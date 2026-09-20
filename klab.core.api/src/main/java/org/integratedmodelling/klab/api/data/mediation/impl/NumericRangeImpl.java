@@ -90,7 +90,7 @@ public class NumericRangeImpl implements NumericRange {
 
     @Override
     public boolean isUpperExclusive() {
-        return lowerExclusive;
+        return upperExclusive;
     }
 
     public void setLowerExclusive(boolean b) {
@@ -366,26 +366,26 @@ public class NumericRangeImpl implements NumericRange {
 
     @Override
     public boolean isCompatible(ValueMediator other) {
-        return other instanceof NumericRangeImpl && isBounded() && ((NumericRangeImpl) other).isBounded();
+        return other instanceof NumericRangeImpl range && finiteRange(this) && finiteRange(range)
+            && lowerExclusive == range.lowerExclusive && upperExclusive == range.upperExclusive;
+    }
+
+    private static boolean finiteRange(NumericRangeImpl range) {
+        return Double.isFinite(range.lowerBound) && Double.isFinite(range.upperBound)
+            && Double.isFinite(range.upperBound - range.lowerBound) && range.upperBound > range.lowerBound;
     }
 
     @Override
-    public Number convert(Number d, ValueMediator other) {
-
-        if (!isBounded()) {
-            throw new IllegalArgumentException(
-                    "range " + this + " cannot convert value " + d + " to " + other + " because it is unbound");
-        }
-        if (!(other instanceof NumericRangeImpl || ((NumericRangeImpl) other).isBounded())) {
-            throw new IllegalArgumentException("range " + this + " cannot convert value " + d + " to " + other
-                    + " because the target is not a range or is unbound");
-        }
-        if (!((NumericRangeImpl) other).contains(d.doubleValue())) {
-            throw new IllegalArgumentException(
-                    "range " + other + " cannot convert value " + d + " to range " + this + " because it does not contain it");
-        }
-
-        return this.lowerBound + (this.getWidth() * ((NumericRangeImpl) other).normalize(d.doubleValue()));
+    public Number convert(Number value, ValueMediator source) {
+        if (!isCompatible(source)) throw new IllegalArgumentException("Range conversion requires finite, strictly increasing bounds");
+        if (value == null || Double.isNaN(value.doubleValue())) return value;
+        var from = (NumericRangeImpl) source;
+        double number = value.doubleValue();
+        if (!from.contains(number)) throw new IllegalArgumentException("Value is outside the source range");
+        double converted = number == from.lowerBound ? lowerBound : number == from.upperBound ? upperBound
+            : lowerBound + (number - from.lowerBound) / from.getWidth() * getWidth();
+        if (!contains(converted)) throw new IllegalArgumentException("Value is outside the target range");
+        return converted;
     }
 
     /**

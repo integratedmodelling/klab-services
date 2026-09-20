@@ -84,6 +84,13 @@ public interface Storage {
    */
   interface Scanner extends PrimitiveIterator.OfLong {
 
+    /** Position the next read without visiting preceding values. Planned read cursors support
+     * offsets from zero through size (the exhausted position); native writers need not support it. */
+    default void seek(long offset) {
+      throw new UnsupportedOperationException("Indexed positioning is not supported");
+    }
+
+
     /** Consumer metadata for planned scans. Legacy implementations may not expose a view. */
     default StorageScan.View view() { throw new UnsupportedOperationException("No planned scan view"); }
 
@@ -101,7 +108,9 @@ public interface Storage {
     }
 
     /**
-     * Read-only view of the shard, used if the geometry or histogram needs to be accessed. These
+     * Read-only view of a physical source shard. A planned view spanning several source shards
+     * throws UnsupportedOperationException here; use view().sources() and view().partition() instead.
+     * Consumer geometry and type may differ from this physical descriptor. These
      * can also be bound to contextualizer arguments for the observation being contextualized (but
      * not necessarily for any input observations).
      *
@@ -243,6 +252,12 @@ public interface Storage {
   List<Shard> getNativeShards(Scheduler.Event event);
 
   Scanner getNativeScanner(Shard shard);
+
+  /** Describe the native output tasks without allocating buffers or resetting histograms.
+   * Providers must return the same ordered geometry as the subsequent native write scan. */
+  default java.util.List<StorageScan.Partition> writeLayout(org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event event) {
+    throw new UnsupportedOperationException("Output layout preview is not supported");
+  }
 
   /** Validate and pin metadata without opening buffers. Planned writes are not yet supported. */
   default <T extends Scanner> StorageScan.Plan<T> plan(StorageScan.Request<T> request) {

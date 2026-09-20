@@ -42,7 +42,7 @@ public class UnitImpl implements Unit {
   @Override
   public boolean isCompatible(ValueMediator other) {
     try {
-      return unitService.isCompatible(this, (Unit) other);
+      return other instanceof Unit unit && unitService.isCompatible(this, unit);
     } catch (NullPointerException e) {
       throw new KlabInternalErrorException("calling isCompatible() without a unit service");
     }

@@ -344,6 +344,20 @@ public class StorageImpl implements Storage {
     return shards.computeIfAbsent(storageKey, k -> createShards(scale, timeStart));
   }
 
+  @Override
+  public List<StorageScan.Partition> writeLayout(Scheduler.Event event) {
+    if (event.getType() != Scheduler.Event.Type.INITIALIZATION)
+      throw new UnsupportedOperationException("Temporal outputs require a write set");
+    var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry()).at(event.getTime());
+    var geometries = scale.size() == 1 ? List.<Geometry>of(scale) : temporalLayout(scale);
+    var result = new ArrayList<StorageScan.Partition>();
+    for (int i = 0; i < geometries.size(); i++) {
+      var geometry = geometries.get(i);
+      result.add(new StorageScan.Partition("task-" + i, geometry.encode(), geometry.size()));
+    }
+    return List.copyOf(result);
+  }
+
   private synchronized List<Shard> createShards(Scale scale, long timeStart) {
 
     var shards = new ArrayList<Shard>();
@@ -503,16 +517,24 @@ public class StorageImpl implements Storage {
   public Set<StorageScan.Capability> scanCapabilities() {
     return Set.of(StorageScan.Capability.NATIVE_READ, StorageScan.Capability.FLOAT_ADAPTATION,
         StorageScan.Capability.INDEXED_READ, StorageScan.Capability.BLOCK_READ,
-        StorageScan.Capability.VALIDITY, StorageScan.Capability.PINNED_SESSION);
+        StorageScan.Capability.VALIDITY, StorageScan.Capability.PINNED_SESSION, StorageScan.Capability.CONFORMANT_READ, StorageScan.Capability.VALUE_MEDIATION);
   }
 
   private record NativePlan<T extends Scanner>(StorageImpl owner, long generation,
-      StorageScan.Description description, Class<T> scannerClass, List<Shard> shards)
+      StorageScan.Description description, Class<T> scannerClass, List<Shard> shards, ConformantScan mapping, String observationGeometry)
       implements StorageScan.Plan<T> {
     private NativePlan { shards = List.copyOf(shards); }
   }
 
+  private record PlanKey(long generation, long observationId, String observationGeometry,
+      StorageScan.Semantics semantics, List<StorageScan.SourceShard> sources, StorageScan.Request<?> request) {}
+
+  // Cache metadata only. Large plans bypass the cache, so its footprint is bounded independently
+  // of request budgets and dataset size. Entries contain no readers or payload buffers.
+  private final Map<PlanKey, NativePlan<?>> scanPlans = new LinkedHashMap<>(16, 0.75f, true);
+
   @Override
+  @SuppressWarnings("unchecked") // scannerClass is part of the immutable request/cache key
   public <T extends Scanner> StorageScan.Plan<T> plan(StorageScan.Request<T> request) {
     Objects.requireNonNull(request);
     synchronized (scanLock) {
@@ -520,38 +542,67 @@ public class StorageImpl implements Storage {
       if (request.access() != StorageScan.Access.READ_ONLY)
         throw new UnsupportedOperationException("Planned writes require a future native ownership protocol");
       if (request.coverage() != StorageScan.Coverage.EXACT || request.sampling() != StorageScan.Sampling.EXACT)
-        throw new UnsupportedOperationException("Spatial mediation is not implemented");
+        throw new UnsupportedOperationException("Spatial resampling is not implemented");
       var layout = StorageScan.Layout.of(nativeShardingStrategy);
-      if (!layout.equals(request.layout()))
-        throw new UnsupportedOperationException("Requested layout differs from native storage");
       if (layout.curve() == Data.FillCurve.UNSPECIFIED || layout.curve() == Data.FillCurve.D3_ZYX
           || layout.curve() == Data.FillCurve.D2_HILBERT || layout.curve() == Data.FillCurve.D3_HILBERT)
         throw new UnsupportedOperationException("Unsupported native traversal: " + layout.curve());
-      if (request.geometry() != null && !request.geometry().equals(observation.getGeometry().encode()))
-        throw new UnsupportedOperationException("Requested coverage differs from native geometry");
       var semantics = scanSemantics();
-      if (request.semantics() != null && !request.semantics().equals(semantics))
-        throw new UnsupportedOperationException("Value mediation is not implemented");
+      var targetSemantics = ValueMediation.target(semantics, request.semantics());
+      var conversion = ValueMediation.compile(semantics, targetSemantics, request.rate());
+      ValueMediation.validateType(conversion, getNativeType());
       var valueType = StorageScan.type(request.scannerClass(), getNativeType());
+      if (request.layout().type() != null && request.layout().type() != getNativeType()
+          && request.layout().type() != valueType)
+        throw new IllegalArgumentException("Requested layout type contradicts the scanner type");
       var operation = StorageScan.operation(getNativeType(), valueType, request.precision());
       var nativeShards = List.copyOf(getNativeShards(request.slice().event(), false));
       if (nativeShards.isEmpty()) throw new KlabIllegalStateException("No initialized source data for scan");
-      if (nativeShards.stream().anyMatch(s -> !readableShards.contains(s.getUrn())))
+      if (nativeShards.stream().anyMatch(shard -> !readableShards.contains(shard.getUrn())))
         throw new IllegalStateException("Source shards have not been finalized");
       if (nativeShards.size() > request.budget().maxPartitions())
         throw new IllegalArgumentException("Source partition budget exceeded");
       var sources = nativeShards.stream().map(this::scanSource).toList();
-      var partitions = request.partitions().isEmpty()
-          ? sources.stream().map(s -> new StorageScan.Partition("native-" + s.index(), s.geometry(), s.size())).toList()
-          : request.partitions();
-      for (var source : sources)
-        if (layout.maxSize() > 0 && source.size() > layout.maxSize())
-          throw new IllegalArgumentException("Native shard exceeds requested maximum state count");
-      var description = new StorageScan.Description(1, scanInstance + ":" + scanGeneration, observation.getId(),
-          Objects.toString(observation.getUrn(), ""), request.slice(), semantics, semantics, layout, layout,
-          sources, partitions, valueType, request.precision(), request.coverage(), request.sampling(),
-          request.budget(), List.of(operation), StorageScan.HistogramPolicy.UNAVAILABLE);
-      return new NativePlan<>(this, scanGeneration, description, request.scannerClass(), nativeShards);
+      String observationGeometry = observation.getGeometry().encode();
+      var key = new PlanKey(scanGeneration, observation.getId(), observationGeometry, semantics, sources, request);
+      var cached = scanPlans.get(key);
+      if (cached != null) return (StorageScan.Plan<T>) cached;
+      var partitions = request.partitions();
+      boolean aligned = layout.curve() == request.layout().curve()
+          && (request.geometry() == null || request.geometry().equals(StorageScan.parseGeometry(observationGeometry).encode()));
+      if (!partitions.isEmpty()) {
+        aligned &= partitions.size() == sources.size();
+        for (int i = 0; aligned && i < partitions.size(); i++)
+          aligned = partitions.get(i).geometry().equals(sources.get(i).geometry())
+              && partitions.get(i).size() == sources.get(i).size();
+      } else {
+        aligned &= layout.splits() == request.layout().splits() && layout.minSize() == request.layout().minSize()
+            && layout.maxSize() == request.layout().maxSize();
+      }
+      ConformantScan mapping = null;
+      if (aligned) {
+        if (partitions.isEmpty()) partitions = sources.stream()
+            .map(source -> new StorageScan.Partition("native-" + source.index(), source.geometry(), source.size())).toList();
+        for (var partition : partitions)
+          if (request.layout().maxSize() > 0 && partition.size() > request.layout().maxSize()) aligned = false;
+      }
+      if (!aligned) {
+        mapping = ConformantScan.compile(sources, request, observationGeometry);
+        partitions = mapping.partitions;
+      }
+      boolean identity = aligned && layout.equals(request.layout());
+      var description = new StorageScan.Description(conversion != null ? 3 : identity ? 1 : 2, scanInstance + ":" + scanGeneration,
+          observation.getId(), Objects.toString(observation.getUrn(), ""), request.slice(), semantics,
+          targetSemantics, layout, request.layout(), sources, partitions, valueType, request.precision(),
+          request.coverage(), request.sampling(), request.budget(), conversion != null ? List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation) : identity ? List.of(operation)
+              : List.of(StorageScan.Operation.INDEX_REMAP, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion);
+      var plan = new NativePlan<>(this, scanGeneration, description, request.scannerClass(), nativeShards, mapping, observationGeometry);
+      long links = mapping == null ? sources.size() : Arrays.stream(mapping.dependencies).mapToLong(array -> array.length).sum();
+      if (sources.size() + partitions.size() + links <= 1024) {
+        scanPlans.put(key, plan);
+        if (scanPlans.size() > 16) scanPlans.remove(scanPlans.keySet().iterator().next());
+      }
+      return plan;
     }
   }
 
@@ -561,24 +612,7 @@ public class StorageImpl implements Storage {
   }
 
   private StorageScan.Semantics scanSemantics() {
-    var observable = observation.getObservable();
-    String unit = "", currency = "", range = "", dimensions = "";
-    if (observable.getUnit() != null) {
-      if (!(observable.getUnit() instanceof org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl impl))
-        throw new UnsupportedOperationException("Unit definition is not portable");
-      unit = Objects.requireNonNull(impl.getDefinition());
-      dimensions = new TreeMap<>(impl.getAggregatedDimensions()).toString();
-    }
-    if (observable.getCurrency() != null) {
-      if (!(observable.getCurrency() instanceof org.integratedmodelling.klab.api.data.mediation.impl.CurrencyImpl impl))
-        throw new UnsupportedOperationException("Currency definition is not portable");
-      currency = Objects.requireNonNull(impl.getDefinition());
-    }
-    if (observable.getRange() != null) {
-      var r = observable.getRange();
-      range = r.getLowerBound() + ":" + r.isLowerExclusive() + ":" + r.getUpperBound() + ":" + r.isUpperExclusive();
-    }
-    return new StorageScan.Semantics(Objects.toString(observable.getUrn(), ""), unit, range, currency, dimensions);
+    return StorageScan.semantics(observation.getObservable());
   }
 
   @Override
@@ -588,6 +622,7 @@ public class StorageImpl implements Storage {
       if (!(plan instanceof NativePlan<T> nativePlan) || nativePlan.owner() != this)
         throw new IllegalArgumentException("Scan plan was not issued by this storage instance");
       if (nativePlan.generation() != scanGeneration || plan.description().observationId() != observation.getId()
+          || !nativePlan.observationGeometry().equals(observation.getGeometry().encode())
           || !plan.description().sourceSemantics().equals(scanSemantics())
           || !nativePlan.shards().stream().map(this::scanSource).toList().equals(plan.description().sources()))
         throw new IllegalStateException("Source changed since scan planning; replan explicitly");
@@ -596,7 +631,7 @@ public class StorageImpl implements Storage {
       var previouslyLoaded = Set.copyOf(shardStorage.keySet());
       try {
         for (var shard : nativePlan.shards()) readers.add(openReader(shard, plan.description().budget().blockValues()));
-        return new LocalScanSession<>(plan, nativePlan.shards(), readers, this::releaseScan);
+        return new LocalScanSession<>(plan, nativePlan.shards(), readers, nativePlan.mapping(), this::releaseScan);
       } catch (RuntimeException | Error failure) {
         for (var reader : readers) {
           try { reader.close(); } catch (RuntimeException cleanup) { failure.addSuppressed(cleanup); }
@@ -618,6 +653,11 @@ public class StorageImpl implements Storage {
   IndexedStorageReader openReader(Shard shard, int blockValues) {
     var state = shardStorage.computeIfAbsent(shard.getUrn(), ignored -> restore(shard));
     return new LocalIndexedReader(state.data, shard.getNativeType(), blockValues);
+  }
+
+  Runnable pinReads() {
+    synchronized (scanLock) { assertOpen(); scanLeases++; }
+    return this::releaseScan;
   }
 
   private void releaseScan() { synchronized (scanLock) { scanLeases--; } }
@@ -902,6 +942,7 @@ public class StorageImpl implements Storage {
       flush();
       shardStorage.values().forEach(shardStorage1 -> shardStorage1.close());
       shardStorage.clear();
+      scanPlans.clear();
       closed = true;
     }
   }

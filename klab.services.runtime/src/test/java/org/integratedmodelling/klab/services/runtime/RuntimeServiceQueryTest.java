@@ -100,6 +100,22 @@ class RuntimeServiceQueryTest {
   }
 
   @Test
+  void qualityQueriesKeepIndependentSourceAndRequestedContracts() {
+    var source = new ObservationImpl(); source.setId(42); source.setGeometry(Geometry.create("1"));
+    var cd = new ObservationImpl.ContextualizationDataImpl();
+    cd.setNativeShardingStrategy(org.integratedmodelling.klab.api.data.Data.ShardingStrategy.trivial(org.integratedmodelling.klab.api.data.Storage.Type.LONG));
+    source.setContextualizationData(cd);
+    var query = new ObservationImpl();query.setId(0);
+    var first = RuntimeService.qualityQueryResult(source,query,source.getGeometry());
+    var second = RuntimeService.qualityQueryResult(source,query,source.getGeometry());
+    first.getContextualizationData().getNativeShardingStrategy().setSuggestedSplits(7);
+    assertEquals(1,source.getContextualizationData().getNativeShardingStrategy().getSuggestedSplits());
+    assertEquals(1,second.getContextualizationData().getNativeShardingStrategy().getSuggestedSplits());
+    assertEquals(List.of(42L),first.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS));
+    assertEquals(0,first.getId());assertEquals(42,source.getId());
+  }
+
+  @Test
   void contributorGeometryIsAUnionRatherThanAConvexHull() {
     Geometry left =
         Geometry.create(
@@ -115,7 +131,7 @@ class RuntimeServiceQueryTest {
   }
 
   @Test
-  void detachedQueriesAreLimitedToEnumerableSubstantials() {
+  void collectiveQueryClassificationExcludesQualities() {
     assertFalse(SemanticType.isEnumerableSubstantial(EnumSet.of(SemanticType.QUALITY)));
     assertTrue(SemanticType.isEnumerableSubstantial(EnumSet.of(SemanticType.SUBJECT)));
     assertTrue(SemanticType.isEnumerableSubstantial(EnumSet.of(SemanticType.AGENT)));

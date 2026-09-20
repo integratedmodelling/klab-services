@@ -97,6 +97,50 @@ class TemporalStorageTest {
     }
   }
 
+  @Test void temporalConversionsUsePinnedPriorAndCurrentValuesAndReleaseOnRollback() {
+    var f = new Fixture(false);
+    var original = (ObservableImpl) f.quality.getObservable();
+    original.setUnit(new org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl("m"));
+    var target = new ObservableImpl(original); target.setUnit(new org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl("mm"));
+    var writes = f.begin("converted",1000,2000);
+    var writer = f.scan(writes,TemporalWriteSet.Access.WRITE); writer.add(90);
+    var request = new StorageScan.Request<>(StorageScan.Slice.of(event("converted",1000,2000)),
+        new StorageScan.Layout(Data.FillCurve.D2_YX,2,0,0,null),null,List.of(),StorageScan.semantics(target),Storage.DoubleScanner.class,
+        StorageScan.Access.READ_ONLY,StorageScan.Precision.LOSSLESS,StorageScan.Coverage.EXACT,
+        StorageScan.Sampling.EXACT,StorageScan.Budget.defaults());
+    try (var prior = writes.read(f.quality,request,TemporalWriteSet.Access.PRIOR);
+         var current = writes.read(f.quality,request,TemporalWriteSet.Access.CURRENT)) {
+      assertEquals(100000,prior.scanners().getFirst().peek());
+      assertEquals(90000,current.scanners().getFirst().peek());
+      assertEquals(3,current.description().version());
+      writer.add(80);
+      assertEquals(90000,current.scanners().getFirst().peek());
+      f.abort(); assertTrue(prior.isClosed()); assertTrue(current.isClosed());
+    }
+    assertSame(original,f.quality.getObservable()); f.storage.close(null);
+  }
+
+  @Test void transactionViewsRemapPriorAndSnapshotCurrentWithoutPublishing() {
+    var f = new Fixture(false); var writes = f.begin("mapped",1000,2000);
+    var writer = f.scan(writes,TemporalWriteSet.Access.WRITE); writer.add(999);
+    var request = new StorageScan.Request<>(StorageScan.Slice.of(event("mapped",1000,2000)),
+        new StorageScan.Layout(Data.FillCurve.D2_YX,2,0,0,null),null,List.of(),null,Storage.DoubleScanner.class,
+        StorageScan.Access.READ_ONLY,StorageScan.Precision.LOSSLESS,StorageScan.Coverage.EXACT,
+        StorageScan.Sampling.EXACT,StorageScan.Budget.defaults());
+    try (var prior = writes.read(f.quality,request,TemporalWriteSet.Access.PRIOR);
+         var current = writes.read(f.quality,request,TemporalWriteSet.Access.CURRENT)) {
+      assertEquals(100,prior.scanners().getFirst().get());
+      assertEquals(999,current.scanners().getFirst().get());
+      writer.add(777);
+      var values = new ArrayList<Double>();
+      for (var scanner : current.scanners()) { scanner.seek(0); while(scanner.hasNext()) values.add(scanner.get()); }
+      assertEquals(List.of(999.0,200.0,350.0),values,"CURRENT is pinned when read is opened");
+      assertEquals(0,f.pending.size());
+      f.abort(); assertTrue(prior.isClosed()); assertTrue(current.isClosed());
+    }
+    f.storage.close(null);
+  }
+
   @Test void plannedSessionKeepsItsCommittedRevisionWhileLaterDataIsPublished() {
     var f = new Fixture(false);
     var writes = f.begin("first", 1000, 2000);

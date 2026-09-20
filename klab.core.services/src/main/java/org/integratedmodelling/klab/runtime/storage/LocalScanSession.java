@@ -10,19 +10,35 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
   private final List<IndexedStorageReader> readers;
   private final List<T> scanners;
   private final Runnable release;
+  private final ValueMediation.Kernel kernel;
+  private final StorageScan.Description description;
   private final AtomicBoolean closed = new AtomicBoolean();
 
   LocalScanSession(StorageScan.Plan<T> plan, List<Storage.Shard> shards,
-      List<IndexedStorageReader> readers, Runnable release) {
+      List<IndexedStorageReader> readers, ConformantScan mapping, Runnable release) {
     this.readers = List.copyOf(readers);
     this.release = release;
     var description = plan.description();
+    this.description = description;
+    this.kernel = ValueMediation.kernel(description.conversion());
     var cursors = new ArrayList<T>();
-    for (int i = 0; i < readers.size(); i++) {
+    for (int i = 0; i < description.partitions().size(); i++) {
+      List<StorageScan.SourceShard> physical;
+      Storage.Shard shard;
+      IndexedStorageReader reader;
+      if (mapping == null) {
+        physical = List.of(description.sources().get(i)); shard = shards.get(i); reader = readers.get(i);
+      } else {
+        var links = mapping.dependencies[i];
+        var linked = new ArrayList<StorageScan.SourceShard>(links.length);
+        for (int source : links) linked.add(description.sources().get(source));
+        physical = List.copyOf(linked);
+        shard = links.length == 1 ? shards.get(links[0]) : null;
+        reader = new ConformantReader(mapping, i, this.readers, description.budget().blockValues());
+      }
       var view = new StorageScan.View(description.partitions().get(i), description.requestedLayout().curve(),
           description.valueType(), description.targetSemantics(), description.slice(),
-          List.of(description.sources().get(i)), description.histogram());
-      var shard = shards.get(i); var reader = readers.get(i);
+          physical, description.histogram());
       Storage.Scanner scanner = switch (description.valueType()) {
         case DOUBLE -> new DoubleCursor(shard, reader, view);
         case FLOAT -> new FloatCursor(shard, reader, view);
@@ -37,6 +53,7 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
   }
 
   @Override public List<T> scanners() { checkOpen(); return scanners; }
+  @Override public StorageScan.Description description() { return description; }
   @Override public boolean isClosed() { return closed.get(); }
   private void checkOpen() { if (isClosed()) throw new IllegalStateException("Scan session is closed"); }
 
@@ -60,9 +77,16 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
     Cursor(Storage.Shard shard, IndexedStorageReader reader, StorageScan.View view) {
       this.shard = shard; this.reader = reader; this.view = view;
     }
-    @Override public Storage.Shard shard() { checkOpen(); return shard; }
+    @Override public Storage.Shard shard() { checkOpen();
+      if (shard == null) throw new UnsupportedOperationException("View has no single physical shard; use view().sources()");
+      return shard; }
     @Override public StorageScan.View view() { checkOpen(); return view; }
     @Override public long size() { checkOpen(); return view.partition().size(); }
+    @Override public void seek(long offset) {
+      checkOpen();
+      if (offset < 0 || offset > view.partition().size()) throw new IndexOutOfBoundsException("Scan offset " + offset);
+      index = offset;
+    }
     @Override public long position() { checkOpen(); return index; }
     @Override public boolean hasNext() { checkOpen(); return index < view.partition().size(); }
     @Override public long nextLong() { checkValue(); return index++; }
@@ -72,13 +96,13 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
   }
   private final class DoubleCursor extends Cursor implements Storage.DoubleScanner {
     DoubleCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); }
-    public double peek() { checkValue(); return reader.type() == Storage.Type.FLOAT ? reader.readFloat(index) : reader.readDouble(index); }
+    public double peek() { checkValue(); return kernel.apply(reader.type() == Storage.Type.FLOAT ? reader.readFloat(index) : reader.readDouble(index)); }
     public double get() { double value = peek(); index++; return value; }
     public void add(double value) { rejectWrite(); }
   }
   private final class FloatCursor extends Cursor implements Storage.FloatScanner {
     FloatCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); }
-    public float peek() { checkValue(); return reader.type() == Storage.Type.DOUBLE ? (float) reader.readDouble(index) : reader.readFloat(index); }
+    public float peek() { checkValue(); return kernel.applyFloat(reader.type() == Storage.Type.DOUBLE ? reader.readDouble(index) : reader.readFloat(index)); }
     public float get() { float value = peek(); index++; return value; }
     public void add(float value) { rejectWrite(); }
   }

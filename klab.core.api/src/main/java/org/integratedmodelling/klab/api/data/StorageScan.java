@@ -19,8 +19,8 @@ public final class StorageScan {
   public enum Access { READ_ONLY, WRITE }
   public enum Coverage { EXACT, MISSING_OUTSIDE }
   public enum Sampling { EXACT, NEAREST, INTERPOLATE, CONSERVATIVE }
-  public enum Operation { IDENTITY, FLOAT_TO_DOUBLE, DOUBLE_TO_FLOAT }
-  public enum Capability { NATIVE_READ, FLOAT_ADAPTATION, INDEXED_READ, BLOCK_READ, VALIDITY, PINNED_SESSION }
+  public enum Operation { IDENTITY, INDEX_REMAP, FLOAT_TO_DOUBLE, DOUBLE_TO_FLOAT, VALUE_CONVERSION }
+  public enum Capability { NATIVE_READ, FLOAT_ADAPTATION, INDEXED_READ, BLOCK_READ, VALIDITY, PINNED_SESSION, CONFORMANT_READ, VALUE_MEDIATION }
   public enum HistogramPolicy { UNAVAILABLE }
 
   /** Mutable strategy beans must be snapshotted before they become plan/cache metadata. */
@@ -69,34 +69,81 @@ public final class StorageScan {
   }
 
   /** Definitions, not executable mediators or reasoner-local IDs. Empty fields mean absent. */
-  public record Semantics(String observable, String unit, String range, String currency, String contextualDimensions)
+  public record Semantics(String observable, String unit, String range, String currency, String contextualDimensions, String meaning)
       implements Serializable {
+    public Semantics(String observable, String unit, String range, String currency, String contextualDimensions) {
+      this(observable, unit, range, currency, contextualDimensions, observable);
+    }
     public Semantics {
       Objects.requireNonNull(observable); Objects.requireNonNull(unit); Objects.requireNonNull(range);
       Objects.requireNonNull(currency); Objects.requireNonNull(contextualDimensions);
+      if (meaning == null) meaning = observable;
     }
+  }
+
+  /** Portable semantic snapshot shared by storage providers and consumer bindings. */
+  public static Semantics semantics(org.integratedmodelling.klab.api.knowledge.Observable observable) {
+    String unit = "", currency = "", range = "", dimensions = "";
+    if (observable.getUnit() != null) {
+      if (!(observable.getUnit() instanceof org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl impl))
+        throw new UnsupportedOperationException("Unit definition is not portable");
+      unit = Objects.requireNonNull(impl.getDefinition());
+      dimensions = (impl.isContextual() ? "contextual:" : "") + new TreeMap<>(impl.getAggregatedDimensions()).toString();
+    }
+    if (observable.getCurrency() != null) {
+      if (!(observable.getCurrency() instanceof org.integratedmodelling.klab.api.data.mediation.impl.CurrencyImpl impl))
+        throw new UnsupportedOperationException("Currency definition is not portable");
+      currency = Objects.requireNonNull(impl.getDefinition());
+    }
+    if (observable.getRange() != null) {
+      var r = observable.getRange();
+      range = r.getLowerBound() + ":" + r.isLowerExclusive() + ":" + r.getUpperBound() + ":" + r.isUpperExclusive();
+    }
+    return new Semantics(Objects.toString(observable.getUrn(), ""), unit, range, currency, dimensions,
+        observable.getSemantics() == null ? Objects.toString(observable.getUrn(), "") :
+        observable.getSemantics().getUrn() + "|" + observable.getContextualization() + "|"
+            + (observable.getObserverSemantics() == null ? "" : observable.getObserverSemantics().getUrn()));
+  }
+
+  /** Exact, locale-independent text for the next value, without advancing. Missing is "null".
+   * Boxing is confined to callers that explicitly request object values, never this path. */
+  public static String textValue(Storage.Scanner scanner) {
+    if (!scanner.isValid()) return "null";
+    return switch (scanner) {
+      case Storage.DoubleScanner s -> Double.toString(s.peek());
+      case Storage.FloatScanner s -> Float.toString(s.peek());
+      case Storage.LongScanner s -> Long.toString(s.peek());
+      case Storage.IntScanner s -> Integer.toString(s.peek());
+      case Storage.BooleanScanner s -> Boolean.toString(s.peek());
+      default -> throw new UnsupportedOperationException("No text representation for this scanner");
+    };
   }
 
   public record Partition(String id, String geometry, long size) implements Serializable {
     public Partition {
       text(id, "partition id"); text(geometry, "partition geometry");
-      var parsed = Geometry.create(geometry);
+      var parsed = parseGeometry(geometry);
       if (size < 0 || parsed.size() != size)
         throw new IllegalArgumentException("Partition size must match its geometry");
       geometry = parsed.encode();
     }
   }
 
-  /** Null geometry/semantics and an empty partition list select the native values at planning time. */
+  /** Null geometry/semantics select native coverage/semantics. Empty partitions let the planner
+   * derive partitions from the requested layout; an exact native request retains native partitions. */
   public record Request<T extends Storage.Scanner>(Slice slice, Layout layout, String geometry,
       List<Partition> partitions, Semantics semantics, Class<T> scannerClass, Access access,
-      Precision precision, Coverage coverage, Sampling sampling, Budget budget) {
+      Precision precision, Coverage coverage, Sampling sampling, Budget budget, org.integratedmodelling.klab.api.services.CurrencyService.Rate rate) {
+    public Request(Slice slice, Layout layout, String geometry, List<Partition> partitions, Semantics semantics,
+        Class<T> scannerClass, Access access, Precision precision, Coverage coverage, Sampling sampling, Budget budget) {
+      this(slice, layout, geometry, partitions, semantics, scannerClass, access, precision, coverage, sampling, budget, null);
+    }
     public Request {
       Objects.requireNonNull(slice); Objects.requireNonNull(layout); Objects.requireNonNull(scannerClass);
       Objects.requireNonNull(access); Objects.requireNonNull(precision); Objects.requireNonNull(coverage);
       Objects.requireNonNull(sampling); Objects.requireNonNull(budget);
       partitions = List.copyOf(partitions);
-      if (geometry != null) geometry = Geometry.create(geometry).encode();
+      if (geometry != null) geometry = parseGeometry(geometry).encode();
       if (partitions.size() > budget.maxPartitions()) throw new IllegalArgumentException("Partition budget exceeded");
       if (partitions.stream().map(Partition::id).distinct().count() != partitions.size())
         throw new IllegalArgumentException("Duplicate consumer partition identity");
@@ -105,6 +152,20 @@ public final class StorageScan {
         Data.ShardingStrategy strategy, Class<T> scannerClass) {
       return new Request<>(Slice.of(event), Layout.of(strategy), null, List.of(), null, scannerClass,
           Access.READ_ONLY, Precision.LOSSLESS, Coverage.EXACT, Sampling.EXACT, Budget.defaults());
+    }
+  }
+
+  /** A cell in one full-coverage consumer traversal. Positive source identity is authorized in
+   * the calling context. Null geometry/semantics select the durable source definitions. */
+  public record Point(long sourceId, Slice slice, Data.FillCurve curve, String geometry,
+      Semantics semantics, long offset, org.integratedmodelling.klab.api.services.CurrencyService.Rate rate) implements Serializable {
+    public Point(long sourceId, Slice slice, Data.FillCurve curve, String geometry, Semantics semantics, long offset) {
+      this(sourceId, slice, curve, geometry, semantics, offset, null);
+    }
+    public Point {
+      if (sourceId <= 0 || offset < 0) throw new IllegalArgumentException("Invalid source ID or cell offset");
+      Objects.requireNonNull(slice); Objects.requireNonNull(curve);
+      if (geometry != null) geometry = parseGeometry(geometry).encode();
     }
   }
 
@@ -117,14 +178,35 @@ public final class StorageScan {
     }
   }
 
-  /** Version 1 describes identity traversal with optional primitive floating-point adaptation. */
+  /** Portable, precompiled ordinary conversion. No mediator or per-cell object is retained. */
+  public record Conversion(String kind, double factor, double offset, String sourceRange,
+      String targetRange, org.integratedmodelling.klab.api.services.CurrencyService.Rate rate) implements Serializable {
+    public Conversion {
+      if (!Set.of("UNIT", "RANGE", "CURRENCY").contains(kind) || !Double.isFinite(factor)
+          || factor <= 0 || !Double.isFinite(offset)) throw new IllegalArgumentException("Invalid value conversion");
+      Objects.requireNonNull(sourceRange); Objects.requireNonNull(targetRange);
+      if (kind.equals("CURRENCY") != (rate != null)) throw new IllegalArgumentException("Currency rate required exclusively for currency conversion");
+      if (rate != null && (factor != rate.factor() || offset != 0)) throw new IllegalArgumentException("Rate/kernel mismatch");
+    }
+  }
+
+  /** Version 1 is native identity; version 2 adds conformant remapping; version 3 adds value conversion.
+   * Providers validate conformance and compile conversion before issuing executable handles. */
   public record Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
       Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
       List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType,
       Precision precision, Coverage coverage, Sampling sampling, Budget budget,
-      List<Operation> operations, HistogramPolicy histogram) implements Serializable {
+      List<Operation> operations, HistogramPolicy histogram, Conversion conversion) implements Serializable {
+    public Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
+        Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
+        List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType, Precision precision,
+        Coverage coverage, Sampling sampling, Budget budget, List<Operation> operations, HistogramPolicy histogram) {
+      this(version, sourceRevision, observationId, observationUrn, slice, sourceSemantics, targetSemantics,
+          nativeLayout, requestedLayout, sources, partitions, valueType, precision, coverage, sampling, budget,
+          operations, histogram, null);
+    }
     public Description {
-      if (version != 1) throw new IllegalArgumentException("Unsupported scan description version: " + version);
+      if (version != 1 && version != 2 && version != 3) throw new IllegalArgumentException("Unsupported scan description version: " + version);
       text(sourceRevision, "source revision");
       Objects.requireNonNull(observationUrn); Objects.requireNonNull(slice);
       Objects.requireNonNull(sourceSemantics); Objects.requireNonNull(targetSemantics);
@@ -132,20 +214,25 @@ public final class StorageScan {
       Objects.requireNonNull(valueType); Objects.requireNonNull(precision); Objects.requireNonNull(coverage);
       Objects.requireNonNull(sampling); Objects.requireNonNull(budget); Objects.requireNonNull(histogram);
       sources = List.copyOf(sources); partitions = List.copyOf(partitions); operations = List.copyOf(operations);
-      if (sources.isEmpty() || sources.size() != partitions.size() || sources.size() > budget.maxPartitions())
+      if (sources.isEmpty() || partitions.isEmpty() || sources.size() > budget.maxPartitions()
+          || partitions.size() > budget.maxPartitions() || version == 1 && sources.size() != partitions.size())
         throw new IllegalArgumentException("Invalid native source/partition count");
       if (sources.stream().map(SourceShard::urn).distinct().count() != sources.size()
           || partitions.stream().map(Partition::id).distinct().count() != partitions.size())
         throw new IllegalArgumentException("Duplicate scan source or partition");
-      if (coverage != Coverage.EXACT || sampling != Sampling.EXACT || !sourceSemantics.equals(targetSemantics)
-          || !nativeLayout.equals(requestedLayout))
-        throw new IllegalArgumentException("Version 1 only supports native layout and semantics");
+      if (coverage != Coverage.EXACT || sampling != Sampling.EXACT || version < 3 && !sourceSemantics.equals(targetSemantics)
+          || version == 1 && !nativeLayout.equals(requestedLayout))
+        throw new IllegalArgumentException("Exact coverage is required; versions 1/2 require native semantics and version 1 requires native layout");
       Operation operation = operation(nativeLayout.type(), valueType, precision);
-      if (!operations.equals(List.of(operation))) throw new IllegalArgumentException("Invalid operation pipeline");
+      if ((version == 3) != (conversion != null)) throw new IllegalArgumentException("Conversion requires version 3");
+      if (!operations.equals(version == 1 ? List.of(operation) : version == 2 ? List.of(Operation.INDEX_REMAP, operation)
+          : List.of(Operation.INDEX_REMAP, Operation.VALUE_CONVERSION, operation))) throw new IllegalArgumentException("Invalid operation pipeline");
       for (int i = 0; i < sources.size(); i++) {
-        var source = sources.get(i); var target = partitions.get(i);
-        if (source.index() != i || !source.layout().equals(nativeLayout)
-            || source.size() != target.size() || !source.geometry().equals(target.geometry()))
+        var source = sources.get(i);
+        if (source.index() != i || !source.layout().equals(nativeLayout))
+          throw new IllegalArgumentException("Invalid source layout or order");
+        if (version == 1 && (source.size() != partitions.get(i).size()
+            || !source.geometry().equals(partitions.get(i).geometry())))
           throw new IllegalArgumentException("Version 1 requires ordered, aligned native partitions");
       }
     }
@@ -154,9 +241,20 @@ public final class StorageScan {
     public String fingerprint() {
       try {
         var digest = MessageDigest.getInstance("SHA-256");
-        fingerprintFields(digest, this);
+        fingerprintFields(digest, this, version < 3);
         return HexFormat.of().formatHex(digest.digest());
       } catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+    }
+  }
+
+  /** One stable named dependency. Parallel AFFECTS relationships retain separate bindings. */
+  public record Binding(int version, String id, Semantics source, Semantics target, Conversion conversion)
+      implements Serializable {
+    public static final String PROPERTY = "storageMediation";
+    public Binding {
+      if (version != 1 || id == null || id.isBlank()) throw new IllegalArgumentException("Invalid mediation binding schema");
+      Objects.requireNonNull(source); Objects.requireNonNull(target);
+      if (!source.equals(target) && conversion == null) throw new IllegalArgumentException("Missing binding conversion");
     }
   }
 
@@ -177,6 +275,8 @@ public final class StorageScan {
 
   public interface Session<T extends Storage.Scanner> extends AutoCloseable {
     List<T> scanners();
+    /** Immutable execution evidence, when supplied by the provider. */
+    default Description description() { return null; }
     boolean isClosed();
     /** Cancellation has the same release/invalidation semantics as close. */
     default void cancel() { close(); }
@@ -201,17 +301,37 @@ public final class StorageScan {
     throw new IllegalArgumentException("Unsupported precision/type conversion: " + source + " -> " + target);
   }
 
+  /** Decode persisted geometry text, including unescaped commas inside WKT parameter values. */
+  public static Geometry parseGeometry(String encoding) {
+    var escaped = new StringBuilder(encoding.length());
+    int braces = 0, parentheses = 0;
+    for (int i = 0; i < encoding.length(); i++) {
+      char c = encoding.charAt(i);
+      if (c == '{') { braces++; parentheses = 0; }
+      if (braces > 0 && c == '(') parentheses++;
+      if (braces > 0 && c == ')') parentheses--;
+      if (c == ',' && braces > 0 && parentheses > 0) escaped.append("&comma;");
+      else escaped.append(c);
+      if (c == '}') { braces--; parentheses = 0; }
+    }
+    return Geometry.create(escaped.toString());
+  }
+
   private static void text(String value, String name) {
     if (value == null || value.isBlank()) throw new IllegalArgumentException("Missing " + name);
   }
 
-  private static void fingerprintFields(MessageDigest digest, Object value) {
-    if (value instanceof List<?> list) {
-      fingerprintFields(digest, list.size());
-      list.forEach(item -> fingerprintFields(digest, item));
+  private static void fingerprintFields(MessageDigest digest, Object value, boolean legacy) {
+    if (value == null) {
+      digest.update(new byte[] {-1, -1, -1, -1});
+    } else if (value instanceof List<?> list) {
+      fingerprintFields(digest, list.size(), legacy);
+      list.forEach(item -> fingerprintFields(digest, item, legacy));
     } else if (value.getClass().isRecord()) {
       for (var component : value.getClass().getRecordComponents()) {
-        try { fingerprintFields(digest, component.getAccessor().invoke(value)); }
+        if (legacy && (value instanceof Description && component.getName().equals("conversion")
+            || value instanceof Semantics && component.getName().equals("meaning"))) continue;
+        try { fingerprintFields(digest, component.getAccessor().invoke(value), legacy); }
         catch (ReflectiveOperationException e) { throw new IllegalStateException(e); }
       }
     } else {

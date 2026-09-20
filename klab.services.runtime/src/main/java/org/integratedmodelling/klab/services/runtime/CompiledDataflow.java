@@ -502,7 +502,8 @@ public class CompiledDataflow {
     var observation = scope.getObservation(plan.getObservation().getId());
     if (observation == null || observation.getId() <= 0)
       throw new KlabInternalErrorException("Missing durable occurrence input " + plan.getName());
-    ((ActuatorImpl) plan).setObservation(observation);
+    ((ActuatorImpl) plan).setObservation(org.integratedmodelling.klab.runtime.storage.StorageReads.binding(
+        observation, plan.getObservation()));
     actuatorObservations.put(plan, observation);
     for (var child : plan.getChildren()) bindRestoredOccurrence(child);
   }
@@ -554,7 +555,7 @@ public class CompiledDataflow {
 
     List<Data.ShardingStrategy> priorityOrder = new ArrayList<>();
     for (var child : actuator.getChildren()) {
-      priorityOrder.add(harmonizeShardingInternal(child));
+      harmonizeShardingInternal(child); // Every producer owns its layout; consumers mediate at binding.
     }
 
     if (actuator.getObservation() != null && actuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
@@ -575,9 +576,12 @@ public class CompiledDataflow {
               .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
               .getDefaultShardingStrategy(actuator.getObservation(), scope);
 
-      // add local and model strategies in increasing priority order. At least one strategy is
-      // guaranteed non-null. At this stage the runtime settings only override what is NOT
-      // specified.
+      // Producer-local declarations precede runtime defaults; later concrete fields win.
+      // Dependencies keep their own layouts and are mediated when the executor binds inputs.
+      for (var call : actuator.getComputation()) {
+        var descriptor = getCallInfo(call, actuator.getObservation());
+        if (descriptor != null) priorityOrder.add(descriptor.shardingStrategy());
+      }
       priorityOrder.addFirst(modelDriven); // second-tier
       priorityOrder.addFirst(localDriven); // first-tier
       priorityOrder.add(runtimeDriven); // highest priority
@@ -594,8 +598,7 @@ public class CompiledDataflow {
       ret = leastPriority.mergeUndefined(priorityOrder.toArray(Data.ShardingStrategy[]::new));
 
       /*
-       * Any definitions from downstream actuators are ignored if the runtime wants to avoid
-       * parallelization. So we check out the service settings explicitly
+       * The runtime disable switch overrides all producer split and size preferences.
        */
       var runtime = scope.getService(RuntimeService.class);
 
@@ -651,6 +654,16 @@ public class CompiledDataflow {
       actuatorObservations.put(actuator, observations.get(actuator.getId()));
     }
     for (var child : actuator.getChildren()) bindLocalReferences(child, observations);
+  }
+
+  private org.integratedmodelling.klab.api.data.StorageScan.Binding storageBinding(Actuator input, Observation source, int rank) {
+    var from = org.integratedmodelling.klab.api.data.StorageScan.semantics(source.getObservable());
+    var requested = input.getObservation() == null ? source : input.getObservation();
+    var to = source.getObservable().is(SemanticType.QUALITY)
+        ? org.integratedmodelling.klab.api.data.StorageScan.semantics(requested.getObservable()) : from;
+    var conversion = org.integratedmodelling.klab.runtime.storage.ValueMediation.compile(from, to,
+        org.integratedmodelling.klab.runtime.storage.StorageReads.rate(requested));
+    return new org.integratedmodelling.klab.api.data.StorageScan.Binding(1, input.getName() + ":" + rank, from, to, conversion);
   }
 
   private void requireObservation(Actuator actuator, Map<Long, Observation> observationMap) {
@@ -843,8 +856,12 @@ public class CompiledDataflow {
 
     var snapshots = new ArrayList<Runnable>();
     for (var actuator : dependencyGraph.vertexSet()) {
-      if (actuator instanceof ActuatorImpl implementation && actuatorObservations.containsKey(actuator))
-        implementation.setObservation(actuatorObservations.get(actuator));
+      if (actuator instanceof ActuatorImpl implementation && actuatorObservations.containsKey(actuator)) {
+        var bound = actuatorObservations.get(actuator);
+        if (bound.getId() == Observation.QUERY_ID && bound.getObservable().is(SemanticType.QUALITY))
+          bound = org.integratedmodelling.klab.runtime.storage.StorageReads.source(bound, scope);
+        implementation.setObservation(org.integratedmodelling.klab.runtime.storage.StorageReads.binding(bound, actuator.getObservation()));
+      }
       if (actuator.getExecutionRole() == Actuator.ExecutionRole.INITIALIZATION
           && !actuator.getComputation().isEmpty() && snapshotSupported(actuator)) {
         var observation = actuatorObservations.get(actuator);
@@ -890,7 +907,9 @@ public class CompiledDataflow {
       // references retain AFFECTS so that later events can still propagate from them.
       // Process inputs remain in HAS_CHILD and the portable named bindings. Reading a quality
       // does not mean the quality causally affects the process that changes it.
-      if (source != null && target != null && source.getId() != Observation.QUERY_ID
+      if (source != null && source.getId() == Observation.QUERY_ID && source.getObservable().is(SemanticType.QUALITY))
+        source = org.integratedmodelling.klab.runtime.storage.StorageReads.source(source, scope);
+      if (source != null && target != null && source.getId() != Observation.QUERY_ID && target.getId() != Observation.QUERY_ID
           && aTarget.getExecutionRole() != Actuator.ExecutionRole.PROCESS) {
         var processBindings = processPlan(aTarget);
         var binding = processBindings == null ? null : processBindings.binding(aSource.getName());
@@ -898,7 +917,9 @@ public class CompiledDataflow {
         transaction.link(source, target, GraphModel.Relationship.AFFECTS, "rank", edge.order,
             ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE, "readState",
             aTarget.getExecutionRole() == Actuator.ExecutionRole.PROCESS ? "PRIOR_COMMITTED" : "CURRENT",
-            "semanticRelations", binding == null ? List.of() : binding.relations());
+            "semanticRelations", binding == null ? List.of() : binding.relations(),
+            org.integratedmodelling.klab.api.data.StorageScan.Binding.PROPERTY,
+            org.integratedmodelling.klab.utilities.Utils.Json.asString(storageBinding(aSource, source, edge.order)));
       }
       transaction.link(aTarget, aSource, GraphModel.Relationship.HAS_CHILD);
     }
@@ -1124,7 +1145,8 @@ public class CompiledDataflow {
           throw new KlabInternalErrorException(
               "Missing dependent observation for " + child.getObservation().getObservable());
         }
-        localReferences.put(child.getName(), childObservation);
+        localReferences.put(child.getName(), org.integratedmodelling.klab.runtime.storage.StorageReads.binding(
+            childObservation, child.getObservation()));
       }
     }
 

@@ -52,7 +52,7 @@ large contextualizations can execute without per-value allocation or boxing.
 `CompiledDataflow.harmonizeSharding()` attributes storage before the first contextualization of a
 new quality:
 
-1. Local, model, child, then runtime strategies are merged; later concrete fields win. Numeric
+1. Local, model, the producer’s own Java function/adapter declarations, then runtime strategies are merged; later concrete fields win. Numeric
    primitive types may override one another; incompatible semantic types fail.
 2. Runtime defaults derive type from semantics (numeric DOUBLE, categorization KEYED, verification
    BOOLEAN), curve from geometry, and split count from available processors. These concrete fields
@@ -63,8 +63,9 @@ new quality:
 4. The result is recorded on observation contextualization data. Storage creation requires it.
    Existing positive-ID observations keep their recorded native strategy.
 
-`CallDescriptors.shardingStrategy()` exposes Java requirements, but harmonization does not yet
-consume them. Consumer preferences are not yet separated from native producer attribution.
+`CallDescriptors.shardingStrategy()` contributes the producer’s Java declarations. Child strategies
+are no longer propagated into the parent’s attribution. Dependency reads use ephemeral requests
+against explicit output partitions, so existing inputs retain their own native layouts and types.
 The runtime curve is `D2_XY` for regular 2D space, `D3_XYZ` for regular 3D space, otherwise
 `D1_LINEAR`. Strategy getters return copies; incomplete native strategies are no longer silently
 replaced by scan requests.
@@ -91,7 +92,8 @@ and do not replace these fields.
 `ComponentRegistry` validates function strategies and copies all four adapter fields, including
 `maxSize`, into `AdapterDescriptor`. Its `shardingStrategy()` has no primitive type. A method's
 `@KlabFunction` supplies its own defaults: it does not inherit class-level sharding fields.
-Exporter registration records its curve but does not yet remap scanner arguments accordingly.
+Exporter registration records its curve; invocation applies it to a single read-only traversal
+across the observation’s native shards. UNSPECIFIED selects the source’s native curve.
 
 ```java
 @KlabFunction(name = "sample", description = "Sample a quality",
@@ -101,7 +103,9 @@ Exporter registration records its curve but does not yet remap scanner arguments
 
 The native splitter bypasses size hints for positive counts and uses them only to derive an
 unspecified count. Planned reads additionally reject native shards exceeding a requested maximum.
-End-to-end enforcement of Java consumer declarations remains stage 3. Dynamic `@Splits`,
+Function/adapter layout declarations participate in new producer attribution with the precedence
+above; they are preferences, not independent per-input traversal requirements. Every input in one
+output task follows that task’s geometry and curve. Dynamic `@Splits`,
 `@SplitSize`, and adapter `@FillCurve` methods mentioned in TODOs are not implemented contracts.
 
 ### k.IM sharding annotations
@@ -127,7 +131,7 @@ Concept annotations contribute first, model/dependency annotations override them
 observation definitions have highest precedence. `override=true` can affect ordinary concept/model
 precedence; see [ANNOTATIONS.md](ANNOTATIONS.md). Replacement is by name. Model annotations apply
 only to the main output. Runtime strategy merging is a separate step with the precedence above.
-Parsing/validation is implemented; consumer remapping and full runtime enforcement are staged in
+Parsing/validation and planned conformant reads are implemented; full runtime binding is staged in
 [STORAGE_PLAN.md](STORAGE_PLAN.md).
 
 ### Fill-curve implementation boundary
@@ -136,8 +140,8 @@ Parsing/validation is implemented; consumer remapping and full runtime enforceme
 For shape [X,Y], `D2_XY` varies Y fastest, `D2_YX` varies X fastest, and `D2_XInvY` reverses Y
 within each X block. `D3_XYZ` is row-major; `D3_ZYX` currently aliases it. Hilbert mapping throws.
 `FillCurve.map` accepts int and `Mapper.offset` narrows to int: these are not proven large-index
-mediation APIs. Planned reads reject UNSPECIFIED, D3_ZYX, and Hilbert curves. Traversal remapping
-is not implemented even where standalone curve mapping works.
+mediation APIs. Planned reads reject UNSPECIFIED, D3_ZYX, and Hilbert curves. Planned conformant reads
+use a separate checked long-index codec; the legacy helper implementations remain unchanged.
 
 ## Creating and finding storage
 
@@ -184,12 +188,14 @@ The requested scanner class is a real contract, not a hint. The storage layer ei
 instance assignable to that class, supplies a compatible primitive adapter, or fails explicitly.
 It must never return a scanner of another type and defer failure to reflection.
 
-During a quality contextualization, `AbstractExecutor` opens native output scanners and matching-strategy
-read-only scanners for quality dependencies. It constructs one task per output shard and binds
+During a quality contextualization, `AbstractExecutor` previews native output partitions and plans
+read-only dependency sessions against those exact partitions before opening writable output scanners.
+It constructs one task per output shard and binds
 component method parameters by the declared input/output name. Parameters may request:
 
 - the `Observation` itself;
-- the scanner's `Shard` view;
+- `StorageScan.View` for consumer geometry, traversal and source metadata;
+- a physical `Storage.Shard` only when it describes the bound input without mediation;
 - generic `Storage.Scanner`;
 - the matching typed scanner;
 - `DoubleScanner` over native float storage, or `FloatScanner` over native double storage.
@@ -209,17 +215,9 @@ types in the message.
 ### Legacy cursor and export boundary
 
 Legacy `get()` and `nextLong()` both advance; `peek()` does not. Legacy scanner exhaustion checks
-are not the strict planned-session contract below. The executor opens output scanners before
-planning all dependencies, so a failed input binding may already have reset output histograms.
-It matches scanner lists by index/count, not by proven geometric alignment.
-
-`ArgumentMatcher` obtains native scanners and calls `ScannerAdapters.mergeScanners()`, whose only
-working case is a singleton. It does not apply exporter curve metadata and does not force
-initialization scanners readonly. `KlabServiceController.exportAsset()` delegates through
-`BaseService.exportAsset()` and language invocation into this route. Detached ID-zero queries
-copy source metadata but do not yet compile scanner/unit mediation; storage is indexed by source
-observation identity, so zero must not become a shared storage key. These consumer routes are
-stage-3 integration work, including individual values returned as text.
+are not the strict planned-session contract below. Legacy `scan()` remains the native compatibility
+entry point. Runtime dependency and exporter bindings use the planned path described under S3;
+`ScannerAdapters.mergeScanners()` is no longer used to acquire observation-wide export inputs.
 
 ### Component author rules
 
@@ -317,15 +315,18 @@ try (var session = storage.open(plan)) {
 ```
 
 Requests snapshot mutable strategies and events into immutable `Layout` and `Slice` records.
-Optional geometry and semantic definitions must match the native source in S1. Empty consumer
-partitions select native partitions; explicit partitions must match ordered source geometry and
-size and have unique identities. Positive maximum size is enforced against every source shard.
+Semantic definitions either match the native source or require a supported S4 conversion. An exact
+native request keeps its native partitions and fast path; other layouts use the S2 conformant planner
+described below. Empty
+consumer partitions mean automatic partitioning, not an empty selection. Explicit partitions have
+unique identities and must cover the same cells without overlap or gaps. Positive maximum size
+limits consumer partitions, not the underlying physical buffers.
 Sources must be finalized initialization shards or restored/committed data. Unsupported layouts,
 semantics, coverage/sampling policies, writes, keyed types, and curves fail before buffer access.
 
 ### Ownership and portable descriptions
 
-Plans belong to their issuing storage instance. Version-1 `Description` records contain immutable
+Plans belong to their issuing storage instance. `Description` records contain immutable
 source descriptors, event, semantic definitions, layouts, partitions, precision, budgets and
 operation metadata. JSON round trips preserve structural equality; inconsistent descriptions and
 unknown versions are rejected. A description is not an executable plan or permission to open data.
@@ -333,10 +334,11 @@ unknown versions are rejected. A description is not an executable plan or permis
 `fingerprint()` is SHA-256 over length-prefixed UTF-8 fields in record/list order. An opaque source
 revision token incorporates local storage identity and write generation, so changing initialization
 values changes the fingerprint. This is not a durable content hash or a cross-provider cache key.
-Temporal source URNs/timestamps identify concrete committed shards. Description persistence in
-graph edges is future work; executable cursors, converters and buffers are never serialized.
+Temporal source URNs/timestamps identify concrete committed shards. S4 persists binding intent on
+AFFECTS and executed descriptions in Activity metadata; executable cursors, converters and buffers
+are never serialized.
 
-Opening rechecks generation, semantics and source descriptors. Stale plans fail and require
+Opening rechecks generation, observation geometry, semantics and source descriptors. Stale plans fail and require
 explicit replanning. An open session leases its source, blocking initialization writes (including
 previously obtained writers), writer resets and storage closure. Concurrent sessions have
 independent task-local cursors. Close/cancel is idempotent and invalidates scanners, closes reader
@@ -345,15 +347,18 @@ handles and newly restored buffers before releasing the lease. Always use try-wi
 
 ### Consumer view, cursor and precision
 
-`shard()` identifies physical native storage; `view()` describes consumer partition, type, semantics,
-slice, curve and sources. Views are never persisted as `HAS_DATA` shards. View histograms are
+`shard()` identifies physical native storage when the view touches exactly one physical shard.
+For a view spanning several shards it throws `UnsupportedOperationException`; use
+`view().sources()` for the physical source descriptors and `view().partition()` for consumer
+geometry. No synthetic or arbitrarily selected physical shard is returned. `view()` also describes
+consumer type, semantics, slice and traversal. Views are never persisted as `HAS_DATA` shards. View histograms are
 explicitly unavailable; native histograms are not converted-view statistics.
 
 `position()` is the next offset, equal to `size()` at exhaustion. `get()` and `nextLong()` each
 consume one position; `peek()`, `isValid()` and `location()` do not advance. Value/location access
 after exhaustion throws `NoSuchElementException`; access after close throws `IllegalStateException`.
-Writes fail without advancing. Location contains partition, curve, slice and long offset; coordinate
-decoding and cell metrics remain future work. Legacy cursor behavior is unchanged.
+Writes fail without advancing. Location contains partition, curve, slice and long offset; public spatial-locator
+construction and cell metrics remain future work (S2 uses internal grid-coordinate decoding). Legacy cursor behavior is unchanged.
 
 Default `LOSSLESS` supports native DOUBLE/FLOAT/INTEGER/LONG/BOOLEAN and FLOAT to DOUBLE.
 DOUBLE to FLOAT requires `ALLOW_FLOAT_NARROWING`, using Java IEEE narrowing including overflow to
@@ -372,35 +377,122 @@ with cancellation on their own reader. No full-dataset copy or per-cell index ar
 dataset size. This does not guarantee that downstream consumer code is allocation-free.
 
 Exporters and individual-value API text responses are required consumers of this same contract.
-Their binding is S3 work, ordinary semantic conversion S4, and contextual conversion S5. Text
-formatting belongs after location selection, validity and primitive mediation at the API boundary.
-S1 neither adds a text-value endpoint nor claims that existing exporters honor requested views.
+Their shared binding is implemented in S3 below; ordinary semantic conversion remains S4 and
+contextual conversion S5. Text formatting follows location selection, validity and primitive mediation.
+
+## Conformant scanner mediation (S2)
+
+The local provider advertises `CONFORMANT_READ`. Its planned-read path supports one-to-many,
+many-to-one and many-to-many layouts for all five native primitive types. Requested partitions
+may cross physical shard boundaries or arrive in a different order. Values are located from
+persisted shard geometry, not list position, equal-size assumptions, or transient parent metadata.
+The original native strategy, buffers, descriptors and histograms remain unchanged. The legacy
+`scan(...)` overload still rejects a different strategy; runtime/export/text consumers use planned sessions.
+
+```java
+var viewStrategy = storage.getNativeShardingStrategy(); // a defensive copy
+viewStrategy.setSuggestedSplits(1);                    // merge into one consumer traversal
+viewStrategy.setCurve(Data.FillCurve.D2_YX);
+var request = StorageScan.Request.nativeRead(event, viewStrategy, Storage.DoubleScanner.class);
+try (var session = storage.open(storage.plan(request))) {
+  var scanner = session.scanners().getFirst();
+  // scanner.view() describes the merged traversal; scanner.shard() may be unavailable.
+}
+```
+
+### Conformance and traversal
+
+Remapping requires nonempty, axis-aligned, rectangular regular spatial grids with one to three
+axes, a known matching CRS, equal cell resolution and aligned cell edges. Source partitions and
+consumer partitions must each be disjoint and cover the observation's rectangular spatial support
+exactly, including its outer boundaries.
+Missing bounds, masks/nonrectangular support, changed CRS/resolution, fractional cell offsets,
+coverage gaps/overlaps and unresolved distributed non-spatial dimensions fail during planning.
+Bounding-box overlap alone is never treated as conformance.
+
+CRS identifiers are compared literally; this path does not infer equivalence or reproject.
+Persisted native splits that omit a CRS inherit their owning observation's CRS. A spatial-only
+consumer geometry inherits the selected slice's non-spatial context. When supplied explicitly,
+non-spatial geometry must match the located source; the unchanged full observation geometry may
+also describe coverage, while the request's `Slice` selects the event. It does not request a
+second temporal resampling. Explicit partition geometry should use spatial-only or event-local
+extents, not a different temporal interval.
+
+Cell-size ratios allow relative error up to 1e-9. Cell edges must be within max(1e-8, eight ULPs)
+of an integer lattice coordinate; requests requiring a tolerance greater than 1e-4 cells are
+rejected as numerically ambiguous. This accommodates serialization round-off, not subcell shifts.
+All index products, volumes and endpoints use checked long arithmetic. Large spatial coordinates
+whose floating-point bounds cannot identify cells reliably are rejected. Local physical buffers
+retain their existing size limits; long total indexing does not remove those backend limits.
+
+| Curve | Meaning in the planned reader |
+|---|---|
+| `D1_LINEAR` | Row-major mixed-radix order over the located spatial axes |
+| `D2_XY` | Y varies fastest |
+| `D2_YX` | X varies fastest |
+| `D2_XInvY` | Y varies fastest in reverse within each X position |
+| `D3_XYZ` | Z varies fastest, then Y, then X |
+
+Dimensional curve mismatches are rejected. `D3_ZYX` remains rejected because legacy storage
+currently aliases it to XYZ; S2 does not reinterpret existing bytes under a different meaning.
+Hilbert and UNSPECIFIED remain unsupported. Traversal applies within each consumer partition;
+a single globally ordered traversal requires one partition. Float widening/narrowing and validity
+compose with remapping under the S1 precision rules, preserving exact integer/long/boolean data.
+Exact native scalar/empty reads retain their fast path and strict cursor behavior; remapping an
+empty or non-spatial grid is not required to fabricate partitions or source cells.
+
+### Partition policy, metadata and resource bounds
+
+An empty partition list asks the planner to derive the requested layout. It repeatedly divides the
+largest box along its longest axis, producing deterministic integer-cell partitions, including
+uneven ones. A positive split count is a preference, bounded by available cells and the soft
+minimum. With split=-1, a positive minimum suggests total/minimum partitions; otherwise one is
+preferred. A positive maximum takes priority and may increase the count beyond the preference.
+An explicit partition list defines the exact consumer order and boundaries; its sizes must obey
+the maximum. The minimum does not reject unavoidable small partitions. `PARALLELIZE_OBSERVATIONS`
+continues to control native output attribution; this readonly view operation does not launch tasks.
+
+Version 1 descriptions remain native-identity descriptions. Version 2 permits different source
+and consumer partitions and records `INDEX_REMAP` before the primitive value operation. JSON and
+fingerprint round trips include the requested layout and explicit consumer order. The structural
+record validates the version/pipeline; compiling a usable plan also validates geometric coverage.
+Null optional layout types use a reserved null marker in fingerprints. WKT commas are preserved
+when decoding geometry text, including strings produced by the existing geometry encoder.
+
+The compiled plan contains a balanced bounding-volume directory and partition metadata, never
+an index per cell. Each mapped reader reuses a fixed coordinate array and its last source lookup.
+Block reads transfer contiguous native spans directly into caller-owned primitive arrays; other
+traversals use bounded primitive gathers. No converted buffer, boxed value or per-cell locator is
+created. Reader-local synchronization protects scratch coordinates/cancellation; source handles
+remain session-owned and leased as in S1.
+
+Both source and consumer counts must fit `Budget.maxPartitions`. Source-to-consumer references
+are capped at eight times that budget, preventing cross-cutting layouts from creating unbounded
+metadata. Violating a budget fails before opening readers. The local metadata-only LRU cache has
+at most 16 entries and admits only plans with at most 1024 combined source, target and reference
+items each. Keys include source generation/descriptors, observation geometry/identity, semantics,
+slice, partitions, type, precision and budgets. Large plans remain usable but bypass the cache.
+Caches hold no payload buffers. Stale plans still fail the open-time checks.
 
 ## Unsupported or incomplete operations
 
-### Value mediation baseline
+### Contextual mediation boundaries
 
-Unit conversion is destination-receiver: `meters.convert(2, millimeters)` returns 0.002.
-`UnitService.convert(value, first, second)` likewise uses destination-first order despite its
-historical from/to parameter names. Ordinary multiplicative and affine Celsius/Kelvin conversions
-work; they are not wired into scanners. Compatibility, algebra, contextualization, and ordinary
-locator conversion remain unfinished. `AbstractMediator` can execute supplied dimension-factor
-operations, but no complete compiler supplies the required per-cell operations/locators.
-`UnitImpl.aggregatedDimensions` is metadata, not evidence of working contextual conversion.
-
-`ShapeImpl.getStandardizedArea()` computes a metered area, not square degrees. Per-cell geographic
-area accuracy and calendar duration policies remain unvalidated for scanner conversion.
-`NumericRangeImpl` supports bounded conversion but needs compatibility/locator hardening.
-Currency conversion/compatibility and the rate provider are stubs. KEYED has a declared width and
-interface but no native scanner or durable worldview-bound dictionary.
+Ordinary unit, range and pinned-currency conversions are supported by planned reads, as specified
+below. Unit algebra and locator-dependent contextualization remain incomplete. `AbstractMediator`
+can execute supplied dimension-factor operations, but no complete scanner compiler supplies the
+required per-cell operations/locators. `UnitImpl.aggregatedDimensions` is metadata, not evidence of
+working contextual conversion. `ShapeImpl.getStandardizedArea()` computes a metered area, not square
+degrees; per-cell geographic area and calendar duration policies remain S5 work. KEYED still has no
+native scanner or durable worldview-bound dictionary.
 
 ### Remaining boundaries
 
 The following remain explicit implementation boundaries:
 
-- geometry-aware scanner split/merge and fill-curve remapping when the requested sharding strategy
-  differs from native storage;
-- unit mediation in scanner decorators;
+- remapping outside the regular, rectangular, same-coverage S2 contract, and remapping through
+  the legacy scan overload;
+- contextual units requiring cell area/volume/duration, nonlinear conversions, and integer-valued semantic conversion;
 - temporary scanners from `StorageManager.getTemporaryScanner(...)`;
 - complete generalized indexing for moving dimensions other than time;
 - a durable, mergeable key descriptor for `KEYED` storage;
@@ -422,3 +514,196 @@ exercise storage through the runtime module. The minimum focused verification is
 
 Changes to attribution or executor binding should additionally compile and test
 `klab.services.runtime` because that module owns sharding harmonization and component invocation.
+
+
+## Consumer integration (S3)
+
+### Contextualizers and binding validation
+
+`Storage.writeLayout(event)` previews the ordered native output partitions without allocating
+buffers, creating scanners or resetting histograms. `AbstractExecutor` requests those explicit
+partition IDs, geometries and sizes for every quality dependency, with the output curve. It plans
+all inputs, opens their sessions, and validates reflected parameter requirements before opening
+writable output scanners. It verifies the actual native output geometry against the preview.
+Planning errors retain the binding name, source/output identity and original cause. Sessions close
+after all tasks have completed, including executor cancellation and reflection failures.
+
+Generic inputs retain their source type. Each typed function input independently requests its Java
+scanner type; the output type does not dictate input representation. Explicit FloatScanner bindings
+permit IEEE double-to-float narrowing; otherwise requests are lossless. Incompatible integer,
+boolean and floating-point bindings fail before output acquisition. Observation parameters retain
+their observation; StorageScan.View parameters describe the consumer. A physical Shard parameter
+is rejected before writing if the input spans shards or changes its geometry, curve or type. Native
+output Shard parameters and native output finalization remain unchanged. Native output View parameters
+have the output task geometry and no read-source descriptors.
+
+Function and adapter declarations affect their own producer attribution, with the same runtime
+overrides documented above. They do not force dependencies to be rewritten. Adapter resource input
+payload transport remains the existing adapter API: this stage does not implement the pre-existing
+`AbstractResourceContextualizer.getInputData()` placeholder or remote dependency transfer.
+
+### Export lifetime and temporal selection
+
+`StorageReads` constructs shared requests for consumers. `ArgumentMatcher` obtains one planned
+read-only scanner per requested exporter scanner parameter using the exporter's declared curve and
+Java type. A request merges all native shards into one traversal. `LanguageService` owns these
+sessions through `ScanResources`; a returned InputStream takes ownership until explicit close,
+EOF or read failure. A synchronous result, failed reflection call or unmatched overload releases
+its sessions immediately. Caller-supplied scanners retain caller ownership.
+
+An omitted event is allowed only when the observation has at most one temporal state, selecting
+initialization. A multi-state export must supply `storageEvent` (event key), `storageStart` and
+`storageEnd` (epoch milliseconds) in export parameters. All three are required together; they
+construct an immutable TEMPORAL_TRANSITION Slice and use normal committed revision selection.
+Unsupported coverage, curves and semantics fail without falling back to a native writable scanner.
+
+### Detached quality queries and individual values
+
+ID-zero quality queries now bind to an existing positive-ID source in the authorized context.
+Their metadata contains exactly one `IM_QUERY_SOURCE_IDS` entry. Requested geometry and Observable
+remain on the detached result; contextualization metadata and native strategy beans are copied.
+Storage lookup resolves the durable source through the context and never indexes ID zero.
+`createStorage()` rejects detached queries. Different query views do not mutate the producer or
+create graph observations, activities or data. A changed unsupported value mediator or
+non-conformant geometry is rejected, not silently relabeled; contextual conversion and spatial resampling remain S5–S6.
+
+`RuntimeService.readValue(StorageScan.Point, ContextScope)` and the matching RuntimeClient call
+provide point access. HTTP `POST /api/v1/observation/value` accepts a Point JSON object and returns
+`text/plain`. Point contains a positive `sourceId`, an explicit `slice`, `curve`, optional full-view
+`geometry` and `semantics`, and a zero-based `offset`. UNSPECIFIED curve selects native traversal.
+The offset belongs to one complete consumer traversal, not a physical shard. Context authorization
+and source lookup precede planning. The service checks bounds before opening the session, seeks
+directly with `Scanner.seek(long)`, checks validity, then formats the typed primitive. No preceding
+cells are read and no full result is materialized. Seek permits size as the exhausted position;
+value access there fails. Legacy writers need not implement seek.
+
+Text is locale-independent Java primitive text: exact decimal longs and integers, `true`/`false`,
+and Float/Double text with decimal points and optional exponent. Missing is the literal `null`;
+zero and false remain valid. Text formatting allocates only at the API boundary. Point selection
+uses the same provider plan and revision rules as dependency/export reads. Ordinary value conversions use the same S4 kernel as the other read routes.
+
+### Transactional temporal reads
+
+`TemporalWriteSet.writeLayout()` previews output tasks. `read(observation, request, PRIOR|CURRENT)`
+validates the event and conformant request and returns a closeable snapshot: PRIOR pins the causal
+baseline; CURRENT includes sparse pending changes captured when opened. Later writes cannot change
+an existing read. `TemporalScalarExecution` opens aligned input snapshots before acquiring output
+writers. Ordinary contextualizers still reject non-initialization quality outputs without a write
+set. Commit/rollback also closes outstanding temporal read sessions; finalization and publication
+continue through the existing write-set protocol.
+
+Temporal views identify transaction-local source descriptors, never persisted HAS_DATA shards, and
+cannot be passed as a physical Shard. Baseline reads and coordinate mapping use primitive kernels.
+Sparse changed offsets are sorted into primitive long arrays when a snapshot opens; lookups do not
+box their offsets. Existing transaction writers still retain boxed sparse change values. Neither
+this integration nor the native read path materializes a converted dataset.
+
+### Harness
+
+`core.inspector.scancheck(context, observation, curve, splits, samples)` compares bounded samples
+across partitioned, single-traversal and indexed-text views and verifies the producer contract stays
+unchanged. Limits are 256 requested partitions and 64 samples per partition. It is an integration
+check; independent codec oracles remain JUnit tests. `celltext(context, observation, curve, offset)`
+exposes the same text reader to assertions. Both use initialization selection and propagate backend
+errors. See [TESTING.md](TESTING.md) and the executable storage testcase linked there.
+
+
+## Ordinary value mediation (S4)
+
+Providers advertise `VALUE_MEDIATION` when they support the ordinary conversion contract.
+A read request may change exactly one ordinary value mediator while retaining the same semantic
+concept, observation contextualization and observer. `StorageScan.Semantics.meaning` carries that
+non-value identity; `observable` retains the complete source/requested URNs for provenance. Legacy
+five-argument semantic snapshots default meaning to observable, so callers using them must retain
+the same observable identity. Contextual extent distributions must agree. Missing definitions,
+changes to multiple mediators, non-affine units and non-conformant coverage fail during planning.
+
+`ValueMediation` compiles immutable coefficients before readers open. `StorageScan.Description`
+version 3 contains a `Conversion` and the ordered pipeline `INDEX_REMAP, VALUE_CONVERSION, <primitive
+adaptation>`; index remapping may itself be identity. Versions 1 and 2 remain readable and retain
+their previous fingerprint encoding. Portable descriptions are evidence, not executable handles:
+providers must replan before reopening. Native source semantics, bytes and HAS_DATA descriptors do
+not change. Converted histogram metadata is unavailable.
+
+The initial conversion path accepts native FLOAT/DOUBLE and FLOAT/DOUBLE consumers. Arithmetic uses
+primitive double values, with one final float cast where requested; double-to-float still requires
+`ALLOW_FLOAT_NARROWING`. Native FLOAT results round to their requested float representation. Semantic
+conversion of INTEGER/LONG/BOOLEAN fails explicitly rather than silently rounding an integer or
+losing long precision. Their identity views remain exact. No converted dataset is materialized,
+and mapping/coefficients/bounds never allocate per value. NaN passes through before arithmetic;
+valid zero remains valid. `peek()` is repeatable and does not advance, and successful `get()` advances
+once. A failed range read leaves the cursor on the offending value.
+
+### Units and ranges
+
+Unit conversion is destination-first: `meters.convert(2, millimeters)` and
+`UnitService.convert(2, meters, millimeters)` both return 0.002. `UnitService.conversion(destination,
+source)` compiles a positive finite multiplier and finite offset. Compatibility now uses the unit
+library; serialized `UnitImpl` definitions are reparsed without requiring transient converter data.
+Scaled definitions do not contaminate the base-unit cache. Ordinary Celsius/Kelvin affine conversion
+is supported. Depth-to-volume, calendar months/years and other location-dependent operations await S5.
+
+Range snapshots encode `lower:lowerExclusive:upper:upperExclusive`. Conversion requires finite,
+strictly increasing bounds, finite widths, and matching endpoint inclusion at both ends. It maps
+linearly and monotonically; included endpoints map exactly. Unbounded/degenerate/reversed snapshots,
+out-of-source-domain values and rounded results outside the target domain throw. No clipping,
+extrapolation or implicit reversal is performed. NaN remains missing. The public numeric-range
+upper-exclusion accessor now reports the correct endpoint.
+
+### Pinned currencies
+
+`CurrencyService.RateProvider.quote(source, target, valuation, operation)` is the deterministic
+provider boundary. Deployment chooses a provider explicitly; scanning never fetches a rate. A
+`CurrencyService.Rate` pins source/target definitions, UTC `Instant` valuation, provider, provider
+version, operation, positive finite factor, and `IEEE_754_BINARY64` rounding. This is numerical
+storage conversion, with no implicit rounding to monetary minor units. Missing or mismatched quotes
+fail. Direct `CurrencyImpl.convert` preserves identity and otherwise throws instead of returning null.
+
+Currency definitions are uppercase `CODE` or `CODE@YYYY`. EXCHANGE preserves the base-year suffix;
+INFLATION preserves the currency code and changes the base year. A compound exchange-plus-inflation
+request must be separated explicitly. No live provider or automatic currency selection is installed.
+
+Pass the pinned quote in `StorageScan.Request.rate` or `StorageScan.Point.rate`. Consumer/query
+observations carry the quote as JSON under `StorageReads.RATE` (`im:storage-currency-rate`). Ordinary
+unit/range conversions require no rate. Dependency and temporal bindings propagate the consumer's
+quote; query results use the query's quote and never inherit an unrelated source rate.
+
+### Dependency provenance and recovery
+
+Each named dependency has its own AFFECTS relationship, even when two bindings share source and
+consumer. The `storageMediation` property is a JSON `StorageScan.Binding` version 1 containing
+binding ID (`localName:rank`), source/target semantics and compiled conversion, including any pinned
+rate. Existing rank, prerequisite role, readState and semanticRelations properties remain intact.
+Neo4j's existing CREATE relationship path and the transaction's directed pseudograph preserve
+parallel edges. Binding metadata and consumer publication share one transaction. Process causal
+and descriptive edge conventions remain unchanged; read mediation does not invent causal links.
+
+Detached binding observations preserve the requested observable without mutating the source.
+In-process bindings follow source ID/URN/coverage through initialization and durable ID assignment;
+transport snapshots contain the resolved identity, never the transient source reference.
+Occurrence snapshots retain that observable and quote; restart resolves the durable source separately
+and replans against its current descriptors. An ID-zero query used by a durable dependency resolves
+its positive source ID before creating an edge. Standalone query/export/point reads create no graph
+observation, activity, relationship or converted storage.
+
+Every dependency execution records a JSON `StorageReads.Evidence` version 1 in its current Activity
+metadata under a unique `im:storage-read:<UUID>` key. It includes binding identity and the complete
+plan description: source revision, event/slice, source descriptors, operations, type/precision and
+conversion reproducibility inputs. Later executions append new evidence; they do not rewrite old
+activities. Rollback removes staged evidence. Temporal descriptions identify transaction-local
+snapshots, while committed storage descriptions pin the selected source generation and shards.
+`Session.description()` exposes provider evidence (null is permitted for older providers).
+
+### Consumer entry points and harness
+
+Contextualizers, temporal scalar dependencies, ID-zero quality queries, exports and indexed cell
+text all use the same conversion compiler. HTTP exports may supply `storageObservable` with the
+requested observable definition and `storageCurrencyRate` with a pinned-rate JSON value, in addition
+to the existing temporal selection parameters. Export argument matching receives a detached view;
+stream ownership and cleanup remain unchanged. `StorageScan.Point` carries requested semantic
+snapshots and an optional quote for the text API.
+
+`core.inspector.unitcheck(context, observation, unit, factor, offset)` compares bounded samples
+against an independently supplied expected affine mapping and also checks partitioned/export/text
+agreement. The staging storage testcase checks elevation meters-to-millimeters with factor 1000.
+Full-stack execution remains the user-run acceptance gate before S5; see [TESTING.md](TESTING.md).

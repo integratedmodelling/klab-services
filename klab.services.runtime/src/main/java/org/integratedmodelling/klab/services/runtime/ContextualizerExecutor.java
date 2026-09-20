@@ -31,6 +31,44 @@ public class ContextualizerExecutor extends AbstractExecutor
     this.call = call;
   }
 
+  private String inputBinding(java.lang.reflect.Parameter parameter) {
+    var inputs = callInfo.serviceInfo().serviceInfo.listInputs();
+    if (inputs.stream().noneMatch(input -> input.getName().equals(parameter.getName()))) return null;
+    if (dependencies.containsKey(parameter.getName())) return parameter.getName();
+    var names = dependencies.keySet().stream().filter(name -> !Dataflow.SELF_ID.equals(name)).toList();
+    return names.size() == 1 ? names.getFirst() : null;
+  }
+
+  @Override
+  protected Class<? extends Storage.Scanner> inputScannerClass(String name) {
+    var method = componentRegistry.implementation(callInfo.serviceInfo()).method;
+    if (method != null) for (var parameter : method.getParameters())
+      if (name.equals(inputBinding(parameter)) && Storage.Scanner.class.isAssignableFrom(parameter.getType()))
+        return parameter.getType().asSubclass(Storage.Scanner.class);
+    return Storage.Scanner.class;
+  }
+
+  @Override
+  protected void validateInputBindings(Map<String, java.util.List<Storage.Scanner>> scanners) {
+    var method = componentRegistry.implementation(callInfo.serviceInfo()).method;
+    if (method == null) return;
+    for (var parameter : method.getParameters()) {
+      var binding = inputBinding(parameter);
+      if (binding != null && scanners.containsKey(binding))
+        for (var scanner : scanners.get(binding))
+          adaptObservationArgument(parameter, dependencies.get(binding), scanner);
+      else if (callInfo.serviceInfo().serviceInfo.listOutputs().stream()
+          .anyMatch(output -> output.getName().equals(parameter.getName()))
+          && Storage.Scanner.class.isAssignableFrom(parameter.getType())) {
+        var nativeType = observation.getContextualizationData().getNativeShardingStrategy().getDataType();
+        org.integratedmodelling.klab.api.data.StorageScan.operation(nativeType,
+            org.integratedmodelling.klab.api.data.StorageScan.type(
+                parameter.getType().asSubclass(Storage.Scanner.class), nativeType),
+            org.integratedmodelling.klab.api.data.StorageScan.Precision.ALLOW_FLOAT_NARROWING);
+      }
+    }
+  }
+
   @Override
   protected boolean run(
       Scheduler.Event event,

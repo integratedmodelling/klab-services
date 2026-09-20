@@ -19,42 +19,36 @@ final class TemporalScalarExecution {
     var writes = scope.getCurrentTransaction().getTemporalWrites();
     if (writes == null) throw new IllegalStateException("Temporal computation has no write set");
     var strategy = target.getContextualizationData().getNativeShardingStrategy();
-    var output =
-        writes.scan(target, strategy, strategy.getScannerClass(), TemporalWriteSet.Access.WRITE);
-    var readers = new LinkedHashMap<String, List<? extends Storage.Scanner>>();
-    var names = computation.inputNames() == null ? inputs.keySet() : computation.inputNames();
-    for (var name : names) {
-      var input = name.equals("self") ? target : inputs.get(name);
-      if (input == null) throw new IllegalArgumentException("Unknown scalar input " + name);
-      var sourceStrategy = input.getContextualizationData().getNativeShardingStrategy();
-      var scans =
-          writes.scan(
-              input,
-              sourceStrategy,
-              sourceStrategy.getScannerClass(),
-              priorInputs || input.getId() == target.getId()
-                  ? TemporalWriteSet.Access.PRIOR
-                  : TemporalWriteSet.Access.CURRENT);
-      if (scans.size() != output.size())
-        throw new UnsupportedOperationException("Scalar input/output splits require mediation");
-      for (int n = 0; n < scans.size(); n++) {
-        if (!scans
-            .get(n)
-            .shard()
-            .getGeometry()
-            .encode()
-            .equals(output.get(n).shard().getGeometry().encode()))
-          throw new UnsupportedOperationException(
-              "Scalar input/output locations require geometry mediation");
+    var partitions = writes.writeLayout(target);
+    try (var resources = new org.integratedmodelling.klab.runtime.language.ScanResources()) {
+      var readers = new LinkedHashMap<String, List<? extends Storage.Scanner>>();
+      var names = computation.inputNames() == null ? inputs.keySet() : computation.inputNames();
+      for (var name : names) {
+        var input = name.equals("self") ? target : inputs.get(name);
+        if (input == null) throw new IllegalArgumentException("Unknown scalar input " + name);
+        var source = org.integratedmodelling.klab.runtime.storage.StorageReads.source(input, scope);
+        var layout = new Data.ShardingStrategy(strategy.getCurve(), partitions.size(), 0, 0, null);
+        var request = new StorageScan.Request<>(StorageScan.Slice.of(event), StorageScan.Layout.of(layout),
+            TemporalGeometry.localize(input.getGeometry(), event).encode(), partitions, StorageScan.semantics(input.getObservable()), Storage.Scanner.class,
+            StorageScan.Access.READ_ONLY, StorageScan.Precision.LOSSLESS, StorageScan.Coverage.EXACT,
+            StorageScan.Sampling.EXACT, StorageScan.Budget.defaults(), org.integratedmodelling.klab.runtime.storage.StorageReads.rate(input));
+        var session = resources.add(writes.read(source, request,
+            priorInputs || source.getId() == target.getId() ? TemporalWriteSet.Access.PRIOR : TemporalWriteSet.Access.CURRENT));
+        org.integratedmodelling.klab.runtime.storage.StorageReads.record(scope, target.getId() + ":" + name, session.description());
+        var scans = session.scanners();
+        if (!scans.stream().map(scanner -> scanner.view().partition()).toList().equals(partitions))
+          throw new IllegalStateException("Temporal planner changed output partitions");
+        readers.put(name.equals("self") ? "__prior_self" : name, scans);
       }
-      readers.put(name.equals("self") ? "__prior_self" : name, scans);
+      var output = writes.scan(target, strategy, strategy.getScannerClass(), TemporalWriteSet.Access.WRITE);
+      if (output.size() != partitions.size()) throw new IllegalStateException("Temporal output layout changed");
+      for (int n = 0; n < output.size(); n++) {
+        var scanners = new HashMap<String, Storage.Scanner>();
+        scanners.put("self", output.get(n));
+        for (var entry : readers.entrySet()) scanners.put(entry.getKey(), entry.getValue().get(n));
+        if (!computation.execute(scanners, event, scope)) return false;
+      }
+      return true;
     }
-    for (int n = 0; n < output.size(); n++) {
-      var scanners = new HashMap<String, Storage.Scanner>();
-      scanners.put("self", output.get(n));
-      for (var entry : readers.entrySet()) scanners.put(entry.getKey(), entry.getValue().get(n));
-      if (!computation.execute(scanners, event, scope)) return false;
-    }
-    return true;
   }
 }

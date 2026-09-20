@@ -73,28 +73,23 @@ public class ArgumentMatcher {
           if (observationArgument != null
               && observationArgument.getObservable().is(SemanticType.QUALITY)
               && scope instanceof ContextScope contextScope) {
-            var observation = observationArgument;
-            // get an overall scanner, adapting to the requested class
-            var storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
-            var event = findArgument(Scheduler.Event.class, furtherArgs);
-            if (event == null
-                && (observation.getGeometry().dimension(Geometry.Dimension.Type.TIME) == null
-                    || observation.getGeometry().dimension(Geometry.Dimension.Type.TIME).size()
-                        <= 1)) {
-              event = Scheduler.Event.initialization();
-            }
-            if (event != null) {
-              var shards = storage.getNativeShards(event);
-              var scanners = shards.stream().map(shard -> storage.getNativeScanner(shard)).toList();
-              if (!scanners.isEmpty()) {
-                if (scanners.stream().anyMatch(s -> !canAdaptScanner(s, parameterType))) return null;
-                payload.add(
-                    ScannerAdapters.mergeScanners(
-                        scanners.stream().map(s -> (Storage.Scanner) ScannerAdapters.adaptType(s,
-                            (Class<? extends Storage.Scanner>) parameterType)).toList(),
-                        (Class<? extends Storage.Scanner>) parameterType));
-              }
-            }
+            var source = org.integratedmodelling.klab.runtime.storage.StorageReads.source(observationArgument, contextScope);
+            var storage = contextScope.getDigitalTwin().getStorageManager().getStorage(source);
+            var nativeType = storage.getNativeShardingStrategy().getDataType();
+            try {
+              org.integratedmodelling.klab.api.data.StorageScan.operation(nativeType,
+                  org.integratedmodelling.klab.api.data.StorageScan.type(parameterType.asSubclass(Storage.Scanner.class), nativeType),
+                  org.integratedmodelling.klab.api.data.StorageScan.Precision.ALLOW_FLOAT_NARROWING);
+            } catch (IllegalArgumentException | UnsupportedOperationException mismatch) { return null; }
+            var resources = findArgument(ScanResources.class, furtherArgs);
+            if (resources == null)
+              throw new IllegalStateException("Observation scanner binding requires invocation-owned resources");
+            var strategy = descriptor.getShardingStrategy();
+            var curve = strategy == null ? org.integratedmodelling.klab.api.data.Data.FillCurve.UNSPECIFIED : strategy.getCurve();
+            var session = resources.add(org.integratedmodelling.klab.runtime.storage.StorageReads.open(
+                observationArgument, contextScope, findArgument(Scheduler.Event.class, furtherArgs), curve,
+                parameterType.asSubclass(Storage.Scanner.class)));
+            payload.add(session.scanners().getFirst());
           }
         }
       } else if (Resource.class.isAssignableFrom(parameterType)) {

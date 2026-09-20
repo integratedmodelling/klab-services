@@ -40,6 +40,41 @@ class ClassificationTransactionTest {
           eq("property"), eq(kind.property()), eq("semanticRelation"), eq(kind.name()),
           eq("provenance"), eq("test:restriction"), eq("bearerId"), eq(bearer.getId()));
   }
+  @Test void storageBindingsRemainDistinctThroughTransactionPublicationAndJsonRecovery() throws Exception {
+    var source = pending(41, false).member(); var target = pending(-2, false).member(); root.add(target);
+    var from = new StorageScan.Semantics("test:elevation", "m", "", "", "");
+    for (var unit : List.of("mm", "km")) {
+      var to = new StorageScan.Semantics("test:elevation", unit, "", "", "");
+      var binding = new StorageScan.Binding(1, unit + ":0", from, to,
+          org.integratedmodelling.klab.runtime.storage.ValueMediation.compile(from, to, null));
+      root.link(source, target, GraphModel.Relationship.AFFECTS, "rank", 0,
+          ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE, "readState", "CURRENT", "semanticRelations", List.of(),
+          StorageScan.Binding.PROPERTY, org.integratedmodelling.klab.utilities.Utils.Json.asString(binding));
+    }
+    assertEquals(2, root.outgoing(source).stream().filter(link -> link.type() == GraphModel.Relationship.AFFECTS).count());
+    assertTrue(root.commit() > 0); assertTrue(target.getId() > 0);
+    var restored = new ArrayList<StorageScan.Binding>();
+    for (var invocation : mockingDetails(storage).getInvocations()) {
+      var args = invocation.getArguments();
+      if (!invocation.getMethod().getName().equals("link") || args[2] != GraphModel.Relationship.AFFECTS) continue;
+      var properties = new HashMap<String,Object>();
+      for (int i=3; i<args.length; i+=2) properties.put(args[i].toString(),args[i+1]);
+      assertEquals(0, properties.get("rank")); assertEquals("CURRENT", properties.get("readState"));
+      assertEquals(ProcessPlan.PREREQUISITE, properties.get(ProcessPlan.EDGE_ROLE));
+      var binding = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(properties.get(StorageScan.Binding.PROPERTY).toString(), StorageScan.Binding.class);
+      restored.add(binding);
+      assertEquals(binding.conversion(), org.integratedmodelling.klab.runtime.storage.ValueMediation.compile(binding.source(),binding.target(),null));
+    }
+    assertEquals(Set.of("mm:0","km:0"), restored.stream().map(StorageScan.Binding::id).collect(java.util.stream.Collectors.toSet()));
+  }
+
+  @Test void failedConsumerPublishesNeitherMediationRelationshipNorConsumer() {
+    var source = pending(41,false).member(); var target = pending(-2,false).member(); root.add(target);
+    root.link(source,target,GraphModel.Relationship.AFFECTS,StorageScan.Binding.PROPERTY,"test binding");
+    child.fail(new IllegalStateException("consumer failed"));
+    assertEquals(-1,root.commit()); verifyNoInteractions(storage); assertEquals(-2,target.getId());
+  }
+
   DigitalTwinImpl twin;
   KnowledgeGraphNeo4j kg;
   KnowledgeGraph.Transaction storage;

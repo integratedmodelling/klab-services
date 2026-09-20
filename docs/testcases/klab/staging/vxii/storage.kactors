@@ -1,0 +1,23 @@
+testcase klab.staging.vxii.storage
+    "Checks conformant storage views against indexed cell text"
+    version 1.0
+    using core.context as context,
+          core.inspector as inspector,
+          core.console as console
+
+@test(name="Elevation storage traversal and partition mediation")
+action storage_views:
+    ctx <- context.new
+    region <- ctx.submit({urn: "staging.storage:rectangle",
+        semantics: {{geography:Region}},
+        space: {shape: "EPSG:3857 POLYGON ((200000 6000000,200000 6000400,200500 6000400,200500 6000000,200000 6000000))", grid: "100 m"} })
+    assert inspector.viable(region)
+    elevation <- ctx.submit({{geography:Elevation in m}} :within region)
+    assert inspector.viable(elevation !nodata)
+    assert inspector.contains(ctx, elevation)
+    assert inspector.scancheck(ctx, elevation, "D2_XY", 1, 8)
+    assert inspector.scancheck(ctx, elevation, "D2_YX", 3, 8)
+    assert inspector.scancheck(ctx, elevation, "D2_XInvY", 7, 8)
+    console.println(inspector.celltext(ctx, elevation, "D2_YX", 0))
+
+    assert inspector.unitcheck(ctx, elevation, "mm", 1000, 0)

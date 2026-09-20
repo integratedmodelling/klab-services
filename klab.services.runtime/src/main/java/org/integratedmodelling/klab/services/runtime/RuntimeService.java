@@ -1070,6 +1070,19 @@ public class RuntimeService extends BaseService
       return Observation.empty(Notification.error("Cannot query an observation without semantics"));
     }
 
+    if (query.getObservable().is(SemanticType.QUALITY)) {
+      var source = scope.getObservation(query);
+      if (source == null || source.getId() <= 0)
+        return Observation.empty(Notification.info("No committed quality matches the query"));
+      var geometry = query.getGeometry() == null ? source.getGeometry() : query.getGeometry();
+      var result = qualityQueryResult(source, query, geometry);
+      var storage = scope.getDigitalTwin().getStorageManager().getStorage(source);
+      var layout = storage.getNativeShardingStrategy();
+      // Validate coverage and semantics immediately; selecting a later revision belongs to each read.
+      storage.plan(org.integratedmodelling.klab.runtime.storage.StorageReads.request(
+          result, Scheduler.Event.initialization(), layout, List.of(), Storage.Scanner.class));
+      return result;
+    }
     var semantics = query.getObservable().getSemantics();
     if (SemanticType.isEnumerableSubstantial(semantics.getType()) && semantics.isCollective()) {
       return queryCollective(query, serviceScope);
@@ -1296,6 +1309,33 @@ public class RuntimeService extends BaseService
       coverage *= Math.max(0.0, Math.min(1.0, dimensionalCoverage));
     }
     return Math.max(0.0, Math.min(1.0, coverage));
+  }
+
+  @Override
+  public String readValue(org.integratedmodelling.klab.api.data.StorageScan.Point point, ContextScope scope) {
+    return org.integratedmodelling.klab.runtime.storage.StorageReads.text(point, scope);
+  }
+
+  static ObservationImpl qualityQueryResult(Observation source, Observation query, Geometry geometry) {
+    if (source.getId() <= 0) throw new IllegalArgumentException("Quality query source must be committed");
+    var result = queryResult(source, geometry, geometry, 1.0);
+    result.setObservable(query.getObservable());
+    result.getMetadata().remove(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE);
+    if (query.getMetadata().containsKey(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE))
+      result.getMetadata().put(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE,
+          query.getMetadata().get(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE));
+    if (source.getContextualizationData() != null) {
+      var original = source.getContextualizationData();
+      var copy = new ObservationImpl.ContextualizationDataImpl();
+      copy.setAdapterId(original.getAdapterId()); copy.setServiceId(original.getServiceId());
+      copy.setServiceUrl(original.getServiceUrl()); copy.setPersistent(original.isPersistent());
+      copy.setParameters(org.integratedmodelling.klab.api.collections.Parameters.create(original.getParameters()));
+      if (original.getNativeShardingStrategy() != null)
+        copy.setNativeShardingStrategy(org.integratedmodelling.klab.api.data.StorageScan.Layout.of(original.getNativeShardingStrategy()).strategy());
+      result.setContextualizationData(copy);
+    }
+    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, List.of(source.getId()));
+    return result;
   }
 
   static ObservationImpl queryResult(

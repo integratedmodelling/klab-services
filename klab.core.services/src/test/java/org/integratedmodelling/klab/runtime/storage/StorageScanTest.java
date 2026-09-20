@@ -124,7 +124,7 @@ class StorageScanTest {
           new StorageScan.Budget(1, 16))));
       var partitions = new ArrayList<>(plan.description().partitions());
       Collections.reverse(partitions);
-      assertThrows(IllegalArgumentException.class, () -> f.storage.plan(new StorageScan.Request<>(
+      assertDoesNotThrow(() -> f.storage.plan(new StorageScan.Request<>(
           request.slice(), request.layout(), null, partitions, null, request.scannerClass(),
           request.access(), request.precision(), request.coverage(), request.sampling(), request.budget())));
       verifyNoInteractions(f.manager, other.manager);
@@ -157,7 +157,7 @@ class StorageScanTest {
   @Test void unsupportedRequestsFailBeforeBufferAccessOrHistogramReset() {
     try (var f = new Fixture(1, Storage.Type.DOUBLE)) {
       var original = f.request(Storage.DoubleScanner.class);
-      var changed = f.strategy.copy(); changed.setSuggestedSplits(2);
+      var changed = f.strategy.copy(); changed.setCurve(Data.FillCurve.D2_HILBERT);
       assertThrows(UnsupportedOperationException.class, () -> f.storage.plan(
           StorageScan.Request.nativeRead(Scheduler.Event.initialization(), changed, Storage.DoubleScanner.class)));
       assertThrows(IllegalArgumentException.class, () -> f.storage.plan(f.request(Storage.FloatScanner.class)));

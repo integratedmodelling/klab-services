@@ -113,6 +113,12 @@ public class JacksonConfiguration {
     @Override
     public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
+      if (value instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl binding
+          && binding.storageSource() != null) {
+        // Snapshot the current durable identity, never the copied temporary fields or live source link.
+        serializers.defaultSerializeValue(Observation.forTransport(binding), gen);
+        return;
+      }
       if (value instanceof NavigableAsset navigableAsset) {
         var delegate = navigableAsset.getDelegate();
         if (delegate != null && delegate != value) {

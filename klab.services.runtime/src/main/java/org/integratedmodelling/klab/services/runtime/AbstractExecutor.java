@@ -10,6 +10,9 @@ import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.data.StorageScan;
+import org.integratedmodelling.klab.runtime.storage.StorageReads;
+import org.integratedmodelling.klab.runtime.language.ScanResources;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -67,83 +70,96 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     List<Callable<Object>> tasks = new ArrayList<>();
     var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());
 
-    if (observation.getObservable().is(SemanticType.QUALITY)) {
+    try (var resources = new ScanResources()) {
+      if (observation.getObservable().is(SemanticType.QUALITY)) {
 
-      /*
-       * Created by the main execution sequence before calling execute()
-       */
-      var storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
+        /*
+         * Created by the main execution sequence before calling execute()
+         */
+        var storage = contextScope.getDigitalTwin().getStorageManager().getStorage(observation);
 
-      /*
-       * Guaranteed to be there by the dataflow compilation process.
-       */
-      var shardingStrategy = observation.getContextualizationData().getNativeShardingStrategy();
+        /*
+         * Guaranteed to be there by the dataflow compilation process.
+         */
+        var shardingStrategy = observation.getContextualizationData().getNativeShardingStrategy();
 
-      Map<String, List<Storage.Scanner>> scanners = new HashMap<>();
-      scanners.put(
-          Dataflow.SELF_ID,
-          new ArrayList<>(
-              storage.scan(event, shardingStrategy, shardingStrategy.getScannerClass(), false)));
-
-      var nScanners = scanners.get(Dataflow.SELF_ID).size();
-
-      /*
-       * All dependencies must be coerced into a scanner structure that
-       * is compatible with the local sharding strategy.
-       */
-      for (var dependency : dependencies.keySet()) {
-
-        if (dependency.equals(Dataflow.SELF_ID)
-            || !dependencies.get(dependency).getObservable().is(SemanticType.QUALITY)) {
-          continue;
+        var partitions = storage.writeLayout(event);
+        Map<String, List<Storage.Scanner>> scanners = new HashMap<>();
+        var plans = new LinkedHashMap<String, StorageScan.Plan<? extends Storage.Scanner>>();
+        var stores = new HashMap<String, Storage>();
+        // Complete metadata validation for every input before acquiring writable output cursors.
+        for (var entry : dependencies.entrySet()) {
+          var name = entry.getKey();
+          var input = entry.getValue();
+          if (name.equals(Dataflow.SELF_ID) || !input.getObservable().is(SemanticType.QUALITY)) continue;
+          try {
+            var source = StorageReads.source(input, contextScope);
+            var store = contextScope.getDigitalTwin().getStorageManager().getStorage(source);
+            var layout = new Data.ShardingStrategy(shardingStrategy.getCurve(), partitions.size(), 0, 0, null);
+            var plan = store.plan(StorageReads.request(input, event, layout, partitions, inputScannerClass(name)));
+            if (!plan.description().partitions().equals(partitions))
+              throw new IllegalStateException("Planner changed the explicit output partition identities or locations");
+            plans.put(name, plan);
+            stores.put(name, store);
+          } catch (RuntimeException e) {
+            throw new IllegalStateException("Cannot bind input " + name + " from " + input.getUrn()
+                + " to output " + observation.getUrn() + " with " + shardingStrategy, e);
+          }
+        }
+        for (var entry : plans.entrySet()) {
+          var session = resources.add(stores.get(entry.getKey()).open(entry.getValue()));
+          scanners.put(entry.getKey(), new ArrayList<>(session.scanners()));
+        }
+        validateInputBindings(scanners);
+        plans.forEach((name, plan) -> StorageReads.record(contextScope, observation.getId() + ":" + name, plan.description()));
+        scanners.put(Dataflow.SELF_ID, new ArrayList<>(
+            storage.scan(event, shardingStrategy, shardingStrategy.getScannerClass(), false)));
+        var nScanners = scanners.get(Dataflow.SELF_ID).size();
+        if (nScanners != partitions.size()) throw new IllegalStateException("Native write layout changed after planning");
+        for (int i = 0; i < nScanners; i++) {
+          var output = scanners.get(Dataflow.SELF_ID).get(i);
+          var expected = partitions.get(i);
+          if (output.size() != expected.size()
+              || !StorageScan.parseGeometry(output.shard().getGeometry().encode()).encode().equals(expected.geometry()))
+            throw new IllegalStateException("Native write partition changed after planning: " + expected.id());
         }
 
-        Storage store;
-        try {
-          store =
-              contextScope
-                  .getDigitalTwin()
-                  .getStorageManager()
-                  .getStorage(dependencies.get(dependency));
-        } catch (Throwable t) {
-          cause = new KlabIllegalStateException("Error scanning dependencies");
-          return false;
+        List<Map<String, Storage.Scanner>> allScanners = new ArrayList<>();
+        for (int n = 0; n < nScanners; n++) {
+          var map = new HashMap<String, Storage.Scanner>();
+          for (var scanner : scanners.keySet()) {
+            map.put(scanner, scanners.get(scanner).get(n));
+          }
+          allScanners.add(map);
         }
 
-        scanners.put(
-            dependency,
-            new ArrayList<>(
-                store.scan(event, shardingStrategy, shardingStrategy.getScannerClass(), true)));
-
-        if (scanners.get(dependency).size() != nScanners) {
-          cause =
-              new KlabIllegalStateException(
-                  "Incompatible sharding strategies for " + dependency + " or mediation failed");
-          return false;
+        for (var scannerMap : allScanners) {
+          tasks.add(
+              () -> {
+                try {
+                  var ok = run(event, scannerMap, contextScope, contextualizationScope);
+                  if (ok) {
+                    storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
+                  } else {
+                    threadNotifications.add(
+                        Notification.error("Contextualization of " + observation + " failed"));
+                  }
+                  return ok;
+                } catch (Throwable t) {
+                  threadNotifications.add(
+                      Notification.error("Error running dataflow task: " + t.getMessage(), t));
+                  cause = t;
+                  return false;
+                }
+              });
         }
-      }
 
-      List<Map<String, Storage.Scanner>> allScanners = new ArrayList<>();
-      for (int n = 0; n < nScanners; n++) {
-        var map = new HashMap<String, Storage.Scanner>();
-        for (var scanner : scanners.keySet()) {
-          map.put(scanner, scanners.get(scanner).get(n));
-        }
-        allScanners.add(map);
-      }
-
-      for (var scannerMap : allScanners) {
+      } else {
+        // non-quality
         tasks.add(
             () -> {
               try {
-                var ok = run(event, scannerMap, contextScope, contextualizationScope);
-                if (ok) {
-                  storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
-                } else {
-                  threadNotifications.add(
-                      Notification.error("Contextualization of " + observation + " failed"));
-                }
-                return ok;
+                return run(event, Map.of(), contextScope, contextualizationScope);
               } catch (Throwable t) {
                 threadNotifications.add(
                     Notification.error("Error running dataflow task: " + t.getMessage(), t));
@@ -153,64 +169,62 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             });
       }
 
-    } else {
-      // non-quality
-      tasks.add(
-          () -> {
-            try {
-              return run(event, Map.of(), contextScope, contextualizationScope);
-            } catch (Throwable t) {
-              threadNotifications.add(
-                  Notification.error("Error running dataflow task: " + t.getMessage(), t));
-              cause = t;
-              return false;
+      try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        var results = executorService.invokeAll(tasks);
+        var ret =
+            results.stream()
+                .allMatch(
+                    f -> f.state() == Future.State.SUCCESS && Boolean.TRUE.equals(f.resultNow()));
+
+        if (!ret) {
+
+          List<Throwable> exceptions = new ArrayList<>();
+          for (var future : results) {
+            if (future.state() == Future.State.FAILED) {
+              exceptions.add(future.exceptionNow());
             }
-          });
-    }
-
-    try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
-      var results = executorService.invokeAll(tasks);
-      var ret =
-          results.stream()
-              .allMatch(
-                  f -> f.state() == Future.State.SUCCESS && Boolean.TRUE.equals(f.resultNow()));
-
-      if (!ret) {
-
-        List<Throwable> exceptions = new ArrayList<>();
-        for (var future : results) {
-          if (future.state() == Future.State.FAILED) {
-            exceptions.add(future.exceptionNow());
+          }
+          if (!exceptions.isEmpty()) {
+            cause = exceptions.getFirst();
+          } else if (cause == null) {
+            cause =
+                new KlabIllegalStateException(
+                    "Execution failed: one or more executors returned false");
           }
         }
-        if (!exceptions.isEmpty()) {
-          cause = exceptions.getFirst();
-        } else if (cause == null) {
-          cause =
-              new KlabIllegalStateException(
-                  "Execution failed: one or more executors returned false");
-        }
-      }
 
-      if (!ret) {
-        // A failed transaction may never persist its activity. Publish the actual cause now.
-        contextScope.error(cause);
-        if (threadNotifications.isEmpty()) {
-          threadNotifications.add(Notification.error(
-              "Contextualization of " + observation.getObservable().getUrn()
-                  + " failed: " + cause.getMessage(), cause));
+        if (!ret) {
+          // A failed transaction may never persist its activity. Publish the actual cause now.
+          contextScope.error(cause);
+          if (threadNotifications.isEmpty()) {
+            threadNotifications.add(Notification.error(
+                "Contextualization of " + observation.getObservable().getUrn()
+                    + " failed: " + cause.getMessage(), cause));
+          }
         }
-      }
-      observation.getNotifications().addAll(threadNotifications);
+        observation.getNotifications().addAll(threadNotifications);
 
-      return ret;
-    } catch (Throwable t) {
-      cause = t;
-      contextScope.error(t);
-      observation.getNotifications().add(Notification.error(t.getMessage(), t));
+        return ret;
+      } catch (Throwable t) {
+        cause = t;
+        contextScope.error(t);
+        observation.getNotifications().add(Notification.error(t.getMessage(), t));
+        return false;
+      }
+    } catch (RuntimeException e) {
+      cause = e;
+      contextScope.error(e);
+      observation.getNotifications().add(Notification.error(e.getMessage(), e));
       return false;
     }
+
   }
+
+  /** Reflection executors override this per binding; generic inputs retain their own native type. */
+  protected Class<? extends Storage.Scanner> inputScannerClass(String name) { return Storage.Scanner.class; }
+
+  /** Validate reflection-only requirements before writable outputs are opened. */
+  protected void validateInputBindings(Map<String, List<Storage.Scanner>> scanners) {}
 
   /**
    * Implement for the actual contextualization.
@@ -295,7 +309,8 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
           runArguments.add(serviceCall);
         } else if (Parameters.class.isAssignableFrom(argument.getType())) {
           runArguments.add(urnParameters);
-        } else if (Storage.Shard.class.isAssignableFrom(argument.getType())
+        } else if (StorageScan.View.class.isAssignableFrom(argument.getType())
+            || Storage.Shard.class.isAssignableFrom(argument.getType())
             || Storage.Scanner.class.isAssignableFrom(argument.getType())
             || Observation.class.isAssignableFrom(argument.getType())) {
           runArguments.add(
@@ -439,8 +454,25 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       }
       return ScannerAdapters.adaptType(
           scanner, argument.getType().asSubclass(Storage.Scanner.class));
+    } else if (StorageScan.View.class.isAssignableFrom(argument.getType())) {
+      if (scanner == null) return null;
+      try { return scanner.view(); }
+      catch (UnsupportedOperationException nativeOutput) {
+        var shard = scanner.shard();
+        return new StorageScan.View(new StorageScan.Partition("task-" + shard.getShardIndex(),
+            shard.getGeometry().encode(), scanner.size()), shard.getShardingStrategy().getCurve(),
+            shard.getNativeType(), StorageScan.semantics(observation.getObservable()),
+            StorageScan.Slice.of(Scheduler.Event.initialization()), List.of(), StorageScan.HistogramPolicy.UNAVAILABLE);
+      }
     } else if (Storage.Shard.class.isAssignableFrom(argument.getType())) {
-      return scanner == null ? null : scanner.shard();
+      if (scanner == null) return null;
+      var shard = scanner.shard();
+      StorageScan.View view = null;
+      try { view = scanner.view(); } catch (UnsupportedOperationException legacy) { /* native output */ }
+      if (view != null && (!view.partition().geometry().equals(StorageScan.parseGeometry(shard.getGeometry().encode()).encode())
+          || view.curve() != shard.getShardingStrategy().getCurve() || view.valueType() != shard.getNativeType()))
+        throw new IllegalArgumentException("Mediated input requires StorageScan.View instead of a physical Shard parameter");
+      return shard;
     }
 
     return null;

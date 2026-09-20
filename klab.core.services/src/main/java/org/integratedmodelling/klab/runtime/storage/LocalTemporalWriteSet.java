@@ -58,6 +58,84 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
   }
 
   @Override
+  public synchronized List<StorageScan.Partition> writeLayout(Observation observation) {
+    if (prepared) throw new IllegalStateException("Temporal write set is sealed");
+    var view = views.computeIfAbsent(observation.getId(), ignored -> new View(observation));
+    var result = new ArrayList<StorageScan.Partition>();
+    for (int i = 0; i < view.layout.size(); i++) {
+      var geometry = view.layout.get(i);
+      result.add(new StorageScan.Partition("task-" + i, geometry.encode(), geometry.size()));
+    }
+    return List.copyOf(result);
+  }
+
+  @Override
+  public synchronized <T extends Storage.Scanner> StorageScan.Session<T> read(
+      Observation observation, StorageScan.Request<T> request, Access access) {
+    if (prepared || access == Access.WRITE || request.access() != StorageScan.Access.READ_ONLY)
+      throw new IllegalArgumentException("Temporal reads require an unsealed read-only snapshot");
+    if (!request.slice().equals(StorageScan.Slice.of(event))
+        || request.coverage() != StorageScan.Coverage.EXACT || request.sampling() != StorageScan.Sampling.EXACT)
+      throw new UnsupportedOperationException("Temporal read requires this transaction's exact support");
+    var view = views.computeIfAbsent(observation.getId(), ignored -> new View(observation));
+    var semantics = StorageScan.semantics(view.observation.getObservable());
+    var targetSemantics = ValueMediation.target(semantics, request.semantics());
+    var conversion = ValueMediation.compile(semantics, targetSemantics, request.rate());
+    ValueMediation.validateType(conversion, view.storage.getNativeType());
+    var nativeLayout = StorageScan.Layout.of(view.storage.getNativeShardingStrategy());
+    var valueType = StorageScan.type(request.scannerClass(), view.storage.getNativeType());
+    var operation = StorageScan.operation(nativeLayout.type(), valueType, request.precision());
+    if (request.layout().type() != null && request.layout().type() != nativeLayout.type()
+        && request.layout().type() != valueType) throw new IllegalArgumentException("Conflicting temporal value type");
+    if (view.layout.size() > request.budget().maxPartitions()) throw new IllegalArgumentException("Source budget exceeded");
+    var sources = new ArrayList<StorageScan.SourceShard>();
+    var shards = new ArrayList<Storage.Shard>();
+    for (int i = 0; i < view.layout.size(); i++) {
+      var geometry = view.layout.get(i);
+      sources.add(new StorageScan.SourceShard("transaction:" + observation.getId() + ":" + i,
+          geometry.encode(), geometry.size(), i, event.getTime().getEnd().getMilliseconds(), nativeLayout));
+      // A transaction overlay is not a persisted physical shard.
+      shards.add(null);
+    }
+    var partitions = request.partitions();
+    boolean aligned = partitions.size() == sources.size() && request.layout().curve() == nativeLayout.curve();
+    for (int i = 0; aligned && i < sources.size(); i++)
+      aligned = partitions.get(i).geometry().equals(sources.get(i).geometry());
+    ConformantScan mapping = aligned ? null : ConformantScan.compile(sources, request, view.support.encode());
+    if (mapping != null) partitions = mapping.partitions;
+    else if (request.geometry() != null && !request.geometry().equals(StorageScan.parseGeometry(view.support.encode()).encode()))
+      throw new UnsupportedOperationException("Temporal requested coverage differs");
+    var description = new StorageScan.Description(conversion == null ? 2 : 3, "transaction:" + UUID.randomUUID(),
+        observation.getId(), Objects.toString(observation.getUrn(), ""), request.slice(), semantics, targetSemantics,
+        nativeLayout, request.layout(), sources, partitions, valueType, request.precision(), request.coverage(),
+        request.sampling(), request.budget(), conversion == null ? List.of(StorageScan.Operation.INDEX_REMAP, operation)
+            : List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion);
+    StorageScan.Plan<T> plan = new StorageScan.Plan<>() {
+      public StorageScan.Description description() { return description; }
+      public Class<T> scannerClass() { return request.scannerClass(); }
+    };
+    var release = view.storage.pinReads();
+    var readers = new ArrayList<IndexedStorageReader>();
+    try {
+      for (int i = 0; i < view.layout.size(); i++) {
+        var baseline = view.baseline.isEmpty() ? null : view.storage.openReader(view.baseline.get(i), request.budget().blockValues());
+        var changes = access == Access.PRIOR ? Map.<Long, Object>of() : Map.copyOf(view.changes.get(i));
+        if (baseline == null && changes.size() != view.layout.get(i).size())
+          throw new IllegalStateException("Created quality has no complete requested state");
+        readers.add(new TemporalIndexedReader(baseline, changes, view.storage.getNativeType(),
+            view.layout.get(i).size(), request.budget().blockValues()));
+      }
+      var session = new LocalScanSession<>(plan, shards, readers, mapping, release);
+      transaction.afterCommit(session::close);
+      transaction.afterRollback(session::close);
+      return session;
+    } catch (RuntimeException | Error e) {
+      for (var reader : readers) try { reader.close(); } catch (RuntimeException failure) { e.addSuppressed(failure); }
+      release.run(); throw e;
+    }
+  }
+
+  @Override
   public synchronized boolean changed(Observation observation) {
     return views.containsKey(observation.getId()) && views.get(observation.getId()).changed();
   }

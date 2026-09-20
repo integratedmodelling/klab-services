@@ -19,20 +19,21 @@ public class CurrencyImpl implements Currency {
 
     private String definition;
     
+    public CurrencyImpl() {}
+
     public CurrencyImpl(String currencyDefinition) {
         this.definition = currencyDefinition;
     }
 
     @Override
     public boolean isCompatible(ValueMediator other) {
-        // TODO Auto-generated method stub
-        return false;
+        return other instanceof CurrencyImpl currency && java.util.Objects.equals(definition, currency.definition);
     }
 
     @Override
     public Number convert(Number d, ValueMediator scale) {
-        // TODO Auto-generated method stub
-        return null;
+        if (isCompatible(scale)) return d;
+        throw new UnsupportedOperationException("Currency conversion requires a pinned CurrencyService.Rate in the scan request");
     }
 
     @Override
@@ -55,8 +56,7 @@ public class CurrencyImpl implements Currency {
 
     @Override
     public boolean isMonetary() {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override

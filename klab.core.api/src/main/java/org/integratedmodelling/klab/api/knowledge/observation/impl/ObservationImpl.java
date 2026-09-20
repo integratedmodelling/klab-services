@@ -30,6 +30,19 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  */
 public class ObservationImpl implements Observation, Cloneable {
 
+  /** In-process read binding only; durable snapshots serialize the resolved identity, not this link. */
+  private transient ObservationImpl storageSource;
+
+  public ObservationImpl storageSource() { return storageSource; }
+
+  /** Follow source identity/coverage through initialization while retaining consumer semantics. */
+  public ObservationImpl copyForReadBinding(Observable requested) {
+    var copy = copyForAttribution(requested);
+    copy.storageSource = this;
+    return copy;
+  }
+
+
   @Serial private static final long serialVersionUID = 8993700853991252827L;
 
   /** The catalog name for the URN of a resolved substantial observation. */
@@ -215,6 +228,9 @@ public class ObservationImpl implements Observation, Cloneable {
   public ObservationImpl copyForAttribution(Observable observable) {
     try {
       var copy = (ObservationImpl) super.clone();
+      copy.id = getId(); copy.urn = getUrn(); copy.geometry = getGeometry(); copy.transientId = getTransientId();
+      copy.storageSource = null;
+      copy.contextualizationData = getContextualizationData();
       copy.metadata = Metadata.create();
       copy.metadata.putAll(metadata);
       copy.notifications = new ArrayList<>(notifications);
@@ -235,7 +251,7 @@ public class ObservationImpl implements Observation, Cloneable {
 
   @Override
   public Geometry getGeometry() {
-    return this.geometry;
+    return storageSource == null ? this.geometry : storageSource.getGeometry();
   }
 
   @Override
@@ -245,7 +261,7 @@ public class ObservationImpl implements Observation, Cloneable {
 
   @Override
   public String getUrn() {
-    return this.urn;
+    return storageSource == null ? this.urn : storageSource.getUrn();
   }
 
   @Override
@@ -325,7 +341,7 @@ public class ObservationImpl implements Observation, Cloneable {
 
   @Override
   public long getId() {
-    return this.id;
+    return storageSource == null ? this.id : storageSource.getId();
   }
 
   @Override
@@ -506,7 +522,7 @@ public class ObservationImpl implements Observation, Cloneable {
 
   @Override
   public ContextualizationData getContextualizationData() {
-    return contextualizationData;
+    return storageSource == null ? contextualizationData : storageSource.getContextualizationData();
   }
 
   public void setContextualizationData(ContextualizationData contextualizationData) {
@@ -519,7 +535,7 @@ public class ObservationImpl implements Observation, Cloneable {
 
   @Override
   public long getTransientId() {
-    return transientId;
+    return storageSource == null ? transientId : storageSource.getTransientId();
   }
 
   /** DO NOT CALL - reserved for serialization purposes */

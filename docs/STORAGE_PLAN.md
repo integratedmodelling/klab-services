@@ -1,7 +1,7 @@
 # Storage mediation development plan
 
-Status: stage 0 audited and characterized; stages 1–8 remain proposed. Baseline inspected on
-2026-09-20. See section 8 for the completion trace, test evidence, and unresolved needs.
+Status: stages 0–4 implemented; stages 5–8 await first-phase full-harness acceptance. Baseline inspected on
+2026-09-20. Sections 8–12 record completion traces, test evidence, and remaining boundaries.
 
 [STORAGE.md](STORAGE.md) remains the authoritative description of committed architecture,
 public APIs, implementation boundaries, and supported behavior. This file records development
@@ -134,8 +134,8 @@ milestone is complete until its acceptance tests and authoritative documentation
 |---|---|---|
 | 0 | None | Baseline audit and regression fixtures — completed; see section 8 |
 | 1 | 0 | Request, plan, consumer metadata, provider contracts — completed; trace and verification in section 9 |
-| 2 | 1 | Exact split/merge and traversal mediation — planned |
-| 3 | 2 | Contextualizer, export, individual-value/text API, query integration — planned |
+| 2 | 1 | Exact split/merge and traversal mediation — completed; see section 10 |
+| 3 | 2 | Contextualizer, export, individual-value/text API, query integration — completed; see section 11 |
 | 4 | 1, 3 | Lazy unit/range/currency conversion and edge persistence — planned |
 | 5 | 4 | Per-cell area/duration and extension/intension mediation — planned |
 | 6 | 2, 3, 5 | Non-conformant spatial mediation — planned |
@@ -750,3 +750,219 @@ The final run includes defensive shard-strategy copying, temporal revision pinni
 annotation tests, native storage reconstruction, legacy executor binding and the parallelism-off
 override. `git diff --check` passes. Local logs/profiling artifacts are in `target/storage-stage0/`;
 this record is the durable summary. S1 is complete within the native-read scope above.
+
+
+## 10. Stage 2 implementation and completion trace
+
+The authoritative contract is [STORAGE.md](STORAGE.md#conformant-scanner-mediation-s2).
+S2 adds conformant mediation to planned readonly sessions. It does not change legacy native
+allocation, writable scanning, the file format, or runtime strategy attribution. The legacy
+mismatched-strategy rejection is retained until S3 migrates the consumer binders.
+
+### 10.1 Needs, delivery and evidence
+
+| Need | Delivered | Evidence / boundary |
+|---|---|---|
+| Grid conformance | `ConformantScan` derives a common integer lattice from persisted geometry, checks CRS, resolution, integer cell edges, shape, located non-spatial context and coverage | Shift, resolution, CRS, shape-CRS conflict, gaps and overlaps rejected before buffer access; observation outer-edge omissions rejected too |
+| Source directory | Balanced bounding-volume directory over actual shard boxes | Uneven physical partitions; no assumption of equal sizes, list-position correspondence or transient parent metadata |
+| Long-index codecs | Checked mixed-radix arithmetic for D1_LINEAR, D2_XY, D2_YX, D2_XInvY and D3_XYZ | Round trips at offset 9,000,000,007; explicit 3D coordinate oracle; overflow rejection. D3_ZYX/Hilbert remain rejected |
+| Split/merge | Deterministic automatic partitioning and explicit consumer partitions | One-to-many, many-to-one, many-to-many, reversed explicit order, uneven boundaries and singleton boxes |
+| Primitive values | `ConformantReader` delegates exact primitive reads through one source lookup | 180 small-grid combinations across five types, three source/target curves and native/consumer split counts; Long.MAX_VALUE-based values stay exact |
+| Block access | Direct contiguous native spans and bounded primitive gathers into caller-owned arrays | Fifteen type/traversal combinations crossing an uneven shard boundary; range/budget errors remain explicit |
+| Value adaptation / validity | Existing session cursors compose with the mapped reader | Float-to-double view, NaN propagation, exact long/boolean values; S1 narrowing policy unchanged |
+| Immutable planning/cache | Bounded metadata-only LRU keyed by source snapshots plus the full request | Repeated requests reuse plan handles; writes invalidate old handles and fingerprints; cache contains no reader/buffer payload |
+| Resource ownership | Existing source leases and session closure cover all mapped cursors | Independent mapped sessions, cancellation and stale-plan checks; S1 partial-open cleanup and temporal pin tests retained |
+| View metadata | Version-2 description records remapping and consumer partitions; multi-source views expose `view().sources()` | JSON/fingerprint round trips, explicit consumer order, source/view distinction; `shard()` rejects an ambiguous multi-source view |
+| Edge requests | Empty partition list derives a layout; native empty identity retains strict exhaustion; no cells are fabricated | Empty cursor never accesses its reader, singleton codec bounds, maximum=1 partition generation |
+| Size hints / budgets | Soft minimum/count preference, hard consumer maximum; bounded directory links and cache admission | Different native/consumer limits, singleton partitions and preserved native strategy |
+| Primitive default / allocations | Reused coordinate scratch and cached lookup, no payload boxing or per-cell metadata | Separate scanner-peek and moving indexed-gather allocation checks; measurements below |
+
+### 10.2 Decisions and integration boundaries
+
+- Remapping covers nonempty rectangular regular grids in one to three spatial axes. Existing exact
+  scalar/empty reads keep their native path. Empty `partitions` means automatic derivation; it is
+  not a request to silently discard coverage. A missing source remains an error.
+- Geometry is checked against the observation's spatial support, not merely the bounding union
+  of the supplied shards. This detects a missing outer strip as well as internal holes.
+- Located source time remains selected by `Slice`. Spatial-only target geometry inherits it;
+  explicit different non-spatial extents fail. Observation-wide time metadata is not confused with
+  event-local partition metadata. Temporal resampling is not introduced.
+- Persisted splits can omit CRS and inherit it from their owner. CRS strings are compared literally;
+  shape and grid CRS must agree. No reprojection or implicit projection aliases are introduced.
+- The new codec avoids the legacy int-indexed curve mapper. D3_ZYX remains ambiguous for existing
+  bytes because the legacy implementation aliases XYZ, so S2 rejects it rather than changing native
+  meaning. D3_XYZ and linear 3D mapping are verified independently.
+- Consumer curves apply inside each partition. Request one consumer partition for one global
+  traversal, including future exporters. Consumer geometry/type comes from `view()`, not a physical
+  shard descriptor; S3 binders must respect the multi-source `shard()` rejection.
+- Automatic splits divide the largest box along its longest axis. Count/minimum are preferences;
+  a positive maximum may increase the count. Explicit partitions determine exact order and must
+  honor the maximum. No execution parallelism is launched by planning; the runtime disable setting
+  still controls new native attribution.
+- `Budget.maxPartitions` bounds both sides, with a source-reference cap of eight times that budget.
+  The metadata cache has at most 16 entries, each admitted only below 1024 combined source, target
+  and source-reference items. Larger valid requests bypass caching. Plans remain provider-bound.
+- Version 1 metadata remains readable. Version 2 adds INDEX_REMAP plus the primitive operation;
+  structural deserialization does not replace provider conformance validation. Optional null layout
+  types have a reserved fingerprint marker. WKT-bearing geometry round trips normalize escaped
+  commas without changing the global geometry parser.
+
+S3 remains responsible for `AbstractExecutor`, adapter/function requirements, exporters, detached
+queries and individual-value/text API access. S4/S5 add ordinary/contextual value semantics through
+this same primitive path. Masks, changed coverage/resolution, affine transformations, unsupported
+curves and remote-provider execution remain outside S2. No new native shards or graph views are
+persisted by mediation.
+
+### 10.3 Verification record
+
+Verification uses JDK 21, the repository Maven wrapper and offline dependencies. Intermittent
+missing-class errors occurred when compiling into the active checkout's shared target directories.
+The final verification uses an isolated source copy under `target/storage-stage2/verify`, containing
+HEAD plus the current Java changes, so its compiler outputs are independent of desktop IDE builds.
+No build configuration or unrelated source was changed to bypass these errors.
+
+```powershell
+.\mvnw.cmd -o -pl klab.services.runtime,klab.services.resolver,klab.services.resources -am "-Dtest=StorageScanTest,ConformantScanTest,ShardingStrategyBaselineTest,FillCurveTest,GeometryAndCurvesTest,GridNImplTest,ShardingAnnotationsBaselineTest,DataflowAnnotationsTest,ShardingAnnotationSyntaxTest,ComponentRegistryShardingTest,StorageMediationBaselineTest,StorageReferenceFixturesTest,UnitMediationBaselineTest,ShardingAttributionBaselineTest,TemporalStorageTest,ScannerAdaptersTest,StorageManagerImplTest,StorageReconstructionTest,AbstractExecutorScannerBindingTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+The allocation checks warm the paths, then measure one million operations with a fixed 64 KiB
+allowance for JVM bookkeeping. One check moves between cells and source shards instead of repeatedly
+peeking a cached offset. These are allocation regressions, not throughput benchmarks; S8 retains
+large-dataset locality, contention, disk and remote-provider performance work. New tests do not
+require an external database or service.
+
+
+Final result (2026-09-20): **BUILD SUCCESS — 96 tests, 95 passed, one pre-existing disabled test,
+zero failures/errors**. Module totals: API 18, core services 65 (one skipped), resolver 5,
+resources 4, runtime 4. The skipped test is `GridNImplTest.projection_canBeNullOrProvided`, already
+annotated `@Disabled`; no S2 test is skipped. All eleven new `ConformantScanTest` methods pass.
+Native scanner, mapped scanner, and moving cross-shard gather checks each report **0 bytes over
+1,000,000 measured operations** in the final run. The latter verifies the actual moving-index path.
+
+The verified Java sources were hash-compared with the active checkout after the run. The final log
+is `target/storage-stage2/verification.log`; `git diff --check` passes. No production export,
+HTTP text-value route, live database or remote provider was exercised. S2 is complete within the
+conformance and supported-curve boundaries documented in STORAGE.md; S3 consumer integration is next.
+
+
+## 11. S3 implementation trace
+
+### Needs, decisions and delivered behavior
+
+| Need | Completion and evidence |
+|---|---|
+| Stable producer attribution, including adapter declarations | Child strategy inheritance removed. The producer's own function/adapter declarations participate between model and runtime hints. Positive-ID storage remains unchanged; runtime disable still forces one native split and clears size hints. Existing attribution regressions retained. |
+| Validate inputs before output reset | Metadata-only `Storage.writeLayout`; all dependency plans use explicit output IDs, geometry, size and curve. Sessions and reflection bindings validate before writable acquisition. `StorageConsumerExecutionTest` checks mixed-type/alignment execution and failure before any output scan, retaining the binding-specific cause. |
+| Independent parameter types and metadata | Contextualizer reflection chooses each input scanner class independently. Generic inputs retain source primitives; Observation, View and native Shard bindings remain explicit. A mediated input cannot masquerade as a physical Shard. Explicit FloatScanner requests permit narrowing; other reads remain lossless. |
+| Export one traversal over many shards | Freeform invocation uses `StorageReads`, exporter curve metadata and typed read plans; overload type mismatch does not acquire writers. Real reflected exporter tests traverse three source shards and preserve the requested curve. |
+| Stream ownership and cancellation | Invocation resources transfer to InputStream; EOF, close and read failure release leases. Failed reflection, unmatched overload and synchronous returns release at invocation exit. Tests prove reads remain usable after method return and writes remain blocked until stream completion. |
+| Point/text API | Added immutable serializable Point, runtime interface/client and authorized HTTP route. Long offset seek is bounded indexed access through the same planner; text preserves exact longs, zero/false, NaN validity and locale-independent formatting. Point JSON and policy/bounds regressions included. |
+| Detached ID-zero quality queries | Existing durable source selected in the authorized context; one source ID retained in query metadata. Requested semantics/geometry remain ephemeral. Query contextualization/layout metadata is copied. Storage creation at zero is rejected; lookup resolves the source. Tests cover independent concurrent views and independent query strategy beans. Unsupported units fail until S4. |
+| Temporal reads and write-set ownership | PRIOR and CURRENT snapshot read sessions remap into output partitions before writable acquisition. Sparse CURRENT offsets become primitive sorted arrays for allocation-free lookup; later writes cannot mutate snapshots. Rollback/commit closes retained sessions. Existing temporal process tests and new snapshot/remap test cover this path. General temporal contextualizers remain gated. |
+| k.Actors full-stack harness | Added `inspector.scancheck` and `celltext`, with catalog/argument checks and Java invocation tests. The real testcase under `docs/testcases/klab/staging/vxii/storage.kactors` parses with the installed grammar. TESTING.md documents copying it into the staging project and running with parallelization enabled/disabled. |
+| Keep default reads primitive | All scan/seek/remap paths use primitive access; string allocation is confined to text requests and bounded inspector samples. Temporal sparse writers retain their existing boxed representation, while read offset lookup no longer boxes. S1/S2 allocation regressions are retained. |
+
+### Scope boundaries and manual acceptance
+
+STORAGE.md is authoritative for API contracts. This trace does not claim units/ranges/currencies,
+contextual conversion, non-conformant resampling or concept dictionaries: those remain S4–S7.
+The existing resource-adapter input-payload/remote dependency-transfer placeholders remain outside
+this scanner-binding change. Function/adapter layout fields are producer preferences under the
+recorded precedence, not a promise of separately writable consumer layouts.
+
+The available checkout did not contain `klab.staging.vxii`; the harness source is therefore stored
+in this repository for copying into that project. It uses a small rectangular projected grid and
+requires live geography semantics and an elevation resource. JUnit validates its syntax and Java
+verbs. No full-stack assembly, live endpoint/remote service test or harness execution was attempted,
+as requested. The user-run harness should inspect report outcomes and cleanup, not only agent exit.
+
+### Verification
+
+Verification uses the isolated source checkout under `target/storage-stage2/verify`, reusing the
+S2 setup to avoid shared IDE compiler output. Sources are synchronized from the current worktree;
+there is no build-configuration workaround. Initial runs caught and corrected a test fixture's
+registry setup, a missing test-executor method and a nested-map lexical ambiguity in the actual
+k.Actors file. These were not waived. The final combined regression result is recorded below.
+
+
+Final result (2026-09-20): **BUILD SUCCESS — 146 tests, 145 passed, one pre-existing disabled test,
+zero failures/errors**. Module totals: API 18, core services 90 (one skipped), resolver 5,
+resources 5, runtime 28. Runtime server compilation succeeds. The sole skip remains
+`GridNImplTest.projection_canBeNullOrProvided`; no new test is disabled. Native, mapped and moving
+cross-shard allocation checks each report **0 bytes per 1,000,000 measured operations**.
+
+```powershell
+.\mvnw.cmd -o -pl klab.services.runtime.server,klab.services.resources -am "-Dtest=StorageScanTest,ConformantScanTest,ShardingStrategyBaselineTest,FillCurveTest,GeometryAndCurvesTest,GridNImplTest,ShardingAnnotationsBaselineTest,DataflowAnnotationsTest,ShardingAnnotationSyntaxTest,ComponentRegistryShardingTest,StorageMediationBaselineTest,StorageReferenceFixturesTest,UnitMediationBaselineTest,ShardingAttributionBaselineTest,TemporalStorageTest,ScannerAdaptersTest,StorageManagerImplTest,StorageReconstructionTest,AbstractExecutorScannerBindingTest,StorageConsumerExecutionTest,StorageConsumerIntegrationTest,TemporalProcessIntegrationTest,RuntimeServiceQueryTest,CoreActorLibraryInspectorTest,StorageHarnessSyntaxTest,ExportDispatchTest,ExportResponseTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+The final log is `target/storage-stage2/s3-verification.log`. All 35 changed Java/harness sources
+were hash-compared against the isolated verification checkout with no differences. `git diff
+--check` passes. The verification includes the final correction resolving temporal query bindings
+through their durable source, covered by a new read-before-write ordering regression. S3 is
+complete within the documented scanner and provider boundaries; S4 is the next numeric mediation stage.
+
+
+## 12. Stage 4 implementation trace
+
+S4 implements ordinary value mediation on the shared planned-read routes. The authoritative
+contract is the S4 section of [STORAGE.md](STORAGE.md). S5 and later stages are deliberately held
+until the user-run full harness has confirmed this first phase.
+
+| Need | Completion and proof |
+|---|---|
+| Resolve unit direction and compatibility | Destination-first names and JavaDoc; real dimensional compatibility; restart-safe definition parsing; scaled-unit cache correction. Primitive coefficients support multiplication and affine offsets. Asymmetric m/mm, Celsius/Kelvin and scaled-unit tests. |
+| Lazy, efficient scanner conversion | Version-3 portable descriptions and cached primitive kernels in local sessions. Remap precedes conversion, final primitive narrowing occurs once; NaN and cursor semantics retained. Real FLOAT/DOUBLE scanner tests include repeatable peek, seek, missing values and text. INTEGER/LONG/BOOLEAN semantic conversion explicitly rejects; identity remains unchanged. |
+| Range contract | Finite positive widths, increasing bounds, matching endpoint inclusion; exact included endpoints; no clipping/extrapolation; bad domains fail. Fixed upper-exclusive accessor and aligned public bounded-range conversion checks. |
+| Deterministic currency | Explicit RateProvider and immutable pinned Rate with definitions, valuation Instant, provider/version, rate, exchange/inflation and binary64 rounding. CODE@year distinguishes base-year semantics. No network lookup in a plan or scanner. Fixed quote, bad direction, unavailable rate, invalid rate and compound-operation tests. |
+| Multiple bindings on one dependency pair | Each prerequisite AFFECTS edge carries its own version-1 Binding JSON, identified by localName:rank. Existing pseudograph and Neo4j CREATE path already preserve parallel relationships. Existing rank/role/readState/semanticRelations retained. Transaction tests publish two differently converted bindings and deserialize their properties independently. |
+| Restart semantics | In-process binding identities follow temporary-to-durable source publication. Occurrence snapshots retain requested input observables and pinned rates instead of replacing them with native source semantics. Restored bindings resolve the real source separately. Plan/binding/evidence JSON round trips validate schema and reproduce conversion metadata. No persisted converted observation or HAS_DATA descriptor. |
+| Per-run provenance | Activity metadata receives an immutable Evidence JSON entry per binding invocation, containing the complete source revision/event/plan. Unique keys preserve earlier evidence. Transaction rollback removes staged entries; consumer failure publishes neither binding relationships nor consumer. |
+| Queries, exports and individual text values | ID-zero views keep requested observables and query-specific rates without allocating graph assets. Durable dependency edges resolve the positive source. Point requests carry optional quotes. Exports accept storageObservable/storageCurrencyRate and pass detached views to the existing matcher/session lifecycle. |
+| Temporal reads | PRIOR and CURRENT apply the same compiler to pinned snapshots before output writers open. Regression verifies independent converted prior/current values and rollback closes both sessions. |
+| k.Actors first-phase harness | New static inspector.unitcheck checks an independent factor/offset plus traversal/partition/text agreement. Existing staging testcase now verifies elevation m→mm. Actual testcase parser and inspector catalog are verified in JUnit. |
+
+### Decisions and limits
+
+S4 supports one changed ordinary mediator per plan and FLOAT/DOUBLE conversion. Integer-valued
+semantic conversion requires a future explicit overflow/rounding policy. Contextual unit flags and
+extent distributions are carried in semantic identity; S4 does not infer cell areas or durations.
+Range endpoint inclusion must match; this avoids converting an included source endpoint into an
+excluded target endpoint. Currency plans use binary64 scientific arithmetic, without rounding to
+minor monetary units. Exchange and inflation are separate operations. Rates are supplied explicitly
+by the caller/provider and preserved in binding and execution provenance.
+
+Identity/conformant description versions 1/2 keep their original fingerprint encoding. Version 3
+includes the semantic meaning key and conversion; old constructor overloads remain available.
+Converted views do not advertise native histograms. Existing process/descriptive causal conventions
+remain intact. Non-quality dependency edges retain their existing semantic behavior.
+
+### Verification and corrections
+
+Builds use an isolated source copy at `target/storage-stage2/verify`; shared IDE outputs are untouched.
+During verification, a moving-cursor allocation regression was traced with JFR to Mockito's globally
+instrumented `List.getFirst`, not boxed conversion arithmetic. The mapped reader now caches its
+immutable primitive type once, removing the lookup from production reads as well. The ordinary
+conversion path allocates no per-value wrapper, locator, coefficient or coordinate object.
+
+JUnit covers compilation through runtime server, actual parser input, ordinary/temporal reads,
+multiple bindings, transaction publication/rollback, JSON reconstruction and primitive allocation.
+It does not prove a live Neo4j restart or a full resolver/service/HTTP round trip. Those remain in the
+user-run full-stack acceptance gate; no live stack or currency provider was started.
+
+Final result (2026-09-20): **BUILD SUCCESS — 167 tests, 166 passed, one pre-existing disabled test,
+zero failures/errors**. Module totals: API 18, core services 101 (one skipped), resolver 5,
+resources 5, runtime 38. Runtime server compilation succeeds. The sole skip remains
+`GridNImplTest.projection_canBeNullOrProvided`; no new test is disabled. Native, mapped, moving-gather
+and moving-mediated-cursor checks each report **0 bytes per 1,000,000 measured operations**.
+
+The final run includes the source-ID publication/JSON transport regression, old semantic-snapshot
+compatibility, and rejection when final float narrowing would cross an excluded range endpoint.
+All 47 changed Java/harness source files match the isolated verification copy by SHA-256.
+`git diff --check` passes. The final log is `target/storage-stage2/s4-verification.log`.
+
+```powershell
+.\mvnw.cmd -o -pl klab.services.runtime.server,klab.services.resources -am "-Dtest=ValueMediationTest,ClassificationTransactionTest,StorageScanTest,ConformantScanTest,ShardingStrategyBaselineTest,FillCurveTest,GeometryAndCurvesTest,GridNImplTest,ShardingAnnotationsBaselineTest,DataflowAnnotationsTest,ShardingAnnotationSyntaxTest,ComponentRegistryShardingTest,StorageMediationBaselineTest,StorageReferenceFixturesTest,UnitMediationBaselineTest,ShardingAttributionBaselineTest,TemporalStorageTest,ScannerAdaptersTest,StorageManagerImplTest,StorageReconstructionTest,AbstractExecutorScannerBindingTest,StorageConsumerExecutionTest,StorageConsumerIntegrationTest,TemporalProcessIntegrationTest,RuntimeServiceQueryTest,CoreActorLibraryInspectorTest,StorageHarnessSyntaxTest,ExportDispatchTest,ExportResponseTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+S4 closes the ordinary-mediation implementation phase within the documented type/provider bounds.
+The full harness has not been run here. S5+ remains deferred until that manual acceptance gate passes.

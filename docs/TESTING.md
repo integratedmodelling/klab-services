@@ -300,3 +300,48 @@ These cover real UNIVERSAL default-observer preparation, the distinct `1` scalar
 `X` empty encodings through runtime scales and repository reads, and replacement of initial
 universal perceived geometry by the first concrete observation. They do not prove a complete live
 resolver-to-graph-to-ObserverTree round trip.
+
+
+## Storage mediation harness (S3–S4)
+
+[storage.kactors](testcases/klab/staging/vxii/storage.kactors) is a ready-to-copy testcase for
+`klab.staging.vxii/testcases/klab/staging/vxii/storage.kactors`. The staging project was not present
+in the accessible checkout, so this repository holds the source. It creates a small rectangular
+projected grid, submits elevation within that region, checks committed membership, and compares
+three traversal/partition requests. It requires a worldview defining geography:Region and
+geography:Elevation and a working elevation resolver/resource. Those live dependencies are
+intentional; this is a full-stack harness, not a synthetic unit test. A rectangular grid keeps the
+case within S2 conformance; an administrative polygon would require the later masking/resampling
+stage. Run it with parallelization enabled and disabled to cover both native attribution modes.
+
+New static inspector functions:
+
+- `scancheck(context, observation, curve, splits, samples)` compares values and validity at bounded
+  sample locations in an adapted partitioned view, a single export traversal, and indexed text
+  reads. It checks cursor positioning and unchanged source layout/semantics. Curve is an enum name
+  such as `"D2_YX"`. Limits are 1–256 partitions and 1–64 samples per partition. This checks the
+  integration of shared planner routes; independent numeric/grid oracles are covered by JUnit.
+- `celltext(context, observation, curve, offset)` returns locale-independent primitive text, with
+  `null` as the missing-data string. Zero/false and exact long values retain their meaning.
+
+These functions require a captured quality and an explicit context, use initialization for at-most-one-state
+time support, close all sessions, and propagate backend failures with their cause. They do not
+create assertion entries; use `assert inspector.scancheck(...)` as in the testcase. The current
+sample also verifies meters-to-millimeters through `unitcheck`; it does not exercise remote HTTP or live temporal events. Java tests
+cover revision selection and transaction snapshots, stream ownership, point API behavior, mixed
+primitive dependencies, pre-write failure and detached source binding.
+
+The repository parser test `StorageHarnessSyntaxTest` reads the actual testcase file. Inspector
+catalog/argument descriptors and Java invocation are checked by `CoreActorLibraryInspectorTest`
+and `StorageConsumerIntegrationTest`. Full-stack execution remains a manual acceptance step;
+inspect assertion reports and console output, not only normal testcase termination.
+
+S4 adds `unitcheck(context, observation, unit, factor, offset)`. It samples at most 64 locations,
+checks the supplied independent affine expectation, compares partition/export/cell-text routes,
+and checks that native semantics/layout and missingness remain unchanged. The testcase invokes
+`assert inspector.unitcheck(ctx, elevation, "mm", 1000, 0)` after computing elevation in meters.
+For the first-phase acceptance run, execute the testcase with parallelization both enabled and
+disabled. The deterministic JUnit suite additionally covers Celsius/Kelvin, bounded/open ranges,
+fixed currency quotes, two bindings from one source, temporal snapshots, provenance JSON recovery,
+transaction failure and zero per-value allocation. Live provider selection, complete HTTP/service
+integration and live Neo4j restart remain full-harness checks; no full stack was launched here.

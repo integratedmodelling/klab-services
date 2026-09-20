@@ -726,6 +726,22 @@ public abstract class BaseService implements KlabService {
       }
     }
 
+    if (parameters != null && parameters.containsKey("storageObservable")) {
+      if (!(asset instanceof Observation observation) || !(scope instanceof org.integratedmodelling.klab.api.scope.ContextScope))
+        throw new IllegalArgumentException("A mediated export requires an observation in a context scope");
+      var requested = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)
+          .resolveObservable(parameters.get("storageObservable").toString());
+      if (requested == null) throw new IllegalArgumentException("Unknown export observable");
+      asset = org.integratedmodelling.klab.runtime.storage.StorageReads.binding(observation, requested);
+    }
+    if (parameters != null && parameters.containsKey("storageCurrencyRate")) {
+      if (!(asset instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl observation))
+        throw new IllegalArgumentException("Currency export requires an observation");
+      var detached = observation.copyForAttribution(observation.getObservable());
+      detached.getMetadata().put(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE, parameters.get("storageCurrencyRate").toString());
+      asset = detached;
+    }
+
     var schemata =
         ResourceTransport.INSTANCE.findExportSchemata(
             knowledgeClass, mediaType, geometry, this, scope);
@@ -754,7 +770,16 @@ public abstract class BaseService implements KlabService {
     serviceCall.getParameters().putUnnamed(urn);
     serviceCall.getParameters().putUnnamed(this);
     var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
-    return languageService.execute(serviceCall, scope, InputStream.class, asset, this, parameters);
+    org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event event = null;
+    if (parameters != null && (parameters.containsKey("storageEvent") || parameters.containsKey("storageStart") || parameters.containsKey("storageEnd"))) {
+      if (!(parameters.containsKey("storageEvent") && parameters.containsKey("storageStart") && parameters.containsKey("storageEnd")))
+        throw new IllegalArgumentException("Temporal export requires storageEvent, storageStart and storageEnd");
+      event = new org.integratedmodelling.klab.api.data.StorageScan.Slice(
+          org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Type.TEMPORAL_TRANSITION,
+          parameters.get("storageEvent").toString(), Long.parseLong(parameters.get("storageStart").toString()),
+          Long.parseLong(parameters.get("storageEnd").toString())).event();
+    }
+    return languageService.execute(serviceCall, scope, InputStream.class, asset, this, parameters, event);
   }
 
   public RuntimeAsset resolveUrn(String urn, KlabAsset.KnowledgeClass knowledgeClass, Scope scope) {

@@ -38,6 +38,12 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
  */
 public interface RuntimeService extends KlabService {
 
+  /** Read one exact cell as locale-independent text ("null" for missing), without a dataset scan. */
+  default String readValue(org.integratedmodelling.klab.api.data.StorageScan.Point point, ContextScope scope) {
+    throw new UnsupportedOperationException("Point value access is not supported by this runtime");
+  }
+
+
   Data.ShardingStrategy getDefaultShardingStrategy(Observation observation, ContextScope scope);
 
   /**

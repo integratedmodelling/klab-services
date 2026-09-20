@@ -719,6 +719,41 @@ public class CoreActorLibrary {
       return Objects.requireNonNull(graph, "graph").edgeSet().size();
     }
 
+    @Verb(name = "scancheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Compare bounded samples in partitioned, export and indexed text views; backend failures propagate.")
+    public static boolean scancheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or context scope") Object context,
+        @Verb.Argument(name = "observation", description = "Committed quality or detached quality query") Observation observation,
+        @Verb.Argument(name = "curve", description = "Supported fill curve constant") org.integratedmodelling.klab.api.data.Data.FillCurve curve,
+        @Verb.Argument(name = "splits", description = "Consumer partitions, 1..256") int splits,
+        @Verb.Argument(name = "samples", description = "Samples per partition, 1..64") int samples) {
+      return org.integratedmodelling.klab.runtime.storage.StorageReadInspector.check(
+          contextScope(context), observation, curve, splits, samples);
+    }
+
+    @Verb(name = "unitcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Check a lazy unit view against an independent factor and offset across storage read routes.")
+    public static boolean unitcheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "observation", description = "Committed numeric quality") Observation observation,
+        @Verb.Argument(name = "unit", description = "Requested ordinary unit") String unit,
+        @Verb.Argument(name = "factor", description = "Expected source-to-target multiplier") double factor,
+        @Verb.Argument(name = "offset", description = "Expected source-to-target offset") double offset) {
+      return org.integratedmodelling.klab.runtime.storage.StorageReadInspector.unitCheck(
+          contextScope(context), observation, unit, factor, offset);
+    }
+
+    @Verb(name = "celltext", executionType = Verb.Type.FUNCTION, returns = String.class,
+        description = "Read one cell through the export view, preserving exact longs and missingness.")
+    public static String celltext(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or context scope") Object context,
+        @Verb.Argument(name = "observation", description = "Committed quality or detached quality query") Observation observation,
+        @Verb.Argument(name = "curve", description = "Supported fill curve constant") org.integratedmodelling.klab.api.data.Data.FillCurve curve,
+        @Verb.Argument(name = "offset", description = "Zero-based consumer traversal offset") long offset) {
+      return org.integratedmodelling.klab.runtime.storage.StorageReads.text(
+          observation, contextScope(context), null, curve, offset);
+    }
+
     private static boolean sameAsset(RuntimeAsset left, RuntimeAsset right) {
       return left != null
           && (left == right

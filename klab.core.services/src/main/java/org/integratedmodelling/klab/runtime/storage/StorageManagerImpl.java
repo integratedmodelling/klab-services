@@ -155,6 +155,8 @@ public class StorageManagerImpl implements StorageManager {
 
   public Storage getStorage(Observation observation) {
 
+    if (observation.getId() == Observation.QUERY_ID)
+      return getStorage(StorageReads.source(observation, contextScope));
     var ret = this.storage.get(observation.getId());
     if (ret == null && observation.getId() > 0) {
       ret =
@@ -188,6 +190,8 @@ public class StorageManagerImpl implements StorageManager {
 
   @Override
   public Storage createStorage(Observation observation) {
+    if (observation.getId() == Observation.QUERY_ID)
+      throw new IllegalArgumentException("Detached queries cannot own storage");
     var cd = observation.getContextualizationData();
     if (cd == null || cd.getNativeShardingStrategy() == null) {
       throw new KlabIllegalStateException(

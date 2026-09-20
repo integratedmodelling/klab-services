@@ -57,6 +57,11 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
+  public String readValue(org.integratedmodelling.klab.api.data.StorageScan.Point point, ContextScope scope) {
+    return client.withScope(scope).post(ServicesAPI.RUNTIME.READ_VALUE, point, String.class);
+  }
+
+  @Override
   public Data.ShardingStrategy getDefaultShardingStrategy(
       Observation observation, ContextScope scope) {
     return client

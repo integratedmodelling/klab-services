@@ -55,13 +55,10 @@ public class ScannerAdapters {
     }
 
     if (adapted == null) {
-      var shard = originalScanner.shard();
       throw new KlabIllegalArgumentException(
           "Cannot adapt storage scanner "
               + originalScanner.getClass().getSimpleName()
-              + " (native type "
-              + (shard == null ? "unknown" : shard.getNativeType())
-              + ") to "
+              + " to "
               + adaptedScannerClass.getSimpleName());
     }
     return adaptedScannerClass.cast(adapted);
@@ -95,6 +92,7 @@ public class ScannerAdapters {
       return delegate.nextLong();
     }
 
+    @Override public void seek(long offset) { delegate.seek(offset); }
     @Override public long position() { return delegate.position(); }
     @Override public boolean isValid() { return delegate.isValid(); }
     @Override public org.integratedmodelling.klab.api.data.StorageScan.View view() {

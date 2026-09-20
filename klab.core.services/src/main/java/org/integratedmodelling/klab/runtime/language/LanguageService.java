@@ -84,30 +84,36 @@ public class LanguageService implements Language {
       for (var descriptor : descriptors) {
         if (!descriptor.error) {
           if (componentRegistry.implementation(descriptor).method != null) {
-            // adapt the parameters to the function call
-            var parameters = getParameters(descriptor, call, scope, false, furtherArgs);
-            if (parameters == null) {
-              continue;
-            }
-            try {
-              return (T)
-                  componentRegistry
-                      .implementation(descriptor)
-                      .method
-                      .invoke(
-                          descriptor.staticMethod
-                              ? null
-                              : componentRegistry.implementation(descriptor).mainClassInstance,
-                          parameters);
-            } catch (IllegalAccessException
-                | IllegalArgumentException
-                | InvocationTargetException e) {
-              scope.error("runtime error when invoking function " + call.getUrn(), e);
-              if (resultClass == java.io.InputStream.class) {
-                throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
-                    e instanceof InvocationTargetException invocation ? invocation.getCause() : e);
+            try (var resources = new ScanResources()) {
+              var ownedArgs = java.util.Arrays.copyOf(furtherArgs, furtherArgs.length + 1);
+              ownedArgs[furtherArgs.length] = resources;
+              // adapt the parameters to the function call
+              var parameters = getParameters(descriptor, call, scope, false, ownedArgs);
+              if (parameters == null) {
+                continue;
               }
-              return null;
+              try {
+                var result =
+                    componentRegistry
+                        .implementation(descriptor)
+                        .method
+                        .invoke(
+                            descriptor.staticMethod
+                                ? null
+                                : componentRegistry.implementation(descriptor).mainClassInstance,
+                            parameters);
+                if (result instanceof java.io.InputStream stream) return (T) resources.transfer(stream);
+                return (T) result;
+              } catch (IllegalAccessException
+                  | IllegalArgumentException
+                  | InvocationTargetException e) {
+                scope.error("runtime error when invoking function " + call.getUrn(), e);
+                if (resultClass == java.io.InputStream.class) {
+                  throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+                      e instanceof InvocationTargetException invocation ? invocation.getCause() : e);
+                }
+                return null;
+              }
             }
           } else if (componentRegistry.implementation(descriptor).constructor != null) {
             Object[] args = getParameters(descriptor, call, scope, true, furtherArgs);

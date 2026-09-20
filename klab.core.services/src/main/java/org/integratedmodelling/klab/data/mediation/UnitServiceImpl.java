@@ -69,7 +69,7 @@ public class UnitServiceImpl implements UnitService {
     javax.measure.Unit<?> peer = units.get(pd.getSecond());
     if (peer == null) {
       try {
-        peer = (javax.measure.Unit<?>) formatter.parse(string);
+        peer = (javax.measure.Unit<?>) formatter.parse(pd.getSecond());
         this.units.put(pd.getSecond(), peer);
       } catch (Throwable e) {
         // KLAB-156: Error getting the default unit
@@ -105,19 +105,36 @@ public class UnitServiceImpl implements UnitService {
 
   @Override
   public boolean isCompatible(Unit unit, Unit other) {
-    // TODO Auto-generated method stub
-    return false;
+    if (unit == null || other == null) return false;
+    return peer(unit).isCompatible(peer(other));
   }
 
-  @SuppressWarnings("unchecked")
+  private javax.measure.Unit<?> peer(Unit unit) {
+    if (!(unit instanceof UnitImpl definition)) throw new IllegalArgumentException("Unit definition is not portable");
+    if (definition.isContextual() || !definition.getAggregatedDimensions().isEmpty())
+      throw new UnsupportedOperationException("Contextual unit conversion requires cell support (S5)");
+    var functional = definition.data(FunctionalUnit.class);
+    return functional == null ? ((UnitImpl)getUnit(definition.getDefinition())).data(FunctionalUnit.class).unit : functional.unit;
+  }
+
   @Override
-  public Number convert(Number d, Unit from, Unit to) {
-    // hostia
-    return ((UnitImpl) to)
-        .data(FunctionalUnit.class)
-        .unit
-        .getConverterTo(((UnitImpl) from).data(FunctionalUnit.class).unit)
-        .convert(d);
+  public Conversion conversion(Unit destination, Unit source) {
+    try {
+      var converter = peer(source).getConverterToAny(peer(destination));
+      for (var step : converter.getConversionSteps())
+        if (!step.isLinear() && !(step instanceof tech.units.indriya.function.AddConverter))
+          throw new UnsupportedOperationException("Non-affine unit conversion is not supported");
+      double zero = converter.convert(0.0);
+      return new Conversion(converter.convert(1.0) - zero, zero);
+    } catch (javax.measure.IncommensurableException | javax.measure.UnconvertibleException e) {
+      throw new IllegalArgumentException("Incompatible units", e);
+    }
+  }
+
+  @Override
+  public Number convert(Number value, Unit destination, Unit source) {
+    if (value == null || Double.isNaN(value.doubleValue())) return value;
+    return conversion(destination, source).convert(value.doubleValue());
   }
 
   @Override

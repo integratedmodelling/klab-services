@@ -373,6 +373,7 @@ public interface ServicesAPI {
    * anything in the context.
    */
   interface RUNTIME {
+    String READ_VALUE = API_BASE + "/observation/value";
 
     String GET_CONTEXT_INFO = API_BASE + "/contexts";
 

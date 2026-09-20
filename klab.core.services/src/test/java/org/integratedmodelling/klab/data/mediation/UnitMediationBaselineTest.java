@@ -36,7 +36,7 @@ class UnitMediationBaselineTest {
   void contextualServiceAndCurrencyRemainStubsWhileRangeConversionWorksForBoundedInputs() {
     var service = new UnitServiceImpl();
     var meters = service.getUnit("m");
-    assertFalse(service.isCompatible(meters, service.getUnit("mm")), "Known stage-4 gap");
+    assertTrue(service.isCompatible(meters, service.getUnit("mm")));
     assertNull(service.contextualize(meters, null, Geometry.UNIVERSAL), "Known stage-5 gap");
     assertNull(service.convert(1, meters, (Locator) null), "Known stage-5 gap");
     assertTrue(Double.isNaN(service.convert(Double.NaN, meters, (Locator) null).doubleValue()));
@@ -48,7 +48,7 @@ class UnitMediationBaselineTest {
     assertNull(percent.convert(1, (Locator) null), "Range locator conversion is also unfinished");
     var currency = new CurrencyImpl("USD");
     assertFalse(currency.isCompatible(new CurrencyImpl("EUR")));
-    assertNull(currency.convert(1, new CurrencyImpl("EUR")));
+    assertThrows(UnsupportedOperationException.class, () -> currency.convert(1, new CurrencyImpl("EUR")));
   }
 
   @Test
