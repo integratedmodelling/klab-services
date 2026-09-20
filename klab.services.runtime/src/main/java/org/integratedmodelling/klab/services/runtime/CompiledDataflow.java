@@ -886,16 +886,41 @@ public class CompiledDataflow {
         var quality = actuatorObservations.get(child);
         transaction.linkProcessInfluence(process, quality, plan.model(), binding.name(), binding.relations());
       }
+      // Only already resolved, bearer-bound qualities become graph endpoints. Missing/created
+      // endpoints remain semantic obligations in the portable plan until materialization.
+      for (var relation : plan.descriptiveLinks()) {
+        var sources = actuator.getChildren().stream().filter(c -> plan.binding(c.getName()) != null)
+            .map(actuatorObservations::get).filter(java.util.Objects::nonNull)
+            .filter(q -> matchesDescription(q, relation.source())).toList();
+        var targets = actuator.getChildren().stream().filter(c -> plan.binding(c.getName()) != null)
+            .map(actuatorObservations::get).filter(java.util.Objects::nonNull)
+            .filter(q -> matchesDescription(q, relation.target())).toList();
+        for (var source : sources) for (var target : targets) {
+          if (!org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.ConsequenceClosure.overlaps(
+              source.getGeometry(), target.getGeometry())) continue;
+          transaction.link(source, target, GraphModel.Relationship.AFFECTS,
+              ProcessPlan.EDGE_ROLE, ProcessPlan.DESCRIPTIVE, "property", relation.kind().property(),
+              "semanticRelation", relation.kind().name(), "provenance", relation.provenance(),
+              "declaredSource", relation.source().getUrn(), "declaredTarget", relation.target().getUrn(),
+              "model", plan.model(), "bearerId", bearer);
+        }
+      }
       // Replace the provisional bearer ID only after the root transaction assigns durable IDs.
       var originalPlan = actuator.getData().get(ProcessPlan.DATA_KEY);
       transaction.afterRollback(() -> actuator.getData().put(ProcessPlan.DATA_KEY, originalPlan));
       transaction.beforeCommit(() -> actuator.getData().put(ProcessPlan.DATA_KEY,
-          org.integratedmodelling.klab.utilities.Utils.Json.asString(new ProcessPlan(1, bearer.getId(),
-              plan.model(), plan.bindings(), plan.obligations()))));
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(new ProcessPlan(2, bearer.getId(),
+              plan.model(), plan.bindings(), plan.obligations(), plan.descriptiveLinks()))));
       transaction.update(actuator);
     }
 
     return true;
+  }
+
+  private boolean matchesDescription(Observation quality, org.integratedmodelling.klab.api.knowledge.Concept endpoint) {
+    if (quality.getObservable().getSemantics().equals(endpoint)) return true;
+    var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    return reasoner != null && reasoner.is(quality.getObservable(), endpoint);
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */

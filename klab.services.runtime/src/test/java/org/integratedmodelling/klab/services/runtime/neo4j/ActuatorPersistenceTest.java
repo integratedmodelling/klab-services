@@ -33,6 +33,18 @@ class ActuatorPersistenceTest {
     actuator.setStrategyUrn("strategy.test");
     actuator.setCoverage(Geometry.UNIVERSAL);
     actuator.getData().put("factor", 3);
+    var sourceQuality = new org.integratedmodelling.common.knowledge.ConceptImpl();
+    sourceQuality.setUrn("test:Numeric"); sourceQuality.setName("Numeric"); sourceQuality.setNamespace("test");
+    sourceQuality.getType().add(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY);
+    var targetQuality = new org.integratedmodelling.common.knowledge.ConceptImpl();
+    targetQuality.setUrn("test:Wet"); targetQuality.setName("Wet"); targetQuality.setNamespace("test");
+    targetQuality.getType().add(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY);
+    targetQuality.getType().add(org.integratedmodelling.klab.api.knowledge.SemanticType.PRESENCE);
+    var processPlan = new org.integratedmodelling.klab.api.digitaltwin.ProcessPlan(2, 100, "test:model", List.of(), List.of(),
+        List.of(new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(sourceQuality, targetQuality,
+            org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.MARKS, "test:Numeric marks test:Wet")));
+    actuator.getData().put(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY,
+        org.integratedmodelling.klab.utilities.Utils.Json.asString(processPlan));
     var declaration = org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.fromModel(List.of(
         org.integratedmodelling.klab.api.lang.Annotation.of("time", "step",
             org.integratedmodelling.common.lang.QuantityImpl.parse("1.day"), "minStep",
@@ -68,6 +80,9 @@ class ActuatorPersistenceTest {
     assertEquals(Actuator.ExecutionRole.PROCESS, restored.getExecutionRole());
     assertEquals(actuator.getOccurrenceSchedules(), restored.getOccurrenceSchedules());
     assertEquals(3, restored.getData().get("factor", 0));
+    assertEquals(processPlan, org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+        restored.getData().get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY).toString(),
+        org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.class));
     assertEquals(1, restored.getComputation().size());
     assertEquals(negotiation, org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
         restored.getData().get(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY).toString(),

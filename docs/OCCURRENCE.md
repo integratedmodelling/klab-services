@@ -9,6 +9,8 @@ are now present. Temporal execution remains gated pending S4/S5. See the impleme
 for verification and remaining work.
 S3.1 now implements the dependency-level schedule override and admissible cadence range contract in
 Section 3.2 for bounded contexts. Parser/live-service acceptance remains a separate verification gate.
+The 2026-09-20 clarification in Section 5 supersedes S3's treatment of `marks`; S3.2 implements
+that correction and descriptive closure. Temporal dispatch remains disabled pending S4.
 
 Read with [observation strategies](OBSERVATION.md), [resolution](RESOLUTION.md),
 [observable semantics](OBSERVABLES.md), [ontology declarations](ONTOLOGY_LANGUAGE.md),
@@ -405,11 +407,35 @@ all three can share causal IDs without forcing every clock tick into the user's 
 
 ## 5. Semantic influence and quality state
 
-Resolve `affects`, `creates`, and connected declarations such as `increases with` through the
-Reasoner. Preserve relation kind/direction and provenance when normalizing executable `AFFECTS`
-links. A qualitative proportionality does not itself supply a numerical algorithm. Test the
-ontology closure explicitly; the current `affectedOrCreated` implementation is not proof that
-all connected properties are covered.
+**Authoritative clarification (2026-09-20):** OWL `affects` links an occurrent (process or event)
+to a quality whose value it changes. `marks`, `increases with` and `decreases with` link qualities
+and specialize OWL `describes`, not OWL `affects`. A descriptive link implies that an occurrent
+affecting either linked quality also affects the other. Preserve declaration direction separately
+from consequence reachability, which applies from either affected endpoint.
+
+| Declaration | Semantic contract |
+|---|---|
+| `affects` | Occurrent to changed quality: direct causal influence |
+| `creates` | Occurrent to epiphenomenal quality: deferred creation, never INIT |
+| `marks` | Descriptive relationship between qualities involving a boolean quality |
+| `increases with` | Quality-to-quality positive dependence, specializing `describes` |
+| `decreases with` | Quality-to-quality negative dependence, specializing `describes` |
+| `discretizes` | An ordering describes a quantifiable quality through classes; the explaining model establishes the one-to-one numeric-value/class mapping |
+| `classifies` | A predicate describes the quality it classifies into its values; neither uniqueness nor exhaustive value coverage is required |
+
+`discretizes` and `classifies` are also `describes` specializations. Preserve their distinct mapping
+contracts when following descriptive consequences. Do not impose discretization's mapping contract
+on classification, or infer a numeric algorithm, thresholds or a classification model from an OWL
+link. These declarations are distinct from the CLASSIFICATION actuator's operational protocol;
+preserve that protocol's existing guarantees.
+
+Normalize descriptive relationships to typed quality-to-quality knowledge-graph `AFFECTS` links,
+retaining the property's class/kind, declared direction and provenance. Compute transitive
+consequence reachability through these links after a direct occurrence effect. For example, if P
+affects Q and R increases with Q, affecting Q reaches R, and affecting R reaches Q. This graph
+normalization does not change the OWL hierarchy or assert that a quality is an occurrent. Keep
+direct effects, descriptive links and computational prerequisites distinguishable. Test inherited
+restrictions and graph closure explicitly; `affectedOrCreated` alone cannot establish this contract.
 
 Bind semantic targets to observations in the correct bearer, endpoint context where explicit,
 and temporal/spatial support. An unrelated instance with matching concept semantics is not a
@@ -422,15 +448,17 @@ not trigger speculative resolution or broad matching of unrelated observations (
 
 S3 stores computational edges with `occurrenceRole=PREREQUISITE` and process-to-quality effects
 with `occurrenceRole=INFLUENCE`. Edges retain model/name evidence and semantic relation kinds.
-`P increases with Q` and `P decreases with Q` describe Q-to-P influence; they do not imply that P
-writes Q. When Q is a declared input, that evidence accompanies its prerequisite edge. The Reasoner
-exports these inherited restrictions separately through `influences`, including remote transport;
-neither proportionality property is assumed to be a subproperty of `affects`.
-`marks` (`odo:marksQuality`) is outgoing influence and implies `affects` on a boolean quality
-(`PRESENCE`/`odo:Presence`). Preserve `MARKS` evidence separately from the normalized AFFECTED effect.
-The declaration validator rejects non-boolean marks targets, and the core ontology gives marksQuality
-an affects superproperty and Presence range. Marked qualities follow ordinary initialization unless
-the process also `creates` them, in which case the epiphenomenon rule takes precedence.
+Extend the existing `influences` transport to retain all descriptive kinds, including DISCRETIZES
+and CLASSIFIES, separately from direct occurrence effects. A descriptive link alone is not evidence
+of a computational input or assignment target. Bind its endpoints in the correct bearer and support,
+retaining unresolved targets as obligations. Ordinary related qualities retain normal INIT; explicit
+`creates` retains deferred materialization. Descriptive propagation never implies creation.
+
+**Superseded S3 behavior:** S3 promoted MARKS to a direct effect, explicitly included it in
+`ReasonerService.affected`, and tested an affects superproperty. S3.2 removes those assumptions and
+validates marking as a quality source and boolean-quality target. It also removes `describedType`
+shortcuts from `affectedBy`/`createdBy`: descriptive reachability must not masquerade as a direct
+effect or infer creation.
 
 Keep executable input prerequisites distinct from causal influence, even if both remain stored
 under `AFFECTS` with typed roles. Traversing all incoming edges recursively is unsafe. For a process
@@ -438,6 +466,10 @@ that reads and affects the same quality, use explicit temporal state versions: t
 the prior committed slice and its consequence computes the next slice. Reject unplanned same-time
 cycles; O3 must settle conflict/composition semantics for multiple processes affecting one target.
 Do not use thread completion order to select a writer.
+Descriptive reachability may revisit an endpoint without being an execution feedback cycle.
+Deduplicate closure by observation and causal transition, then check execution cycles against
+actual computation dependencies. Multiple descriptive paths must not trigger repeated execution
+or propagate influence into unrelated bearers.
 
 For every new quality computation:
 
@@ -698,7 +730,9 @@ a created dependency is never queried/allocated at registration. Runtime tests c
 ownership, durable bearer rebinding, deferred created-output restoration, no storage/scanner allocation
 on INIT, causal-feedback traversal and competing/concurrent writer rollback. An OWL fixture verifies
 inherited affects/creates/marks and separate increases/decreases restrictions with preserved direction;
-declaration and core-ontology tests enforce marks' boolean range and affects implication.
+declaration and core-ontology tests enforce the then-assumed marks boolean range and affects implication.
+The affects implication is superseded by Section 5's 2026-09-20 clarification; S3.2 corrects these
+tests. This historical S3 test record does not validate descriptive propagation.
 These are component tests; no live k.IM namespace, distributed service restart or temporal execution
 is claimed. Existing occurrence, CONNECTION, CLASSIFICATION and transaction suites passed.
 
@@ -709,8 +743,8 @@ mvn -o -pl klab.services.resolver.server,klab.services.runtime,klab.services.rea
 ```
 
 Deploy updated API/Common, Reasoner and Resolver components together: typed influence discovery adds
-the Reasoner `/influences` endpoint, and the updated core ontology declares marksQuality's implication
-and range. Reload the worldview under that Reasoner before the live staging check. Temporal clocks
+the Reasoner `/influences` endpoint. Include S3.2's corrected OWL hierarchy when deploying
+semantic propagation. Reload the worldview before the live staging check. Temporal clocks
 and client consequences remain disabled. The subsequent Section 3.2 contract introduces S3.1 as a
 prerequisite to S4.
 
@@ -790,18 +824,108 @@ Make cached/reference reuse schedule-aware, reject implicit rescheduling, versio
 accepted request and constraints, and test Section 3.2's precedence, bounds, transport and isolation
 contracts. Keep temporal dispatch disabled and report parser/live-test coverage separately.”
 
+### S3.2 — Correct descriptive influence semantics before dispatch
+
+**Depends on:** Section 5 and S3/S3.1. **Status:** implemented (2026-09-20); temporal dispatch remains
+disabled. Schedule negotiation remains unchanged.
+
+**Deliver:** correct the core OWL hierarchy and declaration validation; remove direct MARKS promotion
+from occurrence effects; represent all five descriptive kinds in portable Reasoner evidence and
+plans; persist typed quality-to-quality AFFECTS links with provenance. Discover closure from affected
+qualities, including reverse lookup when the affected quality is a declaration's object. Bind only
+compatible observations and retain unresolved obligations. Keep creation and prerequisites distinct.
+Version changed plans and reject or explicitly migrate legacy plans with ambiguous MARKS meaning;
+do not silently replay them with new semantics.
+
+**Implementation record:** all five descriptive OWL properties specialize `describesQuality`;
+`affects` has an occurrent domain and quality range. The bundled ontology and both authoritative
+`odo-im/releases/0.1.0/odo.owl` and `odo-im/releases/latest/odo.owl` contain matching declarations
+for these seven properties. Synchronization preserves unrelated differences among the files; `latest`
+may subsequently become a link to the authoritative release.
+
+Declaration validation separates occurrence effects from descriptive sources: MARKS requires a
+quality and a boolean-quality target; proportionality requires qualities; DISCRETIZES requires an
+ordering and quantifiable target; CLASSIFIES requires a predicate and quality target, with no imposed
+uniqueness or coverage constraints. Numeric/class mappings remain the explaining model's responsibility.
+No numerical mapping or classification execution is fabricated from ontology declarations.
+
+`SemanticInfluence` transports declared source, target and property kind, plus asserted ontology/axiom
+provenance for inherited restrictions (explicitly labelled entailed evidence where no exact asserted
+origin is found). `influences` returns outgoing direct effects for occurrents and incident descriptive
+links for qualities/predicates, including reverse lookup. Reverse discovery currently scans loaded
+concepts; revision-aware indexing is a later performance optimization, not a semantic shortcut.
+
+`ProcessPlan` version 2 carries a separate descriptive-link collection. Resolution traverses this
+semantic closure without injecting inputs or changing INPUT/AFFECTED/CREATED bindings. Unresolved
+endpoints, including predicate/ordering descriptions without a matching quality observation, remain
+portable obligations in that collection. At storage, only bound qualities on the process bearer with
+overlapping support become graph endpoints. Each directed AFFECTS edge has DESCRIPTIVE role, property
+class, provenance, model and durable bearer identity. The transaction graph permits parallel property
+edges; bearer references become IDs only after assets receive durable identities.
+
+`ConsequenceClosure` computes deterministic, deduplicated reachability from direct effects or an
+affected quality through descriptive links in either direction, restricted by bearer and transition
+support. This operation neither executes actuators nor mutates observations. The scheduler excludes
+descriptive edges from INIT prerequisite traversal; writer claims still use only direct influences.
+S4 will consume this closure in causal dispatch; S5 remains responsible for transition computations.
+
+Legacy version-1 plans without descriptive evidence remain readable. Plans that put MARKS or another
+descriptive kind into direct bindings/obligations are rejected with a re-resolution diagnostic,
+including during executor restoration. They are not silently migrated or reinterpreted. Version-2
+plans preserve links through actuator graph encoding and occurrence-registration snapshots.
+
+**Deployment:** deploy API/Common, Reasoner, Resolver and Runtime together and reload the corrected
+worldview. Re-resolve rejected legacy occurrence plans before enabling dispatch. Do not reuse the
+old marks-to-affects ontology hierarchy with the new runtime.
+
+**Parser/live coverage:** Java tests exercise typed declarations, OWL axioms and transport; no real-file
+Xtext execution, running-service staging namespace, live Neo4j round trip or process restart is claimed.
+The scheduler restart and graph persistence checks use automated fixtures. Live explaining-model
+discretization/classification mappings remain separate acceptance checks.
+
+**Verification (2026-09-20):** 85 distinct focused and regression tests passed, covering inherited
+and reverse discovery of all five kinds, asserted provenance, declaration domains/ranges, portable
+plans, legacy rejection, parallel graph properties, durable bearer IDs, transitive/cyclic closure,
+support and bearer isolation, registration restoration and INIT separation. Existing occurrence,
+CONNECTION and CLASSIFICATION regressions remain included. A further 17-test runtime run checked
+specialized-quality endpoint binding and preserved declared endpoint URNs. All seven changed OWL
+property declarations were compared structurally across the three ontology files. These checks
+do not claim that the complete files are identical or that temporal dispatch has been enabled.
+
+Reproduce with the S3.1 Maven regression command, adding `ConsequenceClosureTest` to `-Dtest`.
+The same tests now include the S3.2 declaration, evidence and persistence cases. A clean reactor
+rebuild was used during verification after a missing OWL class was detected in generated output.
+
+**Gate:** OWL tests prove `describes` specialization rather than `affects` inheritance; direct effects
+require an occurrent source. Test all five kinds, inherited declarations, propagation from either
+endpoint, multi-hop paths, deduplication, cycles and bearer isolation. Verify boolean marking,
+ordering/quantifiable discretization with the explaining model's mapping, and predicate classification
+without uniqueness or coverage requirements. Test transport, graph persistence and restart preserving
+kind/direction; retain ordinary INIT and `creates` deferral. Replace the earlier tests asserting
+marks-to-affects OWL inheritance. Report parser/live coverage separately.
+
+**Prompt:** “Implement S3.2 of docs/OCCURRENCE.md before enabling S4. Follow Section 5: marks,
+increases with, decreases with, discretizes and classifies specialize describes. Separate direct
+occurrence effects from descriptive links; retain property class, declared direction and provenance
+in portable evidence and typed quality-to-quality AFFECTS edges. Compute consequence closure from
+either affected endpoint without conflating reachability with execution order, INIT or creates.
+Correct the earlier marks normalization, ontology and tests; handle legacy plans explicitly.
+Keep temporal dispatch disabled until these gates pass.”
+
 ### S4 — Deterministic simulated dispatch and catch-up
 
-**Depends on:** S2/S3/S3.1. **Deliver:** connect TimeEmitter to scheduler dispatch; match schedules and
+**Depends on:** S2/S3/S3.1/S3.2. **Deliver:** connect TimeEmitter to scheduler dispatch; match schedules and
 support; construct fresh transactional scopes; pass temporal geometry to local/remote executors;
 commit receipts and advance watermarks; restore and replay only required work with backpressure.
 
-**Gate:** no INIT calls; cadence/phase/intersection boundaries; unequal overlapping schedules and
+**Gate:** corrected typed descriptive closure under Section 5/S3.2; no INIT calls;
+cadence/phase/intersection boundaries; unequal overlapping schedules and
 independent removal; two observed events sharing timestamps; late registration needing a new cadence;
 same-twin restart; cache eviction; replay equivalence; failure before/after commit; no duplicate
 execution result or coverage; concurrent resolution cannot skip a tick. Use a controllable clock.
 
-**Prompt:** “Implement S4 of docs/OCCURRENCE.md for bounded simulated time. Wire emitter output,
+**Prompt:** “Implement S4 of docs/OCCURRENCE.md for bounded simulated time after completing S3.2's
+semantic corrections and gates. Wire emitter output,
 per-registration filtering, fresh transactions, causal dispatch and durable catch-up. Test newly
 introduced historical cadence, restart, retry, equal-time identities and cache restoration against
 an uninterrupted reference run. Include monthly calendar cadence over the daily fixture geometry;

@@ -57,7 +57,7 @@ final class ProcessModelBindings {
       assigned.add(target);
     }
     var bindings = new ArrayList<ProcessPlan.Binding>();
-    var evidence = reasoner.influences(process);
+    var evidence = reasoner.influences(process).stream().filter(i -> !i.kind().descriptive()).toList();
     for (var entry : declared.entrySet()) {
       var observable = entry.getValue();
       if (!observable.is(SemanticType.QUALITY)) continue;
@@ -94,10 +94,29 @@ final class ProcessModelBindings {
               influence.kind()
                       == org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.CREATES
                   ? ProcessPlan.Effect.CREATED
-                  : influence.input() ? ProcessPlan.Effect.INPUT : ProcessPlan.Effect.AFFECTED,
+                  : ProcessPlan.Effect.AFFECTED,
               influence.kind().name()));
     }
-    return new ProcessPlan(1, bearer.getId(), model.getUrn(), bindings, obligations);
+    // Preserve the semantic closure even where endpoints are not yet resolved observations.
+    // It does not create inputs, assign effects to qualities, or allocate observations.
+    var descriptive = new java.util.LinkedHashSet<org.integratedmodelling.klab.api.knowledge.SemanticInfluence>();
+    var queue = new java.util.ArrayDeque<org.integratedmodelling.klab.api.knowledge.Concept>();
+    bindings.forEach(b -> queue.add(b.observable().getSemantics()));
+    evidence.forEach(i -> queue.add(i.target()));
+    var visited = new HashSet<String>();
+    while (!queue.isEmpty()) {
+      var quality = queue.removeFirst();
+      if (!visited.add(quality.getUrn())) continue;
+      for (var link : reasoner.influences(quality)) {
+        if (!link.kind().descriptive()) continue;
+        if (link.source() == null || link.provenance() == null)
+          throw new KlabValidationException("Descriptive evidence requires an S3.2 Reasoner");
+        descriptive.add(link);
+        queue.add(link.source());
+        queue.add(link.target());
+      }
+    }
+    return new ProcessPlan(2, bearer.getId(), model.getUrn(), bindings, obligations, List.copyOf(descriptive));
   }
 
   private static void add(LinkedHashMap<String, Observable> declared, Observable observable) {

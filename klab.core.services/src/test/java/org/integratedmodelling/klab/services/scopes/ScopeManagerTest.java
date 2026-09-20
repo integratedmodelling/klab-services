@@ -117,6 +117,52 @@ class ScopeManagerTest {
         .declareSessionScope(any(), any(), any());
   }
 
+  @Test
+  void concurrentLoginsKeepTheSameUserScope() throws Exception {
+    var service = mock(KlabService.class);
+    when(service.serviceId()).thenReturn("resolver");
+    var user = mock(UserIdentity.class);
+    when(user.getUsername()).thenReturn("concurrent.user");
+    var manager = new ScopeManager(service);
+    var start = new java.util.concurrent.CountDownLatch(1);
+    try (var executor = java.util.concurrent.Executors.newFixedThreadPool(8)) {
+      var results = new java.util.ArrayList<java.util.concurrent.Future<ServiceUserScope>>();
+      for (int i = 0; i < 32; i++) {
+        results.add(executor.submit(() -> {
+          start.await();
+          return manager.login(user);
+        }));
+      }
+      start.countDown();
+      var first = results.getFirst().get(5, java.util.concurrent.TimeUnit.SECONDS);
+      for (var result : results) {
+        org.junit.jupiter.api.Assertions.assertSame(first,
+            result.get(5, java.util.concurrent.TimeUnit.SECONDS));
+      }
+      org.junit.jupiter.api.Assertions.assertSame(first,
+          manager.getScope("concurrent.user", ServiceUserScope.class));
+    }
+  }
+
+  @Test
+  void refreshesKnownRuntimeBeforeRejectingStaleOfflineStatus() {
+    var fixture = fixture(true);
+    var runtime = mock(org.integratedmodelling.common.services.client.RuntimeClient.class);
+    when(runtime.serviceId()).thenReturn("runtime-id");
+    var offline = KlabService.ServiceStatus.offline(KlabService.Type.RUNTIME, "runtime-id");
+    var online = new org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl();
+    online.setOperational(true);
+    var current = new java.util.concurrent.atomic.AtomicReference<KlabService.ServiceStatus>(offline);
+    when(runtime.status()).thenAnswer(call -> current.get());
+    when(runtime.refreshStatus()).thenAnswer(call -> { current.set(online); return online; });
+    fixture.userScope.addService(runtime);
+
+    org.junit.jupiter.api.Assertions.assertSame(runtime,
+        fixture.manager.findOriginatingRuntime(fixture.userScope, "runtime-id"));
+    verify(runtime).refreshStatus();
+    assertNull(fixture.manager.findOriginatingRuntime(fixture.userScope, "unknown-runtime"));
+  }
+
   private Fixture fixture(boolean localFederation) {
     var user = mock(UserIdentity.class);
     var ownerService = mock(KlabService.class);

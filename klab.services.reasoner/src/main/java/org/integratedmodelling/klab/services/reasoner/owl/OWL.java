@@ -1005,6 +1005,34 @@ public class OWL {
     return new SpecializingRestrictionVisitor(target, restricted, true, this).getResult();
   }
 
+  /** Asserted origins of an effective restriction, including named ancestors and intersections. */
+  public String restrictionProvenance(Concept source, Property property, Concept target) {
+    var origins = new java.util.TreeSet<String>();
+    var visited = new java.util.HashSet<org.semanticweb.owlapi.model.OWLClass>();
+    class Origins {
+      void visit(org.semanticweb.owlapi.model.OWLClassExpression expression, String origin) {
+        if (expression instanceof org.semanticweb.owlapi.model.OWLClass named) {
+          if (!visited.add(named)) return;
+          for (var ontology : manager.getOntologies()) {
+            for (var axiom : ontology.getSubClassAxiomsForSubClass(named))
+              visit(axiom.getSuperClass(), ontology.getOntologyID() + " " + axiom);
+            for (var axiom : ontology.getEquivalentClassesAxioms(named))
+              for (var equivalent : axiom.getClassExpressions())
+                if (!equivalent.equals(named)) visit(equivalent, ontology.getOntologyID() + " " + axiom);
+          }
+        } else if (expression instanceof org.semanticweb.owlapi.model.OWLObjectIntersectionOf intersection) {
+          for (var operand : intersection.getOperands()) visit(operand, origin);
+        } else if (expression instanceof org.semanticweb.owlapi.model.OWLQuantifiedRestriction<?> restriction
+            && restriction.getFiller() instanceof org.semanticweb.owlapi.model.OWLClassExpression filler
+            && getPropertyFor(restriction.getProperty()).equals(property)
+            && unwrap(filler).contains(target)) origins.add(origin);
+      }
+    }
+    new Origins().visit(getOWLClass(source), source.getUrn());
+    return origins.isEmpty() ? "Entailed: " + source.getUrn() + " " + property + " " + target.getUrn()
+        : String.join("\n", origins);
+  }
+
   public Collection<Concept> getRestrictedClasses(
       Concept target, Property restricted, boolean useSuperproperties) {
     return new SpecializingRestrictionVisitor(target, restricted, useSuperproperties, this)

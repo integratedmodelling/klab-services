@@ -21,6 +21,25 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.junit.jupiter.api.*;
 
 class ClassificationTransactionTest {
+  @Test void parallelDescriptivePropertiesPersistWithDurableBearerAndDoNotBecomeWriterClaims() {
+    var source = pending(41, false).member();
+    var target = pending(42, false).member();
+    var bearer = new ObservationImpl(); bearer.setId(-55); bearer.setObservable(source.getObservable());
+    bearer.setGeometry(source.getGeometry());
+    root.add(bearer);
+    for (var kind : List.of(SemanticInfluence.Kind.INCREASES_WITH, SemanticInfluence.Kind.DECREASES_WITH))
+      root.link(source, target, GraphModel.Relationship.AFFECTS, ProcessPlan.EDGE_ROLE, ProcessPlan.DESCRIPTIVE,
+          "property", kind.property(), "semanticRelation", kind.name(), "provenance", "test:restriction",
+          "bearerId", bearer);
+    assertEquals(2, root.outgoing(source).stream().filter(l -> l.type() == GraphModel.Relationship.AFFECTS).count());
+    assertTrue(root.commit() > 0);
+    assertTrue(bearer.getId() > 0);
+    for (var kind : List.of(SemanticInfluence.Kind.INCREASES_WITH, SemanticInfluence.Kind.DECREASES_WITH))
+      verify(storage).link(eq(source), eq(target), eq(GraphModel.Relationship.AFFECTS),
+          eq("sequence"), anyInt(), eq(ProcessPlan.EDGE_ROLE), eq(ProcessPlan.DESCRIPTIVE),
+          eq("property"), eq(kind.property()), eq("semanticRelation"), eq(kind.name()),
+          eq("provenance"), eq("test:restriction"), eq("bearerId"), eq(bearer.getId()));
+  }
   DigitalTwinImpl twin;
   KnowledgeGraphNeo4j kg;
   KnowledgeGraph.Transaction storage;

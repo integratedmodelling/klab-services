@@ -657,8 +657,9 @@ public interface Reasoner extends KlabService {
   Collection<Concept> affectedOrCreated(Semantics semantics);
 
   /**
-   * Typed inherited restriction evidence. Proportionality fillers influence the declaring
-   * observable.
+   * Typed inherited restriction evidence: outgoing direct effects for occurrents; incident
+   * descriptive links for qualities/predicates, preserving their declared source and target.
+   * Descriptive reachability is not a computational prerequisite or a direct effect.
    */
   default Collection<org.integratedmodelling.klab.api.knowledge.SemanticInfluence> influences(
       Semantics semantics) {

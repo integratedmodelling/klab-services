@@ -139,6 +139,13 @@ class OccurrenceRegistrationTest {
       var negotiation = new OccurrenceNegotiation(1, "test:model", null,
           List.of(new OccurrenceNegotiation.Declaration("test:model", declaration)), declaration);
       f.plan.getData().put(OccurrenceNegotiation.DATA_KEY, Utils.Json.asString(negotiation));
+      var unresolved = observation("Wet", SemanticType.QUALITY, -44);
+      var semanticPlan = new ProcessPlan(2, f.bearer.getId(), "test:model",
+          List.of(new ProcessPlan.Binding("elevation", f.quality.getObservable(), ProcessPlan.Effect.AFFECTED, true, false)),
+          List.of(), List.of(new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(
+              unresolved.getObservable().getSemantics(), f.quality.getObservable().getSemantics(),
+              org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.INCREASES_WITH, "test:Wet restriction")));
+      f.plan.getData().put(ProcessPlan.DATA_KEY, Utils.Json.asString(semanticPlan));
       f.transaction.registerExecutors();
       assertTrue(f.scheduler.submit(f.process, f.scope));
       assertEquals(1, f.qualityInit.get());
@@ -149,6 +156,8 @@ class OccurrenceRegistrationTest {
       assertEquals(negotiation, Utils.Json.parseObject(f.process.getMetadata().get(OccurrenceNegotiation.DATA_KEY).toString(),
           OccurrenceNegotiation.class));
       var registration = f.scheduler.getOccurrenceRegistrations().get(f.process.getId());
+      var semanticSnapshot = Utils.Json.parseObject(registration.plan(), Actuator.class);
+      assertEquals(semanticPlan, Utils.Json.parseObject(semanticSnapshot.getData().get(ProcessPlan.DATA_KEY).toString(), ProcessPlan.class));
       assertEquals(Time.Resolution.Type.MONTH, registration.schedules().getFirst().bound().unit());
       var restoredPlan = Utils.Json.parseObject(registration.plan(), Actuator.class);
       assertEquals(negotiation, Utils.Json.parseObject(restoredPlan.getData().get(OccurrenceNegotiation.DATA_KEY).toString(),
@@ -238,6 +247,17 @@ class OccurrenceRegistrationTest {
       f.transaction.fail(new IllegalStateException("rollback writer claim"));
       assertDoesNotThrow(() -> concurrent.linkProcessInfluence(competitor, f.quality, "test:other", "elevation"));
       concurrent.fail(new IllegalStateException("test cleanup"));
+    }
+  }
+
+  @Test void descriptiveCyclesNeverBecomeInitPrerequisites() throws Exception {
+    try (var f = new Fixture()) {
+      var link = new LinkImpl(f.quality, f.quality, GraphModel.Relationship.AFFECTS);
+      link.properties().put(ProcessPlan.EDGE_ROLE, ProcessPlan.DESCRIPTIVE);
+      when(f.kg.getLinks(f.quality, GraphModel.Relationship.Direction.INCOMING, f.scope,
+          GraphModel.Relationship.AFFECTS)).thenReturn(List.of(link));
+      assertTrue(f.scheduler.submit(f.process, f.scope));
+      assertEquals(1, f.qualityInit.get());
     }
   }
 }

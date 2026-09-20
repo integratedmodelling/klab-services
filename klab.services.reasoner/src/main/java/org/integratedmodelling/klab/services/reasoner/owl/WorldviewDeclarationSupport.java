@@ -18,6 +18,9 @@ public final class WorldviewDeclarationSupport {
       Function<KimConcept, Concept> resolve) {
     // Resolve and validate all operands before writing any of these restrictions.
     var restrictions = new LinkedHashMap<String, List<Concept>>();
+    if (!statement.getQualitiesAffected().isEmpty()
+        && !(owner.is(SemanticType.PROCESS) || owner.is(SemanticType.EVENT)))
+      throw new KlabValidationException("affects requires a process or event source");
     add(
         restrictions,
         "odo:affects",
@@ -67,6 +70,13 @@ public final class WorldviewDeclarationSupport {
         SemanticType.OBSERVABLE,
         resolve);
     for (var description : statement.getObservablesDescribed()) {
+      boolean validOwner = switch (description.getSecond()) {
+        case CLASSIFIES -> owner.is(SemanticType.PREDICATE);
+        case DISCRETIZES -> owner.is(SemanticType.ORDERING);
+        case MARKS, INCREASES_WITH, DECREASES_WITH -> owner.is(SemanticType.QUALITY);
+        case DESCRIBES -> owner.is(SemanticType.QUALITY) || owner.is(SemanticType.PREDICATE);
+      };
+      if (!validOwner) throw new KlabValidationException("Invalid source for " + description.getSecond());
       String property =
           switch (description.getSecond()) {
             case DESCRIBES -> "odo:describesQuality";
@@ -80,8 +90,8 @@ public final class WorldviewDeclarationSupport {
           restrictions,
           property,
           List.of(description.getFirst()),
-          description.getSecond() == KimConceptStatement.DescriptionType.MARKS
-              ? SemanticType.PRESENCE
+          description.getSecond() == KimConceptStatement.DescriptionType.MARKS ? SemanticType.PRESENCE
+              : description.getSecond() == KimConceptStatement.DescriptionType.DISCRETIZES ? SemanticType.QUANTIFIABLE
               : SemanticType.QUALITY,
           resolve);
     }

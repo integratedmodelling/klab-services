@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
+import org.springframework.web.ErrorResponseException;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -30,10 +32,16 @@ public class KlabErrorHandler {
     return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.NOT_FOUND);
   }
 
+  @ExceptionHandler(ErrorResponseException.class)
+  public ResponseEntity<ProblemDetail> handleStatusException(
+      ErrorResponseException ex) {
+    return new ResponseEntity<>(ex.getBody(), ex.getHeaders(), ex.getStatusCode());
+  }
+
   @ExceptionHandler(Throwable.class)
   public @ResponseBody ResponseEntity<ErrorResponse> handleDefaultException(Throwable ex) {
     ErrorResponse errorResponse =
         ErrorResponse.create(ex, HttpStatus.INTERNAL_SERVER_ERROR, Utils.Exceptions.stackTrace(ex));
-    return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.BAD_REQUEST);
+    return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

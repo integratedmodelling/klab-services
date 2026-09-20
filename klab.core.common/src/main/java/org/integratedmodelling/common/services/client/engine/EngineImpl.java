@@ -2,7 +2,6 @@ package org.integratedmodelling.common.services.client.engine;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -57,13 +56,13 @@ public class EngineImpl implements Engine, PropertyHolder {
   private Federation federationData;
   private Consumer<Status> engineStatusMonitor;
   private BiConsumer<KlabService, KlabService.ServiceStatus> serviceStatusMonitor;
-  private boolean onlineStatusNotified = false;
+  private volatile boolean onlineStatusNotified = false;
   private final AtomicBoolean runtimeAuxiliaryCheckRunning = new AtomicBoolean(false);
   private Stack softwareStack;
   private Stack.Tag distributionTag = Stack.Tag.LATEST_STABLE;
   private Worldview worldview;
   private long lastWorldviewUpdate;
-  private final Set<String> advertisedScopeTargets = ConcurrentHashMap.newKeySet();
+  private final ScopeAdvertisements scopeAdvertisements = new ScopeAdvertisements();
 
   public EngineImpl(
       Consumer<Status> engineStatusMonitor,
@@ -99,6 +98,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   public boolean shutdown() {
 
     stopped.set(true);
+    scopeAdvertisements.close();
     booted.set(false);
 
     if (serviceMonitor != null) {
@@ -209,7 +209,7 @@ public class EngineImpl implements Engine, PropertyHolder {
     // this will force a re-advertising of services when they all come up, as long as the engine
     // becomes operational again only when the 4 local are available
     onlineStatusNotified = false;
-    advertisedScopeTargets.clear();
+    scopeAdvertisements.clear();
     return serviceMonitor.startLocalServices(softwareStack, distributionTag, defaultUser);
   }
 
@@ -290,11 +290,9 @@ public class EngineImpl implements Engine, PropertyHolder {
     if (!onlineStatusNotified
         && status.getCondition() != Status.EngineCondition.TRANSITIONING
         && status.isOperational()) {
-      // advertise the user scope to all online services
-      // TODO strategy is static - if we have services coming in at runtime we will need to notify
-      //  them too.
-      notifyScopeToServices(defaultUser);
+      // Subsequent service changes refresh the advertisement for every online peer.
       onlineStatusNotified = true;
+      notifyScopeToServices(defaultUser);
     }
   }
 
@@ -325,13 +323,16 @@ public class EngineImpl implements Engine, PropertyHolder {
     }
   }
 
-  private void notifyScopeToServices(UserScope userScope) {
+  private synchronized void notifyScopeToServices(UserScope userScope) {
 
     var request = createScopeNotification(userScope);
 
     for (var service : getUser().getServices(KlabService.class)) {
-      notifyScopeToService(service, request);
+      if (service instanceof BaseServiceClient client) {
+        scopeAdvertisements.submit(client, request);
+      }
     }
+    scopeAdvertisements.deliverPending();
   }
 
   private UserScopeNotification createScopeNotification(UserScope userScope) {
@@ -383,21 +384,6 @@ public class EngineImpl implements Engine, PropertyHolder {
     return request;
   }
 
-  private void notifyScopeToService(KlabService service, UserScopeNotification request) {
-    if (service instanceof BaseServiceClient serviceClient) {
-      Thread.ofVirtual()
-          .start(
-              () -> {
-                if (serviceClient.notifyScope(request)) {
-                  var serviceId = serviceClient.serviceId();
-                  if (serviceId != null) {
-                    advertisedScopeTargets.add(serviceId);
-                  }
-                }
-              });
-    }
-  }
-
   private void notifyLocalService(
       KlabService klabService, KlabService.ServiceStatus serviceStatus) {
     if (serviceStatusMonitor != null) {
@@ -407,9 +393,9 @@ public class EngineImpl implements Engine, PropertyHolder {
         && onlineStatusNotified
         && serviceStatus != null
         && serviceStatus.isOperational()
-        && serviceStatus.getServiceId() != null
-        && advertisedScopeTargets.add(serviceStatus.getServiceId())) {
-      notifyScopeToService(klabService, createScopeNotification(defaultUser));
+        && serviceStatus.getServiceId() != null) {
+      // Every peer needs the updated topology, including peers already notified at startup.
+      notifyScopeToServices(defaultUser);
     }
   }
 

@@ -45,7 +45,7 @@ import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.DefaultEdge;
 
 /** TODO each digital twin should have its own logger */
@@ -314,7 +314,8 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     public TransactionImpl(Activity activity, ServiceContextScope scope, Object... data) {
 
-      this.graph = new DefaultDirectedGraph<>(RelationshipEdge.class);
+      // The same endpoints may have prerequisites and several descriptive property classes.
+      this.graph = new DirectedPseudograph<>(RelationshipEdge.class);
       this.activity = activity;
       this.scope = scope;
       this.modified = new HashSet<>();
@@ -1004,7 +1005,8 @@ public class DigitalTwinImpl implements DigitalTwin {
           (key, value) -> {
             if (!key.equals("sequence")) {
               ret.add(key);
-              ret.add(value instanceof Geometry g ? g.encode() : value);
+              ret.add(value instanceof Geometry g ? g.encode()
+                  : value instanceof RuntimeAsset asset ? asset.getId() : value);
             }
           });
       return ret.toArray();

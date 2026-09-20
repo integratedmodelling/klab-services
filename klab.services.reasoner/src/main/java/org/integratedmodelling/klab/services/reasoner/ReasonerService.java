@@ -2011,51 +2011,34 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public Collection<org.integratedmodelling.klab.api.knowledge.SemanticInfluence> influences(
       Semantics semantics) {
-    var result =
-        new java.util.ArrayList<org.integratedmodelling.klab.api.knowledge.SemanticInfluence>();
-    var properties =
-        java.util.Map.of(
-            org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.AFFECTS,
-                NS.AFFECTS_PROPERTY,
-            org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.CREATES,
-                NS.CREATES_PROPERTY,
-            org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.MARKS,
-                "odo:marksQuality",
-            org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.INCREASES_WITH,
-                "odo:increasesWith",
-            org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.DECREASES_WITH,
-                "odo:decreasesWith");
-    for (var kind : org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.values()) {
-      var property = owl.getProperty(properties.get(kind));
-      if (property == null) continue;
-      for (var target : owl.getRestrictedClasses(semantics.asConcept(), property)) {
-        if (kind == org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.MARKS
-            && !target.is(SemanticType.PRESENCE))
-          throw new KlabValidationException("marks requires a boolean quality: " + target.getUrn());
-        if (!owl.getOntology(target.getNamespace()).isInternal())
-          result.add(
-              new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(target, kind));
+    var result = new java.util.LinkedHashSet<org.integratedmodelling.klab.api.knowledge.SemanticInfluence>();
+    var query = semantics.asConcept();
+    boolean occurrence = query.is(SemanticType.PROCESS) || query.is(SemanticType.EVENT);
+    // Query both ends of descriptive restrictions. Keep the declaration direction in the result.
+    var sources = occurrence ? List.of(query) : owl.listConcepts(false);
+    for (var source : sources) {
+      for (var kind : org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.values()) {
+        if (kind.descriptive() == occurrence) continue;
+        if (kind.descriptive() && !(source.is(SemanticType.QUALITY) || source.is(SemanticType.PREDICATE))) continue;
+        var property = owl.getProperty(kind.property());
+        if (property == null) continue;
+        for (var target : owl.getRestrictedClasses(source, property)) {
+          if (owl.getOntology(target.getNamespace()).isInternal()) continue;
+          if (!occurrence && !source.equals(query) && !target.equals(query)
+              && !is(query, target)) continue;
+          result.add(new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(
+              source, target, kind, owl.restrictionProvenance(source, property, target)));
+        }
       }
     }
-    result.sort(
-        java.util.Comparator.comparing(
-                (org.integratedmodelling.klab.api.knowledge.SemanticInfluence i) -> i.kind().name())
-            .thenComparing(i -> i.target().getUrn()));
-    return result;
+    return result.stream().sorted(java.util.Comparator.comparing(
+        (org.integratedmodelling.klab.api.knowledge.SemanticInfluence i) -> i.source().getUrn())
+        .thenComparing(i -> i.kind().name()).thenComparing(i -> i.target().getUrn())).toList();
   }
-
   @Override
   public Collection<Concept> affected(Semantics semantics) {
     Set<Concept> ret = new HashSet<>();
-    // Explicitly include marks for worldviews loaded with an older core ontology as well.
-    var marks = owl.getProperty("odo:marksQuality");
-    if (marks != null) {
-      for (var target : owl.getRestrictedClasses(semantics.asConcept(), marks)) {
-        if (!target.is(SemanticType.PRESENCE))
-          throw new KlabValidationException("marks requires a boolean quality: " + target.getUrn());
-        if (!owl.getOntology(target.getNamespace()).isInternal()) ret.add(target);
-      }
-    }
+    if (!semantics.is(SemanticType.PROCESS) && !semantics.is(SemanticType.EVENT)) return ret;
     for (Concept c :
         this.owl.getRestrictedClasses(
             semantics.asConcept(), this.owl.getProperty(NS.AFFECTS_PROPERTY))) {
@@ -2122,9 +2105,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean affectedBy(Semantics affected, Semantics affecting) {
-    Concept described = describedType(affected);
     for (Concept c : affected(affecting)) {
-      if (is(affected, c) || (described != null && is(described, c))) {
+      if (is(affected, c)) {
         return true;
       }
     }
@@ -2133,12 +2115,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean createdBy(Semantics affected, Semantics affecting) {
-    Concept described = describedType(affected);
-    if (described != null && is(described, affecting)) {
-      return true;
-    }
     for (Concept c : created(affecting)) {
-      if (is(affected, c) || (described != null && is(described, c))) {
+      if (is(affected, c)) {
         return true;
       }
     }

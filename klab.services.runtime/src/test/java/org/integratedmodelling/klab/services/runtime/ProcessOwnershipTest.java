@@ -27,6 +27,8 @@ class ProcessOwnershipTest {
     var bearer = ConnectionExecutionTest.observation(-20, SemanticType.EVENT, false, false);
     var process = ConnectionExecutionTest.observation(-30, SemanticType.PROCESS, false, false);
     var quality = ConnectionExecutionTest.observation(-40, SemanticType.QUALITY, false, false);
+    quality.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        "T0(1){tstart=1388534400000,tend=1420070400000,ttype=PHYSICAL}"));
     var scope = mock(ServiceContextScope.class, RETURNS_DEEP_STUBS);
     when(scope.getContextObservation()).thenReturn(root);
     when(scope.getObservation(-20)).thenReturn(bearer);
@@ -35,8 +37,17 @@ class ProcessOwnershipTest {
     plan.setExecutionRole(Actuator.ExecutionRole.PROCESS);
     var input = new ActuatorImpl(); input.setId(-40); input.setName("elevation"); input.setObservation(quality);
     plan.getChildren().add(input);
-    var bindings = new ProcessPlan(1, -20, "test:model", List.of(
-        new ProcessPlan.Binding("elevation", quality.getObservable(), ProcessPlan.Effect.AFFECTED, true, true)), List.of());
+    var parentQuality = new org.integratedmodelling.common.knowledge.ConceptImpl();
+    parentQuality.setUrn("test:ParentQuality"); parentQuality.setName("ParentQuality"); parentQuality.setNamespace("test");
+    parentQuality.getType().add(SemanticType.QUALITY);
+    var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+    doReturn(reasoner).when(scope).getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    when(reasoner.is(quality.getObservable(), parentQuality)).thenReturn(true);
+    var relation = new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(parentQuality,
+        quality.getObservable().getSemantics(), org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.INCREASES_WITH,
+        "test:inherited restriction");
+    var bindings = new ProcessPlan(2, -20, "test:model", List.of(
+        new ProcessPlan.Binding("elevation", quality.getObservable(), ProcessPlan.Effect.AFFECTED, true, true)), List.of(), List.of(relation));
     plan.getData().put(ProcessPlan.DATA_KEY, Utils.Json.asString(bindings));
     ((Map<Actuator, Observation>) field(compiled, "actuatorObservations")).putAll(Map.of(plan, process, input, quality));
     ((Map<Long, Observation>) field(compiled, "dependentObservations")).put(quality.getId(), quality);
@@ -48,6 +59,11 @@ class ProcessOwnershipTest {
     verify(transaction, never()).link(process, quality, GraphModel.Relationship.HAS_CHILD);
     verify(transaction, never()).link(root, quality, GraphModel.Relationship.HAS_CHILD);
     verify(transaction).linkProcessInfluence(process, quality, "test:model", "elevation", List.of());
+    verify(transaction).link(quality, quality, GraphModel.Relationship.AFFECTS,
+        ProcessPlan.EDGE_ROLE, ProcessPlan.DESCRIPTIVE, "property", "odo:increasesWith",
+        "semanticRelation", "INCREASES_WITH", "provenance", "test:inherited restriction",
+        "declaredSource", "test:ParentQuality", "declaredTarget", quality.getObservable().getSemantics().getUrn(),
+        "model", "test:model", "bearerId", bearer);
     assertTrue(quality.isSubstantialQuality());
     var callback = org.mockito.ArgumentCaptor.forClass(Runnable.class);
     verify(transaction).beforeCommit(callback.capture());

@@ -254,10 +254,9 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
                 scope,
                 GraphModel.Relationship.AFFECTS)) {
 
-      if (org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.INFLUENCE.equals(
-          affecting
-              .properties()
-              .get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE))) continue;
+      var role = affecting.properties().get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE);
+      if (org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.INFLUENCE.equals(role)
+          || org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DESCRIPTIVE.equals(role)) continue;
 
       if (checkEvent((Observation) affecting.source(), causingEvent)) {
         continue;

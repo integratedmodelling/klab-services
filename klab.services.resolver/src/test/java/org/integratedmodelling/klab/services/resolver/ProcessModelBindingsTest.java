@@ -20,6 +20,29 @@ import org.integratedmodelling.klab.utilities.Utils;
 import org.junit.jupiter.api.*;
 
 class ProcessModelBindingsTest {
+  @Test void descriptiveClosureRetainsDirectionWithoutAddingInputsEffectsOrCreation() {
+    var f = new Fixture();
+    var other = observable("slope", SemanticType.QUALITY);
+    var third = observable("wet", SemanticType.QUALITY, SemanticType.PRESENCE);
+    var firstLink = new SemanticInfluence(other.getSemantics(), f.elevation.getSemantics(),
+        SemanticInfluence.Kind.INCREASES_WITH, "test:slope restriction");
+    var secondLink = new SemanticInfluence(other.getSemantics(), third.getSemantics(),
+        SemanticInfluence.Kind.MARKS, "test:wet restriction");
+    when(f.reasoner.influences(f.elevation.getSemantics())).thenReturn(List.of(firstLink));
+    when(f.reasoner.influences(other.getSemantics())).thenReturn(List.of(firstLink, secondLink));
+    when(f.reasoner.influences(third.getSemantics())).thenReturn(List.of(secondLink));
+    var plan = ProcessModelBindings.analyze(f.model, f.scope);
+    assertEquals(2, plan.version());
+    assertEquals(List.of(firstLink, secondLink), plan.descriptiveLinks());
+    assertEquals(1, plan.bindings().size());
+    assertTrue(plan.obligations().isEmpty());
+    var restored = Utils.Json.parseObject(Utils.Json.asString(plan), ProcessPlan.class);
+    assertEquals(plan, restored);
+    assertThrows(IllegalArgumentException.class, () -> new ProcessPlan(1, 100, "legacy",
+        List.of(new ProcessPlan.Binding("elevation", f.elevation, ProcessPlan.Effect.AFFECTED,
+            true, false, List.of("MARKS"))), List.of()));
+    assertDoesNotThrow(() -> new ProcessPlan(1, 100, "legacy-safe", plan.bindings(), plan.obligations()));
+  }
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
   static ObservableImpl observable(String name, SemanticType... types) {
     var concept = new ConceptImpl();

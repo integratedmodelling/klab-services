@@ -13,6 +13,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.BaseServiceClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -167,7 +168,7 @@ public class ScopeManager {
     }
   }
 
-  public ServiceUserScope login(UserIdentity user) {
+  public synchronized ServiceUserScope login(UserIdentity user) {
 
     ServiceUserScope ret = scopes.get(user.getUsername());
     if (ret == null) {
@@ -246,7 +247,7 @@ public class ScopeManager {
     return ret;
   }
 
-  public ServiceUserScope getOrCreateUserScope(EngineAuthorization authorization) {
+  public synchronized ServiceUserScope getOrCreateUserScope(EngineAuthorization authorization) {
 
     var ret = scopes.get(authorization.getUsername());
     if (ret instanceof ServiceUserScope userScope) {
@@ -574,9 +575,7 @@ public class ScopeManager {
 
         // we need the original service to retrieve the configuration
         var originalService =
-            userScope
-                .findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()))
-                .orElse(null);
+            findOriginatingRuntime(userScope, runtimeId);
 
         if (originalService != null) {
           Logging.INSTANCE.debug(
@@ -676,6 +675,31 @@ public class ScopeManager {
             + serviceId()
             + " for "
             + describeAuthorization(authorization));
+    return null;
+  }
+
+  /** Refresh only a known, authorized Runtime; never discover a service from an arbitrary header. */
+  RuntimeService findOriginatingRuntime(ServiceUserScope userScope, String runtimeId) {
+    var usable = userScope.findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()));
+    if (usable.isPresent()) {
+      return usable.get();
+    }
+    for (var candidate : userScope.getServices(KlabService.class)) {
+      if (candidate instanceof RuntimeService runtime && runtimeId.equals(runtime.serviceId())) {
+        if (candidate instanceof BaseServiceClient client) {
+          try {
+            client.refreshStatus();
+          } catch (RuntimeException e) {
+            Logging.INSTANCE.warn("Could not refresh originating Runtime " + runtimeId + ": " + e);
+            return null;
+          }
+        }
+        return userScope.findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()))
+            .orElse(null);
+      }
+    }
+    Logging.INSTANCE.warn("Originating Runtime " + runtimeId
+        + " has not been advertised to user scope " + userScope.getId());
     return null;
   }
 

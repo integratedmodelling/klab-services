@@ -19,8 +19,13 @@ class WorldviewOwlRestrictionTest {
     var f = manager.getOWLDataFactory();
     String ns = "http://integratedmodelling.org/odo#";
     var marks = f.getOWLObjectProperty(IRI.create(ns + "marksQuality"));
-    assertTrue(ontology.containsAxiom(f.getOWLSubObjectPropertyOfAxiom(marks,
-        f.getOWLObjectProperty(IRI.create(ns + "affects")))));
+    for (var name : List.of("marksQuality", "increasesWith", "decreasesWith", "discretizesQuality", "classifiesQuality")) {
+      var property = f.getOWLObjectProperty(IRI.create(ns + name));
+      assertTrue(ontology.containsAxiom(f.getOWLSubObjectPropertyOfAxiom(property,
+          f.getOWLObjectProperty(IRI.create(ns + "describesQuality")))));
+      assertFalse(ontology.containsAxiom(f.getOWLSubObjectPropertyOfAxiom(property,
+          f.getOWLObjectProperty(IRI.create(ns + "affects")))));
+    }
     assertTrue(ontology.containsAxiom(f.getOWLObjectPropertyRangeAxiom(marks,
         f.getOWLClass(IRI.create(ns + "Presence")))));
     for (String kind : List.of("Identity", "Realm", "Extent", "Attribute")) {
@@ -33,8 +38,7 @@ class WorldviewOwlRestrictionTest {
     for (String name : List.of("increasesWith", "decreasesWith")) {
       var property = f.getOWLObjectProperty(IRI.create(ns + name));
       assertTrue(ontology.containsAxiom(f.getOWLObjectPropertyRangeAxiom(property,
-          f.getOWLObjectUnionOf(f.getOWLClass(IRI.create(ns + "Quality")),
-              f.getOWLClass(IRI.create(ns + "Ordering"))))));
+          f.getOWLClass(IRI.create(ns + "Quality")))));
     }
     var reasoner = new org.semanticweb.HermiT.Reasoner.ReasonerFactory().createReasoner(ontology);
     try {
