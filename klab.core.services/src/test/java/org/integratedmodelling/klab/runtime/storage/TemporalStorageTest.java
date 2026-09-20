@@ -97,6 +97,27 @@ class TemporalStorageTest {
     }
   }
 
+  @Test void plannedSessionKeepsItsCommittedRevisionWhileLaterDataIsPublished() {
+    var f = new Fixture(false);
+    var writes = f.begin("first", 1000, 2000);
+    f.scan(writes, TemporalWriteSet.Access.WRITE).add(90);
+    writes.prepare(); f.commit();
+    var request = StorageScan.Request.nativeRead(event("first", 1000, 2000),
+        f.layout, Storage.DoubleScanner.class);
+    try (var session = f.storage.open(f.storage.plan(request))) {
+      writes = f.begin("second", 2000, 3000);
+      f.scan(writes, TemporalWriteSet.Access.WRITE).add(80);
+      writes.prepare(); f.commit();
+      assertEquals(90, session.scanners().getFirst().get());
+      try (var latest = f.storage.open(f.storage.plan(StorageScan.Request.nativeRead(
+          event("second", 2000, 3000), f.layout, Storage.DoubleScanner.class)))) {
+        assertEquals(80, latest.scanners().getFirst().get());
+        assertNotEquals(session.scanners().getFirst().shard().getUrn(),
+            latest.scanners().getFirst().shard().getUrn());
+      }
+    } finally { f.storage.close(null); }
+  }
+
   @Test void unchangedReadersWritersAndRevertedWritesAllocateNothing() throws Exception {
     var f=new Fixture(false); var writes=f.begin("no-op",1000,2000);
     assertArrayEquals(new double[]{100,200,350},f.read(writes));

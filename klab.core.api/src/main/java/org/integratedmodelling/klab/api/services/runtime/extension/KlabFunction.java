@@ -230,7 +230,9 @@ public @interface KlabFunction {
   /**
    * Number of allowed splits for buffers in the contextualization strategy. Only relevant for
    * quality contextualizers. Default is up to the implementation. Pass 1 if parallelization is not
-   * wanted. Overrides any settings made with the @split annotation on models and observables.
+   * wanted. This declaration is copied to the service prototype. Its intended precedence over
+   * model/observable sharding hints is not yet enforced by runtime strategy harmonization;
+   * see docs/STORAGE.md for the current annotation and attribution contract.
    *
    * <p>TODO annotating a function that takes a single Buffer should automatically force this to 1.
    *
@@ -239,7 +241,8 @@ public @interface KlabFunction {
   int split() default -1;
 
   /**
-   * Type of filling curve to override any other specification given in code.
+   * Filling-curve requirement recorded in the service prototype. This does not currently guarantee
+   * runtime remapping or override the observation's attributed native strategy.
    *
    * @return
    */
@@ -257,10 +260,9 @@ public @interface KlabFunction {
   long minSizeForSplitting() default 0;
 
   /**
-   * If the adapter has a limitation in the size of the geometry it can handle, report it here. The
-   * resolver will skip functions that do not meet this requirement.
-   *
-   * @return
+   * Maximum states per shard, or zero if unspecified. Must be nonnegative and at least the
+   * declared minimum when positive. Planned reads enforce this cap; Java consumer requirements
+   * are not yet enforced end to end by runtime attribution. See docs/STORAGE.md.
    */
   long maxSize() default 0;
 }

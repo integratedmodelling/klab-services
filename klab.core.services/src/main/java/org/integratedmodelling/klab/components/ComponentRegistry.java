@@ -2343,7 +2343,7 @@ public class ComponentRegistry {
     distribution.setMinSplitSize(annotation.minSizeForSplitting());
     distribution.setSuggestedSplits(annotation.split());
     distribution.setDataType(Storage.Type.defaultFor(annotation.type()));
-    ret.setShardingStrategy(distribution);
+    ret.setShardingStrategy(distribution.validate());
     ret.getType().add(annotation.type());
 
     for (KlabFunction.Argument argument : annotation.parameters()) {
@@ -2733,6 +2733,7 @@ public class ComponentRegistry {
     private final int splits;
     private final Data.FillCurve fillCurve;
     private final long minSplitSize;
+    private final long maxShardSize;
     private Set<Artifact.Type> resourceType = EnumSet.noneOf(Artifact.Type.class);
     private final Version version;
     boolean universal;
@@ -2770,9 +2771,11 @@ public class ComponentRegistry {
       this.embeddable = annotation.embeddable();
       this.componentUrn = componentUrn;
       this.componentVersion = componentVersion;
-      this.splits = annotation.splits();
-      this.fillCurve = annotation.fillCurve();
-      this.minSplitSize = annotation.minSizeForSplitting();
+      var sharding = AdapterDescriptor.shardingStrategy(annotation);
+      this.splits = sharding.getSuggestedSplits();
+      this.fillCurve = sharding.getCurve();
+      this.minSplitSize = sharding.getMinSplitSize();
+      this.maxShardSize = sharding.getMaxBufferSize();
 
       if (annotation.type() != Artifact.Type.VOID) {
         this.resourceType.add(annotation.type());
@@ -3154,7 +3157,7 @@ public class ComponentRegistry {
                 + "methods");
       }
 
-      return new AdapterDescriptor(
+      var descriptor = new AdapterDescriptor(
           name,
           version,
           capabilities.getServiceId(),
@@ -3174,6 +3177,8 @@ public class ComponentRegistry {
           importSchemata,
           exportSchemata,
           this.parameters);
+      descriptor.setMaxSize(maxShardSize);
+      return descriptor;
     }
 
     private Pair<Extensions.FunctionDescriptor, ServiceImplementation> createServiceImplementation(

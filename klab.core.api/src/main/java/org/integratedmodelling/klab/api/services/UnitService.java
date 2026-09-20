@@ -46,10 +46,15 @@ public interface UnitService extends Service {
   boolean isCompatible(Unit unit, Unit other);
 
   /**
-   * @param d
-   * @param from
-   * @param to
-   * @return
+   * Convert a value from the source unit to the destination unit. The current implementation
+   * takes the destination first and the source second, matching
+   * {@code target.convert(value, source)} in {@link Unit}. The historical parameter names
+   * {@code from} and {@code to} are therefore misleading; do not reverse arguments based on them.
+   *
+   * @param d value in the source unit
+   * @param from destination unit (historical name)
+   * @param to source unit (historical name)
+   * @return value in the destination unit
    */
   Number convert(Number d, Unit from, Unit to);
 

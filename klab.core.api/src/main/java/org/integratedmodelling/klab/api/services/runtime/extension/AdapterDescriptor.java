@@ -31,8 +31,8 @@ public class AdapterDescriptor {
   private Set<ResourceAdapter.Validator.LifecyclePhase> validatedPhases;
   private List<ResourceTransport.Schema> importSchemata;
   private List<ResourceTransport.Schema> exportSchemata;
-  private int splits;
-  private Data.FillCurve fillCurve;
+  private int splits = 1;
+  private Data.FillCurve fillCurve = Data.FillCurve.UNSPECIFIED;
   private long minSplitSize;
   private long maxSize;
   private long timestamp;
@@ -260,6 +260,12 @@ public class AdapterDescriptor {
     distribution.setMaxBufferSize(maxSize);
     distribution.setMinSplitSize(minSplitSize);
     distribution.setSuggestedSplits(splits);
-    return distribution;
+    return distribution.validate();
+  }
+
+  /** Decode and validate the Java resource-adapter declaration, including its maximum state count. */
+  public static Data.ShardingStrategy shardingStrategy(ResourceAdapter annotation) {
+    return new Data.ShardingStrategy(annotation.fillCurve(), annotation.splits(),
+        annotation.minSizeForSplitting(), annotation.maxSize(), null).validate();
   }
 }

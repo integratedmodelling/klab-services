@@ -94,6 +94,16 @@ public class ScannerAdapters {
     public long nextLong() {
       return delegate.nextLong();
     }
+
+    @Override public long position() { return delegate.position(); }
+    @Override public boolean isValid() { return delegate.isValid(); }
+    @Override public org.integratedmodelling.klab.api.data.StorageScan.View view() {
+      var nativeView = delegate.view();
+      var type = this instanceof Storage.DoubleScanner ? Storage.Type.DOUBLE : Storage.Type.FLOAT;
+      return new org.integratedmodelling.klab.api.data.StorageScan.View(nativeView.partition(),
+          nativeView.curve(), type, nativeView.semantics(), nativeView.slice(), nativeView.sources(),
+          org.integratedmodelling.klab.api.data.StorageScan.HistogramPolicy.UNAVAILABLE);
+    }
   }
 
   /** Presents float-backed storage to contextualizers that use the traditional double API. */

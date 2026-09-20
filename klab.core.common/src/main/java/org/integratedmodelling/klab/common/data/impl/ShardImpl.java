@@ -61,7 +61,7 @@ public class ShardImpl implements Storage.Shard {
       Persistence persistence,
       Storage.Type dataType) {
     this.geometry = geometry;
-    this.shardingStrategy = shardingStrategy;
+    this.shardingStrategy = shardingStrategy == null ? null : shardingStrategy.copy();
     this.shardIndex = shardIndex;
     this.timestamp = timestamp;
     this.urn = Utils.Names.fastName();
@@ -113,7 +113,7 @@ public class ShardImpl implements Storage.Shard {
   }
 
   public void setShardingStrategy(Data.ShardingStrategy shardingStrategy) {
-    this.shardingStrategy = shardingStrategy;
+    this.shardingStrategy = shardingStrategy == null ? null : shardingStrategy.copy();
   }
 
   public void setTimestamp(long timestamp) {
@@ -147,7 +147,7 @@ public class ShardImpl implements Storage.Shard {
 
   @Override
   public Data.ShardingStrategy getShardingStrategy() {
-    return shardingStrategy;
+    return shardingStrategy == null ? null : shardingStrategy.copy();
   }
 
   @Override

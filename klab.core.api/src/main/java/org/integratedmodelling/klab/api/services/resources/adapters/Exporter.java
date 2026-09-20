@@ -47,8 +47,9 @@ public @interface Exporter {
   KlabFunction.Argument[] properties() default {};
 
   /**
-   * Fill curve if one is needed by the implementation. This ensures that any scanner passed to the
-   * function can be used with the stated fill curve while mapping to the one in the storage.
+   * Fill-curve requirement recorded in the export prototype. The intended contract is to mediate
+   * storage traversal to this curve. Current observation-wide argument binding only supports one
+   * compatible native scanner and does not enforce this requirement; see docs/STORAGE.md.
    *
    * @return
    */

@@ -343,39 +343,8 @@ public class DataflowCompiler {
 
     if (observationActuator.getObservation() != null
         && observationActuator.getObservation().getObservable().is(SemanticType.QUALITY)) {
-      var shardingStrategy = new Data.ShardingStrategy();
-      observationActuator.getObservation().getAnnotations()
-          .forEach(
-              annotation -> {
-                switch (annotation.getName()) {
-                  case "type" ->
-                      shardingStrategy.setDataType(
-                          Storage.Type.valueOf(
-                              annotation
-                                  .get(Annotation.VALUE_PARAMETER_KEY)
-                                  .toString()
-                                  .toUpperCase()));
-                  case "split" ->
-                      shardingStrategy.setSuggestedSplits(
-                          Integer.parseInt(
-                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                  case "maxSize" ->
-                      shardingStrategy.setMaxBufferSize(
-                          Long.parseLong(
-                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                  case "minSplitSize" ->
-                      shardingStrategy.setMinSplitSize(
-                          Long.parseLong(
-                              annotation.get(Annotation.VALUE_PARAMETER_KEY).toString()));
-                  case "fillCurve" ->
-                      shardingStrategy.setCurve(
-                          Data.FillCurve.valueOf(
-                              annotation
-                                  .get(Annotation.VALUE_PARAMETER_KEY)
-                                  .toString()
-                                  .toUpperCase()));
-                }
-              });
+      var shardingStrategy = org.integratedmodelling.klab.api.data.ShardingAnnotations.parse(
+          observationActuator.getObservation().getAnnotations());
       ((ActuatorImpl) observationActuator).setShardingStrategy(shardingStrategy);
     }
   }

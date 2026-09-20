@@ -84,6 +84,22 @@ public interface Storage {
    */
   interface Scanner extends PrimitiveIterator.OfLong {
 
+    /** Consumer metadata for planned scans. Legacy implementations may not expose a view. */
+    default StorageScan.View view() { throw new UnsupportedOperationException("No planned scan view"); }
+
+    /** Non-advancing position of the next value, or size() at exhaustion. */
+    default long position() { throw new UnsupportedOperationException("No scanner position access"); }
+
+    /** Non-advancing validity of the next value; planned scans throw at exhaustion. */
+    default boolean isValid() { throw new UnsupportedOperationException("No scanner validity access"); }
+
+    /** Explicit location object; allocation happens only when requested, not for primitive reads. */
+    default StorageScan.Location location() {
+      if (!hasNext()) throw new java.util.NoSuchElementException();
+      var view = view();
+      return new StorageScan.Location(view.partition(), view.curve(), view.slice(), position());
+    }
+
     /**
      * Read-only view of the shard, used if the geometry or histogram needs to be accessed. These
      * can also be bound to contextualizer arguments for the observation being contextualized (but
@@ -227,6 +243,18 @@ public interface Storage {
   List<Shard> getNativeShards(Scheduler.Event event);
 
   Scanner getNativeScanner(Shard shard);
+
+  /** Validate and pin metadata without opening buffers. Planned writes are not yet supported. */
+  default <T extends Scanner> StorageScan.Plan<T> plan(StorageScan.Request<T> request) {
+    throw new UnsupportedOperationException("Planned scans unavailable for this provider");
+  }
+
+  /** Open independent read cursors for a provider-issued plan. Always close the returned session. */
+  default <T extends Scanner> StorageScan.Session<T> open(StorageScan.Plan<T> plan) {
+    throw new UnsupportedOperationException("Planned scans unavailable for this provider");
+  }
+
+  default java.util.Set<StorageScan.Capability> scanCapabilities() { return java.util.Set.of(); }
 
   /**
    * Create or retrieve scanners for the observation we represent, honoring any requests in terms of

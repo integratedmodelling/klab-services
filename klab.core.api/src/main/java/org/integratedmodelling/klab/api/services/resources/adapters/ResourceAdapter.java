@@ -144,10 +144,9 @@ public @interface ResourceAdapter {
   long minSizeForSplitting() default 0;
 
   /**
-   * If the adapter has a limitation in the size of the geometry it can handle, report it here. The
-   * resolver will skip resources using an adapter that does not meet this requirement.
-   *
-   * @return
+   * Maximum states per shard, or zero if unspecified. Must be nonnegative and at least the
+   * declared minimum when positive. Planned reads enforce this cap; Java consumer requirements
+   * are not yet enforced end to end by runtime attribution. See docs/STORAGE.md.
    */
   long maxSize() default 0;
 

@@ -24,7 +24,7 @@ An annotation may specify the boolean parameter `override=true` to take preceden
 | `@return("behavior.urn")` / `@return(urn="behavior.urn")` | k.Actors action declaring the behavior of a returned agent. |
 | `@type` | k.Actors argument type constraint; behavior URN or Java class constraint. In runtime storage configuration, selects a storage type. |
 | `@adapt` | k.Actors adaptation action. |
-| `@split`, `@maxSize`, `@minSplitSize`, `@fillCurve` | Runtime dataflow storage configuration: splitting, buffer size, minimum split size, and filling curve. |
+| `@split`, `@maxsize`, `@minsplitsize`, `@fillcurve` | Validated lowercase sharding annotations; positional and named `value` work. Runtime consumer mediation is staged. See the authoritative [storage annotation contract](STORAGE.md#kim-sharding-annotations) before use. |
 
 See [the k.Actors reference](AGENTS.md) for action signatures, inheritance, and compiler restrictions. The same annotation name can have different meanings in different declaration contexts.
 

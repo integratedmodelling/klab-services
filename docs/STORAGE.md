@@ -7,7 +7,7 @@ report missing slices/files explicitly and never allocate replacement values in 
 This document is the central implementation guide for observation storage in k.LAB. It describes
 how a quality receives a storage contract, how that contract becomes shards and primitive buffers,
 how contextualizers access the buffers, and how data is finalized and persisted. The public API is
-defined by `Storage`, `StorageManager`, and `Data.ShardingStrategy`; the main implementation is in
+defined by `Storage`, `StorageScan`, `StorageManager`, and `Data.ShardingStrategy`; the main implementation is in
 `StorageManagerImpl`, `StorageImpl`, and `ScannerAdapters`.
 
 Storage belongs to a digital twin. A `StorageManager` owns one `Storage` per quality observation,
@@ -41,7 +41,7 @@ affects storage attributed after the change; it does not migrate existing storag
 | `FLOAT` | `FloatScanner` | 4 bytes | Numeric quality, reduced precision |
 | `INTEGER` | `IntScanner` | 4 bytes | Integer state |
 | `LONG` | `LongScanner` | 8 bytes | Long integer state |
-| `KEYED` | `KeyScanner` backed by integer codes | 4 bytes | Classified/concept state |
+| `KEYED` | `KeyScanner` backed by integer codes | 4 bytes | Classified/concept state (scanner not implemented) |
 | `BOOLEAN` | `BooleanScanner` | 1 byte | Presence or verification state |
 
 The generic `Scanner` deliberately has no boxed `get` or `add` operation. Typed scanners exist so
@@ -52,25 +52,92 @@ large contextualizations can execute without per-value allocation or boxing.
 `CompiledDataflow.harmonizeSharding()` attributes storage before the first contextualization of a
 new quality:
 
-1. `RuntimeService.getDefaultShardingStrategy()` derives a semantic default. Quantification,
-   measurement, and valuation use `DOUBLE`; categorization uses `KEYED`; verification uses
-   `BOOLEAN`.
-2. Model computations and adapter/component declarations contribute their sharding requirements.
-3. Compatible requirements from dependent actuators are harmonized. Numeric primitive types may
-   override one another; numeric and non-numeric types are incompatible.
-4. The runtime applies service settings. `USE_SHORT_FLOAT_REPRESENTATION=true` changes a resulting
-   `DOUBLE` type to native `FLOAT`. `PARALLELIZE_OBSERVATIONS=false` forces one split; otherwise the
-   runtime suggests the available processor count.
-5. The result is written to the observation's contextualization data. `StorageManager.createStorage`
-   requires this field and fails if it is missing.
+1. Local, model, child, then runtime strategies are merged; later concrete fields win. Numeric
+   primitive types may override one another; incompatible semantic types fail.
+2. Runtime defaults derive type from semantics (numeric DOUBLE, categorization KEYED, verification
+   BOOLEAN), curve from geometry, and split count from available processors. These concrete fields
+   currently override earlier hints. Runtime sizes are neutral zeroes.
+3. `USE_SHORT_FLOAT_REPRESENTATION=true` selects FLOAT instead of DOUBLE.
+   `PARALLELIZE_OBSERVATIONS=false`, or nondistributed space, unconditionally forces one split and
+   clears both size hints for newly attributed storage. This remains a supported test mode.
+4. The result is recorded on observation contextualization data. Storage creation requires it.
+   Existing positive-ID observations keep their recorded native strategy.
 
-Existing positive-ID observations retain the strategy recorded when they were created. This is
-necessary for reconstruction: the strategy is used to select the mapped-buffer representation and
-to validate persisted shard data.
+`CallDescriptors.shardingStrategy()` exposes Java requirements, but harmonization does not yet
+consume them. Consumer preferences are not yet separated from native producer attribution.
+The runtime curve is `D2_XY` for regular 2D space, `D3_XYZ` for regular 3D space, otherwise
+`D1_LINEAR`. Strategy getters return copies; incomplete native strategies are no longer silently
+replaced by scan requests.
 
-The strategy's fill curve is derived from geometry when no stronger declaration exists. Regular
-two-dimensional space uses `D2_XY`, regular three-dimensional space uses `D3_XYZ`, and other cases
-use `D1_LINEAR`. Split policy is applied to the event-local geometry when shards are first created.
+### Java sharding annotations
+
+These declare layout preferences, not unit conversion or resampling. Registration mappings are:
+
+| Field | `@KlabFunction` | `@ResourceAdapter` | `@Exporter` |
+|---|---|---|---|
+| Suggested partitions | `split=-1` | `splits=1` | No member; descriptor -1 |
+| Traversal | `fillCurve=UNSPECIFIED` | Same | Same |
+| Soft minimum states per shard | `minSizeForSplitting=0` | Same | No member |
+| Maximum states per shard | `maxSize=0` | Same | No member |
+| Primitive type | Derived from artifact type: NUMBER/CONCEPT/BOOLEAN become DOUBLE/KEYED/BOOLEAN | Unspecified | Unspecified |
+
+`-1` means unspecified split preference, `1` means one partition, and positive counts are
+suggestions to the geometry splitter. Sizes count states, not bytes; zero means unspecified.
+Validation rejects zero or less than -1 splits, negative sizes, and a minimum above a positive
+maximum. The adapter default of one partition deliberately remains more conservative than the
+function default. Java member names remain unchanged. `parallel` and `reentrant` describe execution
+and do not replace these fields.
+
+`ComponentRegistry` validates function strategies and copies all four adapter fields, including
+`maxSize`, into `AdapterDescriptor`. Its `shardingStrategy()` has no primitive type. A method's
+`@KlabFunction` supplies its own defaults: it does not inherit class-level sharding fields.
+Exporter registration records its curve but does not yet remap scanner arguments accordingly.
+
+```java
+@KlabFunction(name = "sample", description = "Sample a quality",
+    type = Artifact.Type.NUMBER, split = 4,
+    fillCurve = Data.FillCurve.D2_YX, minSizeForSplitting = 1024, maxSize = 65536)
+```
+
+The native splitter bypasses size hints for positive counts and uses them only to derive an
+unspecified count. Planned reads additionally reject native shards exceeding a requested maximum.
+End-to-end enforcement of Java consumer declarations remains stage 3. Dynamic `@Splits`,
+`@SplitSize`, and adapter `@FillCurve` methods mentioned in TODOs are not implemented contracts.
+
+### k.IM sharding annotations
+
+`DataflowCompiler` uses the shared `ShardingAnnotations.parse()` decoder. Canonical names are
+lowercase; positional and named `value` syntax both work with the parser's normalized `_p1` value.
+Programmatic beans can use either representation, but supplying both is ambiguous and rejected.
+
+| Annotation | Value | Meaning |
+|---|---|---|
+| `@type("float")` | Case-insensitive Storage enum | Primitive type preference |
+| `@split(4)` | Integer: -1 or positive | Suggested partition count |
+| `@maxsize(65536)` | Nonnegative long | Maximum states per shard |
+| `@minsplitsize(1024)` | Nonnegative long | Soft minimum states per shard |
+| `@fillcurve("D2_XInvY")` | Case-insensitive FillCurve enum | Traversal preference |
+
+`@split(value=4)` and `@split(4)` are equivalent. Mixed-case enum members such as `D2_XInvY`
+are preserved. Missing, ambiguous, malformed, or out-of-range arguments fail validation. Known
+historical camel-case bean names are rejected with a lowercase-name diagnostic; the source grammar
+already rejects them. `UNSPECIFIED` is a neutral declaration, not an executable traversal.
+
+Concept annotations contribute first, model/dependency annotations override them, and explicit
+observation definitions have highest precedence. `override=true` can affect ordinary concept/model
+precedence; see [ANNOTATIONS.md](ANNOTATIONS.md). Replacement is by name. Model annotations apply
+only to the main output. Runtime strategy merging is a separate step with the precedence above.
+Parsing/validation is implemented; consumer remapping and full runtime enforcement are staged in
+[STORAGE_PLAN.md](STORAGE_PLAN.md).
+
+### Fill-curve implementation boundary
+
+`D1_LINEAR`, `D2_XY`, `D2_YX`, and `D2_XInvY` have tested mappings in supported dimensions.
+For shape [X,Y], `D2_XY` varies Y fastest, `D2_YX` varies X fastest, and `D2_XInvY` reverses Y
+within each X block. `D3_XYZ` is row-major; `D3_ZYX` currently aliases it. Hilbert mapping throws.
+`FillCurve.map` accepts int and `Mapper.offset` narrows to int: these are not proven large-index
+mediation APIs. Planned reads reject UNSPECIFIED, D3_ZYX, and Hilbert curves. Traversal remapping
+is not implemented even where standalone curve mapping works.
 
 ## Creating and finding storage
 
@@ -91,15 +158,15 @@ happened during dataflow compilation.
 
 ## Shards, events, and buffers
 
-`StorageImpl.getNativeShards(event)` selects a shard group using the scheduler event. Time is the
-moving dimension in the current implementation: initialization uses timestamp zero and later
-events use their start timestamp. Other non-space dimensions are reserved in the cache key but are
-not yet fully generalized.
+Initialization shard groups use timestamp zero. Temporal reads resolve exact event-keyed shards,
+a covering revision, or an allowed committed baseline and reject missing state. Other moving
+dimensions are not fully generalized. `LocalTemporalWriteSet` stages temporal data;
+`stageTemporal()` exposes committed buffers/descriptors only through transaction callbacks and
+cleans them on rollback. Ordinary `AbstractExecutor` still rejects temporal quality outputs.
 
-On first access, the event-local scale is split according to the native strategy. The resulting
-shard geometries do not overlap and their union represents the observation geometry for that
-event. Each `ShardImpl` records its geometry, index/count, timestamp, strategy, persistence policy,
-and native type.
+First native allocation splits event-local geometry. Physical shard descriptors record geometry,
+index/count, timestamp, strategy, persistence policy, and native type. Splitting uses plain geometry
+rather than reconstructing service-local scales. No scanner mediation is implied by native splitting.
 
 `ShardStorage` allocates an ojAlgo mapped `BufferArray` of the exact primitive width. Scratch buffer
 files live in the storage manager workspace. They are closed when the manager closes; on Windows,
@@ -108,8 +175,8 @@ file is not currently guaranteed.
 
 ## Scanning and contextualizer binding
 
-`Storage.scan(event, request, scannerClass, readOnly)` is the access boundary. For a request that
-matches the native geometry, fill curve, and split policy, it opens one scanner per native shard.
+`Storage.scan(event, request, scannerClass, readOnly)` is the access boundary. For a request whose
+strategy equals the native strategy, it opens one scanner per native shard.
 Write scanners reset the shard histogram only after pending persistence has been flushed; read-only
 scanners reject `add(...)`.
 
@@ -117,7 +184,7 @@ The requested scanner class is a real contract, not a hint. The storage layer ei
 instance assignable to that class, supplies a compatible primitive adapter, or fails explicitly.
 It must never return a scanner of another type and defer failure to reflection.
 
-During a quality contextualization, `AbstractExecutor` opens native output scanners and conformant
+During a quality contextualization, `AbstractExecutor` opens native output scanners and matching-strategy
 read-only scanners for quality dependencies. It constructs one task per output shard and binds
 component method parameters by the declared input/output name. Parameters may request:
 
@@ -139,6 +206,21 @@ No conversion is permitted between floating-point scanners and boolean or keyed 
 declaration is a component contract error and fails during binding with the native and requested
 types in the message.
 
+### Legacy cursor and export boundary
+
+Legacy `get()` and `nextLong()` both advance; `peek()` does not. Legacy scanner exhaustion checks
+are not the strict planned-session contract below. The executor opens output scanners before
+planning all dependencies, so a failed input binding may already have reset output histograms.
+It matches scanner lists by index/count, not by proven geometric alignment.
+
+`ArgumentMatcher` obtains native scanners and calls `ScannerAdapters.mergeScanners()`, whose only
+working case is a singleton. It does not apply exporter curve metadata and does not force
+initialization scanners readonly. `KlabServiceController.exportAsset()` delegates through
+`BaseService.exportAsset()` and language invocation into this route. Detached ID-zero queries
+copy source metadata but do not yet compile scanner/unit mediation; storage is indexed by source
+observation identity, so zero must not become a shared storage key. These consumer routes are
+stage-3 integration work, including individual values returned as text.
+
 ### Component author rules
 
 Component contextualizers should follow these rules:
@@ -148,7 +230,8 @@ Component contextualizers should follow these rules:
 - Declare `FloatScanner` only when float arithmetic is intentional. It can consume double-native
   storage, but reads narrow to float.
 - Declare generic `Scanner` only when the implementation does not call typed value methods or
-  dispatches explicitly by `scanner.shard().getNativeType()`.
+  dispatches explicitly by scanner type; for planned scans, use `scanner.view().valueType()`.
+  The physical shard type may differ from the consumer value type.
 - Mark input and output parameters accurately. Inputs receive read-only scanners; writing through
   them is always an error.
 - Do not retain a scanner beyond the contextualizer invocation or share it with another shard task.
@@ -180,18 +263,12 @@ the primitive payload.
 
 ### Graph atomicity and recovery boundary
 
-The scheduler flushes successful quality storage before submitting its shard descriptors to the
-knowledge-graph transaction. This ordering does not make the graph and filesystem a single atomic
-transaction. A later graph failure can leave persisted files, and assigning a persistent observation
-ID rekeys storage before graph commit. Rollback does not generally restore those in-memory IDs or
-previous buffer contents. In particular, atomic file replacement prevents a torn file, but does
-not preserve a previous data version after an unsuccessful graph update.
-
-Recovery should treat committed descriptors as the visibility boundary, use staged/versioned data
-with a publish step, and collect unreferenced files after a suitable retention period. Retries must
-not assume that a positive in-memory observation ID proves the matching graph node was committed.
-The lifecycle review in [DIGITALTWINS](DIGITALTWINS.md) also identifies an unconditional disposal
-path; the existence of persistence policies alone does not guarantee safe context closure.
+Initialization flushes payloads before descriptor publication, but graph and filesystem operations
+are not one atomic transaction. A graph failure may leave orphan files; rekeying IDs before graph
+commit is not proof of durable publication. Temporal writes use detached versioned buffers and
+transaction callbacks; their committed visibility does not provide general initialization rollback.
+See [PERSISTENT_TWINS.md](PERSISTENT_TWINS.md) and [DIGITALTWINS.md](DIGITALTWINS.md) for restoration
+and ownership/closure behavior. Garbage collection of unreferenced files remains separate work.
 
 ### Connected twins: proposed contract
 
@@ -218,7 +295,106 @@ retains the first concrete task failure as the executor cause; the generic `Exec
 exception is used only when no more specific cause was recorded. This distinction is important
 because collective contextualization otherwise reports only the parent failure.
 
+## Planned read sessions (S1)
+
+`Storage.plan(StorageScan.Request<T>)` validates metadata without opening buffers or resetting
+histograms. `Storage.open(plan)` acquires a read session. Providers without these additive
+capabilities reject the methods; the legacy `scan(...)` signature remains available.
+
+```java
+var request = StorageScan.Request.nativeRead(
+    event, storage.getNativeShardingStrategy(), Storage.DoubleScanner.class);
+var plan = storage.plan(request);
+try (var session = storage.open(plan)) {
+  for (var scanner : session.scanners()) {
+    while (scanner.hasNext()) {
+      boolean valid = scanner.isValid();
+      double value = scanner.get();
+      // Consume the primitive value and validity.
+    }
+  }
+}
+```
+
+Requests snapshot mutable strategies and events into immutable `Layout` and `Slice` records.
+Optional geometry and semantic definitions must match the native source in S1. Empty consumer
+partitions select native partitions; explicit partitions must match ordered source geometry and
+size and have unique identities. Positive maximum size is enforced against every source shard.
+Sources must be finalized initialization shards or restored/committed data. Unsupported layouts,
+semantics, coverage/sampling policies, writes, keyed types, and curves fail before buffer access.
+
+### Ownership and portable descriptions
+
+Plans belong to their issuing storage instance. Version-1 `Description` records contain immutable
+source descriptors, event, semantic definitions, layouts, partitions, precision, budgets and
+operation metadata. JSON round trips preserve structural equality; inconsistent descriptions and
+unknown versions are rejected. A description is not an executable plan or permission to open data.
+
+`fingerprint()` is SHA-256 over length-prefixed UTF-8 fields in record/list order. An opaque source
+revision token incorporates local storage identity and write generation, so changing initialization
+values changes the fingerprint. This is not a durable content hash or a cross-provider cache key.
+Temporal source URNs/timestamps identify concrete committed shards. Description persistence in
+graph edges is future work; executable cursors, converters and buffers are never serialized.
+
+Opening rechecks generation, semantics and source descriptors. Stale plans fail and require
+explicit replanning. An open session leases its source, blocking initialization writes (including
+previously obtained writers), writer resets and storage closure. Concurrent sessions have
+independent task-local cursors. Close/cancel is idempotent and invalidates scanners, closes reader
+handles and releases the lease. Storage owns mapped buffers. Partial opening failure closes acquired
+handles and newly restored buffers before releasing the lease. Always use try-with-resources.
+
+### Consumer view, cursor and precision
+
+`shard()` identifies physical native storage; `view()` describes consumer partition, type, semantics,
+slice, curve and sources. Views are never persisted as `HAS_DATA` shards. View histograms are
+explicitly unavailable; native histograms are not converted-view statistics.
+
+`position()` is the next offset, equal to `size()` at exhaustion. `get()` and `nextLong()` each
+consume one position; `peek()`, `isValid()` and `location()` do not advance. Value/location access
+after exhaustion throws `NoSuchElementException`; access after close throws `IllegalStateException`.
+Writes fail without advancing. Location contains partition, curve, slice and long offset; coordinate
+decoding and cell metrics remain future work. Legacy cursor behavior is unchanged.
+
+Default `LOSSLESS` supports native DOUBLE/FLOAT/INTEGER/LONG/BOOLEAN and FLOAT to DOUBLE.
+DOUBLE to FLOAT requires `ALLOW_FLOAT_NARROWING`, using Java IEEE narrowing including overflow to
+infinity. Integers never pass through double; long precision is retained. Other casts, including
+boolean arithmetic, are rejected. Floating NaN is invalid; infinity is valid. Integer/long/boolean
+storage has no missing-value bitmap, so zero and false are valid.
+
+### Performance and consumer boundaries
+
+Numeric cursors, validity checks and indexed reads use primitive accessors without per-value boxing,
+streams or locator allocation. Metadata and sessions allocate per request/partition; locations
+allocate only on explicit demand. Block reads fill caller-owned primitive arrays with one
+reader-local lock per block. Independent shards do not share a read lock; scalar reads coordinate
+with cancellation on their own reader. No full-dataset copy or per-cell index array is constructed.
+`Budget` limits metadata partitions (default 65536) and values per block (default 65536), not total
+dataset size. This does not guarantee that downstream consumer code is allocation-free.
+
+Exporters and individual-value API text responses are required consumers of this same contract.
+Their binding is S3 work, ordinary semantic conversion S4, and contextual conversion S5. Text
+formatting belongs after location selection, validity and primitive mediation at the API boundary.
+S1 neither adds a text-value endpoint nor claims that existing exporters honor requested views.
+
 ## Unsupported or incomplete operations
+
+### Value mediation baseline
+
+Unit conversion is destination-receiver: `meters.convert(2, millimeters)` returns 0.002.
+`UnitService.convert(value, first, second)` likewise uses destination-first order despite its
+historical from/to parameter names. Ordinary multiplicative and affine Celsius/Kelvin conversions
+work; they are not wired into scanners. Compatibility, algebra, contextualization, and ordinary
+locator conversion remain unfinished. `AbstractMediator` can execute supplied dimension-factor
+operations, but no complete compiler supplies the required per-cell operations/locators.
+`UnitImpl.aggregatedDimensions` is metadata, not evidence of working contextual conversion.
+
+`ShapeImpl.getStandardizedArea()` computes a metered area, not square degrees. Per-cell geographic
+area accuracy and calendar duration policies remain unvalidated for scanner conversion.
+`NumericRangeImpl` supports bounded conversion but needs compatibility/locator hardening.
+Currency conversion/compatibility and the rate provider are stubs. KEYED has a declared width and
+interface but no native scanner or durable worldview-bound dictionary.
+
+### Remaining boundaries
 
 The following remain explicit implementation boundaries:
 

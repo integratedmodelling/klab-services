@@ -49,9 +49,9 @@ public interface Data {
    * - curve the fill curve providing meaning for the sequence of data in storage
    * - suggestedSplits the number of splits suggested for data parallelization, with -1 for
    * arbitrary and 1 for no splits.
-   * - minSplitSize minimum geometry size for a buffer when splits are requested
-   * - maxBufferSize maximum size for the overall data operation to apply. If the geometry is
-   * larger than this, the adapter or contextualizer will be rejected by the resolver.
+   * - minSplitSize soft minimum states per shard when splits are requested; zero is unspecified
+   * - maxBufferSize maximum states per shard; zero is unspecified. Planned reads enforce the cap;
+   * legacy attribution does not yet enforce Java consumer requirements end to end.
    * - dataType the requested or native data type for the operation.
    */
   class ShardingStrategy {
@@ -143,7 +143,19 @@ public interface Data {
       this.dataType = dataType;
     }
 
-    private ShardingStrategy copy() {
+    /** Validate declarations without resolving neutral values. Sizes count states, not bytes. */
+    public ShardingStrategy validate() {
+      if (curve == null) throw new IllegalArgumentException("A curve must use UNSPECIFIED instead of null");
+      if (suggestedSplits != -1 && suggestedSplits < 1)
+        throw new IllegalArgumentException("Splits must be -1 (unspecified) or a positive count");
+      if (minSplitSize < 0 || maxBufferSize < 0)
+        throw new IllegalArgumentException("Sharding sizes must be nonnegative (zero is unspecified)");
+      if (maxBufferSize > 0 && minSplitSize > maxBufferSize)
+        throw new IllegalArgumentException("Minimum split size exceeds maximum shard size");
+      return this;
+    }
+
+    public ShardingStrategy copy() {
       return new ShardingStrategy(
           this.curve, this.suggestedSplits, this.minSplitSize, this.maxBufferSize, this.dataType);
     }
@@ -750,6 +762,8 @@ public interface Data {
           .metadata("im:relationship-source-id", source.getId())
           .metadata("im:relationship-target-id", target.getId());
     }
+
+
 
     /**
      * Retrieve the observation being contextualized (not resolved at this point).
