@@ -24,6 +24,15 @@ public class ScalarOperationExecutor extends AbstractExecutor
   }
 
   @Override
+  public boolean execute(Scheduler.Event event,
+      org.integratedmodelling.klab.services.scopes.ServiceContextScope scope,
+      RuntimeService.ContextualizationScope results) {
+    if (event.getType()!=Scheduler.Event.Type.INITIALIZATION)
+      return TemporalScalarExecution.run(scalarMapper,observation,dependencies,event,scope,false);
+    return super.execute(event,scope,results);
+  }
+
+  @Override
   protected boolean run(
       Scheduler.Event event,
       Map<String, Storage.Scanner> scanners,

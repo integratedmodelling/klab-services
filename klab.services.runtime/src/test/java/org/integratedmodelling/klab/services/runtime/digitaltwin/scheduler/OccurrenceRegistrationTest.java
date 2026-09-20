@@ -35,6 +35,28 @@ import org.junit.jupiter.api.*;
 class OccurrenceRegistrationTest {
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
 
+  @Test void sharedPrerequisiteIsInitializedOnceAcrossParallelDependencyPaths() throws Exception {
+    try(var f=new Fixture()) {
+      var root=observation("Root",SemanticType.SUBJECT,51);
+      var slope=observation("Slope",SemanticType.QUALITY,52);
+      slope.setSubstantialQuality(true);
+      var direct=new LinkImpl(f.quality,root,GraphModel.Relationship.AFFECTS);
+      var derived=new LinkImpl(slope,root,GraphModel.Relationship.AFFECTS);
+      var prerequisite=new LinkImpl(f.quality,slope,GraphModel.Relationship.AFFECTS);
+      when(f.kg.getLinks(eq(root),eq(GraphModel.Relationship.Direction.INCOMING),eq(f.scope),
+          eq(GraphModel.Relationship.AFFECTS))).thenReturn(List.of(direct,derived));
+      when(f.kg.getLinks(eq(slope),eq(GraphModel.Relationship.Direction.INCOMING),eq(f.scope),
+          eq(GraphModel.Relationship.AFFECTS))).thenReturn(List.of(prerequisite));
+      f.transaction.add(root);f.transaction.add(slope);
+      f.transaction.registerExecutors();
+      assertTrue(f.scheduler.executeDependency(root,root.getGeometry(),Scheduler.Event.initialization(),f.scope));
+      assertEquals(1,f.qualityInit.get());
+      assertEquals(0L,f.quality.getEventTimestamps().getFirst());
+      assertTrue(f.scheduler.executeDependency(root,root.getGeometry(),Scheduler.Event.initialization(),f.scope));
+      assertEquals(1,f.qualityInit.get());
+    }
+  }
+
   static ObservationImpl observation(String name, SemanticType type, long id) {
     var concept = new ConceptImpl();
     concept.setUrn("test:" + name); concept.setName(name); concept.setNamespace("test");
@@ -78,7 +100,9 @@ class OccurrenceRegistrationTest {
       when(kg.createTransaction(scope)).thenReturn(storage);
       when(kg.getScheduledObservations(scope)).thenReturn(List.of());
       field(twin, "knowledgeGraph", kg); field(twin, "commitCache", CacheBuilder.newBuilder().build());
-      scheduler = new SchedulerImpl(scope, twin);
+      scheduler = spy(new SchedulerImpl(scope, twin));
+      // These fixtures isolate registration/INIT; storage integration covers automatic dispatch.
+      doNothing().when(scheduler).advanceCommittedOccurrences();
       field(twin, "scheduler", scheduler); when(twin.getScheduler()).thenReturn(scheduler);
       transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
           RuntimeAsset.PROVENANCE_ASSET, process);
@@ -173,6 +197,99 @@ class OccurrenceRegistrationTest {
     }
   }
 
+  @Test void temporalDispatchUsesFreshTransactionsAndAtomicRetryableCursors() throws Exception {
+    try (var f = new Fixture()) {
+      assertTrue(f.scheduler.submit(f.process, f.scope));
+      assertEquals(900, f.transaction.commit());
+      doAnswer(call -> {
+        if (call.getArgument(0) instanceof Activity activity && activity.getMetadata().containsKey(SchedulerJournal.METADATA_KEY))
+          f.durableJournal = new ArrayList<>((List<String>)activity.getMetadata().get(SchedulerJournal.METADATA_KEY));
+        return null;
+      }).when(f.storage).update(any());
+      var attempts = new ArrayList<DigitalTwin.Transaction>();
+      var completed = new ArrayList<String>();
+      var user = f.scope.getUser();
+      when(f.scope.executingFresh(any(Activity.class), any(Observation.class))).thenAnswer(call -> {
+        var scope = mock(ServiceContextScope.class);
+        when(scope.getId()).thenReturn("context"); when(scope.getUser()).thenReturn(user);
+        when(scope.getDigitalTwin()).thenReturn(f.twin);
+        var transaction = f.twin.new TransactionImpl(call.getArgument(0), scope,
+            RuntimeAsset.PROVENANCE_ASSET, call.getArgument(1, Observation.class));
+        assertNull(transaction.getParent()); assertNotSame(f.transaction, transaction);
+        attempts.add(transaction);
+        when(scope.getCurrentTransaction()).thenReturn(transaction);
+        when(f.kg.createTransaction(scope)).thenReturn(f.storage);
+        when(scope.commit()).thenAnswer(ignored -> transaction.commit());
+        doAnswer(failure -> { transaction.fail(failure.getArgument(0, Throwable.class)); return null; })
+            .when(scope).fail(any(Throwable.class));
+        return scope;
+      });
+      var scheduler = f.scheduler;
+      doAnswer(call -> (org.integratedmodelling.klab.api.lang.TriFunction<Geometry, Scheduler.Event, ContextScope, Boolean>)
+          (geometry, event, scope) -> {
+            assertNotEquals(Scheduler.Event.Type.INITIALIZATION, event.getType());
+            assertEquals(event.getTime().getEnd().getMilliseconds(),
+                org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.scale(geometry).getTime().getEnd().getMilliseconds());
+            scope.getCurrentTransaction().afterCommit(() -> completed.add(event.toKey()));
+            return true;
+          }).when(scheduler).restoreExecutor(eq(f.process), any());
+      long february = SimulatedDispatchTest.date("2014-02-01");
+      doThrow(new IllegalStateException("commit fails")).when(f.storage).close();
+      assertFalse(scheduler.advanceTo(february));
+      assertFalse(f.process.getMetadata().containsKey(DispatchProgress.KEY));
+      assertTrue(completed.isEmpty());
+      doNothing().when(f.storage).close();
+      assertTrue(scheduler.advanceTo(february));
+      assertEquals(1, completed.size());
+      assertTrue(scheduler.advanceTo(february));
+      assertEquals(2, attempts.size());
+      assertNotEquals(attempts.getFirst(), attempts.getLast());
+      assertEquals(1, f.qualityInit.get());
+      assertNotNull(f.durableJournal);
+      var journal = Utils.Json.parseObject(f.durableJournal.getFirst(), SchedulerJournal.class);
+      assertEquals(completed.getFirst(), journal.eventId()); assertEquals(900, journal.commitId());
+      when(f.kg.getScheduledObservations(f.scope)).thenReturn(List.of(f.process));
+      try (var restarted = new SchedulerImpl(f.scope, f.twin)) {
+        assertTrue(restarted.advanceTo(february));
+        assertEquals(2, attempts.size(), "Restart must use durable completion, not cache/timestamps");
+      }
+      var eventA = observation("eventA", SemanticType.EVENT, 700);
+      var eventB = observation("eventB", SemanticType.EVENT, 701);
+      assertTrue(scheduler.dispatchObserved(eventA));
+      assertTrue(scheduler.dispatchObserved(eventB));
+      assertTrue(scheduler.dispatchObserved(eventA));
+      assertEquals(4, attempts.size(), "Two equal-time identities commit separately; redelivery is skipped");
+      assertNotEquals(eventA.getMetadata().get(DispatchProgress.KEY), eventB.getMetadata().get(DispatchProgress.KEY));
+    }
+  }
+
+  @Test void rootCommitActivatesAllRegistrationsBeforeRequestingOneAdvance() throws Exception {
+    try (var f = new Fixture()) {
+      var second = observation("SecondProcess", SemanticType.PROCESS, -30);
+      var plan = new ActuatorImpl();
+      plan.setObservation(second); plan.setName("second");
+      plan.setActuatorType(Actuator.Type.RESOLVE);
+      plan.setExecutionRole(Actuator.ExecutionRole.PROCESS);
+      plan.getOccurrenceSchedules().putAll(f.plan.getOccurrenceSchedules());
+      plan.getComputation().add(new ServiceCallImpl("test.second"));
+      f.transaction.add(second);
+      f.transaction.resolveWith(second, new DigitalTwin.Executor() {
+        public Actuator getActuator() { return plan; }
+        public List<ServiceCall> serialized() { return plan.getComputation(); }
+        public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) { return true; }
+      });
+      doAnswer(call -> {
+        assertEquals(2, f.scheduler.getOccurrenceRegistrations().size());
+        return null;
+      }).when(f.scheduler).advanceCommittedOccurrences();
+      assertTrue(f.scheduler.submit(f.process, f.scope));
+      assertTrue(f.scheduler.submit(second, f.scope));
+      verify(f.scheduler, never()).advanceCommittedOccurrences();
+      assertTrue(f.transaction.commit() > 0);
+      verify(f.scheduler).advanceCommittedOccurrences();
+    }
+  }
+
   @Test void failedInputAndRolledBackRegistrationNeverActivate() throws Exception {
     try (var f = new Fixture()) {
       f.failInput = true;
@@ -181,6 +298,7 @@ class OccurrenceRegistrationTest {
       assertEquals(-1, f.transaction.commit());
       assertTrue(f.scheduler.getOccurrenceRegistrations().isEmpty());
       verify(f.storage, never()).store(any());
+      verify(f.scheduler, never()).advanceCommittedOccurrences();
     }
     try (var f = new Fixture()) {
       assertTrue(f.scheduler.submit(f.process, f.scope));
@@ -188,6 +306,7 @@ class OccurrenceRegistrationTest {
       assertFalse(f.process.getMetadata().containsKey(Scheduler.REGISTRATION_METADATA_KEY));
       assertTrue(f.quality.getEventTimestamps().isEmpty());
       assertTrue(f.scheduler.getOccurrenceRegistrations().isEmpty());
+      verify(f.scheduler, never()).advanceCommittedOccurrences();
     }
   }
 

@@ -32,7 +32,9 @@ public record OccurrenceSchedule(
   public enum Source {
     MODEL,
     JAVA,
-    DEPENDENCY
+    DEPENDENCY,
+    CONTEXT_GEOMETRY,
+    OBSERVER_GEOMETRY
   }
 
   public record Cadence(double step, Time.Resolution.Type unit) implements Serializable {
@@ -91,6 +93,27 @@ public record OccurrenceSchedule(
 
   public static OccurrenceSchedule fromDependency(Collection<Annotation> annotations) {
     return fromAnnotations(annotations, Source.DEPENDENCY);
+  }
+
+  /** Last-resort cadence from the original scheduled geometry, never a localized transition. */
+  public static OccurrenceSchedule fromGeometry(Time time, Source source) {
+    if (source != Source.CONTEXT_GEOMETRY && source != Source.OBSERVER_GEOMETRY)
+      throw invalid("Geometry schedule requires geometry provenance");
+    if (time == null || time.getStart() == null || time.getEnd() == null
+        || time.getTimeType() == Time.Type.REAL
+        || (time.getTimeType() != Time.Type.GRID && time.getStep() == null)
+        || time.getResolution() == null)
+      throw invalid("No explicit occurrence schedule or bounded geometry cadence is available");
+    var resolution = time.getResolution();
+    double step = resolution.getMultiplier();
+    if (time.getStep() != null && resolution.getType().isRegular())
+      step = (double) time.getStep().getMilliseconds() / resolution.getType().getMilliseconds();
+    var schedule = new OccurrenceSchedule(2,
+        Instant.ofEpochMilli(time.getStart().getMilliseconds()).toString(),
+        Instant.ofEpochMilli(time.getEnd().getMilliseconds()).toString(),
+        step, resolution.getType(), true, source);
+    schedule.bind(time);
+    return schedule;
   }
 
   private static OccurrenceSchedule fromAnnotations(Collection<Annotation> annotations, Source source) {

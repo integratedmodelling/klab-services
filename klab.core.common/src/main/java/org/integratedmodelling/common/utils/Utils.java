@@ -2024,6 +2024,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           this.status = status;
         }
         public int getStatus() { return status; }
+        static String collectionFailureDetail(String body) {
+          if(body!=null && body.length()<=16384) try {
+            var problem=new ObjectMapper().readValue(body,Map.class);
+            if(problem.get("body") instanceof Map nested) problem=nested;
+            if(problem.get("detail") instanceof String detail && !detail.isBlank()) {
+              var firstLine=detail.lines().findFirst().orElse("").replace('\t',' ');
+              return "Collection request failed: "+firstLine.substring(0,Math.min(512,firstLine.length()));
+            }
+          } catch(Exception ignored) { /* Not a structured problem response. */ }
+          return "Collection request failed";
+        }
       }
 
       private <T> List<T> postCollectionInternal(
@@ -2077,7 +2088,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return parseResponseList(response.body(), resultClass);
           }
           if (strict) throw new RequestFailure(response == null ? 0 : response.statusCode(),
-              "Collection request failed", null);
+              RequestFailure.collectionFailureDetail(response==null ? null : response.body()), null);
 
         } catch (Throwable e) {
           if (strict) {
@@ -2599,7 +2610,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
 
       private <T> T parseResponse(String body, Class<T> resultClass) {
-        if (body == null) {
+        // Nullable REST results (e.g. Reasoner.inherent) may be an empty HTTP 200 body.
+        if (body == null || (body.isBlank() && resultClass != String.class)) {
           return null;
         }
         if (resultClass == String.class) {

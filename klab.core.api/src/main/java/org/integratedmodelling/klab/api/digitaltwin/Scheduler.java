@@ -54,6 +54,18 @@ public interface Scheduler {
   /** Distinguishes executable observations from acknowledged inputs after a cache miss/restart. */
   String EXECUTION_METADATA_KEY = "klab.scheduler.executionRequired";
 
+  String PLAN_METADATA_KEY = "klab.scheduler.computationPlan";
+
+  /** Synchronously drain bounded simulated transitions ending at or before this instant. */
+  default boolean advanceTo(long until) {
+    throw new UnsupportedOperationException("Simulated dispatch unavailable");
+  }
+
+  /** Dispatch a committed observed event, preserving its identity independently of its time. */
+  default boolean dispatchObserved(Observation event) {
+    throw new UnsupportedOperationException("Observed dispatch unavailable");
+  }
+
   /** Execute a step in the contextualization. */
   @FunctionalInterface
   interface Executor {
@@ -62,7 +74,8 @@ public interface Scheduler {
   }
 
   /** Execute an observation prerequisite in the current resolved plan and event. */
-  default boolean executeDependency(Observation observation, Geometry geometry, Event event, ContextScope scope) {
+  default boolean executeDependency(
+      Observation observation, Geometry geometry, Event event, ContextScope scope) {
     throw new UnsupportedOperationException("Explicit Dataflow prerequisites are not supported");
   }
 
@@ -156,8 +169,8 @@ public interface Scheduler {
    *
    * @param until the time instant at which to stop the real-time clock, or negative to run until
    *     the end of the DT's lifetime.
-   * @return true if the real-time clock was started or was already running; false when the epoch end
-   *     is less recent than the current real time.
+   * @return true if the real-time clock was started or was already running; false when the epoch
+   *     end is less recent than the current real time.
    */
   boolean switchToRealTime(long until);
 

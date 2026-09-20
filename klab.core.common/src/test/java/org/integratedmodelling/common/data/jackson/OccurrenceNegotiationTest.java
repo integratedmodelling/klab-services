@@ -40,7 +40,7 @@ class OccurrenceNegotiationTest {
     assertThrows(KlabValidationException.class, () -> choose(request("2.month"), m));
     assertThrows(KlabValidationException.class, () -> choose(request("1.day"), model("1.month", "1.day", "1.month", false)));
     assertDoesNotThrow(() -> choose(request("24.hour"), model("1.day", null, null, false)));
-    assertThrows(KlabValidationException.class, () -> choose(request("1.day")));
+    assertEquals(request("1.day").schedule(), choose(request("1.day")).effective());
   }
 
   @Contextualizer(timeStep=1, timeUnit=Time.Resolution.Type.DAY,

@@ -69,6 +69,14 @@ public class GroovyProcessor implements Language.LanguageProcessor {
     return descriptor.compile();
   }
 
+  public Expression.Descriptor analyzeNamed(
+      ExpressionCode expression,
+      Scope scope,
+      Observation target,
+      Map<String, Observation> bindings) {
+    return new GroovyDescriptor(expression, scope, List.of(target), List.of(), bindings);
+  }
+
   static class IdImpl implements Expression.Descriptor.Identifier {
 
     private String name;
@@ -199,6 +207,16 @@ public class GroovyProcessor implements Language.LanguageProcessor {
         List<Observation> knownOutputs,
         List<Observation> knownInputs,
         Expression.CompilerOption... options) {
+      this(expression, scope, knownOutputs, knownInputs, Map.of(), options);
+    }
+
+    GroovyDescriptor(
+        ExpressionCode expression,
+        Scope scope,
+        List<Observation> knownOutputs,
+        List<Observation> knownInputs,
+        Map<String, Observation> bindings,
+        Expression.CompilerOption... options) {
 
       if (expression == null || expression.getCode() == null) {
         throw new IllegalArgumentException("The expression and its code must not be null");
@@ -236,6 +254,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
           }
         }
       }
+      knownObservations.putAll(bindings);
       this.processedCode =
           this.options.contains(Expression.CompilerOption.DoNotPreprocess)
               ? expression.getCode()
@@ -483,7 +502,8 @@ public class GroovyProcessor implements Language.LanguageProcessor {
               var identifier = (IdImpl) identifiers.computeIfAbsent(tokenInfo.code, IdImpl::new);
               identifier.setObservation(knownObservations.get(tokenInfo.code));
               identifier.nonScalarReferenceCount++;
-              if (tokenInfo.member != null && !identifier.methodsCalled.contains(tokenInfo.member)) {
+              if (tokenInfo.member != null
+                  && !identifier.methodsCalled.contains(tokenInfo.member)) {
                 identifier.methodsCalled.add(tokenInfo.member);
               }
             }
@@ -616,8 +636,7 @@ public class GroovyProcessor implements Language.LanguageProcessor {
           });
     }
 
-    private static String protectGroovyText(
-        String code, Map<String, String> substitutions) {
+    private static String protectGroovyText(String code, Map<String, String> substitutions) {
       boolean[] protectedCharacters = protectedGroovyCharacters(code);
       StringBuilder ret = new StringBuilder();
       int textId = 0;
@@ -668,7 +687,9 @@ public class GroovyProcessor implements Language.LanguageProcessor {
       return output.toString();
     }
 
-    /** Mark quoted strings and comments so k.LAB syntax inside them remains ordinary Groovy text. */
+    /**
+     * Mark quoted strings and comments so k.LAB syntax inside them remains ordinary Groovy text.
+     */
     private static boolean[] protectedGroovyCharacters(String code) {
       boolean[] ret = new boolean[code.length()];
       int i = 0;

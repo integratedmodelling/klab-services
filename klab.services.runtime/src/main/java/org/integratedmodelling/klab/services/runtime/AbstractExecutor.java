@@ -56,6 +56,13 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       ServiceContextScope contextScope,
       RuntimeService.ContextualizationScope contextualizationScope) {
 
+    if (event != null && event.getType()!=Scheduler.Event.Type.INITIALIZATION
+        && observation.getObservable().is(SemanticType.QUALITY)) {
+      // Scalar operations use TemporalScalarExecution. Other output paths must join the write-set
+      // protocol explicitly instead of mutating legacy buffers or treating missing deltas as no-op.
+      throw new UnsupportedOperationException("This contextualizer has no transactional temporal output protocol");
+    }
+
     cause = null;
     List<Callable<Object>> tasks = new ArrayList<>();
     var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());

@@ -48,7 +48,7 @@ public class LocalAdapterExecutor extends AbstractExecutor
         res =
             adapter.contextualize(
                 resource,
-                scanner == null ? observation.getGeometry() : scanner.shard().getGeometry(),
+                TemporalGeometry.localize(scanner == null ? observation.getGeometry() : scanner.shard().getGeometry(), event),
                 scope);
       } catch (Throwable e) {
         observation.getNotifications().add(Notification.error(e));

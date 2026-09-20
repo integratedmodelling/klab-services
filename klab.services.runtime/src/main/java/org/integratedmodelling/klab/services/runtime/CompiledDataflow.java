@@ -409,11 +409,19 @@ public class CompiledDataflow {
     if (actuator.getObservation().getId() == Observation.QUERY_ID)
       throw new UnsupportedOperationException("Occurrence closure cannot retain detached query observations");
     var coverage = actuator.getCoverage();
+    // Resolver coverage collapses temporal multiplicity. Compare both sides using that same
+    // support representation; the original observation grid and occurrence cadence stay intact.
     if (coverage != null && !coverage.isUniversal()
-        && !GeometryRepository.INSTANCE.scale(coverage).encode().equals(
-            GeometryRepository.INSTANCE.scale(actuator.getObservation().getGeometry()).encode()))
-      throw new UnsupportedOperationException("Partial-coverage occurrence closure requires S4 coverage selection");
+        && !occurrenceSupport(coverage).equals(
+            occurrenceSupport(actuator.getObservation().getGeometry())))
+      throw new UnsupportedOperationException("Occurrence closure has partial or incompatible coverage for "
+          + actuator.getName() + "; partial-coverage execution is not supported");
     for (var child : actuator.getChildren()) validateRestorableOccurrence(child);
+  }
+
+  private static String occurrenceSupport(Geometry geometry) {
+    return org.integratedmodelling.klab.api.services.resolver.Coverage.create(
+        GeometryRepository.INSTANCE.scale(geometry), 1.0).encode();
   }
 
   /** Snapshot complete bindings after observation IDs have been assigned, without runtime scales. */
@@ -425,6 +433,9 @@ public class CompiledDataflow {
     copy.setType(source.getType());
     copy.setActuatorType(source.getActuatorType());
     copy.setObservation(Observation.forTransport(source.getObservation()));
+    copy.getObservation().getMetadata().remove(Scheduler.PLAN_METADATA_KEY);
+    copy.getObservation().getMetadata().remove(org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.OccurrenceRegistration.METADATA_KEY);
+    copy.getObservation().getMetadata().remove(org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.DispatchProgress.KEY);
     copy.setId(source.getObservation().getId());
     copy.setCoverage(Geometry.forTransport(source.getCoverage()));
     copy.setStrategyUrn(source.getStrategyUrn());
@@ -478,6 +489,7 @@ public class CompiledDataflow {
 
   /** Restore a complete occurrence closure using durable observations, without allocation or INIT. */
   public DigitalTwin.Executor restoreOccurrenceExecutor(Actuator plan) {
+    validateRestorableOccurrence(plan);
     validateSupportedPlan(plan);
     this.rootActuator = plan;
     bindRestoredOccurrence(plan);
@@ -829,9 +841,22 @@ public class CompiledDataflow {
       }
     }
 
+    var snapshots = new ArrayList<Runnable>();
     for (var actuator : dependencyGraph.vertexSet()) {
       if (actuator instanceof ActuatorImpl implementation && actuatorObservations.containsKey(actuator))
         implementation.setObservation(actuatorObservations.get(actuator));
+      if (actuator.getExecutionRole() == Actuator.ExecutionRole.INITIALIZATION
+          && !actuator.getComputation().isEmpty() && snapshotSupported(actuator)) {
+        var observation = actuatorObservations.get(actuator);
+        var previous = observation.getMetadata().get(Scheduler.PLAN_METADATA_KEY);
+        transaction.update(observation);
+        transaction.afterRollback(() -> {
+          if (previous == null) observation.getMetadata().remove(Scheduler.PLAN_METADATA_KEY);
+          else observation.getMetadata().put(Scheduler.PLAN_METADATA_KEY, previous);
+        });
+        snapshots.add(() -> observation.getMetadata().put(Scheduler.PLAN_METADATA_KEY,
+            org.integratedmodelling.klab.utilities.Utils.Json.asString(portableOccurrencePlan(actuator))));
+      }
       if (!actuator.getComputation().isEmpty()
           || actuator.getChildren().stream().anyMatch(child -> child.getActuatorType() == Actuator.Type.UPDATE)) {
         transaction.add(actuator);
@@ -863,7 +888,10 @@ public class CompiledDataflow {
       var target = actuatorObservations.get(aTarget);
       // A detached query view is an execution-time binding, never a graph asset. Positive-ID
       // references retain AFFECTS so that later events can still propagate from them.
-      if (source != null && target != null && source.getId() != Observation.QUERY_ID) {
+      // Process inputs remain in HAS_CHILD and the portable named bindings. Reading a quality
+      // does not mean the quality causally affects the process that changes it.
+      if (source != null && target != null && source.getId() != Observation.QUERY_ID
+          && aTarget.getExecutionRole() != Actuator.ExecutionRole.PROCESS) {
         var processBindings = processPlan(aTarget);
         var binding = processBindings == null ? null : processBindings.binding(aSource.getName());
         // TODO the execution coverage should be recorded when the partial-storage policy is known.
@@ -914,6 +942,9 @@ public class CompiledDataflow {
       transaction.update(actuator);
     }
 
+    // Process bearer rewrites must precede snapshots of any enclosing computation closure.
+    snapshots.forEach(transaction::beforeCommit);
+
     return true;
   }
 
@@ -921,6 +952,13 @@ public class CompiledDataflow {
     if (quality.getObservable().getSemantics().equals(endpoint)) return true;
     var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
     return reasoner != null && reasoner.is(quality.getObservable(), endpoint);
+  }
+
+  private boolean snapshotSupported(Actuator actuator) {
+    return actuator.getActuatorType() != Actuator.Type.UPDATE
+        && actuatorObservations.get(actuator) != null
+        && actuatorObservations.get(actuator).getId() != Observation.QUERY_ID
+        && actuator.getChildren().stream().allMatch(this::snapshotSupported);
   }
 
   /** One operation per observation. Successful execution will update the observation in the DT. */
@@ -939,6 +977,7 @@ public class CompiledDataflow {
         executorConstraints = new java.util.IdentityHashMap<>();
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
+    private final List<ServiceCall> processAssignments = new ArrayList<>();
     private Map<String, Observation> localReferences = new HashMap<>();
 
     public ExecutorImpl(Actuator actuator) {
@@ -986,8 +1025,9 @@ public class CompiledDataflow {
           var binding = target == null ? null : processBindings.binding(target);
           if (binding == null || !binding.assigned())
             throw new IllegalArgumentException("Invalid process assignment target: " + target);
-          // S5 compiles this against the target quality at transition time. In particular a
-          // CREATED target has no observation, storage or scanner during registration.
+          if (processAssignments.stream().anyMatch(previous -> target.equals(previous.getParameters().get("_targetId"))))
+            throw new IllegalArgumentException("Duplicate process assignment for " + target);
+          processAssignments.add(call);
           continue;
         }
 
@@ -1068,6 +1108,9 @@ public class CompiledDataflow {
         }
       }
 
+      if (!processAssignments.isEmpty() && processAssignments.size()!=actuator.getComputation().size())
+        throw new UnsupportedOperationException("Mixed inline and Java process chains require explicit transactional output composition");
+
       return true;
     }
 
@@ -1118,16 +1161,25 @@ public class CompiledDataflow {
 
       var contextScope = (ServiceContextScope) scope;
       if (actuator.getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION) {
-        if (event.getType() != Scheduler.Event.Type.INITIALIZATION)
-          throw new UnsupportedOperationException("Temporal dispatch is disabled until S4");
         contextScope = (ServiceContextScope) executionScope(contextScope);
-        // A process has no INIT value. Its input qualities still require their ordinary INIT.
-        for (var child : actuator.getChildren()) {
-          var input = actuatorObservations.get(child);
-          if (input != null && !digitalTwin.getScheduler().executeDependency(
-              input, input.getGeometry(), event, contextScope)) return false;
+        if (event.getType() == Scheduler.Event.Type.INITIALIZATION) {
+          // A process has no INIT value. Its input qualities still require their ordinary INIT.
+          for (var child : actuator.getChildren()) {
+            var input = actuatorObservations.get(child);
+            if (input != null && !digitalTwin.getScheduler().executeDependency(
+                input, input.getGeometry(), event, contextScope)) return false;
+          }
+          return true;
         }
-        return true;
+        var bindings = processPlan(actuator);
+        if (bindings == null && actuator.getComputation().stream().anyMatch(call ->
+            call.getUrn().equals("klab.core.expression.resolver") || call.getUrn().equals("klab.core.constant.resolver")))
+          throw new UnsupportedOperationException("Inline process assignments require resolved named quality bindings");
+        if (!processAssignments.isEmpty()) return runProcessAssignments(event,contextScope,bindings);
+        if (actuator.getExecutionRole() == Actuator.ExecutionRole.EVENT_INSTANTIATOR)
+          throw new UnsupportedOperationException("Event instantiation requires S6");
+        if (executors.isEmpty())
+          throw new UnsupportedOperationException("No executable temporal contextualizer");
       }
       if (characterizer != null) return runCharacterization(geometry, event, contextScope);
       if (classifier != null) return runClassification(geometry, event, contextScope);
@@ -1138,6 +1190,8 @@ public class CompiledDataflow {
       }
 
       if (observation.getObservable().is(SemanticType.QUALITY)) {
+        if (event.getType() != Scheduler.Event.Type.INITIALIZATION && (contextScope.getCurrentTransaction()==null || contextScope.getCurrentTransaction().getTemporalWrites()==null))
+          throw new UnsupportedOperationException("Temporal quality execution requires a transaction-owned write set");
         createStorage();
       }
 
@@ -1182,6 +1236,75 @@ public class CompiledDataflow {
       }
 
       return ret;
+    }
+
+    private boolean runProcessAssignments(Scheduler.Event event, ServiceContextScope executionScope, ProcessPlan plan) {
+      var transaction = executionScope.getCurrentTransaction();
+      var writes = transaction.getTemporalWrites();
+      if (writes == null) throw new IllegalStateException("Process assignments require transactional storage");
+      var references = new HashMap<>(localReferences);
+      var created = new LinkedHashMap<String,Observation>();
+      for (var binding : plan.bindings()) {
+        if (binding.effect()!=ProcessPlan.Effect.CREATED || !binding.assigned()) continue;
+        var key = "klab.process.created."+binding.name();
+        var existing = observation.getMetadata().get(key);
+        if (existing instanceof Number id) {
+          var quality = executionScope.getObservation(id.longValue());
+          if (quality == null) throw new IllegalStateException("Missing created output "+binding.name());
+          references.put(binding.name(),quality);
+        } else {
+          var quality = new ObservationImpl();
+          quality.setId(-1000-quality.getTransientId());
+          quality.setObservable(binding.observable()); quality.setName(binding.name());
+          quality.setGeometry(observation.getGeometry()); quality.setParentId(plan.bearerId());
+          quality.setResolvedCoverage(1);
+          quality.getMetadata().put(org.integratedmodelling.klab.runtime.storage.TemporalHistory.EPHEMERAL,true);
+          var cd = new ObservationImpl.ContextualizationDataImpl();
+          cd.setNativeShardingStrategy(runtimeService.getDefaultShardingStrategy(quality,executionScope));
+          quality.setContextualizationData(cd);
+          references.put(binding.name(),quality); created.put(binding.name(),quality);
+          long temporaryId=quality.getId();
+          transaction.afterRollback(() -> {
+            if (digitalTwin.getStorageManager() instanceof org.integratedmodelling.klab.runtime.storage.StorageManagerImpl local)
+              local.discardProvisionalStorage(temporaryId);
+          });
+        }
+      }
+      for (var call : processAssignments) {
+        var name = call.getParameters().get("_targetId",String.class);
+        var target = references.get(name);
+        if (target == null) throw new IllegalStateException("Unbound process output "+name);
+        var targetPlan = new ActuatorImpl(); targetPlan.setName(name); targetPlan.setObservation(target);
+        targetPlan.setActuatorType(Actuator.Type.RESOLVE);
+        var inputs = new HashMap<>(references); inputs.put(Dataflow.SELF_ID,target);
+        var builder = runtimeService.getComputationBuilder(target,executionScope,targetPlan,inputs);
+        if (!builder.add(call)) return false;
+        var computation = builder.build();
+        if (computation == null || !TemporalScalarExecution.run(computation,target,inputs,event,executionScope,true)) return false;
+      }
+      for (var entry : created.entrySet()) {
+        var quality = entry.getValue();
+        if (!writes.changed(quality)) {
+          if (digitalTwin.getStorageManager() instanceof org.integratedmodelling.klab.runtime.storage.StorageManagerImpl local)
+            local.discardProvisionalStorage(quality.getId());
+          continue;
+        }
+        var binding = plan.binding(entry.getKey());
+        transaction.add(quality);
+        transaction.link(processBearer(plan),quality,GraphModel.Relationship.HAS_CHILD);
+        transaction.link(transaction.getActivity(),quality,GraphModel.Relationship.RESOLVED);
+        ((DigitalTwinImpl.TransactionImpl)transaction).linkProcessInfluence(observation,quality,plan.model(),binding.name(),binding.relations());
+        var key = "klab.process.created."+entry.getKey();
+        var previous = observation.getMetadata().get(key);
+        long temporaryId = quality.getId();
+        transaction.beforeCommit(() -> observation.getMetadata().put(key,quality.getId()));
+        transaction.update(observation);
+        transaction.afterRollback(() -> {
+          if (previous==null) observation.getMetadata().remove(key); else observation.getMetadata().put(key,previous);
+        });
+        transaction.afterCommit(() -> digitalTwin.getStorageManager().finalizeStorage(temporaryId,quality.getId()));
+      }
+      return true;
     }
 
     private synchronized boolean runClassification(Geometry geometry, Scheduler.Event event,

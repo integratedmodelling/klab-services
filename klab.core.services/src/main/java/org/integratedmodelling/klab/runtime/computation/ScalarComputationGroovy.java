@@ -86,11 +86,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
         }
 
         step.expressionDescriptor =
-            groovyProcessor.analyze(
-                expressionCode,
-                scope,
-                List.of(actuator.getObservation()),
-                actuator.getChildren().stream().map(Actuator::getObservation).toList());
+            groovyProcessor.analyzeNamed(expressionCode, scope, target, observations);
         step.scalar =
             step.expressionDescriptor.getIdentifiers().values().stream()
                 .anyMatch(id -> id.observation() != null && id.scalarReferenceCount() > 0);
@@ -113,8 +109,19 @@ public class ScalarComputationGroovy implements ScalarComputation {
       } else if (RuntimeService.CoreFunctor.CONSTANT_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
-        // check types
-        // insert streamlined code, same as before (buffer.fill(value) TODO using native methods)
+        var value = contextualizable.getParameters().get("value");
+        if (!(value instanceof Number || value instanceof Boolean)) {
+          target
+              .getNotifications()
+              .add(Notification.error("Scalar constants require a numeric or boolean value"));
+          return false;
+        }
+        var step = new Step();
+        String code = value instanceof Long ? value + "L" : value.toString();
+        step.expressionDescriptor =
+            groovyProcessor.analyzeNamed(
+                ExpressionCode.of(code, "groovy"), scope, target, observations);
+        steps.add(step);
       } else {
         // non-scalar contextualizer
       }
@@ -189,7 +196,12 @@ public class ScalarComputationGroovy implements ScalarComputation {
                         identifier, typeDeclaration, scalarBuffers.size() + 1, observation));
                 codeInfo
                     .getLoopVariableAssignments()
-                    .add("def " + identifier + " = " + identifier + "Buffer.get()");
+                    .add(
+                        "def "
+                            + identifier
+                            + " = "
+                            + (self ? "priorSelf" : identifier)
+                            + "Buffer.get()");
               }
 
               /*
@@ -200,8 +212,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
               /*
                * Create observation wrappers inline before the main loop
                */
-              if (desc.nonScalarReferenceCount() > 0
-                  && observationWrappers.add(identifier)) {
+              if (desc.nonScalarReferenceCount() > 0 && observationWrappers.add(identifier)) {
                 codeInfo
                     .getBodyInitializationStatements()
                     .add(
@@ -225,6 +236,13 @@ public class ScalarComputationGroovy implements ScalarComputation {
                   + ") scanners.get(\"self\")\n");
 
       codeInfo.getMainCodeBlocks().addAll(codeStatements);
+      if (scalarBuffers.containsKey(Dataflow.SELF_ID))
+        codeInfo
+            .getBodyInitializationStatements()
+            .add(
+                "def priorSelfBuffer = ("
+                    + getScannerType(target, codeInfo)
+                    + ") (scanners.get(\"__prior_self\") ?: scanners.get(\"self\"))");
 
       for (String var : scalarBuffers.keySet()) {
         var info = scalarBuffers.get(var);
@@ -254,7 +272,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
             .add(Notification.error("Groovy compilation failed: " + t.getMessage(), t));
         return null; // or a no-op ScalarComputation
       }
-      return new ScalarComputationGroovy(compiled, scope, output.toString());
+      return new ScalarComputationGroovy(
+          compiled, scope, output.toString(), Set.copyOf(scalarBuffers.keySet()));
     }
 
     private void addPredefinedVariable(
@@ -267,8 +286,15 @@ public class ScalarComputationGroovy implements ScalarComputation {
         case "context" -> initializers.add("def context = scope.getContextObservation()");
         case "source" -> initializers.add("def source = scope.getSourceObservation()");
         case "target" -> initializers.add("def target = scope.getTargetObservation()");
+        case "time" -> initializers.add("def time = event.getTime()");
+        case "scale" ->
+            initializers.add(
+                "def scale = org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.scale(scanners.get('self').shard().getGeometry())");
+        case "space" ->
+            initializers.add(
+                "def space = org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.scale(scanners.get('self').shard().getGeometry()).getSpace()");
         default -> {
-          // scope is already a run() argument. scale, space and time remain supplied by callers.
+          // scope and event are already run() arguments.
         }
       }
     }
@@ -313,12 +339,19 @@ public class ScalarComputationGroovy implements ScalarComputation {
   private ExpressionBase script;
   private ContextScope scope;
   private String sourceCode;
+  private final Set<String> inputNames;
+
+  @Override
+  public Set<String> inputNames() {
+    return inputNames;
+  }
 
   private ScalarComputationGroovy(
-      ExpressionBase groovyScript, ContextScope scope, String sourceCode) {
+      ExpressionBase groovyScript, ContextScope scope, String sourceCode, Set<String> inputNames) {
     this.script = groovyScript;
     this.scope = scope;
     this.sourceCode = sourceCode;
+    this.inputNames = inputNames;
   }
 
   @Override

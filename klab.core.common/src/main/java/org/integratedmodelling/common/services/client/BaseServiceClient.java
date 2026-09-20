@@ -484,7 +484,7 @@ public abstract class BaseServiceClient implements KlabService {
       // TODO deactivate (operational should return false)
       return false;
     } else {
-      Logging.INSTANCE.info("Successfully notified " + serviceName() + " of new user scope");
+//      Logging.INSTANCE.info("Successfully notified " + serviceName() + " of new user scope");
       return true;
     }
   }

@@ -33,8 +33,45 @@ final class ScheduleNegotiationSupport {
       if (info != null && info.getOccurrenceSchedule() != null)
         declarations.add(new OccurrenceNegotiation.Declaration(urn, info.getOccurrenceSchedule()));
     }
-    return OccurrenceNegotiation.select(model.getUrn(), primary.is(SemanticType.PROCESS) ? graph.scheduleRequest : null,
+    var request = primary.is(SemanticType.PROCESS) ? graph.scheduleRequest : null;
+    if (declarations.isEmpty() && request == null) {
+      var geometry = geometryDefault(primary.is(SemanticType.PROCESS), scope);
+      declarations.add(geometry);
+    }
+    return OccurrenceNegotiation.select(model.getUrn(), request,
         declarations, time);
+  }
+
+  static OccurrenceNegotiation.Declaration geometryDefault(boolean process, ContextScope scope) {
+    var owner = process ? scope.getContextObservation() : scope.getObserver();
+    if (owner == null || owner.isEmpty())
+      throw new KlabValidationException("No schedule-bearing context or observer is available");
+    if (!process && !owner.getObservable().is(SemanticType.AGENT))
+      throw new KlabValidationException("Schedule fallback requires an agent's perceived geometry");
+    var geometry = process ? owner.getGeometry()
+        : owner.geometry(Observation.GeometryRelationship.PERCEIVES);
+    var time = geometry == null ? null
+        : org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.scale(geometry).getTime();
+    return new OccurrenceNegotiation.Declaration((process ? "context:" : "observer:") + owner.getId(),
+        OccurrenceSchedule.fromGeometry(time, process ? OccurrenceSchedule.Source.CONTEXT_GEOMETRY
+            : OccurrenceSchedule.Source.OBSERVER_GEOMETRY));
+  }
+
+  static void checkReuse(Observation observation, OccurrenceNegotiation.Request request, Time time,
+      ContextScope scope) {
+    checkReuse(observation, request, time);
+    if (request != null || observation == null || observation.isEmpty()) return;
+    var encoded = observation.getMetadata().get(OccurrenceNegotiation.DATA_KEY);
+    if (encoded == null) return;
+    var accepted = Utils.Json.parseObject(encoded.toString(), OccurrenceNegotiation.class);
+    var source = accepted.effective().source();
+    if (source == OccurrenceSchedule.Source.CONTEXT_GEOMETRY
+        || source == OccurrenceSchedule.Source.OBSERVER_GEOMETRY) {
+      var fallback = geometryDefault(source == OccurrenceSchedule.Source.CONTEXT_GEOMETRY, scope);
+      if (!OccurrenceNegotiation.equivalent(accepted.effective(), fallback.schedule(), time))
+        throw new KlabValidationException("Geometry default would reschedule an existing occurrence");
+      accepted.validate(time);
+    }
   }
 
   static void checkReuse(Observation observation, OccurrenceNegotiation.Request request, Time time) {

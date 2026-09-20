@@ -74,17 +74,25 @@ public class StorageImpl implements Storage {
     private final BufferArray data;
 
     ShardStorage(Shard shard, StorageManagerImpl storage) {
+      this(shard, storage, false);
+    }
+
+    ShardStorage(Shard shard, StorageManagerImpl storage, boolean provisional) {
       this.shard = shard;
       this.storage = storage;
       resetHistogram();
       this.data =
-          switch (shard.getShardingStrategy().getDataType()) {
-            case DOUBLE -> storage.getDoubleBuffer(shard.getGeometry().size());
-            case FLOAT -> storage.getFloatBuffer(shard.getGeometry().size());
-            case INTEGER, KEYED -> storage.getIntBuffer(shard.getGeometry().size());
-            case BOOLEAN -> storage.getBooleanBuffer(shard.getGeometry().size());
-            case LONG -> storage.getLongBuffer(shard.getGeometry().size());
-          };
+          provisional
+              ? (BufferArray)
+                  StorageManagerImpl.bufferFactory(shard.getNativeType())
+                      .make(shard.getGeometry().size())
+              : switch (shard.getShardingStrategy().getDataType()) {
+                case DOUBLE -> storage.getDoubleBuffer(shard.getGeometry().size());
+                case FLOAT -> storage.getFloatBuffer(shard.getGeometry().size());
+                case INTEGER, KEYED -> storage.getIntBuffer(shard.getGeometry().size());
+                case BOOLEAN -> storage.getBooleanBuffer(shard.getGeometry().size());
+                case LONG -> storage.getLongBuffer(shard.getGeometry().size());
+              };
     }
 
     void resetHistogram() {
@@ -126,6 +134,8 @@ public class StorageImpl implements Storage {
    * linear indexing and come from the scheduler event that serves as an index.
    */
   private NavigableMap<ComparableLongList, List<Shard>> shards = new ConcurrentSkipListMap<>();
+  private final Map<String, List<Shard>> temporalShards = new LinkedHashMap<>();
+  private TemporalHistory history = new TemporalHistory(1, List.of());
 
   /**
    * Create the storage container for the observation according to the observation's own sharding
@@ -152,6 +162,14 @@ public class StorageImpl implements Storage {
      * If the observation comes from the KG, we load any pre-existing shards into lazy containers.
      */
     if (observation.getId() > 0) {
+      var encodedHistory = observation.getMetadata().get(TemporalHistory.KEY);
+      if (encodedHistory != null)
+        history = Utils.Json.parseObject(encodedHistory.toString(), TemporalHistory.class);
+      var versionByUrn = new HashMap<String, String>();
+      for (var revision : history.revisions()) {
+        temporalShards.put(revision.event(), new ArrayList<>());
+        for (var urn : revision.shards()) versionByUrn.put(urn, revision.event());
+      }
       for (var shard :
           contextScope
               .getDigitalTwin()
@@ -163,6 +181,10 @@ public class StorageImpl implements Storage {
         if (shard.getGeometry() == null) {
           throw new KlabIllegalStateException(
               "Cannot reconstruct storage without shard geometry: " + shard.getUrn());
+        }
+        if (versionByUrn.containsKey(shard.getUrn())) {
+          temporalShards.get(versionByUrn.get(shard.getUrn())).add(shard);
+          continue;
         }
         var time = TimeInstant.create(shard.getTimestamp());
         var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry()).at(time);
@@ -181,6 +203,13 @@ public class StorageImpl implements Storage {
         shards.computeIfAbsent(new ComparableLongList(key), k -> new ArrayList<>()).add(shard);
       }
       for (var group : shards.values()) {
+        validateRestoredShards(group, nativeShardingStrategy.getDataType());
+      }
+      for (var revision : history.revisions()) {
+        var group = temporalShards.get(revision.event());
+        if (group.size() != revision.shards().size() || group.isEmpty())
+          throw new KlabIllegalStateException(
+              "Missing committed temporal data for " + revision.event());
         validateRestoredShards(group, nativeShardingStrategy.getDataType());
       }
     }
@@ -246,10 +275,30 @@ public class StorageImpl implements Storage {
 
   @Override
   public List<Shard> getNativeShards(Scheduler.Event event) {
-    return getNativeShards(event, true);
+    return getNativeShards(event, event.getType() == Scheduler.Event.Type.INITIALIZATION);
   }
 
   private List<Shard> getNativeShards(Scheduler.Event event, boolean create) {
+
+    if (event.getType() != Scheduler.Event.Type.INITIALIZATION) {
+      if (create)
+        throw new KlabIllegalStateException(
+            "Temporal writes require a transaction-owned write set");
+      var exact = temporalShards.get(event.toKey());
+      if (exact != null) return List.copyOf(exact);
+      TemporalHistory.Revision covering = null;
+      for (var revision : history.revisions()) {
+        if (revision.start() <= event.getTime().getStart().getMilliseconds()
+            && revision.end() >= event.getTime().getEnd().getMilliseconds()) covering = revision;
+      }
+      if (covering != null) return List.copyOf(temporalShards.get(covering.event()));
+      var baseline =
+          temporalBaseline(
+              event, Boolean.TRUE.equals(observation.getMetadata().get(TemporalHistory.EPHEMERAL)));
+      if (baseline.isEmpty())
+        throw new KlabIllegalStateException("No committed state at requested temporal support");
+      return baseline;
+    }
 
     var time = event.getTime();
     if (time.size() != 1) {
@@ -276,7 +325,10 @@ public class StorageImpl implements Storage {
       var existing = shards.get(storageKey);
       if (existing == null) {
         throw new KlabIllegalStateException(
-            "No available storage slice for observation " + observation.getId() + " at " + timeStart);
+            "No available storage slice for observation "
+                + observation.getId()
+                + " at "
+                + timeStart);
       }
       return existing;
     }
@@ -342,7 +394,9 @@ public class StorageImpl implements Storage {
 
   @Override
   public Storage.Scanner getNativeScanner(Shard shard) {
-    return getNativeScanner(shard, false, false);
+    boolean immutable =
+        history.revisions().stream().anyMatch(r -> r.shards().contains(shard.getUrn()));
+    return getNativeScanner(shard, immutable, false);
   }
 
   private Storage.Scanner getNativeScanner(Shard shard, boolean readOnly, boolean resetForWrite) {
@@ -429,7 +483,160 @@ public class StorageImpl implements Storage {
   public List<Shard> allShards() {
     var ret = new ArrayList<Shard>();
     shards.values().forEach(ret::addAll);
+    temporalShards.values().forEach(ret::addAll);
     return ret;
+  }
+
+  /** Canonical owner of the cached storage and its committed metadata. */
+  Observation temporalOwner() {
+    return observation;
+  }
+
+  /** Select a stable causal baseline; equal-time revisions remain independently addressable. */
+  synchronized List<Shard> temporalBaseline(Scheduler.Event event, boolean ephemeral) {
+    TemporalHistory.Revision selected = null;
+    long start = event.getTime().getStart().getMilliseconds();
+    long end = event.getTime().getEnd().getMilliseconds();
+    for (var revision : history.revisions()) {
+      boolean eligible =
+          ephemeral ? revision.start() <= start && revision.end() >= end : revision.end() <= start;
+      if (eligible && (selected == null || revision.end() >= selected.end())) selected = revision;
+    }
+    if (selected != null) return List.copyOf(temporalShards.get(selected.event()));
+    if (ephemeral) return List.of();
+    var initial = shards.get(new ComparableLongList(List.of(0L)));
+    if (initial == null
+        && shards.size() == 1
+        && shards.firstEntry().getValue().stream().allMatch(s -> s.getTimestamp() == 0))
+      initial = shards.firstEntry().getValue();
+    return initial == null ? List.of() : List.copyOf(initial);
+  }
+
+  Object nativeValue(Shard shard, long index) {
+    var data = shardStorage.computeIfAbsent(shard.getUrn(), urn -> restore(shard)).data;
+    return switch (getNativeType()) {
+      case DOUBLE -> data.doubleValue(index);
+      case FLOAT -> data.floatValue(index);
+      case INTEGER -> data.intValue(index);
+      case LONG -> data.longValue(index);
+      case BOOLEAN -> data.byteValue(index) != 0;
+      default ->
+          throw new KlabUnimplementedException("Temporal keyed storage requires persistent keys");
+    };
+  }
+
+  List<Geometry> temporalLayout(Geometry geometry) {
+    return getGeometries(
+        geometry,
+        nativeShardingStrategy.getSuggestedSplits(),
+        nativeShardingStrategy.getMinSplitSize(),
+        nativeShardingStrategy.getMaxBufferSize());
+  }
+
+  /** Flush detached versions before graph commit; expose them in this storage only afterwards. */
+  void stageTemporal(
+      Scheduler.Event event,
+      Geometry support,
+      List<Geometry> layout,
+      java.util.function.BiFunction<Integer, Long, Object> value,
+      org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction transaction) {
+    if (history.revisions().stream().anyMatch(r -> r.event().equals(event.toKey())))
+      throw new KlabIllegalStateException("Temporal state already committed: " + event.toKey());
+    var pending = new ArrayList<Shard>();
+    var buffers = new ArrayList<ShardStorage>();
+    transaction.afterRollback(
+        () -> {
+          for (var buffer : buffers) {
+            buffer.close();
+            try {
+              java.nio.file.Files.deleteIfExists(
+                  storageManager.getStorageFile(buffer.shard).toPath());
+            } catch (java.io.IOException e) {
+              scope.error(e);
+            }
+          }
+        });
+    for (int partition = 0; partition < layout.size(); partition++) {
+      var shard =
+          new ShardImpl(
+              Geometry.forTransport(layout.get(partition)),
+              observation,
+              nativeShardingStrategy,
+              partition,
+              layout.size(),
+              event.getTime().getEnd().getMilliseconds(),
+              scope.getConfiguration().getPersistence(),
+              getNativeType());
+      var buffer = new ShardStorage(shard, storageManager, true);
+      buffers.add(buffer);
+      pending.add(shard);
+      for (long index = 0; index < buffer.data.count(); index++) {
+        var nativeValue = value.apply(partition, index);
+        if (nativeValue instanceof Boolean b) buffer.data.set(index, b ? 1 : 0);
+        else if (nativeValue instanceof Long l) buffer.data.set(index, l.longValue());
+        else if (nativeValue instanceof Integer i) buffer.data.set(index, i.intValue());
+        else buffer.data.set(index, ((Number) nativeValue).doubleValue());
+      }
+      buffer.rebuildHistogram();
+      shard.setHistogram(Utils.Data.adaptHistogram(buffer.histogram, buffer.data.count()));
+      storageManager.persistTemporalShard(shard, buffer.data);
+      transaction.link(
+          observation,
+          shard,
+          GraphModel.Relationship.HAS_DATA,
+          "eventId",
+          event.toKey(),
+          "start",
+          event.getTime().getStart().getMilliseconds(),
+          "end",
+          event.getTime().getEnd().getMilliseconds());
+    }
+    var revisions = new ArrayList<>(history.revisions());
+    revisions.add(
+        new TemporalHistory.Revision(
+            event.toKey(),
+            event.getTime().getStart().getMilliseconds(),
+            event.getTime().getEnd().getMilliseconds(),
+            Geometry.forTransport(support).encode(),
+            pending.stream().map(Shard::getUrn).toList()));
+    var next = new TemporalHistory(1, revisions);
+    var previous = observation.getMetadata().get(TemporalHistory.KEY);
+    observation.getMetadata().put(TemporalHistory.KEY, Utils.Json.asString(next));
+    if (observation
+        instanceof
+        org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl concrete) {
+      var oldHistograms = concrete.getHistograms();
+      var updatedHistograms = new TreeMap<Long, Histogram>(oldHistograms);
+      com.dynatrace.dynahist.Histogram aggregate = null;
+      long count = 0;
+      for (var buffer : buffers) {
+        count += buffer.data.count();
+        if (buffer.histogram != null) {
+          if (aggregate == null)
+            aggregate =
+                com.dynatrace.dynahist.Histogram.createDynamic(buffer.histogram.getLayout());
+          aggregate.addHistogram(buffer.histogram);
+        }
+      }
+      if (aggregate != null)
+        updatedHistograms.put(
+            event.getTime().getEnd().getMilliseconds(),
+            Utils.Data.adaptHistogram(aggregate, count));
+      concrete.setHistograms(updatedHistograms);
+      transaction.afterRollback(() -> concrete.setHistograms(oldHistograms));
+    }
+    transaction.update(observation);
+    transaction.afterRollback(
+        () -> {
+          if (previous == null) observation.getMetadata().remove(TemporalHistory.KEY);
+          else observation.getMetadata().put(TemporalHistory.KEY, previous);
+        });
+    transaction.afterCommit(
+        () -> {
+          history = next;
+          temporalShards.put(event.toKey(), List.copyOf(pending));
+          for (var buffer : buffers) shardStorage.put(buffer.shard.getUrn(), buffer);
+        });
   }
 
   private Layout histogramLayout(Observable observable) {
@@ -448,9 +655,21 @@ public class StorageImpl implements Storage {
     return ret;
   }
 
+  /** Timestamp summaries use the last committed revision; history retains every event identity. */
+  private List<Shard> histogramShards() {
+    var selected = new TreeMap<Long, List<Shard>>();
+    for (var shard : allShards()) {
+      selected.computeIfAbsent(shard.getTimestamp(), ignored -> new ArrayList<>()).add(shard);
+    }
+    for (var revision : history.revisions()) {
+      selected.put(revision.end(), temporalShards.get(revision.event()));
+    }
+    return selected.values().stream().flatMap(List::stream).toList();
+  }
+
   private NavigableMap<Long, com.dynatrace.dynahist.Histogram> temporalHistograms() {
     var ret = new TreeMap<Long, com.dynatrace.dynahist.Histogram>();
-    for (var shard : allShards()) {
+    for (var shard : histogramShards()) {
       var shardData = shardStorage.computeIfAbsent(shard.getUrn(), urn -> restore(shard));
       if (shardData.histogram != null) {
         var histogram = ret.get(shard.getTimestamp());
@@ -471,17 +690,23 @@ public class StorageImpl implements Storage {
     temporalHistograms()
         .forEach(
             (timestamp, histogram) ->
-                ret.put(timestamp, Utils.Data.adaptHistogram(histogram,
-                    allShards().stream().filter(s -> s.getTimestamp() == timestamp)
-                        .mapToLong(s -> shardStorage.get(s.getUrn()).data.count()).sum())));
+                ret.put(
+                    timestamp,
+                    Utils.Data.adaptHistogram(
+                        histogram,
+                        histogramShards().stream()
+                            .filter(s -> s.getTimestamp() == timestamp)
+                            .mapToLong(s -> shardStorage.get(s.getUrn()).data.count())
+                            .sum())));
     return Collections.unmodifiableMap(ret);
   }
 
   @Override
   public Histogram getHistogram() {
     var histogram = histogram();
-    return Utils.Data.adaptHistogram(histogram,
-        allShards().stream().mapToLong(s -> shardStorage.get(s.getUrn()).data.count()).sum());
+    return Utils.Data.adaptHistogram(
+        histogram,
+        histogramShards().stream().mapToLong(s -> shardStorage.get(s.getUrn()).data.count()).sum());
   }
 
   @Override
@@ -717,8 +942,7 @@ public class StorageImpl implements Storage {
     }
   }
 
-  private static void addToHistogram(
-      com.dynatrace.dynahist.Histogram histogram, double value) {
+  private static void addToHistogram(com.dynatrace.dynahist.Histogram histogram, double value) {
     if (histogram != null && !Double.isNaN(value)) {
       histogram.addValue(value);
     }

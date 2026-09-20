@@ -125,6 +125,23 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final Graph<RuntimeAsset, RelationshipEdge> graph;
     private final Map<Observation, Executor> contextualizers;
     private TransactionImpl parent; // null in the root activity
+    private org.integratedmodelling.klab.api.data.TemporalWriteSet temporalWrites;
+    private final List<java.util.function.Supplier<org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal>> journalFactories = new ArrayList<>();
+
+    @Override public void stageSchedulerJournal(java.util.function.Supplier<org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal> journal) {
+      if (parent != null) { parent.stageSchedulerJournal(journal); return; }
+      journalFactories.add(journal);
+    }
+
+    @Override public org.integratedmodelling.klab.api.data.TemporalWriteSet getTemporalWrites() {
+      return parent == null ? temporalWrites : parent.getTemporalWrites();
+    }
+    @Override public void setTemporalWrites(org.integratedmodelling.klab.api.data.TemporalWriteSet writes) {
+      if (parent != null) { parent.setTemporalWrites(writes); return; }
+      if (temporalWrites != null && temporalWrites != writes)
+        throw new IllegalStateException("A root transaction has only one temporal write set");
+      temporalWrites = writes;
+    }
     private Map<Concept, Scale> cohortGeometries = new HashMap<>();
     private List<Runnable> beforeCommitActions = new ArrayList<>();
     private List<Runnable> afterCommitActions = new ArrayList<>();
@@ -258,6 +275,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         beforeCommitActions.clear();
         afterCommitActions.clear();
         schedulerJournal.clear();
+        journalFactories.clear();
         contextualizers.clear();
       }
     }
@@ -724,11 +742,18 @@ public class DigitalTwinImpl implements DigitalTwin {
               }
 
               for (var action : List.copyOf(beforeCommitActions)) action.run();
+              if (!journalFactories.isEmpty()) {
+                journalFactories.forEach(factory -> schedulerJournal.add(factory.get()));
+                activity.getMetadata().put(org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal.METADATA_KEY,
+                    schedulerJournal.stream().map(j -> Utils.Json.asString(j.committed(commitId))).toList());
+                modified.add(activity);
+              }
 
               for (var asset :
                   modified.stream()
                       .sorted(Comparator.comparingLong(RuntimeAsset::getId))
                       .toList()) {
+                if (asset == activity && !schedulerJournal.isEmpty()) continue;
                 var attribution = attributions.get(asset);
                 if (attribution != null) {
                   if (attribution.original().getId() > 0)
@@ -767,8 +792,27 @@ public class DigitalTwinImpl implements DigitalTwin {
               if (activeObserver != null
                   && target != null
                   && activeObserver.getId() != target.getId()) {
-                kgTransaction.perceive(activeObserver, target.getGeometry());
-                modified.add(activeObserver);
+                if (schedulerJournal.isEmpty()) {
+                  kgTransaction.perceive(activeObserver, target.getGeometry());
+                  modified.add(activeObserver);
+                } else for (var journal : schedulerJournal) {
+                  if (journal.publicationPending() || journal.kind()==Scheduler.Event.Type.EVENT) {
+                    kgTransaction.perceive(activeObserver, org.integratedmodelling.klab.api.geometry.Geometry.create(journal.support()));
+                    modified.add(activeObserver);
+                  }
+                }
+              }
+              if (!schedulerJournal.isEmpty()) {
+                var snapshot = createCommit(commitId,scope.getUser().getUsername(),stored,modified,linked);
+                var encodedDeltas = activity.getMetadata().get(
+                    org.integratedmodelling.klab.api.digitaltwin.TemporalStateDelta.METADATA_KEY);
+                var deltas = new ArrayList<org.integratedmodelling.klab.api.digitaltwin.TemporalStateDelta>();
+                if (encodedDeltas instanceof List<?> values) for (var value : values)
+                  deltas.add(Utils.Json.parseObject(value.toString(),org.integratedmodelling.klab.api.digitaltwin.TemporalStateDelta.class));
+                activity.getMetadata().put(org.integratedmodelling.klab.api.digitaltwin.TransitionCommit.METADATA_KEY,
+                    Utils.Json.asString(new org.integratedmodelling.klab.api.digitaltwin.TransitionCommit(
+                        1,scope.getId(),snapshot,schedulerJournal.stream().map(j -> j.committed(commitId)).toList(),deltas)));
+                kgTransaction.update(activity);
               }
             }
           } catch (Exception failure) {
@@ -805,6 +849,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         beforeCommitActions.clear();
         rollbackActions.clear();
         schedulerJournal.clear();
+        journalFactories.clear();
 
         ret = commit.getId();
       }

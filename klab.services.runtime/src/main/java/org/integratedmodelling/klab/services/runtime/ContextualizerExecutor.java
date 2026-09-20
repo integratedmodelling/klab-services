@@ -42,6 +42,7 @@ public class ContextualizerExecutor extends AbstractExecutor
         scanners.get(Dataflow.SELF_ID) == null
             ? observation.getGeometry()
             : scanners.get(Dataflow.SELF_ID).shard().getGeometry();
+    geometry = TemporalGeometry.localize(geometry, event);
 
     if (componentRegistry.implementation(callInfo.serviceInfo()).method != null) {
 

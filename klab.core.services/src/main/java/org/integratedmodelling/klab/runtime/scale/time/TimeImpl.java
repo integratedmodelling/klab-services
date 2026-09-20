@@ -617,7 +617,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     return create(
         type,
         resType,
-        (scope == null ? null : 1.0),
+        scope,
         start,
         end,
         null,

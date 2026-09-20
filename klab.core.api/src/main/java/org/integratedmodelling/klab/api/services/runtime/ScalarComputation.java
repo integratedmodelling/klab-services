@@ -17,6 +17,8 @@ import java.util.Map;
  * processed remotely.
  */
 public interface ScalarComputation {
+  /** Null denotes an older implementation whose inputs cannot be narrowed safely. */
+  default java.util.Set<String> inputNames() { return null; }
 
   /**
    * Create a scalar computation by adding consecutive scalar contextualizables. These should be

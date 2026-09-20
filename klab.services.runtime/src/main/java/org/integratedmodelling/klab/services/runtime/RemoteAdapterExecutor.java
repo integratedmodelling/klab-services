@@ -93,7 +93,13 @@ public class RemoteAdapterExecutor extends AbstractExecutor
             service
                 .get()
                 .contextualizeResource(
-                    resource, scanners.get(Dataflow.SELF_ID).shard().getGeometry(), scope);
+                    resource,
+                    TemporalGeometry.localize(
+                        scanners.get(Dataflow.SELF_ID) == null
+                            ? observation.getGeometry()
+                            : scanners.get(Dataflow.SELF_ID).shard().getGeometry(),
+                        event),
+                    scope);
       }
 
       // enqueue data extraction from service method TODO pass the scanner and use its geometry

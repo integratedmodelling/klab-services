@@ -100,12 +100,20 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public Observation getObserver() {
-    return this.observer;
+    return currentSnapshot(this.observer);
   }
 
   @Override
   public Observation getContextObservation() {
-    return this.contextObservation;
+    return currentSnapshot(this.contextObservation);
+  }
+
+  private Observation currentSnapshot(Observation observation) {
+    if(observation!=null && digitalTwin!=null && digitalTwin.getTransitionHistory().modifies(observation.getId())) {
+      var refreshed=digitalTwin.getKnowledgeGraph().getAsset(observation.getId(),this,Observation.class);
+      if(refreshed!=null) return refreshed;
+    }
+    return observation;
   }
 
   @Override
@@ -268,6 +276,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public void close() {
+    if (digitalTwin != null) digitalTwin.dispose();
     ClientScopeManager.INSTANCE.unregister(this);
     var runtime = getService(RuntimeService.class);
     if (runtime != null) {
@@ -431,7 +440,11 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     return this.digitalTwin;
   }
 
-  public void createDigitalTwin(String id) {
+  public synchronized void createDigitalTwin(String id) {
+    if(digitalTwin!=null) {
+      if(id.equals(digitalTwin.getContextId()) && !digitalTwin.isDisposed()) return;
+      digitalTwin.dispose();
+    }
     this.digitalTwin = new ClientDigitalTwin(this, id);
   }
 

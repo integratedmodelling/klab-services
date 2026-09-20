@@ -89,9 +89,23 @@ through `ServiceAuthorizationManager`. The manager parses the scope token, asks 
 for the corresponding peer scope, contextualizes it, and attaches it to the request principal.
 Missing scope headers yield a user-level scope; they do not imply a context.
 
-### 1.4. Reconstructing a missing context
+### 1.4. General scope recovery in `klab.core.services`
 
-The reconstruction path is lazy:
+Scope recovery is shared service infrastructure, not a Resolver implementation. The common
+`ServiceSecurityConfiguration` installs `TokenAuthorizationFilter`, which invokes
+`ServiceAuthorizationManager`; that manager delegates scope lookup and reconstruction to
+`ScopeManager`. All of these classes are in `klab.core.services`. Services using this common
+security pipeline therefore attempt recovery before their endpoint controller is invoked,
+regardless of whether the endpoint belongs to Resolver, Reasoner, Resources, or Runtime.
+
+The shared manager creates/reuses user scopes, reconstructs eligible session peers, and lazily
+reconstructs missing context peers from their host Runtime. The status refresh for an advertised
+but apparently unusable Runtime is also implemented in this shared manager. Service-specific
+`declareSessionScope` and `declareContextScope` hooks perform the receiving service's local
+instrumentation; they do not move the recovery algorithm into that service. Direct in-process
+calls that bypass the HTTP security pipeline must supply a scope or invoke the manager themselves.
+
+For a missing context, the shared reconstruction path is:
 
 1. Reuse a compatible registered scope if present, applying the requesting identity when needed.
 2. For a missing context, require the originating Runtime ID and locate it among the user's
@@ -113,10 +127,18 @@ session/context creation operation transactional or synchronize all child scope 
 Child scopes copy service lists; they are not automatically live views of later user-catalog
 changes.
 
-If Resolver still lacks a context, its controller returns a conflict with reconnection guidance.
-The error handler now preserves the status and detail of Spring status exceptions rather than
-embedding a 409 inside a generic 500 response. Unknown host, known-but-unusable host, unauthorized
-configuration, and unavailable configuration should remain distinguishable in diagnostics.
+Resolver provides a concrete example of endpoint-level failure handling: its `requireContext`
+helper checks the scope already attached to the principal and returns a conflict with reconnection
+guidance if recovery did not produce a context. That helper does not perform recovery. Other
+controllers retain their own scope requirements and failure handling; shared recovery does not
+imply that every endpoint returns the same conflict response. The shared `KlabErrorHandler` now
+preserves the status and detail of Spring status exceptions rather than embedding a 409 inside
+a generic 500 response. Unknown host, known-but-unusable host, unauthorized configuration, and
+unavailable configuration should remain distinguishable in diagnostics.
+
+Reconstructing a receiving service's context peer is also distinct from restoring the host
+Runtime's persisted twin, executable state, or scheduler after a restart. Shared scope recovery
+does not by itself provide that durable recovery capability.
 
 ### 1.5. Messaging and persistence today
 

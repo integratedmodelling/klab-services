@@ -173,7 +173,7 @@ public class ResolutionCompiler {
 
     if (observation.getId() > 0) {
       ScheduleNegotiationSupport.checkReuse(observation, parentGraph.scheduleRequest,
-          GeometryRepository.INSTANCE.scale(observation.getGeometry()).getTime());
+          GeometryRepository.INSTANCE.scale(observation.getGeometry()).getTime(), scope);
       return parentGraph;
     }
 
@@ -188,7 +188,7 @@ public class ResolutionCompiler {
     var query =
         suppliedQuery == null ? query(observation.getObservable(), scale, scope) : suppliedQuery;
     if (query.hasCoverage() && query.coverage().isComplete()) {
-      ScheduleNegotiationSupport.checkReuse(query.reference(), parentGraph.scheduleRequest, scale.getTime());
+      ScheduleNegotiationSupport.checkReuse(query.reference(), parentGraph.scheduleRequest, scale.getTime(), scope);
       var ret = parentGraph.createChild(observation, scale);
       ret.addReference(query.reference(), query.coverage());
       return ret;
@@ -204,10 +204,11 @@ public class ResolutionCompiler {
     }
     Coverage coverage = Coverage.create(scale, 0.0);
     for (var resolvable : parentGraph.getResolving(observation.getObservable(), scale)) {
-      if (parentGraph.scheduleRequest != null) {
+      if (parentGraph.scheduleRequest != null || observation.getObservable().is(SemanticType.PROCESS)
+          || observation.getObservable().is(SemanticType.EVENT)) {
         // A semantic/coverage cache entry alone cannot prove occurrence compatibility.
         if (!(resolvable.getFirst() instanceof Observation cached)) continue;
-        ScheduleNegotiationSupport.checkReuse(cached, parentGraph.scheduleRequest, scale.getTime());
+        ScheduleNegotiationSupport.checkReuse(cached, parentGraph.scheduleRequest, scale.getTime(), scope);
       }
       if (resolvable.getSecond().getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
         continue;
@@ -632,7 +633,7 @@ public class ResolutionCompiler {
     }
     var query = query(observable, contextualizedScope.getSecond(), contextualizedScope.getFirst());
     if (query.hasCoverage() && query.coverage().isComplete()) {
-      ScheduleNegotiationSupport.checkReuse(query.reference(), graph.scheduleRequest, contextualizedScope.getSecond().getTime());
+      ScheduleNegotiationSupport.checkReuse(query.reference(), graph.scheduleRequest, contextualizedScope.getSecond().getTime(), contextualizedScope.getFirst());
       return graph.createReference(observable, query.reference());
     }
 
@@ -648,7 +649,7 @@ public class ResolutionCompiler {
     if (observation.isEmpty()) {
       return ResolutionGraph.empty();
     } else if (observation.getId() > 0) {
-      ScheduleNegotiationSupport.checkReuse(observation, graph.scheduleRequest, contextualizedScope.getSecond().getTime());
+      ScheduleNegotiationSupport.checkReuse(observation, graph.scheduleRequest, contextualizedScope.getSecond().getTime(), contextualizedScope.getFirst());
       return graph.createReference(observable, observation);
     }
 

@@ -25,10 +25,11 @@ import org.integratedmodelling.klab.utilities.Utils;
 import org.ojalgo.array.BufferArray;
 
 /**
- * There is one separate <code>StorageScope</code> in each {@link ContextScope}. It's built on
- * demand based on the configuration available from the context data, including whatever user-level
- * configuration was passed, and stored in the context data at the runtime side. The StorageScope is
- * managed by the StorageManager, which is a singleton used by the DigitalTwin.
+ * There is one separate <code>StorageScope</code> in each {@link
+ * org.integratedmodelling.klab.api.scope.ContextScope}. It's built on demand based on the
+ * configuration available from the context data, including whatever user-level configuration was
+ * passed, and stored in the context data at the runtime side. The StorageScope is managed by the
+ * StorageManager, which is a singleton used by the DigitalTwin.
  */
 public class StorageManagerImpl implements StorageManager {
 
@@ -156,7 +157,8 @@ public class StorageManagerImpl implements StorageManager {
 
     var ret = this.storage.get(observation.getId());
     if (ret == null && observation.getId() > 0) {
-      ret = this.storage.computeIfAbsent(observation.getId(), id -> reconstructStorage(observation));
+      ret =
+          this.storage.computeIfAbsent(observation.getId(), id -> reconstructStorage(observation));
     }
 
     if (ret == null) {
@@ -354,18 +356,11 @@ public class StorageManagerImpl implements StorageManager {
       for (long i = 0; i < array.count(); i++) {
         switch (type) {
           case FLOAT:
-            array.set(
-                i,
-                legacy
-                    ? Float.intBitsToFloat(readLegacyInt(input))
-                    : input.readFloat());
+            array.set(i, legacy ? Float.intBitsToFloat(readLegacyInt(input)) : input.readFloat());
             break;
           case DOUBLE:
             array.set(
-                i,
-                legacy
-                    ? Double.longBitsToDouble(readLegacyLong(input))
-                    : input.readDouble());
+                i, legacy ? Double.longBitsToDouble(readLegacyLong(input)) : input.readDouble());
             break;
           case LONG:
             array.set(i, legacy ? readLegacyLong(input) : input.readLong());
@@ -383,9 +378,7 @@ public class StorageManagerImpl implements StorageManager {
 
   private static int readLegacyInt(DataInputStream input) throws IOException {
     int value = input.readInt();
-    return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
-        ? Integer.reverseBytes(value)
-        : value;
+    return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? Integer.reverseBytes(value) : value;
   }
 
   private static long readLegacyLong(DataInputStream input) throws IOException {
@@ -465,5 +458,42 @@ public class StorageManagerImpl implements StorageManager {
 
   public File getStorageFile(Storage.Shard shard) {
     return new File(getContextStorageDirectory(), shard.getUrn() + ".dat");
+  }
+
+  /** Remove only an uncommitted observation's local storage container. */
+  public void discardProvisionalStorage(long temporaryId) {
+    if (temporaryId >= 0)
+      throw new IllegalArgumentException("Cannot discard committed observation storage");
+    var discarded = storage.remove(temporaryId);
+    if (discarded != null) discarded.close(null);
+  }
+
+  /** Synchronous immutable-file preparation for a graph-owned temporal revision. */
+  void persistTemporalShard(Storage.Shard shard, BufferArray data) {
+    var destination = getStorageFile(shard).toPath();
+    java.nio.file.Path temporary = null;
+    try {
+      Files.createDirectories(destination.getParent());
+      temporary = Files.createTempFile(destination.getParent(), shard.getUrn(), ".pending");
+      writeBufferArray(data, temporary.toFile(), shard.getNativeType());
+      try (var channel =
+          java.nio.channels.FileChannel.open(temporary, java.nio.file.StandardOpenOption.WRITE)) {
+        channel.force(true);
+      }
+      try {
+        Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE);
+      } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+        Files.move(temporary, destination);
+      }
+    } catch (IOException e) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e);
+    } finally {
+      if (temporary != null)
+        try {
+          Files.deleteIfExists(temporary);
+        } catch (IOException e) {
+          contextScope.error(e);
+        }
+    }
   }
 }

@@ -2525,8 +2525,13 @@ public class RuntimeService extends BaseService
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
       KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope) {
+    if(scope==null) throw new KnowledgeGraph.QueryException(
+        KnowledgeGraph.QueryException.Code.BACKEND_UNAVAILABLE,"Context is unavailable; reconnect the digital twin or retry after initialization");
     if (scope instanceof ContextScope contextScope) {
-      var knowledgeGraph = contextScope.getDigitalTwin().getKnowledgeGraph();
+      var twin=contextScope.getDigitalTwin();
+      var knowledgeGraph = twin==null ? null : twin.getKnowledgeGraph();
+      if(knowledgeGraph==null) throw new KnowledgeGraph.QueryException(
+          KnowledgeGraph.QueryException.Code.BACKEND_UNAVAILABLE,"Knowledge graph is not ready for context "+contextScope.getId());
       if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
         if (qc.getResultType() == null) {
           throw new KnowledgeGraph.QueryException(

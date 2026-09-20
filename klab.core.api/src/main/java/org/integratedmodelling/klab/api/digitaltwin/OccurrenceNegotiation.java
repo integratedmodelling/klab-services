@@ -27,7 +27,8 @@ public record OccurrenceNegotiation(int version, String model, Request request,
     }
   }
   public OccurrenceNegotiation {
-    if (version != 1 || model == null || effective == null || declarations == null || declarations.isEmpty())
+    if ((version != 1 && version != 2) || model == null || effective == null || declarations == null
+        || (declarations.isEmpty() && (version == 1 || request == null)))
       throw new KlabValidationException("Incomplete occurrence negotiation");
     declarations = List.copyOf(declarations);
     if (declarations.stream().filter(d -> d.schedule().source() == OccurrenceSchedule.Source.MODEL).count() > 1)
@@ -36,11 +37,14 @@ public record OccurrenceNegotiation(int version, String model, Request request,
 
   public static OccurrenceNegotiation select(String model, Request request,
       List<Declaration> declarations, Time context) {
-    if (declarations.isEmpty()) throw new KlabValidationException("Occurrent model requires @time or Java schedule: " + model);
+    if (declarations.isEmpty() && request == null) throw new KlabValidationException("Occurrent model requires a schedule: " + model);
     var modelDefault = declarations.stream().map(Declaration::schedule)
         .filter(s -> s.source() == OccurrenceSchedule.Source.MODEL).findFirst().orElse(null);
     var chosen = request != null ? request.schedule() : modelDefault != null ? modelDefault : declarations.getFirst().schedule();
-    var result = new OccurrenceNegotiation(1, model, request, declarations, chosen);
+    var version = declarations.isEmpty() || declarations.stream().anyMatch(d ->
+        d.schedule().source() == OccurrenceSchedule.Source.CONTEXT_GEOMETRY
+            || d.schedule().source() == OccurrenceSchedule.Source.OBSERVER_GEOMETRY) ? 2 : 1;
+    var result = new OccurrenceNegotiation(version, model, request, declarations, chosen);
     result.validate(context);
     return result;
   }

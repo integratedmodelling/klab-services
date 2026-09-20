@@ -60,12 +60,21 @@ public class JobManager {
             Logging.INSTANCE.error(
                 "Job " + description + " failed\n" + Utils.Exceptions.stackTrace(storedFailure));
           } else {
-            Logging.INSTANCE.info("Job " + description + " completed successfully");
+            Logging.INSTANCE.info("Job " + description + " " + completionDescription(result));
           }
           results.put(ret, Pair.of(result, storedFailure));
           jobs.remove(ret, job);
         });
     return ret;
+  }
+
+  static String completionDescription(Object result) {
+    if (result instanceof org.integratedmodelling.klab.api.services.runtime.Dataflow dataflow) {
+      return "completed with resolution outcome " + dataflow.getResolutionOutcome();
+    }
+    if (Boolean.FALSE.equals(result)) return "completed with a negative result";
+    // FINISHED describes delivery of a result, not success of the application operation.
+    return "completed; application outcome is reported in the result";
   }
 
   public JobStatus status(long id) {

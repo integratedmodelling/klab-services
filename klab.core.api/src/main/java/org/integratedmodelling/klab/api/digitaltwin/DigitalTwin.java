@@ -128,6 +128,7 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     String getId();
 
+
     /**
      * This is used to flag a failure in the creation of a digital twin or the connection. If true,
      * the ID may be null and should not be used even if not. Notifications should contain at least
@@ -243,6 +244,10 @@ public interface DigitalTwin extends RuntimeAsset {
    * finalizing the storage commitment on commit.
    */
   interface Transaction {
+    default org.integratedmodelling.klab.api.data.TemporalWriteSet getTemporalWrites() { return null; }
+    default void setTemporalWrites(org.integratedmodelling.klab.api.data.TemporalWriteSet writes) {
+      throw new UnsupportedOperationException("Transactional temporal storage is unavailable");
+    }
 
     /**
      * The ID returned when a commit was done successfully on a non-root transition. In recursive
@@ -283,6 +288,11 @@ public interface DigitalTwin extends RuntimeAsset {
 
     /** Stage event identity, completion receipt and publication intent in the same root commit. */
     default void stageSchedulerJournal(SchedulerJournal journal) {
+      throw new UnsupportedOperationException();
+    }
+
+    /** Resolve newly created asset IDs after allocation, in the same atomic graph commit. */
+    default void stageSchedulerJournal(java.util.function.Supplier<SchedulerJournal> journal) {
       throw new UnsupportedOperationException();
     }
 

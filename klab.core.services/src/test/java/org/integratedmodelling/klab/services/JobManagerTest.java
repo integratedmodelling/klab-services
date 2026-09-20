@@ -10,6 +10,14 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.junit.jupiter.api.Test;
 
 class JobManagerTest {
+  @Test void completionDoesNotClaimApplicationSuccess() {
+    assertEquals("completed with resolution outcome FAILED",JobManager.completionDescription(
+        org.integratedmodelling.klab.api.services.runtime.Dataflow.empty(java.util.List.of())));
+    assertEquals("completed with resolution outcome NO_MODEL",JobManager.completionDescription(
+        org.integratedmodelling.klab.api.services.runtime.Dataflow.noModel(java.util.List.of())));
+    assertFalse(JobManager.completionDescription(false).contains("success"));
+    assertFalse(JobManager.completionDescription(null).contains("success"));
+  }
 
   @Test
   void cancellationTargetsSubmittedTaskAndRemainsVisibleAsInterrupted() {

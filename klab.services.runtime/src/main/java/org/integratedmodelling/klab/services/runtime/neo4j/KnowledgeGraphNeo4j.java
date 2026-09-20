@@ -1242,7 +1242,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setCredits(node.get(GraphModel.Fields.CREDITS).asLong(0));
         instance.setSize(node.get(GraphModel.Fields.SIZE).asLong(0));
         instance.setSchedulerTime(
-            node.get(GraphModel.Fields.SCHEDULER_TIME).asList(value -> value.asLong()));
+            node.get(GraphModel.Fields.SCHEDULER_TIME).isNull()
+                ? List.of()
+                : node.get(GraphModel.Fields.SCHEDULER_TIME).asList(value -> value.asLong()));
         instance.setStackTrace(
             node.get(GraphModel.Fields.STACK_TRACE).isNull()
                 ? null

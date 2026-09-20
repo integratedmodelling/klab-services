@@ -402,7 +402,7 @@ public class RuntimeClient extends BaseServiceClient
           default -> KnowledgeGraph.QueryException.Code.EXECUTION_FAILED;
         };
         throw new KnowledgeGraph.QueryException(code,
-            "Knowledge graph request failed (HTTP " + failure.getStatus() + ")", failure);
+            "Knowledge graph request failed (HTTP " + failure.getStatus() + "): " + failure.getMessage(), failure);
       }
     }
     throw new KlabIllegalStateException("Knowledge graph query using unexpected implementation");

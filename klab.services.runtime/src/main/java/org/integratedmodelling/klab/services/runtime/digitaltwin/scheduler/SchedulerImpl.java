@@ -33,14 +33,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.Disposables;
 
-/**
- * Reactive scheduler/event bus stub for testing, to evolve into the actual scheduler.
- *
- * <p>Executors should be registered with the observations at dataflow compilation - the insertion
- * in the DT should also compile them.They should have a flag that says when the implementations can
- * be removed (init only, recompute, event-specific etc). The DT should be able to reconstruct the
- * necessary ones from the recorded actuators without a need for the dataflow being there.
- */
+/** INIT registration and synchronous bounded temporal dispatch with durable per-plan progress. */
 public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   private final ServiceContextScope rootScope;
@@ -53,7 +46,13 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   private final reactor.core.Disposable.Composite subscriptions = Disposables.composite();
   private boolean hasTimeBounds;
   private final Map<Long, OccurrenceRegistration> occurrences = new ConcurrentHashMap<>();
+  private final Map<Long, Observation> occurrenceObservations = new ConcurrentHashMap<>();
+  private final java.util.concurrent.atomic.AtomicLong requestedThrough =
+      new java.util.concurrent.atomic.AtomicLong(Long.MIN_VALUE);
   private final Map<DigitalTwin.Transaction, Set<Observation>> pending = new IdentityHashMap<>();
+  private final InitializationRuns initializationRuns = new InitializationRuns();
+  private boolean draining;
+  private boolean advancePending;
 
   public Map<Long, OccurrenceRegistration> getOccurrenceRegistrations() {
     return Map.copyOf(occurrences);
@@ -87,7 +86,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     // registered.
     post(this.initializationEvent = Event.initialization(), rootScope);
     // Restore committed registrations without rerunning initialization or changing timestamps.
-    // Clock replay/resumption still needs a durable event-completion cursor and execution policy.
+    // Resumption is explicitly driven by advanceTo; construction must never execute user code.
     for (var observation : knowledgeGraph.getScheduledObservations(rootScope)) {
       if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
         activateOccurrence(observation);
@@ -164,21 +163,237 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   @Override
   public boolean switchToRealTime(long until) {
+    throw new UnsupportedOperationException(
+        "Only bounded simulated temporal dispatch is supported");
+  }
 
-    if (!occurrences.isEmpty())
-      throw new UnsupportedOperationException("Occurrence clocks are disabled until S4");
+  /** Explicit bounded clock driver. Restart and newly introduced cadences use their own cursors. */
+  @Override
+  public synchronized boolean advanceTo(long until) {
+    if (until == Long.MAX_VALUE)
+      throw new IllegalArgumentException("A finite simulation horizon is required");
+    until = requestedThrough.accumulateAndGet(until, Math::max);
+    advancePending = true;
+    if (draining) return true;
+    draining = true;
+    try {
+      do {
+        advancePending = false;
+        if (!drainThrough(requestedThrough.get())) return false;
+      } while (advancePending);
+      return true;
+    } finally {
+      draining = false;
+    }
+  }
 
-    if (System.currentTimeMillis() < epochEnd) {
+  private boolean drainThrough(long until) {
+    var registrations = new ArrayList<SimulatedDispatch.Registration>();
+    for (var entry : occurrences.entrySet()) {
+      var registration = entry.getValue();
+      var schedule = registration.schedules().getFirst().bound();
+      if (registration.schedules().stream().anyMatch(s -> !s.bound().equals(schedule)))
+        throw new UnsupportedOperationException(
+            "An actuator chain must have one accepted schedule");
+      var observation = occurrenceObservations.get(entry.getKey());
+      registrations.add(
+          new SimulatedDispatch.Registration(
+              entry.getKey(),
+              registration.id(),
+              registration.planRevision(),
+              schedule,
+              () -> completedThrough(observation, registration)));
+    }
+    return timeEmitter.emitSimulated(
+        registrations,
+        until,
+        tick -> {
+          var observation = occurrenceObservations.get(tick.registration().observationId());
+          var registration = occurrences.get(observation.getId());
+          return dispatch(observation, registration, tick.event(), true);
+        });
+  }
+
+  private long completedThrough(Observation observation, OccurrenceRegistration registration) {
+    var encoded = observation.getMetadata().get(DispatchProgress.KEY);
+    if (encoded == null) return Long.MIN_VALUE;
+    var progress = Utils.Json.parseObject(encoded.toString(), DispatchProgress.class);
+    if (!progress.registration().equals(registration.id())
+        || !progress.revision().equals(registration.planRevision()))
+      throw new IllegalStateException(
+          "Temporal cursor belongs to another accepted plan; re-resolution required");
+    return progress.through();
+  }
+
+  @Override
+  public synchronized boolean dispatchObserved(Observation observation) {
+    if (observation.getId() <= 0
+        || !observation.getObservable().is(SemanticType.EVENT)
+        || observation.getObservable().getSemantics().isCollective())
+      throw new IllegalArgumentException("A durable individual event observation is required");
+    var time = GeometryRepository.INSTANCE.scale(observation.getGeometry()).getTime();
+    if (time == null || time.getStart() == null || time.getEnd() == null)
+      throw new IllegalArgumentException("Observed events require bounded temporal support");
+    if (time.getStart().getMilliseconds() >= time.getEnd().getMilliseconds())
+      throw new UnsupportedOperationException(
+          "Point events require an explicit temporal support policy");
+    var id = "observed:" + observation.getId();
+    var previous = observation.getMetadata().get(DispatchProgress.KEY);
+    if (previous != null) {
+      var receipt = Utils.Json.parseObject(previous.toString(), DispatchProgress.class);
+      if (!receipt.eventId().equals(id)
+          || !receipt.revision().equals("observed-v1:" + observation.getGeometry().encode()))
+        throw new IllegalStateException(
+            "Observed event identity or support changed after dispatch");
+      return true;
+    }
+    return dispatch(
+        observation,
+        null,
+        new TransitionEvent(
+            id, time.getStart().getMilliseconds(), time.getEnd().getMilliseconds(), observation),
+        false);
+  }
+
+  private boolean dispatch(
+      Observation observation,
+      OccurrenceRegistration registration,
+      TransitionEvent event,
+      boolean runOccurrence) {
+    var geometry =
+        org.integratedmodelling.klab.services.runtime.TemporalGeometry.localize(
+            observation.getGeometry(), event);
+    var scope =
+        rootScope.executingFresh(
+            org.integratedmodelling.klab.api.provenance.Activity.of(
+                org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION),
+            observation);
+    try {
+      var bearer = registration == null ? observation.getParentId() : registration.bearerId();
+      var consequences =
+          ComputationalClosure.ordered(observation, bearer, geometry, knowledgeGraph, scope);
+      var writes =
+          new org.integratedmodelling.klab.runtime.storage.LocalTemporalWriteSet(event, scope);
+      if (runOccurrence) {
+        // Compile against this attempt's scope, never a cached/committed transaction.
+        var executor = restoreExecutor(observation, scope);
+        if (executor == null || !execute(executor, observation, geometry, event, scope))
+          throw new IllegalStateException(
+              "Temporal contextualization failed for " + observation.getUrn());
+      }
+      for (var consequence : consequences) {
+        boolean triggered =
+            knowledgeGraph
+                .getLinks(
+                    consequence,
+                    GraphModel.Relationship.Direction.INCOMING,
+                    scope,
+                    GraphModel.Relationship.AFFECTS)
+                .stream()
+                .anyMatch(
+                    link ->
+                        org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.PREREQUISITE
+                                .equals(
+                                    link.properties()
+                                        .get(
+                                            org.integratedmodelling.klab.api.digitaltwin.ProcessPlan
+                                                .EDGE_ROLE))
+                            && link.source() instanceof Observation input
+                            && (writes.changed(input) || input.getId() == observation.getId()));
+        if (!triggered) continue;
+        var executor = restoreExecutor(consequence, scope);
+        var support =
+            org.integratedmodelling.klab.services.runtime.TemporalGeometry.localize(
+                consequence.getGeometry(), event);
+        if (executor == null || !execute(executor, consequence, support, event, scope))
+          throw new IllegalStateException(
+              "Causal contextualization failed for " + consequence.getUrn());
+      }
+      var changed = writes.changedObservations();
+      writes.prepare();
+      var id = registration == null ? event.id() : registration.id();
+      var revision =
+          registration == null
+              ? "observed-v1:" + observation.getGeometry().encode()
+              : registration.planRevision();
+      var previous = observation.getMetadata().get(DispatchProgress.KEY);
+      var transaction = scope.getCurrentTransaction();
+      transaction.afterRollback(() -> restoreMetadata(observation, DispatchProgress.KEY, previous));
+      observation
+          .getMetadata()
+          .put(
+              DispatchProgress.KEY,
+              Utils.Json.asString(
+                  new DispatchProgress(
+                      1,
+                      id,
+                      revision,
+                      event.end(),
+                      event.id(),
+                      registration == null ? event.end() : requestedThrough.get())));
+      transaction.update(observation);
+      transaction.beforeCommit(
+          () -> {
+            var deltas =
+                changed.stream()
+                    .sorted(java.util.Comparator.comparingLong(Observation::getId))
+                    .map(
+                        quality -> {
+                          var history =
+                              Utils.Json.parseObject(
+                                  quality
+                                      .getMetadata()
+                                      .get(
+                                          org.integratedmodelling.klab.runtime.storage
+                                              .TemporalHistory.KEY)
+                                      .toString(),
+                                  org.integratedmodelling.klab.runtime.storage.TemporalHistory
+                                      .class);
+                          var state =
+                              history.revisions().stream()
+                                  .filter(r -> r.event().equals(event.toKey()))
+                                  .findFirst()
+                                  .orElseThrow();
+                          return Utils.Json.asString(
+                              new org.integratedmodelling.klab.api.digitaltwin.TemporalStateDelta(
+                                  1,
+                                  quality.getId(),
+                                  event.toKey(),
+                                  state.support(),
+                                  state.shards()));
+                        })
+                    .toList();
+            if (!deltas.isEmpty())
+              transaction
+                  .getActivity()
+                  .getMetadata()
+                  .put(
+                      org.integratedmodelling.klab.api.digitaltwin.TemporalStateDelta.METADATA_KEY,
+                      deltas);
+          });
+      transaction.stageSchedulerJournal(
+          () ->
+              new org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal(
+                  1,
+                  event.id(),
+                  null,
+                  event.getType(),
+                  event.start(),
+                  event.end(),
+                  id,
+                  revision,
+                  geometry.encode(),
+                  0,
+                  changed.stream().map(Observation::getId).sorted().toList(),
+                  !changed.isEmpty()));
+      if (scope.commit() < 0)
+        throw new IllegalStateException("Temporal transaction did not commit");
+      return true;
+    } catch (Throwable failure) {
+      scope.fail(failure);
+      rootScope.error(failure);
       return false;
     }
-
-    if (until < 0) {
-      this.timeEmitter.startRealtimeClock();
-    } else {
-      this.timeEmitter.startRealtimeClock(until);
-    }
-
-    return true;
   }
 
   private Triple<Long, Long, Time.Resolution> register(Geometry geometry) {
@@ -200,6 +415,9 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   @Override
   public boolean executeDependency(
       Observation observation, Geometry geometry, Event event, ContextScope scope) {
+    if (event.getType() != Event.Type.INITIALIZATION)
+      throw new UnsupportedOperationException(
+          "Temporal prerequisites are selected by causal dispatch, not INIT recursion");
     return checkEvent(observation, event)
         || contextualize(observation, geometry, (ServiceContextScope) scope, event);
   }
@@ -232,6 +450,17 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       ServiceContextScope requestedScope,
       Event causingEvent) {
 
+    if(causingEvent.getType()==Event.Type.INITIALIZATION) {
+      return initializationRuns.execute(requestedScope.getCurrentTransaction(), observation.getId(),
+          () -> checkEvent(observation,causingEvent)
+              || contextualizeOnce(observation,geometry,requestedScope,causingEvent));
+    }
+    return contextualizeOnce(observation,geometry,requestedScope,causingEvent);
+  }
+
+  private boolean contextualizeOnce(
+      Observation observation, Geometry geometry, ServiceContextScope requestedScope, Event causingEvent) {
+
     var transactionExecutor =
         requestedScope.getCurrentTransaction() == null
             ? null
@@ -254,9 +483,13 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
                 scope,
                 GraphModel.Relationship.AFFECTS)) {
 
-      var role = affecting.properties().get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE);
+      var role =
+          affecting
+              .properties()
+              .get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE);
       if (org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.INFLUENCE.equals(role)
-          || org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DESCRIPTIVE.equals(role)) continue;
+          || org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DESCRIPTIVE.equals(role))
+        continue;
 
       if (checkEvent((Observation) affecting.source(), causingEvent)) {
         continue;
@@ -322,14 +555,16 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
             != org.integratedmodelling.klab.api.services.runtime.Actuator.ExecutionRole
                 .INITIALIZATION) {
       if (causingEvent.getType() != Event.Type.INITIALIZATION)
-        throw new UnsupportedOperationException("Temporal dispatch is disabled until S4");
+        throw new UnsupportedOperationException(
+            "Temporal execution must enter the transactional dispatcher");
       if (!transactionExecutor.run(geometry, causingEvent, scope)) return false;
       stageOccurrence(observation, transactionExecutor.getActuator(), scope);
       return true;
     }
     if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
       if (causingEvent.getType() != Event.Type.INITIALIZATION)
-        throw new UnsupportedOperationException("Temporal dispatch is disabled until S4");
+        throw new UnsupportedOperationException(
+            "Temporal execution must enter the transactional dispatcher");
       return true;
     }
     if (executor == null && observation.getId() > 0) {
@@ -352,7 +587,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     return true;
   }
 
-  private TriFunction<Geometry, Event, ContextScope, Boolean> restoreExecutor(
+  TriFunction<Geometry, Event, ContextScope, Boolean> restoreExecutor(
       Observation observation, ServiceContextScope scope) {
     if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
       var registration = readOccurrence(observation);
@@ -370,6 +605,16 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       var compiled =
           new CompiledDataflow(scope.getService(RuntimeService.class), observation, boundScope);
       return compiled.restoreOccurrenceExecutor(plan)::run;
+    }
+    var snapshot = observation.getMetadata().get(Scheduler.PLAN_METADATA_KEY);
+    if (snapshot != null) {
+      var plan =
+          Utils.Json.parseObject(
+              snapshot.toString(),
+              org.integratedmodelling.klab.api.services.runtime.Actuator.class);
+      return new CompiledDataflow(scope.getService(RuntimeService.class), observation, scope)
+              .restoreOccurrenceExecutor(plan)
+          ::run;
     }
     var implementations =
         knowledgeGraph.getLinks(
@@ -430,6 +675,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     processor.tryEmitComplete();
     executors.invalidateAll();
     occurrences.clear();
+    occurrenceObservations.clear();
     synchronized (pending) {
       pending.clear();
     }
@@ -441,6 +687,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       Geometry geometry,
       Scheduler.Event event,
       ServiceContextScope scope) {
+    if (event.getType() != Event.Type.INITIALIZATION) return executor.apply(geometry, event, scope);
     if (observation instanceof ObservationImpl concrete && scope.getCurrentTransaction() != null) {
       var previousTimestamps = new ArrayList<>(observation.getEventTimestamps());
       scope
@@ -489,7 +736,13 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   }
 
   private void activateOccurrence(Observation observation) {
+    occurrenceObservations.put(observation.getId(), observation);
     occurrences.put(observation.getId(), readOccurrence(observation));
+    var encoded = observation.getMetadata().get(DispatchProgress.KEY);
+    if (encoded != null) {
+      var progress = Utils.Json.parseObject(encoded.toString(), DispatchProgress.class);
+      requestedThrough.accumulateAndGet(progress.requestedThrough(), Math::max);
+    }
   }
 
   private void stageOccurrence(
@@ -522,7 +775,8 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     var id = UUID.randomUUID().toString();
     var previous = observation.getMetadata().get(OccurrenceRegistration.METADATA_KEY);
     var previousRegistered = observation.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY);
-    var negotiationKey = org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY;
+    var negotiationKey =
+        org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.DATA_KEY;
     var previousNegotiation = observation.getMetadata().get(negotiationKey);
     Runnable release =
         () -> {
@@ -575,12 +829,24 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         });
     root.afterCommit(
         () -> {
-          try {
-            activateOccurrence(observation);
-          } finally {
-            release.run();
+          // The first callback activates the entire root commit before any temporal execution.
+          Set<Observation> committed;
+          synchronized (pending) {
+            committed = pending.remove(root);
           }
+          if (committed == null) return;
+          committed.forEach(this::activateOccurrence);
+          advanceCommittedOccurrences();
         });
+  }
+
+  /** Run committed bounded registrations; the accepted bounds are also durable retry intent. */
+  void advanceCommittedOccurrences() {
+    long horizon = occurrences.values().stream()
+        .flatMap(registration -> registration.schedules().stream())
+        .mapToLong(schedule -> schedule.bound().end()).max().orElse(Long.MIN_VALUE);
+    if (horizon != Long.MIN_VALUE && !advanceTo(horizon))
+      rootScope.error("Temporal dispatch stopped after registration commit; retry from durable progress is required");
   }
 
   private boolean checkEvent(Observation observation, Event event) {

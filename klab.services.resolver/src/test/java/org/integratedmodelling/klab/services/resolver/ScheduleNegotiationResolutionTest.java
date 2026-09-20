@@ -21,6 +21,95 @@ import org.junit.jupiter.api.*;
 class ScheduleNegotiationResolutionTest {
   @BeforeAll static void setup() { ServiceConfiguration.injectInstantiators(); }
   static final Geometry GEOMETRY = Geometry.create("T0(1){tstart=1704067200000,tend=1735689600000,ttype=PHYSICAL}");
+  static Geometry scheduled(String unit, double step) {
+    return Geometry.create("T1(12){tstart=1704067200000,tend=1735689600000,ttype=GRID,tunit="
+        + unit + ",tscope=" + step + "}");
+  }
+
+  @Test void originalContextDefaultRetainsCalendarMultiplierTransportAndReuseIsolation() {
+    var scope = scope(10);
+    var original = scheduled("MONTH", 2);
+    ((ObservationImpl) scope.getContextObservation()).setGeometry(original);
+    var model = model("test:implicit", false); model.getAnnotations().clear();
+    // Candidate support has lost its grid: use the original context's cadence and phase.
+    var time = GeometryRepository.INSTANCE.scale(GEOMETRY).getTime();
+    var accepted = ScheduleNegotiationSupport.negotiate(model, ResolutionGraph.create(scope), scope, time);
+    assertEquals(2, accepted.version());
+    assertEquals(2, accepted.effective().step());
+    assertEquals(java.time.Instant.parse("2024-03-01T00:00:00Z").toEpochMilli(),
+        new OccurrenceSchedule.Cadence(accepted.effective().step(), accepted.effective().unit())
+            .advance(java.time.Instant.parse("2024-01-01T00:00:00Z").toEpochMilli()));
+    assertEquals(org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution.Type.MONTH,
+        accepted.effective().unit());
+    assertEquals(OccurrenceSchedule.Source.CONTEXT_GEOMETRY, accepted.effective().source());
+    assertEquals("context:10", accepted.declarations().getFirst().origin());
+    assertEquals(accepted, Utils.Json.parseObject(Utils.Json.asString(accepted), OccurrenceNegotiation.class));
+    var existing = new ObservationImpl(); existing.setId(100); existing.setGeometry(original);
+    existing.setObservable(model.getObservables().getFirst());
+    existing.getMetadata().put(OccurrenceNegotiation.DATA_KEY, Utils.Json.asString(accepted));
+    assertDoesNotThrow(() -> ScheduleNegotiationSupport.checkReuse(existing, null, time, scope));
+    ((ObservationImpl) scope.getContextObservation()).setGeometry(scheduled("MONTH", 1));
+    assertThrows(RuntimeException.class, () -> ScheduleNegotiationSupport.checkReuse(existing, null, time, scope));
+    assertEquals(2, accepted.effective().step());
+    // Neither an explicit request nor a model default is constrained by geometry cadence.
+    var requested = ScheduleNegotiationSupport.negotiate(model,
+        ResolutionGraph.create(scope).withScheduleRequest(request("parent", "1.day")), scope, time);
+    assertEquals(OccurrenceSchedule.Source.DEPENDENCY, requested.effective().source());
+    assertTrue(requested.declarations().isEmpty());
+    assertEquals(requested, Utils.Json.parseObject(Utils.Json.asString(requested), OccurrenceNegotiation.class));
+    assertEquals(OccurrenceSchedule.Source.MODEL,
+        ScheduleNegotiationSupport.negotiate(model("test:explicit", true), ResolutionGraph.create(scope), scope, time)
+            .effective().source());
+  }
+
+  @Test void eventDefaultUsesObserverPerceivedGeometryAndRejectsMissingCadence() {
+    var scope = scope(10);
+    var observer = new ObservationImpl(); observer.setId(50);
+    observer.setObservable(ProcessModelBindingsTest.observable("observer", SemanticType.AGENT));
+    observer.setGeometry(scheduled("DAY", 1));
+    observer.setPerceivedGeometry(scheduled("MONTH", 3));
+    when(scope.getObserver()).thenReturn(observer);
+    var fallback = ScheduleNegotiationSupport.geometryDefault(false, scope);
+    assertEquals(OccurrenceSchedule.Source.OBSERVER_GEOMETRY, fallback.schedule().source());
+    assertEquals(3, fallback.schedule().step());
+    assertEquals("observer:50", fallback.origin());
+    var eventModel = model("test:events", false); eventModel.getAnnotations().clear();
+    var event = ProcessModelBindingsTest.observable("events", SemanticType.EVENT);
+    ((ConceptImpl) event.getSemantics()).setCollective(true);
+    eventModel.getObservables().clear(); eventModel.getObservables().add(event);
+    assertEquals(fallback.schedule(), ScheduleNegotiationSupport.negotiate(eventModel,
+        ResolutionGraph.create(scope), scope, GeometryRepository.INSTANCE.scale(GEOMETRY).getTime()).effective());
+    assertThrows(RuntimeException.class, () -> ScheduleNegotiationSupport.geometryDefault(true, scope));
+    observer.setPerceivedGeometry(null);
+    assertThrows(RuntimeException.class, () -> ScheduleNegotiationSupport.geometryDefault(false, scope));
+    observer.setPerceivedGeometry(Geometry.create("T1(12){tstart=1704067200000,tend=1735689600000,ttype=REAL,tunit=MONTH,tscope=1}"));
+    assertThrows(RuntimeException.class, () -> ScheduleNegotiationSupport.geometryDefault(false, scope));
+  }
+
+  @Test void missingGeometryCadenceRejectsCandidateAndExplicitAlternativeStillResolves() {
+    var scope = scope(10); var scale = GeometryRepository.INSTANCE.scale(GEOMETRY);
+    var implicit = model("test:noDefault", false); implicit.getAnnotations().clear();
+    var explicit = model("test:explicit", false);
+    var compiler = spy(new ResolutionCompiler(mock(ResolverService.class)));
+    doReturn(List.of(implicit, explicit)).when(compiler).queryModels(any(), any(), eq(scope), any());
+    var strategy = mock(ObservationStrategy.class);
+    var operation = mock(ObservationStrategy.Operation.class);
+    when(operation.getObservable()).thenReturn(explicit.getObservables().getFirst());
+    when(operation.getType()).thenReturn(ObservationStrategy.Operation.Type.OBSERVE);
+    when(operation.getId()).thenReturn("process");
+    when(strategy.getOperations()).thenReturn(List.of(operation));
+    var result = compiler.resolve(strategy, scale, ResolutionGraph.create(scope), scope);
+    assertFalse(result.isEmpty());
+    assertFalse(result.graph().containsVertex(implicit));
+    assertTrue(result.graph().containsVertex(explicit));
+    var info = new ServiceInfoImpl();
+    var java = new OccurrenceSchedule(2, "", "", 1,
+        org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution.Type.MONTH,
+        false, OccurrenceSchedule.Source.JAVA);
+    info.setOccurrenceSchedule(java);
+    var graph = ResolutionGraph.create(scope); graph.addServiceInfo("test.process", info);
+    assertEquals(java, ScheduleNegotiationSupport.negotiate(implicit, graph, scope, scale.getTime()).effective());
+  }
   static OccurrenceNegotiation.Request request(String owner, String cadence) {
     return new OccurrenceNegotiation.Request(owner, "erosion", "test:erosion",
         OccurrenceSchedule.fromDependency(List.of(Annotation.of("time", "step", QuantityImpl.parse(cadence)))));

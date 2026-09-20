@@ -527,6 +527,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
+  /** Start a scheduler attempt without inheriting a resolution or already committed transaction. */
+  public ServiceContextScope executingFresh(Activity activity, Object... assets) {
+    var fresh = new ServiceContextScope(this);
+    fresh.currentTransaction = null;
+    fresh.remoteTransactionId = null;
+    return fresh.executing(activity, assets);
+  }
+
   public long commit() {
     if (getActivity() instanceof ActivityImpl activity) {
       activity.setOutcome(Activity.Outcome.SUCCESS);
@@ -538,7 +546,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     var ret = this.currentTransaction.commit();
-    send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+    try {
+      send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
+    } catch (RuntimeException deliveryFailure) {
+      warn("Activity delivery failed; committed temporal history remains available",deliveryFailure);
+    }
     return ret;
   }
 
