@@ -49,7 +49,8 @@ public enum Setting {
       new File(
           System.getProperty("user.home")
               + File.separator
-              + Configuration.KLAB_RELATIVE_WORK_PATH)),
+              + Configuration.KLAB_RELATIVE_WORK_PATH),
+      true),
   MONOSPACE_FONT(
       Page.APPEARANCE,
       "The font to use for the monospaced text in the modeler",
@@ -60,7 +61,8 @@ public enum Setting {
       "The directory where PIDs and other runtime files are stored",
       File.class,
       new File(
-          System.getProperty("user.home") + File.separator + ".klab" + File.separator + "run")),
+          System.getProperty("user.home") + File.separator + ".klab" + File.separator + "run"),
+      true),
   DISTRIBUTION_DIRECTORY(
       Page.GENERAL,
       "The directory where k.LAB distribution files will be stored. Contents will be large.",
@@ -70,7 +72,8 @@ public enum Setting {
               + File.separator
               + ".klab"
               + File.separator
-              + "distribution")),
+              + "distribution"),
+      true),
   NUMBER_OF_DISTRIBUTION_TO_KEEP(
       Page.GENERAL,
       "The number of previous k.LAB distributions to keep on disk when updating to a new one.",
@@ -89,7 +92,8 @@ public enum Setting {
               + File.separator
               + "services"
               + File.separator
-              + "graphdb")),
+              + "graphdb"),
+      true),
   CERTIFICATE_FILE(
       Page.GENERAL,
       "The certificate file to use to connect to the k.LAB network",
@@ -273,7 +277,8 @@ public enum Setting {
               + File.separator
               + "git"
               + File.separator
-              + "klab-services")),
+              + "klab-services"),
+      true),
   START_RESOURCES_SERVICE_IN_DEBUG_MODE(
       Page.DEBUGGING,
       "Start the local resources service in debug mode on port "
@@ -412,7 +417,16 @@ public enum Setting {
   public final Page page;
   public final Object defaultValue;
 
+  /** Whether this File-valued setting denotes a directory rather than a regular file. */
+  public final boolean directory;
+
   Setting(Page page, String description, Class<?> valueClass, Object defaultValue) {
+    this(page, description, valueClass, defaultValue, false);
+  }
+
+  Setting(
+      Page page, String description, Class<?> valueClass, Object defaultValue, boolean directory) {
+    this.directory = directory;
     this.description = description;
     this.valueClass = valueClass;
     this.page = page;
@@ -423,6 +437,7 @@ public enum Setting {
   Setting(Page page, String description, String defaultValue, String... stringValues) {
     this.description = description;
     this.values = stringValues;
+    this.directory = false;
     this.valueClass = String.class;
     this.defaultValue = defaultValue;
     this.page = page;
