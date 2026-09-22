@@ -96,7 +96,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put(
               GraphModel.Fields.NAME,
               observation.getName() == null
-                  ? observation.getObservable().codeName()
+                  ? observation.getObservable().displayLabel()
                   : observation.getName());
           ret.put(GraphModel.Fields.TYPE, observation.getObservable().getArtifactType().name());
           ret.put(GraphModel.Fields.URN, observation.getUrn());

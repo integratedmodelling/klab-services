@@ -13,7 +13,6 @@ import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.springframework.util.StringUtils;
 
 public class ObservableImpl implements Observable {
 
@@ -269,33 +268,16 @@ public class ObservableImpl implements Observable {
 
   @Override
   public String displayName() {
-
-    StringBuilder ret = new StringBuilder(getSemantics().displayName());
-
-    //    for (Pair<ValueOperator, Object> operator : getValueOperators()) {
-    //
-    //      ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
-    //
-    //      if (operator.getSecond() instanceof KimConcept kimConcept) {
-    //        // FIXME use displayName for the associated concept! needs the service
-    //        ret.append(kimConcept.getName());
-    //      } else if (operator.getSecond() instanceof KimObservable kimObservable) {
-    //        // FIXME use displayName for the associated observable! needs the service
-    //        ret.append(kimObservable.getCodeName());
-    //      } else {
-    //        ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
-    //      }
-    //    }
-    return ret.toString();
+    return displayLabel();
   }
 
   @Override
   public String displayLabel() {
-    String ret = displayName();
-    if (!ret.contains(" ")) {
-      ret = StringUtils.capitalize(Utils.CamelCase.toLowerCase(ret, ' '));
+    if (statedName != null && !statedName.isBlank()) return statedName;
+    for (var key : List.of(Metadata.DISPLAY_LABEL, Metadata.DC_LABEL, Metadata.RDFS_LABEL)) {
+      if (metadata.get(key) instanceof String label && !label.isBlank()) return label;
     }
-    return ret;
+    return semantics == null ? SemanticLabels.expression(urn) : semantics.displayLabel();
   }
 
   @Override
@@ -374,6 +356,7 @@ public class ObservableImpl implements Observable {
 
   @Override
   public Metadata getMetadata() {
+    metadata.put(Metadata.SUGGESTED_NAME, displayLabel());
     return metadata;
   }
 

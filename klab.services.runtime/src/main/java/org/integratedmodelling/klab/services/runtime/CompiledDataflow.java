@@ -1277,7 +1277,9 @@ public class CompiledDataflow {
         } else {
           var quality = new ObservationImpl();
           quality.setId(-1000-quality.getTransientId());
-          quality.setObservable(binding.observable()); quality.setName(binding.name());
+          quality.setObservable(binding.observable());
+          // The binding key remains a code identifier; only an explicit name belongs on the observation.
+          quality.setName(binding.observable().getStatedName());
           quality.setGeometry(observation.getGeometry()); quality.setParentId(plan.bearerId());
           quality.setResolvedCoverage(1);
           quality.getMetadata().put(org.integratedmodelling.klab.runtime.storage.TemporalHistory.EPHEMERAL,true);

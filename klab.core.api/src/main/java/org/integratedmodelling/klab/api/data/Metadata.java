@@ -41,6 +41,12 @@ public interface Metadata extends Parameters<String> {
   /** This is not in Dublin Core but is used extensively in legacy content, unfortunately */
   String DC_LABEL = "dc:label";
 
+  /** Singular human-readable concept label; also an OWL annotation. */
+  String DISPLAY_LABEL = "klab:displayLabel";
+
+  /** Human-readable default for an unnamed observation, never a reference identifier. */
+  String SUGGESTED_NAME = "im:suggested-name";
+
   /** This is not in Dublin Core but is used extensively in legacy content, unfortunately */
   String DC_COMMENT = "dc:comment";
 

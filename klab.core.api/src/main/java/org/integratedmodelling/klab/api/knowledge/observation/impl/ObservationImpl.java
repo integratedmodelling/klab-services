@@ -256,6 +256,8 @@ public class ObservationImpl implements Observation, Cloneable {
 
   @Override
   public Metadata getMetadata() {
+    if (observable != null && observable.getSemantics() != null)
+      metadata.put(Metadata.SUGGESTED_NAME, observable.displayLabel());
     return this.metadata;
   }
 
@@ -475,7 +477,11 @@ public class ObservationImpl implements Observation, Cloneable {
       return name;
     }
     var identityName = nameFromIdentity(urn);
-    return identityName == null && observable != null ? observable.codeName() : identityName;
+    if (identityName != null) return identityName;
+    for (var key : java.util.List.of(Metadata.DISPLAY_LABEL, Metadata.DC_LABEL, Metadata.RDFS_LABEL)) {
+      if (metadata.get(key) instanceof String label && !label.isBlank()) return label;
+    }
+    return observable == null ? null : observable.displayLabel();
   }
 
   public void setName(String name) {

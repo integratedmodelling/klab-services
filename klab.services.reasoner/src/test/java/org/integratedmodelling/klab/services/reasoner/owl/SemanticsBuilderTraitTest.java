@@ -94,6 +94,8 @@ class SemanticsBuilderTraitTest {
         head.setType(EnumSet.of(SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE));
         head.getTraits().add(syntax(name)); head.setCollective(true); head.resetDefinition();
         var built = SemanticsBuilder.create(head, reasoner, scope).buildConcept();
+        assertEquals(name + " regions", built.displayLabel());
+        assertEquals(name + " region", built.singular().displayLabel());
         assertNotNull(owl.getOWLClass(built));
         assertEquals(owl.getOWLClass(built), owl.getOWLClass(built.singular()));
         assertTrue(new OWLSemanticClauseSupport(owl).applicableTo(ontology.getConcept(name), built));

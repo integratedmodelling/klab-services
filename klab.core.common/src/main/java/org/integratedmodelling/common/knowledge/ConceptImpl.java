@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.springframework.util.StringUtils;
 
 public class ConceptImpl implements Concept {
 
@@ -212,20 +211,22 @@ public class ConceptImpl implements Concept {
 
   @Override
   public String codeName() {
-    return Utils.CamelCase.toLowerCase(displayName(), '_');
+    return Utils.CamelCase.toLowerCase(identifierLabel(), '_');
   }
 
   @Override
   public String displayName() {
+    return displayLabel();
+  }
 
-    // String ret = getMetadata().get(IMetadata.DISPLAY_LABEL_PROPERTY, String.class);
-    //
-    // if (ret == null) {
+  // Preserve historical code identifiers independently of human-readable naming.
+  private String identifierLabel() {
+
     String ret = getMetadata().get(Metadata.DC_LABEL, String.class);
-    // }
     if (ret == null) {
       ret = getName();
     }
+    if (ret == null) ret = SemanticLabels.expression(urn);
     if (ret.startsWith("i")) {
       ret = ret.substring(1);
     }
@@ -235,11 +236,7 @@ public class ConceptImpl implements Concept {
 
   @Override
   public String displayLabel() {
-    String ret = displayName();
-    if (!ret.contains(" ")) {
-      ret = StringUtils.capitalize(Utils.CamelCase.toLowerCase(ret, ' '));
-    }
-    return ret;
+    return SemanticLabels.label(this);
   }
 
   @Override

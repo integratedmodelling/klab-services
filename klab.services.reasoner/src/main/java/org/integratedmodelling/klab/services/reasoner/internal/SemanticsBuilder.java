@@ -631,6 +631,11 @@ public class SemanticsBuilder implements Observable.Builder {
             "The inherited inherent is outside the dependent's applies to domain");
     }
 
+    if (ret != resolvedConcept) {
+      reasoner.owl().setDisplayLabel(ret,
+          org.integratedmodelling.common.knowledge.SemanticLabels.describe(kimConcept, reasoner::resolveConcept, false));
+    }
+
     // set collective and abstract FIXME make this semantic and that's it
     if (kimConcept.isCollective()) {
       ret = ret.collective();

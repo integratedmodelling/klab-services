@@ -1352,6 +1352,8 @@ public class OWL {
     manager.addAxiom(
         ((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
 
+    setDisplayLabel(ret, concepts.stream().map(Concept::displayLabel).sorted()
+        .collect(java.util.stream.Collectors.joining(" and ")));
     return ret;
   }
 
@@ -1385,6 +1387,8 @@ public class OWL {
     manager.addAxiom(
         ((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
 
+    setDisplayLabel(ret, concepts.stream().map(Concept::displayLabel).sorted()
+        .collect(java.util.stream.Collectors.joining(" or ")));
     return ret;
   }
 
@@ -1648,6 +1652,9 @@ public class OWL {
         aontology.add(Axiom.AnnotationAssertion(conceptId, NS.TRAIT_RESTRICTING_PROPERTY, prop));
       }
 
+      aontology.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.NOT, attribute.displayLabel(), null)));
       aontology.define();
 
       ret = aontology.getConcept(conceptId);
@@ -1732,8 +1739,26 @@ public class OWL {
     ax.add(Axiom.ClassAssertion(name, subclassTypes));
     ax.add(Axiom.SubClass(ret.getNamespace() + ":" + ret.getName(), name));
     ax.add(Axiom.AnnotationAssertion(name, NS.CONCEPT_DEFINITION_PROPERTY, urn));
+    ax.add(Axiom.AnnotationAssertion(name, NS.DISPLAY_LABEL_PROPERTY,
+        org.integratedmodelling.common.knowledge.SemanticLabels.expression(urn)));
     ontology.define(ax);
     return ontology.getConcept(name);
+  }
+
+  /** Presentation metadata is independent of generated OWL and reference identifiers. */
+  public synchronized void setDisplayLabel(Concept concept, String label) {
+    if (label == null || label.isBlank()) return;
+    if (label.equals(concept.getMetadata().get(Metadata.DISPLAY_LABEL))) return;
+    var ontology = getOntology(concept.getNamespace());
+    var owlClass = getOWLClass(concept);
+    if (owlClass != null) {
+      var previous = ontology.ontology.getAnnotationAssertionAxioms(owlClass.getIRI()).stream()
+          .filter(ax -> Metadata.DISPLAY_LABEL.equals(OWLMetadata.translate(ax.getProperty().getIRI().toString())))
+          .collect(java.util.stream.Collectors.toSet());
+      manager.removeAxioms(ontology.ontology, previous);
+    }
+    ontology.define(List.of(Axiom.AnnotationAssertion(concept.getName(), NS.DISPLAY_LABEL_PROPERTY, label)));
+    concept.getMetadata().put(Metadata.DISPLAY_LABEL, label);
   }
 
   public synchronized void finalizeConcept(ConceptImpl concept) {
@@ -1787,6 +1812,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.CHANGE, concept.displayLabel(), null)));
       ontology.define(ax);
 
       Concept ret = ontology.getConcept(conceptId);
@@ -1851,6 +1879,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.RATE, concept.displayLabel(), null)));
       ontology.define(ax);
 
       Concept ret = ontology.getConcept(conceptId);
@@ -1915,6 +1946,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.CHANGED, concept.displayLabel(), null)));
       ontology.define(ax);
 
       Concept ret = ontology.getConcept(conceptId);
@@ -1980,6 +2014,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.COUNT, concept.displayLabel(), null)));
       ontology.define(ax);
       Concept ret = ontology.getConcept(conceptId);
 
@@ -2032,6 +2069,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.DISTANCE, concept.displayLabel(), null)));
       ontology.define(ax);
 
       Concept ret = ontology.getConcept(conceptId);
@@ -2087,6 +2127,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.PRESENCE, concept.displayLabel(), null)));
       ontology.define(ax);
       Concept ret = ontology.getConcept(conceptId);
 
@@ -2142,6 +2185,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.OCCURRENCE, concept.displayLabel(), null)));
       ontology.define(ax);
       Concept ret = ontology.getConcept(conceptId);
 
@@ -2195,6 +2241,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.MAGNITUDE, concept.displayLabel(), null)));
       ontology.define(ax);
       Concept ret = ontology.getConcept(conceptId);
 
@@ -2248,6 +2297,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.LEVEL, concept.displayLabel(), null)));
       ontology.define(ax);
       Concept ret = ontology.getConcept(conceptId);
 
@@ -2300,6 +2352,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.PROBABILITY, concept.displayLabel(), null)));
       ontology.define(ax);
       Concept ret = ontology.getConcept(conceptId);
 
@@ -2347,6 +2402,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.UNCERTAINTY, concept.displayLabel(), null)));
       ontology.define(ax);
       Concept ret = ontology.getConcept(conceptId);
       /*
@@ -2422,6 +2480,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              (isPercentage ? UnarySemanticOperator.PERCENTAGE : UnarySemanticOperator.PROPORTION), concept.displayLabel(), comparison == null ? null : comparison.displayLabel())));
       ontology.define(ax);
 
       Concept ret = ontology.getConcept(conceptId);
@@ -2502,6 +2563,9 @@ public class OWL {
         }
       }
 
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.RATIO, concept.displayLabel(), comparison == null ? null : comparison.displayLabel())));
       ontology.define(ax);
 
       Concept ret = ontology.getConcept(conceptId);
@@ -2572,6 +2636,9 @@ public class OWL {
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+      ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              (monetary ? UnarySemanticOperator.MONETARY_VALUE : UnarySemanticOperator.VALUE), concept.displayLabel(), comparison == null ? null : comparison.displayLabel())));
       ontology.define(ax);
 
       Concept ret = ontology.getConcept(conceptId);
@@ -2625,6 +2692,9 @@ public class OWL {
       axioms.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
       axioms.add(Axiom.AnnotationAssertion(conceptId, NS.IS_TYPE_DELEGATE, "true"));
       axioms.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", traitID));
+      axioms.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
+          org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+              UnarySemanticOperator.TYPE, classified.displayLabel(), null)));
       axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
       ontology.define(axioms);
       Concept ret = ontology.getConcept(conceptId);
