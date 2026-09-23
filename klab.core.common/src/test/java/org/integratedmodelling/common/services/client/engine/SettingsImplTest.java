@@ -2,7 +2,9 @@ package org.integratedmodelling.common.services.client.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -29,6 +31,47 @@ class SettingsImplTest {
     assertEquals(Boolean.FALSE, settings.get(Setting.POLLING, Boolean.class));
   }
 
+  @Test
+  void reloadsFileSettingsAndListsThemAsFiles() throws Exception {
+    var storage = Files.createFile(temporaryDirectory.resolve("paths.properties")).toFile();
+    var settings = new SettingsImpl(storage);
+    // No existence check: settings may refer to directories or files created later.
+    var path = temporaryDirectory.resolve("not yet created").resolve("distribution").toFile();
+    for (var setting : Setting.values()) {
+      if (setting.valueClass == File.class) {
+        settings.set(setting, path).get(2, TimeUnit.SECONDS);
+      }
+    }
+
+    var reloaded = new SettingsImpl(storage);
+    var values = reloaded.asMap();
+    for (var setting : Setting.values()) {
+      if (setting.valueClass == File.class) {
+        assertEquals(path, reloaded.get(setting, File.class), setting.name());
+        assertEquals(path, values.get(setting.name()), setting.name());
+        assertTrue(reloaded.isSet(setting));
+      }
+    }
+    assertTrue(!path.exists());
+  }
+
+  @Test
+  void reloadsOtherScalarPropertiesAndStillRejectsWrongRequestedTypes() throws Exception {
+    var storage = Files.createFile(temporaryDirectory.resolve("scalars.properties")).toFile();
+    var settings = new SettingsImpl(storage);
+    settings.set(Setting.POLLING, false).get(2, TimeUnit.SECONDS);
+    settings.set(Setting.POLLING_INTERVAL_LOCAL, 37).get(2, TimeUnit.SECONDS);
+    settings.set(Setting.DISTRIBUTION_SOURCE_URL, "https://example.org/distribution")
+        .get(2, TimeUnit.SECONDS);
+
+    var reloaded = new SettingsImpl(storage);
+    assertEquals(false, reloaded.get(Setting.POLLING, Boolean.class));
+    assertEquals(37, reloaded.get(Setting.POLLING_INTERVAL_LOCAL, Integer.class));
+    assertEquals("https://example.org/distribution",
+        reloaded.get(Setting.DISTRIBUTION_SOURCE_URL, String.class));
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,
+        () -> reloaded.get(Setting.DISTRIBUTION_SOURCE_LOCATION, String.class));
+  }
   @Test
   void operationResultCallbackReceivesSettingRequestAndResult() throws Exception {
     var file = Files.createFile(temporaryDirectory.resolve("operations.properties")).toFile();

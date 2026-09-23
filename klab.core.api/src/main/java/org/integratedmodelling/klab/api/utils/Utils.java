@@ -5088,6 +5088,9 @@ public class Utils {
         }
 
       } else if (ret instanceof String) {
+        if (cls.equals(File.class)) {
+          return (T) new File((String) ret);
+        }
         if (cls.equals(Double.class)) {
           return (T) Double.valueOf((String) ret);
         }
@@ -5142,6 +5145,10 @@ public class Utils {
 
     @SuppressWarnings("unchecked")
     public static <T> T parseAsType(String ret, Class<?> cls) {
+
+      if (cls.equals(File.class)) {
+        return (T) new File(ret);
+      }
 
       if (cls.equals(Object.class) || cls.equals(String.class)) {
         return (T) ret;
