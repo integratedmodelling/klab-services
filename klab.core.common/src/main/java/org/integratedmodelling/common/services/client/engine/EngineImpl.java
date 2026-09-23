@@ -367,7 +367,7 @@ public class EngineImpl implements Engine, PropertyHolder {
       if (serviceInfo.getId() == null
           || serviceInfo.getUrl() == null
           || serviceInfo.getType() == null) {
-        Logging.INSTANCE.warn(
+        Logging.INSTANCE.debug(
             "Skipping incomplete service advertisement for "
                 + service.getClass().getSimpleName()
                 + ": id="
@@ -519,5 +519,4 @@ public class EngineImpl implements Engine, PropertyHolder {
 
     return this.worldview;
   }
-
 }
