@@ -2116,6 +2116,100 @@ class BehaviorAnalyzerTest {
   }
 
   @Test
+  void javaIntegerParametersAcceptOnlyLongLiteralsWithinRange() throws Exception {
+    for (Class<?> parameter : List.of(int.class, Integer.class)) {
+      var descriptor = new Extensions.ActorDescriptor();
+      descriptor.urn = "java.worker";
+      var accept = javaVerb("integer", true,
+          JavaStaticityActor.class.getMethod("integer", parameter));
+      descriptor.verbs.add(accept.getKey());
+      var resolved = new AgentCompiler.ResolvedActor(descriptor, Map.of("integer", accept.getValue()));
+      var resolver = new AgentCompiler.Resolver() {
+        @Override
+        public AgentCompiler.ResolvedActor resolveActor(String urn,
+            org.integratedmodelling.klab.api.scope.UserScope scope) {
+          return resolved;
+        }
+      };
+      for (Object literal : List.of(1L, 8L, 0L, -1L, (long) Integer.MIN_VALUE,
+          (long) Integer.MAX_VALUE, (long) Integer.MIN_VALUE - 1,
+          (long) Integer.MAX_VALUE + 1, Long.MIN_VALUE, Long.MAX_VALUE, 1.5, "1")) {
+        var value = new KActorsValueImpl();
+        value.setType(literal instanceof String ? ValueType.STRING : ValueType.NUMBER);
+        value.setStatedValue(literal);
+        var call = verb("java", "integer");
+        call.getArguments().putUnnamed(value);
+        var source = behavior(action("main", call));
+        source.setImports(List.of(imported("java.worker", "java")));
+        var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+        var analyzer = new BehaviorAnalyzer(source, environment.validator());
+        boolean compatible = literal instanceof Long number
+            && number >= Integer.MIN_VALUE && number <= Integer.MAX_VALUE;
+        assertEquals(compatible, analyzer.analyze(), literal + ": " + messages(analyzer));
+        if (!compatible) {
+          assertTrue(messages(analyzer).contains("must be java.lang.Integer"), messages(analyzer));
+        } else {
+          var compiler = new AgentCompiler(source, null, environment.validator(), environment.resolver());
+          assertTrue(compiler.compile(), compiler.getNotifications().toString());
+          assertGeneratedJavaCompiles(compiler.getSourceCode());
+        }
+      }
+    }
+  }
+
+  @Test
+  void integerLiteralsWidenForFloatingPointVerbsIncludingInspectorUnitcheck() throws Exception {
+    var inspector = org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Inspector.class;
+    for (var method : List.of(
+        inspector.getMethod("unitcheck", RuntimeAgent.Scope.class, Object.class,
+            org.integratedmodelling.klab.api.knowledge.observation.Observation.class,
+            String.class, double.class, double.class),
+        JavaStaticityActor.class.getMethod("floating", double.class, Double.class,
+            float.class, Float.class))) {
+      var descriptor = new Extensions.ActorDescriptor();
+      descriptor.urn = "java.worker";
+      var accept = javaVerb(method.getName(), true, method);
+      descriptor.verbs.add(accept.getKey());
+      var resolved = new AgentCompiler.ResolvedActor(descriptor,
+          Map.of(method.getName(), accept.getValue()));
+      var resolver = new AgentCompiler.Resolver() {
+        @Override
+        public AgentCompiler.ResolvedActor resolveActor(String urn,
+            org.integratedmodelling.klab.api.scope.UserScope scope) {
+          return resolved;
+        }
+      };
+      var call = verb("inspector", method.getName());
+      if (method.getName().equals("unitcheck")) {
+        call.getArguments().putUnnamed(identifier("ctx"));
+        call.getArguments().putUnnamed(identifier("elevation"));
+        var unit = new KActorsValueImpl();
+        unit.setType(ValueType.STRING);
+        unit.setStatedValue("mm");
+        call.getArguments().putUnnamed(unit);
+      }
+      for (long literal : method.getName().equals("unitcheck")
+          ? new long[] {1000, 0} : new long[] {1000, 0, 1000, 0}) {
+        var value = new KActorsValueImpl();
+        value.setType(ValueType.NUMBER);
+        value.setStatedValue(literal);
+        call.getArguments().putUnnamed(value);
+      }
+      var main = action("main", call);
+      main.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("ctx"),
+          new KActorsActionImpl.ArgumentImpl("elevation")));
+      var source = behavior(main);
+      source.setImports(List.of(imported("java.worker", "inspector")));
+      var environment = AgentCompiler.runtimeEnvironment(resolver, null);
+      var analyzer = new BehaviorAnalyzer(source, environment.validator());
+      assertTrue(analyzer.analyze(), messages(analyzer));
+      var compiler = new AgentCompiler(source, null, environment.validator(), environment.resolver());
+      assertTrue(compiler.compile(), compiler.getNotifications().toString());
+      assertGeneratedJavaCompiles(compiler.getSourceCode());
+    }
+  }
+
+  @Test
   void enumLiteralValidationUsesCaseInsensitiveEnumNames() throws Exception {
     var descriptor = new Extensions.ActorDescriptor();
     descriptor.urn = "java.worker";
@@ -2398,6 +2492,22 @@ class BehaviorAnalyzerTest {
   }
 
   public static class JavaStaticityActor {
+    @Verb(name = "floating", executionType = Verb.Type.FUNCTION)
+    public static Object[] floating(double primitiveDouble, Double boxedDouble,
+        float primitiveFloat, Float boxedFloat) {
+      return new Object[] {primitiveDouble, boxedDouble, primitiveFloat, boxedFloat};
+    }
+
+    @Verb(name = "integer", executionType = Verb.Type.FUNCTION)
+    public static int integer(int value) {
+      return value;
+    }
+
+    @Verb(name = "integer", executionType = Verb.Type.FUNCTION)
+    public static Integer integer(Integer value) {
+      return value;
+    }
+
     @Verb(name = "utility", executionType = Verb.Type.FUNCTION)
     public static Object utility() {
       return null;

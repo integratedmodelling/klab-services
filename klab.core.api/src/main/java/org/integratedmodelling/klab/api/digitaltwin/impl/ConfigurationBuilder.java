@@ -32,10 +32,13 @@ public class ConfigurationBuilder {
   private Observation observer;
   private boolean empty;
   private String behaviorUrn;
+  private org.integratedmodelling.klab.api.knowledge.WorldviewCommitment worldviewCommitment;
+  public ConfigurationBuilder worldviewCommitment(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment value) { worldviewCommitment = value; return this; }
 
   public ConfigurationBuilder() {}
 
   public ConfigurationBuilder(DigitalTwin.Configuration configuration) {
+    this.worldviewCommitment = configuration.getWorldviewCommitment();
     this.accessRights = configuration.getAccessRights();
     this.persistence = configuration.getPersistence();
     this.name = configuration.getName();
@@ -183,7 +186,7 @@ public class ConfigurationBuilder {
   }
 
   public DigitalTwin.Configuration build() {
-    return new ConfigurationImpl(
+    var result = new ConfigurationImpl(
         accessRights,
         persistence,
         name,
@@ -200,5 +203,7 @@ public class ConfigurationBuilder {
         this.empty,
         this.observer,
         this.behaviorUrn);
+    result.setWorldviewCommitment(worldviewCommitment);
+    return result;
   }
 }

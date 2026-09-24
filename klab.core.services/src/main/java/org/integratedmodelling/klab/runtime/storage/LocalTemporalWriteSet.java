@@ -31,17 +31,21 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
 
   public static Geometry localize(Geometry geometry, Scheduler.Event event) {
     var time = event.getTime();
-    var extent =
-        GeometryRepository.INSTANCE
-            .scale(
-                Geometry.create(
-                    "T0(1){ttype=PHYSICAL,tstart="
-                        + time.getStart().getMilliseconds()
-                        + ",tend="
-                        + time.getEnd().getMilliseconds()
-                        + "}"))
-            .getTime();
-    return GeometryRepository.INSTANCE.scale(geometry).with(extent);
+    var space = geometry.dimension(Geometry.Dimension.Type.SPACE);
+    // Preserve the established scale encoding for whole observations (also used in delta evidence).
+    // Bare shard bounds must remain geometry: they may inherit a CRS and cannot build a full tile.
+    if (space != null && space.getParameters().containsKey("shape")) {
+      var extent = GeometryRepository.INSTANCE.scale(Geometry.create("T0(1){ttype=PHYSICAL,tstart="
+          + time.getStart().getMilliseconds() + ",tend=" + time.getEnd().getMilliseconds() + "}")).getTime();
+      return GeometryRepository.INSTANCE.scale(geometry).with(extent);
+    }
+    var encoded = new StringBuilder("T0(1){ttype=PHYSICAL,tstart=")
+        .append(time.getStart().getMilliseconds()).append(",tend=")
+        .append(time.getEnd().getMilliseconds()).append("}");
+    // Shard bounds may inherit their owner's CRS; localization changes time only.
+    for (var dimension : geometry.getDimensions())
+      if (dimension.getType() != Geometry.Dimension.Type.TIME) encoded.append(dimension.encode());
+    return StorageScan.parseGeometry(encoded.toString());
   }
 
   @Override
@@ -49,6 +53,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
       Observation observation, Data.ShardingStrategy layout, Class<T> type, Access access) {
     if (prepared) throw new IllegalStateException("Temporal write set is sealed");
     var view = views.computeIfAbsent(observation.getId(), ignored -> new View(observation));
+    view.storage.validateKeyWorldview();
     if (!view.storage.getNativeShardingStrategy().equals(layout))
       throw new UnsupportedOperationException("Temporal scanner layout mediation is not available");
     var ret = new ArrayList<T>();
@@ -61,6 +66,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
   public synchronized List<StorageScan.Partition> writeLayout(Observation observation) {
     if (prepared) throw new IllegalStateException("Temporal write set is sealed");
     var view = views.computeIfAbsent(observation.getId(), ignored -> new View(observation));
+    view.storage.validateKeyWorldview();
     var result = new ArrayList<StorageScan.Partition>();
     for (int i = 0; i < view.layout.size(); i++) {
       var geometry = view.layout.get(i);
@@ -74,10 +80,10 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
       Observation observation, StorageScan.Request<T> request, Access access) {
     if (prepared || access == Access.WRITE || request.access() != StorageScan.Access.READ_ONLY)
       throw new IllegalArgumentException("Temporal reads require an unsealed read-only snapshot");
-    if (!request.slice().equals(StorageScan.Slice.of(event))
-        || request.coverage() != StorageScan.Coverage.EXACT || request.sampling() != StorageScan.Sampling.EXACT)
+    if (!request.slice().equals(StorageScan.Slice.of(event)))
       throw new UnsupportedOperationException("Temporal read requires this transaction's exact support");
     var view = views.computeIfAbsent(observation.getId(), ignored -> new View(observation));
+    view.storage.validateKeyWorldview();
     var semantics = StorageScan.semantics(view.observation.getObservable());
     var targetSemantics = ValueMediation.target(semantics, request.semantics());
     var conversion = ValueMediation.compile(semantics, targetSemantics, request.rate());
@@ -101,15 +107,19 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
     boolean aligned = partitions.size() == sources.size() && request.layout().curve() == nativeLayout.curve();
     for (int i = 0; aligned && i < sources.size(); i++)
       aligned = partitions.get(i).geometry().equals(sources.get(i).geometry());
-    ConformantScan mapping = aligned ? null : ConformantScan.compile(sources, request, view.support.encode());
-    if (mapping != null) partitions = mapping.partitions;
-    else if (request.geometry() != null && !request.geometry().equals(StorageScan.parseGeometry(view.support.encode()).encode()))
-      throw new UnsupportedOperationException("Temporal requested coverage differs");
-    var description = new StorageScan.Description(conversion == null ? 2 : 3, "transaction:" + UUID.randomUUID(),
+    var nativeSpace = StorageReads.spatialSupport(view.observation);
+    aligned &= request.geometry() == null
+        || request.geometry().equals(StorageScan.parseGeometry(view.support.encode()).encode())
+        || nativeSpace != null && request.geometry().equals(nativeSpace.encode());
+    ScanMapping mapping = aligned ? null : SpatialScan.plan(sources, request, view.support.encode(), StorageReads.acceptsLossy(scope));
+    if (mapping != null) partitions = mapping.partitions();
+    SpatialScan.validateConversion(mapping, conversion);
+    boolean spatial = mapping instanceof SpatialScan;
+    var description = new StorageScan.Description(view.storage.getNativeType() == Storage.Type.KEYED ? 5 : spatial ? 4 : conversion == null ? 2 : 3, "transaction:" + UUID.randomUUID(),
         observation.getId(), Objects.toString(observation.getUrn(), ""), request.slice(), semantics, targetSemantics,
-        nativeLayout, request.layout(), sources, partitions, valueType, request.precision(), request.coverage(),
-        request.sampling(), request.budget(), conversion == null ? List.of(StorageScan.Operation.INDEX_REMAP, operation)
-            : List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion);
+        nativeLayout, request.layout(), sources, partitions, valueType, request.precision(), spatial ? request.coverage() : StorageScan.Coverage.EXACT,
+        spatial ? request.sampling() : StorageScan.Sampling.EXACT, request.budget(), spatial ? SpatialScan.operations(conversion, operation) : conversion == null ? List.of(StorageScan.Operation.INDEX_REMAP, operation)
+            : List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion, SpatialScan.metadata(mapping), view.storage.getNativeType() == Storage.Type.KEYED ? view.storage.key().snapshot() : null);
     StorageScan.Plan<T> plan = new StorageScan.Plan<>() {
       public StorageScan.Description description() { return description; }
       public Class<T> scannerClass() { return request.scannerClass(); }
@@ -123,7 +133,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
         if (baseline == null && changes.size() != view.layout.get(i).size())
           throw new IllegalStateException("Created quality has no complete requested state");
         readers.add(new TemporalIndexedReader(baseline, changes, view.storage.getNativeType(),
-            view.layout.get(i).size(), request.budget().blockValues()));
+            view.layout.get(i).size(), request.budget().blockValues(), view.storage.getNativeType() == Storage.Type.KEYED ? view.storage.key().readOnly() : null));
       }
       var session = new LocalScanSession<>(plan, shards, readers, mapping, release);
       transaction.afterCommit(session::close);
@@ -190,6 +200,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
         throw new UnsupportedOperationException(
             "Storage backend does not implement temporal writes");
       storage = local;
+      storage.validateKeyWorldview();
       // Graph traversals may return another object for the same ID. Data, timestamps and deltas
       // must all update the owner held by the storage cache.
       observation = local.temporalOwner();
@@ -237,9 +248,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
             case INTEGER -> Storage.IntScanner.class;
             case LONG -> Storage.LongScanner.class;
             case BOOLEAN -> Storage.BooleanScanner.class;
-            default ->
-                throw new UnsupportedOperationException(
-                    "Temporal keyed writers require persistent keys");
+            case KEYED -> Storage.KeyScanner.class;
           };
       var descriptor =
           new ShardImpl(
@@ -259,6 +268,8 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
               new Class<?>[] {api},
               (proxy, method, args) -> {
                 switch (method.getName()) {
+                  case "key": return storage.key().readOnly();
+                  case "isValid": return type == Storage.Type.KEYED ? ((Integer)value(partition,cursor[0],access==Access.PRIOR)) != 0 : true;
                   case "shard":
                     return descriptor;
                   case "size":
@@ -275,13 +286,13 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
                 if (cursor[0] >= size) throw new NoSuchElementException("Scanner exhausted");
                 return switch (method.getName()) {
                   case "nextLong", "next" -> cursor[0]++;
-                  case "peek" -> value(partition, cursor[0], access == Access.PRIOR);
-                  case "get" -> value(partition, cursor[0]++, access == Access.PRIOR);
+                  case "peek" -> type == Storage.Type.KEYED ? storage.key().lookup((Integer)value(partition,cursor[0],access==Access.PRIOR)) : value(partition, cursor[0], access == Access.PRIOR);
+                  case "get" -> type == Storage.Type.KEYED ? storage.key().lookup((Integer)value(partition,cursor[0]++,access==Access.PRIOR)) : value(partition, cursor[0]++, access == Access.PRIOR);
                   case "add" -> {
                     if (access != Access.WRITE || prepared)
                       throw new IllegalStateException("Scanner is not writable");
+                    Object next = type == Storage.Type.KEYED ? storage.key().code(args[0]) : args[0];
                     long index = cursor[0]++;
-                    Object next = args[0];
                     if (!created
                         && Objects.equals(
                             next, storage.nativeValue(baseline.get(partition), index)))

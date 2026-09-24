@@ -664,6 +664,9 @@ public class ResolutionCompiler {
       var probe = new Observation.NaiveBuilder(observable, scope);
       probe.geometry(requestedScale.as(Geometry.class));
       var existing = scope.getObservation(probe.make());
+      if (existing != null && !existing.isEmpty() && existing.getId() > 0)
+        org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(
+            existing, requestedScale.as(Geometry.class), scope);
       return existing == null || existing.isEmpty() || existing.getId() <= 0
           ? new QueryMatch(
               existing, null, requestedScale, null, Coverage.create(requestedScale, 0.0))

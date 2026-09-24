@@ -25,6 +25,7 @@ class StorageConsumerExecutionTest {
     final StorageManagerImpl manager=mock(StorageManagerImpl.class);
     final List<StorageImpl> stores=new ArrayList<>();
     Fixture() {
+      org.mockito.Mockito.doReturn(mock(org.integratedmodelling.klab.api.services.RuntimeService.class,RETURNS_DEEP_STUBS)).when(scope).getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
       when(scope.getConfiguration().getPersistence()).thenReturn(Persistence.EXPLICIT_ACTION);
       when(scope.getDigitalTwin().getStorageManager()).thenReturn(manager);
       when(manager.getDoubleBuffer(anyLong())).thenAnswer(c -> (BufferArray)BufferArray.R064.make(c.getArgument(0,Long.class)));
@@ -77,7 +78,7 @@ class StorageConsumerExecutionTest {
           while(out.hasNext()){double av=a.get();int bv=b.get();assertEquals(bv+.25,av);out.add(av+bv);}return true;
         }
       };
-      assertTrue(executor.execute(Scheduler.Event.initialization(),f.scope,null),()->String.valueOf(executor.getCause()));
+      assertTrue(executor.execute(Scheduler.Event.initialization(),f.scope,null),()->String.valueOf(executor.getCause())+"; cause: "+executor.getCause().getCause());
       try(var read=StorageReads.open(output,f.scope,null,Data.FillCurve.D2_YX,Storage.DoubleScanner.class)) {
         var scanner=read.scanners().getFirst();for(int y=0;y<4;y++)for(int x=0;x<5;x++)assertEquals(2*(100*x+y)+.25,scanner.get());
       }
@@ -102,7 +103,7 @@ class StorageConsumerExecutionTest {
           while(out.hasNext()){double value=mm.get();assertEquals(value/1000000,km.get(),1e-12);out.add(value);}return true;
         }
       };
-      assertTrue(executor.execute(Scheduler.Event.initialization(),f.scope,null),()->String.valueOf(executor.getCause()));
+      assertTrue(executor.execute(Scheduler.Event.initialization(),f.scope,null),()->String.valueOf(executor.getCause())+"; cause: "+executor.getCause().getCause());
       try(var read=StorageReads.open(source,f.scope,null,Data.FillCurve.D2_YX,Storage.DoubleScanner.class)) {
         var scan=read.scanners().getFirst();scan.seek(1);assertEquals(100,scan.peek());
       }
@@ -140,8 +141,61 @@ class StorageConsumerExecutionTest {
     }
   }
 
+  @Test void spatialDependencyUsesOutputCellsAndRecordsResamplingEvidence() {
+    try(var f=new Fixture()) {
+      when(f.scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class).settings()
+          .get(org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS,Boolean.class)).thenReturn(true);
+      var input=f.quality(11,3,Data.FillCurve.D2_YX,Storage.Type.DOUBLE,GRID);
+      var output=f.quality(-1,2,Data.FillCurve.D2_XY,Storage.Type.DOUBLE,GRID.replace("S2(5,4)","S2(10,8)"));
+      ((ObservableImpl)input.getObservable()).setUnit(new org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl("m"));
+      var requested=new ObservableImpl((ObservableImpl)input.getObservable());requested.setUnit(new org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl("mm"));
+      when(f.scope.getObservation(11L)).thenReturn(input);
+      f.fill(input);
+      var executor=new AbstractExecutor(null,output,f.scope,Map.of("elevation",StorageReads.binding(input,requested))) {
+        public boolean validate(){return true;}
+        protected boolean run(Scheduler.Event event,Map<String,Storage.Scanner> scans,ContextScope scope,
+            org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope context) {
+          var in=(Storage.DoubleScanner)scans.get("elevation");var out=(Storage.DoubleScanner)scans.get("self");
+          assertEquals(out.size(),in.size());
+          while(out.hasNext())out.add(in.get());return true;
+        }
+      };
+      assertTrue(executor.execute(Scheduler.Event.initialization(),f.scope,null),()->String.valueOf(executor.getCause())+"; cause: "+executor.getCause().getCause());
+      try(var session=StorageReads.open(output,f.scope,null,Data.FillCurve.D2_XY,Storage.DoubleScanner.class)) {
+        var scan=session.scanners().getFirst();
+        for(int x=0;x<10;x++)for(int y=0;y<8;y++)assertEquals(1000*(100*(x/2)+y/2),scan.get());
+      }
+      verify(f.scope.getCurrentTransaction().getActivity(),atLeastOnce()).getMetadata();
+    }
+  }
+
+  @Test void executorCarriesTheOutputCrsIntoCrossProjectionDependencyPlans() {
+    try(var f=new Fixture()) {
+      when(f.scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class).settings()
+          .get(org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS,Boolean.class)).thenReturn(true);
+      var input=f.quality(11,3,Data.FillCurve.D2_XY,Storage.Type.DOUBLE,GRID);f.fill(input);
+      double x=6378137*Math.toRadians(1.5),y=6378137*Math.log(Math.tan(Math.PI/4+Math.toRadians(1.5)/2));
+      String shape="EPSG:3857 POLYGON (("+(x-10)+" "+(y-10)+"&comma;"+(x-10)+" "+(y+10)+"&comma;"
+          +(x+10)+" "+(y+10)+"&comma;"+(x+10)+" "+(y-10)+"&comma;"+(x-10)+" "+(y-10)+"))";
+      var output=f.quality(-1,1,Data.FillCurve.D2_XY,Storage.Type.DOUBLE,
+          "T0(1){ttype=PHYSICAL,tstart=1000,tend=10000}S2(2,2){proj=EPSG:3857,shape="+shape+"}");
+      var executor=new AbstractExecutor(null,output,f.scope,Map.of("elevation",input)) {
+        public boolean validate(){return true;}
+        protected boolean run(Scheduler.Event event,Map<String,Storage.Scanner> scans,ContextScope scope,
+            org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope context) {
+          var in=(Storage.DoubleScanner)scans.get("elevation");var out=(Storage.DoubleScanner)scans.get("self");
+          assertEquals("EPSG:3857",in.view().spatial().targetCrs());
+          while(in.hasNext()) { assertEquals(101,in.peek());out.add(in.get()); } return true;
+        }
+      };
+      assertTrue(executor.execute(Scheduler.Event.initialization(),f.scope,null),()->String.valueOf(executor.getCause())+"; cause: "+executor.getCause().getCause());
+    }
+  }
+
   @Test void incompatibleInputPreservesOutputAndConcreteCause() {
     try(var f=new Fixture()) {
+      when(f.scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class).settings()
+          .get(org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS,Boolean.class)).thenReturn(false);
       var input=f.quality(11,3,Data.FillCurve.D2_YX,Storage.Type.FLOAT,GRID);
       var output=f.quality(-1,2,Data.FillCurve.D2_XY,Storage.Type.DOUBLE,GRID.replace("5 4","10 4").replace("5 0","10 0"));
       f.fill(input);f.fill(output);
@@ -152,6 +206,7 @@ class StorageConsumerExecutionTest {
       };
       assertFalse(executor.execute(Scheduler.Event.initialization(),f.scope,null));
       assertTrue(executor.getCause().getMessage().contains("elevation"));assertNotNull(executor.getCause().getCause());
+      assertTrue(executor.getCause().getMessage().contains("ACCEPT_LOSSY_MEDIATIONS=false"));
       verify(f.manager.getStorage(output),never()).scan(any(),any(),any(),eq(false));
       try(var read=StorageReads.open(output,f.scope,null,Data.FillCurve.D2_XY,Storage.DoubleScanner.class)){assertEquals(0,read.scanners().getFirst().get());}
     }

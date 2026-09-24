@@ -28,10 +28,11 @@ final class TemporalScalarExecution {
         if (input == null) throw new IllegalArgumentException("Unknown scalar input " + name);
         var source = org.integratedmodelling.klab.runtime.storage.StorageReads.source(input, scope);
         var layout = new Data.ShardingStrategy(strategy.getCurve(), partitions.size(), 0, 0, null);
+        var targetSupport = org.integratedmodelling.klab.runtime.storage.StorageReads.spatialSupport(target);
         var request = new StorageScan.Request<>(StorageScan.Slice.of(event), StorageScan.Layout.of(layout),
-            TemporalGeometry.localize(input.getGeometry(), event).encode(), partitions, StorageScan.semantics(input.getObservable()), Storage.Scanner.class,
-            StorageScan.Access.READ_ONLY, StorageScan.Precision.LOSSLESS, StorageScan.Coverage.EXACT,
-            StorageScan.Sampling.EXACT, StorageScan.Budget.defaults(), org.integratedmodelling.klab.runtime.storage.StorageReads.rate(input));
+            targetSupport == null ? null : targetSupport.encode(), partitions, StorageScan.semantics(input.getObservable()), Storage.Scanner.class,
+            StorageScan.Access.READ_ONLY, StorageScan.Precision.LOSSLESS, StorageScan.Coverage.MISSING_OUTSIDE,
+            input.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.CLASS) ? StorageScan.Sampling.MAJORITY : StorageScan.Sampling.NEAREST, StorageScan.Budget.defaults(), org.integratedmodelling.klab.runtime.storage.StorageReads.rate(input));
         var session = resources.add(writes.read(source, request,
             priorInputs || source.getId() == target.getId() ? TemporalWriteSet.Access.PRIOR : TemporalWriteSet.Access.CURRENT));
         org.integratedmodelling.klab.runtime.storage.StorageReads.record(scope, target.getId() + ":" + name, session.description());

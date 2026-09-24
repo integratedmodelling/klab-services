@@ -12,7 +12,13 @@ final class TemporalIndexedReader implements IndexedStorageReader {
   private final long size;
   private final int blockValues;
   private boolean closed;
+  private final org.integratedmodelling.klab.api.data.mediation.classification.DataKey key;
+  public org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() { return key; }
   TemporalIndexedReader(IndexedStorageReader baseline, Map<Long, Object> changes, Storage.Type type, long size, int blockValues) {
+    this(baseline,changes,type,size,blockValues,null);
+  }
+  TemporalIndexedReader(IndexedStorageReader baseline, Map<Long,Object> changes, Storage.Type type,long size,int blockValues, org.integratedmodelling.klab.api.data.mediation.classification.DataKey key) {
+    this.key=key;
     this.baseline = baseline; this.type = type; this.size = size; this.blockValues = blockValues;
     locations = changes.keySet().stream().mapToLong(Long::longValue).sorted().toArray();
     values = new Object[locations.length];
@@ -29,6 +35,7 @@ final class TemporalIndexedReader implements IndexedStorageReader {
   }
   public boolean isValid(long index) {
     return switch (type) {
+      case KEYED -> { int code=readInt(index); if(key==null || code<0 || code>=key.size())throw new IllegalStateException("Unknown keyed code"); yield code!=0; }
       case DOUBLE -> !Double.isNaN(readDouble(index));
       case FLOAT -> !Float.isNaN(readFloat(index));
       default -> { change(index); yield true; }

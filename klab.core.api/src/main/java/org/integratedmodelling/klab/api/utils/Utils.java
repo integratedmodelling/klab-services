@@ -5146,6 +5146,10 @@ public class Utils {
     @SuppressWarnings("unchecked")
     public static <T> T parseAsType(String ret, Class<?> cls) {
 
+      if (cls.isEnum()) {
+        return (T) Enum.valueOf((Class<? extends Enum>) cls, ret);
+      }
+
       if (cls.equals(File.class)) {
         return (T) new File(ret);
       }

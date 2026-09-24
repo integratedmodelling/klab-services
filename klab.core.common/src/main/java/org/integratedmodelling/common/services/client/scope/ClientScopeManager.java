@@ -125,8 +125,9 @@ public enum ClientScopeManager {
     scopes.remove(clientSessionScope.getId());
   }
 
+  /** Disconnect this client; remote twins are governed by the runtime's persistence policy. */
   public void close() {
-    scopes.values().forEach(ClientSessionScope::close);
+    closePeers();
     scheduler.shutdown();
     try {
       if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -137,4 +138,18 @@ public enum ClientScopeManager {
       Thread.currentThread().interrupt();
     }
   }
+
+  void closePeers() {
+    // Closing a peer unregisters it. Snapshot the collection before doing local cleanup.
+    for (var scope : List.copyOf(scopes.values())) {
+      try {
+        scope.closePeer();
+      } catch (Exception e) {
+        org.integratedmodelling.common.logging.Logging.INSTANCE.warn(
+            "Cannot disconnect client scope " + scope.getId(), e);
+      }
+    }
+    scopes.clear();
+  }
+
 }

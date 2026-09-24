@@ -119,7 +119,7 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
     }
   }
 
-  /** Close only this client peer when the corresponding server-owned session owns its lifecycle. */
+  /** Disconnect local messaging and registration; never release the server-owned session. */
   public void closePeer() {
     ClientScopeManager.INSTANCE.unregister(this);
     closeMessaging();

@@ -72,8 +72,10 @@ class InitializationRunsTest {
       var constructor=Class.forName(StorageImpl.class.getName()+"$LocalDoubleScanner")
           .getDeclaredConstructor(StorageImpl.class,ShardImpl.class,BufferArray.class,com.dynatrace.dynahist.Histogram.class,boolean.class);
       constructor.setAccessible(true);
+      var storageConstructor = StorageImpl.class.getDeclaredConstructor();
+      storageConstructor.setAccessible(true);
       return (org.integratedmodelling.klab.api.data.Storage.DoubleScanner)
-          constructor.newInstance(mock(StorageImpl.class),shard,buffer,histogram,false);
+          constructor.newInstance(storageConstructor.newInstance(),shard,buffer,histogram,false);
     } catch(ReflectiveOperationException failure) { throw new AssertionError(failure); }
   }
 }

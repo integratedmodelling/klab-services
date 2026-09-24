@@ -41,7 +41,7 @@ affects storage attributed after the change; it does not migrate existing storag
 | `FLOAT` | `FloatScanner` | 4 bytes | Numeric quality, reduced precision |
 | `INTEGER` | `IntScanner` | 4 bytes | Integer state |
 | `LONG` | `LongScanner` | 8 bytes | Long integer state |
-| `KEYED` | `KeyScanner` backed by integer codes | 4 bytes | Classified/concept state (scanner not implemented) |
+| `KEYED` | `KeyScanner` backed by integer codes | 4 bytes | Worldview-bound concept state; zero is missing |
 | `BOOLEAN` | `BooleanScanner` | 1 byte | Presence or verification state |
 
 The generic `Scanner` deliberately has no boxed `get` or `add` operation. Typed scanners exist so
@@ -155,6 +155,11 @@ storage by observation ID within the twin:
 - `finalizeStorage(temporaryId, finalId)` rekeys storage when transaction commit assigns the
   persistent observation ID;
 - `clear()` and `deleteStorage(...)` close mapped buffers and remove the context's persisted files.
+
+Exiting a client or the IDE disconnects local scope peers only. It must not call runtime
+`releaseContext` or `releaseSession`: those operations close server scopes and can delete
+context graphs and storage. Runtime persistence and timeout policies continue to govern
+unattended twins; explicit deletion remains a separate operation.
 
 Calling `getStorage` without an existing or reconstructable contract is an error. Storage creation
 is not the place to infer semantics or consult current settings: attribution must already have
@@ -483,19 +488,17 @@ below. Unit algebra and locator-dependent contextualization remain incomplete. `
 can execute supplied dimension-factor operations, but no complete scanner compiler supplies the
 required per-cell operations/locators. `UnitImpl.aggregatedDimensions` is metadata, not evidence of
 working contextual conversion. `ShapeImpl.getStandardizedArea()` computes a metered area, not square
-degrees; per-cell geographic area and calendar duration policies remain S5 work. KEYED still has no
-native scanner or durable worldview-bound dictionary.
+degrees; per-cell geographic area and calendar duration policies remain S5 work. KEYED support is
+specified in the S7 section below.
 
 ### Remaining boundaries
 
 The following remain explicit implementation boundaries:
 
-- remapping outside the regular, rectangular, same-coverage S2 contract, and remapping through
-  the legacy scan overload;
+- spatial mediation outside the S6 support matrix below, and mediation through the legacy scan overload;
 - contextual units requiring cell area/volume/duration, nonlinear conversions, and integer-valued semantic conversion;
 - temporary scanners from `StorageManager.getTemporaryScanner(...)`;
 - complete generalized indexing for moving dimensions other than time;
-- a durable, mergeable key descriptor for `KEYED` storage;
 - cleanup of orphan persisted shards and fully deterministic mapped-file unmapping;
 - applying partial-quality actuator coverage to execution storage.
 
@@ -565,7 +568,7 @@ remain on the detached result; contextualization metadata and native strategy be
 Storage lookup resolves the durable source through the context and never indexes ID zero.
 `createStorage()` rejects detached queries. Different query views do not mutate the producer or
 create graph observations, activities or data. A changed unsupported value mediator or
-non-conformant geometry is rejected, not silently relabeled; contextual conversion and spatial resampling remain S5–S6.
+non-conformant geometry uses the S6 policy below; contextual conversion remains S5 work.
 
 `RuntimeService.readValue(StorageScan.Point, ContextScope)` and the matching RuntimeClient call
 provide point access. HTTP `POST /api/v1/observation/value` accepts a Point JSON object and returns
@@ -616,7 +619,7 @@ concept, observation contextualization and observer. `StorageScan.Semantics.mean
 non-value identity; `observable` retains the complete source/requested URNs for provenance. Legacy
 five-argument semantic snapshots default meaning to observable, so callers using them must retain
 the same observable identity. Contextual extent distributions must agree. Missing definitions,
-changes to multiple mediators, non-affine units and non-conformant coverage fail during planning.
+changes to multiple mediators and non-affine units fail during planning. Spatial coverage follows S6 below.
 
 `ValueMediation` compiles immutable coefficients before readers open. `StorageScan.Description`
 version 3 contains a `Conversion` and the ordered pipeline `INDEX_REMAP, VALUE_CONVERSION, <primitive
@@ -707,3 +710,161 @@ snapshots and an optional quote for the text API.
 against an independently supplied expected affine mapping and also checks partitioned/export/text
 agreement. The staging storage testcase checks elevation meters-to-millimeters with factor 1000.
 Full-stack execution remains the user-run acceptance gate before S5; see [TESTING.md](TESTING.md).
+
+
+## Non-conformant spatial read mediation (S6)
+
+`ACCEPT_LOSSY_MEDIATIONS` is a runtime Boolean setting, default **true**. Quality reuse in
+`ResolutionCompiler` validates source/target spatial support before accepting an existing quality.
+When false, mismatched extents fail with `ACCEPT_LOSSY_MEDIATIONS=false`, followed by the geometric
+reason (for example, `cell resolution differs` or `requested coverage differs`). Partition/curve
+changes that remain exactly conformant are still allowed. This gate does not change the separate
+float-narrowing policy or migrate native storage.
+
+`StorageReads` selects NEAREST for numeric/boolean data and MAJORITY for `type of` categories,
+with MISSING_OUTSIDE for dependency, query, export and point/text reads. Explicit output partitions define target support independently of the input extent. Planning
+first attempts S2 conformant mapping; on success it retains the exact description and reader.
+Otherwise the runtime gate and requested sampling policy determine whether spatial mediation is
+allowed. An explicit `Sampling.EXACT`, including `Request.nativeRead`, never opts into resampling.
+All dependency plans validate before writable output acquisition. Cache keys include the gate;
+opening a previously issued spatial plan also checks the current setting. Resolver-side runtime clients refresh their settings snapshot before this check. Already open sessions
+retain their pinned contract. Failed requests do not change native values, histograms or descriptors.
+
+### Sampling and coverage
+
+| Policy | Types | Meaning |
+|---|---|---|
+| NEAREST (runtime default) | FLOAT, DOUBLE, INTEGER, LONG, BOOLEAN | Transform target cell centers; select containing half-open source cells, preserving exact native primitives. |
+| INTERPOLATE | FLOAT, DOUBLE | Bilinear interpolation of source cell-center values; all positive-weight contributors must exist and be valid. No edge clamping or hole filling. |
+| CONSERVATIVE | FLOAT, DOUBLE densities/intensive quantities | Overlap-area weighted mean normalized by the geometrically covered target area. |
+| MAJORITY (categorical default) | KEYED | Same-CRS overlap-area majority, canonical-definition tie breaking, strict missing-contributor propagation. |
+| CONSERVATIVE_TOTAL | FLOAT, DOUBLE cell totals | Sum source values times overlap area / source cell area. Full-domain coarsening/refinement conserves totals within floating-point tolerance. |
+
+Conservative policies are explicit scientific choices; the runtime does not infer totals versus
+densities from unit strings. For categorical information such as `type of`, the default policy is
+**area-weighted majority** (`MAJORITY`), with the S7 dictionary contract below. Exact weighted ties
+choose the lexicographically smallest canonical semantic definition. A missing positive-area
+contributor makes the result missing; uncovered area is ignored when some coverage exists. Zero
+overlap is missing. Category codes are never averaged or summed. Numeric interpolation and
+conservative policies reject INTEGER/LONG/BOOLEAN rather than treating them as category dictionaries.
+
+MISSING_OUTSIDE emits invalid values where a sample lacks source support. EXACT rejects target
+footprints outside the source rectangle during metadata planning (1e-8 source-cell round-off
+tolerance). It does not guarantee native validity. NaN contributors propagate missingness; neighbors
+are not renormalized to fill missing source cells. Partial conservative densities normalize over
+actual geometric overlap; partial totals include only overlap contributions. Zero overlap is missing.
+Absent/corrupt files remain errors, never missing spatial values. Floating reads expose missingness
+as NaN and text as `null`. Integer/long/boolean callers must check `isValid()` before `get()`/`peek()`:
+invalid reads throw, preserving zero/false as ordinary values. Seek/nextLong can skip invalid cells.
+Spatial scanners expose target metadata in `view()` and never claim a physical `shard()` identity.
+
+### Geometry, precision and resources
+
+Spatial mediation supports regular, axis-aligned rectangular **2D** grids. Source shards must cover
+the native rectangle without gaps/overlaps. Explicit target partitions must cover one target
+rectangle without gaps/overlaps, retaining identifiers and order. Derived partitions obey the
+existing partition/size budgets and checked long curve codecs. The native scale layer currently
+normalizes a single-cell observation to an irregular shape; such observations cannot enter this
+regular-grid resampling path (an explicitly gridded one-cell target partition is supported).
+
+| Geometry change | Support |
+|---|---|
+| Same-CRS resolution/offset changes, coarse/fine grids, subset, partial/no overlap | All spatial policies |
+| EPSG:4326 to/from EPSG:3857 | Nearest and bilinear through strict GeoTools transforms, XY/longitude-first axes |
+| Conservative EPSG:4326 overlap | Spherical area proportional to longitude width times difference of sine(latitude); the common radius cancels |
+| Conservative matching projected CRS | Planar overlap; coordinate-plane conservation, not ellipsoidal ground-area accuracy |
+| Rotated/sheared grids, masks, arbitrary reprojection, antimeridian wrapping, polar/singular domains | Explicitly unsupported |
+| Changed non-spatial extents or temporal resampling | Explicitly unsupported; selected event slices can be spatially mediated |
+
+Geographic spatial bounds must remain within [-180,180] longitude and strictly inside
++/-85.0511287798066 latitude. Web Mercator bounds must be strictly inside +/-20037508.342789244.
+This restricted domain permits monotonic transformed-window pruning. Other matching CRSs use planar
+coordinates. Ambiguous cells (width within 32 ULPs of bounds or counts beyond binary64's reliable
+integer range) fail rather than guessing. Unknown spatial grid parameters fail during remapping; concrete cell counts and bounds take precedence over the `sgrid` resolution hint.
+
+Version **4** descriptions record `SPATIAL_RESAMPLE`, optional `VALUE_CONVERSION`, then the primitive
+operation. Source/target geometry encodings carry bounds, shapes and traversal; `Description.spatial()` and
+`View.spatial()` retain effective source/target CRS identifiers even when shard encodings omit them.
+Executor requests supply the output observation CRS for such partitions. Policy, source
+revision, event and budgets are explicit fields. Version 4 defines the XY convention, strict
+transform, half-open boundaries, spherical/planar metrics, tolerance and binary64 arithmetic above.
+These versioned policies are included in fingerprints and execution evidence. Versions 1-3 retain
+their previous fingerprints. Spatial arithmetic uses double accumulators even over FLOAT storage;
+ordinary unit conversion follows sampling and final narrowing happens once. Conservative totals
+permit multiplicative ordinary conversion. Affine total and bounded-range/resampling combinations
+fail. Contextual precipitation depth-to-volume conversion and calendar metrics remain S5 work.
+
+Plans retain partition metadata and a source spatial directory, never per-cell maps. Transformed
+target windows prune source links. Each numeric cursor has one source-value window capped at
+min(4096, Budget.blockValues), plus fixed primitive scratch coordinates. Local opening still
+validates/leases the native shard group, including files outside the target window. Remote block
+fetching and lazy shard acquisition remain S8 work. No converted buffers or HAS_DATA views persist.
+
+`LocalTemporalWriteSet.read` applies the same policies to pinned PRIOR/CURRENT snapshots and closes
+sessions on commit/rollback. Pre-earthquake elevation can be read over a changed event extent.
+Partial-quality writes and ordinary temporal output contextualizers retain their existing gates.
+
+
+## Keyed storage and categorical mediation (S7)
+
+`Storage.KeyScanner<Concept>` now reads and writes concept values over four-byte signed integer
+payloads. Code **0** is missing (`null`); positive codes are dictionary entries. Negative and unknown
+codes are corruption errors, never missing values. An ordinary `IntScanner` cannot expose keyed
+payloads as measurements. A key scanner exposes an immutable `DataKey` snapshot through `key()`;
+`Storage.getKey()` also returns an immutable snapshot. Codes can be inspected through a dictionary's
+`reverseLookup` and `lookup`, which keeps their semantic binding explicit. `DataKey.size()` and its
+indexed label/concept lists include the reserved missing entry at index 0, so every exposed index
+round-trips without an offset. The persisted entry catalog contains only codes 1..N.
+
+For `type of X`, the reasoner resolves each previously unseen definition and checks that it is a
+concrete, non-generic, non-bottom subclass of X. X itself is rejected. Only validated canonical
+concepts are cached. Repeated insertion uses a hot identity cache and a canonical-definition map;
+there is no per-value reasoning, remote call, or serialization. Invalid definitions are cached too.
+The observation owns one synchronized allocator shared by its shards and concurrent producers.
+Codes are append-only and cannot collide. Their numerical order has no rank meaning: this type-of
+dictionary is explicitly unordered. Read cursors decode to cached canonical concept objects.
+
+The first successful typed insertion (including missing) permanently commits the entire root context
+to a `WorldviewCommitment`: worldview identity plus a sorted map of resolvable ontology URNs to
+SHA-256 source hashes. The reasoner advertises this content snapshot in its capabilities; a local
+revision counter alone is insufficient across restarts. The commitment is recorded on the root
+Neo4j context, exposed in `DigitalTwin.Configuration`, and copied to `worldview.json` beside storage.
+Reopening a committed context requires an available, consistent reasoner with exactly the same
+commitment, even if no keyed quality has been requested yet. Same worldview ID with changed content
+is rejected. New plans/scanners and previously unseen semantic values recheck the environment;
+existing read sessions keep their pinned contract. A failed/rolled-back activity may leave the
+context committed, but cannot publish unbound semantic payloads. Cross-worldview translation is
+rejected; no label-based equivalence is inferred.
+
+Each finalized shard references an immutable `key-<SHA256>.json` dictionary and a categorical
+histogram containing that dictionary hash, positive-code counts, and a separate missing count.
+The dictionary records its schema version, root commitment, type constraint, ordered code-to-entry
+catalog, canonical semantic definitions, labels, and authority references where supplied by the
+reasoner. It never stores Java concept objects or reasoner-local IDs. Snapshot files are flushed and
+renamed before a shard can be published; existing dictionary versions are never overwritten with
+changed meanings. Graph shard descriptors retain dictionary and histogram references. Restoration
+checks hashes, compatible prefix assignments, root commitment, and payload code/count consistency.
+Legacy keyed payloads without this evidence fail explicitly. Dictionary entries are reconstructed
+without per-cell reasoning; concept resolution/validation is lazy and cached. Offline semantic reads
+fail closed when the committed worldview cannot be verified.
+
+Dictionary translations match canonical definitions within the same worldview/type, with bounded
+translation-table caching by both dictionary fingerprints. A shared allocator avoids shard remapping
+inside an observation. `Storage.getCategoryHistograms()` merges per-time shard counts through these
+semantic translations and returns the dictionary with each summary. Numeric histograms never operate
+on category codes. Validated immutable dictionary files are cached (at most 16 snapshots of up to
+4096 entries); a fresh manager revalidates persisted bytes.
+
+Scan description **version 5** includes the dictionary and worldview in execution evidence and
+fingerprints, and supports native, conformant and spatial keyed views. Versions 1–4 retain their
+previous fingerprints. Spatial majority uses the S6 planar/spherical overlap metrics and same-CRS
+support matrix. Scratch is proportional to dictionary cardinality, not cell count, and is reused
+between samples. Explicit nearest sampling is also available, including supported reprojection;
+numeric interpolation and conservative sums/means reject keyed values. Temporal PRIOR/CURRENT reads,
+commit and rollback use the same dictionaries and snapshots. Temporal localization preserves raw
+shard geometry and inherited CRS while replacing only time.
+
+Dictionary/root/payload publication follows the existing staged filesystem/graph protocol; it is
+not a claim of atomic transactions across those systems. Orphan semantic snapshots are harmless and
+remain part of the final recovery/hardening work. Contextualized units remain S5; the existing S6
+geometry limits and final full-stack acceptance checks remain explicit.

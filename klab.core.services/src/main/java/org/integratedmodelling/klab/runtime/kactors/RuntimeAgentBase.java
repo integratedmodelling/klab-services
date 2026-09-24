@@ -2461,6 +2461,15 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (value == null || target.isInstance(value)) {
       return value;
     }
+    if ((target == int.class || target == Integer.class) && value instanceof Long number) {
+      // Compiled calls use boxed targets; reflective calls may use primitive targets.
+      return Math.toIntExact(number);
+    }
+    if (JavaArgumentConversions.widensToFloatingPoint(value, target)) {
+      Number number = (Number) value;
+      if (target == float.class || target == Float.class) return number.floatValue();
+      return number.doubleValue();
+    }
     if (target.isPrimitive() && value instanceof Number number) {
       if (target == int.class) return number.intValue();
       if (target == long.class) return number.longValue();

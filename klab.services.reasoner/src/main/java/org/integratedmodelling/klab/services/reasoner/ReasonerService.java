@@ -1289,7 +1289,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public Capabilities capabilities(Scope scope) {
+  public synchronized Capabilities capabilities(Scope scope) {
 
     var ret = new ReasonerCapabilitiesImpl();
 
@@ -1306,6 +1306,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
     ret.setConsistent(this.consistent.get());
     ret.setKnowledgeRevision(knowledgeRevision());
+    if (worldview != null && consistent.get() && !loadedOntologySources.isEmpty())
+      ret.setWorldviewCommitment(new org.integratedmodelling.klab.api.knowledge.WorldviewCommitment(1, worldview.getWorldviewId(), loadedOntologySources));
     return ret;
   }
 

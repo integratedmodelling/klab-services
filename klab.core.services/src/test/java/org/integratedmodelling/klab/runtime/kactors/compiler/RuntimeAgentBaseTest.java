@@ -1,12 +1,6 @@
 package org.integratedmodelling.klab.runtime.kactors.compiler;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -996,6 +990,48 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
+  void longArgumentsFitPrimitiveAndBoxedIntegerParametersWithoutOverflow() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+    for (long value : new long[] {1, 8, 0, -1, Integer.MIN_VALUE, Integer.MAX_VALUE}) {
+      for (String verb : List.of("primitiveInteger", "boxedInteger")) {
+        assertEquals((int) value, agent.function(TestActor.class, verb, root, value));
+      }
+      assertEquals((int) value, agent.adapt(value, Integer.class));
+      assertEquals((int) value, agent.adapt(value, int.class));
+    }
+    for (long value : new long[] {(long) Integer.MIN_VALUE - 1,
+        (long) Integer.MAX_VALUE + 1, Long.MIN_VALUE, Long.MAX_VALUE}) {
+      for (String verb : List.of("primitiveInteger", "boxedInteger")) {
+        assertThrows(RuntimeException.class,
+            () -> agent.function(TestActor.class, verb, root, value));
+      }
+      assertThrows(ArithmeticException.class, () -> agent.adapt(value, Integer.class));
+      assertThrows(ArithmeticException.class, () -> agent.adapt(value, int.class));
+    }
+  }
+
+  @Test
+  void integerArgumentsWidenToPrimitiveAndBoxedFloatingPointParameters() {
+    var agent = new ReactiveRuntimeAgent();
+    var root = (AgentScope) agent.rootScope();
+    for (Number value : List.of((byte) 1, (short) 1, 1000, 1000L, 0L, -1L,
+        Long.MIN_VALUE, Long.MAX_VALUE)) {
+      assertEquals(value.doubleValue(), agent.adapt(value, Double.class));
+      assertEquals(value.doubleValue(), agent.adapt(value, double.class));
+      assertEquals(value.floatValue(), agent.adapt(value, Float.class));
+      assertEquals(value.floatValue(), agent.adapt(value, float.class));
+      assertArrayEquals(
+          new Object[] {value.doubleValue(), value.doubleValue(), value.floatValue(), value.floatValue()},
+          (Object[]) agent.function(TestActor.class, "floating", root, value, value, value, value));
+    }
+    assertEquals(1.5d, agent.adapt(1.5f, Double.class));
+    assertThrows(IllegalArgumentException.class, () -> agent.adapt("1000", Double.class));
+    assertThrows(IllegalArgumentException.class, () -> agent.adapt("1000", Float.class));
+    assertThrows(IllegalArgumentException.class, () -> agent.adapt(1.5d, Float.class));
+  }
+
+  @Test
   void enumArgumentsMatchConstantsByNameIgnoringCase() {
     var agent = new ReactiveRuntimeAgent();
     var root = (AgentScope) agent.rootScope();
@@ -1109,6 +1145,22 @@ class RuntimeAgentBaseTest {
   }
 
   private static class TestActor {
+    @Verb(name = "floating", executionType = Verb.Type.FUNCTION)
+    public static Object[] floating(double primitiveDouble, Double boxedDouble,
+        float primitiveFloat, Float boxedFloat) {
+      return new Object[] {primitiveDouble, boxedDouble, primitiveFloat, boxedFloat};
+    }
+
+    @Verb(name = "primitiveInteger", executionType = Verb.Type.FUNCTION)
+    public static int primitiveInteger(int value) {
+      return value;
+    }
+
+    @Verb(name = "boxedInteger", executionType = Verb.Type.FUNCTION)
+    public static Integer boxedInteger(Integer value) {
+      return value;
+    }
+
 
     private final String value;
 
@@ -1407,6 +1459,10 @@ class RuntimeAgentBaseTest {
   }
 
   private static class ReactiveRuntimeAgent extends RuntimeAgentBase {
+    private Object adapt(Object value, Class<?> target) {
+      return adaptJavaArgument(value, target);
+    }
+
 
     private ReactiveRuntimeAgent() {
       super(null, null);

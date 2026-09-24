@@ -96,14 +96,14 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             var source = StorageReads.source(input, contextScope);
             var store = contextScope.getDigitalTwin().getStorageManager().getStorage(source);
             var layout = new Data.ShardingStrategy(shardingStrategy.getCurve(), partitions.size(), 0, 0, null);
-            var plan = store.plan(StorageReads.request(input, event, layout, partitions, inputScannerClass(name)));
+            var plan = store.plan(StorageReads.request(input, event, layout, partitions, inputScannerClass(name), StorageReads.spatialSupport(observation)));
             if (!plan.description().partitions().equals(partitions))
               throw new IllegalStateException("Planner changed the explicit output partition identities or locations");
             plans.put(name, plan);
             stores.put(name, store);
           } catch (RuntimeException e) {
             throw new IllegalStateException("Cannot bind input " + name + " from " + input.getUrn()
-                + " to output " + observation.getUrn() + " with " + shardingStrategy, e);
+                + " to output " + observation.getUrn() + " with " + shardingStrategy + ": " + e.getMessage(), e);
           }
         }
         for (var entry : plans.entrySet()) {

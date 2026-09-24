@@ -966,3 +966,91 @@ All 47 changed Java/harness source files match the isolated verification copy by
 
 S4 closes the ordinary-mediation implementation phase within the documented type/provider bounds.
 The full harness has not been run here. S5+ remains deferred until that manual acceptance gate passes.
+
+
+## 13. S6 spatial implementation trace
+
+The September 23 request authorizes progression beyond the earlier manual S4 acceptance gate.
+S5 contextual units remain deferred. STORAGE.md specifies the S6 scientific policies and support
+matrix; this stage does not imply arbitrary CRS/mask support or completed S7 dictionaries.
+
+- The existing runtime setting `ACCEPT_LOSSY_MEDIATIONS` (default true) now gates non-conformant
+  quality reuse during resolution and storage planning/opening, including cached plans. Errors
+  identify the setting and concrete extent mismatch before output acquisition.
+- Shared planned reads support nearest sampling, bilinear intensive interpolation, conservative
+  density means and conservative cell totals. Runtime defaults are nearest and missing outside
+  coverage, as confirmed by the user. Native exact requests retain S2 behavior.
+- Target partitions define dependency support. Queries, exports and text use the same default.
+  Selected PRIOR/CURRENT transaction states can be read over different spatial extents without
+  publishing partial-quality writes.
+- Source directories, bounded numeric windows and primitive scratch avoid cell-sized maps and
+  boxed numeric mediation. Version-4 execution evidence retains geometry, policy, revision/event;
+  legacy fingerprints remain unchanged.
+- EPSG:4326/Web Mercator reprojection supports a bounded monotonic XY domain. Conservative
+  reprojection, rotated grids, masks and wraparound fail explicitly. Geographic spherical weights
+  and projected planar weights are distinct documented policies.
+- The user's categorical preference is recorded as area-weighted majority for `type of`, gated on
+  S7 dictionaries. Numeric conservative aggregation is not applied to category codes.
+
+Verification covers analytic ramps, primitive nearest reads, coarse/fine conservation, geographic
+area-weighted means, missingness, partial/no overlap, target partitions, reprojection/domain
+rejection, schema/fingerprint transport, gate changes, resolution, executor binding, and event-relative
+PRIOR/CURRENT snapshots and rollback. The final verification result is recorded below.
+
+
+Final S6 verification (2026-09-23): **BUILD SUCCESS — 103 tests passed, zero failures/errors/skips**
+in the final focused run (core services 59, resolver 4, runtime 40). Runtime-server compilation
+succeeds. This includes ordinary and temporal consumer execution, output-CRS propagation, the
+runtime-client settings refresh, disabled-gate diagnostics, and all 13 spatial tests. The nearest,
+bilinear and conservative moving-cursor allocation checks each remain below 64 KiB across
+1,000,000 operations.
+
+Verification ran offline with JDK 21 in `target/s6-verify`, an isolated source copy, to avoid IDE
+output interference. Maven ran outside the filesystem sandbox because sandboxed javac could not
+resolve directory classpaths. All 22 modified/new Java files (including pre-existing user changes)
+match that copy by SHA-256; `git diff --check` passes. No live full-stack harness or Neo4j restart was
+run. S5 and S7 remain deferred. The final log is `target/s6-final.log`.
+
+```powershell
+.\mvnw.cmd -o -pl klab.services.runtime.server,klab.services.resolver -am "-Dtest=SpatialScanTest,ResolutionCompilerQueryTest,ValueMediationTest,StorageScanTest,ConformantScanTest,TemporalStorageTest,ClassificationTransactionTest,ShardingAttributionBaselineTest,AbstractExecutorScannerBindingTest,StorageConsumerExecutionTest,StorageConsumerIntegrationTest,TemporalProcessIntegrationTest,RuntimeServiceQueryTest,StorageHarnessSyntaxTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+Earlier broader regression runs also exercised API geometry/curve/sharding, reconstruction,
+scanner adapters, resource export and parser tests. The accumulated per-class reports contain
+187 tests, zero failures/errors, and the pre-existing disabled
+`GridNImplTest.projection_canBeNullOrProvided`; these reports span multiple runs, not one final
+187-test invocation.
+
+
+## 14. S7 keyed storage and S6 categorical completion
+
+The September 23 follow-up authorizes S7 and the remaining categorical S6 policy before S5 and
+final full-stack acceptance. Keyed scanners now use a coordinated, validated concept dictionary;
+root worldview content commitments and immutable dictionary files accompany persisted integer data.
+Shard graph descriptors retain dictionary hashes and categorical histograms. Reopen rejects missing,
+corrupt or incompatible semantic evidence. Ordinary and temporal reads carry version-5 evidence,
+with cached canonical decoding and compatible dictionary translation.
+
+The user confirmed area-weighted majority with canonical-definition lexical tie breaking, missing
+positive-area contributors producing missing output, and uncovered area ignored when overlap exists.
+This is the default for `type of` consumer reads. Explicit nearest remains available. Numeric
+aggregation never treats category codes as measurements. STORAGE.md specifies lifecycle, caching,
+publication and support limits. S5 contextualized units and final recovery/full-stack testing remain.
+
+Final S7 verification (2026-09-23): **BUILD SUCCESS — 140 tests passed, zero failures/errors/skips**.
+The run includes 9 keyed storage tests and the root worldview graph contract, plus spatial,
+conformant, temporal, scheduler, executor, classification, resolver, reasoner and export regressions.
+One million repeated insertions perform a single semantic resolution/subsumption validation;
+32 concurrent producers also allocate one consistent code. Tests exercise real dictionary/payload
+files and reconstruction, with in-memory scratch buffers to avoid Windows mapped-file cleanup locks.
+The Neo4j root transaction is tested through its driver contract; no live full-stack/Neo4j restart
+was run. The temporal delta encoding regression is included and passes.
+
+The offline JDK 21 reactor compiles the reasoner, resolver, resources, runtime and runtime server.
+All 45 Java files differing from HEAD (including earlier S6 and user changes) match the isolated
+`target/s7-verify` source copy by SHA-256. `git diff --check` passes. Maven ran outside the filesystem
+sandbox because sandboxed javac could not resolve directory classpaths. Log: `target/s7-final.log`.
+
+```powershell
+.\mvnw.cmd -o -pl klab.services.runtime.server,klab.services.reasoner,klab.services.resolver,klab.services.resources -am "-Dtest=KeyedStorageTest,WorldviewCommitmentTest,SpatialScanTest,ConformantScanTest,StorageScanTest,TemporalStorageTest,StorageReconstructionTest,StorageManagerImplTest,StorageConsumerExecutionTest,StorageConsumerIntegrationTest,TemporalProcessIntegrationTest,ResolutionCompilerQueryTest,RuntimeServiceQueryTest,ValueMediationTest,ClassificationTransactionTest,AbstractExecutorScannerBindingTest,ScannerAdaptersTest,DigitalTwinCommitTest,WorldviewLoadingSupportTest,DocumentSemanticValidatorTest,ExportDispatchTest,ExportResponseTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```

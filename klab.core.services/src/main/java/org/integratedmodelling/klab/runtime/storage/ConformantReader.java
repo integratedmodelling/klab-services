@@ -20,6 +20,7 @@ final class ConformantReader implements IndexedStorageReader {
     this.plan = plan; this.target = plan.targets[partition]; this.sources = sources;
     this.blockValues = blockValues; this.type = sources.get(0).type(); point = new long[target.shape.length];
   }
+  public org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() { return sources.getFirst().key(); }
   public Storage.Type type() { return type; }
   public long size() { return target.size; }
   public int blockValues() { return blockValues; }

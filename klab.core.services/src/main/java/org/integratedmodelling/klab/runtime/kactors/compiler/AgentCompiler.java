@@ -1417,7 +1417,7 @@ public class AgentCompiler {
           }
           continue;
         }
-        if (expected != null && literal != null && !boxed(expected).isInstance(literal)) {
+        if (expected != null && literal != null && !isCompatibleJavaLiteral(literal, expected)) {
           notifications.add(
               argumentError(
                   verb,
@@ -1437,6 +1437,18 @@ public class AgentCompiler {
   }
 
   private static final Object UNKNOWN_LITERAL = new Object();
+
+  private static boolean isCompatibleJavaLiteral(Object literal, Class<?> expected) {
+    Class<?> target = boxed(expected);
+    // The parser represents integer literals as Long, including values for Java int parameters.
+    return target.isInstance(literal)
+        || org.integratedmodelling.klab.runtime.kactors.JavaArgumentConversions
+            .widensToFloatingPoint(literal, target)
+        || (target == Integer.class
+            && literal instanceof Long value
+            && value >= Integer.MIN_VALUE
+            && value <= Integer.MAX_VALUE);
+  }
 
   private static Object literalValue(Object supplied) {
     if (supplied instanceof KActorsStatement.CallArgument

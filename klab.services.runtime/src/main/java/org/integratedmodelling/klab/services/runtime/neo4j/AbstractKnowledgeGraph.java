@@ -253,6 +253,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put(GraphModel.Fields.TIMESTAMP, buffer.getTimestamp());
           ret.put(GraphModel.Fields.SHARD_COUNT, buffer.getShardCount());
           ret.put(GraphModel.Fields.URN, buffer.getUrn());
+          if (buffer.getKeyDictionaryHash() != null) ret.put("keyDictionaryHash", buffer.getKeyDictionaryHash());
+          if (buffer.getCategoryHistogram() != null) ret.put("categoryHistogram", Utils.Json.asString(buffer.getCategoryHistogram()));
           if (buffer.getHistogram() != null) {
             ret.put(GraphModel.Fields.HISTOGRAM, Utils.Json.asString(buffer.getHistogram()));
           }

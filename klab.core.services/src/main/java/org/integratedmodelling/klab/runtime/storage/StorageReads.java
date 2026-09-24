@@ -10,8 +10,44 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 /** Shared consumer binding. Requests are ephemeral; source ownership never follows a query ID. */
 public final class StorageReads {
   private StorageReads() {}
+  /** Read the current runtime policy at planning AND opening, including cached plans. */
+  static boolean acceptsLossy(ContextScope scope) {
+    if (scope == null) return true;
+    org.integratedmodelling.klab.api.services.KlabService runtime = scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    if (runtime == null || runtime.settings() == null) return true;
+    // Resolver-side clients cache settings after the first read. Refresh their snapshot so a
+    // runtime policy change cannot be bypassed by a previously connected resolver.
+    if (runtime instanceof org.integratedmodelling.common.services.client.BaseServiceClient)
+      runtime.settings().asMap();
+    return !Boolean.FALSE.equals(runtime.settings().get(
+        org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS, Boolean.class));
+  }
+
   public static final String RATE = "im:storage-currency-rate";
   public static final String BINDING_SOURCE = "im:storage-binding-source";
+
+  /** Resolution-time geometry validation, before a reused quality is accepted as a dependency.
+   * Synthetic descriptors contain metadata only; event/revision validity is checked by real reads. */
+  public static void validateSpatialReuse(Observation source, Geometry requested, ContextScope scope) {
+    if (source == null || source.getGeometry() == null || requested == null
+        || !source.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY)) return;
+    var from = source.getGeometry().dimension(Geometry.Dimension.Type.SPACE);
+    var to = requested.dimension(Geometry.Dimension.Type.SPACE);
+    if (from == null && to == null || from != null && to != null && from.encode().equals(to.encode())) return;
+    if (from == null || to == null) {
+      if (!acceptsLossy(scope)) throw SpatialScan.disabled("one quality has no spatial extent");
+      throw new UnsupportedOperationException("Spatial mediation requires both source and target extents");
+    }
+    boolean keyed = source.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.CLASS);
+    var layout = new StorageScan.Layout(from.getDimensionality() == 2 ? Data.FillCurve.D2_XY : Data.FillCurve.D1_LINEAR,
+        1, 0, 0, keyed ? Storage.Type.KEYED : Storage.Type.DOUBLE);
+    var descriptor = new StorageScan.SourceShard("resolution-source", from.encode(), from.size(), 0, 0, layout);
+    var request = new StorageScan.Request<>(StorageScan.Slice.of(Scheduler.Event.initialization()), layout,
+        to.encode(), List.of(), null, Storage.Scanner.class, StorageScan.Access.READ_ONLY,
+        StorageScan.Precision.LOSSLESS, StorageScan.Coverage.MISSING_OUTSIDE,
+        keyed ? StorageScan.Sampling.MAJORITY : StorageScan.Sampling.NEAREST, StorageScan.Budget.defaults());
+    SpatialScan.plan(List.of(descriptor), request, from.encode(), acceptsLossy(scope));
+  }
 
   public static org.integratedmodelling.klab.api.services.CurrencyService.Rate rate(Observation observation) {
     Object value = observation.getMetadata().get(RATE);
@@ -84,6 +120,11 @@ public final class StorageReads {
     return source;
   }
 
+  public static Geometry spatialSupport(Observation observation) {
+    var space = observation.getGeometry().dimension(Geometry.Dimension.Type.SPACE);
+    return space == null ? null : StorageScan.parseGeometry(space.encode());
+  }
+
   public static Scheduler.Event event(Observation observation, Scheduler.Event event) {
     if (event != null) return event;
     var time = observation.getGeometry().dimension(Geometry.Dimension.Type.TIME);
@@ -95,11 +136,18 @@ public final class StorageReads {
   public static <T extends Storage.Scanner> StorageScan.Request<T> request(
       Observation consumer, Scheduler.Event event, Data.ShardingStrategy layout,
       List<StorageScan.Partition> partitions, Class<T> type) {
+    return request(consumer, event, layout, partitions, type, partitions.isEmpty() ? consumer.getGeometry() : null);
+  }
+
+  /** Target support supplies the owning output CRS when native output partitions omit it. */
+  public static <T extends Storage.Scanner> StorageScan.Request<T> request(
+      Observation consumer, Scheduler.Event event, Data.ShardingStrategy layout,
+      List<StorageScan.Partition> partitions, Class<T> type, Geometry targetSupport) {
     return new StorageScan.Request<>(StorageScan.Slice.of(event(consumer, event)),
-        StorageScan.Layout.of(layout), consumer.getGeometry().encode(), partitions,
+        StorageScan.Layout.of(layout), targetSupport == null ? null : targetSupport.encode(), partitions,
         StorageScan.semantics(consumer.getObservable()), type, StorageScan.Access.READ_ONLY,
         type == Storage.FloatScanner.class ? StorageScan.Precision.ALLOW_FLOAT_NARROWING : StorageScan.Precision.LOSSLESS,
-        StorageScan.Coverage.EXACT, StorageScan.Sampling.EXACT, StorageScan.Budget.defaults(), rate(consumer));
+        StorageScan.Coverage.MISSING_OUTSIDE, consumer.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.CLASS) ? StorageScan.Sampling.MAJORITY : StorageScan.Sampling.NEAREST, StorageScan.Budget.defaults(), rate(consumer));
   }
 
   /** One consumer traversal, irrespective of native shard count. The caller owns the session. */
@@ -124,7 +172,7 @@ public final class StorageReads {
     var curve = point.curve() == Data.FillCurve.UNSPECIFIED ? storage.getNativeShardingStrategy().getCurve() : point.curve();
     var request = new StorageScan.Request<>(point.slice(), new StorageScan.Layout(curve, 1, 0, 0, null),
         point.geometry(), List.of(), point.semantics(), Storage.Scanner.class, StorageScan.Access.READ_ONLY,
-        StorageScan.Precision.LOSSLESS, StorageScan.Coverage.EXACT, StorageScan.Sampling.EXACT, StorageScan.Budget.defaults(), point.rate());
+        StorageScan.Precision.LOSSLESS, StorageScan.Coverage.MISSING_OUTSIDE, storage.getNativeType() == Storage.Type.KEYED ? StorageScan.Sampling.MAJORITY : StorageScan.Sampling.NEAREST, StorageScan.Budget.defaults(), point.rate());
     var plan = storage.plan(request);
     if (plan.description().partitions().size() != 1 || point.offset() >= plan.description().partitions().getFirst().size())
       throw new IndexOutOfBoundsException("Cell offset " + point.offset());

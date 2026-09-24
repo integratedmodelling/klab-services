@@ -47,9 +47,7 @@ public enum Setting {
       "The directory where all k.LAB files are stored",
       File.class,
       new File(
-          System.getProperty("user.home")
-              + File.separator
-              + Configuration.KLAB_RELATIVE_WORK_PATH),
+          System.getProperty("user.home") + File.separator + Configuration.KLAB_RELATIVE_WORK_PATH),
       true),
   MONOSPACE_FONT(
       Page.APPEARANCE,
@@ -60,8 +58,7 @@ public enum Setting {
       Page.GENERAL,
       "The directory where PIDs and other runtime files are stored",
       File.class,
-      new File(
-          System.getProperty("user.home") + File.separator + ".klab" + File.separator + "run"),
+      new File(System.getProperty("user.home") + File.separator + ".klab" + File.separator + "run"),
       true),
   DISTRIBUTION_DIRECTORY(
       Page.GENERAL,
@@ -221,6 +218,21 @@ public enum Setting {
       "The Bolt URL for the connected neo4j database",
       String.class,
       "bolt://0.0.0.0:7687"),
+  RESOLVE_COLLECTIVES_TOGETHER(
+      Page.RUNTIME,
+      "If a collective observation produces more than GROUP_COLLECTIVE_INSTANCES instances, use one resolution for all of them",
+      Boolean.class,
+      Boolean.FALSE),
+  GROUP_COLLECTIVE_INSTANCES(
+      Page.RUNTIME,
+      "The minimum number of instances to resolve using one collective resolution instead of one per instance",
+      Integer.class,
+      10),
+  ACCEPT_LOSSY_MEDIATIONS(
+      Page.RUNTIME,
+      "Accept loss of precision when mediating qualities across non-conformant extents",
+      Boolean.class,
+      Boolean.TRUE),
   USE_LOCAL_FEDERATION(
       Page.RUNTIME,
       "Use the local federation with the broker embedded in the runtime until downtime",

@@ -167,6 +167,8 @@ public interface Storage {
   }
 
   interface KeyScanner<T extends Serializable> extends Scanner {
+    /** Dictionary bound to the integer payload; code zero means missing. */
+    DataKey key();
     T get();
 
     T peek();
@@ -182,6 +184,8 @@ public interface Storage {
    * are bound to contextualizer parameters to enable data access.
    */
   interface Shard extends RuntimeAsset {
+    default String getKeyDictionaryHash() { return null; }
+    default org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram getCategoryHistogram() { return null; }
 
     /**
      * Some "tile"of the observation geometry. No shard can ever overlap another's geometry, and the
@@ -335,6 +339,9 @@ public interface Storage {
    * @return the data key, or null.
    */
   DataKey getKey();
+
+  /** Dictionary-bound categorical counts per committed time; never numeric code histograms. */
+  default java.util.Map<Long, org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Summary> getCategoryHistograms() { return java.util.Map.of(); }
 
   /**
    * Called after each shard's successful run to update internal indices and, if required, enqueue

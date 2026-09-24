@@ -35,6 +35,7 @@ class ResolutionCompilerQueryTest {
     when(observable.getSemantics()).thenReturn(semantics);
     when(observable.getUrn()).thenReturn("each test:Junction");
     var existing = mock(Observation.class);
+    when(existing.getMetadata()).thenReturn(org.integratedmodelling.klab.api.data.Metadata.create());
     when(existing.getId()).thenReturn(42L);
     when(existing.getGeometry()).thenReturn(scale);
     var compiler = org.mockito.Mockito.spy(new ResolutionCompiler(mock(ResolverService.class)));
@@ -73,6 +74,7 @@ class ResolutionCompilerQueryTest {
     when(observable.getSemantics()).thenReturn(semantics);
     when(semantics.getType()).thenReturn(EnumSet.of(SemanticType.QUALITY));
     when(scope.getObservation(any(Observation.class))).thenReturn(existing);
+    when(existing.getMetadata()).thenReturn(org.integratedmodelling.klab.api.data.Metadata.create());
     when(existing.getId()).thenReturn(42L);
 
     var result = new ResolutionCompiler(mock(ResolverService.class)).query(observable, requested, scope);
@@ -82,6 +84,34 @@ class ResolutionCompilerQueryTest {
     assertSame(requested, result.coveredScale());
     assertTrue(result.coverage().isComplete());
     verify(scope, never()).observation(any());
+  }
+
+  @Test
+  void qualityExtentMismatchHonorsRuntimeGateDuringResolution() {
+    var scope=mock(ContextScope.class,org.mockito.Mockito.RETURNS_DEEP_STUBS);
+    var observable=mock(Observable.class);
+    var semantics=mock(Concept.class);
+    when(observable.is(SemanticType.QUALITY)).thenReturn(true);
+    when(observable.getSemantics()).thenReturn(semantics);
+    when(semantics.getType()).thenReturn(EnumSet.of(SemanticType.QUALITY));
+    var existing=mock(Observation.class);
+    when(existing.getMetadata()).thenReturn(org.integratedmodelling.klab.api.data.Metadata.create());
+    when(existing.getId()).thenReturn(42L);when(existing.getObservable()).thenReturn(observable);
+    when(existing.getGeometry()).thenReturn(Geometry.create("S2(4,4){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 4&comma;4 4&comma;4 0&comma;0 0))}"));
+    when(scope.getObservation(any(Observation.class))).thenReturn(existing);
+    var requested=GeometryRepository.INSTANCE.scale(Geometry.create("S2(2,2){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 4&comma;4 4&comma;4 0&comma;0 0))}"));
+    org.mockito.Mockito.doReturn(mock(org.integratedmodelling.klab.api.services.RuntimeService.class,org.mockito.Mockito.RETURNS_DEEP_STUBS)).when(scope).getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    var settings=scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class).settings();
+    when(settings.get(org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS,Boolean.class)).thenReturn(false);
+    var compiler=new ResolutionCompiler(mock(ResolverService.class));
+    var failure=org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,
+        ()->compiler.query(observable,requested,scope));
+    assertTrue(failure.getMessage().contains("ACCEPT_LOSSY_MEDIATIONS=false"));
+    assertTrue(failure.getMessage().contains("resolution differs"));
+    when(settings.get(org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS,Boolean.class)).thenReturn(true);
+    assertSame(existing,compiler.query(observable,requested,scope).reference());
+    org.junit.jupiter.api.Assertions.assertEquals(Boolean.TRUE,
+        org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS.defaultValue);
   }
 
   @Test

@@ -10,7 +10,14 @@ final class LocalIndexedReader implements IndexedStorageReader {
   private final Storage.Type type;
   private final int blockValues;
   private boolean closed;
+  private final org.integratedmodelling.klab.api.data.mediation.classification.DataKey key;
+  public org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() { return key; }
   LocalIndexedReader(BufferArray buffer, Storage.Type type, int blockValues) {
+    this(buffer,type,blockValues,null);
+  }
+  LocalIndexedReader(BufferArray buffer, Storage.Type type, int blockValues, org.integratedmodelling.klab.api.data.mediation.classification.DataKey key) {
+    if(type==Storage.Type.KEYED && key==null)throw new IllegalArgumentException("KEYED reader requires a dictionary");
+    this.key=key;
     this.buffer = buffer; this.type = type; this.blockValues = blockValues;
   }
   public Storage.Type type() { return type; }
@@ -27,13 +34,13 @@ final class LocalIndexedReader implements IndexedStorageReader {
       check(index, type);
       if (type == Storage.Type.DOUBLE) return !Double.isNaN(buffer.doubleValue(index));
       if (type == Storage.Type.FLOAT) return !Float.isNaN(buffer.floatValue(index));
-      if (type == Storage.Type.KEYED) throw new UnsupportedOperationException("No durable dictionary");
+      if (type == Storage.Type.KEYED) { int code=buffer.intValue(index); if(code<0 || code>=key.size())throw new IllegalStateException("Unknown keyed code " + code); return code!=0; }
       return true;
     }
   }
   public double readDouble(long index) { synchronized (monitor) { check(index, Storage.Type.DOUBLE); return buffer.doubleValue(index); } }
   public float readFloat(long index) { synchronized (monitor) { check(index, Storage.Type.FLOAT); return buffer.floatValue(index); } }
-  public int readInt(long index) { synchronized (monitor) { check(index, Storage.Type.INTEGER); return buffer.intValue(index); } }
+  public int readInt(long index) { synchronized (monitor) { check(index, type == Storage.Type.KEYED ? Storage.Type.KEYED : Storage.Type.INTEGER); return buffer.intValue(index); } }
   public long readLong(long index) { synchronized (monitor) { check(index, Storage.Type.LONG); return buffer.longValue(index); } }
   public boolean readBoolean(long index) { synchronized (monitor) { check(index, Storage.Type.BOOLEAN); return buffer.byteValue(index) != 0; } }
   private void checkBlock(long start, int length, int offset, int count, Storage.Type expected) {

@@ -18,9 +18,11 @@ public final class StorageScan {
   public enum Precision { LOSSLESS, ALLOW_FLOAT_NARROWING }
   public enum Access { READ_ONLY, WRITE }
   public enum Coverage { EXACT, MISSING_OUTSIDE }
-  public enum Sampling { EXACT, NEAREST, INTERPOLATE, CONSERVATIVE }
-  public enum Operation { IDENTITY, INDEX_REMAP, FLOAT_TO_DOUBLE, DOUBLE_TO_FLOAT, VALUE_CONVERSION }
-  public enum Capability { NATIVE_READ, FLOAT_ADAPTATION, INDEXED_READ, BLOCK_READ, VALIDITY, PINNED_SESSION, CONFORMANT_READ, VALUE_MEDIATION }
+  /** CONSERVATIVE averages densities over overlap; CONSERVATIVE_TOTAL apportions source cell totals.
+   * Neither policy is category aggregation. INTERPOLATE and conservative policies require floats. */
+  public enum Sampling { EXACT, NEAREST, INTERPOLATE, CONSERVATIVE, CONSERVATIVE_TOTAL, MAJORITY }
+  public enum Operation { IDENTITY, INDEX_REMAP, FLOAT_TO_DOUBLE, DOUBLE_TO_FLOAT, VALUE_CONVERSION, SPATIAL_RESAMPLE }
+  public enum Capability { NATIVE_READ, FLOAT_ADAPTATION, INDEXED_READ, BLOCK_READ, VALIDITY, PINNED_SESSION, CONFORMANT_READ, VALUE_MEDIATION, SPATIAL_READ, KEYED_READ }
   public enum HistogramPolicy { UNAVAILABLE }
 
   /** Mutable strategy beans must be snapshotted before they become plan/cache metadata. */
@@ -115,6 +117,7 @@ public final class StorageScan {
       case Storage.LongScanner s -> Long.toString(s.peek());
       case Storage.IntScanner s -> Integer.toString(s.peek());
       case Storage.BooleanScanner s -> Boolean.toString(s.peek());
+      case Storage.KeyScanner<?> s -> ((org.integratedmodelling.klab.api.knowledge.Concept)s.peek()).getUrn();
       default -> throw new UnsupportedOperationException("No text representation for this scanner");
     };
   }
@@ -190,13 +193,38 @@ public final class StorageScan {
     }
   }
 
+  /** Effective CRS identities, including inherited definitions omitted from physical shard geometry.
+   * Description version 4 fixes XY axis order, strict transforms and binary64 overlap policy. */
+  public record Spatial(String sourceCrs, String targetCrs) implements Serializable {
+    public Spatial { text(sourceCrs, "source CRS"); text(targetCrs, "target CRS"); }
+  }
+
   /** Version 1 is native identity; version 2 adds conformant remapping; version 3 adds value conversion.
+   * Version 4 adds spatial resampling with the versioned XY/binary64 policy documented in STORAGE.md.
    * Providers validate conformance and compile conversion before issuing executable handles. */
   public record Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
       Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
       List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType,
       Precision precision, Coverage coverage, Sampling sampling, Budget budget,
-      List<Operation> operations, HistogramPolicy histogram, Conversion conversion) implements Serializable {
+      List<Operation> operations, HistogramPolicy histogram, Conversion conversion, Spatial spatial,
+      org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary dictionary) implements Serializable {
+    public Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
+        Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
+        List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType, Precision precision,
+        Coverage coverage, Sampling sampling, Budget budget, List<Operation> operations, HistogramPolicy histogram,
+        Conversion conversion, Spatial spatial) {
+      this(version,sourceRevision,observationId,observationUrn,slice,sourceSemantics,targetSemantics,nativeLayout,requestedLayout,
+          sources,partitions,valueType,precision,coverage,sampling,budget,operations,histogram,conversion,spatial,null);
+    }
+    public Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
+        Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
+        List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType, Precision precision,
+        Coverage coverage, Sampling sampling, Budget budget, List<Operation> operations, HistogramPolicy histogram,
+        Conversion conversion) {
+      this(version, sourceRevision, observationId, observationUrn, slice, sourceSemantics, targetSemantics,
+          nativeLayout, requestedLayout, sources, partitions, valueType, precision, coverage, sampling, budget,
+          operations, histogram, conversion, null);
+    }
     public Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
         Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
         List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType, Precision precision,
@@ -206,7 +234,7 @@ public final class StorageScan {
           operations, histogram, null);
     }
     public Description {
-      if (version != 1 && version != 2 && version != 3) throw new IllegalArgumentException("Unsupported scan description version: " + version);
+      if (version != 1 && version != 2 && version != 3 && version != 4 && version != 5) throw new IllegalArgumentException("Unsupported scan description version: " + version);
       text(sourceRevision, "source revision");
       Objects.requireNonNull(observationUrn); Objects.requireNonNull(slice);
       Objects.requireNonNull(sourceSemantics); Objects.requireNonNull(targetSemantics);
@@ -220,12 +248,21 @@ public final class StorageScan {
       if (sources.stream().map(SourceShard::urn).distinct().count() != sources.size()
           || partitions.stream().map(Partition::id).distinct().count() != partitions.size())
         throw new IllegalArgumentException("Duplicate scan source or partition");
-      if (coverage != Coverage.EXACT || sampling != Sampling.EXACT || version < 3 && !sourceSemantics.equals(targetSemantics)
+      if (version < 4 && (coverage != Coverage.EXACT || sampling != Sampling.EXACT) || version < 3 && !sourceSemantics.equals(targetSemantics)
           || version == 1 && !nativeLayout.equals(requestedLayout))
         throw new IllegalArgumentException("Exact coverage is required; versions 1/2 require native semantics and version 1 requires native layout");
+      if ((version == 5) != (dictionary != null) || valueType == Storage.Type.KEYED && dictionary == null)
+        throw new IllegalArgumentException("Keyed plans require version 5 dictionary evidence");
+      if (dictionary != null && (valueType != Storage.Type.KEYED || conversion != null
+          || spatial == null && (sampling != Sampling.EXACT || coverage != Coverage.EXACT)))
+        throw new IllegalArgumentException("Invalid keyed plan policy");
       Operation operation = operation(nativeLayout.type(), valueType, precision);
-      if ((version == 3) != (conversion != null)) throw new IllegalArgumentException("Conversion requires version 3");
-      if (!operations.equals(version == 1 ? List.of(operation) : version == 2 ? List.of(Operation.INDEX_REMAP, operation)
+      if (version < 4 && ((version == 3) != (conversion != null))) throw new IllegalArgumentException("Conversion requires version 3");
+      if (version < 5 && (version == 4) != (spatial != null)) throw new IllegalArgumentException("Spatial CRS metadata requires version 4");
+      if (spatial != null && sampling == Sampling.EXACT) throw new IllegalArgumentException("Spatial description requires a sampling policy");
+      if (!operations.equals(spatial != null ? (conversion == null
+          ? List.of(Operation.SPATIAL_RESAMPLE, operation)
+          : List.of(Operation.SPATIAL_RESAMPLE, Operation.VALUE_CONVERSION, operation)) : version == 1 ? List.of(operation) : version == 2 || version == 5 ? List.of(Operation.INDEX_REMAP, operation)
           : List.of(Operation.INDEX_REMAP, Operation.VALUE_CONVERSION, operation))) throw new IllegalArgumentException("Invalid operation pipeline");
       for (int i = 0; i < sources.size(); i++) {
         var source = sources.get(i);
@@ -266,7 +303,11 @@ public final class StorageScan {
 
   /** Consumer metadata is separate from physical shards and is never a HAS_DATA descriptor. */
   public record View(Partition partition, Data.FillCurve curve, Storage.Type valueType,
-      Semantics semantics, Slice slice, List<SourceShard> sources, HistogramPolicy histogram) {
+      Semantics semantics, Slice slice, List<SourceShard> sources, HistogramPolicy histogram, Spatial spatial) {
+    public View(Partition partition, Data.FillCurve curve, Storage.Type valueType, Semantics semantics,
+        Slice slice, List<SourceShard> sources, HistogramPolicy histogram) {
+      this(partition, curve, valueType, semantics, slice, sources, histogram, null);
+    }
     public View { sources = List.copyOf(sources); }
   }
 
@@ -292,7 +333,7 @@ public final class StorageScan {
 
   public static Operation operation(Storage.Type source, Storage.Type target, Precision precision) {
     Objects.requireNonNull(source); Objects.requireNonNull(target); Objects.requireNonNull(precision);
-    if (source == Storage.Type.KEYED || target == Storage.Type.KEYED)
+    if (source != target && (source == Storage.Type.KEYED || target == Storage.Type.KEYED))
       throw new UnsupportedOperationException("KEYED scanning requires a durable dictionary");
     if (source == target) return Operation.IDENTITY;
     if (source == Storage.Type.FLOAT && target == Storage.Type.DOUBLE) return Operation.FLOAT_TO_DOUBLE;
@@ -329,6 +370,8 @@ public final class StorageScan {
       list.forEach(item -> fingerprintFields(digest, item, legacy));
     } else if (value.getClass().isRecord()) {
       for (var component : value.getClass().getRecordComponents()) {
+        if (value instanceof Description d && d.version() < 5 && component.getName().equals("dictionary")) continue;
+        if (value instanceof Description description && description.version() < 4 && component.getName().equals("spatial")) continue;
         if (legacy && (value instanceof Description && component.getName().equals("conversion")
             || value instanceof Semantics && component.getName().equals("meaning"))) continue;
         try { fingerprintFields(digest, component.getAccessor().invoke(value), legacy); }

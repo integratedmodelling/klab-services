@@ -34,6 +34,11 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
  * service calls.
  */
 public interface KnowledgeGraph {
+  /** Atomically bind the root context; reject any existing incompatible commitment. */
+  default void bindWorldview(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment commitment) {
+    throw new UnsupportedOperationException("Root worldview commitment is not supported");
+  }
+
 
   /**
    * Each transaction produces a commit that details the changes made in the transaction. These are

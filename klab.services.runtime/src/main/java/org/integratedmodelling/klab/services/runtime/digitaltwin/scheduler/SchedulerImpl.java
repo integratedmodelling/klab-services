@@ -688,11 +688,25 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       Scheduler.Event event,
       ServiceContextScope scope) {
     if (event.getType() != Event.Type.INITIALIZATION) return executor.apply(geometry, event, scope);
+    // Dependency traversal may supply a detached graph snapshot. Transaction.update() resolves
+    // identities to its own graph vertex, so publish summaries on that same instance.
+    if (scope.getCurrentTransaction() != null && observation.getId() != Observation.UNASSIGNED_ID) {
+      long observationId = observation.getId();
+      observation = scope.getCurrentTransaction().assets().stream()
+          .filter(Observation.class::isInstance)
+          .map(Observation.class::cast)
+          .filter(candidate -> candidate.getId() == observationId)
+          .findFirst().orElse(observation);
+    }
     if (observation instanceof ObservationImpl concrete && scope.getCurrentTransaction() != null) {
       var previousTimestamps = new ArrayList<>(observation.getEventTimestamps());
+      var previousHistograms = observation.getHistograms();
       scope
           .getCurrentTransaction()
-          .afterRollback(() -> concrete.setEventTimestamps(previousTimestamps));
+          .afterRollback(() -> {
+            concrete.setEventTimestamps(previousTimestamps);
+            concrete.setHistograms(previousHistograms);
+          });
     }
     if (executor.apply(geometry, event, scope)) {
       if (observation.getObservable().is(SemanticType.QUALITY)) {

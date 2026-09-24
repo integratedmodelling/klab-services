@@ -15,7 +15,7 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
   private final AtomicBoolean closed = new AtomicBoolean();
 
   LocalScanSession(StorageScan.Plan<T> plan, List<Storage.Shard> shards,
-      List<IndexedStorageReader> readers, ConformantScan mapping, Runnable release) {
+      List<IndexedStorageReader> readers, ScanMapping mapping, Runnable release) {
     this.readers = List.copyOf(readers);
     this.release = release;
     var description = plan.description();
@@ -29,23 +29,23 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
       if (mapping == null) {
         physical = List.of(description.sources().get(i)); shard = shards.get(i); reader = readers.get(i);
       } else {
-        var links = mapping.dependencies[i];
+        var links = mapping.dependencies()[i];
         var linked = new ArrayList<StorageScan.SourceShard>(links.length);
         for (int source : links) linked.add(description.sources().get(source));
         physical = List.copyOf(linked);
-        shard = links.length == 1 ? shards.get(links[0]) : null;
-        reader = new ConformantReader(mapping, i, this.readers, description.budget().blockValues());
+        shard = !(mapping instanceof SpatialScan) && links.length == 1 ? shards.get(links[0]) : null;
+        reader = mapping.reader(i, this.readers, description.budget().blockValues());
       }
       var view = new StorageScan.View(description.partitions().get(i), description.requestedLayout().curve(),
           description.valueType(), description.targetSemantics(), description.slice(),
-          physical, description.histogram());
+          physical, description.histogram(), description.spatial());
       Storage.Scanner scanner = switch (description.valueType()) {
         case DOUBLE -> new DoubleCursor(shard, reader, view);
         case FLOAT -> new FloatCursor(shard, reader, view);
         case INTEGER -> new IntCursor(shard, reader, view);
         case LONG -> new LongCursor(shard, reader, view);
         case BOOLEAN -> new BooleanCursor(shard, reader, view);
-        case KEYED -> throw new UnsupportedOperationException("KEYED scanner unavailable");
+        case KEYED -> new KeyCursor(shard,reader,view);
       };
       cursors.add(plan.scannerClass().cast(scanner));
     }
@@ -93,6 +93,13 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
     @Override public boolean isValid() { checkValue(); return reader.isValid(index); }
     void checkValue() { if (!hasNext()) throw new NoSuchElementException("Scan exhausted"); }
     void rejectWrite() { checkOpen(); throw new IllegalStateException("Planned scans are read-only"); }
+  }
+  private final class KeyCursor extends Cursor implements Storage.KeyScanner<org.integratedmodelling.klab.api.knowledge.Concept> {
+    KeyCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); if(r.key()==null)throw new IllegalStateException("Missing dictionary"); }
+    public org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() { return reader.key(); }
+    public org.integratedmodelling.klab.api.knowledge.Concept peek() { checkValue(); return reader.isValid(index) ? (org.integratedmodelling.klab.api.knowledge.Concept)key().lookup(reader.readInt(index)) : null; }
+    public org.integratedmodelling.klab.api.knowledge.Concept get() { var value=peek();index++;return value; }
+    public void add(org.integratedmodelling.klab.api.knowledge.Concept value) { rejectWrite(); }
   }
   private final class DoubleCursor extends Cursor implements Storage.DoubleScanner {
     DoubleCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); }

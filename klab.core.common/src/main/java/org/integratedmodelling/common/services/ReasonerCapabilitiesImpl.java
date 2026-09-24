@@ -9,6 +9,9 @@ public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities
 
   private KlabService.Type type;
   private String worldviewId;
+  private org.integratedmodelling.klab.api.knowledge.WorldviewCommitment worldviewCommitment;
+  public org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return worldviewCommitment; }
+  public void setWorldviewCommitment(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment value) { worldviewCommitment = value; }
   private boolean consistent;
   private long knowledgeRevision;
 

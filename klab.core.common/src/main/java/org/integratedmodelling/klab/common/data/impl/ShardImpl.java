@@ -32,6 +32,12 @@ public class ShardImpl implements Storage.Shard {
   private Histogram histogram;
   private Storage.Type nativeType;
   private int shardCount;
+  private String keyDictionaryHash;
+  private org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram categoryHistogram;
+  public String getKeyDictionaryHash() { return keyDictionaryHash; }
+  public void setKeyDictionaryHash(String value) { keyDictionaryHash = value; }
+  public org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram getCategoryHistogram() { return categoryHistogram; }
+  public void setCategoryHistogram(org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram value) { categoryHistogram = value; }
 
   public ShardImpl() {
     geometry = null;

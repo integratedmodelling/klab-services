@@ -276,13 +276,22 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public void close() {
-    if (digitalTwin != null) digitalTwin.dispose();
-    ClientScopeManager.INSTANCE.unregister(this);
+    closePeer();
     var runtime = getService(RuntimeService.class);
     if (runtime != null) {
       runtime.releaseContext(this);
     } else {
       throw new KlabInternalErrorException("Context scope: no runtime service available");
+    }
+  }
+
+  /** Release local listeners, messaging and recovery workers without deleting the remote twin. */
+  @Override
+  public void closePeer() {
+    try {
+      if (digitalTwin != null) digitalTwin.dispose();
+    } finally {
+      super.closePeer();
     }
   }
 

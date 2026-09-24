@@ -59,6 +59,9 @@ public interface GraphModel {
     String ADAPTER_ID = "adapterId";
     String ADAPTER_PARAMETERS = "adapterParameters";
     String EVENT_TIMESTAMPS = "eventTimestamps";
+    String WORLDVIEW_COMMITMENT = "worldviewCommitment";
+    String KEY_DICTIONARY_HASH = "keyDictionaryHash";
+    String CATEGORY_HISTOGRAM = "categoryHistogram";
     String HISTOGRAM = "histogram";
     String HISTOGRAMS = "histograms";
     String FILL_CURVE = "fillCurve";
@@ -167,6 +170,9 @@ public interface GraphModel {
             ADAPTER_ID,
             ADAPTER_PARAMETERS,
             EVENT_TIMESTAMPS,
+            WORLDVIEW_COMMITMENT,
+            KEY_DICTIONARY_HASH,
+            CATEGORY_HISTOGRAM,
             HISTOGRAM,
             HISTOGRAMS,
             FILL_CURVE,

@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 /** Internal provider boundary: exact native primitives, bounded blocks, no buffers or file paths. */
 interface IndexedStorageReader extends AutoCloseable {
   Storage.Type type();
+  default org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() { return null; }
   long size();
   int blockValues();
   boolean isValid(long index);

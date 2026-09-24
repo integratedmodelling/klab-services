@@ -2435,6 +2435,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public <T> List<T> getCollection(
           String apiRequest, Class<T> resultClass, Object... parameters) {
 
+        return getCollectionInternal(apiRequest, resultClass, false, parameters);
+      }
+
+      /** Preserve request failures so graph caches cannot mistake them for empty adjacency. */
+      public <T> List<T> getCollectionOrThrow(
+          String apiRequest, Class<T> resultClass, Object... parameters) {
+        return getCollectionInternal(apiRequest, resultClass, true, parameters);
+      }
+
+      private <T> List<T> getCollectionInternal(
+          String apiRequest, Class<T> resultClass, boolean strict, Object... parameters) {
         var options = new Options();
         var params = makeKeyMap(options, parameters);
         var apiCall = substituteTemplateParameters(apiRequest, params);
@@ -2466,7 +2477,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return parseResponseList(response.body(), resultClass);
           }
 
+          if (strict) throw new RequestFailure(response == null ? 0 : response.statusCode(),
+              RequestFailure.collectionFailureDetail(response == null ? null : response.body()), null);
         } catch (Throwable e) {
+          if (strict) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            if (e instanceof RequestFailure failure) throw failure;
+            throw new RequestFailure(0, "Collection request failed", e);
+          }
           if (scope != null) {
             scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else {

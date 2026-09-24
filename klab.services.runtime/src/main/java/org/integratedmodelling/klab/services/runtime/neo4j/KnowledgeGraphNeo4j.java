@@ -749,6 +749,20 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return transaction.run(query, parameters);
   }
 
+  @Override
+  public void bindWorldview(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment commitment) {
+    try (var session = driver.session(); var transaction = session.beginTransaction()) {
+      lockContext(transaction, rootContextId);
+      var node = transaction.run(Queries.FIND_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId)).single().get(0).asNode();
+      var existing = node.get("worldviewCommitment");
+      if (!existing.isNull() && !commitment.equals(Utils.Json.parseObject(existing.asString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class)))
+        throw new IllegalStateException("Context is committed to a different worldview");
+      transaction.run("MATCH (n) WHERE elementId(n) = $id SET n.worldviewCommitment = $commitment",
+          Map.of("id", node.elementId(), "commitment", Utils.Json.asString(commitment)));
+      transaction.commit();
+    }
+  }
+
   /** Ensure things are OK re: main agents and the like. Must be called only once */
   protected void initializeContext(DigitalTwin.Configuration configuration, UserScope scope) {
 
@@ -769,6 +783,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       boolean newContext = !result.hasNext();
       if (!newContext) {
         lockContext(transaction, configuration.getId());
+        var persisted = result.single().get(0).asNode().get("worldviewCommitment");
+        if (!persisted.isNull()) {
+          var commitment = Utils.Json.parseObject(persisted.asString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class);
+          if (configuration.getWorldviewCommitment() != null && !configuration.getWorldviewCommitment().equals(commitment))
+            throw new IllegalStateException("Context worldview commitment differs");
+          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl) configuration).setWorldviewCommitment(commitment);
+        }
       }
       if (newContext) {
 
@@ -1368,6 +1389,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setUrn(node.get(GraphModel.Fields.URN).asString());
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setShardCount(node.get(GraphModel.Fields.SHARD_COUNT).asInt());
+        if (!node.get("keyDictionaryHash").isNull()) instance.setKeyDictionaryHash(node.get("keyDictionaryHash").asString());
+        if (!node.get("categoryHistogram").isNull()) instance.setCategoryHistogram(Utils.Json.parseObject(node.get("categoryHistogram").asString(), org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram.class));
         instance.setNativeType(
             Storage.Type.valueOf(node.get(GraphModel.Fields.NATIVE_TYPE).asString()));
         instance.setTimestamp(node.get(GraphModel.Fields.TIMESTAMP).asLong());
@@ -1677,6 +1700,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                       scope.getService(RuntimeService.class).getUrl()
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
                               "{id}", record.get(GraphModel.Fields.ID).toString())))
+              .worldviewCommitment(record.get("worldviewCommitment") == null ? null : Utils.Json.parseObject(record.get("worldviewCommitment").toString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
               .id(record.get(GraphModel.Fields.ID).toString())
               .name(record.get(GraphModel.Fields.NAME).toString())
               .serviceId(serviceId)
@@ -2810,6 +2834,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                       scope.getService(RuntimeService.class).getUrl()
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
                               "{id}", context.get(GraphModel.Fields.ID).toString())))
+              .worldviewCommitment(context.get("worldviewCommitment") == null ? null : Utils.Json.parseObject(context.get("worldviewCommitment").toString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
               .id(context.get(GraphModel.Fields.ID).toString())
               .name(context.get(GraphModel.Fields.NAME).toString())
               .serviceId(serviceId)

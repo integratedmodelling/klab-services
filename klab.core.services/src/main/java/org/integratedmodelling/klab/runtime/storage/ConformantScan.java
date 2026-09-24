@@ -7,7 +7,12 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 
 /** Immutable, metadata-only regular-grid mapping. All payload indices remain long. */
-final class ConformantScan {
+final class ConformantScan implements ScanMapping {
+  public List<StorageScan.Partition> partitions() { return partitions; }
+  public int[][] dependencies() { return dependencies; }
+  public IndexedStorageReader reader(int partition, List<IndexedStorageReader> readers, int blockValues) {
+    return new ConformantReader(this, partition, readers, blockValues);
+  }
   final List<StorageScan.Partition> partitions;
   final Box[] sources;
   final Box[] targets;
@@ -139,7 +144,7 @@ final class ConformantScan {
     }
   }
 
-  private record Grid(Geometry geometry, long[] shape, double[] bounds, String projection, String others) {
+  record Grid(Geometry geometry, long[] shape, double[] bounds, String projection, String others) {
     static Grid read(String encoding, String inheritedProjection) {
       return read(encoding, inheritedProjection, true);
     }
@@ -149,6 +154,11 @@ final class ConformantScan {
       if (space == null || !space.isRegular() || space.isGeneric()
           || space.getDimensionality() < 1 || space.getDimensionality() > 3)
         throw unsupported("regular spatial grids of one to three dimensions are required");
+      // Concrete bounds and cell counts are authoritative; sgrid is only a resolution hint.
+      // Never ignore an unknown transform/rotation or external grid definition when remapping.
+      for (String key : space.getParameters().keySet())
+        if (!Set.of("proj", "bbox", "shape", "sgrid").contains(key))
+          throw unsupported("unsupported spatial grid parameter: " + key);
       long[] shape = space.getShape().stream().mapToLong(Long::longValue).toArray();
       if (shape.length != space.getDimensionality()) throw unsupported("unspecified grid shape");
       new Box(new long[shape.length], shape);
@@ -186,7 +196,7 @@ final class ConformantScan {
     }
   }
 
-  private static final class Lattice {
+  static final class Lattice {
     final Grid reference;
     final double[] step;
     Lattice(Grid reference) {
@@ -248,11 +258,14 @@ final class ConformantScan {
       if (sources[i].size != descriptors.get(i).size()) throw unsupported("source geometry size differs");
     }
     Directory directory = Directory.of(sources);
-    Box ownerCoverage = lattice.box(Grid.read(observationGeometry, inherited, false), false);
+    Grid ownerGrid = Grid.read(observationGeometry, inherited, false);
+    Box ownerCoverage = lattice.box(ownerGrid, false);
     verifyCover(sources, directory, ownerCoverage);
     if (request.geometry() != null) {
-      boolean fullObservation = request.geometry().equals(StorageScan.parseGeometry(observationGeometry).encode());
-      Box coverage = lattice.box(Grid.read(request.geometry(), inherited, !fullObservation), !fullObservation);
+      Grid requestedGrid = Grid.read(request.geometry(), inherited, false);
+      // The unchanged observation time describes coverage; Slice selects the actual revision.
+      boolean ownerContext = requestedGrid.others.equals(ownerGrid.others);
+      Box coverage = lattice.box(Grid.read(request.geometry(), inherited, !ownerContext), !ownerContext);
       if (!same(coverage, directory.bounds)) throw unsupported("requested coverage differs");
     }
     List<StorageScan.Partition> partitions = request.partitions();

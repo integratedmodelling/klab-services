@@ -1208,6 +1208,8 @@ public class DigitalTwinImpl implements DigitalTwin {
             .serviceId(service.serviceId())
             .build();
     this.knowledgeGraph = (KnowledgeGraphNeo4j) database.contextualize(configuration, userScope);
+    if (configuration.getWorldviewCommitment() != null)
+      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl) scope.getConfiguration()).setWorldviewCommitment(configuration.getWorldviewCommitment());
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
   }

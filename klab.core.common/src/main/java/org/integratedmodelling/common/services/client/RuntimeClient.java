@@ -257,7 +257,7 @@ public class RuntimeClient extends BaseServiceClient
   public List<ContextInfo> getContextInfo(Scope scope) {
     return client
         .withScope(scope)
-        .getCollection(ServicesAPI.RUNTIME.GET_CONTEXT_INFO, ContextInfo.class);
+        .getCollectionOrThrow(ServicesAPI.RUNTIME.GET_CONTEXT_INFO, ContextInfo.class);
   }
 
   @Override
@@ -496,7 +496,7 @@ public class RuntimeClient extends BaseServiceClient
       GraphModel.Relationship[] relationship) {
     return client
         .withScope(scope)
-        .getCollection(
+        .getCollectionOrThrow(
             ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_LINKS,
             KnowledgeGraph.LinkInfo.class,
             "sourceId",

@@ -6,6 +6,15 @@ import org.integratedmodelling.klab.api.collections.Constant;
 public final class JavaArgumentConversions {
   private JavaArgumentConversions() {}
 
+  /** Java numeric widening, including the usual floating-point rounding for large integers. */
+  public static boolean widensToFloatingPoint(Object value, Class<?> target) {
+    boolean integral = value instanceof Byte || value instanceof Short
+        || value instanceof Integer || value instanceof Long;
+    return ((target == float.class || target == Float.class) && integral)
+        || ((target == double.class || target == Double.class)
+            && (integral || value instanceof Float));
+  }
+
   public static Object enumValue(Object value, Class<?> target) {
     if (!target.isEnum()) throw new IllegalArgumentException("Not an enum: " + target.getName());
     if (target.isInstance(value)) return value;

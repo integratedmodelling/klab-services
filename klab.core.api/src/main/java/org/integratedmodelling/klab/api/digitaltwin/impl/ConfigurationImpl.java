@@ -36,6 +36,9 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private String owner;
   private boolean empty;
   private String behaviorUrn;
+  private org.integratedmodelling.klab.api.knowledge.WorldviewCommitment worldviewCommitment;
+  public org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return worldviewCommitment; }
+  public void setWorldviewCommitment(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment value) { worldviewCommitment = value; }
 
   // for the object mapper, do not remove
   ConfigurationImpl() {}

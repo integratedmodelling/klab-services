@@ -81,6 +81,102 @@ public class StorageManagerImpl implements StorageManager {
             "storage.properties", NEXT_ID_PROPERTY + "=0");
     // Descriptors are reconstructed on demand; primitive buffers remain unloaded until scanned.
     readConfiguration();
+    validateWorldviewOnReopen();
+  }
+
+  /** Explicit directories for embedded runtimes and storage conformance tests. */
+  StorageManagerImpl(ServiceContextScope scope, File workspace, File persistentSpace) {
+    this.contextScope=scope;this.workspace=workspace;this.persistentSpace=persistentSpace;
+    workspace.mkdirs();this.propertyFile=new File(workspace,"storage.properties");
+    if(!propertyFile.exists())writeConfiguration();
+    readConfiguration();validateWorldviewOnReopen();
+  }
+
+  private org.integratedmodelling.klab.api.knowledge.WorldviewCommitment committedWorldview;
+  private boolean worldviewPublished;
+  private final Map<String,org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary> dictionaryCache = new LinkedHashMap<>(16,0.75f,true);
+
+  org.integratedmodelling.klab.api.knowledge.WorldviewCommitment currentWorldview() {
+    var reasoner = contextScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    if (reasoner == null) throw new IllegalStateException("A reasoner is required for keyed storage");
+    var capabilities = reasoner.capabilities(contextScope);
+    var worldview = capabilities == null ? null : capabilities.getWorldviewCommitment();
+    if (worldview == null || !capabilities.isConsistent())
+      throw new IllegalStateException("Keyed storage requires a consistent, content-fingerprinted worldview");
+    if (committedWorldview != null && !committedWorldview.equals(worldview))
+      throw new IllegalStateException("Context worldview differs from the active reasoner; reopen rejected");
+    return worldview;
+  }
+
+  private void validateWorldviewOnReopen() {
+    committedWorldview = contextScope.getConfiguration().getWorldviewCommitment();
+    var file = new File(getContextStorageDirectory(), "worldview.json");
+    if (file.exists()) {
+      var persisted = readJson(file, org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class);
+      if (committedWorldview != null && !committedWorldview.equals(persisted))
+        throw new IllegalStateException("Root and storage worldview commitments differ");
+      committedWorldview = persisted;
+    }
+    if (committedWorldview != null) {
+      currentWorldview();
+      if (contextScope.getConfiguration() instanceof org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl config)
+        config.setWorldviewCommitment(committedWorldview);
+    }
+  }
+
+  synchronized void bindWorldview(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment worldview) {
+    if (!worldview.equals(currentWorldview())) throw new IllegalStateException("Worldview changed during keyed insertion");
+    if (worldviewPublished) return;
+    // A failed insertion may leave a commitment, but can never leave uncommitted semantic data.
+    contextScope.getDigitalTwin().getKnowledgeGraph().bindWorldview(worldview);
+    writeJson(new File(getContextStorageDirectory(), "worldview.json"), worldview);
+    committedWorldview = worldview;
+    worldviewPublished = true;
+    if (contextScope.getConfiguration() instanceof org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl config)
+      config.setWorldviewCommitment(worldview);
+    if (contextScope.getDigitalTwin().getOptions() instanceof org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl config)
+      config.setWorldviewCommitment(worldview);
+  }
+
+  void persistDictionary(org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary dictionary) {
+    bindWorldview(dictionary.worldview());
+    var file = new File(getContextStorageDirectory(), "key-" + dictionary.fingerprint() + ".json");
+    if (file.exists()) {
+      if (!readDictionary(dictionary.fingerprint()).equals(dictionary)) throw new IllegalStateException("Dictionary hash collision");
+    } else writeJson(file, dictionary);
+  }
+
+  org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary readDictionary(String hash) {
+    if (hash == null || !hash.matches("[0-9a-f]{64}")) throw new IllegalStateException("Missing or invalid keyed dictionary reference");
+    synchronized(dictionaryCache) { var cached=dictionaryCache.get(hash); if(cached!=null)return cached; }
+    var dictionary = readJson(new File(getContextStorageDirectory(), "key-" + hash + ".json"),
+        org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary.class);
+    if (!hash.equals(dictionary.fingerprint())) throw new IllegalStateException("Keyed dictionary hash mismatch");
+    if (committedWorldview == null || !committedWorldview.equals(dictionary.worldview()))
+      throw new IllegalStateException("Keyed dictionary lacks matching root worldview commitment");
+    if(dictionary.entries().size()<=4096) synchronized(dictionaryCache) {
+      dictionaryCache.put(hash,dictionary);
+      if(dictionaryCache.size()>16)dictionaryCache.remove(dictionaryCache.keySet().iterator().next());
+    }
+    return dictionary;
+  }
+
+  private static <T> T readJson(File file, Class<T> type) {
+    try { return Utils.Json.parseObject(Files.readString(file.toPath()), type); }
+    catch (IOException e) { throw new IllegalStateException("Missing/corrupt semantic storage: " + file, e); }
+  }
+
+  private static void writeJson(File file, Object value) {
+    java.nio.file.Path temporary = null;
+    try {
+      Files.createDirectories(file.toPath().getParent());
+      temporary = Files.createTempFile(file.toPath().getParent(), "semantic-", ".pending");
+      Files.writeString(temporary, Utils.Json.asString(value));
+      try (var channel = java.nio.channels.FileChannel.open(temporary, java.nio.file.StandardOpenOption.WRITE)) { channel.force(true); }
+      try { Files.move(temporary, file.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+      catch (java.nio.file.AtomicMoveNotSupportedException e) { Files.move(temporary, file.toPath(), StandardCopyOption.REPLACE_EXISTING); }
+    } catch (IOException e) { throw new IllegalStateException("Cannot persist semantic storage " + file, e); }
+    finally { if (temporary != null) try { Files.deleteIfExists(temporary); } catch (IOException ignored) {} }
   }
 
   private synchronized File nextBufferFile(String prefix) {
@@ -266,8 +362,8 @@ public class StorageManagerImpl implements StorageManager {
   private void writeConfiguration() {
     Properties p = new Properties();
     p.setProperty(NEXT_ID_PROPERTY, nextId.get() + "");
-    try {
-      p.store(new FileOutputStream(propertyFile), null);
+    try (var output = new FileOutputStream(propertyFile)) {
+      p.store(output, null);
     } catch (Exception e) {
       throw new KlabIOException(e);
     }

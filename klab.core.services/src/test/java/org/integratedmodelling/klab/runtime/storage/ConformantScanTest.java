@@ -68,13 +68,14 @@ class ConformantScanTest {
     final StorageManagerImpl manager = mock(StorageManagerImpl.class);
     final Data.ShardingStrategy strategy;
     final StorageImpl storage;
+    final ServiceContextScope scope = mock(ServiceContextScope.class, RETURNS_DEEP_STUBS);
     Fixture(int splits, Storage.Type type, FillCurve curve) {
       var observation = new ObservationImpl(); var concept = new ConceptImpl();
       concept.setUrn("test:quality"); concept.setName("quality"); concept.getType().add(SemanticType.QUALITY);
       observation.setObservable(ObservableImpl.promote(concept,null)); observation.setId(-1); observation.setUrn("test:grid");
       observation.setGeometry(Geometry.create(TIME + "S2(5,4){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 4&comma;5 4&comma;5 0&comma;0 0))}"));
       strategy = new Data.ShardingStrategy(curve,splits,0,0,type);
-      var scope = mock(ServiceContextScope.class, RETURNS_DEEP_STUBS);
+      org.mockito.Mockito.doReturn(mock(org.integratedmodelling.klab.api.services.RuntimeService.class,RETURNS_DEEP_STUBS)).when(scope).getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
       when(scope.getConfiguration().getPersistence()).thenReturn(Persistence.EXPLICIT_ACTION);
       when(manager.getDoubleBuffer(anyLong())).thenAnswer(c -> (BufferArray)BufferArray.R064.make(c.getArgument(0,Long.class)));
       when(manager.getFloatBuffer(anyLong())).thenAnswer(c -> (BufferArray)BufferArray.R032.make(c.getArgument(0,Long.class)));

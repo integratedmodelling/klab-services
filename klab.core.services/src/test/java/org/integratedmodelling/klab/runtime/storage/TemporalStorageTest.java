@@ -97,6 +97,28 @@ class TemporalStorageTest {
     }
   }
 
+  @Test void eventRelativeSpatialReadPinsPriorAndCurrentOverPartialTargetExtent() {
+    var f=new Fixture(false);
+    org.mockito.Mockito.doReturn(mock(org.integratedmodelling.klab.api.services.RuntimeService.class,RETURNS_DEEP_STUBS)).when(f.scope).getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    when(f.scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class).settings()
+        .get(org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS,Boolean.class)).thenReturn(true);
+    var writes=f.begin("earthquake",1000,2000);
+    var writer=f.scan(writes,TemporalWriteSet.Access.WRITE);writer.add(90);
+    var request=new StorageScan.Request<>(StorageScan.Slice.of(event("earthquake",1000,2000)),
+        new StorageScan.Layout(Data.FillCurve.D2_YX,1,0,0,null),"S2(4,1){proj=EPSG:4326,bbox=[-1 3 0 1]}",
+        List.of(),null,Storage.DoubleScanner.class,StorageScan.Access.READ_ONLY,StorageScan.Precision.LOSSLESS,
+        StorageScan.Coverage.MISSING_OUTSIDE,StorageScan.Sampling.NEAREST,StorageScan.Budget.defaults());
+    try(var prior=writes.read(f.quality,request,TemporalWriteSet.Access.PRIOR);
+        var current=writes.read(f.quality,request,TemporalWriteSet.Access.CURRENT)) {
+      var before=prior.scanners().getFirst();var now=current.scanners().getFirst();
+      assertFalse(before.isValid());assertTrue(Double.isNaN(before.get()));
+      now.seek(1);assertEquals(90,now.peek());assertEquals(100,before.get());
+      writer.add(80);now.seek(2);assertEquals(200,now.get());
+      assertEquals(4,current.description().version());
+      f.abort();assertTrue(prior.isClosed());assertTrue(current.isClosed());
+    } finally {f.storage.close(null);}
+  }
+
   @Test void temporalConversionsUsePinnedPriorAndCurrentValuesAndReleaseOnRollback() {
     var f = new Fixture(false);
     var original = (ObservableImpl) f.quality.getObservable();

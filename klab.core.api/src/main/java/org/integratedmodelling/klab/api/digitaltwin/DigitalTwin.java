@@ -33,6 +33,8 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   interface Configuration {
 
+    default org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return null; }
+
     /**
      * The URL does not need to be filled in if the configuration is passed to a {@link
      * SessionScope#createContext(Configuration)}. Otherwise, the URL should be that of the chosen

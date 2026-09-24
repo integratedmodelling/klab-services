@@ -42,7 +42,7 @@ public class StorageImpl implements Storage {
   private boolean closed;
   private final Set<String> readableShards = new HashSet<>();
   private final StorageManagerImpl storageManager;
-  private DataKey dataKey;
+  private ConceptDataKey dataKey;
 
   /**
    * Used as a key for the geometry-aware shard cache. In all current implementations, the key will
@@ -104,7 +104,7 @@ public class StorageImpl implements Storage {
 
     void resetHistogram() {
       this.histogram =
-          storage.isRecordHistogram()
+          storage.isRecordHistogram() && shard.getNativeType() != Type.KEYED
               ? com.dynatrace.dynahist.Histogram.createDynamic(
                   histogramLayout(observation.getObservable()))
               : null;
@@ -220,6 +220,10 @@ public class StorageImpl implements Storage {
               "Missing committed temporal data for " + revision.event());
         validateRestoredShards(group, nativeShardingStrategy.getDataType());
       }
+    }
+    if (getNativeType() == Type.KEYED && !allShards().isEmpty()) {
+      var restored=new HashSet<String>();
+      for (var shard : allShards()) if(restored.add(shard.getKeyDictionaryHash())) key().restore(storageManager.readDictionary(shard.getKeyDictionaryHash()));
     }
   }
 
@@ -430,6 +434,7 @@ public class StorageImpl implements Storage {
     synchronized (scanLock) {
       assertOpen();
       if (resetForWrite) assertUnleased();
+      if (getNativeType() == Type.KEYED) storageManager.currentWorldview();
 
       var st = shardStorage.get(shard.getUrn());
 
@@ -455,9 +460,7 @@ public class StorageImpl implements Storage {
         case INTEGER -> new LocalIntScanner((ShardImpl) shard, st.data, st.histogram, readOnly);
         case LONG -> new LocalLongScanner((ShardImpl) shard, st.data, st.histogram, readOnly);
         case BOOLEAN -> new LocalBooleanScanner((ShardImpl) shard, st.data, st.histogram, readOnly);
-        case KEYED ->
-            throw new KlabUnimplementedException(
-                "KEYED storage requires a persistent DataKey and a dedicated KeyScanner");
+        case KEYED -> new LocalKeyScanner((ShardImpl) shard, st.data, readOnly);
       };
     }
   }
@@ -479,6 +482,16 @@ public class StorageImpl implements Storage {
     if (!storageManager.loadBufferArray(ret.data, file, shard.getNativeType())) {
       ret.close();
       throw new KlabIllegalStateException("Cannot read shard data from local storage: " + file);
+    }
+    if (shard.getNativeType() == Type.KEYED) {
+      var dictionary = storageManager.readDictionary(shard.getKeyDictionaryHash());
+      for (long i=0;i<ret.data.count();i++) if (ret.data.intValue(i) < 0 || ret.data.intValue(i) > dictionary.entries().size()) {
+        ret.close(); throw new IllegalStateException("Unknown code in keyed shard " + shard.getUrn());
+      }
+      var expected = shard.getCategoryHistogram();
+      if (expected == null || !expected.equals(categoryHistogram(ret.data, dictionary.fingerprint()))) {
+        ret.close(); throw new IllegalStateException("Keyed histogram/dictionary mismatch " + shard.getUrn());
+      }
     }
     ret.rebuildHistogram();
     if (shard instanceof ShardImpl shardImpl) {
@@ -517,17 +530,17 @@ public class StorageImpl implements Storage {
   public Set<StorageScan.Capability> scanCapabilities() {
     return Set.of(StorageScan.Capability.NATIVE_READ, StorageScan.Capability.FLOAT_ADAPTATION,
         StorageScan.Capability.INDEXED_READ, StorageScan.Capability.BLOCK_READ,
-        StorageScan.Capability.VALIDITY, StorageScan.Capability.PINNED_SESSION, StorageScan.Capability.CONFORMANT_READ, StorageScan.Capability.VALUE_MEDIATION);
+        StorageScan.Capability.VALIDITY, StorageScan.Capability.PINNED_SESSION, StorageScan.Capability.CONFORMANT_READ, StorageScan.Capability.VALUE_MEDIATION, StorageScan.Capability.SPATIAL_READ, StorageScan.Capability.KEYED_READ);
   }
 
   private record NativePlan<T extends Scanner>(StorageImpl owner, long generation,
-      StorageScan.Description description, Class<T> scannerClass, List<Shard> shards, ConformantScan mapping, String observationGeometry)
+      StorageScan.Description description, Class<T> scannerClass, List<Shard> shards, ScanMapping mapping, String observationGeometry)
       implements StorageScan.Plan<T> {
     private NativePlan { shards = List.copyOf(shards); }
   }
 
   private record PlanKey(long generation, long observationId, String observationGeometry,
-      StorageScan.Semantics semantics, List<StorageScan.SourceShard> sources, StorageScan.Request<?> request) {}
+      StorageScan.Semantics semantics, List<StorageScan.SourceShard> sources, StorageScan.Request<?> request, boolean acceptsLossy) {}
 
   // Cache metadata only. Large plans bypass the cache, so its footprint is bounded independently
   // of request budgets and dataset size. Entries contain no readers or payload buffers.
@@ -541,8 +554,7 @@ public class StorageImpl implements Storage {
       assertOpen();
       if (request.access() != StorageScan.Access.READ_ONLY)
         throw new UnsupportedOperationException("Planned writes require a future native ownership protocol");
-      if (request.coverage() != StorageScan.Coverage.EXACT || request.sampling() != StorageScan.Sampling.EXACT)
-        throw new UnsupportedOperationException("Spatial resampling is not implemented");
+      if (getNativeType() == Type.KEYED) storageManager.currentWorldview();
       var layout = StorageScan.Layout.of(nativeShardingStrategy);
       if (layout.curve() == Data.FillCurve.UNSPECIFIED || layout.curve() == Data.FillCurve.D3_ZYX
           || layout.curve() == Data.FillCurve.D2_HILBERT || layout.curve() == Data.FillCurve.D3_HILBERT)
@@ -564,7 +576,8 @@ public class StorageImpl implements Storage {
         throw new IllegalArgumentException("Source partition budget exceeded");
       var sources = nativeShards.stream().map(this::scanSource).toList();
       String observationGeometry = observation.getGeometry().encode();
-      var key = new PlanKey(scanGeneration, observation.getId(), observationGeometry, semantics, sources, request);
+      boolean acceptsLossy = StorageReads.acceptsLossy(scope);
+      var key = new PlanKey(scanGeneration, observation.getId(), observationGeometry, semantics, sources, request, acceptsLossy);
       var cached = scanPlans.get(key);
       if (cached != null) return (StorageScan.Plan<T>) cached;
       var partitions = request.partitions();
@@ -579,7 +592,7 @@ public class StorageImpl implements Storage {
         aligned &= layout.splits() == request.layout().splits() && layout.minSize() == request.layout().minSize()
             && layout.maxSize() == request.layout().maxSize();
       }
-      ConformantScan mapping = null;
+      ScanMapping mapping = null;
       if (aligned) {
         if (partitions.isEmpty()) partitions = sources.stream()
             .map(source -> new StorageScan.Partition("native-" + source.index(), source.geometry(), source.size())).toList();
@@ -587,17 +600,19 @@ public class StorageImpl implements Storage {
           if (request.layout().maxSize() > 0 && partition.size() > request.layout().maxSize()) aligned = false;
       }
       if (!aligned) {
-        mapping = ConformantScan.compile(sources, request, observationGeometry);
-        partitions = mapping.partitions;
+        mapping = SpatialScan.plan(sources, request, observationGeometry, acceptsLossy);
+        partitions = mapping.partitions();
       }
       boolean identity = aligned && layout.equals(request.layout());
-      var description = new StorageScan.Description(conversion != null ? 3 : identity ? 1 : 2, scanInstance + ":" + scanGeneration,
+      SpatialScan.validateConversion(mapping, conversion);
+      boolean spatial = mapping instanceof SpatialScan;
+      var description = new StorageScan.Description(getNativeType() == Type.KEYED ? 5 : spatial ? 4 : conversion != null ? 3 : identity ? 1 : 2, scanInstance + ":" + scanGeneration,
           observation.getId(), Objects.toString(observation.getUrn(), ""), request.slice(), semantics,
           targetSemantics, layout, request.layout(), sources, partitions, valueType, request.precision(),
-          request.coverage(), request.sampling(), request.budget(), conversion != null ? List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation) : identity ? List.of(operation)
-              : List.of(StorageScan.Operation.INDEX_REMAP, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion);
+          spatial ? request.coverage() : StorageScan.Coverage.EXACT, spatial ? request.sampling() : StorageScan.Sampling.EXACT, request.budget(), spatial ? SpatialScan.operations(conversion, operation) : conversion != null ? List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation) : identity && getNativeType() != Type.KEYED ? List.of(operation)
+              : List.of(StorageScan.Operation.INDEX_REMAP, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion, SpatialScan.metadata(mapping), getNativeType() == Type.KEYED ? key().snapshot() : null);
       var plan = new NativePlan<>(this, scanGeneration, description, request.scannerClass(), nativeShards, mapping, observationGeometry);
-      long links = mapping == null ? sources.size() : Arrays.stream(mapping.dependencies).mapToLong(array -> array.length).sum();
+      long links = mapping == null ? sources.size() : Arrays.stream(mapping.dependencies()).mapToLong(array -> array.length).sum();
       if (sources.size() + partitions.size() + links <= 1024) {
         scanPlans.put(key, plan);
         if (scanPlans.size() > 16) scanPlans.remove(scanPlans.keySet().iterator().next());
@@ -626,6 +641,9 @@ public class StorageImpl implements Storage {
           || !plan.description().sourceSemantics().equals(scanSemantics())
           || !nativePlan.shards().stream().map(this::scanSource).toList().equals(plan.description().sources()))
         throw new IllegalStateException("Source changed since scan planning; replan explicitly");
+      if (nativePlan.mapping() instanceof SpatialScan && !StorageReads.acceptsLossy(scope))
+        throw SpatialScan.disabled("spatial extents differ; previously issued resampling plan");
+      if (getNativeType() == Type.KEYED) storageManager.currentWorldview();
       scanLeases++;
       var readers = new ArrayList<IndexedStorageReader>();
       var previouslyLoaded = Set.copyOf(shardStorage.keySet());
@@ -652,7 +670,7 @@ public class StorageImpl implements Storage {
 
   IndexedStorageReader openReader(Shard shard, int blockValues) {
     var state = shardStorage.computeIfAbsent(shard.getUrn(), ignored -> restore(shard));
-    return new LocalIndexedReader(state.data, shard.getNativeType(), blockValues);
+    return new LocalIndexedReader(state.data, shard.getNativeType(), blockValues, getNativeType() == Type.KEYED ? key().readOnly() : null);
   }
 
   Runnable pinReads() {
@@ -704,11 +722,10 @@ public class StorageImpl implements Storage {
     return switch (getNativeType()) {
       case DOUBLE -> data.doubleValue(index);
       case FLOAT -> data.floatValue(index);
-      case INTEGER -> data.intValue(index);
+      case INTEGER, KEYED -> data.intValue(index);
       case LONG -> data.longValue(index);
       case BOOLEAN -> data.byteValue(index) != 0;
-      default ->
-          throw new KlabUnimplementedException("Temporal keyed storage requires persistent keys");
+
     };
   }
 
@@ -766,6 +783,7 @@ public class StorageImpl implements Storage {
       }
       buffer.rebuildHistogram();
       shard.setHistogram(Utils.Data.adaptHistogram(buffer.histogram, buffer.data.count()));
+      if (getNativeType() == Type.KEYED) finalizeKeyed(shard, buffer.data);
       storageManager.persistTemporalShard(shard, buffer.data);
       transaction.link(
           observation,
@@ -877,6 +895,37 @@ public class StorageImpl implements Storage {
   }
 
   @Override
+  public Map<Long, org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Summary> getCategoryHistograms() {
+    synchronized(scanLock) {
+      if(getNativeType()!=Type.KEYED)return Map.of();
+      storageManager.currentWorldview();
+      var groups=new TreeMap<Long,List<Shard>>();
+      for(var shard:histogramShards())groups.computeIfAbsent(shard.getTimestamp(),k->new ArrayList<>()).add(shard);
+      var result=new TreeMap<Long,org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Summary>();
+      for(var group:groups.entrySet()) {
+        var dictionaries=new HashMap<String,org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary>();
+        for(var shard:group.getValue()) dictionaries.computeIfAbsent(shard.getKeyDictionaryHash(),storageManager::readDictionary);
+        var target=dictionaries.values().stream().max(Comparator.comparingInt(d->d.entries().size())).orElseThrow();
+        var translations=new HashMap<String,int[]>();
+        var counts=new TreeMap<Integer,Long>();long missing=0;
+        for(var shard:group.getValue()) {
+          var histogram=shard.getCategoryHistogram();
+          if(histogram==null || !histogram.dictionary().equals(shard.getKeyDictionaryHash()))throw new IllegalStateException("Missing/mismatched categorical histogram");
+          var translate=translations.computeIfAbsent(histogram.dictionary(),id->dictionaries.get(id).translationTo(target));
+          for(var count:histogram.counts().entrySet()) {
+            if(count.getKey()>=translate.length)throw new IllegalStateException("Unknown histogram code");
+            counts.merge(translate[count.getKey()],count.getValue(),Math::addExact);
+          }
+          missing=Math.addExact(missing,histogram.missing());
+        }
+        result.put(group.getKey(),new org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Summary(target,
+            new org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram(target.fingerprint(),counts,missing)));
+      }
+      return Collections.unmodifiableMap(result);
+    }
+  }
+
+  @Override
   public Map<Long, Histogram> getHistograms() {
     var ret = new TreeMap<Long, Histogram>();
     temporalHistograms()
@@ -903,8 +952,43 @@ public class StorageImpl implements Storage {
 
   @Override
   public DataKey getKey() {
-    // TODO KEYED storage needs a durable, mergeable key descriptor in ShardImpl and Observation.
-    return dataKey;
+    if(getNativeType()!=Type.KEYED)return null;
+    storageManager.currentWorldview();
+    return key().readOnly();
+  }
+
+  void validateKeyWorldview() { if(getNativeType()==Type.KEYED)storageManager.currentWorldview(); }
+
+  ConceptDataKey key() {
+    synchronized (scanLock) {
+      if (dataKey == null) {
+        var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+        var worldview = storageManager.currentWorldview();
+        if (!observation.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.CLASS))
+          throw new IllegalArgumentException("KEYED requires a type-of observable");
+        var target = reasoner.describedType(observation.getObservable());
+        dataKey = new ConceptDataKey(reasoner, target, worldview, () -> storageManager.bindWorldview(worldview), () -> {
+          if(!worldview.equals(storageManager.currentWorldview()))throw new IllegalStateException("Keyed semantic environment changed");
+        });
+      }
+      return dataKey;
+    }
+  }
+
+  private org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram categoryHistogram(BufferArray data, String hash) {
+    var counts = new TreeMap<Integer,Long>(); long missing=0;
+    for(long i=0;i<data.count();i++) { int code=data.intValue(i); if(code==0)missing++; else {
+      if(code<0 || code>=key().size())throw new IllegalStateException("Unknown keyed code " + code);
+      counts.merge(code,1L,Math::addExact);
+    } }
+    return new org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram(hash,counts,missing);
+  }
+
+  private void finalizeKeyed(ShardImpl shard, BufferArray data) {
+    var dictionary = key().snapshot();
+    storageManager.persistDictionary(dictionary);
+    shard.setKeyDictionaryHash(dictionary.fingerprint());
+    shard.setCategoryHistogram(categoryHistogram(data,dictionary.fingerprint()));
   }
 
   @Override
@@ -921,6 +1005,7 @@ public class StorageImpl implements Storage {
           histogram = Utils.Data.adaptHistogram(dynaHistogram, storage.data.count());
         }
         baseScanner.shard.setHistogram(histogram);
+        if (getNativeType() == Type.KEYED) finalizeKeyed(baseScanner.shard, storage.data);
       }
       if (scope.getConfiguration().getPersistence().survivesShutdown) {
         storageManager.persistShard(scanner);
@@ -1002,6 +1087,23 @@ public class StorageImpl implements Storage {
     protected void assertWritable() {
       if (readOnly) {
         throw new KlabIllegalStateException("Cannot write through a read-only storage scanner");
+      }
+    }
+  }
+
+  class LocalKeyScanner extends BaseScanner implements Storage.KeyScanner<org.integratedmodelling.klab.api.knowledge.Concept> {
+    private final ConceptDataKey key;
+    LocalKeyScanner(ShardImpl shard, BufferArray data, boolean readOnly) {
+      super(shard,data,null,readOnly); key = StorageImpl.this.key();
+    }
+    public DataKey key() { return key.readOnly(); }
+    public boolean isValid() { return peek() != null; }
+    public org.integratedmodelling.klab.api.knowledge.Concept peek() { if(!hasNext())throw new NoSuchElementException(); return key.lookup(data.intValue(index)); }
+    public org.integratedmodelling.klab.api.knowledge.Concept get() { var value=peek();index++;return value; }
+    public void add(org.integratedmodelling.klab.api.knowledge.Concept value) {
+      synchronized(scanLock) {
+        assertUnleased();assertWritable();if(!hasNext())throw new NoSuchElementException();
+        int code=key.code(value);data.set(index++,code);scanGeneration++;readableShards.remove(shard.getUrn());
       }
     }
   }

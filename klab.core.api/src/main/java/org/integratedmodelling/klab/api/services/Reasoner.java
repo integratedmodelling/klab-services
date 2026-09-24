@@ -43,6 +43,8 @@ public interface Reasoner extends KlabService {
      */
     String getWorldviewId();
 
+    default org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return null; }
+
     /** Monotonically increasing revision of the loaded semantic knowledge. */
     default long getKnowledgeRevision() {
       return 0L;
