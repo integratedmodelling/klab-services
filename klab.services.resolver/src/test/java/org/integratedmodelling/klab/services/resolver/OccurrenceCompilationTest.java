@@ -63,7 +63,8 @@ class OccurrenceCompilationTest {
     }
     for (var type : List.of(SemanticType.EVENT, SemanticType.RELATIONSHIP, SemanticType.SUBJECT)) {
       var actuator = compile(model(type, false));
-      assertEquals(Actuator.ExecutionRole.INITIALIZATION, actuator.getExecutionRole());
+      assertEquals(type == SemanticType.EVENT ? Actuator.ExecutionRole.EVENT
+          : Actuator.ExecutionRole.INITIALIZATION, actuator.getExecutionRole());
       assertTrue(actuator.getOccurrenceSchedules().isEmpty());
     }
   }

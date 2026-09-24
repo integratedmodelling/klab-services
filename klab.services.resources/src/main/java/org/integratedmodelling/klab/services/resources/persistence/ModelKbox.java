@@ -789,6 +789,23 @@ public class ModelKbox extends ObservableKbox {
 
     if (!ret.isEmpty()) {
 
+      if (mainObservable.is(SemanticType.PROCESS)) {
+        var qualities = new ArrayList<Observable>();
+        for (var declared : model.getObservables().subList(1, model.getObservables().size()))
+          qualities.add(monitor.getService(Reasoner.class).resolveObservable(declared.getUrn()));
+        for (var dependency : model.getDependencies())
+          qualities.add(monitor.getService(Reasoner.class).resolveObservable(dependency.getUrn()));
+        for (var change : org.integratedmodelling.klab.runtime.language.OccurrentSemantics.changes(
+            mainObservable, qualities, monitor)) {
+          var descriptor = ret.getFirst().copy();
+          descriptor.setObservable(change.getUrn());
+          descriptor.setObservableConcept(change.getSemantics());
+          descriptor.setObservationType(change.getContextualization().name());
+          descriptor.setPrimaryObservable(false);
+          ret.add(descriptor);
+        }
+      }
+
       for (KimObservable attr :
           model.getObservables().stream().filter(o -> o.getFormalName() != null).toList()) {
 
@@ -1009,7 +1026,7 @@ public class ModelKbox extends ObservableKbox {
       Observable oobs, Observable main, boolean first, Scope monitor) {
 
     List<Observable> ret = new ArrayList<>();
-    if (!first) {
+    if (!first && !main.is(SemanticType.PROCESS) && !main.is(SemanticType.EVENT)) {
       /*
        * Subsequent observables inherit any explicit specialization in the main observable of a
        * model

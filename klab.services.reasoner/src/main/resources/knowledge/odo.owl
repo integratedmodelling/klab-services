@@ -156,8 +156,10 @@ Dr. Greta Adamo (greta.adamo@bc3research.org)</dc:contributor>
     <!-- http://integratedmodelling.org/odo#changes -->
 
     <owl:ObjectProperty rdf:about="http://integratedmodelling.org/odo#changes">
-        <rdfs:domain rdf:resource="http://integratedmodelling.org/odo#Event"/>
-        <rdfs:domain rdf:resource="http://integratedmodelling.org/odo#Process"/>
+        <rdfs:domain><owl:Class><owl:unionOf rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://integratedmodelling.org/odo#Process"/>
+            <rdf:Description rdf:about="http://integratedmodelling.org/odo#Event"/>
+        </owl:unionOf></owl:Class></rdfs:domain>
         <rdfs:range rdf:resource="http://integratedmodelling.org/odo#Quality"/>
     </owl:ObjectProperty>
     
@@ -864,6 +866,13 @@ Dr. Greta Adamo (greta.adamo@bc3research.org)</dc:contributor>
     </owl:Class>
     
 
+
+    <!-- http://integratedmodelling.org/odo#Change -->
+
+    <owl:Class rdf:about="http://integratedmodelling.org/odo#Change">
+        <rdfs:subClassOf rdf:resource="http://integratedmodelling.org/odo#Process"/>
+        <rdfs:comment>A process describing change in a quality. Every quality admits this operator.</rdfs:comment>
+    </owl:Class>
 
     <!-- http://integratedmodelling.org/odo#ContinuousNumericallyQuantifiableQuality -->
 

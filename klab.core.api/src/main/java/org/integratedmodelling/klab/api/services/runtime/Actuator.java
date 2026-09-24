@@ -62,7 +62,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
  */
 public interface Actuator extends Serializable, RuntimeAsset {
 
-  enum ExecutionRole { INITIALIZATION, PROCESS, EVENT_INSTANTIATOR }
+  enum ExecutionRole { INITIALIZATION, PROCESS, EVENT_INSTANTIATOR, EVENT }
 
   default ExecutionRole getExecutionRole() { return ExecutionRole.INITIALIZATION; }
 

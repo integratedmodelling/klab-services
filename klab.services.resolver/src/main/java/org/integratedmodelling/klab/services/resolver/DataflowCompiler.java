@@ -260,7 +260,8 @@ public class DataflowCompiler {
       String localName) {
 
     var occurrenceSchedule = compileOccurrenceSchedule(observationActuator, model);
-    if (observationActuator.getExecutionRole() == Actuator.ExecutionRole.PROCESS
+    if ((observationActuator.getExecutionRole() == Actuator.ExecutionRole.PROCESS
+        || observationActuator.getExecutionRole() == Actuator.ExecutionRole.EVENT)
         && !observationActuator.getData().containsKey(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY)) {
       var processPlan = ProcessModelBindings.analyze(model, scope);
       observationActuator.getData().put(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY,
@@ -354,6 +355,10 @@ public class DataflowCompiler {
       Actuator actuator, Model model) {
     if (model.getObservables().isEmpty()) return null;
     var primary = model.getObservables().getFirst();
+    if (primary.is(SemanticType.EVENT) && !primary.getSemantics().isCollective()) {
+      ((ActuatorImpl) actuator).setExecutionRole(Actuator.ExecutionRole.EVENT);
+      return null;
+    }
     var role = primary.is(SemanticType.PROCESS) ? Actuator.ExecutionRole.PROCESS
         : primary.is(SemanticType.EVENT) && primary.getSemantics().isCollective()
             ? Actuator.ExecutionRole.EVENT_INSTANTIATOR : Actuator.ExecutionRole.INITIALIZATION;

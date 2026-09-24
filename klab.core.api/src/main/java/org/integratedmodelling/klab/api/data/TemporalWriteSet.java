@@ -26,6 +26,12 @@ public interface TemporalWriteSet {
     throw new UnsupportedOperationException("Temporal read mediation is unavailable");
   }
 
+  /** Writable event view. Closing scatters explicit writes to covered native cell centers only. */
+  default <T extends Storage.Scanner> StorageScan.Session<T> write(
+      Observation observation, StorageScan.Request<T> request) {
+    throw new UnsupportedOperationException("Event-local writes are unavailable");
+  }
+
   boolean changed(Observation observation);
 
   Set<Observation> changedObservations();

@@ -125,13 +125,22 @@ public class ClientDigitalTwin implements DigitalTwin {
           for(var delta:transition.qualities())
             if(knowledgeGraph.getAsset(delta.observationId(),scope,Observation.class)==null)
               throw new IllegalStateException("Committed quality is temporarily unavailable: "+delta.observationId());
+          for (var journal : transition.journals()) {
+            var observed = journal.observedEvent();
+            if (observed != null && knowledgeGraph.getAsset(observed.observationId(), scope, Observation.class) == null)
+              throw new IllegalStateException("Started event is temporarily unavailable: " + observed.observationId());
+          }
           transitionHistory.accept(transition);
         }
       }
       case ObserverResolved, ObserverGeometryChanged ->
           getKnowledgeGraph().ingestObserver(event.getPayload(Observation.class));
       case ObservationSubmissionFinished ->
-          getKnowledgeGraph().ingest(event.getPayload(Observation.class));
+          {
+            var observation = event.getPayload(Observation.class);
+            if (org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation)) return;
+            getKnowledgeGraph().ingest(observation);
+          }
     }
 
     for (var consumer : List.copyOf(eventConsumers)) {

@@ -25,13 +25,16 @@ public record ProcessPlan(
     CREATED
   }
 
+  public enum Bearer { CONTEXT, OCCURRENT }
+
   public record Binding(
       String name,
       Observable observable,
       Effect effect,
       boolean dependency,
       boolean assigned,
-      List<String> relations)
+      List<String> relations,
+      Bearer bearer)
       implements Serializable {
     public Binding {
       if (name == null
@@ -41,6 +44,12 @@ public record ProcessPlan(
           || !observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY))
         throw new IllegalArgumentException("Invalid process quality binding");
       relations = List.copyOf(relations);
+      bearer = bearer == null ? Bearer.CONTEXT : bearer;
+    }
+
+    public Binding(String name, Observable observable, Effect effect, boolean dependency,
+        boolean assigned, List<String> relations) {
+      this(name, observable, effect, dependency, assigned, relations, Bearer.CONTEXT);
     }
 
     public Binding(
@@ -53,9 +62,11 @@ public record ProcessPlan(
       implements Serializable {}
 
   public ProcessPlan {
-    if ((version != 1 && version != 2) || bearerId == 0 || model == null)
+    if ((version != 1 && version != 2 && version != 3) || bearerId == 0 || model == null)
       throw new IllegalArgumentException("Invalid process bearer plan");
     bindings = List.copyOf(bindings);
+    if (version < 3 && bindings.stream().anyMatch(b -> b.bearer() == Bearer.OCCURRENT))
+      throw new IllegalArgumentException("Occurrence bearers require plan version 3");
     if (bindings.stream().map(Binding::name).distinct().count() != bindings.size())
       throw new IllegalArgumentException("Duplicate process binding names");
     obligations = List.copyOf(obligations);

@@ -167,12 +167,15 @@ class TemporalProcessIntegrationTest {
       when(link.properties()).thenReturn(org.integratedmodelling.klab.api.collections.Parameters.create(ProcessPlan.EDGE_ROLE,role));links.add(link);
     }
     void createPrecipitation() {
+      createPrecipitation(ProcessPlan.Bearer.CONTEXT);
+    }
+    void createPrecipitation(ProcessPlan.Bearer qualityBearer) {
       var registration=Utils.Json.parseObject(process.getMetadata().get(OccurrenceRegistration.METADATA_KEY).toString(),OccurrenceRegistration.class);
       var plan=Utils.Json.parseObject(registration.plan(),Actuator.class);
       var precipitation=observation("precipitation",SemanticType.QUALITY,-1).getObservable();
-      plan.getData().put(ProcessPlan.DATA_KEY,Utils.Json.asString(new ProcessPlan(2,20,"test:rain",List.of(
+      plan.getData().put(ProcessPlan.DATA_KEY,Utils.Json.asString(new ProcessPlan(3,20,"test:rain",List.of(
           new ProcessPlan.Binding("elevation",quality.getObservable(),ProcessPlan.Effect.INPUT,true,false),
-          new ProcessPlan.Binding("precipitation",precipitation,ProcessPlan.Effect.CREATED,false,true,List.of("CREATES"))),List.of())));
+          new ProcessPlan.Binding("precipitation",precipitation,ProcessPlan.Effect.CREATED,false,true,List.of("CREATES"),qualityBearer)),List.of())));
       plan.getComputation().clear();plan.getComputation().add(new ServiceCallImpl("klab.core.expression.resolver",
           "_targetId","precipitation","expression",ExpressionCode.of("0","groovy")));
       process.getMetadata().put(OccurrenceRegistration.METADATA_KEY,Utils.Json.asString(new OccurrenceRegistration(1,
@@ -215,6 +218,7 @@ class TemporalProcessIntegrationTest {
       when(scope.getObserver()).thenAnswer(call -> observer);
       when(scope.getId()).thenReturn("context");when(scope.getUser()).thenReturn(user);when(scope.getContextObservation()).thenReturn(bearer);
       when(scope.within(bearer)).thenReturn(scope);
+      when(scope.within(process)).thenReturn(scope);
       when(scope.getDigitalTwin()).thenReturn(twin);when(scope.getConfiguration().getPersistence()).thenReturn(Persistence.EXPLICIT_ACTION);
       when(scope.getObservation(anyLong())).thenAnswer(call -> observations.get(call.getArgument(0)));
       doReturn(runtime).when(scope).getService(RuntimeService.class);
@@ -404,6 +408,101 @@ class TemporalProcessIntegrationTest {
       assertEquals(2,f.data.get(createdId).size());assertEquals(4,f.observations.size());assertEquals(3,f.files());
       var scanner=f.store(created).scan(new TransitionEvent("query",date("2014-02-01"),date("2014-03-01"),null),f.layout,Storage.DoubleScanner.class,true).getFirst();
       assertEquals(0,scanner.get());assertEquals(0,scanner.get());assertEquals(0,scanner.get());
+    }
+  }
+
+  @Test void individualEventRunsAtBothBoundariesWithPartialEffectsRetryAndRestart() throws Exception {
+    try (var f = new Fixture("elevation - 10")) {
+      var event = observation("earthquake", SemanticType.EVENT, 102);
+      long start = date("2014-02-01"), end = date("2016-01-01");
+      event.setGeometry(Geometry.create("T0(1){ttype=PHYSICAL,tstart=" + start + ",tend=" + end
+          + "}S2(1,1){proj=EPSG:4326,bbox=[1 2 0 1]}"));
+      event.setParentId(999); // Its producing collective is distinct from the quality's bearer.
+      var consequence = f.downstream("doubled", 103, f.quality, "elevation", "elevation * 2", 0);
+      f.link(event, f.quality, ProcessPlan.INFLUENCE);
+      event.getMetadata().put(ObservedEvent.PENDING, true);
+      var registration = Utils.Json.parseObject(f.process.getMetadata().get(OccurrenceRegistration.METADATA_KEY).toString(), OccurrenceRegistration.class);
+      var plan = (ActuatorImpl) Utils.Json.parseObject(registration.plan(), Actuator.class);
+      plan.setObservation(event); plan.setExecutionRole(Actuator.ExecutionRole.EVENT);
+      ((ActuatorImpl) plan.getChildren().getFirst()).setCoverage(event.getGeometry());
+      plan.getOccurrenceSchedules().clear();
+      event.getMetadata().put(Scheduler.PLAN_METADATA_KEY, Utils.Json.asString(plan));
+      f.observations.put(event.getId(), event);
+      when(f.graph.getScheduledObservations(f.root)).thenReturn(List.of(event));
+      f.restart();
+      assertTrue(f.scheduler.advanceTo(start - 1));
+      assertTrue(f.journals.isEmpty());
+      f.failCommit = true;
+      assertFalse(f.scheduler.advanceTo(start));
+      assertTrue(ObservedEvent.pending(event));
+      assertArrayEquals(new double[] {100, 200, 350}, f.values(start));
+      f.failCommit = false;
+      assertTrue(f.scheduler.advanceTo(start), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertFalse(ObservedEvent.pending(event));
+      assertArrayEquals(new double[] {100, 190, 350}, f.values(start));
+      assertArrayEquals(new double[] {0, 380, 0}, f.values(consequence, start));
+      assertEquals(Scheduler.Event.Boundary.START, f.journals.getFirst().observedEvent().boundary());
+      assertEquals(end, f.journals.getFirst().observedEvent().end());
+      f.restart();
+      assertTrue(f.scheduler.advanceTo(END));
+      assertEquals(1, f.journals.size(), "The event outlives the instantiation horizon");
+      assertTrue(f.scheduler.advanceTo(end), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertArrayEquals(new double[] {100, 180, 350}, f.values(end));
+      assertArrayEquals(new double[] {0, 360, 0}, f.values(consequence, end));
+      assertEquals(2, f.journals.size());
+      assertEquals(Scheduler.Event.Boundary.END, f.journals.getLast().observedEvent().boundary());
+      f.restart(); assertTrue(f.scheduler.advanceTo(end)); assertEquals(2, f.journals.size());
+    }
+  }
+
+  @Test void javaEventBindingsUseOneCellAndGrantWritesOnlyForAffectedQualities() throws Exception {
+    for (boolean affected : new boolean[] {false, true}) {
+      try (var f = new Fixture("elevation")) {
+        var event = observation("earthquake", SemanticType.EVENT, 102);
+        long start = date("2014-02-01");
+        event.setGeometry(Geometry.create("T0(1){ttype=PHYSICAL,tstart=" + start + ",tend=" + (start + 1000)
+            + "}S2(1,1){proj=EPSG:4326,bbox=[1 2 0 1]}"));
+        var boundary = new TransitionEvent("java-start", start, start, event, Scheduler.Event.Boundary.START);
+        var scope = f.root.executingFresh(Activity.of(Activity.Type.SIMULATION), event);
+        var writes = new LocalTemporalWriteSet(boundary, scope);
+        var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+        doReturn(reasoner).when(scope).getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+        when(reasoner.affectedBy(f.quality.getObservable(), event.getObservable())).thenReturn(affected);
+        var executor = new org.integratedmodelling.klab.services.runtime.AbstractExecutor(
+            mock(CompiledDataflow.CallDescriptors.class), event, scope, Map.of("elevation", f.quality)) {
+          public boolean validate() { return true; }
+          public boolean run(Scheduler.Event invocation, Map<String, Storage.Scanner> bindings,
+              org.integratedmodelling.klab.api.scope.ContextScope context,
+              org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope contextualization) {
+            var scanner = assertInstanceOf(Storage.DoubleScanner.class, bindings.get("elevation"));
+            assertEquals(1, scanner.size()); assertEquals(200, scanner.peek());
+            if (affected) scanner.add(42);
+            else assertThrows(IllegalStateException.class, () -> scanner.add(42));
+            return true;
+          }
+        };
+        assertTrue(executor.execute(boundary, scope,
+            new org.integratedmodelling.klab.services.runtime.ContextualizationScopeImpl(event, boundary)),
+            () -> String.valueOf(executor.getCause()));
+        writes.prepare(); assertTrue(scope.commit() > 0);
+        assertArrayEquals(new double[] {100, affected ? 42 : 200, 350}, f.values(start));
+      }
+    }
+  }
+
+  @Test void occurrenceOwnedCreationRetainsItsBearerAcrossRestart() throws Exception {
+    try (var f = new Fixture("elevation")) {
+      f.createPrecipitation(ProcessPlan.Bearer.OCCURRENT);
+      assertTrue(f.scheduler.advanceTo(date("2014-02-01")), () -> Utils.Exceptions.stackTrace(f.failure));
+      long id = ((Number) f.process.getMetadata().get("klab.process.created.precipitation")).longValue();
+      assertEquals(f.process.getId(), f.observations.get(id).getParentId());
+      verify(f.graphTx).link(eq(f.process), eq(f.observations.get(id)),
+          eq(GraphModel.Relationship.HAS_CHILD), any(Object[].class));
+      f.restart();
+      assertTrue(f.scheduler.advanceTo(date("2014-03-01")), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertEquals(id, ((Number) f.process.getMetadata().get("klab.process.created.precipitation")).longValue());
+      assertEquals(f.process.getId(), f.observations.get(id).getParentId());
+      assertEquals(2, f.data.get(id).size());
     }
   }
 }

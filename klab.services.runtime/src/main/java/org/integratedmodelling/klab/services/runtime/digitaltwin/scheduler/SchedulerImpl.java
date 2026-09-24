@@ -11,6 +11,8 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+import org.integratedmodelling.klab.api.digitaltwin.ObservedEvent;
+import org.integratedmodelling.klab.services.runtime.EventSupport;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -47,6 +49,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   private boolean hasTimeBounds;
   private final Map<Long, OccurrenceRegistration> occurrences = new ConcurrentHashMap<>();
   private final Map<Long, Observation> occurrenceObservations = new ConcurrentHashMap<>();
+  private final Map<Long, Observation> individualEvents = new ConcurrentHashMap<>();
   private final java.util.concurrent.atomic.AtomicLong requestedThrough =
       new java.util.concurrent.atomic.AtomicLong(Long.MIN_VALUE);
   private final Map<DigitalTwin.Transaction, Set<Observation>> pending = new IdentityHashMap<>();
@@ -88,6 +91,11 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     // Restore committed registrations without rerunning initialization or changing timestamps.
     // Resumption is explicitly driven by advanceTo; construction must never execute user code.
     for (var observation : knowledgeGraph.getScheduledObservations(rootScope)) {
+      if (EventSupport.individual(observation)) {
+        EventSupport.validate(observation, null);
+        individualEvents.put(observation.getId(), observation);
+        continue;
+      }
       if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
         activateOccurrence(observation);
         continue;
@@ -118,6 +126,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
       var initialized = initialize(observation, serviceContextScope);
       if (initialized) {
+        if (EventSupport.individual(observation)) stageIndividual(observation, serviceContextScope);
         var previous = observation.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY);
         observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
         var transaction = scope.getCurrentTransaction();
@@ -128,6 +137,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
             () -> {
               if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY))
                 return;
+              if (EventSupport.individual(observation)) return;
               var time = register(observation.getGeometry());
               subscriptions.add(
                   subscribe(
@@ -188,30 +198,41 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   }
 
   private boolean drainThrough(long until) {
-    var registrations = new ArrayList<SimulatedDispatch.Registration>();
-    for (var entry : occurrences.entrySet()) {
-      var registration = entry.getValue();
-      var schedule = registration.schedules().getFirst().bound();
-      if (registration.schedules().stream().anyMatch(s -> !s.bound().equals(schedule)))
-        throw new UnsupportedOperationException(
-            "An actuator chain must have one accepted schedule");
-      var observation = occurrenceObservations.get(entry.getKey());
-      registrations.add(
-          new SimulatedDispatch.Registration(
-              entry.getKey(),
-              registration.id(),
-              registration.planRevision(),
-              schedule,
-              () -> completedThrough(observation, registration)));
+    // Rebuild after every commit: an instantiator may introduce boundaries before the next tick.
+    record Due(long instant, int priority, Observation observation,
+        OccurrenceRegistration registration, TransitionEvent event) {}
+    while (true) {
+      var queue = new PriorityQueue<Due>(Comparator.comparingLong(Due::instant)
+          .thenComparingInt(Due::priority).thenComparing(d -> d.event().id()));
+      for (var entry : occurrences.entrySet()) {
+        var registration = entry.getValue();
+        var schedule = registration.schedules().getFirst().bound();
+        if (registration.schedules().stream().anyMatch(s -> !s.bound().equals(schedule)))
+          throw new UnsupportedOperationException("An actuator chain must have one accepted schedule");
+        var observation = occurrenceObservations.get(entry.getKey());
+        var period = TimeEmitter.nextPeriod(schedule, completedThrough(observation, registration));
+        if (period == null) continue;
+        boolean instantiator = registration.role() == org.integratedmodelling.klab.api.services.runtime.Actuator.ExecutionRole.EVENT_INSTANTIATOR;
+        long instant = instantiator ? period.start() : period.end();
+        if (instant <= until) queue.add(new Due(instant, instantiator ? 0 : 2, observation, registration,
+            new TransitionEvent(registration.id() + "/" + registration.planRevision() + "/"
+                + period.start() + "/" + period.end(), period.start(), period.end(), null)));
+      }
+      for (var observation : individualEvents.values()) {
+        var time = EventSupport.validate(observation, null);
+        var boundary = !Boolean.TRUE.equals(observation.getMetadata().get(ObservedEvent.STARTED))
+            ? Event.Boundary.START : !Boolean.TRUE.equals(observation.getMetadata().get(ObservedEvent.ENDED))
+                ? Event.Boundary.END : Event.Boundary.NONE;
+        if (boundary == Event.Boundary.NONE) continue;
+        long instant = (boundary == Event.Boundary.START ? time.getStart() : time.getEnd()).getMilliseconds();
+        if (instant <= until) queue.add(new Due(instant, 1, observation, null,
+            new TransitionEvent("observed:" + observation.getId() + ":" + boundary,
+                instant, instant, observation, boundary)));
+      }
+      if (queue.isEmpty()) return true;
+      var due = queue.remove();
+      if (!dispatch(due.observation(), due.registration(), due.event(), true)) return false;
     }
-    return timeEmitter.emitSimulated(
-        registrations,
-        until,
-        tick -> {
-          var observation = occurrenceObservations.get(tick.registration().observationId());
-          var registration = occurrences.get(observation.getId());
-          return dispatch(observation, registration, tick.event(), true);
-        });
   }
 
   private long completedThrough(Observation observation, OccurrenceRegistration registration) {
@@ -231,28 +252,23 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         || !observation.getObservable().is(SemanticType.EVENT)
         || observation.getObservable().getSemantics().isCollective())
       throw new IllegalArgumentException("A durable individual event observation is required");
-    var time = GeometryRepository.INSTANCE.scale(observation.getGeometry()).getTime();
-    if (time == null || time.getStart() == null || time.getEnd() == null)
-      throw new IllegalArgumentException("Observed events require bounded temporal support");
-    if (time.getStart().getMilliseconds() >= time.getEnd().getMilliseconds())
-      throw new UnsupportedOperationException(
-          "Point events require an explicit temporal support policy");
-    var id = "observed:" + observation.getId();
-    var previous = observation.getMetadata().get(DispatchProgress.KEY);
-    if (previous != null) {
-      var receipt = Utils.Json.parseObject(previous.toString(), DispatchProgress.class);
-      if (!receipt.eventId().equals(id)
-          || !receipt.revision().equals("observed-v1:" + observation.getGeometry().encode()))
-        throw new IllegalStateException(
-            "Observed event identity or support changed after dispatch");
-      return true;
-    }
-    return dispatch(
-        observation,
-        null,
-        new TransitionEvent(
-            id, time.getStart().getMilliseconds(), time.getEnd().getMilliseconds(), observation),
-        false);
+    EventSupport.validate(observation, null);
+    individualEvents.putIfAbsent(observation.getId(), observation);
+    return requestedThrough.get() == Long.MIN_VALUE || advanceTo(requestedThrough.get());
+  }
+
+  private void stageIndividual(Observation observation, ServiceContextScope scope) {
+    EventSupport.validate(observation, null);
+    var transaction = scope.getCurrentTransaction();
+    var previous = observation.getMetadata().get(ObservedEvent.PENDING);
+    if (!Boolean.TRUE.equals(observation.getMetadata().get(ObservedEvent.STARTED)))
+      observation.getMetadata().put(ObservedEvent.PENDING, true);
+    transaction.update(observation);
+    transaction.afterRollback(() -> restoreMetadata(observation, ObservedEvent.PENDING, previous));
+    transaction.afterCommit(() -> {
+      individualEvents.put(observation.getId(), observation);
+      advanceCommittedOccurrences();
+    });
   }
 
   private boolean dispatch(
@@ -270,6 +286,12 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
             observation);
     try {
       var bearer = registration == null ? observation.getParentId() : registration.bearerId();
+      if (registration == null && observation.getMetadata().get(Scheduler.PLAN_METADATA_KEY) instanceof String encoded) {
+        var plan = Utils.Json.parseObject(encoded, org.integratedmodelling.klab.api.services.runtime.Actuator.class);
+        var bindings = plan.getData().get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY);
+        if (bindings != null) bearer = Utils.Json.parseObject(bindings.toString(),
+            org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.class).bearerId();
+      }
       var consequences =
           ComputationalClosure.ordered(observation, bearer, geometry, knowledgeGraph, scope);
       var writes =
@@ -277,7 +299,9 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       if (runOccurrence) {
         // Compile against this attempt's scope, never a cached/committed transaction.
         var executor = restoreExecutor(observation, scope);
-        if (executor == null || !execute(executor, observation, geometry, event, scope))
+        if (executor == null && (registration != null
+                || Boolean.TRUE.equals(observation.getMetadata().get(Scheduler.EXECUTION_METADATA_KEY)))
+            || executor != null && !execute(executor, observation, geometry, event, scope))
           throw new IllegalStateException(
               "Temporal contextualization failed for " + observation.getUrn());
       }
@@ -318,6 +342,21 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
               : registration.planRevision();
       var previous = observation.getMetadata().get(DispatchProgress.KEY);
       var transaction = scope.getCurrentTransaction();
+      if (event.getBoundary() != Event.Boundary.NONE) {
+        String phaseKey = event.getBoundary() == Event.Boundary.START ? ObservedEvent.STARTED : ObservedEvent.ENDED;
+        var previousPhase = observation.getMetadata().get(phaseKey);
+        var previousPending = observation.getMetadata().get(ObservedEvent.PENDING);
+        transaction.afterRollback(() -> {
+          restoreMetadata(observation, phaseKey, previousPhase);
+          restoreMetadata(observation, ObservedEvent.PENDING, previousPending);
+        });
+        observation.getMetadata().put(phaseKey, true);
+        observation.getMetadata().put(ObservedEvent.PENDING, false);
+        if (event.getBoundary() == Event.Boundary.START && observation.getParentId() > 0) {
+          var parent = scope.getObservation(observation.getParentId());
+          if (parent != null) transaction.update(parent);
+        }
+      }
       transaction.afterRollback(() -> restoreMetadata(observation, DispatchProgress.KEY, previous));
       observation
           .getMetadata()
@@ -374,7 +413,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       transaction.stageSchedulerJournal(
           () ->
               new org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal(
-                  1,
+                  event.getBoundary() == Event.Boundary.NONE ? 1 : 2,
                   event.id(),
                   null,
                   event.getType(),
@@ -385,7 +424,12 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
                   geometry.encode(),
                   0,
                   changed.stream().map(Observation::getId).sorted().toList(),
-                  !changed.isEmpty()));
+                  !changed.isEmpty(),
+                  event.getBoundary() == Event.Boundary.NONE ? null : new ObservedEvent(
+                      observation.getId(), observation.getObservable().getSemantics().getUrn(),
+                      observation.getName(), EventSupport.validate(observation, null).getStart().getMilliseconds(),
+                      EventSupport.validate(observation, null).getEnd().getMilliseconds(),
+                      observation.getGeometry().encode(), event.getBoundary())));
       if (scope.commit() < 0)
         throw new IllegalStateException("Temporal transaction did not commit");
       return true;
@@ -558,7 +602,8 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         throw new UnsupportedOperationException(
             "Temporal execution must enter the transactional dispatcher");
       if (!transactionExecutor.run(geometry, causingEvent, scope)) return false;
-      stageOccurrence(observation, transactionExecutor.getActuator(), scope);
+      if (!EventSupport.individual(observation))
+        stageOccurrence(observation, transactionExecutor.getActuator(), scope);
       return true;
     }
     if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
@@ -676,6 +721,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     executors.invalidateAll();
     occurrences.clear();
     occurrenceObservations.clear();
+    individualEvents.clear();
     synchronized (pending) {
       pending.clear();
     }
@@ -859,6 +905,11 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     long horizon = occurrences.values().stream()
         .flatMap(registration -> registration.schedules().stream())
         .mapToLong(schedule -> schedule.bound().end()).max().orElse(Long.MIN_VALUE);
+    if (horizon == Long.MIN_VALUE && !individualEvents.isEmpty()
+        && rootScope.getContextObservation() != null) {
+      var time = GeometryRepository.INSTANCE.scale(rootScope.getContextObservation().getGeometry()).getTime();
+      if (time != null && time.getEnd() != null) horizon = time.getEnd().getMilliseconds();
+    }
     if (horizon != Long.MIN_VALUE && !advanceTo(horizon))
       rootScope.error("Temporal dispatch stopped after registration commit; retry from durable progress is required");
   }

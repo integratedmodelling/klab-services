@@ -161,7 +161,8 @@ public class ContextualizerExecutor extends AbstractExecutor
           return false;
         var outcomes = builder.getObjects().stream().map(Data.Builder::getObservation).toList();
         contextualizationScope.getOutcomes().addAll(outcomes);
-        if (observation instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl impl)
+          if (!observation.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.EVENT)
+              && observation instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl impl)
           impl.setChildrenCount(outcomes.size());
       }
     }

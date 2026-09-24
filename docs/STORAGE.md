@@ -802,7 +802,12 @@ fetching and lazy shard acquisition remain S8 work. No converted buffers or HAS_
 
 `LocalTemporalWriteSet.read` applies the same policies to pinned PRIOR/CURRENT snapshots and closes
 sessions on commit/rollback. Pre-earthquake elevation can be read over a changed event extent.
-Partial-quality writes and ordinary temporal output contextualizers retain their existing gates.
+Individual event effects use `TemporalWriteSet.write` over the event geometry. Explicit writes
+scatter to native cells by nearest cell center; cells outside the event remain unchanged. A
+single-cell event grid is supported. Writable value conversion is rejected, and the same rectangular
+grid, CRS and mediation-setting limits apply. Closing a view stages changes in the transaction;
+commit publishes them atomically and rollback preserves historical data. Ordinary temporal output
+contextualizers still require a transaction-owned write set.
 
 
 ## Keyed storage and categorical mediation (S7)

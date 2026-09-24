@@ -1,6 +1,6 @@
 # Occurrences: achieved behavior and next steps
 
-Status: 2026-09-20. S0–S5, including S3.1/S3.2, and the implementable S7a client path are achieved for bounded simulated processes. The user confirmed that the live process fixture resolves, dispatches its transitions, and displays correct results in all IDE views. Event execution and partial spatial coverage remain the next phase, pending the scanner construction and mediation strategy.
+Status: 2026-09-24. S0–S5, including S3.1/S3.2, and the implementable S7a client path are achieved for bounded simulated processes. The user confirmed that the live process fixture resolves, dispatches its transitions, and displays correct results in all IDE views. The event lifecycle implementation below adds scheduled instantiation, individual boundaries, partial spatial effects and client duration history; live event/IDE acceptance remains a separate gate.
 
 This document replaces the chronological implementation plan with the accepted contracts, achievements, and remaining gates. Earlier implementation detail is available in repository history.
 
@@ -9,7 +9,7 @@ This document replaces the chronological implementation plan with the accepted c
 | Stage | Delivered |
 | --- | --- |
 | S1–S2 | Portable schedules and execution roles; validated actuator persistence; registration after commit; separation of occurrence registration from quality INIT |
-| S3 | Process dependencies resolve on the inherent substantial/event; named inputs and outputs retain their bearer; `creates` is deferred until temporal execution |
+| S3 | Quality inherency selects the occurrence or its context as bearer; named inputs and outputs retain that selection; `creates` is deferred until temporal execution |
 | S3.1 | Dependency-local schedule requests, provenance, whole-schedule replacement, inclusive acceptance ranges, model/Java locks, candidate rejection and schedule-aware reuse |
 | S3.2 | Correct direct effects versus descriptive quality links, typed portable evidence and graph edges, semantic consequence closure; ontology synchronization including authoritative odo-im 0.1.0 |
 | S4 | Bounded native-calendar dispatch, per-registration filtering, fresh transactions, durable progress, historical catch-up, retry and restart support |
@@ -21,8 +21,9 @@ The live fixture uses a Region, an initialized Elevation quality, and an Erosion
 ### Execution and semantic contracts
 
 - Processes resolve through SIMULATION. Event instantiators register scheduled plans; individual events are observations with their own lifecycle. All relationships are substantials: functional relationships may host processes, structural relationships may not.
-- Ordinary injected quality dependencies belong to the process's inherent substantial/event and complete INIT before the process reads them. Their explanatory models need not be listed by the substantial model. Process registration never executes its temporal computation under INIT.
-- A quality connected by `creates` is an epiphenomenon, still borne by the affected substantial/event. Its observation and data are materialized only by a successful temporal transition, without a fictitious INIT state. Unavailable prior-state reads are errors.
+- Quality dependencies of processes and individual events select their bearer from semantics. If a quality inheres to the occurrence (including an inherited compatible type), resolve and attribute it there. Otherwise it must inhere to the context observation and the occurrence must `affect` or `create` it. Inherency to the occurrence takes precedence. Missing or incompatible inherency is rejected; an inline assignment does not establish a semantic effect on the context.
+- Ordinary quality dependencies complete INIT before the process reads them, under their selected bearer. Their explanatory models need not be listed by the context model. Process registration never executes its temporal computation under INIT.
+- A quality connected by `creates` is an epiphenomenon borne by its semantically selected occurrence or context. Its observation and data are materialized only by a successful temporal transition, without a fictitious INIT state. Unavailable prior-state reads are errors.
 - Inline `set x to [expression]` accepts a named quality output or `observing` dependency. `set to [expression]` is illegal for a process. Assignments compile against named bindings and run over the quality's localized geometry. Reads use prior causal state; multiple output assignments do not acquire an accidental order through writes.
 - Direct `affects` links an occurrent to changed qualities. `marks`, `increases with`, `decreases with`, `discretizes`, and `classifies` specialize `describes` and link qualities. Preserve property class, declared direction and provenance in typed quality-to-quality AFFECTS evidence. Reachability from either affected endpoint does not imply execution order, INIT, or creation.
 - `marks` concerns boolean qualities; `discretizes` maps a quantifiable quality to ordering classes under the explaining model's one-to-one mapping; `classifies` defines predicate classification without uniqueness or coverage guarantees.
@@ -60,27 +61,119 @@ The scalar path has automated storage-content, Data-link, rollback, retry, resta
 
 ## Next steps
 
+### Semantic bearer revision (2026-09-24)
+
+The shared `of` argument rules accept processes as quality bearers without making processes
+countable. Inherited inherency and `applies to` bounds still constrain specialization. A process
+continues to require its own substantial/event host; allowing a quality to belong to a process
+does not make processes hosts for other ordinary processes.
+
+ProcessPlan version 3 records CONTEXT or OCCURRENT on each quality binding. Resolution uses that
+scope for queries and initialization; graph storage and deferred creation use the same bearer.
+Versions 1 and 2 retain their original context-bearer interpretation on replay. Existing observations
+are not reparented; re-resolution is needed to adopt revised semantics.
+
+ModelKbox's existing `inferModels` extension point now adds `change in X` descriptors for quality
+outputs and dependencies that a process semantically affects or creates. Occurrence qualities retain
+their declared inherency during indexing. Resolver semantic matching recognizes the same inferred
+outputs. Resources' existing knowledge-indexing pass removes and reindexes each namespace;
+run that pass with the updated service to populate existing catalogs. This makes a process a
+candidate for explicit change requests; it does not implement joint-effect selection.
+
+The `change in` operator is valid for every quality, irrespective of its bearer or whether a model
+currently affects it. The affects/creates requirement controls which process models advertise that
+change, not whether the change concept can be constructed. In ODO, `changes` has a union domain
+of Process and Event; separate domains would require both disjoint types and make every change
+unsatisfiable. The generated `odo:Change` is a Process and retains the quality's bearer.
+
+Change inference also exercises inherited OWL restrictions, including imported vocabularies such
+as PROV. Clause matching must compare OWL properties and their superproperties without requiring
+unrelated properties to have a registered k.LAB namespace. A failed knowledge-indexing pass must
+leave semantic search unavailable and return a discovery error, rather than query a partial catalog
+and report that an ordinary explanatory model is absent. A later successful indexing pass restores
+search availability.
+
+**Pending collinearity rule:** when `change in X` is requested in a context providing X and Y,
+prefer a process that changes both over two independent processes changing X and Y. Define the
+coverage and priority policy before implementing it; independent per-observable ranking is not
+sufficient to make that choice.
+
+Verification: 52 targeted tests passed for observable validation, parsed ontology declarations,
+bearer selection and scope routing, plan transport, ModelKbox inference and resolver matching,
+schedule negotiation, registration and temporal storage/restart. No live services were restarted.
+
+```text
+mvn -pl klab.services.resources,klab.services.runtime -am test -Dtest=ObservableValidatorTest,ProcessModelBindingsTest,WorldviewValidationTest,OccurrenceModelIndexTest,TemporalProcessIntegrationTest,ScheduleNegotiationResolutionTest,OccurrenceRegistrationTest -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+### Earlier geometry-default verification
+
 Verification for the geometry-default addition: 37 selected Java tests passed across schedule/negotiation serialization, resolver candidate selection and reuse, registration, simulated dispatch and temporal scalar storage. The 17 schedule/resolver tests also passed after adding event-instantiator and native-calendar assertions. No live services were restarted for this addition.
 
 ```text
 mvn -pl klab.services.resolver,klab.services.runtime -am test -Dtest=OccurrenceScheduleTest,OccurrenceNegotiationTest,ScheduleNegotiationResolutionTest,TemporalProcessIntegrationTest,OccurrenceRegistrationTest,SimulatedDispatchTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
-### Scanner construction and mediation prerequisite
-
-The user will define fully and partially conformant scanner construction, binding and mediation. Implement that strategy before claiming support for event effects with partial spatial coverage. Preserve named/annotated affected-property bindings, time-localized geometry, split/fill-curve negotiation, lazy writes and effective-change detection. Validate untouched cells and historical shards, not just contextualizer invocation counts. Advanced Java contextualizers and distributed backends require their own integration gates.
-
 ### S6 — Event production and feedback
 
-Execute scheduled event instantiators, accepting zero or more individuals. Validate each individual's temporal support against the logical instantiation time: no start in the past; future extent is legitimate. Resolve each individual normally and enqueue observed-event consequences only after successful commit. Preserve identity across retry, replay and equal-time events.
+Collective event instantiators execute at the start of each accepted schedule interval, never at
+INIT, and may return zero or more individuals. The complete batch is validated before child
+resolution begins. Each child resolves through the ordinary submission path within the producing
+root transaction; a failed required child prevents that transaction from committing. Individual
+plans and dependencies are prepared immediately, while their event computations wait for boundaries.
 
-Before enabling this path, settle batch atomicity, partially failed batches, future-start activation, recursive event production and point-event support. Test empty success, invalid past starts, future durations, partial spatial effects, no-op versus effective effects, rollback after allocation, restart and idempotent observed-event feedback. Scanner mediation must prove that only covered cells change.
+An individual has one atomic, bounded, positive-duration period, without temporal subdivisions.
+Its start must not precede the logical instantiation time. Future starts are allowed; the end may
+outlive the producing interval and the instantiator's entire schedule. A one-cell spatial grid is
+valid, including geometry expressed using only a bounding box. A physical event never has zero
+duration; its two scheduler boundary notifications are instantaneous state transitions.
 
-Continuation prompt: “Implement S6 using the agreed scanner construction and mediation strategy. Execute scheduled event instantiators, validate and resolve emitted individuals, and enqueue committed observed events idempotently. Close batch/future-event policies and test partial spatial effects through actual storage contents, rollback, retry and restart.”
+Individual plans use the portable EVENT execution role. The scheduler merges START and END with
+regular schedules, rebuilding the due queue after each commit so newly produced events can enter
+before the next tick. A boundary has stable identity `observed:<id>:START|END`; separate durable
+completion flags survive retry and restart. Pending events are registered only after successful
+commit. An end beyond the current simulation horizon remains pending until the clock advances.
+
+Java contextualizers receive the executing boundary through any `TimeInstant` parameter, and can
+inspect `Scheduler.Event.getBoundary()`. Unqualified inline assignments execute at both boundaries.
+Portable assignment calls reserve `_eventBoundary=START|END` for future `at start/end set` syntax;
+the qualifier is valid only on individual event plans. The source-language syntax is not yet added.
+
+Quality bearer selection remains semantic. Event scanners traverse the event's spatial geometry,
+including for context-borne qualities. Inputs open as prior-state snapshots; only qualities
+semantically affected by the event receive writable Java scanners. Scalar affected assignments use
+the same event view. Closing a writable view scatters explicitly written cells back to native
+storage by nearest cell center: cells outside the event remain unchanged. The existing mediation
+setting, CRS, rectangular-grid and value-conversion restrictions still apply. Deferred scalar
+`creates` outputs use their selected bearer and do not receive a fictitious INIT revision.
+
+Client lookups and graph queries hide pending events. A successful START publishes a version-2
+SchedulerJournal carrying `ObservedEvent` (identity, semantic type, name, full geometry, start and
+end), inside the existing TransitionCommit envelope. `TransitionHistory.eventsByType()` supplies
+one immutable duration record per started event, grouped by canonical semantic type for IDE
+lanes. END records do not create duplicate bars, and reordered/replayed delivery converges.
+
+Acceptance must include real instantiator contextualizers and IDE rendering; the client history
+API is available here, but this repository does not establish live UI acceptance. Distributed
+writeback, real-time driving and behavior-driven recursive production remain separate gates.
+
+Verification: 88 selected tests passed across client/common, core services, resolver and runtime.
+Coverage includes single-cell bbox/shape promotion and round trips, atomic-period validation,
+whole-batch rejection before child submission, required child success, Java boundary arguments,
+read-only versus affected scanners, partial writes with untouched native cells, downstream
+recomputation at START and END beyond the original horizon, rollback/retry/restart, and replayed
+duration history. Existing process creation and no-op behavior remain covered. The final Maven
+run used an isolated source copy under `target/event-verification-workspace` to avoid concurrent
+IDE compiler output replacement; its `event-verification.log` records BUILD SUCCESS. No live
+services were restarted.
+
+```text
+mvn -o -pl klab.services.runtime,klab.services.resolver -am test -Dtest=GeometryRepositoryTest,EventSupportTest,OccurrenceCompilationTest,OccurrenceExecutorTest,OccurrenceRegistrationTest,SimulatedDispatchTest,TemporalStorageTest,TemporalProcessIntegrationTest,AbstractExecutorScannerBindingTest,TransitionTransportTest,ProcessModelBindingsTest,ClientKnowledgeGraphTest,ComputationalClosureTest,InstantiationNamespaceTest -Dsurefire.failIfNoSpecifiedTests=false
+```
 
 ### S7b — Events and behavior-driven mutations
 
-Complete event-production transport, all-observed-event visibility and causal navigation after S6. k.Actors behaviors bound to process/event models must join the same digital-twin transition. Plan explicit versioned mutation records rather than overloading quality deltas or generic graph added/deleted sets.
+Use the committed event duration history above for IDE event lanes and complete live acceptance and causal navigation. k.Actors behaviors bound to process/event models must join the same digital-twin transition. Plan explicit versioned mutation records rather than overloading quality deltas or generic graph added/deleted sets.
 
 | Mutation | Required committed client behavior |
 | --- | --- |

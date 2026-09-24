@@ -43,7 +43,8 @@ public final class StorageScan {
   public record Slice(Scheduler.Event.Type type, String key, long start, long end) implements Serializable {
     public Slice {
       Objects.requireNonNull(type); text(key, "event key");
-      if (type != Scheduler.Event.Type.INITIALIZATION && end <= start)
+      if (type != Scheduler.Event.Type.INITIALIZATION
+          && (end < start || end == start && type != Scheduler.Event.Type.EVENT))
         throw new IllegalArgumentException("A scan interval must have positive duration");
     }
     public static Slice of(Scheduler.Event event) {

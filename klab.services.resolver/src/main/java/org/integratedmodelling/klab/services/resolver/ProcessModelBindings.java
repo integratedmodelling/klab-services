@@ -20,7 +20,9 @@ final class ProcessModelBindings {
 
   static ProcessPlan analyze(Model model, ContextScope scope) {
     if (model.getObservables().isEmpty()
-        || !model.getObservables().getFirst().is(SemanticType.PROCESS)) return null;
+        || !(model.getObservables().getFirst().is(SemanticType.PROCESS)
+            || model.getObservables().getFirst().is(SemanticType.EVENT)
+                && !model.getObservables().getFirst().getSemantics().isCollective())) return null;
     var process = model.getObservables().getFirst();
     var bearer = scope.getContextObservation();
     if (bearer == null)
@@ -34,7 +36,7 @@ final class ProcessModelBindings {
     var reasoner = scope.getService(Reasoner.class);
     if (reasoner == null)
       throw new KlabValidationException("Process binding requires Reasoner evidence");
-    compatible(process, semantics, reasoner);
+    if (process.is(SemanticType.PROCESS)) compatible(process, semantics, reasoner);
     var declared = new LinkedHashMap<String, Observable>();
     var dependencies = new HashSet<String>();
     for (var output : model.getObservables().subList(1, model.getObservables().size()))
@@ -61,7 +63,11 @@ final class ProcessModelBindings {
     for (var entry : declared.entrySet()) {
       var observable = entry.getValue();
       if (!observable.is(SemanticType.QUALITY)) continue;
-      compatible(observable, semantics, reasoner);
+      var qualityBearer = org.integratedmodelling.klab.runtime.language.OccurrentSemantics.bearer(
+          observable, process, semantics, reasoner);
+      if (process.is(SemanticType.EVENT) && assigned.contains(entry.getKey())
+          && !reasoner.affectedBy(observable, process) && !reasoner.createdBy(observable, process))
+        throw new KlabValidationException("An event assignment requires affects or creates: " + entry.getKey());
       var effect =
           reasoner.createdBy(observable, process)
               ? ProcessPlan.Effect.CREATED
@@ -84,7 +90,7 @@ final class ProcessModelBindings {
               effect,
               dependencies.contains(entry.getKey()),
               assigned.contains(entry.getKey()),
-              List.copyOf(relations)));
+              List.copyOf(relations), qualityBearer));
     }
     var obligations = new ArrayList<ProcessPlan.Obligation>();
     for (var influence : evidence) {
@@ -116,7 +122,7 @@ final class ProcessModelBindings {
         queue.add(link.target());
       }
     }
-    return new ProcessPlan(2, bearer.getId(), model.getUrn(), bindings, obligations, List.copyOf(descriptive));
+    return new ProcessPlan(3, bearer.getId(), model.getUrn(), bindings, obligations, List.copyOf(descriptive));
   }
 
   private static void add(LinkedHashMap<String, Observable> declared, Observable observable) {

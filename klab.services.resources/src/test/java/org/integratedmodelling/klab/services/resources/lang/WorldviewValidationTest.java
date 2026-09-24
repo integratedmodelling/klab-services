@@ -18,6 +18,12 @@ import org.integratedmodelling.languages.worldview.Ontology;
 import org.junit.jupiter.api.Test;
 
 class WorldviewValidationTest {
+  @Test void qualityDeclarationsCanInhereToProcessesAndEvents() throws Exception {
+    assertTrue(diagnostics("process Flow; event Flood; length Length; "
+        + "length FlowLength is test:Length of test:Flow; "
+        + "length FloodLength is test:Length of test:Flood;").isEmpty());
+  }
+
   @Test void editingCannotResolveForwardOrDeletedDeclarationsFromThePreviousSnapshot() throws Exception {
     var prefix = "ontology test in domain root version 1.0.0; ";
     var warm = new WorldviewValidationScope();

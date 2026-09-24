@@ -154,6 +154,50 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
               });
         }
 
+      } else if (event != null && event.getType() != Scheduler.Event.Type.INITIALIZATION
+          && observation.getObservable().is(SemanticType.EVENT)) {
+        var writes = contextScope.getCurrentTransaction().getTemporalWrites();
+        if (writes == null) throw new IllegalStateException("Events require transactional storage");
+        var scanners = new LinkedHashMap<String, List<Storage.Scanner>>();
+        var requests = new LinkedHashMap<String, StorageScan.Request<Storage.Scanner>>();
+        var eventSpace = StorageReads.spatialSupport(observation);
+        for (var entry : dependencies.entrySet()) {
+          var input = entry.getValue();
+          if (entry.getKey().equals(Dataflow.SELF_ID) || !input.getObservable().is(SemanticType.QUALITY)) continue;
+          var layout = eventSpace == null
+              ? contextScope.getDigitalTwin().getStorageManager().createStorage(StorageReads.source(input, contextScope)).getNativeShardingStrategy()
+              : new Data.ShardingStrategy(Data.FillCurve.D1_LINEAR, 1, 0, 0, null);
+          requests.put(entry.getKey(), StorageReads.request(input, event, layout,
+              eventSpace == null ? writes.writeLayout(StorageReads.source(input, contextScope)) : List.of(),
+              Storage.Scanner.class, eventSpace));
+        }
+        // Open every causal snapshot before granting any writable binding.
+        for (var entry : requests.entrySet()) {
+          var input = dependencies.get(entry.getKey());
+          var source = StorageReads.source(input, contextScope);
+          var session = resources.add(writes.read(source, entry.getValue(), org.integratedmodelling.klab.api.data.TemporalWriteSet.Access.PRIOR));
+          StorageReads.record(contextScope, observation.getId() + ":" + entry.getKey(), session.description());
+          scanners.put(entry.getKey(), new ArrayList<>(session.scanners()));
+        }
+        validateInputBindings(scanners);
+        if (event.getBoundary() != Scheduler.Event.Boundary.NONE) {
+          var reasoner = contextScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+          for (var entry : requests.entrySet()) {
+            var input = dependencies.get(entry.getKey());
+            if (reasoner.affectedBy(input.getObservable(), observation.getObservable())) {
+              var session = resources.add(writes.write(StorageReads.source(input, contextScope), entry.getValue()));
+              scanners.put(entry.getKey(), new ArrayList<>(session.scanners()));
+            }
+          }
+        }
+        int count = scanners.isEmpty() ? 1 : scanners.values().iterator().next().size();
+        if (scanners.values().stream().anyMatch(list -> list.size() != count))
+          throw new IllegalStateException("Event bindings have incompatible partitions");
+        for (int p = 0; p < count; p++) {
+          var bindings = new LinkedHashMap<String, Storage.Scanner>();
+          for (var entry : scanners.entrySet()) bindings.put(entry.getKey(), entry.getValue().get(p));
+          tasks.add(() -> run(event, bindings, contextScope, contextualizationScope));
+        }
       } else {
         // non-quality
         tasks.add(
@@ -335,6 +379,8 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
             scale = GeometryRepository.INSTANCE.scale(geometry);
           }
           runArguments.add(scale == null ? null : scale.getSpace());
+        } else if (org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant.class.isAssignableFrom(argument.getType())) {
+          runArguments.add(schedulerEvent == null ? null : schedulerEvent.getInstant());
         } else if (Time.class.isAssignableFrom(argument.getType())) {
           if (schedulerEvent != null) {
             runArguments.add(schedulerEvent.getTime());

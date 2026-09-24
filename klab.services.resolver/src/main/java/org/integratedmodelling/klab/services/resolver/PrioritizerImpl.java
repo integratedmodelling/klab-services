@@ -86,6 +86,14 @@ public class PrioritizerImpl implements Prioritizer<Model> {
     return distances.computeIfAbsent(model, candidate -> {
       var outputs = candidate.getObservables();
       if (outputs == null) return Integer.MAX_VALUE;
+      if (observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.CHANGE)
+          && !outputs.isEmpty()) {
+        var qualities = new java.util.ArrayList<>(outputs.subList(1, outputs.size()));
+        qualities.addAll(candidate.getDependencies());
+        outputs = new java.util.ArrayList<>(outputs);
+        outputs.addAll(org.integratedmodelling.klab.runtime.language.OccurrentSemantics.changes(
+            outputs.getFirst(), qualities, scope));
+      }
       return outputs.stream().filter(Objects::nonNull)
           .mapToInt(output -> scope.getService(Reasoner.class)
               .semanticDistance(output, observable, contextObservable))

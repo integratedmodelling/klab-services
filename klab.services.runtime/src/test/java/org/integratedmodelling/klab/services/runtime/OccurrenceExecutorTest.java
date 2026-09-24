@@ -111,6 +111,8 @@ class OccurrenceExecutorTest {
       when(twin.getScheduler()).thenReturn(scheduler);
       var process = observation("occurrence", role == Actuator.ExecutionRole.PROCESS
           ? SemanticType.PROCESS : SemanticType.EVENT, 100);
+      if (role == Actuator.ExecutionRole.EVENT_INSTANTIATOR)
+        ((ConceptImpl) process.getObservable().getSemantics()).setCollective(true);
       var input = observation("elevation", SemanticType.QUALITY, 101);
       when(scope.getObservation(100)).thenReturn(process);
       when(scope.getObservation(101)).thenReturn(input);

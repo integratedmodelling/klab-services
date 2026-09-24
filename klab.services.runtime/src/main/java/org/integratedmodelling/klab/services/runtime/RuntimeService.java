@@ -2241,6 +2241,18 @@ public class RuntimeService extends BaseService
          * remove that focus while resolving each countable child.
          */
         var instantiationScope = contextScope.within(scope.getTarget());
+        if (scope.getTarget().getObservable().is(SemanticType.EVENT)) {
+          // Validate the complete batch before opening any child resolutions.
+          for (var child : scope.getOutcomes()) EventSupport.validate(child, scope.getEvent());
+          if (contextScope.getCurrentTransaction() != null
+              && scope.getTarget() instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl collective) {
+            int previousCount = collective.getChildrenCount();
+            contextScope.getCurrentTransaction().afterRollback(() -> collective.setChildrenCount(previousCount));
+          }
+          for (var child : scope.getOutcomes()) {
+            child.getMetadata().put(org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.PENDING, true);
+          }
+        }
         for (var child : scope.getOutcomes()) {
           var memberScope = instantiationScope.withResolutionConstraints(
               scope.getResolutionConstraints(child).toArray(ResolutionConstraint[]::new));

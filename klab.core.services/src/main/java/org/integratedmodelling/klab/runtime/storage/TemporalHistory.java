@@ -9,7 +9,7 @@ public record TemporalHistory(int version, List<Revision> revisions) {
   public record Revision(String event, long start, long end, String support, List<String> shards) {
     public Revision {
       shards = List.copyOf(shards);
-      if (event == null || event.isBlank() || end <= start || support == null || support.isBlank()
+      if (event == null || event.isBlank() || end < start || support == null || support.isBlank()
           || shards.isEmpty() || new java.util.HashSet<>(shards).size() != shards.size())
         throw new IllegalArgumentException("Invalid temporal state revision");
     }

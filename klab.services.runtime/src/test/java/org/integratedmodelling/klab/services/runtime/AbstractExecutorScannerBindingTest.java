@@ -8,6 +8,28 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.junit.jupiter.api.Test;
 
 class AbstractExecutorScannerBindingTest {
+  @Test void timeInstantParametersIdentifyTheExecutedEventBoundary() throws Exception {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var descriptors = org.mockito.Mockito.mock(CompiledDataflow.CallDescriptors.class);
+    var executor = org.mockito.Mockito.mock(AbstractExecutor.class,
+        org.mockito.Mockito.withSettings().useConstructor(descriptors, null, null, java.util.Map.of())
+            .defaultAnswer(org.mockito.Mockito.CALLS_REAL_METHODS));
+    var observation = new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+    var method = ComponentContextualizer.class.getDeclaredMethod("boundary",
+        org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant.class);
+    for (var boundary : new org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Boundary[] {
+        org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Boundary.START,
+        org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Boundary.END}) {
+      long instant = boundary == org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Boundary.START ? 1000 : 9000;
+      var event = new org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.TransitionEvent(
+          "boundary:" + boundary, instant, instant, observation, boundary);
+      var arguments = executor.matchArguments(null, method, null, null, null, java.util.Map.of(),
+          observation, null, null, null, null, null, null, null, event, null);
+      assertEquals(instant, assertInstanceOf(
+          org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant.class,
+          arguments.getFirst()).getMilliseconds());
+    }
+  }
 
   @Test
   void componentDoubleScannerParameterAcceptsNativeFloatStorage() throws Exception {
@@ -26,6 +48,7 @@ class AbstractExecutorScannerBindingTest {
   }
 
   private static final class ComponentContextualizer {
+    private void boundary(org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant instant) {}
     @SuppressWarnings("unused")
     private void run(Storage.DoubleScanner output) {}
   }

@@ -8,7 +8,7 @@ import java.util.Set;
 
 public enum SemanticClause {
 
-    OF(SemanticRole.INHERENT, "of", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.COUNTABLE)),
+    OF(SemanticRole.INHERENT, "of", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.COUNTABLE, SemanticType.PROCESS, SemanticType.QUALITY)),
     FOR(SemanticRole.GOAL, "for", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.OBSERVABLE)),
     WITH(SemanticRole.COMPRESENT, "with", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.COUNTABLE)),
     CAUSED_BY(SemanticRole.CAUSANT, "caused by", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.OBSERVABLE)),

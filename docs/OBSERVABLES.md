@@ -122,6 +122,25 @@ Requesting the probability or presence of a flood changes the semantic head to
 a quality, hence `QUANTIFICATION` or `VERIFICATION`. Presence of a process is
 accepted as shorthand for presence of any event subsuming that process.
 
+Event instantiation runs on its temporal schedule, never at INIT. Each produced individual is
+resolved before the producing transaction commits, with one atomic period of positive duration.
+Its start cannot be in the past relative to instantiation; its end may extend beyond that schedule.
+The individual contextualizer runs once at START and once at END. Clients expose the event at
+START and retain its full duration and semantic type for timeline history. Single-cell spatial
+support is valid. See [OCCURRENCE.md](OCCURRENCE.md#s6--event-production-and-feedback).
+
+A quality can inhere to a process as well as to an event: for example, an erosion intensity may
+describe the erosion process itself, while elevation describes its region. For quality dependencies
+of an occurrence model, compatible inherency to the occurrence selects that occurrence as bearer.
+Otherwise the quality must inhere to the context and be affected or created by the occurrence.
+An assignment alone does not authorize a context effect. Missing inherency is not silently filled
+with the surrounding context. Processes remain non-countable; `each` is not enabled for them.
+
+A process model affecting or creating a declared quality X can also be discovered for `change in X`.
+This is a simulation request, not a numeric difference or a request to initialize X. Selecting a
+joint process for several changing qualities requires the separate collinearity policy tracked in
+[OCCURRENCE.md](OCCURRENCE.md).
+
 A configuration is also distinct from its constituents. A configuration built
 from detected qualities is local to the observation holding those qualities.
 One built from relationships is global to the digital twin and can change as

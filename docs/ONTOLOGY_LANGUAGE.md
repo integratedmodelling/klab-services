@@ -427,6 +427,14 @@ process Heating
 modified. Several targets may be comma-separated. These clauses express semantic potential, not
 executable equations; k.IM models provide the computation.
 
+Inherency and effects serve different purposes. A quality may inhere to a process or event itself
+(`Quality of Process` is valid), or to the occurrence's surrounding context. In an occurrence model,
+the first belongs to the occurrence; the second can be resolved on the context only when the
+occurrence `affects` or `creates` it. An `affects`/`creates` link does not override inherency.
+Process bearers remain non-countable, and existing inherited restrictions and `applies to` bounds
+still apply. For example, process intensity can describe Erosion itself while Elevation describes
+the Region that Erosion affects. See [OCCURRENCE.md](OCCURRENCE.md).
+
 ### 7.7. `emerges from` and `implies`
 
 Both clauses accept contextualized expressions:

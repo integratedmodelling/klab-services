@@ -21,6 +21,23 @@ class GeometryRepositoryTest {
   }
 
   @Test
+  void oneCellGridsRetainTheirGridThroughPromotionAndEncoding() {
+    for (String spatial : new String[] {
+        "S2(1,1){proj=EPSG:4326,bbox=[1 2 0 1]}",
+        "S2(1,1){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((1 0&comma;1 1&comma;2 1&comma;2 0&comma;1 0))}"}) {
+      var scale = GeometryRepository.INSTANCE.scale(Geometry.create(spatial));
+      var tile = org.junit.jupiter.api.Assertions.assertInstanceOf(
+          org.integratedmodelling.klab.api.knowledge.observation.scale.space.Tile.class, scale.getSpace());
+      assertEquals(1, tile.getGrid().getXCells());
+      assertEquals(1, tile.getGrid().getYCells());
+      assertEquals(1, scale.size());
+      var restored = GeometryRepository.INSTANCE.scale(Geometry.create(scale.encode()));
+      assertEquals(scale.encode(), restored.encode());
+      assertTrue(restored.getSpace().isRegular());
+    }
+  }
+
+  @Test
   void outerUnionReturnsCachedScale() {
     Geometry first = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
     Geometry second = Geometry.create("T0(1){tend=20,tstart=5,ttype=PHYSICAL}");

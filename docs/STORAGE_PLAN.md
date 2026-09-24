@@ -992,6 +992,21 @@ matrix; this stage does not imply arbitrary CRS/mask support or completed S7 dic
 - The user's categorical preference is recorded as area-weighted majority for `type of`, gated on
   S7 dictionaries. Numeric conservative aggregation is not applied to category codes.
 
+### Event writeback integration (2026-09-24)
+
+`TemporalWriteSet.write(observation, request)` now opens a closeable event-grid view over a causal
+baseline. Reads remain pinned to prior state. Explicit scanner writes are accumulated locally;
+closing the view maps native cell centers into the event grid and scatters only touched values.
+Native cells outside the event retain their baseline values. Unchanged writes remain no-ops, and
+rollback discards the overlay and cancels open writers. The view supports one-cell grids and
+aligned native support, and uses the existing nearest/CRS/mediation-setting policies for
+non-conformant grids. Writable value conversion is rejected; writes use native value semantics.
+These writes do not introduce arbitrary polygon masks or conservative writeback policies.
+
+START and END transitions may have instantaneous storage slices. This does not permit zero-duration
+event observations: their physical start and end must differ. Equal-time state revisions retain
+separate event identities, and created qualities can supply committed baselines at later boundaries.
+
 Verification covers analytic ramps, primitive nearest reads, coarse/fine conservation, geographic
 area-weighted means, missingness, partial/no overlap, target partitions, reprojection/domain
 rejection, schema/fingerprint transport, gate changes, resolution, executor binding, and event-relative

@@ -18,6 +18,28 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.junit.jupiter.api.Test;
 
 class TransitionTransportTest {
+  @Test void eventDurationsAreGroupedOnlyAfterStartAndSurviveReorderedTransport() {
+    var history = new TransitionHistory("context");
+    var start = eventBoundary(30, Scheduler.Event.Boundary.START);
+    var end = eventBoundary(31, Scheduler.Event.Boundary.END);
+    history.accept(end);
+    assertTrue(history.eventsByType().isEmpty());
+    var restored = Utils.Json.parseObject(Utils.Json.asString(start), TransitionCommit.class);
+    history.accept(restored); history.accept(start); history.accept(end);
+    var bars = history.eventsByType().get("test:Earthquake");
+    assertEquals(1, bars.size());
+    assertEquals(1000, bars.getFirst().start()); assertEquals(9000, bars.getFirst().end());
+    assertThrows(UnsupportedOperationException.class, () -> bars.clear());
+  }
+  private static TransitionCommit eventBoundary(long commitId, Scheduler.Event.Boundary boundary) {
+    var commit = new CommitImpl(); commit.setId(commitId);
+    var descriptor = new ObservedEvent(42, "test:Earthquake", "earthquake", 1000, 9000, "T0(1)", boundary);
+    long instant = boundary == Scheduler.Event.Boundary.START ? 1000 : 9000;
+    var journal = new SchedulerJournal(2, "observed:42:" + boundary, null, Scheduler.Event.Type.EVENT,
+        instant, instant, "event:42", "plan", "T0(1)", commitId, List.of(), false, descriptor);
+    return new TransitionCommit(1, "context", commit, List.of(journal), List.of());
+  }
+
   @Test void repeatedRegistrationKeepsTwinAndReplacementDisposesOldPoller() {
     var scope=mock(org.integratedmodelling.common.services.client.scope.ClientContextScope.class);
     when(scope.getService(RuntimeService.class)).thenReturn(mock(RuntimeClient.class));

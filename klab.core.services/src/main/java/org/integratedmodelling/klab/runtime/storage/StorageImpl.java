@@ -704,7 +704,8 @@ public class StorageImpl implements Storage {
     long end = event.getTime().getEnd().getMilliseconds();
     for (var revision : history.revisions()) {
       boolean eligible =
-          ephemeral ? revision.start() <= start && revision.end() >= end : revision.end() <= start;
+          ephemeral && event.getBoundary() == Scheduler.Event.Boundary.NONE
+              ? revision.start() <= start && revision.end() >= end : revision.end() <= start;
       if (eligible && (selected == null || revision.end() >= selected.end())) selected = revision;
     }
     if (selected != null) return List.copyOf(temporalShards.get(selected.event()));

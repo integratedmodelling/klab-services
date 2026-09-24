@@ -89,6 +89,7 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
       envelope =
           EnvelopeImpl.create(
               corners.get(0), corners.get(1), corners.get(2), corners.get(3), projection);
+      if (shape == null) shape = envelope.asShape();
     }
 
     if (dimension.isRegular()) {
@@ -141,7 +142,7 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                         Configuration.KLAB_USE_IN_MEMORY_DATABASE, "true")));
       } else if (shape != null
           && dimension.getShape().size() > 1
-          && dimension.getShape().stream().reduce(1L, (a, b) -> a * b) > 1) {
+          && dimension.getShape().stream().allMatch(size -> size > 0)) {
         if (envelope == null) {
           envelope = shape.getEnvelope();
         }

@@ -416,7 +416,10 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return new KnowledgeGraphQuery<>(KnowledgeGraphQuery.AssetType.classify(resultClass)) {
       @Override
       public List<T> run(Scope scope) {
-        return runtimeClient.queryKnowledgeGraph(this, scope);
+          return runtimeClient.queryKnowledgeGraph(this, scope).stream()
+              .filter(asset -> !(asset instanceof Observation observation)
+                  || !org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation))
+              .toList();
       }
     };
   }
@@ -424,7 +427,10 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   @Override
   public <T extends RuntimeAsset> List<T> query(
       Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope) {
-    return runtimeClient.queryKnowledgeGraph(knowledgeGraphQuery, scope);
+    return runtimeClient.queryKnowledgeGraph(knowledgeGraphQuery, scope).stream()
+        .filter(asset -> !(asset instanceof Observation observation)
+            || !org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation))
+        .toList();
   }
 
   /**
@@ -583,7 +589,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       return null;
     }
     try {
-      return (T) assetCache.get(id, () -> retrieveFromGraph(id, resultClass, scope));
+      var asset = (T) assetCache.get(id, () -> retrieveFromGraph(id, resultClass, scope));
+      return asset instanceof Observation observation
+          && org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation) ? null : asset;
     } catch (Throwable e) {
       // fall back to other strategy
       scope.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
@@ -597,7 +605,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       return null;
     }
     try {
-      return runtimeClient.getAsset(urn, resultClass, scope);
+      var asset = runtimeClient.getAsset(urn, resultClass, scope);
+      return asset instanceof Observation observation
+          && org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation) ? null : asset;
     } catch (Throwable e) {
       scope.warn("Ignoring unexpected error retrieving a knowledge-graph URN", e);
       return null;

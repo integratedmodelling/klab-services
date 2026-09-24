@@ -19,8 +19,18 @@ final class TemporalScalarExecution {
     var writes = scope.getCurrentTransaction().getTemporalWrites();
     if (writes == null) throw new IllegalStateException("Temporal computation has no write set");
     var strategy = target.getContextualizationData().getNativeShardingStrategy();
-    var partitions = writes.writeLayout(target);
     try (var resources = new org.integratedmodelling.klab.runtime.language.ScanResources()) {
+      var eventSupport = event.getBoundary() == Scheduler.Event.Boundary.NONE || event.getEvent() == null
+          ? null : org.integratedmodelling.klab.runtime.storage.StorageReads.spatialSupport(event.getEvent());
+      StorageScan.Session<? extends Storage.Scanner> eventOutput = null;
+      if (eventSupport != null && !Boolean.TRUE.equals(target.getMetadata().get(
+          org.integratedmodelling.klab.runtime.storage.TemporalHistory.EPHEMERAL))) {
+        var layout = new Data.ShardingStrategy(strategy.getCurve(), 1, 0, 0, null);
+        eventOutput = resources.add(writes.write(target,
+            org.integratedmodelling.klab.runtime.storage.StorageReads.request(target, event, layout,
+                List.of(), Storage.Scanner.class, eventSupport)));
+      }
+      var partitions = eventOutput == null ? writes.writeLayout(target) : eventOutput.description().partitions();
       var readers = new LinkedHashMap<String, List<? extends Storage.Scanner>>();
       var names = computation.inputNames() == null ? inputs.keySet() : computation.inputNames();
       for (var name : names) {
@@ -28,7 +38,8 @@ final class TemporalScalarExecution {
         if (input == null) throw new IllegalArgumentException("Unknown scalar input " + name);
         var source = org.integratedmodelling.klab.runtime.storage.StorageReads.source(input, scope);
         var layout = new Data.ShardingStrategy(strategy.getCurve(), partitions.size(), 0, 0, null);
-        var targetSupport = org.integratedmodelling.klab.runtime.storage.StorageReads.spatialSupport(target);
+        var targetSupport = eventSupport == null
+            ? org.integratedmodelling.klab.runtime.storage.StorageReads.spatialSupport(target) : eventSupport;
         var request = new StorageScan.Request<>(StorageScan.Slice.of(event), StorageScan.Layout.of(layout),
             targetSupport == null ? null : targetSupport.encode(), partitions, StorageScan.semantics(input.getObservable()), Storage.Scanner.class,
             StorageScan.Access.READ_ONLY, StorageScan.Precision.LOSSLESS, StorageScan.Coverage.MISSING_OUTSIDE,
@@ -41,7 +52,9 @@ final class TemporalScalarExecution {
           throw new IllegalStateException("Temporal planner changed output partitions");
         readers.put(name.equals("self") ? "__prior_self" : name, scans);
       }
-      var output = writes.scan(target, strategy, strategy.getScannerClass(), TemporalWriteSet.Access.WRITE);
+      var output = eventOutput == null
+          ? writes.scan(target, strategy, strategy.getScannerClass(), TemporalWriteSet.Access.WRITE)
+          : eventOutput.scanners();
       if (output.size() != partitions.size()) throw new IllegalStateException("Temporal output layout changed");
       for (int n = 0; n < output.size(); n++) {
         var scanners = new HashMap<String, Storage.Scanner>();

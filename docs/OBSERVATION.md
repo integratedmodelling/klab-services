@@ -625,6 +625,25 @@ constraint. It does not implement discovery of alternative inherents, per-member
 aggregation back to the original subject. `requireObservation` clears the focused context for
 collective registration. This is not a general distribution operator.
 
+Occurrence model quality dependencies have a specific bearer-selection step before this generic
+contextualization: inherency to the process or individual event selects that observation; otherwise
+inherency must match the context and the occurrence must affect or create the quality. Queries and
+recursive resolution use the selected scope, so a similarly named quality on the context is not
+reused as an occurrence quality. Process plans persist the selection for graph attribution and
+deferred creation. See [OCCURRENCE.md](OCCURRENCE.md) for lifecycle limits.
+
+Individual event resolution persists an EVENT plan and initializes ordinary quality dependencies,
+but does not execute the event computation at INIT. Scheduled instantiation resolves the complete
+batch within its producing transaction. After commit, each individual waits for its own start and
+end boundaries. Java `TimeInstant` parameters receive the boundary instant. Scanners use event
+spatial support even when the quality belongs to the context; semantic `affects` grants writable
+bindings. Event publication and duration history begin at START, independently of instantiation.
+
+Model discovery also indexes `change in X` for a process's declared affected/created quality outputs
+and dependencies. Semantic-distance filtering considers these inferred outputs as well as explicit
+outputs. This does not choose between one joint process and several independent processes; that
+collinearity policy is pending.
+
 The current loops fall short of the intended partial-contribution contract. The observation loop
 collects relevant strategy graphs but calls `strategyResolution.checkCoverage(strategyResolution)`
 and merges them into the observation only after a strategy is individually complete. Two

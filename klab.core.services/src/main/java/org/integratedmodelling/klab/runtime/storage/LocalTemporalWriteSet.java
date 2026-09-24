@@ -151,6 +151,35 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
   }
 
   @Override
+  public synchronized <T extends Storage.Scanner> StorageScan.Session<T> write(
+      Observation observation, StorageScan.Request<T> request) {
+    var baseline = read(observation, request, Access.PRIOR);
+    var view = views.get(observation.getId());
+    if (baseline.description().conversion() != null) {
+      baseline.close();
+      throw new UnsupportedOperationException("Writable event bindings require native value semantics");
+    }
+    try {
+      var session = new EventWriteSession<>(baseline, request, view.storage.getNativeType(),
+          view.storage.getNativeShardingStrategy(), view.support, writeLayout(observation),
+          (partition, index, value) -> {
+            synchronized (LocalTemporalWriteSet.this) {
+              if (prepared) throw new IllegalStateException("Temporal write set is sealed");
+              if (!view.created && Objects.equals(value, view.storage.nativeValue(view.baseline.get(partition), index)))
+                view.changes.get(partition).remove(index);
+              else view.changes.get(partition).put(index, value);
+            }
+          }, view.storage.getNativeType() == Storage.Type.KEYED ? view.storage.key() : null,
+          StorageReads.acceptsLossy(scope));
+      transaction.afterRollback(session::cancel);
+      return session;
+    } catch (RuntimeException | Error failure) {
+      baseline.close();
+      throw failure;
+    }
+  }
+
+  @Override
   public synchronized Set<Observation> changedObservations() {
     var ret = Collections.newSetFromMap(new IdentityHashMap<Observation, Boolean>());
     views
@@ -209,7 +238,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
       boolean ephemeral =
           Boolean.TRUE.equals(observation.getMetadata().get(TemporalHistory.EPHEMERAL));
       baseline = storage.temporalBaseline(event, ephemeral);
-      created = ephemeral;
+      created = ephemeral && (event.getBoundary() == Scheduler.Event.Boundary.NONE || baseline.isEmpty());
       if (baseline.isEmpty() && !created)
         throw new IllegalStateException(
             "Affected quality has no committed baseline: " + observation.getUrn());

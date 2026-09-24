@@ -376,7 +376,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         if (indexKnowledge(scope)) {
           this.semanticSearchAvailable.set(true);
         }
-        return true;
+        return this.semanticSearchAvailable.get();
       } else {
         Logging.INSTANCE.warn("reasoner is inoperative: cannot index semantic content");
         this.semanticSearchAvailable.set(false);
@@ -1914,7 +1914,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       ContextScope scope) {
 
     if (!checkSemanticServices(scope)) {
-      return ResourceSet.empty(Notification.warning("Semantic search is not available"));
+      return ResourceSet.empty(Notification.error("Semantic search is not available: model indexing or reasoner availability failed"));
     }
 
     ResourceSet results = new ResourceSet();

@@ -119,6 +119,39 @@ class TemporalStorageTest {
     } finally {f.storage.close(null);}
   }
 
+  @Test void eventWritesScatterOnlyCoveredCellsAndRollbackPreservesHistory() {
+    var f = new Fixture(false);
+    doReturn(mock(org.integratedmodelling.klab.api.services.RuntimeService.class, RETURNS_DEEP_STUBS))
+        .when(f.scope).getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    when(f.scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class).settings()
+        .get(org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS, Boolean.class)).thenReturn(true);
+    var writes = f.begin("event-start", 1000, 2000);
+    var request = new StorageScan.Request<>(StorageScan.Slice.of(event("event-start", 1000, 2000)),
+        new StorageScan.Layout(Data.FillCurve.D2_YX, 1, 0, 0, null),
+        "S2(2,1){proj=EPSG:4326,bbox=[1 2 0 1]}", List.of(), null,
+        Storage.DoubleScanner.class, StorageScan.Access.READ_ONLY, StorageScan.Precision.LOSSLESS,
+        StorageScan.Coverage.MISSING_OUTSIDE, StorageScan.Sampling.NEAREST, StorageScan.Budget.defaults());
+    try (var session = writes.write(f.quality, request)) {
+      var output = session.scanners().getFirst();
+      assertEquals(2, output.size());
+      assertEquals(200, output.peek());
+      output.add(10); output.add(20);
+    }
+    var current = f.scan(writes, TemporalWriteSet.Access.CURRENT);
+    assertArrayEquals(new double[] {100, 20, 350}, new double[] {current.get(), current.get(), current.get()});
+    assertArrayEquals(new double[] {100, 200, 350}, f.read(writes));
+    writes.prepare(); f.abort();
+    assertEquals(1, f.committed.size());
+    var retry = f.begin("event-start", 1000, 2000);
+    try (var session = retry.write(f.quality, request)) {
+      session.scanners().getFirst().add(30);
+      session.scanners().getFirst().add(40);
+    }
+    retry.prepare(); f.commit(); f.restore();
+    assertArrayEquals(new double[] {100, 40, 350}, f.read(f.begin("later", 2000, 3000)));
+    f.storage.close(null);
+  }
+
   @Test void temporalConversionsUsePinnedPriorAndCurrentValuesAndReleaseOnRollback() {
     var f = new Fixture(false);
     var original = (ObservableImpl) f.quality.getObservable();

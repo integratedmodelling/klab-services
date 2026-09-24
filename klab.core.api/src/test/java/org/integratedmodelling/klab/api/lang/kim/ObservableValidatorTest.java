@@ -15,6 +15,16 @@ class ObservableValidatorTest {
 
   private final ObservableValidator validator = new ObservableValidator();
 
+  @Test void acceptsProcessInherencyWithoutMakingProcessesCountable() {
+    var quality = concept(SemanticType.QUALITY);
+    var process = concept(SemanticType.PROCESS);
+    quality.setInherent(process);
+    assertTrue(validator.validateConcept(quality).isEmpty());
+    process.setCollective(true);
+    assertError(process, "each");
+    assertTrue(org.integratedmodelling.klab.api.lang.SemanticClause.OF.argument.contains(SemanticType.PROCESS));
+  }
+
   @Test
   void rejectsDuringWithANonEventTarget() {
     var concept = concept(SemanticType.QUALITY);

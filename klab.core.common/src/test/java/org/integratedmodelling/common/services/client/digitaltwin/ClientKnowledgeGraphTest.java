@@ -46,6 +46,28 @@ class ClientKnowledgeGraphTest {
   }
 
   @Test
+  void pendingEventsStayHiddenUntilTheStartCommitInvalidatesTheirSnapshot() {
+    when(scope.getId()).thenReturn("context");
+    var pending = observation(42, null);
+    pending.getMetadata().put(org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.PENDING, true);
+    graph.ingest(pending);
+    when(runtime.queryKnowledgeGraph(any(), eq(scope))).thenReturn((List) List.of(pending));
+    assertNull(graph.getAsset(42, scope, RuntimeAsset.class));
+    assertTrue(graph.query(org.integratedmodelling.klab.api.knowledge.observation.Observation.class, scope).run(scope).isEmpty());
+    var fresh = observation(42, null);
+    when(runtime.getAsset(42, RuntimeAsset.class, scope)).thenReturn(fresh);
+    var commit = commit(90); commit.getModifiedAssets().add(42L);
+    var event = new org.integratedmodelling.klab.api.digitaltwin.ObservedEvent(42, "test:Event", "event",
+        100, 200, "T0(1)", org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Boundary.START);
+    var journal = new org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal(2, "observed:42:START",
+        null, org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Type.EVENT,
+        100, 100, "event:42", "plan", "T0(1)", 90, List.of(), false, event);
+    graph.ingestTransition(new org.integratedmodelling.klab.api.digitaltwin.TransitionCommit(
+        1, "context", commit, List.of(journal), List.of()));
+    assertSame(fresh, graph.getAsset(42, scope, RuntimeAsset.class));
+  }
+
+  @Test
   void classificationCommitInvalidatesTheCachedMemberWithoutReplacingIdentity() {
     var before = observation(421, null);
     var after = observation(421, null);

@@ -347,6 +347,7 @@ public class ResolutionCompiler {
             // root substantial would incorrectly be its own context during model lookup.
             var modelScope = contextualizedScope.getFirst();
             if (explainedObservation != null
+                && !explainedObservation.getObservable().is(SemanticType.EVENT)
                 && SemanticType.isEnumerableSubstantial(
                     explainedObservation.getObservable().getSemantics().getType())
                 && java.util.Objects.equals(
@@ -354,7 +355,8 @@ public class ResolutionCompiler {
                     explainedObservation.getObservable().getUrn())) {
               modelScope = modelScope.within(explainedObservation);
             }
-            var modelResolution = resolve(model, contextualizedScope.getSecond(), ret, modelScope);
+            var modelResolution = resolve(model, contextualizedScope.getSecond(), ret, modelScope,
+                explainedObservation);
             if (modelResolution.isEmpty()) continue;
             if (operation.getTransformationTarget() != null) {
               // Until composed contextualizer pipelines expose their graph ports, accept only
@@ -494,9 +496,21 @@ public class ResolutionCompiler {
    */
   private ResolutionGraph resolve(
       Model model, Scale scaleToCover, ResolutionGraph graph, ContextScope scope) {
+    return resolve(model, scaleToCover, graph, scope, null);
+  }
+
+  private ResolutionGraph resolve(
+      Model model, Scale scaleToCover, ResolutionGraph graph, ContextScope scope,
+      Observation occurrentObservation) {
 
     var ret = graph.createChild(model, scaleToCover);
-    var processPlan = ProcessModelBindings.analyze(model, scope);
+    org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
+    try {
+      processPlan = ProcessModelBindings.analyze(model, scope);
+    } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException rejected) {
+      scope.warn("Rejected occurrence bindings in " + model.getUrn() + ": " + rejected.getMessage());
+      return ResolutionGraph.empty();
+    }
     ret.processPlan = processPlan;
 
     scope =
@@ -550,6 +564,22 @@ public class ResolutionCompiler {
 
       ResolutionGraph dependencyResolution;
       try {
+        var dependencyScope = scope;
+        var primary = model.getObservables().getFirst();
+        if (dependency.is(SemanticType.QUALITY)
+            && (primary.is(SemanticType.PROCESS)
+                || primary.is(SemanticType.EVENT) && !primary.getSemantics().isCollective())) {
+          var context = scope.getContextObservation();
+          var bearer = org.integratedmodelling.klab.runtime.language.OccurrentSemantics.bearer(
+              dependency, primary, context == null ? null : context.getObservable(),
+              scope.getService(Reasoner.class));
+          if (bearer == org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.Bearer.OCCURRENT) {
+            if (occurrentObservation == null)
+              throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+                  "Missing occurrence observation for " + dependency.getUrn());
+            dependencyScope = scope.within(occurrentObservation);
+          }
+        }
         var requestedSchedule = dependency.is(SemanticType.PROCESS)
             ? org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.fromDependency(dependency.getAnnotations()) : null;
         var request = requestedSchedule == null ? null
@@ -559,8 +589,8 @@ public class ResolutionCompiler {
         dependencyResolution =
             dependency.getContextualization() != null
                     && dependency.getContextualization().modifiesExistingObservations()
-                ? resolveOperation(dependency, scaleToCover, dependencyGraph, scope, dependency)
-                : resolve(dependency, scaleToCover, dependencyGraph, scope);
+                ? resolveOperation(dependency, scaleToCover, dependencyGraph, dependencyScope, dependency)
+                : resolve(dependency, scaleToCover, dependencyGraph, dependencyScope);
       } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException rejected) {
         scheduleRejected(model, ret.scheduleRequest, rejected, scope);
         return ResolutionGraph.empty();

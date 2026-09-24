@@ -26,7 +26,7 @@ public final class ComputationalClosure {
             GraphModel.Relationship.AFFECTS)) {
       if (ProcessPlan.INFLUENCE.equals(edge.properties().get(ProcessPlan.EDGE_ROLE))
           && edge.target() instanceof Observation quality
-          && eligible(quality, bearer, support)) roots.put(quality.getId(), quality);
+          && eligible(quality, bearer, seed.getId(), support)) roots.put(quality.getId(), quality);
     }
     var queue = new ArrayDeque<>(roots.values());
     var visited = new HashSet<Long>();
@@ -44,7 +44,7 @@ public final class ComputationalClosure {
         if (!ProcessPlan.PREREQUISITE.equals(edge.properties().get(ProcessPlan.EDGE_ROLE))
             || !(edge.target() instanceof Observation target)
             || roots.containsKey(target.getId())
-            || !eligible(target, bearer, support)) continue;
+            || !eligible(target, bearer, seed.getId(), support)) continue;
         var encoded = target.getMetadata().get(Scheduler.PLAN_METADATA_KEY);
         if (encoded == null)
           throw new IllegalStateException(
@@ -81,10 +81,19 @@ public final class ComputationalClosure {
     return List.copyOf(result);
   }
 
-  private static boolean eligible(Observation quality, long bearer, Geometry support) {
+  private static boolean eligible(Observation quality, long bearer, long occurrence, Geometry support) {
+    var repository = org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE;
+    var boundary = repository.scale(support);
+    boolean instant = boundary.getTime() != null && boundary.getTime().getStart() != null
+        && boundary.getTime().getEnd() != null
+        && boundary.getTime().getStart().getMilliseconds() == boundary.getTime().getEnd().getMilliseconds();
+    // Quality temporal geometry records computed support, not the lifetime of its bearer.
+    // Event boundaries may extend that support, including beyond the original simulation horizon.
+    var space = instant ? repository.scale(quality.getGeometry()).getSpace() : null;
     return quality.getId() > 0
         && quality.getObservable().is(SemanticType.QUALITY)
-        && (quality.getParentId() <= 0 || quality.getParentId() == bearer)
-        && ConsequenceClosure.overlaps(quality.getGeometry(), support);
+        && (quality.getParentId() <= 0 || quality.getParentId() == bearer || quality.getParentId() == occurrence)
+        && (instant ? space == null || boundary.getSpace() == null || space.intersects(boundary.getSpace())
+            : ConsequenceClosure.overlaps(quality.getGeometry(), support));
   }
 }

@@ -12,6 +12,43 @@ import org.semanticweb.owlapi.model.*;
 
 class OWLSemanticClauseSupportTest {
   @Test
+  void importedProvenanceRestrictionsDoNotRequireRegisteredNamespaces() throws Exception {
+    var scope = (Scope) java.lang.reflect.Proxy.newProxyInstance(
+        Scope.class.getClassLoader(), new Class<?>[] {Scope.class},
+        (self, method, args) -> null);
+    var owl = new OWL(scope);
+    owl.manager = OWLManager.createOWLOntologyManager();
+    var ontology = owl.requireOntology("domain");
+    ontology.define(List.of(
+        Axiom.ClassAssertion("Quality", EnumSet.of(SemanticType.QUALITY, SemanticType.OBSERVABLE)),
+        Axiom.ClassAssertion("Tree", EnumSet.of(SemanticType.SUBJECT, SemanticType.OBSERVABLE)),
+        Axiom.ClassAssertion("Rock", EnumSet.of(SemanticType.SUBJECT, SemanticType.OBSERVABLE))));
+    owl.requireOntology("odo").define(List.of(Axiom.ObjectPropertyAssertion("isInherentTo")));
+    var factory = owl.manager.getOWLDataFactory();
+    var owner = ontology.getConcept("Quality");
+    var quality = owl.getOWLClass(owner);
+    var tree = ontology.getConcept("Tree");
+    var rock = ontology.getConcept("Rock");
+    var provenance = factory.getOWLObjectProperty(IRI.create("http://www.w3.org/ns/prov#wasGeneratedBy"));
+    owl.manager.addAxiom(ontology.getOWLOntology(), factory.getOWLSubClassOfAxiom(
+        quality, factory.getOWLObjectSomeValuesFrom(provenance, factory.getOWLThing())));
+    var support = new OWLSemanticClauseSupport(owl);
+    assertTrue(support.applicableTo(owner, tree));
+    assertTrue(support.clauses(owner).isEmpty());
+
+    // Even an unregistered external subproperty must retain its semantic restriction.
+    var external = factory.getOWLObjectProperty(IRI.create("https://example.org/external#bearer"));
+    var inherent = factory.getOWLObjectProperty(IRI.create(owl.getProperty("odo:isInherentTo").getURI()));
+    owl.manager.addAxiom(ontology.getOWLOntology(), factory.getOWLSubObjectPropertyOfAxiom(external, inherent));
+    owl.manager.addAxiom(ontology.getOWLOntology(), factory.getOWLSubClassOfAxiom(
+        quality, factory.getOWLObjectSomeValuesFrom(external, owl.getOWLClass(tree))));
+    support = new OWLSemanticClauseSupport(owl);
+    assertTrue(support.accepts(owner, SemanticRole.INHERENT, tree));
+    assertFalse(support.accepts(owner, SemanticRole.INHERENT, rock));
+    assertEquals(1, support.clauses(owner).size());
+  }
+
+  @Test
   void applicabilityConstrainsPredicatesAndAddsToDependentInherency() throws Exception {
     var scope =
         (Scope)

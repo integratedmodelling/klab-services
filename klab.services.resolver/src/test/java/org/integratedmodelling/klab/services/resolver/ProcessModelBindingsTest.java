@@ -32,7 +32,7 @@ class ProcessModelBindingsTest {
     when(f.reasoner.influences(other.getSemantics())).thenReturn(List.of(firstLink, secondLink));
     when(f.reasoner.influences(third.getSemantics())).thenReturn(List.of(secondLink));
     var plan = ProcessModelBindings.analyze(f.model, f.scope);
-    assertEquals(2, plan.version());
+    assertEquals(3, plan.version());
     assertEquals(List.of(firstLink, secondLink), plan.descriptiveLinks());
     assertEquals(1, plan.bindings().size());
     assertTrue(plan.obligations().isEmpty());
@@ -66,6 +66,9 @@ class ProcessModelBindingsTest {
       when(scope.getService(Reasoner.class)).thenReturn(reasoner);
       model.setUrn("test:processModel"); model.getObservables().add(process);
       model.getDependencies().add(elevation);
+      when(reasoner.inherent(elevation)).thenReturn(region.getObservable().getSemantics());
+      when(reasoner.is(region.getObservable(), region.getObservable().getSemantics())).thenReturn(true);
+      when(reasoner.affectedBy(elevation, process)).thenReturn(true);
       when(expression.getExpression()).thenReturn(org.integratedmodelling.klab.api.lang.ExpressionCode.of("elevation - 10", "groovy"));
       when(expression.getTargetId()).thenReturn("elevation");
       model.getComputation().add(expression);
@@ -128,12 +131,86 @@ class ProcessModelBindingsTest {
         observable("event", SemanticType.EVENT),
         observable("relationship", SemanticType.RELATIONSHIP, SemanticType.FUNCTIONAL))) {
       f.region.setObservable(host);
+      when(f.reasoner.inherent(f.elevation)).thenReturn(host.getSemantics());
       assertDoesNotThrow(() -> ProcessModelBindings.analyze(f.model, f.scope));
     }
     f.region.setObservable(observable("relationship", SemanticType.RELATIONSHIP, SemanticType.STRUCTURAL));
     assertThrows(KlabValidationException.class, () -> ProcessModelBindings.analyze(f.model, f.scope));
     f.region.setObservable(f.process);
     assertThrows(KlabValidationException.class, () -> ProcessModelBindings.analyze(f.model, f.scope));
+  }
+
+  @Test void occurrenceInherencyWinsAndSurvivesTransport() {
+    var f = new Fixture();
+    when(f.reasoner.inherent(f.elevation)).thenReturn(f.process.getSemantics());
+    when(f.reasoner.affectedBy(f.elevation, f.process)).thenReturn(false);
+    var plan = ProcessModelBindings.analyze(f.model, f.scope);
+    assertEquals(ProcessPlan.Bearer.OCCURRENT, plan.binding("elevation").bearer());
+    assertEquals(plan, Utils.Json.parseObject(Utils.Json.asString(plan), ProcessPlan.class));
+    assertThrows(IllegalArgumentException.class,
+        () -> new ProcessPlan(2, 100, "old", plan.bindings(), plan.obligations()));
+  }
+
+  @Test void occurrenceQualityQueriesTheOccurrenceScopeInsteadOfReusingTheContextQuality() throws Exception {
+    var f = new Fixture();
+    var occurrence = new ObservationImpl(); occurrence.setId(-42); occurrence.setObservable(f.process);
+    var local = mock(ContextScope.class);
+    when(f.scope.within(occurrence)).thenReturn(local);
+    when(local.getContextObservation()).thenReturn(occurrence);
+    when(local.getService(Reasoner.class)).thenReturn(f.reasoner);
+    when(f.reasoner.inherent(f.elevation)).thenReturn(f.process.getSemantics());
+    for (var scope : List.of(f.scope, local))
+      when(scope.withResolutionConstraints(any(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint[].class)))
+          .thenReturn(scope);
+    var runtime = mock(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    when(f.scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class)).thenReturn(runtime);
+    when(runtime.resolveContextualizables(eq(f.model.getComputation()), eq(f.scope)))
+        .thenReturn(new org.integratedmodelling.klab.api.services.resources.ResourceSet());
+    var geometry = org.integratedmodelling.klab.api.geometry.Geometry.create(
+        "T0(1){tstart=1388534400000,tend=1420070400000,ttype=PHYSICAL}");
+    var quality = new ObservationImpl(); quality.setId(101); quality.setObservable(f.elevation);
+    quality.setGeometry(geometry); occurrence.setGeometry(geometry);
+    when(local.getObservation(any(org.integratedmodelling.klab.api.knowledge.observation.Observation.class)))
+        .thenReturn(quality);
+    f.model.setCoverage(org.integratedmodelling.klab.api.geometry.Geometry.UNIVERSAL);
+    var method = ResolutionCompiler.class.getDeclaredMethod("resolve", Model.class,
+        org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class,
+        ResolutionGraph.class, ContextScope.class,
+        org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+    method.setAccessible(true);
+    var result = (ResolutionGraph) method.invoke(new ResolutionCompiler(mock(ResolverService.class)),
+        f.model, GeometryRepository.INSTANCE.scale(geometry), ResolutionGraph.create(f.scope), f.scope, occurrence);
+    assertFalse(result.isEmpty());
+    verify(local).getObservation(any(org.integratedmodelling.klab.api.knowledge.observation.Observation.class));
+    verify(f.scope, never()).getObservation(any(org.integratedmodelling.klab.api.knowledge.observation.Observation.class));
+  }
+
+  @Test void contextAssignmentRequiresSemanticEffectAndKnownInherency() {
+    var f = new Fixture();
+    when(f.reasoner.affectedBy(f.elevation, f.process)).thenReturn(false);
+    assertThrows(KlabValidationException.class, () -> ProcessModelBindings.analyze(f.model, f.scope));
+    when(f.reasoner.createdBy(f.elevation, f.process)).thenReturn(true);
+    assertEquals(ProcessPlan.Bearer.CONTEXT,
+        ProcessModelBindings.analyze(f.model, f.scope).binding("elevation").bearer());
+    when(f.reasoner.inherent(f.elevation)).thenReturn(null);
+    assertThrows(KlabValidationException.class, () -> ProcessModelBindings.analyze(f.model, f.scope));
+  }
+
+  @Test void individualEventUsesTheSameBearerRule() {
+    var f = new Fixture();
+    var event = observable("flood", SemanticType.EVENT);
+    when(f.reasoner.inherent(f.elevation)).thenReturn(event.getSemantics());
+    assertEquals(ProcessPlan.Bearer.OCCURRENT,
+        org.integratedmodelling.klab.runtime.language.OccurrentSemantics.bearer(
+            f.elevation, event, f.region.getObservable(), f.reasoner));
+    when(f.reasoner.inherent(f.elevation)).thenReturn(f.region.getObservable().getSemantics());
+    assertThrows(KlabValidationException.class,
+        () -> org.integratedmodelling.klab.runtime.language.OccurrentSemantics.bearer(
+            f.elevation, event, f.region.getObservable(), f.reasoner));
+    when(f.reasoner.affectedBy(f.elevation, event)).thenReturn(true);
+    assertEquals(ProcessPlan.Bearer.CONTEXT,
+        org.integratedmodelling.klab.runtime.language.OccurrentSemantics.bearer(
+            f.elevation, event, f.region.getObservable(), f.reasoner));
   }
 
   @Test void implicitUnknownAmbiguousNonqualityAndIncompatibleAssignmentsAreRejected() {

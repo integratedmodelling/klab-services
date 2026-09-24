@@ -107,15 +107,30 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
         visit(operand, inherited || operand instanceof OWLClass, visited, result);
     } else if (expression instanceof OWLQuantifiedRestriction<?> restriction
         && restriction.getFiller() instanceof OWLClassExpression filler) {
-      var property = owl.getPropertyFor(restriction.getProperty());
+      if (!(restriction.getProperty() instanceof OWLObjectPropertyExpression property)) return;
+      // Imported vocabularies (e.g. PROV) need not have a k.LAB namespace. Match OWL
+      // properties directly, retaining semantic subproperties without resolving unrelated IRIs.
+      var properties = new HashSet<OWLObjectPropertyExpression>();
+      collectSuperProperties(property, properties);
       for (var entry : PROPERTIES.entrySet())
-        if (property != null && property.is(owl.getProperty(entry.getValue()), owl))
+        if (matchesProperty(properties, entry.getValue()))
           result.add(new Bound(entry.getKey(), filler, inherited, false));
-      var appliesTo = owl.getProperty(NS.APPLIES_TO_PROPERTY);
-      if (property != null && appliesTo != null && property.is(appliesTo, owl))
+      if (matchesProperty(properties, NS.APPLIES_TO_PROPERTY))
         result.add(new Bound(SemanticRole.INHERENT, filler, inherited, true));
     }
     // A union in the superclass hierarchy does not assert either branch individually.
+  }
+
+  private void collectSuperProperties(
+      OWLObjectPropertyExpression property, Set<OWLObjectPropertyExpression> properties) {
+    if (!properties.add(property)) return;
+    EntitySearcher.getSuperProperties(property, owl.manager.ontologies())
+        .forEach(parent -> collectSuperProperties(parent, properties));
+  }
+
+  private boolean matchesProperty(Set<OWLObjectPropertyExpression> properties, String name) {
+    var semanticProperty = owl.getProperty(name);
+    return semanticProperty != null && properties.contains(semanticProperty.getOWLEntity());
   }
 
   @Override

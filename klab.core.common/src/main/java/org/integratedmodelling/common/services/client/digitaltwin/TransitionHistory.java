@@ -52,4 +52,19 @@ public final class TransitionHistory {
     return commits.values().stream()
         .anyMatch(t -> t.consequential() && t.commit().getModifiedAssets().contains(observationId));
   }
+
+  /** One duration bar per started event, grouped by canonical semantic type for IDE lanes. */
+  public synchronized Map<String, List<ObservedEvent>> eventsByType() {
+    var started = new TreeMap<Long, ObservedEvent>();
+    commits.values().stream().flatMap(c -> c.journals().stream())
+        .map(SchedulerJournal::observedEvent).filter(Objects::nonNull)
+        .filter(e -> e.boundary() == Scheduler.Event.Boundary.START)
+        .forEach(e -> started.putIfAbsent(e.observationId(), e));
+    var grouped = new TreeMap<String, List<ObservedEvent>>();
+    started.values().stream().sorted(Comparator.comparingLong(ObservedEvent::start)
+        .thenComparingLong(ObservedEvent::observationId))
+        .forEach(e -> grouped.computeIfAbsent(e.type(), key -> new ArrayList<>()).add(e));
+    grouped.replaceAll((key, value) -> List.copyOf(value));
+    return Collections.unmodifiableMap(grouped);
+  }
 }

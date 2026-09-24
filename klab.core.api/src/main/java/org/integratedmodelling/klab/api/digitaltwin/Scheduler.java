@@ -56,12 +56,12 @@ public interface Scheduler {
 
   String PLAN_METADATA_KEY = "klab.scheduler.computationPlan";
 
-  /** Synchronously drain bounded simulated transitions ending at or before this instant. */
+  /** Drain due simulated work through this instant, including instantiator and event starts. */
   default boolean advanceTo(long until) {
     throw new UnsupportedOperationException("Simulated dispatch unavailable");
   }
 
-  /** Dispatch a committed observed event, preserving its identity independently of its time. */
+  /** Register a committed observed event and dispatch boundaries due at the current horizon. */
   default boolean dispatchObserved(Observation event) {
     throw new UnsupportedOperationException("Observed dispatch unavailable");
   }
@@ -80,6 +80,16 @@ public interface Scheduler {
   }
 
   interface Event {
+
+    /** Event lifecycle phase. NONE denotes an ordinary temporal tick. */
+    enum Boundary { NONE, START, END }
+
+    default Boundary getBoundary() { return Boundary.NONE; }
+
+    /** Logical invocation time; event boundaries carry an instantaneous scheduler support. */
+    default TimeInstant getInstant() {
+      return getBoundary() == Boundary.START ? getTime().getStart() : getTime().getEnd();
+    }
 
     enum Type {
       /**
@@ -101,8 +111,8 @@ public interface Scheduler {
      * If {@link #getEvent()} returns null, the time reflects the geometry of either the observation
      * (if {@link #getType()} returns INITIALIZATION, which will also be the {@link
      * Time#getTimeType()}) or the temporal transition, in which case the time will be a standard
-     * period with the appropriate resolution. If an event was observed, the time is taken from the
-     * geometry of the event.
+     * period with the appropriate resolution. An observed event boundary has instantaneous support;
+     * the event's full positive-duration period remains in {@link #getEvent()}'s geometry.
      *
      * @return a temporal span, never null.
      */
