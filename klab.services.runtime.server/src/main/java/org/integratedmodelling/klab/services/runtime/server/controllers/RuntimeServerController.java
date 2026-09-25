@@ -66,7 +66,6 @@ public class RuntimeServerController {
 
   @Autowired private RuntimeServer runtimeService;
 
-  @GetMapping(ServicesAPI.RUNTIME.GET_OBSERVER_GEOMETRY)
   @Operation(summary = "Read one observation cell", description = "Exact text from a planned read view; null denotes missing data")
   @PostMapping(value = ServicesAPI.RUNTIME.READ_VALUE, produces = "text/plain")
   public @ResponseBody String readValue(
@@ -79,6 +78,8 @@ public class RuntimeServerController {
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
 
+  // TODO rename to generalized AGENT geometry endpoint
+  @GetMapping(ServicesAPI.RUNTIME.GET_OBSERVER_GEOMETRY)
   @Operation(summary = "Audit occupied and perceived geometry of an observer")
   public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
       @PathVariable long id, Principal principal) {
@@ -92,6 +93,7 @@ public class RuntimeServerController {
     }
   }
 
+  // TODO rename to generalized AGENT geometry endpoint
   @PostMapping(ServicesAPI.RUNTIME.UPDATE_OBSERVER_GEOMETRY)
   @Operation(summary = "Replace an observer's perceived spatial extent, preserving time")
   public Observation updateObserverGeometry(
