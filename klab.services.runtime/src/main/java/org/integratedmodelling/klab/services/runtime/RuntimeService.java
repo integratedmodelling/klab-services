@@ -473,7 +473,7 @@ public class RuntimeService extends BaseService
 
   @Override
   public ServiceInfo getServiceInfo(String urn, Scope scope) {
-    var ret = getComponentRegistry().getFunctionDescriptor(urn, Version.ANY_VERSION);
+    var ret = getComponentRegistry().getFunctionDescriptor(urn, Version.ANY_VERSION, scope);
     return ret.isEmpty() ? null : ret.stream().map(s -> s.serviceInfo).findFirst().orElse(null);
   }
 
@@ -2099,19 +2099,11 @@ public class RuntimeService extends BaseService
 
         ResourceSet resolution = ResourceSet.empty();
 
-        if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)) {
-          getComponentRegistry()
-              .refreshDependencyComponentIfAvailable(
-                  contextualizable.getServiceCall().getUrn(),
-                  contextualizable.getServiceCall().getRequiredVersion(),
-                  scope);
-        }
-
         /*
         first check if we have the service in our own catalog.
         */
         var executor =
-            getComponentRegistry().getFunctionDescriptor(contextualizable.getServiceCall());
+            getComponentRegistry().getFunctionDescriptor(contextualizable.getServiceCall(), scope);
 
         if (executor != null && !executor.isEmpty()) {
           resolution =

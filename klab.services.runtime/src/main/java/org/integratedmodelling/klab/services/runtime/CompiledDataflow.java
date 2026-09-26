@@ -260,7 +260,7 @@ public class CompiledDataflow {
 
   private Extensions.FunctionDescriptor choosePrototype(ServiceCall call, Observation observation) {
     List<Pair<Extensions.FunctionDescriptor, Integer>> candidates = new ArrayList<>();
-    for (var prototype : componentRegistry.getFunctionDescriptor(call)) {
+    for (var prototype : componentRegistry.getFunctionDescriptor(call, scope)) {
       // match parameters, types, fill curve w.r.t. observation geometry; choose best fit
       var implementation = componentRegistry.implementation(prototype);
       if (implementation != null) {
@@ -1059,7 +1059,7 @@ public class CompiledDataflow {
     private boolean compile(Actuator actuator) {
       if (actuator.getActuatorType() == Actuator.Type.UPDATE) {
         if (actuator.getContextualization() == Contextualization.CHARACTERIZATION)
-          characterizer = MemberCharacterizerExecutor.compile(actuator, componentRegistry);
+          characterizer = MemberCharacterizerExecutor.compile(actuator, componentRegistry, scope);
         else classifier = compileMemberClassifier(actuator);
         serviceCalls.addAll(actuator.getComputation());
         return true;

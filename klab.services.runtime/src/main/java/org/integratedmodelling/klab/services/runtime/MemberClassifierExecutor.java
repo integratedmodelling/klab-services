@@ -49,7 +49,7 @@ public final class MemberClassifierExecutor {
           "Classification requires one local Concept-returning contextualizer");
     var call = actuator.getComputation().getFirst();
     var candidates = new ArrayList<MemberClassifierExecutor>();
-    for (var descriptor : registry.getFunctionDescriptor(call)) {
+    for (var descriptor : registry.getFunctionDescriptor(call, scope)) {
       var implementation = registry.implementation(descriptor);
       if (implementation != null && supports(implementation.method)) {
         candidates.add(

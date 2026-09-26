@@ -55,6 +55,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -82,10 +83,11 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      */
     public static Adapter resolveAdapter(String urn, UserScope scope, BaseService targetService) {
 
-      var ret = targetService.getComponentRegistry().getAdapter(urn, Version.ANY_VERSION, scope);
-      if (ret != null) {
-        return ret;
-      }
+      var coordinates = Version.splitVersion(urn);
+      var ret =
+          targetService
+              .getComponentRegistry()
+              .getAdapter(coordinates.getFirst(), coordinates.getSecond(), scope);
 
       var result =
           queryResources(
@@ -96,11 +98,43 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       if (!result.isEmpty()) {
         if (targetService.getComponentRegistry().loadComponents(result, scope)) {
-          return targetService.getComponentRegistry().getAdapter(urn, Version.ANY_VERSION, scope);
+          return targetService
+              .getComponentRegistry()
+              .getAdapter(coordinates.getFirst(), coordinates.getSecond(), scope);
         }
+        return null;
       }
 
-      return null;
+      return ret;
+    }
+
+    /**
+     * Resolve an authority into a Reasoner, installing its component from a Resources service when
+     * the authority is advertised as embeddable.
+     */
+    public static org.integratedmodelling.klab.api.knowledge.Authority resolveAuthority(
+        String urn, UserScope scope, BaseService targetService) {
+
+      if (targetService.serviceType() != KlabService.Type.REASONER) {
+        return null;
+      }
+      var coordinates = Version.splitVersion(urn);
+      var ret =
+          targetService
+              .getComponentRegistry()
+              .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
+      var result =
+          queryResources(
+              scope,
+              ResourcesService.class,
+              service -> service.resolve(urn, KlabAsset.KnowledgeClass.COMPONENT, scope));
+      if (!result.isEmpty()
+          && targetService.getComponentRegistry().loadComponents(result, scope)) {
+        return targetService
+            .getComponentRegistry()
+            .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
+      }
+      return result.isEmpty() ? ret : null;
     }
   }
 

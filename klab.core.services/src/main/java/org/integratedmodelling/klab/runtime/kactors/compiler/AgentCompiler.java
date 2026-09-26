@@ -331,7 +331,7 @@ public class AgentCompiler {
     return new Resolver() {
       @Override
       public ResolvedActor resolveActor(String urn, UserScope scope) {
-        var descriptors = registry.getActorDescriptors(urn, null);
+        var descriptors = registry.getActorDescriptors(urn, null, scope);
         if (descriptors.isEmpty()) {
           return null;
         }
@@ -356,7 +356,9 @@ public class AgentCompiler {
       @Override
       public Object adaptToBehavior(
           String behaviorUrn, Object source, RuntimeAgent.Scope runtimeScope) {
-        var descriptors = registry.getActorDescriptors(behaviorUrn, null);
+        var descriptors =
+            registry.getActorDescriptors(
+                behaviorUrn, null, runtimeScope == null ? null : runtimeScope.getScope());
         if (descriptors.isEmpty()) {
           throw new IllegalArgumentException("Unknown Java actor " + behaviorUrn);
         }

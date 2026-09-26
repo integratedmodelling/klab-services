@@ -58,7 +58,7 @@ public class LanguageService implements Language {
   @SuppressWarnings("unchecked")
   @Override
   public <T> T execute(ServiceCall call, Scope scope, Class<T> resultClass, Object... furtherArgs) {
-    var descriptors = this.componentRegistry.getFunctionDescriptor(call);
+    var descriptors = this.componentRegistry.getFunctionDescriptor(call, scope);
     if (descriptors == null) {
       /*
       check the resource service in the scope to see if we can find a component that supports this call
@@ -77,7 +77,7 @@ public class LanguageService implements Language {
                   Notification.error("A user scope is required to resolve service calls"));
       if (!resourceSet.isEmpty()) {
         componentRegistry.loadComponents(resourceSet, scope);
-        descriptors = this.componentRegistry.getFunctionDescriptor(call);
+        descriptors = this.componentRegistry.getFunctionDescriptor(call, scope);
       }
     }
     if (descriptors != null) {

@@ -18,7 +18,8 @@ final class MemberCharacterizerExecutor {
   private final Actuator actuator;
   private final List<Invocation> invocations;
 
-  static MemberCharacterizerExecutor compile(Actuator actuator, ComponentRegistry registry) {
+  static MemberCharacterizerExecutor compile(
+      Actuator actuator, ComponentRegistry registry, Scope scope) {
     if (actuator.getOperationObservable() == null
         || actuator.getOperationObservable().getContextualization()
             != org.integratedmodelling.klab.api.knowledge.Contextualization.CHARACTERIZATION
@@ -29,7 +30,7 @@ final class MemberCharacterizerExecutor {
     var invocations = new ArrayList<Invocation>();
     for (var call : actuator.getComputation()) {
       var candidates = new ArrayList<Invocation>();
-      for (var descriptor : registry.getFunctionDescriptor(call)) {
+      for (var descriptor : registry.getFunctionDescriptor(call, scope)) {
         var implementation = registry.implementation(descriptor);
         if (implementation != null && supports(implementation.method))
           candidates.add(new Invocation(implementation.method, implementation.mainClassInstance, call));

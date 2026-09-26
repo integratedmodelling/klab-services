@@ -45,6 +45,7 @@ import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.reasoner.Authority;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
@@ -103,6 +104,8 @@ public class ComponentRegistry {
 
   private MultiValuedMap<String, Extensions.ComponentDescriptor> adapterFinder =
       new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, Extensions.ComponentDescriptor> authorityFinder =
+      new HashSetValuedHashMap<>();
   private MultiValuedMap<String, Extensions.ComponentDescriptor> serviceFinder =
       new HashSetValuedHashMap<>();
   private MultiValuedMap<String, Extensions.ComponentDescriptor> annotationFinder =
@@ -119,8 +122,10 @@ public class ComponentRegistry {
    */
   private MultiValuedMap<String, AdapterDescriptor> adapterDescriptorFinder =
       new HashSetValuedHashMap<>();
+  private MultiValuedMap<String, AuthorityRegistration> authorities = new HashSetValuedHashMap<>();
   private Map<Class<?>, Object> globalInstances = new HashMap<>();
   private File catalogFile;
+  private ComponentEventLog componentEventLog = new ComponentEventLog(null);
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
   public ComponentRegistry(BaseService service, StartupOptions options) {
@@ -145,6 +150,7 @@ public class ComponentRegistry {
             null,
             null,
             ResourcePrivileges.PUBLIC,
+            new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
             new HashMap<>(),
@@ -372,8 +378,19 @@ public class ComponentRegistry {
           cache.getAvailabilityInfo(
               coordinates[0], coordinates[1], coordinates[2], "component", "kar");
       return switch (availability.status()) {
-        case NEEDS_UPDATE_FROM_LOCAL_REPOSITORY, NEEDS_UPDATE_FROM_REMOTE_REPOSITORY ->
-            applyMavenSnapshotUpdate(component, availability.status());
+        case NEEDS_UPDATE_FROM_LOCAL_REPOSITORY, NEEDS_UPDATE_FROM_REMOTE_REPOSITORY -> {
+          recordComponentEvent(
+              component,
+              ComponentHistory.EventType.UPDATE_AVAILABLE,
+              ComponentHistory.Outcome.INFO,
+              "A newer component build is available from the "
+                  + updateSource(availability.status())
+                  + " Maven repository",
+              Map.of(
+                  "source", updateSource(availability.status()),
+                  "latestTimestamp", Long.toString(availability.latestVersionTimestamp())));
+          yield applyMavenSnapshotUpdate(component, availability.status());
+        }
         case UP_TO_DATE ->
             ResourceSet.empty(
                 Notification.info("Component " + component.id() + " is already up to date"));
@@ -410,6 +427,16 @@ public class ComponentRegistry {
                 || availability.status()
                     == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
               updates.add(new MavenSnapshotUpdate(component, availability));
+              recordComponentEvent(
+                  component,
+                  ComponentHistory.EventType.UPDATE_AVAILABLE,
+                  ComponentHistory.Outcome.INFO,
+                  "A newer component build is available from the "
+                      + updateSource(availability.status())
+                      + " Maven repository",
+                  Map.of(
+                      "source", updateSource(availability.status()),
+                      "latestTimestamp", Long.toString(availability.latestVersionTimestamp())));
             } else if (availability.status() == MavenComponentCache.Status.UNKNOWN
                 && reportNoUpdates) {
               ret.getNotifications()
@@ -463,6 +490,15 @@ public class ComponentRegistry {
   private ResourceSet applyMavenSnapshotUpdate(
       Extensions.ComponentDescriptor component, MavenComponentCache.Status status) {
 
+    recordComponentEvent(
+        component,
+        ComponentHistory.EventType.UPDATE_STARTED,
+        ComponentHistory.Outcome.INFO,
+        "Started synchronizing a newer build from the "
+            + updateSource(status)
+            + " Maven repository",
+        Map.of("source", updateSource(status)));
+
     Logging.INSTANCE.info(
         "Attempting update of modified component "
             + component.id()
@@ -485,6 +521,12 @@ public class ComponentRegistry {
         if (component.fileHash() != null && component.fileHash().equals(fileHash)) {
           if (status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
               || status == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
+            recordComponentEvent(
+                component,
+                ComponentHistory.EventType.FAILED,
+                ComponentHistory.Outcome.WARNING,
+                "The Maven source advertised an update but returned the installed artifact",
+                Map.of("source", updateSource(status)));
             return ResourceSet.empty(
                 Notification.warning(
                     "Update was indicated for component "
@@ -495,6 +537,12 @@ public class ComponentRegistry {
               Notification.info("Component " + component.id() + " is already up to date"));
         }
         if (!isCompatibleWithCurrentKlab(file)) {
+          recordComponentEvent(
+              component,
+              ComponentHistory.EventType.FAILED,
+              ComponentHistory.Outcome.WARNING,
+              "Skipped the newer Maven build because it is incompatible with this k.LAB version",
+              Map.of("source", updateSource(status)));
           return ResourceSet.empty(
               Notification.warning(
                   "Skipping update of component "
@@ -514,6 +562,12 @@ public class ComponentRegistry {
               .getSecond()
               .getNotifications()
               .add(Notification.info("Component " + component.id() + " updated successfully"));
+          recordComponentEvent(
+              result.getFirst(),
+              ComponentHistory.EventType.UPDATED,
+              ComponentHistory.Outcome.SUCCESS,
+              "Installed a newer build from the " + updateSource(status) + " Maven repository",
+              Map.of("source", updateSource(status)));
         }
         Logging.INSTANCE.info(
             "Component "
@@ -527,9 +581,22 @@ public class ComponentRegistry {
       }
     } catch (Exception e) {
       Logging.INSTANCE.error("Unable to update outdated component " + component.id(), e);
+      recordComponentEvent(
+          component,
+          ComponentHistory.EventType.FAILED,
+          ComponentHistory.Outcome.FAILURE,
+          "Unable to update the component from Maven: "
+              + Objects.toString(e.getMessage(), e.getClass().getSimpleName()),
+          Map.of("source", updateSource(status)));
       return ResourceSet.empty(
           Notification.error("Unable to update outdated component " + component.id(), e));
     }
+    recordComponentEvent(
+        component,
+        ComponentHistory.EventType.FAILED,
+        ComponentHistory.Outcome.WARNING,
+        "The newer Maven artifact could not be retrieved",
+        Map.of("source", updateSource(status)));
     return ResourceSet.empty(
         Notification.warning(
             "Updated Maven artifact could not be retrieved for component " + component.id()));
@@ -569,6 +636,8 @@ public class ComponentRegistry {
         ServiceConfiguration.INSTANCE.getFileWithTemplate(
             "services/" + service.serviceType().name().toLowerCase() + "/components/catalog.json",
             "[]");
+    this.componentEventLog =
+        new ComponentEventLog(new File(this.catalogFile.getParentFile(), "history.jsonl"));
 
     this.cache =
         new MavenComponentCache(
@@ -584,6 +653,9 @@ public class ComponentRegistry {
 
       for (var adapter : descriptor.adapters()) {
         adapterFinder.put(adapter.getName(), descriptor);
+      }
+      for (var authority : descriptor.authorities()) {
+        authorityFinder.put(authority.urn(), descriptor);
       }
       for (var serv : descriptor.services().keySet()) {
         serviceFinder.put(serv, descriptor);
@@ -627,6 +699,7 @@ public class ComponentRegistry {
     var ret = components.removeMapping(component.id(), component);
 
     removeDescriptorReferences(adapterFinder, component);
+    removeDescriptorReferences(authorityFinder, component);
     removeDescriptorReferences(serviceFinder, component);
     removeDescriptorReferences(annotationFinder, component);
     removeDescriptorReferences(actorFinder, component);
@@ -639,6 +712,7 @@ public class ComponentRegistry {
     removeFunctionImplementations(component.exporters());
     removeFunctionImplementations(component.importers());
     removeComponentAdapters(component);
+    removeComponentAuthorities(component);
 
     return ret;
   }
@@ -684,6 +758,70 @@ public class ComponentRegistry {
           removeAdapterImplementations(adapter);
           adapters.removeMapping(adapterName, adapter);
           adapterDescriptorFinder.removeMapping(adapterName, adapter.getAdapterInfo());
+        }
+      }
+    }
+  }
+
+  /** Return persistent component history, optionally narrowed with an {@code id@version} URN. */
+  public ComponentHistory getComponentHistory(String componentUrn) {
+    if (componentUrn == null || componentUrn.isBlank()) {
+      return null;
+    }
+    var coordinates = Version.splitVersion(componentUrn);
+    return componentEventLog.history(coordinates.getFirst(), coordinates.getSecond());
+  }
+
+  private void recordComponentEvent(
+      Extensions.ComponentDescriptor component,
+      ComponentHistory.EventType type,
+      ComponentHistory.Outcome outcome,
+      String message,
+      Map<String, String> details) {
+    if (component == null) {
+      return;
+    }
+    recordComponentEvent(
+        component.id(),
+        component.version(),
+        component.importType(),
+        component.sourceServiceId(),
+        type,
+        outcome,
+        message,
+        details);
+  }
+
+  private void recordComponentEvent(
+      String componentId,
+      Version version,
+      Extensions.ComponentImportType importType,
+      String sourceServiceId,
+      ComponentHistory.EventType type,
+      ComponentHistory.Outcome outcome,
+      String message,
+      Map<String, String> details) {
+    componentEventLog.append(
+        new ComponentHistory.Event(
+            componentId,
+            version,
+            System.currentTimeMillis(),
+            type,
+            outcome,
+            importType,
+            sourceServiceId,
+            service.serviceId(),
+            service.serviceType(),
+            message,
+            details));
+  }
+
+  private void removeComponentAuthorities(Extensions.ComponentDescriptor component) {
+    for (var authorityUrn : new ArrayList<>(authorities.keySet())) {
+      for (var registration : new ArrayList<>(authorities.get(authorityUrn))) {
+        if (component.id().equals(registration.componentUrn())
+            && component.version().equals(registration.componentVersion())) {
+          authorities.removeMapping(authorityUrn, registration);
         }
       }
     }
@@ -825,19 +963,41 @@ public class ComponentRegistry {
 
   /**
    * Refresh the dependency component providing the requested service when its source service has a
-   * newer installation of the same component. Failures are logged and leave (or restore) the
-   * current component whenever possible so callers can continue resolution transparently.
+   * newer installation of the same component.
    *
    * @return true only when a replacement was installed successfully
    */
   public synchronized boolean refreshDependencyComponentIfAvailable(
       String serviceUrn, Version requiredVersion, Scope scope) {
-    var dependency = selectBestComponent(serviceFinder.get(serviceUrn), requiredVersion);
+    return refreshDependencyComponentIfAvailable(serviceUrn, requiredVersion, scope, serviceFinder)
+        == DependencyRefreshResult.UPDATED;
+  }
+
+  /**
+   * Refresh the dependency component providing a Java actor before the actor descriptor is used.
+   * Actor implementations are library contributions but are indexed separately from service calls,
+   * so they need the same source check through the actor index.
+   */
+  public synchronized boolean refreshDependencyActorComponentIfAvailable(
+      String actorUrn, Version requiredVersion, Scope scope) {
+    return refreshDependencyComponentIfAvailable(actorUrn, requiredVersion, scope, actorFinder)
+        == DependencyRefreshResult.UPDATED;
+  }
+
+  private synchronized DependencyRefreshResult refreshDependencyComponentIfAvailable(
+      String contributionUrn,
+      Version requiredVersion,
+      Scope scope,
+      MultiValuedMap<String, Extensions.ComponentDescriptor> finder) {
+    if (finder == null) {
+      return DependencyRefreshResult.NO_CHANGE;
+    }
+    var dependency = selectBestComponent(finder.get(contributionUrn), requiredVersion);
     if (dependency == null
         || dependency.importType() != Extensions.ComponentImportType.DEPENDENCY
         || dependency.sourceServiceId() == null
         || scope == null) {
-      return false;
+      return DependencyRefreshResult.NO_CHANGE;
     }
     var source =
         scope
@@ -846,7 +1006,7 @@ public class ComponentRegistry {
                 candidate -> Objects.equals(candidate.serviceId(), dependency.sourceServiceId()))
             .orElse(null);
     if (source == null) {
-      return false;
+      return DependencyRefreshResult.NO_CHANGE;
     }
     try {
       var sourceDescriptor =
@@ -856,8 +1016,21 @@ public class ComponentRegistry {
               .findFirst()
               .orElse(null);
       if (!isInstalledDependencyUpdateAvailable(dependency, sourceDescriptor)) {
-        return false;
+        return DependencyRefreshResult.NO_CHANGE;
       }
+
+      recordComponentEvent(
+          dependency,
+          ComponentHistory.EventType.UPDATE_AVAILABLE,
+          ComponentHistory.Outcome.INFO,
+          "The source Resources service advertises a newer build of this dependency",
+          Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+      recordComponentEvent(
+          dependency,
+          ComponentHistory.EventType.UPDATE_STARTED,
+          ComponentHistory.Outcome.INFO,
+          "Started refreshing the dependency from its source Resources service",
+          Map.of());
 
       Logging.INSTANCE.info(
           "Refreshing dependency component "
@@ -874,7 +1047,14 @@ public class ComponentRegistry {
                 + dependency.version()
                 + " refreshed successfully from service "
                 + dependency.sourceServiceId());
-        return true;
+        var refreshed = getExactComponent(dependency.id(), dependency.version());
+        recordComponentEvent(
+            refreshed == null ? dependency : refreshed,
+            ComponentHistory.EventType.UPDATED,
+            ComponentHistory.Outcome.SUCCESS,
+            "Installed the newer dependency build from its source Resources service",
+            Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+        return DependencyRefreshResult.UPDATED;
       }
       Logging.INSTANCE.warn(
           "Could not refresh dependency component "
@@ -883,19 +1063,39 @@ public class ComponentRegistry {
               + dependency.version()
               + " from service "
               + dependency.sourceServiceId()
-              + "; continuing with the installed component");
+              + "; the stale component will not be used by a scope-aware lookup");
+      recordComponentEvent(
+          dependency,
+          ComponentHistory.EventType.FAILED,
+          ComponentHistory.Outcome.FAILURE,
+          "The newer dependency build could not be installed; the stale build was rejected",
+          Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+      return DependencyRefreshResult.FAILED;
     } catch (Throwable t) {
       Logging.INSTANCE.error(
-          "Unable to refresh dependency component "
+          "Unable to check dependency component "
               + dependency.id()
               + " version "
               + dependency.version()
-              + " from service "
+              + " at service "
               + dependency.sourceServiceId()
               + "; continuing with the installed component",
           t);
+      recordComponentEvent(
+          dependency,
+          ComponentHistory.EventType.FAILED,
+          ComponentHistory.Outcome.WARNING,
+          "Unable to inspect or retrieve the dependency source: "
+              + Objects.toString(t.getMessage(), t.getClass().getSimpleName()),
+          Map.of());
+      return DependencyRefreshResult.NO_CHANGE;
     }
-    return false;
+  }
+
+  private enum DependencyRefreshResult {
+    NO_CHANGE,
+    UPDATED,
+    FAILED
   }
 
   private boolean replaceDependencyComponent(
@@ -1035,6 +1235,12 @@ public class ComponentRegistry {
               + " version "
               + dependency.version()
               + " for update at the next service restart");
+      recordComponentEvent(
+          dependency,
+          ComponentHistory.EventType.UPDATE_DEFERRED,
+          ComponentHistory.Outcome.PENDING,
+          "A newer dependency build was staged for installation at the next service restart",
+          Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
     } catch (Throwable schedulingFailure) {
       Logging.INSTANCE.error(
           "Unable to schedule dependency component "
@@ -1043,6 +1249,14 @@ public class ComponentRegistry {
               + dependency.version()
               + " for update at restart",
           schedulingFailure);
+      recordComponentEvent(
+          dependency,
+          ComponentHistory.EventType.FAILED,
+          ComponentHistory.Outcome.FAILURE,
+          "Unable to stage the newer dependency build for restart: "
+              + Objects.toString(
+                  schedulingFailure.getMessage(), schedulingFailure.getClass().getSimpleName()),
+          Map.of());
     }
   }
 
@@ -1062,6 +1276,12 @@ public class ComponentRegistry {
     }
     removeComponentRegistration(dependency);
     saveConfiguration();
+    recordComponentEvent(
+        dependency,
+        ComponentHistory.EventType.UNLOADED,
+        ComponentHistory.Outcome.INFO,
+        "Unloaded the dependency to replace it with a newer build",
+        Map.of());
     return true;
   }
 
@@ -1145,6 +1365,15 @@ public class ComponentRegistry {
             + update.componentId()
             + " version "
             + update.version());
+    var component = getExactComponent(update.componentId(), update.version());
+    if (component != null) {
+      recordComponentEvent(
+          component,
+          ComponentHistory.EventType.UPDATED,
+          ComponentHistory.Outcome.SUCCESS,
+          "Installed the staged dependency build during service startup",
+          Map.of("sourceTimestamp", Long.toString(update.sourceTimestamp())));
+    }
   }
 
   private void restoreDependencyComponent(
@@ -1164,6 +1393,12 @@ public class ComponentRegistry {
                 + dependency.id()
                 + " version "
                 + dependency.version());
+        recordComponentEvent(
+            dependency,
+            ComponentHistory.EventType.FAILED,
+            ComponentHistory.Outcome.FAILURE,
+            "Rollback failed after an unsuccessful dependency refresh",
+            Map.of());
       } else {
         componentManager.startPlugins();
         Logging.INSTANCE.info(
@@ -1172,6 +1407,12 @@ public class ComponentRegistry {
                 + " version "
                 + dependency.version()
                 + " after an unsuccessful refresh");
+        recordComponentEvent(
+            restored.getFirst(),
+            ComponentHistory.EventType.ROLLED_BACK,
+            ComponentHistory.Outcome.WARNING,
+            "Restored the previous dependency build after an unsuccessful refresh",
+            Map.of());
       }
     } catch (Throwable rollbackFailure) {
       Logging.INSTANCE.error(
@@ -1180,6 +1421,14 @@ public class ComponentRegistry {
               + " version "
               + dependency.version(),
           rollbackFailure);
+      recordComponentEvent(
+          dependency,
+          ComponentHistory.EventType.FAILED,
+          ComponentHistory.Outcome.FAILURE,
+          "Rollback failed after an unsuccessful dependency refresh: "
+              + Objects.toString(
+                  rollbackFailure.getMessage(), rollbackFailure.getClass().getSimpleName()),
+          Map.of());
     }
   }
 
@@ -1201,7 +1450,8 @@ public class ComponentRegistry {
   public ServiceImplementation implementation(Extensions.FunctionDescriptor descriptor) {
     var implementation = functionImplementations.get(descriptor);
     return implementation == null
-        ? serviceImplementations.get(descriptor.serviceInfo.getName()) : implementation;
+        ? serviceImplementations.get(descriptor.serviceInfo.getName())
+        : implementation;
   }
 
   /**
@@ -1340,6 +1590,27 @@ public class ComponentRegistry {
   }
 
   /**
+   * Resolve a service-call contribution after checking whether an installed dependency has a newer
+   * same-version build at its source Resources service.
+   */
+  public List<Extensions.FunctionDescriptor> getFunctionDescriptor(ServiceCall call, Scope scope) {
+    return getFunctionDescriptor(call.getUrn(), call.getRequiredVersion(), scope);
+  }
+
+  /** Scope-aware form of {@link #getFunctionDescriptor(String, Version)}. */
+  public List<Extensions.FunctionDescriptor> getFunctionDescriptor(
+      String urn, Version version, Scope scope) {
+    var refresh = refreshDependencyComponentIfAvailable(urn, version, scope, serviceFinder);
+    if (refresh == DependencyRefreshResult.FAILED) {
+      throw new KlabResourceAccessException(
+          "A newer build of the component providing "
+              + urn
+              + " is available but could not be installed");
+    }
+    return getFunctionDescriptor(urn, version);
+  }
+
+  /**
    * Return the function descriptor that corresponds to the passed call, considering any version
    * requirements and arguments. If no version requirements are present, return the highest version
    * among the compatible ones.
@@ -1389,6 +1660,22 @@ public class ComponentRegistry {
   }
 
   /**
+   * Resolve a Java actor contribution after checking whether an installed dependency has a newer
+   * same-version build at its source Resources service.
+   */
+  public List<Extensions.ActorDescriptor> getActorDescriptors(
+      String urn, Version version, Scope scope) {
+    var refresh = refreshDependencyComponentIfAvailable(urn, version, scope, actorFinder);
+    if (refresh == DependencyRefreshResult.FAILED) {
+      throw new KlabResourceAccessException(
+          "A newer build of the component providing Java actor "
+              + urn
+              + " is available but could not be installed");
+    }
+    return getActorDescriptors(urn, version);
+  }
+
+  /**
    * Call with a new plugin file (located anywhere) and optional Maven coordinates to build the
    * descriptors, entries in the catalog, and return a {@link KlabComponent} that can be activated,
    * or null.
@@ -1435,6 +1722,7 @@ public class ComponentRegistry {
     var libraries = new ArrayList<Extensions.LibraryDescriptor>();
     var actors = new ArrayList<Extensions.LibraryDescriptor>();
     var adapters = new ArrayList<AdapterDescriptor>();
+    var authorityDescriptors = new ArrayList<Extensions.AuthorityDescriptor>();
     var license = component.getWrapper().getDescriptor().getLicense();
     var description = component.getWrapper().getDescriptor().getPluginDescription();
     var timestamp = sourceTimestamp > 0 ? sourceTimestamp : pluginFile.lastModified();
@@ -1474,7 +1762,15 @@ public class ComponentRegistry {
             ResourceAdapter.class,
             (annotation, cls) ->
                 registerAdapter(
-                    (ResourceAdapter) annotation, cls, componentName, componentVersion, adapters)));
+                    (ResourceAdapter) annotation, cls, componentName, componentVersion, adapters),
+            Authority.class,
+            (annotation, cls) ->
+                registerAuthority(
+                    (Authority) annotation,
+                    cls,
+                    componentName,
+                    componentVersion,
+                    authorityDescriptors)));
 
     var componentDescriptor =
         new Extensions.ComponentDescriptor(
@@ -1487,6 +1783,7 @@ public class ComponentRegistry {
             permissions,
             libraries,
             adapters,
+            authorityDescriptors,
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
@@ -1503,6 +1800,10 @@ public class ComponentRegistry {
                     || importType == Extensions.ComponentImportType.DEPENDENCY
                 ? timestamp
                 : 0L);
+
+    for (var authority : componentDescriptor.authorities()) {
+      authorityFinder.put(authority.urn(), componentDescriptor);
+    }
 
     // update catalog
     for (var library : componentDescriptor.libraries()) {
@@ -1553,6 +1854,18 @@ public class ComponentRegistry {
     this.components.put(componentName, componentDescriptor);
 
     saveConfiguration();
+
+    recordComponentEvent(
+        componentDescriptor,
+        ComponentHistory.EventType.REGISTERED,
+        ComponentHistory.Outcome.SUCCESS,
+        "Registered component contributions in the " + service.serviceType() + " service",
+        Map.of(
+            "libraries", Integer.toString(componentDescriptor.libraries().size()),
+            "adapters", Integer.toString(componentDescriptor.adapters().size()),
+            "authorities", Integer.toString(componentDescriptor.authorities().size()),
+            "serviceCalls", Integer.toString(componentDescriptor.services().size()),
+            "actors", Integer.toString(componentDescriptor.actors().size())));
 
     return componentDescriptor;
   }
@@ -2142,6 +2455,86 @@ public class ComponentRegistry {
     }
   }
 
+  private void registerAuthority(
+      Authority annotation,
+      Class<?> cls,
+      String componentUrn,
+      Version componentVersion,
+      List<Extensions.AuthorityDescriptor> authorityDescriptors) {
+
+    if (annotation.urn().isBlank()) {
+      Logging.INSTANCE.error("Ignoring @Authority with an empty URN on " + cls.getCanonicalName());
+      return;
+    }
+    if (!org.integratedmodelling.klab.api.knowledge.Authority.class.isAssignableFrom(cls)) {
+      Logging.INSTANCE.error(
+          "Ignoring @Authority "
+              + annotation.urn()
+              + ": "
+              + cls.getCanonicalName()
+              + " does not implement the Authority interface");
+      return;
+    }
+    try {
+      var constructor = cls.getDeclaredConstructor();
+      authorityDescriptors.add(
+          new Extensions.AuthorityDescriptor(
+              annotation.urn(), annotation.embeddable(), List.of(annotation.subAuthorities())));
+
+      // Resources advertise and deliver authority components, but only Reasoners host them.
+      if (service.serviceType() == KlabService.Type.REASONER) {
+        var implementation =
+            (org.integratedmodelling.klab.api.knowledge.Authority) constructor.newInstance();
+        if (!annotation.urn().equals(implementation.getURN())) {
+          authorityDescriptors.removeLast();
+          Logging.INSTANCE.error(
+              "Ignoring @Authority "
+                  + annotation.urn()
+                  + ": implementation reports URN "
+                  + implementation.getURN());
+          return;
+        }
+        authorities.put(
+            annotation.urn(),
+            new AuthorityRegistration(implementation, componentUrn, componentVersion));
+      }
+    } catch (NoSuchMethodException e) {
+      Logging.INSTANCE.error(
+          "Ignoring @Authority " + annotation.urn() + ": a no-argument constructor is required");
+    } catch (ReflectiveOperationException | RuntimeException e) {
+      Logging.INSTANCE.error("Cannot initialize authority " + annotation.urn(), e);
+    }
+  }
+
+  /** Return the best locally hosted implementation of an authority, if this is a Reasoner. */
+  public org.integratedmodelling.klab.api.knowledge.Authority getAuthority(
+      String urn, Version version, Scope scope) {
+    AuthorityRegistration selected = null;
+    for (var candidate : authorities.get(urn)) {
+      if ((version == null || candidate.componentVersion().compatible(version))
+          && (selected == null
+              || candidate.componentVersion().greater(selected.componentVersion()))) {
+        selected = candidate;
+      }
+    }
+    return selected == null ? null : selected.implementation();
+  }
+
+  /**
+   * Find the component advertising an embeddable authority. Non-embeddable authorities are only
+   * discoverable as capabilities of Reasoners explicitly configured to host their component.
+   */
+  public Extensions.ComponentDescriptor resolveAuthorityComponent(String urn, Version version) {
+    var component = selectBestComponent(authorityFinder.get(urn), version);
+    if (component == null) {
+      return null;
+    }
+    return component.authorities().stream()
+            .anyMatch(authority -> authority.urn().equals(urn) && authority.embeddable())
+        ? component
+        : null;
+  }
+
   /**
    * Retrieve a component in a given version or the latest. TODO use this in other methods that use
    * the logic.
@@ -2163,6 +2556,14 @@ public class ComponentRegistry {
       }
       ret |= removeComponentRegistration(component);
       saveConfiguration();
+      if (ret) {
+        recordComponentEvent(
+            component,
+            ComponentHistory.EventType.UNLOADED,
+            ComponentHistory.Outcome.SUCCESS,
+            "Unloaded the component from the service registry",
+            Map.of());
+      }
       return ret;
     }
     return false;
@@ -2176,22 +2577,36 @@ public class ComponentRegistry {
    */
   public synchronized boolean loadComponents(ResourceSet resourceSet, Scope scope) {
 
-    var missingComponents =
+    var requestedComponents =
         resourceSet.getResults().stream()
             .filter(resource -> resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT)
-            .filter(
-                resource -> {
-                  var split = Version.splitVersion(resource.getResourceUrn());
-                  var components = this.components.get(split.getFirst());
-                  if (components == null) {
-                    return true;
-                  }
-                  return components.stream()
-                      .noneMatch(component -> component.version().compatible(split.getSecond()));
-                })
             .toList();
 
-    for (var result : missingComponents) {
+    for (var result : requestedComponents) {
+      var coordinates = Version.splitVersion(result.getResourceUrn());
+      var installed =
+          selectBestComponent(components.get(coordinates.getFirst()), coordinates.getSecond());
+
+      if (installed != null) {
+        if (requiresDependencyRefresh(installed, result)
+            && !refreshDependencyComponent(installed, result, scope)) {
+          recordComponentEvent(
+              installed,
+              ComponentHistory.EventType.FAILED,
+              ComponentHistory.Outcome.FAILURE,
+              "The dependency build advertised by Resources could not be installed",
+              Map.of(
+                  "sourceTimestamp", Long.toString(result.getTimestamp()),
+                  "sourceServiceId", Objects.toString(result.getServiceId(), "")));
+          scope.error(
+              "Component "
+                  + installed.id()
+                  + " is older than the copy advertised by Resources service "
+                  + result.getServiceId());
+          return false;
+        }
+        continue;
+      }
 
       // load from service
       var service =
@@ -2201,6 +2616,15 @@ public class ComponentRegistry {
               .orElse(null);
 
       if (service == null) {
+        recordComponentEvent(
+            coordinates.getFirst(),
+            coordinates.getSecond(),
+            Extensions.ComponentImportType.DEPENDENCY,
+            result.getServiceId(),
+            ComponentHistory.EventType.FAILED,
+            ComponentHistory.Outcome.FAILURE,
+            "The Resources service advertising this dependency is unavailable",
+            Map.of());
         return false;
       }
 
@@ -2235,15 +2659,27 @@ public class ComponentRegistry {
         scope.error(e);
         return false;
       }
-      var installed = installComponent(
-          plugin,
-          null,
-          Extensions.ComponentImportType.DEPENDENCY,
-          result.getServiceId(),
-          result.getTimestamp());
-      if (installed == null || installed.getFirst() == null) {
-        scope.error("Failed to install component " + result.getResourceUrn()
-            + (installed == null ? "" : ": " + installed.getSecond().getNotifications()));
+      var installation =
+          installComponent(
+              plugin,
+              null,
+              Extensions.ComponentImportType.DEPENDENCY,
+              result.getServiceId(),
+              result.getTimestamp());
+      if (installation == null || installation.getFirst() == null) {
+        recordComponentEvent(
+            coordinates.getFirst(),
+            coordinates.getSecond(),
+            Extensions.ComponentImportType.DEPENDENCY,
+            result.getServiceId(),
+            ComponentHistory.EventType.FAILED,
+            ComponentHistory.Outcome.FAILURE,
+            "Failed to install the component supplied by Resources",
+            Map.of("sourceTimestamp", Long.toString(result.getTimestamp())));
+        scope.error(
+            "Failed to install component "
+                + result.getResourceUrn()
+                + (installation == null ? "" : ": " + installation.getSecond().getNotifications()));
         return false;
       }
     }
@@ -2252,6 +2688,68 @@ public class ComponentRegistry {
     componentManager.startPlugins();
 
     return true;
+  }
+
+  static boolean requiresDependencyRefresh(
+      Extensions.ComponentDescriptor installed, ResourceSet.Resource requested) {
+    return installed.importType() == Extensions.ComponentImportType.DEPENDENCY
+        && Objects.equals(installed.sourceServiceId(), requested.getServiceId())
+        && requested.getTimestamp() > installed.timestamp();
+  }
+
+  private boolean refreshDependencyComponent(
+      Extensions.ComponentDescriptor installed, ResourceSet.Resource requested, Scope scope) {
+    var source =
+        scope
+            .findService(
+                ResourcesService.class,
+                candidate -> Objects.equals(candidate.serviceId(), requested.getServiceId()))
+            .orElse(null);
+    if (source == null) {
+      return false;
+    }
+    try {
+      var sourceDescriptor =
+          source.capabilities(scope).getComponents().stream()
+              .filter(candidate -> Objects.equals(candidate.id(), installed.id()))
+              .filter(candidate -> Objects.equals(candidate.version(), installed.version()))
+              .findFirst()
+              .orElse(null);
+      if (sourceDescriptor == null) {
+        return false;
+      }
+      recordComponentEvent(
+          installed,
+          ComponentHistory.EventType.UPDATE_AVAILABLE,
+          ComponentHistory.Outcome.INFO,
+          "Resources requested a newer build of this dependency",
+          Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+      recordComponentEvent(
+          installed,
+          ComponentHistory.EventType.UPDATE_STARTED,
+          ComponentHistory.Outcome.INFO,
+          "Started refreshing the dependency required by the incoming resource set",
+          Map.of());
+      var replaced = replaceDependencyComponent(installed, sourceDescriptor, source, scope);
+      if (replaced) {
+        var refreshed = getExactComponent(installed.id(), installed.version());
+        recordComponentEvent(
+            refreshed == null ? installed : refreshed,
+            ComponentHistory.EventType.UPDATED,
+            ComponentHistory.Outcome.SUCCESS,
+            "Installed the newer dependency build required by the incoming resource set",
+            Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+      }
+      return replaced;
+    } catch (Throwable t) {
+      Logging.INSTANCE.error(
+          "Unable to refresh required component "
+              + installed.id()
+              + " from service "
+              + requested.getServiceId(),
+          t);
+      return false;
+    }
   }
 
   public void scanPackage(
@@ -2528,6 +3026,7 @@ public class ComponentRegistry {
 
     var libraries = new ArrayList<Extensions.LibraryDescriptor>();
     var adapters = new ArrayList<AdapterDescriptor>();
+    var authorityDescriptors = new ArrayList<Extensions.AuthorityDescriptor>();
     var actors = new ArrayList<Extensions.LibraryDescriptor>();
 
     scanPackage(
@@ -2544,10 +3043,22 @@ public class ComponentRegistry {
                     cls,
                     Extensions.LOCAL_SERVICE_COMPONENT,
                     Version.CURRENT_VERSION,
-                    adapters)));
+                    adapters),
+            Authority.class,
+            (annotation, cls) ->
+                registerAuthority(
+                    (Authority) annotation,
+                    cls,
+                    Extensions.LOCAL_SERVICE_COMPONENT,
+                    Version.CURRENT_VERSION,
+                    authorityDescriptors)));
 
     localComponentDescriptor.libraries().addAll(libraries);
     localComponentDescriptor.adapters().addAll(adapters);
+    localComponentDescriptor.authorities().addAll(authorityDescriptors);
+    for (var authority : authorityDescriptors) {
+      authorityFinder.put(authority.urn(), localComponentDescriptor);
+    }
 
     // update catalog
     for (var library : localComponentDescriptor.libraries()) {
@@ -2592,6 +3103,11 @@ public class ComponentRegistry {
 
     this.components.put(Extensions.LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
   }
+
+  private record AuthorityRegistration(
+      org.integratedmodelling.klab.api.knowledge.Authority implementation,
+      String componentUrn,
+      Version componentVersion) {}
 
   /**
    * Use this call for the "master" service that installs components based on configuration.
@@ -3157,26 +3673,27 @@ public class ComponentRegistry {
                 + "methods");
       }
 
-      var descriptor = new AdapterDescriptor(
-          name,
-          version,
-          capabilities.getServiceId(),
-          capabilities.getType(),
-          universal,
-          threadSafe,
-          hasContextualizer(),
-          hasSanitizer(),
-          hasInspector(),
-          hasPublisher(),
-          isEmbeddable(),
-          isBatchable(),
-          fillCurve,
-          splits,
-          minSplitSize,
-          validations,
-          importSchemata,
-          exportSchemata,
-          this.parameters);
+      var descriptor =
+          new AdapterDescriptor(
+              name,
+              version,
+              capabilities.getServiceId(),
+              capabilities.getType(),
+              universal,
+              threadSafe,
+              hasContextualizer(),
+              hasSanitizer(),
+              hasInspector(),
+              hasPublisher(),
+              isEmbeddable(),
+              isBatchable(),
+              fillCurve,
+              splits,
+              minSplitSize,
+              validations,
+              importSchemata,
+              exportSchemata,
+              this.parameters);
       descriptor.setMaxSize(maxShardSize);
       return descriptor;
     }

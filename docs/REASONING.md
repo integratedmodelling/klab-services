@@ -13,6 +13,7 @@ and document validation. For language syntax see [observable expressions](OBSERV
 ## Contents
 
 - [Semantic API and conventions](#implementation-surfaces)
+- [Authority-backed identities](#authority-backed-identities)
 - [Assisted observable composition](#assisted-observable-composition)
 - [Semantic document validation](#semantic-document-validation)
 - [Administrative operations](#administrative-operations)
@@ -94,6 +95,32 @@ return `owl:Nothing` semantics rather than Java `null`.
 
 The reasoner should not be used for semantic decisions when no worldview is loaded or when
 `isConsistent()` is false.
+
+## Authority-Backed Identities
+
+Authorities let the Reasoner use selected concepts from an external terminology without importing
+the complete terminology. A worldview declares an identity concept with
+`requires authority NAME {...}`. The declaration's `urn` configuration entry identifies the
+provider, while `NAME` is a namespace local to that worldview. Two declarations using the same
+provider URN remain independent configurations and must not share binding state merely because
+their component implementation is the same.
+
+The component layer now discovers authority implementations, advertises their descriptors through
+Resources, hosts them only in Reasoners, and can install embeddable providers on demand. The
+worldview language adapter also retains the local authority name and its parameter map. Runtime
+validation currently reports that the requirement is retained but not enforced: knowledge loading
+does not yet call `Authority.setup()`, create worldview-scoped bindings, or materialize identities.
+
+The completed reasoning path will resolve `NAME:<identifier>` lazily, ingest the returned identity
+and its parent chain as normal concepts, and preserve authority provenance. Asserted parent links
+can then participate in ordinary OWL hierarchy operations. When two identities require semantics
+defined by the external classification, distance and subsumption must delegate to the configured
+authority using the same directional non-negative compatibility contract described above. Quoted
+forms such as `NAME:"<provider expression>"` are reserved for provider-defined multidimensional
+expressions and still require grammar and runtime support.
+
+See [Authorities](AUTHORITIES.md) for the provider API, discovery and synchronization flow,
+worldview binding invariants, current implementation status, and development plan.
 
 ## Resolution and semantic construction
 
@@ -669,6 +696,9 @@ they must not silently return `false`, `0`, an empty collection, or `null`.
 
 ## Remaining implementation gaps
 
+- Worldview-scoped authority activation, identity materialization, quoted provider expressions,
+  authority-aware semantic distance, and the remote authority protocol; see
+  [Authorities](AUTHORITIES.md#development-plan).
 - Generic substitution capture for abstract semantic patterns.
 - Inference-based concretization from a collection of concrete concepts.
 - Contextual role inference (`rolesFor`), implied role selection (`impliedRole`) and

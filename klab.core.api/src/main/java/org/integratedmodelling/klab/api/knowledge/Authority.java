@@ -1,8 +1,9 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.List;
-import java.util.Map;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
@@ -12,13 +13,15 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * Authorities are built from components and are unique to the reasoner. The @Authority annotation
  * tags classes and methods so that an Authority object can be built by the ComponentRegistry. When
  * an authority is referenced, the Reasoner looks up a service in the scope that provides it;
- * failing that, it looks for a component that provides it and installs it.
+ * failing that, it looks for a component that provides it and installs it. THe worldview must
+ * register the authority ID it wishes by asking for a Configuration using the worldview-provided
+ * root concepts tagged with <code>requires authority NAME { ....configuration...}</code>.
  */
 public interface Authority {
 
   /**
-   * Each authority can have one or more configurations, which specify the "sub-authorities" and
-   * their parameters. The configuration is stored as JSON and can be changed through the API.
+   * Each authority must be configured to provide the bridge to the reasoner. The resolution API is
+   * invoked on the URL returned in configuration.
    */
   interface Configuration {
 
@@ -31,6 +34,13 @@ public interface Authority {
     String getWorldview();
 
     /**
+     * The URL is the endpoint for the resolution API and CRUD operations on terminology.
+     *
+     * @return
+     */
+    URL getResolutionEndpoint();
+
+    /**
      * Entry points are configurable parameters for the configuration of the authority in the
      * worldview. The worldview is connected to the authority and must specify all the mandatory
      * entry points when the link is declared (in a `defines authority` statement).
@@ -38,6 +48,23 @@ public interface Authority {
      * @return
      */
     List<ServiceInfo.Argument> getEntryPoints();
+
+    /**
+     * These may come from the configuration and if any error notification appears, the
+     * configuration should not be used.
+     *
+     * @return
+     */
+    List<Notification> getNotifications();
+
+    /**
+     * A list of namespaces that the authority provides. If not empty, the namespaces can be used
+     * like normal namespaces for concepts aliases. The list may be empty, established directly by
+     * the authority, or negotiated through configuration.
+     *
+     * @return
+     */
+    List<String> getNamespaces();
 
     /**
      * @return
@@ -192,11 +219,13 @@ public interface Authority {
   }
 
   /**
-   * Unique name of this authority.
+   * Unique URN of this authority. The urn is resolved like that of any component, agent or other
+   * plug-in asset; it must be referenced when asking for a configuration. The name used as
+   * namespace for the authority is chosen in the worldview where the configuration is registered.
    *
    * @return
    */
-  String getName();
+  String getURN();
 
   /**
    * Create the concept corresponding to the identity. It must be an identity semantically, and may
@@ -264,7 +293,8 @@ public interface Authority {
    * reset actions.
    *
    * @param options a map of options to specify actions.
-   * @return true if setup was successful. Returning false should invalidate the authority.
+   * @return the configured authority if setup was successful. Notifications must be checked in the
+   *     returned configuration; if any error notification appears, the request has failed..
    */
-  boolean setup(Map<String, String> options);
+  Configuration setup(Parameters<String> options);
 }

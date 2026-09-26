@@ -28,12 +28,15 @@ class ExtensionsTest {
             null,
             null,
             null,
+            null,
             0L,
             null,
             null,
             0L);
 
     assertNotNull(descriptor.actors());
+    assertNotNull(descriptor.authorities());
+    assertTrue(descriptor.authorities().isEmpty());
     assertTrue(descriptor.actors().isEmpty());
     assertEquals(Extensions.ComponentImportType.FILE, descriptor.importType());
     assertEquals(Extensions.ComponentUpdateStatus.UNKNOWN, descriptor.updateStatus());
@@ -65,6 +68,7 @@ class ExtensionsTest {
         null,
         null,
         mavenCoordinates,
+        null,
         null,
         null,
         null,

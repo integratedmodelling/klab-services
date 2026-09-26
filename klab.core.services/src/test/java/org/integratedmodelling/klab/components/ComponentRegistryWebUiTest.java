@@ -114,6 +114,7 @@ class ComponentRegistryWebUiTest {
         null,
         null,
         null,
+        null,
         "resources-service",
         1L,
         Extensions.ComponentImportType.FILE,

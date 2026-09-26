@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
+import org.integratedmodelling.klab.api.services.reasoner.Authority;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /** Holder of descriptive records for extensions of all kinds. */
@@ -69,6 +70,22 @@ public interface Extensions {
   }
 
   /**
+   * Describes an authority contributed by a component. Authority implementations are hosted by a
+   * Reasoner, while Resources services use this descriptor to advertise and deliver the containing
+   * component.
+   *
+   * @param urn the authority URN declared in {@link Authority#urn()}
+   * @param embeddable whether a Reasoner may install the containing component on demand
+   * @param subAuthorities optional sub-authorities supported by the implementation
+   */
+  record AuthorityDescriptor(String urn, boolean embeddable, List<String> subAuthorities) {
+
+    public AuthorityDescriptor {
+      subAuthorities = subAuthorities == null ? new ArrayList<>() : subAuthorities;
+    }
+  }
+
+  /**
    * Describes a component which may bring with itself libraries and adapters with their content.
    * The usage rights are hosted within the rights system and are not part of the descriptor; the
    * rights in the manifest are used to initialize the component's rights in the hosting service.
@@ -84,6 +101,7 @@ public interface Extensions {
    *     Maven, consisting of groupId:artifactId:version
    * @param libraries descriptors for all {@link Library}-annotated classes in the component.
    * @param adapters descriptors for all {@link ResourceAdapter}-annotated classes in the component
+   * @param authorities descriptors for all {@link Authority}-annotated classes in the component
    * @param services descriptors for all {@link KlabService}-annotated methods and classes,
    *     including those hosted within libraries.
    * @param annotations descriptor for all special annotations and their handler methods, including
@@ -106,6 +124,7 @@ public interface Extensions {
       ResourcePrivileges usageRights,
       List<LibraryDescriptor> libraries,
       List<AdapterDescriptor> adapters,
+      List<AuthorityDescriptor> authorities,
       // FIXME these must be able to list multiple descriptors per URN, selected based on parameter
       //  types
       Map<String, List<FunctionDescriptor>> services,
@@ -123,6 +142,7 @@ public interface Extensions {
     public ComponentDescriptor {
       libraries = libraries == null ? new ArrayList<>() : libraries;
       adapters = adapters == null ? new ArrayList<>() : adapters;
+      authorities = authorities == null ? new ArrayList<>() : authorities;
       services = services == null ? new HashMap<>() : services;
       annotations = annotations == null ? new HashMap<>() : annotations;
       actors = actors == null ? new HashMap<>() : actors;
@@ -175,6 +195,7 @@ public interface Extensions {
           usageRights,
           libraries,
           adapters,
+          authorities,
           services,
           annotations,
           actors,
@@ -211,6 +232,8 @@ public interface Extensions {
               + "services, "
               + adapters.size()
               + " adapters, "
+              + authorities.size()
+              + " authorities, "
               + actors.size()
               + " actors, "
               + annotations.size()

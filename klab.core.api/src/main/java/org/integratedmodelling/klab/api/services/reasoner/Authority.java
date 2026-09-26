@@ -26,11 +26,21 @@ import java.lang.annotation.*;
 public @interface Authority {
 
   /**
-   * Mandatory name of the authority.
+   * Mandatory URN of the authority.
    *
    * @return
    */
-  String name();
+  String urn();
+
+  /**
+   * If this is true, the authority's component can be installed into a Reasoner on demand. If
+   * false, the authority is only available on Reasoners where its component was explicitly
+   * configured. Resources services still advertise and deliver both kinds of authority.
+   *
+   * @return
+   */
+  boolean embeddable() default false;
+
 
   /**
    * Optional names of sub-authorities that this authority provides.

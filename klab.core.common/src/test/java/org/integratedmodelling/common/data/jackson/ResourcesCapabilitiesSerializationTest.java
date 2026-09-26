@@ -44,6 +44,7 @@ class ResourcesCapabilitiesSerializationTest {
             null,
             List.of(library),
             null,
+            List.of(new Extensions.AuthorityDescriptor("test.authority", true, List.of("SUB"))),
             null,
             null,
             null,
@@ -72,5 +73,7 @@ class ResourcesCapabilitiesSerializationTest {
             .getFirst()
             .getFirst()
             .getName());
+    assertEquals(
+        "test.authority", roundTrip.getComponents().getFirst().authorities().getFirst().urn());
   }
 }

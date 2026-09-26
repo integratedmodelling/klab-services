@@ -91,6 +91,8 @@ public enum Setting {
               + File.separator
               + "graphdb"),
       true),
+  UNDOCK_INSPECTOR(
+      Page.GENERAL, "Show the inspector view in undocked state by default", Boolean.class, false),
   CERTIFICATE_FILE(
       Page.GENERAL,
       "The certificate file to use to connect to the k.LAB network",

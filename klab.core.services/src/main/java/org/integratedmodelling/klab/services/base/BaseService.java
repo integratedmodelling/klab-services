@@ -21,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -62,6 +63,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
+import org.integratedmodelling.klab.api.services.runtime.extension.ComponentHistory;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -299,6 +301,21 @@ public abstract class BaseService implements KlabService {
     if (ServiceStatus.class.isAssignableFrom(infoClass) && identifiesThisService(urn)) {
       return infoClass.cast(status());
     }
+    if (ComponentHistory.class.isAssignableFrom(infoClass)
+        && objectClass == KlabAsset.KnowledgeClass.COMPONENT
+        && getComponentRegistry() != null) {
+      var coordinates = Version.splitVersion(urn);
+      var visible =
+          getComponentRegistry().getComponents(scope).stream()
+              .anyMatch(
+                  component ->
+                      Objects.equals(component.id(), coordinates.getFirst())
+                          && (Version.isAny(coordinates.getSecond())
+                              || Objects.equals(component.version(), coordinates.getSecond())));
+      return visible
+          ? infoClass.cast(getComponentRegistry().getComponentHistory(urn))
+          : null;
+    }
 
     var object =
         commonInformationObjects(objectClass, scope).stream()
@@ -367,6 +384,8 @@ public abstract class BaseService implements KlabService {
         || infoClass == BufferedImage.class
         || DomainObject.class.isAssignableFrom(infoClass)
         || AdapterDescriptor.class.isAssignableFrom(infoClass)
+        || ComponentHistory.class.isAssignableFrom(infoClass)
+        || Extensions.AuthorityDescriptor.class.isAssignableFrom(infoClass)
         || Extensions.ComponentDescriptor.class.isAssignableFrom(infoClass)
         || Extensions.FunctionDescriptor.class.isAssignableFrom(infoClass)
         || ServiceCapabilities.class.isAssignableFrom(infoClass)
@@ -381,7 +400,10 @@ public abstract class BaseService implements KlabService {
       case COMPONENT -> List.copyOf(getComponentRegistry().getComponents(scope));
       case INFORMATION ->
           getComponentRegistry().getComponents(scope).stream()
-              .flatMap(component -> component.adapters().stream())
+              .flatMap(
+                  component ->
+                      Stream.concat(
+                          component.adapters().stream(), component.authorities().stream()))
               .distinct()
               .toList();
       case SERVICE_IMPLEMENTATION ->
@@ -405,6 +427,7 @@ public abstract class BaseService implements KlabService {
     return switch (object) {
       case Extensions.ComponentDescriptor component -> component.id();
       case AdapterDescriptor adapter -> adapter.getName();
+      case Extensions.AuthorityDescriptor authority -> authority.urn();
       case Extensions.FunctionDescriptor function -> function.serviceInfo.getName();
       case ServiceCapabilities ignored -> serviceId();
       case ServiceStatus ignored -> serviceId();

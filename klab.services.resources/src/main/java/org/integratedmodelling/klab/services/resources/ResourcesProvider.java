@@ -544,7 +544,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   public ResourceSet resolveResourceAdapter(String urn, Scope scope) {
     var version = Version.splitVersion(urn);
-    var adapter = getComponentRegistry().getAdapter(urn, version.getSecond(), scope);
+    var adapter = getComponentRegistry().getAdapter(version.getFirst(), version.getSecond(), scope);
     if (adapter == null) {
       return ResourceSet.empty(Notification.error("No adapter available for " + urn));
     }
@@ -563,6 +563,33 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 component == null ? adapter.getAdapterInfo().getTimestamp() : component.timestamp(),
                 false));
     return ret;
+  }
+
+  /** Resolve the component providing an embeddable authority for on-demand installation. */
+  public ResourceSet resolveAuthority(String urn, Scope scope) {
+    var version = Version.splitVersion(urn);
+    var component =
+        getComponentRegistry().resolveAuthorityComponent(version.getFirst(), version.getSecond());
+    if (component == null) {
+      return ResourceSet.empty(Notification.error("No embeddable authority available for " + urn));
+    }
+    return ResourceSet.of(
+        new ResourceSet.Resource(
+            serviceId(),
+            component.id(),
+            null,
+            component.version(),
+            KnowledgeClass.COMPONENT,
+            component.timestamp(),
+            false));
+  }
+
+  private ResourceSet resolveComponentExtension(String urn, Scope scope) {
+    var version = Version.splitVersion(urn);
+    if (getComponentRegistry().getAdapter(version.getFirst(), version.getSecond(), scope) != null) {
+      return resolveResourceAdapter(urn, scope);
+    }
+    return resolveAuthority(urn, scope);
   }
 
   public ResourceSet resolveImportSchema(String mediaType, Geometry geometry, Scope scope) {
@@ -1270,7 +1297,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             }
             yield desiredResource == null ? null : ResourceSet.of(desiredResource);
           }
-          case COMPONENT -> resolveResourceAdapter(urn, scope);
+          case COMPONENT -> resolveComponentExtension(urn, scope);
           case MODEL -> resolveModelAsset(urn, scope);
           case RESOURCE -> resolveResourceUrn(urn, scope);
           case WORKSPACE -> {

@@ -24,6 +24,7 @@ The repository contains three separate concerns:
 ```text
 components/
   catalog.json
+  history.jsonl
   cache/
     catalog.json
     ...
@@ -43,6 +44,11 @@ timestamps used to decide whether an update is needed.
 `catalog.json` is the registry's local component catalog. It records the descriptors for components
 known to the service, including the source archive, source hash, Maven coordinates when applicable,
 usage rights, exported capabilities, and the time of registration or update.
+
+`history.jsonl` is an append-only service-local audit trail. Each line is an independent JSON
+event, so a damaged final write does not invalidate the earlier history. Events identify the
+component and version, hosting service, import type, source service, outcome, message, and any
+source-specific details.
 
 When an older repository contains loadable `.jar` files directly in the repository root, startup
 migrates them into `plugins/` when possible. Files that are not plug-ins should remain outside
@@ -93,6 +99,20 @@ Adapters may be embeddable or service-bound. An embeddable adapter can be used l
 runtime close to the data. A service-bound adapter must be invoked through the Resources service
 that provides it, which is appropriate when the adapter depends on server-side state or protected
 infrastructure.
+
+### Authorities
+
+Authorities connect the Reasoner to external terminologies and classifications that are too large
+or too specialized to load into a worldview in full. Component classes implementing the knowledge
+`Authority` interface are discovered through the Java `@Authority` annotation. Their descriptors
+advertise a stable provider URN, whether the provider is embeddable, and any known sub-authorities.
+
+Resources services advertise and deliver authority components but do not host authority
+implementations. A Reasoner instantiates them. Embeddable providers may be transferred from
+Resources and installed by a Reasoner on demand; non-embeddable providers are available only on
+Reasoners where their component was explicitly installed. A worldview binds the provider URN to a
+local name and configuration, independently for each `requires authority` declaration. The full
+provider, binding, and reasoning contract is documented in [Authorities](AUTHORITIES.md).
 
 ### Import And Export Schemata
 
@@ -150,9 +170,23 @@ information is what enables later update checks.
 ### Service-to-Service Transfer
 
 An installed component can be exported as a Java archive and imported by another service. This is a
-distribution path for already available components, not a Maven-managed source. Unless the target
-service imports the same component through Maven coordinates, it should be treated like a direct
-local import for update purposes.
+distribution path for already available components, not a Maven-managed source. A component
+resolved from a Resources service is recorded as a `DEPENDENCY`, including that source service id
+and timestamp. A manually exported archive uploaded without that provenance is a direct local
+`FILE` import instead.
+
+The four acquisition paths and their update owners are therefore:
+
+| Acquisition path | Installed type | Update owner |
+| --- | --- | --- |
+| Local `.kar` uploaded to a Resources service | `FILE` | An administrator uploads a replacement. |
+| Local Maven repository | `MAVEN` | The importing service's Maven cache checks a changed local artifact for a SNAPSHOT. |
+| Remote Maven repository | `MAVEN` | The importing service's Maven cache checks remote SNAPSHOT metadata and downloads when required. |
+| Local or remote Resources service | `DEPENDENCY` | The consuming service compares the source descriptor timestamp during library service-call, Java actor, adapter, or authority resolution and imports the newer installed archive. |
+
+The Resources host may itself have acquired the component through any of the first three paths. A
+dependent service follows only the Resources descriptor and archive; it does not infer or repeat
+the host's Maven or file operation.
 
 ## Registration And Discovery
 
@@ -163,7 +197,7 @@ descriptor records:
 - The local source archive and its file hash.
 - Maven coordinates, when the component came from Maven.
 - Usage rights inferred from the plug-in manifest.
-- Libraries, actors, adapters, services, annotations, verbs, importers, and exporters.
+- Libraries, actors, adapters, authorities, services, annotations, verbs, importers, and exporters.
 - The source service id, when applicable.
 - The registration or update timestamp.
 - The import type: `BUILT_IN`, `FILE`, `MAVEN`, or `DEPENDENCY`.
@@ -176,12 +210,37 @@ Maven releases and the built-in service component are not updateable; Maven SNAP
 imported `.kar` archives, and dependency copies are updateable through their respective sources.
 
 The descriptor is saved to `catalog.json` and indexed by contribution type. Service verbs,
-adapters, annotations, verbs, importers, and exporters can then be resolved by name. When more than
-one descriptor can satisfy a request, the registry prefers the highest version compatible with the
-requested version. Exact version requests are matched exactly.
+adapters, authorities, annotations, verbs, importers, and exporters can then be resolved by name.
+Authorities are indexed by their provider URN; the worldview-local name is a separate Reasoner
+binding and is not a component-registry key. When more than one descriptor can satisfy a request,
+the registry prefers the highest version compatible with the requested version. Exact version
+requests are matched exactly.
 
-The registry also has a local service component. This makes built-in service libraries and adapters
-visible through the same lookup mechanism used for imported components.
+The registry also has a local service component. This makes built-in service libraries, adapters,
+and authorities visible through the same lookup mechanism used for imported components.
+
+## Component History
+
+Each service records the lifecycle and synchronization events that affect its own copy of a
+component. This applies equally to primary `FILE` or `MAVEN` installations and to `DEPENDENCY`
+copies held by secondary services. Recorded events include registration, discovery of a newer
+build, update start and completion, unload, deferred restart installation, rollback, and failures.
+Routine update checks that find no new build are deliberately not recorded.
+
+History is exposed as a typed projection through the generic service `info` API. A client can use:
+
+```java
+service.info(
+    componentId + "@" + componentVersion,
+    KlabAsset.KnowledgeClass.COMPONENT,
+    ComponentHistory.class,
+    userScope);
+```
+
+Omitting `@version` returns events for all retained versions of that component. Events are returned
+newest first. The same visibility check used for component descriptors is applied before history
+is returned, so an IDE can fetch this projection when a ComponentCard history action is opened
+without a separate administration endpoint.
 
 ## Versioning And Compatibility
 
@@ -201,7 +260,7 @@ For predictable maintenance:
 - Use `-SNAPSHOT` only for components that are expected to change in place.
 - Set `Plugin-Requires` narrowly enough to prevent loading against incompatible k.LAB releases.
 - Keep the PF4J plug-in id stable across versions of the same component.
-- Use unique names for libraries, actors, adapters, and service verbs.
+- Use unique names for libraries, actors, adapters, authorities, and service verbs.
 
 Side-by-side descriptors for multiple component versions can exist in the catalog, but PF4J plug-in
 ids are unique in the running plug-in manager. In practice, the runtime should be maintained as one
@@ -211,8 +270,8 @@ descriptor for lookups.
 ## Update Modes
 
 Components can be updated manually or automatically. Scheduled repository polling applies only to
-Maven-sourced SNAPSHOT components. Dependency copies are checked on demand when the Runtime needs
-one of their contributions.
+Maven-sourced SNAPSHOT components. Dependency copies are checked on demand when a secondary
+service resolves a library service call, Java actor, adapter, or authority contribution.
 
 Update discovery follows the component's import type:
 
@@ -226,23 +285,33 @@ Update discovery follows the component's import type:
 - `BUILT_IN` components and stable Maven versions report `NOT_UPDATEABLE`.
 
 This separation is important operationally: the Resources service owns and serves hosted
-components, while Runtime and other services should refresh dependency copies from that Resources
-service rather than consulting Maven or a local file path themselves.
+components, while Runtime, Reasoner, and other secondary services should refresh dependency copies
+from that Resources service rather than consulting Maven or a local file path themselves.
 
 ### Dependency Refresh During Resolution
 
-Before resolving a service call from a dependency component, the Runtime checks whether the exact
-source Resources service is currently visible. If it is, the Runtime compares the installed
-timestamp of the matching source descriptor with the timestamp of its local dependency copy. Only
-a source component that is already installed with a newer timestamp triggers replacement; an
-upstream update merely advertised by the source is not copied until the source has installed it.
+Before resolving a library service call, Java actor, adapter, or authority from a dependency
+component, the consuming service checks whether the exact source Resources service is currently
+visible. If it is, the consumer compares the installed timestamp of the matching source descriptor
+with the timestamp of its local dependency copy. Only a source component that is already installed
+with a newer timestamp triggers replacement; an upstream update merely advertised by the source is
+not copied until the source has installed it.
 
-The source service is not required to be present when the Runtime initializes. If it is absent,
+Runtime services use this scope-aware lookup before compiling or executing a component-provided
+`ServiceCall` reactor and before resolving a Java actor or agent adapter. Replacement therefore
+precedes selection of reflective methods and classes, avoiding new executions retaining a
+descriptor from the older build. Objects and agents already executing from the old class loader
+are not migrated; update them during a quiet maintenance window when stateful implementations are
+in use.
+
+The source service is not required to be present when the consumer initializes. If it is absent,
 resolution continues with the local copy and the same check is made again on later resolutions.
 When a newer source installation is available, the replacement archive is exported and validated
-before the Runtime attempts to unload the active component. A successful replacement is registered
-and started before resolution continues. Failures are logged and are otherwise transparent to the
-resolution request; the registry preserves or restores the installed component whenever possible.
+before the consumer attempts to unload the active component. A successful replacement is registered
+and started before resolution continues. The registry preserves or restores the installed
+component whenever possible if replacement fails. A scope-aware library service-call or Java actor
+lookup then rejects the request instead of selecting that known-stale component; update-check APIs
+that do not immediately consume the contribution simply report that no replacement was installed.
 
 If the validated replacement cannot be installed immediately, for example because Windows still
 holds the active archive open, it is saved in the component repository's `pending-updates/`
