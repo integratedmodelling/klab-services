@@ -82,6 +82,10 @@ public class KimDateImpl implements KimDate {
         this.sec = sec;
     }
 
+    public void setMs(int ms) {
+        this.ms = ms;
+    }
+
     public void setValid(boolean valid) {
         this.valid = valid;
     }

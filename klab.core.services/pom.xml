@@ -154,6 +154,10 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         <!-- Headless workflow layout. Rendering uses Java2D and needs no browser. -->
         <dependency>
             <groupId>org.eclipse.elk</groupId>

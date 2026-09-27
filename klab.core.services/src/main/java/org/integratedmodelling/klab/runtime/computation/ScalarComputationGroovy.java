@@ -18,6 +18,8 @@ import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.kim.KimClassification;
+import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -56,7 +58,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
       String target = Dataflow.SELF_ID;
       boolean scalar = true;
       Expression.Descriptor expressionDescriptor;
-      // TODO compiled LUT and the like
+      CompiledValueMapping valueMapping;
       Object constantLiteral;
     }
 
@@ -100,12 +102,30 @@ public class ScalarComputationGroovy implements ScalarComputation {
       } else if (RuntimeService.CoreFunctor.LUT_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
-        // check types
-        // LUT, classification or reference to codelist. Should build a LUT object for internal
-        // processing and
-        // generate the scalar code using it. The result should STILL have a proper GroovyDescriptor
-        // with
-        // the scalar call.
+        var step = new Step();
+        var classification =
+            contextualizable.getParameters().get("classification", KimClassification.class);
+        var lookup = contextualizable.getParameters().get("lookupTable", KimLookupTable.class);
+        var codelist =
+            contextualizable.getParameters().get(
+                "codelist", org.integratedmodelling.klab.api.knowledge.Codelist.class);
+        if (classification != null) {
+          step.valueMapping = CompiledValueMapping.compile(classification, scope);
+        } else if (lookup != null) {
+          step.valueMapping = CompiledValueMapping.compile(lookup, scope);
+        } else if (codelist != null) {
+          step.valueMapping =
+              CompiledValueMapping.compile(
+                  codelist,
+                  contextualizable.getParameters().get("accordingTo", String.class),
+                  scope);
+        } else if (contextualizable.getParameters().contains("accordingTo")) {
+          throw new IllegalArgumentException(
+              "according to must be expanded by the Resolver before Runtime compilation");
+        } else {
+          throw new IllegalArgumentException("LUT resolver call has no value mapping");
+        }
+        steps.add(step);
       } else if (RuntimeService.CoreFunctor.CONSTANT_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
@@ -149,6 +169,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
       Set<String> wiredObservations = new HashSet<>();
       Set<String> observationWrappers = new HashSet<>();
       Set<String> predefinedVariables = new HashSet<>();
+      int mappingIndex = 0;
+      codeInfo.getLoopVariableAssignments().add("def self = null");
 
       for (var step : steps) {
         if (step.expressionDescriptor
@@ -163,7 +185,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
           }
 
           if (step.expressionDescriptor != null) {
-            codeStatements.add(groovyDescriptor.getProcessedCode());
+            codeStatements.add("__result = " + groovyDescriptor.getProcessedCode());
+            codeStatements.add("self = __result");
 
             for (var identifier : step.expressionDescriptor.getIdentifiers().keySet()) {
               var desc = step.expressionDescriptor.getIdentifiers().get(identifier);
@@ -197,8 +220,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                 codeInfo
                     .getLoopVariableAssignments()
                     .add(
-                        "def "
-                            + identifier
+                        (self ? "self" : "def " + identifier)
                             + " = "
                             + (self ? "priorSelf" : identifier)
                             + "Buffer.get()");
@@ -224,6 +246,46 @@ public class ScalarComputationGroovy implements ScalarComputation {
               }
             }
           }
+        } else if (step.valueMapping != null) {
+          String field = "__mapping" + mappingIndex++;
+          args.add(step.valueMapping);
+          // KlabGroovyShell maps non-API constructor values to Object.class. Keep the generated
+          // signature aligned while retaining the immutable compiled mapping as the field value.
+          codeInfo.getConstructorArguments().add("Object " + field);
+          codeInfo.getFieldDeclarations().add("Object " + field);
+          codeInfo
+              .getConstructorInitializationStatements()
+              .add("this." + field + " = " + field);
+
+          var inputVariables = new ArrayList<String>();
+          for (var inputName : step.valueMapping.inputNames()) {
+            boolean self = Dataflow.SELF_ID.equals(inputName);
+            var input = self ? target : observations.get(inputName);
+            if (input == null) {
+              throw new IllegalArgumentException(
+                  "Unknown value-mapping input " + inputName + " in " + observations.keySet());
+            }
+            inputVariables.add(inputName);
+            if (!scalarBuffers.containsKey(inputName)) {
+              scalarBuffers.put(
+                  inputName,
+                  new VarInfo(inputName, getTypeDeclaration(input), scalarBuffers.size() + 1, input));
+              codeInfo
+                  .getLoopVariableAssignments()
+                  .add(
+                      (self ? "self" : "def " + inputName)
+                          + " = "
+                          + (self ? "priorSelf" : inputName)
+                          + "Buffer.get()");
+            }
+          }
+          codeStatements.add(
+              "__result = "
+                  + field
+                  + ".lookup(new Object[]{"
+                  + String.join(", ", inputVariables)
+                  + "}, scope)");
+          codeStatements.add("self = __result");
         }
       }
 
@@ -235,7 +297,12 @@ public class ScalarComputationGroovy implements ScalarComputation {
                   + getScannerType(target, codeInfo)
                   + ") scanners.get(\"self\")\n");
 
-      codeInfo.getMainCodeBlocks().addAll(codeStatements);
+      codeInfo
+          .getMainCodeBlocks()
+          .add(
+              "({ -> def __result = null; "
+                  + String.join("; ", codeStatements)
+                  + "; return __result })()");
       if (scalarBuffers.containsKey(Dataflow.SELF_ID))
         codeInfo
             .getBodyInitializationStatements()

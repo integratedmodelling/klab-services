@@ -66,6 +66,8 @@ public interface KlabAsset extends Serializable {
     FLOW_TRANSITION,
     /** Attachment descriptor in a flow state (the payload is retrieved separately). */
     FLOW_ATTACHMENT,
+    /** A transportable mapping between external codes and values. */
+    CODELIST,
     /**
      * This is used to tag a variety of informational assets, such as adapter descriptors, reports,
      * language info, etc. When this is used, more information is always supplied so that the actual
@@ -98,6 +100,7 @@ public interface KlabAsset extends Serializable {
         case FLOW_STATE -> Flow.State.class;
         case FLOW_TRANSITION -> Flow.Transaction.class;
         case FLOW_ATTACHMENT -> Flow.Attachment.class;
+        case CODELIST -> Codelist.class;
         default ->
             throw new KlabIllegalStateException(
                 "Cannot convert  " + this + " into serializable asset class");
@@ -163,6 +166,8 @@ public interface KlabAsset extends Serializable {
         return FLOW_TRANSITION;
       } else if (Flow.Attachment.class.isAssignableFrom(cls)) {
         return FLOW_ATTACHMENT;
+      } else if (Codelist.class.isAssignableFrom(cls)) {
+        return CODELIST;
       } else {
         throw new KlabUnimplementedException("Classification of asset class " + cls);
       }
@@ -192,6 +197,7 @@ public interface KlabAsset extends Serializable {
       case Flow.State state -> KnowledgeClass.FLOW_STATE;
       case Flow.Transaction transition -> KnowledgeClass.FLOW_TRANSITION;
       case Flow.Attachment attachment -> KnowledgeClass.FLOW_ATTACHMENT;
+      case Codelist codelist -> KnowledgeClass.CODELIST;
       case KActorsBehavior behavior ->
           switch (behavior.getBehaviorType()) {
             case BEHAVIOR, TASK, USER, TRAIT, LIBRARY -> KnowledgeClass.BEHAVIOR;

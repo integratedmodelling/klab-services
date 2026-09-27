@@ -1539,6 +1539,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     for (KimOntology ontology : worldview.getOntologies()) {
       for (var statement : ontology.getStatements()) {
         defineConcept(statement, scope);
+        tagConceptService(statement, ontology.getServiceId());
       }
       this.owl.registerWithReasoner(ontology);
       rememberOntologySource(ontology);
@@ -1621,6 +1622,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         notifications.addAll(ontology.getNotifications());
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);
+          tagConceptService(statement, resource.getServiceId());
         }
         this.owl.registerWithReasoner(ontology);
         rememberOntologySource(ontology);
@@ -1687,6 +1689,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 .noneMatch(Utils.Notifications::hasErrors));
 
     return changes;
+  }
+
+  /** Retain the originating Resources service on declared concepts for later namespace-bound retrieval. */
+  private void tagConceptService(KimConceptStatement statement, String serviceId) {
+    if (serviceId == null) return;
+    var concept = owl.getConcept(statement.getNamespace() + ":" + statement.getUrn());
+    if (concept instanceof ConceptImpl implementation) implementation.setServiceId(serviceId);
+    for (var child : statement.getChildren()) tagConceptService(child, serviceId);
   }
 
   @Override

@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -24,6 +25,8 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -339,7 +342,7 @@ public class DataflowCompiler {
       }
       observationActuator
           .getComputation()
-          .add(adaptContextualizer(contextualizer, overriddenParameters));
+          .add(adaptContextualizer(contextualizer, overriddenParameters, model));
     }
 
     if (observationActuator.getObservation() != null
@@ -479,7 +482,7 @@ public class DataflowCompiler {
    * @return
    */
   private ServiceCall adaptContextualizer(
-      Contextualizable contextualizer, Map<String, Object> parameters) {
+      Contextualizable contextualizer, Map<String, Object> parameters, Model model) {
 
     ServiceCall ret = null;
 
@@ -495,11 +498,14 @@ public class DataflowCompiler {
               "urns",
               contextualizer.getResourceUrns());
     } else if (contextualizer.getAccordingTo() != null) {
+      var codelist = resolveCodelist(contextualizer.getAccordingTo(), model);
       ret =
           new ServiceCallImpl(
               RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCallName(),
               "accordingTo",
-              contextualizer.getAccordingTo());
+              contextualizer.getAccordingTo(),
+              "codelist",
+              codelist);
     } else if (contextualizer.getClassification() != null) {
       ret =
           new ServiceCallImpl(
@@ -540,5 +546,57 @@ public class DataflowCompiler {
     }
 
     return ret;
+  }
+
+  org.integratedmodelling.klab.api.knowledge.Codelist resolveCodelist(
+      String authorityId, Model model) {
+    if (model.getObservables().isEmpty())
+      throw new KlabValidationException("according to requires a semantic model output");
+    var semantics = model.getObservables().getFirst().getSemantics();
+    if (!semantics.is(SemanticType.CLASS))
+      throw new KlabValidationException(
+          "according to " + authorityId + " requires the model to produce type of X");
+    var reasoner = scope.getService(Reasoner.class);
+    if (reasoner == null)
+      throw new KlabIllegalStateException("according to requires a Reasoner service");
+    var root = reasoner.describedType(semantics);
+    if (root == null || !root.is(SemanticType.PREDICATE))
+      throw new KlabValidationException(
+          "Cannot determine the predicate X in the model output type of X");
+
+    var services = new ArrayList<>(scope.getServices(ResourcesService.class));
+    var preferredServiceIds = new LinkedHashSet<String>();
+    if (root.getServiceId() != null) preferredServiceIds.add(root.getServiceId());
+    if (model.getObservables().getFirst().getServiceId() != null)
+      preferredServiceIds.add(model.getObservables().getFirst().getServiceId());
+    if (model.getServiceId() != null) preferredServiceIds.add(model.getServiceId());
+    if (root.getServiceId() != null)
+      services.removeIf(service -> !root.getServiceId().equals(service.serviceId()));
+    services.sort(
+        Comparator.comparingInt(
+            service -> preferredServiceIds.contains(service.serviceId()) ? 0 : 1));
+
+    org.integratedmodelling.klab.api.knowledge.Codelist found = null;
+    for (var resources : services) {
+      var candidate =
+          resources.retrieve(
+              root.getUrn(),
+              org.integratedmodelling.klab.api.knowledge.Codelist.class,
+              scope);
+      if (candidate == null) continue;
+      found = candidate;
+      break;
+    }
+    if (found == null)
+      throw new KlabValidationException(
+          "No Resources service owns the concept hierarchy rooted at " + root.getUrn());
+    if (!found.getAuthorityIds().contains(authorityId))
+      throw new KlabValidationException(
+          "Concept hierarchy " + root.getUrn() + " has no @code annotations for scheme "
+              + authorityId);
+    if (found.codes(authorityId).isEmpty())
+      throw new KlabValidationException(
+          "Code scheme " + authorityId + " is empty below " + root.getUrn());
+    return found;
   }
 }

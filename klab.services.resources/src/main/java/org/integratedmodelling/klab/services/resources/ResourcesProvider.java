@@ -49,6 +49,8 @@ import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
 import org.integratedmodelling.klab.api.lang.LanguageDescriptor;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimAssetImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -69,6 +71,7 @@ import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
+import org.integratedmodelling.klab.services.resources.lang.ConceptCodelistBuilder;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.services.resources.storage.ResourceManager;
@@ -1147,13 +1150,28 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return (T) resolveObservableInternal(urn);
     } else if (KimConcept.class.isAssignableFrom(assetClass)) {
       return (T) resolveConceptInternal(urn);
+    } else if (Codelist.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(deriveConceptCodelist(urn));
     } else if (Worldview.class.isAssignableFrom(assetClass)) {
       var ret = retrieveWorldview();
       if (ret != null && ret.getUrn().equals(urn)) {
         return assetClass.cast(ret);
       }
     }
-    return workspaceManager.retrieve(urn, assetClass);
+    var result = workspaceManager.retrieve(urn, assetClass);
+    if (result instanceof KimAssetImpl asset && asset.getServiceId() == null)
+      asset.setServiceId(serviceId());
+    if (result instanceof KlabDocumentImpl<?> document && document.getServiceId() == null)
+      document.setServiceId(serviceId());
+    return result;
+  }
+
+  /** Build the portable code mapping declared below an ontology concept. */
+  private Codelist deriveConceptCodelist(String rootConceptUrn) {
+    var path = workspaceManager.conceptDeclarationPath(rootConceptUrn);
+    if (path.isEmpty()) return null;
+    return ConceptCodelistBuilder.build(
+        rootConceptUrn, path.getLast(), serviceId(), this::resolveConceptInternal);
   }
 
   @Override

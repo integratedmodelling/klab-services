@@ -359,9 +359,52 @@ model ecology:VegetationCondition
 ```
 
 The grammar supports Boolean, numeric, range, string, concept, set-membership,
-relational, wildcard, and unknown classifiers. A classification can also be
-referenced by name with `according to`. `discretized into` uses the same
-classification structure for continuous-to-class conversion.
+relational, wildcard, and unknown classifiers. `discretized into` uses the same
+classification structure for continuous-to-class conversion, with the additional
+requirement that its numeric intervals form the validated discretization domain.
+
+#### Classification according to an external code scheme
+
+`according to` maps integer codes produced by a resource to concepts annotated with
+the same code scheme. Codes are declared on the worldview concepts using `@code`:
+
+```kwv
+@code("corine", 211)
+identity NonIrrigatedArableLand;
+
+@code("corine", 231)
+identity Pastures;
+
+@code("corine", 311)
+identity BroadLeavedForest;
+```
+
+A model can use the mapping without repeating a classification table when its output is
+`type of X`, where X is the root predicate whose descendants carry the annotations:
+
+```kim
+model type of ecology:LandCoverType
+  observing geography:CorineLandCoverCode named code
+  classified according to corine
+;
+```
+
+The name after `according to` identifies the first argument of `@code`. Scheme names
+are lower-case path identifiers and are matched exactly. The second argument is a
+signed 64-bit integer. A concept may declare codes for several schemes, but it may
+have only one code in any one scheme.
+
+The predicate X determines the hierarchy used to interpret the scheme. Codes are collected
+from its descendants. A code must identify at most one descendant within the selected scheme.
+Reusing the same scheme and numeric code below an unrelated root is therefore allowed;
+duplicates within the requested hierarchy are errors.
+
+At execution, all finite integral numeric representations compare by integer value,
+so `232` and `232.0` denote the same code. Fractional values, values outside the
+signed 64-bit range, non-finite numbers, and codes absent from the scheme produce
+no-data. The mapping is derived from the committed worldview and compiled into the
+same scalar classification machinery used by inline lookup tables; models do not
+define or maintain a separate ontology-side lookup table.
 
 ### 6.5 Lookup and match tables
 
@@ -586,18 +629,26 @@ Before publishing a `.kim` namespace, check that:
 ## 15. Current implementation status
 
 The grammar is the authoritative statement of accepted source syntax, while the
-Java syntax objects are the contract consumed by services. They are not yet
-perfectly aligned:
+Java syntax objects are the contract consumed by services. The current adapter:
 
-- `ModelSyntaxImpl` adapts model outputs, dependencies, sources, expressions,
-  `set`, `integrate`, `using`, and `over` actions;
-- adaptation of inline classification, classification references, lookup
-  tables, and named lookup tables is still marked incomplete in the current
-  implementation;
-- semantic validation is evolving and does not prove that referenced resources,
-  adapters, functions, or runtime services are available; and
-- the repository currently lacks broad real-file regression coverage for
-  `.kim` namespaces comparable to the k.Actors behavior tests.
+- captures inline classifications, discretizations, one-way and two-way lookup
+  tables, `according to`, and named lookup-table references in EMF-independent
+  syntax objects;
+- lowers those objects to portable `KimClassification` and `KimLookupTable`
+  beans, validates their structure and result types, and preserves them through
+  namespace and dataflow JSON transport;
+- resolves local named lookup-table definitions, including forward references;
+  imported definitions are not resolved yet; and
+- compiles transported inline and named mappings into immutable, cached Runtime
+  scalar executors using typed storage scanners; and
+- derives transportable codelists from descendant `@code` annotations through the Resources
+  `retrieve` endpoint, validates `according to` against a `type of X` model output in Resolver,
+  and compiles the selected code authority into the same cached scalar executor at Runtime.
+
+Semantic validation does not prove that referenced resources, adapters,
+functions, or runtime services are available. The staging lookup-table fixture
+is covered from parsing through JSON transport and scalar scanner execution;
+broader real-file regression coverage remains desirable.
 
 For language evolution, keep four artifacts synchronized: the Xtext grammar,
 the `KimNamespace`/`KimModel`/`Contextualizable` API contracts, the syntax

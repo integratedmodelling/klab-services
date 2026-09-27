@@ -20,7 +20,7 @@ public class KimLookupTableImpl extends KimStatementImpl implements KimLookupTab
     private boolean twoWay;
     private List<KimClassifier> rowClassifiers = new ArrayList<>();
     private List<KimClassifier> columnClassifiers = new ArrayList<>();
-    private int lookupColumnIndex;
+    private int lookupColumnIndex = -1;
 
     private String urn;
 

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.net.URI;
@@ -255,6 +256,14 @@ public class JacksonConfiguration {
 
     private Object deserializeTypedContainer(
         JsonNode node, JsonParser parser, java.lang.reflect.Type type) throws Exception {
+      if (type instanceof Class<?> arrayType && arrayType.isArray() && node.isArray()) {
+        var componentType = arrayType.getComponentType();
+        var ret = Array.newInstance(componentType, node.size());
+        for (int i = 0; i < node.size(); i++) {
+          Array.set(ret, i, deserialize(node.get(i), parser, componentType));
+        }
+        return ret;
+      }
       if (type instanceof ParameterizedType generic
           && generic.getRawType() instanceof Class<?> raw) {
         if (raw == Map.class && node.isObject() && !node.has(CLASS_FIELD)) {
@@ -557,6 +566,15 @@ public class JacksonConfiguration {
           Contextualizable.class,
           Identifier.class,
           KimConcept.class,
+          KimClassifier.class,
+          KimClassification.class,
+          KimLookupTable.class,
+          KimLookupTable.Argument.class,
+          Codelist.class,
+          org.integratedmodelling.klab.api.knowledge.impl.CodelistImpl.Entry.class,
+          KimTable.class,
+          KimDate.class,
+          KimQuantity.class,
           KimObservable.class,
           Quantity.class,
           Model.ResolutionInfo.class,

@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.collections.impl.ConstantImpl;
 import org.integratedmodelling.klab.api.collections.impl.IdentifierImpl;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.Version;
@@ -435,18 +436,33 @@ public enum LanguageAdapter {
             ? KlabStatement.Scope.PUBLIC
             : KlabStatement.Scope.valueOf(namespace.getScope().name()));
 
+    // Register table definitions before adapting models so forward references are deterministic.
+    var namedTables = new LinkedHashMap<String, KimLookupTable>();
+    for (var statement : namespace.getStatements()) {
+      if (statement instanceof DefineSyntax define && define.getValue() instanceof ValueMappingSyntax) {
+        var adapted = (KimSymbolDefinition) adaptDefine(define, ret);
+        if (adapted.getValue() instanceof KimLookupTable table) {
+          namedTables.put(define.getName(), table);
+          namedTables.put(ret.getUrn() + "." + define.getName(), table);
+        }
+      }
+    }
+
     // TODO       ret.setImports(); and the rest
     for (var statement : namespace.getStatements()) {
-      ret.getStatements().add(adaptStatement(statement, ret));
+      ret.getStatements().add(adaptStatement(statement, ret, namedTables));
     }
 
     return ret;
   }
 
-  private KlabStatement adaptStatement(NamespaceStatementSyntax statement, KimNamespace namespace) {
+  private KlabStatement adaptStatement(
+      NamespaceStatementSyntax statement,
+      KimNamespace namespace,
+      Map<String, KimLookupTable> namedTables) {
     return switch (statement) {
       //            case InstanceSyntax instance -> adaptInstance(instance, namespace);
-      case ModelSyntax model -> adaptModel(model, namespace);
+      case ModelSyntax model -> adaptModel(model, namespace, namedTables);
       case DefineSyntax define -> adaptDefine(define, namespace);
       default -> null;
     };
@@ -700,6 +716,11 @@ public enum LanguageAdapter {
     Object object = value;
     if (object instanceof ParsedLiteral parsedLiteral) {
       return adaptLiteral(parsedLiteral, namespace, projectName, documentClass);
+    } else if (object instanceof ValueMappingSyntax mappingSyntax) {
+      var syntheticNamespace = new KimNamespaceImpl();
+      syntheticNamespace.setUrn(namespace);
+      syntheticNamespace.setProjectName(projectName);
+      return adaptLookupTable(mappingSyntax, syntheticNamespace, true);
     } else if (object instanceof ObservableSyntax observableSyntax) {
       object = adaptObservable(observableSyntax, namespace, projectName, documentClass);
     } else if (object instanceof SemanticSyntax semanticSyntax) {
@@ -765,7 +786,8 @@ public enum LanguageAdapter {
     return adaptValue(literal.getPod(), namespace, projectName, documentClass);
   }
 
-  private KlabStatement adaptModel(ModelSyntax model, KimNamespace namespace) {
+  private KlabStatement adaptModel(
+      ModelSyntax model, KimNamespace namespace, Map<String, KimLookupTable> namedTables) {
 
     KimModelImpl ret = new KimModelImpl();
 
@@ -848,10 +870,62 @@ public enum LanguageAdapter {
     ret.setInactive(inactive);
 
     for (var contextualizable : model.getContextualizations()) {
-      ret.getContextualization().add(adaptContextualizable(contextualizable, namespace));
+      try {
+        var adapted = adaptContextualizable(contextualizable, namespace, namedTables);
+        KimObservable target = mainObservable;
+        if (contextualizable.getTarget() != null) {
+          target =
+              ret.getObservables().stream()
+                  .filter(
+                      observable ->
+                          contextualizable.getTarget().equals(observable.getFormalName())
+                              || contextualizable.getTarget().equals(observable.getCodeName()))
+                  .findFirst()
+                  .orElse(null);
+        }
+        if (target == null) {
+          throw new KlabIllegalArgumentException(
+              "Unknown contextualization target " + contextualizable.getTarget());
+        }
+        ((ContextualizableImpl) adapted).setTarget(target);
+        validateMappingTarget(adapted, target);
+        ret.getContextualization().add(adapted);
+      } catch (KlabIllegalArgumentException e) {
+        var notification = Notification.error(ret, e.getMessage());
+        ret.getNotifications().add(notification);
+        namespace.getNotifications().add(notification);
+      }
     }
 
     return ret;
+  }
+
+  private void validateMappingTarget(Contextualizable contextualizable, KimObservable target) {
+    var targetType =
+        target.getNonSemanticType() != null
+            ? target.getNonSemanticType()
+            : org.integratedmodelling.klab.api.knowledge.Artifact.Type.forSemantics(
+                target.getSemantics().getType());
+    if (contextualizable.getClassification() != null
+        && !org.integratedmodelling.klab.api.knowledge.Artifact.Type.isCompatible(
+            targetType, org.integratedmodelling.klab.api.knowledge.Artifact.Type.CONCEPT)) {
+      throw new KlabIllegalArgumentException(
+          "A classification produces concepts, incompatible with target type " + targetType);
+    }
+    if (contextualizable.getLookupTable() != null) {
+      var lookupType = contextualizable.getLookupTable().getLookupType();
+      if (lookupType != null
+          && !org.integratedmodelling.klab.api.knowledge.Artifact.Type.isCompatible(
+              targetType, lookupType)) {
+        throw new KlabIllegalArgumentException(
+            "Lookup result type " + lookupType + " is incompatible with target type " + targetType);
+      }
+    }
+    if (contextualizable.getAccordingTo() != null
+        && targetType != org.integratedmodelling.klab.api.knowledge.Artifact.Type.CONCEPT) {
+      throw new KlabIllegalArgumentException(
+          "according to requires a concept-valued target, not " + targetType);
+    }
   }
 
   private Urn adaptUrn(org.eclipse.xtext.util.Pair<String, Map<Object, Object>> u) {
@@ -863,7 +937,9 @@ public enum LanguageAdapter {
   }
 
   private Contextualizable adaptContextualizable(
-      ModelSyntax.Contextualization contextualizable, KimNamespace namespace) {
+      ModelSyntax.Contextualization contextualizable,
+      KimNamespace namespace,
+      Map<String, KimLookupTable> namedTables) {
 
     var ret = new ContextualizableImpl();
 
@@ -885,12 +961,247 @@ public enum LanguageAdapter {
       if (contextualizable.isIntegration()) {
         ret.setAction(Contextualizable.Action.INTEGRATE);
       } // TODO the rest - set to, do. May be unnecessary if validated properly
+    } else if (contextualizable.getContextualizable()
+        instanceof ValueMappingSyntax mappingSyntax) {
+      ret.setTargetId(contextualizable.getTarget());
+      switch (mappingSyntax.getKind()) {
+        case CLASSIFICATION, DISCRETIZATION ->
+            ret.setClassification(adaptClassification(mappingSyntax, namespace));
+        case ACCORDING_TO -> ret.setAccordingTo(mappingSyntax.getReference());
+        case LOOKUP, TWO_WAY_LOOKUP -> ret.setLookupTable(adaptLookupTable(mappingSyntax, namespace));
+        case NAMED_LOOKUP -> {
+          var template = namedTables.get(mappingSyntax.getReference());
+          if (template == null) {
+            template = namedTables.get(namespace.getUrn() + "." + mappingSyntax.getReference());
+          }
+          if (template == null) {
+            throw new KlabIllegalArgumentException(
+                "Unknown lookup table " + mappingSyntax.getReference());
+          }
+          var invocation = (KimLookupTableImpl) adaptLookupTable(mappingSyntax, namespace);
+          invocation.setUrn(namespace.getUrn() + "." + mappingSyntax.getReference());
+          invocation.setTable(template.getTable());
+          invocation.setTwoWay(template.isTwoWay());
+          invocation.setRowClassifiers(template.getRowClassifiers());
+          invocation.setColumnClassifiers(template.getColumnClassifiers());
+          KimValueMappingValidator.validateAndNormalize(invocation, false);
+          ret.setLookupTable(invocation);
+        }
+      }
     } else {
       // TODO all others
       throw new KlabUnimplementedException("contextualizable " + contextualizable);
     }
 
     return ret;
+  }
+
+  private KimClassification adaptClassification(
+      ValueMappingSyntax syntax, KimNamespace namespace) {
+    var ret = new KimClassificationImpl();
+    ret.setDiscretization(syntax.getKind() == ValueMappingSyntax.Kind.DISCRETIZATION);
+    var classifiers = new ArrayList<PairImpl<KimConcept, KimClassifier>>();
+    for (int i = 0; i < syntax.getRowClassifiers().size(); i++) {
+      classifiers.add(
+          new PairImpl<>(
+              adaptSemantics(
+                  syntax.getResults().get(i),
+                  namespace.getUrn(),
+                  namespace.getProjectName(),
+                  KlabAsset.KnowledgeClass.MODEL),
+              adaptClassifier(syntax.getRowClassifiers().get(i), namespace)));
+    }
+    ret.setClassifiers(classifiers);
+    KimValueMappingValidator.validate(ret);
+    return ret;
+  }
+
+  private KimLookupTable adaptLookupTable(ValueMappingSyntax syntax, KimNamespace namespace) {
+    return adaptLookupTable(syntax, namespace, false);
+  }
+
+  private KimLookupTable adaptLookupTable(
+      ValueMappingSyntax syntax, KimNamespace namespace, boolean definition) {
+    var ret = new KimLookupTableImpl();
+    if (syntax.getKind() == ValueMappingSyntax.Kind.NAMED_LOOKUP) {
+      ret.setUrn(syntax.getReference());
+    }
+    ret.setTwoWay(syntax.getKind() == ValueMappingSyntax.Kind.TWO_WAY_LOOKUP);
+    var table = new KimTableImpl();
+    table.setTwoWay(ret.isTwoWay());
+    table.setHeaders(new ArrayList<>(syntax.getHeaders()));
+    table.setRowClassifiers(
+        syntax.getRowClassifiers().stream()
+            .map(classifier -> adaptClassifier(classifier, namespace))
+            .toList());
+    table.setColumnClassifiers(
+        syntax.getColumnClassifiers().stream()
+            .map(classifier -> adaptClassifier(classifier, namespace))
+            .toList());
+    var rows = new ArrayList<KimClassifier[]>();
+    for (var sourceRow : syntax.getRows()) {
+      var row = new KimClassifier[sourceRow.size()];
+      for (int i = 0; i < sourceRow.size(); i++) {
+        row[i] = adaptClassifier(sourceRow.get(i), namespace);
+      }
+      rows.add(row);
+    }
+    table.setRows(rows);
+    ret.setTable(table);
+    ret.setRowClassifiers(table.getRowClassifiers());
+    ret.setColumnClassifiers(table.getColumnClassifiers());
+
+    var arguments = new ArrayList<KimLookupTable.Argument>();
+    for (var sourceArgument : syntax.getArguments()) {
+      var argument = new KimLookupTable.Argument();
+      argument.id = sourceArgument.id();
+      argument.concept =
+          sourceArgument.concept() == null
+              ? null
+              : adaptSemantics(
+                  sourceArgument.concept(),
+                  namespace.getUrn(),
+                  namespace.getProjectName(),
+                  KlabAsset.KnowledgeClass.MODEL);
+      argument.dimension =
+          sourceArgument.dimension() == null
+              ? null
+              : KimLookupTable.Argument.Dimension.valueOf(sourceArgument.dimension().name());
+      arguments.add(argument);
+    }
+    ret.setArguments(arguments);
+    KimValueMappingValidator.validateAndNormalize(
+        ret, definition || syntax.getKind() == ValueMappingSyntax.Kind.NAMED_LOOKUP);
+    return ret;
+  }
+
+  private KimClassifier adaptClassifier(ClassifierSyntax syntax, KimNamespace namespace) {
+    var ret = new KimClassifierImpl();
+    ret.setNegated(syntax.isNegated());
+    switch (syntax.getKind()) {
+      case CATCH_ALL -> ret.setCatchAll(true);
+      case CATCH_ANYTHING -> ret.setCatchAnything(true);
+      case NO_DATA -> ret.setNullMatch(true);
+      case BOOLEAN -> ret.setBooleanMatch((Boolean) syntax.getValue());
+      case NUMBER -> ret.setNumberMatch(((Number) syntax.getValue()).doubleValue());
+      case TEXT -> ret.setStringMatch((String) syntax.getValue());
+      case CONCEPT ->
+          ret.setConceptMatch(
+              (KimConcept)
+                  adaptValue(
+                      syntax.getValue(),
+                      namespace.getUrn(),
+                      namespace.getProjectName(),
+                      KlabAsset.KnowledgeClass.MODEL));
+      case INTERVAL ->
+          ret.setIntervalMatch(
+              new NumericRangeImpl(
+                  syntax.getLowerBound().doubleValue(),
+                  syntax.getUpperBound().doubleValue(),
+                  !syntax.isLowerInclusive(),
+                  !syntax.isUpperInclusive()));
+      case RELATIONAL -> adaptRelationalClassifier(ret, syntax);
+      case EXPRESSION -> {
+        var expression = new ExpressionCodeImpl();
+        expression.setCode((String) syntax.getValue());
+        ret.setExpressionMatch(expression);
+      }
+      case QUANTITY -> {
+        var value =
+            adaptValue(
+                syntax.getValue(),
+                namespace.getUrn(),
+                namespace.getProjectName(),
+                KlabAsset.KnowledgeClass.MODEL);
+        var quantity = new KimQuantityImpl();
+        if (value instanceof Quantity source) {
+          quantity.setValue(source.getValue());
+          quantity.setUnit(source.getUnit());
+          quantity.setCurrency(source.getCurrency());
+        } else {
+          quantity.setValue((Number) value);
+        }
+        ret.setQuantityMatch(quantity);
+      }
+      case DATE -> {
+        var source = (ClassifierSyntax.DateValue) syntax.getValue();
+        var date = new KimDateImpl();
+        date.setYear(source.bc() ? -source.year() : source.year());
+        date.setMonth(source.month());
+        date.setDay(source.day());
+        date.setHour(source.hour());
+        date.setMin(source.minute());
+        date.setSec(source.second());
+        date.setMs(source.millisecond());
+        date.setValid(true);
+        ret.setDateMatch(date);
+      }
+      case SET -> {
+        var matches = new ArrayList<KimClassifier>();
+        for (var item : syntax.getSetValues()) {
+          var value =
+              adaptValue(
+                  item,
+                  namespace.getUrn(),
+                  namespace.getProjectName(),
+                  KlabAsset.KnowledgeClass.MODEL);
+          matches.add(classifierForValue(value));
+        }
+        ret.setClassifierMatches(matches);
+      }
+    }
+    ret.setType(classifierType(ret));
+    return ret;
+  }
+
+  private void adaptRelationalClassifier(KimClassifierImpl target, ClassifierSyntax syntax) {
+    double value = ((Number) syntax.getValue()).doubleValue();
+    switch (syntax.getOperator()) {
+      case ">=" -> target.setIntervalMatch(new NumericRangeImpl(value, null, false, true));
+      case ">" -> target.setIntervalMatch(new NumericRangeImpl(value, null, true, true));
+      case "<=" -> target.setIntervalMatch(new NumericRangeImpl(null, value, true, false));
+      case "<" -> target.setIntervalMatch(new NumericRangeImpl(null, value, true, true));
+      case "==", "=" -> target.setNumberMatch(value);
+      case "!=" -> {
+        target.setNumberMatch(value);
+        target.setNegated(!target.isNegated());
+      }
+      default -> throw new KlabIllegalArgumentException("Unsupported classifier operator " + syntax.getOperator());
+    }
+  }
+
+  private KimClassifier classifierForValue(Object value) {
+    var ret = new KimClassifierImpl();
+    if (value == null) ret.setNullMatch(true);
+    else if (value instanceof Number number) ret.setNumberMatch(number.doubleValue());
+    else if (value instanceof Boolean bool) ret.setBooleanMatch(bool);
+    else if (value instanceof String string) ret.setStringMatch(string);
+    else if (value instanceof KimConcept concept) ret.setConceptMatch(concept);
+    else throw new KlabIllegalArgumentException("Unsupported classifier set value " + value);
+    ret.setType(classifierType(ret));
+    return ret;
+  }
+
+  private org.integratedmodelling.klab.api.knowledge.Artifact.Type classifierType(
+      KimClassifier classifier) {
+    if (classifier.getConceptMatch() != null
+        || (classifier.getConceptMatches() != null && !classifier.getConceptMatches().isEmpty())) {
+      return org.integratedmodelling.klab.api.knowledge.Artifact.Type.CONCEPT;
+    }
+    if (classifier.getBooleanMatch() != null) {
+      return org.integratedmodelling.klab.api.knowledge.Artifact.Type.BOOLEAN;
+    }
+    if (classifier.getNumberMatch() != null || classifier.getIntervalMatch() != null
+        || classifier.getQuantityMatch() != null) {
+      return org.integratedmodelling.klab.api.knowledge.Artifact.Type.NUMBER;
+    }
+    if (classifier.getStringMatch() != null) {
+      return org.integratedmodelling.klab.api.knowledge.Artifact.Type.TEXT;
+    }
+    if (classifier.getDateMatch() != null) {
+      return org.integratedmodelling.klab.api.knowledge.Artifact.Type.DATETIME;
+    }
+    return org.integratedmodelling.klab.api.knowledge.Artifact.Type.VALUE;
   }
 
   private ExpressionCode adaptExpression(
