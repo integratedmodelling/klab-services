@@ -61,6 +61,7 @@ import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdap
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.ResourceIndexer;
@@ -554,14 +555,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     ResourceSet ret = new ResourceSet();
     ret.getResults()
         .add(
-            new ResourceSet.Resource(
-                this.serviceId(),
+            componentResource(
                 adapter.getComponentUrn(),
-                null,
                 adapter.getComponentVersion(),
-                KnowledgeClass.COMPONENT,
                 component == null ? adapter.getAdapterInfo().getTimestamp() : component.timestamp(),
-                false));
+                component));
     return ret;
   }
 
@@ -574,14 +572,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return ResourceSet.empty(Notification.error("No embeddable authority available for " + urn));
     }
     return ResourceSet.of(
-        new ResourceSet.Resource(
-            serviceId(),
-            component.id(),
-            null,
-            component.version(),
-            KnowledgeClass.COMPONENT,
-            component.timestamp(),
-            false));
+        componentResource(
+            component.id(), component.version(), component.timestamp(), component));
   }
 
   private ResourceSet resolveComponentExtension(String urn, Scope scope) {
@@ -606,14 +598,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         empty = false;
         ret.getResults()
             .add(
-                new ResourceSet.Resource(
-                    this.serviceId(),
-                    component.id(),
-                    null,
-                    component.version(),
-                    KnowledgeClass.COMPONENT,
-                    component.timestamp(),
-                    false));
+                componentResource(
+                    component.id(), component.version(), component.timestamp(), component));
       }
     }
 
@@ -636,14 +622,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         empty = false;
         ret.getResults()
             .add(
-                new ResourceSet.Resource(
-                    this.serviceId(),
-                    component.id(),
-                    null,
-                    component.version(),
-                    KnowledgeClass.COMPONENT,
-                    component.timestamp(),
-                    false));
+                componentResource(
+                    component.id(), component.version(), component.timestamp(), component));
       }
     }
 
@@ -653,6 +633,29 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     ret.setEmpty(empty);
 
+    return ret;
+  }
+
+  private ResourceSet.Resource componentResource(
+      String componentId,
+      Version componentVersion,
+      long timestamp,
+      Extensions.ComponentDescriptor component) {
+    var ret =
+        new ResourceSet.Resource(
+            serviceId(),
+            componentId,
+            null,
+            componentVersion,
+            KnowledgeClass.COMPONENT,
+            timestamp,
+            false);
+    if (component != null && component.mavenCoordinates() != null) {
+      ret.getMetadata()
+          .put(
+              Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY,
+              component.mavenCoordinates());
+    }
     return ret;
   }
 

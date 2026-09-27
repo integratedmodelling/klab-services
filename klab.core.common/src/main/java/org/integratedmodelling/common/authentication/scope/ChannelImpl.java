@@ -78,7 +78,7 @@ public abstract class ChannelImpl implements Channel {
   @Override
   public void info(Object... info) {
     for (var listener : getListeners(Message.Queue.Info).values()) {
-      listener.accept(this, Message.create(this, Notification.error(info)));
+      listener.accept(this, Message.create(this, Notification.info(info)));
     }
     Logging.INSTANCE.info(info);
   }
@@ -86,7 +86,7 @@ public abstract class ChannelImpl implements Channel {
   @Override
   public void warn(Object... o) {
     for (var listener : getListeners(Message.Queue.Warnings).values()) {
-      listener.accept(this, Message.create(this, Notification.error(o)));
+      listener.accept(this, Message.create(this, Notification.warning(o)));
     }
     Logging.INSTANCE.warn(o);
   }

@@ -53,7 +53,9 @@ class ComponentEventLogTest {
         ComponentHistory.Outcome.SUCCESS,
         Extensions.ComponentImportType.DEPENDENCY,
         "resources",
+        "Resources",
         "runtime",
+        "Runtime",
         KlabService.Type.RUNTIME,
         "registered",
         Map.of());

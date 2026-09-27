@@ -199,7 +199,6 @@ public class CompiledDataflow {
           }
           case URN_RESOLVER -> {
 
-            // TODO use all services hostia
             resource =
                 resolveResource(
                     call.getParameters().getList("urns", String.class), observation, scope);

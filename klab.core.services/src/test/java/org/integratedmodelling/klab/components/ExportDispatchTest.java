@@ -23,16 +23,25 @@ import org.junit.jupiter.api.Test;
 class ExportDispatchTest {
   @Test void missingPngTriggersComponentLoadAndCapabilityRefresh() {
     var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
-    var resources = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var localResources = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var remoteResources = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var resources = new org.integratedmodelling.common.services.client.ResourcesMerger(scope);
     var runtime = mock(org.integratedmodelling.klab.api.services.KlabService.class);
     var capabilities = mock(org.integratedmodelling.klab.api.services.KlabService.ServiceCapabilities.class);
     var exports = new java.util.HashMap<String, List<org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema>>();
     when(capabilities.getExportSchemata()).thenReturn(exports);
     when(runtime.capabilities(scope)).thenReturn(capabilities);
     when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class)).thenReturn(resources);
+    doReturn(List.of(localResources, remoteResources))
+        .when(scope)
+        .getServices(org.integratedmodelling.klab.api.services.ResourcesService.class);
     var result = new org.integratedmodelling.klab.api.services.resources.ResourceSet();
     result.setEmpty(false);
-    when(resources.resolve("export-schema:image/png", KlabAsset.KnowledgeClass.INFORMATION, scope)).thenReturn(result);
+    when(localResources.resolve("export-schema:image/png", KlabAsset.KnowledgeClass.INFORMATION, scope))
+        .thenReturn(org.integratedmodelling.klab.api.services.resources.ResourceSet.empty(
+            org.integratedmodelling.klab.api.services.runtime.Notification.error("Not available locally")));
+    when(remoteResources.resolve("export-schema:image/png", KlabAsset.KnowledgeClass.INFORMATION, scope))
+        .thenReturn(result);
     when(runtime.loadResources(result, scope)).thenAnswer(invocation -> {
       exports.put("test", List.of(org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.create(
           "test.png", org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.Type.PROPERTIES,

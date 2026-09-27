@@ -13,7 +13,11 @@ public interface MessagingChannel extends Channel {
 
   @Override
   default Set<Message.Queue> defaultQueues() {
-    return EnumSet.of(Message.Queue.Errors, Message.Queue.Events, Message.Queue.Warnings);
+    return EnumSet.of(
+        Message.Queue.Errors,
+        Message.Queue.Events,
+        Message.Queue.Warnings,
+        Message.Queue.Info);
   }
 
   /**

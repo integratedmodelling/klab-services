@@ -15,6 +15,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +44,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.reasoner.Authority;
@@ -82,6 +84,7 @@ public class ComponentRegistry {
   private PluginManager componentManager;
   private File pluginPath = null;
   private MavenComponentCache cache;
+  private final Map<String, String> componentSourceServiceNames = new ConcurrentHashMap<>();
 
   /** Browser resource read from an installed component archive. */
   public record WebUiResource(byte[] content, String filename) {}
@@ -298,6 +301,8 @@ public class ComponentRegistry {
   private record MavenSnapshotUpdate(
       Extensions.ComponentDescriptor component, MavenComponentCache.Availability availability) {}
 
+  private static final String DEPENDENCY_SOURCE_POLICY = "LOCAL_MAVEN_THEN_RESOURCES";
+
   private record MavenUpdateCheck(List<MavenSnapshotUpdate> updates, ResourceSet report) {}
 
   record PendingDependencyUpdate(
@@ -345,8 +350,8 @@ public class ComponentRegistry {
   }
 
   /**
-   * Update one registered component from its source. At present only Maven-imported SNAPSHOT
-   * components support an update action.
+   * Update one registered component from its source. Maven imports use normal Maven resolution;
+   * dependencies use only a newer artifact already installed in the local Maven repository.
    */
   public synchronized ResourceSet updateComponent(String componentId, Version version) {
     var component =
@@ -361,7 +366,8 @@ public class ComponentRegistry {
                   + componentId
                   + (version == null ? "" : " version " + version)));
     }
-    if (component.importType() != Extensions.ComponentImportType.MAVEN
+    if ((component.importType() != Extensions.ComponentImportType.MAVEN
+            && component.importType() != Extensions.ComponentImportType.DEPENDENCY)
         || component.mavenCoordinates() == null
         || !component.mavenCoordinates().contains("SNAPSHOT")) {
       return ResourceSet.empty(
@@ -374,21 +380,10 @@ public class ComponentRegistry {
           Notification.error("Invalid Maven coordinates for component " + component.id()));
     }
     try {
-      var availability =
-          cache.getAvailabilityInfo(
-              coordinates[0], coordinates[1], coordinates[2], "component", "kar");
+      var availability = mavenAvailability(component, coordinates);
       return switch (availability.status()) {
         case NEEDS_UPDATE_FROM_LOCAL_REPOSITORY, NEEDS_UPDATE_FROM_REMOTE_REPOSITORY -> {
-          recordComponentEvent(
-              component,
-              ComponentHistory.EventType.UPDATE_AVAILABLE,
-              ComponentHistory.Outcome.INFO,
-              "A newer component build is available from the "
-                  + updateSource(availability.status())
-                  + " Maven repository",
-              Map.of(
-                  "source", updateSource(availability.status()),
-                  "latestTimestamp", Long.toString(availability.latestVersionTimestamp())));
+          recordMavenUpdateDecision(component, availability);
           yield applyMavenSnapshotUpdate(component, availability.status());
         }
         case UP_TO_DATE ->
@@ -411,6 +406,44 @@ public class ComponentRegistry {
     }
   }
 
+  /**
+   * Update one registered component using the full service-aware source policy. Dependency
+   * components prefer a newer local Maven SNAPSHOT and otherwise refresh from their authoritative
+   * Resources service. Other component types use their directly configured source.
+   */
+  public synchronized ResourceSet updateComponent(
+      String componentId, Version version, Scope scope) {
+    var component =
+        components.get(componentId).stream()
+            .filter(candidate -> version == null || Objects.equals(candidate.version(), version))
+            .findFirst()
+            .orElse(null);
+    if (component == null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Cannot update unknown component "
+                  + componentId
+                  + (version == null ? "" : " version " + version)));
+    }
+    if (component.importType() != Extensions.ComponentImportType.DEPENDENCY) {
+      return updateComponent(componentId, component.version());
+    }
+    return switch (refreshDependencyComponent(component, scope)) {
+      case UPDATED ->
+          ResourceSet.empty(
+              Notification.info(
+                  "Component " + component.id() + " was updated successfully"));
+      case NO_CHANGE ->
+          ResourceSet.empty(
+              Notification.info(
+                  "Component " + component.id() + " is already up to date"));
+      case FAILED ->
+          ResourceSet.empty(
+              Notification.error(
+                  "Component " + component.id() + " could not be updated"));
+    };
+  }
+
   private MavenUpdateCheck checkMavenSnapshotUpdates(boolean reportNoUpdates) {
     var ret = new ResourceSet();
     var updates = new ArrayList<MavenSnapshotUpdate>();
@@ -420,23 +453,13 @@ public class ComponentRegistry {
         var coords = component.mavenCoordinates().split(":");
         if (coords.length == 3) {
           try {
-            var availability =
-                cache.getAvailabilityInfo(coords[0], coords[1], coords[2], "component", "kar");
+            var availability = mavenAvailability(component, coords);
             if (availability.status()
                     == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
                 || availability.status()
                     == MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY) {
               updates.add(new MavenSnapshotUpdate(component, availability));
-              recordComponentEvent(
-                  component,
-                  ComponentHistory.EventType.UPDATE_AVAILABLE,
-                  ComponentHistory.Outcome.INFO,
-                  "A newer component build is available from the "
-                      + updateSource(availability.status())
-                      + " Maven repository",
-                  Map.of(
-                      "source", updateSource(availability.status()),
-                      "latestTimestamp", Long.toString(availability.latestVersionTimestamp())));
+              recordMavenUpdateDecision(component, availability);
             } else if (availability.status() == MavenComponentCache.Status.UNKNOWN
                 && reportNoUpdates) {
               ret.getNotifications()
@@ -480,6 +503,57 @@ public class ComponentRegistry {
     return new MavenUpdateCheck(List.copyOf(updates), ret);
   }
 
+  private MavenComponentCache.Availability mavenAvailability(
+      Extensions.ComponentDescriptor component, String[] coordinates) {
+    if (component.importType() != Extensions.ComponentImportType.DEPENDENCY) {
+      return cache.getAvailabilityInfo(
+          coordinates[0], coordinates[1], coordinates[2], "component", "kar");
+    }
+    var local =
+        cache.findLocalArtifact(coordinates[0], coordinates[1], coordinates[2], "component", "kar");
+    if (local.isEmpty()) {
+      return new MavenComponentCache.Availability(MavenComponentCache.Status.UP_TO_DATE, 0L);
+    }
+    var artifact = local.get();
+    var newer =
+        artifact.timestamp() > component.timestamp()
+            && !Objects.equals(artifact.hash(), component.fileHash());
+    return new MavenComponentCache.Availability(
+        newer
+            ? MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY
+            : MavenComponentCache.Status.UP_TO_DATE,
+        artifact.timestamp());
+  }
+
+  private void recordMavenUpdateDecision(
+      Extensions.ComponentDescriptor component, MavenComponentCache.Availability availability) {
+    if (component.importType() == Extensions.ComponentImportType.DEPENDENCY) {
+      recordComponentEvent(
+          component,
+          ComponentHistory.EventType.UPDATE_AVAILABLE,
+          ComponentHistory.Outcome.INFO,
+          "Selected a newer local Maven SNAPSHOT ahead of the advertising Resources service",
+          Map.of(
+              "decision", "LOCAL_MAVEN_PRECEDENCE",
+              "policy", DEPENDENCY_SOURCE_POLICY,
+              "selectedSource", "LOCAL_MAVEN",
+              "resourcesSourceServiceId", Objects.toString(component.sourceServiceId(), ""),
+              "latestTimestamp", Long.toString(availability.latestVersionTimestamp())));
+      return;
+    }
+    recordComponentEvent(
+        component,
+        ComponentHistory.EventType.UPDATE_AVAILABLE,
+        ComponentHistory.Outcome.INFO,
+        "A newer component build is available from the "
+            + updateSource(availability.status())
+            + " Maven repository",
+        Map.of(
+            "decision", "MAVEN_SOURCE_SELECTED",
+            "source", updateSource(availability.status()),
+            "latestTimestamp", Long.toString(availability.latestVersionTimestamp())));
+  }
+
   private void merge(ResourceSet target, ResourceSet source) {
     if (source != null) {
       target.getNotifications().addAll(source.getNotifications());
@@ -490,6 +564,16 @@ public class ComponentRegistry {
   private ResourceSet applyMavenSnapshotUpdate(
       Extensions.ComponentDescriptor component, MavenComponentCache.Status status) {
 
+    var dependency = component.importType() == Extensions.ComponentImportType.DEPENDENCY;
+    var decisionDetails =
+        dependency
+            ? Map.of(
+                "decision", "LOCAL_MAVEN_PRECEDENCE",
+                "policy", DEPENDENCY_SOURCE_POLICY,
+                "selectedSource", "LOCAL_MAVEN",
+                "resourcesSourceServiceId", Objects.toString(component.sourceServiceId(), ""))
+            : Map.of("decision", "MAVEN_SOURCE_SELECTED", "source", updateSource(status));
+
     recordComponentEvent(
         component,
         ComponentHistory.EventType.UPDATE_STARTED,
@@ -497,7 +581,7 @@ public class ComponentRegistry {
         "Started synchronizing a newer build from the "
             + updateSource(status)
             + " Maven repository",
-        Map.of("source", updateSource(status)));
+        decisionDetails);
 
     Logging.INSTANCE.info(
         "Attempting update of modified component "
@@ -514,8 +598,22 @@ public class ComponentRegistry {
 
     try {
       var file =
-          cache.synchronizeArtifact(
-              mavenCoordinates[0], mavenCoordinates[1], mavenCoordinates[2], "component", "kar");
+          dependency
+              ? cache
+                  .findLocalArtifact(
+                      mavenCoordinates[0],
+                      mavenCoordinates[1],
+                      mavenCoordinates[2],
+                      "component",
+                      "kar")
+                  .map(MavenComponentCache.LocalArtifact::file)
+                  .orElse(null)
+              : cache.synchronizeArtifact(
+                  mavenCoordinates[0],
+                  mavenCoordinates[1],
+                  mavenCoordinates[2],
+                  "component",
+                  "kar");
       if (file != null && file.exists()) {
         var fileHash = Utils.Files.hash(file);
         if (component.fileHash() != null && component.fileHash().equals(fileHash)) {
@@ -526,7 +624,7 @@ public class ComponentRegistry {
                 ComponentHistory.EventType.FAILED,
                 ComponentHistory.Outcome.WARNING,
                 "The Maven source advertised an update but returned the installed artifact",
-                Map.of("source", updateSource(status)));
+                decisionDetails);
             return ResourceSet.empty(
                 Notification.warning(
                     "Update was indicated for component "
@@ -542,7 +640,7 @@ public class ComponentRegistry {
               ComponentHistory.EventType.FAILED,
               ComponentHistory.Outcome.WARNING,
               "Skipped the newer Maven build because it is incompatible with this k.LAB version",
-              Map.of("source", updateSource(status)));
+              decisionDetails);
           return ResourceSet.empty(
               Notification.warning(
                   "Skipping update of component "
@@ -555,7 +653,15 @@ public class ComponentRegistry {
         unloadComponent(component.id(), component.version());
         // TODO remove the previous file if any, as a change from remote to local may leave two
         //  versions in the plugin dir
-        var result = installComponent(file, component.mavenCoordinates());
+        var result =
+            dependency
+                ? installComponent(
+                    file,
+                    component.mavenCoordinates(),
+                    Extensions.ComponentImportType.DEPENDENCY,
+                    component.sourceServiceId(),
+                    file.lastModified())
+                : installComponent(file, component.mavenCoordinates());
         if (result != null && result.getFirst() != null) {
           componentManager.enablePlugin(result.getFirst().id());
           result
@@ -567,7 +673,7 @@ public class ComponentRegistry {
               ComponentHistory.EventType.UPDATED,
               ComponentHistory.Outcome.SUCCESS,
               "Installed a newer build from the " + updateSource(status) + " Maven repository",
-              Map.of("source", updateSource(status)));
+              decisionDetails);
         }
         Logging.INSTANCE.info(
             "Component "
@@ -587,7 +693,7 @@ public class ComponentRegistry {
           ComponentHistory.Outcome.FAILURE,
           "Unable to update the component from Maven: "
               + Objects.toString(e.getMessage(), e.getClass().getSimpleName()),
-          Map.of("source", updateSource(status)));
+          decisionDetails);
       return ResourceSet.empty(
           Notification.error("Unable to update outdated component " + component.id(), e));
     }
@@ -596,7 +702,7 @@ public class ComponentRegistry {
         ComponentHistory.EventType.FAILED,
         ComponentHistory.Outcome.WARNING,
         "The newer Maven artifact could not be retrieved",
-        Map.of("source", updateSource(status)));
+        decisionDetails);
     return ResourceSet.empty(
         Notification.warning(
             "Updated Maven artifact could not be retrieved for component " + component.id()));
@@ -772,6 +878,12 @@ public class ComponentRegistry {
     return componentEventLog.history(coordinates.getFirst(), coordinates.getSecond());
   }
 
+  private void rememberSourceService(KlabService source) {
+    if (source != null && source.serviceId() != null && source.serviceName() != null) {
+      componentSourceServiceNames.put(source.serviceId(), source.serviceName());
+    }
+  }
+
   private void recordComponentEvent(
       Extensions.ComponentDescriptor component,
       ComponentHistory.EventType type,
@@ -810,7 +922,9 @@ public class ComponentRegistry {
             outcome,
             importType,
             sourceServiceId,
+            sourceServiceId == null ? null : componentSourceServiceNames.get(sourceServiceId),
             service.serviceId(),
+            service.serviceName(),
             service.serviceType(),
             message,
             details));
@@ -908,6 +1022,18 @@ public class ComponentRegistry {
 
   private Extensions.ComponentDescriptor computeDependencyUpdateStatus(
       Extensions.ComponentDescriptor component, Scope scope) {
+    if (component.mavenCoordinates() != null
+        && component.mavenCoordinates().contains("SNAPSHOT")) {
+      var coordinates = component.mavenCoordinates().split(":");
+      if (coordinates.length == 3) {
+        var local = mavenAvailability(component, coordinates);
+        if (local.status() == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY) {
+          return component.withUpdateStatus(
+              Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE,
+              local.latestVersionTimestamp());
+        }
+      }
+    }
     if (scope == null || component.sourceServiceId() == null) {
       return component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
     }
@@ -920,6 +1046,7 @@ public class ComponentRegistry {
     if (source == null) {
       return component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
     }
+    rememberSourceService(source);
     try {
       var sourceDescriptor =
           source.capabilities(scope).getComponents().stream()
@@ -994,9 +1121,45 @@ public class ComponentRegistry {
     }
     var dependency = selectBestComponent(finder.get(contributionUrn), requiredVersion);
     if (dependency == null
-        || dependency.importType() != Extensions.ComponentImportType.DEPENDENCY
-        || dependency.sourceServiceId() == null
-        || scope == null) {
+        || dependency.importType() != Extensions.ComponentImportType.DEPENDENCY) {
+      return DependencyRefreshResult.NO_CHANGE;
+    }
+
+    return refreshDependencyComponent(dependency, scope);
+  }
+
+  private DependencyRefreshResult refreshDependencyComponent(
+      Extensions.ComponentDescriptor dependency, Scope scope) {
+
+    if (dependency.mavenCoordinates() != null
+        && dependency.mavenCoordinates().contains("SNAPSHOT")) {
+      var coordinates = dependency.mavenCoordinates().split(":");
+      if (coordinates.length == 3) {
+        var local = mavenAvailability(dependency, coordinates);
+        if (local.status() == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY) {
+          recordMavenUpdateDecision(dependency, local);
+          notifyComponentSynchronization(
+              scope,
+              "Synchronizing component "
+                  + dependency.id()
+                  + " from the local Maven repository");
+          var oldHash = dependency.fileHash();
+          applyMavenSnapshotUpdate(dependency, local.status());
+          var refreshed = getExactComponent(dependency.id(), dependency.version());
+          if (refreshed != null && !Objects.equals(oldHash, refreshed.fileHash())) {
+            notifyComponentSynchronization(
+                scope,
+                "Component "
+                    + dependency.id()
+                    + " was synchronized successfully from the local Maven repository");
+            return DependencyRefreshResult.UPDATED;
+          }
+          return DependencyRefreshResult.FAILED;
+        }
+      }
+    }
+
+    if (dependency.sourceServiceId() == null || scope == null) {
       return DependencyRefreshResult.NO_CHANGE;
     }
     var source =
@@ -1008,6 +1171,7 @@ public class ComponentRegistry {
     if (source == null) {
       return DependencyRefreshResult.NO_CHANGE;
     }
+    rememberSourceService(source);
     try {
       var sourceDescriptor =
           source.capabilities(scope).getComponents().stream()
@@ -1023,14 +1187,23 @@ public class ComponentRegistry {
           dependency,
           ComponentHistory.EventType.UPDATE_AVAILABLE,
           ComponentHistory.Outcome.INFO,
-          "The source Resources service advertises a newer build of this dependency",
-          Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+          "No newer local Maven SNAPSHOT was available; selected the authoritative Resources service build",
+          Map.of(
+              "decision", "RESOURCES_AUTHORITY",
+              "policy", DEPENDENCY_SOURCE_POLICY,
+              "selectedSource", "RESOURCES",
+              "localCandidate", "ABSENT_OR_NOT_NEWER",
+              "sourceServiceId", Objects.toString(dependency.sourceServiceId(), ""),
+              "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
       recordComponentEvent(
           dependency,
           ComponentHistory.EventType.UPDATE_STARTED,
           ComponentHistory.Outcome.INFO,
           "Started refreshing the dependency from its source Resources service",
-          Map.of());
+          Map.of(
+              "decision", "RESOURCES_AUTHORITY",
+              "policy", DEPENDENCY_SOURCE_POLICY,
+              "selectedSource", "RESOURCES"));
 
       Logging.INSTANCE.info(
           "Refreshing dependency component "
@@ -1039,6 +1212,12 @@ public class ComponentRegistry {
               + dependency.version()
               + " from service "
               + dependency.sourceServiceId());
+      notifyComponentSynchronization(
+          scope,
+          "Synchronizing component "
+              + dependency.id()
+              + " from Resources service "
+              + source.serviceName());
       if (replaceDependencyComponent(dependency, sourceDescriptor, source, scope)) {
         Logging.INSTANCE.info(
             "Dependency component "
@@ -1053,7 +1232,17 @@ public class ComponentRegistry {
             ComponentHistory.EventType.UPDATED,
             ComponentHistory.Outcome.SUCCESS,
             "Installed the newer dependency build from its source Resources service",
-            Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+            Map.of(
+                "decision", "RESOURCES_AUTHORITY",
+                "policy", DEPENDENCY_SOURCE_POLICY,
+                "selectedSource", "RESOURCES",
+                "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+        notifyComponentSynchronization(
+            scope,
+            "Component "
+                + dependency.id()
+                + " was synchronized successfully from Resources service "
+                + source.serviceName());
         return DependencyRefreshResult.UPDATED;
       }
       Logging.INSTANCE.warn(
@@ -1069,7 +1258,11 @@ public class ComponentRegistry {
           ComponentHistory.EventType.FAILED,
           ComponentHistory.Outcome.FAILURE,
           "The newer dependency build could not be installed; the stale build was rejected",
-          Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+          Map.of(
+              "decision", "RESOURCES_AUTHORITY",
+              "policy", DEPENDENCY_SOURCE_POLICY,
+              "selectedSource", "RESOURCES",
+              "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
       return DependencyRefreshResult.FAILED;
     } catch (Throwable t) {
       Logging.INSTANCE.error(
@@ -1175,7 +1368,9 @@ public class ComponentRegistry {
       var installed =
           installComponent(
               stagedArchive,
-              null,
+              sourceDescriptor.mavenCoordinates() == null
+                  ? dependency.mavenCoordinates()
+                  : sourceDescriptor.mavenCoordinates(),
               Extensions.ComponentImportType.DEPENDENCY,
               dependency.sourceServiceId(),
               sourceDescriptor.timestamp());
@@ -1607,7 +1802,20 @@ public class ComponentRegistry {
               + urn
               + " is available but could not be installed");
     }
-    return getFunctionDescriptor(urn, version);
+    var descriptors = getFunctionDescriptor(urn, version);
+    if (descriptors == null && scope instanceof UserScope userScope) {
+      var requestedUrn =
+          version == null || Version.ANY_VERSION.equals(version) ? urn : urn + "@" + version;
+      var resources =
+          scope
+              .getService(ResourcesService.class)
+              .resolve(
+                  requestedUrn, KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION, userScope);
+      if (resources != null && !resources.isEmpty() && loadComponents(resources, scope)) {
+        descriptors = getFunctionDescriptor(urn, version);
+      }
+    }
+    return descriptors;
   }
 
   /**
@@ -1746,6 +1954,9 @@ public class ComponentRegistry {
                   : Extensions.ComponentImportType.MAVEN)
               : existingDescriptor.importType();
     }
+    if (mavenCoordinates == null && importType == Extensions.ComponentImportType.DEPENDENCY) {
+      mavenCoordinates = inferMavenCoordinates(pluginFile, componentName);
+    }
     if (sourceServiceId == null) {
       sourceServiceId =
           existingDescriptor == null ? service.serviceId() : existingDescriptor.sourceServiceId();
@@ -1868,6 +2079,42 @@ public class ComponentRegistry {
             "actors", Integer.toString(componentDescriptor.actors().size())));
 
     return componentDescriptor;
+  }
+
+  private static String inferMavenCoordinates(File archive, String componentId) {
+    if (archive == null || !archive.isFile()) {
+      return null;
+    }
+    String fallback = null;
+    try (var jar = new JarFile(archive)) {
+      var entries = jar.entries();
+      while (entries.hasMoreElements()) {
+        var entry = entries.nextElement();
+        if (entry.isDirectory()
+            || !entry.getName().startsWith("META-INF/maven/")
+            || !entry.getName().endsWith("/pom.properties")) {
+          continue;
+        }
+        var properties = new Properties();
+        try (var input = jar.getInputStream(entry)) {
+          properties.load(input);
+        }
+        var groupId = properties.getProperty("groupId");
+        var artifactId = properties.getProperty("artifactId");
+        var version = properties.getProperty("version");
+        if (groupId == null || artifactId == null || version == null) {
+          continue;
+        }
+        var coordinates = groupId + ":" + artifactId + ":" + version;
+        if (Objects.equals(componentId, artifactId)) {
+          return coordinates;
+        }
+        fallback = fallback == null ? coordinates : "";
+      }
+    } catch (IOException e) {
+      Logging.INSTANCE.warn("Unable to inspect Maven provenance in component " + archive, e);
+    }
+    return fallback == null || fallback.isBlank() ? null : fallback;
   }
 
   private void registerActor(
@@ -2548,25 +2795,81 @@ public class ComponentRegistry {
   }
 
   public synchronized boolean unloadComponent(String urn, Version version) {
+    return unloadComponent(
+        urn,
+        version,
+        "Unloaded the component from the service registry",
+        Map.of("trigger", "REGISTRY"));
+  }
+
+  /** Remove a component explicitly at an administrator's request. */
+  public synchronized ResourceSet removeComponent(String urn, Version version) {
     var component = getComponent(urn, version);
-    if (component != null) {
-      var ret = false;
-      if (componentManager != null && componentManager.getPlugin(component.id()) != null) {
-        ret = componentManager.deletePlugin(component.id());
-      }
-      ret |= removeComponentRegistration(component);
-      saveConfiguration();
-      if (ret) {
-        recordComponentEvent(
-            component,
-            ComponentHistory.EventType.UNLOADED,
-            ComponentHistory.Outcome.SUCCESS,
-            "Unloaded the component from the service registry",
-            Map.of());
-      }
-      return ret;
+    if (component == null) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Cannot remove unknown component "
+                  + urn
+                  + (version == null ? "" : " version " + version)));
     }
-    return false;
+    if (component.importType() == Extensions.ComponentImportType.BUILT_IN) {
+      return ResourceSet.empty(
+          Notification.error("Built-in component " + component.id() + " cannot be removed"));
+    }
+    var details = Map.of("trigger", "ADMINISTRATOR_SETTING", "decision", "EXPLICIT_REMOVAL");
+    if (componentManager != null
+        && componentManager.getPlugin(component.id()) != null
+        && !componentManager.deletePlugin(component.id())) {
+      recordComponentEvent(
+          component,
+          ComponentHistory.EventType.FAILED,
+          ComponentHistory.Outcome.FAILURE,
+          "The component could not be stopped and removed at an administrator's request",
+          details);
+      return ResourceSet.empty(
+          Notification.error(
+              "Component " + component.id() + " is active and could not be removed"));
+    }
+    var removed = removeComponentRegistration(component);
+    if (component.sourceArchive() != null
+        && component.sourceArchive().isFile()
+        && isInPluginDirectory(component.sourceArchive())) {
+      removed |= Utils.Files.deleteQuietly(component.sourceArchive());
+    }
+    saveConfiguration();
+    if (removed) {
+      recordComponentEvent(
+          component,
+          ComponentHistory.EventType.UNLOADED,
+          ComponentHistory.Outcome.SUCCESS,
+          "Removed the component at an administrator's request",
+          details);
+    }
+    return ResourceSet.empty(
+        removed
+            ? Notification.info("Component " + component.id() + " was removed successfully")
+            : Notification.error("Component " + component.id() + " could not be removed"));
+  }
+
+  private boolean unloadComponent(
+      String urn, Version version, String eventMessage, Map<String, String> eventDetails) {
+    var component = getComponent(urn, version);
+    if (component == null) return false;
+    var ret = false;
+    if (componentManager != null && componentManager.getPlugin(component.id()) != null) {
+      ret = componentManager.deletePlugin(component.id());
+    }
+    ret |= removeComponentRegistration(component);
+    saveConfiguration();
+    if (ret) {
+      recordComponentEvent(
+          component,
+          ComponentHistory.EventType.UNLOADED,
+          ComponentHistory.Outcome.SUCCESS,
+          eventMessage,
+          eventDetails);
+    }
+    return ret;
   }
 
   /**
@@ -2596,6 +2899,9 @@ public class ComponentRegistry {
               ComponentHistory.Outcome.FAILURE,
               "The dependency build advertised by Resources could not be installed",
               Map.of(
+                  "decision", "RESOURCES_AUTHORITY",
+                  "policy", DEPENDENCY_SOURCE_POLICY,
+                  "selectedSource", "RESOURCES",
                   "sourceTimestamp", Long.toString(result.getTimestamp()),
                   "sourceServiceId", Objects.toString(result.getServiceId(), "")));
           scope.error(
@@ -2627,6 +2933,14 @@ public class ComponentRegistry {
             Map.of());
         return false;
       }
+      rememberSourceService(service);
+
+      notifyComponentSynchronization(
+          scope,
+          "Synchronizing component "
+              + result.getResourceUrn()
+              + " from Resources service "
+              + service.serviceName());
 
       final String mediaType = "application/java-archive";
       var schemata =
@@ -2662,7 +2976,9 @@ public class ComponentRegistry {
       var installation =
           installComponent(
               plugin,
-              null,
+              result
+                  .getMetadata()
+                  .get(Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY, String.class),
               Extensions.ComponentImportType.DEPENDENCY,
               result.getServiceId(),
               result.getTimestamp());
@@ -2682,6 +2998,12 @@ public class ComponentRegistry {
                 + (installation == null ? "" : ": " + installation.getSecond().getNotifications()));
         return false;
       }
+      notifyComponentSynchronization(
+          scope,
+          "Component "
+              + installation.getFirst().id()
+              + " was synchronized successfully from Resources service "
+              + service.serviceName());
     }
 
     // hopefully this is OK with plugins that have started already
@@ -2699,6 +3021,33 @@ public class ComponentRegistry {
 
   private boolean refreshDependencyComponent(
       Extensions.ComponentDescriptor installed, ResourceSet.Resource requested, Scope scope) {
+    if (installed.mavenCoordinates() != null
+        && installed.mavenCoordinates().contains("SNAPSHOT")) {
+      var coordinates = installed.mavenCoordinates().split(":");
+      if (coordinates.length == 3) {
+        var local = mavenAvailability(installed, coordinates);
+        if (local.status() == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY) {
+          recordMavenUpdateDecision(installed, local);
+          notifyComponentSynchronization(
+              scope,
+              "Synchronizing component "
+                  + installed.id()
+                  + " from the local Maven repository");
+          var oldHash = installed.fileHash();
+          applyMavenSnapshotUpdate(installed, local.status());
+          var refreshed = getExactComponent(installed.id(), installed.version());
+          if (refreshed != null && !Objects.equals(oldHash, refreshed.fileHash())) {
+            notifyComponentSynchronization(
+                scope,
+                "Component "
+                    + installed.id()
+                    + " was synchronized successfully from the local Maven repository");
+            return true;
+          }
+          return false;
+        }
+      }
+    }
     var source =
         scope
             .findService(
@@ -2708,6 +3057,7 @@ public class ComponentRegistry {
     if (source == null) {
       return false;
     }
+    rememberSourceService(source);
     try {
       var sourceDescriptor =
           source.capabilities(scope).getComponents().stream()
@@ -2722,14 +3072,29 @@ public class ComponentRegistry {
           installed,
           ComponentHistory.EventType.UPDATE_AVAILABLE,
           ComponentHistory.Outcome.INFO,
-          "Resources requested a newer build of this dependency",
-          Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+          "No newer local Maven SNAPSHOT was available; selected the authoritative Resources service build",
+          Map.of(
+              "decision", "RESOURCES_AUTHORITY",
+              "policy", DEPENDENCY_SOURCE_POLICY,
+              "selectedSource", "RESOURCES",
+              "localCandidate", "ABSENT_OR_NOT_NEWER",
+              "sourceServiceId", Objects.toString(installed.sourceServiceId(), ""),
+              "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
       recordComponentEvent(
           installed,
           ComponentHistory.EventType.UPDATE_STARTED,
           ComponentHistory.Outcome.INFO,
           "Started refreshing the dependency required by the incoming resource set",
-          Map.of());
+          Map.of(
+              "decision", "RESOURCES_AUTHORITY",
+              "policy", DEPENDENCY_SOURCE_POLICY,
+              "selectedSource", "RESOURCES"));
+      notifyComponentSynchronization(
+          scope,
+          "Synchronizing component "
+              + installed.id()
+              + " from Resources service "
+              + source.serviceName());
       var replaced = replaceDependencyComponent(installed, sourceDescriptor, source, scope);
       if (replaced) {
         var refreshed = getExactComponent(installed.id(), installed.version());
@@ -2738,7 +3103,17 @@ public class ComponentRegistry {
             ComponentHistory.EventType.UPDATED,
             ComponentHistory.Outcome.SUCCESS,
             "Installed the newer dependency build required by the incoming resource set",
-            Map.of("sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+            Map.of(
+                "decision", "RESOURCES_AUTHORITY",
+                "policy", DEPENDENCY_SOURCE_POLICY,
+                "selectedSource", "RESOURCES",
+                "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+        notifyComponentSynchronization(
+            scope,
+            "Component "
+                + installed.id()
+                + " was synchronized successfully from Resources service "
+                + source.serviceName());
       }
       return replaced;
     } catch (Throwable t) {
@@ -2749,6 +3124,12 @@ public class ComponentRegistry {
               + requested.getServiceId(),
           t);
       return false;
+    }
+  }
+
+  private static void notifyComponentSynchronization(Scope scope, String message) {
+    if (scope != null) {
+      scope.send(Notification.info(message));
     }
   }
 

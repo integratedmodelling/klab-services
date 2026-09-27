@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.extension;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -32,6 +33,23 @@ public class MavenComponentCache {
 
   /** Non-mutating availability result, including the source artifact's authoritative timestamp. */
   public record Availability(Status status, long latestVersionTimestamp) {}
+
+  /** A component artifact found in the local Maven repository without consulting any remote. */
+  public record LocalArtifact(File file, String hash, long timestamp) {}
+
+  /**
+   * Find an artifact strictly in the local Maven repository. This is deliberately separate from
+   * {@link #getAvailabilityInfo} because dependency components must never let a secondary service
+   * bypass their advertising Resources service in favor of a remote Maven repository.
+   */
+  public Optional<LocalArtifact> findLocalArtifact(
+      String groupId, String artifactId, String version, String classifier, String suffix) {
+    var file =
+        Utils.Maven.findLocalArtifactFile(groupId, artifactId, version, classifier, suffix);
+    return file == null || !file.isFile()
+        ? Optional.empty()
+        : Optional.of(new LocalArtifact(file, Utils.Files.hash(file), file.lastModified()));
+  }
 
   // descriptor saved in the catalog
   public static class ArtifactInfo {

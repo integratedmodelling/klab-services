@@ -52,7 +52,9 @@ public record ComponentHistory(String componentId, Version version, List<Event> 
       Outcome outcome,
       Extensions.ComponentImportType importType,
       String sourceServiceId,
+      String sourceServiceName,
       String serviceId,
+      String serviceName,
       KlabService.Type serviceType,
       String message,
       Map<String, String> details)

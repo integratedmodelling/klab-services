@@ -169,11 +169,12 @@ information is what enables later update checks.
 
 ### Service-to-Service Transfer
 
-An installed component can be exported as a Java archive and imported by another service. This is a
-distribution path for already available components, not a Maven-managed source. A component
-resolved from a Resources service is recorded as a `DEPENDENCY`, including that source service id
-and timestamp. A manually exported archive uploaded without that provenance is a direct local
-`FILE` import instead.
+An installed component can be exported as a Java archive and imported by another service. A
+component resolved from a Resources service is recorded as a `DEPENDENCY`, including that source
+service id and timestamp. When known, Resources also transports the component's Maven coordinates
+as provenance. Those coordinates permit a local Maven override; they do not turn the dependency
+into an independently Maven-managed import. A manually exported archive uploaded without that
+provenance is a direct local `FILE` import instead.
 
 The four acquisition paths and their update owners are therefore:
 
@@ -182,11 +183,13 @@ The four acquisition paths and their update owners are therefore:
 | Local `.kar` uploaded to a Resources service | `FILE` | An administrator uploads a replacement. |
 | Local Maven repository | `MAVEN` | The importing service's Maven cache checks a changed local artifact for a SNAPSHOT. |
 | Remote Maven repository | `MAVEN` | The importing service's Maven cache checks remote SNAPSHOT metadata and downloads when required. |
-| Local or remote Resources service | `DEPENDENCY` | The consuming service compares the source descriptor timestamp during library service-call, Java actor, adapter, or authority resolution and imports the newer installed archive. |
+| Local or remote Resources service | `DEPENDENCY` | The consumer first accepts a newer same-version SNAPSHOT from its local Maven repository; otherwise the advertising Resources service is authoritative. |
 
 The Resources host may itself have acquired the component through any of the first three paths. A
-dependent service follows only the Resources descriptor and archive; it does not infer or repeat
-the host's Maven or file operation.
+dependent service never queries or downloads from a remote Maven repository. Its complete priority
+order is: a newer local Maven SNAPSHOT, then the descriptor and archive installed at the exact
+advertising Resources service. Thus a developer's local `mvn install` takes precedence, while in
+all other cases Resources remains authoritative even if a newer remote Maven artifact exists.
 
 ## Registration And Discovery
 
@@ -226,6 +229,13 @@ component. This applies equally to primary `FILE` or `MAVEN` installations and t
 copies held by secondary services. Recorded events include registration, discovery of a newer
 build, update start and completion, unload, deferred restart installation, rollback, and failures.
 Routine update checks that find no new build are deliberately not recorded.
+
+Events produced after an update candidate is selected include a machine-readable decision and
+policy in `details` (for example `LOCAL_MAVEN_PRECEDENCE` or `RESOURCES_AUTHORITY` and
+`LOCAL_MAVEN_THEN_RESOURCES`). This makes the selected source and its rationale visible in the IDE
+History dialog. The typed event retains service IDs for correlation and also carries user-facing
+service names when the service is visible; clients should display the name and use the ID only as a
+fallback.
 
 History is exposed as a typed projection through the generic service `info` API. A client can use:
 
@@ -279,23 +289,26 @@ Update discovery follows the component's import type:
   latest timestamp comes from the selected local artifact or remote snapshot metadata.
 - A hosted `FILE` component has no external repository to poll. Its current registration timestamp
   is also its latest-known timestamp; uploading a replacement advances both.
-- A `DEPENDENCY` component asks the `ResourcesService` identified by `sourceServiceId` for the
-  matching hosted descriptor. A newer hosted registration or an update advertised by that service
-  makes the dependency's status `UPDATE_AVAILABLE`.
+- A `DEPENDENCY` component with SNAPSHOT coordinates first checks only the local Maven repository.
+  A different, newer local artifact makes its status `UPDATE_AVAILABLE`. If there is none, it asks
+  the `ResourcesService` identified by `sourceServiceId` for the matching hosted descriptor. A
+  newer hosted registration or an update advertised by that service then makes the dependency's
+  status `UPDATE_AVAILABLE`. Remote Maven repositories are never consulted by this path.
 - `BUILT_IN` components and stable Maven versions report `NOT_UPDATEABLE`.
 
-This separation is important operationally: the Resources service owns and serves hosted
-components, while Runtime, Reasoner, and other secondary services should refresh dependency copies
-from that Resources service rather than consulting Maven or a local file path themselves.
+This separation is important operationally: a local Maven install is an explicit developer
+override. Otherwise the Resources service owns and serves hosted components, and Runtime,
+Reasoner, and other secondary services refresh dependency copies from that Resources service.
 
 ### Dependency Refresh During Resolution
 
 Before resolving a library service call, Java actor, adapter, or authority from a dependency
-component, the consuming service checks whether the exact source Resources service is currently
-visible. If it is, the consumer compares the installed timestamp of the matching source descriptor
-with the timestamp of its local dependency copy. Only a source component that is already installed
-with a newer timestamp triggers replacement; an upstream update merely advertised by the source is
-not copied until the source has installed it.
+component, the consuming service first checks for a newer local Maven SNAPSHOT. If none is selected,
+it checks whether the exact source Resources service is currently visible and compares the
+installed timestamp of the matching source descriptor with the timestamp of its local dependency
+copy. Only a source component that is already installed with a newer timestamp triggers
+replacement; an upstream update merely advertised by the source is not copied until the source has
+installed it.
 
 Runtime services use this scope-aware lookup before compiling or executing a component-provided
 `ServiceCall` reactor and before resolving a Java actor or agent adapter. Replacement therefore
@@ -303,6 +316,21 @@ precedes selection of reflective methods and classes, avoiding new executions re
 descriptor from the older build. Objects and agents already executing from the old class loader
 are not migrated; update them during a quiet maintenance window when stateful implementations are
 in use.
+
+When the contribution is not installed at all, the consumer resolves its full ServiceCall URN as
+`SERVICE_IMPLEMENTATION` through the scope's merged Resources client. A current Resources service
+must return the embeddable `COMPONENT` descriptor that provides the implementation. After transfer,
+the Runtime verifies that the requested function is registered and adds a
+`SERVICE_IMPLEMENTATION` result to the requirements returned to the Resolver; this is what makes
+the newly available prototype visible while the resolution graph and dataflow are compiled. All
+services participating in a stack should therefore run the same version of this discovery
+contract.
+
+An install or actual same-version build replacement sends informational start and completion
+notifications through the initiating scope. Runtime messaging subscribes to the Info queue by
+default, so these notifications can be displayed by the submitting client during a longer
+submission, resolution, or contextualization cycle. Checks that find no newer build remain silent
+and are not added to component history.
 
 The source service is not required to be present when the consumer initializes. If it is absent,
 resolution continues with the local copy and the same check is made again on later resolutions.
@@ -354,17 +382,27 @@ For each candidate, the Maven cache determines whether:
 - The status cannot be established.
 
 The result reports available updates and diagnostics. The component descriptors advertised by the
-service provide the structured `updateStatus` and `latestVersionTimestamp` needed by an eventual
-administration API.
+service provide the structured `updateStatus` and `latestVersionTimestamp` used by administration
+clients.
 
 ### SNAPSHOT Update Actions
 
 `ComponentRegistry.updateMavenSnapshotComponents()` composes discovery with updates for all changed
-Maven SNAPSHOTs, preserving the existing automatic behavior. `updateComponent(id, version)` is the
-targeted action intended for a future administration endpoint. When an update is indicated, these
-actions synchronize the artifact, compare the candidate file hash to the installed descriptor
-hash, verify k.LAB compatibility, unload the current component, install the replacement archive,
+Maven SNAPSHOTs, preserving the existing automatic behavior. `updateComponent(id, version, scope)`
+is the service-aware targeted action: for dependencies it applies the same local-Maven-then-
+Resources precedence used during resolution. When an update is indicated, these actions
+synchronize the artifact, compare the candidate file hash to the installed descriptor hash,
+verify k.LAB compatibility, unload the current component, install the replacement archive,
 register the new descriptor, and save the updated catalog.
+
+Administrators invoke targeted update and removal through the common settings API by posting a Map
+to `UPDATE_COMPONENT` or `REMOVE_COMPONENT`. Both maps require `component` and accept `version`;
+their result map contains `result`, `message`, `action`, `component`, and `version`. The settings
+controller independently enforces `CRUDOperation.ADMINISTER`, and the IDE enables the matching
+ComponentCard actions only when the target service advertises that permission. Removal of the
+built-in service component is rejected. Explicit removals are recorded in component history with
+an `ADMINISTRATOR_SETTING` trigger; update events retain the source-selection rationale described
+above. A no-op update request that finds no newer build is not added to history.
 
 Hash comparison is important because SNAPSHOT timestamps and repository metadata can be noisy. If
 the retrieved archive has the same content hash as the installed archive, the registry does not

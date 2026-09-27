@@ -262,6 +262,10 @@ scope. Deployment method-security configuration must enforce the role annotation
 External credentials are for services and resources contacted by k.LAB; they are distinct from
 the token authenticating the current API caller. The setting body must match the setting's value
 class; do not assume a universal `{"value": ...}` envelope from older method commentary.
+Map-valued settings are executable operations: their payload carries operation parameters and the
+completed job result is another map. `UPDATE_COMPONENT` and `REMOVE_COMPONENT` use this mechanism
+on every service type with `component` and optional `version` parameters; see
+[Components](COMPONENTS.md#snapshot-update-actions) for their lifecycle semantics.
 
 ## Web UI and generated API descriptions
 

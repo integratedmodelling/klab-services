@@ -9,6 +9,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.ResourcesMerger;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -62,6 +63,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private boolean empty;
   private Set<CRUDOperation> permissions = EnumSet.of(CRUDOperation.READ);
   private List<Notification> notifications = new ArrayList<>();
+  private ResourcesMerger resourcesMerger;
 
   protected Map<KlabService.Type, List<KlabService>> serviceMap = new ConcurrentHashMap<>();
 
@@ -83,6 +85,13 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   @Override
   public final <T extends KlabService> T getService(Class<T> serviceClass) {
+    if (ResourcesService.class.isAssignableFrom(serviceClass)
+        && getServices(serviceClass).size() > 1) {
+      if (resourcesMerger == null) {
+        resourcesMerger = new ResourcesMerger(this);
+      }
+      return (T) resourcesMerger;
+    }
     return getServices(serviceClass).stream()
         .findFirst()
         .orElseThrow(

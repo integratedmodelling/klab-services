@@ -120,9 +120,11 @@ Resolution also participates in dependency freshness checks. A secondary service
 source Resources service before using a library service call, Java actor, adapter, or authority
 component. If the source advertises the same component version with a newer installed timestamp,
 the dependency archive is exported, validated, and replaced before lookup continues. This covers
-components hosted by a local or remote Resources service. Maven SNAPSHOT discovery remains owned
-by the service that imported the Maven coordinates and runs at startup, on a schedule, or through
-an explicit update action; a secondary service does not independently poll Maven. See
+components hosted by a local or remote Resources service. When Resources transports Maven
+provenance for a dependency, a secondary service accepts a newer SNAPSHOT from its local Maven
+repository first. If none exists, the advertising Resources service remains authoritative. The
+secondary service never polls or downloads from remote Maven repositories. The lifecycle event
+records the selected source and this decision rationale for the IDE History view. See
 [component update modes](COMPONENTS.md#update-modes) for the complete source matrix and failure
 behavior.
 

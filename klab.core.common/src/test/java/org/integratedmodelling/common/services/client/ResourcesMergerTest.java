@@ -68,6 +68,42 @@ class ResourcesMergerTest {
   }
 
   @Test
+  void successfulRemoteResolutionSuppressesLocalNotFoundError() {
+    var scope = mock(Scope.class);
+    var localService = mock(ResourcesService.class);
+    var remoteService = mock(ResourcesService.class);
+    var userScope = mock(UserScope.class);
+    when(localService.resolve("component.call", KnowledgeClass.SERVICE_IMPLEMENTATION, userScope))
+        .thenReturn(ResourceSet.empty(Notification.error("Cannot resolve service implementation")));
+    when(remoteService.resolve("component.call", KnowledgeClass.SERVICE_IMPLEMENTATION, userScope))
+        .thenReturn(result("component", "remote", false, "1.0.0", 2));
+    doReturn(List.of(localService, remoteService)).when(scope).getServices(ResourcesService.class);
+
+    var merged =
+        new ResourcesMerger(scope)
+            .resolve("component.call", KnowledgeClass.SERVICE_IMPLEMENTATION, userScope);
+
+    assertFalse(merged.isEmpty());
+    assertEquals("remote", merged.getResults().iterator().next().getServiceId());
+    assertTrue(merged.getNotifications().isEmpty());
+  }
+
+  @Test
+  void federatedReadsFallThroughToRemoteService() {
+    var scope = mock(Scope.class);
+    var localService = mock(ResourcesService.class);
+    var remoteService = mock(ResourcesService.class);
+    var userScope = mock(UserScope.class);
+    var asset = mock(KlabAsset.class);
+    when(localService.retrieve("remote.asset", KlabAsset.class, userScope)).thenReturn(null);
+    when(remoteService.retrieve("remote.asset", KlabAsset.class, userScope)).thenReturn(asset);
+    doReturn(List.of(localService, remoteService)).when(scope).getServices(ResourcesService.class);
+
+    assertSame(
+        asset, new ResourcesMerger(scope).retrieve("remote.asset", KlabAsset.class, userScope));
+  }
+
+  @Test
   void nonQueryOperationsUseTheFirstPrioritizedService() {
     var scope = mock(Scope.class);
     var primary = mock(ResourcesService.class);
@@ -102,8 +138,7 @@ class ResourcesMergerTest {
     doReturn(List.of(primary, secondary)).when(scope).getServices(ResourcesService.class);
 
     var merged =
-        new ResourcesMerger(scope)
-            .query(null, KnowledgeClass.MODEL, KlabAsset.class, userScope);
+        new ResourcesMerger(scope).query(null, KnowledgeClass.MODEL, KlabAsset.class, userScope);
 
     assertEquals(List.of(first, unique), merged);
   }
@@ -150,9 +185,7 @@ class ResourcesMergerTest {
       String urn, String serviceId, boolean local, String version, long timestamp) {
     var ret = new ResourceSet();
     ret.getResults()
-        .add(
-            descriptor(
-                urn, serviceId, local, version, timestamp, KlabAsset.KnowledgeClass.MODEL));
+        .add(descriptor(urn, serviceId, local, version, timestamp, KlabAsset.KnowledgeClass.MODEL));
     return ret;
   }
 

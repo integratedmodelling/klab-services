@@ -120,6 +120,7 @@ public abstract class BaseService implements KlabService {
 
     this.type = serviceType;
     settings = SettingsImpl.forService(this, serviceType);
+    configureComponentActions((SettingsImpl) settings);
 
     settingsForSlaveServices = SettingsImpl.forSlaveServices(serviceType, settings);
 
@@ -170,6 +171,73 @@ public abstract class BaseService implements KlabService {
 
   public Settings settings() {
     return settings;
+  }
+
+  private void configureComponentActions(SettingsImpl serviceSettings) {
+    serviceSettings.setExecutionHandler(
+        Setting.UPDATE_COMPONENT, request -> executeComponentAction(request, false));
+    serviceSettings.setExecutionHandler(
+        Setting.REMOVE_COMPONENT, request -> executeComponentAction(request, true));
+  }
+
+  private Map<String, Object> executeComponentAction(Object request, boolean remove) {
+    if (!(request instanceof Map<?, ?> parameters)) {
+      return componentActionResult(remove, null, null, false, "A component action requires a map");
+    }
+    var component = Objects.toString(parameters.get("component"), "").trim();
+    var versionText = Objects.toString(parameters.get("version"), "").trim();
+    if (component.isEmpty()) {
+      return componentActionResult(
+          remove, null, versionText, false, "The component parameter is required");
+    }
+    if (componentRegistry == null) {
+      return componentActionResult(
+          remove, component, versionText, false, "The component registry is not initialized");
+    }
+
+    try {
+      var version = versionText.isEmpty() ? null : Version.create(versionText);
+      var report =
+          remove
+              ? componentRegistry.removeComponent(component, version)
+              : componentRegistry.updateComponent(component, version, serviceScope);
+      var success =
+          report.getNotifications().stream()
+              .noneMatch(
+                  notification ->
+                      notification.getLevel().severity >= Notification.Level.Warning.severity);
+      var message =
+          report.getNotifications().stream()
+              .map(Notification::getMessage)
+              .filter(Objects::nonNull)
+              .collect(java.util.stream.Collectors.joining("; "));
+      return componentActionResult(
+          remove,
+          component,
+          versionText,
+          success,
+          message.isBlank()
+              ? (remove ? "Component removal completed" : "Component update completed")
+              : message);
+    } catch (RuntimeException e) {
+      return componentActionResult(
+          remove,
+          component,
+          versionText,
+          false,
+          Objects.toString(e.getMessage(), e.getClass().getSimpleName()));
+    }
+  }
+
+  private Map<String, Object> componentActionResult(
+      boolean remove, String component, String version, boolean success, String message) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("action", remove ? "remove" : "update");
+    result.put("component", Objects.toString(component, ""));
+    result.put("version", Objects.toString(version, ""));
+    result.put("result", success);
+    result.put("message", message);
+    return result;
   }
 
   /**

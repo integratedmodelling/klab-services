@@ -20,6 +20,9 @@ public interface Extensions {
 
   String LOCAL_SERVICE_COMPONENT = "internal.local.service.component";
 
+  /** Metadata key used when a Resources service advertises a component's Maven provenance. */
+  String COMPONENT_MAVEN_COORDINATES_METADATA_KEY = "component.maven.coordinates";
+
   /** How a component entered the registry. The import type determines how updates are obtained. */
   enum ComponentImportType {
     /** Code contributed by the service itself rather than an imported archive. */

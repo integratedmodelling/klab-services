@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.api.configuration;
 
 import java.io.File;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -200,6 +202,26 @@ public enum Setting {
       "Execute to remove one or more components from the service",
       Map.class,
       Map.of("component", String.class, "result", Boolean.class)),
+  UPDATE_COMPONENT(
+      Page.SERVICES,
+      "Update an installed component from the highest-priority available source",
+      Map.class,
+      Map.of(
+          "component", String.class,
+          "version", String.class,
+          "result", Boolean.class,
+          "message", String.class),
+      EnumSet.allOf(KlabService.Type.class)),
+  REMOVE_COMPONENT(
+      Page.SERVICES,
+      "Remove an installed component from the service",
+      Map.class,
+      Map.of(
+          "component", String.class,
+          "version", String.class,
+          "result", Boolean.class,
+          "message", String.class),
+      EnumSet.allOf(KlabService.Type.class)),
   LOAD_REMOTE_RUNTIME_COMPONENTS(
       Page.RUNTIME,
       "If false, no remote components will be loaded when requested, relying only on those explicitly installed",
@@ -434,18 +456,41 @@ public enum Setting {
   /** Whether this File-valued setting denotes a directory rather than a regular file. */
   public final boolean directory;
 
+  /** Additional service types accepting this setting independently of its presentation page. */
+  private final Set<KlabService.Type> serviceTypes;
+
   Setting(Page page, String description, Class<?> valueClass, Object defaultValue) {
-    this(page, description, valueClass, defaultValue, false);
+    this(page, description, valueClass, defaultValue, false, Set.of());
   }
 
   Setting(
       Page page, String description, Class<?> valueClass, Object defaultValue, boolean directory) {
+    this(page, description, valueClass, defaultValue, directory, Set.of());
+  }
+
+  Setting(
+      Page page,
+      String description,
+      Class<?> valueClass,
+      Object defaultValue,
+      Set<KlabService.Type> serviceTypes) {
+    this(page, description, valueClass, defaultValue, false, serviceTypes);
+  }
+
+  Setting(
+      Page page,
+      String description,
+      Class<?> valueClass,
+      Object defaultValue,
+      boolean directory,
+      Set<KlabService.Type> serviceTypes) {
     this.directory = directory;
     this.description = description;
     this.valueClass = valueClass;
     this.page = page;
     this.defaultValue = defaultValue;
     this.values = new String[] {};
+    this.serviceTypes = Set.copyOf(serviceTypes);
   }
 
   Setting(Page page, String description, String defaultValue, String... stringValues) {
@@ -455,6 +500,7 @@ public enum Setting {
     this.valueClass = String.class;
     this.defaultValue = defaultValue;
     this.page = page;
+    this.serviceTypes = Set.of();
   }
 
   public boolean validate(Object value) {
@@ -473,6 +519,7 @@ public enum Setting {
 
   /** Return whether this setting belongs to the configuration category for a service type. */
   public boolean appliesTo(KlabService.Type serviceType) {
-    return serviceType != null && page.name().equals(serviceType.name());
+    return serviceType != null
+        && (serviceTypes.contains(serviceType) || page.name().equals(serviceType.name()));
   }
 }

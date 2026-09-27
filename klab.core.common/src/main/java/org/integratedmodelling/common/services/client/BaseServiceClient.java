@@ -457,6 +457,11 @@ public abstract class BaseServiceClient implements KlabService {
     }
   }
 
+  /** Discard advertised metadata so the next capabilities request reflects server-side changes. */
+  public void invalidateCapabilities() {
+    capabilities = null;
+  }
+
   public void addListener(BiConsumer<ServiceStatus, Boolean> listener) {
     statusListeners.add(listener);
   }

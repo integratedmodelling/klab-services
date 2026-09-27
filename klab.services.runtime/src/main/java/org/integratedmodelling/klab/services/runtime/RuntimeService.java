@@ -753,7 +753,6 @@ public class RuntimeService extends BaseService
                     scope)
             == null) {
 
-          // TODO use all services!
           var requirements =
               scope
                   .getService(ResourcesService.class)
@@ -2141,6 +2140,39 @@ public class RuntimeService extends BaseService
           return ResourceSet.empty(
               Notification.error(
                   "Cannot receive resources from service " + resourcesService.serviceName()));
+        }
+
+        // A Resources service resolves an implementation by returning the component that carries
+        // it. Once that component has been ingested, expose the requested implementation itself in
+        // the requirements so the resolver can retrieve its prototype and compile the dataflow.
+        var installedExecutor =
+            getComponentRegistry().getFunctionDescriptor(contextualizable.getServiceCall());
+        if (installedExecutor == null || installedExecutor.isEmpty()) {
+          return ResourceSet.empty(
+              Notification.error(
+                  "Component synchronization did not install service implementation "
+                      + contextualizable.getServiceCall().getUrn()));
+        }
+        if (resolution.getResults().stream()
+            .noneMatch(
+                resource ->
+                    resource.getKnowledgeClass()
+                            == KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION
+                        && contextualizable
+                            .getServiceCall()
+                            .getUrn()
+                            .equals(resource.getResourceUrn()))) {
+          resolution
+              .getResults()
+              .add(
+                  new ResourceSet.Resource(
+                      this.serviceId(),
+                      contextualizable.getServiceCall().getUrn(),
+                      null,
+                      contextualizable.getServiceCall().getRequiredVersion(),
+                      KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION,
+                      System.currentTimeMillis(),
+                      false));
         }
         ret = Utils.Resources.merge(ret, resolution);
       }

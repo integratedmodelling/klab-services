@@ -14,8 +14,10 @@ import static org.mockito.Mockito.when;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -143,6 +145,85 @@ class ComponentRegistryUpdateStatusTest {
   }
 
   @Test
+  void dependencySnapshotsUseOnlyNewerLocalMavenArtifacts(@TempDir Path repository)
+      throws Exception {
+    var cache = mock(MavenComponentCache.class);
+    var service = mock(BaseService.class);
+    when(service.serviceId()).thenReturn("runtime-service");
+    when(service.serviceName()).thenReturn("Local Runtime");
+    var component = descriptor(Extensions.ComponentImportType.DEPENDENCY, 1000L, 1000L);
+    when(cache.findLocalArtifact(
+            "org.example", "test", "1.0.0-SNAPSHOT", "component", "kar"))
+        .thenReturn(
+            Optional.of(
+                new MavenComponentCache.LocalArtifact(
+                    new File("test-component.kar"), "new-hash", 2000L)));
+    var registry = new ComponentRegistry(service, null, cache, List.of(component));
+    var eventLog = ComponentRegistry.class.getDeclaredField("componentEventLog");
+    eventLog.setAccessible(true);
+    eventLog.set(registry, new ComponentEventLog(repository.resolve("component-history.jsonl").toFile()));
+
+    var report = registry.checkForUpdates();
+
+    assertEquals(1, report.getNotifications().size());
+    verify(cache)
+        .findLocalArtifact(
+            "org.example", "test", "1.0.0-SNAPSHOT", "component", "kar");
+    verify(cache, never())
+        .getAvailabilityInfo(
+            "org.example", "test", "1.0.0-SNAPSHOT", "component", "kar");
+    var history = registry.getComponentHistory("test.component");
+    assertEquals("LOCAL_MAVEN_PRECEDENCE", history.events().getFirst().details().get("decision"));
+    assertEquals("Local Runtime", history.events().getFirst().serviceName());
+  }
+
+  @Test
+  void explicitDependencyUpdateReportsNoChangeWithoutANewerSource() {
+    var cache = mock(MavenComponentCache.class);
+    var service = mock(BaseService.class);
+    when(service.serviceId()).thenReturn("runtime-service");
+    var component = descriptor(Extensions.ComponentImportType.DEPENDENCY, 1000L, 1000L);
+    when(cache.findLocalArtifact(
+            "org.example", "test", "1.0.0-SNAPSHOT", "component", "kar"))
+        .thenReturn(Optional.empty());
+    var registry = new ComponentRegistry(service, null, cache, List.of(component));
+
+    var report = registry.updateComponent("test.component", component.version(), null);
+
+    assertFalse(
+        org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(
+            report.getNotifications()));
+    assertTrue(report.getNotifications().getFirst().getMessage().contains("already up to date"));
+  }
+
+  @Test
+  void administratorRemovalUnregistersANonBuiltInComponent(@TempDir Path repository)
+      throws Exception {
+    var service = mock(BaseService.class);
+    when(service.serviceId()).thenReturn("runtime-service");
+    when(service.serviceName()).thenReturn("Local Runtime");
+    var component = descriptor(Extensions.ComponentImportType.FILE, 1000L, 1000L);
+    var registry = new ComponentRegistry(service, null, null, List.of(component));
+    var catalog = ComponentRegistry.class.getDeclaredField("catalogFile");
+    catalog.setAccessible(true);
+    catalog.set(registry, repository.resolve("catalog.json").toFile());
+    var eventLog = ComponentRegistry.class.getDeclaredField("componentEventLog");
+    eventLog.setAccessible(true);
+    eventLog.set(
+        registry,
+        new ComponentEventLog(repository.resolve("component-history.jsonl").toFile()));
+
+    var report = registry.removeComponent("test.component", component.version());
+
+    assertFalse(
+        org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(
+            report.getNotifications()));
+    assertEquals(null, registry.getComponent("test.component", component.version()));
+    var history = registry.getComponentHistory("test.component");
+    assertEquals("ADMINISTRATOR_SETTING", history.events().getFirst().details().get("trigger"));
+  }
+
+  @Test
   void newerResourcesResultRequiresDependencyRefresh() {
     var dependency = descriptor(Extensions.ComponentImportType.DEPENDENCY, 1000L, 1000L);
     var newer =
@@ -212,6 +293,7 @@ class ComponentRegistryUpdateStatusTest {
         null,
         null,
         importType == Extensions.ComponentImportType.MAVEN
+                || importType == Extensions.ComponentImportType.DEPENDENCY
             ? "org.example:test:1.0.0-SNAPSHOT"
             : null,
         null,

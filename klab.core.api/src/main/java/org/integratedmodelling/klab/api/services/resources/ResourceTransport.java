@@ -19,7 +19,7 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * Specifications and schemata for resource importing and exporting. IDs of the transport utilized
+ * Specifications and schemata for resource importing and exporting. IDs of the transport used
  * will be required in each import or export call. These apply both to the default services and to
  * individual adapters, which can specify the transport schemata they accept and provide.
  */
@@ -335,8 +335,9 @@ public enum ResourceTransport {
    * Find the export schemata applicable to the passed media type and identity. TODO use scope for
    * permissions
    *
-   * <p>TODO if schema isn't found locally, it should be looked up in a component through the
-   * resources service.
+   * <p>If no local schema matches, component discovery is delegated to the scope's Resources
+   * service. Client and service scopes expose a merging Resources facade when more than one
+   * provider is available.
    *
    * @param knowledgeClass
    * @param mediaType
@@ -363,14 +364,15 @@ public enum ResourceTransport {
     }
 
     if (ret.isEmpty()) {
-      // TODO use all services!
       // TODO only search if not searched before or services have changed
       var result =
           scope instanceof UserScope userScope
               ? scope
                   .getService(ResourcesService.class)
                   .resolve(
-                      "export-schema:" + mediaType, KlabAsset.KnowledgeClass.INFORMATION, userScope)
+                      "export-schema:" + mediaType,
+                      KlabAsset.KnowledgeClass.INFORMATION,
+                      userScope)
               : ResourceSet.empty();
       if (result != null && !result.isEmpty() && service.loadResources(result, scope)) {
         // do it again

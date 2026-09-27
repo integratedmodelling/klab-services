@@ -103,8 +103,20 @@ public class ResourcesMerger implements ResourcesService {
                                   + failureMessage(failure)))));
     }
     CompletableFuture.allOf(responses.toArray(CompletableFuture[]::new)).join();
-    return Utils.Resources.merge(
-        responses.stream().map(CompletableFuture::join).toArray(ResourceSet[]::new));
+    var resourceSets = responses.stream().map(CompletableFuture::join).toList();
+    var resolved = resourceSets.stream().filter(result -> !result.isEmpty()).toList();
+    if (resolved.isEmpty()) {
+      return Utils.Resources.merge(resourceSets.toArray(ResourceSet[]::new));
+    }
+    var merged = Utils.Resources.merge(resolved.toArray(ResourceSet[]::new));
+    // A miss is normally reported as an error by an individual Resources service. Once another
+    // service resolves the request it is not an error, but transport warnings remain useful.
+    resourceSets.stream()
+        .filter(ResourceSet::isEmpty)
+        .flatMap(result -> result.getNotifications().stream())
+        .filter(notification -> notification.getLevel() != Notification.Level.Error)
+        .forEach(merged.getNotifications()::add);
+    return merged;
   }
 
   private static String failureMessage(Throwable failure) {
@@ -133,6 +145,21 @@ public class ResourcesMerger implements ResourcesService {
       return merged.stream().filter(asset -> urns.add(((KlabAsset) asset).getUrn())).toList();
     }
     return List.copyOf(merged);
+  }
+
+  /** Return the first non-null read result, preserving the local-first service ordering. */
+  private <T> T first(Function<ResourcesService, T> operation) {
+    for (var service : services()) {
+      try {
+        var result = operation.apply(service);
+        if (result != null) {
+          return result;
+        }
+      } catch (Throwable ignored) {
+        // A federated read must remain usable when one service is temporarily unavailable.
+      }
+    }
+    return null;
   }
 
   @Override
@@ -289,7 +316,7 @@ public class ResourcesMerger implements ResourcesService {
   @Override
   public <T extends Serializable> T retrieveAsset(
       String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
-    return primary().retrieveAsset(urn, locator, assetClass, scope);
+    return first(service -> service.retrieveAsset(urn, locator, assetClass, scope));
   }
 
   @Override
@@ -318,7 +345,7 @@ public class ResourcesMerger implements ResourcesService {
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
-    return primary().retrieve(urn, assetClass, scope);
+    return first(service -> service.retrieve(urn, assetClass, scope));
   }
 
   @Override
@@ -352,7 +379,7 @@ public class ResourcesMerger implements ResourcesService {
   @Override
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
-    return primary().info(urn, assetClass, infoClass, scope);
+    return first(service -> service.info(urn, assetClass, infoClass, scope));
   }
 
   @Override

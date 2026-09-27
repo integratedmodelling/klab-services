@@ -925,23 +925,49 @@ public class Utils {
      */
     public static <T extends KlabService> ResourceSet queryResources(
         Scope scope, Class<T> serviceClass, Function<T, ResourceSet> request) {
-      ResourceSet ret = new ResourceSet();
       List<Callable<ResourceSet>> tasks = new ArrayList<>();
       for (var service : scope.getServices(serviceClass)) {
-        tasks.add(() -> request.apply(service));
+        tasks.add(
+            () -> {
+              try {
+                return request.apply(service);
+              } catch (Throwable t) {
+                return ResourceSet.empty(
+                    Notification.warning(
+                        "Could not query "
+                            + service.serviceName()
+                            + ": "
+                            + Objects.toString(t.getMessage(), t.getClass().getSimpleName())));
+              }
+            });
       }
 
       try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        List<ResourceSet> responses = new ArrayList<>();
         for (var result : executorService.invokeAll(tasks)) {
-          ret = Utils.Resources.merge(ret, result.get());
+          var response = result.get();
+          if (response != null) {
+            responses.add(response);
+          }
         }
+        // A normal miss from one Resources service carries an error notification. Do not let that
+        // invalidate a successful resolution from another service; retain all diagnostics only when
+        // every service missed.
+        var resolved = responses.stream().filter(response -> !response.isEmpty()).toList();
+        if (resolved.isEmpty()) {
+          return Utils.Resources.merge(responses.toArray(ResourceSet[]::new));
+        }
+        var merged = Utils.Resources.merge(resolved.toArray(ResourceSet[]::new));
+        responses.stream()
+            .filter(ResourceSet::isEmpty)
+            .flatMap(response -> response.getNotifications().stream())
+            .filter(notification -> notification.getLevel() != Notification.Level.Error)
+            .forEach(merged.getNotifications()::add);
+        return merged;
       } catch (Throwable t) {
-        ret.setEmpty(true);
-        ret.getNotifications()
-            .add(Notification.error("Error while executing multiple service " + "requests", t));
+        return ResourceSet.empty(
+            Notification.error("Error while executing multiple service requests", t));
       }
-
-      return ret;
     }
 
     public static String dump(ResourceSet resourceSet) {
