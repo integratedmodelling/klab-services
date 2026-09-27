@@ -81,7 +81,7 @@ reconstruction and replication path is planned; the current source encoder is in
 | `klab.distribution` | Distribution and local service-stack management |
 | `support` | Graph database, language-server and AMQP messaging support modules for local deployments. |
 
-The k.LAB Modeler IDE, a specialized Maven plug-in to aid deployment and testing, and several plug-in components are available in this same Github repository as separate projects.
+The k.LAB Modeler IDE, a specialized Maven plug-in to aid deployment and testing, and several plug-in components are available in this same Github repository as separate projects. New component repositories can be bootstrapped with the sibling `klab.component.archetype`; see the [Maven and component archetype guide](docs/MAVEN.md).
 
 ## Build
 
@@ -119,6 +119,7 @@ No release is available yet, but the artifacts are deployed as SNAPSHOTs in the 
 - [Storage](docs/STORAGE.md) and [provenance](docs/PROVENANCE.md): runtime state and traceability
 - [Agent compiler](docs/AGENT_COMPILER.md): k.Actors runtime and behavior execution internals
 - [Components](docs/COMPONENTS.md): plug-ins, adapters and service extensions
+- [Maven and component archetype](docs/MAVEN.md): generate, package, test and publish component projects
 
 ## Status
 

@@ -471,6 +471,13 @@ For low-risk operation:
 
 ## Packaging Checklist
 
+For a new component, use the `org.integratedmodelling:klab.component.archetype` archetype rather
+than assembling the PF4J and packaging boilerplate by hand. It always creates the required
+`KlabComponent` entry point and can independently add compilable starters for libraries and
+contextualizers, agents, resource adapters, importers/exporters, and authorities. The complete
+command, property reference, build workflow, and Central deployment setup are documented in
+[Maven Builds And Component Archetype](MAVEN.md#create-a-component-project).
+
 A component archive should include:
 
 - A unique PF4J plug-in id that is also meaningful as the component id.
@@ -481,6 +488,7 @@ A component archive should include:
 - A license or rights declaration that can initialize usage rights.
 - A `Plugin-Requires` constraint for the compatible k.LAB version range.
 - Only the classes and resources needed by the component itself.
+- The project license; generated components include GNU Affero GPL version 3 by default.
 
 The Maven artifact intended for component import should be published with classifier `component`
 and suffix `kar`, so the registry can resolve it as:
