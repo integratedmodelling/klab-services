@@ -134,7 +134,17 @@ public class ResourcesMerger implements ResourcesService {
     var responses = new ArrayList<CompletableFuture<ResourceSet>>(services.size());
     for (var service : services) {
       responses.add(
-          CompletableFuture.supplyAsync(() -> operation.apply(service))
+          CompletableFuture.supplyAsync(
+                  () -> {
+                    var result = operation.apply(service);
+                    return result == null
+                        ? ResourceSet.empty(
+                            Notification.warning(
+                                "Resource query returned no result from "
+                                    + service.serviceName()
+                                    + "; its API may be out of date"))
+                        : result;
+                  })
               .exceptionally(
                   failure ->
                       ResourceSet.empty(

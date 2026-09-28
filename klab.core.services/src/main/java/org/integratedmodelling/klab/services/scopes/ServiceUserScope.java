@@ -423,7 +423,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public boolean validateServices() {
     // TODO check that all essential services are available and online, waiting a bit for connection
     //  if necessary
-    Logging.INSTANCE.info("Services for " + user.getUsername() + " validated");
+//    Logging.INSTANCE.info("Services for " + user.getUsername() + " validated");
     return true;
   }
 

@@ -115,6 +115,25 @@ class ResourcesMergerTest {
   }
 
   @Test
+  void nullResponseFromOutdatedServiceBecomesAnEmptyDiagnosticResult() {
+    var scope = mock(Scope.class);
+    var outdatedService = mock(ResourcesService.class);
+    var userScope = mock(UserScope.class);
+    when(outdatedService.serviceName()).thenReturn("outdated resources");
+    when(outdatedService.resolve("random", KnowledgeClass.RESOURCE_ADAPTER, userScope))
+        .thenReturn(null);
+    doReturn(List.of(outdatedService)).when(scope).getServices(ResourcesService.class);
+
+    var merged =
+        new ResourcesMerger(scope)
+            .resolve("random", KnowledgeClass.RESOURCE_ADAPTER, userScope);
+
+    assertTrue(merged.isEmpty());
+    assertEquals(1, merged.getNotifications().size());
+    assertTrue(merged.getNotifications().getFirst().getMessage().contains("API may be out of date"));
+  }
+
+  @Test
   void federatedReadsFallThroughToRemoteService() {
     var scope = mock(Scope.class);
     var localService = mock(ResourcesService.class);

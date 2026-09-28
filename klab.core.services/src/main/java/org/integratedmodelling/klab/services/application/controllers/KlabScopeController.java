@@ -31,7 +31,7 @@ public class KlabScopeController {
   @PostMapping(ServicesAPI.NOTIFY_USER_SCOPE)
   public boolean notifyUserScope(@RequestBody UserScopeNotification request, Principal principal) {
 
-    Logging.INSTANCE.info("Received user scope notification: " + request.getEmailAddress());
+    Logging.INSTANCE.debug("Received user scope notification: " + request.getEmailAddress());
 
     if (principal instanceof EngineAuthorization authorization) {
       var userScope = authorization.getScope(ServiceUserScope.class);
