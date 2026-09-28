@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 
 /**
  * All k.LAB assets have a URN, a version, metadata and possibly annotations. They are
@@ -46,6 +47,7 @@ public interface KlabAsset extends Serializable {
     OBSERVATION_STRATEGY,
     OBSERVATION_STRATEGY_DOCUMENT,
     COMPONENT,
+    RESOURCE_ADAPTER,
     PROJECT,
     WORLDVIEW,
     WORKSPACE,
@@ -101,6 +103,7 @@ public interface KlabAsset extends Serializable {
         case FLOW_TRANSITION -> Flow.Transaction.class;
         case FLOW_ATTACHMENT -> Flow.Attachment.class;
         case CODELIST -> Codelist.class;
+        case RESOURCE_ADAPTER -> AdapterDescriptor.class;
         default ->
             throw new KlabIllegalStateException(
                 "Cannot convert  " + this + " into serializable asset class");
@@ -168,6 +171,8 @@ public interface KlabAsset extends Serializable {
         return FLOW_ATTACHMENT;
       } else if (Codelist.class.isAssignableFrom(cls)) {
         return CODELIST;
+      } else if (AdapterDescriptor.class.isAssignableFrom(cls)) {
+        return RESOURCE_ADAPTER;
       } else {
         throw new KlabUnimplementedException("Classification of asset class " + cls);
       }
@@ -198,6 +203,7 @@ public interface KlabAsset extends Serializable {
       case Flow.Transaction transition -> KnowledgeClass.FLOW_TRANSITION;
       case Flow.Attachment attachment -> KnowledgeClass.FLOW_ATTACHMENT;
       case Codelist codelist -> KnowledgeClass.CODELIST;
+      case AdapterDescriptor adapter -> KnowledgeClass.RESOURCE_ADAPTER;
       case KActorsBehavior behavior ->
           switch (behavior.getBehaviorType()) {
             case BEHAVIOR, TASK, USER, TRAIT, LIBRARY -> KnowledgeClass.BEHAVIOR;

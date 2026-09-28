@@ -2221,7 +2221,7 @@ public class RuntimeService extends BaseService
                       Version.isAny(resolvedUrn.getVersion())
                           ? resolvedUrn.getCatalog()
                           : resolvedUrn.getCatalog() + "@" + resolvedUrn.getVersion(),
-                      KlabAsset.KnowledgeClass.COMPONENT,
+                      KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                       scope);
               if (adapterRequirements != null
                   && !adapterRequirements.isEmpty()
@@ -2293,7 +2293,7 @@ public class RuntimeService extends BaseService
                     ? null
                     : universalProvider.info(
                         resolvedUrn.getCatalog(),
-                        KlabAsset.KnowledgeClass.INFORMATION,
+                        KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                         AdapterDescriptor.class,
                         scope);
 
@@ -2344,7 +2344,7 @@ public class RuntimeService extends BaseService
                         Version.isAny(resolvedUrn.getVersion())
                             ? resolvedUrn.getCatalog()
                             : resolvedUrn.getCatalog() + "@" + resolvedUrn.getVersion(),
-                        KlabAsset.KnowledgeClass.COMPONENT,
+                        KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                         scope);
               }
               if (adapterRequirements == null || adapterRequirements.isEmpty()) {

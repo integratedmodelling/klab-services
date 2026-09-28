@@ -433,9 +433,17 @@ public class RuntimeClient extends BaseServiceClient
                         || contextualizable.getServiceCall() != null)
             .toList();
 
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS, request, ResourceSet.class);
+    var ret =
+        client
+            .withScope(scope)
+            .post(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS, request, ResourceSet.class);
+    return ret == null
+        ? ResourceSet.empty(
+            Notification.error(
+                "Runtime service "
+                    + serviceName()
+                    + " returned no contextualizer resolution; its API may be out of date"))
+        : ret;
   }
 
   @Override

@@ -1,9 +1,14 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
@@ -13,8 +18,11 @@ import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdap
  * Describes an adapter from a client's perspective. Included in component descriptor which is part
  * of the common service capabiities.
  */
-public class AdapterDescriptor {
+public class AdapterDescriptor implements KlabAsset {
 
+  private String urn;
+  private Metadata metadata = Metadata.create();
+  private List<Annotation> annotations = new ArrayList<>();
   private String name;
   private Version version;
   private String serviceId;
@@ -61,6 +69,7 @@ public class AdapterDescriptor {
       List<ResourceTransport.Schema> exportSchemata,
       List<Adapter.Parameter> parameters) {
     this.name = name;
+    this.urn = name;
     this.version = version;
     this.serviceId = serviceId;
     this.serviceType = serviceType;
@@ -87,6 +96,9 @@ public class AdapterDescriptor {
 
   public void setName(String name) {
     this.name = name;
+    if (this.urn == null) {
+      this.urn = name;
+    }
   }
 
   public Version getVersion() {
@@ -97,8 +109,35 @@ public class AdapterDescriptor {
     this.version = version;
   }
 
+  @Override
+  public String getUrn() {
+    return urn == null ? name : urn;
+  }
+
+  @Override
+  public Metadata getMetadata() {
+    return metadata;
+  }
+
   public String getServiceId() {
     return serviceId;
+  }
+
+  @Override
+  public Collection<Annotation> getAnnotations() {
+    return annotations;
+  }
+
+  public void setUrn(String urn) {
+    this.urn = urn;
+  }
+
+  public void setMetadata(Metadata metadata) {
+    this.metadata = metadata == null ? Metadata.create() : metadata;
+  }
+
+  public void setAnnotations(List<Annotation> annotations) {
+    this.annotations = annotations == null ? new ArrayList<>() : annotations;
   }
 
   public void setServiceId(String serviceId) {
@@ -263,9 +302,16 @@ public class AdapterDescriptor {
     return distribution.validate();
   }
 
-  /** Decode and validate the Java resource-adapter declaration, including its maximum state count. */
+  /**
+   * Decode and validate the Java resource-adapter declaration, including its maximum state count.
+   */
   public static Data.ShardingStrategy shardingStrategy(ResourceAdapter annotation) {
-    return new Data.ShardingStrategy(annotation.fillCurve(), annotation.splits(),
-        annotation.minSizeForSplitting(), annotation.maxSize(), null).validate();
+    return new Data.ShardingStrategy(
+            annotation.fillCurve(),
+            annotation.splits(),
+            annotation.minSizeForSplitting(),
+            annotation.maxSize(),
+            null)
+        .validate();
   }
 }

@@ -78,7 +78,7 @@ workspaces, worldviews, components, and service implementations. Special informa
 identifiers are:
 
 - `export-schema:<media-type>` and `import-schema:<media-type>` with `INFORMATION`;
-- an adapter identifier, optionally versioned, with `COMPONENT`;
+- an adapter identifier, optionally versioned, with `RESOURCE_ADAPTER`;
 - `<service-call-urn>@<version>` with `SERVICE_IMPLEMENTATION`.
 
 Model resolution through `query` uses the typed convention
@@ -94,13 +94,14 @@ RESOURCE descriptor and, when available, the embeddable COMPONENT that supplies 
 
 A consuming Runtime must not interpret the RESOURCE descriptor as a catalog object. If the adapter
 is missing and the RESOURCE dependency set did not carry its component, Runtime resolves the
-adapter identifier separately as `COMPONENT` through the merged Resources client, installs that
-dependency, and verifies the embeddable adapter before continuing. Retrieval is deferred until the
-compiled dataflow uses the URN; at that point any Resources service with the adapter can synthesize
-the Resource. Ordinary non-`klab` resource URNs retain the owner-specific resolve-then-retrieve
-contract.
+adapter identifier separately as `RESOURCE_ADAPTER` through the merged Resources client. The
+result identifies the providing `COMPONENT`, which Runtime installs before verifying the
+embeddable adapter. Retrieval is deferred until the compiled dataflow uses the URN; at that point
+any Resources service with the adapter can synthesize the Resource. Ordinary non-`klab` resource
+URNs retain the owner-specific resolve-then-retrieve contract. Adapter descriptor retrieval and
+queries use `RESOURCE_ADAPTER`; the former `INFORMATION` projection is not part of this contract.
 
-The same component lookup is also a compatibility fallback when the merged RESOURCE lookup is
+The same adapter lookup is also a compatibility fallback when the merged RESOURCE lookup is
 empty. If it installs an embeddable adapter, Runtime synthesizes the universal RESOURCE descriptor
 locally and continues resolution. This lets a newer Runtime consume an adapter advertised by a
 Resources service that does not yet implement synthetic universal-RESOURCE resolution.
@@ -120,9 +121,13 @@ the served worldview.
 
 `list` has no search semantics. Clients that need matching, sorting, or a different representation
 must use `query`. In a multi-service scope, `ResourcesMerger` snapshots all resource services,
-excludes itself, queries them concurrently, tolerates an individual failure, and returns distinct
-results in service order. `retrieve`, writes, and operational calls go to the primary service
-because their results cannot be combined safely.
+including Resources clients advertised in a service-side scope even when they are temporarily
+absent from its live status-filtered typed projection. It de-duplicates the snapshot by service ID
+(or URL when no ID is known), excludes itself, queries the services concurrently, tolerates an
+individual failure, and returns distinct results in service order. This prevents a cached merger
+from silently becoming local-only while the advertised federation still contains a remote
+provider. `retrieve`, writes, and operational calls go to the primary service because their results
+cannot be combined safely.
 
 ### Info
 

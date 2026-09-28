@@ -86,7 +86,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   @Override
   public final <T extends KlabService> T getService(Class<T> serviceClass) {
     if (ResourcesService.class.isAssignableFrom(serviceClass)
-        && getServices(serviceClass).size() > 1) {
+        && serviceList(KlabService.Type.RESOURCES).size() > 1) {
       if (resourcesMerger == null) {
         resourcesMerger = new ResourcesMerger(this);
       }

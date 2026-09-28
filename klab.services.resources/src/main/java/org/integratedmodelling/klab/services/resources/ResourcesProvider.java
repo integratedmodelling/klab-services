@@ -563,6 +563,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 adapter.getComponentVersion(),
                 component == null ? adapter.getAdapterInfo().getTimestamp() : component.timestamp(),
                 component));
+    ret.getServices().put(serviceId(), getUrl());
     return ret;
   }
 
@@ -1152,6 +1153,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return (T) resolveConceptInternal(urn);
     } else if (Codelist.class.isAssignableFrom(assetClass)) {
       return assetClass.cast(deriveConceptCodelist(urn));
+    } else if (AdapterDescriptor.class.isAssignableFrom(assetClass)) {
+      return assetClass.cast(
+          super.info(urn, KnowledgeClass.RESOURCE_ADAPTER, AdapterDescriptor.class, scope));
     } else if (Worldview.class.isAssignableFrom(assetClass)) {
       var ret = retrieveWorldview();
       if (ret != null && ret.getUrn().equals(urn)) {
@@ -1189,6 +1193,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return resourcesKbox.listResourcesUrns().stream()
           .map(urn -> retrieve(urn, assetClass, scope))
           .filter(Objects::nonNull)
+          .toList();
+    } else if (AdapterDescriptor.class.isAssignableFrom(assetClass)) {
+      return super
+          .query(
+              Parameters.create(),
+              KnowledgeClass.RESOURCE_ADAPTER,
+              AdapterDescriptor.class,
+              scope)
+          .stream()
+          .map(assetClass::cast)
           .toList();
     }
     if (Worldview.class.isAssignableFrom(assetClass)) {
@@ -1319,6 +1333,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             yield desiredResource == null ? null : ResourceSet.of(desiredResource);
           }
           case COMPONENT -> resolveComponentExtension(urn, scope);
+          case RESOURCE_ADAPTER -> resolveResourceAdapter(urn, scope);
           case MODEL -> resolveModelAsset(urn, scope);
           case RESOURCE -> resolveResourceUrn(urn, scope);
           case WORKSPACE -> {
@@ -1621,7 +1636,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     query = query == null ? Parameters.create() : query;
     if (isCommonInformationClass(assetClass, infoClass)
         && (assetClass == KnowledgeClass.COMPONENT
-            //            || assetClass == KnowledgeClass.INFORMATION
+            || assetClass == KnowledgeClass.RESOURCE_ADAPTER
             || assetClass == KnowledgeClass.SERVICE_IMPLEMENTATION)) {
       return super.query(query == null ? Parameters.create() : query, assetClass, infoClass, scope);
     }

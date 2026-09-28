@@ -51,7 +51,7 @@ public class RemoteAdapterExecutor extends AbstractExecutor
                   this.service = resourcesService;
                   return resourcesService.info(
                       resource.getAdapterType(),
-                      KlabAsset.KnowledgeClass.INFORMATION,
+                      KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                       AdapterDescriptor.class,
                       scope);
                 })

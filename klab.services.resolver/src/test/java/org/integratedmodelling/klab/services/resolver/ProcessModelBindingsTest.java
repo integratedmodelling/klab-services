@@ -125,6 +125,37 @@ class ProcessModelBindingsTest {
     verify(f.scope, never()).observation(any());
   }
 
+  @Test void nullContextualizerResponseFailsResolutionWithoutThrowing() throws Exception {
+    var f = new Fixture();
+    when(f.scope.withResolutionConstraints(
+            any(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint[].class)))
+        .thenReturn(f.scope);
+    var runtime = mock(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    when(f.scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class))
+        .thenReturn(runtime);
+    when(runtime.resolveContextualizables(eq(f.model.getComputation()), eq(f.scope)))
+        .thenReturn(null);
+    f.model.setCoverage(org.integratedmodelling.klab.api.geometry.Geometry.UNIVERSAL);
+    var scale =
+        GeometryRepository.INSTANCE.scale(
+            org.integratedmodelling.klab.api.geometry.Geometry.create(
+                "T0(1){tstart=1388534400000,tend=1420070400000,ttype=PHYSICAL}"));
+    var method =
+        ResolutionCompiler.class.getDeclaredMethod(
+            "resolve", Model.class,
+            org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class,
+            ResolutionGraph.class, ContextScope.class);
+    method.setAccessible(true);
+
+    var result =
+        (ResolutionGraph)
+            method.invoke(
+                new ResolutionCompiler(mock(ResolverService.class)),
+                f.model, scale, ResolutionGraph.create(f.scope), f.scope);
+
+    assertTrue(result.isEmpty());
+  }
+
   @Test void subjectEventAndFunctionalRelationshipAreHostsButStructuralRelationshipsAreNot() {
     var f = new Fixture();
     for (var host : List.of(observable("region", SemanticType.SUBJECT),

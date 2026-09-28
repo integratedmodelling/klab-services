@@ -330,8 +330,9 @@ Resource URNs have a separate adapter-discovery path. A universal resource has t
 `klab:<adapter>:...`; it contains no stored data and therefore has no resource-catalog entry. When
 Runtime resolves such a RESOURCE and the named adapter is not installed locally, it first uses any
 COMPONENT dependency returned with the resource. If none was returned, it explicitly resolves the
-second URN element as a COMPONENT through the merged Resources client. The component is transferred
-and installed before dataflow compilation continues, and Runtime verifies that it registered an
+second URN element as a `RESOURCE_ADAPTER` through the merged Resources client. That resolution
+returns the providing COMPONENT, which is transferred and installed before dataflow compilation
+continues. Runtime then verifies that the component registered an
 embeddable adapter with the requested version. The synthetic RESOURCE descriptor is retained in the
 resolution result, but it is not passed to catalog retrieval: the now-local adapter synthesizes the
 Resource when the compiled dataflow uses it.

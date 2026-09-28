@@ -167,6 +167,9 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
+
+    Logging.INSTANCE.info("Resolving " + assetClass + " " + urn + " in service " + serviceName());
+
     // Media types contain slashes (and may contain parameters), so they cannot be carried in
     // the generic resolver's single URN path segment. Use the existing query-based endpoints.
     if (assetClass == KnowledgeClass.INFORMATION && urn.startsWith("export-schema:")) {

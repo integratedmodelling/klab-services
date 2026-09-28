@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -27,6 +28,31 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 class ResourcesMergerTest {
+
+  @Test
+  void includesAdvertisedRemoteServiceMissingFromTypedScopeProjection() {
+    var scope = mock(Scope.class);
+    var localService = mock(ResourcesService.class);
+    var remoteService = mock(ResourcesService.class);
+    var userScope = mock(UserScope.class);
+
+    when(localService.serviceId()).thenReturn("local");
+    when(remoteService.serviceId()).thenReturn("remote");
+    when(localService.resolve("urn", KnowledgeClass.RESOURCE, userScope))
+        .thenReturn(ResourceSet.empty(Notification.error("Not found locally")));
+    when(remoteService.resolve("urn", KnowledgeClass.RESOURCE, userScope))
+        .thenReturn(result("urn", "remote", false, "1.0.0", 2));
+    doReturn(List.of(localService)).when(scope).getServices(ResourcesService.class);
+    doReturn(List.of(localService, remoteService)).when(scope).getServices(KlabService.class);
+
+    var merged =
+        new ResourcesMerger(scope).resolve("urn", KnowledgeClass.RESOURCE, userScope);
+
+    assertFalse(merged.isEmpty());
+    assertEquals("remote", merged.getResults().iterator().next().getServiceId());
+    verify(localService).resolve("urn", KnowledgeClass.RESOURCE, userScope);
+    verify(remoteService).resolve("urn", KnowledgeClass.RESOURCE, userScope);
+  }
 
   @Test
   void queriesAllServicesConcurrentlyAndSurvivesIndividualFailures() {

@@ -347,6 +347,7 @@ public abstract class BaseService implements KlabService {
         .findFirst().orElse(null);
     if (common != null) return common;
     if (objectClass == KlabAsset.KnowledgeClass.COMPONENT
+        || objectClass == KlabAsset.KnowledgeClass.RESOURCE_ADAPTER
         || objectClass == KlabAsset.KnowledgeClass.INFORMATION
         || objectClass == KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION) return null;
     return info(urn, objectClass, objectClass.getAssetClass(), scope);
@@ -466,12 +467,14 @@ public abstract class BaseService implements KlabService {
     }
     return switch (objectClass) {
       case COMPONENT -> List.copyOf(getComponentRegistry().getComponents(scope));
+      case RESOURCE_ADAPTER ->
+          getComponentRegistry().getComponents(scope).stream()
+              .flatMap(component -> component.adapters().stream())
+              .distinct()
+              .toList();
       case INFORMATION ->
           getComponentRegistry().getComponents(scope).stream()
-              .flatMap(
-                  component ->
-                      Stream.concat(
-                          component.adapters().stream(), component.authorities().stream()))
+              .flatMap(component -> component.authorities().stream())
               .distinct()
               .toList();
       case SERVICE_IMPLEMENTATION ->

@@ -192,7 +192,7 @@ public class CompiledDataflow {
                           .getService(ResourcesService.class)
                           .info(
                               resource.getAdapterType(),
-                              KlabAsset.KnowledgeClass.INFORMATION,
+                              KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                               AdapterDescriptor.class,
                               scope)
                       : embeddedAdapter.getAdapterInfo();
@@ -217,7 +217,7 @@ public class CompiledDataflow {
                           .getService(ResourcesService.class)
                           .info(
                               resource.getAdapterType(),
-                              KlabAsset.KnowledgeClass.INFORMATION,
+                              KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                               AdapterDescriptor.class,
                               scope)
                       : embeddedAdapter.getAdapterInfo();
