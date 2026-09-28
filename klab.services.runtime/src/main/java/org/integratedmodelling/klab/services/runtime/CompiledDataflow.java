@@ -5,6 +5,7 @@ import java.util.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
@@ -239,7 +240,7 @@ public class CompiledDataflow {
     return ret;
   }
 
-  private Resource resolveResource(
+  Resource resolveResource(
       List<String> urns, Observation observation, ServiceContextScope scope) {
 
     if (urns.size() == 1 && scope.getData().containsKey(urns.getFirst())) {
@@ -252,6 +253,23 @@ public class CompiledDataflow {
       throw new KlabInternalErrorException(
           "TO BE IMPLEMENTED: composite resource retrieval for multiple URNs");
     }
+
+    var urn = Urn.of(urns.getFirst());
+    if (urn.isUniversal()) {
+      var adapter =
+          componentRegistry.getAdapter(urn.getCatalog(), urn.getVersion(), scope);
+      if (adapter != null) {
+        return Resource.builder(urn.getUrn())
+            .withAdapterType(urn.getCatalog())
+            .withResourceVersion(adapter.getVersion())
+            .withType(adapter.resourceType(urn))
+            .withGeometry(Geometry.create("S2"))
+            .withParameters(Parameters.create(urn.getParameters()))
+            .withServiceId(runtimeService.serviceId())
+            .build();
+      }
+    }
+
     return scope
         .getService(ResourcesService.class)
         .retrieve(urns.getFirst(), Resource.class, scope);

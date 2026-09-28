@@ -85,6 +85,32 @@ Model resolution through `query` uses the typed convention
 `{"observable": <Observable>}`, `KnowledgeClass.MODEL`, and `ResourceSet.class`. This preserves the
 old semantic model-candidate operation while keeping it under the generic query API.
 
+#### Universal resources
+
+A resource URN whose node (first element) is `klab`, such as `klab:random:...`, is universal. It
+does not identify stored data and is intentionally absent from every resource catalog. Its catalog
+(second element) is instead the adapter identifier. Resolving it as `RESOURCE` returns a synthetic
+RESOURCE descriptor and, when available, the embeddable COMPONENT that supplies that adapter.
+
+A consuming Runtime must not interpret the RESOURCE descriptor as a catalog object. If the adapter
+is missing and the RESOURCE dependency set did not carry its component, Runtime resolves the
+adapter identifier separately as `COMPONENT` through the merged Resources client, installs that
+dependency, and verifies the embeddable adapter before continuing. Retrieval is deferred until the
+compiled dataflow uses the URN; at that point any Resources service with the adapter can synthesize
+the Resource. Ordinary non-`klab` resource URNs retain the owner-specific resolve-then-retrieve
+contract.
+
+The same component lookup is also a compatibility fallback when the merged RESOURCE lookup is
+empty. If it installs an embeddable adapter, Runtime synthesizes the universal RESOURCE descriptor
+locally and continues resolution. This lets a newer Runtime consume an adapter advertised by a
+Resources service that does not yet implement synthetic universal-RESOURCE resolution.
+
+A universal adapter need not be embeddable. For a non-embeddable adapter, the RESOURCE descriptor's
+service ID identifies the Resources service that will synthesize and execute it. Runtime does not
+request or install that component; dataflow compilation retains a remote adapter descriptor and
+execution uses the Resources contextualization API and Avro data transport. Thus universal-resource
+resolution supports both local embedded execution and remote hosted execution.
+
 ### Retrieve and list
 
 `WorkspaceManager` is the source of full workspace-managed assets. It retrieves and lists

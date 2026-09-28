@@ -58,6 +58,7 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.*;
+import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -2194,17 +2195,205 @@ public class RuntimeService extends BaseService
 
         } else {
 
-          // ensure resource or adapter is accessible, pre-cache any multiple URN configuration
+          var resolvedUrn = Urn.of(preResolveResourceData.getFirst());
+          // Ensure the resource or its adapter is accessible, and pre-cache any multiple-URN
+          // configuration. A universal-resource provider may run an older implementation that
+          // advertises the adapter component but does not synthesize a RESOURCE result. Do not let
+          // that compatibility gap prevent an embeddable adapter from being discovered.
           var resolution =
               resourcesService.resolve(
                   preResolveResourceData.getFirst(), KlabAsset.KnowledgeClass.RESOURCE, scope);
+          if (resolution == null) {
+            resolution = ResourceSet.empty();
+          }
+          if (resolution.isEmpty() && resolvedUrn.isUniversal()) {
+            ResourceSet adapterRequirements = null;
+            var installedAdapter =
+                getComponentRegistry()
+                    .getAdapter(resolvedUrn.getCatalog(), resolvedUrn.getVersion(), scope);
+            if (installedAdapter == null) {
+              scope.info(
+                  "Discovering component for universal resource adapter '",
+                  resolvedUrn.getCatalog(),
+                  "'");
+              adapterRequirements =
+                  resourcesService.resolve(
+                      Version.isAny(resolvedUrn.getVersion())
+                          ? resolvedUrn.getCatalog()
+                          : resolvedUrn.getCatalog() + "@" + resolvedUrn.getVersion(),
+                      KlabAsset.KnowledgeClass.COMPONENT,
+                      scope);
+              if (adapterRequirements != null
+                  && !adapterRequirements.isEmpty()
+                  && ingestResources(
+                      adapterRequirements,
+                      scope,
+                      settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
+                installedAdapter =
+                    getComponentRegistry()
+                        .getAdapter(resolvedUrn.getCatalog(), resolvedUrn.getVersion(), scope);
+              }
+            }
+            if (installedAdapter != null && installedAdapter.isEmbeddable()) {
+              var adapterInfo = installedAdapter.getAdapterInfo();
+              var syntheticResource =
+                  ResourceSet.of(
+                      new ResourceSet.Resource(
+                          this.serviceId(),
+                          resolvedUrn.getUrn(),
+                          null,
+                          installedAdapter.getVersion(),
+                          KlabAsset.KnowledgeClass.RESOURCE,
+                          adapterInfo == null
+                              ? System.currentTimeMillis()
+                              : adapterInfo.getTimestamp(),
+                          false));
+              resolution =
+                  adapterRequirements == null
+                      ? syntheticResource
+                      : Utils.Resources.merge(adapterRequirements, syntheticResource);
+              if (adapterRequirements != null) {
+                scope.info(
+                    "Installed component for universal resource adapter '",
+                    resolvedUrn.getCatalog(),
+                    "'");
+              }
+            }
+          }
           if (resolution.isEmpty()) {
             return resolution;
           }
           ret = Utils.Resources.merge(ret, resolution);
+
+          if (resolvedUrn.isUniversal()
+              && getComponentRegistry()
+                      .getAdapter(resolvedUrn.getCatalog(), resolvedUrn.getVersion(), scope)
+                  == null) {
+            var universalResource =
+                resolution.getResults().stream()
+                    .filter(
+                        resource ->
+                            resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE
+                                && Objects.equals(
+                                    resource.getResourceUrn(), resolvedUrn.getUrn()))
+                    .findFirst()
+                    .orElse(null);
+            var universalProvider =
+                universalResource == null
+                    ? null
+                    : scope
+                        .findService(
+                            ResourcesService.class,
+                            service ->
+                                Objects.equals(
+                                    service.serviceId(), universalResource.getServiceId()))
+                        .orElse(null);
+            var remoteAdapter =
+                universalProvider == null
+                    ? null
+                    : universalProvider.info(
+                        resolvedUrn.getCatalog(),
+                        KlabAsset.KnowledgeClass.INFORMATION,
+                        AdapterDescriptor.class,
+                        scope);
+
+            if (remoteAdapter != null && !remoteAdapter.isEmbeddable()) {
+              // The resource has no catalog entry, but its hosting service can synthesize it and
+              // execute the adapter through the remote Avro data route. Preserve that service ID
+              // for RemoteAdapterExecutor and do not attempt to transfer its component.
+              if (universalProvider.retrieve(resolvedUrn.getUrn(), Resource.class, scope) == null) {
+                return ResourceSet.empty(
+                    Notification.error(
+                        "Remote adapter "
+                            + resolvedUrn.getCatalog()
+                            + " cannot create universal resource "
+                            + resolvedUrn.getUrn()));
+              }
+            } else {
+              /*
+               * Universal resources have no catalog entry: klab:<adapter>:... is both the resource
+               * identifier and the declaration of the adapter that must handle it. Older providers,
+               * and providers hosting a non-local copy of the resource adapter, may return only the
+               * synthetic RESOURCE result. Resolve the adapter contribution explicitly when the
+               * resource dependency set did not already include it.
+               */
+              var adapterRequirements = resolution;
+              var resourceCarriedComponents =
+                  resolution.getResults().stream()
+                      .anyMatch(
+                          resource ->
+                              resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT);
+              if (resourceCarriedComponents
+                  && !ingestResources(
+                      resolution,
+                      scope,
+                      settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
+                return ResourceSet.empty(
+                    Notification.error(
+                        "Cannot install adapter for universal resource " + resolvedUrn.getUrn()));
+              }
+
+              // A returned component may be another resource dependency, so only its successful
+              // registration of the named adapter suppresses explicit adapter discovery.
+              if (!resourceCarriedComponents
+                  || getComponentRegistry()
+                          .getAdapter(resolvedUrn.getCatalog(), resolvedUrn.getVersion(), scope)
+                      == null) {
+                adapterRequirements =
+                    resourcesService.resolve(
+                        Version.isAny(resolvedUrn.getVersion())
+                            ? resolvedUrn.getCatalog()
+                            : resolvedUrn.getCatalog() + "@" + resolvedUrn.getVersion(),
+                        KlabAsset.KnowledgeClass.COMPONENT,
+                        scope);
+              }
+              if (adapterRequirements == null || adapterRequirements.isEmpty()) {
+                return adapterRequirements == null
+                    ? ResourceSet.empty(
+                        Notification.error(
+                            "Cannot discover adapter "
+                                + resolvedUrn.getCatalog()
+                                + " for universal resource "
+                                + resolvedUrn.getUrn()))
+                    : adapterRequirements;
+              }
+              if (adapterRequirements != resolution
+                  && !ingestResources(
+                      adapterRequirements,
+                      scope,
+                      settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
+                return ResourceSet.empty(
+                    Notification.error(
+                        "Cannot install adapter "
+                            + resolvedUrn.getCatalog()
+                            + " for universal resource "
+                            + resolvedUrn.getUrn()));
+              }
+              ret = Utils.Resources.merge(ret, adapterRequirements);
+              var installedAdapter =
+                  getComponentRegistry()
+                      .getAdapter(resolvedUrn.getCatalog(), resolvedUrn.getVersion(), scope);
+              if (installedAdapter == null || !installedAdapter.isEmbeddable()) {
+                return ResourceSet.empty(
+                    Notification.error(
+                        "Adapter "
+                            + resolvedUrn.getCatalog()
+                            + " for universal resource "
+                            + resolvedUrn.getUrn()
+                            + " is not available as an embeddable Runtime contribution"));
+              }
+            }
+          }
+
           if (!ret.isEmpty()) {
             for (var resource : resolution.getResults()) {
               if (resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE) {
+                // Universal resources deliberately have no catalog object. Embedded adapters
+                // synthesize them in CompiledDataflow; remote adapters were checked against their
+                // hosting service above and will retrieve the synthetic object when compiled.
+                if (Urn.of(resource.getResourceUrn()).isUniversal()) {
+                  continue;
+                }
                 var service =
                     scope
                         .findService(

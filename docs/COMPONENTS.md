@@ -326,6 +326,23 @@ the newly available prototype visible while the resolution graph and dataflow ar
 services participating in a stack should therefore run the same version of this discovery
 contract.
 
+Resource URNs have a separate adapter-discovery path. A universal resource has the form
+`klab:<adapter>:...`; it contains no stored data and therefore has no resource-catalog entry. When
+Runtime resolves such a RESOURCE and the named adapter is not installed locally, it first uses any
+COMPONENT dependency returned with the resource. If none was returned, it explicitly resolves the
+second URN element as a COMPONENT through the merged Resources client. The component is transferred
+and installed before dataflow compilation continues, and Runtime verifies that it registered an
+embeddable adapter with the requested version. The synthetic RESOURCE descriptor is retained in the
+resolution result, but it is not passed to catalog retrieval: the now-local adapter synthesizes the
+Resource when the compiled dataflow uses it.
+
+Embeddability is an execution choice, not a condition for resolving a universal resource. When the
+hosting Resources service advertises a non-embeddable adapter, Runtime retains the synthetic
+RESOURCE descriptor and its source service ID without requesting the component. The compiled
+dataflow retrieves the synthesized Resource from that service and selects `RemoteAdapterExecutor`,
+which obtains data through the Resources contextualization/Avro transport route. Component
+synchronization is used only for an adapter advertised as embeddable.
+
 An install or actual same-version build replacement sends informational start and completion
 notifications through the initiating scope. Runtime messaging subscribes to the Info queue by
 default, so these notifications can be displayed by the submitting client during a longer
