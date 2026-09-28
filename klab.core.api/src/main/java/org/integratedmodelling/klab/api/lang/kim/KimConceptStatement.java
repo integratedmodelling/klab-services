@@ -95,6 +95,22 @@ public interface KimConceptStatement extends KlabStatement {
 
   List<KimConcept> getObservablesCreated();
 
+  /**
+   * Sources named by an {@code affected by} clause on this declaration. The Reasoner translates
+   * each entry exactly as if that source had declared {@code affects} this concept.
+   */
+  default List<KimConcept> getAffectedBy() {
+    return List.of();
+  }
+
+  /**
+   * Sources named by a {@code created by} clause on this declaration. The Reasoner translates each
+   * entry exactly as if that source had declared {@code creates} this concept.
+   */
+  default List<KimConcept> getCreatedBy() {
+    return List.of();
+  }
+
   List<KimConcept> getTraitsConferred();
 
   List<KimConcept> getTraitsInherited();

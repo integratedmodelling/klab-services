@@ -411,7 +411,7 @@ functional relationship DrainsTo
 This establishes relationship source and target. The current grammar accepts one source reference
 and one target reference in a single `links` clause.
 
-### 7.6. `creates` and `affects`
+### 7.6. `creates`, `affects`, `created by`, and `affected by`
 
 ```kwv
 process Precipitation
@@ -421,11 +421,30 @@ process Precipitation
 process Heating
     affects earth:AtmosphericTemperature
 ;
+
+volume WaterVolume
+    created by hydrology:Precipitation
+;
+
+temperature AtmosphericTemperature
+    affected by hydrology:Heating
+;
 ```
 
 `creates` declares produced observables. `affects` declares observables whose state may be
 modified. Several targets may be comma-separated. These clauses express semantic potential, not
 executable equations; k.IM models provide the computation.
+
+The passive forms `created by` and `affected by` are dependency-ordering syntax for the same
+relationships. Use them on a target concept when the source concept belongs to an upstream
+ontology that cannot import the ontology defining the target. For example,
+`AtmosphericTemperature affected by hydrology:Heating` produces the same OWL restriction as
+`hydrology:Heating affects AtmosphericTemperature`: the restriction uses `odo:affects` with
+`Heating` as its source. Likewise, `created by` uses `odo:creates`. Neither form declares or uses an
+inverse OWL object property.
+
+Several sources may be comma-separated. `affected by` requires process or event sources and a
+quality target; `created by` requires observable sources and an observable target.
 
 Inherency and effects serve different purposes. A quality may inhere to a process or event itself
 (`Quality of Process` is valid), or to the occurrence's surrounding context. In an occurrence model,

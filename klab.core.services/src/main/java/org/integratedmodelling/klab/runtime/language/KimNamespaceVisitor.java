@@ -1,7 +1,11 @@
 package org.integratedmodelling.klab.runtime.language;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -25,7 +29,84 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
   public static class LenientValidator extends KimObservableVisitor.LenientValidator
       implements Validator {}
 
-  public static class DefaultValidator extends KimValidator implements Validator {}
+  public static class DefaultValidator extends KimValidator implements Validator {
+    @Override
+    public List<Notification> validateModel(KimModel model, Context context) {
+      var diagnostics = new java.util.ArrayList<Notification>();
+      for (var contextualizable : safe(model.getContextualization())) {
+        var target = contextualizable.getTarget();
+        if (contextualizable.getTargetId() != null && !contextualizable.getTargetId().isBlank()) {
+          target =
+              Stream.concat(
+                      safe(model.getObservables()).stream(), safe(model.getDependencies()).stream())
+                  .filter(observable -> matches(contextualizable.getTargetId(), observable))
+                  .findFirst()
+                  .orElse(null);
+        } else if (target == null && !safe(model.getObservables()).isEmpty()) {
+          target = safe(model.getObservables()).iterator().next();
+        }
+        if (target == null) {
+          diagnostics.add(
+              error(
+                  "Unknown contextualization target " + contextualizable.getTargetId(),
+                  contextualizable,
+                  context));
+          continue;
+        }
+        validateMappingTarget(contextualizable, target, context, diagnostics);
+      }
+      return diagnostics;
+    }
+
+    private static boolean matches(String targetId, KimObservable observable) {
+      return Objects.equals(targetId, observable.getFormalName())
+          || Objects.equals(targetId, observable.getCodeName());
+    }
+
+    private static void validateMappingTarget(
+        Contextualizable contextualizable,
+        KimObservable target,
+        Context context,
+        List<Notification> diagnostics) {
+      var targetType =
+          target.getNonSemanticType() != null
+              ? target.getNonSemanticType()
+              : Artifact.Type.forSemantics(target.getSemantics().getType());
+      if (contextualizable.getClassification() != null
+          && !Artifact.Type.isCompatible(targetType, Artifact.Type.CONCEPT)) {
+        diagnostics.add(
+            error(
+                "A classification produces concepts, incompatible with target type " + targetType,
+                contextualizable,
+                context));
+      }
+      if (contextualizable.getLookupTable() != null) {
+        var lookupType = contextualizable.getLookupTable().getLookupType();
+        if (lookupType != null && !Artifact.Type.isCompatible(targetType, lookupType)) {
+          diagnostics.add(
+              error(
+                  "Lookup result type "
+                      + lookupType
+                      + " is incompatible with target type "
+                      + targetType,
+                  contextualizable,
+                  context));
+        }
+      }
+      if (contextualizable.getAccordingTo() != null && targetType != Artifact.Type.CONCEPT) {
+        diagnostics.add(
+            error(
+                "according to requires a concept-valued target, not " + targetType,
+                contextualizable,
+                context));
+      }
+    }
+
+    private static Notification error(String message, Contextualizable source, Context context) {
+      return Notification.error(
+          message, Notification.LexicalContext.of(source, context.getDocument()));
+    }
+  }
 
   private final Validator namespaceValidator;
 

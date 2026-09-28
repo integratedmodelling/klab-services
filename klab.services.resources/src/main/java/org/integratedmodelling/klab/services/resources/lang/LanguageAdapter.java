@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
@@ -875,7 +876,7 @@ public enum LanguageAdapter {
         KimObservable target = mainObservable;
         if (contextualizable.getTarget() != null) {
           target =
-              ret.getObservables().stream()
+              Stream.concat(ret.getObservables().stream(), ret.getDependencies().stream())
                   .filter(
                       observable ->
                           contextualizable.getTarget().equals(observable.getFormalName())
@@ -883,12 +884,7 @@ public enum LanguageAdapter {
                   .findFirst()
                   .orElse(null);
         }
-        if (target == null) {
-          throw new KlabIllegalArgumentException(
-              "Unknown contextualization target " + contextualizable.getTarget());
-        }
         ((ContextualizableImpl) adapted).setTarget(target);
-        validateMappingTarget(adapted, target);
         ret.getContextualization().add(adapted);
       } catch (KlabIllegalArgumentException e) {
         var notification = Notification.error(ret, e.getMessage());
@@ -898,34 +894,6 @@ public enum LanguageAdapter {
     }
 
     return ret;
-  }
-
-  private void validateMappingTarget(Contextualizable contextualizable, KimObservable target) {
-    var targetType =
-        target.getNonSemanticType() != null
-            ? target.getNonSemanticType()
-            : org.integratedmodelling.klab.api.knowledge.Artifact.Type.forSemantics(
-                target.getSemantics().getType());
-    if (contextualizable.getClassification() != null
-        && !org.integratedmodelling.klab.api.knowledge.Artifact.Type.isCompatible(
-            targetType, org.integratedmodelling.klab.api.knowledge.Artifact.Type.CONCEPT)) {
-      throw new KlabIllegalArgumentException(
-          "A classification produces concepts, incompatible with target type " + targetType);
-    }
-    if (contextualizable.getLookupTable() != null) {
-      var lookupType = contextualizable.getLookupTable().getLookupType();
-      if (lookupType != null
-          && !org.integratedmodelling.klab.api.knowledge.Artifact.Type.isCompatible(
-              targetType, lookupType)) {
-        throw new KlabIllegalArgumentException(
-            "Lookup result type " + lookupType + " is incompatible with target type " + targetType);
-      }
-    }
-    if (contextualizable.getAccordingTo() != null
-        && targetType != org.integratedmodelling.klab.api.knowledge.Artifact.Type.CONCEPT) {
-      throw new KlabIllegalArgumentException(
-          "according to requires a concept-valued target, not " + targetType);
-    }
   }
 
   private Urn adaptUrn(org.eclipse.xtext.util.Pair<String, Map<Object, Object>> u) {
@@ -946,6 +914,7 @@ public enum LanguageAdapter {
     ret.setOffsetInDocument(contextualizable.getCodeOffset());
     ret.setLength(contextualizable.getCodeLength());
     ret.setNamespace(namespace.getUrn());
+    ret.setTargetId(contextualizable.getTarget());
 
     if (contextualizable.getContextualizable() instanceof FunctionCallSyntax functionCallSyntax) {
       ret.setServiceCall(
@@ -956,14 +925,12 @@ public enum LanguageAdapter {
               KlabAsset.KnowledgeClass.MODEL));
     } else if (contextualizable.getContextualizable()
         instanceof ExpressionSyntax expressionSyntax) {
-      ret.setTargetId(contextualizable.getTarget());
       ret.setExpression(adaptExpression(expressionSyntax, namespace));
       if (contextualizable.isIntegration()) {
         ret.setAction(Contextualizable.Action.INTEGRATE);
       } // TODO the rest - set to, do. May be unnecessary if validated properly
     } else if (contextualizable.getContextualizable()
         instanceof ValueMappingSyntax mappingSyntax) {
-      ret.setTargetId(contextualizable.getTarget());
       switch (mappingSyntax.getKind()) {
         case CLASSIFICATION, DISCRETIZATION ->
             ret.setClassification(adaptClassification(mappingSyntax, namespace));
@@ -1834,6 +1801,8 @@ public enum LanguageAdapter {
         .forEach(value -> ret.getTraitsInherited().add(adapt.apply(value)));
     definition.getAffected().forEach(value -> ret.getQualitiesAffected().add(adapt.apply(value)));
     definition.getCreated().forEach(value -> ret.getObservablesCreated().add(adapt.apply(value)));
+    definition.getAffectedBy().forEach(value -> ret.getAffectedBy().add(adapt.apply(value)));
+    definition.getCreatedBy().forEach(value -> ret.getCreatedBy().add(adapt.apply(value)));
     definition
         .getMetadata()
         .forEach(

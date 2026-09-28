@@ -32,6 +32,8 @@ class WorldviewClauseAuditTest {
         thing Qualified inherits audit:State;
         process Affected affects audit:Measure;
         process Created creates audit:Measure;
+        quantity PassivelyAffected affected by audit:Affected;
+        thing PassivelyCreated created by audit:Created;
         attribute Applicable applies to audit:Entity;
         relationship Connection links audit:Entity to audit:Entity;
         thing Emergent emerges from audit:Entity within audit:Entity;
@@ -71,6 +73,11 @@ class WorldviewClauseAuditTest {
     assertEquals(1, statements.get("Qualified").getTraitsInherited().size());
     assertEquals(1, statements.get("Affected").getQualitiesAffected().size());
     assertEquals(1, statements.get("Created").getObservablesCreated().size());
+    assertEquals(
+        "audit:Affected",
+        statements.get("PassivelyAffected").getAffectedBy().getFirst().getUrn());
+    assertEquals(
+        "audit:Created", statements.get("PassivelyCreated").getCreatedBy().getFirst().getUrn());
     assertEquals(1, statements.get("Applicable").getAppliesTo().size());
     assertEquals(1, statements.get("Connection").getSubjectsLinked().size());
     assertEquals("audit:Entity", statements.get("Connection").getSubjectsLinked().getFirst().getSource().getUrn());
@@ -97,6 +104,9 @@ class WorldviewClauseAuditTest {
         org.integratedmodelling.klab.api.lang.kim.KimOntology.class);
     var connection = reloaded.getStatements().stream().filter(value -> value.getUrn().equals("Connection")).findFirst().orElseThrow();
     assertEquals("audit:Entity", connection.getSubjectsLinked().getFirst().getTarget().getUrn());
+    var passive = reloaded.getStatements().stream()
+        .filter(value -> value.getUrn().equals("PassivelyAffected")).findFirst().orElseThrow();
+    assertEquals("audit:Affected", passive.getAffectedBy().getFirst().getUrn());
     var report = new ArrayList<String>();
     report.add("Declaration | bean parent/inherits/applies/links/emergence/requires/describes | Kim parent/inherits/applies/links/emergence/requires/describes/affects/creates/within");
     for (int i = 0; i < bean.getConceptDeclarations().size(); i++) {

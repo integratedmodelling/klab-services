@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.runtime.language.KimNamespaceVisitor;
 import org.junit.jupiter.api.Test;
 
 class LookupTableLanguageAdapterTest {
@@ -52,7 +53,7 @@ class LookupTableLanguageAdapterTest {
   }
 
   @Test
-  void invalidContextualizationTargetBecomesDocumentNotification() {
+  void invalidContextualizationTargetReachesTheKimVisitorOnce() {
     var namespace =
         LanguageAdapter.INSTANCE.adaptNamespace(
             syntax(
@@ -68,23 +69,51 @@ class LookupTableLanguageAdapterTest {
             1L);
 
     var model = assertInstanceOf(KimModel.class, namespace.getStatements().getFirst());
-    assertTrue(model.getContextualization().isEmpty());
-    assertFalse(model.getNotifications().isEmpty());
-    assertTrue(
-        model.getNotifications().stream()
-            .anyMatch(
-                notification ->
-                    notification.getLevel() == Notification.Level.Error
-                        && notification
-                            .getMessage()
-                            .contains("Unknown contextualization target elevation")));
-    assertTrue(
-        namespace.getNotifications().stream()
-            .anyMatch(
+    assertEquals(1, model.getContextualization().size());
+    assertTrue(model.getNotifications().isEmpty());
+    assertTrue(namespace.getNotifications().isEmpty());
+
+    var visitor = new KimNamespaceVisitor();
+    visitor.visit(namespace);
+    var errors =
+        visitor.getNotifications().stream()
+            .filter(notification -> notification.getLevel() == Notification.Level.Error)
+            .filter(
                 notification ->
                     notification
                         .getMessage()
-                        .contains("Unknown contextualization target elevation")));
+                        .contains("Unknown contextualization target elevation"))
+            .toList();
+    assertEquals(1, errors.size());
+  }
+
+  @Test
+  void processAssignmentCanTargetAnObservingDependency() {
+    var namespace =
+        LanguageAdapter.INSTANCE.adaptNamespace(
+            syntax(
+                """
+                private namespace test.process.target version 1.0;
+
+                model test:Erosion
+                  observing test:Elevation named elevation
+                  set elevation to [1];
+                """),
+            "test-project",
+            List.of(),
+            1L);
+
+    var model = assertInstanceOf(KimModel.class, namespace.getStatements().getFirst());
+    assertEquals(1, model.getContextualization().size());
+    assertEquals("elevation", model.getContextualization().getFirst().getTargetId());
+    assertEquals(
+        model.getDependencies().getFirst(), model.getContextualization().getFirst().getTarget());
+
+    var visitor = new KimNamespaceVisitor();
+    visitor.visit(namespace);
+    assertFalse(
+        visitor.getNotifications().stream()
+            .anyMatch(n -> n.getMessage().contains("Unknown contextualization target")));
   }
 
   private static void assertTable(KimLookupTable lookup) {

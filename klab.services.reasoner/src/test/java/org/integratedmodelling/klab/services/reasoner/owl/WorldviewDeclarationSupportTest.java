@@ -50,6 +50,30 @@ class WorldviewDeclarationSupportTest {
         ontology.getConcept("Owner"), statement, value -> owl.getConcept(value.getName())));
     assertEquals(before, ontology.getOWLOntology().getAxiomCount());
   }
+  @Test void passiveClausesWriteTheSameForwardPropertiesOnTheirNamedSources() {
+    var owl = owl();
+    var ontology = owl.requireOntology("audit");
+    declare(ontology, "Process", SemanticType.OBSERVABLE, SemanticType.PROCESS);
+    declare(ontology, "Creator", SemanticType.OBSERVABLE, SemanticType.PROCESS);
+    declare(ontology, "Quality", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    declare(ontology, "Entity", SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.SUBJECT);
+
+    var affected = new KimConceptStatementImpl();
+    affected.getAffectedBy().add(syntax("Process"));
+    WorldviewDeclarationSupport.compile(
+        owl, ontology, ontology.getConcept("Quality"), affected,
+        value -> owl.getConcept(value.getName()));
+    assertRestriction(
+        owl, ontology, ontology.getConcept("Process"), "affects", ontology.getConcept("Quality"));
+
+    var created = new KimConceptStatementImpl();
+    created.getCreatedBy().add(syntax("Creator"));
+    WorldviewDeclarationSupport.compile(
+        owl, ontology, ontology.getConcept("Entity"), created,
+        value -> owl.getConcept(value.getName()));
+    assertRestriction(
+        owl, ontology, ontology.getConcept("Creator"), "creates", ontology.getConcept("Entity"));
+  }
   private OWL owl() {
     var scope = (org.integratedmodelling.klab.api.scope.Scope) java.lang.reflect.Proxy.newProxyInstance(
         getClass().getClassLoader(), new Class<?>[]{org.integratedmodelling.klab.api.scope.Scope.class},

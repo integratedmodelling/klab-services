@@ -80,6 +80,8 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
 
   private List<KimConcept> qualitiesAffected = new ArrayList<>();
   private List<KimConcept> observablesCreated = new ArrayList<>();
+  private List<KimConcept> affectedBy = new ArrayList<>();
+  private List<KimConcept> createdBy = new ArrayList<>();
   private List<KimConcept> traitsConferred = new ArrayList<>();
   private List<KimConcept> traitsInherited = new ArrayList<>();
   private List<KimConcept> requiredExtents = new ArrayList<>();
@@ -124,6 +126,16 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   @Override
   public List<KimConcept> getObservablesCreated() {
     return this.observablesCreated;
+  }
+
+  @Override
+  public List<KimConcept> getAffectedBy() {
+    return this.affectedBy;
+  }
+
+  @Override
+  public List<KimConcept> getCreatedBy() {
+    return this.createdBy;
   }
 
   @Override
@@ -220,6 +232,14 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
 
   public void setObservablesCreated(List<KimConcept> observablesCreated) {
     this.observablesCreated = observablesCreated;
+  }
+
+  public void setAffectedBy(List<KimConcept> affectedBy) {
+    this.affectedBy = affectedBy;
+  }
+
+  public void setCreatedBy(List<KimConcept> createdBy) {
+    this.createdBy = createdBy;
   }
 
   public void setTraitsConferred(List<KimConcept> traitsConferred) {

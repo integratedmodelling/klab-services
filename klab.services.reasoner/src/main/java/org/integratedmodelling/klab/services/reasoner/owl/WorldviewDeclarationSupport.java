@@ -33,6 +33,21 @@ public final class WorldviewDeclarationSupport {
         statement.getObservablesCreated(),
         SemanticType.OBSERVABLE,
         resolve);
+    var inverseRestrictions = new LinkedHashMap<String, List<Concept>>();
+    if (!statement.getAffectedBy().isEmpty() && !owner.is(SemanticType.QUALITY))
+      throw new KlabValidationException("affected by requires a quality target");
+    for (var operand : statement.getAffectedBy()) {
+      var source = require(resolve, operand, SemanticType.OBSERVABLE);
+      if (!(source.is(SemanticType.PROCESS) || source.is(SemanticType.EVENT)))
+        throw new KlabValidationException("affected by requires a process or event source");
+      inverseRestrictions.computeIfAbsent("odo:affects", key -> new ArrayList<>()).add(source);
+    }
+    if (!statement.getCreatedBy().isEmpty() && !owner.is(SemanticType.OBSERVABLE))
+      throw new KlabValidationException("created by requires an observable target");
+    for (var operand : statement.getCreatedBy())
+      inverseRestrictions
+          .computeIfAbsent("odo:creates", key -> new ArrayList<>())
+          .add(require(resolve, operand, SemanticType.OBSERVABLE));
     add(
         restrictions,
         "odo:requiresIdentity",
@@ -122,6 +137,12 @@ public final class WorldviewDeclarationSupport {
       if (property == null)
         throw new KlabValidationException("Missing ontology property " + entry.getKey());
       for (var target : entry.getValue()) owl.restrictSome(owner, property, target, ontology);
+    }
+    for (var entry : inverseRestrictions.entrySet()) {
+      var property = owl.getProperty(entry.getKey());
+      if (property == null)
+        throw new KlabValidationException("Missing ontology property " + entry.getKey());
+      for (var source : entry.getValue()) owl.restrictSome(source, property, owner, ontology);
     }
     if (!applicables.isEmpty()) owl.setApplicableObservables(owner, applicables, ontology);
   }

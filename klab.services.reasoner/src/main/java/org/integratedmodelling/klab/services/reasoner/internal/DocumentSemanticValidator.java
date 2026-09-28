@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.reasoner.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -32,6 +33,76 @@ public class DocumentSemanticValidator
     var visitor = new KimOntologyVisitor(this, null);
     visitor.visit((KimOntology) document);
     return visitor.getNotifications();
+  }
+
+  @Override
+  public List<Notification> validateModel(
+      KimModel model, KimObservableVisitor.Context context) {
+    if (model.getObservables().isEmpty()
+        || model.getObservables().getFirst().getSemantics() == null
+        || !model.getObservables().getFirst().getSemantics().is(SemanticType.PROCESS)) {
+      return List.of();
+    }
+    var result = new ArrayList<Notification>();
+    for (var contextualizable : model.getContextualization()) {
+      var targetId = contextualizable.getTargetId();
+      if (targetId == null || targetId.isBlank()) continue;
+      var output = findTarget(model.getObservables(), targetId);
+      var dependency = output == null ? findTarget(model.getDependencies(), targetId) : null;
+      var target = output == null ? dependency : output;
+      if (target == null) {
+        result.add(error("Unknown contextualization target " + targetId, contextualizable, context));
+        continue;
+      }
+      try {
+        var resolvedTarget = resolveSemantics(target);
+        // Unresolved observable diagnostics are produced by validateConcept(). Do not duplicate
+        // those here with a misleading target-kind error.
+        if (resolvedTarget == null) continue;
+        if (!resolvedTarget.is(SemanticType.QUALITY)) {
+          result.add(
+              error(
+                  "Process contextualization target " + targetId + " must be a quality",
+                  contextualizable,
+                  context));
+          continue;
+        }
+        if (dependency != null) {
+          var process = resolveSemantics(model.getObservables().getFirst());
+          if (process != null && !reasoner.affectedBy(resolvedTarget, process)) {
+            result.add(
+                error(
+                    "Process contextualization target "
+                        + targetId
+                        + " must be an output or a quality dependency affected by the process",
+                    contextualizable,
+                    context));
+          }
+        }
+      } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException e) {
+        result.add(error(e.getMessage(), contextualizable, context));
+      }
+    }
+    return result;
+  }
+
+  /** Resolve the OWL node used by worldview relationships, without observable-level decoration. */
+  private Concept resolveSemantics(KimObservable observable) {
+    var semantics = observable == null ? null : observable.getSemantics();
+    if (semantics == null) return null;
+    return semantics.getName() == null
+        ? reasoner.declareConcept(semantics)
+        : reasoner.resolveConcept(semantics.getName());
+  }
+
+  private KimObservable findTarget(List<KimObservable> observables, String targetId) {
+    return observables.stream()
+        .filter(
+            observable ->
+                Objects.equals(targetId, observable.getFormalName())
+                    || Objects.equals(targetId, observable.getCodeName()))
+        .findFirst()
+        .orElse(null);
   }
 
   @Override
