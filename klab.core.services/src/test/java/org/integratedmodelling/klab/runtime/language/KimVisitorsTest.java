@@ -8,6 +8,7 @@ import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.junit.jupiter.api.Test;
@@ -137,6 +138,43 @@ class KimVisitorsTest {
                 ref ->
                     ref.urn().equals("base.ontology")
                         && ref.knowledgeClass() == KlabAsset.KnowledgeClass.ONTOLOGY));
+  }
+
+  @Test
+  void uncompiledClauseWarningsUseTheClauseOccurrence() {
+    var ontology = new KimOntologyImpl();
+    ontology.setUrn("test");
+    ontology.setProjectName("project");
+    var statement = new KimConceptStatementImpl();
+    statement.setUrn("Entity");
+    statement.setOffsetInDocument(10);
+    statement.setLength(100);
+    statement
+        .getDeclarationClauses()
+        .add(
+            new KimConceptStatement.DeclarationClause(
+                "deniabilityClause", "deniable as test:Negative", 42, 25));
+    statement
+        .getDeclarationClauses()
+        .add(
+            new KimConceptStatement.DeclarationClause(
+                "within", "within test:Context", 74, 19));
+    ontology.getStatements().add(statement);
+    var visitor = new KimOntologyVisitor();
+
+    visitor.visit(ontology);
+
+    var warnings =
+        visitor.getNotifications().stream()
+            .filter(n -> n.getMessage().contains("scoped/denial semantics"))
+            .toList();
+    assertEquals(2, warnings.size());
+    assertEquals(
+        List.of(42, 74),
+        warnings.stream().map(n -> n.getLexicalContext().getOffsetInDocument()).toList());
+    assertEquals(
+        List.of(25, 19),
+        warnings.stream().map(n -> n.getLexicalContext().getLength()).toList());
   }
 
   @Test

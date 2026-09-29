@@ -225,6 +225,13 @@ class ContextualizerComponentResolutionTest {
                         && "runtime".equals(resource.getServiceId())));
     verify(resources).resolve("random", KlabAsset.KnowledgeClass.RESOURCE_ADAPTER, scope);
     verify(registry).loadComponents(componentResolution, scope);
+    var notifications = org.mockito.ArgumentCaptor.forClass(Notification.class);
+    verify(scope, org.mockito.Mockito.times(2)).send(notifications.capture());
+    assertEquals(
+        List.of(
+            "Discovering component for universal resource adapter 'random'",
+            "Installed component for universal resource adapter 'random'"),
+        notifications.getAllValues().stream().map(Notification::getMessage).toList());
   }
 
   @Test

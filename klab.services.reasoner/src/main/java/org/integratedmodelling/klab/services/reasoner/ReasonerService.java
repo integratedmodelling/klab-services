@@ -261,9 +261,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         response.setKnowledgeRevision(knowledgeRevision());
       }
       if (document instanceof KimOntology) {
+        // Resources diagnostics already belong to the document in the editor. Replaying its
+        // warnings here makes one occurrence look like a second semantic diagnostic. Only cached
+        // errors participate in the semantic-validation barrier.
         response
             .getNotifications()
-            .addAll(loadedOntologyDiagnostics.getOrDefault(document.getUrn(), List.of()));
+            .addAll(
+                loadedOntologyDiagnostics.getOrDefault(document.getUrn(), List.of()).stream()
+                    .filter(
+                        notification ->
+                            notification.getLevel().severity
+                                >= Notification.Level.Error.severity)
+                    .toList());
         if (Utils.Notifications.hasErrors(response.getNotifications())) {
           response.setStatus(SemanticValidationResponse.Status.COMPLETE);
           return response;

@@ -144,6 +144,13 @@ class DocumentSemanticValidatorTest {
     assertEquals(SemanticValidationResponse.Status.COMPLETE, invalid.getStatus());
     assertFalse(invalid.valid());
     assertEquals(12, invalid.getNotifications().getFirst().getLexicalContext().getOffsetInDocument());
+    var warning = org.integratedmodelling.klab.api.services.runtime.Notification.warning("Resources warning",
+        org.integratedmodelling.klab.api.services.runtime.Notification.LexicalContext.of(lexical, ontology));
+    diagnostics.set(reasoner, Map.of("earth", List.of(warning)));
+    var withoutReplayedWarning = reasoner.validateDocument(request, scope);
+    assertTrue(withoutReplayedWarning.valid());
+    assertTrue(withoutReplayedWarning.getNotifications().stream()
+        .noneMatch(n -> n.getMessage().equals("Resources warning")));
     request.setKnowledgeRevision(6);
     assertEquals(SemanticValidationResponse.Status.STALE_KNOWLEDGE, reasoner.validateDocument(request, scope).getStatus());
     ontology.getNotifications().add(org.integratedmodelling.klab.api.services.runtime.Notification.error("syntax error"));

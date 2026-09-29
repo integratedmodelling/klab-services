@@ -888,7 +888,6 @@ public enum LanguageAdapter {
         ret.getContextualization().add(adapted);
       } catch (KlabIllegalArgumentException e) {
         var notification = Notification.error(ret, e.getMessage());
-        ret.getNotifications().add(notification);
         namespace.getNotifications().add(notification);
       }
     }

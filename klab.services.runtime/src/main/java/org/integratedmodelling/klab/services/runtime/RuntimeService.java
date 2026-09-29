@@ -2212,10 +2212,9 @@ public class RuntimeService extends BaseService
                 getComponentRegistry()
                     .getAdapter(resolvedUrn.getCatalog(), resolvedUrn.getVersion(), scope);
             if (installedAdapter == null) {
-              scope.info(
-                  "Discovering component for universal resource adapter '",
-                  resolvedUrn.getCatalog(),
-                  "'");
+              scope.send(Notification.info(
+                  "Discovering component for universal resource adapter '"
+                      + resolvedUrn.getCatalog() + "'"));
               adapterRequirements =
                   resourcesService.resolve(
                       Version.isAny(resolvedUrn.getVersion())
@@ -2253,10 +2252,9 @@ public class RuntimeService extends BaseService
                       ? syntheticResource
                       : Utils.Resources.merge(adapterRequirements, syntheticResource);
               if (adapterRequirements != null) {
-                scope.info(
-                    "Installed component for universal resource adapter '",
-                    resolvedUrn.getCatalog(),
-                    "'");
+                scope.send(Notification.info(
+                    "Installed component for universal resource adapter '"
+                        + resolvedUrn.getCatalog() + "'"));
               }
             }
           }

@@ -32,7 +32,7 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
             Notification.warning(
                 "This declaration clause is retained but its scoped/denial semantics are not yet compiled: "
                     + clause.kind(),
-                Notification.LexicalContext.of(statement, context.getDocument())));
+                Notification.LexicalContext.of(clauseSource(clause), context.getDocument())));
     }
     if (!statement.isAlias() && statement.getUpperConceptDefined() == null) return result;
     // Programmatically constructed/older beans may not carry source clause spans.
@@ -88,6 +88,13 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
 
   private boolean atomicCoreTarget(String target) {
     return target != null && target.matches("[a-z][a-zA-Z0-9_.]*:[A-Z][a-zA-Z0-9_]*");
+  }
+
+  private KimConcept clauseSource(KimConceptStatement.DeclarationClause clause) {
+    var source = new KimConceptImpl();
+    source.setOffsetInDocument(clause.offset());
+    source.setLength(clause.length());
+    return source;
   }
 
   @Override
