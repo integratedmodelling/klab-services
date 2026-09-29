@@ -932,8 +932,11 @@ public class CompiledDataflow {
           if (previous == null) observation.getMetadata().remove(Scheduler.PLAN_METADATA_KEY);
           else observation.getMetadata().put(Scheduler.PLAN_METADATA_KEY, previous);
         });
-        snapshots.add(() -> observation.getMetadata().put(Scheduler.PLAN_METADATA_KEY,
-            org.integratedmodelling.klab.utilities.Utils.Json.asString(portableOccurrencePlan(actuator))));
+        snapshots.add(() -> {
+          bindSnapshotObservations(actuator, actuatorObservations);
+          observation.getMetadata().put(Scheduler.PLAN_METADATA_KEY,
+              org.integratedmodelling.klab.utilities.Utils.Json.asString(portableOccurrencePlan(actuator)));
+        });
       }
       if (!actuator.getComputation().isEmpty()
           || actuator.getChildren().stream().anyMatch(child -> child.getActuatorType() == Actuator.Type.UPDATE)) {
@@ -1035,6 +1038,16 @@ public class CompiledDataflow {
     if (quality.getObservable().getSemantics().equals(endpoint)) return true;
     var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
     return reasoner != null && reasoner.is(quality.getObservable(), endpoint);
+  }
+
+  /** References are not dependency-graph vertices; refresh the entire closure after ID assignment. */
+  static void bindSnapshotObservations(Actuator actuator, Map<Actuator, Observation> observations) {
+    var bound = observations.get(actuator);
+    if (bound != null && actuator instanceof ActuatorImpl implementation) {
+      implementation.setObservation(org.integratedmodelling.klab.runtime.storage.StorageReads.binding(
+          bound, actuator.getObservation()));
+    }
+    for (var child : actuator.getChildren()) bindSnapshotObservations(child, observations);
   }
 
   private boolean snapshotSupported(Actuator actuator) {

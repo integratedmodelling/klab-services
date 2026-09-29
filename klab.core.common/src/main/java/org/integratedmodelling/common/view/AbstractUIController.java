@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.*;
 //import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
@@ -217,7 +218,18 @@ public abstract class AbstractUIController implements UIController {
    */
   protected abstract void createView();
 
-  protected void processNotification(Channel scope, Message message) {}
+  protected void processNotification(Channel scope, Message message) {
+    if (uiView == null || message == null
+        || message.getMessageClass() != Message.MessageClass.Notification) {
+      return;
+    }
+    var notification = message.getPayload(Notification.class);
+    if (notification != null && notification.getMode() != Notification.Mode.Silent) {
+      // Notifications describe service operations as well as context activity. Deliver them to
+      // the application view regardless of which context currently has focus.
+      uiView.handleNotification(notification);
+    }
+  }
 
   protected void processInteraction(Channel scope, Message message) {}
 

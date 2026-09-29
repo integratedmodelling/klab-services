@@ -21,6 +21,27 @@ import org.junit.jupiter.api.*;
 
 class OccurrenceExecutorTest {
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
+  @Test void connectionSnapshotRefreshesReferenceEndpointAfterProducerGetsDurableId() {
+    var relationship = observation("connection", SemanticType.RELATIONSHIP, 100);
+    var producer = observation("endpoint", SemanticType.SUBJECT, -20);
+    var plan = new ActuatorImpl();
+    plan.setName("connection");
+    plan.setObservation(relationship);
+    var target = new ActuatorImpl();
+    target.setName("target");
+    target.setActuatorType(Actuator.Type.REFERENCE);
+    target.setObservation(org.integratedmodelling.klab.api.knowledge.observation.Observation.forTransport(producer));
+    plan.getChildren().add(target);
+    producer.setId(101);
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException.class,
+        () -> CompiledDataflow.portableOccurrencePlan(plan));
+    CompiledDataflow.bindSnapshotObservations(plan, java.util.Map.of(plan, relationship, target, producer));
+    var snapshot = CompiledDataflow.portableOccurrencePlan(plan);
+    assertEquals(101, snapshot.getChildren().getFirst().getObservation().getId());
+    assertEquals(Actuator.ExecutionRole.INITIALIZATION, snapshot.getExecutionRole());
+    assertTrue(snapshot.getOccurrenceSchedules().isEmpty());
+  }
+
   @Test void fullCollapsedResolverCoverageIsNotPartialOccurrenceCoverage() {
     var process=observation("erosion",SemanticType.PROCESS,100);
     var geometry=Geometry.create("T1(365){ttype=GRID,tstart=1388534400000,tend=1420070400000,tscope=1.0,tunit=DAY}S2(10,10){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 1&comma;1 1&comma;1 0&comma;0 0))}");
