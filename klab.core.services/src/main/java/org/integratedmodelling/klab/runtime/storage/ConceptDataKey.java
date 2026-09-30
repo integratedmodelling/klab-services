@@ -99,12 +99,12 @@ final class ConceptDataKey implements DataKey {
       public List<Pair<Integer,String>> getAllValues() { var ret=new ArrayList<Pair<Integer,String>>();for(int i=0;i<size();i++)ret.add(Pair.of(i,i==0?"Missing":snapshot.entries().get(i-1).label()));return List.copyOf(ret); }
       public boolean isOrdered() { return false; }
       public Object include(Object value) { throw new UnsupportedOperationException("Dictionary snapshots are immutable; use typed scanner insertion"); }
-      public Authority getAuthority() { return null; }
+      public Codelist getCodelist() { return null; }
       public String encode(KlabLanguage language) { return org.integratedmodelling.klab.utilities.Utils.Json.asString(snapshot); }
     };
   }
   public boolean isOrdered() { return false; }
   public Object include(Object value) { return lookup(code(value)); }
-  public Authority getAuthority() { return null; }
+  public Codelist getCodelist() { return null; }
   public String encode(KlabLanguage language) { return org.integratedmodelling.klab.utilities.Utils.Json.asString(snapshot()); }
 }

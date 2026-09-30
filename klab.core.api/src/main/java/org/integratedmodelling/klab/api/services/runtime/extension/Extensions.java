@@ -11,8 +11,8 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.reasoner.Authority;
+import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /** Holder of descriptive records for extensions of all kinds. */
@@ -81,10 +81,17 @@ public interface Extensions {
    * @param embeddable whether a Reasoner may install the containing component on demand
    * @param subAuthorities optional sub-authorities supported by the implementation
    */
-  record AuthorityDescriptor(String urn, boolean embeddable, List<String> subAuthorities) {
+  record AuthorityDescriptor(
+      String urn,
+      Version version,
+      boolean embeddable,
+      boolean searchable,
+      List<String> subAuthorities,
+      List<String> codelists) {
 
     public AuthorityDescriptor {
       subAuthorities = subAuthorities == null ? new ArrayList<>() : subAuthorities;
+      codelists = codelists == null ? new ArrayList<>() : codelists;
     }
   }
 
@@ -111,8 +118,7 @@ public interface Extensions {
    *     those in libraries
    * @param actors descriptor for all {@link Actor}-annotated classes in the component, including
    *     those in libraries.
-   * @param importType how the component entered this registry and therefore where updates come
-   *     from
+   * @param importType how the component entered this registry and therefore where updates come from
    * @param updateStatus result of the latest non-mutating update check
    * @param latestVersionTimestamp timestamp of the latest version known at the source, or zero if
    *     it could not be established
@@ -139,8 +145,7 @@ public interface Extensions {
       long timestamp, // time of creation/last update
       ComponentImportType importType,
       ComponentUpdateStatus updateStatus,
-      long latestVersionTimestamp
-      ) {
+      long latestVersionTimestamp) {
 
     public ComponentDescriptor {
       libraries = libraries == null ? new ArrayList<>() : libraries;
@@ -171,8 +176,7 @@ public interface Extensions {
       return mavenCoordinates == null ? ComponentImportType.FILE : ComponentImportType.MAVEN;
     }
 
-    private static boolean isUpdateable(
-        ComponentImportType importType, String mavenCoordinates) {
+    private static boolean isUpdateable(ComponentImportType importType, String mavenCoordinates) {
       return importType == ComponentImportType.FILE
           || importType == ComponentImportType.DEPENDENCY
           || (importType == ComponentImportType.MAVEN

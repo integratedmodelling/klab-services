@@ -4,11 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Codelist;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -20,18 +18,19 @@ class ComponentRegistryAuthorityTest {
 
   @org.integratedmodelling.klab.api.services.reasoner.Authority(
       urn = "test.authority",
+      version = Version.CURRENT,
       embeddable = true,
       subAuthorities = {"SUB"})
   public static class TestAuthority
-      implements org.integratedmodelling.klab.api.knowledge.Authority {
+      implements org.integratedmodelling.klab.api.services.Authority {
 
     @Override
-    public String getURN() {
+    public String getUrn() {
       return "test.authority";
     }
 
     @Override
-    public Identity getIdentity(String identityId, String catalog) {
+    public Identity resolveIdentity(String configurationId, String identityId) {
       return null;
     }
 
@@ -41,26 +40,23 @@ class ComponentRegistryAuthorityTest {
     }
 
     @Override
-    public Codelist getCodelist() {
-      return null;
+    public java.util.Map<String, Codelist> getCodelists() {
+      return java.util.Map.of();
     }
 
     @Override
-    public int getSemanticDistance(Identity a, Identity b) {
-      return 0;
+    public org.integratedmodelling.klab.api.services.Authority subAuthority(String catalog) {
+      return this;
     }
 
     @Override
-    public void document(String identityId, String mediaType, OutputStream destination) {}
-
-    @Override
-    public List<Identity> search(String query, String catalog) {
+    public List<Identity> search(String query, String catalog, String configurationId) {
       return List.of();
     }
 
     @Override
-    public Configuration setup(Parameters<String> options) {
-      return null;
+    public String configure(ConfigurationRequest request) {
+      return "test-configuration";
     }
   }
 
@@ -82,8 +78,7 @@ class ComponentRegistryAuthorityTest {
     discover(registry);
 
     assertInstanceOf(
-        TestAuthority.class,
-        registry.getAuthority("test.authority", Version.ANY_VERSION, null));
+        TestAuthority.class, registry.getAuthority("test.authority", Version.ANY_VERSION, null));
   }
 
   private ComponentRegistry registry(KlabService.Type serviceType) {

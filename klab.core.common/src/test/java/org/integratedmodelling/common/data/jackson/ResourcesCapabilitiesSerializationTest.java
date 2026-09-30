@@ -8,6 +8,7 @@ import org.integratedmodelling.common.lang.ServiceInfoImpl;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +45,9 @@ class ResourcesCapabilitiesSerializationTest {
             null,
             List.of(library),
             null,
-            List.of(new Extensions.AuthorityDescriptor("test.authority", true, List.of("SUB"))),
+            List.of(
+                new Extensions.AuthorityDescriptor(
+                    "test.authority", Version.CURRENT_VERSION, true, true, List.of("SUB"), null)),
             null,
             null,
             null,

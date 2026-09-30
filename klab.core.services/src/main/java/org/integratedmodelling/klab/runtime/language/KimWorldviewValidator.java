@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.language;
 import java.util.ArrayList;
 import java.util.List;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -18,11 +19,15 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
           Notification.warning(
               "The describes target is compiled; its as value semantics are not implemented",
               Notification.LexicalContext.of(statement, context.getDocument())));
-    if (statement.getAuthorityRequired() != null)
-      result.add(
-          Notification.warning(
-              "The authority requirement is retained but not yet enforced at runtime",
-              Notification.LexicalContext.of(statement, context.getDocument())));
+    if (statement.getAuthorityRequired() != null) {
+      var source = statement.getDeclarationClauses().stream()
+          .filter(clause -> clause.kind().equals("requiresClause"))
+          .findFirst().map(this::clauseSource).orElse(null);
+      var lexical = Notification.LexicalContext.of(
+          source == null ? statement : source, context.getDocument());
+      var errors = authorityErrors(statement);
+      for (var message : errors) result.add(Notification.error(message, lexical));
+    }
     for (var clause : statement.getDeclarationClauses()) {
       if (clause.kind().equals("within")
           || clause.kind().equals("deniabilityClause")
@@ -84,6 +89,23 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
       }
     }
     return result;
+  }
+
+  /** Checks shared by source validation and worldview ingestion, including transported beans. */
+  public static List<String> authorityErrors(KimConceptStatement statement) {
+    if (statement.getAuthorityRequired() == null) return List.of();
+    var errors = new ArrayList<String>();
+    if (!statement.getType().contains(SemanticType.IDENTITY))
+      errors.add("Only an identity concept may require an authority");
+    if (statement.isAlias() || statement.getUpperConceptDefined() != null)
+      errors.add("An alias cannot require an authority");
+    if (!statement.getAuthorityRequired().matches("[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]*)*"))
+      errors.add("An authority requirement needs an uppercase local name");
+    var urn = statement.getAuthorityParameters() == null ? null
+        : statement.getAuthorityParameters().get("urn");
+    if (!(urn instanceof String reference) || reference.isBlank())
+      errors.add("An authority requirement needs a nonblank string urn parameter");
+    return errors;
   }
 
   private boolean atomicCoreTarget(String target) {

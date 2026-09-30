@@ -85,6 +85,11 @@ public class OWL {
   private BiMap<String, ConceptImpl> conceptsById = HashBiMap.create();
   private AtomicLong classId = new AtomicLong(1L);
   private Scope scope;
+  private java.util.function.BiFunction<String, String, Concept> authorityResolver;
+
+  public void setAuthorityResolver(java.util.function.BiFunction<String, String, Concept> resolver) {
+    this.authorityResolver = resolver;
+  }
 
   private boolean reasonerActive;
   private boolean reasonerSynchronizing = false;
@@ -389,13 +394,8 @@ public class OWL {
 
       if (Character.isUpperCase(st.getNamespace().charAt(0))) {
 
-        Authority authority = ServiceConfiguration.INSTANCE.getAuthorities().get(st.getNamespace());
-        if (authority != null) {
-          Identity identity = authority.resolveIdentity(removeTicks(st.getName()));
-          if (identity != null) {
-            result = getAuthorityConcept(identity);
-          }
-        }
+        if (authorityResolver != null)
+          result = authorityResolver.apply(st.getNamespace(), removeTicks(st.getName()));
 
       } else {
 
@@ -2718,7 +2718,7 @@ public class OWL {
     return id == null ? null : conceptsById.get(id);
   }
 
-  synchronized void registerWithReasoner(Ontology o) {
+  public synchronized void registerWithReasoner(Ontology o) {
     if (mergedReasonerOntology != null) {
       mergedReasonerOntology.addImport(o);
       if (reasoner != null && reasonerSynchronizing) {

@@ -117,6 +117,13 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     return client.postRequired(ServicesAPI.REASONER.RESOLVE_CONCEPT, definition, Concept.class);
   }
 
+  @Override
+  public String configureAuthority(
+      org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest request,
+      Scope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.REASONER.CONFIGURE_AUTHORITY, request, String.class);
+  }
+
   public Observable resolveObservableInternal(String definition) {
     return client.postRequired(
         ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);

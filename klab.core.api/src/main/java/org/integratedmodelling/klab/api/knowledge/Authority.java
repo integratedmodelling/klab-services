@@ -10,6 +10,9 @@ import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
+ * @deprecated Implement {@link org.integratedmodelling.klab.api.services.Authority} for component
+ *     discovery and worldview bridge configuration. This legacy contract is no longer hosted.
+ *
  * Authorities are built from components and are unique to the reasoner. The @Authority annotation
  * tags classes and methods so that an Authority object can be built by the ComponentRegistry. When
  * an authority is referenced, the Reasoner looks up a service in the scope that provides it;
@@ -17,6 +20,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * register the authority ID it wishes by asking for a Configuration using the worldview-provided
  * root concepts tagged with <code>requires authority NAME { ....configuration...}</code>.
  */
+@Deprecated
 public interface Authority {
 
   /**

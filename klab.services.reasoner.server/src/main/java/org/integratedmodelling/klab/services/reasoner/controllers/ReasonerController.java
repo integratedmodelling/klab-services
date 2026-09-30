@@ -33,6 +33,24 @@ public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
 
+  @Operation(summary = "Configure an authority bridge in the loaded worldview")
+  @PostMapping(ServicesAPI.REASONER.CONFIGURE_AUTHORITY)
+  public String configureAuthority(
+      @RequestBody org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest request,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      try {
+        return reasoner.klabService().configureAuthority(request, authorization.getScope());
+      } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException | IllegalArgumentException e) {
+        throw new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage());
+      }
+    }
+    throw new org.springframework.web.server.ResponseStatusException(
+        org.springframework.http.HttpStatus.FORBIDDEN,
+        "Authority configuration requires an authorized scope");
+  }
+
   @Operation(
       summary = "Validate document semantics",
       description = "Return source-bound diagnostics for a parsed document snapshot")

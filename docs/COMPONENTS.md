@@ -103,8 +103,9 @@ infrastructure.
 ### Authorities
 
 Authorities connect the Reasoner to external terminologies and classifications that are too large
-or too specialized to load into a worldview in full. Component classes implementing the knowledge
-`Authority` interface are discovered through the Java `@Authority` annotation. Their descriptors
+or too specialized to load into a worldview in full. Component classes implementing
+`org.integratedmodelling.klab.api.services.Authority` are discovered through the Java `@Authority`
+annotation. Their descriptors
 advertise a stable provider URN, whether the provider is embeddable, and any known sub-authorities.
 
 Resources services advertise and deliver authority components but do not host authority
@@ -113,6 +114,12 @@ Resources and installed by a Reasoner on demand; non-embeddable providers are av
 Reasoners where their component was explicitly installed. A worldview binds the provider URN to a
 local name and configuration, independently for each `requires authority` declaration. The full
 provider, binding, and reasoning contract is documented in [Authorities](AUTHORITIES.md).
+
+The intended source integrity rule limits authority offerings to the certified Resources services
+contributing to the loaded worldview, including authorized higher-tier contributors. Generic
+component distribution by an ordinary Resources service does not confer that role. Enforcement
+and an explicit full-local development association remain pending; see
+[worldview provider integrity](AUTHORITIES.md#worldview-provider-integrity-rule).
 
 ### Import And Export Schemata
 

@@ -119,6 +119,14 @@ workspaces, projects, namespaces, ontologies, observation-strategy documents, be
 and symbol definitions. The provider additionally retrieves resources, concepts, observables, and
 the served worldview.
 
+Worldview retrieval currently supplies a container from one provider; it does not establish a
+complete protocol for assembling certified higher-tier contributions from several services.
+The intended production rule also restricts authority plug-ins to the authorized services supplying
+the loaded worldview. Ordinary Resources providers must not acquire that role through general
+component distribution. These source restrictions are not yet enforced. See
+[worldview composition and authority provenance](SERVICE_COORDINATION_AND_DISCOVERY.md#worldview-composition-and-authority-provenance)
+for the proposed distributed contract and full-local development requirements.
+
 `list` has no search semantics. Clients that need matching, sorting, or a different representation
 must use `query`. In a multi-service scope, `ResourcesMerger` snapshots all resource services,
 including Resources clients advertised in a service-side scope even when they are temporarily

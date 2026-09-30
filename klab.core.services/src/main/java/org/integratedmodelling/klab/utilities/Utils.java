@@ -112,7 +112,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * Resolve an authority into a Reasoner, installing its component from a Resources service when
      * the authority is advertised as embeddable.
      */
-    public static org.integratedmodelling.klab.api.knowledge.Authority resolveAuthority(
+    public static org.integratedmodelling.klab.api.services.Authority resolveAuthority(
         String urn, UserScope scope, BaseService targetService) {
 
       if (targetService.serviceType() != KlabService.Type.REASONER) {

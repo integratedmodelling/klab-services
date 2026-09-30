@@ -223,6 +223,7 @@ public interface ServicesAPI {
    * @author ferd
    */
   interface REASONER {
+    String CONFIGURE_AUTHORITY = API_BASE + "/authority/configure";
 
     /**
      * Resolve a concept definition passed as a request body, returning a unique ID for the

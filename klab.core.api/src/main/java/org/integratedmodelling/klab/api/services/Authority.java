@@ -1,12 +1,38 @@
 package org.integratedmodelling.klab.api.services;
 
 import java.util.List;
-
+import java.util.Map;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.knowledge.Codelist;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
-public interface Authority extends Service {
+public interface Authority {
+
+  /** Context for one independent worldview bridge. Parameters include the provider urn. */
+  record ConfigurationRequest(
+      String worldview, String name, String rootIdentity, Map<String, Object> parameters) {
+    public ConfigurationRequest {
+      if (worldview == null || worldview.isBlank())
+        throw new IllegalArgumentException("A worldview is required");
+      if (name == null || !name.matches("[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]*)*"))
+        throw new IllegalArgumentException("An uppercase local authority name is required");
+      if (rootIdentity == null || rootIdentity.isBlank())
+        throw new IllegalArgumentException("A root identity concept URN is required");
+      if (parameters == null || !(parameters.get("urn") instanceof String urn) || urn.isBlank())
+        throw new IllegalArgumentException("A nonblank string urn parameter is required");
+      parameters = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(parameters));
+    }
+  }
+
+  /**
+   * Create an independent bridge and return its opaque provider-held configuration ID. The
+   * provider must retain configuration state separately for each bridge, and throw a validation
+   * exception on failure. The root identity is supplied by the worldview, not by the provider.
+   */
+  String configure(ConfigurationRequest request);
+
+  /** Release provider-held state when a bridge is removed or its worldview is reloaded. */
+  default void releaseConfiguration(String configurationId) {}
 
   interface Identity {
 
@@ -33,10 +59,10 @@ public interface Authority extends Service {
     String getAuthorityName();
 
     /**
-     * If not null, this will be the label for the concept that provides a parent for the identity.
-     * The authority must return an identity for it. It will be declared as the base identity. If
-     * null, a base identity will be created from the ontology ID and shared by all identities in
-     * the authority.
+     * Optional ID of the vocabulary's base identity. The Reasoner recursively resolves this and
+     * the parent IDs until known concepts are reached. It may be the configured worldview root
+     * URN, which is already known. Provider top-level identities inherit from that root; other
+     * identities inherit through the supplied hierarchy. The authority owns hierarchy validity.
      *
      * @return
      */
@@ -72,7 +98,8 @@ public interface Authority extends Service {
     String getLabel();
 
     /**
-     * This should be 1 if returned by getIdentity(), or 0-1 if returned through a query.
+     * This should be 1 for a resolved identity, or 0-1 for a search candidate. Search scores
+     * describe provider-specific relevance, not necessarily a probability of correctness.
      *
      * @return
      */
@@ -113,11 +140,22 @@ public interface Authority extends Service {
      * If true, the authority is capable of accepting unambiguous but different identifiers for the
      * same concept, such as water and h2o, which are resolved through a search. If false, the
      * authority can only deal with correct identifiers or formulas. The main consequence is that if
-     * this is true, each search can have multiple results, otherwise it's either 0 or 1.
+     * this is true, resolution may accept aliases. Search may return multiple candidates
+     * regardless of this flag; candidates must be selected explicitly when ambiguous.
      *
      * @return
      */
     boolean isFuzzy();
+
+    /** Whether explicit, provider-defined name reconciliation is available. */
+    default boolean isReconciliationSupported() { return false; }
+
+    /**
+     * If true, declared sub-authorities only filter searches: NAME.RANK:id resolves through
+     * NAME's bridge, with identical codes, parents and canonical concepts. Otherwise a dotted
+     * name must have its own configured binding; the Reasoner must not guess its semantics.
+     */
+    default boolean areSubAuthoritiesSearchFilters() { return false; }
 
     /**
      * If the authority admits sub-authorities (e.g. GBIF/SPECIES), these should be listed along
@@ -146,11 +184,12 @@ public interface Authority extends Service {
   }
 
   /**
-   * Unique name of this authority.
+   * Unique URN of this authority. Worldviews bind this to a local name when binding the root
+   * concept with a <code>requires authority</code> clause.
    *
    * @return
    */
-  String getName();
+  String getUrn();
 
   /**
    * Create the concept corresponding to the identity. It must be an identity semantically, and may
@@ -160,7 +199,17 @@ public interface Authority extends Service {
    * @param identityId
    * @return
    */
-  Identity resolveIdentity(String identityId);
+  Identity resolveIdentity(String configurationId, String identityId);
+
+  /**
+   * Explicitly reconcile a name or external identifier with optional disambiguating fields.
+   * Field names and accepted match policies belong to the provider. Return a canonical identity
+   * only when the match is unambiguous; report failed/ambiguous matches with error notifications.
+   * This operation must not silently replace code lookup or select the first search candidate.
+   */
+  default Identity reconcile(String configurationId, Map<String, String> fields) {
+    throw new UnsupportedOperationException("This authority does not support reconciliation");
+  }
 
   /**
    * Get the authority service's capabilities.
@@ -170,11 +219,17 @@ public interface Authority extends Service {
   Capabilities getCapabilities();
 
   /**
-   * If the authority is based on a codelist, return it here.
+   * Non-empty iif the authority provides codelists. Codelists can be bound to worldview-local
+   * namespaces and be used as a vocabulary for identities that bridges transparently to the
+   * authority.
+   *
+   * <p>Codes can be proposed by users by inserting proposal annotations in namespace code, to help
+   * construct shared, recognizable terminology without compromising on authority-specific
+   * semantics.
    *
    * @return
    */
-  Codelist getCodelist();
+  Map<String, Codelist> getCodelists();
 
   /**
    * If the authority has lower-level subcatalogs, return the singleton that will handle the catalog
@@ -186,15 +241,20 @@ public interface Authority extends Service {
    */
   Authority subAuthority(String catalog);
 
+
+
+
+
   /**
-   * Can be called only if {@link Capabilities#isSearchable()} returns true. Implementations must
-   * set the {@link Metadata#IM_KEY} to the unique identity ID that will produce the concept when
-   * called in {@link #resolveIdentity(String)}. Remaining fields should be set so as to support the
-   * user in choosing an identity.
+   * Can be called only if {@link Capabilities#isSearchable()} returns true. Each candidate's
+   * {@link Identity#getId()} must resolve through {@link #resolveIdentity(String, String)} in
+   * the same configuration. Remaining fields support the user in choosing an identity. An empty
+   * list means no matches, not a transport failure; failures must be reported explicitly.
    *
    * @param query
-   * @param catalog may be null
+   * @param subAuthority may be null
+   * @param configurationId the active provider-held bridge ID
    * @return
    */
-  List<Identity> search(String query, String catalog);
+  List<Identity> search(String query, String subAuthority, String configurationId);
 }

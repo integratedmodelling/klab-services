@@ -42,7 +42,7 @@ class WorldviewClauseAuditTest {
         thing RequiredRealm requires realm audit:State;
         thing RequiredExtent requires extent audit:Entity;
         thing RequiredAttribute requires attribute audit:State;
-        thing Authorized requires authority TEST {region: "EU"};
+        identity Authorized requires authority TEST {urn: "test.authority", region: "EU"};
         attribute Described describes audit:Measure as 0 to 10;
         attribute BooleanDescription describes audit:Measure as true;
         attribute ConceptDescription describes audit:Measure as audit:State;
@@ -86,6 +86,7 @@ class WorldviewClauseAuditTest {
     assertEquals(1, statements.get("RequiredExtent").getRequiredExtents().size());
     assertEquals(1, statements.get("RequiredAttribute").getRequiredAttributes().size());
     assertEquals("TEST", statements.get("Authorized").getAuthorityRequired());
+    assertEquals("test.authority", statements.get("Authorized").getAuthorityParameters().get("urn"));
     assertEquals("EU", statements.get("Authorized").getAuthorityParameters().get("region"));
     assertEquals("Audit", adapted.getMetadata().get("label"));
     assertEquals("Entity", statements.get("Entity").getMetadata().get("label"));
@@ -102,6 +103,11 @@ class WorldviewClauseAuditTest {
     var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
     var reloaded = mapper.readValue(mapper.writeValueAsString(adapted),
         org.integratedmodelling.klab.api.lang.kim.KimOntology.class);
+    var authority = reloaded.getStatements().stream()
+        .filter(value -> value.getUrn().equals("Authorized")).findFirst().orElseThrow();
+    assertEquals("TEST", authority.getAuthorityRequired());
+    assertEquals("test.authority", authority.getAuthorityParameters().get("urn"));
+    assertTrue(authority.getType().contains(org.integratedmodelling.klab.api.knowledge.SemanticType.IDENTITY));
     var connection = reloaded.getStatements().stream().filter(value -> value.getUrn().equals("Connection")).findFirst().orElseThrow();
     assertEquals("audit:Entity", connection.getSubjectsLinked().getFirst().getTarget().getUrn());
     var passive = reloaded.getStatements().stream()

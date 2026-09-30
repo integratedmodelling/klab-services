@@ -107,17 +107,18 @@ their component implementation is the same.
 
 The component layer now discovers authority implementations, advertises their descriptors through
 Resources, hosts them only in Reasoners, and can install embeddable providers on demand. The
-worldview language adapter also retains the local authority name and its parameter map. Runtime
-validation currently reports that the requirement is retained but not enforced: knowledge loading
-does not yet call `Authority.setup()`, create worldview-scoped bindings, or materialize identities.
+worldview language adapter also retains the local authority name and its parameter map. Validation
+checks the identity declaration, local name and provider URN; knowledge loading configures
+worldview-scoped bridges through `Authority.configure()` and lazily materializes identities.
 
-The completed reasoning path will resolve `NAME:<identifier>` lazily, ingest the returned identity
-and its parent chain as normal concepts, and preserve authority provenance. Asserted parent links
+The initial reasoning path resolves `NAME:<identifier>` lazily and ingests the returned identity
+and its base/parent chain as normal concepts, stopping at known concepts. Asserted parent links
 can then participate in ordinary OWL hierarchy operations. When two identities require semantics
 defined by the external classification, distance and subsumption must delegate to the configured
-authority using the same directional non-negative compatibility contract described above. Quoted
-forms such as `NAME:"<provider expression>"` are reserved for provider-defined multidimensional
-expressions and still require grammar and runtime support.
+authority using the same directional non-negative compatibility contract described above; this
+delegation remains pending. Bracketed forms such as `NAME:[<provider expression>]` carry
+provider-defined multidimensional expressions. The grammar accepts them; full runtime payload
+handling and transport coverage remain pending.
 
 See [Authorities](AUTHORITIES.md) for the provider API, discovery and synchronization flow,
 worldview binding invariants, current implementation status, and development plan.
@@ -696,8 +697,16 @@ they must not silently return `false`, `0`, an empty collection, or `null`.
 
 ## Remaining implementation gaps
 
-- Worldview-scoped authority activation, identity materialization, quoted provider expressions,
-  authority-aware semantic distance, and the remote authority protocol; see
+Distributed worldview acquisition from certified root/higher-tier providers and authority source
+integrity are production requirements still awaiting an explicit assembly and trust protocol.
+The current startup path selects one worldview provider. See
+[worldview composition and authority provenance](SERVICE_COORDINATION_AND_DISCOVERY.md#worldview-composition-and-authority-provenance)
+for the intended rule, local development requirements, and outstanding decisions.
+
+- Authority discovery during startup without a user scope, full transport of bracketed provider
+  expressions (`NAME:[...]`), typed parent relationships, component-update invalidation,
+  authority-aware semantic distance, and the remote authority protocol. Initial worldview bridge
+  activation and recursive identity materialization are implemented; see
   [Authorities](AUTHORITIES.md#development-plan).
 - Generic substitution capture for abstract semantic patterns.
 - Inference-based concretization from a collection of concrete concepts.

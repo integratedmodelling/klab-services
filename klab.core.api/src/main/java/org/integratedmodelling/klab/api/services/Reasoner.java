@@ -22,6 +22,11 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 /** The reasoner service collects all functionalities that use semantics in k.LAB. */
 public interface Reasoner extends KlabService {
 
+  /** Configure a bridge to an existing identity in the loaded worldview; returns the provider ID. */
+  default String configureAuthority(Authority.ConfigurationRequest request, Scope scope) {
+    throw new UnsupportedOperationException("Authority configuration is not supported");
+  }
+
   /**
    * All services publish capabilities and have a call to get them. Capabilities may depend on
    * authentication but the endpoint should be publicly available as well.
