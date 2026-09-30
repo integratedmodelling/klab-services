@@ -34,6 +34,22 @@ public interface Authority {
   /** Release provider-held state when a bridge is removed or its worldview is reloaded. */
   default void releaseConfiguration(String configurationId) {}
 
+  /**
+   * Lifetimes in seconds for successful Reasoner-side cached results. Zero disables caching for
+   * an operation; Long.MAX_VALUE means immutable data without expiry. Providers with mutable
+   * vocabularies should choose conservative lifetimes. Diagnostics and failures are never cached.
+   * Revision must change whenever the provider changes the meaning/format of its cached results.
+   */
+  record CachePolicy(String revision, long identitySeconds, long searchSeconds, long reconciliationSeconds) {
+    public CachePolicy {
+      if (revision == null || revision.isBlank() || identitySeconds < 0 || searchSeconds < 0
+          || reconciliationSeconds < 0) throw new IllegalArgumentException("Invalid authority cache policy");
+    }
+  }
+
+  /** Default retention: one day for identities, five minutes for query results. */
+  default CachePolicy getCachePolicy() { return new CachePolicy("1", 86400, 300, 300); }
+
   interface Identity {
 
     /**

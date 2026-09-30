@@ -10,21 +10,32 @@ public final class AuthorityBindings {
   public record Binding(Authority.ConfigurationRequest request, Authority provider, String id) {}
 
   private final Map<String, Binding> bindings = new LinkedHashMap<>();
+  private final java.nio.file.Path cacheRoot;
+
+  /** Without a cache root, use providers directly (e.g. isolated unit tests). */
+  public AuthorityBindings() { this.cacheRoot = null; }
+
+  /** Production bridges persist successful provider results beneath the Reasoner's data directory. */
+  public AuthorityBindings(java.nio.file.Path cacheRoot) {
+    this.cacheRoot = java.util.Objects.requireNonNull(cacheRoot);
+  }
 
   public synchronized String configure(Authority.ConfigurationRequest request, Authority provider) {
     var previous = bindings.get(request.name());
     if (previous != null) {
-      if (previous.provider() == provider && previous.request().equals(request)) return previous.id();
+      if ((previous.provider() == provider || (previous.provider() instanceof CachedAuthority cached && cached.wraps(provider)))
+          && previous.request().equals(request)) return previous.id();
       throw new KlabValidationException("Duplicate local authority name: " + request.name());
     }
     var capabilities = provider.getCapabilities();
     if (capabilities != null && capabilities.getWorldview() != null
         && !request.worldview().equals(capabilities.getWorldview()))
       throw new KlabValidationException("Authority is incompatible with worldview " + request.worldview());
-    String id = provider.configure(request);
+    Authority hosted = cacheRoot == null ? provider : new CachedAuthority(provider, cacheRoot);
+    String id = hosted.configure(request);
     if (id == null || id.isBlank())
       throw new KlabValidationException("Authority returned an empty configuration ID: " + request.name());
-    bindings.put(request.name(), new Binding(request, provider, id));
+    bindings.put(request.name(), new Binding(request, hosted, id));
     return id;
   }
 

@@ -126,12 +126,52 @@ An authorized request uses the same `Authority.ConfigurationRequest` as ingestio
 }
 ```
 
-The response is the provider's configuration ID. The worldview must match the loaded worldview,
+The response is the Reasoner's stable bridge/cache ID; its wrapper retains the provider's transient
+configuration handle internally. The worldview must match the loaded worldview,
 and the root must resolve to a loaded identity. Exact repeated requests reuse the existing bridge;
 conflicting declarations of the same local name fail. Provider capabilities can restrict the
 worldview. Source declarations automatically configure their bridge after the identity is built.
 During startup without a user scope, providers must already be installed locally; Resources
 discovery/transfer is available when configuration has a user scope.
+
+### Persistent Reasoner cache
+
+Production bindings use a shared Reasoner-side wrapper for every authority. Identical declarations
+already reuse the live bridge; after reload/restart the provider is configured again to restore its
+live state, while successful results are reused from disk. Provider configuration handles need not
+be serializable or stable across processes.
+
+The external bridge ID contains the worldview and local configuration name plus a SHA-256 fingerprint
+of the worldview root, complete parameter map, provider URN, implementation revision and cache policy.
+Nested maps are serialized in sorted-key order. Cache directories under the Reasoner's service data
+directory (`services/reasoner/authority-cache`) retain readable worldview/configuration names with
+hashed suffixes. Parameters themselves are not written to disk. The provider revision includes its
+annotation version and artifact checksum; development classes fall back to the provider class checksum,
+so helper-only development changes must also bump the provider's explicit cache-policy revision.
+
+`Authority.getCachePolicy()` supplies a revision and lifetimes in seconds for identity, search and
+reconciliation results. Defaults are one day for identities and five minutes for queries. Zero
+disables caching; `Long.MAX_VALUE` denotes immutable data without time expiry. TAXA uses this for its
+pinned taxon identities and limits query retention to one day. Policy/release/provider/root changes
+select another partition; they never silently reuse incompatible results.
+
+The cache stores core DTOs rather than plug-in objects. Only clean successful identities are retained;
+nulls, exceptions and diagnostic-bearing results are not cached. Empty successful searches may be
+cached briefly. Search candidates do not seed identity lookup, because providers may perform stronger
+validation there. Canonical IDs and their resolved aliases share the validated lookup result. Dotted
+search-filter dispatch uses the base bridge; explicit provider sub-authority views have separate keys.
+
+An in-memory LRU retains 512 entries per bridge. Atomic JSON writes persist entries up to 4 MiB;
+periodic trimming (on the first write and every 64 writes) targets 10,000 entries and 256 MiB per
+partition, removing oldest-written entries. There may be up to 63 writes of temporary overshoot.
+Expiry/corruption produces a cache miss; disk errors fall back to memory/provider access with a
+warning. Live bridge release leaves disk data available for subsequent activation. Concurrent
+requests on one bridge serialize to avoid duplicate upstream misses. Administrative cross-partition
+cleanup and coordinated rate-limit/backoff policies remain future work.
+
+Caching does not establish component provenance, authorize a provider or supply an automatic offline
+configuration path. Providers may still validate their source during `configure()`. Already materialized
+OWL concepts follow worldview/binding reload semantics; cache expiry alone does not rewrite their axioms.
 
 ## Discovery, Installation, And Updates
 
@@ -278,6 +318,7 @@ configuration equivalence.
 | Authority source integrity | Proposed, not enforced. Discovery currently queries all Resources services in a user scope; Resources authority resolution does not check the worldview-provider role. Certificate-backed contributor selection and provenance checks remain pending. |
 | Worldview parsing and transport | Available for local name, parameter map, and clause source spans. Validation checks identity/name/URN; ingestion repeats these checks on transported beans. |
 | Binding activation and `configure()` lifecycle | Implemented for locally hosted providers and user-scoped component discovery. Provider-held IDs are retained with worldview and anchor context; reload/removal releases affected configurations. |
+| Persistent authority result cache | Shared Reasoner core support for all providers. Stable bridge keys, policy-controlled identity/search/reconciliation retention, DTO persistence, restart reuse, parameter/provider isolation, atomic writes and memory fallback are implemented. Live provider handles are restored on activation; cross-partition administration and coordinated throttling remain pending. |
 | Authority concept materialization | Initial path implemented: configured lookup, recursive base/parent expansion to known concepts, root inheritance, graph error handling, isolated ontologies, and display/locator metadata. Parent relationship properties and component revision invalidation remain pending. |
 | Search-only sub-authority dispatch | Implemented for opted-in providers: advertised dotted suffixes resolve through the base bridge, cache and canonical ontology. Exact configured dotted bindings take precedence. |
 | Taxonomic provider | The sibling `klab.authority.taxa` implements pinned COL XR configuration, code lookup, synonym canonicalization, hierarchy validation, scientific/vernacular search and explicit reconciliation. See its README for parameters and limits. |
@@ -362,3 +403,8 @@ and installed locally, the focused Reasoner Maven suite passed six tests (includ
 through OWL lookup), and the sibling provider passed nine fixture-based Maven tests and packaged a
 component archive. REST integration, full Resources-to-Reasoner worldview ingestion, complete
 worldview reloads, and component revision changes still need integration coverage.
+
+The shared persistent-cache pass added eight passing cache regression tests, alongside the six
+binding/materialization tests and nine TAXA tests. Coverage includes restart/reload reuse, canonical
+alias reuse, immutable retention, expiry/opt-out, concurrent miss deduplication, partition isolation,
+query/identity separation, uncached failures, corruption and unavailable-disk fallback.

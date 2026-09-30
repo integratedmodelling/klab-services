@@ -147,7 +147,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private ObservationReasoner observationReasoner;
   private volatile Worldview worldview;
   private final org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
-      authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings();
+      authorityBindings;
 
   @Override
   public synchronized String configureAuthority(Authority.ConfigurationRequest request, Scope scope) {
@@ -497,6 +497,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Autowired
   public ReasonerService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.REASONER, options);
+    this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
+        BaseService.getConfigurationDirectory(options).toPath().resolve("authority-cache"));
     this.owl = new OWL(scope);
     var authorityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
         this.owl, authorityBindings);
