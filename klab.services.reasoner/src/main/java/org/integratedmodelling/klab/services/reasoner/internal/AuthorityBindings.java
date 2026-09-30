@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.services.Authority;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 
 /** Configured bridges owned by one Reasoner's loaded worldview. Provider state stays in the provider. */
 public final class AuthorityBindings {
@@ -18,6 +19,18 @@ public final class AuthorityBindings {
   /** Production bridges persist successful provider results beneath the Reasoner's data directory. */
   public AuthorityBindings(java.nio.file.Path cacheRoot) {
     this.cacheRoot = java.util.Objects.requireNonNull(cacheRoot);
+  }
+
+  /** Accept the loaded instance ID for compatibility, but persist the stable worldview name. */
+  public static Authority.ConfigurationRequest forWorldview(
+      Authority.ConfigurationRequest request, Worldview worldview) {
+    if (worldview == null || worldview.getUrn() == null || worldview.getUrn().isBlank()
+        || (!request.worldview().equals(worldview.getUrn())
+            && !request.worldview().equals(worldview.getWorldviewId()))) {
+      throw new KlabValidationException("Authority bridge must use the loaded worldview");
+    }
+    return new Authority.ConfigurationRequest(worldview.getUrn(), request.name(),
+        request.rootIdentity(), request.parameters());
   }
 
   public synchronized String configure(Authority.ConfigurationRequest request, Authority provider) {

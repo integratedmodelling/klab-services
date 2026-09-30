@@ -12,6 +12,17 @@ import java.util.List;
 import java.util.Set;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
+  private boolean genericQuality;
+
+  @Override
+  public boolean isGenericQuality() {
+    return genericQuality;
+  }
+
+  public void setGenericQuality(boolean genericQuality) {
+    this.genericQuality = genericQuality;
+  }
+
   private List<DeclarationClause> declarationClauses = new ArrayList<>();
   private List<KimConcept> declaredReferences = new ArrayList<>();
 

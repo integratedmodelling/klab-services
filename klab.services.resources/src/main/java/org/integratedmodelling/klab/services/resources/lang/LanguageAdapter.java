@@ -281,7 +281,7 @@ public enum LanguageAdapter {
     }
     ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
-    if (semantics.isLeafDeclaration()) {
+    if (semantics.isLeafDeclaration() && semantics.getUnaryOperator() == null) {
       ret.setName(semantics.getObservable().concept().toString());
       ret.setNegated(semantics.isNegated() || semantics.getObservable().negated());
       retainReferenceFlags(ret, semantics.getObservable());
@@ -322,6 +322,9 @@ public enum LanguageAdapter {
       ret.setObservable(operand);
       ret.setSemanticModifier(
           UnarySemanticOperator.valueOf(semantics.getUnaryOperator().getFirst().name()));
+      // Older language beans can still carry the operand's type here.
+      var modifiedType = ret.getSemanticModifier().apply(operand.getType());
+      if (modifiedType != null && !operand.is(SemanticType.NOTHING)) ret.setType(modifiedType);
       if (semantics.getUnaryOperator().getSecond() != null
           && !semantics.getUnaryOperator().getSecond().isEmpty()) {
 
@@ -1738,6 +1741,7 @@ public enum LanguageAdapter {
     ret.setDeprecated(definition.getDeprecation() != null);
     ret.setProjectName(projectName);
     ret.setType(adaptSemanticType(definition.getDeclaredType()));
+    ret.setGenericQuality(definition.isGenericQuality());
     ret.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
     for (var annotation : definition.getAnnotations()) {
       ret.getAnnotations()

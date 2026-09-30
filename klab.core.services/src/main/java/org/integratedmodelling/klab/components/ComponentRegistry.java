@@ -1789,7 +1789,8 @@ public class ComponentRegistry {
         Utils.Files.deleteQuietly(pluginDestination);
       }
     } catch (Throwable t) {
-      ret = ResourceSet.empty(Notification.error(t.getMessage()));
+      Logging.INSTANCE.error("Failed to install component " + pluginDestination, t);
+      ret = ResourceSet.empty(Notification.error(t));
       Utils.Files.deleteQuietly(pluginDestination);
     }
 
@@ -2900,6 +2901,13 @@ public class ComponentRegistry {
    */
   public synchronized boolean loadComponents(ResourceSet resourceSet, Scope scope) {
 
+    if (pluginPath == null || componentManager == null) {
+      var diagnostic = Notification.error("Component registry has not been initialized");
+      resourceSet.getNotifications().add(diagnostic);
+      scope.error(diagnostic.getMessage());
+      return false;
+    }
+
     var requestedComponents =
         resourceSet.getResults().stream()
             .filter(resource -> resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT)
@@ -2934,6 +2942,9 @@ public class ComponentRegistry {
                   + installed.id()
                   + " is older than the copy advertised by Resources service "
                   + result.getServiceId());
+          resourceSet.getNotifications().add(
+              Notification.error("Failed to refresh component " + result.getResourceUrn()
+                  + " from Resources service " + result.getServiceId()));
           return false;
         }
         continue;
@@ -2947,6 +2958,9 @@ public class ComponentRegistry {
               .orElse(null);
 
       if (service == null) {
+        resourceSet.getNotifications().add(
+            Notification.error("Resources service " + result.getServiceId()
+                + " is unavailable for component " + result.getResourceUrn()));
         recordComponentEvent(
             coordinates.getFirst(),
             coordinates.getSecond(),
@@ -2995,6 +3009,7 @@ public class ComponentRegistry {
         // give the OS time to react - found that often the file is truncated
         TimeUnit.SECONDS.sleep(2);
       } catch (Exception e) {
+        resourceSet.getNotifications().add(Notification.error(e));
         scope.error(e);
         return false;
       }
@@ -3008,6 +3023,11 @@ public class ComponentRegistry {
               result.getServiceId(),
               result.getTimestamp());
       if (installation == null || installation.getFirst() == null) {
+        resourceSet.getNotifications().add(
+            Notification.error("Failed to install component " + result.getResourceUrn()));
+        if (installation != null) {
+          resourceSet.getNotifications().addAll(installation.getSecond().getNotifications());
+        }
         recordComponentEvent(
             coordinates.getFirst(),
             coordinates.getSecond(),

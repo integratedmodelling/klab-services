@@ -119,6 +119,9 @@ The principal steps are:
    across ready peers, including peers already notified. `ScopeAdvertisements` retains the latest
    pending payload per target, serializes deliveries to that target, and retries unsuccessful
    deliveries every five seconds. An older acknowledgement cannot discard a newer pending payload.
+   HTTP failures, including HTML gateway responses, and connection failures leave the payload
+   pending without emitting client-side parsing exceptions or scope errors. Only an explicit
+   `true` acknowledgement completes delivery; these retries do not deactivate the service client.
 
 The last step repairs incomplete startup snapshots and failed delivery; it is not a general
 membership protocol. Advertisements add or replace service entries rather than reconcile an

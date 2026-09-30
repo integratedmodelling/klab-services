@@ -132,7 +132,7 @@ and the root must resolve to a loaded identity. Exact repeated requests reuse th
 conflicting declarations of the same local name fail. Provider capabilities can restrict the
 worldview. Source declarations automatically configure their bridge after the identity is built.
 During startup without a user scope, providers must already be installed locally; Resources
-discovery/transfer is available when configuration has a user scope.
+discovery/transfer is available in service and user scopes.
 
 ### Persistent Reasoner cache
 
@@ -140,6 +140,10 @@ Production bindings use a shared Reasoner-side wrapper for every authority. Iden
 already reuse the live bridge; after reload/restart the provider is configured again to restore its
 live state, while successful results are reused from disk. Provider configuration handles need not
 be serializable or stable across processes.
+
+Bridge requests and persistent keys use the stable worldview name (`Worldview.getUrn()`), not its
+generated loaded-instance ID. The configuration endpoint also accepts the current instance ID for
+compatibility and normalizes it to the name before invoking the provider or selecting a cache.
 
 The external bridge ID contains the worldview and local configuration name plus a SHA-256 fingerprint
 of the worldview root, complete parameter map, provider URN, implementation revision and cache policy.
@@ -180,7 +184,12 @@ OWL concepts follow worldview/binding reload semantics; cache expiry alone does 
 The intended integrity rule is that authority plug-ins come from the same authorized Resources
 services that supply the loaded worldview. A Resources service supplying only ordinary resources
 must not become an authority source merely because it is available in the caller's scope.
-This is a proposed enforcement contract; the current implementation does not yet enforce it.
+Discovery now filters Resources services by `isWorldviewProvider` and an `adoptedWorldview`
+matching the loaded worldview name (`Worldview.getUrn()`), in both startup service scopes and user
+scopes. The generated `getWorldviewId()` identifies a loaded instance and must not be compared with
+the advertised name. This is an
+initial eligibility check, not the complete enforcement contract: contributor certification,
+component provenance verification and explicitly installed provider checks remain pending.
 
 For a remote Reasoner, its service certificate establishes the permitted service peers. Authority
 selection must further restrict those peers to the providers contributing to its loaded worldview.
@@ -224,7 +233,8 @@ Local Maven builds, component archives, unsaved editor validation and project re
 of that workflow. Development components need an explicit association with the local worldview
 provider, and must follow the existing update and diagnostic paths. Local validation errors may
 remain visible for editing without silently treating unrelated authority sources as trusted.
-Startup discovery through a service scope and this development association are still pending.
+Startup discovery through a service scope is implemented. The explicit development association
+and its provenance checks remain pending.
 
 ### Current acquisition path
 
@@ -237,7 +247,10 @@ Authority components follow the normal component distribution path:
    component descriptor.
 3. Resources advertises and exports the component but does not instantiate its authority classes.
 4. A Reasoner first checks its own registry. For an embeddable authority it may resolve the
-   provider through Resources, import the component as a dependency, and instantiate it locally.
+   provider through matching worldview Resources providers, import the component as a dependency,
+   and instantiate it locally. Startup uses the same component loader as user-driven ingestion;
+   authenticated client credentials remain in effect when no user scope exists yet. Authority
+   resolution includes the source service URL, as other component acquisition routes do.
 5. A non-embeddable provider is usable only from a Reasoner where its component was installed by
    configuration or administration. Its component descriptor remains visible in that Reasoner's
    capabilities.
@@ -315,9 +328,10 @@ configuration equivalence.
 | Embeddable discovery and component transfer | Available through Resources component resolution. |
 | Non-embeddable installation | Available when the component is explicitly installed on the Reasoner; automatic transfer is intentionally refused. |
 | Dependency update before use | Available for adapter and authority resolution when the source Resources service advertises a newer installed copy. |
-| Authority source integrity | Proposed, not enforced. Discovery currently queries all Resources services in a user scope; Resources authority resolution does not check the worldview-provider role. Certificate-backed contributor selection and provenance checks remain pending. |
+| Authority source integrity | Discovery accepts only Resources services advertising the worldview-provider role and the loaded worldview name. The generated instance ID is a separate value. Resources-side restrictions, certificate-backed contributor selection, installed-provider checks and provenance verification remain pending. |
 | Worldview parsing and transport | Available for local name, parameter map, and clause source spans. Validation checks identity/name/URN; ingestion repeats these checks on transported beans. |
-| Binding activation and `configure()` lifecycle | Implemented for locally hosted providers and user-scoped component discovery. Provider-held IDs are retained with worldview and anchor context; reload/removal releases affected configurations. |
+| Binding activation and `configure()` lifecycle | Implemented for locally hosted providers and service/user-scoped component discovery. Provider-held IDs are retained with worldview and anchor context; reload/removal releases affected configurations. |
+| Ingestion diagnostics | Startup and user-driven ingestion retain lexical notifications for ontology semantic validation. A missing provider remains visible on the binding declaration after restart. |
 | Persistent authority result cache | Shared Reasoner core support for all providers. Stable bridge keys, policy-controlled identity/search/reconciliation retention, DTO persistence, restart reuse, parameter/provider isolation, atomic writes and memory fallback are implemented. Live provider handles are restored on activation; cross-partition administration and coordinated throttling remain pending. |
 | Authority concept materialization | Initial path implemented: configured lookup, recursive base/parent expansion to known concepts, root inheritance, graph error handling, isolated ontologies, and display/locator metadata. Parent relationship properties and component revision invalidation remain pending. |
 | Search-only sub-authority dispatch | Implemented for opted-in providers: advertised dotted suffixes resolve through the base bridge, cache and canonical ontology. Exact configured dotted bindings take precedence. |
@@ -408,3 +422,18 @@ The shared persistent-cache pass added eight passing cache regression tests, alo
 binding/materialization tests and nine TAXA tests. Coverage includes restart/reload reuse, canonical
 alias reuse, immutable retention, expiry/opt-out, concurrent miss deduplication, partition isolation,
 query/identity separation, uncached failures, corruption and unavailable-disk fallback.
+
+The startup-discovery repair passed five core discovery/registry tests and nine Reasoner
+binding/materialization/loading/notification tests. Coverage includes discovery without a user
+scope, user-scope refresh, rejection of unrelated Resources providers, failed installation, and
+lexical diagnostic retention with listener cleanup. Core dependencies built and installed locally;
+Resources packaged and Reasoner main sources compiled. The live Resources service advertised TAXA
+and its component JAR exporter. Full-stack transfer and binding activation still require a restart
+with these changes.
+
+Live follow-up exposed the distinction between Resources' advertised worldview name (`imod`)
+and the generated loaded-instance ID. Discovery now compares names; bridge configuration also
+normalizes the current instance ID to that stable name for persistent cache reuse. The live
+Resources resolver and JAR export both succeeded. Five discovery/registry tests, sixteen Reasoner
+binding/cache/materialization/notification tests, and six HTTP/advertisement tests passed after
+this correction. Full bridge activation awaits deployment of the corrected Reasoner/core builds.

@@ -15,6 +15,27 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.junit.jupiter.api.Test;
 
 class SemanticValidationTransportTest {
+  @Test void transportsGenericDeclarationIntentToTheReasoner() throws Exception {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var statement = new KimConceptStatementImpl();
+    statement.setUrn("Frequency"); statement.setGenericQuality(true);
+    var copy = mapper.readValue(mapper.writeValueAsBytes(statement),
+        org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.class);
+    assertTrue(copy.isGenericQuality());
+  }
+
+  @Test void transportsAuditTraceSeparatelyFromDiagnosticText() throws Exception {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var source = new KimConceptImpl();
+    source.setNamespace("physical"); source.setOffsetInDocument(42); source.setLength(19);
+    var notification = Notification.error(new IllegalArgumentException("Expected a quality"), source);
+    var copy = mapper.readValue(mapper.writeValueAsBytes(notification), Notification.class);
+    assertEquals("Expected a quality", copy.getMessage());
+    assertEquals(notification.getStackTrace(), copy.getStackTrace());
+    assertTrue(copy.getStackTrace().contains("IllegalArgumentException"));
+    assertEquals(42, copy.getLexicalContext().getOffsetInDocument());
+  }
+
   @Test void transportsOccurrencesAndRevisionBoundDiagnostics() throws Exception {
     var mapper = JacksonConfiguration.newObjectMapper();
     var namespace = new KimNamespaceImpl(); namespace.setUrn("test"); namespace.setProjectName("project");

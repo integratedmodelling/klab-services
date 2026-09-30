@@ -575,9 +575,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (component == null) {
       return ResourceSet.empty(Notification.error("No embeddable authority available for " + urn));
     }
-    return ResourceSet.of(
+    var ret = ResourceSet.of(
         componentResource(
             component.id(), component.version(), component.timestamp(), component));
+    ret.getServices().put(serviceId(), getUrl());
+    return ret;
   }
 
   private ResourceSet resolveComponentExtension(String urn, Scope scope) {

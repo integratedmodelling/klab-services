@@ -79,8 +79,8 @@ public class DocumentSemanticValidator
                     context));
           }
         }
-      } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException e) {
-        result.add(error(e.getMessage(), contextualizable, context));
+      } catch (RuntimeException e) {
+        result.add(error(e, contextualizable, context));
       }
     }
     return result;
@@ -216,8 +216,8 @@ public class DocumentSemanticValidator
         }
       }
       collect(concept, syntax, context, result);
-    } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException e) {
-      result.add(error(e.getMessage(), syntax, context));
+    } catch (RuntimeException e) {
+      result.add(error(e, syntax, context));
     }
     return result;
   }
@@ -282,11 +282,12 @@ public class DocumentSemanticValidator
     if (concept != null) {
       for (var notification : concept.getNotifications()) {
         // Copy: never attach occurrence locations to cached semantic objects.
-        result.add(
-            Notification.create(
+        var copy = Notification.create(
                 notification.getLevel(),
                 notification.getMessage(),
-                Notification.LexicalContext.of(source, context.getDocument())));
+                Notification.LexicalContext.of(source, context.getDocument()));
+        copy.setStackTrace(notification.getStackTrace());
+        result.add(copy);
       }
     }
     if (concept == null || concept.is(SemanticType.NOTHING) || !reasoner.satisfiable(concept)) {
@@ -303,7 +304,7 @@ public class DocumentSemanticValidator
   }
 
   private Notification error(
-      String message, Statement source, KimObservableVisitor.Context context) {
+      Object message, Statement source, KimObservableVisitor.Context context) {
     // ConceptData references may lack a token range. Use their enclosing source occurrence
     // rather than emitting a diagnostic that the editor cannot place.
     for (var enclosing = context; source.getLength() <= 0 && enclosing != null;

@@ -2835,7 +2835,25 @@ public class WorkspaceManager {
     document.setSourceCode(source);
     document.setLastUpdateTimestamp(timestamp);
     document.setInactive(true);
-    document.setNotifications(new ArrayList<>(notifications));
+    var bound = new ArrayList<Notification>();
+    for (var notification : notifications) {
+      var context = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl.LexicalContextImpl();
+      context.setDocumentUrn(urn);
+      context.setProjectUrn(projectName);
+      context.setDocumentType(KlabAsset.KnowledgeClass.classify(document.getClass()));
+      var original = notification.getLexicalContext();
+      if (original != null) {
+        context.setOffsetInDocument(original.getOffsetInDocument());
+        context.setLength(original.getLength());
+      } else {
+        context.setOffsetInDocument(0);
+        context.setLength(source == null ? 0 : Math.min(1, source.length()));
+      }
+      var copy = Notification.create(notification.getLevel(), notification.getMessage(), context);
+      copy.setStackTrace(notification.getStackTrace());
+      bound.add(copy);
+    }
+    document.setNotifications(bound);
     return document;
   }
 
@@ -3941,11 +3959,12 @@ public class WorkspaceManager {
       try {
         IParseResult result = parser.parse(reader);
         for (var error : result.getSyntaxErrors()) {
-          System.out.println(error);
-          // TODO syntax context
+          var context = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl.LexicalContextImpl();
+          context.setOffsetInDocument(error.getOffset());
+          context.setLength(error.getLength());
           errors.add(
               Notification.create(
-                  error.getSyntaxErrorMessage().getMessage(), Notification.Level.Error));
+                  error.getSyntaxErrorMessage().getMessage(), Notification.Level.Error, context));
         }
         return (T) result.getRootASTElement();
       } catch (Throwable throwable) {

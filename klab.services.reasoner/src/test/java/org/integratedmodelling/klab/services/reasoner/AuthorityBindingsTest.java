@@ -9,6 +9,27 @@ import org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
 import org.junit.jupiter.api.Test;
 
 class AuthorityBindingsTest {
+  @Test
+  void loadedInstanceIdsNormalizeToTheSamePersistentWorldviewName() {
+    var worldview = new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();
+    worldview.setUrn("imod");
+    worldview.setWorldviewId("first-instance");
+    var parameters = Map.<String, Object>of("urn", "test.authority");
+    var first = AuthorityBindings.forWorldview(
+        new Authority.ConfigurationRequest("first-instance", "TAXA", "biology:Identity", parameters),
+        worldview);
+    worldview.setWorldviewId("second-instance");
+    var second = AuthorityBindings.forWorldview(
+        new Authority.ConfigurationRequest("second-instance", "TAXA", "biology:Identity", parameters),
+        worldview);
+    assertEquals(first, second);
+    assertEquals("imod", first.worldview());
+    assertEquals(first, AuthorityBindings.forWorldview(first, worldview));
+    assertThrows(KlabValidationException.class, () -> AuthorityBindings.forWorldview(
+        new Authority.ConfigurationRequest("another-worldview", "TAXA", "biology:Identity", parameters),
+        worldview));
+  }
+
   private Authority.ConfigurationRequest request(String name, String root) {
     return new Authority.ConfigurationRequest("worldview", name, root,
         Map.of("urn", "test.authority", "catalog", name));

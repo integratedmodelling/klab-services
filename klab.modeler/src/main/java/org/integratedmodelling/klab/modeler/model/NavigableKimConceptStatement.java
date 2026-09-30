@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.Set;
 
 public class NavigableKimConceptStatement extends NavigableKlabStatement<KimConceptStatement> implements KimConceptStatement {
+    @Override
+    public boolean isGenericQuality() {
+        return delegate.isGenericQuality();
+    }
+
     public NavigableKimConceptStatement(KimConceptStatement asset, NavigableKlabAsset<?> parent) {
         super(asset, parent);
     }
