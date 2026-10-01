@@ -688,6 +688,56 @@ The client clears caches after administrative load/update calls and whenever ref
 report a different knowledge revision. Observable-specific observer, contextualization, and mediator
 checks are performed after retrieving the cached concept-level distance.
 
+## Composer insertion latency and pre-caching plan
+
+The IDE's **Adding…** interval includes the edit request and generation of proposals for the
+next token. It is not just a concept lookup. `SELECT` reuses the selected proposal's prepared
+state, but then validates the next candidates. `IDENTITY` additionally resolves and materializes
+the authority identity and its parents, registers ontology axioms, flushes the reasoner, and
+replays the expression. Candidate validation can call Resources to parse uncached observable
+declarations and perform satisfiability and applicability checks. A fast authority search does
+not imply a fast insertion.
+
+After a confirmed authority insertion, SemanticComposer should return to Concepts / operators
+and display the proposals in that same response. Preserve the current mode and query on a
+rejected or unconfirmed insertion, or if the user changed input while the edit was pending.
+Authority terminals must also be distinguished from expressions: `TAXA:123 biology:Subject`
+must compile as an identity-qualified subject, never as one provider code.
+
+Pre-caching is planned across the IDE, ReasonerClient, and services:
+
+1. Measure cold and warm `TOKEN`, `SELECT`, and `IDENTITY` separately. Extend the existing
+   client/server elapsed-time logging with provider lookup, graph materialization/flush,
+   expression replay, documentation, index scanning, and candidate-validation timings and
+   counts. Measure first insertion after startup, later insertions, and insertion after a
+   knowledge revision; distinguish network time from local UI rendering and worker delay.
+2. At service readiness after worldview loading, warm a bounded set of frequently used local
+   concept/observable declarations and inference data. Repeat after knowledge changes, cancel
+   obsolete work, and publish entries only for the revision that produced them. Prioritize the
+   active worldview and recent successful declarations rather than every possible composition.
+3. In the IDE/client, warm capabilities, connection setup, recently used concept metadata and
+   observable resolutions when the Reasoner becomes available or the composer opens. The client
+   already caches concept/observable resolutions, subsumption and distances; semantic-search
+   requests currently go directly to the server. Key any additional cache by service identity,
+   knowledge revision, and authorization scope; clear it on reconnect or service replacement.
+4. Precompute likely next contexts on the service using immutable expression snapshots and a
+   bounded work budget. Reuse validation results, not old session responses. Proposal IDs and
+   `matchesRequestId` belong to the current server session; an IDE cache cannot replay them after
+   edits, undo, another query, or session expiry. Every selected result still needs admission
+   against the current expression and current knowledge.
+5. For authority selection, consider bounded prefetch of the highlighted identity's full
+   resolution under the provider's cache policy. Existing persistent authority search and
+   identity caches are separate: search hits intentionally do not seed identity validation.
+   Avoid materializing an entire external authority or speculative ontology mutations on every
+   keystroke. Measure how much latency remains in OWL registration and inference after a
+   provider-cache hit before choosing a materialization warmup strategy.
+
+Acceptance requires lower cold **Adding…** latency on a representative loaded worldview, with
+unchanged proposal validity, correct invalidation, and bounded startup/background work. Test
+authority and ontology identities followed by a valid Subject, rejected incompatible heads,
+undo, stale responses, and a knowledge update during warmup. No insertion speedup is claimed
+until those timings are measured; the mode/terminal fixes address correctness independently.
+
 ## Error and transport behavior
 
 Controller endpoints that accept concept arrays validate arity and reject null concepts before

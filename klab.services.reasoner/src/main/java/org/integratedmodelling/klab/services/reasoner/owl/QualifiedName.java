@@ -88,6 +88,13 @@ public class QualifiedName implements Serializable {
     if (ss.length != 2 || ss[0].trim().equals("") || ss[1].trim().equals("")) {
       return null;
     }
+    if (Character.isUpperCase(ss[0].charAt(0))
+        && !ss[1].matches("[A-Za-z0-9_]+|\\[(?:[^\\]\\\\]|\\\\[\\]\\\\])*\\]")) {
+      // Only a complete authority terminal is atomic. In particular, a trait followed by
+      // its observable head must go through expression compilation, not provider lookup.
+      // Spaces and colons remain legal inside a bracketed code, with escaped ] and \\.
+      return null;
+    }
     return ss;
   }
 

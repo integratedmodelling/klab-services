@@ -45,6 +45,21 @@ class AuthorityIdentityResolverTest {
     return identity;
   }
 
+  @Test void compoundAuthorityExpressionsAreNotDispatchedAsIdentityCodes() {
+    var owl = new TestOWL();
+    owl.setAuthorityResolver((authority, code) -> {
+      fail("Compound expression dispatched to authority: " + code);
+      return null;
+    });
+    for (String terminal : List.of("TAXA:123", "TAXA:[a b]", "TAXA:[a:b]", "TAXA:[x\\]y]")) {
+      for (String suffix : List.of(" biology:Subject", " of biology:Subject",
+          " and TAXA:456", " or (TAXA:456)", " biology:Subject of biology:Habitat")) {
+        assertFalse(QualifiedName.validate(terminal + suffix), terminal + suffix);
+        assertNull(owl.getConcept(terminal + suffix));
+      }
+    }
+  }
+
   @Test
   void baseIdentityCarriesTheWorldviewRootAndRecursionStopsAtKnownParents() {
     var owl = new TestOWL();
