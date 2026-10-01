@@ -81,6 +81,43 @@ class AuthorityDiscoveryTest {
     verify(otherWorldview, never()).resolve(anyString(), any(), any());
   }
 
+  private org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding binding() {
+    return new org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding(
+        "TAXA", "test:Species", "test", 0, 10, "source-hash",
+        new org.integratedmodelling.klab.api.services.runtime.extension.Extensions.AuthorityDescriptor(
+            "test.authority", Version.create("1.0.0"), true, true, List.of(), List.of()),
+        "test.component", Version.create("1.0.0"), null);
+  }
+
+  @Test void pinnedAuthorityUsesInstalledExactProviderWithoutRediscovery() {
+    var scope = mock(ServiceScope.class);
+    var target = target(); var binding = binding(); var provider = mock(Authority.class);
+    when(target.getComponentRegistry().getAuthority(binding, scope)).thenReturn(provider);
+    assertSame(provider, Utils.Resources.resolveAuthority(binding, scope, target, worldview()));
+    verify(scope, never()).getServices(ResourcesService.class);
+  }
+
+  @Test void pinnedAuthorityRejectsCompatibleButDifferentComponentVersion() {
+    var scope = mock(ServiceScope.class); var source = resources(true, "imod");
+    when(scope.getServices(ResourcesService.class)).thenReturn(List.of(source));
+    when(source.resolve("test.component@1.0.0", KnowledgeClass.COMPONENT, null))
+        .thenReturn(ResourceSet.of(new ResourceSet.Resource("resources", "test.component", null,
+            Version.create("1.1.0"), KnowledgeClass.COMPONENT, 1, false)));
+    var target = target();
+    assertNull(Utils.Resources.resolveAuthority(binding(), scope, target, worldview()));
+    verify(target.getComponentRegistry(), never()).loadComponents(any(), any());
+  }
+
+  @Test void pinnedAuthorityInstallsExactComponentAndUsesExactLookup() {
+    var scope = mock(ServiceScope.class); var source = resources(true, "imod");
+    when(scope.getServices(ResourcesService.class)).thenReturn(List.of(source));
+    when(source.resolve("test.component@1.0.0", KnowledgeClass.COMPONENT, null)).thenReturn(component());
+    var target = target(); var binding = binding(); var provider = mock(Authority.class);
+    when(target.getComponentRegistry().loadComponents(any(), same(scope))).thenReturn(true);
+    when(target.getComponentRegistry().getAuthority(binding, scope)).thenReturn(null, provider);
+    assertSame(provider, Utils.Resources.resolveAuthority(binding, scope, target, worldview()));
+  }
+
   private BaseService target() {
     var target = mock(BaseService.class);
     when(target.serviceType()).thenReturn(KlabService.Type.REASONER);

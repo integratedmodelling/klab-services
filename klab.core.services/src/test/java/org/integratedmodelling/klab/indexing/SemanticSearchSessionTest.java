@@ -423,6 +423,196 @@ class SemanticSearchSessionTest {
     return observable;
   }
 
+  @Test void tokenSearchDoesNotRevalidateTheAlreadyConfirmedExpression() {
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    call(SemanticSearchRequest.Mode.TOKEN); select("test:Height");
+    candidates.clear();
+    clearInvocations(reasoner);
+    call(SemanticSearchRequest.Mode.TOKEN);
+    verify(reasoner, never()).resolveObservable(anyString());
+  }
+
+  @Test void choosingAValidatedProposalDoesNotResolveItAgain() {
+    concept("data:Normalized", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+    call(SemanticSearchRequest.Mode.TOKEN);
+    candidates.clear();
+    clearInvocations(reasoner);
+    assertEquals("data:Normalized", select("data:Normalized").getDeclaration());
+    verify(reasoner, never()).resolveObservable(anyString());
+    verify(reasoner, never()).resolveConcept(anyString());
+    assertEquals("", call(SemanticSearchRequest.Mode.UNDO).getDeclaration());
+  }
+
+  @Test void newerQueryStopsOlderScanWithoutDiscardingTheCompositionSession() throws Exception {
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    candidates.add(new SemanticMatch(ValueOperator.GREATER));
+    var started = new java.util.concurrent.CountDownLatch(1);
+    var concurrent = new SemanticSearchSession(reasoner, (text, scope, limit) -> {
+      if (text.equals("slow")) {
+        started.countDown();
+        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+          scope.checkSearchCancelled();
+          try { Thread.sleep(5); } catch (InterruptedException ex) { throw new IllegalStateException(ex); }
+        }
+        throw new IllegalStateException("Old query was not cancelled");
+      }
+      return candidates;
+    }, new SemanticSearchRequest());
+    var initial = concurrent.handle(request(SemanticSearchRequest.Mode.TOKEN), 42);
+    var head = request(SemanticSearchRequest.Mode.SELECT);
+    head.setSelectedMatchId("test:Height"); head.setMatchesRequestId(initial.getRequestId());
+    assertEquals("test:Height", concurrent.handle(head, 42).getDeclaration());
+    var worker = java.util.concurrent.Executors.newFixedThreadPool(2);
+    try {
+      var old = request(SemanticSearchRequest.Mode.TOKEN); old.setQueryString("slow");
+      var first = worker.submit(() -> concurrent.handle(old, 42));
+      assertTrue(started.await(2, java.util.concurrent.TimeUnit.SECONDS));
+      var fresh = request(SemanticSearchRequest.Mode.TOKEN); fresh.setQueryString("height");
+      var latest = worker.submit(() -> concurrent.handle(fresh, 42)).get(2, java.util.concurrent.TimeUnit.SECONDS);
+      var abandoned = first.get(2, java.util.concurrent.TimeUnit.SECONDS);
+      assertEquals(List.of("Superseded by a newer search."), abandoned.getErrors());
+      assertEquals("test:Height", abandoned.getDeclaration());
+      assertEquals("test:Height", latest.getDeclaration());
+      assertTrue(latest.getMatches().stream().anyMatch(match -> match.getId().equals(">")));
+      var select = request(SemanticSearchRequest.Mode.SELECT);
+      select.setMatchesRequestId(latest.getRequestId()); select.setSelectedMatchId(">");
+      assertEquals("test:Height >", concurrent.handle(select, 42).getDeclaration());
+      assertEquals("test:Height", concurrent.handle(request(SemanticSearchRequest.Mode.UNDO), 42).getDeclaration());
+    } finally { worker.shutdownNow(); }
+  }
+
+  @Test void newerQueryDoesNotCancelAnInsertion() throws Exception {
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var started = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    var concurrent = new SemanticSearchSession(reasoner, (text, scope, limit) -> {
+      if (calls.incrementAndGet() == 2) {
+        started.countDown();
+        while (release.getCount() > 0) {
+          scope.checkSearchCancelled();
+          try { release.await(5, java.util.concurrent.TimeUnit.MILLISECONDS); }
+          catch (InterruptedException ex) { throw new IllegalStateException(ex); }
+        }
+      }
+      return candidates;
+    }, new SemanticSearchRequest());
+    var initial = concurrent.handle(request(SemanticSearchRequest.Mode.TOKEN), 42);
+    var select = request(SemanticSearchRequest.Mode.SELECT);
+    select.setSelectedMatchId("test:Height"); select.setMatchesRequestId(initial.getRequestId());
+    var worker = java.util.concurrent.Executors.newFixedThreadPool(2);
+    try {
+      var insertion = worker.submit(() -> concurrent.handle(select, 42));
+      assertTrue(started.await(2, java.util.concurrent.TimeUnit.SECONDS));
+      var fresh = request(SemanticSearchRequest.Mode.TOKEN); fresh.setQueryString("slope");
+      var query = worker.submit(() -> concurrent.handle(fresh, 42));
+      var registeredField = SemanticSearchSession.class.getDeclaredField("latestRequestId");
+      registeredField.setAccessible(true);
+      var registered = (java.util.concurrent.atomic.AtomicInteger) registeredField.get(concurrent);
+      long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
+      while (registered.get() < fresh.getRequestId() && System.nanoTime() < deadline) Thread.sleep(5);
+      assertEquals(fresh.getRequestId(), registered.get());
+      assertFalse(insertion.isDone(), "A newer query cancelled the pending insertion");
+      release.countDown();
+      var inserted = insertion.get(2, java.util.concurrent.TimeUnit.SECONDS);
+      assertEquals("test:Height", inserted.getDeclaration()); assertTrue(inserted.getErrors().isEmpty());
+      assertEquals("test:Height", query.get(2, java.util.concurrent.TimeUnit.SECONDS).getDeclaration());
+    } finally { release.countDown(); worker.shutdownNow(); }
+  }
+
+  @Test void suggestionFailureAfterAnEditStillReturnsCommittedStateAndAllowsUndo() {
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var fail = new java.util.concurrent.atomic.AtomicBoolean(false);
+    var recovering = new SemanticSearchSession(reasoner, (text, scope, limit) -> {
+      if (fail.get()) throw new IllegalStateException("Index unavailable");
+      return candidates;
+    }, new SemanticSearchRequest());
+    var first = recovering.handle(request(SemanticSearchRequest.Mode.TOKEN), 42);
+    fail.set(true);
+    var selection = request(SemanticSearchRequest.Mode.SELECT);
+    selection.setSelectedMatchId("test:Height"); selection.setMatchesRequestId(first.getRequestId());
+    var selected = recovering.handle(selection, 42);
+    assertEquals("test:Height", selected.getDeclaration()); assertTrue(selected.isCanUndo());
+    assertNotNull(selected.getObservable()); assertFalse(selected.getErrors().isEmpty());
+    var undone = recovering.handle(request(SemanticSearchRequest.Mode.UNDO), 42);
+    assertEquals("", undone.getDeclaration()); assertFalse(undone.isCanUndo());
+  }
+
+  @Test void failedConceptLookupDoesNotMakeOtherSuggestionsUnusable() {
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    concept("test:Missing", SemanticType.OBSERVABLE, SemanticType.SUBJECT);
+    when(reasoner.resolveConcept("test:Missing")).thenThrow(new IllegalStateException("Lookup unavailable"));
+    var result = call(SemanticSearchRequest.Mode.TOKEN);
+    assertTrue(result.getMatches().stream().anyMatch(match -> match.getId().equals("test:Height")));
+    assertFalse(result.getErrors().isEmpty());
+    assertEquals("test:Height", select("test:Height").getDeclaration());
+  }
+
+  @Test void documentationFailureStillReturnsUndoableExpression() {
+    var concept = concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    call(SemanticSearchRequest.Mode.TOKEN);
+    when(reasoner.directGoal(concept)).thenThrow(new IllegalStateException("Documentation unavailable"));
+    var selected = select("test:Height");
+    assertEquals("test:Height", selected.getDeclaration()); assertTrue(selected.isCanUndo());
+    assertFalse(selected.getErrors().isEmpty());
+    assertEquals("", call(SemanticSearchRequest.Mode.UNDO).getDeclaration());
+  }
+
+  @Test void authorityInsertionIsOneStyledUndoableStepAndRejectsStaleState() {
+    var identity = concept("internal:Taxon", SemanticType.IDENTITY, SemanticType.PREDICATE);
+    valid.put("TAXA:123", valid.get("internal:Taxon"));
+    var resolver = mock(SemanticSearchSession.AuthorityResolver.class);
+    when(resolver.resolve("TAXA", "123")).thenReturn(new SemanticSearchSession.AuthoritySelection(identity, "TAXA:123"));
+    var composing = new SemanticSearchSession(reasoner, (text, scope, limit) -> List.of(),
+        new SemanticSearchRequest(), new SemanticClauseSupport(reasoner), resolver);
+    var initial = composing.handle(request(SemanticSearchRequest.Mode.TOKEN), 42);
+    var insert = request(SemanticSearchRequest.Mode.IDENTITY);
+    insert.setAuthority("TAXA"); insert.setIdentityCode("123"); insert.setMatchesRequestId(initial.getRequestId());
+    var inserted = composing.handle(insert, 42);
+    assertTrue(inserted.getErrors().isEmpty(), inserted.getErrors().toString());
+    assertEquals("TAXA:123", inserted.getDeclaration()); assertTrue(inserted.isCanUndo());
+    assertEquals("TAXA:123", inserted.getCode().getFirst().getValue());
+    var stale = request(SemanticSearchRequest.Mode.IDENTITY);
+    stale.setAuthority("TAXA"); stale.setIdentityCode("123"); stale.setMatchesRequestId(initial.getRequestId());
+    assertFalse(composing.handle(stale, 42).getErrors().isEmpty());
+    verify(resolver, times(1)).resolve("TAXA", "123");
+    assertEquals("", composing.handle(request(SemanticSearchRequest.Mode.UNDO), 42).getDeclaration());
+  }
+
+  @Test void unsatisfiableIdentityCannotRemainAsAnIncompletePredicate() {
+    var identity = concept("internal:Taxon", SemanticType.IDENTITY, SemanticType.PREDICATE);
+    when(reasoner.satisfiable(identity)).thenReturn(false);
+    var composing = new SemanticSearchSession(reasoner, (text, scope, limit) -> List.of(),
+        new SemanticSearchRequest(), new SemanticClauseSupport(reasoner),
+        (authority, code) -> new SemanticSearchSession.AuthoritySelection(identity, "TAXA:123"));
+    var initial = composing.handle(request(SemanticSearchRequest.Mode.TOKEN), 42);
+    var insert = request(SemanticSearchRequest.Mode.IDENTITY); insert.setAuthority("TAXA");
+    insert.setIdentityCode("123"); insert.setMatchesRequestId(initial.getRequestId());
+    var result = composing.handle(insert, 42);
+    assertFalse(result.getErrors().isEmpty()); assertEquals("", result.getDeclaration()); assertFalse(result.isCanUndo());
+  }
+
+  @Test void unavailableAndIncompatibleAuthorityInsertionsLeaveTheExpressionUntouched() {
+    var height = concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var identity = concept("internal:Taxon", SemanticType.IDENTITY, SemanticType.PREDICATE);
+    var resolver = mock(SemanticSearchSession.AuthorityResolver.class);
+    when(resolver.resolve("TAXA", "123")).thenReturn(new SemanticSearchSession.AuthoritySelection(identity, "TAXA:123"));
+    when(resolver.resolve("TAXA", "missing")).thenThrow(new IllegalArgumentException("Unavailable"));
+    var composing = new SemanticSearchSession(reasoner, (text, scope, limit) -> candidates,
+        new SemanticSearchRequest(), new SemanticClauseSupport(reasoner), resolver);
+    var initial = composing.handle(request(SemanticSearchRequest.Mode.TOKEN), 42);
+    var select = request(SemanticSearchRequest.Mode.SELECT); select.setSelectedMatchId("test:Height");
+    select.setMatchesRequestId(initial.getRequestId()); var previous = composing.handle(select, 42);
+    for (var code : List.of("123", "missing")) {
+      var insert = request(SemanticSearchRequest.Mode.IDENTITY); insert.setAuthority("TAXA");
+      insert.setIdentityCode(code); insert.setMatchesRequestId(previous.getRequestId());
+      previous = composing.handle(insert, 42);
+      assertEquals("test:Height", previous.getDeclaration()); assertFalse(previous.getErrors().isEmpty());
+    }
+    assertEquals("", composing.handle(request(SemanticSearchRequest.Mode.UNDO), 42).getDeclaration());
+  }
+
   private Concept concept(String urn, SemanticType... types) {
     Set<SemanticType> semantics = EnumSet.copyOf(List.of(types));
     var concept = mock(Concept.class);

@@ -11,7 +11,8 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
  * clients may discard obsolete query responses but must retain the initialized search ID.
  *
  * <p>TOKEN only queries. SELECT accepts selectedMatchId from the response identified by
- * matchesRequestId. VALUE accepts a literal in queryString when the server requests one.
+ * matchesRequestId. IDENTITY accepts authority + identityCode at that same response revision.
+ * VALUE accepts a literal in queryString when the server requests one.
  * UNDO and scope operations edit the expression. cancelSearch releases the session.
  * Initial semanticTypes constrain completed results; initial matchTypes filter proposals.
  * Unsupported components are not offered. Idle searches expire on the server.
@@ -19,7 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 public class SemanticSearchRequest {
 
     public enum Mode {
-        TOKEN, UNDO, OPEN_SCOPE, CLOSE_SCOPE, SELECT, VALUE
+        TOKEN, UNDO, OPEN_SCOPE, CLOSE_SCOPE, SELECT, VALUE, IDENTITY
     }
 
     private String queryString;
@@ -31,6 +32,14 @@ public class SemanticSearchRequest {
     private Set<SemanticType> semanticTypes = EnumSet.noneOf(SemanticType.class);
     private Set<SemanticMatch.Type> matchTypes = EnumSet.noneOf(SemanticMatch.Type.class);
     private Mode searchMode = Mode.TOKEN;
+    private String authority;
+    private String identityCode;
+    /** IDENTITY requires the current semantic response in matchesRequestId, and an exact canonical
+     * code. Authority search scores or list positions are never interpreted as selections. */
+    public String getAuthority() { return authority; }
+    public void setAuthority(String value) { authority = value; }
+    public String getIdentityCode() { return identityCode; }
+    public void setIdentityCode(String value) { identityCode = value; }
     private String selectedMatchId;
     private int matchesRequestId;
 

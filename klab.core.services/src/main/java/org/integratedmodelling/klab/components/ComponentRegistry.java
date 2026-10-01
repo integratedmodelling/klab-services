@@ -2774,6 +2774,22 @@ public class ComponentRegistry {
     }
   }
 
+  /** Exact worldview selection; never substitute a compatible version or another component. */
+  public org.integratedmodelling.klab.api.services.Authority getAuthority(
+      org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding binding, Scope scope) {
+    var matching = authorities.get(binding.provider().urn()).stream()
+        .filter(candidate -> binding.componentUrn().equals(candidate.componentUrn())
+            && binding.componentVersion().equals(candidate.componentVersion()))
+        .toList();
+    if (matching.size() != 1) return null;
+    var component = components.get(binding.componentUrn()).stream()
+        .filter(candidate -> binding.componentVersion().equals(candidate.version()))
+        .findFirst().orElse(null);
+    if (component == null || !binding.componentVersion().equals(component.version())
+        || component.authorities().stream().noneMatch(binding.provider()::equals)) return null;
+    return matching.getFirst().implementation();
+  }
+
   /** Return the best locally hosted implementation of an authority, if this is a Reasoner. */
   public org.integratedmodelling.klab.api.services.Authority getAuthority(
       String urn, Version version, Scope scope) {

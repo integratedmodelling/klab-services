@@ -24,6 +24,17 @@ class AuthorityIdentityResolverTest {
     @Override public synchronized void flushReasoner() {}
   }
 
+  @Test void owlDispatchPreservesBracketPayloadAndEmbeddedColons() {
+    var owl = new TestOWL();
+    var seen = new java.util.concurrent.atomic.AtomicReference<String>();
+    var concept = mock(org.integratedmodelling.klab.api.knowledge.Concept.class);
+    owl.setAuthorityResolver((authority, code) -> { assertEquals("TAXA", authority); seen.set(code); return concept; });
+    for (String code : List.of("A:B", "x] of test:Other", "x" + (char)92 + "y", "a b")) {
+      var token = org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode("TAXA", code);
+      assertSame(concept, owl.getConcept(token)); assertEquals(code, seen.get());
+    }
+  }
+
   private Authority.Identity identity(String id, String base, String... parents) {
     var identity = mock(Authority.Identity.class);
     when(identity.getId()).thenReturn(id);

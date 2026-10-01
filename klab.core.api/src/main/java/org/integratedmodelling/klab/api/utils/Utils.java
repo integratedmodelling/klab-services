@@ -1146,6 +1146,7 @@ public class Utils {
 
       var ret = new WorldviewImpl();
       ret.setUrn(result.get().getResourceUrn());
+      ret.refreshAuthorityBindings(resourceSet, scope);
       ret.getMetadata().putAll(result.get().getMetadata());
 
       for (var ontology : resourceSet.getOntologies()) {

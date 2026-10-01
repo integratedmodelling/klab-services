@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.api.services.resources.objects;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.net.URL;
 
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -14,6 +16,7 @@ public class AuthorityIdentity implements Authority.Identity {
 	private List<String> parentIds;
 	private String label;
 	private String description;
+	private Map<String, URL> documentation = Map.of();
 	private float score = 1.0f;
 	private String authorityName;
 	private String baseIdentity;
@@ -33,6 +36,15 @@ public class AuthorityIdentity implements Authority.Identity {
 	@Override
 	public List<String> getParentIds() {
 		return parentIds;
+	}
+
+	@Override
+	public Map<String, URL> getDocumentation() {
+		return documentation;
+	}
+
+	public void setDocumentation(Map<String, URL> documentation) {
+		this.documentation = documentation == null ? Map.of() : Map.copyOf(documentation);
 	}
 
 	@Override

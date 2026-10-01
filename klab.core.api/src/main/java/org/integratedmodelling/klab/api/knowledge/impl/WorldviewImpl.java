@@ -26,6 +26,88 @@ public class WorldviewImpl implements Worldview {
   private List<Annotation> annotations = new ArrayList<>();
   private List<Notification> notifications = new ArrayList<>();
   private String serviceId;
+  private List<Worldview.AuthorityBinding> authorityBindings = new ArrayList<>();
+
+  @Override
+  public List<Worldview.AuthorityBinding> getAuthorityBindings() { return authorityBindings; }
+
+  public void setAuthorityBindings(List<Worldview.AuthorityBinding> bindings) {
+    authorityBindings = bindings == null ? new ArrayList<>() : new ArrayList<>(bindings);
+  }
+
+  /** Replace the discovery snapshot, including removals and descriptor-only updates. */
+  public void refreshAuthorityBindings(
+      org.integratedmodelling.klab.api.services.resources.ResourceSet resources, UserScope scope) {
+    var replacement = new java.util.LinkedHashMap<String, Worldview.AuthorityBinding>();
+    boolean failed = false;
+    for (var resource : resources.getResults()) {
+      if (resource.getKnowledgeClass() != KlabAsset.KnowledgeClass.WORLDVIEW) continue;
+      var service = scope.findService(ResourcesService.class,
+          candidate -> java.util.Objects.equals(candidate.serviceId(), resource.getServiceId()));
+      Worldview snapshot = null;
+      try {
+        if (service.isPresent())
+          snapshot = service.get().retrieve(resource.getResourceUrn(), Worldview.class, scope);
+      } catch (RuntimeException e) {
+        scope.warn("Cannot retrieve authority bindings for worldview " + resource.getResourceUrn());
+      }
+      if (snapshot == null || snapshot.isEmpty()) {
+        failed = true;
+        notifications.add(Notification.error("Cannot synchronize authority bindings for worldview "
+            + resource.getResourceUrn()));
+        if (snapshot != null) notifications.addAll(snapshot.getNotifications());
+        continue;
+      }
+      for (var binding : snapshot.getAuthorityBindings()) {
+        var previous = replacement.putIfAbsent(binding.localId(), binding);
+        if (previous != null && !previous.equals(binding)) {
+          failed = true;
+          notifications.add(Notification.error("Conflicting worldview authority: " + binding.localId()));
+        }
+      }
+    }
+    setAuthorityBindings(failed ? List.of() : new ArrayList<>(replacement.values()));
+    setEmpty(failed);
+    if (!failed) refreshAuthorityHosts(scope);
+  }
+
+  /** Client-relative locality: Resources cannot decide which host is local to a caller. */
+  public void refreshAuthorityHosts(UserScope scope) {
+    var hosted = new java.util.HashMap<String, Worldview.AuthorityBinding>();
+    var reasoners = new ArrayList<>(scope.getServices(org.integratedmodelling.klab.api.services.Reasoner.class));
+    reasoners.sort(java.util.Comparator
+        .comparing((org.integratedmodelling.klab.api.services.Reasoner service) -> !service.isLocal())
+        .thenComparing(service -> String.valueOf(service.getUrl())));
+    for (var reasoner : reasoners) {
+      try {
+        var capabilities = reasoner.capabilities(scope);
+        if (capabilities == null || !capabilities.isConsistent()
+            || !java.util.Objects.equals(getUrn(), capabilities.getWorldviewUrn())) continue;
+        for (var available : capabilities.getAuthorityBindings()) {
+          for (var binding : authorityBindings) {
+            if (binding.localId().equals(available.localId())
+                && binding.rootIdentity().equals(available.rootIdentity())
+                && binding.sourceHash() != null && binding.sourceHash().equals(available.sourceHash())
+                && binding.provider().equals(available.provider())
+                && binding.componentUrn().equals(available.componentUrn())
+                && binding.componentVersion().equals(available.componentVersion())) {
+              hosted.putIfAbsent(binding.localId(), new Worldview.AuthorityBinding(binding.localId(),
+                  binding.rootIdentity(), binding.sourceOntology(), binding.sourceOffset(),
+                  binding.sourceLength(), binding.sourceHash(), binding.provider(), binding.componentUrn(),
+                  binding.componentVersion(), reasoner.getUrl()));
+            }
+          }
+        }
+      } catch (RuntimeException e) {
+        scope.warn("Cannot discover authority bindings from Reasoner " + reasoner.serviceId());
+      }
+    }
+    setAuthorityBindings(authorityBindings.stream().map(binding -> hosted.getOrDefault(binding.localId(),
+        new Worldview.AuthorityBinding(binding.localId(), binding.rootIdentity(), binding.sourceOntology(),
+            binding.sourceOffset(), binding.sourceLength(), binding.sourceHash(), binding.provider(), binding.componentUrn(),
+            binding.componentVersion(), null))).toList());
+  }
+
 
   @Override
   public String getUrn() {
@@ -72,6 +154,7 @@ public class WorldviewImpl implements Worldview {
       notifications.clear();
       notifications.addAll(resources.getNotifications());
       resources.getNotifications().forEach(userScope::warn);
+      refreshAuthorityBindings(resources, userScope);
       metadata.clear();
       metadata.putAll(result.get().getMetadata());
       boolean recomputeOrder = false;

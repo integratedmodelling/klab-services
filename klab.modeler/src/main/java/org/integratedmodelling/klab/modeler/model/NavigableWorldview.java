@@ -96,6 +96,11 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview>
   }
 
   @Override
+  public List<Worldview.AuthorityBinding> getAuthorityBindings() {
+    return delegate.getAuthorityBindings();
+  }
+
+  @Override
   public String getWorldviewId() {
     return delegate.getWorldviewId();
   }

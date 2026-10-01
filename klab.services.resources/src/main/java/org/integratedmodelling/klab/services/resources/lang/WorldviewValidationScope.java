@@ -21,6 +21,17 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
 
   public WorldviewValidationScope() {}
 
+  @Override
+  public ConceptDescriptor getConceptDescriptor(String name) {
+    // The language's fallback splits on every colon, truncating bracketed authority codes.
+    if (name != null && name.matches("[A-Z][A-Z0-9_]*(\\.[A-Z0-9_]+)*:.*")) {
+      var parts = name.split(":", 2);
+      return new ConceptDescriptor(parts[0], parts[1], SemanticSyntax.Type.IDENTITY,
+          "Authority identity", "", false, false);
+    }
+    return super.getConceptDescriptor(name);
+  }
+
   public WorldviewValidationScope(Worldview worldview) {
     this();
     for (var ontology : worldview.getOntologies()) {

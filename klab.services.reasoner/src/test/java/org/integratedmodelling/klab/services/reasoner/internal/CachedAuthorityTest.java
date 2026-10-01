@@ -13,6 +13,11 @@ import org.junit.jupiter.api.io.TempDir;
 class CachedAuthorityTest {
   @TempDir Path directory;
 
+  private static java.net.URL documentationUrl() {
+    try { return java.net.URI.create("https://example.org/taxon.md").toURL(); }
+    catch (java.net.MalformedURLException e) { throw new AssertionError(e); }
+  }
+
   private Authority.ConfigurationRequest request(String worldview, String name, String root, int release) {
     return new Authority.ConfigurationRequest(worldview, name, root,
         Map.of("urn", "test.authority", "release", release));
@@ -38,7 +43,8 @@ class CachedAuthorityTest {
     private Identity identity(String id) {
       if (fail) throw new IllegalStateException("HTTP 429");
       var result = new CachedAuthority.StoredIdentity(id.equals("alias") ? "A" : id, "Concept", request.name(),
-          request.rootIdentity(), List.of("Parent"), List.of(), "Description", "Label", 1, request.name()+":"+id);
+          request.rootIdentity(), List.of("Parent"), List.of(), "Description", "Label", 1, request.name()+":"+id,
+          Map.of("text/markdown", documentationUrl()));
       if (!diagnostics) return result;
       return new Identity() {
         @Override public String getId() { return result.getId(); }
@@ -81,6 +87,9 @@ class CachedAuthorityTest {
     assertEquals("A", next.resolveIdentity(restoredId, "A").getId());
     assertEquals(List.of("Parent"), next.resolveIdentity(restoredId, "A").getParentIds());
     assertEquals("bio:Root", next.resolveIdentity(restoredId, "A").getBaseIdentity());
+    assertEquals(Map.of("text/markdown", documentationUrl()), next.resolveIdentity(restoredId, "A").getDocumentation());
+    assertEquals(identity.getDocumentation(), next.search("name", "SPECIES", restoredId).getFirst().getDocumentation());
+    assertEquals(identity.getDocumentation(), next.reconcile(restoredId, Map.of("scientificName", "Name", "kingdom", "Plantae")).getDocumentation());
     assertEquals(1, next.search("name", "SPECIES", restoredId).size());
     assertEquals("A", next.reconcile(restoredId, new LinkedHashMap<>(Map.of("kingdom","Plantae","scientificName","Name"))).getId());
     assertEquals(0, restored.lookups + restored.searches + restored.matches);

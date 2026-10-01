@@ -398,7 +398,26 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
    * @return
    */
   public Worldview retrieveWorldview() {
-    return this.workspaceManager.getWorldview();
+    return retrieveWorldview(serviceScope());
+  }
+
+  private Worldview retrieveWorldview(Scope scope) {
+    var source = this.workspaceManager.getWorldview();
+    var snapshot = new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();
+    snapshot.setUrn(source.getUrn());
+    snapshot.setWorldviewId(source.getWorldviewId());
+    snapshot.setServiceId(serviceId());
+    snapshot.setEmpty(source.isEmpty());
+    snapshot.getMetadata().putAll(source.getMetadata());
+    snapshot.getOntologies().addAll(source.getOntologies());
+    snapshot.getObservationStrategies().addAll(source.getObservationStrategies());
+    snapshot.getNotifications().addAll(source.getNotifications());
+    snapshot.getAnnotations().addAll(source.getAnnotations());
+    org.integratedmodelling.klab.services.resources.lang.WorldviewAuthorityValidator.validate(
+        snapshot, getComponentRegistry().getComponents(scope).stream()
+            .filter(component -> component.usageRights() == null
+                || component.usageRights().checkAuthorization(scope)).toList());
+    return snapshot;
   }
 
   /**
@@ -1159,8 +1178,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return assetClass.cast(
           super.info(urn, KnowledgeClass.RESOURCE_ADAPTER, AdapterDescriptor.class, scope));
     } else if (Worldview.class.isAssignableFrom(assetClass)) {
-      var ret = retrieveWorldview();
-      if (ret != null && ret.getUrn().equals(urn)) {
+      var ret = retrieveWorldview(scope);
+      if (ret != null && java.util.Objects.equals(ret.getUrn(), urn)) {
         return assetClass.cast(ret);
       }
     }
@@ -1208,7 +1227,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           .toList();
     }
     if (Worldview.class.isAssignableFrom(assetClass)) {
-      var worldview = retrieveWorldview();
+      var worldview = retrieveWorldview(scope);
       return worldview == null ? List.of() : List.of(assetClass.cast(worldview));
     }
     return workspaceManager.list(assetClass);

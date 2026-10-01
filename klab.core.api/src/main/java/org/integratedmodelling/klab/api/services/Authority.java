@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import java.util.List;
 import java.util.Map;
+import java.net.URL;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Codelist;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -98,6 +99,15 @@ public interface Authority {
      * @return
      */
     List<String> getParentRelationship();
+
+    /**
+     * Documentation resources keyed by media type. Providers should supply at least
+     * {@code text/markdown}, and may include images, PDF or other media. UIs must tolerate
+     * its absence. Each URL must retrieve a resource in the associated media type.
+     */
+    default Map<String, URL> getDocumentation() {
+      return Map.of();
+    }
 
     /**
      * Description in text or markdown.

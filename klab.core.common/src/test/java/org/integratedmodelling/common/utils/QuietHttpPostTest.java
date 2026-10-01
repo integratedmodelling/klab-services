@@ -13,6 +13,34 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.junit.jupiter.api.Test;
 
 class QuietHttpPostTest {
+  @Test void interruptingAnObsoletePostPreservesInterruptAndDoesNotNotifyScope() throws Exception {
+    var started = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    var done = new java.util.concurrent.CountDownLatch(1);
+    var interrupted = new java.util.concurrent.atomic.AtomicBoolean();
+    var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext("/", exchange -> {
+      started.countDown();
+      try { release.await(5, java.util.concurrent.TimeUnit.SECONDS); }
+      catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+      finally { exchange.close(); }
+    });
+    server.start();
+    var scope = mock(Scope.class);
+    try (var client = Utils.Http.getClient("http://127.0.0.1:" + server.getAddress().getPort(), scope)) {
+      var worker = new Thread(() -> {
+        try { client.post("/", Map.of(), Boolean.class); interrupted.set(Thread.currentThread().isInterrupted()); }
+        finally { done.countDown(); }
+      });
+      worker.start();
+      assertTrue(started.await(5, java.util.concurrent.TimeUnit.SECONDS));
+      worker.interrupt();
+      assertTrue(done.await(5, java.util.concurrent.TimeUnit.SECONDS));
+      assertTrue(interrupted.get());
+      verifyNoInteractions(scope);
+      release.countDown(); worker.join(5000);
+    } finally { release.countDown(); server.stop(0); }
+  }
   @Test void gatewayFailureStaysUnacknowledgedUntilTheRetrySucceeds() throws Exception {
     var attempts = new AtomicInteger();
     var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);

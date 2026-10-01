@@ -395,7 +395,8 @@ public class OWL {
       if (Character.isUpperCase(st.getNamespace().charAt(0))) {
 
         if (authorityResolver != null)
-          result = authorityResolver.apply(st.getNamespace(), removeTicks(st.getName()));
+          result = authorityResolver.apply(st.getNamespace(),
+              org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.decode(removeTicks(st.getName())));
 
       } else {
 

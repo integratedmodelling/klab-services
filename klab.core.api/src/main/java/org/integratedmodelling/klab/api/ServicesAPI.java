@@ -223,7 +223,15 @@ public interface ServicesAPI {
    * @author ferd
    */
   interface REASONER {
+    String AUTHORITY_SEARCH = API_BASE + "/authority/search";
+
     String CONFIGURE_AUTHORITY = API_BASE + "/authority/configure";
+
+    /** Authenticated GET with authority and identity; returns media types mapped to remote-client URLs. */
+    String AUTHORITY_DOCUMENTATION = API_BASE + "/authority/documentation";
+
+    /** Authenticated GET with authority, identity and mediaType; serves local identity documentation. */
+    String AUTHORITY_DOCUMENTATION_CONTENT = AUTHORITY_DOCUMENTATION + "/content";
 
     /**
      * Resolve a concept definition passed as a request body, returning a unique ID for the

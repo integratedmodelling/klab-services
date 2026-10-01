@@ -83,7 +83,8 @@ public class QualifiedName implements Serializable {
    * @return identifiers
    */
   public static String[] splitIdentifier(String s) {
-    String[] ss = s.split(":");
+    String[] ss = s != null && s.matches("[A-Z][A-Z0-9_]*(\\.[A-Z0-9_]+)*:.*")
+        ? s.split(":", 2) : s == null ? new String[0] : s.split(":");
     if (ss.length != 2 || ss[0].trim().equals("") || ss[1].trim().equals("")) {
       return null;
     }

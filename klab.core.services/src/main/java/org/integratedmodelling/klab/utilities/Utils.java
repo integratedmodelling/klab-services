@@ -116,6 +116,30 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * participate in discovery. Locally installed providers remain available without discovery.
      */
     public static org.integratedmodelling.klab.api.services.Authority resolveAuthority(
+        Worldview.AuthorityBinding binding, Scope scope, BaseService targetService, Worldview worldview) {
+      var registry = targetService.getComponentRegistry();
+      var provider = registry.getAuthority(binding, scope);
+      if (provider != null || !binding.provider().embeddable()) return provider;
+      for (var service : scope.getServices(ResourcesService.class)) {
+        var capabilities = service.capabilities(scope);
+        if (capabilities == null || !capabilities.isWorldviewProvider()
+            || !Objects.equals(worldview.getUrn(), capabilities.getAdoptedWorldview())) continue;
+        var response = service.resolve(binding.componentUrn() + "@" + binding.componentVersion(),
+            KlabAsset.KnowledgeClass.COMPONENT, scope instanceof UserScope user ? user : null);
+        if (response == null || response.isEmpty()) continue;
+        // Existing component resolution may choose a compatible version. Reject substitutions.
+        if (response.getResults().stream().noneMatch(resource ->
+            binding.componentUrn().equals(resource.getResourceUrn())
+                && binding.componentVersion().equals(resource.getResourceVersion()))) continue;
+        if (registry.loadComponents(response, scope)) {
+          provider = registry.getAuthority(binding, scope);
+          if (provider != null) return provider;
+        }
+      }
+      return null;
+    }
+
+    public static org.integratedmodelling.klab.api.services.Authority resolveAuthority(
         String urn, Scope scope, BaseService targetService, Worldview worldview) {
 
       if (targetService.serviceType() != KlabService.Type.REASONER) {

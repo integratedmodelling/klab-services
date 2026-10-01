@@ -95,7 +95,7 @@ must prevent concept creation.
 The old `api.knowledge.Authority` interface is deprecated and is no longer a discoverable provider
 contract. Its `setup()`, `Configuration.getResolutionEndpoint()`, documentation, and distance methods
 have not been carried over as an operational remote protocol. New providers use `api.services.Authority`.
-Distance delegation and documentation transport still need an API decision.
+Distance delegation still needs an API decision. Identity documentation is published through the authenticated Reasoner documentation routes.
 
 Provider projects using the previous service interface must add `configure(ConfigurationRequest)`,
 pass configuration IDs to `resolveIdentity` and `search`, and return the annotated URN from
@@ -133,6 +133,55 @@ conflicting declarations of the same local name fail. Provider capabilities can 
 worldview. Source declarations automatically configure their bridge after the identity is built.
 During startup without a user scope, providers must already be installed locally; Resources
 discovery/transfer is available in service and user scopes.
+
+### Worldview discovery, search, and semantic insertion
+
+`Worldview.getAuthorityBindings()` supplies validated local names, identity roots, source ranges
+and hashes, selected provider descriptors and exact component versions. It excludes configuration
+parameters and provider handles. Client synchronization selects matching configured Reasoners,
+prefers a local host, and records its URL. Missing or stale hosts are not selected.
+
+`Reasoner.searchAuthority(AuthoritySearchRequest, scope)` and `ReasonerClient` use authenticated
+`POST /api/v1/authority/search`:
+
+```json
+{"authority":"TAXA","query":"oak","filter":"GENUS","offset":0,"limit":20}
+```
+
+`authority` is an exact configured local name, never a provider URN. Omit `filter` for an
+unfiltered search. A filter must be advertised by a provider whose capabilities explicitly declare
+`areSubAuthoritiesSearchFilters()`. An advertised subdivision is not implicitly a separate binding.
+Query length is 1â€“256 characters, limit is 1â€“100, and offset is 0â€“10000. Invalid requests return
+HTTP 400; missing authentication or component access returns 403. Successful transport returns
+an `AuthoritySearchResponse` with status `OK`, `UNSUPPORTED`, `UNAVAILABLE`, or `FAILED`.
+Only `OK` with no matches means an empty search. The client propagates transport failures.
+
+Matches implement `Authority.Identity` and carry canonical code, local authority name, label,
+description, relevance score, canonical locator, and provider notifications. They omit provider
+configuration IDs and documentation URLs; use the authenticated documentation operation for the
+latter. Paging slices the provider-returned list, deduplicated by canonical code in provider order.
+`total` is the size of that list, not an exhaustive catalog count; `nextOffset == -1` marks its end
+or the offset bound. Providers may cap their own results or reorder them between calls.
+
+For insertion, initialize an ordinary semantic session, then send `SemanticSearchRequest` with
+`searchMode: "IDENTITY"`, `authority`, `identityCode`, the existing `searchId`, an increasing
+`requestId`, and `matchesRequestId` equal to the current semantic response ID. This is distinct
+from `SELECT`: authority candidates never become arbitrary semantic proposal IDs.
+
+The Reasoner checks the configured binding and component access, resolves the exact canonical
+code (aliases are rejected), rejects provider error notifications and unsatisfiable identities,
+and replays the insertion through the session's normal operand, predicate, clause, scope, and
+result-category validation. Rejected edits preserve the expression. Successful insertion adds
+one styled token and one undo step. HTTP sessions belong to the authenticated user; another user
+cannot read, edit, or cancel them. Worldview knowledge updates and reloads expire existing sessions.
+
+`AuthorityIdentitySyntax` serializes simple codes as `TAXA:123` and complex codes as `TAXA:[A B]`.
+Inside brackets, backslashes and closing brackets are escaped. Resources adaptation and OWL
+dispatch preserve embedded colons and escaped payloads. The Reasoner supplies the canonical local
+locator rather than accepting a provider-supplied expression as executable semantic text.
+
+Provider search is still synchronous and provider-side cancellation/paging are not introduced by
+this contract. The IDE authority chooser and identity table remain a separate UI stage.
 
 ### Persistent Reasoner cache
 
@@ -321,7 +370,7 @@ configuration equivalence.
 
 | Area | Status |
 | --- | --- |
-| Java annotation and provider interface | Available for provider identity, bridge configuration, search, codelists and hierarchy data. The old knowledge interface is deprecated; documentation and distance APIs still need migration decisions. |
+| Java annotation and provider interface | Available for provider identity, bridge configuration, search, codelists and hierarchy data. Reasoner documentation transport is available; authority-specific distance remains pending. |
 | Component scanning and validation | Available. Empty URNs, wrong interface types, missing no-argument constructors, and annotation/implementation URN mismatches are rejected. |
 | Descriptor advertisement and serialization | Available. `ComponentDescriptor.authorities()` is published with service capabilities. |
 | Reasoner-only instantiation | Available. Resources indexes and advertises providers without hosting them. |
@@ -338,8 +387,8 @@ configuration equivalence.
 | Taxonomic provider | The sibling `klab.authority.taxa` implements pinned COL XR configuration, code lookup, synonym canonicalization, hierarchy validation, scientific/vernacular search and explicit reconciliation. See its README for parameters and limits. |
 | Explicit reconciliation | Optional shared Java API and capability flag available. TAXA rejects ambiguous and higher-rank matches; service/UI transport remains pending. |
 | Authority-aware semantic distance | Not implemented in Reasoner matching. |
-| Bracketed complex expressions (`NAME:[...]`) | Accepted by the observable grammar. End-to-end payload handling and round-trip coverage remain to be verified; the Reasoner's legacy qualified-name splitter still splits on every colon, and quote removal is not a bracket-payload decoder. |
-| Remote authority API | Reasoner bridge configuration endpoint available with authorized scope. Standalone authority hosting, remote identity/search/distance/documentation/CRUD protocols remain undefined. |
+| Bracketed complex expressions (`NAME:[...]`) | Canonical serialization, Resources parser/adapter retention, OWL decoding, and HTTP semantic insertion/undo are implemented and regression-tested. |
+| Remote authority API | Authenticated Reasoner configuration, search, documentation, and semantic identity insertion are available. Standalone provider hosting, distance, and CRUD protocols remain undefined. |
 
 ## Development Plan
 
@@ -395,7 +444,7 @@ relationships, and a transport-neutral documentation result instead of an `Outpu
 - Parser model: sibling `klab-languages/org.integratedmodelling.languages.worldview/src/org/integratedmodelling/languages/ConceptDeclarationSyntaxImpl.java`, `Requirement(AUTHORITY, targets, name, parameters)`; source clause ranges are also retained.
 - Resources adaptation: [LanguageAdapter.java](../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/LanguageAdapter.java), `adaptConceptDefinition()` copies the name/map/ranges into the statement declaring the root.
 - Source validation: [KimWorldviewValidator.java](../klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/language/KimWorldviewValidator.java)
-- Ingestion: [ReasonerService.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java), `loadKnowledge()` → `defineConcept()` → `build()` → `configureAuthorityBinding()`; `updateKnowledge()` releases/rebuilds affected bridges.
+- Ingestion: [ReasonerService.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java), `loadKnowledge()` â†’ `defineConcept()` â†’ `build()` â†’ `configureAuthorityBinding()`; `updateKnowledge()` releases/rebuilds affected bridges.
 - Bridge registry: [AuthorityBindings.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/AuthorityBindings.java)
 - Lazy resolution: [OWL.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/owl/OWL.java), uppercase namespace lookup delegates to [AuthorityIdentityResolver.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/AuthorityIdentityResolver.java). The old global `ServiceConfiguration` lookup and synthetic-root materializer are bypassed for configured bridges.
 - REST configuration: [ReasonerController.java](../klab.services.reasoner.server/src/main/java/org/integratedmodelling/klab/services/reasoner/controllers/ReasonerController.java)

@@ -1823,6 +1823,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
           }
 
+        } catch (InterruptedException cancelled) {
+          // An obsolete search is deliberately interrupted by its caller. Preserve the
+          // cancellation signal without publishing a service-error notification.
+          Thread.currentThread().interrupt();
+          if (propagateFailure) throw new KlabServiceAccessException(cancelled);
+          return null;
         } catch (Throwable e) {
           if (reportFailure && scope != null) {
             scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);

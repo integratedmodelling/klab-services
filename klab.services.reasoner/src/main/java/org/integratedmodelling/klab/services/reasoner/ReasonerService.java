@@ -155,6 +155,61 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return configureAuthorityBinding(request, scope);
   }
 
+  @Override
+  public synchronized Map<String, java.net.URL> getAuthorityDocumentation(
+      String authority, String identity, Scope scope) {
+    if (scope == null) throw new KlabValidationException("Authority documentation requires a scope");
+    return authorityBindings.documentation(authority, identity);
+  }
+
+  private Worldview.AuthorityBinding authorizedAuthority(String name, Scope scope) {
+    if (scope == null) throw new SecurityException("Authority operations require an authorized scope");
+    var definition = worldview == null ? null : worldview.getAuthorityBindings().stream()
+        .filter(binding -> binding.localId().equals(name)).findFirst().orElse(null);
+    if (definition == null) throw new java.util.NoSuchElementException("Authority is not configured");
+    var component = getComponentRegistry().getComponents(scope).stream()
+        .filter(candidate -> candidate.id().equals(definition.componentUrn())
+            && candidate.version().equals(definition.componentVersion())).findFirst().orElse(null);
+    if (component == null) throw new java.util.NoSuchElementException("Authority component is unavailable");
+    if (component.usageRights() != null && !component.usageRights().checkAuthorization(scope))
+      throw new SecurityException("Authority component access denied");
+    return definition;
+  }
+
+  @Override
+  public synchronized org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse searchAuthority(
+      org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {
+    try {
+      var definition = authorizedAuthority(request.authority(), scope);
+      if (!definition.provider().searchable()) return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNSUPPORTED,
+          "This authority does not advertise search");
+      return authorityBindings.search(request);
+    } catch (java.util.NoSuchElementException e) {
+      return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNAVAILABLE,
+          "Authority is not configured");
+    }
+  }
+
+  private synchronized SemanticSearchSession.AuthoritySelection resolveAuthoritySelection(
+      String name, String code, Scope scope) {
+    authorizedAuthority(name, scope);
+    var binding = authorityBindings.get(name);
+    if (binding == null) throw new KlabValidationException("Authority is not configured");
+    final Authority.Identity identity;
+    try { identity = binding.provider().resolveIdentity(binding.id(), code); }
+    catch (RuntimeException e) { throw new KlabValidationException("Authority identity lookup failed"); }
+    if (identity == null || !code.equals(identity.getId()) || (identity.getNotifications() != null
+        && identity.getNotifications().stream().anyMatch(n -> n.getLevel() == Notification.Level.Error)))
+      throw new KlabValidationException("Authority did not resolve the selected canonical identity");
+    String token = org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(name, code);
+    var concept = owl.getConcept(token);
+    if (concept == null || !concept.is(SemanticType.IDENTITY) || concept.is(SemanticType.NOTHING))
+      throw new KlabValidationException("Authority identity is unavailable");
+    return new SemanticSearchSession.AuthoritySelection(concept, token);
+  }
+
   private String configureAuthorityBinding(Authority.ConfigurationRequest request, Scope scope) {
     request = org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
         .forWorldview(request, worldview);
@@ -162,7 +217,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (root == null || !root.is(SemanticType.IDENTITY) || root.is(SemanticType.NOTHING))
       throw new KlabValidationException("Authority bridge root must be a loaded identity concept");
     String urn = (String) request.parameters().get("urn");
-    var provider = Utils.Resources.resolveAuthority(urn, scope, this, worldview);
+    String localName = request.name();
+    var selected = worldview.getAuthorityBindings().stream()
+        .filter(binding -> binding.localId().equals(localName)).findFirst().orElse(null);
+    if (selected == null || !selected.rootIdentity().equals(request.rootIdentity())
+        || !org.integratedmodelling.klab.api.data.Version.splitVersion(urn).getFirst()
+            .equals(selected.provider().urn()))
+      throw new KlabValidationException("Authority is not a validated worldview binding");
+    var provider = Utils.Resources.resolveAuthority(selected, scope, this, worldview);
     if (provider == null)
       throw new KlabValidationException("Authority provider is unavailable: " + urn);
     return authorityBindings.configure(request, provider);
@@ -189,7 +251,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * Cache for ongoing requests expires in 10 minutes. CHECK this may be less and become
    * configurable.
    */
-  private Cache<Integer, SemanticSearchSession> semanticExpressions =
+  private record OwnedSemanticSession(Object owner, SemanticSearchSession session) {}
+  private Cache<Integer, OwnedSemanticSession> semanticExpressions =
       Caffeine.newBuilder().maximumSize(1000).expireAfterAccess(Duration.ofMinutes(10)).build();
 
   private final OWL owl;
@@ -1334,6 +1397,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.setPermissions(permissions(scope));
 
     ret.setWorldviewId(worldview == null ? null : worldview.getWorldviewId());
+    ret.setWorldviewUrn(worldview == null ? null : worldview.getUrn());
+    if (worldview != null && knowledgeReady && consistent.get()) {
+      ret.setAuthorityBindings(worldview.getAuthorityBindings().stream()
+          .filter(binding -> authorityBindings.get(binding.localId()) != null
+              && binding.sourceHash() != null
+              && binding.sourceHash().equals(loadedOntologySources.get(binding.sourceOntology())))
+          .map(binding -> new Worldview.AuthorityBinding(binding.localId(), binding.rootIdentity(),
+              binding.sourceOntology(), binding.sourceOffset(), binding.sourceLength(), binding.sourceHash(), binding.provider(),
+              binding.componentUrn(), binding.componentVersion(), getUrl())).toList());
+    }
     ret.setServiceName(serviceName);
     ret.setType(Type.REASONER);
     ret.setUrl(getUrl());
@@ -1671,6 +1744,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         var ontology =
             resourceService.retrieve(resource.getResourceUrn(), KimOntology.class, parsingScope);
         notifications.addAll(ontology.getNotifications());
+        var authoritySnapshot = resourceService.retrieve(worldview.getUrn(), Worldview.class, parsingScope);
+        if (authoritySnapshot == null)
+          throw new KlabValidationException("Cannot synchronize worldview authority definitions");
+        if (worldview instanceof org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl mutable) {
+          var reconciled = new ArrayList<>(mutable.getAuthorityBindings());
+          reconciled.removeIf(binding -> binding.sourceOntology().equals(ontology.getUrn()));
+          reconciled.addAll(authoritySnapshot.getAuthorityBindings().stream()
+              .filter(binding -> binding.sourceOntology().equals(ontology.getUrn())).toList());
+          mutable.setAuthorityBindings(reconciled);
+        }
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);
           tagConceptService(statement, resource.getServiceId());
@@ -2987,15 +3070,25 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    */
   @Override
   public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
+    return semanticSearch(request, serviceScope());
+  }
+
+  @Override
+  public SemanticSearchResponse semanticSearch(SemanticSearchRequest request, Scope scope) {
+    if (scope == null) throw new SecurityException("Semantic search requires an authorized scope");
+    Object owner = scope instanceof UserScope user ? user.getUser().getUsername() : scope;
 
     long started = System.currentTimeMillis();
     int id = request.getSearchId();
     SemanticSearchResponse response;
+    var owned = id == 0 ? null : semanticExpressions.getIfPresent(id);
+    if (owned != null && !java.util.Objects.equals(owner, owned.owner()))
+      throw new SecurityException("Semantic search belongs to another user");
     if (request.isCancelSearch()) {
       semanticExpressions.invalidate(id);
       return new SemanticSearchResponse(0, request.getRequestId());
     }
-    var session = id == 0 ? null : semanticExpressions.getIfPresent(id);
+    var session = owned == null ? null : owned.session();
     if (id != 0 && session == null) {
       response = new SemanticSearchResponse(0, request.getRequestId());
       response.getErrors().add("This search has expired. Start a new expression.");
@@ -3013,10 +3106,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 indexer::query,
                 request,
                 new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(
-                    owl));
+                    owl), (authority, code) -> resolveAuthoritySelection(authority, code, scope));
         do {
           id = java.util.concurrent.ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE);
-        } while (semanticExpressions.asMap().putIfAbsent(id, session) != null);
+        } while (semanticExpressions.asMap().putIfAbsent(id, new OwnedSemanticSession(owner, session)) != null);
       }
       response = session.handle(request, id);
     }

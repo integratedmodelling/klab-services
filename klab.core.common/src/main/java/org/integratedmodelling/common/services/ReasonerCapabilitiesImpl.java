@@ -7,6 +7,16 @@ import org.integratedmodelling.klab.api.services.impl.AbstractServiceCapabilitie
 public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities
     implements Reasoner.Capabilities {
 
+  private java.util.List<org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding>
+      authorityBindings = new java.util.ArrayList<>();
+  private String worldviewUrn;
+  public String getWorldviewUrn() { return worldviewUrn; }
+  public void setWorldviewUrn(String value) { worldviewUrn = value; }
+  public java.util.List<org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding>
+      getAuthorityBindings() { return authorityBindings; }
+  public void setAuthorityBindings(java.util.List<org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding> value) {
+    authorityBindings = value == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(value);
+  }
   private KlabService.Type type;
   private String worldviewId;
   private org.integratedmodelling.klab.api.knowledge.WorldviewCommitment worldviewCommitment;

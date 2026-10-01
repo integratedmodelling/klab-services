@@ -22,7 +22,7 @@ public final class AuthorityIdentityResolver {
   }
 
   public synchronized Concept resolve(String name, String id) {
-    var binding = findBinding(name);
+    var binding = bindings.find(name);
     if (binding == null) return null;
     // Search-only subdivisions share the base binding's cache, ontology and canonical locator.
     name = binding.request().name();
@@ -52,7 +52,7 @@ public final class AuthorityIdentityResolver {
       annotate(axioms, concept, Metadata.DC_COMMENT, identity.getDescription());
       annotate(axioms, concept, CoreOntology.NS.AUTHORITY_ID_PROPERTY, name);
       annotate(axioms, concept, CoreOntology.NS.CONCEPT_DEFINITION_PROPERTY,
-          identity.getLocator() == null ? name + ":" + identity.getId() : identity.getLocator());
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(name, identity.getId()));
     }
     // Declare the entire graph first, before edges refer to parents. Keeping locator annotations
     // out of this pass also preserves each node's internal concept URN.
@@ -62,23 +62,6 @@ public final class AuthorityIdentityResolver {
     owl.flushReasoner();
     graph.forEach((externalId, identity) -> known.put(externalId, ontology.getConcept(identity.getConceptName())));
     return known.get(id);
-  }
-
-  private AuthorityBindings.Binding findBinding(String name) {
-    var exact = bindings.get(name);
-    if (exact != null) return exact;
-    int separator = name.lastIndexOf('.');
-    if (separator <= 0) return null;
-    var base = bindings.get(name.substring(0, separator));
-    if (base == null) return null;
-    var capabilities = base.provider().getCapabilities();
-    String suffix = name.substring(separator + 1);
-    if (capabilities != null && capabilities.areSubAuthoritiesSearchFilters()
-        && capabilities.getSubAuthorities() != null
-        && capabilities.getSubAuthorities().stream().anyMatch(pair -> suffix.equals(pair.getFirst()))) {
-      return base;
-    }
-    return null;
   }
 
   private void collect(AuthorityBindings.Binding binding, String id,

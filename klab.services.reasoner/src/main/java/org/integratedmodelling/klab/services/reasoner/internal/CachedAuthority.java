@@ -186,14 +186,15 @@ public final class CachedAuthority implements Authority {
   /** Cache DTO independent of plug-in classes and classloaders. Diagnostics are never persisted. */
   public record StoredIdentity(String id, String conceptName, String authorityName, String baseIdentity,
       List<String> parentIds, List<String> parentRelationship, String description, String label,
-      float score, String locator) implements Identity {
+      float score, String locator, Map<String, java.net.URL> documentation) implements Identity {
     public StoredIdentity {
       parentIds = parentIds == null ? List.of() : List.copyOf(parentIds);
       parentRelationship = parentRelationship == null ? List.of() : List.copyOf(parentRelationship);
+      documentation = documentation == null ? Map.of() : Map.copyOf(documentation);
     }
     static StoredIdentity of(Identity i) { return new StoredIdentity(i.getId(), i.getConceptName(),
         i.getAuthorityName(), i.getBaseIdentity(), i.getParentIds(), i.getParentRelationship(),
-        i.getDescription(), i.getLabel(), i.getScore(), i.getLocator()); }
+        i.getDescription(), i.getLabel(), i.getScore(), i.getLocator(), i.getDocumentation()); }
     @Override public String getId() { return id; }
     @Override public String getConceptName() { return conceptName; }
     @Override public String getAuthorityName() { return authorityName; }
@@ -201,6 +202,7 @@ public final class CachedAuthority implements Authority {
     @Override public List<String> getParentIds() { return parentIds; }
     @Override public List<String> getParentRelationship() { return parentRelationship; }
     @Override public String getDescription() { return description; }
+    @Override public Map<String, java.net.URL> getDocumentation() { return documentation; }
     @Override public String getLabel() { return label; }
     @Override public float getScore() { return score; }
     @Override public String getLocator() { return locator; }

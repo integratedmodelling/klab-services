@@ -52,7 +52,97 @@ public final class AuthorityBindings {
     return id;
   }
 
+  /** Search only exact bindings. Dotted filter aliases must be supplied as explicit filters. */
+  public synchronized org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse search(
+      org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request) {
+    var binding = get(request.authority());
+    var status = org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNAVAILABLE;
+    if (binding == null) return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse
+        .failure(status, "Authority is not configured");
+    try {
+      var capabilities = binding.provider().getCapabilities();
+      if (capabilities == null || !capabilities.isSearchable())
+        return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
+            org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNSUPPORTED,
+            "This authority does not support search");
+      if (request.filter() != null && (!capabilities.areSubAuthoritiesSearchFilters()
+          || capabilities.getSubAuthorities() == null || capabilities.getSubAuthorities().stream()
+              .noneMatch(pair -> request.filter().equals(pair.getFirst()))))
+        return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
+            org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNSUPPORTED,
+            "The authority does not advertise this search filter");
+      var found = binding.provider().search(request.query(), request.filter(), binding.id());
+      if (found == null) throw new IllegalStateException("Provider returned no search response");
+      var unique = new java.util.LinkedHashMap<String, Authority.Identity>();
+      for (var identity : found) {
+        if (identity == null || identity.getId() == null || identity.getId().isBlank())
+          throw new IllegalStateException("Provider returned an invalid candidate");
+        unique.putIfAbsent(identity.getId(), identity);
+      }
+      var candidates = new java.util.ArrayList<>(unique.values());
+      int from = Math.min(request.offset(), candidates.size());
+      int end = Math.min(from + request.limit(), candidates.size());
+      var matches = new java.util.ArrayList<org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity>();
+      for (var identity : candidates.subList(from, end)) {
+        var copy = new org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity();
+        copy.setId(identity.getId()); copy.setAuthorityName(binding.request().name());
+        copy.setLocator(org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax
+            .encode(binding.request().name(), identity.getId()));
+        copy.setLabel(identity.getLabel()); copy.setDescription(identity.getDescription());
+        copy.setScore(identity.getScore()); copy.setConceptName(identity.getConceptName());
+        copy.setNotifications(identity.getNotifications() == null ? java.util.List.of()
+            : new java.util.ArrayList<>(identity.getNotifications()));
+        // Provider-local files and configuration details do not belong in discovery results.
+        matches.add(copy);
+      }
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.OK,
+          matches, candidates.size(), end < candidates.size() && end <= 10000 ? end : -1, java.util.List.of());
+    } catch (UnsupportedOperationException e) {
+      return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNSUPPORTED,
+          "This authority does not support search");
+    } catch (RuntimeException e) {
+      return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.FAILED,
+          "Authority provider search failed");
+    }
+  }
+
   public synchronized Binding get(String name) { return bindings.get(name); }
+
+  /** Exact dotted bindings take precedence over advertised search-only rank aliases. */
+  public synchronized Binding find(String name) {
+    if (name == null) return null;
+    var exact = bindings.get(name);
+    if (exact != null) return exact;
+    int separator = name.lastIndexOf('.');
+    if (separator <= 0) return null;
+    var base = bindings.get(name.substring(0, separator));
+    if (base == null) return null;
+    var capabilities = base.provider().getCapabilities();
+    String suffix = name.substring(separator + 1);
+    if (capabilities != null && capabilities.areSubAuthoritiesSearchFilters()
+        && capabilities.getSubAuthorities() != null
+        && capabilities.getSubAuthorities().stream().anyMatch(pair -> suffix.equals(pair.getFirst()))) {
+      return base;
+    }
+    return null;
+  }
+
+  /** Resolve provider data without creating semantic concepts or exposing configuration IDs. */
+  public synchronized Map<String, java.net.URL> documentation(String name, String id) {
+    if (name == null || name.isBlank() || id == null || id.isBlank())
+      throw new IllegalArgumentException("Authority name and identity ID are required");
+    var binding = find(name);
+    if (binding == null) throw new java.util.NoSuchElementException("Authority is not configured");
+    var identity = binding.provider().resolveIdentity(binding.id(), id);
+    if (identity == null || (identity.getNotifications() != null && identity.getNotifications().stream()
+        .anyMatch(n -> n.getLevel() == org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error))) {
+      throw new java.util.NoSuchElementException("Authority identity is unavailable");
+    }
+    return identity.getDocumentation() == null ? Map.of() : Map.copyOf(identity.getDocumentation());
+  }
 
   public synchronized java.util.List<Binding> snapshot() { return java.util.List.copyOf(bindings.values()); }
 
