@@ -356,15 +356,26 @@ public final class SemanticSearchSession {
         if (predicate) {
           var combined = new ArrayList<>(frame.predicates);
           combined.add(concept);
+          // Satisfiability alone does not enforce one predicate per lexical family. Check
+          // here so conflicting identities cannot fill the indexer's candidate limit.
+          var roots = new HashSet<Concept>();
+          var predicates = new HashSet<String>();
+          for (var entered : combined) {
+            var root = reasoner.lexicalRoot(entered);
+            require(predicates.add(entered.getUrn()) && (root == null || roots.add(root)),
+                "A predicate from this base trait is already present.");
+          }
           require(clauseSupport.predicatesCompatible(combined), "This predicate is disjoint with an entered predicate.");
           frame.predicates.add(concept);
           frame.complete = false;
+          var operandConstraints = new HashSet<>(frame.scope.logicalRealm);
           // A predicate may complete a unary expression (e.g. type of), or prefix a future head.
           try {
             complete(frame, input, i);
-            // A bare predicate can also remain a prefix for a subsequent head concept.
+            // A bare predicate can still prefix a head. Preserve the operand categories
+            // from before completion, including any enclosing operator/clause restrictions.
             if (frame.concept.is(SemanticType.PREDICATE))
-              frame.scope.logicalRealm.addAll(SemanticScope.root().logicalRealm);
+              frame.scope.logicalRealm.addAll(operandConstraints);
           } catch (IllegalArgumentException incomplete) { }
         } else {
           complete(frame, input, i);

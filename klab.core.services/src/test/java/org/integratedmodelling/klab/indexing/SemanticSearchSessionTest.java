@@ -326,6 +326,33 @@ class SemanticSearchSessionTest {
         .anyMatch(value -> value.getId().equals("test:Blue")));
   }
 
+  @Test void identitiesKeepObservableHeadsAndOnlyAllowDifferentTraitFamilies() {
+    var oak = concept("test:Oak", SemanticType.PREDICATE, SemanticType.IDENTITY);
+    var pine = concept("test:Pine", SemanticType.PREDICATE, SemanticType.IDENTITY);
+    var nativeIdentity = concept("test:Native", SemanticType.PREDICATE, SemanticType.IDENTITY);
+    concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    when(reasoner.lexicalRoot(oak)).thenReturn(oak);
+    when(reasoner.lexicalRoot(pine)).thenReturn(oak);
+    when(reasoner.lexicalRoot(nativeIdentity)).thenReturn(nativeIdentity);
+    // Even a satisfiable intersection cannot justify two traits from one family.
+    when(reasoner.resolveConcept("(test:Oak) and (test:Pine)")).thenReturn(oak);
+    when(reasoner.resolveConcept("(test:Oak) and (test:Native)")).thenReturn(oak);
+    valid.put("test:Oak test:Tree", valid.get("test:Tree"));
+    valid.put("test:Oak test:Native test:Tree", valid.get("test:Tree"));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    var prefix = select("test:Oak");
+    assertTrue(prefix.getMatches().stream().anyMatch(m -> m.getId().equals("test:Tree")));
+    assertTrue(prefix.getMatches().stream().anyMatch(m -> m.getId().equals("test:Native")));
+    assertFalse(prefix.getMatches().stream().anyMatch(m -> m.getId().equals("test:Pine")));
+    assertFalse(prefix.getMatches().stream().anyMatch(m -> m.getId().equals("test:Oak")));
+    var chain = select("test:Native");
+    assertTrue(chain.getErrors().isEmpty(), chain.getErrors().toString());
+    assertTrue(chain.getMatches().stream().anyMatch(m -> m.getId().equals("test:Tree")));
+    assertNotNull(select("test:Tree").getObservable());
+    assertTrue(call(SemanticSearchRequest.Mode.UNDO).getMatches().stream()
+        .anyMatch(m -> m.getId().equals("test:Tree")));
+  }
+
   @Test void substantialClausesFilterUnaryOperatorsByTheirResultCategory() {
     for (var clause : List.of(SemanticLexicalElement.OF, SemanticLexicalElement.WITH,
         SemanticLexicalElement.ADJACENT_TO, SemanticLexicalElement.LINKING)) {

@@ -14,6 +14,47 @@ import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.junit.jupiter.api.Test;
 
 class IndexerComposerTest {
+  @Test void sameFamilyIdentitiesCannotCrowdObservableHeadsOutOfCompletions() throws Exception {
+    try (var fixture = new Fixture()) {
+      fixture.add("test:Oak", SemanticType.IDENTITY, SemanticType.PREDICATE);
+      var oak = fixture.reasoner.resolveConcept("test:Oak");
+      when(fixture.reasoner.lexicalRoot(oak)).thenReturn(oak);
+      for (int i = 0; i < 120; i++) {
+        String id = "test:Identity" + i;
+        fixture.add(id, SemanticType.IDENTITY, SemanticType.PREDICATE);
+        when(fixture.reasoner.lexicalRoot(fixture.reasoner.resolveConcept(id))).thenReturn(oak);
+      }
+      fixture.add("test:Native", SemanticType.IDENTITY, SemanticType.PREDICATE);
+      var nativeIdentity = fixture.reasoner.resolveConcept("test:Native");
+      when(fixture.reasoner.lexicalRoot(nativeIdentity)).thenReturn(nativeIdentity);
+      fixture.add("test:Tree", SemanticType.SUBJECT);
+      when(fixture.reasoner.satisfiable(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+      when(fixture.reasoner.resolveConcept(org.mockito.ArgumentMatchers.startsWith("("))).thenReturn(oak);
+      when(fixture.reasoner.resolveObservable(org.mockito.ArgumentMatchers.anyString())).thenAnswer(call -> {
+        String declaration = call.getArgument(0);
+        var concept = declaration.endsWith("test:Tree")
+            ? fixture.reasoner.resolveConcept("test:Tree") : oak;
+        var observable = new org.integratedmodelling.common.knowledge.ObservableImpl();
+        observable.setUrn(declaration); observable.setSemantics(concept); return observable;
+      });
+      fixture.refresh();
+      var initial = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest();
+      initial.setRequestId(1); initial.setQueryString("oak"); initial.setMaxResults(30);
+      var session = new SemanticSearchSession(fixture.reasoner, fixture.index::query, initial);
+      session.handle(initial, 42);
+      var selection = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest();
+      selection.setSearchMode(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest.Mode.SELECT);
+      selection.setRequestId(2); selection.setMatchesRequestId(1);
+      selection.setSelectedMatchId("test:Oak"); selection.setMaxResults(30);
+      var selected = session.handle(selection, 42);
+      assertTrue(selected.getErrors().isEmpty(), selected.getErrors().toString());
+      var ids = selected.getMatches().stream().map(SemanticMatch::getId).toList();
+      assertTrue(ids.contains("test:Tree"), ids.toString());
+      assertTrue(ids.contains("test:Native"), ids.toString());
+      assertFalse(ids.stream().anyMatch(id -> id.startsWith("test:Identity") || id.equals("test:Oak")));
+    }
+  }
+
   @Test void cancellationStopsTheScanBetweenCandidates() throws Exception {
     try (var fixture = new Fixture()) {
       for (int i = 0; i < 20; i++) fixture.add("test:Quality" + i, SemanticType.QUALITY);
@@ -109,16 +150,18 @@ class IndexerComposerTest {
     Object field(String name) throws Exception {
       var field = Indexer.class.getDeclaredField(name); field.setAccessible(true); return field.get(index);
     }
-    void add(String id, SemanticType type) throws Exception {
+    void add(String id, SemanticType type, SemanticType... categories) throws Exception {
       var concept = new ConceptImpl(); concept.setUrn(id);
-      concept.getType().addAll(List.of(SemanticType.OBSERVABLE, type));
+      concept.getType().add(type);
+      concept.getType().addAll(categories.length == 0 ? List.of(SemanticType.OBSERVABLE) : List.of(categories));
       when(reasoner.resolveConcept(id)).thenReturn(concept);
       var document = new Document();
       document.add(new StringField("id", id, Field.Store.YES));
       document.add(new TextField("name", id.substring(id.indexOf(':') + 1), Field.Store.YES));
       document.add(new StoredField("vmtype", SemanticMatch.Type.CONCEPT.ordinal()));
       document.add(new StoredField("vctype", type.ordinal()));
-      document.add(new StoredField("smtype", SemanticType.OBSERVABLE.ordinal() + "," + type.ordinal()));
+      document.add(new StoredField("smtype", concept.getType().stream()
+          .map(value -> Integer.toString(value.ordinal())).collect(java.util.stream.Collectors.joining(","))));
       writer.addDocument(document);
     }
     void refresh() throws Exception { ((ReferenceManager<?>) field("searcherManager")).maybeRefreshBlocking(); }
