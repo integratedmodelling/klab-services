@@ -84,7 +84,7 @@ class MemberCharacterizerExecutorTest {
       var implementation = new ComponentRegistry.ServiceImplementation();
       implementation.method = Characterizer.class.getMethod("characterize", Observable.class, Observation.class, ContextScope.class);
       implementation.mainClassInstance = characterizer;
-      when(registry.getFunctionDescriptor(call)).thenReturn(List.of(descriptor));
+      when(registry.getFunctionDescriptor(eq(call), eq(scope))).thenReturn(List.of(descriptor));
       when(registry.implementation(descriptor)).thenReturn(implementation);
       plan = new CompiledDataflow(runtime, member, scope);
       assertTrue(plan.compile(node));

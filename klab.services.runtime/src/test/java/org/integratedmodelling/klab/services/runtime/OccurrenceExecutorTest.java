@@ -76,7 +76,7 @@ class OccurrenceExecutorTest {
     descriptor.staticMethod = true; descriptor.serviceInfo = mock(org.integratedmodelling.klab.api.lang.ServiceInfo.class);
     var implementation = new org.integratedmodelling.klab.components.ComponentRegistry.ServiceImplementation();
     implementation.method = getClass().getMethod("simulate", Geometry.class, Scheduler.Event.class);
-    when(registry.getFunctionDescriptor(any())).thenReturn(java.util.List.of(descriptor));
+    when(registry.getFunctionDescriptor(any(org.integratedmodelling.klab.api.lang.ServiceCall.class), any(org.integratedmodelling.klab.api.scope.Scope.class))).thenReturn(java.util.List.of(descriptor));
     when(registry.implementation(descriptor)).thenReturn(implementation);
     var process = observation("process",SemanticType.PROCESS,100);
     process.setObservable(((ObservableImpl)process.getObservable()).as(org.integratedmodelling.klab.api.knowledge.Contextualization.SIMULATION));
