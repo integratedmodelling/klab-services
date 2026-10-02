@@ -7,11 +7,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import org.apache.commons.io.FileUtils;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
@@ -26,7 +24,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     var ret = new LinkedHashMap<Stack.Tag, DistributionImpl>();
 
     if (settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class)) {
-      var developmentDistribution = developmentDistribution(distributionName);
+      var developmentDistribution = developmentDistribution(distributionName, settings);
       if (developmentDistribution != null) {
         for (var tag : developmentDistribution.getTags()) {
           var devTag = Stack.Tag.of(Version.HEAD, tag.release(), tag.build(), true, false);
@@ -79,23 +77,14 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         && Objects.equals(first.build(), second.build());
   }
 
-  static DistributionImpl developmentDistribution(String distributionName) {
+  static DistributionImpl developmentDistribution(String distributionName, Settings settings) {
 
-    File distributionDirectory =
-        new File(
-            Configuration.INSTANCE.getProperty(
-                Configuration.KLAB_DEVELOPMENT_SOURCE_REPOSITORY,
-                System.getProperty("user.home")
-                    + File.separator
-                    + "git"
-                    + File.separator
-                    + "klab"
-                    + "-services"));
-    return developmentDistribution(distributionName, distributionDirectory);
+    File distributionDirectory = settings.get(Setting.DISTRIBUTION_SOURCE_LOCATION, File.class);
+    return developmentDistribution(distributionName, distributionDirectory, settings);
   }
 
   static DistributionImpl developmentDistribution(
-      String distributionName, File distributionDirectory) {
+      String distributionName, File distributionDirectory, Settings settings) {
     if (distributionDirectory.isDirectory()) {
       File distributionFolder =
           new File(
@@ -278,8 +267,7 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
         for (var releaseDirectory : releaseDirectories) {
           var release =
               new Distribution.Release(
-                  Utils.URLs.newURL(new File(releaseDirectory, RELEASE_PROPERTIES_FILE)),
-                  true);
+                  Utils.URLs.newURL(new File(releaseDirectory, RELEASE_PROPERTIES_FILE)), true);
           if (!release.isEmpty()) {
             this.releases.add(release);
           }
@@ -584,7 +572,8 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
       File storageDestination,
       File productDestination,
       Map<FileData, FileTarget> previouslyAvailable) {
-    if (!samePath(storageDestination, productDestination) && fileMatches(productDestination, file)) {
+    if (!samePath(storageDestination, productDestination)
+        && fileMatches(productDestination, file)) {
       return productDestination;
     }
     var previous = previouslyAvailable.get(file);
@@ -624,7 +613,8 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
 
   private boolean productFileLinksStorage(
       File productDestination, File storageDestination, FileData file) {
-    return fileMatches(productDestination, file) && sameFile(productDestination, storageDestination);
+    return fileMatches(productDestination, file)
+        && sameFile(productDestination, storageDestination);
   }
 
   private boolean fileMatches(File file, FileData fileData) {
