@@ -264,6 +264,11 @@ backward-compatible reader accepts the original headerless native-endian format 
 exactly valid. Knowledge-graph `HAS_DATA` relationships retain shard descriptors; the files retain
 the primitive payload.
 
+Primitive payloads are encoded/decoded in reusable blocks of at most 64 KiB. The version-1
+bytes (including canonical NaN writes), legacy native-endian reads, synchronization and
+temporary-file publication contracts are preserved. See [bulk shard I/O](BULK_SHARD_IO.md)
+for compatibility scenarios, persistence/reopening demonstrations and repeatable measurements.
+
 ### Graph atomicity and recovery boundary
 
 Initialization flushes payloads before descriptor publication, but graph and filesystem operations
