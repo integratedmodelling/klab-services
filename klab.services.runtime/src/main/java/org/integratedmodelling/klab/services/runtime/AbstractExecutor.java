@@ -40,17 +40,20 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   protected final CompiledDataflow.CallDescriptors callInfo;
   protected final Observation observation;
   protected Throwable cause;
+  protected final ShardExecution shardExecution;
   protected Map<String, Observation> dependencies = new HashMap<>();
 
   public AbstractExecutor(
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
       ContextScope scope,
-      Map<String, Observation> dependencies) {
+      Map<String, Observation> dependencies,
+      ShardExecution shardExecution) {
     this.callInfo = callInfo;
     this.observation = observation;
     this.scope = scope;
     this.dependencies = dependencies;
+    this.shardExecution = Objects.requireNonNull(shardExecution, "Runtime shard execution controller");
   }
 
   @Override
@@ -69,8 +72,12 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
     cause = null;
     List<Callable<Object>> tasks = new ArrayList<>();
     var threadNotifications = Collections.synchronizedList(new ArrayList<Notification>());
+    var metrics = new ShardExecution.Metrics();
 
     try (var resources = new ScanResources()) {
+      if (contextScope.isInterrupted() || Thread.currentThread().isInterrupted()) {
+        throw new java.util.concurrent.CancellationException("Contextualization cancelled before binding");
+      }
       if (observation.getObservable().is(SemanticType.QUALITY)) {
 
         /*
@@ -137,10 +144,16 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
           tasks.add(
               () -> {
                 try {
-                  var ok = run(event, scannerMap, contextScope, contextualizationScope);
-                  if (ok) {
-                    storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
-                  } else {
+                  var ok = shardExecution.execute(contextScope::isInterrupted, () -> {
+                    var computed = run(event, scannerMap, contextScope, contextualizationScope);
+                    if (computed) {
+                      if (contextScope.isInterrupted() || Thread.currentThread().isInterrupted())
+                        throw new java.util.concurrent.CancellationException("Shard cancelled before finalization");
+                      storage.finalizeRun(scannerMap.get(Dataflow.SELF_ID));
+                    }
+                    return computed;
+                  }, metrics);
+                  if (!ok) {
                     threadNotifications.add(
                         Notification.error("Contextualization of " + observation + " failed"));
                   }
@@ -148,7 +161,9 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
                 } catch (Throwable t) {
                   threadNotifications.add(
                       Notification.error("Error running dataflow task: " + t.getMessage(), t));
-                  cause = t;
+                  synchronized (AbstractExecutor.this) {
+                    if (cause == null) cause = t;
+                  }
                   return false;
                 }
               });
@@ -250,6 +265,7 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
 
         return ret;
       } catch (Throwable t) {
+        if (t instanceof InterruptedException) Thread.currentThread().interrupt();
         cause = t;
         contextScope.error(t);
         observation.getNotifications().add(Notification.error(t.getMessage(), t));
@@ -260,6 +276,8 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
       contextScope.error(e);
       observation.getNotifications().add(Notification.error(e.getMessage(), e));
       return false;
+    } finally {
+      if (observation.getObservable().is(SemanticType.QUALITY)) metrics.record(contextScope);
     }
 
   }

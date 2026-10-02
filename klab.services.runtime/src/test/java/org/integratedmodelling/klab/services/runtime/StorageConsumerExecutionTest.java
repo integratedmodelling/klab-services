@@ -24,7 +24,12 @@ class StorageConsumerExecutionTest {
     final ServiceContextScope scope=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);
     final StorageManagerImpl manager=mock(StorageManagerImpl.class);
     final List<StorageImpl> stores=new ArrayList<>();
+    final ShardExecution execution;
     Fixture() {
+      this(new ShardExecution(() -> 2));
+    }
+    Fixture(ShardExecution execution) {
+      this.execution = execution;
       org.mockito.Mockito.doReturn(mock(org.integratedmodelling.klab.api.services.RuntimeService.class,RETURNS_DEEP_STUBS)).when(scope).getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
       when(scope.getConfiguration().getPersistence()).thenReturn(Persistence.EXPLICIT_ACTION);
       when(scope.getDigitalTwin().getStorageManager()).thenReturn(manager);
@@ -68,7 +73,7 @@ class StorageConsumerExecutionTest {
       var ints=f.quality(12,2,Data.FillCurve.D2_XInvY,Storage.Type.INTEGER,GRID);
       var output=f.quality(-1,4,Data.FillCurve.D2_XY,Storage.Type.DOUBLE,GRID);
       f.fill(floats);f.fill(ints);
-      var executor=new AbstractExecutor(null,output,f.scope,Map.of("a",floats,"b",ints)) {
+      var executor=new AbstractExecutor(null,output,f.scope,Map.of("a",floats,"b",ints),f.execution) {
         protected Class<? extends Storage.Scanner> inputScannerClass(String name){return name.equals("a")?Storage.DoubleScanner.class:Storage.IntScanner.class;}
         public boolean validate(){return true;}
         protected boolean run(Scheduler.Event event,Map<String,Storage.Scanner> scans,ContextScope scope,
@@ -95,7 +100,7 @@ class StorageConsumerExecutionTest {
       when(f.scope.getObservation(11L)).thenReturn(source);f.fill(source);
       var output=f.quality(-1,4,Data.FillCurve.D2_YX,Storage.Type.DOUBLE,GRID);
       var inputs=Map.of("mm",StorageReads.binding(source,millimeters),"km",StorageReads.binding(source,kilometers));
-      var executor=new AbstractExecutor(null,output,f.scope,inputs) {
+      var executor=new AbstractExecutor(null,output,f.scope,inputs,f.execution) {
         public boolean validate(){return true;}
         protected boolean run(Scheduler.Event event,Map<String,Storage.Scanner> scans,ContextScope scope,
             org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope context) {
@@ -133,7 +138,7 @@ class StorageConsumerExecutionTest {
       var writer=mock(Storage.DoubleScanner.class);doReturn(List.of(writer)).when(writes).scan(eq(output),any(),any(),eq(TemporalWriteSet.Access.WRITE));
       var computation=mock(org.integratedmodelling.klab.api.services.runtime.ScalarComputation.class);
       when(computation.inputNames()).thenReturn(Set.of("input"));when(computation.execute(anyMap(),eq(event),eq(f.scope))).thenReturn(true);
-      assertTrue(TemporalScalarExecution.run(computation,output,Map.of("input",query),event,f.scope,false));
+      assertTrue(TemporalScalarExecution.run(computation,output,Map.of("input",query),event,f.scope,false,f.execution));
       var ordered=inOrder(writes);ordered.verify(writes).writeLayout(output);
       ordered.verify(writes).read(eq(source),any(),eq(TemporalWriteSet.Access.CURRENT));
       ordered.verify(writes).scan(eq(output),any(),any(),eq(TemporalWriteSet.Access.WRITE));
@@ -151,7 +156,7 @@ class StorageConsumerExecutionTest {
       var requested=new ObservableImpl((ObservableImpl)input.getObservable());requested.setUnit(new org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl("mm"));
       when(f.scope.getObservation(11L)).thenReturn(input);
       f.fill(input);
-      var executor=new AbstractExecutor(null,output,f.scope,Map.of("elevation",StorageReads.binding(input,requested))) {
+      var executor=new AbstractExecutor(null,output,f.scope,Map.of("elevation",StorageReads.binding(input,requested)),f.execution) {
         public boolean validate(){return true;}
         protected boolean run(Scheduler.Event event,Map<String,Storage.Scanner> scans,ContextScope scope,
             org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope context) {
@@ -179,7 +184,7 @@ class StorageConsumerExecutionTest {
           +(x+10)+" "+(y+10)+"&comma;"+(x+10)+" "+(y-10)+"&comma;"+(x-10)+" "+(y-10)+"))";
       var output=f.quality(-1,1,Data.FillCurve.D2_XY,Storage.Type.DOUBLE,
           "T0(1){ttype=PHYSICAL,tstart=1000,tend=10000}S2(2,2){proj=EPSG:3857,shape="+shape+"}");
-      var executor=new AbstractExecutor(null,output,f.scope,Map.of("elevation",input)) {
+      var executor=new AbstractExecutor(null,output,f.scope,Map.of("elevation",input),f.execution) {
         public boolean validate(){return true;}
         protected boolean run(Scheduler.Event event,Map<String,Storage.Scanner> scans,ContextScope scope,
             org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope context) {
@@ -199,7 +204,7 @@ class StorageConsumerExecutionTest {
       var input=f.quality(11,3,Data.FillCurve.D2_YX,Storage.Type.FLOAT,GRID);
       var output=f.quality(-1,2,Data.FillCurve.D2_XY,Storage.Type.DOUBLE,GRID.replace("5 4","10 4").replace("5 0","10 0"));
       f.fill(input);f.fill(output);
-      var executor=new AbstractExecutor(null,output,f.scope,Map.of("elevation",input)) {
+      var executor=new AbstractExecutor(null,output,f.scope,Map.of("elevation",input),f.execution) {
         public boolean validate(){return true;}
         protected boolean run(Scheduler.Event event,Map<String,Storage.Scanner> scans,ContextScope scope,
             org.integratedmodelling.klab.api.services.RuntimeService.ContextualizationScope context){fail("Must fail before running");return false;}

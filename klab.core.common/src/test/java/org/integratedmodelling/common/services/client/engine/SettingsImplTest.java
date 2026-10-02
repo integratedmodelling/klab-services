@@ -97,4 +97,20 @@ class SettingsImplTest {
     assertEquals(request, callback.get().get("request"));
     assertEquals(Map.of("result", true), callback.get().get("result"));
   }
+
+  @Test
+  void shardExecutionLimitPersistsAndInvalidUpdatesPreserveTheLastValue() throws Exception {
+    var file = Files.createFile(temporaryDirectory.resolve("runtime.properties")).toFile();
+    var settings = new SettingsImpl(file);
+    var limit = Setting.MAX_CONCURRENT_SHARD_TASKS;
+    settings.set(limit, 3).get(2, TimeUnit.SECONDS);
+    for (int invalid : new int[] {-1, -10}) {
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,
+          () -> settings.set(limit, invalid));
+    }
+    var reloaded = new SettingsImpl(file);
+    assertEquals(3, reloaded.get(limit, Integer.class));
+    assertEquals("runtime.max_concurrent_shard_tasks", reloaded.setting2Property(limit));
+    assertEquals(3, reloaded.asMap().get(limit.name()));
+  }
 }

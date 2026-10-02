@@ -55,7 +55,7 @@ class ConnectionContextualizerTest {
     when(registry.implementation(descriptor)).thenReturn(implementation);
     var executor = new ContextualizerExecutor(registry,
         new CompiledDataflow.CallDescriptors(null, descriptor, null, null), collective,
-        Map.of("source", source, "target", target), new ServiceCallImpl(), scope);
+        Map.of("source", source, "target", target), new ServiceCallImpl(), scope, new ShardExecution(() -> 1));
     var outcomes = new ContextualizationScopeImpl(collective, null);
     assertTrue(executor.execute(null, scope, outcomes), () -> String.valueOf(executor.getCause()));
     assertEquals(1, outcomes.getOutcomes().size());

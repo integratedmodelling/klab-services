@@ -56,7 +56,7 @@ class TemporalProcessIntegrationTest {
     final KnowledgeGraphNeo4j graph=mock(KnowledgeGraphNeo4j.class,RETURNS_DEEP_STUBS);
     final KnowledgeGraph.Transaction graphTx=mock(KnowledgeGraph.Transaction.class);
     final StorageManagerImpl manager=mock(StorageManagerImpl.class);
-    final RuntimeService runtime=mock(RuntimeService.class);
+    final RuntimeService runtime=org.integratedmodelling.klab.services.runtime.ShardExecutionTestSupport.runtime(2);
     final ServiceContextScope root=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);
     final ObservationImpl process=observation("erosion",SemanticType.PROCESS,100);
     final ObservationImpl quality=observation("relief",SemanticType.QUALITY,101);
@@ -469,7 +469,8 @@ class TemporalProcessIntegrationTest {
         doReturn(reasoner).when(scope).getService(org.integratedmodelling.klab.api.services.Reasoner.class);
         when(reasoner.affectedBy(f.quality.getObservable(), event.getObservable())).thenReturn(affected);
         var executor = new org.integratedmodelling.klab.services.runtime.AbstractExecutor(
-            mock(CompiledDataflow.CallDescriptors.class), event, scope, Map.of("elevation", f.quality)) {
+            mock(CompiledDataflow.CallDescriptors.class), event, scope, Map.of("elevation", f.quality),
+            org.integratedmodelling.klab.services.runtime.ShardExecutionTestSupport.controller(2)) {
           public boolean validate() { return true; }
           public boolean run(Scheduler.Event invocation, Map<String, Storage.Scanner> bindings,
               org.integratedmodelling.klab.api.scope.ContextScope context,

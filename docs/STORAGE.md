@@ -289,6 +289,11 @@ by the existing storage manager.
 
 ## Concurrency and failure behavior
 
+The Runtime can limit active quality-shard computations across observations through
+`MAX_CONCURRENT_SHARD_TASKS` (default `0`, unrestricted). This controls admission separately
+from shard splitting. See [Runtime shard execution limits](SHARD_EXECUTION.md) for configuration,
+queued cancellation, temporal execution, activity timing evidence and executable scenarios.
+
 Different shard scanners may execute concurrently on virtual threads. A scanner and its cursor are
 task-local. `StorageImpl` uses concurrent maps for shard groups and backing state, while shard
 creation is synchronized to prevent duplicate allocation.

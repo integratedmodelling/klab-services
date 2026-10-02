@@ -130,6 +130,13 @@ public class RuntimeService extends BaseService
         }
       };
 
+  private final ShardExecution shardExecution = new ShardExecution(
+      () -> settings().get(Setting.MAX_CONCURRENT_SHARD_TASKS, Integer.class));
+
+  ShardExecution shardExecution() {
+    return shardExecution;
+  }
+
   public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
     readConfiguration(options);
@@ -324,6 +331,7 @@ public class RuntimeService extends BaseService
 
   @Override
   public boolean shutdown() {
+    shardExecution.close();
 
     /** Close every scope that's scheduled for closing at service shutdown */
     for (var scope : getScopeManager().getScopes(Scope.Type.CONTEXT, ContextScope.class)) {

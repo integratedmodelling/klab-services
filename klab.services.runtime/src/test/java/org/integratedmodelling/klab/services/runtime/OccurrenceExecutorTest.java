@@ -69,7 +69,7 @@ class OccurrenceExecutorTest {
 
   @Test void portableJavaProcessRunsWithTransitionGeometryAfterEveryCacheRestoration() throws Exception {
     transitions.clear();
-    var runtime = mock(RuntimeService.class);
+    var runtime = ShardExecutionTestSupport.runtime(2);
     var registry = mock(org.integratedmodelling.klab.components.ComponentRegistry.class);
     when(runtime.getComponentRegistry()).thenReturn(registry);
     var descriptor = new org.integratedmodelling.klab.api.services.runtime.extension.Extensions.FunctionDescriptor();
@@ -125,7 +125,7 @@ class OccurrenceExecutorTest {
     for (var role : new Actuator.ExecutionRole[] {
         Actuator.ExecutionRole.PROCESS, Actuator.ExecutionRole.EVENT_INSTANTIATOR}) {
       var scope = mock(ServiceContextScope.class);
-      var runtime = mock(RuntimeService.class);
+      var runtime = ShardExecutionTestSupport.runtime(2);
       var twin = mock(DigitalTwin.class);
       var scheduler = mock(Scheduler.class);
       when(scope.getDigitalTwin()).thenReturn(twin);
@@ -175,7 +175,7 @@ class OccurrenceExecutorTest {
 
   @Test void createdQualityRemainsADeclarationThroughRestoreAndInit() {
     var scope = mock(ServiceContextScope.class);
-    var runtime = mock(RuntimeService.class);
+    var runtime = ShardExecutionTestSupport.runtime(2);
     var twin = mock(DigitalTwin.class);
     when(scope.getDigitalTwin()).thenReturn(twin);
     var process = observation("rainfall", SemanticType.PROCESS, 100);

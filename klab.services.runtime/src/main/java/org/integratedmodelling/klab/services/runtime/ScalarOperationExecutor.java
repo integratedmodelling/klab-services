@@ -18,8 +18,9 @@ public class ScalarOperationExecutor extends AbstractExecutor
       ScalarComputation.Builder builder,
       Observation observation,
       Map<String, Observation> dependencies,
-      ContextScope scope) {
-    super(null, observation, scope, dependencies);
+      ContextScope scope,
+      ShardExecution shardExecution) {
+    super(null, observation, scope, dependencies, shardExecution);
     this.scalarBuilder = builder;
   }
 
@@ -28,7 +29,7 @@ public class ScalarOperationExecutor extends AbstractExecutor
       org.integratedmodelling.klab.services.scopes.ServiceContextScope scope,
       RuntimeService.ContextualizationScope results) {
     if (event.getType()!=Scheduler.Event.Type.INITIALIZATION)
-      return TemporalScalarExecution.run(scalarMapper,observation,dependencies,event,scope,false);
+      return TemporalScalarExecution.run(scalarMapper,observation,dependencies,event,scope,false,shardExecution);
     return super.execute(event,scope,results);
   }
 

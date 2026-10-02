@@ -15,10 +15,12 @@ final class TemporalScalarExecution {
       Map<String, Observation> inputs,
       Scheduler.Event event,
       ContextScope scope,
-      boolean priorInputs) {
+      boolean priorInputs,
+      ShardExecution shardExecution) {
     var writes = scope.getCurrentTransaction().getTemporalWrites();
     if (writes == null) throw new IllegalStateException("Temporal computation has no write set");
     var strategy = target.getContextualizationData().getNativeShardingStrategy();
+    var metrics = new ShardExecution.Metrics();
     try (var resources = new org.integratedmodelling.klab.runtime.language.ScanResources()) {
       var eventSupport = event.getBoundary() == Scheduler.Event.Boundary.NONE || event.getEvent() == null
           ? null : org.integratedmodelling.klab.runtime.storage.StorageReads.spatialSupport(event.getEvent());
@@ -60,9 +62,12 @@ final class TemporalScalarExecution {
         var scanners = new HashMap<String, Storage.Scanner>();
         scanners.put("self", output.get(n));
         for (var entry : readers.entrySet()) scanners.put(entry.getKey(), entry.getValue().get(n));
-        if (!computation.execute(scanners, event, scope)) return false;
+        if (!shardExecution.execute(scope::isInterrupted,
+            () -> computation.execute(scanners, event, scope), metrics)) return false;
       }
       return true;
+    } finally {
+      metrics.record(scope);
     }
   }
 }

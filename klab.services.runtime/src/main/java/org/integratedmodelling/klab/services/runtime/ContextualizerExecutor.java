@@ -25,8 +25,9 @@ public class ContextualizerExecutor extends AbstractExecutor
       Observation observation,
       Map<String, Observation> dependencies,
       ServiceCall call,
-      ContextScope scope) {
-    super(callInfo, observation, scope, dependencies);
+      ContextScope scope,
+      ShardExecution shardExecution) {
+    super(callInfo, observation, scope, dependencies, shardExecution);
     this.componentRegistry = componentRegistry;
     this.call = call;
   }
