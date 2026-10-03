@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.services.resources.workflow.ProposalRevi
 
 /** Read-only validation seam. Implementations must not apply ontologies or publish PRs.
  * Results must describe these exact bytes and imported worldview context. An acceptance requires
- * import context, schema, parser and Reasoner PASS; scientific judgment is recorded separately by the manager.
+ * import context, schema, parser, adaptation and Reasoner PASS; scientific judgment is recorded separately by the manager.
  */
 @FunctionalInterface
 public interface ProposalCandidateValidator {

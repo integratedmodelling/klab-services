@@ -21,6 +21,7 @@ class ProposalReviewProtocolTest {
       new Check(CheckKind.IMPORT_CONTEXT, CheckStatus.PASS, List.of("test fixture context")),
       new Check(CheckKind.DOCUMENT_SCHEMA, CheckStatus.PASS, List.of("test fixture schema")),
       new Check(CheckKind.PARSER, CheckStatus.PASS, List.of("test fixture parser")),
+      new Check(CheckKind.ADAPTATION, CheckStatus.PASS, List.of("test fixture adaptation")),
       new Check(CheckKind.REASONER, CheckStatus.PASS, List.of("test fixture reasoner")));
   WorkflowStore store() throws Exception {
     var constructor = Class.forName(WorkflowManagerAuthorizationTest.class.getName() + "$MemoryStore").getDeclaredConstructor();
@@ -193,6 +194,102 @@ class ProposalReviewProtocolTest {
     var candidate=ProposalReviewProtocol.readCandidate(new Artifact(p.getId(),p.getChecksum()),null,s::getWorkflowAttachment);
     var r=command(f,"submit",candidate);
     assertThrows(KlabIllegalStateException.class,()->m.transition(id,r,user));
+  }
+
+  @Test void reviewEvidenceIsCarriedToPrivateReviewersAndThroughAdvancement() throws Exception {
+    var s=store();var m=manager(s);var editor=scope("editor","EDITOR");var reviewer=scope("reviewer","REVIEWER");
+    var init=initialization(true);var uploads=new ArrayList<>(init.getAttachments());
+    uploads.add(upload("supporting-material","text/plain","source evidence"));init.setAttachments(uploads);
+    var f=m.initializeFlow(WORKFLOW,init,editor);
+    for (String type : List.of("bootstrap-comments","supporting-material")) {
+      var a=current(f).getAttachments().stream().filter(x->type.equals(x.getType())).findFirst().orElseThrow();
+      assertNotNull(m.getAttachment(f.getId(),a.getId(),reviewer));
+    }
+    f=m.transition(f.getId(),command(f,"open-input",current(f).getProposalReview().candidate()),scope("admin","ADMIN"));
+    assertTrue(current(f).getAttachments().stream().anyMatch(a->"supporting-material".equals(a.getType())));
+    assertTrue(current(f).getAttachments().stream().anyMatch(a->"bootstrap-comments".equals(a.getType())));
+  }
+  @Test void assignedReviewerMayRequestChangesButDoesNotAcquireEditorCrudRights() throws Exception {
+    var s=store();var m=manager(s);var editor=scope("editor","EDITOR");var reviewer=scope("reviewer","REVIEWER");
+    var init=initialization(true);var target=Flow.State.create();target.setAssignees(Set.of("reviewer"));init.getTransition().setTargetState(target);
+    var created=m.initializeFlow(WORKFLOW,init,editor);
+    var f=m.getFlow(created.getId(),reviewer);
+    assertThrows(KlabResourceAccessException.class,()->m.updateState(f.getId(),current(f).getId(),current(f),reviewer));
+    assertThrows(KlabResourceAccessException.class,()->m.addAttachment(f.getId(),current(f).getId(),upload("supporting-material","text/plain","x"),reviewer));
+    assertThrows(KlabResourceAccessException.class,()->m.transition(f.getId(),command(f,"accept-peer-review",current(f).getProposalReview().candidate()),reviewer));
+    var result=m.transition(f.getId(),command(f,"request-changes",current(f).getProposalReview().candidate()),reviewer);
+    var returned=m.getFlow(result.getId(),editor);
+    assertEquals("editing",current(returned).getSchemaId());assertEquals("editor",current(returned).getOwner());
+  }
+  @Test void failedAttachmentRemovalKeepsPersistedDescriptorAndBlob() throws Exception {
+    var original=store();var fail=new java.util.concurrent.atomic.AtomicBoolean();
+    var s=(WorkflowStore)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{WorkflowStore.class},(p,m,a)->{
+      if(m.getName().equals("putFlow")&&fail.get())return false;return m.invoke(original,a);
+    });
+    var m=manager(s);var editor=scope("editor","EDITOR");var f=m.initializeFlow(WORKFLOW,initialization(true),editor);
+    var a=m.addAttachment(f.getId(),current(f).getId(),upload("supporting-material","text/plain","retained evidence"),editor);fail.set(true);
+    assertThrows(KlabIllegalStateException.class,()->m.deleteAttachment(f.getId(),a.getId(),editor));
+    assertNotNull(original.getWorkflowAttachment(a.getId()));
+    assertTrue(original.getFlow(f.getId()).getStates().values().stream().flatMap(st->st.getAttachments().stream()).anyMatch(x->a.getId().equals(x.getId())));
+  }
+  @Test void removingOneSharedDescriptorDoesNotGarbageCollectItsPayload() throws Exception {
+    var s=store();var m=manager(s);var editor=scope("editor","EDITOR");var f=m.initializeFlow(WORKFLOW,initialization(true),editor);
+    var a=m.addAttachment(f.getId(),current(f).getId(),upload("supporting-material","text/plain","shared evidence"),editor);
+    var duplicate=Flow.State.create();duplicate.setId("another-reference");duplicate.setSchemaId("peer-review");duplicate.getAttachments().add(a);
+    s.getFlow(f.getId()).getStates().put(duplicate.getId(),duplicate);
+    assertTrue(m.deleteAttachment(f.getId(),a.getId(),editor));assertNotNull(s.getWorkflowAttachment(a.getId()));
+    assertTrue(s.getFlow(f.getId()).getStates().get(duplicate.getId()).getAttachments().stream().anyMatch(x->a.getId().equals(x.getId())));
+  }
+  @Test void extraYamlDocumentsAndJsonRootsAreRejected() {
+    var text=new String(proposal("r1",null).getContent(),StandardCharsets.UTF_8);
+    for (String trailing : List.of("---\nproposal: {revision_id: other}\n","---\n","...\n---\n{}")) {
+      var bytes=(text+trailing).getBytes(StandardCharsets.UTF_8);
+      assertThrows(KlabIllegalStateException.class,()->org.integratedmodelling.common.review.ProposalCandidateBinding.inspect(new Artifact("a","hash"),null,bytes));
+    }
+    var bytes="""
+        {"proposal_schema":"classpath:/schemas/llm/domain-context-proposal.schema.json",
+         "context_pack_version":"1.3","proposal":{"id":"p","revision_id":"r",
+         "actions":[],"existing_ontologies":[]}} {}
+        """.getBytes(StandardCharsets.UTF_8);
+    assertThrows(KlabIllegalStateException.class,()->org.integratedmodelling.common.review.ProposalCandidateBinding.inspect(new Artifact("a","hash"),null,bytes));
+  }
+  @Test void unsupportedVersionsFailAndUnknownFieldsNeverGrantAuthority() throws Exception {
+    var s=store();var m=manager(s);var editor=scope("editor","EDITOR");var init=initialization(true);
+    init.getTransition().setProposalReview(new Command(2,null,"Unsupported",null));
+    assertThrows(KlabIllegalStateException.class,()->m.initializeFlow(WORKFLOW,init,editor));assertTrue(s.listFlows().isEmpty());
+    // The shared transport intentionally ignores unknown fields for forward-compatible reads.
+    var decoded=Utils.Json.parseObject("{\"version\":1,\"candidate\":null,\"rationale\":\"review\",\"dossier\":null,\"approved\":true}",Command.class);
+    assertEquals(new Command(1,null,"review",null),decoded);
+    var ordinary=new WorkflowManager(s);var f=ordinary.initializeFlow(WORKFLOW,initialization(true),editor);
+    var r=command(f,"accept-peer-review",current(f).getProposalReview().candidate());r.getMetadata().put("approved",true);
+    assertThrows(KlabIllegalStateException.class,()->ordinary.transition(f.getId(),r,editor));
+  }
+  @Test void proposalUploadActionDossierAndRationaleLimitsAreEnforced() throws Exception {
+    var bytes=new byte[ProposalReview.MAX_PROPOSAL_BYTES+1];
+    assertThrows(KlabIllegalStateException.class,()->org.integratedmodelling.common.review.ProposalCandidateBinding.inspect(new Artifact("x","x"),null,bytes));
+    var text=new String(proposal("r1",null).getContent(),StandardCharsets.UTF_8);
+    var actions=new StringBuilder("actions: [");
+    for(int i=0;i<=ProposalReview.MAX_ACTIONS;i++)actions.append("{action_id: a").append(i).append("},");
+    actions.append("]");var excessive=text.replace("actions: [{action_id: action-1}]",actions.toString()).getBytes(StandardCharsets.UTF_8);
+    assertThrows(KlabIllegalStateException.class,()->org.integratedmodelling.common.review.ProposalCandidateBinding.inspect(new Artifact("x","x"),null,excessive));
+    var dossier=new BootstrapDossier(List.of(),List.of(),List.of(),List.of(),Collections.nCopies(ProposalReview.MAX_DOSSIER_RECORDS+1,"gap"),List.of());
+    assertFalse(BootstrapDossierValidator.errors(dossier).isEmpty());
+    var s=store();var m=manager(s);var editor=scope("editor","EDITOR");var f=m.initializeFlow(WORKFLOW,initialization(true),editor);
+    var r=command(f,"request-changes",current(f).getProposalReview().candidate());r.setProposalReview(new Command(1,current(f).getProposalReview().candidate(),"x".repeat(ProposalReview.MAX_RATIONALE_CHARS+1),null));
+    assertThrows(KlabIllegalStateException.class,()->m.transition(f.getId(),r,editor));
+    var upload=upload("supporting-material","text/plain","x");upload.setContent(new byte[ProposalReview.MAX_UPLOAD_BYTES+1]);
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,()->m.addAttachment(f.getId(),current(f).getId(),upload,editor));
+  }
+
+  @Test void stageAttachmentCountAndAggregateBytesAreBoundedBeforePersistence() throws Exception {
+    var s=store();var m=manager(s);var editor=scope("editor","EDITOR");var init=initialization(false);
+    init.setAttachments(Collections.nCopies(ProposalReview.MAX_STAGE_ATTACHMENTS+1,upload("supporting-material","text/plain","x")));
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,()->m.initializeFlow(WORKFLOW,init,editor));
+    assertTrue(s.listFlows().isEmpty());
+    var large=upload("supporting-material","application/octet-stream","x");large.setContent(new byte[ProposalReview.MAX_UPLOAD_BYTES]);
+    var total=initialization(false);total.setAttachments(List.of(large,large,upload("supporting-material","text/plain","x")));
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,()->m.initializeFlow(WORKFLOW,total,editor));
+    assertTrue(s.listFlows().isEmpty());
   }
 
 }

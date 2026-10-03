@@ -1,0 +1,54 @@
+{
+  "manifestVersion": 1,
+  "proposalId": "hydrology-surface-catchment",
+  "revisionId": "hydrology-surface-catchment-r1",
+  "validator": {
+    "jsonschemaVersion": "4.26.0",
+    "proposalSchemaSha256": "58bfb773d600411bb83084e9ed4e7cdfe2901189fc5e585ba1e40fe9fb8cacf5"
+  },
+  "checks": [
+    {
+      "kind": "PILOT_MANIFEST",
+      "status": "PASS",
+      "messages": [
+        "Exact four saved-byte hashes and review revision bindings verified",
+        "Research dossier may be broader than explicitly mapped proposal assets"
+      ]
+    },
+    {
+      "kind": "DOCUMENT_SCHEMA",
+      "status": "PASS",
+      "messages": []
+    },
+    {
+      "kind": "IMPORT_CONTEXT",
+      "status": "BLOCKED",
+      "messages": [
+        "Current authoritative imported source hashes unavailable"
+      ]
+    },
+    {
+      "kind": "SCIENTIFIC_REVIEW",
+      "status": "BLOCKED",
+      "messages": [
+        "No authenticated scientific decision; client manifest flags cannot grant approval",
+        "Unresolved research semantics: 8"
+      ]
+    },
+    {
+      "kind": "ROOT_CONTEXT",
+      "status": "BLOCKED",
+      "messages": [
+        "No verified root/import semantic snapshot"
+      ]
+    },
+    {
+      "kind": "REASONER",
+      "status": "NOT_RUN",
+      "messages": [
+        "No service started or authoritative knowledge changed"
+      ]
+    }
+  ],
+  "acceptance": "BLOCKED"
+}

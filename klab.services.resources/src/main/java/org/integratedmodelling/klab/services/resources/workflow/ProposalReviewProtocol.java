@@ -33,6 +33,8 @@ final class ProposalReviewProtocol {
     var command = request.getProposalReview();
     if (command == null || command.version() != ProposalReview.VERSION) fail("Proposal review command version 1 is required");
     if (!initialization && request.getExpectedRevision() < 0) fail("Proposal review requires expectedRevision");
+    if (command.rationale() != null && command.rationale().length() > ProposalReview.MAX_RATIONALE_CHARS)
+      fail("Review rationale length limit exceeded");
     var prior = source.getProposalReview();
     Candidate candidate = command.candidate();
     if (candidate == null && initialization && operation == Operation.SUBMIT) {
@@ -75,7 +77,7 @@ final class ProposalReviewProtocol {
     checks.removeIf(c -> c.kind() == CheckKind.SCIENTIFIC_REVIEW || c.kind() == CheckKind.APPLICATION || c.kind() == CheckKind.PR_HANDOFF);
     if (operation == Operation.ACCEPT) {
       if (ontologyAttachment == null) fail("Acceptance requires the exact reviewed ontology artifact");
-      for (var kind : List.of(CheckKind.IMPORT_CONTEXT, CheckKind.DOCUMENT_SCHEMA, CheckKind.PARSER, CheckKind.REASONER)) {
+      for (var kind : List.of(CheckKind.IMPORT_CONTEXT, CheckKind.DOCUMENT_SCHEMA, CheckKind.PARSER, CheckKind.ADAPTATION, CheckKind.REASONER)) {
         var matching = checks.stream().filter(c -> c.kind() == kind).toList();
         if (matching.size() != 1 || matching.getFirst().status() != CheckStatus.PASS)
           fail("Acceptance blocked: " + kind + " must pass for this candidate and current imports");
@@ -102,6 +104,9 @@ final class ProposalReviewProtocol {
     if (operation == Operation.SUBMIT || operation == Operation.ADVANCE) {
       target.getAttachments().add(alias(proposalAttachment, "bootstrap-proposal"));
       if (ontologyAttachment != null) target.getAttachments().add(alias(ontologyAttachment, "candidate-ontology"));
+      source.getAttachments().stream()
+          .filter(a -> "bootstrap-comments".equals(a.getType()) || "supporting-material".equals(a.getType()))
+          .forEach(a -> target.getAttachments().add(alias(a, a.getType())));
     }
   }
 

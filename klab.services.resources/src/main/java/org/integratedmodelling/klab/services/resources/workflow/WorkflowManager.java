@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowParticipant;
 import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowRole;
 import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns;
+import org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview;
 import org.integratedmodelling.klab.resources.WorkflowStore;
 
 /**
@@ -49,7 +50,7 @@ public class WorkflowManager {
 
   /** Create a manager with the service callback responsible for stage lifecycle actions. */
   public WorkflowManager(WorkflowStore kbox, WorkflowStageLifecycleHandler stageLifecycleHandler) {
-    this(kbox, stageLifecycleHandler, ProposalCandidateValidator.UNAVAILABLE);
+    this(kbox, stageLifecycleHandler, new IsolatedProposalCandidateValidator());
   }
 
   public WorkflowManager(WorkflowStore kbox, WorkflowStageLifecycleHandler stageLifecycleHandler,
@@ -638,7 +639,7 @@ public class WorkflowManager {
     if (!participant.canRespondTo(source))
       throw new KlabResourceAccessException("The group response deadline has elapsed");
     requireContributor(workflow, requiredStateSchema(workflow, source.getSchemaId()), participant);
-    requireStageEditor(source, participant);
+    requireTransitionActor(workflow, transition, source, participant);
     validateTransitionInputs(workflow, transition, source);
     var now = Instant.now();
     var transactionId =
@@ -652,7 +653,8 @@ public class WorkflowManager {
     var target =
         request.getTargetState() == null ? new FlowImpl.StateImpl() : request.getTargetState();
     if (target.getOwner() == null || target.getOwner().isBlank()) {
-      target.setOwner(participant.getIdentity());
+      target.setOwner("REQUEST_CHANGES".equals(transition.getMetadata().get(ProposalReviewProtocol.OPERATION))
+          ? flow.getOwner() : participant.getIdentity());
     }
     normalizeNewState(target, flowId, transition.getTargetState(), now);
     if (flow.getStates().containsKey(target.getId()))
@@ -702,6 +704,7 @@ public class WorkflowManager {
         && ("application/vnd.klab.proposal+yaml".equals(upload.getMediaType())
             || "application/vnd.klab.ontology".equals(upload.getMediaType())))
       throw new KlabIllegalStateException("Request changes before uploading a revised review candidate");
+    validateUploadBounds(upload, state);
     var rule =
         schema.getAttachments().stream()
             .filter(r -> Objects.equals(r.getType(), upload.getType()))
@@ -777,11 +780,15 @@ public class WorkflowManager {
       requireStageEditor(state, participant);
       if (state.getStatus() == Flow.StateStatus.CLOSED)
         throw new KlabIllegalStateException("Attachments cannot be deleted from a closed state");
-      if (!kbox.deleteWorkflowAttachment(attachmentId))
-        throw new KlabIllegalStateException("Attachment payload is missing");
       state.getAttachments().remove(attachment);
       state.setUpdatedAt(Instant.now());
       persistMutation(flow, workflow);
+      // Removal is committed first. Failed writes retain both descriptor and payload. Shared
+      // descriptors keep the blob alive; unsuccessful GC is safe and can be retried separately.
+      boolean referenced = kbox.listFlows().stream().flatMap(f -> f.getStates().values().stream())
+          .flatMap(st -> st.getAttachments().stream()).anyMatch(a -> attachmentId.equals(a.getId()));
+      if (!referenced && !kbox.deleteWorkflowAttachment(attachmentId))
+        Logging.INSTANCE.warn("Unreferenced workflow attachment could not be garbage-collected: " + attachmentId);
       return true;
     }
     throw new KlabIllegalArgumentException("Unknown attachment " + attachmentId);
@@ -825,6 +832,7 @@ public class WorkflowManager {
       WorkflowParticipant participant) {
     if (upload == null || upload.getContent() == null)
       throw new KlabIllegalArgumentException("Attachment content is required");
+    validateUploadBounds(upload, state);
     var rule =
         schema.getAttachments().stream()
             .filter(candidate -> Objects.equals(candidate.getType(), upload.getType()))
@@ -873,13 +881,14 @@ public class WorkflowManager {
     if (!participant.canRespondTo(source))
       throw new KlabResourceAccessException("The group response deadline has elapsed");
     requireContributor(workflow, requiredStateSchema(workflow, source.getSchemaId()), participant);
-    requireStageEditor(source, participant);
+    requireTransitionActor(workflow, transition, source, participant);
     validateTransitionInputs(workflow, transition, source);
     var now = Instant.now();
     var target = request.getTargetState() == null ? new FlowImpl.StateImpl() : request.getTargetState();
     request.setTargetState(target);
     if (target.getOwner() == null || target.getOwner().isBlank())
-      target.setOwner(participant.getIdentity());
+      target.setOwner("REQUEST_CHANGES".equals(transition.getMetadata().get(ProposalReviewProtocol.OPERATION))
+          ? flow.getOwner() : participant.getIdentity());
     normalizeNewState(target, flow.getId(), transition.getTargetState(), now);
     if (flow.getStates().containsKey(target.getId()))
       throw new KlabIllegalArgumentException("Duplicate target state id " + target.getId());
@@ -1000,6 +1009,27 @@ public class WorkflowManager {
   private void requireContributor(
       Workflow workflow, Workflow.StateSchema schema, WorkflowParticipant participant) {
     if (!workflow.canAccess(schema, participant)) throw access(schema.getId());
+  }
+
+  private void validateUploadBounds(Flow.AttachmentUpload upload, Flow.State state) {
+    int limit = "application/vnd.klab.proposal+yaml".equals(upload.getMediaType())
+        ? ProposalReview.MAX_PROPOSAL_BYTES : "application/vnd.klab.ontology".equals(upload.getMediaType())
+            ? ProposalReview.MAX_ONTOLOGY_BYTES : ProposalReview.MAX_UPLOAD_BYTES;
+    if (upload.getContent().length > limit || state.getAttachments().size() >= ProposalReview.MAX_STAGE_ATTACHMENTS
+        || state.getAttachments().stream().mapToLong(Flow.Attachment::getSize).sum()
+            + upload.getContent().length > ProposalReview.MAX_STAGE_BYTES)
+      throw new KlabIllegalArgumentException("Workflow attachment byte/count limit exceeded");
+  }
+
+  private void requireTransitionActor(Workflow workflow, Workflow.TransitionSchema transition,
+      Flow.State state, WorkflowParticipant participant) {
+    var operation = transition.getMetadata().get(ProposalReviewProtocol.OPERATION);
+    boolean assignedReviewer = participant.getRoles().contains(WorkflowRole.REVIEWER)
+        && state.getAssignees().contains(participant.getIdentity())
+        && transition.getRoles().contains(WorkflowRole.REVIEWER)
+        && requiredStateSchema(workflow, state.getSchemaId()).getContributorRoles().contains(WorkflowRole.REVIEWER)
+        && operation != null && !"SUBMIT".equals(operation.toString());
+    if (!assignedReviewer) requireStageEditor(state, participant);
   }
 
   private void requireStageEditor(Flow.State state, WorkflowParticipant participant) {

@@ -7,6 +7,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.HashSet;
+import org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.Artifact;
 import org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.Candidate;
@@ -20,17 +22,25 @@ public final class ProposalCandidateBinding {
       YAMLFactory.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build());
   public static Candidate inspect(Artifact proposal, Artifact ontology, byte[] content) {
     try {
-      JsonNode document = YAML.readTree(content);
+      if (content == null || content.length > ProposalReview.MAX_PROPOSAL_BYTES)
+        fail("Proposal exceeds byte limit or has no content");
+      JsonNode document;
+      try (var parser = YAML.createParser(content)) {
+        document = YAML.readTree(parser);
+        if (parser.nextToken() != null) fail("Exactly one proposal document is required; trailing input is not admitted");
+      }
       if (!"classpath:/schemas/llm/domain-context-proposal.schema.json".equals(document.path("proposal_schema").asText())
           || !"1.3".equals(document.path("context_pack_version").asText())) fail("Unsupported proposal schema or context pack version");
       var body = document.path("proposal");
       String id = requiredText(body, "id"), revision = requiredText(body, "revision_id");
       JsonNode actions = body.path("actions");
       if (!actions.isArray()) fail("Proposal actions must be an array");
+      if (actions.size() > ProposalReview.MAX_ACTIONS) fail("Proposal action count limit exceeded");
       var ids = new ArrayList<String>();
+      var uniqueIds = new HashSet<String>();
       for (var action : actions) {
         String actionId = requiredText(action, "action_id");
-        if (ids.contains(actionId)) fail("Duplicate proposal action ID");
+        if (!uniqueIds.add(actionId)) fail("Duplicate proposal action ID");
         ids.add(actionId);
       }
       if (!body.path("existing_ontologies").isArray()) fail("Proposal import context must be an array");

@@ -14,6 +14,9 @@ public final class BootstrapDossierValidator {
   public static List<String> errors(BootstrapDossier d) {
     var errors = new ArrayList<String>();
     if (d == null) return errors;
+    long records = (long) d.evidence().size() + d.concepts().size() + d.questions().size()
+        + d.qualityAnalyses().size() + d.unresolvedSemantics().size() + d.coverageShortfalls().size();
+    if (records > ProposalReview.MAX_DOSSIER_RECORDS) return List.of("Dossier record count limit exceeded");
     var evidence = ids(safe(d.evidence()).stream().map(Evidence::id).toList(), "evidence", errors);
     var concepts = ids(safe(d.concepts()).stream().map(Concept::id).toList(), "concept", errors);
     ids(safe(d.questions()).stream().map(Question::id).toList(), "question", errors);

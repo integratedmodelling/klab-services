@@ -7,9 +7,17 @@ import java.util.List;
 public final class ProposalReview {
   private ProposalReview() {}
   public static final int VERSION = 1;
+  public static final int MAX_PROPOSAL_BYTES = 4 * 1024 * 1024;
+  public static final int MAX_ONTOLOGY_BYTES = 2 * 1024 * 1024;
+  public static final int MAX_UPLOAD_BYTES = 16 * 1024 * 1024;
+  public static final long MAX_STAGE_BYTES = 32L * 1024 * 1024;
+  public static final int MAX_STAGE_ATTACHMENTS = 256;
+  public static final int MAX_ACTIONS = 10_000;
+  public static final int MAX_DOSSIER_RECORDS = 5_000;
+  public static final int MAX_RATIONALE_CHARS = 16_000;
   public enum Operation { SUBMIT, REQUEST_CHANGES, ADVANCE, ACCEPT, REJECT }
   public enum Status { IN_REVIEW, CHANGES_REQUESTED, ACCEPTED, REJECTED }
-  public enum CheckKind { IMPORT_CONTEXT, DOCUMENT_SCHEMA, PARSER, REASONER, SCIENTIFIC_REVIEW, APPLICATION, PR_HANDOFF }
+  public enum CheckKind { IMPORT_CONTEXT, DOCUMENT_SCHEMA, PARSER, ADAPTATION, REASONER, SCIENTIFIC_REVIEW, APPLICATION, PR_HANDOFF }
   public enum CheckStatus { PASS, FAIL, NOT_RUN, BLOCKED }
   public record Artifact(String attachmentId, String checksum) implements Serializable {}
   public record Candidate(String proposalId, String revisionId, String supersedesRevision,
