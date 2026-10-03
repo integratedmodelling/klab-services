@@ -192,6 +192,16 @@ public enum Setting {
       Boolean.class,
       // default is FALSE for now. Will eventually become true.
       Boolean.FALSE),
+  MAX_CONCURRENT_SHARD_TASKS(
+      Page.RUNTIME,
+      "Maximum active quality-shard computations across this runtime; 0 is unrestricted, changes affect new admissions",
+      Integer.class,
+      0) {
+    @Override
+    public boolean validate(Object value) {
+      return value instanceof Integer limit && limit >= 0;
+    }
+  },
   REINITIALIZE_DATABASE(
       Page.RUNTIME,
       "Remove all digital twins and re-initialize the knowledge graph",

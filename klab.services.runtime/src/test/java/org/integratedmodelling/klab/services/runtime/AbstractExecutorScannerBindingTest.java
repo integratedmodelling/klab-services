@@ -12,7 +12,7 @@ class AbstractExecutorScannerBindingTest {
     org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
     var descriptors = org.mockito.Mockito.mock(CompiledDataflow.CallDescriptors.class);
     var executor = org.mockito.Mockito.mock(AbstractExecutor.class,
-        org.mockito.Mockito.withSettings().useConstructor(descriptors, null, null, java.util.Map.of())
+        org.mockito.Mockito.withSettings().useConstructor(descriptors, null, null, java.util.Map.of(), new ShardExecution(() -> 1))
             .defaultAnswer(org.mockito.Mockito.CALLS_REAL_METHODS));
     var observation = new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
     var method = ComponentContextualizer.class.getDeclaredMethod("boundary",

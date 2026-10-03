@@ -1160,8 +1160,8 @@ public class CompiledDataflow {
               }
               ContextualExecutor executor =
                   callInfo.embeddedAdapter() != null
-                      ? new LocalAdapterExecutor(callInfo, observation, localReferences, scope)
-                      : new RemoteAdapterExecutor(callInfo, observation, localReferences, scope);
+                      ? new LocalAdapterExecutor(callInfo, observation, localReferences, scope, runtimeService.shardExecution())
+                      : new RemoteAdapterExecutor(callInfo, observation, localReferences, scope, runtimeService.shardExecution());
               if (!executor.validate()) {
                 var cause = executor.getCause();
                 if (cause != null) {
@@ -1197,7 +1197,7 @@ public class CompiledDataflow {
           }
           executors.add(
               new ContextualizerExecutor(
-                  componentRegistry, callInfo, observation, localReferences, call, scope));
+                  componentRegistry, callInfo, observation, localReferences, call, scope, runtimeService.shardExecution()));
         }
         // Scalar batches do not instantiate members; bind each non-scalar producing executor.
         for (int i = firstExecutor; i < executors.size(); i++)
@@ -1234,7 +1234,7 @@ public class CompiledDataflow {
     private boolean getScalarOperator(
         ScalarComputation.Builder scalarBuilder, Map<String, Observation> knownObservations) {
       var executor =
-          new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope);
+          new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope, runtimeService.shardExecution());
       if (!executor.validate()) {
         var cause = executor.getCause();
         if (cause != null) {
@@ -1398,7 +1398,7 @@ public class CompiledDataflow {
         var builder = runtimeService.getComputationBuilder(target,targetScope,targetPlan,inputs);
         if (!builder.add(call)) return false;
         var computation = builder.build();
-        if (computation == null || !TemporalScalarExecution.run(computation,target,inputs,event,targetScope,true)) return false;
+        if (computation == null || !TemporalScalarExecution.run(computation,target,inputs,event,targetScope,true,runtimeService.shardExecution())) return false;
       }
       for (var entry : created.entrySet()) {
         var quality = entry.getValue();

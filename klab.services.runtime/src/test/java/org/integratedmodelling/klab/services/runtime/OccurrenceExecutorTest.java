@@ -69,14 +69,14 @@ class OccurrenceExecutorTest {
 
   @Test void portableJavaProcessRunsWithTransitionGeometryAfterEveryCacheRestoration() throws Exception {
     transitions.clear();
-    var runtime = mock(RuntimeService.class);
+    var runtime = ShardExecutionTestSupport.runtime(2);
     var registry = mock(org.integratedmodelling.klab.components.ComponentRegistry.class);
     when(runtime.getComponentRegistry()).thenReturn(registry);
     var descriptor = new org.integratedmodelling.klab.api.services.runtime.extension.Extensions.FunctionDescriptor();
     descriptor.staticMethod = true; descriptor.serviceInfo = mock(org.integratedmodelling.klab.api.lang.ServiceInfo.class);
     var implementation = new org.integratedmodelling.klab.components.ComponentRegistry.ServiceImplementation();
     implementation.method = getClass().getMethod("simulate", Geometry.class, Scheduler.Event.class);
-    when(registry.getFunctionDescriptor(any())).thenReturn(java.util.List.of(descriptor));
+    when(registry.getFunctionDescriptor(any(org.integratedmodelling.klab.api.lang.ServiceCall.class), any(org.integratedmodelling.klab.api.scope.Scope.class))).thenReturn(java.util.List.of(descriptor));
     when(registry.implementation(descriptor)).thenReturn(implementation);
     var process = observation("process",SemanticType.PROCESS,100);
     process.setObservable(((ObservableImpl)process.getObservable()).as(org.integratedmodelling.klab.api.knowledge.Contextualization.SIMULATION));
@@ -125,7 +125,7 @@ class OccurrenceExecutorTest {
     for (var role : new Actuator.ExecutionRole[] {
         Actuator.ExecutionRole.PROCESS, Actuator.ExecutionRole.EVENT_INSTANTIATOR}) {
       var scope = mock(ServiceContextScope.class);
-      var runtime = mock(RuntimeService.class);
+      var runtime = ShardExecutionTestSupport.runtime(2);
       var twin = mock(DigitalTwin.class);
       var scheduler = mock(Scheduler.class);
       when(scope.getDigitalTwin()).thenReturn(twin);
@@ -175,7 +175,7 @@ class OccurrenceExecutorTest {
 
   @Test void createdQualityRemainsADeclarationThroughRestoreAndInit() {
     var scope = mock(ServiceContextScope.class);
-    var runtime = mock(RuntimeService.class);
+    var runtime = ShardExecutionTestSupport.runtime(2);
     var twin = mock(DigitalTwin.class);
     when(scope.getDigitalTwin()).thenReturn(twin);
     var process = observation("rainfall", SemanticType.PROCESS, 100);
