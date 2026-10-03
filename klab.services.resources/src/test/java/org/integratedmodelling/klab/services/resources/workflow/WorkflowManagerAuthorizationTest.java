@@ -97,7 +97,7 @@ class WorkflowManagerAuthorizationTest {
             new Class<?>[] {KlabAsset.KnowledgeClass.class, UserScope.class},
             KlabAsset.KnowledgeClass.WORKFLOW,
             wildcard);
-    assertEquals(1, visible.size());
+    assertEquals(store.listWorkflows().size(), visible.size());
     assertEquals(
         "asset-review", createFlow(manager, initial(), false, wildcard).getWorkflowId());
   }
@@ -273,6 +273,9 @@ class WorkflowManagerAuthorizationTest {
   void firstStageIsPersistedOnlyAfterAValidAtomicSubmission() {
     var store = new MemoryStore();
     var manager = new WorkflowManager(store);
+    // asset-review 1.1 intentionally made candidate optional. Exercise the atomic gate with an
+    // explicitly required fixture rule, rather than relying on the obsolete bundled default.
+    store.getWorkflow("asset-review").getStates().get("editing").getAttachments().getFirst().setRequired(true);
     var editor = scope("editor", "EDITOR");
     var request = Flow.InitializationRequest.create();
     request.setInitialState(initial());

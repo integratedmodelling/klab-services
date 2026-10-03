@@ -77,6 +77,11 @@ public interface Flow extends KlabAsset {
   }
 
   interface State extends KlabAsset {
+    /** Server-owned proposal review extension; null for ordinary workflow stages. */
+    ProposalReview.StageData getProposalReview();
+
+    void setProposalReview(ProposalReview.StageData review);
+
     String getId();
 
     void setId(String id);
@@ -177,6 +182,10 @@ public interface Flow extends KlabAsset {
   }
 
   interface TransitionRequest extends Serializable {
+    ProposalReview.Command getProposalReview();
+
+    void setProposalReview(ProposalReview.Command review);
+
     String getTransactionId();
 
     void setTransactionId(String transactionId);
