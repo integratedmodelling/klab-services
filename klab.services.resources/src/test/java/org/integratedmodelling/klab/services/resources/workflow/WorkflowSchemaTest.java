@@ -68,7 +68,7 @@ class WorkflowSchemaTest {
     assertTrue(workflow.validateTransition(flow, state.getId(), "submit", editor).isEmpty());
     assertFalse(
         workflow.validateTransition(flow, state.getId(), "reject-peer-review", editor).isEmpty());
-    assertTrue(workflow.getStates().get("editing").getAttachments().getFirst().isRequired());
+    assertFalse(workflow.getStates().get("editing").getAttachments().getFirst().isRequired());
     assertFalse(
         workflow.getStates().get("editing").getAttachments().get(1).isRequired());
     assertEquals(

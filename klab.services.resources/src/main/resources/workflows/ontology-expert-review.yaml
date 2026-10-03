@@ -1,5 +1,5 @@
 id: ontology-expert-review
-version: "1.0"
+version: "1.1"
 name: k.LAB ontology expert review
 description: Editorial and peer review of a k.LAB ontology.
 assetTypes: [ONTOLOGY]
@@ -18,9 +18,13 @@ states:
         arity: -1
         required: true
       - type: bootstrap-comments
-        mediaType: "application/vnd.klab.proposal+yaml"
+        mediaType: "application/vnd.klab.comments+json"
         arity: -1
         required: true
+      - type: candidate-ontology
+        mediaType: "application/vnd.klab.ontology"
+        arity: 1
+        required: false
       - type: supporting-material
         mediaType: "*/*"
         arity: -1
@@ -43,6 +47,10 @@ states:
       - type: bootstrap-comments
         mediaType: "application/vnd.klab.comments+json"
         arity: -1
+        required: false
+      - type: candidate-ontology
+        mediaType: "application/vnd.klab.ontology"
+        arity: 1
         required: false
       - type: supporting-material
         mediaType: "*/*"
@@ -67,6 +75,10 @@ states:
       - type: bootstrap-comments
         mediaType: "application/vnd.klab.comments+json"
         arity: -1
+        required: false
+      - type: candidate-ontology
+        mediaType: "application/vnd.klab.ontology"
+        arity: 1
         required: false
       - type: supporting-material
         mediaType: "*/*"
@@ -97,6 +109,10 @@ states:
         mediaType: "application/vnd.klab.ontology"
         arity: 1
         required: true
+      - type: candidate-ontology
+        mediaType: "application/vnd.klab.ontology"
+        arity: 1
+        required: false
       - type: supporting-material
         mediaType: "*/*"
         arity: -1
@@ -124,6 +140,8 @@ transitions:
     targetState: editing
     roles: [ADMIN, EDITOR]
   submit:
+    metadata:
+      proposalReviewOperation: SUBMIT
     description: Submit the edited asset for peer review.
     sourceStates: [editing]
     sourceAssetTypes: [ONTOLOGY]
@@ -131,31 +149,43 @@ transitions:
     targetState: peer-review
     roles: [ADMIN, EDITOR]
   request-changes:
+    metadata:
+      proposalReviewOperation: REQUEST_CHANGES
     description: Return the asset to its editor.
     sourceStates: [peer-review, community-review]
-    targetState: peer-review
+    targetState: editing
     roles: [ADMIN, EDITOR, REVIEWER]
   open-input:
+    metadata:
+      proposalReviewOperation: ADVANCE
     description: Send the peer-reviewed proposal for public review.
     sourceStates: [peer-review]
     targetState: community-review
     roles: [ADMIN, EDITOR]
   public-input:
+    metadata:
+      proposalReviewOperation: REQUEST_CHANGES
     description: Send the public proposal for another iteration.
     sourceStates: [community-review]
-    targetState: community-review
+    targetState: editing
     roles: [ADMIN, REVIEWER]
   accept-peer-review:
+    metadata:
+      proposalReviewOperation: ACCEPT
     description: Accept directly after peer review.
     sourceStates: [peer-review]
     targetState: accepted
     roles: [ADMIN, EDITOR]
   accept-community-review:
+    metadata:
+      proposalReviewOperation: ACCEPT
     description: Accept directly after community review.
     sourceStates: [community-review]
     targetState: accepted
     roles: [ADMIN, EDITOR]
   reject-peer-review:
+    metadata:
+      proposalReviewOperation: REJECT
     description: Reject after peer review.
     sourceStates: [peer-review]
     targetState: rejected
