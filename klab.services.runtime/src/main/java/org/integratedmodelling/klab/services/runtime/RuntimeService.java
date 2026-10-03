@@ -486,6 +486,11 @@ public class RuntimeService extends BaseService
    * activity followed by resolution and, if successful, contextualization of all resolved
    * observations. Instantiators cause other submissions within the same transaction.
    *
+   * <p>Cancelling a non-coalesced submission signals only that request and its derived execution
+   * scopes. Cancellation is cooperative: pending resolution must settle before cleanup, running
+   * components must return, and a commit already in progress cannot be undone. Identity-coalesced
+   * submissions instead detach the cancelled subscriber so that shared work can still complete.
+   *
    * @param submitted the observation to submit
    * @param scope the context scope in which to submit the observation
    * @return the submission task
@@ -525,6 +530,22 @@ public class RuntimeService extends BaseService
 
     var submissionScope = submissionScope(submitted, scope);
     var submissionIdentity = submissionIdentity(submitted, submissionScope);
+    if (submissionIdentity == null && submissionScope instanceof ServiceContextScope serviceScope) {
+      // CompletableFuture cancellation does not travel upstream through dependent stages.
+      // Expose the request's own future as a cooperative signal to all derived execution scopes.
+      var result = new CompletableFuture<Observation>();
+      var requestScope = serviceScope.withCancellation(result::isCancelled);
+      submitInternal(submitted, requestScope).thenApply(observation -> {
+        checkSubmissionCancellation(requestScope);
+        return observation != submitted
+            ? recordExistingPerception(observation, requestScope, explicitAgent) : observation;
+      }).whenComplete((observation, failure) -> {
+        if (failure != null) result.completeExceptionally(failure);
+        else result.complete(observation);
+      });
+      return result;
+    }
+    // Coalesced work is shared: cancelling one subscriber must only detach that subscriber.
     var future = submissionIdentity == null
         ? submitInternal(submitted, submissionScope)
         : coalesce(inFlightSubmissions, submissionIdentity,
@@ -926,6 +947,7 @@ public class RuntimeService extends BaseService
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
+                checkSubmissionCancellation(resolutionScope);
                 resolution.getMetadata().put("resolutionOutcome", dataflow.getResolutionOutcome().name());
                 observation.getNotifications().addAll(dataflow.getNotifications());
                 if (observation instanceof ObservationImpl observationImpl
@@ -934,6 +956,7 @@ public class RuntimeService extends BaseService
                 }
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
+                    checkSubmissionCancellation(resolutionScope);
                     attachResolutionDiagnostics(dataflow, resolution);
                     if (resolutionScope.commit() >= 0) {
                       if (predefinedContextualization != null) {
@@ -959,6 +982,7 @@ public class RuntimeService extends BaseService
                 //  correct if the observations have been created at compilation.
 
                 if (!o.isEmpty()) {
+                  checkSubmissionCancellation(submissionScope);
                   submissionScope.getCurrentTransaction().registerExecutors();
                   if (!submissionScope.contextualize(o)) {
                     submission.setName("SUB FAIL");
@@ -972,6 +996,7 @@ public class RuntimeService extends BaseService
                   }
 
                   // TODO add more info about the contextualization to the action's metadata
+                  checkSubmissionCancellation(submissionScope);
                   submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
                   if (commitId < 0) {
@@ -1022,6 +1047,12 @@ public class RuntimeService extends BaseService
         scope.getService(Reasoner.class).baseSubstantialType(observable.getSemantics(), scope);
     return new SubmissionIdentity(
         scope.getId(), cohortSemantics.getUrn(), ObservationImpl.logicalUrn(observation.getUrn()));
+  }
+
+  private static void checkSubmissionCancellation(ContextScope scope) {
+    if (scope.isInterrupted() || Thread.currentThread().isInterrupted()) {
+      throw new java.util.concurrent.CancellationException("Observation submission cancelled");
+    }
   }
 
   static <K, T> CompletableFuture<T> coalesce(
