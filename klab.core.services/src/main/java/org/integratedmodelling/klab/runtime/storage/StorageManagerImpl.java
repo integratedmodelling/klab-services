@@ -23,6 +23,8 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.ojalgo.array.BufferArray;
+import org.ojalgo.structure.Access1D;
+import org.ojalgo.structure.Mutate1D;
 
 /**
  * There is one separate <code>StorageScope</code> in each {@link
@@ -379,7 +381,7 @@ public class StorageManagerImpl implements StorageManager {
     }
   }
 
-  static void writeBufferArray(BufferArray array, File file, Storage.Type type) throws IOException {
+  static void writeBufferArray(Access1D<?> array, File file, Storage.Type type) throws IOException {
     try (var fileOutput = new FileOutputStream(file);
         var bufferedOutput = new BufferedOutputStream(fileOutput);
         var output = new DataOutputStream(bufferedOutput)) {
@@ -391,25 +393,7 @@ public class StorageManagerImpl implements StorageManager {
       output.writeInt(elementSize);
       output.writeLong(array.count());
 
-      for (long i = 0; i < array.count(); i++) {
-        switch (type) {
-          case FLOAT:
-            output.writeFloat(array.floatValue(i));
-            break;
-          case DOUBLE:
-            output.writeDouble(array.doubleValue(i));
-            break;
-          case LONG:
-            output.writeLong(array.longValue(i));
-            break;
-          case INTEGER, KEYED:
-            output.writeInt(array.intValue(i));
-            break;
-          case BOOLEAN:
-            output.writeByte(array.byteValue(i));
-            break;
-        }
-      }
+      ShardBufferIO.write(array, output, type);
       output.flush();
       fileOutput.getFD().sync();
     }
@@ -425,7 +409,7 @@ public class StorageManagerImpl implements StorageManager {
     }
   }
 
-  static void readBufferArray(BufferArray array, File file, Storage.Type type) throws IOException {
+  static void readBufferArray(Mutate1D array, File file, Storage.Type type) throws IOException {
     try (var fileInput = new FileInputStream(file);
         var bufferedInput = new BufferedInputStream(fileInput);
         var input = new DataInputStream(bufferedInput)) {
@@ -453,37 +437,8 @@ public class StorageManagerImpl implements StorageManager {
         bufferedInput.reset();
       }
 
-      for (long i = 0; i < array.count(); i++) {
-        switch (type) {
-          case FLOAT:
-            array.set(i, legacy ? Float.intBitsToFloat(readLegacyInt(input)) : input.readFloat());
-            break;
-          case DOUBLE:
-            array.set(
-                i, legacy ? Double.longBitsToDouble(readLegacyLong(input)) : input.readDouble());
-            break;
-          case LONG:
-            array.set(i, legacy ? readLegacyLong(input) : input.readLong());
-            break;
-          case INTEGER, KEYED:
-            array.set(i, legacy ? readLegacyInt(input) : input.readInt());
-            break;
-          case BOOLEAN:
-            array.set(i, input.readByte());
-            break;
-        }
-      }
+      ShardBufferIO.read(array, input, type, legacy ? ByteOrder.nativeOrder() : ByteOrder.BIG_ENDIAN);
     }
-  }
-
-  private static int readLegacyInt(DataInputStream input) throws IOException {
-    int value = input.readInt();
-    return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? Integer.reverseBytes(value) : value;
-  }
-
-  private static long readLegacyLong(DataInputStream input) throws IOException {
-    long value = input.readLong();
-    return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? Long.reverseBytes(value) : value;
   }
 
   // TODO check that this is executed transparently and only after the obs is finalized
@@ -569,7 +524,7 @@ public class StorageManagerImpl implements StorageManager {
   }
 
   /** Synchronous immutable-file preparation for a graph-owned temporal revision. */
-  void persistTemporalShard(Storage.Shard shard, BufferArray data) {
+  void persistTemporalShard(Storage.Shard shard, Access1D<?> data) {
     var destination = getStorageFile(shard).toPath();
     java.nio.file.Path temporary = null;
     try {
