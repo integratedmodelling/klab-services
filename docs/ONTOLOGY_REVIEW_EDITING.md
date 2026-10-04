@@ -10,6 +10,26 @@ Shared decision IDs **OR-01 through OR-12** have the same meaning in both guides
 operation is explained under **DETAILED WORKFLOW TO BE DECIDED**, with the decision needed and an
 interim way to preserve useful work. Those entries are proposals for agreement, not adopted policy.
 
+## Find a task
+
+- [Establish responsibility and access](#establish-responsibility-and-access).
+- [Prepare scope and sources](#prepare-the-scope-sources-and-imported-context), then [build the bootstrap dossier](#build-a-small-bootstrap-dossier).
+- [Prepare proposal and attachments](#prepare-the-proposal-and-attachments), then [start and submit in the IDE](#start-and-submit-using-the-native-ide).
+- [Interpret checks and readiness](#understand-validation-and-readiness).
+- [Respond and revise](#respond-to-feedback-and-revise); consult the [state/action matrix](#state-and-action-reference) and [acceptance boundary](#or-09).
+- [Recover from conflicts](#recover-safely-and-preserve-the-record) and use the [editor's checklist](#editors-readiness-checklist).
+
+## Open decision index
+
+| Decision | Topic | Decision | Topic |
+| --- | --- | --- | --- |
+| [OR-01](#or-01) | Editor selection and ownership | [OR-07](#or-07) | Public and external participation |
+| [OR-02](#or-02) | Reviewers, quorum and conflicts of interest | [OR-08](#or-08) | Disagreement and escalation |
+| [OR-03](#or-03) | Scope, imports and authority policy | [OR-09](#or-09) | Acceptance and rejection policy |
+| [OR-04](#or-04) | Package and evidence binding | [OR-10](#or-10) | Application, Git and publication |
+| [OR-05](#or-05) | Semantic validation and probes | [OR-11](#or-11) | Retention, archival and migration |
+| [OR-06](#or-06) | Feedback and action records | [OR-12](#or-12) | Live operation and recovery |
+
 ## Current state and terms
 
 Verified on **2026-10-04**, after fetching both repositories' remote `develop` branches:
@@ -369,11 +389,26 @@ selected stage's unsaved form edits after confirmation; it is not an attachment 
 uploads in an existing flow have already changed the service. **Cancel workflow** is for the
 provisional flow, not withdrawal of a submitted case.
 
-On a stale revision, checksum mismatch, unavailable response or changed import: copy local notes;
-reopen the flow; inspect its latest candidate, history and checks; reconcile before retrying. A lost
-response may follow a successful server write. Do not merely replace `expectedRevision` on an old
-decision. If the submission succeeded, continue from the returned/current stage instead of making
-a duplicate case. Unknown review-extension versions are inspection-only.
+On a stale revision, checksum mismatch, unavailable response or changed import, load a fresh case
+before retrying. Selecting **Open flows** while its workflow tab remains open only focuses the cached
+editor; it does not refresh that editor's candidate or history.
+
+1. Copy all unsaved notes and form edits you need to preserve to a local file.
+2. If the workflow is paired with source, toggle **Side-to-side workflow review** off. Close the
+   individual workflow tab. When unsaved proposal edits exist, the confirmation asks **Discard
+   unsaved proposal review edits and notes in this workflow?** Choose **OK** only after preserving
+   them; **Cancel** keeps the tab and draft. Closing is refused while a submission is in progress.
+3. Open the ontology asset's context menu again. Choose **Open flows**, or **Closed flows** if the
+   case has completed, and select the same flow. With the old tab closed, this creates an editor from
+   the freshly retrieved case.
+4. Compare its candidate, visible history and checks with your saved notes; reconcile before retrying.
+   A lost response may follow a successful server write. Do not merely replace `expectedRevision`
+   on an old decision. If submission succeeded, continue from the current stage instead of making
+   a duplicate case.
+
+This closes and opens a local UI tab; it does not invoke the **Reopen flow** lifecycle action, which
+is blocked for proposal-review flows. Closing does not undo persisted transitions or attachments.
+Unknown review-extension versions remain inspection-only.
 
 ### OR-11
 
@@ -419,6 +454,7 @@ point is the [proposal-review contract](../PROPOSAL_REVIEW_CONTRACT.md), read wi
 - [Flow types][flow], [ProposalReview types][types], [shared candidate inspector][binding] and [controller][controller]: transport and immutable bindings.
 - [Isolated validator][validator] and [schema provider][schema-provider]: what production checks actually establish.
 - Pinned IDE [WorkflowEditor][ide-shell], [ProposalStageEditor][ide-stage], [WorkspaceEditor][ide-workspace] and [review model][ide-model]: controls and local draft behavior.
+- Pinned IDE [tab host][ide-tab-host]: individual workflow-tab close confirmation and disposal.
 - Pinned IDE [review notes][ide-notes]: reported tests and unverified live boundaries; its older schema-blocker statement is superseded by the backend schema increment.
 
 [context]: ../llm/DOMAIN_CONTEXT_PACK.md
@@ -438,6 +474,7 @@ point is the [proposal-review contract](../PROPOSAL_REVIEW_CONTRACT.md), read wi
 [ide-stage]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/ProposalStageEditor.java
 [ide-workspace]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/WorkspaceEditor.java
 [ide-model]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/ProposalReviewModel.java
+[ide-tab-host]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/pages/EditorPage.java
 [ide-notes]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/docs/PROPOSAL_REVIEW.md
 [sandbox]: https://github.com/integratedmodelling/imod/tree/68a6cbc/experiments/strawman-2026/bootstrap
 [method]: https://github.com/integratedmodelling/imod/blob/68a6cbc/experiments/strawman-2026/bootstrap/METHOD.md

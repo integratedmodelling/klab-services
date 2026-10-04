@@ -9,6 +9,26 @@ Shared decision IDs **OR-01 through OR-12** have the same meaning in both guides
 operation is explained under **DETAILED WORKFLOW TO BE DECIDED**, with the decision needed and an
 interim way to preserve useful work. Those entries are proposals for agreement, not adopted policy.
 
+## Find a task
+
+- [Obtain the case and access](#obtain-the-case-and-the-right-access).
+- [Find the proposal and source view](#find-the-proposal-and-inspect-source-beside-it), then [verify the candidate](#verify-what-you-are-being-asked-to-judge).
+- [Examine meaning and coverage](#examine-meaning-evidence-and-coverage), then [interpret automatic checks](#separate-automatic-checks-from-judgment).
+- [Give feedback, return work and re-review](#give-actionable-feedback-and-return-work).
+- [Address public input and disagreements](#public-input-and-disagreements); consult the [state/action matrix](#state-and-action-reference) and [decision boundary](#or-09).
+- [Preserve decisions and recover](#preserve-a-reproducible-decision-and-recover-from-conflicts), then use the [reviewer's checklist](#reviewers-checklist).
+
+## Open decision index
+
+| Decision | Topic | Decision | Topic |
+| --- | --- | --- | --- |
+| [OR-01](#or-01) | Editor selection and ownership | [OR-07](#or-07) | Public and external participation |
+| [OR-02](#or-02) | Reviewers, quorum and conflicts of interest | [OR-08](#or-08) | Disagreement and escalation |
+| [OR-03](#or-03) | Scope, imports and authority policy | [OR-09](#or-09) | Acceptance and rejection policy |
+| [OR-04](#or-04) | Package and evidence binding | [OR-10](#or-10) | Application, Git and publication |
+| [OR-05](#or-05) | Semantic validation and probes | [OR-11](#or-11) | Retention, archival and migration |
+| [OR-06](#or-06) | Feedback and action records | [OR-12](#or-12) | Live operation and recovery |
+
 ## Current state and review boundary
 
 Verified on **2026-10-04** against newly fetched remote `develop` branches:
@@ -147,7 +167,7 @@ Use the native tabs in this order, returning to the attached source whenever a c
 | --- | --- |
 | **Sources** | Follow stable evidence IDs to actual locators/excerpts. Check what was read, source scope, edition/date and limits. A reputable title or inaccessible abstract does not support every attributed meaning. |
 | **Concepts & bindings** | Select each record and inspect definition in the proposal, claimed type, ancestry, bearer/participants, qualities, relationship endpoints and process/event bindings. These are claims until separately validated. |
-| **Questions & coverage** | Inspect question text and precise intent, expression(s), concept incidence, imported derivation, positive cases, invalid probes and gaps. Ask whether the expression answers the actual question. |
+| **Questions & coverage** | Inspect native question text, intent, evidence/concept references, expressions, invalid probes and gaps. Follow the linked proposal/supporting evidence for positive cases, result-category audits and detailed imported derivations; these have no dedicated native question fields. Ask whether the expression answers the actual question. |
 | **Quality analysis** | Trace proposed attributes, realms and orderings to a quality and source. Check comparison/boundary, nominal versus ordered values, overlap, context and scale. Unknown/unmeasured/disputed is an evidence state, not automatically a predicate. |
 | **Issues & checks** | Read unresolved semantics and justified shortfalls before interpreting server checks. Missing records/results are not successful checks. |
 | **Decision** | Draft an accountable rationale tied to the exact revision, issue IDs and action set. It is persisted through a transition. |
@@ -344,11 +364,28 @@ Distinguish a draft opinion from a successfully recorded transition. A source-ed
 working source through its own path; it does not revise the frozen review candidate. Return work to
 editing to submit revised bytes.
 
-On conflict or an uncertain response, copy your notes, reopen the case and compare its latest history,
-candidate and checks. The server may have committed before a response was lost. Reconcile instead of
-repeating a stale decision or only replacing its flow revision. Failed/cancelled confirmation retains
-the local draft; **Reset** discards selected-stage edits after confirmation and does not roll back
-already stored attachments. Proposal stages do not expose normal delete/reopen shortcuts.
+On conflict or an uncertain response, load a fresh case before retrying. Selecting **Open flows**
+while its workflow tab remains open only focuses the cached editor; it does not refresh that editor's
+candidate or history.
+
+1. Copy all unsaved notes and form edits you need to preserve to a local file.
+2. If the workflow is paired with source, toggle **Side-to-side workflow review** off. Close the
+   individual workflow tab. When unsaved proposal edits exist, the confirmation asks **Discard
+   unsaved proposal review edits and notes in this workflow?** Choose **OK** only after preserving
+   them; **Cancel** keeps the tab and draft. Closing is refused while a submission is in progress.
+3. Open the ontology asset's context menu again. Choose **Open flows**, or **Closed flows** if the
+   case has completed, and select the same flow. With the old tab closed, this creates an editor from
+   the freshly retrieved case.
+4. Compare its candidate, visible history and checks with your saved notes. The server may have
+   committed before a response was lost. Reconcile before retrying instead of repeating a stale
+   decision or only replacing its flow revision. Ask the author/coordinator about records hidden
+   by your access projection.
+
+This closes and opens a local UI tab; it does not invoke the **Reopen flow** lifecycle action, which
+is blocked for proposal-review flows. Closing does not undo persisted transitions or attachments.
+Failed/cancelled confirmation retains the local draft; **Reset** discards selected-stage edits after
+confirmation and does not roll back stored attachments. Proposal stages do not expose normal
+delete/reopen shortcuts.
 
 ### OR-11
 
@@ -395,6 +432,7 @@ in [WorkflowManager][manager] and [ProposalReviewProtocol][protocol] take preced
 - [Workflow definition][workflow] and [review types][types]: exact role matrix, states and candidate/check fields.
 - [Controller][controller], [shared binding inspector][binding] and [isolated validator][validator]: authentication surface, saved-byte identity and current check limits.
 - Pinned IDE [stage form][ide-stage], [workflow shell][ide-shell], [workspace controls][ide-workspace], [review model][ide-model] and [lexical markers][ide-markers]: labels, decision gate, draft handling and source links.
+- Pinned IDE [tab host][ide-tab-host]: individual workflow-tab close confirmation and disposal.
 - [Dossier mapping](../DOSSIER_MAPPING.md), [context pack][context], [proposal schema][schema] and [bootstrap method][method]: interpretation and research boundaries.
 - [Backend test evidence][increment], [earlier validation evidence](../VALIDATION_INCREMENT.md) and pinned [IDE verification notes][ide-notes]: reported checks, with live integration limits retained.
 
@@ -412,6 +450,7 @@ in [WorkflowManager][manager] and [ProposalReviewProtocol][protocol] take preced
 [ide-stage]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/ProposalStageEditor.java
 [ide-workspace]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/WorkspaceEditor.java
 [ide-model]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/ProposalReviewModel.java
+[ide-tab-host]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/pages/EditorPage.java
 [ide-markers]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/ProposalLexicalMarkers.java
 [ide-notes]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/docs/PROPOSAL_REVIEW.md
 [sandbox]: https://github.com/integratedmodelling/imod/tree/68a6cbc/experiments/strawman-2026/bootstrap
