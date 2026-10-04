@@ -883,3 +883,17 @@ Dictionary/root/payload publication follows the existing staged filesystem/graph
 not a claim of atomic transactions across those systems. Orphan semantic snapshots are harmless and
 remain part of the final recovery/hardening work. Contextualized units remain S5; the existing S6
 geometry limits and final full-stack acceptance checks remain explicit.
+
+
+## Anchored world grids
+
+Scan description version 6 supports periodic longitude indices and clipped world-boundary cell footprints.
+See [context-wide grid anchoring](GRID_ALIGNMENT.md) for the geometry contract, installation, persistence,
+and physical-area sampling rules. Versions 1–5 retain their existing ordinary-grid contracts.
+
+## Nonrectangular grid coverage
+
+Scan description version 7 records source and consumer support independently of value validity.
+Scanners skip consumer cells outside the shape while preserving dense grid indices and the rectangular
+fast path. See [shape coverage and scanner cell access](GRID_COVERAGE.md) for the centre rule, sparse
+range traversal, contextualizer API, and temporal/persistence behavior.

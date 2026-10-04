@@ -187,6 +187,18 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       asset = navigableAsset.getDelegate();
     }
 
+    if (asset instanceof KimSymbolDefinition definition && "grid".equals(definition.getDefineClass())) {
+      if (currentContext == null) return CompletableFuture.failedFuture(new IllegalStateException("Create a digital twin before installing its grid"));
+      try {
+        var alignment = currentContext.getService(RuntimeService.class).configureGrid(definition.getUrn(), currentContext);
+        var result=Observation.empty(Notification.info("Grid installed: "+alignment.definitionUrn()));
+        for (String warning : alignment.warnings()) result.getNotifications().add(Notification.warning(warning));
+        return CompletableFuture.completedFuture(result);
+      } catch (RuntimeException ex) {
+        return CompletableFuture.failedFuture(ex);
+      }
+    }
+
     Observation.NaiveBuilder builder = null;
 
     if (asset instanceof org.integratedmodelling.klab.api.knowledge.Observable observable) {
@@ -335,7 +347,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
   @Override
   public ContextScope createDefaultContext() {
+    return createDefaultContext(null);
+  }
 
+  @Override
+  public ContextScope createDefaultContext(String gridUrn) {
     ContextScope currentContext = null;
 
     if (currentUser() == null) {
@@ -373,6 +389,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     var configuration = defaultDigitalTwinConfiguration(name);
 
     if (configuration != null) {
+      if (gridUrn!=null) configuration=DigitalTwin.Configuration.builder(configuration).grid(gridUrn).build();
       currentContext = openNewContext(configuration, false);
     }
 

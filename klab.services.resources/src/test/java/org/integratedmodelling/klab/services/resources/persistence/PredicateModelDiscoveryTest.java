@@ -11,6 +11,92 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.junit.jupiter.api.Test;
 
 class PredicateModelDiscoveryTest {
+  @Test void discoveryFailureCannotMasqueradeAsNoModel() throws Exception {
+    var box = mock(ModelKbox.class, CALLS_REAL_METHODS);
+    var database = mock(org.integratedmodelling.klab.persistence.h2.H2Database.class);
+    var context = mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+    var request = mock(Observable.class);
+    var geometry = mock(org.integratedmodelling.klab.api.geometry.Geometry.class);
+    var failure = new IllegalStateException("Reasoner unavailable");
+    doNothing().when(box).initialize(context);
+    var databaseField = org.integratedmodelling.klab.persistence.h2.H2Kbox.class.getDeclaredField("database");
+    databaseField.setAccessible(true);
+    databaseField.set(box, database);
+    when(database.hasTable("model")).thenReturn(true);
+    when(request.getUrn()).thenReturn("earth:PhysicalEnvironment of each earth:Region");
+    doThrow(failure).when(box).queryModels(request, geometry, null, List.of(), context);
+    var thrown = assertThrows(org.integratedmodelling.klab.api.exceptions.KlabStorageException.class,
+        () -> box.query(request, geometry, null, List.of(), context));
+    assertSame(failure, thrown.getCause());
+  }
+
+  @Test void persistedConceptsRemainDiscoverableAfterRestart() throws Exception {
+    var box = mock(ModelKbox.class, CALLS_REAL_METHODS);
+    var scope = mock(Scope.class);
+    var reasoner = mock(Reasoner.class);
+    var request = mock(Observable.class);
+    var head = concept("earth:PhysicalEnvironment");
+    var classifier = concept("earth:PhysicalEnvironment of each earth:Region");
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    when(request.getContextualization()).thenReturn(Contextualization.CLASSIFICATION);
+    when(reasoner.coreObservable(request)).thenReturn(head);
+    when(reasoner.coreObservable(classifier)).thenReturn(head);
+    when(reasoner.resolveConcept(classifier.getUrn())).thenReturn(classifier);
+    when(reasoner.resolving(head)).thenReturn(List.of(head));
+    when(reasoner.semanticDistance(classifier, request, null)).thenReturn(0);
+    field(box, "scope", scope);
+    field(box, "definitionHash", Map.of(classifier.getUrn(), 42L));
+    field(box, "coreTypeHash", new HashMap<>());
+    field(box, "conceptHash", new HashMap<>());
+    assertEquals(Set.of(42L), box.getCompatibleTypeIds(request, null));
+    assertEquals(Set.of(42L), box.getCompatibleTypeIds(request, null));
+    verify(reasoner, times(1)).resolveConcept(classifier.getUrn());
+  }
+
+  @Test void reRegisteringPersistedConceptRestoresCandidatesWithoutWritingDatabase() throws Exception {
+    var box = mock(ModelKbox.class, CALLS_REAL_METHODS);
+    var scope = mock(Scope.class);
+    var reasoner = mock(Reasoner.class);
+    var request = mock(Observable.class);
+    var head = concept("earth:Region");
+    var candidate = concept("each earth:Region");
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    when(request.getContextualization()).thenReturn(Contextualization.INSTANTIATION);
+    when(reasoner.coreObservable(request)).thenReturn(head);
+    when(reasoner.coreObservable(candidate)).thenReturn(head);
+    when(reasoner.resolving(head)).thenReturn(List.of(head));
+    when(reasoner.semanticDistance(candidate, request, null)).thenReturn(0);
+    field(box, "scope", scope);
+    field(box, "definitionHash", Map.of(candidate.getUrn(), 7L));
+    field(box, "coreTypeHash", new HashMap<>());
+    field(box, "conceptHash", new HashMap<>());
+    assertEquals(7L, box.requireConceptId(candidate, scope));
+    assertEquals(Set.of(7L), box.getCompatibleTypeIds(request, null));
+    verify(reasoner, never()).resolveConcept(anyString());
+  }
+
+  @Test void temporarilyUnavailablePersistedConceptIsRetried() throws Exception {
+    var box = mock(ModelKbox.class, CALLS_REAL_METHODS);
+    var scope = mock(Scope.class);
+    var reasoner = mock(Reasoner.class);
+    var request = mock(Observable.class);
+    var head = concept("earth:PhysicalEnvironment");
+    var candidate = concept("earth:PhysicalEnvironment of each earth:Region");
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    when(request.getContextualization()).thenReturn(Contextualization.CLASSIFICATION);
+    when(reasoner.coreObservable(request)).thenReturn(head);
+    when(reasoner.coreObservable(candidate)).thenReturn(head);
+    when(reasoner.resolving(head)).thenReturn(List.of(head));
+    when(reasoner.resolveConcept(candidate.getUrn())).thenReturn(null, candidate);
+    when(reasoner.semanticDistance(candidate, request, null)).thenReturn(0);
+    field(box, "scope", scope);
+    field(box, "definitionHash", Map.of(candidate.getUrn(), 42L));
+    field(box, "coreTypeHash", new HashMap<>());
+    field(box, "conceptHash", new HashMap<>());
+    assertTrue(box.getCompatibleTypeIds(request, null).isEmpty());
+    assertEquals(Set.of(42L), box.getCompatibleTypeIds(request, null));
+  }
+
   @Test void modelIndexIncludesExactAndSubsumingHeadsThenChecksFullSemantics() throws Exception {
     var box = mock(ModelKbox.class, CALLS_REAL_METHODS);
     var scope = mock(Scope.class); var reasoner = mock(Reasoner.class);

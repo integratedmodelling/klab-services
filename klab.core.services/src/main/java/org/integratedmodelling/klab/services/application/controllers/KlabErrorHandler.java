@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.services.application.ServiceNetworkedInstanc
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.ErrorResponseException;
@@ -29,19 +30,24 @@ public class KlabErrorHandler {
       HttpServletRequest request, NoHandlerFoundException ex) {
     ErrorResponse errorResponse =
         ErrorResponse.create(ex, HttpStatus.NOT_FOUND, Utils.Exceptions.stackTrace(ex));
-    return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.NOT_FOUND);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .contentType(MediaType.APPLICATION_JSON).body(errorResponse);
   }
 
   @ExceptionHandler(ErrorResponseException.class)
   public ResponseEntity<ProblemDetail> handleStatusException(
       ErrorResponseException ex) {
-    return new ResponseEntity<>(ex.getBody(), ex.getHeaders(), ex.getStatusCode());
+    return ResponseEntity.status(ex.getStatusCode()).headers(ex.getHeaders())
+        .contentType(MediaType.APPLICATION_PROBLEM_JSON).body(ex.getBody());
   }
 
   @ExceptionHandler(Throwable.class)
   public @ResponseBody ResponseEntity<ErrorResponse> handleDefaultException(Throwable ex) {
     ErrorResponse errorResponse =
         ErrorResponse.create(ex, HttpStatus.INTERNAL_SERVER_ERROR, Utils.Exceptions.stackTrace(ex));
-    return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    // Binary exports accept only their requested image/data format. Errors still need a JSON
+    // representation, otherwise negotiation fails and the error dispatch masks the real failure.
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .contentType(MediaType.APPLICATION_JSON).body(errorResponse);
   }
 }

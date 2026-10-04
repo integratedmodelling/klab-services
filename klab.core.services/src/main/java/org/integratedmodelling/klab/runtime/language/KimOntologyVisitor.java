@@ -37,7 +37,7 @@ public class KimOntologyVisitor extends KimObservableVisitor {
 
   public void visit(KimOntology ontology) {
     var context = beginDocument(ontology);
-    addNotifications(ontologyValidator.validateOntology(ontology, context));
+    addNotifications(ontologyValidator.validateOntology(ontology, context), context);
     for (var urn : safe(ontology.getImportedOntologies())) {
       reference(urn, KlabAsset.KnowledgeClass.ONTOLOGY, ontology, context);
     }
@@ -59,7 +59,7 @@ public class KimOntologyVisitor extends KimObservableVisitor {
   }
 
   private void visitConceptStatement(KimConceptStatement statement, Context context) {
-    addNotifications(ontologyValidator.validateConceptStatement(statement, context));
+    addNotifications(ontologyValidator.validateConceptStatement(statement, context), context);
     for (var source : safe(statement.getDeclaredReferences())) {
       reference(source.getName(), KlabAsset.KnowledgeClass.CONCEPT, source, context);
     }

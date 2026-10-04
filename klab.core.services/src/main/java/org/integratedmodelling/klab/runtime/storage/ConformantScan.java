@@ -19,12 +19,15 @@ final class ConformantScan implements ScanMapping {
   final int[][] dependencies;
   final Directory directory;
   final FillCurve sourceCurve, targetCurve;
+  final long longitudePeriod;
+  final String projection;
 
   private ConformantScan(List<StorageScan.Partition> partitions, Box[] sources, Box[] targets,
-      int[][] dependencies, Directory directory, FillCurve sourceCurve, FillCurve targetCurve) {
+      int[][] dependencies, Directory directory, FillCurve sourceCurve, FillCurve targetCurve, long longitudePeriod, String projection) {
     this.partitions = List.copyOf(partitions); this.sources = sources; this.targets = targets;
     this.dependencies = dependencies; this.directory = directory;
-    this.sourceCurve = sourceCurve; this.targetCurve = targetCurve;
+    this.sourceCurve = sourceCurve; this.targetCurve = targetCurve; this.longitudePeriod=longitudePeriod;
+    this.projection = projection;
   }
 
   static UnsupportedOperationException unsupported(String reason) {
@@ -144,7 +147,7 @@ final class ConformantScan implements ScanMapping {
     }
   }
 
-  record Grid(Geometry geometry, long[] shape, double[] bounds, String projection, String others) {
+  record Grid(Geometry geometry, long[] shape, double[] bounds, String projection, String others, double[] world) {
     static Grid read(String encoding, String inheritedProjection) {
       return read(encoding, inheritedProjection, true);
     }
@@ -157,7 +160,7 @@ final class ConformantScan implements ScanMapping {
       // Concrete bounds and cell counts are authoritative; sgrid is only a resolution hint.
       // Never ignore an unknown transform/rotation or external grid definition when remapping.
       for (String key : space.getParameters().keySet())
-        if (!Set.of("proj", "bbox", "shape", "sgrid").contains(key))
+        if (!Set.of("proj", "bbox", "shape", "sgrid", "gridalignment", "world").contains(key))
           throw unsupported("unsupported spatial grid parameter: " + key);
       long[] shape = space.getShape().stream().mapToLong(Long::longValue).toArray();
       if (shape.length != space.getDimensionality()) throw unsupported("unspecified grid shape");
@@ -178,21 +181,43 @@ final class ConformantScan implements ScanMapping {
       if (shapeDefinition != null) {
         var polygon = ShapeImpl.create(shapeDefinition.toString());
         if (!projection.equals(polygon.getProjection().getCode())) throw unsupported("shape CRS differs from grid CRS");
-        if (shape.length != 2 || !polygon.getJTSGeometry().isRectangle())
-          throw unsupported("masked or nonrectangular coverage");
+        if (shape.length != 2 || polygon.getJTSGeometry().getDimension() != 2 || !polygon.getJTSGeometry().isValid())
+          throw unsupported("invalid areal coverage");
         var envelope = polygon.getEnvelope();
         double[] polygonBounds = {envelope.getMinX(), envelope.getMaxX(), envelope.getMinY(), envelope.getMaxY()};
         if (bounds == null) bounds = polygonBounds;
-        // Shape can describe the un-clipped grid's support; differing bounds need mask mediation.
-        else if (!Arrays.equals(bounds, polygonBounds)) throw unsupported("shape and grid bounds differ");
+        // TileImpl retains the original rectangular support when GridImpl adjusts its envelope
+        // to the cell lattice. The explicit bbox describes the stored cells, including boundary
+        // cells; the support envelope must not replace it or prevent a lossless index remap.
       }
       if (bounds == null || bounds.length != shape.length * 2) throw unsupported("missing grid bounds");
       for (int d = 0; d < shape.length; d++)
         if (!Double.isFinite(bounds[2*d]) || !Double.isFinite(bounds[2*d+1])
             || bounds[2*d+1] <= bounds[2*d]) throw unsupported("invalid grid bounds");
+      double[] world = new double[0];
+      if (space.getParameters().get("world") != null) {
+        String[] parts=space.getParameters().get("world").toString().replace('[',' ').replace(']',' ').trim().split("[\\s,]+");
+        world=Arrays.stream(parts).mapToDouble(Double::parseDouble).toArray();
+        if (world.length!=4 || shape.length!=2 || !Arrays.stream(world).allMatch(Double::isFinite)
+            || world[0]>=world[1] || world[2]>=world[3]) throw unsupported("invalid world bounds");
+        // World metadata authorizes clipping/wrapping; it must match the declared CRS domain.
+        try {
+          double[] expected=org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.worldBounds(
+              org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection.of(projection));
+          if (expected.length!=4) throw unsupported("world boundary metadata requires a supported global CRS");
+          for(int axis=0;axis<4;axis++) if(Math.abs(world[axis]-expected[axis])>1e-9*Math.max(1,Math.abs(expected[axis])))
+            throw unsupported("world bounds differ from CRS domain");
+          double dx=(bounds[1]-bounds[0])/shape[0],dy=(bounds[3]-bounds[2])/shape[1];
+          double period=(world[1]-world[0])/dx;
+          if (Math.abs(period-Math.rint(period))>1e-7 || period>0x1p52 || shape[0]>Math.rint(period)
+              || bounds[2]<=world[2]-dy || bounds[3]>=world[3]+dy
+              || bounds[2]>=world[3] || bounds[3]<=world[2]) throw unsupported("world grid contains duplicate or empty boundary cells");
+        } catch (UnsupportedOperationException e) { throw e; }
+        catch (Exception e) { throw new IllegalArgumentException("Cannot validate world grid",e); }
+      }
       return new Grid(geometry, shape, bounds, projection,
           geometry.getDimensions().stream().filter(d -> d.getType() != Geometry.Dimension.Type.SPACE)
-              .map(Geometry.Dimension::encode).collect(java.util.stream.Collectors.joining()));
+              .map(Geometry.Dimension::encode).collect(java.util.stream.Collectors.joining()),world);
     }
   }
 
@@ -237,16 +262,15 @@ final class ConformantScan implements ScanMapping {
         text.append(reference.bounds[2*d] + box.start[d] * step[d]).append(' ')
             .append(reference.bounds[2*d] + (box.start[d] + box.shape[d]) * step[d]);
       }
-      return text.append("]}").toString();
+      text.append("]");
+      if (reference.world.length==4) text.append(",world=").append(Arrays.toString(reference.world).replace(",", ""));
+      return text.append("}").toString();
     }
   }
 
   static ConformantScan compile(List<StorageScan.SourceShard> descriptors,
       StorageScan.Request<?> request, String observationGeometry) {
     var ownerSpace = StorageScan.parseGeometry(observationGeometry).dimension(Geometry.Dimension.Type.SPACE);
-    if (ownerSpace != null && ownerSpace.getParameters().get("shape") != null
-        && !ShapeImpl.create(ownerSpace.getParameters().get("shape").toString()).getJTSGeometry().isRectangle())
-      throw unsupported("observation has masked or nonrectangular coverage");
     String inherited = ownerSpace == null ? null : Objects.toString(ownerSpace.getParameters().get("proj"), null);
     Grid first = Grid.read(descriptors.getFirst().geometry(), inherited);
     Lattice lattice = new Lattice(first);
@@ -261,17 +285,20 @@ final class ConformantScan implements ScanMapping {
     Grid ownerGrid = Grid.read(observationGeometry, inherited, false);
     Box ownerCoverage = lattice.box(ownerGrid, false);
     verifyCover(sources, directory, ownerCoverage);
+    long period = ownerGrid.world.length==4 ? lattice.snap((ownerGrid.world[1]-ownerGrid.world[0])/lattice.step[0]) : 0;
+    Box requestedCoverage = directory.bounds;
     if (request.geometry() != null) {
       Grid requestedGrid = Grid.read(request.geometry(), inherited, false);
       // The unchanged observation time describes coverage; Slice selects the actual revision.
       boolean ownerContext = requestedGrid.others.equals(ownerGrid.others);
       Box coverage = lattice.box(Grid.read(request.geometry(), inherited, !ownerContext), !ownerContext);
-      if (!same(coverage, directory.bounds)) throw unsupported("requested coverage differs");
+      if (!equivalent(coverage, directory.bounds,period)) throw unsupported("requested coverage differs");
+      requestedCoverage=coverage;
     }
     List<StorageScan.Partition> partitions = request.partitions();
     Box[] targets;
     if (partitions.isEmpty()) {
-      List<Box> split = split(directory.bounds, request.layout(), request.budget().maxPartitions());
+      List<Box> split = split(requestedCoverage, request.layout(), request.budget().maxPartitions());
       targets = split.toArray(Box[]::new);
       var generated = new ArrayList<StorageScan.Partition>();
       for (int i = 0; i < targets.length; i++)
@@ -282,16 +309,39 @@ final class ConformantScan implements ScanMapping {
       for (int i = 0; i < targets.length; i++)
         targets[i] = lattice.box(Grid.read(partitions.get(i).geometry(), inherited), true);
     }
-    verifyCover(targets, Directory.of(targets), directory.bounds);
+    verifyCover(targets, Directory.of(targets), requestedCoverage);
     int[][] dependencies = new int[targets.length][];
     long remainingLinks = Math.multiplyExact((long) request.budget().maxPartitions(), 8);
     for (int i = 0; i < targets.length; i++) {
       if (request.layout().maxSize() > 0 && targets[i].size > request.layout().maxSize())
         throw new IllegalArgumentException("Consumer partition exceeds maximum state count");
-      var links = new ArrayList<Integer>(); directory.collect(targets[i], links, remainingLinks);
+      var links = new ArrayList<Integer>();
+      if (period==0) directory.collect(targets[i],links,remainingLinks);
+      else {
+        // At most two translated target windows intersect a source interval no wider than a period.
+        Box t=targets[i];
+        long shift=Math.floorDiv(directory.bounds.start[0]-t.start[0],period);
+        for (long delta=shift;delta<=shift+1;delta++) {
+          long[] start=t.start.clone(); start[0]=Math.addExact(start[0],Math.multiplyExact(delta,period));
+          var translated=new ArrayList<Integer>(); directory.collect(new Box(start,t.shape),translated,remainingLinks);
+          for (int link:translated) if (!links.contains(link)) links.add(link);
+        }
+        if (links.size()>remainingLinks) throw new IllegalArgumentException("Source-link budget exceeded");
+      }
       dependencies[i] = links.stream().mapToInt(Integer::intValue).toArray(); remainingLinks -= links.size();
     }
-    return new ConformantScan(partitions, sources, targets, dependencies, directory, sourceCurve, targetCurve);
+    return new ConformantScan(partitions, sources, targets, dependencies, directory, sourceCurve, targetCurve,period,first.projection());
+  }
+
+  /** Periodic intervals describe the same cells when their phase matches, or both cover a full turn. */
+  private static boolean equivalent(Box a, Box b, long period) {
+    if (period==0) return same(a,b);
+    return Arrays.equals(a.shape,b.shape) && a.start[1]==b.start[1]
+        && (a.shape[0]==period || Math.floorMod(a.start[0]-b.start[0],period)==0);
+  }
+
+  void locatePeriodic(long[] point) {
+    if (longitudePeriod>0) point[0]=directory.bounds.start[0]+Math.floorMod(point[0]-directory.bounds.start[0],longitudePeriod);
   }
 
   private static boolean same(Box a, Box b) {

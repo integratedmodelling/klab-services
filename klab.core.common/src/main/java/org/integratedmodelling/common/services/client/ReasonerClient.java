@@ -540,7 +540,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Collection<Concept> resolving(Semantics relationship) {
-    return client.postCollection(
+    return client.postCollectionOrThrow(
         ServicesAPI.REASONER.RESOLVING, relationship.asConcept(), Concept.class);
   }
 

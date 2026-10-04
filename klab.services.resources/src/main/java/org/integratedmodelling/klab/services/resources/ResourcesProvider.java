@@ -72,7 +72,8 @@ import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.lang.ConceptCodelistBuilder;
-import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
+import org.integratedmodelling.klab.services.resources.persistence.ModelCatalog;
+import org.integratedmodelling.klab.services.resources.persistence.ModelCatalogs;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.services.resources.storage.ResourceManager;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
@@ -129,10 +130,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 }
               });
 
-  /**
-   * @deprecated use {@link ResourcesKBox}
-   */
-  private ModelKbox kbox;
+  /** Switchable semantic model catalog; resource/workflow storage remains in ResourcesKBox. */
+  private ModelCatalog kbox;
 
   // set to true when the connected reasoner becomes operational
   //  private boolean semanticSearchAvailable = false;
@@ -181,7 +180,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         },
         Instance.class);
 
-    this.kbox = ModelKbox.create(this);
+    this.kbox = ModelCatalogs.create(this, options);
 
     /*
     initialize the plugin system to handle components
@@ -480,12 +479,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     // TODO index ontologies
     try {
       for (var namespace : workspaceManager.getNamespaces()) {
-        kbox.remove(namespace.getUrn(), scope);
-        for (var statement : namespace.getStatements()) {
-          if (statement instanceof KimModel model) {
-            kbox.store(model, scope);
-          }
-        }
+        kbox.replaceNamespace(namespace, scope);
       }
     } catch (Throwable t) {
       Logging.INSTANCE.error("Error indexing semantic content", t);
@@ -1121,6 +1115,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       this.lspThread.interrupt();
     }
 
+    this.kbox.close();
     this.resourcesKbox.shutdown();
 
     // try {
@@ -1161,6 +1156,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
+    if (org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class.isAssignableFrom(assetClass)) {
+      var definition = workspaceManager.retrieve(urn, KimSymbolDefinition.class);
+      if (definition == null) return null;
+      return assetClass.cast(org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.decode(definition, serviceId()));
+    }
+
     if (Workspace.class.isAssignableFrom(assetClass)) return assetClass.cast(retrieveWorkspace(urn, scope));
     // TODO RESOURCES-CRUD enforce the asset's ResourcePrivileges for every branch.
     var workflowClass = workflowKnowledgeClass(assetClass);
@@ -2027,7 +2028,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
    *
    * @return
    */
-  public ModelKbox modelKbox() {
+  public ModelCatalog modelKbox() {
     return this.kbox;
   }
 

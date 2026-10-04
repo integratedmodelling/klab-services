@@ -415,6 +415,7 @@ public interface ServicesAPI {
     String GET_OBSERVER_GEOMETRY = API_BASE + "/observer/{id}/geometry";
 
     String REGISTER_OBSERVATION = API_BASE + "/register";
+    String CONFIGURE_GRID = API_BASE + "/grid";
 
     String GET_SHARDING_STRATEGY = API_BASE + "/sharding";
 

@@ -42,6 +42,12 @@ class ClassificationPipelineTest {
             + "shape=EPSG:4326 000000000300000001000000054040E5E353F7CED9C022D1EB851EB8524040E5E353F7CED9C01C5810624DD2F24041F916872B020CC01C5810624DD2F24041F916872B020CC022D1EB851EB8524040E5E353F7CED9C022D1EB851EB852}"));
   }
   @Test void partialCohortRequiresMissingSupport() throws Exception { exercise(.5, true); }
+  @Test void dailyGriddedClassificationDependency() throws Exception {
+    exercise(0, true, true, false, false,
+        Geometry.create("T1(365){tend=1420070400000,tstart=1388534400000,ttype=GRID,tunit=DAY,tscope=1}"
+            + "S2(240,258){bbox=[33.796 35.98113986232176 -9.41 -7.077211516709439],proj=EPSG:4326,"
+            + "shape=EPSG:4326 000000000300000001000000054040E5E353F7CED9C022D1EB851EB8524040E5E353F7CED9C01C5810624DD2F24041F916872B020CC01C5810624DD2F24041F916872B020CC022D1EB851EB8524040E5E353F7CED9C022D1EB851EB852}"));
+  }
   @Test void incompleteCohortCannotClaimClassification() throws Exception { exercise(.5, false); }
   @Test void classificationDependencyNeverRegistersDirective() throws Exception { exercise(1, true, true); }
   @Test void characterizationBindsExistingContext() throws Exception { exercise(1, true, false, true); }
@@ -128,9 +134,10 @@ class ClassificationPipelineTest {
     when(instantiator.getComputation()).thenReturn(List.of(computation));
     when(instantiator.getAnnotations()).thenReturn(List.of());
     var parentModel = mock(Model.class);
+    when(parentModel.getObservables()).thenReturn(List.of(request.getObservable()));
     when(parentModel.getCoverage()).thenReturn(Coverage.universal());
     when(parentModel.getDependencies()).thenReturn(List.of(directive));
-    when(parentModel.getComputation()).thenReturn(List.of(computation));
+    when(parentModel.getComputation()).thenReturn(List.of());
     when(parentModel.getAnnotations()).thenReturn(List.of());
     var compiler = new ResolutionCompiler(mock(ResolverService.class)) {
       @Override public List<Model> queryModels(Observable o, Concept c, ContextScope s, Scale scale) {

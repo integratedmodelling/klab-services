@@ -519,6 +519,7 @@ public class RuntimeService extends BaseService
     if (submitted instanceof ObservationImpl mutable && submitted.getGeometry() == null) {
       mutable.setGeometry(ContextScope.getResolutionGeometry(effectiveScope));
     }
+    alignObservation(submitted, effectiveScope);
     boolean explicitAgent = submitted.getObservable() != null && submitted.getObservable().is(SemanticType.AGENT)
         && scope.getCurrentTransaction() == null && submitted.getId() != Observation.QUERY_ID
         && (submitted.getId() > 0 || !Boolean.TRUE.equals(submitted.getMetadata().get(
@@ -749,6 +750,8 @@ public class RuntimeService extends BaseService
           observation1.setGeometry(scope.getObserver().geometry(Observation.GeometryRelationship.PERCEIVES));
         }
       }
+
+      alignObservation(observation,scope);
 
       // sanitize whatever geometry we have before any use is made of it. TODO add a flag or
       // something to
@@ -1512,6 +1515,47 @@ public class RuntimeService extends BaseService
   }
 
   @Override
+  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(String definitionUrn, ContextScope scope) {
+    if (definitionUrn == null || definitionUrn.isBlank()) throw new IllegalArgumentException("Missing grid definition URN");
+    if (!(scope instanceof ServiceContextScope context)) throw new IllegalArgumentException("Grid configuration requires a runtime context");
+    synchronized (context.getData()) {
+      var existing = context.getConfiguration().getGridAlignment();
+      if (existing != null) {
+        if (!existing.definitionUrn().equals(definitionUrn)) throw new IllegalStateException("A digital twin supports only one grid instruction");
+        return existing;
+      }
+      if (Boolean.TRUE.equals(context.getData().get("klab.grid.observationsStarted"))) throw new IllegalStateException("Install a grid before making observations");
+      var grid = org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.resolve(definitionUrn, context);
+      grid = ((KnowledgeGraphNeo4j)context.getDigitalTwin().getKnowledgeGraph()).installGrid(grid);
+      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getConfiguration()).setGridAlignment(grid);
+      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getDigitalTwin().getOptions()).setGridAlignment(grid);
+      context.getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY, grid);
+      for (String warning : grid.emittedWarnings()) context.warn(warning);
+      return grid;
+    }
+  }
+
+  private void alignObservation(Observation observation, ContextScope scope) {
+    if (observation.getId()>0 || observation.getId()==Observation.QUERY_ID || observation.isEmpty()) return;
+    if (scope instanceof ServiceContextScope context && observation instanceof ObservationImpl mutable) {
+      // The implicit user agent has no spatial cells; allow installing a grid in a fresh IDE twin.
+      if (Boolean.TRUE.equals(observation.getMetadata().get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC))
+          && observation.getGeometry()!=null && observation.getGeometry().isUniversal()) return;
+      synchronized (context.getData()) {
+        if (!Boolean.TRUE.equals(context.getData().get("klab.grid.observationsStarted"))) {
+          var grid=((KnowledgeGraphNeo4j)context.getDigitalTwin().getKnowledgeGraph()).sealGrid();
+          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getConfiguration()).setGridAlignment(grid);
+          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getDigitalTwin().getOptions()).setGridAlignment(grid);
+          if (grid!=null) context.getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,grid);
+          context.getData().put("klab.grid.observationsStarted",true);
+        }
+        mutable.setGeometry(org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.alignGeometry(
+            observation.getGeometry(), context.getConfiguration().getGridAlignment()));
+      }
+    }
+  }
+
+  @Override
   public Observation register(Observation observation, ContextScope scope) {
 
     if (observation.getObservable() != null
@@ -1524,6 +1568,8 @@ public class RuntimeService extends BaseService
         || observation.isEmpty()) {
       return observation;
     }
+
+    alignObservation(observation, scope);
 
     var mayExistInCohort =
         SemanticType.isEnumerableSubstantial(observation.getObservable().getSemantics().getType())

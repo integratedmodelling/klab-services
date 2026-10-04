@@ -396,9 +396,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   @Override
   public void warn(Object... o) {
+    var notification = Notification.warning(o);
+    if (org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(notification.getLevel(),o)) return;
     super.warn(o);
     if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
-      payloadCollector.add(Notification.warning(o).withIdentity(getId()));
+      payloadCollector.add(notification.withIdentity(getId()));
     }
   }
 

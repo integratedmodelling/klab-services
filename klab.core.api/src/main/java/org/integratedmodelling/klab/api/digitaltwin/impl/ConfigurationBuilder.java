@@ -32,12 +32,41 @@ public class ConfigurationBuilder {
   private Observation observer;
   private boolean empty;
   private String behaviorUrn;
+  private String gridUrn;
+  private java.util.Map<String, Object> gridDefinition;
+
+  /** Supply one inline grid with the same fields as a k.IM define grid instruction. */
+  public ConfigurationBuilder grid(java.util.Map<String, ?> specification) {
+    var frozen = org.integratedmodelling.klab.api.digitaltwin.GridSpecification.copyOf(specification);
+    grid(org.integratedmodelling.klab.api.digitaltwin.GridSpecification.urn(frozen));
+    gridDefinition = frozen;
+    return this;
+  }
+  private org.integratedmodelling.klab.api.digitaltwin.GridAlignment gridAlignment;
+
+  /** Install one named grid before observations are made. */
+  public ConfigurationBuilder grid(String definitionUrn) {
+    if (definitionUrn == null || definitionUrn.isBlank()) throw new IllegalArgumentException("Missing grid definition URN");
+    if (gridUrn != null && !gridUrn.equals(definitionUrn)) throw new IllegalArgumentException("Only one grid instruction is allowed per twin");
+    gridUrn = definitionUrn;
+    return this;
+  }
+
+  /** Used to carry a server-resolved lattice when copying or reconnecting configuration. */
+  public ConfigurationBuilder gridAlignment(org.integratedmodelling.klab.api.digitaltwin.GridAlignment value) {
+    gridAlignment = value;
+    if (value != null) grid(value.definitionUrn());
+    return this;
+  }
   private org.integratedmodelling.klab.api.knowledge.WorldviewCommitment worldviewCommitment;
   public ConfigurationBuilder worldviewCommitment(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment value) { worldviewCommitment = value; return this; }
 
   public ConfigurationBuilder() {}
 
   public ConfigurationBuilder(DigitalTwin.Configuration configuration) {
+    this.gridUrn = configuration.getGridUrn();
+    this.gridDefinition = configuration.getGridDefinition() == null ? null : org.integratedmodelling.klab.api.digitaltwin.GridSpecification.copyOf(configuration.getGridDefinition());
+    this.gridAlignment = configuration.getGridAlignment();
     this.worldviewCommitment = configuration.getWorldviewCommitment();
     this.accessRights = configuration.getAccessRights();
     this.persistence = configuration.getPersistence();
@@ -204,6 +233,9 @@ public class ConfigurationBuilder {
         this.observer,
         this.behaviorUrn);
     result.setWorldviewCommitment(worldviewCommitment);
+    result.setGridUrn(gridUrn);
+    result.setGridDefinition(gridDefinition);
+    result.setGridAlignment(gridAlignment);
     return result;
   }
 }

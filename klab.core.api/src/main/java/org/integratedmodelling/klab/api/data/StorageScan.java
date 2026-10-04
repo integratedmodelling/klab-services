@@ -202,13 +202,25 @@ public final class StorageScan {
 
   /** Version 1 is native identity; version 2 adds conformant remapping; version 3 adds value conversion.
    * Version 4 adds spatial resampling with the versioned XY/binary64 policy documented in STORAGE.md.
+   * Version 6 adds periodic longitude indices and clipped world-boundary footprints.
+   * Version 7 records source and consumer cell-centre coverage masks independently of validity.
    * Providers validate conformance and compile conversion before issuing executable handles. */
   public record Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
       Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
       List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType,
       Precision precision, Coverage coverage, Sampling sampling, Budget budget,
       List<Operation> operations, HistogramPolicy histogram, Conversion conversion, Spatial spatial,
-      org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary dictionary) implements Serializable {
+      org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary dictionary,
+      Mask mask) implements Serializable {
+    public Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
+        Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
+        List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType, Precision precision,
+        Coverage coverage, Sampling sampling, Budget budget, List<Operation> operations, HistogramPolicy histogram,
+        Conversion conversion, Spatial spatial,
+        org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.Dictionary dictionary) {
+      this(version,sourceRevision,observationId,observationUrn,slice,sourceSemantics,targetSemantics,nativeLayout,requestedLayout,
+          sources,partitions,valueType,precision,coverage,sampling,budget,operations,histogram,conversion,spatial,dictionary,null);
+    }
     public Description(int version, String sourceRevision, long observationId, String observationUrn, Slice slice,
         Semantics sourceSemantics, Semantics targetSemantics, Layout nativeLayout, Layout requestedLayout,
         List<SourceShard> sources, List<Partition> partitions, Storage.Type valueType, Precision precision,
@@ -235,7 +247,8 @@ public final class StorageScan {
           operations, histogram, null);
     }
     public Description {
-      if (version != 1 && version != 2 && version != 3 && version != 4 && version != 5) throw new IllegalArgumentException("Unsupported scan description version: " + version);
+      if (version < 1 || version > 7) throw new IllegalArgumentException("Unsupported scan description version: " + version);
+      if ((version == 7) != (mask != null)) throw new IllegalArgumentException("Coverage masks require version 7");
       text(sourceRevision, "source revision");
       Objects.requireNonNull(observationUrn); Objects.requireNonNull(slice);
       Objects.requireNonNull(sourceSemantics); Objects.requireNonNull(targetSemantics);
@@ -252,7 +265,7 @@ public final class StorageScan {
       if (version < 4 && (coverage != Coverage.EXACT || sampling != Sampling.EXACT) || version < 3 && !sourceSemantics.equals(targetSemantics)
           || version == 1 && !nativeLayout.equals(requestedLayout))
         throw new IllegalArgumentException("Exact coverage is required; versions 1/2 require native semantics and version 1 requires native layout");
-      if ((version == 5) != (dictionary != null) || valueType == Storage.Type.KEYED && dictionary == null)
+      if (version < 6 && (version == 5) != (dictionary != null) || valueType == Storage.Type.KEYED && dictionary == null)
         throw new IllegalArgumentException("Keyed plans require version 5 dictionary evidence");
       if (dictionary != null && (valueType != Storage.Type.KEYED || conversion != null
           || spatial == null && (sampling != Sampling.EXACT || coverage != Coverage.EXACT)))
@@ -261,10 +274,17 @@ public final class StorageScan {
       if (version < 4 && ((version == 3) != (conversion != null))) throw new IllegalArgumentException("Conversion requires version 3");
       if (version < 5 && (version == 4) != (spatial != null)) throw new IllegalArgumentException("Spatial CRS metadata requires version 4");
       if (spatial != null && sampling == Sampling.EXACT) throw new IllegalArgumentException("Spatial description requires a sampling policy");
-      if (!operations.equals(spatial != null ? (conversion == null
+      var expected = spatial != null ? (conversion == null
           ? List.of(Operation.SPATIAL_RESAMPLE, operation)
-          : List.of(Operation.SPATIAL_RESAMPLE, Operation.VALUE_CONVERSION, operation)) : version == 1 ? List.of(operation) : version == 2 || version == 5 ? List.of(Operation.INDEX_REMAP, operation)
-          : List.of(Operation.INDEX_REMAP, Operation.VALUE_CONVERSION, operation))) throw new IllegalArgumentException("Invalid operation pipeline");
+          : List.of(Operation.SPATIAL_RESAMPLE, Operation.VALUE_CONVERSION, operation)) : version == 1 ? List.of(operation)
+          : conversion==null ? List.of(Operation.INDEX_REMAP, operation)
+          : List.of(Operation.INDEX_REMAP, Operation.VALUE_CONVERSION, operation);
+      boolean boundaryIdentity=version>=6 && conversion==null && spatial==null && dictionary==null
+          && nativeLayout.equals(requestedLayout) && sources.size()==partitions.size();
+      if (boundaryIdentity) for(int i=0;i<sources.size();i++)
+        boundaryIdentity &= sources.get(i).geometry().equals(partitions.get(i).geometry()) && sources.get(i).size()==partitions.get(i).size();
+      if (!operations.equals(expected) && !(boundaryIdentity && operations.equals(List.of(operation))))
+        throw new IllegalArgumentException("Invalid operation pipeline");
       for (int i = 0; i < sources.size(); i++) {
         var source = sources.get(i);
         if (source.index() != i || !source.layout().equals(nativeLayout))
@@ -314,6 +334,33 @@ public final class StorageScan {
 
   /** Location of the NEXT value; requesting it never advances the cursor. */
   public record Location(Partition partition, Data.FillCurve curve, Slice slice, long offset) {}
+
+  /** Frozen coverage geometry; null selects unrestricted rectangular coverage on that side. */
+  public record Mask(String sourceGeometry, String targetGeometry) implements Serializable {
+    public Mask {
+      if (sourceGeometry == null && targetGeometry == null) throw new IllegalArgumentException("Empty coverage mask");
+      if (sourceGeometry != null) sourceGeometry = parseGeometry(sourceGeometry).encode();
+      if (targetGeometry != null) targetGeometry = parseGeometry(targetGeometry).encode();
+    }
+  }
+
+  public record CellBounds(double minX, double maxX, double minY, double maxY) implements Serializable {}
+
+  /** A physical spatial cell. Bounds are in CRS units; a seam cell has two disjoint fragments. */
+  public record Cell(long x, long y, String projection, List<CellBounds> bounds) {
+    public Cell { bounds = List.copyOf(bounds); }
+    public org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape shape() {
+      return org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape.create(wkt(),
+          org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection.of(projection));
+    }
+    public String wkt() {
+      var rings = bounds.stream().map(b -> "((" + b.minX + " " + b.minY + ","
+          + b.maxX + " " + b.minY + "," + b.maxX + " " + b.maxY + ","
+          + b.minX + " " + b.maxY + "," + b.minX + " " + b.minY + "))").toList();
+      return rings.isEmpty() ? "POLYGON EMPTY" : rings.size() == 1 ? "POLYGON " + rings.getFirst()
+          : "MULTIPOLYGON (" + String.join(",", rings) + ")";
+    }
+  }
 
   public interface Session<T extends Storage.Scanner> extends AutoCloseable {
     List<T> scanners();
@@ -372,6 +419,7 @@ public final class StorageScan {
     } else if (value.getClass().isRecord()) {
       for (var component : value.getClass().getRecordComponents()) {
         if (value instanceof Description d && d.version() < 5 && component.getName().equals("dictionary")) continue;
+        if (value instanceof Description d && d.version() < 7 && component.getName().equals("mask")) continue;
         if (value instanceof Description description && description.version() < 4 && component.getName().equals("spatial")) continue;
         if (legacy && (value instanceof Description && component.getName().equals("conversion")
             || value instanceof Semantics && component.getName().equals("meaning"))) continue;

@@ -230,6 +230,11 @@ public interface RuntimeService extends KlabService {
    */
   Observation register(Observation observation, ContextScope scope);
 
+  /** Install the context's single grid definition before registering observations. */
+  default org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(String definitionUrn, ContextScope scope) {
+    throw new UnsupportedOperationException("Grid configuration is unavailable");
+  }
+
   /** Enumerate a completed collective input within its observed support, including uncommitted members. */
   default List<Observation> getMembers(Observation collective, ContextScope scope) {
     throw new UnsupportedOperationException("Collective member enumeration is unavailable");

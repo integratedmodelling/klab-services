@@ -193,3 +193,14 @@ builder.
   and comments are shielded from that lexer, and regression tests cover the supported
   transformations, but new Groovy syntax should be tested before it is relied upon in contextual
   expressions. `DoNotPreprocess` is the escape hatch for stand-alone code.
+
+
+Scalar computation and lookup-table walking share the generated scanner loop. The output
+scanner controls iteration through `hasNext()`; `size()` is the dense bounding-box size
+and can exceed the number of covered cells. The loop obtains the dense current index from
+`position()` before reading inputs or writing output. Each separate input scanner advances
+once per output cell. A read of the output itself uses `peek()` so that the subsequent
+`add()` is its only advancement; a separate `__prior_self` input advances with `get()`.
+Consecutive expression, constant and lookup-table steps share the computed `self` value
+within the cell without reading prior storage again. Cell geometry remains available from
+`Scanner.cell()` and `Scanner.spatialExtent()` before advancing the cursor.

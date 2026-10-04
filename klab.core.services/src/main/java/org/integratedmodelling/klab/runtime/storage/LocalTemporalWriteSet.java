@@ -115,11 +115,13 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
     if (mapping != null) partitions = mapping.partitions();
     SpatialScan.validateConversion(mapping, conversion);
     boolean spatial = mapping instanceof SpatialScan;
-    var description = new StorageScan.Description(view.storage.getNativeType() == Storage.Type.KEYED ? 5 : spatial ? 4 : conversion == null ? 2 : 3, "transaction:" + UUID.randomUUID(),
+    var targetSupport = request.geometry() == null ? view.coverage : SpatialCoverage.support(request.geometry());
+    var mask = SpatialCoverage.metadata(view.coverage, targetSupport);
+    var description = new StorageScan.Description(mask != null ? 7 : StorageImpl.hasWorldGrid(sources,partitions) ? 6 : view.storage.getNativeType() == Storage.Type.KEYED ? 5 : spatial ? 4 : conversion == null ? 2 : 3, "transaction:" + UUID.randomUUID(),
         observation.getId(), Objects.toString(observation.getUrn(), ""), request.slice(), semantics, targetSemantics,
         nativeLayout, request.layout(), sources, partitions, valueType, request.precision(), spatial ? request.coverage() : StorageScan.Coverage.EXACT,
         spatial ? request.sampling() : StorageScan.Sampling.EXACT, request.budget(), spatial ? SpatialScan.operations(conversion, operation) : conversion == null ? List.of(StorageScan.Operation.INDEX_REMAP, operation)
-            : List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion, SpatialScan.metadata(mapping), view.storage.getNativeType() == Storage.Type.KEYED ? view.storage.key().snapshot() : null);
+            : List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion, SpatialScan.metadata(mapping), view.storage.getNativeType() == Storage.Type.KEYED ? view.storage.key().snapshot() : null, mask);
     StorageScan.Plan<T> plan = new StorageScan.Plan<>() {
       public StorageScan.Description description() { return description; }
       public Class<T> scannerClass() { return request.scannerClass(); }
@@ -130,12 +132,12 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
       for (int i = 0; i < view.layout.size(); i++) {
         var baseline = view.baseline.isEmpty() ? null : view.storage.openReader(view.baseline.get(i), request.budget().blockValues());
         var changes = access == Access.PRIOR ? Map.<Long, Object>of() : Map.copyOf(view.changes.get(i));
-        if (baseline == null && changes.size() != view.layout.get(i).size())
+        if (baseline == null && changes.size() != view.requiredSize(i))
           throw new IllegalStateException("Created quality has no complete requested state");
         readers.add(new TemporalIndexedReader(baseline, changes, view.storage.getNativeType(),
             view.layout.get(i).size(), request.budget().blockValues(), view.storage.getNativeType() == Storage.Type.KEYED ? view.storage.key().readOnly() : null));
       }
-      var session = new LocalScanSession<>(plan, shards, readers, mapping, release);
+      var session = new LocalScanSession<>(plan, shards, readers, mapping, release, view.coverage, targetSupport);
       transaction.afterCommit(session::close);
       transaction.afterRollback(session::close);
       return session;
@@ -218,6 +220,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
     final Observation observation;
     final StorageImpl storage;
     final Geometry support;
+    final SpatialCoverage.Support coverage;
     final List<Storage.Shard> baseline;
     final List<Geometry> layout;
     final List<Map<Long, Object>> changes = new ArrayList<>();
@@ -235,6 +238,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
       observation = local.temporalOwner();
       this.observation = observation;
       support = localize(observation.getGeometry(), event);
+      coverage = SpatialCoverage.support(support.encode());
       boolean ephemeral =
           Boolean.TRUE.equals(observation.getMetadata().get(TemporalHistory.EPHEMERAL));
       baseline = storage.temporalBaseline(event, ephemeral);
@@ -256,9 +260,15 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
     void validateComplete() {
       if (created)
         for (int n = 0; n < layout.size(); n++)
-          if (changes.get(n).size() != layout.get(n).size())
+          if (changes.get(n).size() != requiredSize(n))
             throw new IllegalStateException(
-                "Created output must cover every declared location explicitly");
+                "Created output must cover every covered location explicitly");
+    }
+
+    long requiredSize(int partition) {
+      return coverage == null ? layout.get(partition).size() :
+          new SpatialCoverage(layout.get(partition).encode(), coverage.projection,
+              storage.getNativeShardingStrategy().getCurve(), coverage).coveredSize();
     }
 
     Object value(int partition, long index, boolean prior) {
@@ -291,12 +301,31 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
               type);
       long size = layout.get(partition).size();
       long[] cursor = {0};
-      return (Storage.Scanner)
+      SpatialCoverage[] spatial = {null};
+      var scanner = (Storage.Scanner)
           Proxy.newProxyInstance(
               Storage.class.getClassLoader(),
               new Class<?>[] {api},
               (proxy, method, args) -> {
                 switch (method.getName()) {
+                  case "position": return cursor[0];
+                  case "seek": {
+                    long offset = ((Number) args[0]).longValue();
+                    if (offset < 0 || offset > size) throw new IndexOutOfBoundsException("Scan offset " + offset);
+                    cursor[0] = offset; return null;
+                  }
+                  case "spatialCoordinates", "cell", "spatialExtent": {
+                    if (cursor[0] >= size) throw new NoSuchElementException("Scanner exhausted");
+                    if (spatial[0] == null) {
+                      var space = support.dimension(Geometry.Dimension.Type.SPACE);
+                      spatial[0] = new SpatialCoverage(layout.get(partition).encode(),
+                          space == null ? null : Objects.toString(space.getParameters().get("proj"), null),
+                          storage.getNativeShardingStrategy().getCurve(), null);
+                    }
+                    if (method.getName().equals("cell")) return spatial[0].cell(cursor[0]);
+                    if (method.getName().equals("spatialExtent")) return spatial[0].cell(cursor[0]).shape();
+                    spatial[0].coordinates(cursor[0], (long[]) args[0]); return null;
+                  }
                   case "key": return storage.key().readOnly();
                   case "isValid": return type == Storage.Type.KEYED ? ((Integer)value(partition,cursor[0],access==Access.PRIOR)) != 0 : true;
                   case "shard":
@@ -334,6 +363,9 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
                           "Unsupported temporal scanner operation: " + method.getName());
                 };
               });
+      return coverage == null ? scanner : CoveredScanner.wrap(scanner,
+          new SpatialCoverage(layout.get(partition).encode(), coverage.projection,
+              storage.getNativeShardingStrategy().getCurve(), coverage));
     }
   }
 }

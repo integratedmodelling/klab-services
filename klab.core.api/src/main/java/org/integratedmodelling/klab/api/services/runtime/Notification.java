@@ -226,7 +226,7 @@ public interface Notification extends Serializable {
     ret.setStackTrace(stackTrace);
     ret.setLexicalContext(lexicalContext);
     ret.setTimestamp(timestamp);
-    ret.setMode(mode);
+    ret.setMode(org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(level, objects) ? Mode.Silent : mode);
     ret.setOutcome(outcome);
     ret.setInteractivity(interactivity);
 

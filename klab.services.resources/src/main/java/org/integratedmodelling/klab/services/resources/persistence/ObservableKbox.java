@@ -59,10 +59,10 @@ import org.integratedmodelling.klab.utilities.Utils;
  */
 public abstract class ObservableKbox extends H2Kbox {
 
-  private Map<String, Long> definitionHash = new HashMap<>();
-  private Map<Long, String> typeHash = new HashMap<>();
-  private Map<String, Set<String>> coreTypeHash = new HashMap<>();
-  private Map<String, Concept> conceptHash = new HashMap<>();
+  private Map<String, Long> definitionHash = new java.util.concurrent.ConcurrentHashMap<>();
+  private Map<Long, String> typeHash = new java.util.concurrent.ConcurrentHashMap<>();
+  private Map<String, Set<String>> coreTypeHash = new java.util.concurrent.ConcurrentHashMap<>();
+  private Map<String, Concept> conceptHash = new java.util.concurrent.ConcurrentHashMap<>();
 
   //    protected Reasoner reasoner;
   protected Scope scope;
@@ -105,7 +105,7 @@ public abstract class ObservableKbox extends H2Kbox {
       ret.append((ret.length() == 0) ? "" : (" " + operator + " "))
           .append(field)
           .append(" = '")
-          .append(o)
+          .append(Utils.Escape.forSQL(String.valueOf(o)))
           .append("'");
     }
 
@@ -137,13 +137,11 @@ public abstract class ObservableKbox extends H2Kbox {
 
     initialize(monitor);
 
-    if (!database.hasTable(getMainTableId()) || !database.hasTable("namespaces")) {
-      return 0;
-    }
+    int n = database.hasTable(getMainTableId())
+        ? deleteAllObjectsWithNamespace(namespaceId, monitor) : 0;
 
-    int n = deleteAllObjectsWithNamespace(namespaceId, monitor);
-
-    database.execute("DELETE FROM namespaces where id = '" + namespaceId + "';");
+    if (database.hasTable("namespaces"))
+      database.execute("DELETE FROM namespaces where id = '" + Utils.Escape.forSQL(namespaceId) + "';");
 
     return n;
   }
@@ -220,7 +218,7 @@ public abstract class ObservableKbox extends H2Kbox {
       if (ns != null) {
         ret =
             "DELETE FROM namespaces WHERE id = '"
-                + ns.getUrn()
+                + Utils.Escape.forSQL(ns.getUrn())
                 + "'; INSERT INTO namespaces VALUES ('"
                 + Utils.Escape.forSQL(ns.getUrn())
                 + "', "
@@ -260,10 +258,11 @@ public abstract class ObservableKbox extends H2Kbox {
    * @param monitor
    * @return the ID for the observable, creating as necessary
    */
-  public long requireConceptId(Concept observable, Channel monitor) {
+  public synchronized long requireConceptId(Concept observable, Channel monitor) {
 
     long ret = getConceptId(observable);
     if (ret >= 0) {
+      indexConcept(observable);
       return ret;
     }
 
@@ -282,7 +281,7 @@ public abstract class ObservableKbox extends H2Kbox {
                   return "INSERT INTO concepts VALUES ("
                       + primaryKey
                       + ", '"
-                      + definition
+                      + Utils.Escape.forSQL(definition)
                       + "', 1);";
                 }
               },
@@ -290,24 +289,32 @@ public abstract class ObservableKbox extends H2Kbox {
 
       definitionHash.put(definition, ret);
       typeHash.put(ret, definition);
-      conceptHash.put(definition, observable);
-
-      // store all existing definitions with same core type
-      Concept coreType = scope.getService(Reasoner.class).coreObservable(observable);
-      String cdef = coreType.getUrn();
-      Set<String> cset = coreTypeHash.get(cdef);
-      if (cset == null) {
-        cset = new HashSet<>();
-        coreTypeHash.put(cdef, cset);
-      }
-      cset.add(definition);
-      conceptHash.put(cdef, coreType);
+      indexConcept(observable);
 
     } catch (KlabException e) {
       throw new KlabStorageException(e);
     }
 
     return ret;
+  }
+
+  private void indexConcept(Concept concept) {
+    var core = scope.getService(Reasoner.class).coreObservable(concept);
+    if (core == null) return;
+    coreTypeHash.computeIfAbsent(core.getUrn(), ignored -> new HashSet<>()).add(concept.getUrn());
+    conceptHash.put(concept.getUrn(), concept);
+  }
+
+  /** Restore persisted candidates lazily, after the reasoner has become available. */
+  private void restoreConceptIndex() {
+    var reasoner = scope.getService(Reasoner.class);
+    for (var definition : definitionHash.keySet()) {
+      if (!conceptHash.containsKey(definition)) {
+        var concept = reasoner.resolveConcept(definition);
+        // Unavailable concepts may become resolvable after a worldview update; retry next query.
+        if (concept != null) indexConcept(concept);
+      }
+    }
   }
 
   /**
@@ -322,7 +329,7 @@ public abstract class ObservableKbox extends H2Kbox {
    * @param observable
    * @return the IDs of all compatible concepts that have been used in the kbox.
    */
-  public Set<Long> getCompatibleTypeIds(Observable observable, Concept context) {
+  public synchronized Set<Long> getCompatibleTypeIds(Observable observable, Concept context) {
 
     Set<Long> ret = new HashSet<>();
     Concept main = scope.getService(Reasoner.class).coreObservable(observable);
@@ -332,6 +339,7 @@ public abstract class ObservableKbox extends H2Kbox {
        */
       return ret;
     }
+    restoreConceptIndex();
 
     /*
      * We lookup all models whose observable incarnates the core type, adding all possible
@@ -511,25 +519,11 @@ public abstract class ObservableKbox extends H2Kbox {
 
     for (String s : metadata.keySet()) {
 
-      String sql =
-          " INSERT INTO metadata VALUES ("
-              + oid
-              + ", " // +
-              // "fid
-              // LONG,
-              // "
-              + "'"
-              + s
-              + "', " // + "key VARCHAR(256), "
-              + "?" // + "value OTHER"
-              + ")";
-      try {
-        /*
-         * OK, must execute these right away unfortunately - so if something goes wrong with
-         * the object's storage these will remain in the DB.
-         */
-        PreparedStatement prsql = database.getConnection().prepareStatement(sql);
-        prsql.setObject(1, metadata.get(s), Types.JAVA_OBJECT);
+      String sql = "INSERT INTO metadata VALUES (?, ?, ?)";
+      try (PreparedStatement prsql = database.getConnection().prepareStatement(sql)) {
+        prsql.setLong(1, oid);
+        prsql.setString(2, s);
+        prsql.setObject(3, metadata.get(s), Types.JAVA_OBJECT);
         prsql.executeUpdate();
       } catch (Exception e) {
         throw new KlabStorageException(e);
@@ -554,24 +548,23 @@ public abstract class ObservableKbox extends H2Kbox {
   public int removeIfOlder(KimNamespace namespace, Channel monitor) {
 
     if (!database.hasTable("namespaces")) {
+      clearNamespace(namespace.getUrn(), monitor);
       return 1;
     }
 
-    long dbTimestamp = getNamespaceTimestamp(namespace);
+    var stored = database.queryIds("SELECT timestamp FROM namespaces WHERE id = '"
+        + Utils.Escape.forSQL(namespace.getUrn()) + "'");
+    long dbTimestamp = stored.isEmpty() ? 0 : stored.getFirst();
     long timestamp = namespace.getLastUpdateTimestamp();
 
     /*
      * if we have stored something and we are younger than the stored ns, remove all models
      * coming from it so we can add our new ones.
      */
-    if (timestamp > dbTimestamp) {
-
-      if (dbTimestamp > 0) {
-
-        monitor.debug("Removing all observations in namespace " + namespace.getUrn());
-        int removed = clearNamespace(namespace.getUrn(), monitor);
-        monitor.debug("Removed " + removed + " observations.");
-      }
+    if (stored.isEmpty() || timestamp > dbTimestamp) {
+      monitor.debug("Removing all observations in namespace " + namespace.getUrn());
+      int removed = clearNamespace(namespace.getUrn(), monitor);
+      monitor.debug("Removed " + removed + " observations.");
 
       monitor.debug(
           "Refreshing observations in "
@@ -598,9 +591,6 @@ public abstract class ObservableKbox extends H2Kbox {
 
   public void remove(String namespaceId, Channel monitor) {
 
-    if (!database.hasTable("namespaces")) {
-      return;
-    }
     monitor.debug("Removing all observations in namespace " + namespaceId);
     int removed = clearNamespace(namespaceId, monitor);
     monitor.debug("Removed " + removed + " observations.");

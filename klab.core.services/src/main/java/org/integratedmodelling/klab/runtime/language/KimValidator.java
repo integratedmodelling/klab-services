@@ -10,6 +10,19 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public class KimValidator extends ObservableValidator implements KimObservableVisitor.Validator {
 
   @Override
+  public List<Notification> validateStatement(
+      org.integratedmodelling.klab.api.lang.kim.KlabStatement statement, KimObservableVisitor.Context context) {
+    if (!(statement instanceof org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition definition)
+        || !"grid".equals(definition.getDefineClass())) return List.of();
+    try {
+      return org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.decode(definition)
+          .emittedWarnings().stream().<Notification>map(message -> Notification.warning(message,statement)).toList();
+    } catch (RuntimeException ex) {
+      return List.of(Notification.error(ex.getMessage(),statement));
+    }
+  }
+
+  @Override
   public List<Notification> validateObservable(
       KimObservable observable, KimObservableVisitor.Context context) {
     return super.validateObservable(observable);

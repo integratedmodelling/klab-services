@@ -149,7 +149,7 @@ public class KimObservableVisitor {
     }
     var statementContext = context.node == statement ? context : child(context, statement);
     statements.add(statement);
-    addNotifications(validator.validateStatement(statement, statementContext));
+    addNotifications(validator.validateStatement(statement, statementContext), statementContext);
     for (var annotation : safe(statement.getAnnotations())) {
       visitAnnotation(annotation, child(statementContext, annotation));
     }
@@ -173,7 +173,7 @@ public class KimObservableVisitor {
     }
     var observableContext = context.node == observable ? context : child(context, observable);
     statements.add(observable);
-    addNotifications(validator.validateStatement(observable, observableContext));
+    addNotifications(validator.validateStatement(observable, observableContext), observableContext);
     for (var annotation : safe(observable.getAnnotations())) {
       visitAnnotation(annotation, child(observableContext, annotation));
     }
@@ -182,7 +182,7 @@ public class KimObservableVisitor {
 
   private void visitObservableEntered(KimObservable observable, Context context) {
     observables.add(observable);
-    addNotifications(validator.validateObservable(observable, context));
+    addNotifications(validator.validateObservable(observable, context), context);
     visitConcept(observable.getSemantics(), child(context, observable.getSemantics()));
     visitValue(observable.getValue(), context);
     visitValue(observable.getDefaultValue(), context);
@@ -198,7 +198,7 @@ public class KimObservableVisitor {
     }
     var conceptContext = context.node == concept ? context : child(context, concept);
     statements.add(concept);
-    addNotifications(validator.validateStatement(concept, conceptContext));
+    addNotifications(validator.validateStatement(concept, conceptContext), conceptContext);
     for (var annotation : safe(concept.getAnnotations())) {
       visitAnnotation(annotation, child(conceptContext, annotation));
     }
@@ -207,7 +207,7 @@ public class KimObservableVisitor {
 
   private void visitConceptEntered(KimConcept concept, Context conceptContext) {
     concepts.add(concept);
-    addNotifications(validator.validateConcept(concept, conceptContext));
+    addNotifications(validator.validateConcept(concept, conceptContext), conceptContext);
     reference(concept.getName(), KlabAsset.KnowledgeClass.CONCEPT, concept, conceptContext);
     visitConcept(concept.getObservable(), conceptContext);
     visitConcept(concept.getParent(), conceptContext);
@@ -244,7 +244,7 @@ public class KimObservableVisitor {
     var contextualizableContext =
         context.node == contextualizable ? context : child(context, contextualizable);
     statements.add(contextualizable);
-    addNotifications(validator.validateStatement(contextualizable, contextualizableContext));
+    addNotifications(validator.validateStatement(contextualizable, contextualizableContext), contextualizableContext);
     for (var annotation : safe(contextualizable.getAnnotations())) {
       visitAnnotation(annotation, child(contextualizableContext, annotation));
     }
@@ -273,7 +273,7 @@ public class KimObservableVisitor {
     }
     var callContext = child(context, call);
     serviceCalls.add(call);
-    addNotifications(validator.validateServiceCall(call, callContext));
+    addNotifications(validator.validateServiceCall(call, callContext), callContext);
     reference(call.getUrn(), KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION, call, callContext);
     if (call.getParameters() != null) {
       call.getParameters().values().forEach(value -> visitValue(value, callContext));
@@ -301,7 +301,7 @@ public class KimObservableVisitor {
     if (table == null || !enter(table)) return;
     var tableContext = context.node == table ? context : child(context, table);
     statements.add(table);
-    addNotifications(validator.validateStatement(table, tableContext));
+    addNotifications(validator.validateStatement(table, tableContext), tableContext);
     for (var annotation : safe(table.getAnnotations())) {
       visitAnnotation(annotation, child(tableContext, annotation));
     }
@@ -321,7 +321,7 @@ public class KimObservableVisitor {
     if (table == null || !enter(table)) return;
     var tableContext = context.node == table ? context : child(context, table);
     statements.add(table);
-    addNotifications(validator.validateStatement(table, tableContext));
+    addNotifications(validator.validateStatement(table, tableContext), tableContext);
     for (var annotation : safe(table.getAnnotations())) {
       visitAnnotation(annotation, child(tableContext, annotation));
     }
@@ -417,7 +417,14 @@ public class KimObservableVisitor {
     var resolved = resolver.resolve(urn, knowledgeClass, context);
     var reference = new Reference(urn, knowledgeClass, source, resolved);
     references.add(reference);
-    addNotifications(validator.validateReference(reference, context));
+    addNotifications(validator.validateReference(reference, context), context);
+  }
+
+  protected final void addNotifications(Collection<Notification> diagnostics, Context context) {
+    if (diagnostics == null) return;
+    var sources = context == null ? new Object[0] : context.getPath().toArray();
+    addNotifications(diagnostics.stream().filter(java.util.Objects::nonNull)
+        .filter(notification -> !org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(notification.getLevel(),sources)).toList());
   }
 
   protected final void addNotifications(Collection<Notification> diagnostics) {

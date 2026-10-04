@@ -14,12 +14,19 @@ final class EventWriteSession<T extends Storage.Scanner> implements StorageScan.
   private final ScanMapping mapping;
   private final Sink sink;
   private final ConceptDataKey key;
+  private final SpatialCoverage.Cursor[] nativeMasks;
   private boolean closed;
 
   EventWriteSession(StorageScan.Session<T> baseline, StorageScan.Request<T> request, Storage.Type type,
       Data.ShardingStrategy nativeLayout, Geometry nativeGeometry, List<StorageScan.Partition> nativePartitions,
       Sink sink, ConceptDataKey key, boolean acceptsLossy) {
     this.baseline = baseline; this.sink = sink; this.key = key;
+    nativeMasks = new SpatialCoverage.Cursor[nativePartitions.size()];
+    var support = SpatialCoverage.support(nativeGeometry.encode());
+    if (support != null) for (int p=0;p<nativePartitions.size();p++) {
+      var coverage = new SpatialCoverage(nativePartitions.get(p).geometry(),support.projection,nativeLayout.getCurve(),support);
+      if (!coverage.unrestricted) nativeMasks[p] = coverage.new Cursor();
+    }
     var descriptor = baseline.description();
     var sources = new ArrayList<StorageScan.SourceShard>();
     for (int p = 0; p < descriptor.partitions().size(); p++) {
@@ -45,18 +52,15 @@ final class EventWriteSession<T extends Storage.Scanner> implements StorageScan.
         case INTEGER -> Storage.IntScanner.class; case LONG -> Storage.LongScanner.class;
         case BOOLEAN -> Storage.BooleanScanner.class; case KEYED -> Storage.KeyScanner.class;
       };
-      long[] position = {0};
       @SuppressWarnings("unchecked") T writer = (T) Proxy.newProxyInstance(Storage.class.getClassLoader(),
           new Class<?>[] {api}, (proxy, method, args) -> {
             if (closed) throw new IllegalStateException("Event scanner is closed");
             switch (method.getName()) {
               case "add" -> {
-                if (position[0] >= reader.size()) throw new NoSuchElementException();
-                pending.put(position[0]++, key == null ? args[0] : key.code(args[0]));
+                if (!reader.hasNext()) throw new NoSuchElementException();
+                pending.put(reader.position(), key == null ? args[0] : key.code(args[0]));
                 reader.nextLong(); return null;
               }
-              case "seek" -> { position[0] = ((Number)args[0]).longValue(); }
-              case "get", "next", "nextLong" -> position[0]++;
             }
             try { return method.invoke(reader, args); }
             catch (java.lang.reflect.InvocationTargetException e) { throw e.getCause(); }
@@ -74,11 +78,13 @@ final class EventWriteSession<T extends Storage.Scanner> implements StorageScan.
     try {
       if (mapping == null) {
         for (int p = 0; p < changes.size(); p++)
-          for (var entry : changes.get(p).entrySet()) sink.put(p, entry.getKey(), entry.getValue());
+          for (var entry : changes.get(p).entrySet()) transfer(p, entry.getKey(), p, entry.getKey());
       } else if (mapping instanceof ConformantScan exact) {
         long[] point = new long[exact.sources[0].shape.length];
         for (int p = 0; p < exact.targets.length; p++) for (long i = 0; i < exact.targets[p].size; i++) {
+          if (nativeMasks[p] != null && (i = nativeMasks[p].next(i)) == exact.targets[p].size) break;
           exact.targets[p].decode(i, exact.targetCurve, point);
+          exact.locatePeriodic(point);
           int source = exact.directory.find(point);
           transfer(p, i, source, source < 0 ? -1 : exact.sources[source].encode(point, exact.sourceCurve));
         }
@@ -87,10 +93,12 @@ final class EventWriteSession<T extends Storage.Scanner> implements StorageScan.
         for (int p = 0; p < spatial.target.targets.length; p++) {
           var box = spatial.target.targets[p];
           for (long i = 0; i < box.size; i++) {
+            if (nativeMasks[p] != null && (i = nativeMasks[p].next(i)) == box.size) break;
             box.decode(i, spatial.target.targetCurve, target);
             spatial.world(target[0] + 0.5, target[1] + 0.5, world);
             point[0] = SpatialScan.floor(spatial.coordinate(world[0], 0));
             point[1] = SpatialScan.floor(spatial.coordinate(world[1], 1));
+            spatial.source.locatePeriodic(point);
             int source = spatial.source.directory.find(point);
             transfer(p, i, source, source < 0 ? -1 : spatial.source.sources[source].encode(point, spatial.source.sourceCurve));
           }
@@ -99,6 +107,7 @@ final class EventWriteSession<T extends Storage.Scanner> implements StorageScan.
     } finally { baseline.close(); }
   }
   private void transfer(int partition, long index, int source, long offset) {
+    if (nativeMasks[partition] != null && nativeMasks[partition].next(index) != index) return;
     if (source >= 0 && changes.get(source).containsKey(offset))
       sink.put(partition, index, changes.get(source).get(offset));
   }

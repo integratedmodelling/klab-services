@@ -20,6 +20,30 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
 class TemporalStorageTest {
+  @Test void maskedCreationRequiresOnlyCoveredCellsAndSurvivesPersistence() {
+    var f = new Fixture(true);
+    f.storage.close(null);
+    f.quality.setGeometry(Geometry.create(SpatialCoverageTest.geometry(SpatialCoverageTest.HOLE)));
+    f.restore();
+    var writes = f.begin("masked-created",1000,2000);
+    var scanner = f.scan(writes,TemporalWriteSet.Access.WRITE);
+    int written = 0;
+    while (scanner.hasNext()) {
+      assertNotEquals(10,scanner.position()); // Hole centre (2,2) in XY order.
+      scanner.add(scanner.position()+.5); written++;
+    }
+    assertEquals(19,written); writes.prepare(); f.commit();
+    f.storage.close(null); f.restore();
+    try (var session = f.storage.open(f.storage.plan(StorageScan.Request.nativeRead(
+        event("masked-created",1000,2000),f.layout,Storage.DoubleScanner.class)))) {
+      var reader = session.scanners().getFirst(); int count=0;
+      while (reader.hasNext()) {
+        assertNotEquals(10,reader.position()); assertEquals(reader.position()+.5,reader.get()); count++;
+      }
+      assertEquals(19,count);
+    }
+    f.storage.close(null);
+  }
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
   @TempDir Path directory;
   static Scheduler.Event event(String id,long start,long end) {

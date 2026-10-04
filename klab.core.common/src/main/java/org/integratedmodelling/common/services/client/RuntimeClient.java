@@ -143,6 +143,17 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
+  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(String definitionUrn, ContextScope scope) {
+    var alignment = client.withScope(scope).post(ServicesAPI.RUNTIME.CONFIGURE_GRID,
+        java.util.Map.of("definitionUrn", definitionUrn), org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
+    if (alignment == null) throw new IllegalStateException("Runtime did not return a grid alignment");
+    scope.getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY, alignment);
+    if (scope.getConfiguration() instanceof org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl configuration)
+      configuration.setGridAlignment(alignment);
+    return alignment;
+  }
+
+  @Override
   public Observation register(Observation observation, ContextScope scope) {
 
     if (observation.getId() > 0 || observation.getId() < Observation.UNASSIGNED_ID) {

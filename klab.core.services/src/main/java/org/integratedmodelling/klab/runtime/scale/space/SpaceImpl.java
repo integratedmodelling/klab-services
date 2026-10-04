@@ -1,16 +1,13 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
-import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.*;
 import org.integratedmodelling.klab.api.lang.Quantity;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -20,7 +17,6 @@ import org.locationtech.jts.geom.GeometryFactory;
 
 import java.io.Serial;
 import java.util.List;
-import java.util.Map;
 
 public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
 
@@ -81,11 +77,13 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
 
     if (bboxDefinition != null) {
       List<Double> corners = null;
-      if (bboxDefinition instanceof List list) {
-        corners = list;
+      if (bboxDefinition instanceof List<?> list) {
+        corners = list.stream().map(value -> value instanceof Number number ? number.doubleValue() : Double.parseDouble(value.toString())).toList();
       } else if (bboxDefinition instanceof String string) {
-        corners = Utils.Data.parseList(string, Double.class);
+        corners = java.util.Arrays.stream(string.replace('[',' ').replace(']',' ').trim().split("[\\s,]+"))
+            .map(Double::parseDouble).toList();
       }
+      if (corners==null || corners.size()!=4) throw new KlabIllegalArgumentException("Spatial bounds require four coordinates");
       envelope =
           EnvelopeImpl.create(
               corners.get(0), corners.get(1), corners.get(2), corners.get(3), projection);
@@ -100,7 +98,6 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
           dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_GRIDRESOLUTION);
       var gridUrn =
           dimension.getParameters().get(GeometryImpl.PARAMETER_SPACE_GRIDURN, String.class);
-      Grid imposedGrid = null;
       if (gridUrn != null) {
         if (scope == null || scope.getService(ResourcesService.class) == null) {
           throw new KlabIllegalArgumentException(
@@ -109,25 +106,12 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
         if (!(scope instanceof UserScope userScope)) {
           throw new KlabIllegalArgumentException("A user scope is required to resolve resources");
         }
-        var definition =
-            scope
-                .getService(ResourcesService.class)
-                .resolve(gridUrn, KlabAsset.KnowledgeClass.DEFINITION, userScope);
-        // TODO ingest the resource set and parse the symbol
-        if (Utils.Notifications.hasErrors(definition.getNotifications())) {
-          throw new KlabUnimplementedException("cannot create grid from definition yet");
-        }
-        var result =
-            KnowledgeRepository.INSTANCE.ingest(
-                definition,
-                scope,
-                KimSymbolDefinition.class);
-        if (result.size() == 1) {
-          var gridDef = result.getFirst();
-          if (gridDef instanceof Map map) {
-            grid = new GridImpl(map);
-          }
-        }
+        if (envelope == null) throw new KlabIllegalArgumentException("Named grid requires spatial bounds");
+        var requested = dimension.getShape()!=null && dimension.getShape().size()==2 && dimension.getShape().stream().allMatch(n -> n>0)
+            ? new GridImpl(envelope,shape,dimension.getShape().get(0),dimension.getShape().get(1))
+            : new GridImpl(envelope,shape,1,1);
+        grid = GridAlignmentSupport.align(requested,GridAlignmentSupport.resolve(gridUrn,scope));
+        adjust = false;
       } else if (gridResolution != null && envelope != null) {
         Quantity resolution =
             gridResolution instanceof Quantity quantity
@@ -139,8 +123,10 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                 resolution,
                 Boolean.parseBoolean(
                     Configuration.INSTANCE.getProperty(
-                        Configuration.KLAB_USE_IN_MEMORY_DATABASE, "true")));
+                        Configuration.KLAB_USE_IN_MEMORY_DATABASE, "true")),
+                dimension.getParameters().containsKey("world") ? GridAlignmentSupport.worldBounds(projection) : new double[0]);
       } else if (shape != null
+          && dimension.getShape() != null
           && dimension.getShape().size() > 1
           && dimension.getShape().stream().allMatch(size -> size > 0)) {
         if (envelope == null) {
@@ -150,13 +136,20 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
         // grids are communicated through the runtime.
         grid =
             new GridImpl(envelope, shape, dimension.getShape().get(0), dimension.getShape().get(1));
+        Object world = dimension.getParameters().get("world");
+        if (world != null) {
+          var values=java.util.Arrays.stream(world.toString().replace('[',' ').replace(']',' ').trim().split("[\\s,]+"))
+              .mapToDouble(Double::parseDouble).toArray();
+          ((GridImpl)grid).setWorldBounds(values);
+        }
         adjust = false;
-      }
-      if (grid != null && imposedGrid != null) {
-        grid = grid.align(imposedGrid);
       }
 
       if (shape != null && grid != null) {
+        if (!shape.getProjection().equals(grid.getProjection())) shape=ShapeImpl.promote(shape).transform(grid.getProjection());
+        // Only newly resolved grids expand rectangular requests. A transported grid may carry
+        // an explicit rectangular crop and must keep that mask.
+        if (gridUrn != null) shape = GridAlignmentSupport.rectangularSupport(shape,grid);
         return new TileImpl(shape, grid, adjust);
       } else if (shape != null) {
         return shape;

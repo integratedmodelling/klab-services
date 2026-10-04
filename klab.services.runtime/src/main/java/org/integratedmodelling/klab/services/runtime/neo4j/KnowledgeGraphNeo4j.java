@@ -186,6 +186,13 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             + "FOREACH (asset IN assets | DETACH DELETE asset) DETACH DELETE ctx "
             + "WITH geometries FOREACH (g IN [g IN geometries WHERE NOT EXISTS { (g)--() }] "
             + "| DELETE g)";
+    // An automatic, universal user observer has no spatial allocation and may predate installation.
+    String BLOCKS_GRID = "(NOT coalesce(o.`klab.observer.automatic`,false) "
+        + "OR NOT EXISTS { MATCH (o)-[:HAS_GEOMETRY]->(:Geometry {definition:'*'}) } "
+        + "OR EXISTS { MATCH (o)-[:HAS_DATA]->() })";
+    String GRID_OCCUPIED = "MATCH (ctx:Context {id:$id}) RETURN "
+        + "EXISTS { MATCH (ctx)-[:HAS_CHILD|HAS_MEMBER|HAS_PROVENANCE|HAS_DATAFLOW|HAS_ACTIVITY|CREATED|RESOLVED*1..]->(o:Observation) WHERE " + BLOCKS_GRID + " } "
+        + "OR EXISTS { MATCH (o:Observation) WHERE coalesce(o.ownerContextId,o.`im:context-id`)=$id AND " + BLOCKS_GRID + " } AS occupied";
     String FIND_CONTEXT =
         ("MATCH (ctx:"
             + GraphModel.Labels.CONTEXT
@@ -783,7 +790,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       boolean newContext = !result.hasNext();
       if (!newContext) {
         lockContext(transaction, configuration.getId());
-        var persisted = result.single().get(0).asNode().get("worldviewCommitment");
+        var contextNode = result.single().get(0).asNode();
+        restoreGrid(configuration,contextNode.get("gridAlignment"));
+        var persisted = contextNode.get("worldviewCommitment");
         if (!persisted.isNull()) {
           var commitment = Utils.Json.parseObject(persisted.asString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class);
           if (configuration.getWorldviewCommitment() != null && !configuration.getWorldviewCommitment().equals(commitment))
@@ -833,8 +842,56 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       }
 
+      if (newContext && configuration.getGridUrn() != null) {
+        var grid = configuration.getGridDefinition() == null
+            ? org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.resolve(configuration.getGridUrn(), scope)
+            : org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.decode(configuration.getGridDefinition());
+        transaction.run("MATCH (ctx:Context {id:$id}) SET ctx.gridAlignment=$grid",
+            Map.of("id", configuration.getId(), "grid", Utils.Json.asString(grid))).consume();
+        ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl) configuration).setGridAlignment(grid);
+      }
       ensureSpatialLayer(transaction, configuration.getId(), newContext);
       transaction.commit();
+    }
+  }
+
+  static void restoreGrid(DigitalTwin.Configuration configuration, org.neo4j.driver.Value persisted) {
+    var grid=persisted.isNull() ? null : Utils.Json.parseObject(persisted.asString(),org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
+    if (configuration.getGridUrn()!=null && (grid==null || !configuration.getGridUrn().equals(grid.definitionUrn())))
+      throw new IllegalStateException("Context grid definition differs from persisted instruction");
+    ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)configuration).setGridAlignment(grid);
+  }
+
+  /** Registration seals configuration even before the observation is committed, across runtimes. */
+  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment sealGrid() {
+    try (var session=driver.session();var tx=session.beginTransaction()) {
+      lockContext(tx,rootContextId);
+      var value=tx.run("MATCH (ctx:Context {id:$id}) SET ctx.gridFrozen=true RETURN ctx.gridAlignment AS grid",
+          Map.of("id",rootContextId)).single().get("grid");
+      var grid=value.isNull() ? null : Utils.Json.parseObject(value.asString(),org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
+      tx.commit();return grid;
+    }
+  }
+
+  /** Freeze one definition before observation registration, under the same Context lock as commits. */
+  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment installGrid(
+      org.integratedmodelling.klab.api.digitaltwin.GridAlignment grid) {
+    try (var session = driver.session(); var tx = session.beginTransaction()) {
+      lockContext(tx, rootContextId);
+      var node = tx.run(Queries.FIND_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId)).single().get(0).asNode();
+      var persisted = node.get("gridAlignment");
+      if (!persisted.isNull()) {
+        var existing = Utils.Json.parseObject(persisted.asString(), org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
+        if (!existing.definitionUrn().equals(grid.definitionUrn())) throw new IllegalStateException("A digital twin supports only one grid instruction");
+        tx.commit();
+        return existing;
+      }
+      if (node.get("gridFrozen").asBoolean(false)) throw new IllegalStateException("Install a grid before making observations");
+      var occupied = tx.run(Queries.GRID_OCCUPIED,Map.of("id",rootContextId)).single().get("occupied").asBoolean();
+      if (occupied) throw new IllegalStateException("Install a grid before making observations");
+      tx.run("MATCH (ctx:Context {id:$id}) SET ctx.gridAlignment=$grid", Map.of("id",rootContextId,"grid",Utils.Json.asString(grid))).consume();
+      tx.commit();
+      return grid;
     }
   }
 
@@ -1645,77 +1702,42 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public List<ContextInfo> getExistingContexts(UserScope scope) {
 
     var ret = new ArrayList<ContextInfo>();
-    var result =
-        scope == null
-            ? query(
-                ("match (c:"
-                        + GraphModel.Labels.CONTEXT
-                        + ")<-[:"
-                        + GraphModel.Relationship.CREATED.name()
-                        + "]-(a:"
-                        + GraphModel.Labels.ACTIVITY
-                        + ") return c."
-                        + GraphModel.Fields.ID
-                        + " as "
-                        + GraphModel.Fields.CONTEXT_ID
-                        + ", a."
-                        + GraphModel.Fields.START
-                        + " as ")
-                    + GraphModel.Fields.START_TIME,
-                Map.of(),
-                scope)
-            : query(
-                ("match (c:"
-                        + GraphModel.Labels.CONTEXT
-                        + " {"
-                        + GraphModel.Fields.USER
-                        + ": $"
-                        + GraphModel.Fields.USERNAME
-                        + "})<-[:"
-                        + GraphModel.Relationship.CREATED.name()
-                        + "]-(a:"
-                        + GraphModel.Labels.ACTIVITY
-                        + ") return c")
-                    + ("." + GraphModel.Fields.NAME + " as")
-                    + (" contextName, c."
-                        + GraphModel.Fields.ID
-                        + " as "
-                        + GraphModel.Fields.CONTEXT_ID
-                        + ", a."
-                        + GraphModel.Fields.START
-                        + " as "
-                        + GraphModel.Fields.START_TIME),
-                Map.of(GraphModel.Fields.USERNAME, scope.getUser().getUsername()),
-                scope);
+    var effectiveScope=scope==null ? userScope : scope;
+    var runtime=effectiveScope==null ? null : effectiveScope.getService(RuntimeService.class);
+    var result = query("MATCH (c:Context) WHERE $user IS NULL OR c.user=$user "
+        + "RETURN c.id AS id,c.name AS name,c.user AS user,c.description AS description,"
+        + "c.lastUpdate AS lastUpdate,c.expiration AS expiration,c.created AS startTime,"
+        + "c.worldviewCommitment AS worldviewCommitment,c.gridAlignment AS gridAlignment",
+        java.util.Collections.singletonMap("user",scope==null ? null : scope.getUser().getUsername()),scope);
 
     for (var record : result.records()) {
       ContextInfo info = new ContextInfo();
-      info.setCreationTime(record.get(GraphModel.Fields.START_TIME).asLong());
+      info.setCreationTime(record.get(GraphModel.Fields.START_TIME).asLong(0));
       info.setIdleTimeMs(
-          System.currentTimeMillis() - record.get(GraphModel.Fields.LAST_UPDATE).asLong());
+          System.currentTimeMillis() - record.get(GraphModel.Fields.LAST_UPDATE).asLong(System.currentTimeMillis()));
       info.setConfiguration(
           DigitalTwin.Configuration.builder()
               .url(
-                  Utils.URLs.newURL(
-                      scope.getService(RuntimeService.class).getUrl()
+                  runtime==null ? null : Utils.URLs.newURL(
+                      runtime.getUrl()
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
-                              "{id}", record.get(GraphModel.Fields.ID).toString())))
-              .worldviewCommitment(record.get("worldviewCommitment") == null ? null : Utils.Json.parseObject(record.get("worldviewCommitment").toString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
-              .id(record.get(GraphModel.Fields.ID).toString())
-              .name(record.get(GraphModel.Fields.NAME).toString())
+                              "{id}", record.get(GraphModel.Fields.ID).asString())))
+              .worldviewCommitment(record.get("worldviewCommitment").isNull() ? null : Utils.Json.parseObject(record.get("worldviewCommitment").asString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
+              .gridAlignment(record.get("gridAlignment").isNull() ? null : Utils.Json.parseObject(record.get("gridAlignment").asString(),org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
+              .id(record.get(GraphModel.Fields.ID).asString())
+              .name(record.get(GraphModel.Fields.NAME).asString())
               .serviceId(serviceId)
-              .owner(record.get(GraphModel.Fields.USER).toString())
-              .description(record.get(GraphModel.Fields.DESCRIPTION).toString())
-              .serverUrl(scope.getService(RuntimeService.class).getUrl())
-              .persistence(Persistence.valueOf(record.get(GraphModel.Fields.EXPIRATION).toString()))
+              .owner(record.get(GraphModel.Fields.USER).asString())
+              .description(record.get(GraphModel.Fields.DESCRIPTION).asString())
+              .serverUrl(runtime==null ? null : runtime.getUrl())
+              .persistence(Persistence.valueOf(record.get(GraphModel.Fields.EXPIRATION).asString()))
               .timeout(
-                  scope
-                      .getService(RuntimeService.class)
+                  runtime==null ? 0 : runtime
                       .settings()
                       .get(Setting.DIGITAL_TWIN_TIMEOUT_MINUTES, Integer.class),
                   TimeUnit.MINUTES)
-              .build()
-              .validate(scope));
+              .build());
+      if (effectiveScope!=null) info.getConfiguration().validate(effectiveScope);
 
       // TODO something is probably missing
 
@@ -2835,6 +2857,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
                               "{id}", context.get(GraphModel.Fields.ID).toString())))
               .worldviewCommitment(context.get("worldviewCommitment") == null ? null : Utils.Json.parseObject(context.get("worldviewCommitment").toString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
+              .gridAlignment(context.get("gridAlignment")==null ? null : Utils.Json.parseObject(context.get("gridAlignment").toString(),org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
               .id(context.get(GraphModel.Fields.ID).toString())
               .name(context.get(GraphModel.Fields.NAME).toString())
               .serviceId(serviceId)

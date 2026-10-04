@@ -53,6 +53,7 @@ final class SpatialReader implements IndexedStorageReader {
   private boolean select(long x, long y) {
     sourcePoint[0] = x;
     sourcePoint[1] = y;
+    plan.source.locatePeriodic(sourcePoint);
     selected = plan.source.directory.find(sourcePoint);
     if (selected < 0) return false;
     selectedOffset = plan.source.sources[selected].encode(sourcePoint, plan.source.sourceCurve);
@@ -89,7 +90,10 @@ final class SpatialReader implements IndexedStorageReader {
     value = Double.NaN;
     if (plan.conservative()) aggregate();
     else {
-      plan.world(point[0] + 0.5, point[1] + 0.5, lower);
+      if (plan.targetLattice.reference.world().length==4) {
+        plan.world(point[0],point[1],lower); plan.world(point[0]+1,point[1]+1,upper);
+        lower[0]=(lower[0]+upper[0])/2; lower[1]=(lower[1]+upper[1])/2;
+      } else plan.world(point[0] + 0.5, point[1] + 0.5, lower);
       double x = plan.coordinate(lower[0], 0), y = plan.coordinate(lower[1], 1);
       if (plan.sampling == StorageScan.Sampling.NEAREST) {
         valid = select(SpatialScan.floor(x), SpatialScan.floor(y));
@@ -101,6 +105,14 @@ final class SpatialReader implements IndexedStorageReader {
   private void interpolate(double x, double y) {
     long ix = SpatialScan.floor(x), iy = SpatialScan.floor(y);
     double fx = x - ix, fy = y - iy, sum = 0;
+    if (plan.sourceLattice.reference.world().length==4) {
+      double coordinate=y+0.5;
+      // In logical source-cell coordinates a clipped centre may differ from row+0.5.
+      if (coordinate < rowCentre(iy)) iy--;
+      else if (coordinate > rowCentre(iy+1)) iy++;
+      double low=rowCentre(iy),high=rowCentre(iy+1);
+      fy=(coordinate-low)/(high-low);
+    }
     for (int dx = 0; dx < 2; dx++)
       for (int dy = 0; dy < 2; dy++) {
         double weight = (dx == 0 ? 1 - fx : fx) * (dy == 0 ? 1 - fy : fy);
@@ -113,15 +125,25 @@ final class SpatialReader implements IndexedStorageReader {
     valid = !Double.isNaN(sum);
   }
 
+  private double rowCentre(long row) {
+    var lattice=plan.sourceLattice;
+    double[] world=lattice.reference.world();
+    double min=(world[2]-lattice.reference.bounds()[2])/lattice.step[1];
+    double max=(world[3]-lattice.reference.bounds()[2])/lattice.step[1];
+    // Outside rows remain absent support; interpolation must not extrapolate at a pole.
+    if(row+1<=min || row>=max) return row+0.5;
+    return (Math.max(row,min)+Math.min(row+1,max))/2;
+  }
+
   private void aggregate() {
     plan.world(point[0], point[1], lower);
     plan.world(point[0] + 1, point[1] + 1, upper);
     double x0 = plan.coordinate(lower[0], 0), y0 = plan.coordinate(lower[1], 1);
     double x1 = plan.coordinate(upper[0], 0), y1 = plan.coordinate(upper[1], 1);
     var bounds = plan.source.directory.bounds;
-    long fromX = Math.max(bounds.start[0], SpatialScan.floor(x0));
+    long fromX = plan.source.longitudePeriod>0 ? SpatialScan.floor(x0) : Math.max(bounds.start[0], SpatialScan.floor(x0));
     long fromY = Math.max(bounds.start[1], SpatialScan.floor(y0));
-    long toX = Math.min(bounds.start[0] + bounds.shape[0], (long) Math.ceil(x1));
+    long toX = plan.source.longitudePeriod>0 ? (long)Math.ceil(x1) : Math.min(bounds.start[0] + bounds.shape[0], (long) Math.ceil(x1));
     long toY = Math.min(bounds.start[1] + bounds.shape[1], (long) Math.ceil(y1));
     double sum = 0, weightSum = 0;
     boolean majority = plan.sampling == StorageScan.Sampling.MAJORITY;

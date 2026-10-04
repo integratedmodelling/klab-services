@@ -70,6 +70,8 @@ public interface KlabAsset extends Serializable {
     FLOW_ATTACHMENT,
     /** A transportable mapping between external codes and values. */
     CODELIST,
+    /** Resolved spatial lattice from a define grid instruction. */
+    GRID_ALIGNMENT,
     /**
      * This is used to tag a variety of informational assets, such as adapter descriptors, reports,
      * language info, etc. When this is used, more information is always supplied so that the actual
@@ -102,6 +104,7 @@ public interface KlabAsset extends Serializable {
         case FLOW_STATE -> Flow.State.class;
         case FLOW_TRANSITION -> Flow.Transaction.class;
         case FLOW_ATTACHMENT -> Flow.Attachment.class;
+        case GRID_ALIGNMENT -> org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class;
         case CODELIST -> Codelist.class;
         case RESOURCE_ADAPTER -> AdapterDescriptor.class;
         default ->
@@ -127,7 +130,9 @@ public interface KlabAsset extends Serializable {
     }
 
     public static KnowledgeClass classify(Class<? extends KlabAsset> cls) {
-      if (Concept.class.isAssignableFrom(cls)) {
+      if (org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class.isAssignableFrom(cls)) {
+        return GRID_ALIGNMENT;
+      } else if (Concept.class.isAssignableFrom(cls)) {
         return CONCEPT;
       } else if (KimObservable.class.isAssignableFrom(cls)) {
         return OBSERVABLE;
@@ -202,6 +207,7 @@ public interface KlabAsset extends Serializable {
       case Flow.State state -> KnowledgeClass.FLOW_STATE;
       case Flow.Transaction transition -> KnowledgeClass.FLOW_TRANSITION;
       case Flow.Attachment attachment -> KnowledgeClass.FLOW_ATTACHMENT;
+      case org.integratedmodelling.klab.api.digitaltwin.GridAlignment grid -> KnowledgeClass.GRID_ALIGNMENT;
       case Codelist codelist -> KnowledgeClass.CODELIST;
       case AdapterDescriptor adapter -> KnowledgeClass.RESOURCE_ADAPTER;
       case KActorsBehavior behavior ->

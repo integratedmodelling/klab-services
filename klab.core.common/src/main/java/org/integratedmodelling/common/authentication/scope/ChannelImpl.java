@@ -85,8 +85,10 @@ public abstract class ChannelImpl implements Channel {
 
   @Override
   public void warn(Object... o) {
+    var notification = Notification.warning(o);
+    if (org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(notification.getLevel(),o)) return;
     for (var listener : getListeners(Message.Queue.Warnings).values()) {
-      listener.accept(this, Message.create(this, Notification.warning(o)));
+      listener.accept(this, Message.create(this, notification));
     }
     Logging.INSTANCE.warn(o);
   }

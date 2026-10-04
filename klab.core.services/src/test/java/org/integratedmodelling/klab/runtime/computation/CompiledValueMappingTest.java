@@ -366,6 +366,7 @@ class CompiledValueMappingTest {
     @Override
     public void add(double value) {
       written.add(value);
+      index++;
     }
 
     @Override
@@ -382,6 +383,9 @@ class CompiledValueMappingTest {
     public Storage.Shard shard() {
       return null;
     }
+
+    @Override
+    public long position() { return index; }
 
     @Override
     public long size() {
@@ -416,6 +420,7 @@ class CompiledValueMappingTest {
     @Override
     public void add(Concept value) {
       written.add(value);
+      index++;
     }
 
     @Override
@@ -432,6 +437,9 @@ class CompiledValueMappingTest {
     public Storage.Shard shard() {
       return null;
     }
+
+    @Override
+    public long position() { return index; }
 
     @Override
     public long size() {

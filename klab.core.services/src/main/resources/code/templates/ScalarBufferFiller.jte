@@ -66,8 +66,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification
 
    <%-- main iteration. All scanners must be in sync --%>
 
-    var n = selfBuffer.size()
-    for (long i = 0; i < n; i++) {
+    while (selfBuffer.hasNext()) {
+    long i = selfBuffer.position()
     <%-- here is the actual preprocessed expression content --%>
     <%--extract all needed scalar dependencies as non-boxing scalars from shards --%>
     <%--e.g. double elevation = elevationScanner.get() --%>

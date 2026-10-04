@@ -1015,14 +1015,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         bearers.addAll(allParents(inherent.singular()));
       }
       for (var head : heads) {
-        if (!head.is(SemanticType.PREDICATE)) continue;
+        if (!head.is(SemanticType.PREDICATE) || CoreOntology.isCore(head)) continue;
         if (inherent == null) ret.add(head);
         else
           for (var bearer : bearers) {
-            ret.add(
-                SemanticsBuilder.create(head, this, serviceScope())
-                    .of(inherent.isCollective() ? bearer.collective() : bearer)
-                    .buildConcept());
+            // OWL ancestry includes foundational odo classes, which are not k.IM domain
+            // expressions. Rebuilding e.g. "each odo:Subject" resolves to Nothing and used
+            // to abort the entire candidate query, including its already accepted exact match.
+            if (CoreOntology.isCore(bearer) || bearer.is(SemanticType.NOTHING)) continue;
+            try {
+              ret.add(
+                  SemanticsBuilder.create(head, this, serviceScope())
+                      .of(inherent.isCollective() ? bearer.collective() : bearer)
+                      .buildConcept());
+            } catch (KlabValidationException incompatibleGeneralization) {
+              // A valid predicate application need not remain valid for every ancestor of
+              // its bearer (e.g. an applies-to constraint). Reject only that candidate.
+            }
           }
       }
       return ret;

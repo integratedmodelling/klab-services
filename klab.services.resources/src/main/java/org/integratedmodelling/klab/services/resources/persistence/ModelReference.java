@@ -155,6 +155,9 @@ public class ModelReference {
     ret.specializedObservable = specializedObservable;
     ret.permissions = permissions;
     ret.timestamp = timestamp;
+    ret.priority = priority;
+    ret.version = version;
+    ret.abstractObservable = abstractObservable;
 
     return ret;
   }
