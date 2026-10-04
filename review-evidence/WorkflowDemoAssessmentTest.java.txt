@@ -1,0 +1,178 @@
+package org.integratedmodelling.klab.services.resources.workflow;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
+import org.integratedmodelling.klab.resources.WorkflowStore;
+import org.junit.jupiter.api.Test;
+
+/** Bounded characterization tests: these describe gaps, not desirable production behavior. */
+class WorkflowDemoAssessmentTest {
+  private static final String WORKFLOW = "ontology-expert-review";
+
+  private WorkflowStore store() throws Exception {
+    var constructor = Class.forName(WorkflowManagerAuthorizationTest.class.getName() + "$MemoryStore")
+        .getDeclaredConstructor();
+    constructor.setAccessible(true);
+    return (WorkflowStore) constructor.newInstance();
+  }
+
+  private UserScope scope(String name, String role) throws Exception {
+    var method = WorkflowManagerAuthorizationTest.class.getDeclaredMethod(
+        "scope", String.class, String.class, String.class);
+    method.setAccessible(true);
+    return (UserScope) method.invoke(new WorkflowManagerAuthorizationTest(), name, role, "*");
+  }
+
+  private Flow.AttachmentUpload upload(String type, String revision) {
+    var upload = Flow.AttachmentUpload.create();
+    upload.setType(type);
+    upload.setFileName(revision + ".yaml");
+    upload.setMediaType("application/vnd.klab.proposal+yaml");
+    upload.setAssetType(KlabAsset.KnowledgeClass.ONTOLOGY);
+    // Deliberately schema-invalid: verifies that blob admission is not proposal validation.
+    upload.setContent(("placeholder_revision: " + revision + "\n").getBytes(StandardCharsets.UTF_8));
+    return upload;
+  }
+
+  private Flow.InitializationRequest initialization() {
+    var state = Flow.State.create();
+    state.setId("initial");
+    state.setSchemaId("editing");
+    state.setAssetUrn("urn:test:workshop-placeholder");
+    state.setPermissionsOwnerUrn("urn:test:workshop-placeholder");
+    state.setAssetType(KlabAsset.KnowledgeClass.ONTOLOGY);
+    var request = Flow.InitializationRequest.create();
+    request.setInitialState(state);
+    request.setAttachments(List.of(upload("bootstrap-proposal", "r1"), upload("bootstrap-comments", "notes")));
+    var transition = Flow.TransitionRequest.create();
+    transition.setTransitionId("submit");
+    transition.setSourceStateId("initial");
+    request.setTransition(transition);
+    return request;
+  }
+
+  private String current(Flow flow) { return flow.getCurrentStateIds().iterator().next(); }
+
+  private Flow.TransitionRequest request(Flow flow, String transition) {
+    var request = Flow.TransitionRequest.create();
+    request.setSourceStateId(current(flow));
+    request.setTransitionId(transition);
+    request.setExpectedRevision(flow.getRevision());
+    request.setTargetState(Flow.State.create());
+    return request;
+  }
+
+  @Test
+  void acceptedTerminalDropsSuppliedArtifactsAndCannotReceiveRequiredUploads() throws Exception {
+    var manager = new WorkflowManager(store());
+    var editor = scope("editor", "EDITOR");
+    var flow = manager.initializeFlow(WORKFLOW, initialization(), editor);
+    assertTrue(flow.getStates().get(current(flow)).getAttachments().isEmpty());
+    manager.addAttachment(flow.getId(), current(flow), upload("bootstrap-proposal", "r1"), editor);
+    flow = manager.getFlow(flow.getId(), editor);
+    var acceptance = request(flow, "accept-peer-review");
+    for (String type : List.of("final-proposal", "accepted-ontology")) {
+      var supplied = new FlowImpl.AttachmentImpl();
+      supplied.setType(type);
+      acceptance.getTargetState().getAttachments().add(supplied);
+    }
+    var accepted = manager.transition(flow.getId(), acceptance, editor);
+    assertEquals(Flow.Status.CLOSED, accepted.getStatus());
+    var terminal = accepted.getStates().values().stream()
+        .filter(state -> state.getSchemaId().equals("accepted")).findFirst().orElseThrow();
+    assertTrue(terminal.getAttachments().isEmpty());
+    assertEquals(List.of("final-proposal", "accepted-ontology"), manager.getWorkflow(WORKFLOW)
+        .getStates().get("accepted").getAttachments().stream().filter(rule -> rule.isRequired())
+        .map(rule -> rule.getType()).toList());
+    assertThrows(KlabIllegalStateException.class,
+        () -> manager.addAttachment(accepted.getId(), terminal.getId(), upload("final-proposal", "r1"), editor));
+  }
+
+  @Test
+  void freshFlowRevisionAllowsAcceptanceWithDeletedCandidateAndStaleApprovalMetadata() throws Exception {
+    var manager = new WorkflowManager(store());
+    var editor = scope("editor", "EDITOR");
+    var flow = manager.initializeFlow(WORKFLOW, initialization(), editor);
+    var original = manager.addAttachment(flow.getId(), current(flow), upload("bootstrap-proposal", "r1"), editor);
+    flow = manager.getFlow(flow.getId(), editor);
+    var acceptance = request(flow, "accept-peer-review");
+    acceptance.setMetadata(Map.of("approvedAttachmentId", original.getId(),
+        "approvedChecksum", original.getChecksum(), "approvedProposalRevision", "r1", "approvedActionIds", List.of("action-r1")));
+    assertTrue(manager.deleteAttachment(flow.getId(), original.getId(), editor));
+    var replacement = manager.addAttachment(flow.getId(), current(flow), upload("bootstrap-proposal", "r2"), editor);
+    assertNotEquals(original.getId(), replacement.getId());
+    assertNotEquals(original.getChecksum(), replacement.getChecksum());
+    final String flowId = flow.getId();
+    assertThrows(KlabIllegalStateException.class, () -> manager.transition(flowId, acceptance, editor));
+    acceptance.setExpectedRevision(manager.getFlow(flowId, editor).getRevision());
+    var accepted = manager.transition(flowId, acceptance, editor);
+    assertEquals(Flow.Status.CLOSED, accepted.getStatus());
+    assertEquals(original.getId(), accepted.getHistory().getLast().getMetadata().get("approvedAttachmentId"));
+    assertTrue(accepted.getStates().values().stream().flatMap(s -> s.getAttachments().stream())
+        .noneMatch(a -> a.getId().equals(original.getId())));
+  }
+
+  @Test
+  void openAttachmentCanBeDeletedButClosedStageAttachmentCannot() throws Exception {
+    var manager = new WorkflowManager(store());
+    var editor = scope("editor", "EDITOR");
+    var flow = manager.initializeFlow(WORKFLOW, initialization(), editor);
+    var removable = manager.addAttachment(flow.getId(), current(flow), upload("bootstrap-proposal", "r1"), editor);
+    assertTrue(manager.deleteAttachment(flow.getId(), removable.getId(), editor));
+    final String flowId = flow.getId();
+    assertThrows(KlabIllegalArgumentException.class, () -> manager.getAttachment(flowId, removable.getId(), editor));
+    var retained = manager.addAttachment(flow.getId(), current(flow), upload("bootstrap-proposal", "r2"), editor);
+    flow = manager.getFlow(flowId, editor);
+    manager.transition(flowId, request(flow, "request-changes"), editor);
+    assertThrows(KlabIllegalStateException.class, () -> manager.deleteAttachment(flowId, retained.getId(), editor));
+  }
+
+  @Test
+  void requestChangesCreatesFreshPeerReviewStageFromPeerAndCommunityReview() throws Exception {
+    var manager = new WorkflowManager(store());
+    var admin = scope("admin", "ADMIN");
+    var flow = manager.initializeFlow(WORKFLOW, initialization(), admin);
+    for (String sourceSchema : List.of("peer-review", "community-review")) {
+      if (sourceSchema.equals("community-review")) {
+        manager.addAttachment(flow.getId(), current(flow), upload("bootstrap-proposal", "r2"), admin);
+        flow = manager.getFlow(flow.getId(), admin);
+        flow = manager.transition(flow.getId(), request(flow, "open-input"), admin);
+      }
+      assertEquals(sourceSchema, flow.getStates().get(current(flow)).getSchemaId());
+      var oldState = current(flow);
+      manager.addAttachment(flow.getId(), oldState, upload("bootstrap-proposal", "r3"), admin);
+      flow = manager.getFlow(flow.getId(), admin);
+      flow = manager.transition(flow.getId(), request(flow, "request-changes"), admin);
+      assertNotEquals(oldState, current(flow));
+      assertEquals("peer-review", flow.getStates().get(current(flow)).getSchemaId());
+      assertEquals(Flow.StateStatus.CLOSED, flow.getStates().get(oldState).getStatus());
+      assertTrue(flow.getStates().get(current(flow)).getAttachments().isEmpty());
+      var missingProposal = request(flow, "accept-peer-review");
+      var flowId = flow.getId();
+      assertThrows(KlabIllegalStateException.class, () -> manager.transition(flowId, missingProposal, admin));
+    }
+    assertFalse(manager.getWorkflow(WORKFLOW).getTransitions().containsKey("resubmit"));
+  }
+
+  @Test
+  void rejectionClosesPeerReviewWithoutTerminalArtifacts() throws Exception {
+    var manager = new WorkflowManager(store());
+    var admin = scope("admin", "ADMIN");
+    var flow = manager.initializeFlow(WORKFLOW, initialization(), admin);
+    manager.addAttachment(flow.getId(), current(flow), upload("bootstrap-proposal", "r1"), admin);
+    flow = manager.getFlow(flow.getId(), admin);
+    var rejected = manager.transition(flow.getId(), request(flow, "reject-peer-review"), admin);
+    assertEquals(Flow.Status.CLOSED, rejected.getStatus());
+    assertEquals("reject-peer-review", rejected.getHistory().getLast().getTransitionId());
+    assertFalse(manager.getWorkflow(WORKFLOW).getTransitions().containsKey("reject-community-review"));
+  }
+}

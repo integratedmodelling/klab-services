@@ -1,0 +1,55 @@
+{
+  "manifestVersion": 1,
+  "proposalId": "hydrology-surface-catchment",
+  "revisionId": "hydrology-surface-catchment-r1",
+  "scientificReview": "NOT_REVIEWED",
+  "rootContext": "BLOCKED",
+  "artifacts": [
+    {
+      "role": "PROPOSAL",
+      "path": "proposal.yaml",
+      "proposalId": "hydrology-surface-catchment",
+      "revisionId": "hydrology-surface-catchment-r1",
+      "sha256": "8977dcac048bff1cc7f6e6adabce296646b57140ab4850c54557984986ff805e"
+    },
+    {
+      "role": "ONTOLOGY",
+      "path": "candidate.kwv",
+      "proposalId": "hydrology-surface-catchment",
+      "revisionId": "hydrology-surface-catchment-r1",
+      "sha256": "f7435d74550593daba1ea89b31b8c657c46c1c4b3b3936dd11a30946614182fd"
+    },
+    {
+      "role": "DOSSIER",
+      "path": "dossier.json",
+      "proposalId": "hydrology-surface-catchment",
+      "revisionId": "hydrology-surface-catchment-r1",
+      "sha256": "f2e6e11846027cd7c46b6244cdb1379a72656e3ee1f769a9378a6b9914c94698"
+    },
+    {
+      "role": "SOURCE_QUESTIONS",
+      "path": "questions.md",
+      "proposalId": "hydrology-surface-catchment",
+      "revisionId": "hydrology-surface-catchment-r1",
+      "sha256": "5d00e74f3fd3ab0790ce6d1dee2dc31f2c3d10740ebad1ffeef474bcd416abf1"
+    }
+  ],
+  "imports": [
+    {
+      "id": "imod",
+      "revision": "608bef150ced0a109db98a5aad64ba4461beaa54",
+      "sha256": null
+    },
+    {
+      "id": "earth",
+      "revision": "608bef150ced0a109db98a5aad64ba4461beaa54",
+      "sha256": null
+    }
+  ],
+  "assetMapping": [
+    {
+      "proposalAssetId": "concept-surface-catchment",
+      "dossierConceptId": "hydrology-SurfaceCatchment"
+    }
+  ]
+}

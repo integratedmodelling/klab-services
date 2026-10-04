@@ -1,0 +1,12 @@
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.943 s -- in org.integratedmodelling.common.review.ProposalDocumentTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.111 s -- in org.integratedmodelling.klab.services.resources.lang.WorldviewValidationTest
+Hydrology isolated checks: [Check[kind=DOCUMENT_SCHEMA, status=PASS, messages=[Bundled context-pack 1.3 schema; Draft 2020-12; proposal SHA-256 8977dcac048bff1cc7f6e6adabce296646b57140ab4850c54557984986ff805e; structure only, no scientific or semantic approval]], Check[kind=IMPORT_CONTEXT, status=BLOCKED, messages=[No authoritative current import snapshot; isolated scope contains no imported declarations]], Check[kind=PARSER, status=PASS, messages=[Active Worldview Xtext parser; candidate SHA-256 f7435d74550593daba1ea89b31b8c657c46c1c4b3b3936dd11a30946614182fd, Syntax only; no scientific, reference, reasoning or consequence support implied]], Check[kind=ADAPTATION, status=BLOCKED, messages=[Import resolution unavailable in fresh scope: [imod, earth]]], Check[kind=REASONER, status=BLOCKED, messages=[Existing Reasoner validation requires authoritative saved sources and loaded knowledge; not invoked for this draft]]]
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.624 s -- in org.integratedmodelling.klab.services.resources.workflow.IsolatedProposalCandidateValidatorTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.140 s -- in org.integratedmodelling.klab.services.resources.workflow.ProposalReviewProtocolTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.224 s -- in org.integratedmodelling.klab.services.resources.workflow.ProposalSchemaValidatorTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.161 s -- in org.integratedmodelling.klab.services.resources.workflow.WorkflowManagerAuthorizationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.084 s -- in org.integratedmodelling.klab.services.resources.workflow.WorkflowSchemaTest
+[INFO] Tests run: 67, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time:  01:36 min
