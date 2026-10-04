@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import java.net.URL;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Codelist;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -26,9 +26,9 @@ public interface Authority {
   }
 
   /**
-   * Create an independent bridge and return its opaque provider-held configuration ID. The
-   * provider must retain configuration state separately for each bridge, and throw a validation
-   * exception on failure. The root identity is supplied by the worldview, not by the provider.
+   * Create an independent bridge and return its opaque provider-held configuration ID. The provider
+   * must retain configuration state separately for each bridge, and throw a validation exception on
+   * failure. The root identity is supplied by the worldview, not by the provider.
    */
   String configure(ConfigurationRequest request);
 
@@ -36,20 +36,27 @@ public interface Authority {
   default void releaseConfiguration(String configurationId) {}
 
   /**
-   * Lifetimes in seconds for successful Reasoner-side cached results. Zero disables caching for
-   * an operation; Long.MAX_VALUE means immutable data without expiry. Providers with mutable
+   * Lifetimes in seconds for successful Reasoner-side cached results. Zero disables caching for an
+   * operation; Long.MAX_VALUE means immutable data without expiry. Providers with mutable
    * vocabularies should choose conservative lifetimes. Diagnostics and failures are never cached.
    * Revision must change whenever the provider changes the meaning/format of its cached results.
    */
-  record CachePolicy(String revision, long identitySeconds, long searchSeconds, long reconciliationSeconds) {
+  record CachePolicy(
+      String revision, long identitySeconds, long searchSeconds, long reconciliationSeconds) {
     public CachePolicy {
-      if (revision == null || revision.isBlank() || identitySeconds < 0 || searchSeconds < 0
-          || reconciliationSeconds < 0) throw new IllegalArgumentException("Invalid authority cache policy");
+      if (revision == null
+          || revision.isBlank()
+          || identitySeconds < 0
+          || searchSeconds < 0
+          || reconciliationSeconds < 0)
+        throw new IllegalArgumentException("Invalid authority cache policy");
     }
   }
 
   /** Default retention: one day for identities, five minutes for query results. */
-  default CachePolicy getCachePolicy() { return new CachePolicy("1", 86400, 300, 300); }
+  default CachePolicy getCachePolicy() {
+    return new CachePolicy("1", 86400, 300, 300);
+  }
 
   interface Identity {
 
@@ -76,9 +83,9 @@ public interface Authority {
     String getAuthorityName();
 
     /**
-     * Optional ID of the vocabulary's base identity. The Reasoner recursively resolves this and
-     * the parent IDs until known concepts are reached. It may be the configured worldview root
-     * URN, which is already known. Provider top-level identities inherit from that root; other
+     * Optional ID of the vocabulary's base identity. The Reasoner recursively resolves this and the
+     * parent IDs until known concepts are reached. It may be the configured worldview root URN,
+     * which is already known. Provider top-level identities inherit from that root; other
      * identities inherit through the supplied hierarchy. The authority owns hierarchy validity.
      *
      * @return
@@ -101,9 +108,9 @@ public interface Authority {
     List<String> getParentRelationship();
 
     /**
-     * Documentation resources keyed by media type. Providers should supply at least
-     * {@code text/markdown}, and may include images, PDF or other media. UIs must tolerate
-     * its absence. Each URL must retrieve a resource in the associated media type.
+     * Documentation resources keyed by media type. Providers should supply at least {@code
+     * text/markdown}, and may include images, PDF or other media. UIs must tolerate its absence.
+     * Each URL must retrieve a resource in the associated media type.
      */
     default Map<String, URL> getDocumentation() {
       return Map.of();
@@ -166,22 +173,26 @@ public interface Authority {
      * If true, the authority is capable of accepting unambiguous but different identifiers for the
      * same concept, such as water and h2o, which are resolved through a search. If false, the
      * authority can only deal with correct identifiers or formulas. The main consequence is that if
-     * this is true, resolution may accept aliases. Search may return multiple candidates
-     * regardless of this flag; candidates must be selected explicitly when ambiguous.
+     * this is true, resolution may accept aliases. Search may return multiple candidates regardless
+     * of this flag; candidates must be selected explicitly when ambiguous.
      *
      * @return
      */
     boolean isFuzzy();
 
     /** Whether explicit, provider-defined name reconciliation is available. */
-    default boolean isReconciliationSupported() { return false; }
+    default boolean isReconciliationSupported() {
+      return false;
+    }
 
     /**
-     * If true, declared sub-authorities only filter searches: NAME.RANK:id resolves through
-     * NAME's bridge, with identical codes, parents and canonical concepts. Otherwise a dotted
-     * name must have its own configured binding; the Reasoner must not guess its semantics.
+     * If true, declared sub-authorities only filter searches: NAME.RANK:id resolves through NAME's
+     * bridge, with identical codes, parents and canonical concepts. Otherwise a dotted name must
+     * have its own configured binding; the Reasoner must not guess its semantics.
      */
-    default boolean areSubAuthoritiesSearchFilters() { return false; }
+    default boolean areSubAuthoritiesSearchFilters() {
+      return false;
+    }
 
     /**
      * If the authority admits sub-authorities (e.g. GBIF/SPECIES), these should be listed along
@@ -228,10 +239,10 @@ public interface Authority {
   Identity resolveIdentity(String configurationId, String identityId);
 
   /**
-   * Explicitly reconcile a name or external identifier with optional disambiguating fields.
-   * Field names and accepted match policies belong to the provider. Return a canonical identity
-   * only when the match is unambiguous; report failed/ambiguous matches with error notifications.
-   * This operation must not silently replace code lookup or select the first search candidate.
+   * Explicitly reconcile a name or external identifier with optional disambiguating fields. Field
+   * names and accepted match policies belong to the provider. Return a canonical identity only when
+   * the match is unambiguous; report failed/ambiguous matches with error notifications. This
+   * operation must not silently replace code lookup or select the first search candidate.
    */
   default Identity reconcile(String configurationId, Map<String, String> fields) {
     throw new UnsupportedOperationException("This authority does not support reconciliation");
@@ -267,15 +278,11 @@ public interface Authority {
    */
   Authority subAuthority(String catalog);
 
-
-
-
-
   /**
-   * Can be called only if {@link Capabilities#isSearchable()} returns true. Each candidate's
-   * {@link Identity#getId()} must resolve through {@link #resolveIdentity(String, String)} in
-   * the same configuration. Remaining fields support the user in choosing an identity. An empty
-   * list means no matches, not a transport failure; failures must be reported explicitly.
+   * Can be called only if {@link Capabilities#isSearchable()} returns true. Each candidate's {@link
+   * Identity#getId()} must resolve through {@link #resolveIdentity(String, String)} in the same
+   * configuration. Remaining fields support the user in choosing an identity. An empty list means
+   * no matches, not a transport failure; failures must be reported explicitly.
    *
    * @param query
    * @param subAuthority may be null
