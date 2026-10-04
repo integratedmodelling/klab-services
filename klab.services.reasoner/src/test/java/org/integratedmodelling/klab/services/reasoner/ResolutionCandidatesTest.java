@@ -15,6 +15,42 @@ class ResolutionCandidatesTest {
   @Test void classificationSurvivesInternalAndIncompatibleAncestors() { exercise(true); }
   @Test void characterizationSurvivesInternalAndIncompatibleAncestors() { exercise(false); }
 
+  @Test void normalizationDiscoversTransformerWithFoundationalQualityBearer() {
+    var reasoner = mock(ReasonerService.class, CALLS_REAL_METHODS);
+    var request = concept("data:Normalized of geography:Elevation", SemanticType.PREDICATE);
+    var head = concept("data:Normalized", SemanticType.PREDICATE);
+    var elevation = concept("geography:Elevation", SemanticType.QUALITY);
+    // imod:Quality is represented by this foundational concept in the loaded worldview.
+    var quality = concept("odo:Quality", SemanticType.QUALITY);
+    quality.getType().add(SemanticType.OBSERVABLE);
+    var structural = concept("odo:PhysicalProperty", SemanticType.ABSTRACT);
+    var invalid = concept("odo:InvalidObservable", SemanticType.OBSERVABLE);
+    var nothing = concept("owl:Nothing", SemanticType.NOTHING);
+    var transformer = concept("data:Normalized of odo:Quality", SemanticType.PREDICATE);
+    doReturn(null).when(reasoner).serviceScope();
+    doReturn(elevation).when(reasoner).directInherent(request);
+    doReturn(List.of()).when(reasoner).allParents(head);
+    doReturn(List.of(structural, invalid, quality)).when(reasoner).allParents(elevation);
+
+    var stripping = mock(SemanticsBuilder.class, RETURNS_SELF);
+    var application = mock(SemanticsBuilder.class, RETURNS_SELF);
+    when(stripping.buildConcept()).thenReturn(head);
+    Concept[] bearer = new Concept[1];
+    when(application.of(any())).thenAnswer(call -> {
+      bearer[0] = call.getArgument(0);
+      assertNotEquals(structural, bearer[0]);
+      return application;
+    });
+    when(application.buildConcept()).thenAnswer(call ->
+        bearer[0].equals(quality) ? transformer : bearer[0].equals(invalid) ? nothing : request);
+    try (var builders = mockStatic(SemanticsBuilder.class)) {
+      builders.when(() -> SemanticsBuilder.create(request, reasoner, null)).thenReturn(stripping);
+      builders.when(() -> SemanticsBuilder.create(head, reasoner, null)).thenReturn(application);
+      assertEquals(java.util.Set.of(request, transformer),
+          java.util.Set.copyOf(reasoner.resolving(request)));
+    }
+  }
+
   private void exercise(boolean collective) {
     var reasoner = mock(ReasonerService.class, CALLS_REAL_METHODS);
     var request = concept("test:Environment of test:Region", SemanticType.PREDICATE);

@@ -1019,15 +1019,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         if (inherent == null) ret.add(head);
         else
           for (var bearer : bearers) {
-            // OWL ancestry includes foundational odo classes, which are not k.IM domain
-            // expressions. Rebuilding e.g. "each odo:Subject" resolves to Nothing and used
-            // to abort the entire candidate query, including its already accepted exact match.
-            if (CoreOntology.isCore(bearer) || bearer.is(SemanticType.NOTHING)) continue;
+            // Worldview aliases such as imod:Quality resolve to foundational observables
+            // (odo:Quality). Keep these bearers so generic predicate models remain discoverable,
+            // but omit structural OWL ancestors that have no observable semantics.
+            if (bearer.is(SemanticType.NOTHING)
+                || CoreOntology.isCore(bearer) && !bearer.is(SemanticType.OBSERVABLE)) continue;
             try {
-              ret.add(
+              var candidate =
                   SemanticsBuilder.create(head, this, serviceScope())
                       .of(inherent.isCollective() ? bearer.collective() : bearer)
-                      .buildConcept());
+                      .buildConcept();
+              if (candidate != null && !candidate.is(SemanticType.NOTHING)) ret.add(candidate);
             } catch (KlabValidationException incompatibleGeneralization) {
               // A valid predicate application need not remain valid for every ancestor of
               // its bearer (e.g. an applies-to constraint). Reject only that candidate.
