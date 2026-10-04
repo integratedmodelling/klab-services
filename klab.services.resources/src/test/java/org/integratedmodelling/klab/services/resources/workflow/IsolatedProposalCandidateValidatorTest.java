@@ -35,6 +35,7 @@ class IsolatedProposalCandidateValidatorTest {
   @Test void realHydrologySyntaxDoesNotDischargeMissingImportsOrScientificReview() throws Exception {
     var results = new IsolatedProposalCandidateValidator().validate(null, fixture("proposal.yaml"), fixture("candidate.kwv"));
     assertEquals(CheckStatus.PASS, check(results, CheckKind.PARSER).status());
+    assertEquals(CheckStatus.PASS, check(results, CheckKind.DOCUMENT_SCHEMA).status());
     assertNotEquals(CheckStatus.PASS, check(results, CheckKind.ADAPTATION).status());
     assertEquals(CheckStatus.BLOCKED, check(results, CheckKind.IMPORT_CONTEXT).status());
     assertEquals(CheckStatus.BLOCKED, check(results, CheckKind.REASONER).status());
@@ -56,6 +57,7 @@ class IsolatedProposalCandidateValidatorTest {
     assertEquals(Status.IN_REVIEW, review.status());
     assertEquals(dossier, review.dossier());
     assertEquals(CheckStatus.PASS, check(review.validation(), CheckKind.PARSER).status());
+    assertEquals(CheckStatus.PASS, check(review.validation(), CheckKind.DOCUMENT_SCHEMA).status());
     assertEquals(CheckStatus.NOT_RUN, check(review.validation(), CheckKind.SCIENTIFIC_REVIEW).status());
     assertThrows(KlabIllegalStateException.class, () -> manager.transition(flow.getId(),
         helper.command(flow, "accept-peer-review", review.candidate()), editor));

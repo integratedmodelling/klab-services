@@ -19,7 +19,7 @@ import org.integratedmodelling.languages.api.ParsedObject;
 import org.integratedmodelling.languages.worldview.Ontology;
 
 /** Real, isolated syntax/adaptation checks. Never starts a service, saves a source or loads OWL.
- * The fresh scope intentionally has no imported declarations. Full schema, current import context
+ * The fresh scope intentionally has no imported declarations. Current import context
  * and loaded Reasoner checks stay unavailable. Syntax success never makes a candidate acceptable.
  */
 public final class IsolatedProposalCandidateValidator implements ProposalCandidateValidator {
@@ -31,8 +31,7 @@ public final class IsolatedProposalCandidateValidator implements ProposalCandida
   @Override
   public List<Check> validate(ProposalReview.Candidate candidate, byte[] proposal, byte[] ontology) {
     var checks = new ArrayList<Check>();
-    checks.add(new Check(CheckKind.DOCUMENT_SCHEMA, CheckStatus.BLOCKED,
-        List.of("Draft 2020-12 Java validator is not configured; offline fixture validation is separate")));
+    checks.add(ProposalSchemaValidator.bundled().validate(proposal));
     checks.add(new Check(CheckKind.IMPORT_CONTEXT, CheckStatus.BLOCKED,
         List.of("No authoritative current import snapshot; isolated scope contains no imported declarations")));
     checks.addAll(validateOntology(ontology));

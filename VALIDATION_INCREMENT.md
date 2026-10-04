@@ -1,5 +1,7 @@
 # Validation increment and review fixes
 
+Historical results for commit d6e781d. The subsequent `SCHEMA_VALIDATION_INCREMENT.md` supersedes the Java JSON Schema blocker below with a real NetworkNT provider; the other boundaries still apply.
+
 This follows pinned first-slice commit `e6ad32ca048c5e9468ab722909c44b541ee98b7a` on the same local branch. The first commit remains intact. No service startup, authoritative source change, publication or IDE edit is included.
 
 ## Additive contract for IDE

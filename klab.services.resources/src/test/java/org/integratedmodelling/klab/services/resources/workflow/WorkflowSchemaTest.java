@@ -20,6 +20,17 @@ import org.junit.jupiter.api.Test;
 
 class WorkflowSchemaTest {
 
+  @Test
+  void ontologyCommentAttachmentsUseTheCommentMediaTypeConsistently() throws Exception {
+    try (var stream = getClass().getClassLoader().getResourceAsStream("workflows/ontology-expert-review.yaml")) {
+      var workflow = org.integratedmodelling.common.utils.Utils.YAML.load(stream, Workflow.class);
+      var comments = workflow.getStates().values().stream().flatMap(s -> s.getAttachments().stream())
+          .filter(a -> a.getType().endsWith("-comments")).toList();
+      assertEquals(4, comments.size());
+      comments.forEach(a -> assertEquals("application/vnd.klab.comments+json", a.getMediaType()));
+    }
+  }
+
   private Workflow schema() throws Exception {
     try (var stream =
         getClass().getClassLoader().getResourceAsStream("workflows/asset-review.yaml")) {
