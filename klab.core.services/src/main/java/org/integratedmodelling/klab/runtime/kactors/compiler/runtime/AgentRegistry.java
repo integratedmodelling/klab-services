@@ -49,7 +49,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
@@ -175,11 +174,7 @@ public enum AgentRegistry {
     }
 
     try {
-      var resources = scope.getService(ResourcesService.class);
-      var behavior =
-          resources == null
-              ? null
-              : resources.retrieve(agent.getBehaviorUrn(), KActorsBehavior.class, userScope);
+      var behavior = resolver.resolveBehavior(agent.getBehaviorUrn(), userScope);
       if (behavior == null) {
         return failedHandle(agent, "Cannot resolve k.Actors behavior " + agent.getBehaviorUrn());
       }

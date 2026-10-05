@@ -1,5 +1,8 @@
 # k.Actors language guide
 
+Core library agent and verb contracts are documented separately in
+[Core agent reference](AGENTS_REFERENCE.md).
+
 This file is a user-level introduction and reference for k.Actors as implemented in the current
 `klab-services` distribution. It is also intended to give contributors and coding agents enough
 context to read, validate, test, and extend k.Actors code without having to reconstruct the
@@ -350,45 +353,10 @@ confirmed by the following stopped status, after which clients may disconnect th
 Correlated `ask`/reply is based on the handler responding by
 sending a normal message through its injected `sender` handle. The action will automatically encode an ID for the received message so that the receiving sender can recognize it as a response. 
 
-Every behavior implicitly inherits the Java behavior `core.agent`, in the same way that every Java
-class ultimately inherits `Object`. It provides the common agent contract without requiring an
-`inherits` or `using` clause:
-
-```kactors
-worker <- tools.new(configuration)
-worker.tell(RELOAD, configuration)
-result <- worker.ask(LOOKUP, key :timeout 10.s)
-worker.ask(WAIT_FOR_EVENT, key !timeout):
-    response -> process(response)
-console.println(worker.name(), " ", worker.urn())
-```
-
-`new` follows the construction rules described under imports. `tell` requires a message-class
-constant and one arbitrary serializable payload; it publishes the message and returns immediately.
-`ask` accepts the same two ordinary arguments and is a supplier: it waits for a correlated response
-from the receiver. An optional temporal quantity may be supplied as inline `:timeout` metadata;
-the runtime default is 30 seconds. Use the negative metadata flag `!timeout` when no deadline should
-be installed. This is appropriate for the ordinary reactive form shown above: installing the
-supplier listener does not block the action, and the match action simply remains dormant if no
-response arrives. A matching function or supplier `@handle` action replies with its returned value.
-A handler failure completes the request exceptionally. Emitter handlers do not have a single
-automatic result, but may explicitly reply through their injected `sender` handle.
-
-`name()` returns the agent's display name and `urn()` its runtime-wide instance URN. The same verbs
-work on `self` and on any agent-valued variable. The runtime initializes this identity on the
-generated agent and every retained inherited-behavior delegate before the agent starts.
-
-The `core.agent` verbs are ordinary inherited actions, not reserved names. A behavior may replace
-one by declaring an action with the same name; validation emits the normal inheritance warning
-unless the action carries `@override`. Calls then select the local action. This is intentionally
-also true of message-related verbs, providing a controlled extension point for future policies
-such as authorization-aware stopping. The base `new` implementation is a construction contract:
-calling it on an actor specification invokes the compiler/runtime construction path, while calling
-the unoverridden implementation on an existing instance is invalid.
-
-Messaging is available only when the scope used to create or reconnect the agent has a connected
-messaging channel. Agent creation still succeeds without one: messaging is disabled and the
-returned agent contains an info-level notification explaining why.
+Every behavior implicitly inherits the universal core agent contract. Its inherited verbs remain
+ordinary actions and may be overridden with `@override`. See
+[the core agent reference](AGENTS_REFERENCE.md#coreagent) for construction, identity, request/reply,
+and timeout contracts.
 
 ### 4.4. Interactive agent consoles
 
@@ -411,12 +379,7 @@ arguments. The action follows the same binding rules as `@handle`: each ordinary
 receives the input line and an optional parameter named exactly `sender` receives the sending
 agent handle. Inherited `@stdin` actions are retained; a local one overrides them.
 
-The core `console` actor sends output to every console currently attached to the agent. It exposes:
-
-- `print(values...)` and `println(values...)` for standard output;
-- `format(pattern, values...)` and its `printf` alias;
-- `error(values...)`, `errorln(values...)`, and `errorf(pattern, values...)` for standard error;
-- `flush`, which flushes the local fallback writer.
+See [core.console](AGENTS_REFERENCE.md#coreconsole) for the output verbs and stream contract.
 
 An `AgentConsole` attaches when constructed with a connected client-side `Agent` handle. Its
 `sendLine(...)` method forwards one logical line, `onOutput(...)` receives standard-output and
@@ -1056,22 +1019,6 @@ layer described in section 5.1. List, set, and map literals are emitted as mutab
 (`ArrayList`, `LinkedHashSet`, and `LinkedHashMap` respectively), so their normal public operations
 can be called from k.Actors. This is separate from Java actor resolution: the value does not need an
 actor descriptor, an agent behavior URN, or message dispatch unless it is actually an agent handle.
-
-### 10.9. Core string operations
-
-Import `core.strings as strings` for null-safe, static string functions. The actor exposes
-`lowercase`, `uppercase`, `capitalize`, `labelize`, `trim`, `normalize`, `length`, `isempty`,
-`contains`, `startswith`, `endswith`, `equalsignorecase`, `indexof`, `count`, `matches`, `replace`,
-`substring`, `split`, `tokenize`, `join`, `concat`, `repeat`, and `abbreviate`.
-
-`split` treats its separator literally and preserves empty fields. `tokenize` splits whitespace
-while retaining double-quoted phrases. `matches` is the exception to literal matching and accepts
-a Java regular expression. Every operation is a function and can therefore be nested directly
-inside another call:
-
-```kactors
-console.println(strings.uppercase(strings.trim(message)))
-```
 
 ## 11. Validation checklist
 

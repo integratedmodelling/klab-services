@@ -1,9 +1,9 @@
-# Common service endpoint contracts
+# Common service contracts
 
-This document describes the HTTP operations shared by the Resources, Reasoner, Resolver, and
-Runtime services. It is the entry point for the service API documentation: common transport,
-inspection, adaptation, asset exchange, jobs, and administration belong here; the assets and
-operations owned by each service belong in its service-specific reference.
+This document describes the HTTP operations and common service facilities shared by the Resources,
+Reasoner, Resolver, and Runtime services. It is the entry point for service API documentation:
+common transport, inspection, adaptation, asset exchange, jobs, administration, and outgoing email
+belong here; the assets and operations owned by each service belong in its service-specific reference.
 
 This is an initial reference to the current implementation, not a declaration that every service
 supports every asset or representation. A shared route delegates to the receiving provider;
@@ -266,6 +266,115 @@ Map-valued settings are executable operations: their payload carries operation p
 completed job result is another map. `UPDATE_COMPONENT` and `REMOVE_COMPONENT` use this mechanism
 on every service type with `component` and optional `version` parameters; see
 [Components](COMPONENTS.md#snapshot-update-actions) for their lifecycle semantics.
+
+## Outgoing email
+
+Every `BaseService` owns an
+[EmailManager](../klab.core.services/src/main/java/org/integratedmodelling/klab/services/base/EmailManager.java),
+exposed by `getEmailManager()`. Configure it entirely through `service.settings()` or the common
+administrative setting endpoints. Each service has its own configuration; the manager does not
+read `spring.mail.*`, environment variables, external credential records, or peer-service settings.
+The IDE service dashboard's configuration view has an **Email** tab for these settings, with a
+masked password editor and a security-mode selector. Reading and changing them requires the same
+administrative permissions as other service settings.
+
+### Settings and defaults
+
+All email settings belong to `Setting.Page.EMAIL` and apply to every service type. String settings
+default to the empty string unless specified below. Ports and timeouts are validated by the setting
+API; completeness and address syntax are checked by the manager before sending.
+
+| Setting | Type | Default | Contract |
+| --- | --- | --- | --- |
+| `EMAIL_ENABLED` | Boolean | `false` | Master switch for outgoing email. Enable after completing configuration. |
+| `EMAIL_SMTP_HOST` | String | `""` | Required nonblank SMTP server hostname. |
+| `EMAIL_SMTP_PORT` | Integer | `587` | 1..65535. Choose the provider's port; security mode does not change it automatically. |
+| `EMAIL_FROM_ADDRESS` | String | `""` | Required valid sender email address, used for every message. |
+| `EMAIL_FROM_NAME` | String | `""` | Optional sender display name. |
+| `EMAIL_REPLY_TO` | String | `""` | Optional valid reply-to address. Blank uses the ordinary sender reply behavior. |
+| `EMAIL_AUTHENTICATION` | Boolean | `true` | Require SMTP authentication. Set false for a relay that does not require credentials. |
+| `EMAIL_USERNAME` | String | `""` | Required nonblank username when authentication is enabled. |
+| `EMAIL_PASSWORD` | String | `""` | Required nonblank password or application password when authentication is enabled; whitespace is preserved. |
+| `EMAIL_SECURITY` | String | `"STARTTLS"` | Exactly `STARTTLS`, `SSL`, or `NONE`; case-sensitive. |
+| `EMAIL_CONNECTION_TIMEOUT_MS` | Integer | `10000` | Positive connection timeout in milliseconds. |
+| `EMAIL_READ_TIMEOUT_MS` | Integer | `10000` | Positive SMTP read timeout in milliseconds. |
+| `EMAIL_WRITE_TIMEOUT_MS` | Integer | `10000` | Positive SMTP write timeout in milliseconds. |
+
+`STARTTLS` requires a successful TLS upgrade; sending does not silently fall back to plaintext.
+`SSL` enables implicit TLS, typically on port 465. `NONE` uses ordinary SMTP without transport
+encryption. TLS checks server identity and uses the JVM's normal certificate trust configuration;
+there is no setting to trust every certificate or disable identity checks. UTF-8 is used for
+message headers and bodies. Credentials are not used when authentication is disabled.
+
+### Configuration through the setting API
+
+`Settings.get(setting, type)` returns the effective scalar value, including defaults.
+`set(setting, value)` validates, persists, and returns a future completing with the effective value.
+Wait for that future before depending on the change. Changes apply to the next email operation
+without a service restart; each send reads one settings snapshot. Multiple scalar changes are
+individual operations, not a transaction, so leave email disabled during initial configuration.
+
+```java
+var settings = service.settings();
+settings.set(Setting.EMAIL_ENABLED, false).get();
+settings.set(Setting.EMAIL_SMTP_HOST, "smtp.example.org").get();
+settings.set(Setting.EMAIL_SMTP_PORT, 587).get();
+settings.set(Setting.EMAIL_FROM_ADDRESS, "service@example.org").get();
+settings.set(Setting.EMAIL_FROM_NAME, "k.LAB service").get();
+settings.set(Setting.EMAIL_SECURITY, "STARTTLS").get();
+settings.set(Setting.EMAIL_AUTHENTICATION, true).get();
+settings.set(Setting.EMAIL_USERNAME, smtpUsername).get();
+settings.set(Setting.EMAIL_PASSWORD, smtpApplicationPassword).get();
+settings.set(Setting.EMAIL_ENABLED, true).get();
+```
+
+Use `GET /settings` to retrieve the effective settings map. To change a value over HTTP, use
+`POST /set/EMAIL_SMTP_HOST` with a raw JSON string body such as `"smtp.example.org"`, or
+`POST /set/EMAIL_ENABLED` with the JSON boolean `true`. The returned number is a job ID, not the
+setting value; use `/jobs/status/{id}` and `/jobs/retrieve/{id}` with the same identity/scope to
+await completion. The controller also accepts property-form names such as
+`email.email_smtp_host`. See [Administration](#administration) and [Asynchronous jobs](#asynchronous-jobs).
+
+Local settings persistence is the usual service `settings.properties`, under
+`services/<service-type>/` in the configured k.LAB work directory. Email keys use the same
+page-prefixed convention, for example `email.email_smtp_host`. This is the setting API's storage
+format, not a separate configuration surface. SMTP passwords are currently stored as ordinary
+property values and are returned to authorized administrators by `GET /settings`; masking the
+dashboard field does not encrypt persisted credentials. Configuration-status operations expose
+only setting names and booleans.
+
+### Status and sending from Java
+
+```java
+var email = service.getEmailManager();
+var status = email.getConfigurationStatus();
+boolean ready = status.configured();
+boolean sent = email.send("recipient@example.org", "Observation complete", "Results are ready.");
+boolean htmlSent = email.send("recipient@example.org", "Observation complete", "<p>Results are ready.</p>", true);
+```
+
+`isConfigured()` and `getConfigurationStatus()` never contact SMTP. The status record contains
+`enabled`, `missingOrInvalidSettings` (an immutable list of `Setting` constants), and the derived
+`configured()` predicate. Disabled email is not configured even if its other settings are complete.
+An enabled service needs a host, valid sender, valid optional reply-to, valid port/security/timeouts,
+and nonblank credentials when authentication is enabled. Completeness does not verify server
+reachability, credentials, or the provider's permission to send from the chosen address.
+
+Both `send` overloads perform blocking I/O and return a boolean. `send(to, subject, body)` sends
+plain text; the fourth argument selects HTML when true. Missing or disabled configuration returns
+false normally and performs no SMTP I/O. Configured sending requires a nonblank recipient, a
+non-null single-line subject, and a non-null body. Message/address errors throw
+`KlabIllegalArgumentException`; configured SMTP delivery failures throw `KlabIOException` with
+the underlying cause. True means the SMTP send completed, not that the recipient read or even
+received the message in an inbox.
+
+Sending uses the configured sender and reply-to; callers cannot override credentials or the sender
+per message. The current interface sends one recipient, with no attachment, CC/BCC, queue, or
+automatic retry facility. Callers control scheduling and retry policy; a timeout or failure does
+not always prove that the server rejected a message, so retries may duplicate delivery. There is
+no standalone HTTP email-send endpoint; the administrative endpoints configure email and Java
+service code invokes the manager. The k.Actors adapter is documented separately in
+[the core agent reference](AGENTS_REFERENCE.md#coreemail).
 
 ## Web UI and generated API descriptions
 

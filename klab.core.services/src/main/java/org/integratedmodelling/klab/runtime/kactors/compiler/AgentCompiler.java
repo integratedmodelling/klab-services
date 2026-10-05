@@ -49,7 +49,6 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
@@ -77,11 +76,14 @@ public class AgentCompiler {
     default KActorsBehavior resolveBehavior(String urn, UserScope scope) {
       // Java actors (including produced proxies) are registry entries, not Resources documents.
       // Do not issue a document request whose absent body would be parsed as KActorsBehavior.
-      if (scope == null || CORE_AGENT_URN.equals(urn) || resolveActor(urn, scope) != null) {
+      if (scope == null
+          || urn == null
+          || urn.isBlank()
+          || CORE_AGENT_URN.equals(urn)
+          || resolveActor(urn, scope) != null) {
         return null;
       }
-      var resources = scope.getService(ResourcesService.class);
-      return resources == null ? null : resources.retrieve(urn, KActorsBehavior.class, scope);
+      return BehaviorResolver.resolve(urn, scope);
     }
 
     default ResolvedActor resolveActor(String urn, UserScope scope) {
@@ -1716,9 +1718,7 @@ public class AgentCompiler {
 
   public AgentCompiler(String behaviorUrn, UserScope scope) {
     this(
-        Objects.requireNonNull(scope, "scope")
-            .getService(ResourcesService.class)
-            .retrieve(behaviorUrn, KActorsBehavior.class, scope),
+        DEFAULT_RESOLVER.resolveBehavior(behaviorUrn, Objects.requireNonNull(scope, "scope")),
         scope,
         defaultValidator(scope),
         DEFAULT_RESOLVER);

@@ -111,6 +111,7 @@ public abstract class BaseService implements KlabService {
   }
 
   protected Settings settings;
+  private final EmailManager emailManager;
   protected Settings settingsForSlaveServices;
   private Identity identity;
   private ScheduledExecutorService schedule = Executors.newScheduledThreadPool(1);
@@ -120,6 +121,7 @@ public abstract class BaseService implements KlabService {
 
     this.type = serviceType;
     settings = SettingsImpl.forService(this, serviceType);
+    emailManager = new EmailManager(settings);
     configureComponentActions((SettingsImpl) settings);
 
     settingsForSlaveServices = SettingsImpl.forSlaveServices(serviceType, settings);
@@ -171,6 +173,11 @@ public abstract class BaseService implements KlabService {
 
   public Settings settings() {
     return settings;
+  }
+
+  /** Outgoing email configured through this service's settings; may be unconfigured. */
+  public EmailManager getEmailManager() {
+    return emailManager;
   }
 
   private void configureComponentActions(SettingsImpl serviceSettings) {

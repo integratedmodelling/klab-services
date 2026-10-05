@@ -20,6 +20,27 @@ class SettingsImplTest {
   @TempDir Path temporaryDirectory;
 
   @Test
+  void persistsEmailConfigurationAndRejectsInvalidSmtpSettings() throws Exception {
+    var file = Files.createFile(temporaryDirectory.resolve("email.properties")).toFile();
+    var settings = new SettingsImpl(file);
+    settings.set(Setting.EMAIL_ENABLED, true).get(2, TimeUnit.SECONDS);
+    settings.set(Setting.EMAIL_SMTP_HOST, "smtp.example.org").get(2, TimeUnit.SECONDS);
+    settings.set(Setting.EMAIL_PASSWORD, " application password ").get(2, TimeUnit.SECONDS);
+    settings.set(Setting.EMAIL_SECURITY, "SSL").get(2, TimeUnit.SECONDS);
+    var reloaded = new SettingsImpl(file);
+    assertEquals(true, reloaded.get(Setting.EMAIL_ENABLED, Boolean.class));
+    assertEquals("smtp.example.org", reloaded.get(Setting.EMAIL_SMTP_HOST, String.class));
+    assertEquals(" application password ", reloaded.get(Setting.EMAIL_PASSWORD, String.class));
+    assertEquals("SSL", reloaded.asMap().get(Setting.EMAIL_SECURITY.name()));
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,
+        () -> settings.set(Setting.EMAIL_SMTP_PORT, 0));
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,
+        () -> settings.set(Setting.EMAIL_READ_TIMEOUT_MS, -1));
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,
+        () -> settings.set(Setting.EMAIL_SECURITY, "UNKNOWN"));
+  }
+
+  @Test
   void persistsTypedValuesAndCompletesTheReturnedFuture() throws Exception {
     var file = Files.createFile(temporaryDirectory.resolve("settings.properties")).toFile();
     var settings = new SettingsImpl(file);

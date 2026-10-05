@@ -12,7 +12,9 @@ import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.runtime.kactors.compiler.BehaviorAnalyzer;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
@@ -75,6 +77,11 @@ class ComponentRegistryActorVerbTest {
     verifyNoInteractions(resources);
 
     // Real document URNs still use the Resources transmission contract.
+    var resource = new ResourceSet.Resource();
+    resource.setResourceUrn("test.remote");
+    resource.setKnowledgeClass(KnowledgeClass.BEHAVIOR);
+    when(resources.resolve("test.remote", KnowledgeClass.BEHAVIOR, scope))
+        .thenReturn(ResourceSet.of(resource));
     when(resources.retrieve("test.remote", KActorsBehavior.class, scope)).thenReturn(restored);
     assertSame(restored, resolver.resolveBehavior("test.remote", scope));
   }

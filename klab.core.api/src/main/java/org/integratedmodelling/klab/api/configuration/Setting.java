@@ -18,6 +18,46 @@ import org.integratedmodelling.klab.api.utils.Utils;
  * "result" field, the type of the result sets the return value of the operation.
  */
 public enum Setting {
+  EMAIL_ENABLED(Page.EMAIL, "Enable outgoing email when SMTP and sender are configured", Boolean.class, false,
+      EnumSet.allOf(KlabService.Type.class)),
+  EMAIL_SMTP_HOST(Page.EMAIL, "SMTP server hostname", String.class, "",
+      EnumSet.allOf(KlabService.Type.class)),
+  EMAIL_SMTP_PORT(Page.EMAIL, "SMTP server port (typically 587 for STARTTLS or 465 for SSL)", Integer.class, 587,
+      EnumSet.allOf(KlabService.Type.class)) {
+    @Override public boolean validate(Object value) {
+      return value instanceof Integer port && port > 0 && port <= 65535;
+    }
+  },
+  EMAIL_FROM_ADDRESS(Page.EMAIL, "Email address used as the sender", String.class, "",
+      EnumSet.allOf(KlabService.Type.class)),
+  EMAIL_FROM_NAME(Page.EMAIL, "Optional sender display name", String.class, "",
+      EnumSet.allOf(KlabService.Type.class)),
+  EMAIL_REPLY_TO(Page.EMAIL, "Optional reply-to email address", String.class, "",
+      EnumSet.allOf(KlabService.Type.class)),
+  EMAIL_AUTHENTICATION(Page.EMAIL, "Authenticate to the SMTP server", Boolean.class, true,
+      EnumSet.allOf(KlabService.Type.class)),
+  EMAIL_USERNAME(Page.EMAIL, "SMTP authentication username", String.class, "",
+      EnumSet.allOf(KlabService.Type.class)),
+  EMAIL_PASSWORD(Page.EMAIL, "SMTP authentication password or application password", String.class, "",
+      EnumSet.allOf(KlabService.Type.class)),
+  EMAIL_SECURITY(Page.EMAIL, "SMTP security: STARTTLS (required), SSL (implicit TLS), or NONE", String.class, "STARTTLS",
+      EnumSet.allOf(KlabService.Type.class)) {
+    @Override public boolean validate(Object value) {
+      return value instanceof String mode && Set.of("STARTTLS", "SSL", "NONE").contains(mode);
+    }
+  },
+  EMAIL_CONNECTION_TIMEOUT_MS(Page.EMAIL, "SMTP connection timeout in milliseconds", Integer.class, 10000,
+      EnumSet.allOf(KlabService.Type.class)) {
+    @Override public boolean validate(Object value) { return value instanceof Integer timeout && timeout > 0; }
+  },
+  EMAIL_READ_TIMEOUT_MS(Page.EMAIL, "SMTP read timeout in milliseconds", Integer.class, 10000,
+      EnumSet.allOf(KlabService.Type.class)) {
+    @Override public boolean validate(Object value) { return value instanceof Integer timeout && timeout > 0; }
+  },
+  EMAIL_WRITE_TIMEOUT_MS(Page.EMAIL, "SMTP write timeout in milliseconds", Integer.class, 10000,
+      EnumSet.allOf(KlabService.Type.class)) {
+    @Override public boolean validate(Object value) { return value instanceof Integer timeout && timeout > 0; }
+  },
   POLLING(
       Page.SERVICES,
       "Enable or disable server polling in all service clients",
@@ -448,6 +488,7 @@ public enum Setting {
     APPEARANCE,
     EDITOR,
     SERVICES,
+    EMAIL,
     MESSAGING,
     RESOURCES,
     REASONER,
