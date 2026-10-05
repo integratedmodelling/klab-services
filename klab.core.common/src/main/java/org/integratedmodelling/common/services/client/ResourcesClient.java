@@ -33,6 +33,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
@@ -102,6 +103,19 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
+  public List<WorkflowBehavior.AvailableAction> getFlowActions(String flowId, String stateId, UserScope scope) {
+    return client.withScope(scope).getCollection(ServicesAPI.RESOURCES.FLOW_ACTIONS,
+        WorkflowBehavior.AvailableAction.class, "flowId", flowId, "stateId", stateId);
+  }
+
+  @Override
+  public Flow executeFlowAction(String flowId, String stateId, String actionId,
+      WorkflowBehavior.ActionRequest request, UserScope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.RESOURCES.FLOW_ACTION, request, Flow.class,
+        "flowId", flowId, "stateId", stateId, "actionId", actionId);
+  }
+
+  @Override
   public Flow transitionFlow(String flowId, Flow.TransitionRequest request, UserScope scope) {
     return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_TRANSITIONS, request, Flow.class, "flowId", flowId);
   }
@@ -158,12 +172,11 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
-    // TODO RESOURCES-CRUD Utils.Http.Client currently discards DELETE response bodies. Preserve the
-    // server-side changesets when typed DELETE support is added to the HTTP client.
-    client
-        .withScope(scope)
-        .delete(ServicesAPI.RESOURCES.DELETE, "urn", urn, "knowledgeClass", knowledgeClass);
-    return List.of();
+    var result = client.withScope(scope).deleteCollectionOrThrow(
+        ServicesAPI.RESOURCES.DELETE_QUERY, ResourceSet.class,
+        "urn", urn, "knowledgeClass", knowledgeClass);
+    invalidateCaches();
+    return result;
   }
 
   @Override
@@ -437,7 +450,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
       }
     }
     var ret =
-        client.postCollection(
+        client.postCollectionOrThrow(
             ServicesAPI.RESOURCES.MANAGE_PROJECT, request, ResourceSet.class, "urn", projectName);
 
     invalidateCaches();

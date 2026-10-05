@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -111,6 +112,17 @@ public interface ResourcesService extends KlabService {
 
   /** Validate, authorize, persist, and append a transition to a flow. */
   Flow transitionFlow(String flowId, Flow.TransitionRequest request, UserScope scope);
+
+  /** Discover configured stage buttons and unresolved parameters without executing behavior code. */
+  default List<WorkflowBehavior.AvailableAction> getFlowActions(String flowId, String stateId, UserScope scope) {
+    throw new UnsupportedOperationException("Workflow actions are not supported");
+  }
+
+  /** Execute one configured button against exactly the advertised aggregate revision. */
+  default Flow executeFlowAction(String flowId, String stateId, String actionId,
+      WorkflowBehavior.ActionRequest request, UserScope scope) {
+    throw new UnsupportedOperationException("Workflow actions are not supported");
+  }
 
   /** Store an attachment payload in the workflow persistence backend. */
   Flow.Attachment addFlowAttachment(

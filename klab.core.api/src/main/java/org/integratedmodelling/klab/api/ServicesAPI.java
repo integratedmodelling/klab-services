@@ -473,6 +473,8 @@ public interface ServicesAPI {
     String FLOW_REOPEN = API_BASE + "/flows/{flowId}/reopen";
     String FLOW_STATES = API_BASE + "/flows/{flowId}/states";
     String FLOW_STATE = API_BASE + "/flows/{flowId}/states/{stateId}";
+    String FLOW_ACTIONS = FLOW_STATE + "/actions";
+    String FLOW_ACTION = FLOW_ACTIONS + "/{actionId}";
     String FLOW_TRANSITIONS = API_BASE + "/flows/{flowId}/transitions";
     String FLOW_ATTACHMENTS = API_BASE + "/flows/{flowId}/states/{stateId}/attachments";
     String FLOW_ATTACHMENT = API_BASE + "/flows/{flowId}/attachments/{attachmentId}";
@@ -492,6 +494,8 @@ public interface ServicesAPI {
     String RESOLVE = API_BASE + "/resolve/{knowledgeClass}/{urn}";
 
     String DELETE = API_BASE + "/delete/{knowledgeClass}/{urn}";
+    /** Query coordinates support qualified URNs without encoded slashes in path segments. */
+    String DELETE_QUERY = API_BASE + "/delete/{knowledgeClass}";
 
     /** PUT endpoint to ingest an asset for addition, update or replacement */
     String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";

@@ -54,11 +54,15 @@ public class FileProjectStorage implements ProjectStorage {
 
           Set<String> branchNames = new HashSet<>();
           for (var branchName : branches.stream().map(Ref::getName).toList()) {
-            branchName = Utils.Paths.getLast(branchName, '/');
-            branchNames.add(branchName);
+            if (branchName.startsWith("refs/heads/")) {
+              branchNames.add(branchName.substring("refs/heads/".length()));
+            } else if (branchName.startsWith("refs/remotes/origin/")
+                && !branchName.endsWith("/HEAD")) {
+              branchNames.add(branchName.substring("refs/remotes/origin/".length()));
+            }
           }
 
-          ret.getBranchNames().addAll(branchNames);
+          ret.getBranchNames().addAll(branchNames.stream().sorted().toList());
 
           for (var remote : git.remoteList().call()) {
             if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
@@ -586,14 +590,35 @@ public class FileProjectStorage implements ProjectStorage {
     }
   }
 
-  /**
-   * We don't have a delete function, but this returns the file URL that can be deleted by the
-   * workspace manager.
-   *
-   * @param resourceType
-   * @param urn
-   * @return the file URL of an existing file, or null if the resource is not found.
-   */
+  /** Remove a document from the working tree and stage its removal when tracked. */
+  public void deleteDocument(String urn, ResourceType resourceType) {
+    var document = locate(urn, resourceType);
+    if (document == null) {
+      throw new KlabIOException("Document " + urn + " was not found");
+    }
+    try {
+      var root = rootFolder.toPath().toRealPath();
+      var target = Path.of(document.toURI()).toRealPath();
+      if (!target.startsWith(root) || target.equals(root)) {
+        throw new IOException("Document is outside the project");
+      }
+      if (isTracked()) {
+        try (var git = Git.open(rootFolder)) {
+          String path = root.relativize(target).toString().replace('\\', '/');
+          var index = git.getRepository().readDirCache();
+          if (index.getEntry(path) != null) {
+            git.rm().addFilepattern(path).call();
+            return;
+          }
+        }
+      }
+      java.nio.file.Files.delete(target);
+    } catch (Exception e) {
+      throw new KlabIOException(e);
+    }
+  }
+
+  /** Return the URL of an existing document, or null if it is absent. */
   public URL locate(String urn, ResourceType resourceType) {
     try {
       File resourceFile =

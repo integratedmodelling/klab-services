@@ -105,6 +105,14 @@ public class ResourceCRUDController {
     @ApiResponse(responseCode = "403", description = "Forbidden"),
     @ApiResponse(responseCode = "404", description = "Asset not found")
   })
+  @DeleteMapping(ServicesAPI.RESOURCES.DELETE_QUERY)
+  public List<ResourceSet> deleteByUrn(
+      @org.springframework.web.bind.annotation.RequestParam("urn") String urn,
+      @PathVariable("knowledgeClass") KlabAsset.KnowledgeClass knowledgeClass,
+      Principal principal) {
+    return delete(urn, knowledgeClass, principal);
+  }
+
   @DeleteMapping(ServicesAPI.RESOURCES.DELETE)
   public List<ResourceSet> delete(
       @Parameter(description = "URN of the asset to delete") @PathVariable(name = "urn") String urn,

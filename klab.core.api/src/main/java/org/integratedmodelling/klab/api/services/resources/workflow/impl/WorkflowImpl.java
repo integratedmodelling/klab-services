@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.resources.workflow.impl;
 
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -87,6 +88,18 @@ public class WorkflowImpl implements Workflow {
   }
 
   public static class StateSchemaImpl implements Workflow.StateSchema {
+    private List<WorkflowBehavior.Action> onStart = new ArrayList<>();
+    public List<WorkflowBehavior.Action> getOnStart() { return onStart; }
+    public void setOnStart(List<WorkflowBehavior.Action> value) { onStart = value == null ? new ArrayList<>() : new ArrayList<>(value); }
+
+    private List<WorkflowBehavior.Action> onCommit = new ArrayList<>();
+    public List<WorkflowBehavior.Action> getOnCommit() { return onCommit; }
+    public void setOnCommit(List<WorkflowBehavior.Action> value) { onCommit = value == null ? new ArrayList<>() : new ArrayList<>(value); }
+
+    private List<WorkflowBehavior.Action> actions = new ArrayList<>();
+    public List<WorkflowBehavior.Action> getActions() { return actions; }
+    public void setActions(List<WorkflowBehavior.Action> value) { actions = value == null ? new ArrayList<>() : new ArrayList<>(value); }
+
     private String id;
     private String workflowId;
     private String workflowVersion;
@@ -228,6 +241,10 @@ public class WorkflowImpl implements Workflow {
   }
 
   public static class TransitionSchemaImpl implements Workflow.TransitionSchema {
+    private List<WorkflowBehavior.Action> actions = new ArrayList<>();
+    public List<WorkflowBehavior.Action> getActions() { return actions; }
+    public void setActions(List<WorkflowBehavior.Action> value) { actions = value == null ? new ArrayList<>() : new ArrayList<>(value); }
+
     private String id;
     private String workflowId;
     private String workflowVersion;
@@ -342,6 +359,9 @@ public class WorkflowImpl implements Workflow {
   }
 
   private String id;
+  private String behavior;
+  public String getBehavior() { return behavior; }
+  public void setBehavior(String behavior) { this.behavior = behavior; }
   private String version;
   private String name;
   private String description;
@@ -357,6 +377,14 @@ public class WorkflowImpl implements Workflow {
     if (id == null || id.isBlank()) errors.add("Workflow id is required");
     if (version == null || version.isBlank()) errors.add("Workflow version is required");
     if (states.isEmpty()) errors.add("At least one state is required");
+    if (behavior != null && behavior.isBlank()) errors.add("Behavior URN cannot be blank");
+    states.values().stream().filter(Objects::nonNull).forEach(state -> {
+      validateActions(state.getOnStart(), false, errors);
+      validateActions(state.getOnCommit(), false, errors);
+      validateActions(state.getActions(), true, errors);
+    });
+    transitions.values().stream().filter(Objects::nonNull)
+        .forEach(transition -> validateActions(transition.getActions(), false, errors));
     for (var entry : states.entrySet()) {
       if (entry.getValue() == null) errors.add("State " + entry.getKey() + " has no schema");
       else {
@@ -408,6 +436,19 @@ public class WorkflowImpl implements Workflow {
         .noneMatch(t -> t != null && t.getSourceStates().contains(Workflow.INIT)))
       errors.add("At least one INIT transition is required");
     return errors;
+  }
+
+  private void validateActions(List<WorkflowBehavior.Action> actions, boolean buttons, List<String> errors) {
+    if (!actions.isEmpty() && (behavior == null || behavior.isBlank()))
+      errors.add("Action bindings require a behavior URN");
+    var ids = new LinkedHashSet<String>();
+    for (var action : actions) {
+      if (action == null || action.action() == null || !action.action().matches("[a-z][a-zA-Z0-9_]*")
+          || "init".equals(action.action()) || "main".equals(action.action()))
+        errors.add("Binding must name an ordinary behavior action");
+      if (buttons && (action == null || action.id() == null || action.id().isBlank()
+          || !ids.add(action.id()))) errors.add("Stage button IDs must be nonblank and unique");
+    }
   }
 
   public List<Workflow.TransitionSchema> admittedTransitions(

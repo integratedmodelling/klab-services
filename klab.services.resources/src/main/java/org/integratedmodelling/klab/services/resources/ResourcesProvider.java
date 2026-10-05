@@ -79,6 +79,7 @@ import org.integratedmodelling.klab.services.resources.storage.ResourceManager;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.services.resources.workflow.WorkflowManager;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowParticipant;
 import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowRole;
@@ -153,6 +154,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     this.workflowManager = new WorkflowManager(this.resourcesKbox);
 
     setComponentRegistry();
+    workflowManager.setBehaviorBridge(new org.integratedmodelling.klab.services.resources.workflow.WorkflowBehaviorBridge(
+        () -> org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler.componentResolver(getComponentRegistry()),
+        owner -> getScopeManager().getScope(owner, UserScope.class)));
 
     ServiceConfiguration.INSTANCE.setMainService(this);
 
@@ -327,6 +331,17 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public boolean deleteFlowState(String flowId, String stateId, UserScope scope) {
     return workflowManager.deleteState(flowId, stateId, scope);
+  }
+
+  @Override
+  public List<WorkflowBehavior.AvailableAction> getFlowActions(String flowId, String stateId, UserScope scope) {
+    return workflowManager.getActions(flowId, stateId, scope);
+  }
+
+  @Override
+  public Flow executeFlowAction(String flowId, String stateId, String actionId,
+      WorkflowBehavior.ActionRequest request, UserScope scope) {
+    return workflowManager.executeAction(flowId, stateId, actionId, request, scope);
   }
 
   @Override
@@ -1241,7 +1256,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         return deleteProject(urn, scope);
       case WORKSPACE:
         return deleteWorkspace(urn, scope);
-      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY:
+      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, TESTCASE, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY:
         String[] urns = urn.split("/");
         if (urns.length < 2) {
           throw new KlabIllegalArgumentException(
@@ -1250,6 +1265,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         return deleteDocument(
             urns[urns.length - 2], urns[urns.length - 1], knowledgeClass.getResourceType(), scope);
       case COMPONENT:
+        // Qualified component URNs identify project behavior documents, not installed extensions.
+        int separator = urn.lastIndexOf('/');
+        if (separator >= 0) {
+          String project = urn.substring(0, separator);
+          project = project.substring(project.lastIndexOf('/') + 1);
+          return deleteDocument(project, urn.substring(separator + 1),
+              ProjectStorage.ResourceType.BEHAVIOR, scope);
+        }
         getComponentRegistry().unloadComponent(urn, Urn.of(urn).getVersion());
         // TODO delete from registry!
         // TODO RESOURCE

@@ -2505,6 +2505,52 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return java.util.Collections.emptyList();
       }
 
+      /** DELETE a resource and preserve its changesets and failures. */
+      public <T> List<T> deleteCollectionOrThrow(
+          String apiRequest, Class<T> resultClass, Object... parameters) {
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        responseHeaders.clear();
+
+        try {
+          var requestBuilder = HttpRequest.newBuilder().DELETE();
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          }
+
+          var response =
+              client.send(
+                  requestBuilder
+                      .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                      .timeout(Duration.ofSeconds(timeoutSeconds))
+                      .build(),
+                  HttpResponse.BodyHandlers.ofString());
+
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+            parseHeaders(response);
+            return parseResponseList(response.body(), resultClass);
+          }
+
+          throw new RequestFailure(response == null ? 0 : response.statusCode(),
+              RequestFailure.collectionFailureDetail(response == null ? null : response.body()), null);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new RequestFailure(0, "Delete request interrupted", e);
+        } catch (RequestFailure e) {
+          throw e;
+        } catch (Exception e) {
+          throw new RequestFailure(0, "Delete request failed", e);
+        }
+      }
+
       /**
        * DELETE helper that sets all headers and returns true if the request was 2xx. What to delete
        * must be set in the URL. Any response body is discarded.

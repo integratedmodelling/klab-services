@@ -10,6 +10,8 @@ import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImp
 
 /** Persistent active or closed instance of a {@link Workflow}. */
 public interface Flow extends KlabAsset {
+  WorkflowBehavior.Checkpoint getBehaviorCheckpoint();
+  void setBehaviorCheckpoint(WorkflowBehavior.Checkpoint checkpoint);
 
   /** Create an empty client-side flow bean, suitable for a provisional first stage. */
   static Flow create() {
@@ -77,6 +79,8 @@ public interface Flow extends KlabAsset {
   }
 
   interface State extends KlabAsset {
+    WorkflowBehavior.Checkpoint getBehaviorCheckpoint();
+    void setBehaviorCheckpoint(WorkflowBehavior.Checkpoint checkpoint);
     /** Server-owned proposal review extension; null for ordinary workflow stages. */
     ProposalReview.StageData getProposalReview();
 

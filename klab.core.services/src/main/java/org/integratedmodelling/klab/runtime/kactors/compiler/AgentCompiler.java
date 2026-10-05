@@ -2215,6 +2215,7 @@ public class AgentCompiler {
     }
     var init = analyzer.getActions().get("init");
     if (init != null) {
+      constructor.beginControlFlow("if (initializingState())");
       switch (init.effectiveExecutionType()) {
         case FUNCTION ->
             constructor.addStatement(
@@ -2227,6 +2228,7 @@ public class AgentCompiler {
                 "invokeSelfEmitter($S, (AgentScope) rootScope(), initArguments)", "init");
       }
     }
+    if (init != null) constructor.endControlFlow();
     type.addMethod(constructor.build());
   }
 
@@ -3884,7 +3886,7 @@ public class AgentCompiler {
     }
     var values =
         strings.stream()
-            .map(value -> value == null ? CodeBlock.of("null") : CodeBlock.of("$S", value))
+            .map(value -> value == null ? CodeBlock.of("($T) null", String.class) : CodeBlock.of("$S", value))
             .toList();
     return CodeBlock.of("$T.asList($L)", java.util.Arrays.class, CodeBlock.join(values, ", "));
   }

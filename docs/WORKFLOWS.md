@@ -505,6 +505,258 @@ to the right of their label in the workspace tree. Both this menu and the corres
 `ResourceEditor` intersect the provider callback's results with `workflow.permitted`; direct start
 callbacks repeat the check, and `WorkflowEditor` derives editability from `Workflow.canAccess`.
 
-The current code does not implement timers, notifications, reviewer quorum, cryptographic
+The current code does not implement durable timers, a notification outbox, reviewer quorum, cryptographic
 signatures, attachment virus scanning, or multi-source joins. These are policy/execution features
 that can be added without changing the persisted core abstractions.
+
+
+## k.Actors instrumentation
+
+A workflow may name **one** behavior URN in `behavior`. Omit the field for the existing,
+uninstrumented execution model. Only the k.Actors `behavior` category is accepted: applications,
+scripts, tasks, libraries, and standalone traits are rejected. Each flow has its own global state;
+the schema and the compiled behavior are not shared mutable flow state.
+
+```yaml
+id: instrumented-review
+version: "1"
+name: Instrumented review
+behavior: examples.review
+states:
+  editing:
+    managerRoles: [ADMIN, EDITOR]
+    contributorRoles: [EDITOR]
+    onStart:
+      - action: prepare
+    onCommit:
+      - action: validate
+    actions:
+      - id: send-reminder
+        label: Send reminder
+        action: remind
+        parameters:
+          subject: Review reminder
+    open: true
+  complete:
+    managerRoles: [ADMIN]
+    contributorRoles: [ADMIN]
+    open: false
+transitions:
+  initialize:
+    sourceStates: [INIT]
+    targetState: editing
+    roles: [ADMIN, EDITOR]
+    actions:
+      - action: created
+  finish:
+    sourceStates: [editing]
+    targetState: complete
+    roles: [ADMIN, EDITOR]
+    actions:
+      - action: submitted
+```
+
+Bindings are ordered objects with `action` and optional `parameters`. Stage buttons additionally
+require a unique, nonblank `id`; `label` is their display text. Empty or omitted lists mean no
+calls. `init` and `main` cannot be explicitly bound. Structural validation rejects bindings without
+a behavior, duplicate button IDs, and invalid action names. Resolution additionally checks that
+bound actions exist and that configured parameter names are declared by those actions.
+
+### Execution order and transaction boundary
+
+Creation resolves the behavior through the owner's `UserScope` and connected Resources services.
+The compiler uses the Resources service's component registry, making installed Java actors
+(including core facilities) available without a Runtime service. The owner remains the agent's
+creation scope; the user triggering an individual operation is passed separately.
+
+Creation executes the constructor `init`, then `main` if declared, then the selected `INIT`
+transition's `actions`, then the initial stage's `onStart`. On an ordinary transition the sequence is:
+
+1. Validate authorization, revision, and transition applicability.
+2. Restore the flow's latest checkpoint, without rerunning `init` or `main`.
+3. Invoke the outgoing stage's `onCommit` actions in order.
+4. Invoke the transition's `actions` in order, validate the resulting required attachments and
+   transition inputs, and checkpoint the outgoing stage.
+5. Prepare the review candidate from the resulting content, close the source, add the target,
+   and record the transition.
+6. Invoke the incoming stage's `onStart` actions and checkpoint the incoming stage.
+7. Persist the flow, its history, stage snapshots, and latest global state as one aggregate.
+
+Atomic first-stage submission also uses this sequence, including initialization, before publishing
+the aggregate or attachment payloads. Direct stage creation runs `onStart`. Ordinary field edits,
+attachment operations, reads, and administrative reopening do not replay behavior hooks.
+A button invokes only its configured action and checkpoints the selected stage; it does not
+implicitly commit or transition the flow. The revision advances after a successful invocation.
+
+A thrown action exception, a missing automatic parameter, or an unpersistable global value prevents
+the flow mutation from being stored. Return values are currently ignored: validation actions must
+throw/assert on rejection rather than return `false`. Behaviors are trusted service code configured
+by workflow administrators. They receive actual aggregate beans and can prepare stage content;
+they should not change IDs, ownership, revision, workflow topology, or authorization fields.
+
+The execution profile accepts **FUNCTION and finite SUPPLIER actions**, including `init`, `main`,
+and inherited actions. Suppliers (such as the core email actor) are awaited for up to 60 seconds
+per invocation before checkpointing. Failure, interruption, or timeout aborts the mutation and
+disposes the action scope. EMITTER actions, including currently unbound actions, are rejected by
+the compiler's effective execution classification. Workflows remain asynchronous between operations,
+while each instrumentation operation finishes before persistence. No running agent, reactor, timer, message
+subscription, future, or Java service instance is stored. The isolated agent is stopped after the
+operation. Long-running Java functions can still block an operation; this is not a preemptive sandbox.
+
+External effects are not rolled back with the aggregate. In particular, an email sent before a
+later failure or process crash may be sent again on retry. Use idempotent integrations and avoid
+assuming exactly-once delivery. A durable outbox and restartable asynchronous continuation contract are tracked
+in [WORKFLOW_EXTENSION.md](WORKFLOW_EXTENSION.md).
+
+### Parameters and the editor agent
+
+Arguments are resolved in declaration order using the following precedence:
+
+1. Exact reserved context name.
+2. Explicit binding parameter, or an allowed interactive input.
+3. A unique context object matching `@type(class="...")`.
+
+| Name | Value |
+| --- | --- |
+| `workflow` | The resolved `Workflow` schema |
+| `flow` | The working `Flow` aggregate |
+| `stage` | The current `Flow.State`; source for commit/transition, target for start |
+| `content` | Content mutation agent for the bound stage |
+| `transition` | The `Workflow.TransitionSchema`, or null for independent buttons/direct stage creation |
+| `user` | The requesting `UserIdentity` |
+| `participant` | The requesting `WorkflowParticipant`, including workflow roles |
+| `editor` | Read-only `WorkflowBehaviorBridge.Editor` facade |
+
+The `content` agent exposes `title(value)`, `description(value)`, `metadata(key, value)` and
+`value(key)`. Use these finite calls to prepare stage content, e.g. `content.title("Ready for review")`.
+Metadata values must be portable. Prefer this agent to changing aggregate fields directly.
+Dynamic Java suppliers are awaited, and dynamic
+emitters are rejected before invocation.
+
+### Attachments through the content agent
+
+The same `content` agent creates and reads attachments on its bound stage. Java camel-case names
+can be called in k.Actors snake case, for example:
+
+```kactors
+action prepare(content):
+    content.attach_text("supporting-material", "readme.txt", "text/plain", "Ready for review")
+```
+
+| Call | Input/result |
+| --- | --- |
+| `attach_text(type, name, mediaType, text)` | UTF-8 text; returns an attachment descriptor |
+| `attach_bytes(type, name, mediaType, bytes)` | Direct Java `byte[]` content |
+| `attach_bytes(type, name, mediaType, assetType, bytes)` | Also supplies a knowledge-class enum name |
+| `attach_file(type, path, mediaType)` | Server-side file; filename inferred from the path |
+| `attach_url(type, url, name, mediaType)` | Downloads HTTP(S) content under the supplied filename |
+| `attachments` | List of the bound stage's attachment descriptors |
+| `attachment(id)` | Defensive copy of a bound-stage attachment's bytes |
+| `remove_attachment(id)` | Removes the descriptor; returns whether it was present |
+
+The `type` must match a stage attachment rule. Existing media-type, asset-type, arity, count,
+byte limits, checksums and author attribution apply to generated attachments too. An asset type
+is inferred from the rule when available. Commit and transition actions can generate required
+inputs before transition validation; initial start actions can do so during atomic first submission.
+Review-bound candidate artifacts remain immutable. A behavior can read both existing and newly
+generated payloads within the operation. Descriptors and byte arrays are transient Java values;
+persist IDs or other scalar metadata in globals instead.
+
+New payloads are staged until the action and checkpoint succeed, then written before the flow
+aggregate. Failed saves clean up attempted payload writes. Removals delete stored bytes only after
+a successful aggregate save and only when no stored flow still references them. These compensating
+operations handle ordinary failures; a process crash between records may leave orphaned blobs.
+The store does not provide a multi-record transaction or a durable garbage-collection journal.
+
+File access is restricted to real paths under the roots in the Resources JVM system property
+`klab.workflow.attachment.roots`, separated by the platform path separator (`;` on Windows).
+The default is the dedicated `klab-workflow-attachments` directory under `java.io.tmpdir`;
+create that directory before placing generated files there. A path names a file on the service
+host, not on the IDE user's computer. IDE-local files continue to use the upload API.
+
+URL downloads have a 10-second connection timeout, a 30-second overall timeout, and a bounded
+streaming body. Redirects, credentials embedded in URLs, and non-HTTP(S) schemes are rejected.
+The optional comma-separated system property `klab.workflow.attachment.hosts` restricts downloads
+to exact hostnames and explicitly permits those hosts even on internal networks. Without it,
+private, loopback and reserved resolved addresses are rejected. DNS checks are not a network
+sandbox: configure service egress controls or an explicit trusted-host list where required.
+No caller credentials are forwarded. Authenticated source adapters and durable transfer retries
+remain extension points.
+
+### Read-only editor and parameter contracts
+
+The editor facade exposes `flowId`, `stageId`, `title`, `description`, `owner`, `revision`, and
+`attachmentNames` through ordinary k.Actors Java-agent calls. It holds immutable scalar values and
+an immutable list, with no editor widget, mutation operation, or live client connection. It describes
+**saved server content**. The bridge neither accesses nor executes against unsaved IDE buffers.
+For example, an action can accept `editor` and call `editor.title`; an action accepting
+`@type(class="Flow") job` receives the flow by type. Canonical Java names match exactly and simple
+names match case-insensitively, including implemented interfaces and superclasses. Ambiguous type
+matches fail rather than choose an arbitrary object. Named values are also type checked.
+
+Configured values cannot replace reserved context values. Interactive callers can supply only
+parameters that discovery reported as unresolved; attempts to replace injected or configured values
+are rejected. Unresolved automatic parameters abort the operation. For buttons, discovery returns
+names plus Java/behavior type hints, allowing the UI to request values before invocation. The
+compiler's normal argument contracts remain the final runtime type check.
+
+Do not retain `flow`, `stage`, `user`, `editor`, or another live Java object in a global. Copy the
+needed scalar values into globals and accept fresh context parameters on subsequent actions.
+
+### Checkpoint storage, restarts, and behavior updates
+
+`Flow.behaviorCheckpoint` stores the latest globals; `Flow.State.behaviorCheckpoint` records that
+stage's latest start, commit, or button snapshot. Both are server-owned and committed with the
+aggregate. Each checkpoint contains the canonical behavior URN, version, and detached global-value
+tree. Flow and state responses omit checkpoints, including public-flow responses. Client-supplied
+checkpoints are discarded on creation and ignored during ordinary updates.
+
+The portable state subset is null, strings, booleans, finite numbers, lists, and string-keyed maps.
+Nested data is copied; live agents, scopes, service objects, arbitrary DTOs, non-string map keys,
+cycles, and excessive nesting are rejected. Inherited delegates have separate nested snapshots.
+Inherited initializers currently run without workflow-context arguments; place context-dependent
+initialization in the top-level `init` action.
+Dynamically constructed imported agents are not a portable state graph: retaining them in globals
+or changing the delegate layout prevents checkpointing/restoration. JSON number representation may
+normalize numeric wrapper types across a restart.
+
+Every instrumented operation resolves through the owner's services again. The existing
+scope-isolated semantic-bean cache checks service identity, canonical URN, version, and source
+timestamp before reuse. Updated source with the same behavior version is recompiled and receives
+the old globals, so same-version changes must preserve state layout. A changed behavior version or
+inherited delegate layout fails closed pending explicit migration; no implicit `init` replay or
+state reset occurs. Currently generated classes are compiled for each isolated operation rather
+than cached across workflow operations.
+
+After a service restart, an owner must have a live authenticated user scope again before another
+participant can resume their instrumented flow. The server never substitutes the requesting user's
+permissions for an absent owner's scope. A durable owner execution identity remains an upstream
+policy decision.
+
+### Interactive API and IDE
+
+`ResourcesService.getFlowActions(flowId, stateId, scope)` and
+`executeFlowAction(flowId, stateId, actionId, request, scope)` expose the bridge to clients.
+The authenticated REST routes, relative to the Resources API base, are:
+
+- `GET /flows/{flowId}/states/{stateId}/actions`: configured button IDs, labels, action names,
+  unresolved parameter descriptors, and the authoritative flow revision. This does not run
+  initialization or action code.
+- `POST /flows/{flowId}/states/{stateId}/actions/{actionId}` with
+  `{"expectedRevision": 3, "parameters": {"message": "Please review"}}`: invokes that configured
+  button and returns the updated projected flow. The revision is mandatory and must match exactly;
+  negative values do not disable concurrency checking.
+
+Both operations require an active current stage, contributor permission, stage-editor ownership
+(or the existing administrator/assigned-editor allowance), and an unexpired response deadline.
+Neither accepts arbitrary behavior action names or executes buttons belonging to another stage.
+Discovery is advisory: authorization, revision, configuration and parameter matching are checked
+again when executing.
+
+The `klab-ide` workflow editor renders configured buttons separately from transition selection.
+Discovery and execution run in background tasks, disabling the editor while a request is pending.
+A modal requests unresolved text, boolean, and numeric Java parameters, validates input before
+sending, and refreshes the stage on success. It explains that actions use saved content. Cancel
+performs no invocation. Agent-valued inputs and richer Java object editors are not yet supported;
+the REST descriptor leaves room for future IDE and web form providers. Unsaved content must be saved
+before running a button. Existing proposal-draft confirmation is retained.

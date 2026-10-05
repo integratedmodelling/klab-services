@@ -4215,6 +4215,7 @@ public class WorkspaceManager {
       var document = fileProjectStorage.locate(documentUrn, resourceType);
       if (document != null) {
         this.loading.set(true);
+        fileProjectStorage.deleteDocument(documentUrn, resourceType);
         var result = new ResourceSet();
         result.setWorkspace(getWorkspaceForProject(projectName));
         result.getServices().put(service.serviceId(), service.getUrl());
@@ -4244,7 +4245,7 @@ public class WorkspaceManager {
                           false));
               result
                   .getNotifications()
-                  .add(Notification.info("Namespace " + documentUrn + " was permanently deleted"));
+                  .add(Notification.info("Namespace " + documentUrn + " was removed from the working tree"));
             } else {
               result
                   .getNotifications()
@@ -4257,10 +4258,10 @@ public class WorkspaceManager {
                 _ontologyOrder.stream()
                     .filter(o -> !o.getUrn().equals(documentUrn))
                     .collect(Collectors.toList());
-            _worldviewOntologies.stream()
+            _worldviewOntologies = _worldviewOntologies.stream()
                 .filter(o -> !o.getUrn().equals(documentUrn))
                 .collect(Collectors.toList());
-            if (previous != null && isWorldviewProvider()) {
+            if (previous != null) {
               // this may or may not end up in the result set
               var worldviewChange = new ResourceSet();
               worldviewChange.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
@@ -4277,7 +4278,9 @@ public class WorkspaceManager {
                           KlabAsset.KnowledgeClass.ONTOLOGY,
                           previous.getLastUpdateTimestamp(),
                           false));
-              ret.add(worldviewChange);
+              if (isWorldviewProvider()) {
+                ret.add(worldviewChange);
+              }
               result
                   .getOntologies()
                   .add(
@@ -4292,7 +4295,7 @@ public class WorkspaceManager {
                           false));
               result
                   .getNotifications()
-                  .add(Notification.info("Ontology " + documentUrn + " was permanently deleted"));
+                  .add(Notification.info("Ontology " + documentUrn + " was removed from the working tree"));
 
             } else {
               result
@@ -4321,7 +4324,7 @@ public class WorkspaceManager {
                           false));
               result
                   .getNotifications()
-                  .add(Notification.info("Behavior " + documentUrn + " was permanently deleted"));
+                  .add(Notification.info("Behavior " + documentUrn + " was removed from the working tree"));
 
             } else {
               result
@@ -4355,7 +4358,7 @@ public class WorkspaceManager {
                   .getNotifications()
                   .add(
                       Notification.info(
-                          "Observation strategy " + documentUrn + " was permanently deleted"));
+                          "Observation strategy " + documentUrn + " was removed from the working tree"));
 
             } else {
               result
@@ -4364,16 +4367,15 @@ public class WorkspaceManager {
             }
           }
         }
-        // FIXME this logic should go in the file storage, including the next TODO and backup
-        File file = new File(document.getFile());
-        // FIXME NOO have the file repo do this, with Git synchronization
-        Utils.Files.deleteQuietly(file);
-        // TODO if namespace and no other docs in the same dir, remove the folders too
         ret.add(result);
-        this.loading.set(false);
+      } else {
+        return List.of(ResourceSet.empty(Notification.error(
+            "Document " + documentUrn + " was not found", UIView.Interactivity.DISPLAY)));
       }
     } catch (Exception e) {
-      return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e)));
+      return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e, UIView.Interactivity.DISPLAY)));
+    } finally {
+      this.loading.set(false);
     }
 
     if (!ret.isEmpty()) {

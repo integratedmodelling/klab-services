@@ -545,10 +545,15 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
       Thread.ofVirtual()
           .start(
               () -> {
-                var ret =
-                    resources.delete(
-                        asset.getUrn(), KlabAsset.classify(document), currentUser());
-                handleResultSets(ret);
+                try {
+                  var ret = resources.delete(
+                        document.getProjectName() + "/" + document.getUrn(),
+                        KlabAsset.classify(document), currentUser());
+                  handleResultSets(ret);
+                } catch (Exception e) {
+                  handleResultSets(List.of(ResourceSet.empty(
+                      Notification.error(e, org.integratedmodelling.klab.api.view.UIView.Interactivity.DISPLAY))));
+                }
               });
     }
   }
@@ -563,8 +568,13 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     Thread.ofVirtual()
         .start(
             () -> {
-              var ret = resources.manageRepository(projectId, operation, arguments);
-              handleResultSets(ret);
+              try {
+                var ret = resources.manageRepository(projectId, operation, arguments);
+                handleResultSets(ret);
+              } catch (Exception e) {
+                handleResultSets(List.of(ResourceSet.empty(
+                    Notification.error(e, org.integratedmodelling.klab.api.view.UIView.Interactivity.DISPLAY))));
+              }
             });
   }
 

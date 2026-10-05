@@ -2105,10 +2105,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     private static ObjectId resolveBranch(Repository repository, String branch) throws IOException {
       String normalized = normalizeBranchName(branch);
-      ObjectId ret = repository.resolve(normalized);
-      if (ret == null) {
-        ret = repository.resolve("refs/heads/" + normalized);
-      }
+      ObjectId ret = repository.resolve("refs/heads/" + normalized);
       if (ret == null) {
         ret = repository.resolve("refs/remotes/origin/" + normalized);
       }
@@ -2120,23 +2117,23 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         throws GitAPIException, IOException {
 
       String normalized = normalizeBranchName(branch);
-      if (repository.findRef("refs/heads/" + normalized) != null
-          || repository.findRef(normalized) != null) {
-        git.checkout().setName(normalized).call();
+      if (repository.exactRef("refs/heads/" + normalized) != null) {
+        git.checkout().setName("refs/heads/" + normalized).call();
         return;
       }
 
       if (repository.findRef("refs/remotes/origin/" + normalized) != null) {
-        git.checkout()
-            .setCreateBranch(true)
+        git.branchCreate()
             .setName(normalized)
-            .setStartPoint("origin/" + normalized)
+            .setStartPoint("refs/remotes/origin/" + normalized)
             .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
             .call();
+        git.checkout().setName("refs/heads/" + normalized).call();
         return;
       }
 
-      git.checkout().setCreateBranch(true).setName(normalized).call();
+      git.branchCreate().setName(normalized).call();
+      git.checkout().setName("refs/heads/" + normalized).call();
       var config = repository.getConfig();
       config.setString("branch", normalized, "remote", "origin");
       config.setString("branch", normalized, "merge", "refs/heads/" + normalized);
@@ -2283,9 +2280,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
       branch = normalizeBranchName(branch);
-      if (branch.isBlank()) {
+      if (branch.isBlank() || !Repository.isValidRefName("refs/heads/" + branch)) {
         ret.getNotifications()
-            .add(Notification.error("A branch name is required to merge changes"));
+            .add(Notification.error("A valid branch name is required to merge changes", UIView.Interactivity.DISPLAY));
         return ret;
       }
 
@@ -2324,7 +2321,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           if (!mergeResult.getMergeStatus().isSuccessful()) {
             resetHard(git, oldCommit);
             ret.getNotifications()
-                .add(Notification.error(formatMergeFailure(localRepository, mergeResult)));
+                .add(Notification.error(formatMergeFailure(localRepository, mergeResult), UIView.Interactivity.DISPLAY));
             return ret;
           }
 
@@ -2369,9 +2366,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
       branch = normalizeBranchName(branch);
-      if (branch.isBlank()) {
+      if (branch.isBlank() || !Repository.isValidRefName("refs/heads/" + branch)) {
         ret.getNotifications()
-            .add(Notification.error("A branch name is required to switch branches"));
+            .add(Notification.error("A valid branch name is required to switch branches", UIView.Interactivity.DISPLAY));
         return ret;
       }
 

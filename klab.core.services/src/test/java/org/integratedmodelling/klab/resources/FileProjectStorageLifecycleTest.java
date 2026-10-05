@@ -65,4 +65,39 @@ class FileProjectStorageLifecycleTest {
     assertEquals(ProjectStorage.ResourceType.TESTCASE, document.getFirst());
     assertEquals("klab.staging.vxii.testsuite", document.getSecond());
   }
+
+  @Test
+  void deletionIsStagedAndCanBeDiscardedBeforeCommit() throws Exception {
+    projectRoot = Files.createDirectory(projectRoot.resolve("project with spaces"));
+    try (var git = org.eclipse.jgit.api.Git.init().setDirectory(projectRoot.toFile()).call()) {
+      var path = projectRoot.resolve("src/test.kim");
+      Files.createDirectories(path.getParent());
+      Files.writeString(path, "namespace test;\n");
+      git.add().addFilepattern(".").call();
+      git.commit().setMessage("Initial").setAuthor("Test", "test@example.org").call();
+      var head = git.getRepository().resolve("HEAD");
+      var storage = new FileProjectStorage(projectRoot.toFile(), "test.project", null);
+
+      storage.deleteDocument("test", ProjectStorage.ResourceType.MODEL_NAMESPACE);
+
+      assertFalse(Files.exists(path));
+      assertTrue(git.status().call().getRemoved().contains("src/test.kim"));
+      assertEquals(head, git.getRepository().resolve("HEAD"));
+      git.reset().setMode(org.eclipse.jgit.api.ResetCommand.ResetType.HARD).call();
+      assertTrue(Files.exists(path));
+    }
+  }
+
+  @Test
+  void branchNamesPreserveTheirFullPath() throws Exception {
+    try (var git = org.eclipse.jgit.api.Git.init().setDirectory(projectRoot.toFile()).call()) {
+      Files.writeString(projectRoot.resolve("README"), "test");
+      git.add().addFilepattern(".").call();
+      git.commit().setMessage("Initial").setAuthor("Test", "test@example.org").call();
+      git.branchCreate().setName("feature/shared").call();
+      var storage = new FileProjectStorage(projectRoot.toFile(), "test.project", null);
+      assertTrue(storage.getRepositoryState().getBranchNames().contains("feature/shared"));
+      assertFalse(storage.getRepositoryState().getBranchNames().contains("shared"));
+    }
+  }
 }
