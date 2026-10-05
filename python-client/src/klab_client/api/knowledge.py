@@ -65,6 +65,7 @@ class ConceptImpl(Concept):
     qualifier: LogicalConnector | None = None
     description_type: DescriptionType = DescriptionType.INSTANTIATION
     notifications: list[Notification] = field(default_factory=list)
+    raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
     def get_type(self) -> set[SemanticType]:
         return self.semantic_types
@@ -83,6 +84,7 @@ class ConceptImpl(Concept):
             qualifier=self.qualifier,
             description_type=self.description_type,
             notifications=list(self.notifications),
+            raw={**self.raw, "collective": False} if self.raw else {},
         )
 
     def collective(self) -> "ConceptImpl":
@@ -93,6 +95,7 @@ class ConceptImpl(Concept):
             qualifier=self.qualifier,
             description_type=self.description_type,
             notifications=list(self.notifications),
+            raw={**self.raw, "collective": True} if self.raw else {},
         )
 
     def get_notifications(self) -> list[Notification]:
@@ -110,6 +113,7 @@ class ObservableImpl(Observable):
     default_value: Any = None
     resolution_directives: list[ResolutionDirective] = field(default_factory=list)
     description_type: DescriptionType = DescriptionType.INSTANTIATION
+    raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
     def get_semantics(self) -> Concept:
         return self.semantics

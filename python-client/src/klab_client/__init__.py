@@ -19,8 +19,11 @@ from klab_client.api.services import (
     RuntimeService,
     RuntimeServiceImpl,
 )
+from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData
+from klab_client.transport import Endpoint
 
 __all__ = [
+    "Client", "Context", "Session", "Job", "JobStatus", "ScientificData", "Endpoint",
     "Concept",
     "ConceptImpl",
     "Observable",

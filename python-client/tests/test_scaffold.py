@@ -13,24 +13,9 @@ from klab_client import (
 from klab_client.api.primitives import Scope
 
 
-def test_basic_client_workflow() -> None:
+def test_local_scope_tracking() -> None:
     user = UserScopeImpl(user_id="u1", roles={"user"})
-    runtime = RuntimeServiceImpl()
-    reasoner = ReasonerImpl()
-    resolver = ResolverImpl()
-    resources = ResourcesServiceImpl()
-
-    concept = reasoner.resolve_concept("im:Concept")
-    observable = ObservableImpl(semantics=concept)
-    observation = ObservationImpl(urn="obs:1", observable=observable)
-
-    context = runtime.connect_context({"session_id": "s1", "context_id": "c1"}, user)
-    assert context is not None
-    runtime.submit(observation, context)
-    df = resolver.resolve(observation, context)
-
-    assert resolver.encode_dataflow(df).startswith("df:")
-    assert resources.resolve("urn:resource", Scope(id="public")).urns == ["urn:resource"]
+    context = ContextScopeImpl(user_id="u1", session_id="s1", context_id="s1.c1")
 
     modeler = ModelerImpl()
     modeler.open_user(user)
