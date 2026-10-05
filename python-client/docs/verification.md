@@ -27,7 +27,7 @@ py -3.11 -m venv "C:\Users\lumsd\AppData\Local\Temp\opencode\klab-client-311"
 & "C:\Users\lumsd\AppData\Local\Temp\opencode\klab-client-311\Scripts\python.exe" -m build
 ```
 
-Results: editable install succeeded; final offline suite **39 passed, 1 deselected**
+Original implementation milestone: editable install succeeded; offline suite **39 passed, 1 deselected**
 on Python 3.11.9; isolated sdist and wheel builds succeeded. The deselected item
 is the opt-in live test, not counted as an integration pass. The initial offline
 run exposed a request-count assertion error (10 actual requests versus 9 expected);
@@ -98,3 +98,35 @@ polymorphic Java DTO compatibility, grid construction, provider selection and
 unit-mediated storage data must be demonstrated live. Source references and
 fixture provenance make these assumptions auditable without pretending they
 were integration-tested.
+
+## Follow-up: more thorough scientific acceptance
+
+The follow-up starts from client revision
+`a4a74eaf3549d419b3571021812e729ad6e204e2` and strengthens tests/documentation without
+changing production package code. Current offline outcome on Python 3.11.9:
+**52 passed, 2 deselected** using the same `-m pytest -q` command/environment above.
+The added tests validate coordinate/traversal agreement, independent-reference
+rejection of plausible but biased values, strict reference metadata/tolerances,
+and the live harness's attach/resume/cleanup and failed-fixture retention paths
+with explicitly synthetic HTTP. They do not establish any live pass.
+
+Actual expanded live invocation:
+
+```powershell
+& "C:\Users\lumsd\AppData\Local\Temp\opencode\klab-client-311\Scripts\python.exe" -m pytest -o "addopts=" -o "junit_family=xunit1" -m live -s tests/test_live.py --junitxml="C:\Users\lumsd\AppData\Local\Temp\opencode\klab-live-acceptance.xml"
+```
+
+Outcome: **2 failed**, zero skipped. The workflow test reported the same five
+missing endpoint/credential/agent variables. The independent-reference test
+reported missing `KLAB_ELEVATION_REFERENCE`. The JUnit failure report was written
+to the specified temporary path; no remote scope or scientific result exists.
+Relevant local listener checks (including YAML ports 8091, 8093, 8094) found no
+listening services. No deployed endpoints/credentials were inferred from source
+configuration, and no stack was launched or deployed.
+
+[live-acceptance.md](live-acceptance.md) specifies the deeper suite, independent
+reference provenance/schema, reproducible commands, per-cell evidence and exact
+remaining live limits. In-flight cancellation, deterministic failed computation,
+cross-user authorization and temporal/provider provenance still need suitable
+deployment-owned fixtures. Completed-job cancellation and zero-budget timeout
+must not be reported as proof of those different behaviors.

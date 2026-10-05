@@ -260,7 +260,14 @@ are never followed with credentials automatically.
 ## Live acceptance
 
 Ordinary tests exclude the live marker and require no credentials or network.
-To explicitly invoke acceptance after configuring all prerequisites:
+The expanded suite verifies all 20 cells across three traversal orders, timeout
+handle preservation, completed-job cancellation, and a new-client attach/resume/
+reread cycle. A separate test compares every cell to an independently obtained
+reference. See [thorough live acceptance](docs/live-acceptance.md) for the reference
+format, evidence artifacts, and precise limits of each check.
+
+To explicitly invoke full acceptance after configuring the deployment and setting
+`KLAB_ELEVATION_REFERENCE` to that reference JSON:
 
 ```sh
 python -m pytest -o addopts='' -m live -s tests/test_live.py
@@ -271,7 +278,8 @@ python -m pytest -o addopts='' -m live -s tests/test_live.py
 ```
 
 This command **fails**, rather than skips, when configuration, authorization,
-assets, actual computation, scientific data, or its invariant is missing. It
+assets, actual computation, scientific data, its invariant, or the independent
+reference is missing. It
 creates only the disposable scopes described above unless KLAB_CONTEXT_ID is set.
 Fixture provenance is recorded in [tests/fixtures/README.md](tests/fixtures/README.md).
 

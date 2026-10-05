@@ -38,7 +38,7 @@ authorization. This is a supported vertical slice, not complete Java API parity.
 
 ## Verification
 
-* Python 3.11.9 offline: **39 passed**, live item deselected by default. Offline
+* Python 3.11.9 offline: **52 passed**, two live items deselected by default. Offline
   tests prohibit real HTTP and cover checked envelopes/headers, authentication,
   malformed responses, job progression/failure/cancellation races, timeout/resume,
   ambiguous submissions, local close versus release, and scientific decoding.
@@ -46,7 +46,8 @@ authorization. This is a supported vertical slice, not complete Java API parity.
 * Wheel installed/imported in a second clean Python 3.11 environment outside the
   checkout; import, concrete geometry, local lifecycle and pip check passed.
 * `git diff --check` passed. No Java changes.
-* Explicit live invocation **failed for missing configuration**. Live acceptance
+* Explicit expanded live invocation **failed twice for missing deployment configuration
+  and independent reference**. Live acceptance
   is **unverified**, not passed/skipped-as-success. There is no measured live
   elevation result in this handoff. See [verification.md](verification.md).
 
@@ -62,7 +63,12 @@ python examples/elevation.py
 ```
 
 The test must return real observations, actual storage values and the scientific
-invariant. Newly created ONE_OFF fixtures are released explicitly after success;
+invariant. The deeper suite additionally checks every cell in three traversal
+orders, closes/reopens local clients and resumes focused jobs without changing
+data, checks completed-job cancellation, and compares all cells with a separately
+obtained `KLAB_ELEVATION_REFERENCE` file. Evidence/provenance and honest limits
+are detailed in [live-acceptance.md](live-acceptance.md).
+Newly created ONE_OFF fixtures are released explicitly after success;
 attached contexts are never disposed. Interrupted/failed fixtures are retained
 with reported IDs for investigation/resume/explicit cleanup.
 
