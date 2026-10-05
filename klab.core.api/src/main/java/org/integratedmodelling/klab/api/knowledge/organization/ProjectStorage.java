@@ -41,7 +41,8 @@ public interface ProjectStorage {
     TESTCASE,
     BEHAVIOR_COMPONENT,
     RESOURCE,
-    RESOURCE_ASSET;
+    RESOURCE_ASSET,
+    ADDITIONAL_MATERIAL;
 
     // FIXME just report language and take the rest from there
     public static ResourceType forExtension(String extension) {
@@ -222,6 +223,7 @@ public interface ProjectStorage {
    */
   static String getRelativeFilePath(String urn, ResourceType type, String separator) {
     return switch (type) {
+      case ADDITIONAL_MATERIAL -> ProjectMaterial.canonicalPath(urn).replace("/", separator);
       case MANIFEST -> "META-INF" + separator + "manifest.json";
       case PROJECT_SETTINGS -> "META-INF" + separator + "project.json";
       case SCRIPT ->

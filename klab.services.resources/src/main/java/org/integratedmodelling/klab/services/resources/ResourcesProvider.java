@@ -571,7 +571,17 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (!(scope instanceof ServiceScope)
         && (!(scope instanceof UserScope user) || !allowsWorkspaceRead(
             resourcesKbox.getStatus(urn, null), user, isAllowed(CRUDOperation.ADMINISTER, user)))) return null;
-    return this.workspaceManager.getWorkspace(urn);
+    var workspace = this.workspaceManager.getWorkspace(urn);
+    return scope instanceof UserScope user ? projectWorkspaceForUser(workspace, user) : workspace;
+  }
+
+  private Workspace projectWorkspaceForUser(Workspace workspace, UserScope user) {
+    if (workspace == null) return null;
+    var projected = (org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl)
+        Utils.Json.parseObject(Utils.Json.asString(workspace), Workspace.class);
+    projected.setProjects(projected.getProjects().stream()
+        .filter(project -> canProjectOperation(project.getUrn(), CRUDOperation.READ, user)).toList());
+    return projected;
   }
 
   public ResourceSet resolveResourceAdapter(String urn, Scope scope) {
@@ -952,6 +962,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
+    if (scope == null || !isAllowed(CRUDOperation.CREATE, scope) && !isAllowed(CRUDOperation.ADMINISTER, scope))
+      throw new KlabResourceAccessException("Creating projects requires CREATE");
 
     var workspaceInfo = resourcesKbox.getStatus(workspaceName, null);
 
@@ -1027,11 +1039,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       String documentUrn,
       ProjectStorage.ResourceType documentType,
       UserScope scope) {
+    requireProjectOperation(projectName, CRUDOperation.CREATE, scope);
     return this.workspaceManager.createEmptyDocument(projectName, documentType, documentUrn, scope);
   }
 
   public List<ResourceSet> createDocument(
       KlabDocument<?> document, Project project, UserScope scope) {
+    requireProjectOperation(project.getUrn(), CRUDOperation.CREATE, scope);
     return this.workspaceManager.createDocument(document, project, scope);
   }
 
@@ -1042,6 +1056,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       String content,
       boolean overwriteExisting,
       UserScope scope) {
+    requireProjectOperation(projectName, CRUDOperation.UPDATE, scope);
     var ret =
         this.workspaceManager.updateDocument(
             projectName, documentUrn, documentType, content, overwriteExisting, scope);
@@ -1055,6 +1070,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
+    requireProjectOperation(projectName, CRUDOperation.DELETE, scope);
 
     //    updateLock.writeLock().lock();
     var workspaceName = workspaceManager.getWorkspaceForProject(projectName);
@@ -1171,6 +1187,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
+    if (org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class.isAssignableFrom(assetClass)) {
+      var material = org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.coordinates(urn);
+      requireMaterialRead(material.getProjectName(), scope);
+      return assetClass.cast(workspaceManager.readMaterial(material));
+    }
     if (org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class.isAssignableFrom(assetClass)) {
       var definition = workspaceManager.retrieve(urn, KimSymbolDefinition.class);
       if (definition == null) return null;
@@ -1200,6 +1221,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       }
     }
     var result = workspaceManager.retrieve(urn, assetClass);
+    if (result instanceof Project project) requireProjectOperation(project.getUrn(), CRUDOperation.READ, scope);
+    if (result instanceof KlabDocument<?> document) requireProjectOperation(document.getProjectName(), CRUDOperation.READ, scope);
     if (result instanceof KimAssetImpl asset && asset.getServiceId() == null)
       asset.setServiceId(serviceId());
     if (result instanceof KlabDocumentImpl<?> document && document.getServiceId() == null)
@@ -1220,7 +1243,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (Workspace.class.isAssignableFrom(assetClass)) {
       return workspaceManager.list(assetClass).stream().filter(workspace -> allowsWorkspaceRead(
           resourcesKbox.getStatus(workspace.getUrn(), null), scope,
-          scope != null && isAllowed(CRUDOperation.ADMINISTER, scope))).toList();
+          scope != null && isAllowed(CRUDOperation.ADMINISTER, scope)))
+          .map(workspace -> assetClass.cast(projectWorkspaceForUser((Workspace) workspace, scope))).toList();
     }
     // TODO RESOURCES-CRUD filter every result using the requesting scope and ResourcePrivileges.
     var workflowClass = workflowKnowledgeClass(assetClass);
@@ -1246,12 +1270,18 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       var worldview = retrieveWorldview(scope);
       return worldview == null ? List.of() : List.of(assetClass.cast(worldview));
     }
-    return workspaceManager.list(assetClass);
+    return workspaceManager.list(assetClass).stream().filter(asset ->
+        asset instanceof KlabDocument<?> document ? canProjectOperation(document.getProjectName(), CRUDOperation.READ, scope)
+            : !(asset instanceof Project project) || canProjectOperation(project.getUrn(), CRUDOperation.READ, scope)).toList();
   }
 
   @Override
   public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
     switch (knowledgeClass) {
+      case ADDITIONAL_MATERIAL:
+        var material = org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.coordinates(urn);
+        requireProjectOperation(material.getProjectName(), CRUDOperation.DELETE, scope);
+        return workspaceManager.deleteMaterial(material, scope);
       case PROJECT:
         return deleteProject(urn, scope);
       case WORKSPACE:
@@ -1450,6 +1480,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
               Notification.error("PUBLISH is only supported for the Resource contract")));
     }
     switch (asset) {
+      case org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material:
+        requireProjectOperation(material.getProjectName(), CRUDOperation.UPDATE_METADATA, scope);
+        return workspaceManager.writeMaterial(material, submissionMode, scope);
       case Workflow workflow:
         return List.of(
             workflowResource(
@@ -1535,6 +1568,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                           + document.getProjectName())));
         }
         var knowledgeClass = KlabAsset.classify(document);
+        requireProjectOperation(document.getProjectName(), submissionMode == SubmissionMode.ADD
+            ? CRUDOperation.CREATE : CRUDOperation.UPDATE, scope);
         if (submissionMode == SubmissionMode.MERGE) {
           return List.of(
               ResourceSet.empty(
@@ -2004,6 +2039,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       String assetUrn,
       ProjectStorage.ResourceType resourceType,
       UserScope scope) {
+    requireProjectOperation(projectName, CRUDOperation.DELETE, scope);
     return this.workspaceManager.deleteDocument(projectName, resourceType, assetUrn, scope);
   }
 
@@ -2275,6 +2311,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       if (scope instanceof UserScope userScope && canEditProject(urn, userScope)) {
         projectPermissions.add(CRUDOperation.UPDATE);
       }
+      if (scope instanceof UserScope userScope) for (var operation : CRUDOperation.values()) {
+        if (canProjectOperation(urn, operation, userScope)) projectPermissions.add(operation);
+      }
       ret.setPermissions(projectPermissions);
     }
     return ret;
@@ -2290,6 +2329,23 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (scope == null || scope.getUser() == null || scope.getUser().isAnonymous()) return false;
     return allowsProjectEdit(resourcesKbox.getStatus(urn, null), scope,
         isAllowed(CRUDOperation.UPDATE, scope), isAllowed(CRUDOperation.ADMINISTER, scope));
+  }
+
+  /** Shared project grant for API and actor operations. */
+  public boolean canProjectOperation(String project, CRUDOperation operation, UserScope user) {
+    return allowsProjectEdit(resourcesKbox.getStatus(project, null), user,
+        user != null && isAllowed(operation, user), user != null && isAllowed(CRUDOperation.ADMINISTER, user));
+  }
+
+  public void requireProjectOperation(String project, CRUDOperation operation, UserScope user) {
+    if (!canProjectOperation(project, operation, user))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Project " + project + " requires " + operation);
+  }
+
+  private void requireMaterialRead(String project, UserScope user) {
+    if (!canProjectOperation(project, CRUDOperation.READ, user)
+        && !canProjectOperation(project, CRUDOperation.UPDATE_METADATA, user))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("No material access to project " + project);
   }
 
   static boolean allowsProjectEdit(ResourceInfo info, UserScope scope, boolean update, boolean administer) {

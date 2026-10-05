@@ -20,7 +20,8 @@ and examples are in [WORKFLOWS.md](WORKFLOWS.md#kactors-instrumentation).
    worker leases, per-action idempotency keys, effect status inspection and retry policy. SMTP send
    success followed by process failure is currently an at-least-once retry risk. Transition revision
    checks prevent stale mutations, but do not provide exactly-once effects.
-5. **Global object graphs.** The portable subset deliberately excludes service/client objects,
+5. **Global object graphs.** Core document/project handles now have a versioned coordinate codec
+   and resolve with the current participant on use. The portable subset deliberately excludes service/client objects,
    arbitrary DTOs and actor handles. Decide versioned codecs for quantities, instants, constants,
    resources, child agents and digital-twin-backed agent state. Inherited snapshots verify delegate
    order and generated behavior class identity; stable persistent

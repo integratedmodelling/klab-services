@@ -533,6 +533,11 @@ public enum AgentRegistry {
   /** Compile an isolated finite agent. The caller owns its lifecycle and durable state. */
   public RuntimeAgentBase checkpointAgent(KActorsBehavior behavior, UserScope scope,
       AgentCompiler.Resolver resolver, Map<String, Object> snapshot, Object[] initArguments) {
+    return checkpointAgent(behavior, scope, resolver, snapshot, initArguments, scope);
+  }
+
+  public RuntimeAgentBase checkpointAgent(KActorsBehavior behavior, UserScope scope,
+      AgentCompiler.Resolver resolver, Map<String, Object> snapshot, Object[] initArguments, UserScope participant) {
     var environment = AgentCompiler.runtimeEnvironment(resolver, scope);
     var compiled = compileBehavior(behavior, scope, environment.validator(), resolver);
     if (!compiled.successful())
@@ -547,6 +552,7 @@ public enum AgentRegistry {
                   Observation.class, Scope.class, Map.class, Object[].class)
                   .newInstance(behavior, null, null, scope, Map.of(), (Object) initArguments));
       var runtime = RuntimeAgentBase.restoringCheckpoint(construct);
+      runtime.setCheckpointParticipant(participant);
       try {
         if (snapshot != null) runtime.restoreCheckpointState(snapshot);
         else runtime.initializeCheckpoint(initArguments);

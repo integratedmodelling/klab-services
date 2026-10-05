@@ -256,7 +256,8 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     return client
         .withScope(scope)
         .putCollectionOrThrow(
-            ServicesAPI.RESOURCES.SUBMIT,
+            asset instanceof org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial
+                ? ServicesAPI.RESOURCES.SUBMIT_QUERY : ServicesAPI.RESOURCES.SUBMIT,
             Utils.Json.asString(asset),
             ResourceSet.class,
             "knowledgeClass",
@@ -308,7 +309,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     return client
         .withScope(scope)
         .get(
-            ServicesAPI.RESOURCES.RETRIEVE,
+            urn.contains("/") ? ServicesAPI.RESOURCES.RETRIEVE_QUERY : ServicesAPI.RESOURCES.RETRIEVE,
             assetClass,
             "urn",
             urn,

@@ -17,6 +17,33 @@ import org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler;
 import org.junit.jupiter.api.Test;
 
 class WorkflowBehaviorBridgeTest {
+  @Test void initBindsDocumentAndProjectAndRestoresTheirReferences() {
+    var behavior = behavior();
+    var init = assign("init", "target", "document", ValueType.IDENTIFIER);
+    init.setArguments(List.of(new KActorsActionImpl.ArgumentImpl("document"), new KActorsActionImpl.ArgumentImpl("project")));
+    var code = new ArrayList<>(init.getCode()); code.addAll(assign("unused", "targetProject", "project", ValueType.IDENTIFIER).getCode()); init.setCode(code);
+    behavior.setStatements(List.of(init));
+    var owner = owner(); var resources = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    when(owner.getServices(org.integratedmodelling.klab.api.services.ResourcesService.class)).thenReturn(List.of(resources));
+    when(resources.serviceId()).thenReturn("resources");
+    var document = new org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl();
+    document.setUrn("test.target"); document.setProjectName("project");
+    when(resources.retrieve("test.target", org.integratedmodelling.klab.api.lang.kim.KimOntology.class, owner)).thenReturn(document);
+    var workflow = new WorkflowImpl(); workflow.setBehavior(behavior.getUrn());
+    var schema = new WorkflowImpl.StateSchemaImpl(); schema.setId("editing"); workflow.getStates().put("editing", schema);
+    var flow = Flow.create(); flow.setOwner("owner"); flow.setAssetUrn("test.target");
+    flow.setAssetType(org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.ONTOLOGY);
+    var stage = Flow.State.create(); stage.setId("stage"); stage.setSchemaId("editing"); flow.getStates().put("stage", stage);
+    try (var session = bridge(behavior).open(workflow, flow, stage, owner)) { session.invoke(List.of(), stage, null); session.checkpoint(stage); }
+    var restored = Utils.Json.parseObject(Utils.Json.asString(flow), Flow.class);
+    try (var session = bridge(behavior).open(workflow, restored, restored.getStates().get("stage"), owner)) {
+      session.invoke(List.of(), restored.getStates().get("stage"), null); session.checkpoint(restored.getStates().get("stage"));
+    }
+    var globals = (Map<?, ?>) restored.getBehaviorCheckpoint().globals().get("state");
+    assertEquals("test.target", ((Map<?, ?>) globals.get("target")).get("urn"));
+    assertEquals("PROJECT", ((Map<?, ?>) globals.get("targetProject")).get("kind"));
+    assertEquals(flow.getBehaviorCheckpoint(), restored.getBehaviorCheckpoint());
+  }
   static KActorsActionImpl assign(String actionName, String variable, Object value, ValueType type) {
     var literal = new KActorsValueImpl();
     literal.setType(type); literal.setStatedValue(value);

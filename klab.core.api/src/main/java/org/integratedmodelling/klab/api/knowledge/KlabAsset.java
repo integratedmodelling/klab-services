@@ -79,10 +79,12 @@ public interface KlabAsset extends Serializable {
      *
      * <p>TODO substitute with something more idiomatic + use DomainObject with a schema
      */
-    INFORMATION;
+    INFORMATION,
+    ADDITIONAL_MATERIAL;
 
     public Class<? extends KlabAsset> getAssetClass() {
       return switch (this) {
+        case ADDITIONAL_MATERIAL -> org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class;
         case RESOURCE -> Resource.class;
         case NAMESPACE -> KimNamespace.class;
         case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> KActorsBehavior.class;
@@ -115,6 +117,7 @@ public interface KlabAsset extends Serializable {
 
     public ProjectStorage.ResourceType getResourceType() {
       return switch (this) {
+        case ADDITIONAL_MATERIAL -> ProjectStorage.ResourceType.ADDITIONAL_MATERIAL;
         case NAMESPACE -> ProjectStorage.ResourceType.MODEL_NAMESPACE;
         case BEHAVIOR -> ProjectStorage.ResourceType.BEHAVIOR;
         case SCRIPT -> ProjectStorage.ResourceType.SCRIPT;
@@ -130,6 +133,7 @@ public interface KlabAsset extends Serializable {
     }
 
     public static KnowledgeClass classify(Class<? extends KlabAsset> cls) {
+      if (org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class.isAssignableFrom(cls)) return ADDITIONAL_MATERIAL;
       if (org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class.isAssignableFrom(cls)) {
         return GRID_ALIGNMENT;
       } else if (Concept.class.isAssignableFrom(cls)) {
@@ -186,6 +190,7 @@ public interface KlabAsset extends Serializable {
 
   static KnowledgeClass classify(KlabAsset asset) {
     return switch (asset) {
+      case org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material -> KnowledgeClass.ADDITIONAL_MATERIAL;
       case KimConcept c -> KnowledgeClass.CONCEPT;
       case KimConceptStatement c -> KnowledgeClass.CONCEPT_STATEMENT;
       case KimObservationStrategy c -> KnowledgeClass.OBSERVATION_STRATEGY;

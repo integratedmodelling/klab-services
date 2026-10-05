@@ -15,6 +15,12 @@ fire repeatedly until their call scope ends. Capturing a supplier with `<-` wait
 | --- | --- | --- |
 | [core.agent](#coreagent) | Universal identity, construction and messaging | Implicitly inherited by behaviors; instance verbs except `duration` |
 | [core.console](#coreconsole) | Agent stdout and stderr | Static functions |
+| [core.document](#coredocument-and-document-subclasses) | Common project document contract | `wrap(document)`, then instance functions |
+| [core.ontology](#coredocument-and-document-subclasses) | Ontology document | Inherits document functions; adds `domain` |
+| [core.namespace](#coredocument-and-document-subclasses) | Model namespace | Inherits document functions; adds `scenario` |
+| [core.strategy_document](#coredocument-and-document-subclasses) | Observation strategy document | Inherits document functions; adds `coverage` |
+| [core.behavior_document](#coredocument-and-document-subclasses) | k.Actors source document | Inherits document functions; adds `category` |
+| [core.project](#coreproject) | Project documents, settings and additional material | `wrap(project)`, then permission-checked functions |
 | [core.context](#corecontext) | Digital twin access and observation submission | Static factories, then instance verbs |
 | [core.email](#coreemail) | Service-configured outgoing email | Static checks and send suppliers |
 | [core.file](#corefile) | Local file and directory operations | Static functions and bound path instances |
@@ -27,6 +33,110 @@ fire repeatedly until their call scope ends. Capturing a supplier with `<-` wait
 Actors supplied by other components have their own catalogs; an illustrative import in a language
 example does not establish that the actor is shipped in this library. Static and instance verbs
 have distinct names because the compiler's actor catalog indexes each verb by name.
+
+## core.document and document subclasses
+
+These agents wrap the four `KlabDocument` interfaces: `KimOntology`, `KimNamespace`,
+`KimObservationStrategyDocument`, and `KActorsBehavior`. `core.document` is their common ancestor;
+each subclass exposes all inherited verbs. The behavior-document wrapper represents source code,
+not a running instance of that behavior. Applications, scripts, tests and components use the same
+wrapper and retain their knowledge class.
+
+All calls are functions. `wrap(document)` accepts a document bean and returns the corresponding
+subclass. Each subclass also offers `wrap`, restricted to its own document type. Wrapping records
+coordinates; it does not grant authority or capture a service session.
+
+| Verb | Result and contract |
+| --- | --- |
+| `urn()` | Stable language URN |
+| `kind()` | Document knowledge-class name |
+| `project()` | Containing `core.project` handle |
+| `read()` | Fresh document bean, resolved with the participant's READ permission |
+| `source()` | Current source code |
+| `version()` | Authored version as text |
+| `statements()` | Current ordered statements |
+| `notifications()` | Current validation notifications |
+| `imports()` | Imported document namespace URNs |
+| `update(source)` | Submit replacement source using UPDATE |
+| `delete()` | Delete through the Resources API |
+| `domain()` | Ontology only: domain concept |
+| `scenario()` | Namespace only: scenario flag |
+| `coverage()` | Strategy document only: coverage specification |
+| `category()` | Behavior document only: k.Actors category name |
+
+Read operations resolve afresh, so an existing handle sees edits and rechecks access. A missing
+document or one resolved in a different project fails explicitly. Document update/delete retain
+the Resources API's project-lock requirements. Save failures returned as error notifications
+become exceptions in these actors.
+
+## core.project
+
+`wrap(project)` returns a handle to an existing k.LAB project. Functions use the services available
+to the invoking user, retaining the original service ID where known. No credentials, permission
+snapshot, service instance, or project bean are retained in the handle.
+
+| Verb | Contract |
+| --- | --- |
+| `urn()` | Project name |
+| `read()` | Current project bean; requires READ |
+| `permissions()` | Current participant's effective project privileges |
+| `documents()` | Handles for the project's current document collections; requires READ |
+| `document(kind, urn)` | Resolve a document handle in this project; requires READ |
+| `create_document(kind, urn, source)` | ADD a document; requires CREATE |
+| `update_document(kind, urn, source)` | UPDATE a document; requires UPDATE and the existing edit lock |
+| `delete_document(kind, urn)` | Delete a document; requires DELETE and the existing edit lock |
+| `settings()` | Current project settings; requires READ |
+| `update_settings(workspace, settings)` | Settings-only project REPLACE; requires UPDATE and the edit lock; existing administrator restrictions still apply |
+| `lock()` / `unlock()` | Acquire/release the caller's existing project editing lock; requires UPDATE |
+| `delete()` | Delete the project through the API; requires DELETE |
+| `material(path)` | Additional material bytes, or null when absent; requires READ or UPDATE_METADATA |
+| `write_material(path, bytes)` | CREATE_OR_UPDATE binary additional material; requires UPDATE_METADATA |
+| `write_text(path, text)` | Same operation with UTF-8 text |
+| `delete_material(path)` | Delete additional material; requires DELETE |
+
+`kind` uses the API knowledge-class names: `ONTOLOGY`, `NAMESPACE`,
+`OBSERVATION_STRATEGY_DOCUMENT`, `BEHAVIOR`, `APPLICATION`, `SCRIPT`, `TESTCASE`, or `COMPONENT`.
+Document URNs are unqualified language URNs. Additional material uses canonical, slash-separated
+project-relative paths, including its filename and extension. Parent directories are created as
+needed. Binary payloads are limited to 32 MiB. Traversal, absolute paths, symlinks, canonical
+document locations, `META-INF`, managed `resources`, and Git control paths are rejected.
+
+Every operation checks both the participant's service privilege and access to the project.
+Administrators retain their existing override. UPDATE_METADATA alone grants no document CRUD
+or settings editing and cannot delete additional material. Material changes do not require an
+UPDATE lock, but respect a lock held by a different user. On service-owned file projects they are
+staged in Git without creating a commit, pushing, or staging unrelated paths. Other storage
+types fail explicitly. See [the material API](RESOURCES.md#additional-project-material).
+
+### Workflow target binding and restoration
+
+Workflow `init` and later actions can request `document`, its applicable subtype name (`ontology`,
+`namespace`, `strategy_document`, `behavior_document`), and `project`. For a document target, both
+the document and containing project are bound. A project target binds `project`. Other target
+types do not invent a containing document/project. Types can also select a unique wrapper.
+
+```kactors
+behavior example.review.instrumentation
+
+action init(document, project):
+    def target_document document
+    def target_project project
+
+action prepare:
+    target_project.write_text("review/README.md", "Submission prepared for review")
+```
+
+These handles are exceptions to the workflow prohibition on storing live Java objects in globals:
+their checkpoints contain only a versioned reference with URN, project, kind and service ID.
+On resumption the wrapper subtype is restored and its operations resolve current data using the
+**current participant**, even though the workflow behavior itself was resolved in its owner's
+scope. Revocation takes effect on subsequent operations. The checkpoint map key
+`$klabProjectActor` is reserved for this reference codec. Arbitrary returned document beans,
+statements, settings and service objects are still not portable globals.
+
+Project changes are external effects of a workflow action: a later failed workflow checkpoint
+does not roll back a project write. Prefer idempotent `write_text`/`write_material` operations
+when retrying actions. Workflow attachments remain separate from project additional material.
 
 ## core.agent
 

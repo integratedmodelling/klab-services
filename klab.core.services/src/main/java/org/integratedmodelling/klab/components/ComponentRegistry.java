@@ -2269,12 +2269,20 @@ public class ComponentRegistry {
     ret.javaClassName = cls.getName();
 
     // annotated methods
-    for (Method method : cls.getDeclaredMethods()) {
+    for (Method method : cls.getMethods()) {
+      if (method.isBridge() || method.isSynthetic()) continue;
+      if (method.getDeclaringClass() != cls) {
+        try {
+          cls.getDeclaredMethod(method.getName(), method.getParameterTypes());
+          continue; // A subclass may hide a static factory with a covariant return type.
+        } catch (NoSuchMethodException inherited) { /* Keep the inherited public contract. */ }
+      }
       if (Modifier.isPublic(method.getModifiers())
           && method.isAnnotationPresent(Verb.class)) { // no verbs in libraries
         var serviceInfo = createVerbPrototype(ret.urn + ".", method.getAnnotation(Verb.class));
         ret.verbs.add(createFunctionDescriptor(serviceInfo, cls, method));
-      } else if (method.isAnnotationPresent(AgentAdapter.class)) {
+      }
+      if (method.isAnnotationPresent(AgentAdapter.class)) {
         var serviceInfo = createAgentAdapterPrototype(ret.urn, method);
         var adapter = createFunctionDescriptor(serviceInfo, cls, method);
         if (!Modifier.isPublic(method.getModifiers())
@@ -2458,8 +2466,12 @@ public class ComponentRegistry {
       if (verb != null && !verb.producesAgent().isBlank()) {
         ret.behaviorUrn = verb.producesAgent().trim();
       }
-      if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers())
-          || serviceInfo.isReentrant()) {
+      if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers())) {
+        // A static factory/adapter needs no constructible instance of its bound actor class.
+        ret.staticMethod = true;
+      } else if (clss.isAnnotationPresent(Actor.class) && !clss.getAnnotation(Actor.class).singleton()) {
+        // Instance verbs receive the actual actor handle. Adapters instantiate lazily if needed.
+      } else if (serviceInfo.isReentrant()) {
         // use a global class instance
         implementation.mainClassInstance = createGlobalClassInstance(ret);
         ret.staticMethod =

@@ -192,6 +192,43 @@ the `workspace/project` URN. `Resource` updates preserve the previous current re
 embedded history and require the submitted version to be newer. k.Actors document mutation,
 project/workspace update, and merge semantics remain pending and return explicit notifications.
 
+## Additional project material
+
+`ProjectMaterial` is a binary-safe `KlabAsset` with knowledge class and project resource type
+`ADDITIONAL_MATERIAL`. It contains `projectName`, `path` (canonical project-relative path),
+`content` (`byte[]`, Base64 in JSON), and service/metadata fields. Its URN is `project/path`.
+It is not a `KlabDocument` and is never parsed as k.IM or k.Actors source.
+
+Use the existing generic `submit`, `retrieve` and `delete` methods. The client uses these
+query-coordinate routes so relative paths never depend on encoded slashes in a path segment:
+
+- `PUT /api/v1/submit/ADDITIONAL_MATERIAL/{mode}?urn=project/review/notes.txt`
+- `GET /api/v1/retrieve/ADDITIONAL_MATERIAL?urn=project/review/notes.txt`
+- `DELETE /api/v1/delete/ADDITIONAL_MATERIAL?urn=project/review/notes.txt`
+
+The submitted body and query URN must agree. Modes are ADD (requires absence), UPDATE (requires
+existence), and CREATE_OR_UPDATE; REPLACE, MERGE and PUBLISH are rejected. The filename, including
+extension, is part of `path`; bytes are preserved without transcoding. `core.project.write_text`
+is the UTF-8 convenience operation.
+
+Creation/update require service UPDATE_METADATA and access to the containing project (ownership
+or its existing user/group rights). Reading requires READ or UPDATE_METADATA. Deletion requires
+DELETE. Administrators retain their override. A user with UPDATE_METADATA alone cannot perform
+document CRUD, replace project settings, or delete material. Project API permission descriptors
+report these effective operation grants; actors enforce the same rules as the service.
+
+Only service-owned `FileProjectStorage` is writable. Parent directories are created automatically;
+paths must already be canonical, use `/`, and remain within the project. Absolute paths, traversal,
+platform aliases, symlink traversal, language-document paths (including case variants), Git control
+files, `META-INF`, and managed `resources` paths are rejected even if the target does not yet exist.
+Thus additional material cannot replace canonical documents or bypass their permissions. Payloads
+are limited to 32 MiB. Ignored or conflicted Git paths fail explicitly.
+
+Mutations stage the one affected path in Git without committing or pushing; unrelated staged
+changes remain intact. An unlocked project accepts metadata contributions without requiring UPDATE.
+A project locked by another user rejects mutations. Workflow checkpoints and project Git writes
+are separate persistence operations; retrying a workflow does not undo previous project effects.
+
 ## Complete lifecycle of a concrete `Resource`
 
 ### 1. Local creation and tier 0

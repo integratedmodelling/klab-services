@@ -3898,6 +3898,59 @@ public class WorkspaceManager {
     }
   }
 
+  private FileProjectStorage materialStorage(String project, UserScope user, boolean mutation) {
+    var descriptor = projectDescriptors.get(project);
+    if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage storage))
+      throw new IllegalArgumentException("Project material requires service-owned FileProjectStorage");
+    if (mutation && projectLocks.containsKey(project)
+        && !Objects.equals(projectLocks.get(project), user.getIdentity().getId()))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Project is locked by another user");
+    return storage;
+  }
+
+  public synchronized org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial readMaterial(
+      org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material) {
+    try {
+      var bytes = org.integratedmodelling.klab.resources.ProjectMaterialIO.read(
+          materialStorage(material.getProjectName(), null, false), material.getPath());
+      if (bytes == null) return null;
+      material.setContent(bytes); material.setServiceId(service.serviceId()); return material;
+    } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
+  }
+
+  public synchronized List<ResourceSet> writeMaterial(
+      org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material,
+      org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode mode, UserScope user) {
+    service.requireProjectOperation(material.getProjectName(), CRUDOperation.UPDATE_METADATA, user);
+    var storage = materialStorage(material.getProjectName(), user, true);
+    try {
+      boolean existed = org.integratedmodelling.klab.resources.ProjectMaterialIO.read(storage, material.getPath()) != null;
+      org.integratedmodelling.klab.resources.ProjectMaterialIO.write(storage, material.getPath(), material.getContent(), mode);
+      return materialChange(material, existed ? CRUDOperation.UPDATE : CRUDOperation.CREATE, storage);
+    } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
+  }
+
+  public synchronized List<ResourceSet> deleteMaterial(
+      org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material, UserScope user) {
+    service.requireProjectOperation(material.getProjectName(), CRUDOperation.DELETE, user);
+    var storage = materialStorage(material.getProjectName(), user, true);
+    try {
+      if (!org.integratedmodelling.klab.resources.ProjectMaterialIO.delete(storage, material.getPath())) return List.of();
+      return materialChange(material, CRUDOperation.DELETE, storage);
+    } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
+  }
+
+  private List<ResourceSet> materialChange(org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material,
+      CRUDOperation operation, FileProjectStorage storage) {
+    var change = new ResourceSet.Resource(operation, service.serviceId(), material.getUrn(),
+        material.getProjectName(), Version.EMPTY_VERSION, KlabAsset.KnowledgeClass.ADDITIONAL_MATERIAL,
+        System.currentTimeMillis(), false);
+    var result = ResourceSet.of(change);
+    result.setWorkspace(getWorkspaceForProject(material.getProjectName()));
+    addRepositoryState(List.of(result), projectDescriptors.get(material.getProjectName()), storage.getRepositoryState());
+    return List.of(result);
+  }
+
   private void refreshWorldviewMembership() {
     _worldview = null;
     _ontologyOrder = null;

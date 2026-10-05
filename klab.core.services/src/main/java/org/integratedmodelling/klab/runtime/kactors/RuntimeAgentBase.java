@@ -121,9 +121,19 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   protected final boolean initializingState() { return !RESTORING.get(); }
 
+  private static final InheritableThreadLocal<org.integratedmodelling.klab.api.scope.UserScope> CHECKPOINT_PARTICIPANT = new InheritableThreadLocal<>();
+  private org.integratedmodelling.klab.api.scope.UserScope checkpointParticipant = CHECKPOINT_PARTICIPANT.get();
+  public final void setCheckpointParticipant(org.integratedmodelling.klab.api.scope.UserScope participant) {
+    checkpointParticipant = participant;
+    inheritedBehaviorInstances.forEach(inherited -> inherited.setCheckpointParticipant(participant));
+  }
+  public final org.integratedmodelling.klab.api.scope.UserScope checkpointParticipant() { return checkpointParticipant; }
+
   /** Invoke a validated, finite workflow action without starting an autonomous main loop. */
   public final Object invokeCheckpointAction(String action, Object... arguments) {
     checkpointExecution = true;
+    var previousParticipant = CHECKPOINT_PARTICIPANT.get();
+    CHECKPOINT_PARTICIPANT.set(checkpointParticipant);
     var invocation = rootScope.withId(nextId.incrementAndGet());
     long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(60);
     try {
@@ -147,6 +157,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       throw new IllegalStateException("Workflow action failed or exceeded 60 seconds: " + action, failure);
     } finally {
       invocation.done();
+      if (previousParticipant == null) CHECKPOINT_PARTICIPANT.remove(); else CHECKPOINT_PARTICIPANT.set(previousParticipant);
     }
   }
 
@@ -175,7 +186,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         || state == null || inherited == null || inherited.size() != inheritedBehaviorInstances.size())
       throw new IllegalStateException("Behavior state layout changed; explicit migration is required");
     rootScope.clear();
-    rootScope.putAll((Map<String, Object>) portableState(state));
+    rootScope.putAll((Map<String, Object>) restoreProjectReferences(portableState(state)));
     for (int i = 0; i < inherited.size(); i++)
       inheritedBehaviorInstances.get(i).restoreCheckpointState(inherited.get(i));
   }
@@ -185,6 +196,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   private static Object portableState(Object value, int depth) {
     if (depth > 64) throw new IllegalArgumentException("Behavior state is cyclic or too deeply nested");
+    if (value instanceof org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.ProjectReference reference)
+      return portableState(reference.checkpointReference(), depth + 1);
     if (value == null || value instanceof String || value instanceof Boolean
         || value instanceof Byte || value instanceof Short || value instanceof Integer
         || value instanceof Long || value instanceof java.math.BigInteger
@@ -206,6 +219,22 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       return copy;
     }
     throw new IllegalArgumentException("Nonportable behavior state: " + value.getClass().getName());
+  }
+
+  private static Object restoreProjectReferences(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      if (map.containsKey("$klabProjectActor")) {
+        if (!(map.get("$klabProjectActor") instanceof Number version) || version.intValue() != 1)
+          throw new IllegalArgumentException("Unknown project actor reference version");
+        return org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.restoreProjectReference(map);
+      }
+      var copy = new java.util.LinkedHashMap<String, Object>();
+      map.forEach((key, item) -> copy.put((String) key, restoreProjectReferences(item))); return copy;
+    }
+    if (value instanceof List<?> list) {
+      var copy = new java.util.ArrayList<Object>(); list.forEach(item -> copy.add(restoreProjectReferences(item))); return copy;
+    }
+    return value;
   }
 
   private boolean checkpointExecution = RESTORING.get();
@@ -974,6 +1003,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         inheritedBehavior.setBehaviorTypeChecker(behaviorTypeChecker);
       }
       if (checkpointExecution) inheritedBehavior.checkpointExecution = true;
+      if (checkpointParticipant != null) inheritedBehavior.setCheckpointParticipant(checkpointParticipant);
       inheritedBehaviorInstances.add(inheritedBehavior);
     }
     return inheritedBehavior;

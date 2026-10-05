@@ -27,6 +27,25 @@ import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 import org.junit.jupiter.api.Test;
 
 class ComponentRegistryActorVerbTest {
+  @Test void documentSubclassesExposeInheritedVerbsAndConformToTheDocumentAncestor() throws Exception {
+    var registry = mock(ComponentRegistry.class, CALLS_REAL_METHODS);
+    var instances = ComponentRegistry.class.getDeclaredField("globalInstances"); instances.setAccessible(true);
+    instances.set(registry, new java.util.HashMap<>());
+    doReturn(List.of()).when(registry).getActorDescriptors(anyString(), isNull());
+    for (var type : List.of(CoreActorLibrary.Document.class, CoreActorLibrary.Ontology.class,
+        CoreActorLibrary.Namespace.class, CoreActorLibrary.StrategyDocument.class, CoreActorLibrary.BehaviorDocument.class)) {
+      var descriptor = discover(registry, type);
+      descriptor.urn = "core." + type.getAnnotation(Actor.class).name();
+      assertNotNull(descriptor.adapter); assertFalse(descriptor.adapter.error);
+      assertTrue(descriptor.verbs.stream().anyMatch(verb -> verb.serviceInfo.getName().endsWith(".source")));
+      assertEquals(1, descriptor.verbs.stream().filter(verb -> verb.serviceInfo.getName().endsWith(".wrap")).count());
+      doReturn(List.of(descriptor)).when(registry).getActorDescriptors(descriptor.urn, null);
+    }
+    var resolver = AgentCompiler.componentResolver(registry);
+    assertTrue(resolver.implementsBehavior("core.ontology", "core.document", null));
+    assertFalse(resolver.implementsBehavior("core.document", "core.ontology", null));
+    assertEquals(CoreActorLibrary.Document.class, resolver.resolveActor("core.ontology", null).verbs().get("source").method.getDeclaringClass());
+  }
   @Test
   void transmittedContextProxyCallsDoNotRetrieveJavaActorsAsBehaviorDocuments() throws Exception {
     var registry = mock(ComponentRegistry.class, CALLS_REAL_METHODS);

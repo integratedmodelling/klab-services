@@ -626,6 +626,9 @@ Arguments are resolved in declaration order using the following precedence:
 | `user` | The requesting `UserIdentity` |
 | `participant` | The requesting `WorkflowParticipant`, including workflow roles |
 | `editor` | Read-only `WorkflowBehaviorBridge.Editor` facade |
+| `document` | `core.document` subtype for a document target, when requested |
+| `ontology`, `namespace`, `strategy_document`, `behavior_document` | Alias for the applicable target document subtype |
+| `project` | `core.project` for a project target or the target document's containing project |
 
 The `content` agent exposes `title(value)`, `description(value)`, `metadata(key, value)` and
 `value(key)`. Use these finite calls to prepare stage content, e.g. `content.title("Ready for review")`.
@@ -702,6 +705,9 @@ compiler's normal argument contracts remain the final runtime type check.
 
 Do not retain `flow`, `stage`, `user`, `editor`, or another live Java object in a global. Copy the
 needed scalar values into globals and accept fresh context parameters on subsequent actions.
+The document/project actor wrappers are an explicit exception: they persist stable references
+and re-resolve data with the current participant's permissions. They can be accepted in `init`
+and retained in globals. See [the actor reference](AGENTS_REFERENCE.md#workflow-target-binding-and-restoration).
 
 ### Checkpoint storage, restarts, and behavior updates
 
@@ -712,6 +718,8 @@ tree. Flow and state responses omit checkpoints, including public-flow responses
 checkpoints are discarded on creation and ignored during ordinary updates.
 
 The portable state subset is null, strings, booleans, finite numbers, lists, and string-keyed maps.
+It also includes the versioned core document/project actor references; no credentials or permission
+grants are stored in those references. Project CRUD uses the triggering participant, not the behavior owner's authority.
 Nested data is copied; live agents, scopes, service objects, arbitrary DTOs, non-string map keys,
 cycles, and excessive nesting are rejected. Inherited delegates have separate nested snapshots.
 Inherited initializers currently run without workflow-context arguments; place context-dependent

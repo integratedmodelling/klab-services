@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -15,21 +16,33 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial;
 import org.integratedmodelling.klab.api.lang.Quantity;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
+import org.integratedmodelling.klab.api.services.runtime.extension.AgentAdapter;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -42,6 +55,524 @@ import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 
 @Library(name = "core")
 public class CoreActorLibrary {
+
+  /** Stable coordinates only: no service, credentials or document bean is checkpointed. */
+  public interface ProjectReference {
+    Map<String, Object> checkpointReference();
+  }
+
+  private static UserScope participant(RuntimeAgent.Scope scope) {
+    if (scope != null
+        && scope.getAgent() instanceof RuntimeAgentBase runtime
+        && runtime.checkpointParticipant() != null) return runtime.checkpointParticipant();
+    if (scope != null && scope.getScope() instanceof UserScope user) return user;
+    if (scope != null && scope.getScope() != null) {
+      var user =
+          scope
+              .getScope()
+              .getParentScope(
+                  org.integratedmodelling.klab.api.scope.Scope.Type.USER, UserScope.class);
+      if (user != null) return user;
+    }
+    throw new KlabIllegalStateException("Project actors require an authenticated user scope");
+  }
+
+  private static ResourcesService projectService(String id, String project, UserScope user) {
+    var services = new LinkedHashSet<>(user.getServices(ResourcesService.class));
+    var preferred = user.getService(ResourcesService.class);
+    if (preferred != null) services.add(preferred);
+    for (var service : services) {
+      if (id != null && !id.isBlank() && !id.equals(service.serviceId())) continue;
+      var info = service.info(project, KlabAsset.KnowledgeClass.PROJECT, ResourceInfo.class, user);
+      if (info != null && info.getKnowledgeClass() == KlabAsset.KnowledgeClass.PROJECT)
+        return service;
+    }
+    throw new KlabIllegalStateException("Project Resources service is unavailable: " + project);
+  }
+
+  private static List<ResourceSet> projectChanges(List<ResourceSet> changes) {
+    if (changes == null) throw new KlabIllegalStateException("No project operation response");
+    for (var change : changes)
+      if (org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(
+          change.getNotifications()))
+        throw new KlabIllegalStateException(
+            "Project operation failed: " + change.getNotifications());
+    return changes;
+  }
+
+  @Actor(name = "document", description = "Common ancestor of project document handles")
+  public static class Document implements ProjectReference {
+    protected final String urn, project, serviceId;
+    protected final KlabAsset.KnowledgeClass kind;
+
+    protected Document(
+        String urn, String project, String serviceId, KlabAsset.KnowledgeClass kind) {
+      this.urn = Objects.requireNonNull(urn);
+      this.project = Objects.requireNonNull(project);
+      this.serviceId = serviceId;
+      this.kind = kind;
+    }
+
+    @AgentAdapter
+    @Verb(
+        name = "wrap",
+        producesAgent = "core.document",
+        description = "Wrap a project document by its stable coordinates")
+    public static Document wrap(KlabDocument<?> document) {
+      return documentReference(
+          document.getUrn(),
+          document.getProjectName(),
+          document.getServiceId(),
+          KlabAsset.classify(document));
+    }
+
+    public static Document documentReference(
+        String urn, String project, String service, KlabAsset.KnowledgeClass kind) {
+      return switch (kind) {
+        case ONTOLOGY -> new Ontology(urn, project, service);
+        case NAMESPACE -> new Namespace(urn, project, service);
+        case OBSERVATION_STRATEGY_DOCUMENT -> new StrategyDocument(urn, project, service);
+        case BEHAVIOR, APPLICATION, SCRIPT, TESTCASE, COMPONENT ->
+            new BehaviorDocument(urn, project, service, kind);
+        default -> throw new IllegalArgumentException("Not a document knowledge class: " + kind);
+      };
+    }
+
+    @Verb(name = "urn", description = "Stable document URN")
+    public String urn() {
+      return urn;
+    }
+
+    @Verb(name = "project", producesAgent = "core.project", description = "The containing project")
+    public Project project() {
+      return new Project(project, serviceId);
+    }
+
+    @Verb(name = "kind", description = "Document knowledge class")
+    public String kind() {
+      return kind.name();
+    }
+
+    @Verb(
+        name = "read",
+        description = "Retrieve current document with the participant's permissions")
+    public KlabDocument<?> read(RuntimeAgent.Scope scope) {
+      var owner = project();
+      var user = participant(scope);
+      var service = owner.authorize(scope, CRUDOperation.READ);
+      var type =
+          kind == KlabAsset.KnowledgeClass.COMPONENT ? KActorsBehavior.class : kind.getAssetClass();
+      var value = service.retrieve(urn, type, user);
+      if (!(value instanceof KlabDocument<?> document)
+          || !project.equals(document.getProjectName()))
+        throw new KlabIllegalStateException(
+            "Document is missing or belongs to another project: " + urn);
+      return document;
+    }
+
+    @Verb(name = "source", description = "Current source code")
+    public String source(RuntimeAgent.Scope scope) {
+      return read(scope).getSourceCode();
+    }
+
+    @Verb(name = "version", description = "Current authored version")
+    public String version(RuntimeAgent.Scope scope) {
+      return Objects.toString(read(scope).getVersion(), "");
+    }
+
+    @Verb(name = "statements", description = "Current document statements")
+    public List<?> statements(RuntimeAgent.Scope scope) {
+      return read(scope).getStatements();
+    }
+
+    @Verb(name = "notifications", description = "Document validation notifications")
+    public Collection<?> notifications(RuntimeAgent.Scope scope) {
+      return read(scope).getNotifications();
+    }
+
+    @Verb(name = "imports", description = "Imported document namespaces")
+    public Set<String> imports(RuntimeAgent.Scope scope) {
+      return read(scope).importedNamespaces(false);
+    }
+
+    @Verb(name = "update", description = "Replace document source using the project CRUD API")
+    public List<ResourceSet> update(RuntimeAgent.Scope scope, String source) {
+      return project()
+          .writeDocument(scope, kind.name(), urn, source, ResourcesService.SubmissionMode.UPDATE);
+    }
+
+    @Verb(name = "delete", description = "Delete this document using the project CRUD API")
+    public List<ResourceSet> delete(RuntimeAgent.Scope scope) {
+      return project().deleteDocument(scope, kind.name(), urn);
+    }
+
+    public Map<String, Object> checkpointReference() {
+      return Map.of(
+          "$klabProjectActor",
+          1,
+          "kind",
+          kind.name(),
+          "urn",
+          urn,
+          "project",
+          project,
+          "serviceId",
+          Objects.toString(serviceId, ""));
+    }
+  }
+
+  @Actor(name = "ontology", description = "Ontology document, inheriting core.document")
+  public static final class Ontology extends Document {
+    private Ontology(String urn, String project, String service) {
+      super(urn, project, service, KlabAsset.KnowledgeClass.ONTOLOGY);
+    }
+
+    @AgentAdapter
+    @Verb(name = "wrap", producesAgent = "core.ontology", description = "Wrap an ontology")
+    public static Ontology wrap(KlabDocument<?> value) {
+      if (!(value instanceof KimOntology)) throw new IllegalArgumentException("Expected ontology");
+      return (Ontology) Document.wrap(value);
+    }
+
+    @Verb(name = "domain", description = "Ontology domain concept")
+    public KimConcept domain(RuntimeAgent.Scope scope) {
+      return ((KimOntology) read(scope)).getDomain();
+    }
+  }
+
+  @Actor(name = "namespace", description = "Model namespace document, inheriting core.document")
+  public static final class Namespace extends Document {
+    private Namespace(String urn, String project, String service) {
+      super(urn, project, service, KlabAsset.KnowledgeClass.NAMESPACE);
+    }
+
+    @AgentAdapter
+    @Verb(name = "wrap", producesAgent = "core.namespace", description = "Wrap a namespace")
+    public static Namespace wrap(KlabDocument<?> value) {
+      if (!(value instanceof KimNamespace))
+        throw new IllegalArgumentException("Expected namespace");
+      return (Namespace) Document.wrap(value);
+    }
+
+    @Verb(name = "scenario", description = "Whether this namespace is a scenario")
+    public boolean scenario(RuntimeAgent.Scope scope) {
+      return ((KimNamespace) read(scope)).isScenario();
+    }
+  }
+
+  @Actor(
+      name = "strategy_document",
+      description = "Observation strategies, inheriting core.document")
+  public static final class StrategyDocument extends Document {
+    private StrategyDocument(String urn, String project, String service) {
+      super(urn, project, service, KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
+    }
+
+    @AgentAdapter
+    @Verb(
+        name = "wrap",
+        producesAgent = "core.strategy_document",
+        description = "Wrap observation strategies")
+    public static StrategyDocument wrap(KlabDocument<?> value) {
+      if (!(value instanceof KimObservationStrategyDocument))
+        throw new IllegalArgumentException("Expected strategy document");
+      return (StrategyDocument) Document.wrap(value);
+    }
+
+    @Verb(name = "coverage", description = "Strategy document coverage specification")
+    public Map<String, Object> coverage(RuntimeAgent.Scope scope) {
+      return ((KimObservationStrategyDocument) read(scope)).getCoverage();
+    }
+  }
+
+  @Actor(
+      name = "behavior_document",
+      description = "k.Actors source document, inheriting core.document")
+  public static final class BehaviorDocument extends Document {
+    private BehaviorDocument(
+        String urn, String project, String service, KlabAsset.KnowledgeClass kind) {
+      super(urn, project, service, kind);
+    }
+
+    @AgentAdapter
+    @Verb(
+        name = "wrap",
+        producesAgent = "core.behavior_document",
+        description = "Wrap k.Actors source")
+    public static BehaviorDocument wrap(KlabDocument<?> value) {
+      if (!(value instanceof KActorsBehavior))
+        throw new IllegalArgumentException("Expected behavior document");
+      return (BehaviorDocument) Document.wrap(value);
+    }
+
+    @Verb(name = "category", description = "k.Actors behavior category")
+    public String category(RuntimeAgent.Scope scope) {
+      return ((KActorsBehavior) read(scope)).getBehaviorType().name();
+    }
+  }
+
+  @Actor(
+      name = "project",
+      description = "Permission-checked k.LAB project CRUD and additional material")
+  public static final class Project implements ProjectReference {
+    private final String urn, serviceId;
+
+    public Project(String urn, String serviceId) {
+      this.urn = Objects.requireNonNull(urn);
+      this.serviceId = serviceId;
+    }
+
+    @AgentAdapter
+    @Verb(
+        name = "wrap",
+        producesAgent = "core.project",
+        description = "Wrap a project using stable coordinates")
+    public static Project wrap(
+        org.integratedmodelling.klab.api.knowledge.organization.Project value) {
+      return new Project(value.getUrn(), value.getServiceId());
+    }
+
+    private ResourcesService authorize(RuntimeAgent.Scope scope, CRUDOperation permission) {
+      var user = participant(scope);
+      var service = projectService(serviceId, urn, user);
+      var info = service.info(urn, KlabAsset.KnowledgeClass.PROJECT, ResourceInfo.class, user);
+      if (info == null
+          || info.getPermissions() == null
+          || !(info.getPermissions().contains(permission)
+              || info.getPermissions().contains(CRUDOperation.ADMINISTER)))
+        throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+            "Project " + urn + " requires " + permission);
+      return service;
+    }
+
+    @Verb(name = "urn", description = "Project URN")
+    public String urn() {
+      return urn;
+    }
+
+    @Verb(name = "read", description = "Retrieve current project")
+    public org.integratedmodelling.klab.api.knowledge.organization.Project read(
+        RuntimeAgent.Scope scope) {
+      return authorize(scope, CRUDOperation.READ)
+          .retrieve(
+              urn,
+              org.integratedmodelling.klab.api.knowledge.organization.Project.class,
+              participant(scope));
+    }
+
+    @Verb(name = "documents", description = "Current document handles in this project")
+    public List<Document> documents(RuntimeAgent.Scope scope) {
+      var value = read(scope);
+      var result = new ArrayList<Document>();
+      value.getOntologies().forEach(document -> result.add(Document.wrap(document)));
+      value.getNamespaces().forEach(document -> result.add(Document.wrap(document)));
+      value.getObservationStrategies().forEach(document -> result.add(Document.wrap(document)));
+      value.getBehaviors().forEach(document -> result.add(Document.wrap(document)));
+      value.getScripts().forEach(document -> result.add(Document.wrap(document)));
+      value.getApps().forEach(document -> result.add(Document.wrap(document)));
+      value.getTestCases().forEach(document -> result.add(Document.wrap(document)));
+      return result;
+    }
+
+    @Verb(name = "settings", description = "Current project settings")
+    public org.integratedmodelling.klab.api.settings.ProjectSettings settings(
+        RuntimeAgent.Scope scope) {
+      return read(scope).getSettings();
+    }
+
+    @Verb(
+        name = "update_settings",
+        description = "Replace settings through the existing locked-project API")
+    public List<ResourceSet> updateSettings(
+        RuntimeAgent.Scope scope,
+        String workspace,
+        org.integratedmodelling.klab.api.settings.ProjectSettings settings) {
+      var service = authorize(scope, CRUDOperation.UPDATE);
+      var value = new org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl();
+      value.setUrn(workspace + "/" + urn);
+      value.setManifest(null);
+      value.setSettings(settings);
+      return projectChanges(
+          service.submit(value, ResourcesService.SubmissionMode.REPLACE, participant(scope)));
+    }
+
+    @Verb(name = "delete", description = "Delete this project through the Resources API")
+    public List<ResourceSet> delete(RuntimeAgent.Scope scope) {
+      return projectChanges(
+          authorize(scope, CRUDOperation.DELETE)
+              .delete(urn, KlabAsset.KnowledgeClass.PROJECT, participant(scope)));
+    }
+
+    @Verb(name = "permissions", description = "Current participant's effective project privileges")
+    public Set<CRUDOperation> permissions(RuntimeAgent.Scope scope) {
+      var user = participant(scope);
+      return Set.copyOf(
+          projectService(serviceId, urn, user)
+              .info(urn, KlabAsset.KnowledgeClass.PROJECT, ResourceInfo.class, user)
+              .getPermissions());
+    }
+
+    @Verb(name = "lock", description = "Acquire the existing project editing lock")
+    public boolean lock(RuntimeAgent.Scope scope) {
+      return authorize(scope, CRUDOperation.UPDATE).lockProject(urn, participant(scope));
+    }
+
+    @Verb(name = "unlock", description = "Release the participant's editing lock")
+    public boolean unlock(RuntimeAgent.Scope scope) {
+      return authorize(scope, CRUDOperation.UPDATE).unlockProject(urn, participant(scope));
+    }
+
+    @Verb(
+        name = "document",
+        producesAgent = "core.document",
+        description = "Bind a document kind and URN within this project")
+    public Document document(RuntimeAgent.Scope scope, String kind, String name) {
+      authorize(scope, CRUDOperation.READ);
+      var value =
+          Document.documentReference(
+              name,
+              urn,
+              serviceId,
+              KlabAsset.KnowledgeClass.valueOf(kind.toUpperCase(Locale.ROOT)));
+      value.read(scope);
+      return value;
+    }
+
+    @Verb(
+        name = "create_document",
+        description = "Create a document from source; kind is a document knowledge class")
+    public List<ResourceSet> createDocument(
+        RuntimeAgent.Scope scope, String kind, String name, String source) {
+      return writeDocument(scope, kind, name, source, ResourcesService.SubmissionMode.ADD);
+    }
+
+    @Verb(name = "update_document", description = "Update a document from source")
+    public List<ResourceSet> updateDocument(
+        RuntimeAgent.Scope scope, String kind, String name, String source) {
+      return writeDocument(scope, kind, name, source, ResourcesService.SubmissionMode.UPDATE);
+    }
+
+    private List<ResourceSet> writeDocument(
+        RuntimeAgent.Scope scope,
+        String kind,
+        String name,
+        String source,
+        ResourcesService.SubmissionMode mode) {
+      var service =
+          authorize(
+              scope,
+              mode == ResourcesService.SubmissionMode.ADD
+                  ? CRUDOperation.CREATE
+                  : CRUDOperation.UPDATE);
+      var type = KlabAsset.KnowledgeClass.valueOf(kind.toUpperCase(Locale.ROOT));
+      org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl<?> value =
+          switch (type) {
+            case ONTOLOGY -> new org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl();
+            case NAMESPACE -> new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+            case OBSERVATION_STRATEGY_DOCUMENT ->
+                new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl();
+            case BEHAVIOR, APPLICATION, SCRIPT, TESTCASE, COMPONENT -> {
+              var behavior =
+                  new org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl();
+              behavior.setBehaviorType(
+                  switch (type) {
+                    case APPLICATION -> KActorsBehavior.Type.APP;
+                    case SCRIPT -> KActorsBehavior.Type.SCRIPT;
+                    case TESTCASE -> KActorsBehavior.Type.UNITTEST;
+                    case COMPONENT -> KActorsBehavior.Type.COMPONENT;
+                    default -> KActorsBehavior.Type.BEHAVIOR;
+                  });
+              yield behavior;
+            }
+            default ->
+                throw new IllegalArgumentException("Not a document knowledge class: " + kind);
+          };
+      value.setUrn(name);
+      value.setProjectName(urn);
+      value.setSourceCode(source);
+      return projectChanges(service.submit(value, mode, participant(scope)));
+    }
+
+    @Verb(
+        name = "delete_document",
+        description = "Delete a project document; requires DELETE and the project lock")
+    public List<ResourceSet> deleteDocument(RuntimeAgent.Scope scope, String kind, String name) {
+      var type = KlabAsset.KnowledgeClass.valueOf(kind.toUpperCase(Locale.ROOT));
+      Document.documentReference(name, urn, serviceId, type);
+      if (name.contains("/")) throw new IllegalArgumentException("Use an unqualified document URN");
+      return projectChanges(
+          authorize(scope, CRUDOperation.DELETE)
+              .delete(urn + "/" + name, type, participant(scope)));
+    }
+
+    @Verb(
+        name = "material",
+        description = "Read additional material; UPDATE_METADATA also grants material reads")
+    public byte[] material(RuntimeAgent.Scope scope, String path) {
+      var permissions = permissions(scope);
+      var service =
+          authorize(
+              scope,
+              permissions.contains(CRUDOperation.READ)
+                  ? CRUDOperation.READ
+                  : CRUDOperation.UPDATE_METADATA);
+      var value =
+          service.retrieve(
+              new ProjectMaterial(urn, path, null).getUrn(),
+              ProjectMaterial.class,
+              participant(scope));
+      return value == null ? null : value.getContent();
+    }
+
+    @Verb(
+        name = "write_material",
+        description = "Create or update arbitrary bytes under a canonical relative path")
+    public List<ResourceSet> writeMaterial(RuntimeAgent.Scope scope, String path, byte[] bytes) {
+      return projectChanges(
+          authorize(scope, CRUDOperation.UPDATE_METADATA)
+              .submit(
+                  new ProjectMaterial(urn, path, bytes),
+                  ResourcesService.SubmissionMode.CREATE_OR_UPDATE,
+                  participant(scope)));
+    }
+
+    @Verb(name = "write_text", description = "Create or update UTF-8 additional material")
+    public List<ResourceSet> writeText(RuntimeAgent.Scope scope, String path, String text) {
+      return writeMaterial(scope, path, text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Verb(
+        name = "delete_material",
+        description = "Delete additional material; requires DELETE, not UPDATE_METADATA")
+    public List<ResourceSet> deleteMaterial(RuntimeAgent.Scope scope, String path) {
+      return projectChanges(
+          authorize(scope, CRUDOperation.DELETE)
+              .delete(
+                  new ProjectMaterial(urn, path, null).getUrn(),
+                  KlabAsset.KnowledgeClass.ADDITIONAL_MATERIAL,
+                  participant(scope)));
+    }
+
+    public Map<String, Object> checkpointReference() {
+      return Map.of(
+          "$klabProjectActor",
+          1,
+          "kind",
+          "PROJECT",
+          "urn",
+          urn,
+          "serviceId",
+          Objects.toString(serviceId, ""));
+    }
+  }
+
+  public static ProjectReference restoreProjectReference(Map<?, ?> reference) {
+    var kind = KlabAsset.KnowledgeClass.valueOf((String) reference.get("kind"));
+    String urn = (String) reference.get("urn"), service = (String) reference.get("serviceId");
+    return kind == KlabAsset.KnowledgeClass.PROJECT
+        ? new Project(urn, service)
+        : Document.documentReference(urn, (String) reference.get("project"), service, kind);
+  }
 
   /**
    * Universal Java behavior inherited implicitly by every k.Actors behavior.

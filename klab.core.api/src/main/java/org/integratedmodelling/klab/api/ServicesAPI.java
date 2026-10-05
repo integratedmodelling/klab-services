@@ -499,6 +499,7 @@ public interface ServicesAPI {
 
     /** PUT endpoint to ingest an asset for addition, update or replacement */
     String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";
+    String SUBMIT_QUERY = API_BASE + "/submit/{knowledgeClass}/{submissionMode}";
 
     /**
      * GET endpoint to retrieve a list of assets of a given type. A POST endpoint may specify a
@@ -511,6 +512,7 @@ public interface ServicesAPI {
      * URN.
      */
     String RETRIEVE = API_BASE + "/retrieve/{knowledgeClass}/{urn}";
+    String RETRIEVE_QUERY = API_BASE + "/retrieve/{knowledgeClass}";
 
     String RESOLVE_URN = "/resolve/{urn}";
 

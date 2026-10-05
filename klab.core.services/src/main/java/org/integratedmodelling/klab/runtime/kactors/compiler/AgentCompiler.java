@@ -109,6 +109,11 @@ public class AgentCompiler {
       if (Objects.equals(actualBehaviorUrn, requiredBehaviorUrn)) {
         return true;
       }
+      var actualActor = resolveActor(actualBehaviorUrn, scope);
+      var requiredActor = resolveActor(requiredBehaviorUrn, scope);
+      if (actualActor != null && requiredActor != null
+          && actualActor.implementationClass() != null && requiredActor.implementationClass() != null)
+        return requiredActor.implementationClass().isAssignableFrom(actualActor.implementationClass());
       return implementsBehavior(
           resolveBehavior(actualBehaviorUrn, scope),
           requiredBehaviorUrn,

@@ -38,6 +38,7 @@ public class WorkflowBehaviorBridge {
   public static final class Content {
     private final Flow.State stage;
     private final Attachments attachments;
+
     private Content(Flow.State stage, Attachments attachments) { this.stage = stage; this.attachments = attachments; }
     public List<Flow.Attachment> attachments() { return List.copyOf(stage.getAttachments()); }
     public byte[] attachment(String id) { return attachmentAccess().read(stage, id); }
@@ -100,6 +101,7 @@ public class WorkflowBehaviorBridge {
     private final Map<String, KActorsAction> actions = new LinkedHashMap<>();
     private RuntimeAgentBase runtime;
     private final Attachments attachments;
+    private Map<String, Object> targetActors;
 
     private Session(Workflow workflow, Flow flow, Flow.State stage, UserScope caller, Attachments attachments) {
       this.attachments = attachments;
@@ -164,7 +166,51 @@ public class WorkflowBehaviorBridge {
       context.put("editor", new Editor(flow.getId(), stage.getId(), stage.getTitle(),
           stage.getDescription(), stage.getOwner(), flow.getRevision(),
           stage.getAttachments().stream().map(Flow.Attachment::getFileName).toList()));
+      context.putAll(targetActors());
       return context;
+    }
+
+    private Map<String, Object> targetActors() {
+      if (targetActors != null) return targetActors;
+      targetActors = new LinkedHashMap<>();
+      boolean needed = actions.values().stream().flatMap(action -> action.getArguments().stream()).anyMatch(argument -> {
+        var contract = org.integratedmodelling.klab.api.lang.kactors.KActorsVisitor.actionArgumentType(argument);
+        String javaName = contract == null || contract.javaClassName() == null ? "" : contract.javaClassName().replace('$', '.');
+        javaName = javaName.substring(javaName.lastIndexOf('.') + 1);
+        return Set.of("document", "project", "ontology", "namespace", "strategy_document", "behavior_document").contains(argument.getName())
+            || contract != null && (contract.behaviorUrn() != null && Set.of("core.document", "core.project", "core.ontology", "core.namespace", "core.strategy_document", "core.behavior_document").contains(contract.behaviorUrn())
+                || Set.of("Document", "Project", "Ontology", "Namespace", "StrategyDocument", "BehaviorDocument").contains(javaName));
+      });
+      if (!needed) return targetActors;
+      var services = new LinkedHashSet<>(owner.getServices(org.integratedmodelling.klab.api.services.ResourcesService.class));
+      var preferred = owner.getService(org.integratedmodelling.klab.api.services.ResourcesService.class);
+      if (preferred != null) services.add(preferred);
+      for (var service : services) {
+        if (flow.getAssetType() == org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.PROJECT) {
+          var project = service.retrieve(flow.getAssetUrn(), org.integratedmodelling.klab.api.knowledge.organization.Project.class, owner);
+          if (project != null) {
+            targetActors.put("project", new org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Project(project.getUrn(), service.serviceId())); break;
+          }
+        } else if (flow.getAssetType() != null) {
+          var type = flow.getAssetType() == org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.COMPONENT
+              ? org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.class : flow.getAssetType().getAssetClass();
+          if (!org.integratedmodelling.klab.api.lang.kim.KlabDocument.class.isAssignableFrom(type)) break;
+          var asset = service.retrieve(flow.getAssetUrn(), type, owner);
+          if (asset instanceof org.integratedmodelling.klab.api.lang.kim.KlabDocument<?> document && document.getProjectName() != null) {
+            var wrapper = org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Document.documentReference(
+                document.getUrn(), document.getProjectName(), service.serviceId(), org.integratedmodelling.klab.api.knowledge.KlabAsset.classify(document));
+            targetActors.put("document", wrapper);
+            targetActors.put(switch (wrapper) {
+              case org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Ontology ignored -> "ontology";
+              case org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Namespace ignored -> "namespace";
+              case org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.StrategyDocument ignored -> "strategy_document";
+              default -> "behavior_document";
+            }, wrapper);
+            targetActors.put("project", wrapper.project()); break;
+          }
+        }
+      }
+      return targetActors;
     }
 
     private void start(Flow.State stage, Workflow.TransitionSchema transition) {
@@ -173,7 +219,7 @@ public class WorkflowBehaviorBridge {
       Object[] init = checkpoint == null && actions.containsKey("init")
           ? bind(action("init"), Map.of(), context(stage, transition), null) : new Object[0];
       runtime = AgentRegistry.INSTANCE.checkpointAgent(behavior, owner, resolver,
-          checkpoint == null ? null : checkpoint.globals(), init);
+          checkpoint == null ? null : checkpoint.globals(), init, caller);
       if (checkpoint == null && actions.containsKey("main"))
         runtime.invokeCheckpointAction("main", bind(action("main"), Map.of(), context(stage, transition), null));
     }
@@ -238,9 +284,15 @@ public class WorkflowBehaviorBridge {
       else if (configured.containsKey(name)) { value = configured.get(name); found = true; }
       else if (javaType != null) {
         String type = javaType;
-        var matches = context.values().stream().filter(Objects::nonNull)
+        var matches = context.values().stream().distinct().filter(Objects::nonNull)
             .filter(candidate -> matches(candidate.getClass(), type)).toList();
         if (matches.size() > 1) throw new IllegalArgumentException("Ambiguous context type for " + name);
+        if (matches.size() == 1) { value = matches.getFirst(); found = true; }
+      }
+      else if (behaviorType != null) {
+        var matches = context.values().stream().filter(Objects::nonNull).distinct()
+            .filter(candidate -> actorMatches(candidate.getClass(), behaviorType)).toList();
+        if (matches.size() > 1) throw new IllegalArgumentException("Ambiguous actor type for " + name);
         if (matches.size() == 1) { value = matches.getFirst(); found = true; }
       }
       if (found && value instanceof Number number && javaType != null)
@@ -288,5 +340,11 @@ public class WorkflowBehaviorBridge {
         || (actual == Character.class && "char".equals(type))) return true;
     for (var implemented : actual.getInterfaces()) if (matches(implemented, type)) return true;
     return actual.getSuperclass() != null && matches(actual.getSuperclass(), type);
+  }
+
+  private static boolean actorMatches(Class<?> actual, String type) {
+    var actor = actual.getAnnotation(org.integratedmodelling.klab.api.services.runtime.extension.Actor.class);
+    return actor != null && ("core." + actor.name()).equals(type)
+        || actual.getSuperclass() != null && actorMatches(actual.getSuperclass(), type);
   }
 }
