@@ -40,7 +40,7 @@ class ResourcesService(ABC):
     def capabilities(self, scope: Scope | None) -> ServiceCapabilities: ...
 
     @abstractmethod
-    def retrieve(self, urn: str, asset_class: type[TAsset], scope: UserScope) -> TAsset | None: ...
+    def retrieve(self, urn: str, asset_class: str | type[KlabAsset] = "RESOURCE", scope: UserScope | None = None) -> KlabAsset: ...
 
     @abstractmethod
     def resolve(self, urn: str, scope: Scope) -> ResourceSet: ...
@@ -69,7 +69,7 @@ class RuntimeService(ABC):
     def release_context(self, scope: ContextScope) -> bool: ...
 
     @abstractmethod
-    def query_knowledge_graph(self, query: Any, scope: Scope) -> list[TRuntime]: ...
+    def query_knowledge_graph(self, query: dict[str, Any], scope: Scope) -> list[dict[str, Any]]: ...
 
 
 class Resolver(ABC):
@@ -113,7 +113,8 @@ class _RemoteService:
         check_notifications(payload, self.client.transport.redact)
         return payload
 
-    def capabilities(self, scope=None):
+    def capabilities(self, scope: Scope | None = None) -> ServiceCapabilities:
+        """Return the server ID and complete checked capabilities payload."""
         from klab_client.dto import required_text
         payload = self._checked(self._request("GET", "/public/capabilities", scope), "capabilities")
         return ServiceCapabilities(required_text(payload, "serviceId"), payload)
@@ -122,12 +123,12 @@ class _RemoteService:
 class ReasonerImpl(_RemoteService, Reasoner):
     service = "reasoner"
 
-    def resolve_concept(self, definition, scope=None):
+    def resolve_concept(self, definition: str, scope: Scope | None = None) -> Concept:
         from klab_client.dto import concept_from_wire
         return concept_from_wire(self._checked(self._request("POST", "/api/v1/resolve/concept", scope,
                                                              text=definition), "concept"))
 
-    def resolve_observable(self, definition, scope=None):
+    def resolve_observable(self, definition: str, scope: Scope | None = None) -> Observable:
         from klab_client.dto import observable_from_wire, check_notifications
         from klab_client.errors import MissingAssetError
         payload = self._checked(self._request("POST", "/api/v1/resolve/observable", scope,
@@ -155,7 +156,8 @@ class ResourcesServiceImpl(_RemoteService, ResourcesService):
             return "RESOURCE"
         raise UnsupportedOperationError("Pass a supported Java KnowledgeClass enum name (e.g. RESOURCE)")
 
-    def retrieve(self, urn, asset_class="RESOURCE", scope=None):
+    def retrieve(self, urn: str, asset_class: str | type[KlabAsset] = "RESOURCE", scope: UserScope | None = None) -> KlabAsset:
+        """Retrieve an explicit knowledge class as a URN plus retained wire DTO."""
         from urllib.parse import quote
         from klab_client.dto import required_text
         from klab_client.errors import MissingAssetError
@@ -166,7 +168,7 @@ class ResourcesServiceImpl(_RemoteService, ResourcesService):
         payload = self._checked(payload, "asset")
         return KlabAsset(required_text(payload, "urn"), payload)
 
-    def list(self, knowledge_class="RESOURCE", scope=None):
+    def list(self, knowledge_class: str = "RESOURCE", scope: UserScope | None = None) -> list[KlabAsset]:
         from klab_client.dto import required_text
         from klab_client.errors import ProtocolError
         payload = self._request("GET", f"/api/v1/list/{self._knowledge_class(knowledge_class)}", scope)
@@ -174,7 +176,7 @@ class ResourcesServiceImpl(_RemoteService, ResourcesService):
             raise ProtocolError("Asset list must be a JSON array")
         return [KlabAsset(required_text(self._checked(p, "asset"), "urn"), p) for p in payload]
 
-    def resolve(self, urn, scope=None, *, knowledge_class="RESOURCE"):
+    def resolve(self, urn: str, scope: Scope | None = None, *, knowledge_class: str = "RESOURCE") -> ResourceSet:
         from urllib.parse import quote
         from klab_client.dto import required_text, object_payload
         from klab_client.errors import ProtocolError
@@ -192,13 +194,13 @@ class ResourcesServiceImpl(_RemoteService, ResourcesService):
 class RuntimeServiceImpl(_RemoteService, RuntimeService):
     service = "runtime"
 
-    def submit(self, observation, scope):
+    def submit(self, observation: Observation, scope: ContextScope) -> Job:
         from klab_client.errors import ConfigurationError
         if self.client is None:
             raise ConfigurationError("Construct runtime through Client")
         return self.client._submit(observation, scope)
 
-    def get_context_info(self, scope=None):
+    def get_context_info(self, scope: Scope | None = None) -> list[ContextInfo]:
         from klab_client.dto import object_payload, required_text
         from klab_client.errors import ProtocolError
         payload = self._request("GET", "/api/v1/contexts", scope)
@@ -211,7 +213,7 @@ class RuntimeServiceImpl(_RemoteService, RuntimeService):
             result.append(ContextInfo(id.split(".")[0], [id], item))
         return result
 
-    def connect_context(self, configuration, user_scope=None):
+    def connect_context(self, configuration: dict[str, Any], user_scope: UserScope | None = None) -> ContextScope:
         self._require_client()
         payload = self._request("POST", "/api/v1/connect", user_scope,
                                 json=self.client._scope_request(configuration), ambiguous=True)
@@ -224,16 +226,16 @@ class RuntimeServiceImpl(_RemoteService, RuntimeService):
             raise ProtocolError("Release must return a boolean")
         return result
 
-    def release_session(self, scope):
+    def release_session(self, scope: SessionScope) -> bool:
         from klab_client.client import scope_token
         return self._release("/releaseSession", scope_token(scope).split(".")[0])
 
-    def release_context(self, scope):
+    def release_context(self, scope: ContextScope) -> bool:
         from klab_client.client import scope_token
         # Release the root context, never dispose an arbitrary focused observation.
         return self._release("/releaseContext", ".".join(scope_token(scope).split("#")[0].split(".")[:2]))
 
-    def query_knowledge_graph(self, query, scope):
+    def query_knowledge_graph(self, query: dict[str, Any], scope: Scope) -> list[dict[str, Any]]:
         from klab_client.errors import ProtocolError, UnsupportedOperationError
         if not isinstance(query, dict):
             raise UnsupportedOperationError("Knowledge graph queries require a structured wire DTO, not query text")
@@ -246,7 +248,7 @@ class RuntimeServiceImpl(_RemoteService, RuntimeService):
 class ResolverImpl(_RemoteService, Resolver):
     service = "resolver"
 
-    def resolve(self, observation, context_scope):
+    def resolve(self, observation: Observation, context_scope: ContextScope) -> Job:
         from klab_client.dto import object_payload
         self._require_client()
         return self.client._submit(observation, context_scope, service="resolver",

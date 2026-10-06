@@ -67,6 +67,10 @@ class ConceptImpl(Concept):
     notifications: list[Notification] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
+    @property
+    def contextualization(self) -> str | None:
+        return self.raw.get("contextualization")
+
     def get_type(self) -> set[SemanticType]:
         return self.semantic_types
 
@@ -102,6 +106,9 @@ class ConceptImpl(Concept):
         return self.notifications
 
     def get_description_type(self) -> DescriptionType:
+        if self.raw:
+            from klab_client.dto import legacy_description_type
+            return legacy_description_type(self.raw)
         return self.description_type
 
 
@@ -115,6 +122,11 @@ class ObservableImpl(Observable):
     description_type: DescriptionType = DescriptionType.INSTANTIATION
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
+    @property
+    def contextualization(self) -> str | None:
+        """Exact transported value, including future values; None means not supplied."""
+        return self.raw.get("contextualization")
+
     def get_semantics(self) -> Concept:
         return self.semantics
 
@@ -122,6 +134,9 @@ class ObservableImpl(Observable):
         return self.observer_semantics
 
     def get_description_type(self) -> DescriptionType:
+        if self.raw:
+            from klab_client.dto import legacy_description_type
+            return legacy_description_type(self.raw)
         return self.description_type
 
     def is_optional(self) -> bool:

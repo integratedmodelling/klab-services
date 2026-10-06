@@ -72,7 +72,8 @@ class Job:
     def __repr__(self):
         return f"Job(id={self.id}, service={self.service!r}, scope={scope_token(self.scope)!r})"
 
-    def status(self, *, timeout=None, _deadline=None) -> JobStatus:
+    def status(self, *, timeout: float | None = None, _deadline: float | None = None) -> JobStatus:
+        """Poll the server state; EMPTY is unavailable, not successful cancellation."""
         payload = object_payload(self.client.transport.request(
             self.service, "GET", f"/jobs/status/{self.id}", scope=scope_token(self.scope),
             service_id=self.client.runtime_service_id, timeout=timeout, deadline=_deadline), "job status")
@@ -93,7 +94,8 @@ class Job:
         self.cancellation_requested = self.cancellation_requested or accepted
         return accepted
 
-    def result(self, timeout: float | None = None):
+    def result(self, timeout: float | None = None) -> ObservationImpl | dict[str, Any]:
+        """Await and retrieve actual result; timeout preserves this resumable handle."""
         if timeout is not None and (not math.isfinite(timeout) or timeout < 0):
             raise InvalidRequestError("Wait timeout must be finite and nonnegative")
         deadline = time.monotonic() + timeout if timeout is not None else None
@@ -154,14 +156,16 @@ class Session(SessionScopeImpl):
     def id(self):
         return self.session_id
 
-    def create_context(self, *, configuration: dict | None = None, name="Python context"):
+    def create_context(self, *, configuration: dict[str, Any] | None = None, name: str = "Python context") -> Context:
+        """Create a remote context; default ONE_OFF is disposable on explicit release."""
         payload = self.client.transport.request(
             "runtime", "POST", "/createContext", scope=self.id,
             json=self.client._scope_request({"name": name, "persistence": "ONE_OFF", **(configuration or {})}),
             ambiguous=True)
         return self.client._context(payload, owned=True)
 
-    def release(self):
+    def release(self) -> bool:
+        """Explicitly close the remote session and its owned scopes."""
         return self.client.runtime.release_session(self)
 
 
@@ -177,24 +181,29 @@ class Context(ContextScopeImpl):
     def id(self):
         return self.configuration["id"]
 
-    def within(self, observation):
+    def within(self, observation: ObservationImpl | int) -> Context:
+        """Return a focused view; it does not create or release a remote context."""
         id = observation.id if isinstance(observation, ObservationImpl) else observation
         if type(id) is not int or id <= 0:
             raise InvalidRequestError("Focus requires a positive committed observation ID")
-        if isinstance(observation, ObservationImpl) and observation._context is not None and observation._context.id != self.id:
-            raise InvalidRequestError("Focused observation belongs to another context")
+        if isinstance(observation, ObservationImpl) and observation._context is not None:
+            bound = observation._context
+            if bound.id != self.id or bound.client.transport.endpoint("runtime").url.rstrip("/") != self.client.transport.endpoint("runtime").url.rstrip("/"):
+                raise InvalidRequestError("Focused observation belongs to another runtime or context")
         base, marker, observer = scope_token(self).partition("#")
         token = base + f".{id}" + (marker + observer if marker else "")
         return Context(self.client, self.configuration, owned=self.owned, token=token)
 
-    def submit(self, observation, *, resolution_constraints=()):
+    def submit(self, observation: ObservationImpl | dict[str, Any], *, resolution_constraints=()) -> Job:
+        """Submit through Runtime; acceptance returns a job, not scientific success."""
         return self.client._submit(observation, self, resolution_constraints)
 
-    def job(self, id):
+    def job(self, id: int) -> Job:
         """Resume a saved job in its original context, including focus path."""
         return Job(self.client, id, self, decoder=lambda p: observation_from_wire(p, self))
 
-    def release(self):
+    def release(self) -> bool:
+        """Explicit remote close; callers must intend disposal of this context."""
         return self.client.runtime.release_context(self)
 
     def fetch_data(self, observation, offsets, *, curve, slice, semantics):
@@ -203,6 +212,8 @@ class Context(ContextScopeImpl):
                 bound.client.transport.endpoint("runtime").url.rstrip("/")
                 != self.client.transport.endpoint("runtime").url.rstrip("/")):
             raise InvalidRequestError("Scientific reads require an observation bound to this runtime and context")
+        if observation.geometry is None:
+            raise ProtocolError("Scientific reads require geometry to preserve location and temporal semantics")
         offsets = tuple(offsets)
         if not offsets or len(offsets) > 256 or any(type(i) is not int or i < 0 for i in offsets):
             raise InvalidRequestError("Read 1–256 explicit nonnegative cell offsets per call")
@@ -260,7 +271,8 @@ class Client:
         self.resources, self.resolver = ResourcesServiceImpl(self), ResolverImpl(self)
 
     @classmethod
-    def from_env(cls):
+    def from_env(cls) -> Client:
+        """Read only documented configuration; construction performs no networking."""
         runtime = os.environ.get("KLAB_RUNTIME_URL")
         if not runtime:
             raise ConfigurationError("Set KLAB_RUNTIME_URL to the configured deployment")
@@ -283,7 +295,7 @@ class Client:
     def _scope_request(self, configuration):
         return {"configuration": configuration_to_wire(configuration), "serviceIds": list(self.service_ids)}
 
-    def initialize_user_scope(self, *, email_address=None, local_federation=False):
+    def initialize_user_scope(self, *, email_address: str | None = None, local_federation: bool = False) -> tuple[dict[str, Any], ...]:
         """Explicitly advertise configured, authorized peers through the existing engine route.
 
         This grants no authority and discovers no credentials or extra origins.
@@ -309,7 +321,8 @@ class Client:
         return tuple({"type": item["type"], "id": item["id"],
                       "operational": item["status"].get("operational")} for item in services)
 
-    def create_session(self, *, name="Python session"):
+    def create_session(self, *, name: str = "Python session") -> Session:
+        """Create a unique server session without ambiguous automatic retry."""
         requested_id = uuid.uuid4().hex
         id = self.transport.request("runtime", "POST", "/createSession",
                                     json=self._scope_request({"id": requested_id, "name": name}), response="text", ambiguous=True)
@@ -324,7 +337,8 @@ class Client:
             raise ProtocolError("Server returned an empty context configuration")
         return Context(self, payload, owned=owned)
 
-    def attach_context(self, id: str, *, configuration=None):
+    def attach_context(self, id: str, *, configuration: dict[str, Any] | None = None) -> Context:
+        """Attach to an authorized persisted/existing context without taking ownership."""
         if not isinstance(id, str) or len(id.split(".")) != 2 or not _TOKEN.fullmatch(id):
             raise InvalidRequestError("Attach requires a root session.context ID")
         return self._context(self.transport.request("runtime", "POST", "/api/v1/connect",
@@ -333,15 +347,21 @@ class Client:
     def _submit(self, observation, scope, constraints=(), *, service="runtime", decoder=None):
         if service == "runtime" and not self.agent_name:
             raise ConfigurationError("Set agent_name/KLAB_AGENT_NAME to the authorized user's existing provenance agent name")
+        token = scope_token(scope)
+        if token is None or len(token.split("#")[0].split(".")) < 2:
+            raise InvalidRequestError("Observation submission requires a context scope")
+        if isinstance(scope, Context):
+            if scope.client.transport.endpoint("runtime").url.rstrip("/") != self.transport.endpoint("runtime").url.rstrip("/"):
+                raise InvalidRequestError("Submission context belongs to a different runtime")
+            context = Context(self, scope.configuration, owned=scope.owned, token=token)
+        else:
+            context = Context(self, {"id": ".".join(token.split("#")[0].split(".")[:2])}, token=token)
         envelope = {"observation": observation_to_wire(observation),
                     "agentName": self.agent_name, "resolutionConstraints": list(constraints)}
         id = self.transport.request(service, "POST", "/api/v1/submit" if service == "runtime" else "/api/v1/resolve",
                                     json=envelope, scope=scope_token(scope), service_id=self.runtime_service_id,
                                     ambiguous=True)
-        token = scope_token(scope)
-        context = scope if isinstance(scope, Context) else Context(
-            self, {"id": ".".join(token.split("#")[0].split(".")[:2])}, token=token)
-        return Job(self, id, scope, service=service,
+        return Job(self, id, context, service=service,
                    decoder=decoder or (lambda p: observation_from_wire(p, context)))
 
     def close(self):

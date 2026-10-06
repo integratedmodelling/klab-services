@@ -8,9 +8,23 @@ from typing import Any
 from .errors import InvalidRequestError, ProtocolError, ServerError, UnsupportedOperationError
 from .api.knowledge import ConceptImpl, ObservableImpl, ResolutionDirective
 from .api.primitives import LogicalConnector, Notification, SemanticType
+from .api.primitives import DescriptionType
 
 OBSERVATION_CLASS = "org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl"
 CONFIGURATION_CLASS = "org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl"
+
+
+def legacy_description_type(payload):
+    """Only explicit compatible mappings; remote absence/future types are not defaults."""
+    mappings = {"MEASURE": DescriptionType.QUANTIFICATION,
+                "QUANTIFICATION": DescriptionType.QUANTIFICATION,
+                "INSTANTIATION": DescriptionType.INSTANTIATION,
+                "CATEGORIZATION": DescriptionType.CATEGORIZATION,
+                "DETECTION": DescriptionType.DETECTION}
+    value = payload.get("contextualization")
+    if value not in mappings:
+        raise UnsupportedOperationError(f"No legacy DescriptionType mapping for server contextualization {value!r}; inspect raw/contextualization")
+    return mappings[value]
 
 
 def object_payload(payload, label):
@@ -45,6 +59,8 @@ def check_notifications(payload, redact=lambda text: text):
 
 def concept_from_wire(payload):
     payload = object_payload(payload, "concept")
+    if payload.get("contextualization") is not None and not isinstance(payload["contextualization"], str):
+        raise ProtocolError("Contextualization must be an enum name or null")
     urn = required_text(payload, "urn")
     types = payload.get("type", [])
     if not isinstance(types, list) or any(not isinstance(t, str) for t in types):
@@ -60,6 +76,8 @@ def concept_from_wire(payload):
 
 def observable_from_wire(payload):
     payload = object_payload(payload, "observable")
+    if payload.get("contextualization") is not None and not isinstance(payload["contextualization"], str):
+        raise ProtocolError("Contextualization must be an enum name or null")
     required_text(payload, "urn")
     directives = payload.get("resolutionDirectives", [])
     if not isinstance(directives, list):

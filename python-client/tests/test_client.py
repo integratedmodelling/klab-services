@@ -442,3 +442,79 @@ def test_explicit_scope_bootstrap_uses_only_configured_authorized_origins():
         assert len(result) == 4 and len(notifications) == 4
         assert client.runtime_service_id == "runtime-id"
         assert set(client.service_ids) == {service + "-id" for service in ("runtime", "reasoner", "resources", "resolver")}
+
+
+def test_service_submit_rejects_foreign_runtime_before_http(observation):
+    with make_client(lambda request: pytest.fail("Foreign runtime must not be submitted")) as first:
+        with Client("https://other-runtime.invalid") as second:
+            foreign = Context(second, {"id": "s.c"})
+            request = ObservationImpl(urn="", observable=observable_from_wire(observation["observable"]))
+            with pytest.raises(InvalidRequestError, match="different runtime"):
+                first.runtime.submit(request, foreign)
+            with pytest.raises(InvalidRequestError, match="context"):
+                first.runtime.submit(request, "session")
+
+
+def test_submit_same_runtime_rebinds_to_submitting_client(observation):
+    def handler(request):
+        if request.url.path == "/api/v1/submit":
+            return httpx.Response(200, json=2)
+        if "status" in request.url.path:
+            return httpx.Response(200, json={"status": "FINISHED"})
+        return httpx.Response(200, json=observation)
+    with make_client(handler) as current:
+        old = Client("https://runtime.invalid")
+        context = Context(old, {"id": "s.c"}).within(9)
+        old.close()
+        job = current.runtime.submit(ObservationImpl(urn="", observable=observable_from_wire(observation["observable"])), context)
+        result = job.result(1)
+        assert result._context.client is current
+        assert result._context.get_context_id() == "s.c.9"
+
+
+@pytest.mark.parametrize("value,expected", [("MEASURE", "QUANTIFICATION"),
+    ("QUANTIFICATION", "QUANTIFICATION"), ("INSTANTIATION", "INSTANTIATION"),
+    ("DETECTION", "DETECTION"), ("CATEGORIZATION", "CATEGORIZATION")])
+def test_remote_semantic_description_is_explicit_not_default(observation, value, expected):
+    payload = observation["observable"]
+    payload["contextualization"] = value
+    payload["semantics"]["contextualization"] = value
+    observable = observable_from_wire(payload)
+    assert observable.contextualization == value
+    assert observable.get_description_type().name == expected
+    assert observable.semantics.get_description_type().name == expected
+
+
+@pytest.mark.parametrize("value", [None, "SIMULATION", "FUTURE_ACTIVITY", "CLASSIFICATION"])
+def test_unrepresentable_legacy_description_is_unsupported(observation, value):
+    payload = observation["observable"]
+    payload["contextualization"] = value
+    observable = observable_from_wire(payload)
+    assert observable.contextualization == value
+    with pytest.raises(UnsupportedOperationError, match="legacy"):
+        observable.get_description_type()
+
+
+def test_local_descriptor_construction_is_preserved():
+    from klab_client import ConceptImpl, ObservableImpl
+    from klab_client.api.primitives import DescriptionType
+    concept = ConceptImpl("local:test")
+    observable = ObservableImpl(concept)
+    assert concept.get_description_type() is DescriptionType.INSTANTIATION
+    assert observable.get_description_type() is DescriptionType.INSTANTIATION
+
+
+def test_focus_rejects_same_context_id_on_another_runtime(observation):
+    with make_client(lambda r: pytest.fail("No request allowed")) as first:
+        with Client("https://other.invalid") as second:
+            result = observation_from_wire(observation, Context(second, {"id": "s.c"}))
+            with pytest.raises(InvalidRequestError, match="runtime"):
+                Context(first, {"id": "s.c"}).within(result)
+
+
+def test_missing_geometry_cannot_be_presented_as_scientific_data(observation):
+    observation.pop("geometry")
+    with make_client(lambda r: pytest.fail("Cannot guess missing geometry")) as client:
+        result = observation_from_wire(observation, Context(client, {"id": "s.c"}))
+        with pytest.raises(ProtocolError, match="geometry"):
+            result.fetch_data([0])
