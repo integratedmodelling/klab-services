@@ -60,7 +60,9 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
 
   @Override
   protected List<KlabService.Type> getOperationalServices() {
-    return List.of(/*KlabService.Type.REASONER*/ );
+    // Keep initialization independent so Reasoner can first load this service's worldview.
+    // Semantic indexing subsequently needs a Reasoner in the service scope (ModelKbox).
+    return List.of(KlabService.Type.REASONER);
   }
 
   @Override

@@ -2619,10 +2619,24 @@ public class RuntimeService extends BaseService
 
   @Override
   public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
-    // TODO for now we just return the existing. Later we should create it if the user is enabled
+    if (configuration == null || configuration.getId() == null || userScope == null) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST);
+    }
     var scope = getScopeManager().getScope(configuration.getId(), ContextScope.class);
+    if (scope != null && getConfiguration(configuration.getId(), userScope) == null) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+    }
     if (scope == null) {
-      scope = reconstructContext(configuration, userScope);
+      // Never recreate a twin from caller-supplied owner/access rights. Use only
+      // persisted descriptors that the graph exposes to this authenticated user.
+      var persisted = getContextInfo(userScope).stream()
+          .map(ContextInfo::getConfiguration)
+          .filter(c -> configuration.getId().equals(c.getId()))
+          .findFirst().orElse(null);
+      if (persisted == null) {
+        throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+      }
+      scope = reconstructContext(persisted, userScope);
     }
     return scope instanceof ServiceContextScope serviceScope
         ? prepareObserverConnection(serviceScope, userScope) : scope;

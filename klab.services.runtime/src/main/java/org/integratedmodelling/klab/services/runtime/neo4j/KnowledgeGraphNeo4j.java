@@ -2286,7 +2286,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 ? rootContextId + "." + id
                 : ObservationImpl.catalogUrn(rootContextId, observation.getUrn()));
         if (scope != null && observation.getObservable().is(SemanticType.QUALITY)) {
-          if (!scope.getDigitalTwin().getStorageManager().finalizeStorage(temporaryId, id)) {
+          if (!finalizeAllocatedStorage(scope.getDigitalTwin().getStorageManager(), temporaryId, id)) {
             observation.getNotifications().add(Notification.error("Problem finalizing storage"));
           }
         }
@@ -2301,6 +2301,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       case AgentImpl agent -> agent.setId(id);
       default -> {}
     }
+  }
+
+  static boolean finalizeAllocatedStorage(
+      org.integratedmodelling.klab.api.digitaltwin.StorageManager manager, long temporaryId, long id) {
+    // Resolution commits identity before contextualization creates storage. Only migrate
+    // an existing provisional allocation; otherwise the executor creates it under final ID.
+    if (manager instanceof org.integratedmodelling.klab.runtime.storage.StorageManagerImpl local
+        && !local.hasAllocatedStorage(temporaryId)) return true;
+    return manager.finalizeStorage(temporaryId, id);
   }
 
   @Override

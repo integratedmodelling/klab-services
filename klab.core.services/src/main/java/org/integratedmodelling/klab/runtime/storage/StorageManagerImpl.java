@@ -314,6 +314,7 @@ public class StorageManagerImpl implements StorageManager {
    */
   @Override
   public boolean finalizeStorage(long temporaryId, long finalizedId) {
+    if (temporaryId == finalizedId) return this.storage.containsKey(finalizedId);
     var storage = this.storage.get(temporaryId);
     if (storage == null) {
       return false;
@@ -322,6 +323,11 @@ public class StorageManagerImpl implements StorageManager {
     this.storage.remove(temporaryId);
     // TODO shard persistence should start here
     return true;
+  }
+
+  /** Registration can precede ExecutorImpl.createStorage; absence then is expected. */
+  public boolean hasAllocatedStorage(long observationId) {
+    return this.storage.containsKey(observationId);
   }
 
   private Storage createShard(

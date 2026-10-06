@@ -44,6 +44,20 @@ import org.integratedmodelling.klab.services.application.security.Role;
  */
 public class ScopeManager {
 
+  static boolean allowsManagedScope(ServiceUserScope managed, UserScope requester) {
+    if (requester == null || requester.getUser() == null) return false;
+    String username = requester.getUser().getUsername();
+    if (managed instanceof ContextScope context) {
+      var configuration = context.getConfiguration();
+      String owner = configuration == null ? null : configuration.getOwner();
+      if (owner == null && managed.getUser() != null) owner = managed.getUser().getUsername();
+      return Objects.equals(owner, username) || (configuration != null
+          && configuration.getAccessRights() != null
+          && configuration.getAccessRights().checkAuthorization(requester));
+    }
+    return managed.getUser() != null && Objects.equals(managed.getUser().getUsername(), username);
+  }
+
   //  private ReActorSystem actorSystem = null;
   private KlabService service;
 
@@ -531,6 +545,10 @@ public class ScopeManager {
 
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
+        if (!allowsManagedScope(ret, userScope)) {
+          throw new org.springframework.web.server.ResponseStatusException(
+              org.springframework.http.HttpStatus.FORBIDDEN, "Scope is not accessible to the requesting user");
+        }
 
         if (scopeData.type() == Scope.Type.CONTEXT
             && !ret.getUser().getUsername().equals(userScope.getUser().getUsername())) {

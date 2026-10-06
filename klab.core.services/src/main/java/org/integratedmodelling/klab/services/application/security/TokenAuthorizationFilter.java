@@ -74,6 +74,10 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
           res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
           return;
         }
+      } catch (org.springframework.web.server.ResponseStatusException denied) {
+        SecurityContextHolder.clearContext();
+        res.setStatus(denied.getStatusCode().value());
+        return;
       } catch (Throwable e) {
         logger.error("Failed to extract JWT token: ", e);
         throw e;
