@@ -2797,23 +2797,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                   Map.of(GraphModel.Fields.SESSION_ID, sessionScope.getId() + "."),
                   scope);
           case UserScope userScope -> {
-            String federation = Klab.INSTANCE.getFederationData(userScope.getUser()).getId();
-            Map<String, Object> params = new HashMap<>();
-            params.put(GraphModel.Fields.USER, userScope.getUser().getUsername());
-            if (federation != null) params.put(GraphModel.Fields.FEDERATION, federation);
+            // Public/user/group sharing cannot be inferred from federation ID.
+            // Filter candidate descriptors by their actual ACL before returning them.
             yield query(
-                ("MATCH (c:"
-                    + GraphModel.Labels.CONTEXT
-                    + ") WHERE c."
-                    + GraphModel.Fields.USER
-                    + " = $"
-                    + GraphModel.Fields.USER
-                    + " OR c."
-                    + GraphModel.Fields.FEDERATION
-                    + " = $"
-                    + GraphModel.Fields.FEDERATION
-                    + " RETURN c"),
-                params,
+                ("MATCH (c:" + GraphModel.Labels.CONTEXT + ") RETURN c"),
+                Map.of(),
                 scope);
           }
           case ServiceScope serviceScope ->
@@ -2824,6 +2812,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     List<ContextInfo> contextInfos = new ArrayList<>();
     for (var context : adapt(contexts, Map.class, scope)) {
+
+      if (scope instanceof UserScope requester && !authorizesPersistedContext(context, requester)) {
+        continue;
+      }
 
       ContextInfo contextInfo = new ContextInfo();
       //      contextInfo.setId(context.get(GraphModel.Fields.ID).toString());
@@ -2848,6 +2840,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               .name(context.get(GraphModel.Fields.NAME).toString())
               .serviceId(serviceId)
               .owner(context.get(GraphModel.Fields.USER).toString())
+              .accessRights(persistedContextRights(context))
               .description(context.get(GraphModel.Fields.DESCRIPTION).toString())
               .serverUrl(scope.getService(RuntimeService.class).getUrl())
               .persistence(
@@ -2888,6 +2881,47 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     //    }
 
     return contextInfos;
+  }
+
+  static ResourcePrivileges persistedContextRights(Map<?, ?> context) {
+    Object encoded = context.get(GraphModel.Fields.RIGHTS);
+    if (encoded == null) return ResourcePrivileges.empty(); // Legacy missing ACL is owner-only.
+    if (!(encoded instanceof String rights)) {
+      throw new KlabStorageException("Invalid persisted context permissions");
+    }
+    return ResourcePrivileges.create(rights);
+  }
+
+  static boolean authorizesPersistedContext(Map<?, ?> context, UserScope requester) {
+    if (requester == null || requester.getUser() == null
+        || requester.getUser().getUsername() == null) return false;
+    Object owner = context.get(GraphModel.Fields.USER);
+    if (!(owner instanceof String username) || username.isBlank()) return false;
+    ResourcePrivileges rights = persistedContextRights(context);
+    return username.equals(requester.getUser().getUsername())
+        || rights.checkAuthorization(requester.getUser().getUsername(), requester.getUser().getGroups());
+  }
+
+  public DigitalTwin.Configuration getAuthorizedConfiguration(String contextId, UserScope requester) {
+    if (contextId == null || requester == null) return null;
+    var rows = adapt(query("MATCH (c:" + GraphModel.Labels.CONTEXT + " {"
+        + GraphModel.Fields.ID + ": $contextId}) RETURN c", Map.of("contextId", contextId), requester),
+        Map.class, requester);
+    for (var row : rows) {
+      if (!authorizesPersistedContext(row, requester)) return null;
+      var runtime = requester.getService(RuntimeService.class);
+      return DigitalTwin.Configuration.builder()
+          .id(contextId).name(row.get(GraphModel.Fields.NAME).toString())
+          .owner(row.get(GraphModel.Fields.USER).toString()).accessRights(persistedContextRights(row))
+          .serviceId(serviceId).serverUrl(runtime.getUrl())
+          .description(Objects.toString(row.get(GraphModel.Fields.DESCRIPTION), ""))
+          .persistence(Persistence.valueOf(row.get(GraphModel.Fields.EXPIRATION).toString()))
+          .worldviewCommitment(row.get("worldviewCommitment") == null ? null
+              : Utils.Json.parseObject(row.get("worldviewCommitment").toString(),
+                  org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
+          .build().validate(requester);
+    }
+    return null;
   }
 
   @Override

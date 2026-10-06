@@ -34,7 +34,11 @@ class ManagedScopeAccessTest {
     var session = mock(ServiceSessionScope.class);
     var alice = user("alice").getUser();
     when(session.getUser()).thenReturn(alice);
+    when(session.getData()).thenReturn(org.integratedmodelling.klab.api.collections.Parameters.create());
     assertTrue(ScopeManager.allowsManagedScope(session, user("alice")));
     assertFalse(ScopeManager.allowsManagedScope(session, user("bob")));
+    session.getData().put(ScopeManager.PERSISTED_SESSION_OWNER, "bob");
+    assertFalse(ScopeManager.allowsManagedScope(session, user("alice")));
+    assertTrue(ScopeManager.allowsManagedScope(session, user("bob")));
   }
 }

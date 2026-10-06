@@ -2620,21 +2620,18 @@ public class RuntimeService extends BaseService
   @Override
   public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
     if (configuration == null || configuration.getId() == null || userScope == null) {
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST);
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException("Context connection requires an identity and context ID");
     }
     var scope = getScopeManager().getScope(configuration.getId(), ContextScope.class);
     if (scope != null && getConfiguration(configuration.getId(), userScope) == null) {
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context is not accessible to the requesting user");
     }
     if (scope == null) {
-      // Never recreate a twin from caller-supplied owner/access rights. Use only
-      // persisted descriptors that the graph exposes to this authenticated user.
-      var persisted = getContextInfo(userScope).stream()
-          .map(ContextInfo::getConfiguration)
-          .filter(c -> configuration.getId().equals(c.getId()))
-          .findFirst().orElse(null);
+      // Context enumeration/federation membership is not authority. Check the
+      // persisted owner and ACL by ID before reconstructing any mutable scope.
+      var persisted = knowledgeGraph.getAuthorizedConfiguration(configuration.getId(), userScope);
       if (persisted == null) {
-        throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+        throw new org.integratedmodelling.klab.api.exceptions.KlabResourceNotFoundException("Context is absent or not accessible");
       }
       scope = reconstructContext(persisted, userScope);
     }
@@ -2737,6 +2734,10 @@ public class RuntimeService extends BaseService
         serviceSession.setStatus(Scope.Status.WAITING);
         serviceSession.setId(sessionId);
         serviceSession.setName(sessionId);
+        // A collaborator may restore a shared context first. The parent's
+        // authority must remain with its persisted owner, not that collaborator.
+        serviceSession.getData().put(org.integratedmodelling.klab.services.scopes.ScopeManager.PERSISTED_SESSION_OWNER,
+            configuration.getOwner());
         serviceSession.setHostServiceId(serviceId());
         for (var service : userScope.getServices(KlabService.class)) {
           serviceSession.addService(service);

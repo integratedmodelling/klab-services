@@ -74,9 +74,9 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
           res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
           return;
         }
-      } catch (org.springframework.web.server.ResponseStatusException denied) {
+      } catch (org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException denied) {
         SecurityContextHolder.clearContext();
-        res.setStatus(denied.getStatusCode().value());
+        res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       } catch (Throwable e) {
         logger.error("Failed to extract JWT token: ", e);
