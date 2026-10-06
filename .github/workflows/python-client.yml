@@ -1,0 +1,24 @@
+name: Python client offline checks
+
+on:
+  push:
+    paths: ['python-client/**', '.github/workflows/python-client.yml']
+  pull_request:
+    paths: ['python-client/**', '.github/workflows/python-client.yml']
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install './python-client[dev,local]'
+      - run: python -m pytest -q
+        working-directory: python-client
+      - run: python -m build
+        working-directory: python-client

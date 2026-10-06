@@ -46,6 +46,14 @@ def launch(repo, java, state, name, auth_package):
     home.mkdir(parents=True, exist_ok=True)
     args = ["-Xmx768m", f"-Duser.home={home.as_posix()}", "-Dserver.address=127.0.0.1",
             "-Dspring.main.banner-mode=off", "-cp", classpath(repo, module).replace("\\", "/"), main]
+    if name == "runtime" and (state / "runtime-fixture.json").is_file():
+        fixture = json.loads((state / "runtime-fixture.json").read_text())
+        classes = Path(fixture["classes"])
+        expected = repo / "klab.services.runtime/target/test-classes"
+        if classes.resolve() != expected.resolve():
+            raise RuntimeError("Test fixture classpath must belong to this checkout's Runtime tests")
+        args[args.index("-cp") + 1] = str(classes).replace("\\", "/") + os.pathsep + args[args.index("-cp") + 1]
+        args.insert(0, "-Dklab.test.controls=" + Path(fixture["controls"]).as_posix())
     if name != "graphdb":
         args.extend(["-dataDir", (home / ".klab").as_posix(), "-port", str(port), "-contextPath", "/" + name])
         certificate = home / ".klab/services" / name / "service.cert"
@@ -64,7 +72,16 @@ def launch(repo, java, state, name, auth_package):
     with (state / f"{name}.console.log").open("wb") as output:
         process = subprocess.Popen([str(java), "@" + str(argfile)], cwd=repo / module,
                                    env=env, stdout=output, stderr=subprocess.STDOUT)
-    (state / f"{name}.pid").write_text(str(process.pid))
+    try:
+        (state / f"{name}.pid").write_text(str(process.pid))
+    except OSError:
+        process.terminate()
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=10)
+        raise
     print(f"Launched {name}: PID {process.pid}, port {port}, log {state / (name + '.console.log')}", flush=True)
     return process
 
@@ -86,21 +103,41 @@ def wait_ready(name, process, seconds):
     return False
 
 
+def inspect_process(pid):
+    command = (f"$p = Get-CimInstance Win32_Process -Filter 'ProcessId={pid}' -ErrorAction Stop; "
+               "if ($p) { @{exists=$true; command_line=$p.CommandLine} | ConvertTo-Json -Compress } "
+               "else { @{exists=$false} | ConvertTo-Json -Compress }")
+    result = subprocess.run(["powershell.exe", "-NoProfile", "-Command", command],
+                            capture_output=True, text=True, timeout=10)
+    if result.returncode:
+        raise RuntimeError("Process inspection failed")
+    payload = json.loads(result.stdout)
+    if type(payload.get("exists")) is not bool:
+        raise RuntimeError("Process inspection returned an invalid status")
+    return payload
+
+
 def stop(state, names):
     failures = 0
     for name in reversed(list(names)):
         file = state / f"{name}.pid"
         if not file.exists():
             continue
-        pid = int(file.read_text())
-        check = subprocess.run(["powershell.exe", "-NoProfile", "-Command",
-            f"(Get-CimInstance Win32_Process -Filter 'ProcessId={pid}').CommandLine"], capture_output=True, text=True)
-        if str(state / f"{name}.args") not in check.stdout:
-            print(f"PID {pid} absent or argfile identity differs; no termination requested")
-            continue
-        result = subprocess.run(["taskkill.exe", "/PID", str(pid), "/T", "/F"], capture_output=True, text=True)
-        failures += result.returncode != 0
-        print(f"Stop {name}: exit {result.returncode}")
+        try:
+            pid = int(file.read_text())
+            check = inspect_process(pid)
+            if not check["exists"]:
+                continue
+            if str(state / f"{name}.args") not in (check.get("command_line") or ""):
+                raise RuntimeError("Live process identity differs; refusing termination")
+            result = subprocess.run(["taskkill.exe", "/PID", str(pid), "/T", "/F"],
+                                    capture_output=True, text=True, timeout=10)
+            if result.returncode or inspect_process(pid)["exists"]:
+                raise RuntimeError("Owned process termination was not confirmed")
+            print(f"Stop {name}: confirmed exited")
+        except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
+            failures += 1
+            print(f"Stop {name}: failed ({type(error).__name__}); inspect state before retry")
     return failures
 
 

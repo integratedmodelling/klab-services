@@ -247,6 +247,32 @@ def main():
         fixture = args.server_state_dir / "assets/python.fixture/src/python.fixture.kim"
         if fixture.exists():
             report["fixture_model_sha256"] = hashlib.sha256(fixture.read_bytes()).hexdigest()
+        provenance = args.server_state_dir / "fixture-provenance.json"
+        if provenance.exists():
+            report["fixture_provenance"] = json.loads(provenance.read_text())
+    report["compiled_classes_sha256"] = {}
+    compiled = {
+        "runtime_acl": "klab.services.runtime/target/classes/org/integratedmodelling/klab/services/runtime/RuntimeService.class",
+        "graph_acl": "klab.services.runtime/target/classes/org/integratedmodelling/klab/services/runtime/neo4j/KnowledgeGraphNeo4j.class",
+        "managed_scope_acl": "klab.core.services/target/classes/org/integratedmodelling/klab/services/scopes/ScopeManager.class",
+        "units": "klab.services.reasoner/target/classes/org/integratedmodelling/klab/services/reasoner/internal/SemanticsBuilder.class",
+        "fixture_controls": "klab.services.runtime/target/test-classes/org/integratedmodelling/klab/services/runtime/testing/FixtureControls.class"}
+    for name, relative in compiled.items():
+        file = root / relative
+        if file.exists():
+            report["compiled_classes_sha256"][name] = hashlib.sha256(file.read_bytes()).hexdigest()
+    snapshots = {}
+    for module in ("klab.services.runtime.server", "klab.services.reasoner.server", "klab.services.resources.server", "klab.services.resolver.server"):
+        file = root / module / "target/local-stack-classpath.txt"
+        if file.exists():
+            import os
+            for value in file.read_text().strip().split(os.pathsep):
+                artifact = Path(value)
+                if "SNAPSHOT" in value and artifact.is_file():
+                    coordinate = value.replace("\\", "/").split("/repository/")[-1]
+                    if coordinate not in snapshots:
+                        snapshots[coordinate] = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    report["snapshot_jars_sha256"] = snapshots
     session_id = None
     started = time.perf_counter()
     try:

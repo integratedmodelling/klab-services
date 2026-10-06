@@ -12,6 +12,8 @@ import json
 from pathlib import Path
 import secrets
 import time
+import hashlib
+import subprocess
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
@@ -34,6 +36,13 @@ def token(key, user, roles=("ROLE_USER",), lifetime=3600):
 
 
 def prepare(state, worldview):
+    revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=worldview, capture_output=True, text=True, check=True).stdout.strip()
+    expected_revision = "608bef150ced0a109db98a5aad64ba4461beaa54"
+    if revision != expected_revision:
+        raise RuntimeError("Worldview revision differs from the fixture's pinned compatibility contract")
+    fixture_classes = Path(__file__).resolve().parents[2] / "klab.services.runtime/target/test-classes"
+    if not (fixture_classes / "org/integratedmodelling/klab/services/runtime/testing/FixtureControls.class").is_file():
+        raise RuntimeError("Compile Runtime test fixtures (Maven test-compile or runner --build)")
     if (state / "fixture-authority.json").exists():
         raise RuntimeError("Fixture already prepared; use a new state directory rather than overwrite credentials")
     state.mkdir(parents=True, exist_ok=True)
@@ -59,7 +68,15 @@ def prepare(state, worldview):
         "prerequisiteProjects": [], "privileges": {"public": True}, "metadata": {}}))
     (fixture / "src/python.fixture.kim").write_text(
         'namespace python.fixture;\n\n// Known constant field through ordinary model resolution.\n'
-        'model geography:Elevation in m set to [100 + 23.25];\n')
+        'model geography:Elevation in m set to [100 + 23.25];\n'
+        '@split(1) @fillcurve("D2_XY")\n'
+        'model geography:Aspect in degree_angle set to [org.integratedmodelling.klab.services.runtime.testing.FixtureControls.nextAspectValue()];\n'
+        'model geography:BathymetricDepth in m set to [org.integratedmodelling.klab.services.runtime.testing.FixtureControls.awaitValue()];\n')
+    (state / "controls").mkdir()
+    (state / "runtime-fixture.json").write_text(json.dumps({"classes": str(fixture_classes), "controls": str(state / "controls")}))
+    (state / "fixture-provenance.json").write_text(json.dumps({"worldview_revision": revision,
+        "worldview_manifest_sha256": hashlib.sha256((worldview / "META-INF/manifest.json").read_bytes()).hexdigest(),
+        "model_sha256": hashlib.sha256((fixture / "src/python.fixture.kim").read_bytes()).hexdigest()}))
     projects = {}
     for name, directory, is_worldview in (("imod", worldview.resolve(), True), ("python.fixture", fixture.resolve(), False)):
         projects[name] = {"sourceUrl": directory.as_uri(), "served": True, "worldview": is_worldview,

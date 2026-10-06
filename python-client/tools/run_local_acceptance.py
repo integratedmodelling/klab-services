@@ -1,11 +1,24 @@
 """Reproducible TEST deployment -> scientific/lifecycle tests -> throughput -> cleanup."""
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
 import sys
 from datetime import datetime, timezone
+
+
+def run_command(command, *, cwd, env, log, timeout):
+    """Bound each child step and terminate its owned process tree on timeout."""
+    process = subprocess.Popen(command, cwd=cwd, env=env, stdout=log, stderr=subprocess.STDOUT)
+    try:
+        return process.wait(timeout=timeout)
+    except (subprocess.TimeoutExpired, KeyboardInterrupt):
+        subprocess.run(["taskkill.exe", "/PID", str(process.pid), "/T", "/F"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        process.wait(timeout=10)
+        raise
 
 
 def main():
@@ -16,10 +29,11 @@ def main():
     parser.add_argument("--duration", type=float, default=15)
     parser.add_argument("--samples", type=int, default=8)
     parser.add_argument("--build", action="store_true")
+    parser.add_argument("--step-timeout", type=float, default=900)
     args = parser.parse_args()
     if os.name != "nt" or not args.java.is_file() or not args.state_dir.parent.is_dir():
         parser.error("Requires Windows, existing Java executable and existing state parent")
-    if args.duration <= 0 or args.samples < 1:
+    if not math.isfinite(args.duration) or args.duration <= 0 or args.samples < 1 or not math.isfinite(args.step_timeout) or args.step_timeout <= 0:
         parser.error("Positive duration and sample count required")
     state = args.state_dir.resolve()
     state.mkdir(exist_ok=True)
@@ -36,16 +50,20 @@ def main():
     report = {"started_utc": datetime.now(timezone.utc).isoformat(), "passed": False, "steps": []}
     def run(label, command, cwd=directory):
         with (state / f"{label}.log").open("wb") as log:
-            result = subprocess.run(command, cwd=cwd, env=env, stdout=log, stderr=subprocess.STDOUT)
-        report["steps"].append({"step": label, "exit_code": result.returncode})
-        print(f"{label}: exit {result.returncode}; log {state / (label + '.log')}", flush=True)
-        if result.returncode:
+            try:
+                code = run_command(command, cwd=cwd, env=env, log=log, timeout=args.step_timeout)
+            except subprocess.TimeoutExpired:
+                report["steps"].append({"step": label, "timed_out": True})
+                raise RuntimeError(f"{label} exceeded step timeout") from None
+        report["steps"].append({"step": label, "exit_code": code})
+        print(f"{label}: exit {code}; log {state / (label + '.log')}", flush=True)
+        if code:
             raise RuntimeError(f"{label} failed; inspect its log")
     try:
         modules = "klab.services.resources.server,klab.services.reasoner.server,klab.services.resolver.server,klab.services.runtime.server,support/klab.support.graphdb"
         mvn = ["cmd.exe", "/c", str(root / "mvnw.cmd"), "-B", "-ntp"]
         if args.build:
-            run("build-servers", mvn + ["-pl", modules, "-am", "-DskipTests", "compile"], root)
+            run("build-servers", mvn + ["-pl", modules, "-am", "-DskipTests", "test-compile"], root)
             run("build-webui", mvn + ["-pl", "klab.core.services", "-Pwebui", "-DskipTests", "process-resources"], root)
             run("build-classpaths", mvn + ["-pl", modules, "dependency:build-classpath", "-DincludeScope=runtime",
                                            "-Dmdep.outputFile=target/local-stack-classpath.txt"], root)
@@ -66,10 +84,14 @@ def main():
                     time.sleep(.1)
             else:
                 raise RuntimeError("TEST authority listener did not start")
-        run("start", [sys.executable, "tools/local_stack.py", "start", "--java", str(args.java.resolve()), "--state-dir", str(state)])
         started = True
+        run("start", [sys.executable, "tools/local_stack.py", "start", "--java", str(args.java.resolve()), "--state-dir", str(state)])
         run("acceptance", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
                            "-m", "live", "-s", "tests/test_local_workflow.py", "--junitxml=" + str(state / "acceptance.xml")])
+        run("cold-prepare", [sys.executable, "tools/cold_context_check.py", "prepare", "--state-dir", str(state)])
+        run("restart-runtime-stop", [sys.executable, "tools/local_stack.py", "stop", "--only", "runtime", "--state-dir", str(state)])
+        run("restart-runtime-start", [sys.executable, "tools/local_stack.py", "start", "--only", "runtime", "--java", str(args.java.resolve()), "--state-dir", str(state)])
+        run("cold-check", [sys.executable, "tools/cold_context_check.py", "check", "--state-dir", str(state)])
         for concurrency in (1, 2, 4):
             run(f"full-c{concurrency}", [sys.executable, "tools/workflow_benchmark.py", "--fixture-config", str(state / "scientist.json"),
                 "--samples", str(args.samples), "--concurrency", str(concurrency), "--duration", str(args.duration),
@@ -80,11 +102,18 @@ def main():
         report["passed"] = True
     except Exception as error:
         report["error"] = type(error).__name__ + ": " + str(error)
+    except KeyboardInterrupt:
+        report["error"] = "Interrupted; owned process cleanup requested"
     finally:
         if started:
-            cleanup = subprocess.run([sys.executable, "tools/local_stack.py", "stop", "--state-dir", str(state)], cwd=directory)
-            report["cleanup_exit_code"] = cleanup.returncode
-            if cleanup.returncode:
+            try:
+                cleanup = subprocess.run([sys.executable, "tools/local_stack.py", "stop", "--state-dir", str(state)],
+                                         cwd=directory, timeout=90)
+                report["cleanup_exit_code"] = cleanup.returncode
+            except subprocess.TimeoutExpired:
+                report["cleanup_exit_code"] = None
+                report["cleanup_timed_out"] = True
+            if report["cleanup_exit_code"] != 0:
                 report["passed"] = False
         if hub is not None and hub.poll() is None:
             hub.terminate()
