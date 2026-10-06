@@ -1,0 +1,20 @@
+{
+  "fixture": "real Runtime arithmetic model, 20 cells at 123.25 m; 20 converted cells at 123250 mm",
+  "authority": "isolated loopback TEST certificate/RSA-signed JWT authority; not production hub",
+  "worldview_revision": "608bef150ced0a109db98a5aad64ba4461beaa54",
+  "model_sha256": "2ef990b35e0ba7a2288bda4022ef37b3ee26340a5be868a834197ed9071eb877",
+  "host": {"os": "Windows 11 amd64", "python": "3.11.9", "jdk": "21.0.12.1+1", "maven": "3.9.5", "neo4j": "2025.10.1"},
+  "source_checkpoint": "8089ac11190af063dabdb206ba6564929eab9cf6",
+  "working_tree_dirty_during_measurement": true,
+  "run_started_utc": "2026-10-06T02:57:17.913037+00:00",
+  "run_finished_utc": "2026-10-06T03:00:08.259235+00:00",
+  "run_passed": true,
+  "cleanup_exit_code": 0,
+  "phases": [
+    {"mode": "full-workflow", "concurrency": 1, "verified": 8, "failed": 0, "wall_seconds": 22.534560600004625, "verified_workflows_per_second": 0.3550102503440142, "verified_cells_per_second": 14.200410013760568, "latency_seconds": {"p50": 2.798101400025189, "p95": 2.919387700036168, "p99": 2.919387700036168}, "peak_aggregate_rss_bytes": 3750977536, "cpu_seconds": 27.609375},
+    {"mode": "full-workflow", "concurrency": 2, "verified": 12, "failed": 0, "wall_seconds": 17.70997059997171, "verified_workflows_per_second": 0.6775844111237073, "verified_cells_per_second": 27.10337644494829, "latency_seconds": {"p50": 2.802369999990333, "p95": 3.7789051000145264, "p99": 3.7789051000145264}, "peak_aggregate_rss_bytes": 3794702336, "cpu_seconds": 34.328125},
+    {"mode": "full-workflow", "concurrency": 4, "verified": 17, "failed": 0, "wall_seconds": 17.913444100006018, "verified_workflows_per_second": 0.9490079018358223, "verified_cells_per_second": 37.96031607343289, "latency_seconds": {"p50": 3.6844296000199392, "p95": 5.615032200003043, "p99": 5.615032200003043}, "peak_aggregate_rss_bytes": 3683733504, "cpu_seconds": 51.640625},
+    {"mode": "repeated-read-no-recomputation", "concurrency": 4, "verified": 54, "failed": 0, "wall_seconds": 15.935571199981496, "verified_read_cycles_per_second": 3.3886453972897255, "verified_cells_per_second": 67.7729079457945, "latency_seconds": {"p50": 1.1995622999966145, "p95": 1.4647839000099339, "p99": 1.4955953000462614}, "peak_aggregate_rss_bytes": 3718033408, "cpu_seconds": 55.984375}
+  ],
+  "measurement_limits": ["fresh contexts; code/model caches can be warm", "small deterministic expression, not terrain data", "per-cell HTTP, not bulk bandwidth", "short phases and small sample percentiles, not capacity/soak certification"]
+}

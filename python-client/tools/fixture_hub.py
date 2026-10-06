@@ -24,11 +24,11 @@ def b64(value):
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
 
 
-def token(key, user, roles=("ROLE_USER",)):
+def token(key, user, roles=("ROLE_USER",), lifetime=3600):
     now = int(time.time())
     header = b64(json.dumps({"alg": "RS256", "typ": "JWT"}).encode())
     claims = b64(json.dumps({"iss": ISSUER, "sub": user, "aud": "engine", "iat": now,
-                             "exp": now + 3600, "perms": [], "roles": list(roles)}).encode())
+                             "exp": now + lifetime, "perms": [], "roles": list(roles)}).encode())
     message = (header + "." + claims).encode()
     return message.decode() + "." + b64(key.sign(message, padding.PKCS1v15(), hashes.SHA256()))
 
@@ -59,7 +59,7 @@ def prepare(state, worldview):
         "prerequisiteProjects": [], "privileges": {"public": True}, "metadata": {}}))
     (fixture / "src/python.fixture.kim").write_text(
         'namespace python.fixture;\n\n// Known constant field through ordinary model resolution.\n'
-        'model 123.25 as geography:Elevation in m;\n')
+        'model geography:Elevation in m set to [100 + 23.25];\n')
     projects = {}
     for name, directory, is_worldview in (("imod", worldview.resolve(), True), ("python.fixture", fixture.resolve(), False)):
         projects[name] = {"sourceUrl": directory.as_uri(), "served": True, "worldview": is_worldview,
@@ -108,7 +108,7 @@ def serve(state):
                               for name, port in SERVICES.items()]
                 response = {"authenticatingHub": ISSUER, "publicKey": public, "groups": [], "services": references,
                     "userData": {"identity": {"id": "python-test-institution", "email": "test@example.invalid"},
-                                 "token": token(key, "python-test-service", ("ROLE_USER", "ROLE_ENGINE")),
+                                 "token": token(key, "python-test-service", ("ROLE_USER", "ROLE_ENGINE"), lifetime=86400),
                                  "expiry": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(), "groups": []}}
                 data = json.dumps(response).encode()
                 self.send_response(200)

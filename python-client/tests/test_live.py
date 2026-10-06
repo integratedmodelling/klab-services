@@ -7,7 +7,7 @@ import pytest
 from klab_client import Client, ObservationImpl, Session
 from klab_client.dto import storage_semantics
 from klab_client.errors import ConfigurationError, WaitTimeout
-from klab_client.experiment import rectangle_geometry, verify_elevation
+from klab_client.experiment import rectangle_geometry, verify_elevation, verify_region, verify_grid
 from live_checks import load_reference, verify_reference, verify_traversals
 
 
@@ -42,7 +42,7 @@ def exercise_live(record_property, *, reference=None):
         record_property("region_handle", json.dumps({"context_id": context_id, "session_id": session_id,
                                                      "job_id": region_job.id, "scope": context.get_context_id()}))
         region = region_job.result(120)
-        assert region.id > 0 and region.raw.get("resolvedCoverage") == 1
+        verify_region(region)
         focused = context.within(region)
         elevation_semantics = client.reasoner.resolve_observable("geography:Elevation in m")
         job = focused.submit(ObservationImpl(urn="", observable=elevation_semantics))
@@ -61,6 +61,7 @@ def exercise_live(record_property, *, reference=None):
         assert elevation.id > 0 and elevation.raw.get("resolvedCoverage") == 1
         assert elevation.units == "m" and elevation.observable.raw["urn"] == elevation_semantics.raw["urn"]
         assert elevation.geometry is not None
+        verify_grid(elevation)
         space = [d for d in elevation.geometry.raw["dimensions"] if d.get("type") == "SPACE"]
         assert len(space) == 1 and space[0].get("shape") == [5, 4], "Returned scientific grid must be 5 x 4"
         evidence.update(elevation_id=elevation.id, semantic_definition=elevation.observable.raw["urn"],

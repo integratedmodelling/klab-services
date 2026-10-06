@@ -1,5 +1,12 @@
 # Draft PR: Enable the scientific Python observation workflow
 
+**Current completion evidence:** the complete deterministic scientific workflow,
+signed-JWT lifecycle/security tests and reproducible concurrency 1/2/4 throughput
+runs now pass on the isolated TEST deployment. Final offline suite: 64 passed;
+2 actual local live tests passed explicitly. Read throughput.md and work-log.md
+for current results; earlier milestone verification paragraphs below are history.
+Production hub onboarding and real terrain/reference validation remain unverified.
+
 ## Summary
 
 Replace misleading local scaffold successes with a transport-backed Python client

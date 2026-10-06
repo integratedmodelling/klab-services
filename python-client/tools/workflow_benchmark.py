@@ -5,7 +5,7 @@ explicitly configured deployment with the same known scientific contract.
 Failures produce a report and nonzero exit, never successful throughput figures.
 """
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from datetime import datetime, timezone
 from decimal import Decimal
 import hashlib
@@ -15,10 +15,11 @@ from pathlib import Path
 import platform
 import subprocess
 import time
+import threading
 
 from klab_client import Client, Endpoint, ObservationImpl, Session
 from klab_client.dto import storage_semantics
-from klab_client.experiment import rectangle_geometry
+from klab_client.experiment import rectangle_geometry, verify_region, verify_grid
 
 
 def make_client(configuration):
@@ -32,27 +33,18 @@ def make_client(configuration):
 
 def initialize(configuration):
     with make_client(configuration) as client:
-        services = []
-        for name in ("resources", "reasoner", "resolver", "runtime"):
-            capability = getattr(client, name).capabilities()
-            status = client.transport.request(name, "GET", "/public/status")
-            services.append({"id": capability.service_id, "type": name.upper(),
-                             "url": client.transport.endpoint(name).url, "status": status})
-        for name in ("resources", "reasoner", "resolver", "runtime"):
-            result = client.transport.request(name, "POST", "/notifyUserScope",
-                json={"services": services, "emailAddress": "test@example.invalid", "localFederation": True}, ambiguous=True)
-            if result is not True:
-                raise RuntimeError(f"User-scope advertisement not accepted by {name}")
+        services = client.initialize_user_scope(email_address="test@example.invalid" if configuration else None,
+                                                local_federation=configuration is not None)
         if configuration is not None:
-            configuration["service_ids"] = [s["id"] for s in services]
-            configuration["runtime_service_id"] = next(s["id"] for s in services if s["type"] == "RUNTIME")
+            configuration["service_ids"] = list(client.service_ids)
+            configuration["runtime_service_id"] = client.runtime_service_id
         models = client.resources.list("MODEL")
         if not models:
             raise RuntimeError("No executable model is available; fixture provisioning did not complete")
-        return [{"type": s["type"], "id": s["id"], "operational": s["status"].get("operational")} for s in services]
+        return list(services)
 
 
-def sample(configuration, session_id, number):
+def sample(configuration, session_id, number, *, retain=False):
     record = {"sample": number, "stages_seconds": {}}
     started = time.perf_counter()
     with make_client(configuration) as client:
@@ -70,8 +62,8 @@ def sample(configuration, session_id, number):
                 name=f"region{number}", observable=region_semantics, geometry=rectangle_geometry())))
             record["region_job_id"] = region_job.id
             region = step("wait_region", lambda: region_job.result(120))
-            if region.id <= 0 or region.raw.get("resolvedCoverage") != 1:
-                raise AssertionError("Region did not reach full committed coverage")
+            verify_region(region)
+            record["region_model_coverage"] = region.raw.get("resolvedCoverage")
             record["region_id"] = region.id
             focused = context.within(region)
             semantics = step("resolve_elevation", lambda: client.reasoner.resolve_observable("geography:Elevation in m"))
@@ -83,8 +75,7 @@ def sample(configuration, session_id, number):
             if elevation.id <= 0 or elevation.raw.get("resolvedCoverage") != 1 or elevation.units != "m":
                 raise AssertionError("Elevation is not a complete committed metre observation")
             record["observation_id"] = elevation.id
-            if elevation.geometry is None or elevation.geometry.shape != (5, 4):
-                raise AssertionError("Scientific grid shape differs from the known 5 x 4 fixture")
+            verify_grid(elevation)
             data = step("read_20_cells", lambda: elevation.fetch_data(range(20), curve="D2_YX"))
             if any(value is None or Decimal(value) != Decimal("123.25") for value in data.values):
                 raise AssertionError("Actual server values differ from independent constant-field oracle 123.25 m")
@@ -100,8 +91,9 @@ def sample(configuration, session_id, number):
                 again = step("resume_job", lambda: attached.within(region.id).job(job.id).result(120))
                 if again.id != elevation.id or again.fetch_data([0], curve="D2_YX").values != (Decimal("123.25"),):
                     raise AssertionError("Attached readback differs from completed computation")
-            if not context.release():
+            if not retain and not context.release():
                 raise AssertionError("Explicit disposable context release failed")
+            record["context_retained"] = retain
             record["outcome"] = "verified"
         except Exception as error:
             record["outcome"] = "failed"
@@ -111,11 +103,110 @@ def sample(configuration, session_id, number):
     return record
 
 
+def read_sample(configuration, seed, number):
+    record = {"sample": number, "stages_seconds": {}, "context_id": seed["context_id"],
+              "observation_id": seed["observation_id"]}
+    started = time.perf_counter()
+    with make_client(configuration) as client:
+        try:
+            context = client.attach_context(seed["context_id"]).within(seed["region_id"])
+            observation = context.job(seed["job_id"]).result(120)
+            if observation.id != seed["observation_id"]:
+                raise AssertionError("Repeated-read job result changed identity")
+            verify_grid(observation)
+            at = time.perf_counter()
+            data = observation.fetch_data(range(20), curve="D2_YX")
+            record["stages_seconds"]["read_20_cells"] = time.perf_counter() - at
+            if any(v is None or Decimal(v) != Decimal("123.25") for v in data.values):
+                raise AssertionError("Repeated actual storage values differ from oracle")
+            record.update(outcome="verified", verified_cells=20)
+        except Exception as error:
+            record.update(outcome="failed", error=client.transport.redact(type(error).__name__ + ": " + str(error)))
+    record["elapsed_seconds"] = time.perf_counter() - started
+    return record
+
+
+class ResourceMonitor:
+    """Optional OS-observed counters for only the explicitly supplied server state."""
+    def __init__(self, state):
+        self.stop_event = threading.Event()
+        self.peak = 0
+        self.processes = []
+        if state:
+            import psutil
+            for name in ("graphdb", "resources", "reasoner", "resolver", "runtime"):
+                file = state / f"{name}.pid"
+                if file.exists():
+                    process = psutil.Process(int(file.read_text()))
+                    if str(state / f"{name}.args") not in " ".join(process.cmdline()):
+                        raise RuntimeError("Resource counter PID identity does not match the supplied state")
+                    self.processes.append(process)
+        self.initial = self.counters()
+        self.thread = threading.Thread(target=self.watch, daemon=True)
+    def counters(self):
+        cpu = read = written = rss = 0
+        for process in self.processes:
+            times = process.cpu_times()
+            io = process.io_counters()
+            cpu += times.user + times.system
+            read += io.read_bytes
+            written += io.write_bytes
+            rss += process.memory_info().rss
+        self.peak = max(self.peak, rss)
+        return {"cpu_seconds": cpu, "os_read_bytes": read, "os_write_bytes": written}
+    def watch(self):
+        while not self.stop_event.wait(.2):
+            try:
+                self.counters()
+            except Exception:
+                return
+    def __enter__(self):
+        self.thread.start()
+        return self
+    def __exit__(self, *args):
+        self.stop_event.set()
+        self.thread.join()
+    def result(self):
+        if not self.processes:
+            return {"collected": False}
+        final = self.counters()
+        return {"collected": True, "peak_aggregate_rss_bytes": self.peak,
+                **{key: final[key] - self.initial[key] for key in final},
+                "io_note": "OS process counters; not physical-disk or network bandwidth measurements"}
+
+
+def run_workload(operation, *, samples, concurrency, duration, on_result):
+    """Bound queued work, sustain the declared interval, drain active work on failure."""
+    records, next_number, failed = [], 0, False
+    started = time.perf_counter()
+    until = started + duration
+    with ThreadPoolExecutor(max_workers=concurrency) as workers:
+        active = set()
+        while active or (not failed and (next_number < samples or time.perf_counter() < until)):
+            while not failed and len(active) < concurrency and (next_number < samples or time.perf_counter() < until):
+                active.add(workers.submit(operation, next_number))
+                next_number += 1
+            if not active:
+                break
+            completed, active = wait(active, return_when=FIRST_COMPLETED)
+            for future in completed:
+                try:
+                    record = future.result()
+                except Exception as error:
+                    record = {"outcome": "failed", "error_type": type(error).__name__}
+                records.append(record)
+                failed |= record["outcome"] != "verified"
+                on_result(record)
+    return records, time.perf_counter() - started
+
+
 def summarize(records, elapsed):
     verified = [r for r in records if r["outcome"] == "verified"]
     failures = len(records) - len(verified)
     result = {"submitted_samples": len(records), "verified_samples": len(verified), "failures": failures,
               "wall_seconds": elapsed, "acceptance_passed": failures == 0 and bool(verified)}
+    if not math.isfinite(elapsed) or elapsed <= 0:
+        raise ValueError("Measured wall interval must be finite and positive")
     if result["acceptance_passed"]:
         times = sorted(r["elapsed_seconds"] for r in verified)
         result.update(verified_workflows_per_second=len(verified)/elapsed,
@@ -129,16 +220,33 @@ def main():
     parser.add_argument("--fixture-config", type=Path, help="Explicit generated scientist.json; never log its contents")
     parser.add_argument("--samples", type=int, default=1)
     parser.add_argument("--concurrency", type=int, default=1)
+    parser.add_argument("--duration", type=float, default=0, help="Minimum sustained measurement seconds")
+    parser.add_argument("--warmup", type=int, default=0, help="Verified workflows excluded from measurement")
+    parser.add_argument("--mode", choices=("full-workflow", "repeated-read"), default="full-workflow")
+    parser.add_argument("--server-state-dir", type=Path, help="Optional explicit state for OS server counters")
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
-    if args.samples < 1 or args.concurrency < 1 or not args.report.parent.is_dir():
+    if args.samples < 1 or args.concurrency < 1 or args.warmup < 0 or not math.isfinite(args.duration) or args.duration < 0 or not args.report.parent.is_dir():
         parser.error("Positive sample/concurrency counts and an existing report parent are required")
     configuration = json.loads(args.fixture_config.read_text()) if args.fixture_config else None
     report = {"started_utc": datetime.now(timezone.utc).isoformat(), "python": platform.python_version(),
-              "mode": "fresh-context-full-workflow", "concurrency": args.concurrency,
+              "mode": args.mode, "concurrency": args.concurrency, "minimum_samples": args.samples,
+              "minimum_duration_seconds": args.duration, "warmup_count": args.warmup,
               "fixture": "123.25 metre constant field through Runtime", "records": []}
     revision = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
     report["client_head"] = revision.stdout.strip()
+    report["working_tree_dirty"] = bool(subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True).stdout)
+    report["implementation_sha256"] = {}
+    root = Path(__file__).resolve().parents[2]
+    for relative in ("python-client/tools/workflow_benchmark.py", "python-client/tools/fixture_hub.py",
+                     "python-client/src/klab_client/client.py", "python-client/src/klab_client/transport.py",
+                     "klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ScopeManager.java",
+                     "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/RuntimeService.java"):
+        report["implementation_sha256"][relative] = hashlib.sha256((root / relative).read_bytes()).hexdigest()
+    if args.server_state_dir:
+        fixture = args.server_state_dir / "assets/python.fixture/src/python.fixture.kim"
+        if fixture.exists():
+            report["fixture_model_sha256"] = hashlib.sha256(fixture.read_bytes()).hexdigest()
     session_id = None
     started = time.perf_counter()
     try:
@@ -146,15 +254,35 @@ def main():
         with make_client(configuration) as client:
             session_id = client.create_session(name="reproducible-throughput").id
         report["session_id"] = session_id
-        with ThreadPoolExecutor(max_workers=args.concurrency) as workers:
-            futures = [workers.submit(sample, configuration, session_id, i) for i in range(args.samples)]
-            for future in as_completed(futures):
-                result = future.result()
-                report["records"].append(result)
-                print(json.dumps(result), flush=True)
-        report["summary"] = summarize(report["records"], time.perf_counter()-started)
+        report["warmup"] = []
+        for i in range(args.warmup):
+            warm = sample(configuration, session_id, -i-1)
+            report["warmup"].append(warm)
+            if warm["outcome"] != "verified":
+                raise AssertionError("Warmup failed; measurement not started")
+        seed = None
+        if args.mode == "repeated-read":
+            seed = sample(configuration, session_id, -1000, retain=True)
+            report["seed"] = seed
+            if seed["outcome"] != "verified":
+                raise AssertionError("Repeated-read seed computation failed")
+        operation = (lambda i: sample(configuration, session_id, i)) if seed is None else (
+                     lambda i: read_sample(configuration, seed, i))
+        with ResourceMonitor(args.server_state_dir.resolve() if args.server_state_dir else None) as monitor:
+            records, elapsed = run_workload(operation, samples=args.samples, concurrency=args.concurrency,
+                duration=args.duration, on_result=lambda record: print(json.dumps(record), flush=True))
+            report["records"] = records
+            report["resources"] = monitor.result()
+        report["summary"] = summarize(records, elapsed)
+        if seed is not None and "verified_workflows_per_second" in report["summary"]:
+            report["summary"]["verified_read_cycles_per_second"] = report["summary"].pop("verified_workflows_per_second")
+        report["summary"]["measurement_scope"] = ("fresh-context complete scientific workflows, server code/model caches may be warm"
+            if seed is None else "reattach/resume and repeated point reads after one computation; no recomputation")
+        report["summary"]["total_run_seconds"] = time.perf_counter() - started
         if report["summary"]["acceptance_passed"]:
             with make_client(configuration) as client:
+                if seed and not client.attach_context(seed["context_id"]).release():
+                    raise AssertionError("Repeated-read seed context release failed")
                 if not Session(client, session_id).release():
                     raise AssertionError("Session release failed")
     except Exception as error:

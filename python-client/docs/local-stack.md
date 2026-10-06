@@ -1,5 +1,11 @@
 # Local stack investigation and actual startup results
 
+**Historical investigation stage.** Subsequent work repaired the blockers below
+and completed the deterministic signed-JWT scientific workflow, lifecycle tests
+and fresh-state throughput runs. See [work-log.md](work-log.md) and
+[throughput.md](throughput.md) for current evidence and explicit production/provider
+limits. This file preserves how the initial setup and defects were discovered.
+
 Date: **5 October 2026**. Checkout: `feature/python-client`, starting from
 `490af42d4` (Java server sources remain at baseline
 `75bf1f7d29c96ec86789d8e1a0135b0b44d0c8ef`).

@@ -61,7 +61,7 @@ class Transport:
         endpoint = self.endpoint(service)
         if not route.startswith("/") or ".." in route or route.startswith("//"):
             raise InvalidRequestError("Route must be a service-relative absolute path")
-        headers = {"Accept": "text/plain" if response == "text" else "application/json"}
+        headers = {"Accept": "text/plain, application/json;q=0.9" if response == "text" else "application/json"}
         if endpoint.credential:
             headers["Authorization"] = endpoint.credential
         if scope:

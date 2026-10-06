@@ -1,5 +1,13 @@
 # Audit findings — current working tree
 
+**Historical audit snapshot:** subsequent remediation and real integration results
+are recorded in [work-log.md](work-log.md) and [throughput.md](throughput.md).
+Do not treat every finding below as still open. Browser scoped access remains an
+explicit unsupported boundary; the verified scientific credential path is signed
+network JWT. Geometry, metadata/binding, streamed wait checks, grid validation,
+server units/null outcomes and private context authorization have been corrected
+and tested subsequently.
+
 Date: 5 October 2026. Reviewed checkpoint `490af42d4` plus the uncommitted
 client/example/launcher/documentation changes identified in astra-audit-handoff.md.
 This is a source/targeted-reproduction review, not a fresh full-stack acceptance

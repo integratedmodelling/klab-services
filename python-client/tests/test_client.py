@@ -417,3 +417,28 @@ def test_gzip_response_decoded_once(observation):
     with make_client(lambda r: httpx.Response(200, content=gzip.compress(json.dumps(
             observation["observable"]).encode()), headers={"content-encoding": "gzip"})) as client:
         assert client.reasoner.resolve_observable("geography:Elevation in m").raw["urn"] == observation["observable"]["urn"]
+
+
+def test_explicit_scope_bootstrap_uses_only_configured_authorized_origins():
+    notifications = []
+    expected_tokens = {"runtime.invalid": "runtime-secret", "reasoner.invalid": "reasoner-secret",
+                       "resources.invalid": "resources-secret", "resolver.invalid": "resolver-secret"}
+    def handler(request):
+        assert request.headers["Authorization"] == expected_tokens[request.url.host]
+        service = request.url.host.split(".")[0]
+        if request.url.path == "/public/capabilities":
+            return httpx.Response(200, json={"serviceId": service + "-id"})
+        if request.url.path == "/public/status":
+            return httpx.Response(200, json={"operational": True})
+        assert request.url.path == "/notifyUserScope"
+        payload = json.loads(request.content)
+        assert payload["localFederation"] is False
+        assert "klab-scope" not in request.headers
+        assert len(payload["services"]) == 4
+        notifications.append(payload)
+        return httpx.Response(200, json=True)
+    with make_client(handler) as client:
+        result = client.initialize_user_scope(email_address="science@example.invalid")
+        assert len(result) == 4 and len(notifications) == 4
+        assert client.runtime_service_id == "runtime-id"
+        assert set(client.service_ids) == {service + "-id" for service in ("runtime", "reasoner", "resources", "resolver")}

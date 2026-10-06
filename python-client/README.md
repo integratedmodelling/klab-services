@@ -13,8 +13,10 @@ mandatory NumPy/pandas/xarray/AMQP dependency is needed.
 
 Compatibility is based on server revision
 `75bf1f7d29c96ec86789d8e1a0135b0b44d0c8ef`. Offline tests, packaging, local service
-startup and public Python HTTP calls have been verified. **Authorized scientific
-execution and scientific throughput remain unverified.** See the
+startup and public Python HTTP calls have been verified. **The complete scientific
+workflow and reproducible throughput tests now pass on the isolated signed-JWT
+test deployment.** Production hub login and real-provider terrain validation remain
+unverified. See [reproduction and actual throughput results](docs/throughput.md) and the
 [contract matrix](docs/contracts.md), [public-method inventory](docs/public-api.md)
 and [verification record](docs/verification.md). This contribution was developed
 against the client specification; it is not an assertion of maintainer-approved roadmap or
@@ -59,12 +61,14 @@ through the deployment's existing k.LAB authentication workflow:
   authentication response/user identity. Use that issued token only with service
   origins trusting the issuing hub, and its authorized scientist username as the
   provenance `agent_name`.
-* On deployments exposing the existing web authentication flow, sign in using
-  that service's web UI. Its issued service-session credential is the value used
-  in subsequent `Authorization` requests (inspect an authenticated request in
-  your browser's Network panel). It is service-local: it cannot authorize a
-  different reasoner/resources origin. Obtain separately issued credentials for
-  those origins or use the supported hub-issued network token accepted by each.
+* Use a deployment whose services authenticate against the issuing hub and load
+  its JWT verification key. Merely starting an anonymous local server does not
+  make a network token usable. The isolated test deployment exercises this existing
+  certificate/public-key/signed-JWT contract with ROLE_USER, not server-key access.
+* Browser-issued `webui_` service-session credentials are currently rejected when
+  klab-scope is supplied by the server. They do **not** support this scoped scientist
+  workflow at the compatibility baseline. Use the verified network-JWT path;
+  browser scoped access requires a separate server feature/authorization design.
 * A Keycloak/OAuth browser access token is not the issued service credential. The
   current server exchanges it through its trusted-hub web authentication flow.
   This package does not invent another login protocol or use privileged server
@@ -158,9 +162,11 @@ For a deployment using a different validated Region definition, supply
 `region_definition=...` to `run_elevation`. Unresolved observable results now raise
 MissingAssetError even when HTTP status is 200.
 
-Local startup and public Python HTTP calls have been verified. Full scientific
-acceptance remains blocked by authorized-user/model/data prerequisites and the
-observed server string-unit builder stub; see [local stack investigation](docs/local-stack.md).
+The original local-stack investigation found missing identity/model/data and a
+server unit stub. Those server blockers are repaired in this branch and the
+deterministic signed-JWT fixture now passes the complete workflow. The real-terrain
+example still needs matching deployment assets and an independent reference;
+see [current acceptance and throughput](docs/throughput.md).
 
 Linux: `python examples/elevation.py`
 
@@ -181,6 +187,7 @@ from klab_client.experiment import run_elevation
 
 client = Client.from_env()
 try:
+    client.initialize_user_scope()  # explicit peer advertisement if no Engine has initialized it
     observation, metres, millimetres = run_elevation(client)
     print(observation.id, observation.observable.raw['urn'], observation.units)
     print(metres.values)

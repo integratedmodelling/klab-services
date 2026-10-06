@@ -78,6 +78,7 @@ def test_live_harness_reconnect_and_failed_fixture_retention(monkeypatch, corrup
 
     base = json.loads((Path(__file__).parent / "fixtures" / "elevation.json").read_text())
     base["geometry"] = rectangle_geometry().to_wire()
+    base["geometry"]["dimensions"][0]["parameters"]["delegate"]["bbox"] = [200000, 200500, 6000000, 6000400]
     calls, properties = [], {}
     def handler(request):
         path = request.url.path
@@ -102,6 +103,8 @@ def test_live_harness_reconnect_and_failed_fixture_retention(monkeypatch, corrup
         if path.startswith("/jobs/retrieve/"):
             result = deepcopy(base)
             result["id"] = 41 if path.endswith("/1") else 42
+            if path.endswith("/1"):
+                result["observable"]["artifactType"] = "OBJECT"
             return httpx.Response(200, json=result)
         if path.startswith("/jobs/cancel/"):
             return httpx.Response(200, json=False)
@@ -142,3 +145,24 @@ def test_live_harness_reconnect_and_failed_fixture_retention(monkeypatch, corrup
         evidence = json.loads(properties["scientific_acceptance_evidence"])
         assert evidence["valid_cells"] == 20
         assert "identical reread" in evidence["checks"][-1]
+
+
+def test_acknowledged_region_and_actual_georeferencing():
+    from klab_client import ObservationImpl, GeometryImpl
+    from klab_client.dto import observable_from_wire
+    from klab_client.experiment import rectangle_geometry, verify_region, verify_grid
+    geometry = rectangle_geometry()
+    params = geometry.raw["dimensions"][0]["parameters"]["delegate"]
+    params["bbox"] = [200000, 200500, 6000000, 6000400]
+    observable = observable_from_wire({"urn": "earth:Region", "artifactType": "OBJECT",
+                                      "semantics": {"urn": "earth:Region", "type": ["SUBJECT"]}})
+    region = ObservationImpl(urn="s.c.region", observable=observable, id=42, geometry=geometry,
+                             raw={"resolvedCoverage": 0, "empty": False})
+    verify_region(region)
+    params["proj"] = "EPSG:4326"
+    with pytest.raises(AssertionError, match="CRS"):
+        verify_grid(region)
+    params["proj"] = "EPSG:3857"
+    params["bbox"] = [0, 500, 0, 400]
+    with pytest.raises(AssertionError, match="location"):
+        verify_grid(region)

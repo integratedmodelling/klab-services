@@ -13,7 +13,7 @@ dependencies = ["httpx>=0.27,<1"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "build>=1,<2"]
-local = ["cryptography>=44,<47"]
+local = ["cryptography>=44,<47", "psutil>=5.9,<8"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

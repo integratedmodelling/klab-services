@@ -1,5 +1,11 @@
 # Server contract and compatibility
 
+The matrix was inspected at the baseline below. This branch now also includes
+essential server corrections (units, job outcomes, semantic indexing dependency,
+storage registration and private scope access). Current actual scientific and
+throughput acceptance is documented in [throughput.md](throughput.md); the older
+local-probe blockers at the end of this file are historical findings.
+
 Inspected baseline: branch `feature/python-client`, commit
 `75bf1f7d2` (full revision recorded in verification.md). The assignment's
 `e24b756f0815d2f51034d62282a175857f5be15c` is not in this local object database.

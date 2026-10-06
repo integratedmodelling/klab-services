@@ -1,5 +1,11 @@
 # Thorough live scientific acceptance
 
+This file describes the real-terrain/reference suite. A separate deterministic
+arithmetic fixture now passes actual signed-JWT scientific/lifecycle/concurrent
+acceptance and reproducible throughput; see [throughput.md](throughput.md) and
+tests/test_local_workflow.py. That success does not fabricate a terrain reference
+or satisfy this suite's external data/provider prerequisites.
+
 The live suite now distinguishes **self-consistency/lifecycle checks** from a
 **separately obtained scientific reference**. Passing unit conversion alone cannot
 prove that terrain values or their locations are correct: an incorrectly shifted

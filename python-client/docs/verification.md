@@ -1,5 +1,11 @@
 # Verification and handoff
 
+**Current results supersede the historical milestones below:** complete deterministic
+scientific workflow and signed-JWT lifecycle acceptance pass on the isolated TEST
+deployment. Fresh-state acceptance/throughput recipe and actual measurements are
+in [throughput.md](throughput.md); the chronological [work log](work-log.md) records
+the repairs and remaining production/real-provider boundaries.
+
 Date: 4 October 2026. Branch: `feature/python-client` in the separate worktree
 `C:\Users\lumsd\Downloads\k1\klab-python-client`.
 Server-contract baseline: `75bf1f7d29c96ec86789d8e1a0135b0b44d0c8ef`.

@@ -23,6 +23,29 @@ def rectangle_geometry():
                 "unnamedKeys": []}}]})
 
 
+def verify_grid(observation):
+    """Verify actual georeferencing, not merely equal-value or shape agreement."""
+    if observation.geometry is None:
+        raise AssertionError("Result lacks scientific geometry")
+    spatial = [d for d in observation.geometry.raw.get("dimensions", []) if d.get("type") == "SPACE"]
+    if len(spatial) != 1 or spatial[0].get("shape") != [5, 4] or not spatial[0].get("regular"):
+        raise AssertionError("Returned grid is not the regular 5 x 4 experiment grid")
+    params = spatial[0].get("parameters", {})
+    params = params.get("delegate", params)
+    if params.get("proj") != "EPSG:3857":
+        raise AssertionError("Returned grid CRS is not EPSG:3857")
+    if params.get("bbox") != [200000, 200500, 6000000, 6000400]:
+        raise AssertionError("Returned grid location/bounds differ from the experiment")
+
+
+def verify_region(region):
+    # A singular substantial is acknowledged even without an explanatory model.
+    # ResolverService.unresolvedOutcome/NO_MODEL legitimately yields zero model coverage.
+    if region.id <= 0 or region.raw.get("empty") or region.observable.raw.get("artifactType") != "OBJECT":
+        raise AssertionError("Region is not a committed substantial observation")
+    verify_grid(region)
+
+
 def run_elevation(client, *, context=None, timeout=120, report=print, region_definition="earth:Region"):
     """Create disposable test scopes or attach to an already-owned context.
 
@@ -42,13 +65,13 @@ def run_elevation(client, *, context=None, timeout=120, report=print, region_def
         geometry=rectangle_geometry()))
     report(f"Region job {region_job.id}; scope {region_job.scope.get_context_id()}")
     region = region_job.result(timeout)
-    if region.raw.get("resolvedCoverage", 0) < 1:
-        raise JobFailedError(region_job.id, "Region coverage is incomplete")
+    verify_region(region)
     elevation_observable = client.reasoner.resolve_observable("geography:Elevation in m")
     focused = context.within(region)
     job = focused.submit(ObservationImpl(urn="", observable=elevation_observable))
     report(f"Elevation job {job.id}; resume in scope {focused.get_context_id()}")
     elevation = job.result(timeout)
+    verify_grid(elevation)
     if elevation.raw.get("resolvedCoverage", 0) < 1 or elevation.units != "m":
         raise JobFailedError(job.id, "Elevation coverage/units do not meet the experiment contract")
     metres = elevation.fetch_data(range(20), curve="D2_YX")

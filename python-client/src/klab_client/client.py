@@ -283,6 +283,32 @@ class Client:
     def _scope_request(self, configuration):
         return {"configuration": configuration_to_wire(configuration), "serviceIds": list(self.service_ids)}
 
+    def initialize_user_scope(self, *, email_address=None, local_federation=False):
+        """Explicitly advertise configured, authorized peers through the existing engine route.
+
+        This grants no authority and discovers no credentials or extra origins.
+        An existing Engine-advertised deployment may already have initialized it.
+        """
+        services = []
+        for name in self.transport.endpoints:
+            capability = getattr(self, name).capabilities()
+            status = object_payload(self.transport.request(name, "GET", "/public/status"), "service status")
+            services.append({"id": capability.service_id, "type": name.upper(),
+                             "url": self.transport.endpoint(name).url, "status": status})
+        runtime_id = next(item["id"] for item in services if item["type"] == "RUNTIME")
+        if self.runtime_service_id is not None and self.runtime_service_id != runtime_id:
+            raise ConfigurationError("Configured home runtime ID differs from its actual capabilities")
+        for name in self.transport.endpoints:
+            accepted = self.transport.request(name, "POST", "/notifyUserScope", ambiguous=True,
+                json={"services": services, "emailAddress": email_address,
+                      "localFederation": local_federation})
+            if accepted is not True:
+                raise ProtocolError(f"User scope advertisement not accepted by {name}")
+        self.service_ids = tuple(item["id"] for item in services)
+        self.runtime_service_id = runtime_id
+        return tuple({"type": item["type"], "id": item["id"],
+                      "operational": item["status"].get("operational")} for item in services)
+
     def create_session(self, *, name="Python session"):
         requested_id = uuid.uuid4().hex
         id = self.transport.request("runtime", "POST", "/createSession",

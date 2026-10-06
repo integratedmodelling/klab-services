@@ -1,5 +1,11 @@
 # Astra review and audit handoff: k.LAB Python client
 
+**Historical checkpoint handoff:** this document describes the earlier 490af42d4
+working-tree state. Current remediation, complete deterministic scientific
+acceptance and measured reproducible throughput are in [work-log.md](work-log.md)
+and [throughput.md](throughput.md). Review the latest code and commits rather than
+using the earlier unverified verdict as the final status.
+
 Prepared **5 October 2026**. This document is a standalone entry point for an
 independent review of what is implemented, what was actually verified, and what
 still prevents scientific end-to-end and throughput acceptance.

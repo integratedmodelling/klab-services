@@ -16,7 +16,7 @@ routes, identity and DTO sources are in [contracts.md](contracts.md).
 | Resolver: resolve | Remote Job yielding raw Dataflow DTO; does not execute it |
 | Resolver: encode_dataflow | Explicit UnsupportedOperationError; inspected Java method is TODO |
 | Geometry / GeometryImpl: dimension, size, is_scalar | Local DTO access; unknown/universal finite size is explicitly unsupported |
-| Geometry / GeometryImpl: encode | Checked scalar `1` or supplied server key; non-scalar encoding without a server key is unsupported; arbitrary values rejected |
+| Geometry / GeometryImpl: encode | Scalar `1`, universal `*`, empty `X`; other encodings unsupported. Server hashes/keys are not geometry encodings; arbitrary values rejected |
 | Observation / ObservationImpl: get_urn, get_name, get_observable, get_value, get_notifications | Local DTO access; get_value does not fetch or infer storage data |
 | Concept / ConceptImpl: get_type, is_collective, get_qualifier, get_notifications, get_description_type | Local DTO access; known Java SemanticType names converted; future names remain in raw. DescriptionType is the legacy Python descriptor, not a remote reasoner operation |
 | Concept / ConceptImpl: singular, collective | Local detached copies with changed collective flag; no remote normalization or new semantic authority implied |
@@ -32,7 +32,7 @@ ObservableImpl without a remotely resolved wire DTO cannot be submitted as if it
 were reasoner-authorized. Explicit input mappings must use the inspected Java
 `@CLASS` discriminator.
 
-New API: Client.from_env/create_session/attach_context/close/context manager;
+New API: Client.from_env/initialize_user_scope/create_session/attach_context/close/context manager;
 Session.create_context/release; Context.within/submit/job/release; Job.status/
 result/wait/cancel; ObservationImpl.fetch_data; ScientificData; Endpoint;
 ResourcesServiceImpl.list; dto.storage_semantics for simple units;
