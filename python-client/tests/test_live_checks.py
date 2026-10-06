@@ -96,7 +96,7 @@ def test_live_harness_reconnect_and_failed_fixture_retention(monkeypatch, corrup
             return httpx.Response(200, json=observable)
         if path == "/api/v1/submit":
             definition = json.loads(request.content)["observation"]["observable"]["urn"]
-            return httpx.Response(200, json=1 if definition == "geography:Region" else 2)
+            return httpx.Response(200, json=1 if definition == "earth:Region" else 2)
         if path.startswith("/jobs/status/"):
             return httpx.Response(200, json={"status": "FINISHED"})
         if path.startswith("/jobs/retrieve/"):

@@ -5,6 +5,7 @@ import math
 import os
 import re
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Any
 
@@ -56,6 +57,8 @@ class ScientificData:
     slice: dict
     values: tuple[Any, ...]
     text: tuple[str, ...]
+    source_observable: str | None = None
+    source_units: str | None = None
 
 
 class Job:
@@ -69,10 +72,10 @@ class Job:
     def __repr__(self):
         return f"Job(id={self.id}, service={self.service!r}, scope={scope_token(self.scope)!r})"
 
-    def status(self, *, timeout=None) -> JobStatus:
+    def status(self, *, timeout=None, _deadline=None) -> JobStatus:
         payload = object_payload(self.client.transport.request(
             self.service, "GET", f"/jobs/status/{self.id}", scope=scope_token(self.scope),
-            service_id=self.client.runtime_service_id, timeout=timeout), "job status")
+            service_id=self.client.runtime_service_id, timeout=timeout, deadline=_deadline), "job status")
         state = payload.get("status")
         if state not in {"WAITING", "STARTED", "CHANGED", "FINISHED", "ABORTED", "INTERRUPTED", "EMPTY"}:
             raise ProtocolError(f"Job {self.id} returned an unknown/null status")
@@ -105,12 +108,12 @@ class Job:
 
         while True:
             try:
-                status = self.status(timeout=remaining())
+                status = self.status(timeout=remaining(), _deadline=deadline)
                 if status.status == "FINISHED":
                     payload = self.client.transport.request(
                         self.service, "GET", f"/jobs/retrieve/{self.id}",
                         scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
-                        timeout=remaining())
+                        timeout=remaining(), deadline=deadline)
                     payload = object_payload(payload, "job result")
                     try:
                         check_notifications(payload, self.client.transport.redact)
@@ -121,7 +124,9 @@ class Job:
                         raise
                     if payload.get("empty"):
                         raise JobFailedError(self.id, "Server returned an empty scientific result")
-                    return self._decoder(payload) if self._decoder else payload
+                    result = self._decoder(payload) if self._decoder else payload
+                    remaining()
+                    return result
                 if status.status == "ABORTED":
                     raise JobFailedError(self.id, status.stack_trace or "Server computation failed")
                 if status.status == "INTERRUPTED":
@@ -193,6 +198,11 @@ class Context(ContextScopeImpl):
         return self.client.runtime.release_context(self)
 
     def fetch_data(self, observation, offsets, *, curve, slice, semantics):
+        bound = observation._context
+        if bound is None or bound.id != self.id or (
+                bound.client.transport.endpoint("runtime").url.rstrip("/")
+                != self.client.transport.endpoint("runtime").url.rstrip("/")):
+            raise InvalidRequestError("Scientific reads require an observation bound to this runtime and context")
         offsets = tuple(offsets)
         if not offsets or len(offsets) > 256 or any(type(i) is not int or i < 0 for i in offsets):
             raise InvalidRequestError("Read 1–256 explicit nonnegative cell offsets per call")
@@ -227,9 +237,10 @@ class Context(ContextScopeImpl):
                   "semantics": semantics, "offset": offset, "rate": None}, response="text") for offset in offsets)
         artifact_type = observation.observable.raw.get("artifactType")
         values = tuple(decode_cell(text, artifact_type) for text in texts)
-        return ScientificData(source_id, observation.observable.raw["urn"],
-                              semantics.get("unit") if semantics else observation.units,
-                              observation.geometry, offsets, curve, slice, values, texts)
+        return ScientificData(source_id, semantics["observable"] if semantics else observation.observable.raw["urn"],
+                               semantics.get("unit") if semantics else observation.units,
+                              observation.geometry, offsets, curve, slice, values, texts,
+                              observation.observable.raw["urn"], observation.units)
 
 
 class Client:
@@ -273,8 +284,9 @@ class Client:
         return {"configuration": configuration_to_wire(configuration), "serviceIds": list(self.service_ids)}
 
     def create_session(self, *, name="Python session"):
+        requested_id = uuid.uuid4().hex
         id = self.transport.request("runtime", "POST", "/createSession",
-                                    json=self._scope_request({"name": name}), response="text", ambiguous=True)
+                                    json=self._scope_request({"id": requested_id, "name": name}), response="text", ambiguous=True)
         if not id or "." in id or not _TOKEN.fullmatch(id):
             raise ProtocolError("createSession returned an invalid session ID")
         return Session(self, id)

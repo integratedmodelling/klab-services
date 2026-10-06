@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 import re
+import time
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
@@ -56,7 +57,7 @@ class Transport:
     def request(self, service: str, method: str, route: str, *, scope: str | None = None,
                 service_id: str | None = None, json=None, text: str | None = None,
                 params=None, response: str = "json", ambiguous: bool = False,
-                timeout: float | None = None):
+                timeout: float | None = None, deadline: float | None = None):
         endpoint = self.endpoint(service)
         if not route.startswith("/") or ".." in route or route.startswith("//"):
             raise InvalidRequestError("Route must be a service-relative absolute path")
@@ -70,10 +71,23 @@ class Transport:
         if text is not None:
             headers["Content-Type"] = "text/plain"
         try:
-            result = self._http.request(method, endpoint.url.rstrip("/") + route,
+            if deadline is not None and time.monotonic() >= deadline:
+                raise TransportError("Request waiting deadline expired")
+            with self._http.stream(method, endpoint.url.rstrip("/") + route,
                                         headers=headers, json=json,
                                         content=text.encode() if text is not None else None,
-                                        params=params, timeout=timeout or self.timeout)
+                                        params=params, timeout=timeout or self.timeout) as streamed:
+                chunks = []
+                for chunk in streamed.iter_bytes():
+                    if deadline is not None and time.monotonic() >= deadline:
+                        raise TransportError("Request waiting deadline expired")
+                    chunks.append(chunk)
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise TransportError("Request waiting deadline expired")
+                decoded_headers = {key: value for key, value in streamed.headers.items()
+                                   if key.lower() not in {"content-encoding", "content-length"}}
+                result = httpx.Response(streamed.status_code, headers=decoded_headers,
+                                        content=b"".join(chunks))
         except httpx.TransportError:
             error = SubmissionOutcomeUnknown if ambiguous else TransportError
             raise error(f"{service} {method} request failed"

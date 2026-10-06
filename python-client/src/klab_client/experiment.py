@@ -23,7 +23,7 @@ def rectangle_geometry():
                 "unnamedKeys": []}}]})
 
 
-def run_elevation(client, *, context=None, timeout=120, report=print):
+def run_elevation(client, *, context=None, timeout=120, report=print, region_definition="earth:Region"):
     """Create disposable test scopes or attach to an already-owned context.
 
     A wait timeout/interruption leaves remote scopes intact and prints job IDs.
@@ -36,7 +36,7 @@ def run_elevation(client, *, context=None, timeout=120, report=print):
         report(f"Created session {session.id}")
         context = session.create_context(configuration={"name": "Python elevation grid", "persistence": "ONE_OFF"})
     report(f"Context {context.id}; retain this ID if interrupted")
-    region_observable = client.reasoner.resolve_observable("geography:Region")
+    region_observable = client.reasoner.resolve_observable(region_definition)
     region_job = context.submit(ObservationImpl(
         urn="staging.storage:rectangle", name="rectangle", observable=region_observable,
         geometry=rectangle_geometry()))

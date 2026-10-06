@@ -1,0 +1,34 @@
+{
+  "@CLASS": "org.integratedmodelling.common.knowledge.ObservableImpl",
+  "semantics": {
+    "@CLASS": "org.integratedmodelling.common.knowledge.ConceptImpl",
+    "urn": "owl:Nothing",
+    "metadata": {
+      "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+      "delegate": {},
+      "unnamedKeys": []
+    },
+    "type": ["NOTHING"],
+    "referenceName": "owl:Nothing",
+    "isAbstract": false,
+    "collective": false,
+    "annotations": [],
+    "notifications": [],
+    "nonSemanticId": -1
+  },
+  "artifactType": "VOID",
+  "isAbstract": false,
+  "urn": "owl:Nothing named owl:Nothing",
+  "optional": false,
+  "generic": false,
+  "resolutionDirectives": [],
+  "statedName": "owl:Nothing",
+  "annotations": [],
+  "metadata": {
+    "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+    "delegate": {},
+    "unnamedKeys": []
+  },
+  "genericComponents": [],
+  "specializedComponents": []
+}

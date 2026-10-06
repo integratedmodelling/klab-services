@@ -73,8 +73,10 @@ class GeometryImpl(Geometry):
             raise UnsupportedOperationError("Geometry.encode encodes geometry, not arbitrary values")
         if self.geometry_type == "scalar" and not self.shape:
             return "1"
-        if self.raw.get("key"):
-            return self.raw["key"]
+        if self.raw.get("universal"):
+            return "*"
+        if self.raw.get("empty"):
+            return "X"
         raise UnsupportedOperationError("Use an explicit server geometry encoding for non-scalar geometry")
 
     def to_wire(self) -> dict[str, Any]:

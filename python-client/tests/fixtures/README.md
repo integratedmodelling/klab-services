@@ -13,4 +13,14 @@ derived from JobManager.status/cancel.
 The request assertions check controller routes, content types, ScopeRequest and
 ResolutionRequest envelopes independently of Python serialization. The opt-in
 live test is required to establish actual stack compatibility and scientific
-completion. Do not label these fixtures as sanitized production responses.
+completion. Do not label the source-derived fixtures as sanitized production responses.
+
+`unresolved-observable.json` is an actual response captured on 5 October 2026
+from this checkout's running Reasoner using the public imod worldview at
+`608bef150ced0a109db98a5aad64ba4461beaa54`. The request was
+`geography:Region`, which returned HTTP 200 but `owl:Nothing` / `VOID` with no
+error notifications. The generated localhost administration key authorized this
+diagnostic request; no credential appears in the capture. This is independent
+evidence of the unresolved-observable wire shape, not evidence of successful
+scientific computation or ordinary scientist authentication. The correct Region
+definition in that worldview is `earth:Region`.

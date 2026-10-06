@@ -85,9 +85,10 @@ requests or explicit exceptions. Runtime.submit/Resolver.resolve return Jobs;
 Geometry.encode no longer serializes arbitrary values. Full existing-method
 coverage and compatibility changes are listed in [public-api.md](public-api.md).
 
-No essential missing server route was found for the selected native-cell vertical
-slice, and no server fix was introduced. The current blocker is **unconfigured
-live access and scientific assets**, not a demonstrated server-side defect.
+At the original milestone no essential missing server route was found for the
+selected native-cell vertical slice, and no server fix was introduced. Its blocker
+was unconfigured live access and scientific assets. The later actual local startup
+investigation below supersedes that preliminary assessment with observed defects.
 Unsupported: binary Avro worker contextualization/job data decoding; dataflow
 encoding; bulk export/array adapters; automatic query/consumer geometry and
 contextual-unit/range/currency conversion. Direct resolver resolution returns a
@@ -130,3 +131,28 @@ remaining live limits. In-flight cancellation, deterministic failed computation,
 cross-user authorization and temporal/provider provenance still need suitable
 deployment-owned fixtures. Completed-job cancellation and zero-budget timeout
 must not be reported as proof of those different behaviors.
+
+## Follow-up: actual local startup and probes
+
+On 5 October 2026, starting from `490af42d4`, completed the build/startup/auth/asset
+investigation requested after the checkpoint. [local-stack.md](local-stack.md)
+records exact setup commands, main classes, dependency findings, discovered
+failures and reproducible launcher/probe instructions.
+
+All four services and the embedded Neo4j support application ran and exposed
+actual HTTP endpoints. The public imod worldview was fetched at
+`608bef150ced0a109db98a5aad64ba4461beaa54`, configured through supported FILE-project
+startup configuration, and loaded by Reasoner. Actual public Python SDK calls
+succeeded. Anonymous scientific API calls failed with HTTP 403. The live suite
+was invoked against those endpoints and failed at session creation (403), with
+its reference test separately failing for missing oracle data: **2 failed, zero
+skips**. There was no completed scientific observation or throughput measurement.
+
+Server defects observed: string-unit declarations are discarded by
+SemanticsBuilder.withUnit(String); null import outcomes produce status:null in
+JobManager. The older example Region namespace also resolved to owl:Nothing.
+Corrected the example to earth:Region and made Python reject unresolved
+observable results, backed by an actual captured response fixture.
+Current offline verification: **53 passed, 2 deselected**, Python 3.11.9.
+The validation JVMs are stopped after the investigation; generated data/logs
+remain in the isolated temporary state directory for diagnosis.

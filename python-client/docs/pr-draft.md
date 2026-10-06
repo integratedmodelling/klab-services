@@ -38,7 +38,7 @@ authorization. This is a supported vertical slice, not complete Java API parity.
 
 ## Verification
 
-* Python 3.11.9 offline: **52 passed**, two live items deselected by default. Offline
+* Python 3.11.9 offline: **53 passed**, two live items deselected by default. Offline
   tests prohibit real HTTP and cover checked envelopes/headers, authentication,
   malformed responses, job progression/failure/cancellation races, timeout/resume,
   ambiguous submissions, local close versus release, and scientific decoding.
@@ -50,6 +50,12 @@ authorization. This is a supported vertical slice, not complete Java API parity.
   and independent reference**. Live acceptance
   is **unverified**, not passed/skipped-as-success. There is no measured live
   elevation result in this handoff. See [verification.md](verification.md).
+* Subsequently built and launched the actual local four-service stack plus
+  Neo4j and loaded the maintained public imod worldview. Public SDK HTTP calls
+  succeeded; scientific session creation failed with HTTP 403. Live probes
+  exposed the server string-unit builder stub and an unresolved Region namespace.
+  Corrected the example to earth:Region and added a live-captured regression
+  fixture/explicit error for HTTP-200 unresolved observables. See local-stack.md.
 
 ## Remaining acceptance prerequisite
 

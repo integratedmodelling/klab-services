@@ -61,7 +61,7 @@ treated as scientific success. EMPTY means unavailable/expired, not cancellation
 
 Use the maintained storage testcase's 500 m × 400 m EPSG:3857 rectangle at
 `[200000,200500] × [6000000,6000400]`, with a 100 m grid. Resolve
-`geography:Region`, submit the named region `staging.storage:rectangle`, then
+`earth:Region`, submit the named region `staging.storage:rectangle`, then
 submit `geography:Elevation in m` within that region. Read initialization cells
 in D2_YX traversal. Resolve `geography:Elevation in mm` and request the same cells
 with explicit StorageScan.Semantics. Assert finite, nonmissing samples, plausible
@@ -75,3 +75,12 @@ geography concepts; a working elevation model/resource covering this rectangle.
 The repository contains the maintained experiment, not a deployed elevation
 dataset. Without these prerequisites, live acceptance must fail explicitly.
 No scientific completion or numeric values have been inferred from local fakes.
+
+Local investigation on 5 October 2026 confirmed the Region namespace against
+`integratedmodelling/imod` revision `608bef150ced0a109db98a5aad64ba4461beaa54`.
+The maintained older storage testcase's `geography:Region` returns `owl:Nothing`;
+the corrected example uses `earth:Region`. The actual Reasoner also drops string
+unit declarations because `internal/SemanticsBuilder.withUnit(String)` is a stub
+at the inspected server baseline. The m/mm requests resolved the semantic concept
+but returned no unit field. This is a demonstrated server blocker for the unit
+invariant, not permission to synthesize units in Python. See local-stack.md.

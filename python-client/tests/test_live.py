@@ -35,7 +35,7 @@ def exercise_live(record_property, *, reference=None):
         context_id = context.id
         evidence.update(context_id=context_id, created_session_id=session_id)
         print(f"Context {context_id}; retained on any failed assertion/interruption", flush=True)
-        region_semantics = client.reasoner.resolve_observable("geography:Region")
+        region_semantics = client.reasoner.resolve_observable("earth:Region")
         region_job = context.submit(ObservationImpl(urn="staging.storage:rectangle", name="rectangle",
                                                     observable=region_semantics, geometry=rectangle_geometry()))
         print(f"Region job {region_job.id}; scope {context.get_context_id()}", flush=True)

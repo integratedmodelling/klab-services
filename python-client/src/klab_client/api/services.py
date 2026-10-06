@@ -129,10 +129,16 @@ class ReasonerImpl(_RemoteService, Reasoner):
 
     def resolve_observable(self, definition, scope=None):
         from klab_client.dto import observable_from_wire, check_notifications
+        from klab_client.errors import MissingAssetError
         payload = self._checked(self._request("POST", "/api/v1/resolve/observable", scope,
                                               text=definition), "observable")
         check_notifications(payload.get("semantics", {}), self.client.transport.redact)
-        return observable_from_wire(payload)
+        observable = observable_from_wire(payload)
+        if (payload.get("artifactType") == "VOID"
+                or observable.semantics.urn == "owl:Nothing"
+                or "NOTHING" in payload["semantics"].get("type", [])):
+            raise MissingAssetError("Semantic definition did not resolve in the configured worldview; inspect the loaded projects")
+        return observable
 
 
 class ResourcesServiceImpl(_RemoteService, ResourcesService):

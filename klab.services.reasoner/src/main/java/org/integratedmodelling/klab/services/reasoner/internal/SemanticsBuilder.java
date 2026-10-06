@@ -289,6 +289,12 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withUnit(String unit) {
+    this.unit = org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE
+        .getService(org.integratedmodelling.klab.api.services.UnitService.class)
+        .getUnit(Objects.requireNonNull(unit, "Unit definition"));
+    if (this.unit == null) {
+      throw new KlabValidationException("Invalid unit definition: " + unit);
+    }
     return this;
   }
 
@@ -747,7 +753,10 @@ public class SemanticsBuilder implements Observable.Builder {
       ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
     } else if (unit != null) {
       ret.setUnit(unit);
-      ret.setUrn(ret.getUrn() + " in " + ret.getUnit());
+      if (!(unit instanceof org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl portable)) {
+        throw new KlabValidationException("Unit definition is not portable");
+      }
+      ret.setUrn(ret.getUrn() + " in " + portable.getDefinition());
     }
 
     if (observerSyntax != null) {

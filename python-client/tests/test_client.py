@@ -11,7 +11,7 @@ from klab_client.client import scope_token
 from klab_client.dto import decode_cell, observable_from_wire, observation_from_wire, storage_semantics
 from klab_client.errors import (
     AuthenticationError, AuthorizationError, ConfigurationError, InvalidRequestError,
-    JobCancelledError, JobFailedError, JobUnavailableError, ProtocolError,
+    JobCancelledError, JobFailedError, JobUnavailableError, MissingAssetError, ProtocolError,
     ServerError, SubmissionOutcomeUnknown, UnsupportedOperationError, WaitTimeout,
 )
 
@@ -38,7 +38,9 @@ def test_complete_workflow_requests_and_data(observation):
         calls.append(request)
         path = request.url.path
         if path == "/createSession":
-            assert json.loads(request.content) == {"configuration": {
+            posted = json.loads(request.content)
+            assert len(posted["configuration"].pop("id")) == 32
+            assert posted == {"configuration": {
                 "@CLASS": "org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl",
                 "name": "test"}, "serviceIds": []}
             assert "klab-scope" not in request.headers
@@ -229,7 +231,11 @@ def test_native_metadata_and_unit_mediation_request(observation):
     with make_client(handler) as client:
         result = observation_from_wire(observation, Context(client, {"id": "s.c"}))
         result.raw["futureField"] = "kept"
-        assert result.fetch_data([0], semantics=semantics).values == (1250,)
+        converted = result.fetch_data([0], semantics=semantics)
+        assert converted.values == (1250,)
+        assert converted.observable == "geography:Elevation in mm"
+        assert converted.source_observable == "geography:Elevation in m"
+        assert converted.units == "mm" and converted.source_units == "m"
 
 
 def test_explicit_unsupported_and_unconfigured_methods():
@@ -349,3 +355,65 @@ def test_submission_5xx_is_ambiguous_and_not_retried(observation):
                 urn="", observable=observable_from_wire(observation["observable"])))
         assert "secret" not in str(caught.value)
     assert len(calls) == 1
+
+
+def test_live_captured_nothing_observable_is_not_success():
+    payload = json.loads((Path(__file__).parent / "fixtures" / "unresolved-observable.json").read_text())
+    with make_client(lambda request: httpx.Response(200, json=payload)) as client:
+        with pytest.raises(MissingAssetError, match="did not resolve"):
+            client.reasoner.resolve_observable("geography:Region")
+
+
+def test_geometry_hash_is_not_geometry_encoding():
+    from klab_client.experiment import rectangle_geometry
+    geometry = rectangle_geometry()
+    geometry.raw["key"] = "hash-of-the-geometry"
+    with pytest.raises(UnsupportedOperationError):
+        geometry.encode()
+    assert GeometryImpl.from_wire({"dimensions": [], "universal": True}).encode() == "*"
+    assert GeometryImpl.from_wire({"dimensions": [], "empty": True}).encode() == "X"
+
+
+def test_foreign_context_or_runtime_read_fails_before_http(observation):
+    with make_client(lambda r: pytest.fail("No foreign-context request allowed")) as client:
+        source = Context(client, {"id": "s.c"})
+        result = observation_from_wire(observation, source)
+        other = Context(client, {"id": "s.other"})
+        with pytest.raises(InvalidRequestError, match="bound"):
+            other.fetch_data(result, [0], curve="D2_YX", slice=None, semantics=None)
+        with Client("https://different-runtime.invalid") as foreign:
+            with pytest.raises(InvalidRequestError, match="bound"):
+                Context(foreign, {"id": "s.c"}).fetch_data(result, [0], curve="D2_YX", slice=None, semantics=None)
+
+
+def test_streaming_deadline_stops_trickling_result_and_can_resume(observation, monkeypatch):
+    now = [0.0]
+    monkeypatch.setattr("time.monotonic", lambda: now[0])
+    expired = [True]
+    closed = []
+    class Trickle(httpx.SyncByteStream):
+        def __iter__(self):
+            for byte in json.dumps(observation).encode():
+                if expired[0]:
+                    now[0] += .02
+                yield bytes([byte])
+        def close(self):
+            closed.append(True)
+    def handler(request):
+        if "status" in request.url.path:
+            return httpx.Response(200, json={"status": "FINISHED"})
+        return httpx.Response(200, stream=Trickle())
+    with make_client(handler) as client:
+        job = Context(client, {"id": "s.c"}).job(1)
+        with pytest.raises(WaitTimeout) as caught:
+            job.result(.1)
+        assert caught.value.job is job and closed
+        expired[0] = False
+        assert job.result(1).id == observation["id"]
+
+
+def test_gzip_response_decoded_once(observation):
+    import gzip
+    with make_client(lambda r: httpx.Response(200, content=gzip.compress(json.dumps(
+            observation["observable"]).encode()), headers={"content-encoding": "gzip"})) as client:
+        assert client.reasoner.resolve_observable("geography:Elevation in m").raw["urn"] == observation["observable"]["urn"]

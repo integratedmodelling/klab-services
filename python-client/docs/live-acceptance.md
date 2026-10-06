@@ -130,12 +130,14 @@ reference. A report with failures is not a successful live acceptance result.
 
 ## Honest limits
 
-There is no configured live stack in the current harness environment. The expanded
-suite's checker/control flow is offline-tested with clearly synthetic data; those
-tests are not evidence of live scientific computation. The checked-out service
-defaults include runtime port 8094 (`/runtime`), reasoner 8091 (`/reasoner`), and
-resolver 8093 (`/resolver`); no relevant listeners were found during this check.
-Service endpoints and credentials remain unconfigured.
+The original acceptance expansion had no configured stack. On 5 October 2026,
+the subsequent [local stack investigation](local-stack.md) built and started
+all four services and Neo4j, loaded the maintained public imod worldview, and
+verified real public Python HTTP calls. Ordinary scientific calls failed with
+HTTP 403; compatible numerical models/data and a reference remain absent. Live
+semantic probes also found a server string-unit builder stub. Thus scientific
+acceptance remains unverified despite demonstrated infrastructure startup.
+The expanded suite's offline synthetic checks do not establish a live pass.
 
 The completed-job cancellation check does not prove active cancellation, an
 ABORTED model execution, subscriber coalescing, or a nonzero in-flight timeout.

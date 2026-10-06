@@ -1,5 +1,9 @@
 # k.LAB Python client
 
+**Current implementation progress and pending work:** [work log](docs/work-log.md).
+Historical audit and verification documents are snapshots; the log records the
+subsequent fixes and integration attempts.
+
 `klab-python-client` imports as `klab_client` and supports Python **3.11+**.
 It connects Python scripts and notebooks to running k.LAB services: create or
 attach to a scientific context, submit an observation through Runtime, wait for
@@ -8,12 +12,17 @@ The public API is synchronous and uses `httpx`; no notebook event loop or
 mandatory NumPy/pandas/xarray/AMQP dependency is needed.
 
 Compatibility is based on server revision
-`75bf1f7d29c96ec86789d8e1a0135b0b44d0c8ef`. **Offline verification is provided;
-live acceptance remains unverified without a configured deployment.** See the
+`75bf1f7d29c96ec86789d8e1a0135b0b44d0c8ef`. Offline tests, packaging, local service
+startup and public Python HTTP calls have been verified. **Authorized scientific
+execution and scientific throughput remain unverified.** See the
 [contract matrix](docs/contracts.md), [public-method inventory](docs/public-api.md)
-and [verification record](docs/verification.md). This contribution implements the
-client specification; it is not an assertion of maintainer-approved roadmap or
+and [verification record](docs/verification.md). This contribution was developed
+against the client specification; it is not an assertion of maintainer-approved roadmap or
 complete Java API parity.
+
+For independent review, start with the [Astra audit handoff](docs/astra-audit-handoff.md).
+It consolidates implemented behavior, actual evidence, post-checkpoint working-tree
+changes, remaining scientific/throughput gaps, and targeted audit questions.
 
 ## Installation and offline checks
 
@@ -136,11 +145,22 @@ authentication errors; renew them through the same existing deployment workflow.
 
 ## Runnable scientific example
 
-Prerequisites: the worldview defines `geography:Region` and `geography:Elevation`;
+Prerequisites: the worldview defines `earth:Region` and `geography:Elevation`;
 Runtime has working knowledge graph/storage and connected reasoner/resolver/resource
 services; an elevation model/resource covers the checked-in small EPSG:3857 grid.
 This is the maintained [storage testcase](../docs/testcases/klab/staging/vxii/storage.kactors)
 experiment. It is not a locally fabricated elevation result.
+
+The Region namespace was reconciled against the public `imod` worldview during
+local startup testing: the older storage testcase uses `geography:Region`, but
+that definition returns an unresolved `owl:Nothing` in the current worldview.
+For a deployment using a different validated Region definition, supply
+`region_definition=...` to `run_elevation`. Unresolved observable results now raise
+MissingAssetError even when HTTP status is 200.
+
+Local startup and public Python HTTP calls have been verified. Full scientific
+acceptance remains blocked by authorized-user/model/data prerequisites and the
+observed server string-unit builder stub; see [local stack investigation](docs/local-stack.md).
 
 Linux: `python examples/elevation.py`
 
