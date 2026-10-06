@@ -1,4 +1,4 @@
-# Local stack investigation and actual startup results
+# Historical local stack investigation and startup results
 
 **Historical investigation stage.** Subsequent work repaired the blockers below
 and completed the deterministic signed-JWT scientific workflow, lifecycle tests

@@ -18,9 +18,9 @@ routes, identity and DTO sources are in [contracts.md](contracts.md).
 | Geometry / GeometryImpl: dimension, size, is_scalar | Local DTO access; unknown/universal finite size is explicitly unsupported |
 | Geometry / GeometryImpl: encode | Scalar `1`, universal `*`, empty `X`; other encodings unsupported. Server hashes/keys are not geometry encodings; arbitrary values rejected |
 | Observation / ObservationImpl: get_urn, get_name, get_observable, get_value, get_notifications | Local DTO access; get_value does not fetch or infer storage data |
-| Concept / ConceptImpl: get_type, is_collective, get_qualifier, get_notifications, get_description_type | Local DTO access; known Java SemanticType names converted; future names remain in raw. DescriptionType is the legacy Python descriptor, not a remote reasoner operation |
+| Concept / ConceptImpl: get_type, is_collective, get_qualifier, get_notifications, get_description_type | Exact raw contextualization retained. Compatible legacy mapping only; missing/future/unrepresentable remote activity raises UnsupportedOperationError instead of INSTANTIATION default |
 | Concept / ConceptImpl: singular, collective | Local detached copies with changed collective flag; no remote normalization or new semantic authority implied |
-| Observable / ObservableImpl: get_semantics, get_observer_semantics, get_description_type, is_optional, get_default_value, get_resolution_directives | Local DTO access; default values/directives are not scientific completion |
+| Observable / ObservableImpl: get_semantics, get_observer_semantics, get_description_type, is_optional, get_default_value, get_resolution_directives | Exact contextualization exposed; MEASURE/QUANTIFICATION, INSTANTIATION, DETECTION, CATEGORIZATION map explicitly. Other legacy conversions unsupported; local-only construction remains compatible |
 | UserScope / UserScopeImpl: get_user_id, get_roles | Local descriptive identity/roles; no authorization grant |
 | SessionScope / SessionScopeImpl: get_session_id | Local DTO access |
 | ContextScope / ContextScopeImpl: get_context_id, get_observer | Local DTO access; remote Context adds explicit workflow helpers |

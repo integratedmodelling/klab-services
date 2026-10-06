@@ -1,6 +1,50 @@
 # Implementation and integration work log
 
+Current user documentation lives under python-client/docs. Detailed development
+history is retained here and is not shipped in the Python source distribution.
+
 ## Latest verified status
+
+### Maintainer revisions — 6 October 2026
+
+Separate current assessments: `python-client/docs/review.md` (server, Python
+library, optional tooling). Documentation now contains concise current contracts
+and reproduction instructions; earlier audits/guides remain in `history/` here.
+
+Fixed persisted graph ACL authorization/restoration (federation is not authority),
+domain HTTP error mapping, foreign-runtime submission/result binding, explicit
+descriptor compatibility mapping, missing-geometry reads, strict security
+assertions, bounded process lifecycle and fixture provenance. Added nonuniform
+zero/missing-cell oracles, controlled in-flight cancellation, actual cold Runtime
+restart checks, and an offline Python CI matrix.
+
+The stronger collaborator-first cold restore exposed the need to preserve parent
+session authority. Restored sessions now record the persisted owner; regression
+checks deny collaborator session use and prove owner creation/release still works.
+The first added Java mock used HashMap where Parameters was required; fixed and
+rebuilt before the final fresh run. `klab-revision-live2` failed the stronger check
+against the previous Runtime compilation; cleanup completed. No success claim
+is based on that failed run.
+
+Final targeted Java checks: `final-bounded-server-review3.log`, BUILD SUCCESS,
+29 tests (17 core/2 Reasoner/10 Runtime), zero failures/errors/skips. Python 3.11
+and 3.12: 91 passed, 4 live deselected. Isolated installed-wheel Python 3.11:
+91 passed, 4 deselected from outside the checkout. Wheel/sdist build succeeded.
+GitHub CI/Linux/Python 3.13 have not been executed locally.
+
+Fresh `klab-revision-live3` ran 15:57:00–15:59:31 UTC on 6 October:
+prepare/start, 2 live acceptance tests, persistent ACL prepare/Runtime-only
+restart/check (collaborator first), full c1/c2/c4 and repeated-read phases all exit
+0. Cleanup exit 0, all five JVM exits confirmed. Command flags were `--samples 1
+--duration 1 --step-timeout 180`, Python 3.12.7, JDK 21.0.12.1, pinned imod
+608bef150ced0a109db98a5aad64ba4461beaa54. Evidence is external under
+`C:\Users\lumsd\AppData\Local\Temp\opencode\klab-revision-live3`; generated
+credentials/state are not tracked. Short revision smoke runs establish correctness,
+not a new sustained throughput/capacity result.
+
+Remaining boundaries: production hub onboarding, genuine terrain/reference
+accuracy, bulk/large-data, temporal/federated and soak. Candidate-context listing
+uses a full graph scan plus Java ACL filtering; malformed rights fail closed.
 
 The complete deterministic scientific workflow now passes with real local services,
 normal signed ROLE_USER JWTs, actual arithmetic execution/storage readback, m/mm

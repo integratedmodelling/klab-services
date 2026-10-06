@@ -1,4 +1,4 @@
-# Astra review and audit handoff: k.LAB Python client
+# Historical Astra review handoff: k.LAB Python client
 
 **Historical checkpoint handoff:** this document describes the earlier 490af42d4
 working-tree state. Current remediation, complete deterministic scientific

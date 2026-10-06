@@ -1,4 +1,4 @@
-# Draft PR: Enable the scientific Python observation workflow
+# Historical draft PR: scientific Python observation workflow
 
 **Current completion evidence:** the complete deterministic scientific workflow,
 signed-JWT lifecycle/security tests and reproducible concurrency 1/2/4 throughput

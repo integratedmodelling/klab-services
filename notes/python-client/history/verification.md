@@ -1,4 +1,4 @@
-# Verification and handoff
+# Historical verification and handoff
 
 **Current results supersede the historical milestones below:** complete deterministic
 scientific workflow and signed-JWT lifecycle acceptance pass on the isolated TEST

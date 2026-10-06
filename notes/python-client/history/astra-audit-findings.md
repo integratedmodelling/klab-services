@@ -1,4 +1,4 @@
-# Audit findings — current working tree
+# Historical audit findings — earlier working tree
 
 **Historical audit snapshot:** subsequent remediation and real integration results
 are recorded in [work-log.md](work-log.md) and [throughput.md](throughput.md).

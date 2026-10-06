@@ -1,323 +1,128 @@
 # k.LAB Python client
 
-**Current implementation progress and pending work:** [work log](docs/work-log.md).
-Historical audit and verification documents are snapshots; the log records the
-subsequent fixes and integration attempts.
+`klab-python-client` imports as `klab_client`, requires Python 3.11+, and provides
+a synchronous API for scripts/notebooks. The verified local workflow authenticates
+a signed user, creates a context, runs a model, reads actual scientific values,
+reattaches, and explicitly releases test-owned state. The local authority and
+datasets are test fixtures; production onboarding and real-provider accuracy
+remain deployment-specific.
 
-`klab-python-client` imports as `klab_client` and supports Python **3.11+**.
-It connects Python scripts and notebooks to running k.LAB services: create or
-attach to a scientific context, submit an observation through Runtime, wait for
-its actual job result, and retrieve scientifically interpretable storage cells.
-The public API is synchronous and uses `httpx`; no notebook event loop or
-mandatory NumPy/pandas/xarray/AMQP dependency is needed.
-
-Compatibility is based on server revision
-`75bf1f7d29c96ec86789d8e1a0135b0b44d0c8ef`. Offline tests, packaging, local service
-startup and public Python HTTP calls have been verified. **The complete scientific
-workflow and reproducible throughput tests now pass on the isolated signed-JWT
-test deployment.** Production hub login and real-provider terrain validation remain
-unverified. See [reproduction and actual throughput results](docs/throughput.md) and the
-[contract matrix](docs/contracts.md), [public-method inventory](docs/public-api.md)
-and [verification record](docs/verification.md). This contribution was developed
-against the client specification; it is not an assertion of maintainer-approved roadmap or
-complete Java API parity.
-
-For independent review, start with the [Astra audit handoff](docs/astra-audit-handoff.md).
-It consolidates implemented behavior, actual evidence, post-checkpoint working-tree
-changes, remaining scientific/throughput gaps, and targeted audit questions.
-
-## Installation and offline checks
-
-Run inside `python-client/`. Linux:
+## Install and check
 
 ```sh
-python3.11 -m venv .venv
-. .venv/bin/activate
-python -m pip install '.[dev]'
+python -m pip install /path/to/python-client
+# Developers, from python-client/:
+python -m pip install '.[dev,local]'
 python -m pytest -q
 python -m build
 ```
 
-Windows PowerShell (no activation-policy changes needed):
+PowerShell uses the same commands through a virtual environment:
 
 ```powershell
 py -3.11 -m venv .venv
-& .\.venv\Scripts\python.exe -m pip install ".[dev]"
+& .\.venv\Scripts\python.exe -m pip install ".[dev,local]"
 & .\.venv\Scripts\python.exe -m pytest -q
-& .\.venv\Scripts\python.exe -m build
 ```
 
-For notebooks, install the package using `%pip install /path/to/python-client`
-in the notebook kernel environment, then restart that kernel if needed. Run the
-same synchronous Python workflow below in cells. There is no import-time network
-access and no hidden credential discovery.
+In a notebook, `%pip install /path/to/python-client` installs into the kernel's
+environment. No import-time networking, background event loop, NumPy or pandas
+is required. Cryptography/psutil are optional local-test tooling dependencies.
 
-## Configuration and existing credentials
+## Connect through a supported credential path
 
-The first release accepts **already-issued authorized credentials**. Obtain them
-through the deployment's existing k.LAB authentication workflow:
+Supply already-issued k.LAB network JWTs only to explicitly configured service
+origins that trust the issuing hub. Services must load its verification key through
+their existing certificate/hub workflow. Obtain/renew credentials using the
+deployment's existing authenticated Engine/account flow. A generic OAuth token,
+anonymous token, local Python role set or server administration key is not a
+scientist credential. Browser `webui_` credentials currently reject scoped
+requests and are not supported for this workflow.
 
-* A hub-authenticated Java engine receives a k.LAB network token in its
-  authentication response/user identity. Use that issued token only with service
-  origins trusting the issuing hub, and its authorized scientist username as the
-  provenance `agent_name`.
-* Use a deployment whose services authenticate against the issuing hub and load
-  its JWT verification key. Merely starting an anonymous local server does not
-  make a network token usable. The isolated test deployment exercises this existing
-  certificate/public-key/signed-JWT contract with ROLE_USER, not server-key access.
-* Browser-issued `webui_` service-session credentials are currently rejected when
-  klab-scope is supplied by the server. They do **not** support this scoped scientist
-  workflow at the compatibility baseline. Use the verified network-JWT path;
-  browser scoped access requires a separate server feature/authorization design.
-* A Keycloak/OAuth browser access token is not the issued service credential. The
-  current server exchanges it through its trusted-hub web authentication flow.
-  This package does not invent another login protocol or use privileged server
-  keys. Anonymous credentials do not grant scientific write authority.
-
-The runtime must already know/authorize the user's reasoner, resolver, and resource
-services. `service_ids` selects those registered service IDs in ScopeRequest; it
-cannot grant permission or register unknown peers. Obtain these IDs from each
-service's `/public/capabilities` or from your configured Java workflow. Supply
-`runtime_service_id` when using a context against another service. It identifies
-the context's home runtime, not your user or job.
-
-Explicit configuration (variables below are read from your own secret/config
-management, not hard-coded credentials):
-
-```python
-from klab_client import Client, Endpoint
-
-client = Client(
-    runtime_url, runtime_issued_credential,
-    reasoner=Endpoint(reasoner_url, reasoner_issued_credential),
-    resources=Endpoint(resources_url, resources_issued_credential),
-    agent_name=authorized_username,
-    runtime_service_id=runtime_service_id,
-    service_ids=registered_service_ids,
-    timeout=30, poll_interval=0.5, verify=True,
-)
-```
-
-Alternatively `Client.from_env()` reads only these documented variables:
+`Client.from_env()` reads only documented variables:
 
 | Variable | Meaning |
 |---|---|
-| `KLAB_RUNTIME_URL` | Required service base URL; include reverse-proxy base path, omit `/api/v1` |
-| `KLAB_RUNTIME_TOKEN` | Issued runtime credential; required for authorized workflow |
-| `KLAB_REASONER_URL`, `KLAB_REASONER_TOKEN` | Reasoner endpoint and explicitly authorized credential |
-| `KLAB_RESOURCES_URL`, `KLAB_RESOURCES_TOKEN` | Optional resource discovery endpoint/credential |
-| `KLAB_RESOLVER_URL`, `KLAB_RESOLVER_TOKEN` | Optional direct resolver endpoint/credential |
-| `KLAB_AGENT_NAME` | Authorized scientist's provenance name; required for Runtime submission |
-| `KLAB_RUNTIME_SERVICE_ID` | Home runtime ID, needed for cross-service context requests |
-| `KLAB_SERVICE_IDS` | Comma-separated IDs of the user's registered required services |
-| `KLAB_TIMEOUT`, `KLAB_POLL_INTERVAL` | Positive seconds; defaults 30 and 0.5 |
-| `KLAB_CA_BUNDLE` | Optional CA file; TLS verification otherwise enabled |
-| `KLAB_CONTEXT_ID` | Used by the example/live test to attach to an existing context |
+| `KLAB_RUNTIME_URL`, `KLAB_RUNTIME_TOKEN` | Runtime base URL (include `/runtime` or proxy prefix, omit `/api/v1`) and issued credential |
+| `KLAB_REASONER_URL`, `KLAB_REASONER_TOKEN` | Reasoner endpoint and credential |
+| `KLAB_RESOURCES_URL/TOKEN`, `KLAB_RESOLVER_URL/TOKEN` | Optional explicit peer endpoints/credentials |
+| `KLAB_AGENT_NAME` | Authorized user's provenance name |
+| `KLAB_TIMEOUT`, `KLAB_POLL_INTERVAL` | Positive seconds, default 30 and 0.5 |
+| `KLAB_CA_BUNDLE` | Optional CA path; TLS verification is otherwise enabled |
+| `KLAB_SERVICE_IDS`, `KLAB_RUNTIME_SERVICE_ID` | Existing peer IDs/home runtime ID, or initialize them explicitly below |
+| `KLAB_CONTEXT_ID` | Example's optional accessible existing context |
 
-Configure endpoints explicitly; no service discovery URL is automatically trusted
-with your credentials. Redirects are not followed. Proxy/environment credential
-discovery is disabled. Each endpoint has its own credential, excluded from reprs
-and sanitized diagnostics. TLS can be configured through the explicit `verify`
-argument (boolean or CA path). The transport is reusable and closeable.
+Explicit configuration is also supported with `Client(runtime_url, credential,
+reasoner=Endpoint(reasoner_url, reasoner_credential), ...)`. Credentials are
+origin-bound, excluded from reprs and redacted from diagnostics; redirects and
+environment proxy/credential discovery are disabled.
 
-To prompt for a credential without putting it in shell history, Linux:
+## Scientific workflow
 
-```sh
-export KLAB_RUNTIME_URL='https://your-runtime.example'
-export KLAB_REASONER_URL='https://your-reasoner.example'
-read -rs -p 'Runtime issued credential: ' KLAB_RUNTIME_TOKEN; echo
-export KLAB_RUNTIME_TOKEN
-read -rs -p 'Reasoner issued credential: ' KLAB_REASONER_TOKEN; echo
-export KLAB_REASONER_TOKEN
-read -r -p 'Authorized username: ' KLAB_AGENT_NAME
-export KLAB_AGENT_NAME
-```
-
-PowerShell:
-
-```powershell
-$env:KLAB_RUNTIME_URL = 'https://your-runtime.example'
-$env:KLAB_REASONER_URL = 'https://your-reasoner.example'
-$env:KLAB_RUNTIME_TOKEN = [System.Net.NetworkCredential]::new('', (Read-Host 'Runtime issued credential' -AsSecureString)).Password
-$env:KLAB_REASONER_TOKEN = [System.Net.NetworkCredential]::new('', (Read-Host 'Reasoner issued credential' -AsSecureString)).Password
-$env:KLAB_AGENT_NAME = Read-Host 'Authorized username'
-```
-
-Set the deployment's registered service IDs as described above. Endpoint example
-hosts must be replaced with your real service URLs. Expired credentials produce
-authentication errors; renew them through the same existing deployment workflow.
-
-## Runnable scientific example
-
-Prerequisites: the worldview defines `earth:Region` and `geography:Elevation`;
-Runtime has working knowledge graph/storage and connected reasoner/resolver/resource
-services; an elevation model/resource covers the checked-in small EPSG:3857 grid.
-This is the maintained [storage testcase](../docs/testcases/klab/staging/vxii/storage.kactors)
-experiment. It is not a locally fabricated elevation result.
-
-The Region namespace was reconciled against the public `imod` worldview during
-local startup testing: the older storage testcase uses `geography:Region`, but
-that definition returns an unresolved `owl:Nothing` in the current worldview.
-For a deployment using a different validated Region definition, supply
-`region_definition=...` to `run_elevation`. Unresolved observable results now raise
-MissingAssetError even when HTTP status is 200.
-
-The original local-stack investigation found missing identity/model/data and a
-server unit stub. Those server blockers are repaired in this branch and the
-deterministic signed-JWT fixture now passes the complete workflow. The real-terrain
-example still needs matching deployment assets and an independent reference;
-see [current acceptance and throughput](docs/throughput.md).
-
-Linux: `python examples/elevation.py`
-
-PowerShell: `& .\.venv\Scripts\python.exe .\examples\elevation.py`
-
-The script creates a new `ONE_OFF` context, submits the 5 × 4 rectangular Region,
-submits `geography:Elevation in m` within it, prints resumable job IDs, waits for
-completion and reads 20 actual cells. It also reads the same cells in mm and
-asserts finite plausible terrain, preserved missingness, at least one real value,
-and **mm = m × 1000** within declared numeric tolerance. No constant terrain value
-is guessed independently of the selected deployment provider.
-
-Notebook equivalent:
+Configure endpoints, credentials and matching scientific assets first:
 
 ```python
 from klab_client import Client
 from klab_client.experiment import run_elevation
 
-client = Client.from_env()
-try:
-    client.initialize_user_scope()  # explicit peer advertisement if no Engine has initialized it
+with Client.from_env() as client:
+    client.initialize_user_scope()  # explicit peer advertisement, not an authority grant
     observation, metres, millimetres = run_elevation(client)
-    print(observation.id, observation.observable.raw['urn'], observation.units)
-    print(metres.values)
-finally:
-    client.close()
+    print(observation.id, observation.units, metres.values)
 ```
 
-For ordinary scripts using your own already-resolved scientific inputs:
+`examples/elevation.py` is the runnable terrain/reference example. It requires
+`earth:Region`, `geography:Elevation`, a compatible model and a covering dataset.
+Its 5×4 EPSG:3857 grid checks actual storage cells, geometry, units and m→mm
+conversion. A deterministic local fixture is available separately; see
+[acceptance and throughput](docs/throughput.md).
 
-```python
-from klab_client import ObservationImpl
+For your own inputs, resolve an observable, construct `ObservationImpl`, and use
+`context.submit(...)` to obtain a Job. `job.result(timeout=120)` retrieves the
+actual server result. `observation.fetch_data([0, 1], curve='D2_YX')` returns
+explicit indexed values, raw cell text, geometry, units and source/target semantics.
+Numbers use integers/Decimal, missing cells use None, and zero/False remain valid.
+Reads are bounded to 1–256 cells per call; this is not a bulk export interface.
 
-session = client.create_session(name='python-science')
-context = session.create_context(name='Disposable experiment')
-observable = client.reasoner.resolve_observable('geography:Elevation in m')
-# Supply the geometry/focus appropriate to your experiment, as in elevation.py.
-job = context.submit(ObservationImpl(urn='', observable=observable))
-print(job.id, job.scope.get_context_id())  # retain before waiting
-observation = job.result(timeout=120)
-data = observation.fetch_data([0], curve='D2_YX')
-```
+## Ownership, jobs and errors
 
-## Attachment, ownership, and interruption
+`client.attach_context('session.context')` attaches to authorized existing state;
+`context.within(observation_id)` preserves a focus path. Save the job ID and scope
+before waiting; `context.job(saved_id).result(...)` resumes it after reconnect.
 
-```python
-context = client.attach_context('session.context')  # actual accessible server ID
-job = context.job(saved_job_id)  # use the original focused scope when applicable
-status = job.status()
-result = job.result(timeout=120)
-client.close()  # local HTTP resources only
-```
+Client close/context-manager exit closes **local HTTP resources only**. Remote
+`context.release()` / `session.release()` are explicit disposal operations. Never
+release shared/user-owned state unless you intend that operation. The example
+releases only its newly created disposable fixtures after success; failed fixtures
+remain available with printed IDs for inspection/manual cleanup.
 
-For the example, set `KLAB_CONTEXT_ID` to attach. It will submit the experiment
-into that context but will **not release** it. A caller can focus with
-`context.within(committed_observation_id)`. Scope tokens preserve the full
-observation path and optional observer suffix.
+FINISHED means result delivery, not scientific correctness. Error notifications,
+empty outcomes and ABORTED/INTERRUPTED/EMPTY states are handled explicitly.
+WaitTimeout retains `.job` and does not stop the server. `cancel()` reports request
+acceptance; polling confirms interruption or a completion race. No mutations are
+automatically retried after ambiguous network/server failure.
 
-`close()`, leaving `with Client(...)`, and restarting a notebook never release
-remote scopes. Explicit `context.release()` / `session.release()` invoke the
-server's remote close. Closing a context can dispose its digital twin according
-to server persistence policy; `ONE_OFF` fixtures are disposable, while other
-policies may retain durable state. Closing a session can affect its contexts and
-jobs. Release only state you intend to dispose. Ownership flags are descriptive,
-not local authorization grants.
+Errors are under `klab_client.errors` (configuration, transport/unknown submission,
+authentication/authorization, invalid request, missing asset, protocol/server,
+job failure/cancellation/unavailability, timeout and unsupported operation).
+Remote `contextualization` is exposed exactly; legacy description getters map
+only compatible activities and raise UnsupportedOperationError otherwise.
 
-The experiment releases its newly created disposable scopes **only after success**.
-On timeout, failure, or Ctrl+C it leaves remote state available for inspection;
-the printed context/job/focus IDs permit reconnecting and resuming. Manually
-inspect/cancel/release these failed fixtures when appropriate. An ambiguous
-submission failure may leave a computation without a returned handle; inspect
-the context through the deployment's supported UI/Java workflow before retrying.
+## Boundaries and further reading
 
-## Jobs, results, and errors
+Unsupported: binary Avro worker/job data, dataflow encoding, bulk export, automatic
+query/consumer geometry conversion, contextual-unit/range/currency adapters, full
+Java Modeler/API parity and mandatory array integrations. Unsupported methods
+raise named errors rather than fake success. Generic assets/graph queries retain
+raw DTOs; scientific values are a distinct storage route.
 
-* `job.status()` returns the server's WAITING/STARTED/CHANGED/FINISHED/ABORTED/
-  INTERRUPTED/EMPTY state. FINISHED means a result was delivered, not that an
-  application invariant holds. Results retain coverage and error notifications.
-* `job.result(timeout=...)` polls and retrieves the actual server result. Error
-  notifications or empty results are failures. Partial coverage remains visible
-  to callers; the experiment requires full coverage.
-* `WaitTimeout` contains `.job`; it stops waiting, does not stop the server, and
-  allows another `result(...)` call. Ctrl+C likewise does not discard the handle.
-* `job.cancel()` returns cancellation-request acceptance; `.cancellation_requested`
-  records that acceptance. Poll afterward: INTERRUPTED confirms the subscriber's
-  interruption. A completion race can instead return FINISHED. For coalesced
-  computations, interruption of one subscriber is not proof all shared work stopped.
-* EMPTY is unavailable/expired, not successful cancellation. Server result caches
-  are bounded (400 entries in the inspected JobManager); retain IDs and retrieve
-  results promptly. Python's local close does not extend retention.
+* [Contract matrix](docs/contracts.md) and [public API inventory](docs/public-api.md)
+* [Live reference format](docs/live-acceptance.md)
+* [Reproducible local tests and throughput](docs/throughput.md)
+* [Separate server/client/tooling review](docs/review.md)
+* Developer history: `../notes/python-client/work-log.md` (not package documentation)
 
-Errors are exported from `klab_client.errors`: ConfigurationError, TransportError,
-SubmissionOutcomeUnknown, AuthenticationError, AuthorizationError,
-InvalidRequestError, MissingAssetError, ProtocolError, ServerError, JobFailedError,
-JobCancelledError, JobUnavailableError, WaitTimeout, UnsupportedOperationError.
-Job exceptions retain the server job ID. No operations are automatically retried:
-mutations without a verified idempotency contract report an unknown outcome after
-ambiguous transport/5xx failure rather than duplicating submission.
-
-Observation metadata and `.get_value()` are distinct from scientific storage
-data. `fetch_data` returns `ScientificData` with explicit offsets, traversal,
-slice, raw cell text, decoded values, observable identity, units and geometry.
-Numbers use exact Python integers or Decimal; `null` is None, false/zero are valid,
-category keys remain semantic URNs, and special numeric values are retained for
-the scientist to assess. No dimensions/coordinates are guessed into a DataFrame.
-Reads are deliberately small (1–256 explicitly requested cells per call); they
-are not a bulk-export replacement. Multi-state temporal data require an explicit
-StorageScan.Slice. Native committed observations and explicit simple-unit
-mediation are supported; query geometry/consumer bindings, contextual-unit/range/
-currency adapters and binary Avro job data are outside this release.
-
-Resource discovery is available through `client.resources.list('RESOURCE')`,
-`.resolve(urn, knowledge_class='RESOURCE')` and `.retrieve(urn, 'RESOURCE')`.
-Results preserve full wire DTOs in `.raw`. The checked server's listing endpoint
-does not offer pagination. Resource URLs returned in DTOs are informational and
-are never followed with credentials automatically.
-
-## Live acceptance
-
-Ordinary tests exclude the live marker and require no credentials or network.
-The expanded suite verifies all 20 cells across three traversal orders, timeout
-handle preservation, completed-job cancellation, and a new-client attach/resume/
-reread cycle. A separate test compares every cell to an independently obtained
-reference. See [thorough live acceptance](docs/live-acceptance.md) for the reference
-format, evidence artifacts, and precise limits of each check.
-
-To explicitly invoke full acceptance after configuring the deployment and setting
-`KLAB_ELEVATION_REFERENCE` to that reference JSON:
-
-```sh
-python -m pytest -o addopts='' -m live -s tests/test_live.py
-```
-
-```powershell
-& .\.venv\Scripts\python.exe -m pytest -o "addopts=" -m live -s .\tests\test_live.py
-```
-
-This command **fails**, rather than skips, when configuration, authorization,
-assets, actual computation, scientific data, its invariant, or the independent
-reference is missing. It
-creates only the disposable scopes described above unless KLAB_CONTEXT_ID is set.
-Fixture provenance is recorded in [tests/fixtures/README.md](tests/fixtures/README.md).
-
-## Scaffold compatibility changes
-
-Existing abstract interfaces, `*Impl` names, local DTOs and Modeler tracking are
-retained. Service implementations now require a configured Client; constructing
-one without transport no longer fabricates concepts, resource URNs or execution.
-`Runtime.submit` and `Resolver.resolve` return Job handles instead of echoed
-observations/dataflow URNs. Resource/graph responses retain raw DTO fields;
-generic Java asset types are selected using explicit KnowledgeClass names.
-Geometry.encode now encodes geometry, not arbitrary Python objects.
-Unsupported worker contextualization/dataflow encoding raises a named exception.
-See the full [inventory](docs/public-api.md) for every pre-existing public method.
+Compatibility targets the server baseline 75bf1f7d2 plus the bounded corrections
+in this branch. This is not a package-publication or maintainer-approved roadmap
+claim. CI runs offline tests; live tests require an explicit configured stack and
+fail, rather than skip-as-success, when prerequisites are missing.
