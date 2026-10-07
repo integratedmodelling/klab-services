@@ -10,6 +10,17 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.junit.jupiter.api.Test;
 
 class JobManagerTest {
+  @Test void nullResultIsTerminalFailureRatherThanNullStatus() {
+    var manager = new JobManager();
+    var id = manager.submit(CompletableFuture.completedFuture(null), "null import result");
+    assertEquals(Scope.Status.ABORTED, manager.status(id).getStatus());
+    assertTrue(manager.status(id).getStackTrace().contains("without a result"));
+    org.junit.jupiter.api.Assertions.assertThrows(
+        org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,
+        () -> manager.getResult(id));
+    assertFalse(manager.cancel(id));
+  }
+
   @Test void completionDoesNotClaimApplicationSuccess() {
     assertEquals("completed with resolution outcome FAILED",JobManager.completionDescription(
         org.integratedmodelling.klab.api.services.runtime.Dataflow.empty(java.util.List.of())));

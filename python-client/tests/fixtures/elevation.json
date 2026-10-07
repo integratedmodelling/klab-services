@@ -1,0 +1,46 @@
+{
+  "@CLASS": "org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl",
+  "id": 42,
+  "urn": "session.context.42",
+  "name": "elevation",
+  "observable": {
+    "@CLASS": "org.integratedmodelling.common.knowledge.ObservableImpl",
+    "urn": "geography:Elevation in m",
+    "artifactType": "NUMBER",
+    "semantics": {
+      "@CLASS": "org.integratedmodelling.common.knowledge.ConceptImpl",
+      "urn": "geography:Elevation",
+      "type": ["QUALITY", "QUANTIFIABLE", "LENGTH", "INTENSIVE", "OBSERVABLE"],
+      "collective": false,
+      "notifications": [],
+      "serviceId": "reasoner-id"
+    },
+    "unit": {
+      "@CLASS": "org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl",
+      "definition": "m",
+      "contextual": false,
+      "unitless": false,
+      "aggregatedDimensions": {}
+    },
+    "resolutionDirectives": [],
+    "optional": false,
+    "serviceId": "reasoner-id"
+  },
+  "geometry": {
+    "@CLASS": "org.integratedmodelling.klab.api.geometry.impl.GeometryImpl",
+    "dimensions": [],
+    "granularity": "SINGLE",
+    "scalar": true,
+    "empty": false,
+    "universal": false
+  },
+  "metadata": {
+    "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+    "delegate": {"im:commit": 7},
+    "unnamedKeys": []
+  },
+  "notifications": [],
+  "resolvedCoverage": 1.0,
+  "eventTimestamps": [0],
+  "empty": false
+}

@@ -1,0 +1,25 @@
+{
+  "fixture": "real Runtime arithmetic model, 20 cells at 123.25 m and 20 converted cells at 123250 mm",
+  "authority": "isolated loopback TEST authority with signed ROLE_USER JWTs; not production hub",
+  "worldview_revision": "608bef150ced0a109db98a5aad64ba4461beaa54",
+  "model_sha256": "9bc51d4fa89c20136fe6b0951a4840120dce0da948156a08203868fb1b92db70",
+  "source_head": "55fe36377",
+  "integrated_develop": "64754ea2b",
+  "working_tree_dirty_during_measurement": true,
+  "source_note": "Measured before committing develop integration and PR-review remediation; full reports retain source/compiled/SNAPSHOT hashes",
+  "host": {"os": "Windows 11 amd64", "python": "3.12.7", "jdk": "21.0.12.1+1", "maven": "3.9.5"},
+  "run_state": "klab-pr-remediation-live2",
+  "run_started_utc": "2026-10-07T14:43:25.267476+00:00",
+  "run_finished_utc": "2026-10-07T14:47:11.093918+00:00",
+  "minimum_samples": 8,
+  "minimum_duration_seconds": 15,
+  "run_passed": true,
+  "cleanup_exit_code": 0,
+  "phases": [
+    {"mode": "full-workflow", "concurrency": 1, "verified": 8, "failed": 0, "wall_seconds": 28.286133100045845, "verified_workflows_per_second": 0.28282409517428997},
+    {"mode": "full-workflow", "concurrency": 2, "verified": 10, "failed": 0, "wall_seconds": 18.221264100051485, "verified_workflows_per_second": 0.5488093441317139},
+    {"mode": "full-workflow", "concurrency": 4, "verified": 14, "failed": 0, "wall_seconds": 19.423574200016446, "verified_workflows_per_second": 0.7207736256897634},
+    {"mode": "repeated-read-no-recomputation", "concurrency": 4, "verified": 41, "failed": 0, "wall_seconds": 15.915517500019632, "verified_read_cycles_per_second": 2.5761022222462717}
+  ],
+  "measurement_limits": ["small synthetic field and per-cell HTTP, not bulk bandwidth", "code/model caches may be warm", "short phases, not capacity/soak certification", "not a controlled before/after performance comparison"]
+}

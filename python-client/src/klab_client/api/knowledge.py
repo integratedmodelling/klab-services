@@ -65,6 +65,11 @@ class ConceptImpl(Concept):
     qualifier: LogicalConnector | None = None
     description_type: DescriptionType = DescriptionType.INSTANTIATION
     notifications: list[Notification] = field(default_factory=list)
+    raw: dict[str, Any] = field(default_factory=dict, repr=False)
+
+    @property
+    def contextualization(self) -> str | None:
+        return self.raw.get("contextualization")
 
     def get_type(self) -> set[SemanticType]:
         return self.semantic_types
@@ -83,6 +88,7 @@ class ConceptImpl(Concept):
             qualifier=self.qualifier,
             description_type=self.description_type,
             notifications=list(self.notifications),
+            raw={**self.raw, "collective": False} if self.raw else {},
         )
 
     def collective(self) -> "ConceptImpl":
@@ -93,12 +99,16 @@ class ConceptImpl(Concept):
             qualifier=self.qualifier,
             description_type=self.description_type,
             notifications=list(self.notifications),
+            raw={**self.raw, "collective": True} if self.raw else {},
         )
 
     def get_notifications(self) -> list[Notification]:
         return self.notifications
 
     def get_description_type(self) -> DescriptionType:
+        if self.raw:
+            from klab_client.dto import legacy_description_type
+            return legacy_description_type(self.raw)
         return self.description_type
 
 
@@ -110,6 +120,12 @@ class ObservableImpl(Observable):
     default_value: Any = None
     resolution_directives: list[ResolutionDirective] = field(default_factory=list)
     description_type: DescriptionType = DescriptionType.INSTANTIATION
+    raw: dict[str, Any] = field(default_factory=dict, repr=False)
+
+    @property
+    def contextualization(self) -> str | None:
+        """Exact transported value, including future values; None means not supplied."""
+        return self.raw.get("contextualization")
 
     def get_semantics(self) -> Concept:
         return self.semantics
@@ -118,6 +134,9 @@ class ObservableImpl(Observable):
         return self.observer_semantics
 
     def get_description_type(self) -> DescriptionType:
+        if self.raw:
+            from klab_client.dto import legacy_description_type
+            return legacy_description_type(self.raw)
         return self.description_type
 
     def is_optional(self) -> bool:

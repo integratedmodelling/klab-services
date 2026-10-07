@@ -20,6 +20,24 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 @ControllerAdvice
 public class KlabErrorHandler {
 
+  @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class)
+  public ResponseEntity<ProblemDetail> handleAccessDenied(RuntimeException exception) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Asset is not accessible"));
+  }
+
+  @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabResourceNotFoundException.class)
+  public ResponseEntity<ProblemDetail> handleMissingResource(RuntimeException exception) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Asset is absent or not accessible"));
+  }
+
+  @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class)
+  public ResponseEntity<ProblemDetail> handleInvalidRequest(RuntimeException exception) {
+    return ResponseEntity.badRequest()
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid request"));
+  }
+
   @Autowired ServiceNetworkedInstance<?> service;
 
   @Autowired ServiceAuthorizationManager scopeManager;

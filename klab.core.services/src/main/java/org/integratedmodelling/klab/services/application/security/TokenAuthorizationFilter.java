@@ -67,6 +67,13 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
       try {
         EngineAuthorization token = authorizationManager.validateToken(tokenString, requestHeaders);
         if (token != null && token.isAuthenticated()) {
+          // Never pass an authenticated request with an unresolved explicit scope
+          // to controllers: absent/inaccessible scopes are not internal failures.
+          if (req.getHeader(ServicesAPI.SCOPE_HEADER) != null && token.getScope() == null) {
+            SecurityContextHolder.clearContext();
+            res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+          }
           SecurityContextHolder.getContext().setAuthentication(token);
         } else if (tokenString.startsWith(HubWebAuthentication.PREFIX)) {
           SecurityContextHolder.clearContext();
@@ -74,6 +81,10 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
           res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
           return;
         }
+      } catch (org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException denied) {
+        SecurityContextHolder.clearContext();
+        res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        return;
       } catch (Throwable e) {
         logger.error("Failed to extract JWT token: ", e);
         throw e;

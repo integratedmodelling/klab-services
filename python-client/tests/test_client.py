@@ -1,0 +1,551 @@
+from copy import deepcopy
+from decimal import Decimal
+import json
+from pathlib import Path
+
+import httpx
+import pytest
+
+from klab_client import Client, Context, Endpoint, GeometryImpl, ObservationImpl, ReasonerImpl
+from klab_client.client import scope_token
+from klab_client.dto import decode_cell, observable_from_wire, observation_from_wire, storage_semantics
+from klab_client.errors import (
+    AuthenticationError, AuthorizationError, ConfigurationError, InvalidRequestError,
+    JobCancelledError, JobFailedError, JobUnavailableError, MissingAssetError, ProtocolError,
+    ServerError, SubmissionOutcomeUnknown, UnsupportedOperationError, WaitTimeout,
+)
+
+
+@pytest.fixture
+def observation():
+    return json.loads((Path(__file__).parent / "fixtures" / "elevation.json").read_text())
+
+
+def make_client(handler, **kwargs):
+    return Client("https://runtime.invalid", "runtime-secret", agent_name="scientist",
+                  reasoner=Endpoint("https://reasoner.invalid", "reasoner-secret"),
+                  resources=Endpoint("https://resources.invalid", "resources-secret"),
+                  resolver=Endpoint("https://resolver.invalid", "resolver-secret"),
+                  runtime_service_id="runtime-id", poll_interval=.001,
+                  http_transport=httpx.MockTransport(handler), **kwargs)
+
+
+def test_complete_workflow_requests_and_data(observation):
+    calls = []
+    status = iter(["WAITING", "FINISHED"])
+
+    def handler(request):
+        calls.append(request)
+        path = request.url.path
+        if path == "/createSession":
+            posted = json.loads(request.content)
+            assert len(posted["configuration"].pop("id")) == 32
+            assert posted == {"configuration": {
+                "@CLASS": "org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl",
+                "name": "test"}, "serviceIds": []}
+            assert "klab-scope" not in request.headers
+            return httpx.Response(200, text="session")
+        if path == "/createContext":
+            assert request.headers["klab-scope"] == "session"
+            assert json.loads(request.content)["configuration"]["persistence"] == "ONE_OFF"
+            return httpx.Response(200, json={"id": "session.context", "notifications": []})
+        if path == "/api/v1/resolve/observable":
+            assert request.headers["Content-Type"] == "text/plain"
+            assert request.content == b"geography:Elevation in m"
+            assert request.headers["Authorization"] == "reasoner-secret"
+            return httpx.Response(200, json=observation["observable"])
+        assert request.headers["Authorization"] == "runtime-secret"
+        if path == "/api/v1/submit":
+            envelope = json.loads(request.content)
+            assert envelope["agentName"] == "scientist"
+            assert envelope["resolutionConstraints"] == []
+            assert envelope["observation"]["id"] == -1
+            assert envelope["observation"]["@CLASS"] == observation["@CLASS"]
+            assert envelope["observation"]["observable"] == observation["observable"]
+            assert request.headers["klab-scope"] == "session.context.8"
+            assert request.headers["klab-service"] == "runtime-id"
+            return httpx.Response(200, json=1)
+        if path == "/jobs/status/1":
+            return httpx.Response(200, json={"status": next(status), "stackTrace": None})
+        if path == "/jobs/retrieve/1":
+            return httpx.Response(200, text=json.dumps(observation), headers={"Content-Type": "text/plain"})
+        if path == "/api/v1/observation/value":
+            point = json.loads(request.content)
+            assert point == {"sourceId": 42, "slice": {"type": "INITIALIZATION", "key": "0-0", "start": 0, "end": 0},
+                             "curve": "D2_YX", "geometry": None, "semantics": None, "offset": 0, "rate": None}
+            return httpx.Response(200, text="123.25")
+        if path == "/releaseContext":
+            assert request.headers["klab-scope"] == "session.context"
+            return httpx.Response(200, json=True)
+        if path == "/releaseSession":
+            assert request.headers["klab-scope"] == "session"
+            return httpx.Response(200, json=True)
+        raise AssertionError(path)
+
+    with make_client(handler) as client:
+        session = client.create_session(name="test")
+        context = session.create_context()
+        observable = client.reasoner.resolve_observable("geography:Elevation in m")
+        focused = context.within(8)
+        job = focused.submit(ObservationImpl(urn="", observable=observable))
+        result = job.result(timeout=1)
+        assert result.id == 42 and result.units == "m"
+        assert result.metadata["im:commit"] == 7
+        assert result.get_value() is None
+        data = result.fetch_data([0], curve="D2_YX")
+        assert data.values == (Decimal("123.25"),)
+        assert data.units == "m"
+        assert focused.release() and session.release()
+    assert len(calls) == 10  # close added no remote operation
+
+
+@pytest.mark.parametrize("code,error", [(401, AuthenticationError), (403, AuthorizationError), (400, InvalidRequestError)])
+def test_errors_redact_credentials(code, error):
+    with make_client(lambda r: httpx.Response(code, text="runtime-secret reasoner-secret")) as client:
+        with pytest.raises(error) as caught:
+            client.runtime.capabilities()
+        assert "secret" not in str(caught.value)
+
+
+@pytest.mark.parametrize("payload", [{}, {"status": None}, {"status": "SUCCEEDED"}, []])
+def test_malformed_status(payload):
+    with make_client(lambda r: httpx.Response(200, json=payload)) as client:
+        with pytest.raises(ProtocolError):
+            Context(client, {"id": "s.c"}).job(1).status()
+
+
+@pytest.mark.parametrize("state,error", [("ABORTED", JobFailedError), ("INTERRUPTED", JobCancelledError), ("EMPTY", JobUnavailableError)])
+def test_job_terminal_states(state, error):
+    with make_client(lambda r: httpx.Response(200, json={"status": state, "stackTrace": "reasoner-secret diagnostic"})) as client:
+        with pytest.raises(error) as caught:
+            Context(client, {"id": "s.c"}).job(2).result(1)
+        assert caught.value.job_id == 2
+        assert "secret" not in str(caught.value)
+
+
+def test_timeout_preserves_job_and_can_resume(observation):
+    finished = False
+    def handler(request):
+        if "status" in request.url.path:
+            return httpx.Response(200, json={"status": "FINISHED" if finished else "WAITING"})
+        return httpx.Response(200, json=observation)
+    with make_client(handler) as client:
+        job = Context(client, {"id": "s.c"}).job(1)
+        with pytest.raises(WaitTimeout) as caught:
+            job.result(.005)
+        assert caught.value.job is job
+        finished = True
+        assert job.result(1).id == 42
+
+
+@pytest.mark.parametrize("accepted,state", [(True, "INTERRUPTED"), (False, "FINISHED"), (True, "FINISHED")])
+def test_cancellation_races(observation, accepted, state):
+    def handler(request):
+        if "cancel" in request.url.path:
+            return httpx.Response(200, json=accepted)
+        if "status" in request.url.path:
+            return httpx.Response(200, json={"status": state})
+        return httpx.Response(200, json=observation)
+    with make_client(handler) as client:
+        job = Context(client, {"id": "s.c"}).job(1)
+        assert job.cancel() is accepted
+        assert job.cancellation_requested is accepted
+        if state == "INTERRUPTED":
+            with pytest.raises(JobCancelledError):
+                job.result(1)
+        else:
+            assert job.result(1).id == 42
+
+
+def test_ambiguous_submission_is_not_retried(observation):
+    calls = []
+    def handler(request):
+        calls.append(request)
+        raise httpx.ReadTimeout("runtime-secret", request=request)
+    with make_client(handler) as client:
+        with pytest.raises(SubmissionOutcomeUnknown) as caught:
+            Context(client, {"id": "s.c"}).submit(ObservationImpl(
+                urn="", observable=observable_from_wire(observation["observable"])))
+        assert "secret" not in str(caught.value)
+    assert len(calls) == 1
+
+
+def test_attach_and_local_close_do_not_release():
+    paths = []
+    def handler(request):
+        paths.append(request.url.path)
+        assert json.loads(request.content)["configuration"]["id"] == "s.c"
+        return httpx.Response(200, json={"id": "s.c", "notifications": []})
+    with make_client(handler) as client:
+        context = client.attach_context("s.c")
+        assert not context.owned
+    assert paths == ["/api/v1/connect"]
+
+
+def test_redirect_never_forwards_credential():
+    requests = []
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(302, headers={"Location": "https://other.invalid"})
+    with make_client(handler) as client:
+        with pytest.raises(ServerError):
+            client.runtime.capabilities()
+    assert len(requests) == 1
+
+
+@pytest.mark.parametrize("mutate", [lambda p: p.pop("observable"), lambda p: p.update(id="42"),
+                                    lambda p: p["geometry"].update(dimensions="bad")])
+def test_incompatible_observation(observation, mutate):
+    mutate(observation)
+    with pytest.raises(ProtocolError):
+        observation_from_wire(observation)
+
+
+def test_finished_does_not_hide_server_error_notification(observation):
+    observation["notifications"] = [{"level": "ERROR", "message": "runtime-secret missing model"}]
+    def handler(request):
+        return httpx.Response(200, json={"status": "FINISHED"} if "status" in request.url.path else observation)
+    with make_client(handler) as client:
+        with pytest.raises(JobFailedError, match="missing model") as caught:
+            Context(client, {"id": "s.c"}).job(1).result(1)
+        assert "secret" not in str(caught.value)
+
+
+@pytest.mark.parametrize("text,kind,expected", [("null", "NUMBER", None), ("0", "NUMBER", 0),
+    ("9007199254740993", "NUMBER", 9007199254740993), ("false", "BOOLEAN", False),
+    ("geography:Forest", "CONCEPT", "geography:Forest"), ("1.25", "NUMBER", Decimal("1.25"))])
+def test_scientific_cell_decoding(text, kind, expected):
+    assert decode_cell(text, kind) == expected
+
+
+def test_native_metadata_and_unit_mediation_request(observation):
+    mm_observable = deepcopy(observation["observable"])
+    mm_observable["urn"] = "geography:Elevation in mm"
+    mm_observable["unit"]["definition"] = "mm"
+    semantics = storage_semantics(observable_from_wire(mm_observable))
+    def handler(request):
+        point = json.loads(request.content)
+        assert point["semantics"] == {"observable": "geography:Elevation in mm", "unit": "mm",
+            "range": "", "currency": "", "contextualDimensions": "{}", "meaning": "geography:Elevation|null|"}
+        return httpx.Response(200, text="1250")
+    with make_client(handler) as client:
+        result = observation_from_wire(observation, Context(client, {"id": "s.c"}))
+        result.raw["futureField"] = "kept"
+        converted = result.fetch_data([0], semantics=semantics)
+        assert converted.values == (1250,)
+        assert converted.observable == "geography:Elevation in mm"
+        assert converted.source_observable == "geography:Elevation in m"
+        assert converted.units == "mm" and converted.source_units == "m"
+
+
+def test_explicit_unsupported_and_unconfigured_methods():
+    with pytest.raises(ConfigurationError):
+        ReasonerImpl().resolve_concept("im:Thing")
+    with make_client(lambda r: pytest.fail("Must not make a request")) as client:
+        with pytest.raises(UnsupportedOperationError):
+            client.resources.contextualize(None, None, None, None)
+        with pytest.raises(UnsupportedOperationError):
+            client.resolver.encode_dataflow(None)
+        with pytest.raises(UnsupportedOperationError):
+            GeometryImpl().encode(object())
+        with pytest.raises(UnsupportedOperationError):
+            client.runtime.query_knowledge_graph("query", None)
+
+
+def test_scope_and_secret_configuration():
+    assert scope_token("s.c.42#9") == "s.c.42#9"
+    with pytest.raises(InvalidRequestError):
+        scope_token("s.c.bad")
+    with pytest.raises(ConfigurationError):
+        Endpoint("https://user:secret@runtime.invalid")
+    assert "secret" not in repr(Endpoint("https://runtime.invalid", "secret"))
+
+
+def test_discovery_and_resolver_contracts(observation):
+    seen = []
+    def handler(request):
+        path = request.url.path
+        seen.append(path)
+        if path == "/public/capabilities":
+            return httpx.Response(200, json={"serviceId": "server-id", "type": "RUNTIME", "future": 7})
+        if path == "/api/v1/resolve/concept":
+            assert request.content == b"geography:Elevation"
+            return httpx.Response(200, json=observation["observable"]["semantics"])
+        if path == "/api/v1/list/RESOURCE":
+            return httpx.Response(200, json=[{"urn": "asset:urn", "adapterType": "raster"}])
+        if path.startswith("/api/v1/retrieve/RESOURCE/"):
+            return httpx.Response(200, json={"urn": "asset:urn", "adapterType": "raster"})
+        if path.startswith("/api/v1/resolve/RESOURCE/"):
+            return httpx.Response(200, json={"results": [{"resourceUrn": "asset:urn", "serviceId": "resources-id"}],
+                                           "services": {"resources-id": "https://untrusted.invalid"}})
+        if path == "/api/v1/contexts":
+            return httpx.Response(200, json=[{"configuration": {"id": "s.c"}, "observationCount": 1}])
+        if path == "/api/v1/query":
+            assert json.loads(request.content)["resultType"] == "OBSERVATION"
+            return httpx.Response(200, json=[observation])
+        assert request.url.host == "resolver.invalid"
+        assert request.headers["Authorization"] == "resolver-secret"
+        assert request.headers["klab-service"] == "runtime-id"
+        assert request.headers["klab-scope"] == "s.c"
+        if path == "/api/v1/resolve":
+            assert json.loads(request.content)["observation"]["observable"] == observation["observable"]
+            return httpx.Response(200, json=3)
+        if path == "/jobs/status/3":
+            return httpx.Response(200, json={"status": "FINISHED"})
+        if path == "/jobs/retrieve/3":
+            return httpx.Response(200, json={"resolutionOutcome": "RESOLVED", "actuators": []})
+        if path == "/api/v1/resource":
+            return httpx.Response(200, json={"urn": "asset:contextual"})
+        if path == "/api/v1/resources":
+            return httpx.Response(200, json=[{"urn": "asset:contextual"}])
+        pytest.fail(path)
+
+    with make_client(handler) as client:
+        for service in (client.runtime, client.reasoner, client.resources, client.resolver):
+            assert service.capabilities().raw["future"] == 7
+        assert client.reasoner.resolve_concept("geography:Elevation").get_type()
+        assert client.resources.list()[0].raw["adapterType"] == "raster"
+        assert client.resources.retrieve("asset:urn").urn == "asset:urn"
+        assert client.resources.resolve("asset:urn").urns == ["asset:urn"]
+        assert client.runtime.get_context_info()[0].raw["observationCount"] == 1
+        context = Context(client, {"id": "s.c"})
+        assert client.runtime.query_knowledge_graph({"resultType": "OBSERVATION"}, context)[0]["id"] == 42
+        local = ObservationImpl(urn="", observable=observable_from_wire(observation["observable"]))
+        assert client.resolver.resolve(local, context).result(1)["resolutionOutcome"] == "RESOLVED"
+        assert client.resolver.submit_resource(local, context)["urn"] == "asset:contextual"
+        assert client.resolver.get_submitted_resources(context)[0]["urn"] == "asset:contextual"
+    assert len(seen) == 15
+
+
+@pytest.mark.parametrize("response", [httpx.Response(200, text="not JSON"),
+    httpx.Response(200, json={"id": "s.c", "notifications": [{"message": "no valid session", "level": "ERROR"}]})])
+def test_malformed_and_negative_context(response):
+    with make_client(lambda r: response) as client:
+        with pytest.raises((ProtocolError, ServerError)):
+            client.attach_context("s.c")
+
+
+def test_application_empty_job_result(observation):
+    observation["empty"] = True
+    with make_client(lambda r: httpx.Response(200, json={"status": "FINISHED"} if "status" in r.url.path else observation)) as client:
+        with pytest.raises(JobFailedError, match="empty"):
+            Context(client, {"id": "s.c"}).job(1).result(1)
+
+
+def test_explicit_temporal_slice_and_native_missingness(observation):
+    observation["geometry"]["dimensions"] = [{"type": "TIME", "shape": [2]}]
+    def handler(request):
+        assert json.loads(request.content)["slice"] == {"type": "TEMPORAL_TRANSITION", "key": "1000-2000", "start": 1000, "end": 2000}
+        return httpx.Response(200, text="null")
+    with make_client(handler) as client:
+        result = observation_from_wire(observation, Context(client, {"id": "s.c"}))
+        with pytest.raises(InvalidRequestError, match="Temporal"):
+            result.fetch_data([0])
+        assert result.fetch_data([0], slice={"type": "TEMPORAL_TRANSITION", "key": "1000-2000", "start": 1000, "end": 2000}).values == (None,)
+
+
+def test_submission_5xx_is_ambiguous_and_not_retried(observation):
+    calls = []
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(502, text="runtime-secret gateway failure")
+    with make_client(handler) as client:
+        with pytest.raises(SubmissionOutcomeUnknown) as caught:
+            Context(client, {"id": "s.c"}).submit(ObservationImpl(
+                urn="", observable=observable_from_wire(observation["observable"])))
+        assert "secret" not in str(caught.value)
+    assert len(calls) == 1
+
+
+def test_live_captured_nothing_observable_is_not_success():
+    payload = json.loads((Path(__file__).parent / "fixtures" / "unresolved-observable.json").read_text())
+    with make_client(lambda request: httpx.Response(200, json=payload)) as client:
+        with pytest.raises(MissingAssetError, match="did not resolve"):
+            client.reasoner.resolve_observable("geography:Region")
+
+
+def test_geometry_hash_is_not_geometry_encoding():
+    from klab_client.experiment import rectangle_geometry
+    geometry = rectangle_geometry()
+    geometry.raw["key"] = "hash-of-the-geometry"
+    with pytest.raises(UnsupportedOperationError):
+        geometry.encode()
+    assert GeometryImpl.from_wire({"dimensions": [], "universal": True}).encode() == "*"
+    assert GeometryImpl.from_wire({"dimensions": [], "empty": True}).encode() == "X"
+
+
+def test_foreign_context_or_runtime_read_fails_before_http(observation):
+    with make_client(lambda r: pytest.fail("No foreign-context request allowed")) as client:
+        source = Context(client, {"id": "s.c"})
+        result = observation_from_wire(observation, source)
+        other = Context(client, {"id": "s.other"})
+        with pytest.raises(InvalidRequestError, match="bound"):
+            other.fetch_data(result, [0], curve="D2_YX", slice=None, semantics=None)
+        with Client("https://different-runtime.invalid") as foreign:
+            with pytest.raises(InvalidRequestError, match="bound"):
+                Context(foreign, {"id": "s.c"}).fetch_data(result, [0], curve="D2_YX", slice=None, semantics=None)
+
+
+def test_streaming_deadline_stops_trickling_result_and_can_resume(observation, monkeypatch):
+    now = [0.0]
+    monkeypatch.setattr("time.monotonic", lambda: now[0])
+    expired = [True]
+    closed = []
+    class Trickle(httpx.SyncByteStream):
+        def __iter__(self):
+            for byte in json.dumps(observation).encode():
+                if expired[0]:
+                    now[0] += .02
+                yield bytes([byte])
+        def close(self):
+            closed.append(True)
+    def handler(request):
+        if "status" in request.url.path:
+            return httpx.Response(200, json={"status": "FINISHED"})
+        return httpx.Response(200, stream=Trickle())
+    with make_client(handler) as client:
+        job = Context(client, {"id": "s.c"}).job(1)
+        with pytest.raises(WaitTimeout) as caught:
+            job.result(.1)
+        assert caught.value.job is job and closed
+        expired[0] = False
+        assert job.result(1).id == observation["id"]
+
+
+def test_gzip_response_decoded_once(observation):
+    import gzip
+    with make_client(lambda r: httpx.Response(200, content=gzip.compress(json.dumps(
+            observation["observable"]).encode()), headers={"content-encoding": "gzip"})) as client:
+        assert client.reasoner.resolve_observable("geography:Elevation in m").raw["urn"] == observation["observable"]["urn"]
+
+
+def test_explicit_scope_bootstrap_uses_only_configured_authorized_origins():
+    notifications = []
+    expected_tokens = {"runtime.invalid": "runtime-secret", "reasoner.invalid": "reasoner-secret",
+                       "resources.invalid": "resources-secret", "resolver.invalid": "resolver-secret"}
+    def handler(request):
+        assert request.headers["Authorization"] == expected_tokens[request.url.host]
+        service = request.url.host.split(".")[0]
+        if request.url.path == "/public/capabilities":
+            return httpx.Response(200, json={"serviceId": service + "-id"})
+        if request.url.path == "/public/status":
+            return httpx.Response(200, json={"operational": True})
+        assert request.url.path == "/notifyUserScope"
+        payload = json.loads(request.content)
+        assert payload["localFederation"] is False
+        assert "klab-scope" not in request.headers
+        assert len(payload["services"]) == 4
+        notifications.append(payload)
+        return httpx.Response(200, json=True)
+    with make_client(handler) as client:
+        result = client.initialize_user_scope(email_address="science@example.invalid")
+        assert len(result) == 4 and len(notifications) == 4
+        assert client.runtime_service_id == "runtime-id"
+        assert set(client.service_ids) == {service + "-id" for service in ("runtime", "reasoner", "resources", "resolver")}
+
+
+def test_service_submit_rejects_foreign_runtime_before_http(observation):
+    with make_client(lambda request: pytest.fail("Foreign runtime must not be submitted")) as first:
+        with Client("https://other-runtime.invalid") as second:
+            foreign = Context(second, {"id": "s.c"})
+            request = ObservationImpl(urn="", observable=observable_from_wire(observation["observable"]))
+            with pytest.raises(InvalidRequestError, match="different runtime"):
+                first.runtime.submit(request, foreign)
+            with pytest.raises(InvalidRequestError, match="context"):
+                first.runtime.submit(request, "session")
+
+
+def test_submit_same_runtime_rebinds_to_submitting_client(observation):
+    def handler(request):
+        if request.url.path == "/api/v1/submit":
+            return httpx.Response(200, json=2)
+        if "status" in request.url.path:
+            return httpx.Response(200, json={"status": "FINISHED"})
+        return httpx.Response(200, json=observation)
+    with make_client(handler) as current:
+        old = Client("https://runtime.invalid")
+        context = Context(old, {"id": "s.c"}).within(9)
+        old.close()
+        job = current.runtime.submit(ObservationImpl(urn="", observable=observable_from_wire(observation["observable"])), context)
+        result = job.result(1)
+        assert result._context.client is current
+        assert result._context.get_context_id() == "s.c.9"
+
+
+@pytest.mark.parametrize("value,expected", [("MEASURE", "QUANTIFICATION"),
+    ("QUANTIFICATION", "QUANTIFICATION"), ("INSTANTIATION", "INSTANTIATION"),
+    ("DETECTION", "DETECTION"), ("CATEGORIZATION", "CATEGORIZATION")])
+def test_remote_semantic_description_is_explicit_not_default(observation, value, expected):
+    payload = observation["observable"]
+    payload["contextualization"] = value
+    payload["semantics"]["contextualization"] = value
+    observable = observable_from_wire(payload)
+    assert observable.contextualization == value
+    assert observable.get_description_type().name == expected
+    assert observable.semantics.get_description_type().name == expected
+
+
+@pytest.mark.parametrize("value", [None, "SIMULATION", "FUTURE_ACTIVITY", "CLASSIFICATION"])
+def test_unrepresentable_legacy_description_is_unsupported(observation, value):
+    payload = observation["observable"]
+    payload["contextualization"] = value
+    observable = observable_from_wire(payload)
+    assert observable.contextualization == value
+    with pytest.raises(UnsupportedOperationError, match="legacy"):
+        observable.get_description_type()
+
+
+def test_local_descriptor_construction_is_preserved():
+    from klab_client import ConceptImpl, ObservableImpl
+    from klab_client.api.primitives import DescriptionType
+    concept = ConceptImpl("local:test")
+    observable = ObservableImpl(concept)
+    assert concept.get_description_type() is DescriptionType.INSTANTIATION
+    assert observable.get_description_type() is DescriptionType.INSTANTIATION
+
+
+def test_focus_rejects_same_context_id_on_another_runtime(observation):
+    with make_client(lambda r: pytest.fail("No request allowed")) as first:
+        with Client("https://other.invalid") as second:
+            result = observation_from_wire(observation, Context(second, {"id": "s.c"}))
+            with pytest.raises(InvalidRequestError, match="runtime"):
+                Context(first, {"id": "s.c"}).within(result)
+
+
+def test_missing_geometry_cannot_be_presented_as_scientific_data(observation):
+    observation.pop("geometry")
+    with make_client(lambda r: pytest.fail("Cannot guess missing geometry")) as client:
+        result = observation_from_wire(observation, Context(client, {"id": "s.c"}))
+        with pytest.raises(ProtocolError, match="geometry"):
+            result.fetch_data([0])
+
+
+@pytest.mark.parametrize("kind", ["context", "session"])
+def test_service_release_rejects_foreign_runtime_before_http(kind):
+    from klab_client import Session
+    with make_client(lambda r: pytest.fail("Foreign disposal must not make HTTP")) as first:
+        with Client("https://other-runtime.invalid") as second:
+            scope = Context(second, {"id": "s.c"}) if kind == "context" else Session(second, "s")
+            operation = first.runtime.release_context if kind == "context" else first.runtime.release_session
+            with pytest.raises(InvalidRequestError, match="different runtime"):
+                operation(scope)
+
+
+@pytest.mark.parametrize("kind", ["context", "session"])
+@pytest.mark.parametrize("raw", [False, True])
+def test_service_release_accepts_same_runtime_other_client_and_explicit_ids(kind, raw):
+    from klab_client import Session
+    calls = []
+    def handler(request):
+        calls.append(request.url.path)
+        assert request.headers["klab-scope"] == ("s.c" if kind == "context" else "s")
+        return httpx.Response(200, json=True)
+    with make_client(handler) as current:
+        old = Client("https://runtime.invalid/")
+        scope = Context(old, {"id": "s.c"}).within(8) if kind == "context" else Session(old, "s")
+        old.close()
+        operation = current.runtime.release_context if kind == "context" else current.runtime.release_session
+        if raw:
+            scope = scope.get_context_id() if kind == "context" else scope.id
+        assert operation(scope)
+    assert calls == ["/releaseContext" if kind == "context" else "/releaseSession"]

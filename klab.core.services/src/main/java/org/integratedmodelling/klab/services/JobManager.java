@@ -54,6 +54,9 @@ public class JobManager {
               job.cancellationRequested().get()
                   ? new CancellationException("Job was cancelled")
                   : failure;
+          if (storedFailure == null && result == null) {
+            storedFailure = new KlabResourceAccessException("Job completed without a result");
+          }
           if (storedFailure instanceof CancellationException || task.isCancelled()) {
             Logging.INSTANCE.info("Job " + description + " was cancelled");
           } else if (storedFailure != null) {
@@ -85,11 +88,11 @@ public class JobManager {
     if (result != null) {
       if (result.getSecond() instanceof CancellationException) {
         ret.setStatus(Scope.Status.INTERRUPTED);
-      } else if (result.getFirst() != null) {
-        ret.setStatus(Scope.Status.FINISHED);
       } else if (result.getSecond() != null) {
         ret.setStatus(Scope.Status.ABORTED);
         ret.setStackTrace(Utils.Exceptions.stackTrace(result.getSecond()));
+      } else {
+        ret.setStatus(Scope.Status.FINISHED);
       }
       return ret;
     }

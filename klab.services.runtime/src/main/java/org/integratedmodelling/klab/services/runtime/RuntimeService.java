@@ -2702,10 +2702,21 @@ public class RuntimeService extends BaseService
 
   @Override
   public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
-    // TODO for now we just return the existing. Later we should create it if the user is enabled
+    if (configuration == null || configuration.getId() == null || userScope == null) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException("Context connection requires an identity and context ID");
+    }
     var scope = getScopeManager().getScope(configuration.getId(), ContextScope.class);
+    if (scope != null && getConfiguration(configuration.getId(), userScope) == null) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context is not accessible to the requesting user");
+    }
     if (scope == null) {
-      scope = reconstructContext(configuration, userScope);
+      // Context enumeration/federation membership is not authority. Check the
+      // persisted owner and ACL by ID before reconstructing any mutable scope.
+      var persisted = knowledgeGraph.getAuthorizedConfiguration(configuration.getId(), userScope);
+      if (persisted == null) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabResourceNotFoundException("Context is absent or not accessible");
+      }
+      scope = reconstructContext(persisted, userScope);
     }
     return scope instanceof ServiceContextScope serviceScope
         ? prepareObserverConnection(serviceScope, userScope) : scope;
@@ -2750,7 +2761,8 @@ public class RuntimeService extends BaseService
   @Override
   public DigitalTwin.Configuration getConfiguration(String scopeId, UserScope scope) {
     var contextScope = getScopeManager().getScope(scopeId, ContextScope.class);
-    if (contextScope == null || scope == null) {
+    if (contextScope == null || scope == null || scope.getUser() == null
+        || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) {
       return null;
     }
 
@@ -2759,7 +2771,8 @@ public class RuntimeService extends BaseService
     var owner = configuration.getOwner();
     var accessRights = configuration.getAccessRights();
     if ((owner != null && owner.equals(requestingUser.getUsername()))
-        || (accessRights != null && accessRights.checkAuthorization(scope))) {
+        || (accessRights != null && accessRights.checkAuthorization(
+            requestingUser.getUsername(), requestingUser.getGroups()))) {
       return configuration;
     }
 
@@ -2806,6 +2819,10 @@ public class RuntimeService extends BaseService
         serviceSession.setStatus(Scope.Status.WAITING);
         serviceSession.setId(sessionId);
         serviceSession.setName(sessionId);
+        // A collaborator may restore a shared context first. The parent's
+        // authority must remain with its persisted owner, not that collaborator.
+        serviceSession.getData().put(org.integratedmodelling.klab.services.scopes.ScopeManager.PERSISTED_SESSION_OWNER,
+            configuration.getOwner());
         serviceSession.setHostServiceId(serviceId());
         for (var service : userScope.getServices(KlabService.class)) {
           serviceSession.addService(service);

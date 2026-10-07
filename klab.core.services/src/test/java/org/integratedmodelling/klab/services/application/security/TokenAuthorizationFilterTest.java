@@ -38,4 +38,39 @@ class TokenAuthorizationFilterTest {
     verify(response).setStatus(401);
     verifyNoInteractions(chain);
   }
+
+  @Test void authenticatedUnresolvedExplicitScopeReturns404BeforeController() throws Exception {
+    var manager = mock(ServiceAuthorizationManager.class);
+    var filter = new TokenAuthorizationFilter(mock(AuthenticationManager.class), manager);
+    var request = mock(HttpServletRequest.class);
+    var response = mock(HttpServletResponse.class);
+    var chain = mock(FilterChain.class);
+    var token = mock(EngineAuthorization.class);
+    when(request.getHeader("Authorization")).thenReturn("issued-token");
+    when(request.getHeader(org.integratedmodelling.klab.api.ServicesAPI.SCOPE_HEADER)).thenReturn("s.c");
+    when(manager.validateToken(eq("issued-token"), anyMap())).thenReturn(token);
+    when(token.isAuthenticated()).thenReturn(true);
+    SecurityContextHolder.getContext().setAuthentication(mock(EngineAuthorization.class));
+    filter.doFilterInternal(request, response, chain);
+    verify(response).setStatus(404);
+    verifyNoInteractions(chain);
+    org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+  }
+
+  @Test void authenticatedResolvedScopeContinuesToController() throws Exception {
+    var manager = mock(ServiceAuthorizationManager.class);
+    var filter = new TokenAuthorizationFilter(mock(AuthenticationManager.class), manager);
+    var request = mock(HttpServletRequest.class);
+    var response = mock(HttpServletResponse.class);
+    var chain = mock(FilterChain.class);
+    var token = mock(EngineAuthorization.class);
+    when(request.getHeader("Authorization")).thenReturn("issued-token");
+    when(request.getHeader(org.integratedmodelling.klab.api.ServicesAPI.SCOPE_HEADER)).thenReturn("s.c");
+    when(manager.validateToken(eq("issued-token"), anyMap())).thenReturn(token);
+    when(token.isAuthenticated()).thenReturn(true);
+    when(token.getScope()).thenReturn(mock(org.integratedmodelling.klab.api.scope.ContextScope.class));
+    filter.doFilterInternal(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verifyNoInteractions(response);
+  }
 }

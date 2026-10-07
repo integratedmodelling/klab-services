@@ -43,6 +43,25 @@ import org.integratedmodelling.klab.services.application.security.Role;
  * for resource maintenance and session expiration is here.
  */
 public class ScopeManager {
+  public static final String PERSISTED_SESSION_OWNER = "klab.session.persisted-owner";
+
+  static boolean allowsManagedScope(ServiceUserScope managed, UserScope requester) {
+    if (requester == null || requester.getUser() == null) return false;
+    String username = requester.getUser().getUsername();
+    if (username == null || username.isBlank()) return false;
+    if (managed instanceof ContextScope context) {
+      var configuration = context.getConfiguration();
+      String owner = configuration == null ? null : configuration.getOwner();
+      if (owner == null && managed.getUser() != null) owner = managed.getUser().getUsername();
+      return Objects.equals(owner, username) || (configuration != null
+          && configuration.getAccessRights() != null
+          && configuration.getAccessRights().checkAuthorization(username, requester.getUser().getGroups()));
+    }
+    Object restoredOwner = managed.getData().get(PERSISTED_SESSION_OWNER);
+    String owner = restoredOwner instanceof String persisted ? persisted
+        : managed.getUser() == null ? null : managed.getUser().getUsername();
+    return owner != null && Objects.equals(owner, username);
+  }
 
   //  private ReActorSystem actorSystem = null;
   private KlabService service;
@@ -531,6 +550,10 @@ public class ScopeManager {
 
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
+        if (!allowsManagedScope(ret, userScope)) {
+          throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+              "Scope is not accessible to the requesting user");
+        }
 
         if (scopeData.type() == Scope.Type.CONTEXT
             && !ret.getUser().getUsername().equals(userScope.getUser().getUsername())) {
