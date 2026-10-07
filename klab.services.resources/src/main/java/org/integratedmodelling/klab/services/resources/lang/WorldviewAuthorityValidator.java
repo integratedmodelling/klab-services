@@ -19,6 +19,8 @@ public final class WorldviewAuthorityValidator {
     var bindings = new LinkedHashMap<String, Worldview.AuthorityBinding>();
     var seen = new HashSet<String>();
     var conflicts = new HashSet<String>();
+    var namespaces = new HashSet<String>();
+    worldview.getOntologies().forEach(o -> namespaces.add(o.getUrn()));
     for (var statement : worldview.allConceptStatements()) {
       String name = statement.getAuthorityRequired();
       if (name == null) continue;
@@ -34,6 +36,17 @@ public final class WorldviewAuthorityValidator {
           throw new IllegalArgumentException("Authority root must be a valid identity concept");
         var request = new Authority.ConfigurationRequest(worldview.getUrn(), name, root,
             statement.getAuthorityParameters());
+        if (request.parameters().containsKey("codelists")) {
+          if (!(request.parameters().get("codelists") instanceof Map<?, ?> lists))
+            throw new IllegalArgumentException("codelists must map provider IDs to local namespaces");
+          for (var entry : lists.entrySet()) {
+            if (!(entry.getKey() instanceof String id) || id.isBlank()
+                || !(entry.getValue() instanceof String namespace)
+                || !namespace.matches("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*"))
+              throw new IllegalArgumentException("Invalid codelist namespace binding");
+            if (!namespaces.add(namespace)) throw new IllegalArgumentException("Conflicting codelist namespace " + namespace);
+          }
+        }
         String urn = (String) request.parameters().get("urn");
         org.integratedmodelling.klab.api.collections.Pair<String, Version> coordinates;
         try { coordinates = Version.splitVersion(urn); }

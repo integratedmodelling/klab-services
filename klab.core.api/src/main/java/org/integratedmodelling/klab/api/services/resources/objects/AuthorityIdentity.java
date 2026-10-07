@@ -11,6 +11,10 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public class AuthorityIdentity implements Authority.Identity {
 
 	private List<String> parentRelationships = new ArrayList<>();
+  private List<String> aliases = new ArrayList<>();
+  /** Approved worldview-local names for this canonical authority identity. */
+  public List<String> getAliases() { return aliases; }
+  public void setAliases(List<String> aliases) { this.aliases = aliases == null ? List.of() : List.copyOf(aliases); }
 	private String id;
 	private String conceptName;
 	private List<String> parentIds;

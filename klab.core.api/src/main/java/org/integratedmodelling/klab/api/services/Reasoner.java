@@ -23,6 +23,11 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 public interface Reasoner extends KlabService {
 
   /** Authenticated provider search; failures are explicit statuses, never empty successful results. */
+  default org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse authorityCodelists(
+      org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest request, Scope scope) {
+    throw new UnsupportedOperationException("Authority codelists are unavailable");
+  }
+
   default org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse searchAuthority(
       org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {
     throw new UnsupportedOperationException("Authority search is not supported");

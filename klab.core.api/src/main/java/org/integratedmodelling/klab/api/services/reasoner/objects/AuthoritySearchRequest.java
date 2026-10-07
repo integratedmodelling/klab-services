@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.services.reasoner.objects;
 
-/** Search a configured local binding. The optional filter is an advertised search-only subdivision.
+/** Search a configured local binding. The optional filter is a configured codelist namespace or an advertised search-only subdivision.
  * Offset/limit page the provider-returned list, not an exhaustive remote catalog. Providers may
  * change ordering between requests. Query length is 1..256, limit 1..100, offset 0..10000. */
 public record AuthoritySearchRequest(String authority, String query, String filter, int offset, int limit) {

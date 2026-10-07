@@ -34,6 +34,7 @@ class CachedAuthorityTest {
   private static final class Provider implements Authority {
     int configurations, lookups, searches, matches, releases;
     boolean fail, diagnostics;
+    String codelistConfiguration;
     CachePolicy policy = new CachePolicy("1", 10, 10, 10);
     ConfigurationRequest request;
     @Override public String getUrn() { return "test.authority"; }
@@ -65,7 +66,17 @@ class CachedAuthorityTest {
     @Override public Identity reconcile(String config, Map<String,String> fields) { matches++; return identity("A"); }
     @Override public Capabilities getCapabilities() { return null; }
     @Override public Map<String,Codelist> getCodelists() { return Map.of(); }
+    @Override public Map<String,Codelist> getCodelists(String id) { codelistConfiguration = id; return Map.of(); }
     @Override public Authority subAuthority(String catalog) { return this; }
+  }
+
+  @Test void codelistsReceiveProviderConfigurationRatherThanCacheKey() {
+    var provider = new Provider();
+    var cached = new CachedAuthority(provider, directory);
+    String id = cached.configure(request());
+    cached.getCodelists(id);
+    assertEquals("session-1", provider.codelistConfiguration);
+    assertThrows(IllegalArgumentException.class, () -> cached.getCodelists("unconfigured"));
   }
 
   @Test void persistsIdentitiesSearchAndReconciliationAcrossRestartWithStableBridgeId() {

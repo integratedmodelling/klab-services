@@ -19,6 +19,9 @@ import org.integratedmodelling.languages.validation.ReasoningValidationScope;
 public class WorldviewValidationScope extends BasicObservableValidationScope
     implements ReasoningValidationScope {
 
+  private final Set<String> authorityCodelistNamespaces = new HashSet<>();
+  private final java.util.Map<String, Set<String>> codelistOwners = new java.util.HashMap<>();
+
   public WorldviewValidationScope() {}
 
   @Override
@@ -28,6 +31,12 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
       var parts = name.split(":", 2);
       return new ConceptDescriptor(parts[0], parts[1], SemanticSyntax.Type.IDENTITY,
           "Authority identity", "", false, false);
+    }
+    if (name != null && name.contains(":")) {
+      var parts = name.split(":", 2);
+      if (authorityCodelistNamespaces.contains(parts[0]))
+        return new ConceptDescriptor(parts[0], parts[1], SemanticSyntax.Type.IDENTITY,
+            "Authority codelist identity; approval is checked by the Reasoner", "", false, false);
     }
     return super.getConceptDescriptor(name);
   }
@@ -47,11 +56,16 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
     synchronized (conceptTypes) {
       isolated.conceptTypes.putAll(conceptTypes);
     }
+    isolated.authorityCodelistNamespaces.addAll(authorityCodelistNamespaces);
+    codelistOwners.forEach((owner, names) -> isolated.codelistOwners.put(owner, new HashSet<>(names)));
     isolated.clearNamespace(namespace);
     return isolated;
   }
 
   public void clearNamespace(String namespace) {
+    codelistOwners.remove(namespace);
+    authorityCodelistNamespaces.clear();
+    codelistOwners.values().forEach(authorityCodelistNamespaces::addAll);
     Set<String> keys = new HashSet<>();
     String ns = namespace + ":";
     for (var concept : conceptTypes.keySet()) {
@@ -130,6 +144,12 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
   }
 
   private void loadConcepts(KimConceptStatement statement, String namespace) {
+    if (statement.getAuthorityRequired() != null && statement.getAuthorityParameters() != null
+        && statement.getAuthorityParameters().get("codelists") instanceof java.util.Map<?, ?> names)
+      for (var value : names.values()) if (value instanceof String name) {
+        authorityCodelistNamespaces.add(name);
+        codelistOwners.computeIfAbsent(namespace, key -> new HashSet<>()).add(name);
+      }
     String defaultLabel = namespace + ":" + statement.getUrn();
     ConceptDescriptor descriptor =
         new ConceptDescriptor(

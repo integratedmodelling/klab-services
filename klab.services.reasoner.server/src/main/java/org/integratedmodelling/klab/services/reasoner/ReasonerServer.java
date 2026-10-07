@@ -27,6 +27,8 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
   protected void configureWebUi(WebUiConfiguration.Builder dashboard) {
     dashboard
         .subtitle("Semantic knowledge and reasoning at a glance")
+        .page("authority-codelists", "Authority codelists", "Review community proposals and approved aliases.",
+            "authority-codelists", 110, true)
         .panel(
             "reasoner-overview",
             "Reasoner workspace",

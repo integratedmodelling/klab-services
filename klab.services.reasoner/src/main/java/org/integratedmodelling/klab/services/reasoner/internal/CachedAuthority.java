@@ -38,6 +38,7 @@ public final class CachedAuthority implements Authority {
   @Override public Capabilities getCapabilities() { return source.getCapabilities(); }
   @Override public CachePolicy getCachePolicy() { return source.getCachePolicy(); }
   @Override public Map<String, Codelist> getCodelists() { return source.getCodelists(); }
+  @Override public synchronized Map<String, Codelist> getCodelists(String id) { check(id); return source.getCodelists(providerId); }
 
   @Override public synchronized String configure(ConfigurationRequest request) {
     if (this.request != null) {
@@ -218,6 +219,7 @@ public final class CachedAuthority implements Authority {
     @Override public Capabilities getCapabilities() { return delegate.getCapabilities(); }
     @Override public CachePolicy getCachePolicy() { return delegate.getCachePolicy(); }
     @Override public Map<String, Codelist> getCodelists() { return delegate.getCodelists(); }
+    @Override public Map<String, Codelist> getCodelists(String id) { check(id); return delegate.getCodelists(providerId); }
     @Override public String configure(ConfigurationRequest request) { return CachedAuthority.this.configure(request); }
     @Override public void releaseConfiguration(String id) { CachedAuthority.this.releaseConfiguration(id); }
     @Override public Identity resolveIdentity(String id, String identity) {

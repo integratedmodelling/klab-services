@@ -22,6 +22,8 @@ public final class AuthorityIdentityResolver {
   }
 
   public synchronized Concept resolve(String name, String id) {
+    var alias = bindings.alias(name, id);
+    if (alias != null) return resolve(alias[0], alias[1]);
     var binding = bindings.find(name);
     if (binding == null) return null;
     // Search-only subdivisions share the base binding's cache, ontology and canonical locator.

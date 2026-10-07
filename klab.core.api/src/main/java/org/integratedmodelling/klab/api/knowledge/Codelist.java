@@ -3,16 +3,14 @@ package org.integratedmodelling.klab.api.knowledge;
 import java.util.Collection;
 
 /**
- * A list to match statistical codelists that haven't yet made into classifications worth of being
- * an officially endorsed authority, through a dedicated authority builder. Codelists can be
- * included in and referenced from resources or extracted from annotations. A codelist may be
- * promoted to an authority.
+ * A portable mapping of codes to k.LAB values. Keys may be strings or numbers; values may
+ * be concepts or other supported transport objects. Multiple keys may denote the same value,
+ * with one preferred key for reverse lookup. Code-only lists may omit values.
  *
- * <p>In a codelist, there may be no values associated with keys (the string codes are all it
- * provides), or the modeler may associate values of a k.LAB-compatible artifact type. In that case,
- * the mapping admits multiple keys to point to the same value, but not the other way around: when
- * looking up the key for a value, the answer must be crisp, so a "preferential" key must be
- * identified in a two-way table.
+ * <p>Authority-owned lists use string concept identifiers as keys and canonical provider codes
+ * as values. Their worldview-local namespace is configured separately. These are aliases for
+ * existing authority identities, not additional ontology declarations. Proposal state is carried
+ * separately; published lists contain only approved mappings.
  *
  * @author Ferd
  */
@@ -65,8 +63,7 @@ public interface Codelist extends KlabAsset {
   boolean isAuthority();
 
   /**
-   * If the codelist depends on a worldview, return true. Worldview-dependent codelists should be as
-   * few as possible and ideally should not exist.
+   * Stable worldview identifier when this list depends on a worldview, otherwise null.
    *
    * @return
    */

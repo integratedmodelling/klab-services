@@ -12,6 +12,7 @@ public final class AuthorityBindings {
 
   private final Map<String, Binding> bindings = new LinkedHashMap<>();
   private final java.nio.file.Path cacheRoot;
+  private final Map<String, AuthorityCodelists> codelists = new LinkedHashMap<>();
 
   /** Without a cache root, use providers directly (e.g. isolated unit tests). */
   public AuthorityBindings() { this.cacheRoot = null; }
@@ -48,7 +49,15 @@ public final class AuthorityBindings {
     String id = hosted.configure(request);
     if (id == null || id.isBlank())
       throw new KlabValidationException("Authority returned an empty configuration ID: " + request.name());
-    bindings.put(request.name(), new Binding(request, hosted, id));
+    var binding = new Binding(request, hosted, id);
+    try {
+      var lists = new AuthorityCodelists(binding, cacheRoot == null ? null : cacheRoot.resolveSibling("authority-codelists"));
+      for (var existing : codelists.values())
+        for (var namespace : lists.namespaces())
+          if (existing.namespaces().contains(namespace)) throw new KlabValidationException("Duplicate codelist namespace " + namespace);
+      codelists.put(request.name(), lists);
+      bindings.put(request.name(), binding);
+    } catch (RuntimeException failure) { hosted.releaseConfiguration(id); throw failure; }
     return id;
   }
 
@@ -61,17 +70,21 @@ public final class AuthorityBindings {
         .failure(status, "Authority is not configured");
     try {
       var capabilities = binding.provider().getCapabilities();
-      if (capabilities == null || !capabilities.isSearchable())
+      var lists = codelists.get(request.authority());
+      boolean searchable = capabilities != null && capabilities.isSearchable();
+      if (!searchable && (lists == null || lists.namespaces().isEmpty()))
         return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
             org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNSUPPORTED,
             "This authority does not support search");
-      if (request.filter() != null && (!capabilities.areSubAuthoritiesSearchFilters()
+      boolean listFilter = lists != null && request.filter() != null && lists.namespaces().contains(request.filter());
+      if (request.filter() != null && !listFilter && (capabilities == null || !capabilities.areSubAuthoritiesSearchFilters()
           || capabilities.getSubAuthorities() == null || capabilities.getSubAuthorities().stream()
               .noneMatch(pair -> request.filter().equals(pair.getFirst()))))
         return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
             org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNSUPPORTED,
             "The authority does not advertise this search filter");
-      var found = binding.provider().search(request.query(), request.filter(), binding.id());
+      var found = (listFilter || !searchable) ? new java.util.ArrayList<Authority.Identity>()
+          : binding.provider().search(request.query(), request.filter(), binding.id());
       if (found == null) throw new IllegalStateException("Provider returned no search response");
       var unique = new java.util.LinkedHashMap<String, Authority.Identity>();
       for (var identity : found) {
@@ -79,12 +92,39 @@ public final class AuthorityBindings {
           throw new IllegalStateException("Provider returned an invalid candidate");
         unique.putIfAbsent(identity.getId(), identity);
       }
+      if (request.filter() == null) {
+        try {
+          var exact = binding.provider().resolveIdentity(binding.id(), request.query());
+          if (exact != null && exact.getId() != null
+              && !org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(exact.getNotifications()))
+            unique.putIfAbsent(exact.getId(), exact);
+        } catch (RuntimeException ignored) { /* A free-text query need not be a valid authority code. */ }
+      }
+      var aliases = new java.util.LinkedHashMap<String, java.util.List<String>>();
+      if (lists != null) {
+        String query = request.query().toLowerCase(java.util.Locale.ROOT);
+        for (var entry : lists.snapshot().codelists().entrySet()) {
+          for (var alias : entry.getValue().codes()) {
+            String code = (String) entry.getValue().value(alias);
+            aliases.computeIfAbsent(code, key -> new java.util.ArrayList<>()).add(entry.getKey() + ":" + alias);
+            if (listFilter && !entry.getKey().equals(request.filter())) continue;
+            if (request.filter() != null && !listFilter) continue;
+            var identity = binding.provider().resolveIdentity(binding.id(), code);
+            if (identity == null || org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(identity.getNotifications())) continue;
+            if ((entry.getKey() + ":" + alias).toLowerCase(java.util.Locale.ROOT).contains(query)
+                || code.toLowerCase(java.util.Locale.ROOT).contains(query)
+                || (identity.getLabel() != null && identity.getLabel().toLowerCase(java.util.Locale.ROOT).contains(query)))
+              unique.putIfAbsent(identity.getId(), identity);
+          }
+        }
+      }
       var candidates = new java.util.ArrayList<>(unique.values());
       int from = Math.min(request.offset(), candidates.size());
       int end = Math.min(from + request.limit(), candidates.size());
       var matches = new java.util.ArrayList<org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity>();
       for (var identity : candidates.subList(from, end)) {
         var copy = new org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity();
+        copy.setAliases(aliases.getOrDefault(identity.getId(), java.util.List.of()));
         copy.setId(identity.getId()); copy.setAuthorityName(binding.request().name());
         copy.setLocator(org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax
             .encode(binding.request().name(), identity.getId()));
@@ -107,6 +147,29 @@ public final class AuthorityBindings {
           org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.FAILED,
           "Authority provider search failed");
     }
+  }
+
+  public synchronized AuthorityCodelists codelists(String authority) {
+    var ret = codelists.get(authority);
+    if (ret == null) throw new java.util.NoSuchElementException("Authority is not configured");
+    return ret;
+  }
+
+  public synchronized Map<String, Long> codelistRevisions() {
+    var ret = new LinkedHashMap<String, Long>();
+    codelists.forEach((name, lists) -> ret.put(name, lists.revision()));
+    return Map.copyOf(ret);
+  }
+
+  public synchronized String[] alias(String namespace, String code) {
+    for (var entry : codelists.entrySet()) {
+      if (entry.getValue().namespaces().contains(namespace)) {
+        String canonical = entry.getValue().resolve(namespace, code);
+        if (canonical == null) throw new KlabValidationException("Unknown or unapproved codelist alias " + namespace + ":" + code);
+        return new String[] {entry.getKey(), canonical};
+      }
+    }
+    return null;
   }
 
   public synchronized Binding get(String name) { return bindings.get(name); }
@@ -134,6 +197,8 @@ public final class AuthorityBindings {
   public synchronized Map<String, java.net.URL> documentation(String name, String id) {
     if (name == null || name.isBlank() || id == null || id.isBlank())
       throw new IllegalArgumentException("Authority name and identity ID are required");
+    var alias = alias(name, id);
+    if (alias != null) { name = alias[0]; id = alias[1]; }
     var binding = find(name);
     if (binding == null) throw new java.util.NoSuchElementException("Authority is not configured");
     var identity = binding.provider().resolveIdentity(binding.id(), id);
@@ -158,6 +223,7 @@ public final class AuthorityBindings {
     while (iterator.hasNext()) {
       var binding = iterator.next();
       if (binding.request().rootIdentity().startsWith(namespace + ":")) {
+        codelists.remove(binding.request().name());
         iterator.remove();
         binding.provider().releaseConfiguration(binding.id());
       }
@@ -167,6 +233,7 @@ public final class AuthorityBindings {
   public synchronized void clear() {
     var previous = new java.util.ArrayList<>(bindings.values());
     bindings.clear();
+    codelists.clear();
     RuntimeException failure = null;
     for (var binding : previous) {
       try { binding.provider().releaseConfiguration(binding.id()); }

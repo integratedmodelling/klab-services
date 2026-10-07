@@ -39,6 +39,23 @@ class WorldviewAuthorityValidatorTest {
     worldview.getOntologies().add(ontology);
     return worldview;
   }
+  @Test void codelistNamespacesHaveIdentitySyntaxAndCannotShadowOntologies() {
+    var root = statement("TAXA", "Identity");
+    root.getAuthorityParameters().put("codelists", Map.of("species", "taxonomy.species"));
+    var worldview = worldview(root);
+    WorldviewAuthorityValidator.validate(worldview, List.of(component("taxa")));
+    assertEquals(1, worldview.getAuthorityBindings().size());
+    var scope = new WorldviewValidationScope(worldview);
+    assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.IDENTITY,
+        scope.getConceptDescriptor("taxonomy.species:FelisCatus").mainType());
+    scope.clearNamespace("test");
+    assertNotEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.IDENTITY,
+        scope.getConceptDescriptor("taxonomy.species:FelisCatus").mainType());
+    root.getAuthorityParameters().put("codelists", Map.of("species", "test"));
+    WorldviewAuthorityValidator.validate(worldview, List.of(component("taxa")));
+    assertTrue(worldview.getAuthorityBindings().isEmpty());
+  }
+
   @Test void nestedDeclarationCarriesSelectedDescriptorAndLocationWithoutParameters() {
     var parent = statement(null, "Parent");
     var child = statement("TAXA", "Species");

@@ -11,9 +11,8 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Codelist;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 
-/** Portable implementation used for codelists derived by a Resources service. */
+/** Portable string/numeric codelist, including legacy concept annotations and authority aliases. */
 public class CodelistImpl implements Codelist {
 
   @Serial private static final long serialVersionUID = 1L;
@@ -23,15 +22,15 @@ public class CodelistImpl implements Codelist {
     @Serial private static final long serialVersionUID = 1L;
 
     private String authorityId;
-    private Long code;
-    private KimConcept value;
+    private Object code;
+    private Object value;
     private String description;
     private boolean preferred = true;
 
     public Entry() {}
 
     public Entry(
-        String authorityId, Long code, KimConcept value, String description, boolean preferred) {
+        String authorityId, Object code, Object value, String description, boolean preferred) {
       this.authorityId = authorityId;
       this.code = code;
       this.value = value;
@@ -47,19 +46,20 @@ public class CodelistImpl implements Codelist {
       this.authorityId = authorityId;
     }
 
-    public Long getCode() {
+    public Object getCode() {
+      if (code instanceof Byte || code instanceof Short || code instanceof Integer) return ((Number) code).longValue();
       return code;
     }
 
-    public void setCode(Long code) {
+    public void setCode(Object code) {
       this.code = code;
     }
 
-    public KimConcept getValue() {
+    public Object getValue() {
       return value;
     }
 
-    public void setValue(KimConcept value) {
+    public void setValue(Object value) {
       this.value = value;
     }
 
@@ -133,6 +133,7 @@ public class CodelistImpl implements Codelist {
   @Override
   public Collection<String> getAuthorityIds() {
     var result = new LinkedHashSet<String>();
+    if (authorityId != null) result.add(authorityId);
     for (var entry : entries) result.add(entry.getAuthorityId());
     return List.copyOf(result);
   }
@@ -282,7 +283,16 @@ public class CodelistImpl implements Codelist {
     this.entries = entries;
   }
 
-  private static boolean sameCode(Long expected, Object key) {
+  private static boolean sameCode(Object expected, Object key) {
+    if (!(expected instanceof Number)) return Objects.equals(expected, key);
+    // Keep legacy exact integral comparisons, including Jackson's Integer/Long coercion.
+    Long integral;
+    try { integral = new java.math.BigDecimal(expected.toString()).longValueExact(); }
+    catch (NumberFormatException | ArithmeticException e) { return Objects.equals(expected, key); }
+    return sameIntegralCode(integral, key);
+  }
+
+  private static boolean sameIntegralCode(Long expected, Object key) {
     if (!(key instanceof Number number)) return false;
     try {
       if (number instanceof java.math.BigInteger integer)

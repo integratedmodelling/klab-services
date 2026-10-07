@@ -400,6 +400,10 @@ public class OWL {
 
       } else {
 
+        if (authorityResolver != null) {
+          result = authorityResolver.apply(st.getNamespace(), st.getName());
+          if (result != null) return result;
+        }
         Ontology o = ontologies.get(st.getNamespace());
         if (o == null) {
           OWLClass systemConcept = this.systemConcepts.get(st.toString());

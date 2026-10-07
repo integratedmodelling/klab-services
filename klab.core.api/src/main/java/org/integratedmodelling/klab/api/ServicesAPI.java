@@ -223,6 +223,8 @@ public interface ServicesAPI {
    * @author ferd
    */
   interface REASONER {
+    String AUTHORITY_CODELISTS = API_BASE + "/authority/codelists";
+
     String AUTHORITY_SEARCH = API_BASE + "/authority/search";
 
     String CONFIGURE_AUTHORITY = API_BASE + "/authority/configure";

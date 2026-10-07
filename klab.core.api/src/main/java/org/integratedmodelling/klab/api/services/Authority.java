@@ -21,7 +21,9 @@ public interface Authority {
         throw new IllegalArgumentException("A root identity concept URN is required");
       if (parameters == null || !(parameters.get("urn") instanceof String urn) || urn.isBlank())
         throw new IllegalArgumentException("A nonblank string urn parameter is required");
-      parameters = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(parameters));
+      var copy = new java.util.LinkedHashMap<>(parameters);
+      if (copy.get("codelists") instanceof Map<?, ?> lists) copy.put("codelists", Map.copyOf(lists));
+      parameters = java.util.Collections.unmodifiableMap(copy);
     }
   }
 
@@ -266,7 +268,10 @@ public interface Authority {
    *
    * @return
    */
-  Map<String, Codelist> getCodelists();
+  default Map<String, Codelist> getCodelists() { return Map.of(); }
+
+  /** Provider-local list IDs and seed data for one configured bridge. Never a mutable service store. */
+  default Map<String, Codelist> getCodelists(String configurationId) { return getCodelists(); }
 
   /**
    * If the authority has lower-level subcatalogs, return the singleton that will handle the catalog

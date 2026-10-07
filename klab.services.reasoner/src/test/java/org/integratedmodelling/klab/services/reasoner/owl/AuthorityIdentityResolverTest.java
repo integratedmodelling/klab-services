@@ -24,6 +24,30 @@ class AuthorityIdentityResolverTest {
     @Override public synchronized void flushReasoner() {}
   }
 
+  @Test void codelistAliasesReuseCanonicalConceptWithoutAddingAxioms() {
+    var owl = new TestOWL();
+    owl.requireOntology("biology").define(List.of(Axiom.ClassAssertion("Species", EnumSet.of(SemanticType.IDENTITY))));
+    var provider = mock(Authority.class);
+    var seed = new org.integratedmodelling.klab.api.knowledge.impl.CodelistImpl();
+    seed.getEntries().add(new org.integratedmodelling.klab.api.knowledge.impl.CodelistImpl.Entry(
+        "TAXA", "DomesticCat", "Cat", null, true));
+    var request = new Authority.ConfigurationRequest("worldview", "TAXA", "biology:Species",
+        Map.of("urn", "test.authority", "codelists", Map.of("species", "taxonomy.species")));
+    when(provider.configure(request)).thenReturn("bridge");
+    when(provider.getCodelists("bridge")).thenReturn(Map.of("species", seed));
+    var cat = identity("Cat", null);
+    when(provider.resolveIdentity("bridge", "Cat")).thenReturn(cat);
+    var bindings = new AuthorityBindings(); bindings.configure(request, provider);
+    var resolver = new AuthorityIdentityResolver(owl, bindings); owl.setAuthorityResolver(resolver::resolve);
+    var canonical = owl.getConcept("TAXA:[Cat]");
+    var ontology = owl.getOntology(canonical.getNamespace()).getOWLOntology();
+    long axioms = ontology.getAxiomCount();
+    assertSame(canonical, owl.getConcept("taxonomy.species:DomesticCat"));
+    assertEquals(axioms, ontology.getAxiomCount());
+    assertNull(owl.getOntology("taxonomy.species"));
+    assertThrows(KlabValidationException.class, () -> owl.getConcept("taxonomy.species:PendingCat"));
+  }
+
   @Test void owlDispatchPreservesBracketPayloadAndEmbeddedColons() {
     var owl = new TestOWL();
     var seen = new java.util.concurrent.atomic.AtomicReference<String>();

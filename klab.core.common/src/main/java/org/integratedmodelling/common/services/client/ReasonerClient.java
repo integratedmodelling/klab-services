@@ -118,6 +118,13 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse authorityCodelists(
+      org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest request, Scope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.REASONER.AUTHORITY_CODELISTS, request,
+        org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse.class);
+  }
+
+  @Override
   public String configureAuthority(
       org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest request,
       Scope scope) {

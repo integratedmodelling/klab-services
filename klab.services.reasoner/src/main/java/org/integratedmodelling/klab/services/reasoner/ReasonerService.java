@@ -151,6 +151,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       authorityBindings;
 
   @Override
+  public synchronized org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse authorityCodelists(
+      org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest request, Scope scope) {
+    authorizedAuthority(request.authority(), scope);
+    var operation = request.operation();
+    if (operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.REVIEW
+        || operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.DELETE
+        || operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.CREATE
+        || operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.UPDATE) {
+      if (!(scope instanceof org.integratedmodelling.klab.services.scopes.ServiceUserScope user)
+          || !user.getRoles().contains(org.integratedmodelling.klab.services.application.security.Role.ROLE_ADMINISTRATOR))
+        throw new SecurityException("Codelist review requires an administrator");
+    }
+    var result = authorityBindings.codelists(request.authority()).execute(request, scope.getIdentity().getId());
+    if (operation != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.LIST) {
+      concepts.invalidateAll(); observables.invalidateAll();
+    }
+    return result;
+  }
+
+  @Override
   public synchronized String configureAuthority(Authority.ConfigurationRequest request, Scope scope) {
     return configureAuthorityBinding(request, scope);
   }
@@ -181,9 +201,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {
     try {
       var definition = authorizedAuthority(request.authority(), scope);
-      if (!definition.provider().searchable()) return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
-          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNSUPPORTED,
-          "This authority does not advertise search");
       return authorityBindings.search(request);
     } catch (java.util.NoSuchElementException e) {
       return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
@@ -210,6 +227,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return new SemanticSearchSession.AuthoritySelection(concept, token);
   }
 
+  private static String requestRoot(KimConceptStatement statement) {
+    return statement.getNamespace() + ":" + statement.getUrn();
+  }
+
   private String configureAuthorityBinding(Authority.ConfigurationRequest request, Scope scope) {
     request = org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
         .forWorldview(request, worldview);
@@ -224,9 +245,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         || !org.integratedmodelling.klab.api.data.Version.splitVersion(urn).getFirst()
             .equals(selected.provider().urn()))
       throw new KlabValidationException("Authority is not a validated worldview binding");
+    var declared = worldview.allConceptStatements().stream()
+        .filter(statement -> localName.equals(statement.getAuthorityRequired())
+            && requestRoot(statement).equals(selected.rootIdentity())).findFirst().orElseThrow();
+    if (!Objects.equals(declared.getAuthorityParameters().get("codelists"), request.parameters().get("codelists")))
+      throw new KlabValidationException("Codelists must match the worldview configuration");
     var provider = Utils.Resources.resolveAuthority(selected, scope, this, worldview);
     if (provider == null)
       throw new KlabValidationException("Authority provider is unavailable: " + urn);
+    if (request.parameters().get("codelists") instanceof Map<?, ?> names) {
+      for (var namespace : names.values())
+        if (worldview.getOntologies().stream().anyMatch(o -> o.getUrn().equals(namespace)))
+          throw new KlabValidationException("Codelist namespace collides with an ontology: " + namespace);
+    }
     return authorityBindings.configure(request, provider);
   }
   private volatile boolean knowledgeReady;
@@ -737,6 +768,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public ServiceStatus status() {
     var ret = super.status();
+    ret.getMetadata().put("authority.codelist.revisions", authorityBindings.codelistRevisions());
     ret.getAdvisories().addAll(this.advisories);
     ret.getAdvisories().addAll(this.worldviewLoadDiagnostics);
     if (!this.consistent.get()) {
