@@ -87,6 +87,43 @@ promise participation while hiding all material needed to assess it. Do not expo
 attachments merely because contribution creation is open. Anonymous participation remains outside
 the requested model.
 
+## Contribution visibility: open and closed review
+
+**DETAILED WORKFLOW TO BE DECIDED — missing read policy/API and human policy (OR-02, OR-07, OR-11).**
+Interpret the proposed "open" versus "closed" public review as whether participants can inspect
+other people's submitted work while preparing their own. Keep this independent of admission and
+whether collection is still accepting submissions. Recommended API names avoid overloading OPEN:
+
+| Separate setting | Proposed meaning |
+| --- | --- |
+| Participation | Hub-authorized PUBLIC contribution, assigned review, or both. This determines who may submit. |
+| Collection lifecycle | Accepting submissions, closing, integration or closed. This determines whether a new submission can enter the round. |
+| `PEER_VISIBLE` | Eligible participants may read other submitted contributions and permitted integration dispositions while preparing their own. Suggested label: **Peer-visible contributions**. |
+| `EDITOR_ONLY` | Each contributor sees their own submissions; authorized editors/integrators see all admitted submissions. Fellow reviewers cannot read peers' submissions. Suggested label: **Editor-only contributions**. |
+| Draft sharing | Drafts remain private to their owner unless explicitly shared; editor responsibility alone does not reveal private drafts. |
+| Identity and later release | Identity disclosure, pseudonyms and release after integration/closure are separate policies. Neither mode implies anonymization or publication to unauthenticated readers. |
+
+These are proposed names and semantics, not current enums or UI controls. `publicRead` is not an
+implementation of either mode. Recommend pinning a visibility-policy ID/revision to each round and
+recording it in contribution and integration provenance. Record whether a reviewer could see earlier
+submissions; peer-visible work must not be described as blind independent review. Editor-only content
+visibility alone does not establish anonymity or a complete blinded-study protocol.
+
+Enforce the same caller-specific projection on lists, details, attachment bytes/URLs, diffs, history,
+counts, search, events/notifications, exports, integration dispositions, generated summaries and
+idempotent receipts. Hidden references must not disclose contribution text, authors, counts or
+restricted evidence through another route. Public aggregate responses and old attachment aliases
+must not bypass this policy. Shared evidence retains its own access restrictions. Cache keys and
+download tokens must include policy/authorization context and expire or be invalidated appropriately.
+Private draft existence/content is not an editor collection statistic unless explicitly shared.
+
+Recommend a new round for a broader disclosure policy. If changing an existing round is necessary,
+require an explicit audited authorization/policy decision, participant notice and any required
+consent before exposing previously hidden work. Tightening a policy cannot make already viewed or
+exported content unseen. Later release is a separate explicit operation, not an automatic effect of
+closing collection. Choose the default mode, who may change it and when dispositions become visible;
+no fully settled policy is implied by this design.
+
 ## Proposed round and proposal model
 
 **DETAILED WORKFLOW TO BE DECIDED — OR-04, OR-06, OR-08, OR-11.** Recommend a minimal, stage-local
@@ -143,7 +180,7 @@ Editing review material does not itself authorize overwriting the authoritative 
 | Record | Identity and immutable binding | Revision rule |
 | --- | --- | --- |
 | Author proposal `A_n` | Proposal ID, revision, candidate ontology bytes/hash, target/base snapshot, import snapshot/digest, ordered action IDs, evidence. | `A_(n+1)` supersedes the prior revision of the same author proposal line. |
-| Review round `R_n` | Case/round ID, exact candidate `B_n` (initially `A_n`, subsequently an editor/integration revision if applicable), visibility/public eligibility, opening/cutoff, assignment records. | Changed material/imports require a new round; the old base does not change. |
+| Review round `R_n` | Case/round ID, exact candidate `B_n` (initially `A_n`, subsequently an editor/integration revision if applicable), pinned contribution-visibility policy, separate PUBLIC eligibility, opening/cutoff, assignments. | Changed material/imports require a new round; the old base does not change. |
 | Contribution `C_i@r` | Its own proposal ID/revision, owner, `R_n`, exact `B_n` base, evidence/actions/probes, optional alternative candidate bytes. | Only its owner revises it; `supersedes` stays within that contribution line. |
 | Integration proposal `I_n@r` | Its own proposal ID/revision and integrator; exact round snapshot and selected contribution revisions; each action's disposition and reasons. | Integration revisions supersede integration revisions, not the author or reviewer proposal. |
 | Next review material `B_(n+1)` | Integrated proposal/candidate revision with named editor, or an optional author response referring to `I_n@r`. | Preserves each proposal line's actual authorship; links across lines with `basedOn`/`respondsTo`, not false supersession. |
@@ -352,6 +389,8 @@ revision and operation ID. Public eligibility authorizes only one's own contribu
 no ability to edit the parent dossier, other people's proposals or project documents. Assignment
 and public participation produce the same typed contribution envelope with different participation
 provenance. Read another contribution only when round disclosure policy permits it.
+Return the round's pinned `PEER_VISIBLE` or `EDITOR_ONLY` policy with the allowed operations;
+enforce it through the [full read projection](#contribution-visibility-open-and-closed-review).
 
 For the recommended minimal implementation, propose this narrowly scoped command:
 
@@ -364,14 +403,19 @@ POST /review-rounds/{roundId}/contributions
 -> immutable submissionId, sequence, proposal binding, round receipt, next owned draft reference
 ```
 
-Authenticate and recheck PUBLIC/assigned eligibility, exact packet access, owner and immutable base.
-The round epoch changes on lifecycle/base changes, not each other person's submission. The
-contributor's revision changes only for their own draft/proposal. An atomic open-round check and
-append assigns the sequence before acknowledging success. Never accept a negative/unset revision
-as a bypass, even though some generic transition paths permit a negative expected flow revision.
-The same idempotency key/input returns the same authorized receipt; different input is rejected.
-Do not increment or transition the parent merely to submit one contribution. Recheck authorization
-before returning an earlier receipt, so a retry cannot recover now-forbidden evidence.
+Authenticate and check current permission to read an operation receipt, then resolve any existing
+idempotency key **before** checking whether the round still admits new submissions. For the same
+actor/key and identical normalized input, return the existing authorized receipt even after closure
+or a later round; apply current visibility/evidence restrictions to its projection. Different input
+with the same key is a conflict. This retry does not create a new submission or require an open round.
+
+Only a **new** submission then checks PUBLIC/assigned eligibility, current round admission/epoch,
+exact packet access, owner, immutable base and contributor revision. The round epoch changes on
+lifecycle/base changes, not each other person's submission. The contributor's revision changes only
+for their own draft/proposal. An atomic open-round check and append assigns the sequence before
+acknowledging success. Never accept a negative/unset revision as a bypass, even though some generic
+transition paths permit a negative expected flow revision. Do not increment or transition the parent
+merely to submit one contribution. A denied retry cannot recover now-forbidden evidence.
 
 For the alternative participant-flow implementation, use that flow's revision for draft CAS and a
 typed submission ID for each closed contribution stage. A `contribute-again` transition publishes
@@ -404,7 +448,8 @@ Propose `review.round.close(roundId, expectedRoundRevision, operationId)` and
 close a round. The closure barrier serializes against new submissions and freezes a deterministic
 set of contribution revision IDs. Every attempt receives an accepted-in-round or late receipt;
 the service must not acknowledge a submission and then lose it from integration. Record withdrawn,
-superseded, excluded and pending drafts separately. Quorum/coverage policy determines when closure
+superseded and excluded submissions separately; include pending drafts only if their owners explicitly
+shared them. Quorum/coverage policy determines when closure
 is permitted; a deadline alone does not prove consensus.
 The service assigns the final cutoff sequence and manifest from committed submissions; a caller
 cannot supply an older cutoff to hide already admitted input. A provisional integration batch can
@@ -419,8 +464,9 @@ An editor may **integrate provisionally while collection remains open**. Keep a 
 integrator-owned draft/task and record the exact submission-index watermark and input manifest for
 each iteration. New input makes that draft incomplete, not retrospectively wrong or automatically
 final. A comparison action can show the delta since its watermark. This reduces the final backlog
-but adds reconciliation work and may influence reviewers if drafts are visible; choose disclosure
-policy explicitly. A simpler first version waits until closure before integration begins.
+but adds reconciliation work and may influence reviewers if integration drafts are explicitly shared;
+apply the pinned visibility policy. Ordinary private reviewer drafts remain private. A simpler first
+version waits until closure before integration begins.
 
 For either final integration exit, close collection, obtain its immutable cutoff manifest, reconcile every newly
 admitted submission and supersession, and freeze the integrated proposal against that manifest.
@@ -549,10 +595,15 @@ authorize participant + check expected flow revision and allowed transition
 restore behavior checkpoint
 outgoing.onCommit: verify exact prepared inputs; throw if invalid
 transition.actions: record proposed transition-specific intent; no silent candidate rewrite
-validate required attachments and exact proposal protocol
-checkpoint outgoing; prepare/close source and create target with transition history
+validate transition inputs, including required source attachments
+checkpoint outgoing
+prepare exact proposal protocol; close source and create target/history
 incoming.onStart: prepare instructions/authorized draft context
-checkpoint incoming; persist aggregate and staged attachments
+validate required terminal attachments when the target is terminal
+checkpoint incoming
+write staged attachment payloads; publish flow aggregate
+finalize attachment cleanup; synchronize ResourceInfo
+  catalog synchronization failure can follow an already committed aggregate
 ```
 
 Initial creation also executes `init`, then `main`, the INIT transition actions and stage `onStart`.
@@ -587,7 +638,7 @@ Each row is **DETAILED WORKFLOW TO BE DECIDED**; links point to the shared role-
 | [OR-04](ONTOLOGY_REVIEW_EDITING.md#or-04) Exact package | Atomic immutable snapshots and a new typed cross-proposal envelope. | Saved-source first versus concurrent delivery of IDE buffer capture. |
 | [OR-05](ONTOLOGY_REVIEW_EDITING.md#or-05) Validation | Isolated checks and explicit BLOCKED status; human judgment remains distinct. | Import authority, reasoner isolation and action/source correspondence. |
 | [OR-06](ONTOLOGY_REVIEW_EDITING.md#or-06) Contributions | Stage-local append; integrated proposal with review-again or advance exits. | Append store versus participant-owned flows; one-more versus supersede; provisional integration while open. |
-| [OR-07](ONTOLOGY_REVIEW_EDITING.md#or-07) PUBLIC | Hub-authorized participation without invitations or special reviewer grants. | Eligibility assertion, public packet visibility, moderation and abuse limits. |
+| [OR-07](ONTOLOGY_REVIEW_EDITING.md#or-07) PUBLIC | Hub-authorized participation without special grants; separate pinned peer-visibility setting. | Eligibility, PEER_VISIBLE versus EDITOR_ONLY, identity/later-release policy, moderation and abuse limits. |
 | [OR-08](ONTOLOGY_REVIEW_EDITING.md#or-08) Dissent | Explicit dispositions, unresolved alternatives and appeal provenance. | Adjudicator and whether acknowledgment/appeal blocks return. |
 | [OR-09](ONTOLOGY_REVIEW_EDITING.md#or-09) Decisions | Whole-candidate human acceptance under exact gates. | Decision authority, rejection scope and partial approval policy. |
 | [OR-10](ONTOLOGY_REVIEW_EDITING.md#or-10) Application | Separate authorized CAS/effect-receipt/Git handoff. | Destination, approval, publication and rollback authority. |
@@ -618,7 +669,10 @@ known-person users with other roles, revoked/expired eligibility, inaccessible e
 edits, stale flow/contribution/document revisions, submission racing closure, reviewer supersession,
 missing dispositions, dissent, late input, behavior changes and owner absence. Test interrupted
 requests before/after persistence and external effects; identical retries must have stable receipts,
-different-input reuse must fail. Test the actual IDE capture/confirmation and authenticated HTTP
+including after round closure, while different-input reuse must fail. Test both visibility modes
+across details/attachments/diffs/history/counts/search/events/exports/summaries/caches and retry receipts,
+own versus peer work, private drafts, shared restricted evidence, revocation and policy broadening.
+Test the actual IDE capture/confirmation and authenticated HTTP
 path, not only in-memory DTOs. A successful schema test or build is not scientific or operational
 acceptance.
 

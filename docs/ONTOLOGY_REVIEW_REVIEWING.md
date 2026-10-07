@@ -302,6 +302,7 @@ for targeted expertise. Both paths would use the following sequence; it is not a
 1. Open an accessible review round and its immutable published packet. Confirm round ID, candidate
    and base revisions, evidence access, deadline and your allowed contribution operations. Public
    read visibility alone is not permission to contribute; eligibility is checked through the Hub.
+   Check whether submitted peer work is visible or editor-only before planning your review.
 2. Start your own proposal. Record evidence, questions, counterexamples, requested actions and any
    alternative candidate snapshot. An endorsement or objection is still an attributed proposal.
    Your proposal does not modify another reviewer's work or the author's frozen candidate.
@@ -322,8 +323,9 @@ for targeted expertise. Both paths would use the following sequence; it is not a
 An editor may integrate provisionally while contributions continue, but final integration uses a
 frozen cutoff manifest, not the mutable current status. Contributions accepted after a provisional
 batch need explicit reconciliation; later-than-cutoff work needs a receipt and next-round/decline
-decision. Whether provisional integration and other reviewers' proposals are visible during review
-is a policy choice, especially for blind review.
+decision. The round's separate contribution-visibility policy controls access to submitted peer work and
+permitted integration dispositions. Private drafts require explicit sharing. Peer-visible review
+must not be described as blind independent review; identity and later-release policies are separate.
 
 The narrow append operation is the recommended minimal addition. A contributor-local flow with a
 same-schema **contribute-again** transition is an alternative. A self-loop on the shared review stage
@@ -396,6 +398,16 @@ requires authentication, non-anonymity, email and `workflow.knownRealPerson=true
 is added only if no workflow roles exist. PUBLIC access does not bypass stage ownership or make
 generic uploads/buttons public. `publicRead` separately controls visibility and is read-only in the
 IDE. See [the exact current and proposed distinction](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#roles-access-and-public-participation).
+
+
+**DETAILED WORKFLOW TO BE DECIDED** — Separately choose contribution visibility: proposed
+**Peer-visible contributions** lets eligible participants inspect submitted peer work while preparing
+their own; **Editor-only contributions** lets each person see their own submissions and authorized
+editors see all admitted submissions. Private drafts stay private unless explicitly shared. These
+modes do not mean collection is accepting/closed, do not grant participation, and do not imply
+anonymization or later public release. Pin the policy per round and enforce it on attachments,
+history, search, summaries and exports as well as the main view. See the
+[visibility contract](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#contribution-visibility-open-and-closed-review).
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-07).
 
 ### OR-08
@@ -532,7 +544,8 @@ timeouts and revoked permissions. See [recovery contracts](ONTOLOGY_REVIEW_BEHAV
 - [ ] Superseding revisions re-reviewed; unresolved OR-01 through OR-12 decisions remain visible.
 - [ ] Acceptance, application, Git/PR and publication boundaries explicitly reported.
 - [ ] Current controls distinguished from proposed actions; no configured ontology behavior assumed.
-- [ ] PUBLIC eligibility separated from public visibility, assignment and integration/acceptance authority.
+- [ ] PUBLIC eligibility separated from peer-contribution visibility, round closure and decision authority.
+- [ ] Private drafts, identity disclosure and later release follow the round's explicit policy.
 - [ ] Each contribution and integration proposal preserves owner, immutable base and supersession lineage.
 - [ ] Round cutoff, late submissions, dissent and both integration exits accounted for.
 - [ ] Action error reconciled against persisted flow and external effects before retrying.

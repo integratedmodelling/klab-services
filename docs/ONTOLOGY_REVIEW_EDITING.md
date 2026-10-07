@@ -351,7 +351,8 @@ the current eight-transition workflow below does not implement it.
 2. Open a review round against those exact bytes. Assigned reviewers supply requested expertise;
    Hub-authorized PUBLIC participants contribute without invitations or special grants. Each person
    owns their draft and immutable submitted proposals. One person's submission leaves the shared
-   review stage current for everyone else.
+   review stage current for everyone else. Choose the peer-contribution visibility policy separately
+   and communicate it before review; see [OR-07](#or-07).
 3. Collect proposals and record which earlier revision each supersedes, if any. A new contribution
    is distinct from a revision of an existing one. Do not update the round base while people review it.
 4. As integrator, compare contributions against that base and prepare an integrated proposal.
@@ -423,6 +424,16 @@ requires authentication, non-anonymity, email and `workflow.knownRealPerson=true
 is added only if no workflow roles exist. PUBLIC access does not bypass stage ownership or make
 generic uploads/buttons public. `publicRead` separately controls visibility and is read-only in the
 IDE. See [the exact current and proposed distinction](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#roles-access-and-public-participation).
+
+
+**DETAILED WORKFLOW TO BE DECIDED** — Separately choose contribution visibility: proposed
+**Peer-visible contributions** lets eligible participants inspect submitted peer work while preparing
+their own; **Editor-only contributions** lets each person see their own submissions and authorized
+editors see all admitted submissions. Private drafts stay private unless explicitly shared. These
+modes do not mean collection is accepting/closed, do not grant participation, and do not imply
+anonymization or later public release. Pin the policy per round and enforce it on attachments,
+history, search, summaries and exports as well as the main view. See the
+[visibility contract](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#contribution-visibility-open-and-closed-review).
 [Reviewer counterpart](ONTOLOGY_REVIEW_REVIEWING.md#or-07).
 
 ### OR-08
@@ -548,7 +559,8 @@ timeouts and revoked permissions. See [recovery contracts](ONTOLOGY_REVIEW_BEHAV
 - [ ] Exact confirmation reviewed; returned stage/history inspected; local recovery copies retained.
 - [ ] Readiness means ready for review, with acceptance/application/publication blockers still explicit.
 - [ ] Current controls distinguished from proposed actions; no configured ontology behavior assumed.
-- [ ] PUBLIC eligibility separated from public visibility, assignment and integration/acceptance authority.
+- [ ] PUBLIC eligibility separated from peer-contribution visibility, round closure and decision authority.
+- [ ] Private drafts, identity disclosure and later release follow the round's explicit policy.
 - [ ] Each contribution and integration proposal preserves owner, immutable base and supersession lineage.
 - [ ] Round cutoff, late submissions, dissent and both integration exits accounted for.
 - [ ] Action error reconciled against persisted flow and external effects before retrying.
