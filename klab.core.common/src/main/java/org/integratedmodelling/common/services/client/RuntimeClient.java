@@ -143,6 +143,17 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
+  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(String definitionUrn, ContextScope scope) {
+    var alignment = client.withScope(scope).post(ServicesAPI.RUNTIME.CONFIGURE_GRID,
+        java.util.Map.of("definitionUrn", definitionUrn), org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
+    if (alignment == null) throw new IllegalStateException("Runtime did not return a grid alignment");
+    scope.getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY, alignment);
+    if (scope.getConfiguration() instanceof org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl configuration)
+      configuration.setGridAlignment(alignment);
+    return alignment;
+  }
+
+  @Override
   public Observation register(Observation observation, ContextScope scope) {
 
     if (observation.getId() > 0 || observation.getId() < Observation.UNASSIGNED_ID) {
@@ -433,9 +444,19 @@ public class RuntimeClient extends BaseServiceClient
                         || contextualizable.getServiceCall() != null)
             .toList();
 
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS, request, ResourceSet.class);
+    var ret =
+        client
+            .withScope(scope)
+            .post(ServicesAPI.RUNTIME.RESOLVE_CONTEXTUALIZERS, request, ResourceSet.class);
+    if (ret == null) {
+      var message =
+          "Runtime service "
+              + serviceName()
+              + " returned no contextualizer resolution; its API may be out of date";
+      scope.error(message);
+      return ResourceSet.empty(Notification.error(message));
+    }
+    return ret;
   }
 
   @Override

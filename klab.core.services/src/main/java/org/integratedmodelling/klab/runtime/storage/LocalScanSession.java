@@ -12,14 +12,42 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
   private final Runnable release;
   private final ValueMediation.Kernel kernel;
   private final StorageScan.Description description;
+  private final String spatialProjection;
   private final AtomicBoolean closed = new AtomicBoolean();
 
   LocalScanSession(StorageScan.Plan<T> plan, List<Storage.Shard> shards,
       List<IndexedStorageReader> readers, ScanMapping mapping, Runnable release) {
+    this(plan, shards, readers, mapping, release,
+        plan.description().mask() == null ? null : SpatialCoverage.support(plan.description().mask().sourceGeometry()),
+        plan.description().mask() == null ? null : SpatialCoverage.support(plan.description().mask().targetGeometry()));
+  }
+
+  LocalScanSession(StorageScan.Plan<T> plan, List<Storage.Shard> shards,
+      List<IndexedStorageReader> readers, ScanMapping mapping, Runnable release,
+      SpatialCoverage.Support sourceSupport, SpatialCoverage.Support targetSupport) {
+    var coveredReaders = new ArrayList<IndexedStorageReader>(readers.size());
+    for (int i = 0; i < readers.size(); i++) {
+      var reader = readers.get(i);
+      if (sourceSupport != null) {
+        var coverage = new SpatialCoverage(plan.description().sources().get(i).geometry(), sourceSupport.projection,
+            plan.description().nativeLayout().curve(), sourceSupport);
+        if (!coverage.unrestricted) reader = new CoverageReader(reader, coverage);
+      }
+      coveredReaders.add(reader);
+    }
+    readers = coveredReaders;
     this.readers = List.copyOf(readers);
     this.release = release;
     var description = plan.description();
     this.description = description;
+    if (mapping instanceof SpatialScan spatial) spatialProjection = spatial.targetLattice.reference.projection();
+    else if (mapping instanceof ConformantScan conformant) spatialProjection = conformant.projection;
+    else {
+      var space = StorageScan.parseGeometry(description.sources().getFirst().geometry())
+          .dimension(org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type.SPACE);
+      spatialProjection = targetSupport != null ? targetSupport.projection
+          : space == null ? null : Objects.toString(space.getParameters().get("proj"), null);
+    }
     this.kernel = ValueMediation.kernel(description.conversion());
     var cursors = new ArrayList<T>();
     for (int i = 0; i < description.partitions().size(); i++) {
@@ -47,6 +75,8 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
         case BOOLEAN -> new BooleanCursor(shard, reader, view);
         case KEYED -> new KeyCursor(shard,reader,view);
       };
+      if (targetSupport != null) scanner = CoveredScanner.wrap(scanner,
+          new SpatialCoverage(view.partition().geometry(), targetSupport.projection, view.curve(), targetSupport));
       cursors.add(plan.scannerClass().cast(scanner));
     }
     scanners = List.copyOf(cursors);
@@ -74,6 +104,7 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
     final IndexedStorageReader reader;
     final StorageScan.View view;
     long index;
+    SpatialCoverage spatial;
     Cursor(Storage.Shard shard, IndexedStorageReader reader, StorageScan.View view) {
       this.shard = shard; this.reader = reader; this.view = view;
     }
@@ -88,6 +119,13 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
       index = offset;
     }
     @Override public long position() { checkOpen(); return index; }
+    private SpatialCoverage spatial() {
+      checkValue();
+      if (spatial == null) spatial = new SpatialCoverage(view.partition().geometry(), spatialProjection, view.curve(), null);
+      return spatial;
+    }
+    @Override public void spatialCoordinates(long[] coordinates) { spatial().coordinates(index, coordinates); }
+    @Override public StorageScan.Cell cell() { return spatial().cell(index); }
     @Override public boolean hasNext() { checkOpen(); return index < view.partition().size(); }
     @Override public long nextLong() { checkValue(); return index++; }
     @Override public boolean isValid() { checkValue(); return reader.isValid(index); }

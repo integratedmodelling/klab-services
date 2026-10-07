@@ -130,6 +130,13 @@ public class RuntimeService extends BaseService
         }
       };
 
+  private final ShardExecution shardExecution = new ShardExecution(
+      () -> settings().get(Setting.MAX_CONCURRENT_SHARD_TASKS, Integer.class));
+
+  ShardExecution shardExecution() {
+    return shardExecution;
+  }
+
   public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
     readConfiguration(options);
@@ -324,6 +331,7 @@ public class RuntimeService extends BaseService
 
   @Override
   public boolean shutdown() {
+    shardExecution.close();
 
     /** Close every scope that's scheduled for closing at service shutdown */
     for (var scope : getScopeManager().getScopes(Scope.Type.CONTEXT, ContextScope.class)) {
@@ -486,6 +494,11 @@ public class RuntimeService extends BaseService
    * activity followed by resolution and, if successful, contextualization of all resolved
    * observations. Instantiators cause other submissions within the same transaction.
    *
+   * <p>Cancelling a non-coalesced submission signals only that request and its derived execution
+   * scopes. Cancellation is cooperative: pending resolution must settle before cleanup, running
+   * components must return, and a commit already in progress cannot be undone. Identity-coalesced
+   * submissions instead detach the cancelled subscriber so that shared work can still complete.
+   *
    * @param submitted the observation to submit
    * @param scope the context scope in which to submit the observation
    * @return the submission task
@@ -506,6 +519,7 @@ public class RuntimeService extends BaseService
     if (submitted instanceof ObservationImpl mutable && submitted.getGeometry() == null) {
       mutable.setGeometry(ContextScope.getResolutionGeometry(effectiveScope));
     }
+    alignObservation(submitted, effectiveScope);
     boolean explicitAgent = submitted.getObservable() != null && submitted.getObservable().is(SemanticType.AGENT)
         && scope.getCurrentTransaction() == null && submitted.getId() != Observation.QUERY_ID
         && (submitted.getId() > 0 || !Boolean.TRUE.equals(submitted.getMetadata().get(
@@ -525,6 +539,22 @@ public class RuntimeService extends BaseService
 
     var submissionScope = submissionScope(submitted, scope);
     var submissionIdentity = submissionIdentity(submitted, submissionScope);
+    if (submissionIdentity == null && submissionScope instanceof ServiceContextScope serviceScope) {
+      // CompletableFuture cancellation does not travel upstream through dependent stages.
+      // Expose the request's own future as a cooperative signal to all derived execution scopes.
+      var result = new CompletableFuture<Observation>();
+      var requestScope = serviceScope.withCancellation(result::isCancelled);
+      submitInternal(submitted, requestScope).thenApply(observation -> {
+        checkSubmissionCancellation(requestScope);
+        return observation != submitted
+            ? recordExistingPerception(observation, requestScope, explicitAgent) : observation;
+      }).whenComplete((observation, failure) -> {
+        if (failure != null) result.completeExceptionally(failure);
+        else result.complete(observation);
+      });
+      return result;
+    }
+    // Coalesced work is shared: cancelling one subscriber must only detach that subscriber.
     var future = submissionIdentity == null
         ? submitInternal(submitted, submissionScope)
         : coalesce(inFlightSubmissions, submissionIdentity,
@@ -720,6 +750,8 @@ public class RuntimeService extends BaseService
           observation1.setGeometry(scope.getObserver().geometry(Observation.GeometryRelationship.PERCEIVES));
         }
       }
+
+      alignObservation(observation,scope);
 
       // sanitize whatever geometry we have before any use is made of it. TODO add a flag or
       // something to
@@ -926,6 +958,7 @@ public class RuntimeService extends BaseService
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
+                checkSubmissionCancellation(resolutionScope);
                 resolution.getMetadata().put("resolutionOutcome", dataflow.getResolutionOutcome().name());
                 observation.getNotifications().addAll(dataflow.getNotifications());
                 if (observation instanceof ObservationImpl observationImpl
@@ -934,6 +967,7 @@ public class RuntimeService extends BaseService
                 }
                 if (!dataflow.isEmpty()) {
                   if (compile(observation, dataflow, resolutionScope)) {
+                    checkSubmissionCancellation(resolutionScope);
                     attachResolutionDiagnostics(dataflow, resolution);
                     if (resolutionScope.commit() >= 0) {
                       if (predefinedContextualization != null) {
@@ -959,6 +993,7 @@ public class RuntimeService extends BaseService
                 //  correct if the observations have been created at compilation.
 
                 if (!o.isEmpty()) {
+                  checkSubmissionCancellation(submissionScope);
                   submissionScope.getCurrentTransaction().registerExecutors();
                   if (!submissionScope.contextualize(o)) {
                     submission.setName("SUB FAIL");
@@ -972,6 +1007,7 @@ public class RuntimeService extends BaseService
                   }
 
                   // TODO add more info about the contextualization to the action's metadata
+                  checkSubmissionCancellation(submissionScope);
                   submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
                   if (commitId < 0) {
@@ -1022,6 +1058,12 @@ public class RuntimeService extends BaseService
         scope.getService(Reasoner.class).baseSubstantialType(observable.getSemantics(), scope);
     return new SubmissionIdentity(
         scope.getId(), cohortSemantics.getUrn(), ObservationImpl.logicalUrn(observation.getUrn()));
+  }
+
+  private static void checkSubmissionCancellation(ContextScope scope) {
+    if (scope.isInterrupted() || Thread.currentThread().isInterrupted()) {
+      throw new java.util.concurrent.CancellationException("Observation submission cancelled");
+    }
   }
 
   static <K, T> CompletableFuture<T> coalesce(
@@ -1473,6 +1515,47 @@ public class RuntimeService extends BaseService
   }
 
   @Override
+  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(String definitionUrn, ContextScope scope) {
+    if (definitionUrn == null || definitionUrn.isBlank()) throw new IllegalArgumentException("Missing grid definition URN");
+    if (!(scope instanceof ServiceContextScope context)) throw new IllegalArgumentException("Grid configuration requires a runtime context");
+    synchronized (context.getData()) {
+      var existing = context.getConfiguration().getGridAlignment();
+      if (existing != null) {
+        if (!existing.definitionUrn().equals(definitionUrn)) throw new IllegalStateException("A digital twin supports only one grid instruction");
+        return existing;
+      }
+      if (Boolean.TRUE.equals(context.getData().get("klab.grid.observationsStarted"))) throw new IllegalStateException("Install a grid before making observations");
+      var grid = org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.resolve(definitionUrn, context);
+      grid = ((KnowledgeGraphNeo4j)context.getDigitalTwin().getKnowledgeGraph()).installGrid(grid);
+      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getConfiguration()).setGridAlignment(grid);
+      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getDigitalTwin().getOptions()).setGridAlignment(grid);
+      context.getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY, grid);
+      for (String warning : grid.emittedWarnings()) context.warn(warning);
+      return grid;
+    }
+  }
+
+  private void alignObservation(Observation observation, ContextScope scope) {
+    if (observation.getId()>0 || observation.getId()==Observation.QUERY_ID || observation.isEmpty()) return;
+    if (scope instanceof ServiceContextScope context && observation instanceof ObservationImpl mutable) {
+      // The implicit user agent has no spatial cells; allow installing a grid in a fresh IDE twin.
+      if (Boolean.TRUE.equals(observation.getMetadata().get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC))
+          && observation.getGeometry()!=null && observation.getGeometry().isUniversal()) return;
+      synchronized (context.getData()) {
+        if (!Boolean.TRUE.equals(context.getData().get("klab.grid.observationsStarted"))) {
+          var grid=((KnowledgeGraphNeo4j)context.getDigitalTwin().getKnowledgeGraph()).sealGrid();
+          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getConfiguration()).setGridAlignment(grid);
+          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getDigitalTwin().getOptions()).setGridAlignment(grid);
+          if (grid!=null) context.getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,grid);
+          context.getData().put("klab.grid.observationsStarted",true);
+        }
+        mutable.setGeometry(org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.alignGeometry(
+            observation.getGeometry(), context.getConfiguration().getGridAlignment()));
+      }
+    }
+  }
+
+  @Override
   public Observation register(Observation observation, ContextScope scope) {
 
     if (observation.getObservable() != null
@@ -1485,6 +1568,8 @@ public class RuntimeService extends BaseService
         || observation.isEmpty()) {
       return observation;
     }
+
+    alignObservation(observation, scope);
 
     var mayExistInCohort =
         SemanticType.isEnumerableSubstantial(observation.getObservable().getSemantics().getType())
@@ -2212,16 +2297,15 @@ public class RuntimeService extends BaseService
                 getComponentRegistry()
                     .getAdapter(resolvedUrn.getCatalog(), resolvedUrn.getVersion(), scope);
             if (installedAdapter == null) {
-              scope.info(
-                  "Discovering component for universal resource adapter '",
-                  resolvedUrn.getCatalog(),
-                  "'");
+              scope.send(Notification.info(
+                  "Discovering component for universal resource adapter '"
+                      + resolvedUrn.getCatalog() + "'"));
               adapterRequirements =
                   resourcesService.resolve(
                       Version.isAny(resolvedUrn.getVersion())
                           ? resolvedUrn.getCatalog()
                           : resolvedUrn.getCatalog() + "@" + resolvedUrn.getVersion(),
-                      KlabAsset.KnowledgeClass.COMPONENT,
+                      KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                       scope);
               if (adapterRequirements != null
                   && !adapterRequirements.isEmpty()
@@ -2253,10 +2337,9 @@ public class RuntimeService extends BaseService
                       ? syntheticResource
                       : Utils.Resources.merge(adapterRequirements, syntheticResource);
               if (adapterRequirements != null) {
-                scope.info(
-                    "Installed component for universal resource adapter '",
-                    resolvedUrn.getCatalog(),
-                    "'");
+                scope.send(Notification.info(
+                    "Installed component for universal resource adapter '"
+                        + resolvedUrn.getCatalog() + "'"));
               }
             }
           }
@@ -2293,7 +2376,7 @@ public class RuntimeService extends BaseService
                     ? null
                     : universalProvider.info(
                         resolvedUrn.getCatalog(),
-                        KlabAsset.KnowledgeClass.INFORMATION,
+                        KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                         AdapterDescriptor.class,
                         scope);
 
@@ -2344,7 +2427,7 @@ public class RuntimeService extends BaseService
                         Version.isAny(resolvedUrn.getVersion())
                             ? resolvedUrn.getCatalog()
                             : resolvedUrn.getCatalog() + "@" + resolvedUrn.getVersion(),
-                        KlabAsset.KnowledgeClass.COMPONENT,
+                        KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                         scope);
               }
               if (adapterRequirements == null || adapterRequirements.isEmpty()) {

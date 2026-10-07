@@ -107,7 +107,7 @@ but its intended use still needs agreement; it is not an implemented mapping.
 | W11 `implies X [within Y],...` | Stored in implementation's `implies` list, **not exposed by interface** | No matching `KimConceptStatement` field; contextualization also lost | No declaration handler. `odo:impliesObservable` is a candidate for plain implications, not proof of an encoding for conditional `within`. |
 | W12 `requires identity X,...` | Empty parser branch. `Requirement` record holds **only a kind**, no targets | Target list exists in service API but stays empty | Dormant handler refers to **missing `odo:requiresIdentity`**. Generic `odo:requires` exists but has intersecting ranges; not a safe automatic replacement. |
 | W13 `requires realm/extent/attribute X,...` | Same empty branch; `RequiresType` also **omits ATTRIBUTE** | Service lists exist but unfilled | No declaration loops. Decide generic versus typed requirement properties and validate target types. |
-| W14 `requires authority A [parameters]` | Kind exists; **no authority ID or parameter payload** retained | Only `authorityRequired` string exists, no parameters | No declaration handler. Decide runtime authority validation and persistence; it need not be an object-property restriction. |
+| W14 `requires authority A [parameters]` | Authority name, map, and clause spans retained | `authorityRequired` and `authorityParameters` survive transport | Identity/name/URN checks; ingestion configures a provider-held bridge anchored at the declaring identity. Lazy resolution expands provider base/parent concepts to the first known parent. See AUTHORITIES.md for remaining limits. |
 | W15 `describes Q [as number [to number] / concept / boolean]` | TODO; `Description` record holds **only kind**, no target/value | Existing target/type pairs cannot represent the `as` payload; no adaptation | No consumer. `odo:describesQuality` is a candidate for Q; numeric range/concept/boolean semantics require a separate representation and policy. |
 | W16 `increases with Q` | Same TODO | No adaptation | No consumer. `odo:increasesWith` exists; range has both Ordering and Quality. |
 | W17 `decreases with Q` | Same TODO | No adaptation | No consumer. Core spelling is **`odo:descreasesWith`**, not `decreasesWith`; range is Ordering only. Migration/type policy needed. |
@@ -220,8 +220,11 @@ inventory remains as the record of the audit.
   source is retained rather than compiled as an unconditional statement.
 - **W12–W13:** all four typed requirements are preserved, checked against their
   expected target types, and translated using the corresponding `requires...` property.
-- **W14:** authority identifiers and parameters are preserved in service beans.
-  Runtime enforcement remains pending and is reported by validation.
+- **W14:** authority identifiers, parameters and source spans are preserved. Identity/name/URN
+  validation, configured bridge activation, and lazy base/parent materialization now have an
+  initial implementation. Inheritance connects through the provider's top-level identity;
+  hierarchy validity belongs to the authority. Relationship properties, distance delegation,
+  component update invalidation and remote provider hosting remain pending; see [AUTHORITIES.md](AUTHORITIES.md).
 - **W15–W20:** all six descriptive relations carry their target and generate the
   corresponding existential restriction. `describes ... as` retains its value syntax;
   the extra value semantics remain pending and produce a validation warning.

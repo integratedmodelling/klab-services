@@ -74,8 +74,8 @@ public enum Logging {
   }
 
   public void warn(Object... o) {
-
-    Notification payload = Notification.create(o);
+    Notification payload = Notification.warning(o);
+    if (org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(payload.getLevel(),o)) return;
 
     if (payload.getMode() == Notification.Mode.Silent) {
       return;

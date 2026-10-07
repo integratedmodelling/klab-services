@@ -110,6 +110,134 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
 
   private record SuppliedArguments(Object[] values, Metadata metadata) {}
 
+  private static final ThreadLocal<Boolean> RESTORING = ThreadLocal.withInitial(() -> false);
+
+  /** Suppress constructor init during checkpoint restoration, including inherited constructors. */
+  public static <T> T restoringCheckpoint(java.util.concurrent.Callable<T> constructor) throws Exception {
+    boolean previous = RESTORING.get();
+    RESTORING.set(true);
+    try { return constructor.call(); } finally { RESTORING.set(previous); }
+  }
+
+  protected final boolean initializingState() { return !RESTORING.get(); }
+
+  private static final InheritableThreadLocal<org.integratedmodelling.klab.api.scope.UserScope> CHECKPOINT_PARTICIPANT = new InheritableThreadLocal<>();
+  private org.integratedmodelling.klab.api.scope.UserScope checkpointParticipant = CHECKPOINT_PARTICIPANT.get();
+  public final void setCheckpointParticipant(org.integratedmodelling.klab.api.scope.UserScope participant) {
+    checkpointParticipant = participant;
+    inheritedBehaviorInstances.forEach(inherited -> inherited.setCheckpointParticipant(participant));
+  }
+  public final org.integratedmodelling.klab.api.scope.UserScope checkpointParticipant() { return checkpointParticipant; }
+
+  /** Invoke a validated, finite workflow action without starting an autonomous main loop. */
+  public final Object invokeCheckpointAction(String action, Object... arguments) {
+    checkpointExecution = true;
+    var previousParticipant = CHECKPOINT_PARTICIPANT.get();
+    CHECKPOINT_PARTICIPANT.set(checkpointParticipant);
+    var invocation = rootScope.withId(nextId.incrementAndGet());
+    long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(60);
+    try {
+      Object result = invokeSelfFunction(action, invocation, arguments);
+      if (result instanceof CompletableFuture<?> future)
+        result = future.get(Math.max(1, deadline - System.nanoTime()), java.util.concurrent.TimeUnit.NANOSECONDS);
+      // Dynamically bound Java calls may have been launched by a generated FUNCTION action.
+      synchronized (dynamicLifecycleLock) {
+        while (activeDynamicCalls > 0 && dynamicFailure == null) {
+          long remaining = deadline - System.nanoTime();
+          if (remaining <= 0) throw new java.util.concurrent.TimeoutException(action);
+          java.util.concurrent.TimeUnit.NANOSECONDS.timedWait(dynamicLifecycleLock, remaining);
+        }
+        if (dynamicFailure != null) throw new java.util.concurrent.ExecutionException(dynamicFailure);
+      }
+      return result;
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Workflow action interrupted: " + action, interrupted);
+    } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException failure) {
+      throw new IllegalStateException("Workflow action failed or exceeded 60 seconds: " + action, failure);
+    } finally {
+      invocation.done();
+      if (previousParticipant == null) CHECKPOINT_PARTICIPANT.remove(); else CHECKPOINT_PARTICIPANT.set(previousParticipant);
+    }
+  }
+
+  /** Initialize after construction so finite supplier init actions use the checkpoint deadline. */
+  public final void initializeCheckpoint(Object... arguments) {
+    for (var inherited : inheritedBehaviorInstances) inherited.initializeCheckpoint();
+    if (java.util.Arrays.stream(getClass().getDeclaredMethods())
+        .anyMatch(method -> "action_init".equals(method.getName())))
+      invokeCheckpointAction("init", arguments);
+  }
+
+  /** Global variables only: never serialize subscriptions, scopes, services or live agent handles. */
+  public final Map<String, Object> checkpointState() {
+    var ret = new java.util.LinkedHashMap<String, Object>();
+    ret.put("behaviorClass", getClass().getName());
+    ret.put("state", portableState(new java.util.LinkedHashMap<>(rootScope)));
+    ret.put("inherited", inheritedBehaviorInstances.stream().map(RuntimeAgentBase::checkpointState).toList());
+    return ret;
+  }
+
+  @SuppressWarnings("unchecked")
+  public final void restoreCheckpointState(Map<String, Object> snapshot) {
+    var state = (Map<String, Object>) snapshot.get("state");
+    var inherited = (List<Map<String, Object>>) snapshot.get("inherited");
+    if (!Objects.equals(getClass().getName(), snapshot.get("behaviorClass"))
+        || state == null || inherited == null || inherited.size() != inheritedBehaviorInstances.size())
+      throw new IllegalStateException("Behavior state layout changed; explicit migration is required");
+    rootScope.clear();
+    rootScope.putAll((Map<String, Object>) restoreProjectReferences(portableState(state)));
+    for (int i = 0; i < inherited.size(); i++)
+      inheritedBehaviorInstances.get(i).restoreCheckpointState(inherited.get(i));
+  }
+
+  /** Copy and validate a portable value tree. Cycles and excessive nesting are rejected. */
+  public static Object portableState(Object value) { return portableState(value, 0); }
+
+  private static Object portableState(Object value, int depth) {
+    if (depth > 64) throw new IllegalArgumentException("Behavior state is cyclic or too deeply nested");
+    if (value instanceof org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.ProjectReference reference)
+      return portableState(reference.checkpointReference(), depth + 1);
+    if (value == null || value instanceof String || value instanceof Boolean
+        || value instanceof Byte || value instanceof Short || value instanceof Integer
+        || value instanceof Long || value instanceof java.math.BigInteger
+        || value instanceof java.math.BigDecimal) return value;
+    if (value instanceof Double d && Double.isFinite(d)) return value;
+    if (value instanceof Float f && Float.isFinite(f)) return value;
+    if (value instanceof Map<?, ?> map) {
+      var copy = new java.util.LinkedHashMap<String, Object>();
+      for (var entry : map.entrySet()) {
+        if (!(entry.getKey() instanceof String key))
+          throw new IllegalArgumentException("Behavior state map keys must be strings");
+        copy.put(key, portableState(entry.getValue(), depth + 1));
+      }
+      return copy;
+    }
+    if (value instanceof List<?> list) {
+      var copy = new java.util.ArrayList<Object>();
+      for (var item : list) copy.add(portableState(item, depth + 1));
+      return copy;
+    }
+    throw new IllegalArgumentException("Nonportable behavior state: " + value.getClass().getName());
+  }
+
+  private static Object restoreProjectReferences(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      if (map.containsKey("$klabProjectActor")) {
+        if (!(map.get("$klabProjectActor") instanceof Number version) || version.intValue() != 1)
+          throw new IllegalArgumentException("Unknown project actor reference version");
+        return org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.restoreProjectReference(map);
+      }
+      var copy = new java.util.LinkedHashMap<String, Object>();
+      map.forEach((key, item) -> copy.put((String) key, restoreProjectReferences(item))); return copy;
+    }
+    if (value instanceof List<?> list) {
+      var copy = new java.util.ArrayList<Object>(); list.forEach(item -> copy.add(restoreProjectReferences(item))); return copy;
+    }
+    return value;
+  }
+
+  private boolean checkpointExecution = RESTORING.get();
   private AgentScope rootScope;
   private final KActorsBehavior behavior;
   protected final Sinks.Many<Event> eventBus = Sinks.many().multicast().onBackpressureBuffer();
@@ -874,6 +1002,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       if (behaviorTypeChecker != null) {
         inheritedBehavior.setBehaviorTypeChecker(behaviorTypeChecker);
       }
+      if (checkpointExecution) inheritedBehavior.checkpointExecution = true;
+      if (checkpointParticipant != null) inheritedBehavior.setCheckpointParticipant(checkpointParticipant);
       inheritedBehaviorInstances.add(inheritedBehavior);
     }
     return inheritedBehavior;
@@ -2036,6 +2166,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         dynamicFailure = error;
       }
       activeDynamicCalls--;
+      dynamicLifecycleLock.notifyAll();
     }
     finishDynamicLifecycleIfReady();
   }
@@ -2110,9 +2241,11 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       Method method, Object target, AgentScope scope, Object[] arguments)
       throws ReflectiveOperationException {
     Object[] actualArguments = prepareArguments(method, scope, arguments);
+    Verb.Type type = dynamicMethodType(method);
+    if (checkpointExecution && type == Verb.Type.EMITTER)
+      throw new IllegalArgumentException("Checkpointed actions cannot invoke emitters: " + method.getName());
     Object value =
         method.invoke(Modifier.isStatic(method.getModifiers()) ? null : target, actualArguments);
-    Verb.Type type = dynamicMethodType(method);
     return new DynamicInvocation(type, value);
   }
 

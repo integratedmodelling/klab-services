@@ -135,12 +135,26 @@ public interface Grid extends Serializable {
      * one corresponding to one cell of the other. This may cause the projection and envelope of the result to be
      * different from the original, as well as invalidating the "square cells" constraint.
      * <p>
-     * If the passed grid has an envelope, the result will be intersected to be included in the incoming envelope.
+     * The reference origin defines cell vertices; the result snaps outward to retain this grid's coverage.
      *
      * @param other
      * @return
      */
     Grid align(Grid other);
+
+    /** Align using a resolved context instruction, preserving outward spatial coverage. */
+    default Grid align(org.integratedmodelling.klab.api.digitaltwin.GridAlignment instruction) {
+        throw new UnsupportedOperationException("Typed grid alignment is unavailable");
+    }
+
+    /** Cell footprint in CRS coordinates; wrapped cells may have multiple rectangular pieces. */
+    default List<Envelope> getCellBounds(long x, long y) {
+        if (x<0 || y<0 || x>=getXCells() || y>=getYCells()) throw new IndexOutOfBoundsException();
+        throw new UnsupportedOperationException("Cell footprints are unavailable");
+    }
+
+    /** Longitude and latitude world limits, or an empty array for an ordinary planar grid. */
+    default double[] getWorldBounds() { return new double[0]; }
 
     /**
      * True if the grid has been explicitly constrained to have square cells. The grid may return false and still have

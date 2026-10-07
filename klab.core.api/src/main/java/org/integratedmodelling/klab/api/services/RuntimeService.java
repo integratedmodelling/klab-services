@@ -225,9 +225,15 @@ public interface RuntimeService extends KlabService {
    * @param scope
    * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
    *     observation is resolved or already registered.
-   * @return
+   * @return the requirements for the contextualizables, or an empty set with diagnostics when
+   *     they cannot be resolved; never {@code null}
    */
   Observation register(Observation observation, ContextScope scope);
+
+  /** Install the context's single grid definition before registering observations. */
+  default org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(String definitionUrn, ContextScope scope) {
+    throw new UnsupportedOperationException("Grid configuration is unavailable");
+  }
 
   /** Enumerate a completed collective input within its observed support, including uncommitted members. */
   default List<Observation> getMembers(Observation collective, ContextScope scope) {

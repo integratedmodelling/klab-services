@@ -18,6 +18,56 @@ import org.integratedmodelling.languages.worldview.Ontology;
 import org.junit.jupiter.api.Test;
 
 class WorldviewValidationTest {
+  @Test void missingParentTypeProducesAnInvalidDescriptorInsteadOfCrashingRegistration() {
+    var parent = org.mockito.Mockito.mock(org.integratedmodelling.languages.api.SemanticSyntax.class);
+    org.mockito.Mockito.when(parent.iterator()).thenAnswer(call -> List.of(parent).iterator());
+    var declaration = org.mockito.Mockito.mock(org.integratedmodelling.languages.api.ConceptDeclarationSyntax.class);
+    org.mockito.Mockito.when(declaration.getNamespace()).thenReturn("test");
+    org.mockito.Mockito.when(declaration.getName()).thenReturn("Incomplete");
+    org.mockito.Mockito.when(declaration.isGenericQuality()).thenReturn(true);
+    org.mockito.Mockito.when(declaration.getDeclaredParent()).thenReturn(parent);
+    for (var scope : List.of(new BasicObservableValidationScope(), new WorldviewValidationScope())) {
+      assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.NOTHING,
+          scope.createConceptDescriptor(declaration).mainType());
+    }
+  }
+
+  @Test void coreGenericQualityUsesItsDeclaredTypeDuringStartup() {
+    for (var scope : List.of(new BasicObservableValidationScope(), new WorldviewValidationScope())) {
+      var ontology = adapt("ontology test in domain root version 1.0.0; "
+          + "abstract quality Quality is core odo:Quality; quality Derived is test:Quality;", scope);
+      assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.GENERIC_QUALITY,
+          scope.getConceptDescriptor("test:Quality").mainType());
+      assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.GENERIC_QUALITY,
+          scope.getConceptDescriptor("odo:Quality").mainType());
+      assertTrue(ontology.getStatements().getFirst().getType()
+          .contains(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY));
+      assertEquals("odo:Quality", ontology.getStatements().getFirst().getUpperConceptDefined());
+    }
+  }
+
+  @Test void countTypesPropagateThroughDeclarationsReferencesAndReloads() {
+    var scope = new WorldviewValidationScope();
+    var ontology = adapt("ontology test in domain root version 1.0.0; event Event; "
+        + "abstract quality Frequency is count of test:Event; "
+        + "quality Derived is test:Frequency; length Wavelength decreases with test:Frequency;", scope);
+    for (var statement : ontology.getStatements().subList(1, 3)) {
+      assertTrue(statement.isGenericQuality());
+      assertTrue(statement.getType().containsAll(java.util.EnumSet.of(
+          org.integratedmodelling.klab.api.knowledge.SemanticType.NUMEROSITY,
+          org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY,
+          org.integratedmodelling.klab.api.knowledge.SemanticType.OBSERVABLE,
+          org.integratedmodelling.klab.api.knowledge.SemanticType.QUANTIFIABLE)));
+      assertFalse(statement.getType().contains(org.integratedmodelling.klab.api.knowledge.SemanticType.EVENT));
+      assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.NUMEROSITY,
+          scope.getConceptDescriptor("test:" + statement.getUrn()).mainType());
+    }
+    var reloaded = new WorldviewValidationScope();
+    reloaded.addNamespace(ontology);
+    assertEquals(scope.getConceptDescriptor("test:Frequency").mainType(),
+        reloaded.getConceptDescriptor("test:Frequency").mainType());
+  }
+
   @Test void qualityDeclarationsCanInhereToProcessesAndEvents() throws Exception {
     assertTrue(diagnostics("process Flow; event Flood; length Length; "
         + "length FlowLength is test:Length of test:Flow; "

@@ -264,6 +264,11 @@ backward-compatible reader accepts the original headerless native-endian format 
 exactly valid. Knowledge-graph `HAS_DATA` relationships retain shard descriptors; the files retain
 the primitive payload.
 
+Primitive payloads are encoded/decoded in reusable blocks of at most 64 KiB. The version-1
+bytes (including canonical NaN writes), legacy native-endian reads, synchronization and
+temporary-file publication contracts are preserved. See [bulk shard I/O](BULK_SHARD_IO.md)
+for compatibility scenarios, persistence/reopening demonstrations and repeatable measurements.
+
 ### Graph atomicity and recovery boundary
 
 Initialization flushes payloads before descriptor publication, but graph and filesystem operations
@@ -288,6 +293,11 @@ mediation. These facilities are planned in [DISTRIBUTED_TWINS](DISTRIBUTED_TWINS
 by the existing storage manager.
 
 ## Concurrency and failure behavior
+
+The Runtime can limit active quality-shard computations across observations through
+`MAX_CONCURRENT_SHARD_TASKS` (default `0`, unrestricted). This controls admission separately
+from shard splitting. See [Runtime shard execution limits](SHARD_EXECUTION.md) for configuration,
+queued cancellation, temporal execution, activity timing evidence and executable scenarios.
 
 Different shard scanners may execute concurrently on virtual threads. A scanner and its cursor are
 task-local. `StorageImpl` uses concurrent maps for shard groups and backing state, while shard
@@ -873,3 +883,17 @@ Dictionary/root/payload publication follows the existing staged filesystem/graph
 not a claim of atomic transactions across those systems. Orphan semantic snapshots are harmless and
 remain part of the final recovery/hardening work. Contextualized units remain S5; the existing S6
 geometry limits and final full-stack acceptance checks remain explicit.
+
+
+## Anchored world grids
+
+Scan description version 6 supports periodic longitude indices and clipped world-boundary cell footprints.
+See [context-wide grid anchoring](GRID_ALIGNMENT.md) for the geometry contract, installation, persistence,
+and physical-area sampling rules. Versions 1–5 retain their existing ordinary-grid contracts.
+
+## Nonrectangular grid coverage
+
+Scan description version 7 records source and consumer support independently of value validity.
+Scanners skip consumer cells outside the shape while preserving dense grid indices and the rectangular
+fast path. See [shape coverage and scanner cell access](GRID_COVERAGE.md) for the centre rule, sparse
+range traversal, contextualizer API, and temporal/persistence behavior.

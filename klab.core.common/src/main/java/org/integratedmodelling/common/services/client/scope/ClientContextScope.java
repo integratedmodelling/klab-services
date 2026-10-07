@@ -54,6 +54,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       DigitalTwin.Configuration configuration) {
     super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
+    if (configuration.getGridAlignment()!=null)
+      getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,configuration.getGridAlignment());
     this.observer = configuration.getObserver();
     if (observer != null) resolutionConstraints.put(ResolutionConstraint.Type.Observer,
         ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
@@ -91,6 +93,14 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     shardingStrategy = parent.shardingStrategy;
     this.transaction = parent.transaction;
     this.transactionId = parent.transactionId;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.collections.Parameters<String> getData() {
+    var data=super.getData();
+    if (configuration!=null && configuration.getGridAlignment()!=null)
+      data.put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,configuration.getGridAlignment());
+    return data;
   }
 
   @Override

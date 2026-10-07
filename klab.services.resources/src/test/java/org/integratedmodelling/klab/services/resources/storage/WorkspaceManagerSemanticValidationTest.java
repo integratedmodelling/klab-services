@@ -11,6 +11,26 @@ import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
 import org.junit.jupiter.api.Test;
 
 class WorkspaceManagerSemanticValidationTest {
+  @Test
+  void invalidDocumentsBindParserDiagnosticsAndPreserveAuditTraces() throws Exception {
+    var manager = org.mockito.Mockito.mock(WorkspaceManager.class, org.mockito.Mockito.CALLS_REAL_METHODS);
+    var source = new KimConceptImpl(); source.setOffsetInDocument(12); source.setLength(5);
+    var issue = org.integratedmodelling.klab.api.services.runtime.Notification.error(
+        new IllegalArgumentException("Invalid declaration"), source);
+    var method = WorkspaceManager.class.getDeclaredMethod("invalidOntology", String.class,
+        String.class, String.class, long.class, java.util.Collection.class);
+    method.setAccessible(true);
+    var document = (org.integratedmodelling.klab.api.lang.kim.KimOntology) method.invoke(manager,
+        "test", "project", "ontology test; bad", 0L, java.util.List.of(issue));
+    var bound = document.getNotifications().iterator().next();
+    org.junit.jupiter.api.Assertions.assertEquals("Invalid declaration", bound.getMessage());
+    org.junit.jupiter.api.Assertions.assertEquals(issue.getStackTrace(), bound.getStackTrace());
+    org.junit.jupiter.api.Assertions.assertEquals("test", bound.getLexicalContext().getDocumentUrn());
+    org.junit.jupiter.api.Assertions.assertEquals("project", bound.getLexicalContext().getProjectUrn());
+    org.junit.jupiter.api.Assertions.assertEquals(12, bound.getLexicalContext().getOffsetInDocument());
+    org.junit.jupiter.api.Assertions.assertEquals(5, bound.getLexicalContext().getLength());
+  }
+
 
   @Test
   void outgoingValidationSnapshotClearsErrorsAfterCorrection() {

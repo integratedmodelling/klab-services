@@ -41,7 +41,7 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
 
   public void visit(KimObservationStrategyDocument document) {
     var context = beginDocument(document);
-    addNotifications(strategyValidator.validateDocument(document, context));
+    addNotifications(strategyValidator.validateDocument(document, context), context);
     visitValue(document.getMetadata(), context);
     visitValue(document.getCoverage(), context);
     for (var strategy : safe(document.getStatements())) visitStatement(strategy, context);
@@ -53,7 +53,7 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
   }
 
   private void visitStrategy(KimObservationStrategy strategy, Context context) {
-    addNotifications(strategyValidator.validateStrategy(strategy, context));
+    addNotifications(strategyValidator.validateStrategy(strategy, context), context);
     visitPlanNode(strategy.getSelection(), context);
     for (var setup : safe(strategy.getSetup())) visitPlanNode(setup, context);
     visitPlanNode(strategy.getPlan(), context);
@@ -62,7 +62,7 @@ public class KimObservationStrategyDocumentVisitor extends KimObservableVisitor 
   private void visitPlanNode(KimObservationPlan.Node node, Context context) {
     if (node == null || !enter(node)) return;
     var nodeContext = child(context, node);
-    addNotifications(strategyValidator.validatePlanNode(node, nodeContext));
+    addNotifications(strategyValidator.validatePlanNode(node, nodeContext), nodeContext);
     if (node instanceof KimObservationPlan.ClosedObservable value)
       visitObservable(value.getObservable(), nodeContext);
     else if (node instanceof KimObservationPlan.MatchAlternative value)

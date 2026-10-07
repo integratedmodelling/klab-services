@@ -235,6 +235,10 @@ that project, not an implemented universal gate.
 
 ## Regression verification
 
+For runtime resource-admission scenarios, see [Runtime shard execution limits](SHARD_EXECUTION.md#executable-scenarios).
+They cover shared limits across observations, FIFO waiting, live configuration, cancellation,
+failure recovery, storage readback and temporal execution through existing executor paths.
+
 Focused Java tests cover asset viability, the three data policies, scalar and temporal evidence,
 graph membership and transaction-local link identity, graph structure, verb descriptors, and
 histogram missing-count transport. The runtime invocation regression exercises inline metadata

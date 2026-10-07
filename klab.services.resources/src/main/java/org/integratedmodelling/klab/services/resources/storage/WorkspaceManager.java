@@ -2835,7 +2835,25 @@ public class WorkspaceManager {
     document.setSourceCode(source);
     document.setLastUpdateTimestamp(timestamp);
     document.setInactive(true);
-    document.setNotifications(new ArrayList<>(notifications));
+    var bound = new ArrayList<Notification>();
+    for (var notification : notifications) {
+      var context = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl.LexicalContextImpl();
+      context.setDocumentUrn(urn);
+      context.setProjectUrn(projectName);
+      context.setDocumentType(KlabAsset.KnowledgeClass.classify(document.getClass()));
+      var original = notification.getLexicalContext();
+      if (original != null) {
+        context.setOffsetInDocument(original.getOffsetInDocument());
+        context.setLength(original.getLength());
+      } else {
+        context.setOffsetInDocument(0);
+        context.setLength(source == null ? 0 : Math.min(1, source.length()));
+      }
+      var copy = Notification.create(notification.getLevel(), notification.getMessage(), context);
+      copy.setStackTrace(notification.getStackTrace());
+      bound.add(copy);
+    }
+    document.setNotifications(bound);
     return document;
   }
 
@@ -3880,6 +3898,59 @@ public class WorkspaceManager {
     }
   }
 
+  private FileProjectStorage materialStorage(String project, UserScope user, boolean mutation) {
+    var descriptor = projectDescriptors.get(project);
+    if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage storage))
+      throw new IllegalArgumentException("Project material requires service-owned FileProjectStorage");
+    if (mutation && projectLocks.containsKey(project)
+        && !Objects.equals(projectLocks.get(project), user.getIdentity().getId()))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Project is locked by another user");
+    return storage;
+  }
+
+  public synchronized org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial readMaterial(
+      org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material) {
+    try {
+      var bytes = org.integratedmodelling.klab.resources.ProjectMaterialIO.read(
+          materialStorage(material.getProjectName(), null, false), material.getPath());
+      if (bytes == null) return null;
+      material.setContent(bytes); material.setServiceId(service.serviceId()); return material;
+    } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
+  }
+
+  public synchronized List<ResourceSet> writeMaterial(
+      org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material,
+      org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode mode, UserScope user) {
+    service.requireProjectOperation(material.getProjectName(), CRUDOperation.UPDATE_METADATA, user);
+    var storage = materialStorage(material.getProjectName(), user, true);
+    try {
+      boolean existed = org.integratedmodelling.klab.resources.ProjectMaterialIO.read(storage, material.getPath()) != null;
+      org.integratedmodelling.klab.resources.ProjectMaterialIO.write(storage, material.getPath(), material.getContent(), mode);
+      return materialChange(material, existed ? CRUDOperation.UPDATE : CRUDOperation.CREATE, storage);
+    } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
+  }
+
+  public synchronized List<ResourceSet> deleteMaterial(
+      org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material, UserScope user) {
+    service.requireProjectOperation(material.getProjectName(), CRUDOperation.DELETE, user);
+    var storage = materialStorage(material.getProjectName(), user, true);
+    try {
+      if (!org.integratedmodelling.klab.resources.ProjectMaterialIO.delete(storage, material.getPath())) return List.of();
+      return materialChange(material, CRUDOperation.DELETE, storage);
+    } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
+  }
+
+  private List<ResourceSet> materialChange(org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material,
+      CRUDOperation operation, FileProjectStorage storage) {
+    var change = new ResourceSet.Resource(operation, service.serviceId(), material.getUrn(),
+        material.getProjectName(), Version.EMPTY_VERSION, KlabAsset.KnowledgeClass.ADDITIONAL_MATERIAL,
+        System.currentTimeMillis(), false);
+    var result = ResourceSet.of(change);
+    result.setWorkspace(getWorkspaceForProject(material.getProjectName()));
+    addRepositoryState(List.of(result), projectDescriptors.get(material.getProjectName()), storage.getRepositoryState());
+    return List.of(result);
+  }
+
   private void refreshWorldviewMembership() {
     _worldview = null;
     _ontologyOrder = null;
@@ -3941,11 +4012,12 @@ public class WorkspaceManager {
       try {
         IParseResult result = parser.parse(reader);
         for (var error : result.getSyntaxErrors()) {
-          System.out.println(error);
-          // TODO syntax context
+          var context = new org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl.LexicalContextImpl();
+          context.setOffsetInDocument(error.getOffset());
+          context.setLength(error.getLength());
           errors.add(
               Notification.create(
-                  error.getSyntaxErrorMessage().getMessage(), Notification.Level.Error));
+                  error.getSyntaxErrorMessage().getMessage(), Notification.Level.Error, context));
         }
         return (T) result.getRootASTElement();
       } catch (Throwable throwable) {
@@ -4196,6 +4268,7 @@ public class WorkspaceManager {
       var document = fileProjectStorage.locate(documentUrn, resourceType);
       if (document != null) {
         this.loading.set(true);
+        fileProjectStorage.deleteDocument(documentUrn, resourceType);
         var result = new ResourceSet();
         result.setWorkspace(getWorkspaceForProject(projectName));
         result.getServices().put(service.serviceId(), service.getUrl());
@@ -4225,7 +4298,7 @@ public class WorkspaceManager {
                           false));
               result
                   .getNotifications()
-                  .add(Notification.info("Namespace " + documentUrn + " was permanently deleted"));
+                  .add(Notification.info("Namespace " + documentUrn + " was removed from the working tree"));
             } else {
               result
                   .getNotifications()
@@ -4238,10 +4311,10 @@ public class WorkspaceManager {
                 _ontologyOrder.stream()
                     .filter(o -> !o.getUrn().equals(documentUrn))
                     .collect(Collectors.toList());
-            _worldviewOntologies.stream()
+            _worldviewOntologies = _worldviewOntologies.stream()
                 .filter(o -> !o.getUrn().equals(documentUrn))
                 .collect(Collectors.toList());
-            if (previous != null && isWorldviewProvider()) {
+            if (previous != null) {
               // this may or may not end up in the result set
               var worldviewChange = new ResourceSet();
               worldviewChange.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
@@ -4258,7 +4331,9 @@ public class WorkspaceManager {
                           KlabAsset.KnowledgeClass.ONTOLOGY,
                           previous.getLastUpdateTimestamp(),
                           false));
-              ret.add(worldviewChange);
+              if (isWorldviewProvider()) {
+                ret.add(worldviewChange);
+              }
               result
                   .getOntologies()
                   .add(
@@ -4273,7 +4348,7 @@ public class WorkspaceManager {
                           false));
               result
                   .getNotifications()
-                  .add(Notification.info("Ontology " + documentUrn + " was permanently deleted"));
+                  .add(Notification.info("Ontology " + documentUrn + " was removed from the working tree"));
 
             } else {
               result
@@ -4302,7 +4377,7 @@ public class WorkspaceManager {
                           false));
               result
                   .getNotifications()
-                  .add(Notification.info("Behavior " + documentUrn + " was permanently deleted"));
+                  .add(Notification.info("Behavior " + documentUrn + " was removed from the working tree"));
 
             } else {
               result
@@ -4336,7 +4411,7 @@ public class WorkspaceManager {
                   .getNotifications()
                   .add(
                       Notification.info(
-                          "Observation strategy " + documentUrn + " was permanently deleted"));
+                          "Observation strategy " + documentUrn + " was removed from the working tree"));
 
             } else {
               result
@@ -4345,16 +4420,15 @@ public class WorkspaceManager {
             }
           }
         }
-        // FIXME this logic should go in the file storage, including the next TODO and backup
-        File file = new File(document.getFile());
-        // FIXME NOO have the file repo do this, with Git synchronization
-        Utils.Files.deleteQuietly(file);
-        // TODO if namespace and no other docs in the same dir, remove the folders too
         ret.add(result);
-        this.loading.set(false);
+      } else {
+        return List.of(ResourceSet.empty(Notification.error(
+            "Document " + documentUrn + " was not found", UIView.Interactivity.DISPLAY)));
       }
     } catch (Exception e) {
-      return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e)));
+      return List.of(ResourceSet.empty(Notification.error(e.getMessage(), e, UIView.Interactivity.DISPLAY)));
+    } finally {
+      this.loading.set(false);
     }
 
     if (!ret.isEmpty()) {

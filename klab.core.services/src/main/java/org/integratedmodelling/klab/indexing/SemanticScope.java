@@ -27,6 +27,15 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
  *
  */
 public class SemanticScope {
+    // Session-specific validation must run before the indexer's result limit, so invalid
+    // prefix/head combinations cannot crowd eligible concepts out of the candidate page.
+    java.util.function.Predicate<Concept> candidateFilter = concept -> true;
+    java.util.function.BooleanSupplier searchCancelled = () -> false;
+
+    void checkSearchCancelled() {
+        if (searchCancelled.getAsBoolean())
+            throw new java.util.concurrent.CancellationException("Superseded by a newer search.");
+    }
 
 	/**
 	 * A logical constraint. If not negated, the arguments are required, otherwise

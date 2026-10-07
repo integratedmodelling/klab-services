@@ -14,6 +14,12 @@ public interface Tile extends Shape {
 
     Grid getGrid();
 
+    /** Whether the physical centre of a grid cell is covered by this tile's original shape.
+     * Polygon and hole boundaries count as covered. Grid size remains the dense bounding size. */
+    default boolean isCellCovered(long x, long y) {
+        throw new UnsupportedOperationException("Tile does not expose cell coverage");
+    }
+
 //
 //	public interface Cell extends Space {
 //

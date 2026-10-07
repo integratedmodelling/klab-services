@@ -91,7 +91,7 @@ class ClassificationExecutionTest {
         MemberClassifierExecutorTest.Classifier.class.getMethod(
             "classify", Observable.class, Observation.class, ContextScope.class, ServiceCall.class);
     implementation.mainClassInstance = f.classifier;
-    when(registry.getFunctionDescriptor(any(ServiceCall.class))).thenReturn(List.of(descriptor));
+    when(registry.getFunctionDescriptor(any(ServiceCall.class), any(org.integratedmodelling.klab.api.scope.Scope.class))).thenReturn(List.of(descriptor));
     when(registry.implementation(descriptor)).thenReturn(implementation);
     var parent = new ObservationImpl();
     parent.setId(-10);

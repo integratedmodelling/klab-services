@@ -17,6 +17,16 @@ public class NotificationImpl implements Notification, Serializable {
   @Serial private static final long serialVersionUID = -5812547783872203517L;
 
   private String message;
+  private String stackTrace;
+
+  @Override
+  public String getStackTrace() {
+    return stackTrace;
+  }
+
+  public void setStackTrace(String stackTrace) {
+    this.stackTrace = stackTrace;
+  }
   private Level level;
   //    private Type type = Type.None;
   private long timestamp = System.currentTimeMillis();

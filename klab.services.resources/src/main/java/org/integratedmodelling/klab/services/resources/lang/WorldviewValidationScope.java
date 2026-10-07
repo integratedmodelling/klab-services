@@ -21,6 +21,17 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
 
   public WorldviewValidationScope() {}
 
+  @Override
+  public ConceptDescriptor getConceptDescriptor(String name) {
+    // The language's fallback splits on every colon, truncating bracketed authority codes.
+    if (name != null && name.matches("[A-Z][A-Z0-9_]*(\\.[A-Z0-9_]+)*:.*")) {
+      var parts = name.split(":", 2);
+      return new ConceptDescriptor(parts[0], parts[1], SemanticSyntax.Type.IDENTITY,
+          "Authority identity", "", false, false);
+    }
+    return super.getConceptDescriptor(name);
+  }
+
   public WorldviewValidationScope(Worldview worldview) {
     this();
     for (var ontology : worldview.getOntologies()) {
@@ -78,8 +89,44 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
               "Core concept " + coreConcept.encode() + " for type " + declaration.getDeclaredType(),
               true,
               false));
+      // Do not delegate core registration to language versions that infer generic types
+      // from the intentionally untyped core parent.
+      var descriptor = new ConceptDescriptor(declaration.getNamespace(), declaration.getName(),
+          declaration.getDeclaredType(), declaration.getDescription(), declaration.getName(),
+          declaration.isAbstract(), false, declaration.isSubjective(), declaration.isSealed());
+      conceptTypes.put(declaration.getNamespace() + ":" + declaration.getName(), descriptor);
+      return descriptor;
+    }
+    if (declaration.isGenericQuality() && declaration.getDeclaredParent() != null) {
+      // Descriptor registration must not compile syntax. Core parents in particular are
+      // intentionally untyped: the declaration supplies their type, not vice versa.
+      var type = inheritedType(declaration.getDeclaredParent());
+      var descriptor = new ConceptDescriptor(declaration.getNamespace(), declaration.getName(),
+          type, declaration.getDescription(), declaration.getName(),
+          declaration.isAbstract(), false, declaration.isSubjective(), declaration.isSealed());
+      conceptTypes.put(declaration.getNamespace() + ":" + declaration.getName(), descriptor);
+      return descriptor;
     }
     return super.createConceptDescriptor(declaration);
+  }
+
+  private static SemanticSyntax.Type inheritedType(SemanticSyntax parent) {
+    var result = parent.getType();
+    for (var token : parent) {
+      var type = token.getType();
+      // Accommodate older language beans that still report the unary operand's type.
+      var unary = token.getUnaryOperator();
+      if (unary != null && unary.getFirst() != null && token.getObservable() != null) {
+        var operand = token.getObservable().concept().mainType();
+        type = operand == null ? SemanticSyntax.Type.NOTHING
+            : unary.getFirst().getType(operand, unary.getSecond());
+      }
+      if (type == null || !type.is(SemanticSyntax.TypeCategory.VALID)) {
+        return SemanticSyntax.Type.NOTHING;
+      }
+      if (type.is(SemanticSyntax.TypeCategory.OBSERVABLE)) result = type;
+    }
+    return result == null ? SemanticSyntax.Type.NOTHING : result;
   }
 
   private void loadConcepts(KimConceptStatement statement, String namespace) {

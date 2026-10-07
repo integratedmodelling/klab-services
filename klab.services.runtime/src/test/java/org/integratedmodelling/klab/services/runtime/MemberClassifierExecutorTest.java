@@ -174,12 +174,12 @@ class MemberClassifierExecutorTest {
     var implementation = new org.integratedmodelling.klab.components.ComponentRegistry.ServiceImplementation();
     implementation.method = Classifier.class.getMethod("classify", Observable.class, Observation.class, ContextScope.class, ServiceCall.class);
     implementation.mainClassInstance = f.classifier;
-    when(registry.getFunctionDescriptor(any(ServiceCall.class))).thenReturn(List.of(descriptor));
+    when(registry.getFunctionDescriptor(any(ServiceCall.class), eq(f.scope))).thenReturn(List.of(descriptor));
     when(registry.implementation(descriptor)).thenReturn(implementation);
     assertEquals(1, f.run(MemberClassifierExecutor.compile(f.actuator, registry, f.scope)).size());
-    when(registry.getFunctionDescriptor(any(ServiceCall.class))).thenReturn(List.of(descriptor, descriptor));
+    when(registry.getFunctionDescriptor(any(ServiceCall.class), eq(f.scope))).thenReturn(List.of(descriptor, descriptor));
     assertThrows(IllegalArgumentException.class, () -> MemberClassifierExecutor.compile(f.actuator, registry, f.scope));
-    when(registry.getFunctionDescriptor(any(ServiceCall.class))).thenReturn(List.of());
+    when(registry.getFunctionDescriptor(any(ServiceCall.class), eq(f.scope))).thenReturn(List.of());
     assertThrows(IllegalArgumentException.class, () -> MemberClassifierExecutor.compile(f.actuator, registry, f.scope));
   }
   @Test void actualGeneratorSourceSignatureAndEmptyClosure(@TempDir Path temp) throws Exception {

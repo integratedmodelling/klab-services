@@ -24,7 +24,7 @@ class LocalAdapterExecutorTest {
     when(adapter.hasContextualizer()).thenReturn(true);
     when(adapter.contextualize(resource, Geometry.UNIVERSAL, scope)).thenReturn(resource);
     var executor = new LocalAdapterExecutor(
-        new CompiledDataflow.CallDescriptors(null, null, resource, adapter), observation, Map.of(), scope);
+        new CompiledDataflow.CallDescriptors(null, null, resource, adapter), observation, Map.of(), scope, new ShardExecution(() -> 1));
     assertTrue(executor.run(null, Map.of(), scope, new ContextualizationScopeImpl(observation, null)));
     verify(adapter).contextualize(resource, Geometry.UNIVERSAL, scope);
     verify(adapter).encode(eq(resource), same(Geometry.UNIVERSAL), isNull(), any(), isNull(),

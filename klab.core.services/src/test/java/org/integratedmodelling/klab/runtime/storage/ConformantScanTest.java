@@ -70,10 +70,13 @@ class ConformantScanTest {
     final StorageImpl storage;
     final ServiceContextScope scope = mock(ServiceContextScope.class, RETURNS_DEEP_STUBS);
     Fixture(int splits, Storage.Type type, FillCurve curve) {
+      this(splits, type, curve, TIME + "S2(5,4){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 4&comma;5 4&comma;5 0&comma;0 0))}");
+    }
+    Fixture(int splits, Storage.Type type, FillCurve curve, String geometry) {
       var observation = new ObservationImpl(); var concept = new ConceptImpl();
       concept.setUrn("test:quality"); concept.setName("quality"); concept.getType().add(SemanticType.QUALITY);
       observation.setObservable(ObservableImpl.promote(concept,null)); observation.setId(-1); observation.setUrn("test:grid");
-      observation.setGeometry(Geometry.create(TIME + "S2(5,4){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 4&comma;5 4&comma;5 0&comma;0 0))}"));
+      observation.setGeometry(Geometry.create(geometry));
       strategy = new Data.ShardingStrategy(curve,splits,0,0,type);
       org.mockito.Mockito.doReturn(mock(org.integratedmodelling.klab.api.services.RuntimeService.class,RETURNS_DEEP_STUBS)).when(scope).getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
       when(scope.getConfiguration().getPersistence()).thenReturn(Persistence.EXPLICIT_ACTION);
@@ -84,7 +87,8 @@ class ConformantScanTest {
       when(manager.getBooleanBuffer(anyLong())).thenAnswer(c -> (BufferArray)BufferArray.Z008.make(c.getArgument(0,Long.class)));
       storage = new StorageImpl(observation,strategy,scope,manager);
       for (var scanner : storage.scan(Scheduler.Event.initialization(),strategy,Storage.Scanner.class,false)) {
-        for (var cell : cells(scanner.shard().getGeometry().encode(), curve)) write(scanner,type,code(cell));
+        var ordered = cells(scanner.shard().getGeometry().encode(), curve);
+        while (scanner.hasNext()) write(scanner,type,code(ordered.get(Math.toIntExact(scanner.position()))));
         storage.finalizeRun(scanner);
       }
       clearInvocations(manager);
@@ -97,6 +101,50 @@ class ConformantScanTest {
           StorageScan.Coverage.EXACT,StorageScan.Sampling.EXACT,StorageScan.Budget.defaults());
     }
     public void close() { storage.close(null); }
+  }
+
+  @Test void rectangularSupportDoesNotOverrideStoredCellBounds() {
+    String geometry = grid(5,4,0,5,0,4).replace("proj=EPSG:4326",
+        "proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 3.8&comma;4.8 3.8&comma;4.8 0&comma;0 0))");
+    for (int splits : new int[]{1,3}) {
+      try (var f = new Fixture(splits,Storage.Type.DOUBLE,FillCurve.D2_XY,geometry)) {
+        var parts = List.of(new StorageScan.Partition("right",grid(3,4,2,5,0,4).replace(TIME,""),12),
+            new StorageScan.Partition("left",grid(2,4,0,2,0,4).replace(TIME,""),8));
+        var plan = f.storage.plan(f.request(2,FillCurve.D2_XInvY,0,0,parts,geometry));
+        assertEquals(parts, plan.description().partitions());
+        assertEquals(StorageScan.Sampling.EXACT, plan.description().sampling());
+        try (var session = f.storage.open(plan)) {
+          long count = 0;
+          for (var scanner : session.scanners()) {
+            for (var cell : cells(scanner.view().partition().geometry(),FillCurve.D2_XInvY)) {
+              check(scanner,Storage.Type.DOUBLE,code(cell));
+              count++;
+            }
+            assertFalse(scanner.hasNext());
+          }
+          assertEquals(20, count);
+        }
+      }
+    }
+  }
+
+  @Test void salamellaGridCanBeMappedWithoutSpatialResampling() {
+    var shape = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+        "EPSG:4326 POLYGON ((21.910616123751442 38.79364335500986,21.26838806193504 38.79364335500986,21.26838806193504 39.03962334822924,21.910616123751442 39.03962334822924,21.910616123751442 38.79364335500986))");
+    var grid = new org.integratedmodelling.klab.runtime.scale.space.GridImpl(
+        shape.getEnvelope(), org.integratedmodelling.klab.api.lang.Quantity.create("50.m"), true);
+    var tile = new org.integratedmodelling.klab.runtime.scale.space.TileImpl(shape,grid,true);
+    String geometry = tile.encode();
+    var layout = new StorageScan.Layout(FillCurve.D2_XY,1,0,0,Storage.Type.DOUBLE);
+    var source = new StorageScan.SourceShard("elevation",geometry,tile.size(),0,0,layout);
+    var partitions = List.of(new StorageScan.Partition("normalized",geometry,tile.size()));
+    var request = new StorageScan.Request<>(StorageScan.Slice.of(Scheduler.Event.initialization()),
+        layout,geometry,partitions,null,Storage.DoubleScanner.class,StorageScan.Access.READ_ONLY,
+        StorageScan.Precision.LOSSLESS,StorageScan.Coverage.EXACT,StorageScan.Sampling.EXACT,
+        StorageScan.Budget.defaults());
+    var mapping = SpatialScan.plan(List.of(source),request,geometry,false);
+    assertInstanceOf(ConformantScan.class,mapping);
+    assertEquals(partitions,mapping.partitions());
   }
 
   @Test void splitMergeAndPermutationPreserveEveryPrimitiveCell() {
@@ -367,4 +415,27 @@ class ConformantScanTest {
     }
     for (boolean value : seen) assertTrue(value);
   }
+  @Test void fullWorldViewsRotateAtTheDatelineWithoutDuplicatingValues() {
+    String source=TIME+"S2(4,1){proj=EPSG:4326,bbox=[1 361 -45 45],world=[-180 180 -90 90]}";
+    String target=TIME+"S2(4,1){proj=EPSG:4326,bbox=[-179 181 -45 45],world=[-180 180 -90 90]}";
+    try(var fixture=new Fixture(1,Storage.Type.DOUBLE,FillCurve.D2_XY,source)) {
+      var request=fixture.request(1,FillCurve.D2_XY,0,0,List.of(),target);
+      var plan=fixture.storage.plan(request);
+      assertEquals(6,plan.description().version());
+      assertEquals(plan.description(),Utils.Json.parseObject(Utils.Json.asString(plan.description()),StorageScan.Description.class));
+      try(var session=fixture.storage.open(plan)) {
+        var scanner=(Storage.DoubleScanner)session.scanners().getFirst();
+        double[] values=new double[4];for(int i=0;i<4;i++) values[i]=scanner.get();
+        assertFalse(scanner.hasNext());
+        // Each original cell occurs exactly once, in the rotated target order.
+        assertArrayEquals(new double[]{255.25,355.25,55.25,155.25},values);
+      }
+    }
+  }
+
+  @Test void periodicMetadataRejectsDuplicatedLongitudeCells() {
+    String geometry="S2(5,1){proj=EPSG:4326,bbox=[0 450 -45 45],world=[-180 180 -90 90]}";
+    assertThrows(UnsupportedOperationException.class,()->ConformantScan.Grid.read(geometry,null));
+  }
+
 }

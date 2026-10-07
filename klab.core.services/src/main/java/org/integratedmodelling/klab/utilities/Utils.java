@@ -29,6 +29,7 @@ import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
@@ -58,6 +59,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
@@ -110,10 +112,35 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     /**
      * Resolve an authority into a Reasoner, installing its component from a Resources service when
-     * the authority is advertised as embeddable.
+     * the authority is advertised as embeddable. Only Resources providers of the loaded worldview
+     * participate in discovery. Locally installed providers remain available without discovery.
      */
-    public static org.integratedmodelling.klab.api.knowledge.Authority resolveAuthority(
-        String urn, UserScope scope, BaseService targetService) {
+    public static org.integratedmodelling.klab.api.services.Authority resolveAuthority(
+        Worldview.AuthorityBinding binding, Scope scope, BaseService targetService, Worldview worldview) {
+      var registry = targetService.getComponentRegistry();
+      var provider = registry.getAuthority(binding, scope);
+      if (provider != null || !binding.provider().embeddable()) return provider;
+      for (var service : scope.getServices(ResourcesService.class)) {
+        var capabilities = service.capabilities(scope);
+        if (capabilities == null || !capabilities.isWorldviewProvider()
+            || !Objects.equals(worldview.getUrn(), capabilities.getAdoptedWorldview())) continue;
+        var response = service.resolve(binding.componentUrn() + "@" + binding.componentVersion(),
+            KlabAsset.KnowledgeClass.COMPONENT, scope instanceof UserScope user ? user : null);
+        if (response == null || response.isEmpty()) continue;
+        // Existing component resolution may choose a compatible version. Reject substitutions.
+        if (response.getResults().stream().noneMatch(resource ->
+            binding.componentUrn().equals(resource.getResourceUrn())
+                && binding.componentVersion().equals(resource.getResourceVersion()))) continue;
+        if (registry.loadComponents(response, scope)) {
+          provider = registry.getAuthority(binding, scope);
+          if (provider != null) return provider;
+        }
+      }
+      return null;
+    }
+
+    public static org.integratedmodelling.klab.api.services.Authority resolveAuthority(
+        String urn, Scope scope, BaseService targetService, Worldview worldview) {
 
       if (targetService.serviceType() != KlabService.Type.REASONER) {
         return null;
@@ -123,13 +150,32 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           targetService
               .getComponentRegistry()
               .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
-      var result =
-          queryResources(
-              scope,
-              ResourcesService.class,
-              service -> service.resolve(urn, KlabAsset.KnowledgeClass.COMPONENT, scope));
-      if (!result.isEmpty()
-          && targetService.getComponentRegistry().loadComponents(result, scope)) {
+      // Startup has a service scope, not a user scope. The client retains its authenticated
+      // service-owner credentials when no user scope is supplied to the resolver.
+      var responses = new ArrayList<ResourceSet>();
+      for (var service : scope.getServices(ResourcesService.class)) {
+        try {
+          var capabilities = service.capabilities(scope);
+          if (capabilities == null || !capabilities.isWorldviewProvider()
+              // adoptedWorldview is a name, not the opaque ID of a loaded worldview instance.
+              || worldview == null || worldview.getUrn() == null
+              || !Objects.equals(worldview.getUrn(), capabilities.getAdoptedWorldview())) {
+            continue;
+          }
+          var response = service.resolve(urn, KlabAsset.KnowledgeClass.COMPONENT,
+              scope instanceof UserScope userScope ? userScope : null);
+          if (response != null && !response.isEmpty()) responses.add(response);
+        } catch (RuntimeException e) {
+          scope.warn("Cannot discover authority " + urn + " from " + service.serviceName()
+              + ": " + e.getMessage());
+        }
+      }
+      var result = merge(responses.toArray(ResourceSet[]::new));
+      if (!result.isEmpty()) {
+        if (!targetService.getComponentRegistry().loadComponents(result, scope)) {
+          throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+              "Failed to load component for authority " + urn + ": " + result.getNotifications());
+        }
         return targetService
             .getComponentRegistry()
             .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
@@ -2059,10 +2105,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     private static ObjectId resolveBranch(Repository repository, String branch) throws IOException {
       String normalized = normalizeBranchName(branch);
-      ObjectId ret = repository.resolve(normalized);
-      if (ret == null) {
-        ret = repository.resolve("refs/heads/" + normalized);
-      }
+      ObjectId ret = repository.resolve("refs/heads/" + normalized);
       if (ret == null) {
         ret = repository.resolve("refs/remotes/origin/" + normalized);
       }
@@ -2074,23 +2117,23 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         throws GitAPIException, IOException {
 
       String normalized = normalizeBranchName(branch);
-      if (repository.findRef("refs/heads/" + normalized) != null
-          || repository.findRef(normalized) != null) {
-        git.checkout().setName(normalized).call();
+      if (repository.exactRef("refs/heads/" + normalized) != null) {
+        git.checkout().setName("refs/heads/" + normalized).call();
         return;
       }
 
       if (repository.findRef("refs/remotes/origin/" + normalized) != null) {
-        git.checkout()
-            .setCreateBranch(true)
+        git.branchCreate()
             .setName(normalized)
-            .setStartPoint("origin/" + normalized)
+            .setStartPoint("refs/remotes/origin/" + normalized)
             .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
             .call();
+        git.checkout().setName("refs/heads/" + normalized).call();
         return;
       }
 
-      git.checkout().setCreateBranch(true).setName(normalized).call();
+      git.branchCreate().setName(normalized).call();
+      git.checkout().setName("refs/heads/" + normalized).call();
       var config = repository.getConfig();
       config.setString("branch", normalized, "remote", "origin");
       config.setString("branch", normalized, "merge", "refs/heads/" + normalized);
@@ -2237,9 +2280,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
       branch = normalizeBranchName(branch);
-      if (branch.isBlank()) {
+      if (branch.isBlank() || !Repository.isValidRefName("refs/heads/" + branch)) {
         ret.getNotifications()
-            .add(Notification.error("A branch name is required to merge changes"));
+            .add(Notification.error("A valid branch name is required to merge changes", UIView.Interactivity.DISPLAY));
         return ret;
       }
 
@@ -2278,7 +2321,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           if (!mergeResult.getMergeStatus().isSuccessful()) {
             resetHard(git, oldCommit);
             ret.getNotifications()
-                .add(Notification.error(formatMergeFailure(localRepository, mergeResult)));
+                .add(Notification.error(formatMergeFailure(localRepository, mergeResult), UIView.Interactivity.DISPLAY));
             return ret;
           }
 
@@ -2323,9 +2366,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
       branch = normalizeBranchName(branch);
-      if (branch.isBlank()) {
+      if (branch.isBlank() || !Repository.isValidRefName("refs/heads/" + branch)) {
         ret.getNotifications()
-            .add(Notification.error("A branch name is required to switch branches"));
+            .add(Notification.error("A valid branch name is required to switch branches", UIView.Interactivity.DISPLAY));
         return ret;
       }
 

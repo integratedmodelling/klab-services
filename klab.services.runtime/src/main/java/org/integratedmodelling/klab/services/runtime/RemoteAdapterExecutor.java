@@ -27,9 +27,10 @@ public class RemoteAdapterExecutor extends AbstractExecutor
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
       Map<String, Observation> dependencies,
-      ContextScope scope) {
+      ContextScope scope,
+      ShardExecution shardExecution) {
 
-    super(callInfo, observation, scope, dependencies);
+    super(callInfo, observation, scope, dependencies, shardExecution);
 
     this.resource = callInfo.resource();
 
@@ -51,7 +52,7 @@ public class RemoteAdapterExecutor extends AbstractExecutor
                   this.service = resourcesService;
                   return resourcesService.info(
                       resource.getAdapterType(),
-                      KlabAsset.KnowledgeClass.INFORMATION,
+                      KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                       AdapterDescriptor.class,
                       scope);
                 })

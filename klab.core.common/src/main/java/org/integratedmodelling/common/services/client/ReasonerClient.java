@@ -117,6 +117,47 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     return client.postRequired(ServicesAPI.REASONER.RESOLVE_CONCEPT, definition, Concept.class);
   }
 
+  @Override
+  public String configureAuthority(
+      org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest request,
+      Scope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.REASONER.CONFIGURE_AUTHORITY, request, String.class);
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse searchAuthority(
+      org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.REASONER.AUTHORITY_SEARCH, request,
+        org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.class);
+  }
+
+  @Override
+  public SemanticSearchResponse semanticSearch(SemanticSearchRequest request, Scope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.REASONER.SEMANTIC_SEARCH, request, SemanticSearchResponse.class);
+  }
+
+  @Override
+  public Map<String, java.net.URL> getAuthorityDocumentation(
+      String authority, String identity, Scope scope) {
+    var response = client.withScope(scope).get(ServicesAPI.REASONER.AUTHORITY_DOCUMENTATION,
+        Map.class, "authority", authority, "identity", identity);
+    if (response == null)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
+          "Authority documentation lookup failed");
+    var result = new java.util.LinkedHashMap<String, java.net.URL>();
+    for (Object key : response.keySet()) {
+      try {
+        if (!(key instanceof String type) || !(response.get(key) instanceof String value))
+          throw new IllegalArgumentException("Invalid documentation entry");
+        result.put(type, java.net.URI.create(value).toURL());
+      } catch (IllegalArgumentException | java.net.MalformedURLException e) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
+            "Invalid authority documentation URL response");
+      }
+    }
+    return Map.copyOf(result);
+  }
+
   public Observable resolveObservableInternal(String definition) {
     return client.postRequired(
         ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);
@@ -499,7 +540,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Collection<Concept> resolving(Semantics relationship) {
-    return client.postCollection(
+    return client.postCollectionOrThrow(
         ServicesAPI.REASONER.RESOLVING, relationship.asConcept(), Concept.class);
   }
 

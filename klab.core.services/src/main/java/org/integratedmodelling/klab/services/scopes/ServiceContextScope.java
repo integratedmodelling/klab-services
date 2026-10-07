@@ -91,6 +91,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   Cache<Long, Observation> observationCache;
   private long observationCacheRevision;
   private DigitalTwin.Transaction currentTransaction;
+  private java.util.function.BooleanSupplier requestCancelled = () -> false;
 
   public ServiceContextScope(ServiceContextScope parent) {
     super(parent);
@@ -112,7 +113,22 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.transactions = parent.transactions;
     this.provisionalObservations = parent.provisionalObservations;
     this.remoteTransactionId = parent.remoteTransactionId;
+    this.requestCancelled = parent.requestCancelled;
     copyMessagingSetup(parent);
+  }
+
+  /** Derive a request-local cancellation signal, inherited by its execution scopes only. */
+  public ServiceContextScope withCancellation(java.util.function.BooleanSupplier cancelled) {
+    Objects.requireNonNull(cancelled);
+    var ret = new ServiceContextScope(this);
+    var inherited = requestCancelled;
+    ret.requestCancelled = () -> inherited.getAsBoolean() || cancelled.getAsBoolean();
+    return ret;
+  }
+
+  @Override
+  public boolean isInterrupted() {
+    return super.isInterrupted() || requestCancelled.getAsBoolean();
   }
 
   @Override

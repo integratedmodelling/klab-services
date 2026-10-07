@@ -86,7 +86,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   @Override
   public final <T extends KlabService> T getService(Class<T> serviceClass) {
     if (ResourcesService.class.isAssignableFrom(serviceClass)
-        && getServices(serviceClass).size() > 1) {
+        && serviceList(KlabService.Type.RESOURCES).size() > 1) {
       if (resourcesMerger == null) {
         resourcesMerger = new ResourcesMerger(this);
       }
@@ -396,9 +396,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
 
   @Override
   public void warn(Object... o) {
+    var notification = Notification.warning(o);
+    if (org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(notification.getLevel(),o)) return;
     super.warn(o);
     if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
-      payloadCollector.add(Notification.warning(o).withIdentity(getId()));
+      payloadCollector.add(notification.withIdentity(getId()));
     }
   }
 
@@ -423,7 +425,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public boolean validateServices() {
     // TODO check that all essential services are available and online, waiting a bit for connection
     //  if necessary
-    Logging.INSTANCE.info("Services for " + user.getUsername() + " validated");
+//    Logging.INSTANCE.info("Services for " + user.getUsername() + " validated");
     return true;
   }
 

@@ -2,10 +2,8 @@ package org.integratedmodelling.klab.api.data.mediation.classification;
 
 import java.io.Serializable;
 import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.knowledge.Authority;
+import org.integratedmodelling.klab.api.knowledge.Codelist;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.Encodeable;
 
@@ -82,5 +80,5 @@ public interface DataKey extends Encodeable, Serializable {
    *
    * @return
    */
-  Authority getAuthority();
+  Codelist getCodelist();
 }

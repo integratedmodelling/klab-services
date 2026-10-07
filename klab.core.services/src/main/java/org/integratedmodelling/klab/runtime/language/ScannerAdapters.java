@@ -94,6 +94,8 @@ public class ScannerAdapters {
 
     @Override public void seek(long offset) { delegate.seek(offset); }
     @Override public long position() { return delegate.position(); }
+    @Override public void spatialCoordinates(long[] coordinates) { delegate.spatialCoordinates(coordinates); }
+    @Override public org.integratedmodelling.klab.api.data.StorageScan.Cell cell() { return delegate.cell(); }
     @Override public boolean isValid() { return delegate.isValid(); }
     @Override public org.integratedmodelling.klab.api.data.StorageScan.View view() {
       var nativeView = delegate.view();

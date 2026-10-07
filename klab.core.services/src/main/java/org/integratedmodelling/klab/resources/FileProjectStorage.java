@@ -54,11 +54,15 @@ public class FileProjectStorage implements ProjectStorage {
 
           Set<String> branchNames = new HashSet<>();
           for (var branchName : branches.stream().map(Ref::getName).toList()) {
-            branchName = Utils.Paths.getLast(branchName, '/');
-            branchNames.add(branchName);
+            if (branchName.startsWith("refs/heads/")) {
+              branchNames.add(branchName.substring("refs/heads/".length()));
+            } else if (branchName.startsWith("refs/remotes/origin/")
+                && !branchName.endsWith("/HEAD")) {
+              branchNames.add(branchName.substring("refs/remotes/origin/".length()));
+            }
           }
 
-          ret.getBranchNames().addAll(branchNames);
+          ret.getBranchNames().addAll(branchNames.stream().sorted().toList());
 
           for (var remote : git.remoteList().call()) {
             if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
@@ -466,6 +470,13 @@ public class FileProjectStorage implements ProjectStorage {
   // TODO pass the source code from the template or from an existing document
   @Override
   public URL create(String resourceId, ResourceType resourceType, String contents, Scope scope) {
+    if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
+      try {
+        ProjectMaterialIO.write(this, resourceId, contents.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.ADD);
+        return locate(resourceId, resourceType);
+      } catch (IOException e) { throw new KlabIOException(e); }
+    }
 
     if (!rootFolder.exists()) {
       rootFolder.mkdirs();
@@ -537,6 +548,15 @@ public class FileProjectStorage implements ProjectStorage {
       String updatedUrn,
       String content,
       boolean overwriteExisting) {
+    if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
+      if (!previousUrn.equals(updatedUrn)) throw new KlabIOException("Material rename requires explicit create and delete");
+      try {
+        ProjectMaterialIO.write(this, updatedUrn, content.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            overwriteExisting ? org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.CREATE_OR_UPDATE
+                : org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.UPDATE);
+        return locate(updatedUrn, resourceType);
+      } catch (IOException e) { throw new KlabIOException(e); }
+    }
     try {
       File previousFile =
           new File(
@@ -586,16 +606,42 @@ public class FileProjectStorage implements ProjectStorage {
     }
   }
 
-  /**
-   * We don't have a delete function, but this returns the file URL that can be deleted by the
-   * workspace manager.
-   *
-   * @param resourceType
-   * @param urn
-   * @return the file URL of an existing file, or null if the resource is not found.
-   */
+  /** Remove a document from the working tree and stage its removal when tracked. */
+  public void deleteDocument(String urn, ResourceType resourceType) {
+    if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
+      try { ProjectMaterialIO.delete(this, urn); return; }
+      catch (IOException e) { throw new KlabIOException(e); }
+    }
+    var document = locate(urn, resourceType);
+    if (document == null) {
+      throw new KlabIOException("Document " + urn + " was not found");
+    }
+    try {
+      var root = rootFolder.toPath().toRealPath();
+      var target = Path.of(document.toURI()).toRealPath();
+      if (!target.startsWith(root) || target.equals(root)) {
+        throw new IOException("Document is outside the project");
+      }
+      if (isTracked()) {
+        try (var git = Git.open(rootFolder)) {
+          String path = root.relativize(target).toString().replace('\\', '/');
+          var index = git.getRepository().readDirCache();
+          if (index.getEntry(path) != null) {
+            git.rm().addFilepattern(path).call();
+            return;
+          }
+        }
+      }
+      java.nio.file.Files.delete(target);
+    } catch (Exception e) {
+      throw new KlabIOException(e);
+    }
+  }
+
+  /** Return the URL of an existing document, or null if it is absent. */
   public URL locate(String urn, ResourceType resourceType) {
     try {
+      if (resourceType == ResourceType.ADDITIONAL_MATERIAL && ProjectMaterialIO.read(this, urn) == null) return null;
       File resourceFile =
           new File(
               rootFolder

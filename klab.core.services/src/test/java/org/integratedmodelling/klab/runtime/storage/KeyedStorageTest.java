@@ -22,6 +22,26 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
 class KeyedStorageTest {
+  @Test void maskedKeyedWritesAndReadsPreserveDictionaryAndExcludeExteriorCounts(@TempDir Path directory) {
+    try (var f=new Fixture(directory)) {
+      f.fill(false);
+      f.observation.setGeometry(Geometry.create(grid(4,2,0,4,0,2).replace("bbox=[0.0 4.0 0.0 2.0]",
+          "bbox=[0.0 4.0 0.0 2.0],shape=EPSG:3857 POLYGON ((0 0&comma;4 0&comma;0 2&comma;0 0))")));
+      for(var scanner:f.storage.scan(Scheduler.Event.initialization(),f.layout,Storage.KeyScanner.class,false)) {
+        while(scanner.hasNext()) scanner.add(scanner.cell().bounds().getFirst().minX()<2 ? f.b : f.a);
+        f.storage.finalizeRun(scanner);
+      }
+      var plan=f.storage.plan(f.request(null,StorageScan.Sampling.EXACT));
+      assertEquals(7,plan.description().version()); assertNotNull(plan.description().dictionary());
+      try(var session=f.storage.open(plan)) {
+        var scan=session.scanners().getFirst(); int a=0,b=0;
+        while(scan.hasNext()) { assertTrue(scan.isValid()); var value=scan.get(); if(value==f.a)a++;else if(value==f.b)b++;else fail(); }
+        assertEquals(1,a);assertEquals(3,b);
+      }
+      var histogram=f.storage.getCategoryHistograms().values().iterator().next().histogram();
+      assertEquals(0,histogram.missing()); assertEquals(4,histogram.counts().values().stream().mapToLong(Long::longValue).sum());
+    }
+  }
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
   static ConceptImpl concept(String urn, boolean abstractType) {
     var c=new ConceptImpl();c.setUrn(urn);c.setName(urn.substring(urn.indexOf(':')+1));c.setAbstract(abstractType);return c;

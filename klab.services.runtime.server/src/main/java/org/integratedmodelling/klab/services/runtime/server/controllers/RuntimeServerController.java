@@ -277,6 +277,15 @@ public class RuntimeServerController {
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
+  @PostMapping(ServicesAPI.RUNTIME.CONFIGURE_GRID)
+  public @ResponseBody org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(
+      @RequestBody java.util.Map<String,String> request, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization) {
+      return runtimeService.klabService().configureGrid(request.get("definitionUrn"), authorization.getScope(ContextScope.class));
+    }
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
   @PostMapping(ServicesAPI.RUNTIME.REGISTER_OBSERVATION)
   public @ResponseBody Observation register(
       @RequestBody Observation observation, Principal principal)

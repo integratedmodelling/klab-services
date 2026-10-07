@@ -66,6 +66,23 @@ public interface Worldview extends KlabAsset {
    */
   String getWorldviewId();
 
+  /** Validated worldview-local authority definitions. No provider configuration IDs or secrets. */
+  default List<AuthorityBinding> getAuthorityBindings() { return List.of(); }
+
+  /**
+   * Discovery metadata for one declaration. Parameters remain in the authorized ontology
+   * declaration; they are deliberately not copied into this client-facing record. Advertised
+   * sub-authorities are not independent bindings or implicit search-filter aliases.
+   */
+  record AuthorityBinding(
+      String localId, String rootIdentity, String sourceOntology, int sourceOffset, int sourceLength,
+      String sourceHash,
+      org.integratedmodelling.klab.api.services.runtime.extension.Extensions.AuthorityDescriptor provider,
+      String componentUrn, org.integratedmodelling.klab.api.data.Version componentVersion,
+      java.net.URL reasonerUrl)
+      implements java.io.Serializable {}
+
+
   /**
    * Any notifications from the worldview.
    *

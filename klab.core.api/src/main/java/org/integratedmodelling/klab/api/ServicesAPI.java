@@ -223,6 +223,15 @@ public interface ServicesAPI {
    * @author ferd
    */
   interface REASONER {
+    String AUTHORITY_SEARCH = API_BASE + "/authority/search";
+
+    String CONFIGURE_AUTHORITY = API_BASE + "/authority/configure";
+
+    /** Authenticated GET with authority and identity; returns media types mapped to remote-client URLs. */
+    String AUTHORITY_DOCUMENTATION = API_BASE + "/authority/documentation";
+
+    /** Authenticated GET with authority, identity and mediaType; serves local identity documentation. */
+    String AUTHORITY_DOCUMENTATION_CONTENT = AUTHORITY_DOCUMENTATION + "/content";
 
     /**
      * Resolve a concept definition passed as a request body, returning a unique ID for the
@@ -406,6 +415,7 @@ public interface ServicesAPI {
     String GET_OBSERVER_GEOMETRY = API_BASE + "/observer/{id}/geometry";
 
     String REGISTER_OBSERVATION = API_BASE + "/register";
+    String CONFIGURE_GRID = API_BASE + "/grid";
 
     String GET_SHARDING_STRATEGY = API_BASE + "/sharding";
 
@@ -463,6 +473,8 @@ public interface ServicesAPI {
     String FLOW_REOPEN = API_BASE + "/flows/{flowId}/reopen";
     String FLOW_STATES = API_BASE + "/flows/{flowId}/states";
     String FLOW_STATE = API_BASE + "/flows/{flowId}/states/{stateId}";
+    String FLOW_ACTIONS = FLOW_STATE + "/actions";
+    String FLOW_ACTION = FLOW_ACTIONS + "/{actionId}";
     String FLOW_TRANSITIONS = API_BASE + "/flows/{flowId}/transitions";
     String FLOW_ATTACHMENTS = API_BASE + "/flows/{flowId}/states/{stateId}/attachments";
     String FLOW_ATTACHMENT = API_BASE + "/flows/{flowId}/attachments/{attachmentId}";
@@ -482,9 +494,12 @@ public interface ServicesAPI {
     String RESOLVE = API_BASE + "/resolve/{knowledgeClass}/{urn}";
 
     String DELETE = API_BASE + "/delete/{knowledgeClass}/{urn}";
+    /** Query coordinates support qualified URNs without encoded slashes in path segments. */
+    String DELETE_QUERY = API_BASE + "/delete/{knowledgeClass}";
 
     /** PUT endpoint to ingest an asset for addition, update or replacement */
     String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";
+    String SUBMIT_QUERY = API_BASE + "/submit/{knowledgeClass}/{submissionMode}";
 
     /**
      * GET endpoint to retrieve a list of assets of a given type. A POST endpoint may specify a
@@ -497,6 +512,7 @@ public interface ServicesAPI {
      * URN.
      */
     String RETRIEVE = API_BASE + "/retrieve/{knowledgeClass}/{urn}";
+    String RETRIEVE_QUERY = API_BASE + "/retrieve/{knowledgeClass}";
 
     String RESOLVE_URN = "/resolve/{urn}";
 

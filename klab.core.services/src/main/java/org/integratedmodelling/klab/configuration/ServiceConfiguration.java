@@ -35,13 +35,9 @@ import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.configuration.Settings;
-import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.engine.distribution.Stack;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -63,7 +59,6 @@ import org.integratedmodelling.klab.api.utils.Utils.OS;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
 // import org.integratedmodelling.klab.runtime.language.LanguageService;
-import org.integratedmodelling.klab.extension.MavenComponentCache;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
@@ -1069,11 +1064,11 @@ public enum ServiceConfiguration {
 
   public void registerAuthority(Authority authority) {
     if (authority.getCapabilities().getSubAuthorities().isEmpty()) {
-      this.authorities.put(authority.getName(), authority);
+      this.authorities.put(authority.getUrn(), authority);
     } else {
       for (Pair<String, String> sub : authority.getCapabilities().getSubAuthorities()) {
         String aname =
-            authority.getName() + (sub.getFirst().isEmpty() ? "" : ("." + sub.getFirst()));
+            authority.getUrn() + (sub.getFirst().isEmpty() ? "" : ("." + sub.getFirst()));
         this.authorities.put(
             aname, sub.getFirst().isEmpty() ? authority : authority.subAuthority(sub.getFirst()));
       }

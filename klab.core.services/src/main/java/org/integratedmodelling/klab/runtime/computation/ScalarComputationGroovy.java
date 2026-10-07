@@ -173,6 +173,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
       codeInfo.getLoopVariableAssignments().add("def self = null");
 
       for (var step : steps) {
+        boolean priorResult = !codeStatements.isEmpty();
         if (step.expressionDescriptor
             instanceof GroovyProcessor.GroovyDescriptor groovyDescriptor) {
 
@@ -211,7 +212,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                     .add("this.__" + identifier + " = " + identifier);
               }
 
-              if (desc.scalarReferenceCount() > 0 && !scalarBuffers.containsKey(identifier)) {
+              if (desc.scalarReferenceCount() > 0 && (!self || !priorResult) && !scalarBuffers.containsKey(identifier)) {
                 var typeDeclaration = getTypeDeclaration(observation);
                 scalarBuffers.put(
                     identifier,
@@ -223,7 +224,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                         (self ? "self" : "def " + identifier)
                             + " = "
                             + (self ? "priorSelf" : identifier)
-                            + "Buffer.get()");
+                            + (self ? "IsOutput ? priorSelfBuffer.peek() : priorSelfBuffer.get()" : "Buffer.get()"));
               }
 
               /*
@@ -266,7 +267,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                   "Unknown value-mapping input " + inputName + " in " + observations.keySet());
             }
             inputVariables.add(inputName);
-            if (!scalarBuffers.containsKey(inputName)) {
+            if ((!self || !priorResult) && !scalarBuffers.containsKey(inputName)) {
               scalarBuffers.put(
                   inputName,
                   new VarInfo(inputName, getTypeDeclaration(input), scalarBuffers.size() + 1, input));
@@ -276,7 +277,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                       (self ? "self" : "def " + inputName)
                           + " = "
                           + (self ? "priorSelf" : inputName)
-                          + "Buffer.get()");
+                          + (self ? "IsOutput ? priorSelfBuffer.peek() : priorSelfBuffer.get()" : "Buffer.get()"));
             }
           }
           codeStatements.add(
@@ -309,7 +310,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
             .add(
                 "def priorSelfBuffer = ("
                     + getScannerType(target, codeInfo)
-                    + ") (scanners.get(\"__prior_self\") ?: scanners.get(\"self\"))");
+                    + ") (scanners.get(\"__prior_self\") ?: scanners.get(\"self\"))\ndef priorSelfIsOutput = priorSelfBuffer.is(selfBuffer)");
 
       for (String var : scalarBuffers.keySet()) {
         var info = scalarBuffers.get(var);

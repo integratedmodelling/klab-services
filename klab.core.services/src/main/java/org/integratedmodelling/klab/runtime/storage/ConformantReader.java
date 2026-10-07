@@ -29,6 +29,7 @@ final class ConformantReader implements IndexedStorageReader {
     if (index < 0 || index >= target.size) throw new IndexOutOfBoundsException("View offset " + index);
     if (index == lastIndex) return;
     target.decode(index, plan.targetCurve, point);
+    plan.locatePeriodic(point);
     if (source < 0 || !plan.sources[source].contains(point)) source = plan.directory.find(point);
     if (source < 0) throw new IllegalStateException("Validated source coverage lost a cell");
     offset = plan.sources[source].encode(point, plan.sourceCurve); lastIndex = index;
@@ -46,6 +47,7 @@ final class ConformantReader implements IndexedStorageReader {
   }
   /** A contiguous native run ends at either the source or consumer's fastest-axis boundary. */
   private int span(int remaining) {
+    if (plan.longitudePeriod>0) return 1;
     int sourceAxis = plan.sourceCurve == FillCurve.D2_YX ? 0 : point.length - 1;
     int targetAxis = plan.targetCurve == FillCurve.D2_YX ? 0 : point.length - 1;
     boolean sourceReverse = plan.sourceCurve == FillCurve.D2_XInvY;

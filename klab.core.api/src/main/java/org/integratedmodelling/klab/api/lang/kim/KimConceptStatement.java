@@ -7,6 +7,11 @@ import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 
 public interface KimConceptStatement extends KlabStatement {
+  /** Whether the declaration inherits its fundamental type from its is expression. */
+  default boolean isGenericQuality() {
+    return false;
+  }
+
   record DeclarationClause(String kind, String source, int offset, int length) {}
 
   default List<DeclarationClause> getDeclarationClauses() {

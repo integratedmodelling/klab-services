@@ -33,6 +33,7 @@ public class AnnotationImpl extends ParametersImpl<String> implements Annotation
    * @param data the metadata
    */
   public AnnotationImpl(Parameters<String> data) {
+    // putAll also copies unnamed keys; copying them again duplicates positional arguments.
     putAll(data);
   }
 

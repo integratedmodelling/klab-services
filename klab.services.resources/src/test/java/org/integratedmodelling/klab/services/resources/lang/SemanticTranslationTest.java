@@ -12,6 +12,39 @@ import org.integratedmodelling.languages.validation.LanguageValidationScope.Conc
 import org.junit.jupiter.api.Test;
 
 class SemanticTranslationTest {
+  @Test void parserFinalizesUnaryTypesBeforeRegisteringGenericDeclarations() {
+    var parser = new org.integratedmodelling.languages.WorldviewStandaloneSetup()
+        .createInjectorAndDoEMFRegistration().getInstance(org.eclipse.xtext.parser.IParser.class);
+    var parsed = parser.parse(new java.io.StringReader(
+        "ontology test in domain root version 1.0.0; event Event; "
+        + "abstract quality Frequency is count of test:Event; quality Derived is test:Frequency;"));
+    assertFalse(parsed.hasSyntaxErrors());
+    var scope = new org.integratedmodelling.languages.validation.BasicObservableValidationScope();
+    var syntax = new org.integratedmodelling.languages.OntologySyntaxImpl(
+        (org.integratedmodelling.languages.worldview.Ontology) parsed.getRootASTElement(), scope) {
+      @Override protected void logWarning(org.integratedmodelling.languages.api.ParsedObject t,
+          org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String m) {}
+      @Override protected void logError(org.integratedmodelling.languages.api.ParsedObject t,
+          org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String m) { fail(m); }
+    };
+    assertEquals(SemanticSyntax.Type.NUMEROSITY, scope.getConceptDescriptor("test:Frequency").mainType());
+    assertEquals(SemanticSyntax.Type.NUMEROSITY, scope.getConceptDescriptor("test:Derived").mainType());
+    var ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax, "project", List.of(), 0L);
+    assertTrue(ontology.getStatements().get(1).getDeclaredParent()
+        .is(org.integratedmodelling.klab.api.knowledge.SemanticType.NUMEROSITY));
+  }
+
+  @Test void staleUnaryBeansAreRetypedWithoutChangingTheirOperand() {
+    var syntax = leaf("Event", SemanticSyntax.Type.EVENT);
+    when(syntax.getUnaryOperator()).thenReturn(Tuples.pair(SemanticSyntax.UnaryOperator.COUNT, null));
+    var result = adapt(syntax);
+    assertTrue(result.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NUMEROSITY));
+    assertTrue(result.is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUANTIFIABLE));
+    assertFalse(result.is(org.integratedmodelling.klab.api.knowledge.SemanticType.EVENT));
+    assertTrue(result.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.EVENT));
+    assertEquals("count of test:Event", result.getUrn());
+  }
+
   @Test
   void observableUrnPreservesCollectiveRestrictionAndSuffix() {
     for (boolean collective : List.of(false, true)) {

@@ -84,8 +84,9 @@ public interface Storage {
    */
   interface Scanner extends PrimitiveIterator.OfLong {
 
-    /** Position the next read without visiting preceding values. Planned read cursors support
-     * offsets from zero through size (the exhausted position); native writers need not support it. */
+    /** Position the next read without visiting preceding values. Offsets are dense grid indices,
+     * never ranks in a masked traversal. A covered traversal selects the first covered index at or
+     * after the offset. The exhausted position is size(). */
     default void seek(long offset) {
       throw new UnsupportedOperationException("Indexed positioning is not supported");
     }
@@ -96,6 +97,21 @@ public interface Storage {
 
     /** Non-advancing position of the next value, or size() at exhaustion. */
     default long position() { throw new UnsupportedOperationException("No scanner position access"); }
+
+    /** Decode the next value's partition-local spatial coordinates into a caller-owned array.
+     * Allocation-free; masked traversal does not change the coordinate system. */
+    default void spatialCoordinates(long[] coordinates) {
+      throw new UnsupportedOperationException("No spatial scanner coordinates");
+    }
+
+    /** Physical cell footprint of the next value, allocated only on request. Wrapped cells may
+     * have two bounds and polar cells may be clipped. Coordinates are partition-local. */
+    default StorageScan.Cell cell() { throw new UnsupportedOperationException("No spatial scanner cell"); }
+
+    /** Allocate the physical spatial sub-extent of the next cell only when requested. */
+    default org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape spatialExtent() {
+      return cell().shape();
+    }
 
     /** Non-advancing validity of the next value; planned scans throw at exhaustion. */
     default boolean isValid() { throw new UnsupportedOperationException("No scanner validity access"); }

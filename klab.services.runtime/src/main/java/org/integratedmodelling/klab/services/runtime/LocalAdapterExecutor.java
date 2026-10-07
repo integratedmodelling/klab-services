@@ -22,8 +22,9 @@ public class LocalAdapterExecutor extends AbstractExecutor
       CompiledDataflow.CallDescriptors callInfo,
       Observation observation,
       Map<String, Observation> dependencies,
-      ContextScope scope) {
-    super(callInfo, observation, scope, dependencies);
+      ContextScope scope,
+      ShardExecution shardExecution) {
+    super(callInfo, observation, scope, dependencies, shardExecution);
     this.adapter = callInfo.embeddedAdapter();
     this.resource = callInfo.resource();
   }

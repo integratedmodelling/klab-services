@@ -124,6 +124,11 @@ public interface Notification extends Serializable {
 
   String getMessage();
 
+  /** Optional diagnostic detail for auditing; never part of the displayed message. */
+  default String getStackTrace() {
+    return null;
+  }
+
   //    Type getType();
 
   Mode getMode();
@@ -173,6 +178,7 @@ public interface Notification extends Serializable {
 
     Level level = Level.Info;
     String message = "No message";
+    String stackTrace = null;
     LexicalContext lexicalContext = null;
     long timestamp = System.currentTimeMillis();
     Mode mode = Mode.Normal;
@@ -182,7 +188,8 @@ public interface Notification extends Serializable {
     if (objects != null) {
       for (Object o : objects) {
         if (o instanceof Throwable throwable) {
-          message = Utils.Exceptions.stackTrace(throwable);
+          message = conciseMessage(throwable);
+          stackTrace = Utils.Exceptions.stackTrace(throwable);
           level = Level.Error;
         } else if (o instanceof String string) {
           message = string;
@@ -216,12 +223,27 @@ public interface Notification extends Serializable {
     }
 
     var ret = new NotificationImpl(message, level);
+    ret.setStackTrace(stackTrace);
     ret.setLexicalContext(lexicalContext);
     ret.setTimestamp(timestamp);
-    ret.setMode(mode);
+    ret.setMode(org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(level, objects) ? Mode.Silent : mode);
     ret.setOutcome(outcome);
     ret.setInteractivity(interactivity);
 
     return ret;
+  }
+
+  /** Exceptions are diagnostics here; stack traces belong in service logs. */
+  static String conciseMessage(Throwable failure) {
+    var seen = java.util.Collections.newSetFromMap(
+        new java.util.IdentityHashMap<Throwable, Boolean>());
+    String message = null;
+    while (failure != null && seen.add(failure)) {
+      if (failure.getMessage() != null && !failure.getMessage().isBlank()) {
+        message = failure.getMessage();
+      }
+      failure = failure.getCause();
+    }
+    return message == null ? "Operation failed" : message.lines().findFirst().orElse(message);
   }
 }

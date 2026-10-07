@@ -74,6 +74,19 @@ public class ResourceCRUDController {
     throw new KlabAuthorizationException("No valid scope in resource RETRIEVE request");
   }
 
+  @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_QUERY)
+  public KlabAsset retrieveByUrn(@RequestParam String urn,
+      @PathVariable KlabAsset.KnowledgeClass knowledgeClass, Principal principal) {
+    return retrieve(urn, knowledgeClass, principal);
+  }
+
+  @PutMapping(ServicesAPI.RESOURCES.SUBMIT_QUERY)
+  public List<ResourceSet> submitByUrn(@RequestParam String urn,
+      @PathVariable KlabAsset.KnowledgeClass knowledgeClass,
+      @PathVariable ResourcesService.SubmissionMode submissionMode, @RequestBody String contents, Principal principal) {
+    return submit(urn, knowledgeClass, submissionMode, contents, principal);
+  }
+
   @Operation(
       summary = "List assets",
       description = "List all assets for the specified knowledge class")
@@ -105,6 +118,14 @@ public class ResourceCRUDController {
     @ApiResponse(responseCode = "403", description = "Forbidden"),
     @ApiResponse(responseCode = "404", description = "Asset not found")
   })
+  @DeleteMapping(ServicesAPI.RESOURCES.DELETE_QUERY)
+  public List<ResourceSet> deleteByUrn(
+      @org.springframework.web.bind.annotation.RequestParam("urn") String urn,
+      @PathVariable("knowledgeClass") KlabAsset.KnowledgeClass knowledgeClass,
+      Principal principal) {
+    return delete(urn, knowledgeClass, principal);
+  }
+
   @DeleteMapping(ServicesAPI.RESOURCES.DELETE)
   public List<ResourceSet> delete(
       @Parameter(description = "URN of the asset to delete") @PathVariable(name = "urn") String urn,
@@ -178,6 +199,11 @@ public class ResourceCRUDController {
     if (scope instanceof UserScope userScope) {
 
       switch (knowledgeClass) {
+        case ADDITIONAL_MATERIAL -> {
+          var material = Utils.Json.parseObject(contents, org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class);
+          if (!urn.equals(material.getUrn())) throw new KlabIllegalArgumentException("Material path URN does not match body");
+          return resourcesServer.klabService().submit(material, submissionMode, userScope);
+        }
         case WORKFLOW -> {
           var workflow = Utils.Json.parseObject(contents, Workflow.class);
           if (!urn.equals(workflow.getUrn())) {

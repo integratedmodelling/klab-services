@@ -25,6 +25,20 @@ public final class SemanticSearchSession {
     List<SemanticMatch> query(String text, SemanticScope scope, int limit);
   }
 
+  public record AuthoritySelection(Concept concept, String declaration) {}
+  @FunctionalInterface public interface AuthorityResolver {
+    AuthoritySelection resolve(String authority, String canonicalCode);
+  }
+  private AuthorityResolver authorityResolver = (authority, code) -> {
+    throw new UnsupportedOperationException("Authority insertion is unavailable");
+  };
+
+  public SemanticSearchSession(Reasoner reasoner, Search search, SemanticSearchRequest initial,
+      SemanticClauseSupport clauseSupport, AuthorityResolver authorityResolver) {
+    this(reasoner, search, initial, clauseSupport);
+    this.authorityResolver = Objects.requireNonNull(authorityResolver);
+  }
+
   private final Reasoner reasoner;
   private final Search search;
   private final SemanticClauseSupport clauseSupport;
@@ -33,8 +47,12 @@ public final class SemanticSearchSession {
   private List<Object> tokens = new ArrayList<>();
   private State state;
   private List<SemanticMatch> proposals = List.of();
+  private Map<String, PreparedSelection> preparedSelections = Map.of();
+  private record PreparedSelection(Object token, State state) {}
   private int proposalRequestId;
   private int lastRequestId = -1;
+  private final java.util.concurrent.atomic.AtomicInteger latestRequestId =
+      new java.util.concurrent.atomic.AtomicInteger(-1);
   private record Literal(String code) {}
   private enum Qualifier { EACH }
 
@@ -74,40 +92,67 @@ public final class SemanticSearchSession {
     state = replay(tokens);
   }
 
-  public synchronized SemanticSearchResponse handle(SemanticSearchRequest request, int searchId) {
+  public SemanticSearchResponse handle(SemanticSearchRequest request, int searchId) {
+    // Register before taking the session lock: the request currently holding it must be
+    // able to see a newer query and stop scanning. Edits themselves remain atomic.
+    latestRequestId.accumulateAndGet(request.getRequestId(), Math::max);
+    return handleCurrent(request, searchId);
+  }
+
+  private synchronized SemanticSearchResponse handleCurrent(SemanticSearchRequest request, int searchId) {
     var response = new SemanticSearchResponse(searchId, request.getRequestId());
     if (request.getRequestId() <= lastRequestId) {
       response.getErrors().add("This request is out of order. Search again before choosing a match.");
-      describe(response);
+      describeSafely(response);
       return response;
     }
     lastRequestId = request.getRequestId();
     var mode = request.getSearchMode() == null ? SemanticSearchRequest.Mode.TOKEN : request.getSearchMode();
+    if (superseded(request, mode)) return supersededResponse(response);
     try {
       var next = new ArrayList<>(tokens);
+      State prepared = null;
       switch (mode) {
         case TOKEN -> { }
         case UNDO -> { if (!next.isEmpty()) next.removeLast(); }
         case OPEN_SCOPE -> next.add("(");
         case CLOSE_SCOPE -> next.add(")");
         case VALUE -> next.add(literal(request.getQueryString()));
+        case IDENTITY -> {
+          if (request.getMatchesRequestId() != proposalRequestId)
+            throw new IllegalArgumentException("The expression has changed. Refresh before inserting an identity.");
+          AuthorityIdentitySyntax.encode(request.getAuthority(), request.getIdentityCode());
+          var identity = authorityResolver.resolve(request.getAuthority(), request.getIdentityCode());
+          require(identity != null && identity.concept() != null
+              && identity.concept().is(SemanticType.IDENTITY)
+              && !identity.concept().is(SemanticType.NOTHING), "Authority identity is unavailable.");
+          require(reasoner.satisfiable(identity.concept()), "Authority identity is inconsistent.");
+          next.add(identity);
+        }
         case SELECT -> {
           if (request.getMatchesRequestId() != proposalRequestId)
             throw new IllegalArgumentException("The result list has changed. Choose from the current results.");
           var match = proposals.stream()
               .filter(m -> Objects.equals(m.getId(), request.getSelectedMatchId()))
               .findFirst().orElseThrow(() -> new IllegalArgumentException("The selected match is no longer available."));
-          next.add(token(match));
+          var selection = preparedSelections.get(match.getId());
+          if (selection == null) throw new IllegalArgumentException("Search again before choosing this match.");
+          next.add(selection.token());
+          prepared = selection.state();
         }
       }
       if (next.size() > 128) throw new IllegalArgumentException("The expression is too long.");
-      State candidate = replay(next);
-      tokens = next;
-      state = candidate;
-    } catch (IllegalArgumentException ex) {
-      response.getErrors().add(ex.getMessage());
+      if (mode != SemanticSearchRequest.Mode.TOKEN) {
+        // The proposal was fully validated against this exact session revision. Reusing it
+        // avoids another Resources declaration and ontology validation on selection.
+        State candidate = prepared == null ? replay(next) : prepared;
+        tokens = next;
+        state = candidate;
+      }
+    } catch (RuntimeException ex) {
+      response.getErrors().add(failureMessage(ex));
     }
-    describe(response);
+    describeSafely(response);
     String text = mode == SemanticSearchRequest.Mode.TOKEN && request.getQueryString() != null
         ? request.getQueryString().strip().toLowerCase(Locale.ROOT) : "";
     if (text.length() > 256) {
@@ -116,8 +161,15 @@ public final class SemanticSearchSession {
     }
     int limit = Math.max(1, Math.min(100, request.getMaxResults()));
     var matches = new ArrayList<SemanticMatch>();
+    var prepared = new HashMap<String, PreparedSelection>();
     var candidates = new ArrayList<SemanticMatch>();
-    if ("each".startsWith(text)) {
+    Frame frame = state.current();
+    frame.scope.searchCancelled = () -> superseded(request, mode);
+    boolean eachPosition = tokens.size() == frame.start || !tokens.isEmpty()
+        && tokens.getLast() instanceof SemanticLexicalElement modifier
+        && modifier.role != SemanticRole.RELATIONSHIP_SOURCE
+        && modifier.role != SemanticRole.RELATIONSHIP_TARGET;
+    if ("each".startsWith(text) && !frame.complete && !frame.value && eachPosition) {
       var each = new SemanticMatch();
       each.setMatchType(SemanticMatch.Type.MODIFIER);
       each.setId("each");
@@ -125,23 +177,85 @@ public final class SemanticSearchSession {
       each.setDescription("Make the following countable concept collective, including a clause operand.");
       candidates.add(each);
     }
-    candidates.addAll(search.query(text, state.current().scope, Math.max(100, limit)));
+    try {
+      // The real indexer uses this predicate before its limit. Alternative search providers
+      // may ignore it; the proposal loop below still validates every returned match.
+      frame.scope.candidateFilter = concept -> {
+        try {
+          frame.scope.checkSearchCancelled();
+          var trial = new ArrayList<>(tokens);
+          trial.add(concept);
+          var candidate = replay(trial);
+          frame.scope.checkSearchCancelled();
+          prepared.put(concept.getUrn(), new PreparedSelection(concept, candidate));
+          return true;
+        } catch (java.util.concurrent.CancellationException cancelled) {
+          throw cancelled;
+        } catch (IllegalArgumentException invalid) {
+          return false;
+        } catch (RuntimeException ex) {
+          response.getErrors().add("A suggestion could not be checked: " + failureMessage(ex));
+          return false;
+        }
+      };
+      candidates.addAll(search.query(text, frame.scope, limit));
+    } catch (java.util.concurrent.CancellationException cancelled) {
+      return supersededResponse(response);
+    } catch (RuntimeException ex) {
+      response.getErrors().add("Suggestions are unavailable: " + failureMessage(ex));
+    } finally {
+      frame.scope.candidateFilter = concept -> true;
+      frame.scope.searchCancelled = () -> false;
+    }
     for (var match : candidates) {
+      if (superseded(request, mode)) return supersededResponse(response);
       if (!matchTypes.isEmpty() && !matchTypes.contains(match.getMatchType())) continue;
       try {
         var trial = new ArrayList<>(tokens);
-        trial.add(token(match));
-        replay(trial);
+        var checked = prepared.get(match.getId());
+        var selectedToken = checked == null ? token(match) : checked.token();
+        trial.add(selectedToken);
+        var candidateState = checked == null ? replay(trial) : checked.state();
+        if (superseded(request, mode)) return supersededResponse(response);
         matches.add(match);
+        prepared.put(match.getId(), new PreparedSelection(selectedToken, candidateState));
         if (matches.size() == limit) break;
       } catch (IllegalArgumentException ignored) {
         // An indexed lexical match is a proposal only if it is admissible in this expression.
+      } catch (RuntimeException ex) {
+        response.getErrors().add("A suggestion could not be checked: " + failureMessage(ex));
       }
     }
+    if (superseded(request, mode)) return supersededResponse(response);
     proposals = List.copyOf(matches);
+    preparedSelections = Map.copyOf(prepared);
     proposalRequestId = request.getRequestId();
     response.setMatches(matches);
     return response;
+  }
+
+  private boolean superseded(SemanticSearchRequest request, SemanticSearchRequest.Mode mode) {
+    return mode == SemanticSearchRequest.Mode.TOKEN && latestRequestId.get() > request.getRequestId();
+  }
+
+  private SemanticSearchResponse supersededResponse(SemanticSearchResponse response) {
+    response.getErrors().add("Superseded by a newer search.");
+    // The abandoned query must never publish a new proposal revision or alter tokens.
+    if (response.getDeclaration() == null || response.getCode().isEmpty() && !tokens.isEmpty())
+      describeSafely(response);
+    return response;
+  }
+
+  private static String failureMessage(RuntimeException failure) {
+    return failure.getMessage() == null ? failure.getClass().getSimpleName() : failure.getMessage();
+  }
+
+  private void describeSafely(SemanticSearchResponse response) {
+    try {
+      describe(response);
+    } catch (RuntimeException ex) {
+      response.getErrors().add("Expression documentation is unavailable: " + failureMessage(ex));
+    }
   }
 
   private void describe(SemanticSearchResponse response) {
@@ -189,6 +303,7 @@ public final class SemanticSearchSession {
     frames.push(new Frame(0));
     for (int i = 0; i < input.size(); i++) {
       Object token = input.get(i);
+      if (token instanceof AuthoritySelection identity) token = identity.concept();
       Frame frame = frames.peek();
       if ("(".equals(token)) {
         require(frame.scope.lexicalRealm.contains(SemanticRole.GROUP_OPEN), "A group cannot start here.");
@@ -241,15 +356,26 @@ public final class SemanticSearchSession {
         if (predicate) {
           var combined = new ArrayList<>(frame.predicates);
           combined.add(concept);
+          // Satisfiability alone does not enforce one predicate per lexical family. Check
+          // here so conflicting identities cannot fill the indexer's candidate limit.
+          var roots = new HashSet<Concept>();
+          var predicates = new HashSet<String>();
+          for (var entered : combined) {
+            var root = reasoner.lexicalRoot(entered);
+            require(predicates.add(entered.getUrn()) && (root == null || roots.add(root)),
+                "A predicate from this base trait is already present.");
+          }
           require(clauseSupport.predicatesCompatible(combined), "This predicate is disjoint with an entered predicate.");
           frame.predicates.add(concept);
           frame.complete = false;
+          var operandConstraints = new HashSet<>(frame.scope.logicalRealm);
           // A predicate may complete a unary expression (e.g. type of), or prefix a future head.
           try {
             complete(frame, input, i);
-            // A bare predicate can also remain a prefix for a subsequent head concept.
+            // A bare predicate can still prefix a head. Preserve the operand categories
+            // from before completion, including any enclosing operator/clause restrictions.
             if (frame.concept.is(SemanticType.PREDICATE))
-              frame.scope.logicalRealm.addAll(SemanticScope.root().logicalRealm);
+              frame.scope.logicalRealm.addAll(operandConstraints);
           } catch (IllegalArgumentException incomplete) { }
         } else {
           complete(frame, input, i);
@@ -441,6 +567,11 @@ public final class SemanticSearchSession {
   }
 
   private StyledKimToken styled(Object token) {
+    if (token instanceof AuthoritySelection identity) {
+      var styled = StyledKimToken.create(identity.concept());
+      styled.setValue(identity.declaration());
+      return styled;
+    }
     if (token == Qualifier.EACH) {
       var styled = new StyledKimToken();
       styled.setValue("each");

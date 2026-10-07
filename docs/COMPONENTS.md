@@ -103,8 +103,9 @@ infrastructure.
 ### Authorities
 
 Authorities connect the Reasoner to external terminologies and classifications that are too large
-or too specialized to load into a worldview in full. Component classes implementing the knowledge
-`Authority` interface are discovered through the Java `@Authority` annotation. Their descriptors
+or too specialized to load into a worldview in full. Component classes implementing
+`org.integratedmodelling.klab.api.services.Authority` are discovered through the Java `@Authority`
+annotation. Their descriptors
 advertise a stable provider URN, whether the provider is embeddable, and any known sub-authorities.
 
 Resources services advertise and deliver authority components but do not host authority
@@ -113,6 +114,12 @@ Resources and installed by a Reasoner on demand; non-embeddable providers are av
 Reasoners where their component was explicitly installed. A worldview binds the provider URN to a
 local name and configuration, independently for each `requires authority` declaration. The full
 provider, binding, and reasoning contract is documented in [Authorities](AUTHORITIES.md).
+
+The intended source integrity rule limits authority offerings to the certified Resources services
+contributing to the loaded worldview, including authorized higher-tier contributors. Generic
+component distribution by an ordinary Resources service does not confer that role. Enforcement
+and an explicit full-local development association remain pending; see
+[worldview provider integrity](AUTHORITIES.md#worldview-provider-integrity-rule).
 
 ### Import And Export Schemata
 
@@ -330,8 +337,9 @@ Resource URNs have a separate adapter-discovery path. A universal resource has t
 `klab:<adapter>:...`; it contains no stored data and therefore has no resource-catalog entry. When
 Runtime resolves such a RESOURCE and the named adapter is not installed locally, it first uses any
 COMPONENT dependency returned with the resource. If none was returned, it explicitly resolves the
-second URN element as a COMPONENT through the merged Resources client. The component is transferred
-and installed before dataflow compilation continues, and Runtime verifies that it registered an
+second URN element as a `RESOURCE_ADAPTER` through the merged Resources client. That resolution
+returns the providing COMPONENT, which is transferred and installed before dataflow compilation
+continues. Runtime then verifies that the component registered an
 embeddable adapter with the requested version. The synthetic RESOURCE descriptor is retained in the
 resolution result, but it is not passed to catalog retrieval: the now-local adapter synthesizes the
 Resource when the compiled dataflow uses it.

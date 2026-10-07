@@ -24,6 +24,8 @@ public final class StorageReadInspector {
       for (int i = 0; i < count; i++) {
         long index = count == 1 ? 0 : (from.size()-1)/(count-1)*i;
         from.seek(index); to.seek(index);
+        if (!from.hasNext()) { if (to.hasNext()) throw new IllegalStateException("Coverage differs after conversion"); continue; }
+        if (from.position() != to.position()) throw new IllegalStateException("Coverage differs after conversion");
         if (from.isValid() != to.isValid()) throw new IllegalStateException("Mediation changed missingness");
         if (!from.isValid()) continue;
         double expected = from.peek()*factor + offset;
@@ -59,6 +61,8 @@ public final class StorageReadInspector {
         for (int i = 0; i < count; i++) {
           long offset = count == 1 ? 0 : (scanner.size() - 1) / (count - 1) * i;
           scanner.seek(offset);
+          if (!scanner.hasNext()) continue;
+          offset = scanner.position();
           mapping.targets[p].decode(offset, curve, cell);
           long global = mapping.sources[0].encode(cell, curve);
           whole.seek(global);
@@ -66,7 +70,7 @@ public final class StorageReadInspector {
           if (!expected.equals(StorageScan.textValue(scanner)) || scanner.position() != offset
               || !expected.equals(StorageReads.text(observation, scope, event, curve, global)))
             throw new IllegalStateException("Storage view mismatch at partition " + p + ", offset " + offset);
-          if (scanner.nextLong() != offset || scanner.position() != offset + 1)
+          if (scanner.nextLong() != offset || scanner.position() < offset + 1)
             throw new IllegalStateException("Storage cursor advanced incorrectly");
         }
       }

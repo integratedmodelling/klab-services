@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.services.runtime.library;
 
-import java.util.function.LongConsumer;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -36,10 +35,14 @@ public class DataLibrary {
       ServiceCall call) {
 
     var histogram = input.shard().getHistogram();
-    var scale = histogram.getMax() - histogram.getMin();
-    var n = input.size();
-    for (int i = 0; i < n; i++) {
-      output.add((input.get() - histogram.getMin()) / scale);
+    var minimum = histogram.getMin();
+    var scale = histogram.getMax() - minimum;
+    // size() counts bounding-grid cells, including cells omitted by coverage.
+    // A shared read/write cursor must advance only on the write.
+    if (input == output) {
+      while (output.hasNext()) output.add((input.peek() - minimum) / scale);
+    } else {
+      while (input.hasNext()) output.add((input.get() - minimum) / scale);
     }
   }
 }

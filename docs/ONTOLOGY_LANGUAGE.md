@@ -517,16 +517,20 @@ requires extent <concept-ref> [, ...]
 requires attribute <concept-ref> [, ...]
 ```
 
-An authority requirement uses an uppercase authority identifier and optional parameters:
+An authority requirement belongs to an identity concept, uses an uppercase local name, and
+requires a nonblank quoted provider `urn` in its configuration map:
 
 ```kwv
 identity ChemicalSpecies
-    requires authority IUPAC {language: "en"}
+    requires authority IUPAC {urn: "authority.iupac", language: "en"}
 ;
 ```
 
 Authorities let a worldview validate and use large external identity spaces without copying every
 identifier into the Reasoner.
+The Reasoner configures a provider-held bridge during ingestion. It resolves identities lazily
+and expands base/parent concepts until a known parent is reached; the provider's top-level identity
+connects to the worldview root. See [authorities](AUTHORITIES.md) for the API and current limits.
 
 ### 7.10. Child taxonomies
 

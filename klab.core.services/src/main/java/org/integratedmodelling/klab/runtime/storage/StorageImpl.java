@@ -79,6 +79,15 @@ public class StorageImpl implements Storage {
     private final StorageManagerImpl storage;
     private com.dynatrace.dynahist.Histogram histogram;
     private final BufferArray data;
+    private long coveredSize = -1;
+
+    long coveredSize() {
+      if (coveredSize < 0) {
+        var coverage = shardCoverage(shard);
+        coveredSize = coverage == null ? data.count() : coverage.coveredSize();
+      }
+      return coveredSize;
+    }
 
     ShardStorage(Shard shard, StorageManagerImpl storage) {
       this(shard, storage, false);
@@ -118,7 +127,10 @@ public class StorageImpl implements Storage {
       if (histogram == null) {
         return;
       }
+      var coverage = shardCoverage(shard);
+      var cursor = coverage == null ? null : coverage.new Cursor();
       for (long i = 0; i < data.count(); i++) {
+        if (cursor != null && (i = cursor.next(i)) == data.count()) break;
         switch (shard.getNativeType()) {
           case DOUBLE -> addToHistogram(histogram, data.doubleValue(i));
           case FLOAT -> addToHistogram(histogram, data.floatValue(i));
@@ -454,7 +466,7 @@ public class StorageImpl implements Storage {
        * TODO if there is a need for mediation, we should create a MediatingScanner with the
        * appropriate type. All mediation should be in the scanner and nowhere else.
        */
-      return switch (shard.getShardingStrategy().getDataType()) {
+      Storage.Scanner scanner = switch (shard.getShardingStrategy().getDataType()) {
         case DOUBLE -> new LocalDoubleScanner((ShardImpl) shard, st.data, st.histogram, readOnly);
         case FLOAT -> new LocalFloatScanner((ShardImpl) shard, st.data, st.histogram, readOnly);
         case INTEGER -> new LocalIntScanner((ShardImpl) shard, st.data, st.histogram, readOnly);
@@ -462,6 +474,10 @@ public class StorageImpl implements Storage {
         case BOOLEAN -> new LocalBooleanScanner((ShardImpl) shard, st.data, st.histogram, readOnly);
         case KEYED -> new LocalKeyScanner((ShardImpl) shard, st.data, readOnly);
       };
+      var support = coverageSupport();
+      return support == null ? scanner : CoveredScanner.wrap(scanner,
+          new SpatialCoverage(shard.getGeometry().encode(), support.projection,
+              shard.getShardingStrategy().getCurve(), support));
     }
   }
 
@@ -489,13 +505,13 @@ public class StorageImpl implements Storage {
         ret.close(); throw new IllegalStateException("Unknown code in keyed shard " + shard.getUrn());
       }
       var expected = shard.getCategoryHistogram();
-      if (expected == null || !expected.equals(categoryHistogram(ret.data, dictionary.fingerprint()))) {
+      if (expected == null || !expected.equals(categoryHistogram(shard, ret.data, dictionary.fingerprint()))) {
         ret.close(); throw new IllegalStateException("Keyed histogram/dictionary mismatch " + shard.getUrn());
       }
     }
     ret.rebuildHistogram();
     if (shard instanceof ShardImpl shardImpl) {
-      shardImpl.setHistogram(Utils.Data.adaptHistogram(ret.histogram, ret.data.count()));
+      shardImpl.setHistogram(Utils.Data.adaptHistogram(ret.histogram, ret.coveredSize()));
     }
     return ret;
   }
@@ -534,7 +550,8 @@ public class StorageImpl implements Storage {
   }
 
   private record NativePlan<T extends Scanner>(StorageImpl owner, long generation,
-      StorageScan.Description description, Class<T> scannerClass, List<Shard> shards, ScanMapping mapping, String observationGeometry)
+      StorageScan.Description description, Class<T> scannerClass, List<Shard> shards, ScanMapping mapping, String observationGeometry,
+      SpatialCoverage.Support sourceSupport, SpatialCoverage.Support targetSupport)
       implements StorageScan.Plan<T> {
     private NativePlan { shards = List.copyOf(shards); }
   }
@@ -545,6 +562,25 @@ public class StorageImpl implements Storage {
   // Cache metadata only. Large plans bypass the cache, so its footprint is bounded independently
   // of request budgets and dataset size. Entries contain no readers or payload buffers.
   private final Map<PlanKey, NativePlan<?>> scanPlans = new LinkedHashMap<>(16, 0.75f, true);
+  private String coverageEncoding;
+  private SpatialCoverage.Support coverageSupport;
+
+  private SpatialCoverage.Support coverageSupport() {
+    String encoding = observation.getGeometry().encode();
+    if (!encoding.equals(coverageEncoding)) {
+      coverageSupport = SpatialCoverage.support(encoding);
+      coverageEncoding = encoding;
+    }
+    return coverageSupport;
+  }
+
+  private SpatialCoverage shardCoverage(Shard shard) {
+    var support = coverageSupport();
+    if (support == null) return null;
+    var coverage = new SpatialCoverage(shard.getGeometry().encode(), support.projection,
+        shard.getShardingStrategy().getCurve(), support);
+    return coverage.unrestricted ? null : coverage;
+  }
 
   @Override
   @SuppressWarnings("unchecked") // scannerClass is part of the immutable request/cache key
@@ -576,6 +612,9 @@ public class StorageImpl implements Storage {
         throw new IllegalArgumentException("Source partition budget exceeded");
       var sources = nativeShards.stream().map(this::scanSource).toList();
       String observationGeometry = observation.getGeometry().encode();
+      var sourceSupport = coverageSupport();
+      var targetSupport = request.geometry() == null ? sourceSupport : SpatialCoverage.support(request.geometry());
+      var mask = SpatialCoverage.metadata(sourceSupport, targetSupport);
       boolean acceptsLossy = StorageReads.acceptsLossy(scope);
       var key = new PlanKey(scanGeneration, observation.getId(), observationGeometry, semantics, sources, request, acceptsLossy);
       var cached = scanPlans.get(key);
@@ -606,12 +645,12 @@ public class StorageImpl implements Storage {
       boolean identity = aligned && layout.equals(request.layout());
       SpatialScan.validateConversion(mapping, conversion);
       boolean spatial = mapping instanceof SpatialScan;
-      var description = new StorageScan.Description(getNativeType() == Type.KEYED ? 5 : spatial ? 4 : conversion != null ? 3 : identity ? 1 : 2, scanInstance + ":" + scanGeneration,
+      var description = new StorageScan.Description(mask != null ? 7 : hasWorldGrid(sources,partitions) ? 6 : getNativeType() == Type.KEYED ? 5 : spatial ? 4 : conversion != null ? 3 : identity ? 1 : 2, scanInstance + ":" + scanGeneration,
           observation.getId(), Objects.toString(observation.getUrn(), ""), request.slice(), semantics,
           targetSemantics, layout, request.layout(), sources, partitions, valueType, request.precision(),
           spatial ? request.coverage() : StorageScan.Coverage.EXACT, spatial ? request.sampling() : StorageScan.Sampling.EXACT, request.budget(), spatial ? SpatialScan.operations(conversion, operation) : conversion != null ? List.of(StorageScan.Operation.INDEX_REMAP, StorageScan.Operation.VALUE_CONVERSION, operation) : identity && getNativeType() != Type.KEYED ? List.of(operation)
-              : List.of(StorageScan.Operation.INDEX_REMAP, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion, SpatialScan.metadata(mapping), getNativeType() == Type.KEYED ? key().snapshot() : null);
-      var plan = new NativePlan<>(this, scanGeneration, description, request.scannerClass(), nativeShards, mapping, observationGeometry);
+              : List.of(StorageScan.Operation.INDEX_REMAP, operation), StorageScan.HistogramPolicy.UNAVAILABLE, conversion, SpatialScan.metadata(mapping), getNativeType() == Type.KEYED ? key().snapshot() : null, mask);
+      var plan = new NativePlan<>(this, scanGeneration, description, request.scannerClass(), nativeShards, mapping, observationGeometry, sourceSupport, targetSupport);
       long links = mapping == null ? sources.size() : Arrays.stream(mapping.dependencies()).mapToLong(array -> array.length).sum();
       if (sources.size() + partitions.size() + links <= 1024) {
         scanPlans.put(key, plan);
@@ -619,6 +658,14 @@ public class StorageImpl implements Storage {
       }
       return plan;
     }
+  }
+
+  static boolean hasWorldGrid(List<StorageScan.SourceShard> sources,List<StorageScan.Partition> partitions) {
+    return java.util.stream.Stream.concat(sources.stream().map(StorageScan.SourceShard::geometry),partitions.stream().map(StorageScan.Partition::geometry))
+        .anyMatch(text -> {
+          var space=StorageScan.parseGeometry(text).dimension(Geometry.Dimension.Type.SPACE);
+          return space!=null && space.getParameters().containsKey("world");
+        });
   }
 
   private StorageScan.SourceShard scanSource(Shard shard) {
@@ -649,7 +696,8 @@ public class StorageImpl implements Storage {
       var previouslyLoaded = Set.copyOf(shardStorage.keySet());
       try {
         for (var shard : nativePlan.shards()) readers.add(openReader(shard, plan.description().budget().blockValues()));
-        return new LocalScanSession<>(plan, nativePlan.shards(), readers, nativePlan.mapping(), this::releaseScan);
+        return new LocalScanSession<>(plan, nativePlan.shards(), readers, nativePlan.mapping(), this::releaseScan,
+            nativePlan.sourceSupport(), nativePlan.targetSupport());
       } catch (RuntimeException | Error failure) {
         for (var reader : readers) {
           try { reader.close(); } catch (RuntimeException cleanup) { failure.addSuppressed(cleanup); }
@@ -775,7 +823,10 @@ public class StorageImpl implements Storage {
       var buffer = new ShardStorage(shard, storageManager, true);
       buffers.add(buffer);
       pending.add(shard);
+      var coverage = shardCoverage(shard);
+      var cursor = coverage == null ? null : coverage.new Cursor();
       for (long index = 0; index < buffer.data.count(); index++) {
+        if (cursor != null && (index = cursor.next(index)) == buffer.data.count()) break;
         var nativeValue = value.apply(partition, index);
         if (nativeValue instanceof Boolean b) buffer.data.set(index, b ? 1 : 0);
         else if (nativeValue instanceof Long l) buffer.data.set(index, l.longValue());
@@ -783,7 +834,7 @@ public class StorageImpl implements Storage {
         else buffer.data.set(index, ((Number) nativeValue).doubleValue());
       }
       buffer.rebuildHistogram();
-      shard.setHistogram(Utils.Data.adaptHistogram(buffer.histogram, buffer.data.count()));
+      shard.setHistogram(Utils.Data.adaptHistogram(buffer.histogram, buffer.coveredSize()));
       if (getNativeType() == Type.KEYED) finalizeKeyed(shard, buffer.data);
       storageManager.persistTemporalShard(shard, buffer.data);
       transaction.link(
@@ -816,7 +867,7 @@ public class StorageImpl implements Storage {
       com.dynatrace.dynahist.Histogram aggregate = null;
       long count = 0;
       for (var buffer : buffers) {
-        count += buffer.data.count();
+        count += buffer.coveredSize();
         if (buffer.histogram != null) {
           if (aggregate == null)
             aggregate =
@@ -938,7 +989,7 @@ public class StorageImpl implements Storage {
                         histogram,
                         histogramShards().stream()
                             .filter(s -> s.getTimestamp() == timestamp)
-                            .mapToLong(s -> shardStorage.get(s.getUrn()).data.count())
+                            .mapToLong(s -> shardStorage.get(s.getUrn()).coveredSize())
                             .sum())));
     return Collections.unmodifiableMap(ret);
   }
@@ -948,7 +999,7 @@ public class StorageImpl implements Storage {
     var histogram = histogram();
     return Utils.Data.adaptHistogram(
         histogram,
-        histogramShards().stream().mapToLong(s -> shardStorage.get(s.getUrn()).data.count()).sum());
+        histogramShards().stream().mapToLong(s -> shardStorage.get(s.getUrn()).coveredSize()).sum());
   }
 
   @Override
@@ -976,9 +1027,13 @@ public class StorageImpl implements Storage {
     }
   }
 
-  private org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram categoryHistogram(BufferArray data, String hash) {
+  private org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram categoryHistogram(Shard shard, BufferArray data, String hash) {
     var counts = new TreeMap<Integer,Long>(); long missing=0;
-    for(long i=0;i<data.count();i++) { int code=data.intValue(i); if(code==0)missing++; else {
+    var coverage = shardCoverage(shard);
+    var cursor = coverage == null ? null : coverage.new Cursor();
+    for(long i=0;i<data.count();i++) {
+      if (cursor != null && (i = cursor.next(i)) == data.count()) break;
+      int code=data.intValue(i); if(code==0)missing++; else {
       if(code<0 || code>=key().size())throw new IllegalStateException("Unknown keyed code " + code);
       counts.merge(code,1L,Math::addExact);
     } }
@@ -989,11 +1044,12 @@ public class StorageImpl implements Storage {
     var dictionary = key().snapshot();
     storageManager.persistDictionary(dictionary);
     shard.setKeyDictionaryHash(dictionary.fingerprint());
-    shard.setCategoryHistogram(categoryHistogram(data,dictionary.fingerprint()));
+    shard.setCategoryHistogram(categoryHistogram(shard,data,dictionary.fingerprint()));
   }
 
   @Override
   public void finalizeRun(Scanner scanner) {
+    scanner = CoveredScanner.unwrap(scanner);
     if (!(scanner instanceof BaseScanner))
       throw new IllegalArgumentException("Finalization requires a native output scanner");
     synchronized (scanLock) {
@@ -1003,7 +1059,7 @@ public class StorageImpl implements Storage {
         var storage = shardStorage.get(scanner.shard().getUrn());
         if (storage.histogram != null) {
           var dynaHistogram = storage.histogram;
-          histogram = Utils.Data.adaptHistogram(dynaHistogram, storage.data.count());
+          histogram = Utils.Data.adaptHistogram(dynaHistogram, storage.coveredSize());
         }
         baseScanner.shard.setHistogram(histogram);
         if (getNativeType() == Type.KEYED) finalizeKeyed(baseScanner.shard, storage.data);
@@ -1052,6 +1108,7 @@ public class StorageImpl implements Storage {
     protected final com.dynatrace.dynahist.Histogram histogram;
     protected final boolean readOnly;
     protected long index = 0L;
+    private SpatialCoverage spatial;
 
     public BaseScanner(
         ShardImpl shard,
@@ -1077,8 +1134,34 @@ public class StorageImpl implements Storage {
 
     @Override
     public long nextLong() {
+      if (!hasNext()) throw new NoSuchElementException("Scanner exhausted");
       return index++;
     }
+
+    @Override public long position() { return index; }
+    @Override public void seek(long offset) {
+      if (offset < 0 || offset > size) throw new IndexOutOfBoundsException("Scan offset " + offset);
+      index = offset;
+    }
+    @Override public boolean isValid() {
+      if (!hasNext()) throw new NoSuchElementException("Scanner exhausted");
+      return switch (shard.getNativeType()) {
+        case DOUBLE -> !Double.isNaN(data.doubleValue(index));
+        case FLOAT -> !Float.isNaN(data.floatValue(index));
+        case INTEGER -> data.intValue(index) != Integer.MIN_VALUE;
+        case LONG -> data.longValue(index) != Long.MIN_VALUE;
+        case KEYED -> data.intValue(index) != 0;
+        case BOOLEAN -> true;
+      };
+    }
+    private SpatialCoverage spatial() {
+      if (!hasNext()) throw new NoSuchElementException("Scanner exhausted");
+      if (spatial == null) spatial = new SpatialCoverage(shard.getGeometry().encode(), null,
+          shard.getShardingStrategy().getCurve(), null);
+      return spatial;
+    }
+    @Override public void spatialCoordinates(long[] coordinates) { spatial().coordinates(index, coordinates); }
+    @Override public StorageScan.Cell cell() { return spatial().cell(index); }
 
     @Override
     public boolean hasNext() {

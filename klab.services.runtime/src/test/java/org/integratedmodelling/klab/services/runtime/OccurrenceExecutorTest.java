@@ -21,6 +21,27 @@ import org.junit.jupiter.api.*;
 
 class OccurrenceExecutorTest {
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
+  @Test void connectionSnapshotRefreshesReferenceEndpointAfterProducerGetsDurableId() {
+    var relationship = observation("connection", SemanticType.RELATIONSHIP, 100);
+    var producer = observation("endpoint", SemanticType.SUBJECT, -20);
+    var plan = new ActuatorImpl();
+    plan.setName("connection");
+    plan.setObservation(relationship);
+    var target = new ActuatorImpl();
+    target.setName("target");
+    target.setActuatorType(Actuator.Type.REFERENCE);
+    target.setObservation(org.integratedmodelling.klab.api.knowledge.observation.Observation.forTransport(producer));
+    plan.getChildren().add(target);
+    producer.setId(101);
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException.class,
+        () -> CompiledDataflow.portableOccurrencePlan(plan));
+    CompiledDataflow.bindSnapshotObservations(plan, java.util.Map.of(plan, relationship, target, producer));
+    var snapshot = CompiledDataflow.portableOccurrencePlan(plan);
+    assertEquals(101, snapshot.getChildren().getFirst().getObservation().getId());
+    assertEquals(Actuator.ExecutionRole.INITIALIZATION, snapshot.getExecutionRole());
+    assertTrue(snapshot.getOccurrenceSchedules().isEmpty());
+  }
+
   @Test void fullCollapsedResolverCoverageIsNotPartialOccurrenceCoverage() {
     var process=observation("erosion",SemanticType.PROCESS,100);
     var geometry=Geometry.create("T1(365){ttype=GRID,tstart=1388534400000,tend=1420070400000,tscope=1.0,tunit=DAY}S2(10,10){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 1&comma;1 1&comma;1 0&comma;0 0))}");
@@ -48,14 +69,14 @@ class OccurrenceExecutorTest {
 
   @Test void portableJavaProcessRunsWithTransitionGeometryAfterEveryCacheRestoration() throws Exception {
     transitions.clear();
-    var runtime = mock(RuntimeService.class);
+    var runtime = ShardExecutionTestSupport.runtime(2);
     var registry = mock(org.integratedmodelling.klab.components.ComponentRegistry.class);
     when(runtime.getComponentRegistry()).thenReturn(registry);
     var descriptor = new org.integratedmodelling.klab.api.services.runtime.extension.Extensions.FunctionDescriptor();
     descriptor.staticMethod = true; descriptor.serviceInfo = mock(org.integratedmodelling.klab.api.lang.ServiceInfo.class);
     var implementation = new org.integratedmodelling.klab.components.ComponentRegistry.ServiceImplementation();
     implementation.method = getClass().getMethod("simulate", Geometry.class, Scheduler.Event.class);
-    when(registry.getFunctionDescriptor(any())).thenReturn(java.util.List.of(descriptor));
+    when(registry.getFunctionDescriptor(any(org.integratedmodelling.klab.api.lang.ServiceCall.class), any(org.integratedmodelling.klab.api.scope.Scope.class))).thenReturn(java.util.List.of(descriptor));
     when(registry.implementation(descriptor)).thenReturn(implementation);
     var process = observation("process",SemanticType.PROCESS,100);
     process.setObservable(((ObservableImpl)process.getObservable()).as(org.integratedmodelling.klab.api.knowledge.Contextualization.SIMULATION));
@@ -104,7 +125,7 @@ class OccurrenceExecutorTest {
     for (var role : new Actuator.ExecutionRole[] {
         Actuator.ExecutionRole.PROCESS, Actuator.ExecutionRole.EVENT_INSTANTIATOR}) {
       var scope = mock(ServiceContextScope.class);
-      var runtime = mock(RuntimeService.class);
+      var runtime = ShardExecutionTestSupport.runtime(2);
       var twin = mock(DigitalTwin.class);
       var scheduler = mock(Scheduler.class);
       when(scope.getDigitalTwin()).thenReturn(twin);
@@ -154,7 +175,7 @@ class OccurrenceExecutorTest {
 
   @Test void createdQualityRemainsADeclarationThroughRestoreAndInit() {
     var scope = mock(ServiceContextScope.class);
-    var runtime = mock(RuntimeService.class);
+    var runtime = ShardExecutionTestSupport.runtime(2);
     var twin = mock(DigitalTwin.class);
     when(scope.getDigitalTwin()).thenReturn(twin);
     var process = observation("rainfall", SemanticType.PROCESS, 100);

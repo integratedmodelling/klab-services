@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -15,30 +16,563 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial;
 import org.integratedmodelling.klab.api.lang.Quantity;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Persistence;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.extension.Actor;
+import org.integratedmodelling.klab.api.services.runtime.extension.AgentAdapter;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.kactors.AgentScope;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
 import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
+import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.base.EmailManager;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 
 @Library(name = "core")
 public class CoreActorLibrary {
+
+  /** Stable coordinates only: no service, credentials or document bean is checkpointed. */
+  public interface ProjectReference {
+    Map<String, Object> checkpointReference();
+  }
+
+  private static UserScope participant(RuntimeAgent.Scope scope) {
+    if (scope != null
+        && scope.getAgent() instanceof RuntimeAgentBase runtime
+        && runtime.checkpointParticipant() != null) return runtime.checkpointParticipant();
+    if (scope != null && scope.getScope() instanceof UserScope user) return user;
+    if (scope != null && scope.getScope() != null) {
+      var user =
+          scope
+              .getScope()
+              .getParentScope(
+                  org.integratedmodelling.klab.api.scope.Scope.Type.USER, UserScope.class);
+      if (user != null) return user;
+    }
+    throw new KlabIllegalStateException("Project actors require an authenticated user scope");
+  }
+
+  private static ResourcesService projectService(String id, String project, UserScope user) {
+    var services = new LinkedHashSet<>(user.getServices(ResourcesService.class));
+    var preferred = user.getService(ResourcesService.class);
+    if (preferred != null) services.add(preferred);
+    for (var service : services) {
+      if (id != null && !id.isBlank() && !id.equals(service.serviceId())) continue;
+      var info = service.info(project, KlabAsset.KnowledgeClass.PROJECT, ResourceInfo.class, user);
+      if (info != null && info.getKnowledgeClass() == KlabAsset.KnowledgeClass.PROJECT)
+        return service;
+    }
+    throw new KlabIllegalStateException("Project Resources service is unavailable: " + project);
+  }
+
+  private static List<ResourceSet> projectChanges(List<ResourceSet> changes) {
+    if (changes == null) throw new KlabIllegalStateException("No project operation response");
+    for (var change : changes)
+      if (org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(
+          change.getNotifications()))
+        throw new KlabIllegalStateException(
+            "Project operation failed: " + change.getNotifications());
+    return changes;
+  }
+
+  @Actor(name = "document", description = "Common ancestor of project document handles")
+  public static class Document implements ProjectReference {
+    protected final String urn, project, serviceId;
+    protected final KlabAsset.KnowledgeClass kind;
+
+    protected Document(
+        String urn, String project, String serviceId, KlabAsset.KnowledgeClass kind) {
+      this.urn = Objects.requireNonNull(urn);
+      this.project = Objects.requireNonNull(project);
+      this.serviceId = serviceId;
+      this.kind = kind;
+    }
+
+    @AgentAdapter
+    @Verb(
+        name = "wrap",
+        producesAgent = "core.document",
+        description = "Wrap a project document by its stable coordinates")
+    public static Document wrap(KlabDocument<?> document) {
+      return documentReference(
+          document.getUrn(),
+          document.getProjectName(),
+          document.getServiceId(),
+          KlabAsset.classify(document));
+    }
+
+    public static Document documentReference(
+        String urn, String project, String service, KlabAsset.KnowledgeClass kind) {
+      return switch (kind) {
+        case ONTOLOGY -> new Ontology(urn, project, service);
+        case NAMESPACE -> new Namespace(urn, project, service);
+        case OBSERVATION_STRATEGY_DOCUMENT -> new StrategyDocument(urn, project, service);
+        case BEHAVIOR, APPLICATION, SCRIPT, TESTCASE, COMPONENT ->
+            new BehaviorDocument(urn, project, service, kind);
+        default -> throw new IllegalArgumentException("Not a document knowledge class: " + kind);
+      };
+    }
+
+    @Verb(name = "urn", description = "Stable document URN")
+    public String urn() {
+      return urn;
+    }
+
+    @Verb(name = "project", producesAgent = "core.project", description = "The containing project")
+    public Project project() {
+      return new Project(project, serviceId);
+    }
+
+    @Verb(name = "kind", description = "Document knowledge class")
+    public String kind() {
+      return kind.name();
+    }
+
+    @Verb(
+        name = "read",
+        description = "Retrieve current document with the participant's permissions")
+    public KlabDocument<?> read(RuntimeAgent.Scope scope) {
+      var owner = project();
+      var user = participant(scope);
+      var service = owner.authorize(scope, CRUDOperation.READ);
+      var type =
+          kind == KlabAsset.KnowledgeClass.COMPONENT ? KActorsBehavior.class : kind.getAssetClass();
+      var value = service.retrieve(urn, type, user);
+      if (!(value instanceof KlabDocument<?> document)
+          || !project.equals(document.getProjectName()))
+        throw new KlabIllegalStateException(
+            "Document is missing or belongs to another project: " + urn);
+      return document;
+    }
+
+    @Verb(name = "source", description = "Current source code")
+    public String source(RuntimeAgent.Scope scope) {
+      return read(scope).getSourceCode();
+    }
+
+    @Verb(name = "version", description = "Current authored version")
+    public String version(RuntimeAgent.Scope scope) {
+      return Objects.toString(read(scope).getVersion(), "");
+    }
+
+    @Verb(name = "statements", description = "Current document statements")
+    public List<?> statements(RuntimeAgent.Scope scope) {
+      return read(scope).getStatements();
+    }
+
+    @Verb(name = "notifications", description = "Document validation notifications")
+    public Collection<?> notifications(RuntimeAgent.Scope scope) {
+      return read(scope).getNotifications();
+    }
+
+    @Verb(name = "imports", description = "Imported document namespaces")
+    public Set<String> imports(RuntimeAgent.Scope scope) {
+      return read(scope).importedNamespaces(false);
+    }
+
+    @Verb(name = "update", description = "Replace document source using the project CRUD API")
+    public List<ResourceSet> update(RuntimeAgent.Scope scope, String source) {
+      return project()
+          .writeDocument(scope, kind.name(), urn, source, ResourcesService.SubmissionMode.UPDATE);
+    }
+
+    @Verb(name = "delete", description = "Delete this document using the project CRUD API")
+    public List<ResourceSet> delete(RuntimeAgent.Scope scope) {
+      return project().deleteDocument(scope, kind.name(), urn);
+    }
+
+    public Map<String, Object> checkpointReference() {
+      return Map.of(
+          "$klabProjectActor",
+          1,
+          "kind",
+          kind.name(),
+          "urn",
+          urn,
+          "project",
+          project,
+          "serviceId",
+          Objects.toString(serviceId, ""));
+    }
+  }
+
+  @Actor(name = "ontology", description = "Ontology document, inheriting core.document")
+  public static final class Ontology extends Document {
+    private Ontology(String urn, String project, String service) {
+      super(urn, project, service, KlabAsset.KnowledgeClass.ONTOLOGY);
+    }
+
+    @AgentAdapter
+    @Verb(name = "wrap", producesAgent = "core.ontology", description = "Wrap an ontology")
+    public static Ontology wrap(KlabDocument<?> value) {
+      if (!(value instanceof KimOntology)) throw new IllegalArgumentException("Expected ontology");
+      return (Ontology) Document.wrap(value);
+    }
+
+    @Verb(name = "domain", description = "Ontology domain concept")
+    public KimConcept domain(RuntimeAgent.Scope scope) {
+      return ((KimOntology) read(scope)).getDomain();
+    }
+  }
+
+  @Actor(name = "namespace", description = "Model namespace document, inheriting core.document")
+  public static final class Namespace extends Document {
+    private Namespace(String urn, String project, String service) {
+      super(urn, project, service, KlabAsset.KnowledgeClass.NAMESPACE);
+    }
+
+    @AgentAdapter
+    @Verb(name = "wrap", producesAgent = "core.namespace", description = "Wrap a namespace")
+    public static Namespace wrap(KlabDocument<?> value) {
+      if (!(value instanceof KimNamespace))
+        throw new IllegalArgumentException("Expected namespace");
+      return (Namespace) Document.wrap(value);
+    }
+
+    @Verb(name = "scenario", description = "Whether this namespace is a scenario")
+    public boolean scenario(RuntimeAgent.Scope scope) {
+      return ((KimNamespace) read(scope)).isScenario();
+    }
+  }
+
+  @Actor(
+      name = "strategy_document",
+      description = "Observation strategies, inheriting core.document")
+  public static final class StrategyDocument extends Document {
+    private StrategyDocument(String urn, String project, String service) {
+      super(urn, project, service, KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
+    }
+
+    @AgentAdapter
+    @Verb(
+        name = "wrap",
+        producesAgent = "core.strategy_document",
+        description = "Wrap observation strategies")
+    public static StrategyDocument wrap(KlabDocument<?> value) {
+      if (!(value instanceof KimObservationStrategyDocument))
+        throw new IllegalArgumentException("Expected strategy document");
+      return (StrategyDocument) Document.wrap(value);
+    }
+
+    @Verb(name = "coverage", description = "Strategy document coverage specification")
+    public Map<String, Object> coverage(RuntimeAgent.Scope scope) {
+      return ((KimObservationStrategyDocument) read(scope)).getCoverage();
+    }
+  }
+
+  @Actor(
+      name = "behavior_document",
+      description = "k.Actors source document, inheriting core.document")
+  public static final class BehaviorDocument extends Document {
+    private BehaviorDocument(
+        String urn, String project, String service, KlabAsset.KnowledgeClass kind) {
+      super(urn, project, service, kind);
+    }
+
+    @AgentAdapter
+    @Verb(
+        name = "wrap",
+        producesAgent = "core.behavior_document",
+        description = "Wrap k.Actors source")
+    public static BehaviorDocument wrap(KlabDocument<?> value) {
+      if (!(value instanceof KActorsBehavior))
+        throw new IllegalArgumentException("Expected behavior document");
+      return (BehaviorDocument) Document.wrap(value);
+    }
+
+    @Verb(name = "category", description = "k.Actors behavior category")
+    public String category(RuntimeAgent.Scope scope) {
+      return ((KActorsBehavior) read(scope)).getBehaviorType().name();
+    }
+  }
+
+  @Actor(
+      name = "project",
+      description = "Permission-checked k.LAB project CRUD and additional material")
+  public static final class Project implements ProjectReference {
+    private final String urn, serviceId;
+
+    public Project(String urn, String serviceId) {
+      this.urn = Objects.requireNonNull(urn);
+      this.serviceId = serviceId;
+    }
+
+    @AgentAdapter
+    @Verb(
+        name = "wrap",
+        producesAgent = "core.project",
+        description = "Wrap a project using stable coordinates")
+    public static Project wrap(
+        org.integratedmodelling.klab.api.knowledge.organization.Project value) {
+      return new Project(value.getUrn(), value.getServiceId());
+    }
+
+    private ResourcesService authorize(RuntimeAgent.Scope scope, CRUDOperation permission) {
+      var user = participant(scope);
+      var service = projectService(serviceId, urn, user);
+      var info = service.info(urn, KlabAsset.KnowledgeClass.PROJECT, ResourceInfo.class, user);
+      if (info == null
+          || info.getPermissions() == null
+          || !(info.getPermissions().contains(permission)
+              || info.getPermissions().contains(CRUDOperation.ADMINISTER)))
+        throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+            "Project " + urn + " requires " + permission);
+      return service;
+    }
+
+    @Verb(name = "urn", description = "Project URN")
+    public String urn() {
+      return urn;
+    }
+
+    @Verb(name = "read", description = "Retrieve current project")
+    public org.integratedmodelling.klab.api.knowledge.organization.Project read(
+        RuntimeAgent.Scope scope) {
+      return authorize(scope, CRUDOperation.READ)
+          .retrieve(
+              urn,
+              org.integratedmodelling.klab.api.knowledge.organization.Project.class,
+              participant(scope));
+    }
+
+    @Verb(name = "documents", description = "Current document handles in this project")
+    public List<Document> documents(RuntimeAgent.Scope scope) {
+      var value = read(scope);
+      var result = new ArrayList<Document>();
+      value.getOntologies().forEach(document -> result.add(Document.wrap(document)));
+      value.getNamespaces().forEach(document -> result.add(Document.wrap(document)));
+      value.getObservationStrategies().forEach(document -> result.add(Document.wrap(document)));
+      value.getBehaviors().forEach(document -> result.add(Document.wrap(document)));
+      value.getScripts().forEach(document -> result.add(Document.wrap(document)));
+      value.getApps().forEach(document -> result.add(Document.wrap(document)));
+      value.getTestCases().forEach(document -> result.add(Document.wrap(document)));
+      return result;
+    }
+
+    @Verb(name = "settings", description = "Current project settings")
+    public org.integratedmodelling.klab.api.settings.ProjectSettings settings(
+        RuntimeAgent.Scope scope) {
+      return read(scope).getSettings();
+    }
+
+    @Verb(
+        name = "update_settings",
+        description = "Replace settings through the existing locked-project API")
+    public List<ResourceSet> updateSettings(
+        RuntimeAgent.Scope scope,
+        String workspace,
+        org.integratedmodelling.klab.api.settings.ProjectSettings settings) {
+      var service = authorize(scope, CRUDOperation.UPDATE);
+      var value = new org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl();
+      value.setUrn(workspace + "/" + urn);
+      value.setManifest(null);
+      value.setSettings(settings);
+      return projectChanges(
+          service.submit(value, ResourcesService.SubmissionMode.REPLACE, participant(scope)));
+    }
+
+    @Verb(name = "delete", description = "Delete this project through the Resources API")
+    public List<ResourceSet> delete(RuntimeAgent.Scope scope) {
+      return projectChanges(
+          authorize(scope, CRUDOperation.DELETE)
+              .delete(urn, KlabAsset.KnowledgeClass.PROJECT, participant(scope)));
+    }
+
+    @Verb(name = "permissions", description = "Current participant's effective project privileges")
+    public Set<CRUDOperation> permissions(RuntimeAgent.Scope scope) {
+      var user = participant(scope);
+      return Set.copyOf(
+          projectService(serviceId, urn, user)
+              .info(urn, KlabAsset.KnowledgeClass.PROJECT, ResourceInfo.class, user)
+              .getPermissions());
+    }
+
+    @Verb(name = "lock", description = "Acquire the existing project editing lock")
+    public boolean lock(RuntimeAgent.Scope scope) {
+      return authorize(scope, CRUDOperation.UPDATE).lockProject(urn, participant(scope));
+    }
+
+    @Verb(name = "unlock", description = "Release the participant's editing lock")
+    public boolean unlock(RuntimeAgent.Scope scope) {
+      return authorize(scope, CRUDOperation.UPDATE).unlockProject(urn, participant(scope));
+    }
+
+    @Verb(
+        name = "document",
+        producesAgent = "core.document",
+        description = "Bind a document kind and URN within this project")
+    public Document document(RuntimeAgent.Scope scope, String kind, String name) {
+      authorize(scope, CRUDOperation.READ);
+      var value =
+          Document.documentReference(
+              name,
+              urn,
+              serviceId,
+              KlabAsset.KnowledgeClass.valueOf(kind.toUpperCase(Locale.ROOT)));
+      value.read(scope);
+      return value;
+    }
+
+    @Verb(
+        name = "create_document",
+        description = "Create a document from source; kind is a document knowledge class")
+    public List<ResourceSet> createDocument(
+        RuntimeAgent.Scope scope, String kind, String name, String source) {
+      return writeDocument(scope, kind, name, source, ResourcesService.SubmissionMode.ADD);
+    }
+
+    @Verb(name = "update_document", description = "Update a document from source")
+    public List<ResourceSet> updateDocument(
+        RuntimeAgent.Scope scope, String kind, String name, String source) {
+      return writeDocument(scope, kind, name, source, ResourcesService.SubmissionMode.UPDATE);
+    }
+
+    private List<ResourceSet> writeDocument(
+        RuntimeAgent.Scope scope,
+        String kind,
+        String name,
+        String source,
+        ResourcesService.SubmissionMode mode) {
+      var service =
+          authorize(
+              scope,
+              mode == ResourcesService.SubmissionMode.ADD
+                  ? CRUDOperation.CREATE
+                  : CRUDOperation.UPDATE);
+      var type = KlabAsset.KnowledgeClass.valueOf(kind.toUpperCase(Locale.ROOT));
+      org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl<?> value =
+          switch (type) {
+            case ONTOLOGY -> new org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl();
+            case NAMESPACE -> new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+            case OBSERVATION_STRATEGY_DOCUMENT ->
+                new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl();
+            case BEHAVIOR, APPLICATION, SCRIPT, TESTCASE, COMPONENT -> {
+              var behavior =
+                  new org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl();
+              behavior.setBehaviorType(
+                  switch (type) {
+                    case APPLICATION -> KActorsBehavior.Type.APP;
+                    case SCRIPT -> KActorsBehavior.Type.SCRIPT;
+                    case TESTCASE -> KActorsBehavior.Type.UNITTEST;
+                    case COMPONENT -> KActorsBehavior.Type.COMPONENT;
+                    default -> KActorsBehavior.Type.BEHAVIOR;
+                  });
+              yield behavior;
+            }
+            default ->
+                throw new IllegalArgumentException("Not a document knowledge class: " + kind);
+          };
+      value.setUrn(name);
+      value.setProjectName(urn);
+      value.setSourceCode(source);
+      return projectChanges(service.submit(value, mode, participant(scope)));
+    }
+
+    @Verb(
+        name = "delete_document",
+        description = "Delete a project document; requires DELETE and the project lock")
+    public List<ResourceSet> deleteDocument(RuntimeAgent.Scope scope, String kind, String name) {
+      var type = KlabAsset.KnowledgeClass.valueOf(kind.toUpperCase(Locale.ROOT));
+      Document.documentReference(name, urn, serviceId, type);
+      if (name.contains("/")) throw new IllegalArgumentException("Use an unqualified document URN");
+      return projectChanges(
+          authorize(scope, CRUDOperation.DELETE)
+              .delete(urn + "/" + name, type, participant(scope)));
+    }
+
+    @Verb(
+        name = "material",
+        description = "Read additional material; UPDATE_METADATA also grants material reads")
+    public byte[] material(RuntimeAgent.Scope scope, String path) {
+      var permissions = permissions(scope);
+      var service =
+          authorize(
+              scope,
+              permissions.contains(CRUDOperation.READ)
+                  ? CRUDOperation.READ
+                  : CRUDOperation.UPDATE_METADATA);
+      var value =
+          service.retrieve(
+              new ProjectMaterial(urn, path, null).getUrn(),
+              ProjectMaterial.class,
+              participant(scope));
+      return value == null ? null : value.getContent();
+    }
+
+    @Verb(
+        name = "write_material",
+        description = "Create or update arbitrary bytes under a canonical relative path")
+    public List<ResourceSet> writeMaterial(RuntimeAgent.Scope scope, String path, byte[] bytes) {
+      return projectChanges(
+          authorize(scope, CRUDOperation.UPDATE_METADATA)
+              .submit(
+                  new ProjectMaterial(urn, path, bytes),
+                  ResourcesService.SubmissionMode.CREATE_OR_UPDATE,
+                  participant(scope)));
+    }
+
+    @Verb(name = "write_text", description = "Create or update UTF-8 additional material")
+    public List<ResourceSet> writeText(RuntimeAgent.Scope scope, String path, String text) {
+      return writeMaterial(scope, path, text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Verb(
+        name = "delete_material",
+        description = "Delete additional material; requires DELETE, not UPDATE_METADATA")
+    public List<ResourceSet> deleteMaterial(RuntimeAgent.Scope scope, String path) {
+      return projectChanges(
+          authorize(scope, CRUDOperation.DELETE)
+              .delete(
+                  new ProjectMaterial(urn, path, null).getUrn(),
+                  KlabAsset.KnowledgeClass.ADDITIONAL_MATERIAL,
+                  participant(scope)));
+    }
+
+    public Map<String, Object> checkpointReference() {
+      return Map.of(
+          "$klabProjectActor",
+          1,
+          "kind",
+          "PROJECT",
+          "urn",
+          urn,
+          "serviceId",
+          Objects.toString(serviceId, ""));
+    }
+  }
+
+  public static ProjectReference restoreProjectReference(Map<?, ?> reference) {
+    var kind = KlabAsset.KnowledgeClass.valueOf((String) reference.get("kind"));
+    String urn = (String) reference.get("urn"), service = (String) reference.get("serviceId");
+    return kind == KlabAsset.KnowledgeClass.PROJECT
+        ? new Project(urn, service)
+        : Document.documentReference(urn, (String) reference.get("project"), service, kind);
+  }
 
   /**
    * Universal Java behavior inherited implicitly by every k.Actors behavior.
@@ -87,7 +621,12 @@ public class CoreActorLibrary {
       runtime(scope).tellAgentValue(target, messageClass, payload);
     }
 
-    @Verb(name = "duration", executionType = Verb.Type.FUNCTION, returns = TimeDuration.class)
+    @Verb(
+        name = "duration",
+        executionType = Verb.Type.FUNCTION,
+        returns = TimeDuration.class,
+        description =
+            "Convert a temporal quantity into a `TimeDuration` for scheduling or request timeouts.")
     public static TimeDuration duration(Quantity time) {
       Objects.requireNonNull(time, "quantity");
       return TimeDuration.of(time);
@@ -148,44 +687,83 @@ public class CoreActorLibrary {
           "A static actor that prints to whatever console was configured for the agent. All methods are static and can be called directly without instantiating the actor.")
   public static class Console {
 
-    @Verb(name = "println", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(
+        name = "println",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description =
+            "Print the rendered messages to the configured standard-output console, followed by a line separator.")
     public static void println(RuntimeAgent.Scope scope, Object... messages) {
       write(
           scope, RuntimeAgent.ConsoleMessageType.STDOUT, render(messages) + System.lineSeparator());
     }
 
-    @Verb(name = "print", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(
+        name = "print",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description =
+            "Print the rendered messages to the configured standard-output console without adding a line separator.")
     public static void print(RuntimeAgent.Scope scope, Object... messages) {
       write(scope, RuntimeAgent.ConsoleMessageType.STDOUT, render(messages));
     }
 
-    @Verb(name = "format", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(
+        name = "format",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description =
+            "Print text formatted with Java `String.format` to the standard-output console without adding a line separator.")
     public static void format(RuntimeAgent.Scope scope, String format, Object... args) {
       write(scope, RuntimeAgent.ConsoleMessageType.STDOUT, String.format(format, args));
     }
 
-    @Verb(name = "printf", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(
+        name = "printf",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description =
+            "Alias for `format`: print Java-formatted text to the standard-output console without adding a line separator.")
     public static void printf(RuntimeAgent.Scope scope, String format, Object... args) {
       format(scope, format, args);
     }
 
-    @Verb(name = "error", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(
+        name = "error",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description =
+            "Print the rendered messages to the configured standard-error console without adding a line separator.")
     public static void error(RuntimeAgent.Scope scope, Object... messages) {
       write(scope, RuntimeAgent.ConsoleMessageType.STDERR, render(messages));
     }
 
-    @Verb(name = "errorln", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(
+        name = "errorln",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description =
+            "Print the rendered messages to the configured standard-error console, followed by a line separator.")
     public static void errorln(RuntimeAgent.Scope scope, Object... messages) {
       write(
           scope, RuntimeAgent.ConsoleMessageType.STDERR, render(messages) + System.lineSeparator());
     }
 
-    @Verb(name = "errorf", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(
+        name = "errorf",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description =
+            "Print text formatted with Java `String.format` to the standard-error console without adding a line separator.")
     public static void errorf(RuntimeAgent.Scope scope, String format, Object... args) {
       write(scope, RuntimeAgent.ConsoleMessageType.STDERR, String.format(format, args));
     }
 
-    @Verb(name = "flush", executionType = Verb.Type.FUNCTION, returns = Void.class)
+    @Verb(
+        name = "flush",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description = "Flush the configured agent console.")
     public static void flush(RuntimeAgent.Scope scope) {
       scope.getPrintWriter().flush();
     }
@@ -219,9 +797,857 @@ public class CoreActorLibrary {
     }
   }
 
-  public static class File {}
+  /** Local filesystem operations and immutable path handles; see docs/AGENTS_REFERENCE.md. */
+  @Actor(name = "file", description = "Local file operations and bound file paths")
+  public static class File {
+    private final java.nio.file.Path path;
 
-  /** ContextScope proxy; query contracts and proposed event emitters are in docs/DIGITALTWINS.md. */
+    /** Catalog instance; access verbs require a handle returned by new. */
+    public File() {
+      this.path = null;
+    }
+
+    private File(java.nio.file.Path path) {
+      this.path = path;
+    }
+
+    @Verb(
+        name = "new",
+        executionType = Verb.Type.FUNCTION,
+        returns = File.class,
+        producesAgent = "core.file",
+        description =
+            "Create a `core.file` handle for a normalized absolute local path or `file:` URI. Relative paths use the host working directory; this does not create a file.")
+    public static File create(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return new File(CoreIoSupport.path(path));
+    }
+
+    @Verb(
+        name = "inspect",
+        executionType = Verb.Type.FUNCTION,
+        returns = Map.class,
+        description =
+            "Return local path metadata: `path`, `name`, `exists`, `file`, `directory`, `readable`, `writable`, `size`, and `modified` (epoch milliseconds, or null if absent).")
+    public static Map<String, Object> inspect(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return CoreIoSupport.fileInfo(CoreIoSupport.path(path));
+    }
+
+    @Verb(
+        name = "exists",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description = "Return whether the local path exists, following symbolic links.")
+    public static boolean exists(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return java.nio.file.Files.exists(CoreIoSupport.path(path));
+    }
+
+    @Verb(
+        name = "isfile",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description = "Return whether the local path is a regular file, following symbolic links.")
+    public static boolean isFile(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return java.nio.file.Files.isRegularFile(CoreIoSupport.path(path));
+    }
+
+    @Verb(
+        name = "isdirectory",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description = "Return whether the local path is a directory, following symbolic links.")
+    public static boolean isDirectory(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return java.nio.file.Files.isDirectory(CoreIoSupport.path(path));
+    }
+
+    @Verb(
+        name = "size",
+        executionType = Verb.Type.FUNCTION,
+        returns = Long.class,
+        description =
+            "Return the local file size in bytes; inaccessible or missing paths raise an I/O error.")
+    public static long size(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return CoreIoSupport.io(() -> java.nio.file.Files.size(CoreIoSupport.path(path)));
+    }
+
+    @Verb(
+        name = "read",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Read the entire local file as UTF-8 text; missing or unreadable files raise an I/O error.")
+    public static String read(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return CoreIoSupport.io(
+          () ->
+              java.nio.file.Files.readString(
+                  CoreIoSupport.path(path), java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Verb(
+        name = "readbytes",
+        executionType = Verb.Type.FUNCTION,
+        returns = byte[].class,
+        description =
+            "Read the entire local file as a byte array; missing or unreadable files raise an I/O error.")
+    public static byte[] readBytes(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return CoreIoSupport.io(() -> java.nio.file.Files.readAllBytes(CoreIoSupport.path(path)));
+    }
+
+    @Verb(
+        name = "write",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Create or overwrite a local file with UTF-8 text and return its absolute path. Parent directories must already exist.")
+    public static String write(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path,
+        @Verb.Argument(
+                name = "text",
+                description = "Text to write or encode/decode as specified by the verb")
+            String text) {
+      return CoreIoSupport.write(CoreIoSupport.path(path), text, false);
+    }
+
+    @Verb(
+        name = "writebytes",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Create or overwrite a local file with bytes and return its absolute path. Parent directories must already exist.")
+    public static String writeBytes(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path,
+        @Verb.Argument(name = "bytes", description = "Bytes to write") byte[] bytes) {
+      return CoreIoSupport.writeBytes(CoreIoSupport.path(path), bytes);
+    }
+
+    @Verb(
+        name = "append",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Append UTF-8 text to a local file, creating it if absent, and return its absolute path.")
+    public static String append(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path,
+        @Verb.Argument(
+                name = "text",
+                description = "Text to write or encode/decode as specified by the verb")
+            String text) {
+      return CoreIoSupport.write(CoreIoSupport.path(path), text, true);
+    }
+
+    @Verb(
+        name = "mkdir",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Create a local directory and any missing parent directories; return its absolute path.")
+    public static String mkdir(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return CoreIoSupport.io(
+          () -> java.nio.file.Files.createDirectories(CoreIoSupport.path(path)).toString());
+    }
+
+    @Verb(
+        name = "list",
+        executionType = Verb.Type.FUNCTION,
+        returns = List.class,
+        description =
+            "Return sorted absolute paths of the direct entries in a local directory; traversal is not recursive.")
+    public static List<String> list(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return CoreIoSupport.list(CoreIoSupport.path(path));
+    }
+
+    @Verb(
+        name = "copy",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Copy a local path without replacing an existing destination; return the destination absolute path. Directory contents are not copied recursively.")
+    public static String copy(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "source", description = "Local source path") String source,
+        @Verb.Argument(
+                name = "destination",
+                description = "Local destination path; parent directories must exist")
+            String destination) {
+      return CoreIoSupport.io(
+          () ->
+              java.nio.file.Files.copy(CoreIoSupport.path(source), CoreIoSupport.path(destination))
+                  .toString());
+    }
+
+    @Verb(
+        name = "move",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Move a local path without replacing an existing destination; return the destination absolute path.")
+    public static String move(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "source", description = "Local source path") String source,
+        @Verb.Argument(
+                name = "destination",
+                description = "Local destination path; parent directories must exist")
+            String destination) {
+      return CoreIoSupport.io(
+          () ->
+              java.nio.file.Files.move(CoreIoSupport.path(source), CoreIoSupport.path(destination))
+                  .toString());
+    }
+
+    @Verb(
+        name = "delete",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Delete a local file or empty directory; return `false` if absent. Nonempty directories raise an I/O error.")
+    public static boolean delete(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "path",
+                description =
+                    "Local path or file: URI; relative paths use the host working directory")
+            String path) {
+      return CoreIoSupport.io(() -> java.nio.file.Files.deleteIfExists(CoreIoSupport.path(path)));
+    }
+
+    @Verb(
+        name = "temp",
+        executionType = Verb.Type.FUNCTION,
+        returns = File.class,
+        producesAgent = "core.file",
+        description =
+            "Create an empty `.tmp` file in the JVM temporary directory and return a `core.file` handle. The prefix needs at least three characters; callers own cleanup.")
+    public static File temp(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "prefix",
+                description = "Temporary filename prefix, at least three characters")
+            String prefix) {
+      if (prefix == null || prefix.length() < 3)
+        throw new KlabIllegalArgumentException(
+            "Temporary file prefix needs at least three characters");
+      return CoreIoSupport.io(() -> new File(java.nio.file.Files.createTempFile(prefix, ".tmp")));
+    }
+
+    @Verb(
+        name = "path",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description = "Return this handle's normalized absolute local path.")
+    public String path(RuntimeAgent.Scope scope) {
+      return CoreIoSupport.require(path).toString();
+    }
+
+    @Verb(
+        name = "info",
+        executionType = Verb.Type.FUNCTION,
+        returns = Map.class,
+        description =
+            "Return metadata for the bound path: `path`, `name`, `exists`, `file`, `directory`, `readable`, `writable`, `size`, and `modified`.")
+    public Map<String, Object> info(RuntimeAgent.Scope scope) {
+      return CoreIoSupport.fileInfo(CoreIoSupport.require(path));
+    }
+
+    @Verb(
+        name = "present",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description = "Return whether the bound local path exists, following symbolic links.")
+    public boolean present(RuntimeAgent.Scope scope) {
+      return exists(scope, path(scope));
+    }
+
+    @Verb(
+        name = "text",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Read the entire bound file as UTF-8 text; missing or unreadable files raise an I/O error.")
+    public String text(RuntimeAgent.Scope scope) {
+      return read(scope, path(scope));
+    }
+
+    @Verb(
+        name = "bytes",
+        executionType = Verb.Type.FUNCTION,
+        returns = byte[].class,
+        description =
+            "Read the entire bound file as a byte array; missing or unreadable files raise an I/O error.")
+    public byte[] bytes(RuntimeAgent.Scope scope) {
+      return readBytes(scope, path(scope));
+    }
+
+    @Verb(
+        name = "save",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Create or overwrite the bound file with UTF-8 text and return its absolute path. Parent directories must already exist.")
+    public String save(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "text",
+                description = "Text to write or encode/decode as specified by the verb")
+            String text) {
+      return write(scope, path(scope), text);
+    }
+
+    @Verb(
+        name = "savebytes",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Create or overwrite the bound file with bytes and return its absolute path. Parent directories must already exist.")
+    public String saveBytes(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "bytes", description = "Bytes to write") byte[] bytes) {
+      return writeBytes(scope, path(scope), bytes);
+    }
+
+    @Verb(
+        name = "appendtext",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Append UTF-8 text to the bound file, creating it if absent, and return its absolute path.")
+    public String appendText(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "text",
+                description = "Text to write or encode/decode as specified by the verb")
+            String text) {
+      return append(scope, path(scope), text);
+    }
+
+    @Verb(
+        name = "makedirectories",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Create the bound directory and any missing parent directories; return its absolute path.")
+    public String makeDirectories(RuntimeAgent.Scope scope) {
+      return mkdir(scope, path(scope));
+    }
+
+    @Verb(
+        name = "entries",
+        executionType = Verb.Type.FUNCTION,
+        returns = List.class,
+        description =
+            "Return sorted absolute paths of the bound directory's direct entries; traversal is not recursive.")
+    public List<String> entries(RuntimeAgent.Scope scope) {
+      return list(scope, path(scope));
+    }
+
+    @Verb(
+        name = "copyto",
+        executionType = Verb.Type.FUNCTION,
+        returns = File.class,
+        producesAgent = "core.file",
+        description =
+            "Copy the bound path without replacing the destination and return a new `core.file` handle. The source handle is unchanged; directory contents are not copied recursively.")
+    public File copyTo(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "destination",
+                description = "Local destination path; parent directories must exist")
+            String destination) {
+      return create(scope, copy(scope, path(scope), destination));
+    }
+
+    @Verb(
+        name = "moveto",
+        executionType = Verb.Type.FUNCTION,
+        returns = File.class,
+        producesAgent = "core.file",
+        description =
+            "Move the bound path without replacing the destination and return a new `core.file` handle. The original handle retains its old path.")
+    public File moveTo(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "destination",
+                description = "Local destination path; parent directories must exist")
+            String destination) {
+      return create(scope, move(scope, path(scope), destination));
+    }
+
+    @Verb(
+        name = "remove",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Delete the bound file or empty directory; return `false` if absent. Nonempty directories raise an I/O error.")
+    public boolean remove(RuntimeAgent.Scope scope) {
+      return delete(scope, path(scope));
+    }
+
+    @Verb(
+        name = "child",
+        executionType = Verb.Type.FUNCTION,
+        returns = File.class,
+        producesAgent = "core.file",
+        description =
+            "Resolve a relative path against the bound path and return a normalized `core.file` handle without creating a file. Parent traversal (`..`) is allowed.")
+    public File child(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "relative",
+                description = "Relative path or URL reference, resolved against the handle or base")
+            String relative) {
+      return new File(CoreIoSupport.child(path, relative));
+    }
+
+    @Verb(
+        name = "parent",
+        executionType = Verb.Type.FUNCTION,
+        returns = File.class,
+        producesAgent = "core.file",
+        description =
+            "Return a `core.file` handle for the parent path, or `null` for a filesystem root.")
+    public File parent(RuntimeAgent.Scope scope) {
+      var parent = CoreIoSupport.require(path).getParent();
+      return parent == null ? null : new File(parent);
+    }
+  }
+
+  /** URL inspection and bounded asynchronous access; see docs/AGENTS_REFERENCE.md. */
+  @Actor(name = "url", description = "HTTP, HTTPS and file URL operations and bound URL handles")
+  public static class Url {
+    private final java.net.URI uri;
+
+    /** Catalog instance; access verbs require a handle returned by new. */
+    public Url() {
+      this.uri = null;
+    }
+
+    private Url(java.net.URI uri) {
+      this.uri = uri;
+    }
+
+    @Verb(
+        name = "new",
+        executionType = Verb.Type.FUNCTION,
+        returns = Url.class,
+        producesAgent = "core.url",
+        description =
+            "Create a `core.url` handle for a normalized absolute `http:`, `https:`, or `file:` URL without accessing it. Embedded user credentials are rejected.")
+    public static Url create(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "address",
+                description = "Absolute http:, https:, or file: URL without embedded credentials")
+            String address) {
+      return new Url(CoreIoSupport.uri(address));
+    }
+
+    @Verb(
+        name = "inspect",
+        executionType = Verb.Type.FUNCTION,
+        returns = Map.class,
+        description =
+            "Return parsed URL components: `address`, `scheme`, `host`, `port`, `path`, `query`, and `fragment`. No network access occurs.")
+    public static Map<String, Object> inspect(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "address",
+                description = "Absolute http:, https:, or file: URL without embedded credentials")
+            String address) {
+      return CoreIoSupport.urlInfo(CoreIoSupport.uri(address));
+    }
+
+    @Verb(
+        name = "resolve",
+        executionType = Verb.Type.FUNCTION,
+        returns = Url.class,
+        producesAgent = "core.url",
+        description =
+            "Resolve a relative reference against an absolute URL and return a `core.url` handle without accessing it.")
+    public static Url resolve(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "base", description = "Absolute base URL") String base,
+        @Verb.Argument(
+                name = "relative",
+                description = "Relative path or URL reference, resolved against the handle or base")
+            String relative) {
+      return new Url(CoreIoSupport.resolve(CoreIoSupport.uri(base), relative));
+    }
+
+    @Verb(
+        name = "encode",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Encode text using UTF-8 form URL encoding: spaces become `+` and reserved characters are percent-encoded.")
+    public static String encode(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "text",
+                description = "Text to write or encode/decode as specified by the verb")
+            String text) {
+      return CoreIoSupport.encode(text);
+    }
+
+    @Verb(
+        name = "decode",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Decode UTF-8 form URL encoding, including `+` as a space; malformed escapes are errors.")
+    public static String decode(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "text",
+                description = "Text to write or encode/decode as specified by the verb")
+            String text) {
+      return CoreIoSupport.decode(text);
+    }
+
+    @Verb(
+        name = "read",
+        executionType = Verb.Type.SUPPLIER,
+        returns = String.class,
+        description =
+            "Asynchronously GET the URL and supply its entire body as UTF-8 text. HTTP non-2xx responses fail; redirects are not followed. Defaults: 10-second connect/read timeouts and a 16 MiB response limit.")
+    public static CompletableFuture<String> read(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "address",
+                description = "Absolute http:, https:, or file: URL without embedded credentials")
+            String address) {
+      var uri = CoreIoSupport.uri(address);
+      return CoreIoSupport.async(
+          () -> new String(CoreIoSupport.get(uri), java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Verb(
+        name = "readbytes",
+        executionType = Verb.Type.SUPPLIER,
+        returns = byte[].class,
+        description =
+            "Asynchronously GET the URL and supply its entire body as bytes. HTTP non-2xx responses fail; redirects are not followed. Defaults: 10-second connect/read timeouts and a 16 MiB response limit.")
+    public static CompletableFuture<byte[]> readBytes(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "address",
+                description = "Absolute http:, https:, or file: URL without embedded credentials")
+            String address) {
+      var uri = CoreIoSupport.uri(address);
+      return CoreIoSupport.async(() -> CoreIoSupport.get(uri));
+    }
+
+    @Verb(
+        name = "request",
+        executionType = Verb.Type.SUPPLIER,
+        returns = Map.class,
+        description =
+            "Asynchronously request the URL using `GET`, `HEAD`, `POST`, `PUT`, `DELETE`, or `OPTIONS` and an optional UTF-8 body. Metadata: `:headers` string map, `:timeout` positive milliseconds (default 10000), `:maxbytes` positive byte limit (default 16777216). Supply a map with `status`, `headers`, UTF-8 `body`, `bytes`, and `address`, including non-2xx responses. Redirects are not followed; GET/HEAD reject a body, and file URLs support only GET without headers.")
+    public static CompletableFuture<Map<String, Object>> request(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "address",
+                description = "Absolute http:, https:, or file: URL without embedded credentials")
+            String address,
+        @Verb.Argument(
+                name = "method",
+                description =
+                    "Case-sensitive HTTP method: GET, HEAD, POST, PUT, DELETE, or OPTIONS")
+            String method,
+        @Verb.Argument(
+                name = "body",
+                description = "Optional UTF-8 request body; not permitted for GET or HEAD",
+                optional = true)
+            String body,
+        Metadata options) {
+      var uri = CoreIoSupport.uri(address);
+      var snapshot = CoreIoSupport.options(options);
+      return CoreIoSupport.async(() -> CoreIoSupport.request(uri, method, body, snapshot).asMap());
+    }
+
+    @Verb(
+        name = "download",
+        executionType = Verb.Type.SUPPLIER,
+        returns = File.class,
+        producesAgent = "core.file",
+        description =
+            "Asynchronously GET the URL, then create or replace the destination with response bytes and supply a `core.file` handle. HTTP non-2xx responses fail before writing; parents must exist. Defaults: 10-second connect/read timeouts and a 16 MiB response limit; redirects are not followed.")
+    public static CompletableFuture<File> download(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "address",
+                description = "Absolute http:, https:, or file: URL without embedded credentials")
+            String address,
+        @Verb.Argument(
+                name = "destination",
+                description = "Local destination path; parent directories must exist")
+            String destination) {
+      var uri = CoreIoSupport.uri(address);
+      var path = CoreIoSupport.path(destination);
+      return CoreIoSupport.async(() -> CoreIoSupport.download(uri, path));
+    }
+
+    @Verb(
+        name = "address",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description = "Return this handle's normalized absolute URL string.")
+    public String address(RuntimeAgent.Scope scope) {
+      return CoreIoSupport.require(uri).toString();
+    }
+
+    @Verb(
+        name = "info",
+        executionType = Verb.Type.FUNCTION,
+        returns = Map.class,
+        description =
+            "Return parsed components of the bound URL: `address`, `scheme`, `host`, `port`, `path`, `query`, and `fragment`. No network access occurs.")
+    public Map<String, Object> info(RuntimeAgent.Scope scope) {
+      return CoreIoSupport.urlInfo(CoreIoSupport.require(uri));
+    }
+
+    @Verb(
+        name = "child",
+        executionType = Verb.Type.FUNCTION,
+        returns = Url.class,
+        producesAgent = "core.url",
+        description =
+            "Resolve a relative reference against the bound URL and return a new `core.url` handle without accessing it.")
+    public Url child(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "relative",
+                description = "Relative path or URL reference, resolved against the handle or base")
+            String relative) {
+      return new Url(CoreIoSupport.resolve(CoreIoSupport.require(uri), relative));
+    }
+
+    @Verb(
+        name = "text",
+        executionType = Verb.Type.SUPPLIER,
+        returns = String.class,
+        description =
+            "Asynchronously GET the bound URL and supply UTF-8 text. HTTP non-2xx responses fail; redirects are not followed. Defaults: 10-second connect/read timeouts and a 16 MiB response limit.")
+    public CompletableFuture<String> text(RuntimeAgent.Scope scope) {
+      return read(scope, address(scope));
+    }
+
+    @Verb(
+        name = "bytes",
+        executionType = Verb.Type.SUPPLIER,
+        returns = byte[].class,
+        description =
+            "Asynchronously GET the bound URL and supply response bytes. HTTP non-2xx responses fail; redirects are not followed. Defaults: 10-second connect/read timeouts and a 16 MiB response limit.")
+    public CompletableFuture<byte[]> bytes(RuntimeAgent.Scope scope) {
+      return readBytes(scope, address(scope));
+    }
+
+    @Verb(
+        name = "fetch",
+        executionType = Verb.Type.SUPPLIER,
+        returns = Map.class,
+        description =
+            "Asynchronously request the bound URL using `GET`, `HEAD`, `POST`, `PUT`, `DELETE`, or `OPTIONS` and an optional UTF-8 body. Metadata: `:headers` string map, `:timeout` positive milliseconds (default 10000), `:maxbytes` positive byte limit (default 16777216). Supply `status`, `headers`, UTF-8 `body`, `bytes`, and `address`, including non-2xx responses. Redirects are not followed; GET/HEAD reject a body, and file URLs support only GET without headers.")
+    public CompletableFuture<Map<String, Object>> fetch(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "method",
+                description =
+                    "Case-sensitive HTTP method: GET, HEAD, POST, PUT, DELETE, or OPTIONS")
+            String method,
+        @Verb.Argument(
+                name = "body",
+                description = "Optional UTF-8 request body; not permitted for GET or HEAD",
+                optional = true)
+            String body,
+        Metadata options) {
+      return request(scope, address(scope), method, body, options);
+    }
+
+    @Verb(
+        name = "downloadto",
+        executionType = Verb.Type.SUPPLIER,
+        returns = File.class,
+        producesAgent = "core.file",
+        description =
+            "Asynchronously GET the bound URL, then create or replace the destination and supply a `core.file` handle. HTTP non-2xx responses fail before writing; parents must exist. Defaults: 10-second connect/read timeouts and a 16 MiB response limit; redirects are not followed.")
+    public CompletableFuture<File> downloadTo(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "destination",
+                description = "Local destination path; parent directories must exist")
+            String destination) {
+      return download(scope, address(scope), destination);
+    }
+  }
+
+  /**
+   * Service-owned outgoing email; configuration remains exclusively in the service settings API.
+   */
+  @Actor(
+      name = "email",
+      description = "Send email using the calling agent's host service configuration")
+  public static class Email {
+
+    @Verb(
+        name = "configured",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description = "Check whether outgoing email is enabled and configured; never contacts SMTP")
+    public static boolean configured(RuntimeAgent.Scope scope) {
+      var manager = manager(scope);
+      return manager != null && manager.isConfigured();
+    }
+
+    @Verb(
+        name = "status",
+        executionType = Verb.Type.FUNCTION,
+        returns = Map.class,
+        description =
+            "Return available, enabled, configured and missing setting names without credentials")
+    public static Map<String, Object> status(RuntimeAgent.Scope scope) {
+      var manager = manager(scope);
+      if (manager == null) {
+        return Map.of(
+            "available", false, "enabled", false, "configured", false, "missing", List.of());
+      }
+      var status = manager.getConfigurationStatus();
+      return Map.of(
+          "available",
+          true,
+          "enabled",
+          status.enabled(),
+          "configured",
+          status.configured(),
+          "missing",
+          status.missingOrInvalidSettings().stream().map(Enum::name).toList());
+    }
+
+    @Verb(
+        name = "send",
+        executionType = Verb.Type.SUPPLIER,
+        returns = Boolean.class,
+        description =
+            "Send UTF-8 plain text; supply false if unavailable or unconfigured, true on SMTP acceptance")
+    public static CompletableFuture<Boolean> send(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "to", description = "Recipient email address") String recipient,
+        @Verb.Argument(name = "subject", description = "Single-line subject") String subject,
+        @Verb.Argument(name = "body", description = "Plain text message body") String body) {
+      return send(scope, recipient, subject, body, false);
+    }
+
+    @Verb(
+        name = "sendhtml",
+        executionType = Verb.Type.SUPPLIER,
+        returns = Boolean.class,
+        description =
+            "Send UTF-8 HTML; supply false if unavailable or unconfigured, true on SMTP acceptance")
+    public static CompletableFuture<Boolean> sendHtml(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "to", description = "Recipient email address") String recipient,
+        @Verb.Argument(name = "subject", description = "Single-line subject") String subject,
+        @Verb.Argument(name = "body", description = "HTML message body") String body) {
+      return send(scope, recipient, subject, body, true);
+    }
+
+    private static CompletableFuture<Boolean> send(
+        RuntimeAgent.Scope scope, String recipient, String subject, String body, boolean html) {
+      var manager = manager(scope);
+      if (manager == null) return CompletableFuture.completedFuture(false);
+      // Blocking SMTP work runs on a virtual thread, outside the calling action thread.
+      return CompletableFuture.supplyAsync(
+          () -> manager.send(recipient, subject, body, html),
+          task -> Thread.startVirtualThread(task));
+    }
+
+    private static EmailManager manager(RuntimeAgent.Scope scope) {
+      // Session and context scopes inherit ServiceUserScope and retain their exact host service.
+      // Never borrow SMTP configuration or credentials from a connected peer service/client.
+      if (scope != null
+          && scope.getScope() instanceof ServiceUserScope serviceScope
+          && serviceScope.getService() instanceof BaseService service) {
+        return service.getEmailManager();
+      }
+      return null;
+    }
+  }
+
+  /**
+   * ContextScope proxy; query contracts and proposed event emitters are in docs/DIGITALTWINS.md.
+   */
   @Actor(name = "context", description = "Digital twin actor")
   public static class Context {
 
@@ -236,49 +1662,95 @@ public class CoreActorLibrary {
     }
 
     private ContextScope requireContext() {
-      if (context == null) throw new KlabIllegalStateException("Use context.new, context.current or context.wrap first");
+      if (context == null)
+        throw new KlabIllegalStateException(
+            "Use context.new, context.current or context.wrap first");
       return context;
     }
 
-    @Verb(name = "wrap", executionType = Verb.Type.FUNCTION, producesAgent = "core.context",
-        description = "Borrow an existing ContextScope without creating a twin or taking cleanup ownership")
-    public static Context wrap(RuntimeAgent.Scope scope,
-        @Verb.Argument(name = "context", description = "Existing ContextScope") ContextScope context) {
+    @Verb(
+        name = "wrap",
+        executionType = Verb.Type.FUNCTION,
+        producesAgent = "core.context",
+        description =
+            "Borrow an existing ContextScope without creating a twin or taking cleanup ownership")
+    public static Context wrap(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Existing ContextScope")
+            ContextScope context) {
       return new Context(context);
     }
 
-    @Verb(name = "current", executionType = Verb.Type.FUNCTION, producesAgent = "core.context",
-        description = "Borrow the calling agent's current context; fails if the agent has no context")
+    @Verb(
+        name = "current",
+        executionType = Verb.Type.FUNCTION,
+        producesAgent = "core.context",
+        description =
+            "Borrow the calling agent's current context; fails if the agent has no context")
     public static Context current(RuntimeAgent.Scope scope) {
-      if (scope == null || scope.getContext() == null) throw new KlabIllegalStateException("The calling agent has no context");
+      if (scope == null || scope.getContext() == null)
+        throw new KlabIllegalStateException("The calling agent has no context");
       return new Context(scope.getContext());
     }
 
-    @Verb(name = "focus", executionType = Verb.Type.FUNCTION, producesAgent = "core.context",
-        description = "Return a proxy focused by :within observation or :source observation :target observation")
+    @Verb(
+        name = "focus",
+        executionType = Verb.Type.FUNCTION,
+        producesAgent = "core.context",
+        description =
+            "Return a proxy focused by :within observation or :source observation :target observation")
     public Context focus(RuntimeAgent.Scope scope, Metadata options) {
-      for (String key : options.keySet()) if (!Set.of("within", "source", "target").contains(key))
-        throw new IllegalArgumentException("Unknown focus option: " + key);
+      for (String key : options.keySet())
+        if (!Set.of("within", "source", "target").contains(key))
+          throw new IllegalArgumentException("Unknown focus option: " + key);
       return new Context(ContextActorSupport.focus(requireContext(), options));
     }
 
-    @Verb(name = "scope", executionType = Verb.Type.FUNCTION, returns = ContextScope.class)
-    public ContextScope scope(RuntimeAgent.Scope scope) { return requireContext(); }
+    @Verb(
+        name = "scope",
+        executionType = Verb.Type.FUNCTION,
+        returns = ContextScope.class,
+        description = "Return the underlying `ContextScope` of this context handle.")
+    public ContextScope scope(RuntimeAgent.Scope scope) {
+      return requireContext();
+    }
 
-    @Verb(name = "twin", executionType = Verb.Type.FUNCTION, returns = DigitalTwin.class)
+    @Verb(
+        name = "twin",
+        executionType = Verb.Type.FUNCTION,
+        returns = DigitalTwin.class,
+        description =
+            "Return the underlying `DigitalTwin`; fail if no twin is available in this context.")
     public DigitalTwin twin(RuntimeAgent.Scope scope) {
       var twin = requireContext().getDigitalTwin();
-      if (twin == null) throw new KlabIllegalStateException("No digital twin is available in this context");
+      if (twin == null)
+        throw new KlabIllegalStateException("No digital twin is available in this context");
       return twin;
     }
 
-    @Verb(name = "graph", executionType = Verb.Type.FUNCTION, returns = org.integratedmodelling.klab.api.data.KnowledgeGraph.class)
-    public org.integratedmodelling.klab.api.data.KnowledgeGraph graph(RuntimeAgent.Scope scope) { return twin(scope).getKnowledgeGraph(); }
+    @Verb(
+        name = "graph",
+        executionType = Verb.Type.FUNCTION,
+        returns = org.integratedmodelling.klab.api.data.KnowledgeGraph.class,
+        description = "Return the digital twin's knowledge graph.")
+    public org.integratedmodelling.klab.api.data.KnowledgeGraph graph(RuntimeAgent.Scope scope) {
+      return twin(scope).getKnowledgeGraph();
+    }
 
-    @Verb(name = "scheduler", executionType = Verb.Type.FUNCTION, returns = org.integratedmodelling.klab.api.digitaltwin.Scheduler.class)
-    public org.integratedmodelling.klab.api.digitaltwin.Scheduler scheduler(RuntimeAgent.Scope scope) { return twin(scope).getScheduler(); }
+    @Verb(
+        name = "scheduler",
+        executionType = Verb.Type.FUNCTION,
+        returns = org.integratedmodelling.klab.api.digitaltwin.Scheduler.class,
+        description = "Return the digital twin's scheduler without advancing time.")
+    public org.integratedmodelling.klab.api.digitaltwin.Scheduler scheduler(
+        RuntimeAgent.Scope scope) {
+      return twin(scope).getScheduler();
+    }
 
-    @Verb(name = "timeline", executionType = Verb.Type.FUNCTION, returns = Map.class,
+    @Verb(
+        name = "timeline",
+        executionType = Verb.Type.FUNCTION,
+        returns = Map.class,
         description = "Read scheduler epochStart, epochEnd and resolution without advancing time")
     public Map<String, Object> timeline(RuntimeAgent.Scope scope) {
       var scheduler = Objects.requireNonNull(scheduler(scope), "No scheduler available");
@@ -289,31 +1761,58 @@ public class CoreActorLibrary {
       return Collections.unmodifiableMap(snapshot);
     }
 
-    @Verb(name = "close", executionType = Verb.Type.FUNCTION, returns = Void.class,
-        description = "Explicitly close the underlying context according to its persistence policy; affects all proxies")
-    public void close(RuntimeAgent.Scope scope) { requireContext().close(); }
+    @Verb(
+        name = "close",
+        executionType = Verb.Type.FUNCTION,
+        returns = Void.class,
+        description =
+            "Explicitly close the underlying context according to its persistence policy; affects all proxies")
+    public void close(RuntimeAgent.Scope scope) {
+      requireContext().close();
+    }
 
-    @Verb(name = "storagemanager", executionType = Verb.Type.FUNCTION, returns = org.integratedmodelling.klab.api.digitaltwin.StorageManager.class)
-    public org.integratedmodelling.klab.api.digitaltwin.StorageManager storageManager(RuntimeAgent.Scope scope) { return twin(scope).getStorageManager(); }
+    @Verb(
+        name = "storagemanager",
+        executionType = Verb.Type.FUNCTION,
+        returns = org.integratedmodelling.klab.api.digitaltwin.StorageManager.class,
+        description = "Return the digital twin's storage manager.")
+    public org.integratedmodelling.klab.api.digitaltwin.StorageManager storageManager(
+        RuntimeAgent.Scope scope) {
+      return twin(scope).getStorageManager();
+    }
 
-    @Verb(name = "storage", executionType = Verb.Type.FUNCTION, returns = org.integratedmodelling.klab.api.data.Storage.class,
-        description = "Retrieve existing observation storage; absent or inaccessible storage raises a backend error")
-    public org.integratedmodelling.klab.api.data.Storage storage(RuntimeAgent.Scope scope,
-        @Verb.Argument(name = "observation", description = "Observation in this twin") Observation observation) {
+    @Verb(
+        name = "storage",
+        executionType = Verb.Type.FUNCTION,
+        returns = org.integratedmodelling.klab.api.data.Storage.class,
+        description =
+            "Retrieve existing observation storage; absent or inaccessible storage raises a backend error")
+    public org.integratedmodelling.klab.api.data.Storage storage(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "observation", description = "Observation in this twin")
+            Observation observation) {
       return storageManager(scope).getStorage(Objects.requireNonNull(observation, "observation"));
     }
 
-    @Verb(name = "members", executionType = Verb.Type.FUNCTION, returns = List.class,
-        description = "Return an iterable snapshot of a cohort's direct HAS_MEMBER observations; accepts limit and offset")
-    public List<?> members(RuntimeAgent.Scope scope,
-        @Verb.Argument(name = "cohort", description = "Cohort in this twin") org.integratedmodelling.klab.api.knowledge.Cohort cohort,
+    @Verb(
+        name = "members",
+        executionType = Verb.Type.FUNCTION,
+        returns = List.class,
+        description =
+            "Return an iterable snapshot of a cohort's direct HAS_MEMBER observations; accepts limit and offset")
+    public List<?> members(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "cohort", description = "Cohort in this twin")
+            org.integratedmodelling.klab.api.knowledge.Cohort cohort,
         Metadata options) {
-      for (String key : options.keySet()) if (!Set.of("limit", "offset").contains(key))
-        throw new IllegalArgumentException("Unknown members option: " + key);
+      for (String key : options.keySet())
+        if (!Set.of("limit", "offset").contains(key))
+          throw new IllegalArgumentException("Unknown members option: " + key);
       var queryOptions = Metadata.create();
       queryOptions.putAll(options);
       queryOptions.put("source", Objects.requireNonNull(cohort, "cohort"));
-      queryOptions.put("along", org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship.HAS_MEMBER);
+      queryOptions.put(
+          "along", org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship.HAS_MEMBER);
       queryOptions.put("all", true);
       return (List<?>) ContextActorSupport.query(requireContext(), queryOptions);
     }
@@ -324,37 +1823,54 @@ public class CoreActorLibrary {
      * @param agentScope
      * @return
      */
-    @Verb(name = "new", executionType = Verb.Type.FUNCTION, producesAgent = "core.context", description = "Create a new context")
+    @Verb(
+        name = "new",
+        executionType = Verb.Type.FUNCTION,
+        producesAgent = "core.context",
+        description = "Create a new context")
     public static Context createContext(AgentScope agentScope, Object... args) {
 
       var options = ContextActorSupport.metadata(args);
-      for (String key : options.keySet()) if (!Set.of("name", "description", "persistence").contains(key))
-        throw new IllegalArgumentException("Unknown context creation option: " + key);
-      if (args != null) for (Object argument : args)
-        if (!(argument instanceof String || argument instanceof Persistence || argument instanceof Metadata))
-          throw new IllegalArgumentException("Context.new accepts a name, Persistence and creation metadata; use wrap for an existing scope");
+      for (String key : options.keySet())
+        if (!Set.of("name", "description", "persistence").contains(key))
+          throw new IllegalArgumentException("Unknown context creation option: " + key);
+      if (args != null)
+        for (Object argument : args)
+          if (!(argument instanceof String
+              || argument instanceof Persistence
+              || argument instanceof Metadata))
+            throw new IllegalArgumentException(
+                "Context.new accepts a name, Persistence and creation metadata; use wrap for an existing scope");
       for (String key : List.of("name", "description"))
         if (options.containsKey(key) && !(options.get(key) instanceof String))
           throw new IllegalArgumentException(key + " must be a string");
-      var persistence = options.containsKey("persistence")
-          ? (Persistence) org.integratedmodelling.klab.runtime.kactors.JavaArgumentConversions.enumValue(options.get("persistence"), Persistence.class)
-          : Utils.Collections.findElement(args, Persistence.ONE_OFF);
+      var persistence =
+          options.containsKey("persistence")
+              ? (Persistence)
+                  org.integratedmodelling.klab.runtime.kactors.JavaArgumentConversions.enumValue(
+                      options.get("persistence"), Persistence.class)
+              : Utils.Collections.findElement(args, Persistence.ONE_OFF);
 
       var aScope = agentScope.getAgent().getCreationScope();
       if (aScope instanceof SessionScope sessionScope) {
 
         var builder =
             DigitalTwin.Configuration.builder()
-                .name(options.containsKey("name") ? (String) options.get("name") : Utils.Collections.findElement(args, "Unnamed context"))
+                .name(
+                    options.containsKey("name")
+                        ? (String) options.get("name")
+                        : Utils.Collections.findElement(args, "Unnamed context"))
                 .persistence(persistence)
                 .serviceId(aScope.getService(RuntimeService.class).serviceId())
                 .serverUrl(aScope.getService(RuntimeService.class).getUrl())
                 .owner(sessionScope.getUser().getUsername())
                 .description(
-                    options.containsKey("description") ? (String) options.get("description") : "Created by agent "
-                        + agentScope.getAgent().getName()
-                        + " on "
-                        + TimeInstant.create())
+                    options.containsKey("description")
+                        ? (String) options.get("description")
+                        : "Created by agent "
+                            + agentScope.getAgent().getName()
+                            + " on "
+                            + TimeInstant.create())
                 .accessRights(ResourcePrivileges.create(sessionScope));
 
         var context = sessionScope.createContext(builder.build());
@@ -370,11 +1886,14 @@ public class CoreActorLibrary {
       throw new KlabIllegalStateException("Context creation is only supported in a session scope");
     }
 
-    @Verb(name = "query", executionType = Verb.Type.FUNCTION,
-        description = "Select typed RuntimeAssets by ID, URN or exact observation semantics. "
-            + "Use :within for focused children, :source/:target for directed traversal, "
-            + "both endpoints for LINK results, :along for the edge type, and +all for a list. "
-            + "Supports :limit, :offset and :depth. See docs/DIGITALTWINS.md.")
+    @Verb(
+        name = "query",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Select typed RuntimeAssets by ID, URN or exact observation semantics. "
+                + "Use :within for focused children, :source/:target for directed traversal, "
+                + "both endpoints for LINK results, :along for the edge type, and +all for a list. "
+                + "Supports :limit, :offset and :depth. See docs/DIGITALTWINS.md.")
     public Object query(AgentScope scope, Object... arguments) {
       return ContextActorSupport.query(requireContext(), arguments);
     }
@@ -392,8 +1911,11 @@ public class CoreActorLibrary {
       var selectedContext = ContextActorSupport.focus(requireContext(), metadata);
       var runtimeService = selectedContext.getService(RuntimeService.class);
 
-      var provenanceAgent = selectedContext.getDigitalTwin().getKnowledgeGraph()
-          .requireAgent(scope.getAgent().getName());
+      var provenanceAgent =
+          selectedContext
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .requireAgent(scope.getAgent().getName());
 
       var builder = Observation.builder(selectedContext);
       var definition = Utils.Collections.findElement(arguments, Map.class, metadata);
@@ -719,37 +2241,67 @@ public class CoreActorLibrary {
       return Objects.requireNonNull(graph, "graph").edgeSet().size();
     }
 
-    @Verb(name = "scancheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Compare bounded samples in partitioned, export and indexed text views; backend failures propagate.")
-    public static boolean scancheck(RuntimeAgent.Scope scope,
-        @Verb.Argument(name = "context", description = "Context actor or context scope") Object context,
-        @Verb.Argument(name = "observation", description = "Committed quality or detached quality query") Observation observation,
-        @Verb.Argument(name = "curve", description = "Supported fill curve constant") org.integratedmodelling.klab.api.data.Data.FillCurve curve,
+    @Verb(
+        name = "scancheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Compare bounded samples in partitioned, export and indexed text views; backend failures propagate.")
+    public static boolean scancheck(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or context scope")
+            Object context,
+        @Verb.Argument(
+                name = "observation",
+                description = "Committed quality or detached quality query")
+            Observation observation,
+        @Verb.Argument(name = "curve", description = "Supported fill curve constant")
+            org.integratedmodelling.klab.api.data.Data.FillCurve curve,
         @Verb.Argument(name = "splits", description = "Consumer partitions, 1..256") int splits,
-        @Verb.Argument(name = "samples", description = "Samples per partition, 1..64") int samples) {
+        @Verb.Argument(name = "samples", description = "Samples per partition, 1..64")
+            int samples) {
       return org.integratedmodelling.klab.runtime.storage.StorageReadInspector.check(
           contextScope(context), observation, curve, splits, samples);
     }
 
-    @Verb(name = "unitcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Check a lazy unit view against an independent factor and offset across storage read routes.")
-    public static boolean unitcheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "unitcheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Check a lazy unit view against an independent factor and offset across storage read routes.")
+    public static boolean unitcheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "observation", description = "Committed numeric quality") Observation observation,
+        @Verb.Argument(name = "observation", description = "Committed numeric quality")
+            Observation observation,
         @Verb.Argument(name = "unit", description = "Requested ordinary unit") String unit,
-        @Verb.Argument(name = "factor", description = "Expected source-to-target multiplier") double factor,
-        @Verb.Argument(name = "offset", description = "Expected source-to-target offset") double offset) {
+        @Verb.Argument(name = "factor", description = "Expected source-to-target multiplier")
+            double factor,
+        @Verb.Argument(name = "offset", description = "Expected source-to-target offset")
+            double offset) {
       return org.integratedmodelling.klab.runtime.storage.StorageReadInspector.unitCheck(
           contextScope(context), observation, unit, factor, offset);
     }
 
-    @Verb(name = "celltext", executionType = Verb.Type.FUNCTION, returns = String.class,
-        description = "Read one cell through the export view, preserving exact longs and missingness.")
-    public static String celltext(RuntimeAgent.Scope scope,
-        @Verb.Argument(name = "context", description = "Context actor or context scope") Object context,
-        @Verb.Argument(name = "observation", description = "Committed quality or detached quality query") Observation observation,
-        @Verb.Argument(name = "curve", description = "Supported fill curve constant") org.integratedmodelling.klab.api.data.Data.FillCurve curve,
-        @Verb.Argument(name = "offset", description = "Zero-based consumer traversal offset") long offset) {
+    @Verb(
+        name = "celltext",
+        executionType = Verb.Type.FUNCTION,
+        returns = String.class,
+        description =
+            "Read one cell through the export view, preserving exact longs and missingness.")
+    public static String celltext(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or context scope")
+            Object context,
+        @Verb.Argument(
+                name = "observation",
+                description = "Committed quality or detached quality query")
+            Observation observation,
+        @Verb.Argument(name = "curve", description = "Supported fill curve constant")
+            org.integratedmodelling.klab.api.data.Data.FillCurve curve,
+        @Verb.Argument(name = "offset", description = "Zero-based consumer traversal offset")
+            long offset) {
       return org.integratedmodelling.klab.runtime.storage.StorageReads.text(
           observation, contextScope(context), null, curve, offset);
     }
@@ -768,7 +2320,11 @@ public class CoreActorLibrary {
   @Actor(name = "log", description = "Logging actor")
   public static class Logger {
 
-    @Verb(name = "info", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "info",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Log messages at info level through the calling scope, falling back to the global logger when no service scope is available.")
     public static void info(RuntimeAgent.Scope scope, Object... messages) {
       var uscope = scope.getScope();
       if (uscope != null) {
@@ -778,7 +2334,11 @@ public class CoreActorLibrary {
       }
     }
 
-    @Verb(name = "error", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "error",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Log messages at error level through the calling scope, falling back to the global logger when no service scope is available.")
     public static void error(RuntimeAgent.Scope scope, Object... messages) {
       var uscope = scope.getScope();
       if (uscope != null) {
@@ -788,7 +2348,11 @@ public class CoreActorLibrary {
       }
     }
 
-    @Verb(name = "warning", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "warning",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Log messages at warning level through the calling scope, falling back to the global logger when no service scope is available.")
     public static void warning(RuntimeAgent.Scope scope, Object... messages) {
       var uscope = scope.getScope();
       if (uscope != null) {
@@ -798,7 +2362,11 @@ public class CoreActorLibrary {
       }
     }
 
-    @Verb(name = "debug", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "debug",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Log messages at debug level through the calling scope, falling back to the global logger when no service scope is available.")
     public static void debug(RuntimeAgent.Scope scope, Object... messages) {
       var uscope = scope.getScope();
       if (uscope != null) {
@@ -818,21 +2386,32 @@ public class CoreActorLibrary {
           "Null-safe string conversion, inspection, searching, splitting, joining and formatting functions.")
   public static class Strings {
 
-    @Verb(name = "lowercase", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "lowercase",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Convert text to lowercase using the locale-independent root locale; preserve `null`.")
     public static String lowercase(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to convert") String text) {
       return text == null ? null : text.toLowerCase(Locale.ROOT);
     }
 
-    @Verb(name = "uppercase", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "uppercase",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Convert text to uppercase using the locale-independent root locale; preserve `null`.")
     public static String uppercase(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to convert") String text) {
       return text == null ? null : text.toUpperCase(Locale.ROOT);
     }
 
-    @Verb(name = "capitalize", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "capitalize",
+        executionType = Verb.Type.FUNCTION,
+        description = "Capitalize the first character using the shared string utility.")
     public static String capitalize(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text whose first character is capitalized")
@@ -840,7 +2419,11 @@ public class CoreActorLibrary {
       return org.integratedmodelling.klab.api.utils.Utils.Strings.capitalize(text);
     }
 
-    @Verb(name = "labelize", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "labelize",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Convert an identifier into a readable label using the shared string utility; preserve `null`.")
     public static String labelize(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "identifier", description = "Identifier to turn into a label")
@@ -850,14 +2433,21 @@ public class CoreActorLibrary {
           : org.integratedmodelling.klab.api.utils.Utils.Strings.labelizeIdentifier(identifier);
     }
 
-    @Verb(name = "trim", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "trim",
+        executionType = Verb.Type.FUNCTION,
+        description = "Strip leading and trailing whitespace; preserve `null`.")
     public static String trim(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to strip at both ends") String text) {
       return text == null ? null : text.strip();
     }
 
-    @Verb(name = "normalize", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "normalize",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Strip leading and trailing whitespace and replace internal whitespace runs with single spaces; preserve `null`.")
     public static String normalize(
         RuntimeAgent.Scope scope,
         @Verb.Argument(
@@ -870,21 +2460,30 @@ public class CoreActorLibrary {
               text.strip(), " ");
     }
 
-    @Verb(name = "length", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "length",
+        executionType = Verb.Type.FUNCTION,
+        description = "Return the text length; return zero for `null`.")
     public static int length(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text whose length is returned") String text) {
       return org.integratedmodelling.klab.api.utils.Utils.Strings.length(text);
     }
 
-    @Verb(name = "isempty", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "isempty",
+        executionType = Verb.Type.FUNCTION,
+        description = "Return whether text is `null` or empty.")
     public static boolean isEmpty(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to test", optional = true) String text) {
       return org.integratedmodelling.klab.api.utils.Utils.Strings.isEmpty(text);
     }
 
-    @Verb(name = "contains", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "contains",
+        executionType = Verb.Type.FUNCTION,
+        description = "Test for a literal fragment; return `false` if either argument is `null`.")
     public static boolean contains(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to search") String text,
@@ -893,7 +2492,10 @@ public class CoreActorLibrary {
       return text != null && fragment != null && text.contains(fragment);
     }
 
-    @Verb(name = "startswith", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "startswith",
+        executionType = Verb.Type.FUNCTION,
+        description = "Test for a literal prefix; return `false` if either argument is `null`.")
     public static boolean startsWith(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to inspect") String text,
@@ -901,7 +2503,10 @@ public class CoreActorLibrary {
       return text != null && prefix != null && text.startsWith(prefix);
     }
 
-    @Verb(name = "endswith", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "endswith",
+        executionType = Verb.Type.FUNCTION,
+        description = "Test for a literal suffix; return `false` if either argument is `null`.")
     public static boolean endsWith(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to inspect") String text,
@@ -909,7 +2514,10 @@ public class CoreActorLibrary {
       return text != null && suffix != null && text.endsWith(suffix);
     }
 
-    @Verb(name = "equalsignorecase", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "equalsignorecase",
+        executionType = Verb.Type.FUNCTION,
+        description = "Compare text ignoring case; two `null` values are equal.")
     public static boolean equalsIgnoreCase(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "First text") String text,
@@ -917,7 +2525,11 @@ public class CoreActorLibrary {
       return text == null ? other == null : other != null && text.equalsIgnoreCase(other);
     }
 
-    @Verb(name = "indexof", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "indexof",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Return the zero-based index of the first literal fragment, or `-1` if absent or either argument is `null`.")
     public static int indexOf(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to search") String text,
@@ -926,7 +2538,11 @@ public class CoreActorLibrary {
       return text == null || fragment == null ? -1 : text.indexOf(fragment);
     }
 
-    @Verb(name = "count", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "count",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Count nonoverlapping occurrences of a literal fragment using the shared string utility.")
     public static int count(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to search") String text,
@@ -935,7 +2551,11 @@ public class CoreActorLibrary {
       return org.integratedmodelling.klab.api.utils.Utils.Strings.countMatches(text, fragment);
     }
 
-    @Verb(name = "matches", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "matches",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Test whether the entire text matches a Java regular expression; return `false` for null arguments. Invalid patterns raise an error.")
     public static boolean matches(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to test") String text,
@@ -943,7 +2563,11 @@ public class CoreActorLibrary {
       return text != null && regex != null && Pattern.matches(regex, text);
     }
 
-    @Verb(name = "replace", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "replace",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Replace every literal target occurrence. A null replacement removes matches; null text or target leaves the text unchanged.")
     public static String replace(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to modify") String text,
@@ -954,7 +2578,11 @@ public class CoreActorLibrary {
           : text.replace(target, replacement == null ? "" : replacement);
     }
 
-    @Verb(name = "substring", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "substring",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Return text between inclusive start and exclusive end indices. Negative indices count from the end; bounds are clamped and reversed bounds return empty text. Preserve `null`.")
     public static String substring(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Source text") String text,
@@ -963,7 +2591,11 @@ public class CoreActorLibrary {
       return org.integratedmodelling.klab.api.utils.Utils.Strings.substring(text, start, end);
     }
 
-    @Verb(name = "split", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "split",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Split by a literal separator, preserving empty fields. Null text returns an empty list; null or empty separators split into Unicode code points.")
     public static List<String> split(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to split") String text,
@@ -977,7 +2609,11 @@ public class CoreActorLibrary {
       return List.of(text.split(Pattern.quote(separator), -1));
     }
 
-    @Verb(name = "tokenize", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "tokenize",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Split text on whitespace while preserving quoted phrases; null text returns an empty list.")
     public static List<String> tokenize(
         RuntimeAgent.Scope scope,
         @Verb.Argument(
@@ -989,7 +2625,11 @@ public class CoreActorLibrary {
           : List.copyOf(org.integratedmodelling.klab.api.utils.Utils.Strings.tokenize(text));
     }
 
-    @Verb(name = "join", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "join",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Join rendered values with a separator. Null values render as `null`; a null separator means no separator and a null iterable returns empty text.")
     public static String join(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "values", description = "Values to join") Iterable<?> values,
@@ -1008,7 +2648,11 @@ public class CoreActorLibrary {
       return builder.toString();
     }
 
-    @Verb(name = "concat", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "concat",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Concatenate rendered values without separators. Null elements render as `null`; a null argument array returns empty text.")
     public static String concat(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "values", description = "Values to concatenate") Object... values) {
@@ -1022,7 +2666,11 @@ public class CoreActorLibrary {
       return builder.toString();
     }
 
-    @Verb(name = "repeat", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "repeat",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Repeat text the requested number of times; negative counts return empty text and null text stays null.")
     public static String repeat(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to repeat") String text,
@@ -1030,7 +2678,11 @@ public class CoreActorLibrary {
       return text == null ? null : text.repeat(Math.max(0, times));
     }
 
-    @Verb(name = "abbreviate", executionType = Verb.Type.FUNCTION)
+    @Verb(
+        name = "abbreviate",
+        executionType = Verb.Type.FUNCTION,
+        description =
+            "Abbreviate text to a maximum width with an ellipsis using the shared string utility. Null stays null; too-small widths are invalid.")
     public static String abbreviate(
         RuntimeAgent.Scope scope,
         @Verb.Argument(name = "text", description = "Text to abbreviate") String text,
@@ -1051,7 +2703,11 @@ public class CoreActorLibrary {
      * @param object
      * @return
      */
-    @Verb(name = "at", executionType = Verb.Type.SUPPLIER)
+    @Verb(
+        name = "at",
+        executionType = Verb.Type.SUPPLIER,
+        description =
+            "Supply the given object at the requested time, or the current `TimeInstant` when the object is null. Past times complete immediately.")
     public static CompletableFuture<Object> at(
         RuntimeAgent.Scope scope, TimeInstant time, Object object) {
       Objects.requireNonNull(time, "time");
@@ -1067,7 +2723,11 @@ public class CoreActorLibrary {
      * @param optionalObject
      * @return
      */
-    @Verb(name = "in", executionType = Verb.Type.SUPPLIER)
+    @Verb(
+        name = "in",
+        executionType = Verb.Type.SUPPLIER,
+        description =
+            "Supply the first optional object after a temporal quantity, or the current `TimeInstant` when omitted or null. Nonpositive delays complete immediately; supported units: `ms`, `s`, `sec`, `min`, `h`, `hr`, `d`.")
     public static CompletableFuture<Object> in(
         RuntimeAgent.Scope scope, Quantity time, Object... optionalObject) {
 
@@ -1103,7 +2763,12 @@ public class CoreActorLibrary {
       return future;
     }
 
-    @Verb(name = "tick", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
+    @Verb(
+        name = "tick",
+        executionType = Verb.Type.EMITTER,
+        fires = TimeInstant.class,
+        description =
+            "Emit `TimeInstant` events immediately and then at fixed intervals until the scope completes. The interval must be positive; supported units: `ms`, `s`, `sec`, `min`, `h`, `hr`, `d`.")
     public static void tick(RuntimeAgent.Scope scope, Quantity quantity) {
 
       Objects.requireNonNull(quantity, "quantity");
@@ -1135,7 +2800,12 @@ public class CoreActorLibrary {
       timer.cancel();
     }
 
-    @Verb(name = "random", executionType = Verb.Type.EMITTER, fires = TimeInstant.class)
+    @Verb(
+        name = "random",
+        executionType = Verb.Type.EMITTER,
+        fires = TimeInstant.class,
+        description =
+            "Emit `TimeInstant` events at randomized intervals around the given average until the scope completes. Supported units: `ms`, `s`, `sec`, `min`, `h`, `hr`, `d`.")
     public static void random(RuntimeAgent.Scope scope, Quantity quantity) {
 
       Objects.requireNonNull(quantity, "quantity");

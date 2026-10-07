@@ -8,11 +8,41 @@ import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.junit.jupiter.api.Test;
 
 class KimVisitorsTest {
+
+  @Test
+  void authorityRequirementsValidateIdentityAndProviderAtTheClause() {
+    var ontology = new KimOntologyImpl();
+    ontology.setUrn("test");
+    var statement = new KimConceptStatementImpl();
+    statement.setUrn("Entity");
+    statement.setType(EnumSet.of(SemanticType.SUBJECT));
+    statement.setAuthorityRequired("TEST");
+    statement.getDeclarationClauses().add(new KimConceptStatement.DeclarationClause(
+        "requiresClause", "requires authority TEST {}", 42, 26));
+    ontology.getStatements().add(statement);
+    var visitor = new KimOntologyVisitor();
+    visitor.visit(ontology);
+    var errors = visitor.getNotifications().stream()
+        .filter(n -> n.getLevel() == Notification.Level.Error).toList();
+    assertEquals(2, errors.size());
+    assertTrue(errors.stream().allMatch(n -> n.getLexicalContext().getOffsetInDocument() == 42));
+
+    statement.setType(EnumSet.of(SemanticType.IDENTITY));
+    statement.getAuthorityParameters().put("urn", "example.authority");
+    assertTrue(KimWorldviewValidator.authorityErrors(statement).isEmpty());
+    statement.getAuthorityParameters().put("urn", 42);
+    assertEquals(1, KimWorldviewValidator.authorityErrors(statement).size());
+    statement.getAuthorityParameters().put("urn", " ");
+    assertEquals(1, KimWorldviewValidator.authorityErrors(statement).size());
+    statement.setAuthorityRequired("test");
+    assertEquals(2, KimWorldviewValidator.authorityErrors(statement).size());
+  }
 
   @Test
   void defaultKimValidatorAppliesObservableRulesToConcepts() {
@@ -137,6 +167,43 @@ class KimVisitorsTest {
                 ref ->
                     ref.urn().equals("base.ontology")
                         && ref.knowledgeClass() == KlabAsset.KnowledgeClass.ONTOLOGY));
+  }
+
+  @Test
+  void uncompiledClauseWarningsUseTheClauseOccurrence() {
+    var ontology = new KimOntologyImpl();
+    ontology.setUrn("test");
+    ontology.setProjectName("project");
+    var statement = new KimConceptStatementImpl();
+    statement.setUrn("Entity");
+    statement.setOffsetInDocument(10);
+    statement.setLength(100);
+    statement
+        .getDeclarationClauses()
+        .add(
+            new KimConceptStatement.DeclarationClause(
+                "deniabilityClause", "deniable as test:Negative", 42, 25));
+    statement
+        .getDeclarationClauses()
+        .add(
+            new KimConceptStatement.DeclarationClause(
+                "within", "within test:Context", 74, 19));
+    ontology.getStatements().add(statement);
+    var visitor = new KimOntologyVisitor();
+
+    visitor.visit(ontology);
+
+    var warnings =
+        visitor.getNotifications().stream()
+            .filter(n -> n.getMessage().contains("scoped/denial semantics"))
+            .toList();
+    assertEquals(2, warnings.size());
+    assertEquals(
+        List.of(42, 74),
+        warnings.stream().map(n -> n.getLexicalContext().getOffsetInDocument()).toList());
+    assertEquals(
+        List.of(25, 19),
+        warnings.stream().map(n -> n.getLexicalContext().getLength()).toList());
   }
 
   @Test

@@ -38,6 +38,20 @@ public class WorkflowController {
 
   @Autowired private ResourcesServer resourcesServer;
 
+  @GetMapping(ServicesAPI.RESOURCES.FLOW_ACTIONS)
+  public List<org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior.AvailableAction> actions(
+      @PathVariable String flowId, @PathVariable String stateId, Principal principal) {
+    return resourcesServer.klabService().getFlowActions(flowId, stateId, userScope(principal));
+  }
+
+  @PostMapping(ServicesAPI.RESOURCES.FLOW_ACTION)
+  public Flow executeAction(@PathVariable String flowId, @PathVariable String stateId,
+      @PathVariable String actionId,
+      @RequestBody org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior.ActionRequest request,
+      Principal principal) {
+    return resourcesServer.klabService().executeFlowAction(flowId, stateId, actionId, request, userScope(principal));
+  }
+
   @Operation(summary = "List known workflows", description = "List workflow schemas visible to the caller")
   @GetMapping(ServicesAPI.RESOURCES.WORKFLOWS)
   public List<Workflow> listWorkflows(Principal principal) {

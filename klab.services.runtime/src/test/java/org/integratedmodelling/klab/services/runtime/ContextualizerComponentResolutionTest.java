@@ -129,7 +129,7 @@ class ContextualizerComponentResolutionTest {
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(resources.resolve(urn.getUrn(), KlabAsset.KnowledgeClass.RESOURCE, scope))
         .thenReturn(resourceResolution);
-    when(resources.resolve("random", KlabAsset.KnowledgeClass.COMPONENT, scope))
+    when(resources.resolve("random", KlabAsset.KnowledgeClass.RESOURCE_ADAPTER, scope))
         .thenReturn(componentResolution);
     when(registry.getAdapter("random", Version.ANY_VERSION, scope))
         .thenReturn(null, adapter);
@@ -155,7 +155,7 @@ class ContextualizerComponentResolutionTest {
                 resource ->
                     resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE
                         && urn.getUrn().equals(resource.getResourceUrn())));
-    verify(resources).resolve("random", KlabAsset.KnowledgeClass.COMPONENT, scope);
+    verify(resources).resolve("random", KlabAsset.KnowledgeClass.RESOURCE_ADAPTER, scope);
     verify(registry).loadComponents(componentResolution, scope);
   }
 
@@ -193,7 +193,7 @@ class ContextualizerComponentResolutionTest {
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(resources.resolve(urn.getUrn(), KlabAsset.KnowledgeClass.RESOURCE, scope))
         .thenReturn(unavailableResource);
-    when(resources.resolve("random", KlabAsset.KnowledgeClass.COMPONENT, scope))
+    when(resources.resolve("random", KlabAsset.KnowledgeClass.RESOURCE_ADAPTER, scope))
         .thenReturn(componentResolution);
     when(registry.getAdapter("random", Version.ANY_VERSION, scope))
         .thenReturn(null, adapter);
@@ -223,8 +223,15 @@ class ContextualizerComponentResolutionTest {
                     resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE
                         && urn.getUrn().equals(resource.getResourceUrn())
                         && "runtime".equals(resource.getServiceId())));
-    verify(resources).resolve("random", KlabAsset.KnowledgeClass.COMPONENT, scope);
+    verify(resources).resolve("random", KlabAsset.KnowledgeClass.RESOURCE_ADAPTER, scope);
     verify(registry).loadComponents(componentResolution, scope);
+    var notifications = org.mockito.ArgumentCaptor.forClass(Notification.class);
+    verify(scope, org.mockito.Mockito.times(2)).send(notifications.capture());
+    assertEquals(
+        List.of(
+            "Discovering component for universal resource adapter 'random'",
+            "Installed component for universal resource adapter 'random'"),
+        notifications.getAllValues().stream().map(Notification::getMessage).toList());
   }
 
   @Test
@@ -284,7 +291,7 @@ class ContextualizerComponentResolutionTest {
         .thenReturn(resolution);
     when(resources.info(
             "remote",
-            KlabAsset.KnowledgeClass.INFORMATION,
+            KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
             AdapterDescriptor.class,
             scope))
         .thenReturn(descriptor);
@@ -306,7 +313,7 @@ class ContextualizerComponentResolutionTest {
                     resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE
                         && urn.getUrn().equals(resource.getResourceUrn())));
     verify(resources, never())
-        .resolve("remote", KlabAsset.KnowledgeClass.COMPONENT, scope);
+        .resolve("remote", KlabAsset.KnowledgeClass.RESOURCE_ADAPTER, scope);
   }
 
   @Test

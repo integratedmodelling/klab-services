@@ -192,7 +192,7 @@ public class CompiledDataflow {
                           .getService(ResourcesService.class)
                           .info(
                               resource.getAdapterType(),
-                              KlabAsset.KnowledgeClass.INFORMATION,
+                              KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                               AdapterDescriptor.class,
                               scope)
                       : embeddedAdapter.getAdapterInfo();
@@ -217,7 +217,7 @@ public class CompiledDataflow {
                           .getService(ResourcesService.class)
                           .info(
                               resource.getAdapterType(),
-                              KlabAsset.KnowledgeClass.INFORMATION,
+                              KlabAsset.KnowledgeClass.RESOURCE_ADAPTER,
                               AdapterDescriptor.class,
                               scope)
                       : embeddedAdapter.getAdapterInfo();
@@ -932,8 +932,11 @@ public class CompiledDataflow {
           if (previous == null) observation.getMetadata().remove(Scheduler.PLAN_METADATA_KEY);
           else observation.getMetadata().put(Scheduler.PLAN_METADATA_KEY, previous);
         });
-        snapshots.add(() -> observation.getMetadata().put(Scheduler.PLAN_METADATA_KEY,
-            org.integratedmodelling.klab.utilities.Utils.Json.asString(portableOccurrencePlan(actuator))));
+        snapshots.add(() -> {
+          bindSnapshotObservations(actuator, actuatorObservations);
+          observation.getMetadata().put(Scheduler.PLAN_METADATA_KEY,
+              org.integratedmodelling.klab.utilities.Utils.Json.asString(portableOccurrencePlan(actuator)));
+        });
       }
       if (!actuator.getComputation().isEmpty()
           || actuator.getChildren().stream().anyMatch(child -> child.getActuatorType() == Actuator.Type.UPDATE)) {
@@ -1035,6 +1038,16 @@ public class CompiledDataflow {
     if (quality.getObservable().getSemantics().equals(endpoint)) return true;
     var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
     return reasoner != null && reasoner.is(quality.getObservable(), endpoint);
+  }
+
+  /** References are not dependency-graph vertices; refresh the entire closure after ID assignment. */
+  static void bindSnapshotObservations(Actuator actuator, Map<Actuator, Observation> observations) {
+    var bound = observations.get(actuator);
+    if (bound != null && actuator instanceof ActuatorImpl implementation) {
+      implementation.setObservation(org.integratedmodelling.klab.runtime.storage.StorageReads.binding(
+          bound, actuator.getObservation()));
+    }
+    for (var child : actuator.getChildren()) bindSnapshotObservations(child, observations);
   }
 
   private boolean snapshotSupported(Actuator actuator) {
@@ -1147,8 +1160,8 @@ public class CompiledDataflow {
               }
               ContextualExecutor executor =
                   callInfo.embeddedAdapter() != null
-                      ? new LocalAdapterExecutor(callInfo, observation, localReferences, scope)
-                      : new RemoteAdapterExecutor(callInfo, observation, localReferences, scope);
+                      ? new LocalAdapterExecutor(callInfo, observation, localReferences, scope, runtimeService.shardExecution())
+                      : new RemoteAdapterExecutor(callInfo, observation, localReferences, scope, runtimeService.shardExecution());
               if (!executor.validate()) {
                 var cause = executor.getCause();
                 if (cause != null) {
@@ -1184,7 +1197,7 @@ public class CompiledDataflow {
           }
           executors.add(
               new ContextualizerExecutor(
-                  componentRegistry, callInfo, observation, localReferences, call, scope));
+                  componentRegistry, callInfo, observation, localReferences, call, scope, runtimeService.shardExecution()));
         }
         // Scalar batches do not instantiate members; bind each non-scalar producing executor.
         for (int i = firstExecutor; i < executors.size(); i++)
@@ -1221,7 +1234,7 @@ public class CompiledDataflow {
     private boolean getScalarOperator(
         ScalarComputation.Builder scalarBuilder, Map<String, Observation> knownObservations) {
       var executor =
-          new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope);
+          new ScalarOperationExecutor(scalarBuilder, observation, knownObservations, scope, runtimeService.shardExecution());
       if (!executor.validate()) {
         var cause = executor.getCause();
         if (cause != null) {
@@ -1385,7 +1398,7 @@ public class CompiledDataflow {
         var builder = runtimeService.getComputationBuilder(target,targetScope,targetPlan,inputs);
         if (!builder.add(call)) return false;
         var computation = builder.build();
-        if (computation == null || !TemporalScalarExecution.run(computation,target,inputs,event,targetScope,true)) return false;
+        if (computation == null || !TemporalScalarExecution.run(computation,target,inputs,event,targetScope,true,runtimeService.shardExecution())) return false;
       }
       for (var entry : created.entrySet()) {
         var quality = entry.getValue();

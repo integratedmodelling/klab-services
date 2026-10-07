@@ -628,6 +628,26 @@ public class JacksonConfiguration {
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
     }
 
+    // Material is a concrete binary transport contract. Never instantiate a class supplied by
+    // its discriminator, and run canonical-path validation for both tagged and plain JSON.
+    module.addDeserializer(org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class,
+        new JsonDeserializer<org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial>() {
+          @Override public org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial deserialize(
+              JsonParser parser, DeserializationContext context) throws IOException {
+            JsonNode node = parser.getCodec().readTree(parser);
+            var material = new org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial(
+                node.path("projectName").asText(null), node.path("path").asText(null),
+                node.hasNonNull("content") ? node.get("content").binaryValue() : null);
+            material.setServiceId(node.path("serviceId").asText(null));
+            if (node.hasNonNull("metadata")) {
+              var metadata = node.get("metadata");
+              material.setMetadata(metadata.has(CLASS_FIELD)
+                  ? parser.getCodec().treeToValue(metadata, Metadata.class)
+                  : Metadata.create(parser.getCodec().treeToValue(metadata, Map.class)));
+            }
+            return material;
+          }
+        });
     mapper.registerModule(module);
     mapper.registerModule(new ParameterNamesModule());
     mapper.registerModule(new JavaTimeModule());

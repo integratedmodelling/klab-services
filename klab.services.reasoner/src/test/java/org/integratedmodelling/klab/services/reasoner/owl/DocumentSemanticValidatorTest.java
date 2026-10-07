@@ -16,6 +16,71 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class DocumentSemanticValidatorTest {
+  @Test void genericDeclarationUsesResolvedParentTypesBeforeCreatingItsOwlClass() throws Exception {
+    var scope = mock(Scope.class);
+    var owl = new OWL(scope);
+    owl.manager = OWLManager.createOWLOntologyManager();
+    var ontology = owl.requireOntology("test");
+    var types = EnumSet.of(SemanticType.NUMEROSITY, SemanticType.QUALITY,
+        SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.ABSTRACT);
+    ontology.define(List.of(Axiom.ClassAssertion("Count", types)));
+    var syntax = new KimConceptImpl(); syntax.setName("test:Count"); syntax.setUrn("test:Count");
+    syntax.setType(types);
+    var statement = new KimConceptStatementImpl();
+    statement.setUrn("Frequency"); statement.setNamespace("test");
+    statement.setGenericQuality(true); statement.setDeclaredParent(syntax);
+    // Simulate an older producer retaining the original operand's type.
+    statement.setType(EnumSet.of(SemanticType.EVENT, SemanticType.OBSERVABLE, SemanticType.COUNTABLE));
+    var reasoner = mock(ReasonerService.class, CALLS_REAL_METHODS);
+    var owlField = ReasonerService.class.getDeclaredField("owl");
+    owlField.setAccessible(true); owlField.set(reasoner, owl);
+    var indexerField = ReasonerService.class.getDeclaredField("indexer");
+    indexerField.setAccessible(true);
+    indexerField.set(reasoner, mock(org.integratedmodelling.klab.indexing.Indexer.class));
+    var build = ReasonerService.class.getDeclaredMethod("buildInternal",
+        org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.class, Ontology.class,
+        org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.class, Scope.class);
+    build.setAccessible(true);
+    var result = (Concept) build.invoke(reasoner, statement, ontology, null, scope);
+    assertTrue(result.is(SemanticType.NUMEROSITY));
+    assertTrue(result.is(SemanticType.QUANTIFIABLE));
+    assertFalse(result.is(SemanticType.EVENT));
+    assertFalse(result.is(SemanticType.ABSTRACT));
+    verify(scope, never()).error(any(Object[].class));
+  }
+
+  @Test void runtimeFailuresBecomeConciseSourceBoundDiagnostics() {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.owl()).thenReturn(new OWL(mock(Scope.class)));
+    when(reasoner.resolveConcept("earth:Height")).thenThrow(
+        new IllegalStateException("Compilation failed", new IllegalArgumentException("Invalid quality\ntrace")));
+    var document = new KimOntologyImpl();
+    document.setUrn("earth");
+    document.setProjectName("project");
+    var statement = new KimConceptStatementImpl();
+    statement.setUrn("Derived");
+    statement.setDeclaredParent(syntax("Height", 42));
+    document.getStatements().add(statement);
+    var diagnostics = new DocumentSemanticValidator(reasoner).validate(document);
+    var diagnostic = diagnostics.stream().filter(n -> n.getMessage().equals("Invalid quality"))
+        .findFirst().orElseThrow();
+    assertEquals(42, diagnostic.getLexicalContext().getOffsetInDocument());
+    assertEquals("earth", diagnostic.getLexicalContext().getDocumentUrn());
+    assertEquals("project", diagnostic.getLexicalContext().getProjectUrn());
+  }
+
+  @Test void exceptionNotificationsRetainLexicalContextWithoutStackTraces() {
+    var source = syntax("Height", 42);
+    source.setNamespace("earth");
+    var diagnostic = org.integratedmodelling.klab.api.services.runtime.Notification.error(
+        new IllegalArgumentException("Expected a quantifiable quality"), source);
+    assertEquals("Expected a quantifiable quality", diagnostic.getMessage());
+    assertTrue(diagnostic.getStackTrace().contains("java.lang.IllegalArgumentException"));
+    assertTrue(diagnostic.getStackTrace().contains("exceptionNotificationsRetainLexicalContextWithoutStackTraces"));
+    assertEquals(42, diagnostic.getLexicalContext().getOffsetInDocument());
+    assertEquals("earth", diagnostic.getLexicalContext().getDocumentUrn());
+  }
+
   @Test void ontologyCreationBeforeStartupReportsUnavailableKnowledge() {
     var owl = new OWL(mock(Scope.class));
     var failure = assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException.class,
@@ -144,6 +209,13 @@ class DocumentSemanticValidatorTest {
     assertEquals(SemanticValidationResponse.Status.COMPLETE, invalid.getStatus());
     assertFalse(invalid.valid());
     assertEquals(12, invalid.getNotifications().getFirst().getLexicalContext().getOffsetInDocument());
+    var warning = org.integratedmodelling.klab.api.services.runtime.Notification.warning("Resources warning",
+        org.integratedmodelling.klab.api.services.runtime.Notification.LexicalContext.of(lexical, ontology));
+    diagnostics.set(reasoner, Map.of("earth", List.of(warning)));
+    var withoutReplayedWarning = reasoner.validateDocument(request, scope);
+    assertTrue(withoutReplayedWarning.valid());
+    assertTrue(withoutReplayedWarning.getNotifications().stream()
+        .noneMatch(n -> n.getMessage().equals("Resources warning")));
     request.setKnowledgeRevision(6);
     assertEquals(SemanticValidationResponse.Status.STALE_KNOWLEDGE, reasoner.validateDocument(request, scope).getStatus());
     ontology.getNotifications().add(org.integratedmodelling.klab.api.services.runtime.Notification.error("syntax error"));

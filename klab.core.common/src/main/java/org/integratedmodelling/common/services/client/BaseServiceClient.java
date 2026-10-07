@@ -483,15 +483,10 @@ public abstract class BaseServiceClient implements KlabService {
       return false;
     }
 
-    if (!client.post(ServicesAPI.NOTIFY_USER_SCOPE, notification, Boolean.class)) {
-      Logging.INSTANCE.error(
-          "Failed to notify remote service of new user scope: deactivating service client");
-      // TODO deactivate (operational should return false)
-      return false;
-    } else {
-//      Logging.INSTANCE.info("Successfully notified " + serviceName() + " of new user scope");
-      return true;
-    }
+    // Scheduled advertisements are retried until acknowledged. Gateway errors and unavailable
+    // peers are ordinary failed deliveries, not client-side semantic errors.
+    return Boolean.TRUE.equals(
+        client.postQuietly(ServicesAPI.NOTIFY_USER_SCOPE, notification, Boolean.class));
   }
 
   public boolean isAlive() {

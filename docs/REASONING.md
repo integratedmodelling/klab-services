@@ -107,17 +107,18 @@ their component implementation is the same.
 
 The component layer now discovers authority implementations, advertises their descriptors through
 Resources, hosts them only in Reasoners, and can install embeddable providers on demand. The
-worldview language adapter also retains the local authority name and its parameter map. Runtime
-validation currently reports that the requirement is retained but not enforced: knowledge loading
-does not yet call `Authority.setup()`, create worldview-scoped bindings, or materialize identities.
+worldview language adapter also retains the local authority name and its parameter map. Validation
+checks the identity declaration, local name and provider URN; knowledge loading configures
+worldview-scoped bridges through `Authority.configure()` and lazily materializes identities.
 
-The completed reasoning path will resolve `NAME:<identifier>` lazily, ingest the returned identity
-and its parent chain as normal concepts, and preserve authority provenance. Asserted parent links
+The initial reasoning path resolves `NAME:<identifier>` lazily and ingests the returned identity
+and its base/parent chain as normal concepts, stopping at known concepts. Asserted parent links
 can then participate in ordinary OWL hierarchy operations. When two identities require semantics
 defined by the external classification, distance and subsumption must delegate to the configured
-authority using the same directional non-negative compatibility contract described above. Quoted
-forms such as `NAME:"<provider expression>"` are reserved for provider-defined multidimensional
-expressions and still require grammar and runtime support.
+authority using the same directional non-negative compatibility contract described above; this
+delegation remains pending. Bracketed forms such as `NAME:[<provider expression>]` carry
+provider-defined multidimensional expressions. The grammar accepts them; full runtime payload
+handling and transport coverage remain pending.
 
 See [Authorities](AUTHORITIES.md) for the provider API, discovery and synchronization flow,
 worldview binding invariants, current implementation status, and development plan.
@@ -687,6 +688,56 @@ The client clears caches after administrative load/update calls and whenever ref
 report a different knowledge revision. Observable-specific observer, contextualization, and mediator
 checks are performed after retrieving the cached concept-level distance.
 
+## Composer insertion latency and pre-caching plan
+
+The IDE's **Adding…** interval includes the edit request and generation of proposals for the
+next token. It is not just a concept lookup. `SELECT` reuses the selected proposal's prepared
+state, but then validates the next candidates. `IDENTITY` additionally resolves and materializes
+the authority identity and its parents, registers ontology axioms, flushes the reasoner, and
+replays the expression. Candidate validation can call Resources to parse uncached observable
+declarations and perform satisfiability and applicability checks. A fast authority search does
+not imply a fast insertion.
+
+After a confirmed authority insertion, SemanticComposer should return to Concepts / operators
+and display the proposals in that same response. Preserve the current mode and query on a
+rejected or unconfirmed insertion, or if the user changed input while the edit was pending.
+Authority terminals must also be distinguished from expressions: `TAXA:123 biology:Subject`
+must compile as an identity-qualified subject, never as one provider code.
+
+Pre-caching is planned across the IDE, ReasonerClient, and services:
+
+1. Measure cold and warm `TOKEN`, `SELECT`, and `IDENTITY` separately. Extend the existing
+   client/server elapsed-time logging with provider lookup, graph materialization/flush,
+   expression replay, documentation, index scanning, and candidate-validation timings and
+   counts. Measure first insertion after startup, later insertions, and insertion after a
+   knowledge revision; distinguish network time from local UI rendering and worker delay.
+2. At service readiness after worldview loading, warm a bounded set of frequently used local
+   concept/observable declarations and inference data. Repeat after knowledge changes, cancel
+   obsolete work, and publish entries only for the revision that produced them. Prioritize the
+   active worldview and recent successful declarations rather than every possible composition.
+3. In the IDE/client, warm capabilities, connection setup, recently used concept metadata and
+   observable resolutions when the Reasoner becomes available or the composer opens. The client
+   already caches concept/observable resolutions, subsumption and distances; semantic-search
+   requests currently go directly to the server. Key any additional cache by service identity,
+   knowledge revision, and authorization scope; clear it on reconnect or service replacement.
+4. Precompute likely next contexts on the service using immutable expression snapshots and a
+   bounded work budget. Reuse validation results, not old session responses. Proposal IDs and
+   `matchesRequestId` belong to the current server session; an IDE cache cannot replay them after
+   edits, undo, another query, or session expiry. Every selected result still needs admission
+   against the current expression and current knowledge.
+5. For authority selection, consider bounded prefetch of the highlighted identity's full
+   resolution under the provider's cache policy. Existing persistent authority search and
+   identity caches are separate: search hits intentionally do not seed identity validation.
+   Avoid materializing an entire external authority or speculative ontology mutations on every
+   keystroke. Measure how much latency remains in OWL registration and inference after a
+   provider-cache hit before choosing a materialization warmup strategy.
+
+Acceptance requires lower cold **Adding…** latency on a representative loaded worldview, with
+unchanged proposal validity, correct invalidation, and bounded startup/background work. Test
+authority and ontology identities followed by a valid Subject, rejected incompatible heads,
+undo, stale responses, and a knowledge update during warmup. No insertion speedup is claimed
+until those timings are measured; the mode/terminal fixes address correctness independently.
+
 ## Error and transport behavior
 
 Controller endpoints that accept concept arrays validate arity and reject null concepts before
@@ -696,8 +747,16 @@ they must not silently return `false`, `0`, an empty collection, or `null`.
 
 ## Remaining implementation gaps
 
-- Worldview-scoped authority activation, identity materialization, quoted provider expressions,
-  authority-aware semantic distance, and the remote authority protocol; see
+Distributed worldview acquisition from certified root/higher-tier providers and authority source
+integrity are production requirements still awaiting an explicit assembly and trust protocol.
+The current startup path selects one worldview provider. See
+[worldview composition and authority provenance](SERVICE_COORDINATION_AND_DISCOVERY.md#worldview-composition-and-authority-provenance)
+for the intended rule, local development requirements, and outstanding decisions.
+
+- Authority discovery during startup without a user scope, full transport of bracketed provider
+  expressions (`NAME:[...]`), typed parent relationships, component-update invalidation,
+  authority-aware semantic distance, and the remote authority protocol. Initial worldview bridge
+  activation and recursive identity materialization are implemented; see
   [Authorities](AUTHORITIES.md#development-plan).
 - Generic substitution capture for abstract semantic patterns.
 - Inference-based concretization from a collection of concrete concepts.

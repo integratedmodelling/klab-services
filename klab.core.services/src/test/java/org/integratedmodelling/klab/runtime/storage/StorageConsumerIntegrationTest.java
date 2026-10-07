@@ -22,6 +22,75 @@ class StorageConsumerIntegrationTest {
     when(scope.getObservation(42L)).thenReturn(f.storage.temporalOwner());
     return scope;
   }
+  @Test void scalarExpressionsAndLookupTablesWalkRealCoveredWritersOncePerCell() {
+    for (String shape : List.of(SpatialCoverageTest.HOLE,SpatialCoverageTest.ISLANDS))
+      for (var curve : List.of(Data.FillCurve.D2_XY,Data.FillCurve.D2_YX,Data.FillCurve.D2_XInvY))
+        for (int mode=0;mode<6;mode++) {
+          try (var f=new ConformantScanTest.Fixture(3,Storage.Type.DOUBLE,curve,SpatialCoverageTest.geometry(shape));
+               var source=new ConformantScanTest.Fixture(3,Storage.Type.DOUBLE,curve,SpatialCoverageTest.geometry(shape));
+               var inputs=source.storage.open(source.storage.plan(source.request(3,curve,0,0,List.of(),null)))) {
+            var target=(ObservationImpl)f.storage.temporalOwner();
+            var data=new ObservationImpl.ContextualizationDataImpl(); data.setNativeShardingStrategy(f.strategy);
+            target.setContextualizationData(data);
+            ((ObservationImpl)source.storage.temporalOwner()).setContextualizationData(data);
+            var builder=org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy.builder(
+                target,mock(ContextScope.class),mock(org.integratedmodelling.klab.api.services.runtime.Actuator.class),Map.of("input",source.storage.temporalOwner()));
+            if(mode==0 || mode==3 || mode==4) {
+              assertTrue(builder.add(new org.integratedmodelling.common.lang.ServiceCallImpl(
+                  org.integratedmodelling.klab.api.services.RuntimeService.CoreFunctor.EXPRESSION_RESOLVER.getServiceCallName(),
+                  "expression",org.integratedmodelling.klab.api.lang.ExpressionCode.of(mode==4 ? "input * 2" : "self * 2", "groovy"))));
+            } else {
+              if(mode==2) assertTrue(builder.add(new org.integratedmodelling.common.lang.ServiceCallImpl(
+                  org.integratedmodelling.klab.api.services.RuntimeService.CoreFunctor.CONSTANT_RESOLVER.getServiceCallName(),"value",3.0)));
+              var table=new org.integratedmodelling.klab.api.lang.kim.impl.KimTableImpl();
+              var any=new org.integratedmodelling.klab.api.lang.kim.impl.KimClassifierImpl(); any.setCatchAll(true);
+              var result=new org.integratedmodelling.klab.api.lang.kim.impl.KimClassifierImpl();
+              result.setExpressionMatch(org.integratedmodelling.klab.api.lang.ExpressionCode.of("self * 2", "groovy"));
+              table.setRows(List.<org.integratedmodelling.klab.api.lang.kim.KimClassifier[]>of(new org.integratedmodelling.klab.api.lang.kim.KimClassifier[]{any,result}));
+              var lookup=new org.integratedmodelling.klab.api.lang.kim.impl.KimLookupTableImpl(); lookup.setTable(table);
+              var input=new org.integratedmodelling.klab.api.lang.kim.KimLookupTable.Argument(); input.id=mode==5 ? "input" : "self";
+              var output=new org.integratedmodelling.klab.api.lang.kim.KimLookupTable.Argument(); output.id="?";
+              lookup.setArguments(List.of(input,output));
+              org.integratedmodelling.klab.api.lang.kim.impl.KimValueMappingValidator.validateAndNormalize(lookup,false);
+              assertTrue(builder.add(new org.integratedmodelling.common.lang.ServiceCallImpl(
+                  org.integratedmodelling.klab.api.services.RuntimeService.CoreFunctor.LUT_RESOLVER.getServiceCallName(),"lookupTable",lookup)));
+            }
+            var computation=builder.build(); assertNotNull(computation,target.getNotifications().toString());
+            long count=0;
+            int part=0;
+            for(var scanner:f.storage.scan(Scheduler.Event.initialization(),f.strategy,Storage.DoubleScanner.class,false)) {
+              var scanners=new HashMap<String,Storage.Scanner>(); scanners.put("self",scanner);
+              if(mode>=3) scanners.put(mode==3 ? "__prior_self" : "input",inputs.scanners().get(part));
+              assertTrue(computation.execute(scanners,null,null),target.getNotifications().toString());
+              if(mode>=3) assertFalse(inputs.scanners().get(part).hasNext());
+              part++;
+              assertEquals(scanner.size(),scanner.position()); f.storage.finalizeRun(scanner);
+            }
+            try(var session=f.storage.open(f.storage.plan(f.request(2,Data.FillCurve.D2_YX,0,0,List.of(),null)))) {
+              for(var scanner:session.scanners()) while(scanner.hasNext()) {
+                var cell=scanner.cell();
+                double expected=mode==2 ? 6 : 2*(100*cell.bounds().getFirst().minX()+cell.bounds().getFirst().minY()+.25);
+                assertEquals(expected,((Storage.DoubleScanner)scanner).get()); count++;
+              }
+            }
+            var polygon=org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create("EPSG:4326 "+shape).getJTSGeometry();
+            long expectedCount=0;
+            for(int x=0;x<5;x++) for(int y=0;y<4;y++) if(polygon.covers(polygon.getFactory().createPoint(new org.locationtech.jts.geom.Coordinate(x+.5,y+.5)))) expectedCount++;
+            assertEquals(expectedCount,count);
+          }
+        }
+  }
+  @Test void maskedPointAccessDoesNotReturnTheNextCoveredCellAndInspectorHandlesGaps() {
+    try (var f = new ConformantScanTest.Fixture(3,Storage.Type.DOUBLE,Data.FillCurve.D2_XY,
+        SpatialCoverageTest.geometry(SpatialCoverageTest.HOLE))) {
+      var scope=scope(f); var observation=f.storage.temporalOwner();
+      assertEquals("null",StorageReads.text(observation,scope,Scheduler.Event.initialization(),Data.FillCurve.D2_XY,10));
+      assertEquals("201.25",StorageReads.text(observation,scope,Scheduler.Event.initialization(),Data.FillCurve.D2_XY,9));
+      assertEquals("null",StorageReads.text(new StorageScan.Point(42,StorageScan.Slice.of(Scheduler.Event.initialization()),
+          Data.FillCurve.D2_XY,null,null,10),scope));
+      assertTrue(StorageReadInspector.check(scope,observation,Data.FillCurve.D2_YX,3,8));
+    }
+  }
   @Test void exportPointAndInspectorAgreeForAllPrimitiveTypesAndCurves() {
     for (var type : List.of(Storage.Type.DOUBLE, Storage.Type.FLOAT, Storage.Type.INTEGER, Storage.Type.LONG, Storage.Type.BOOLEAN))
       try (var f = new ConformantScanTest.Fixture(3, type, Data.FillCurve.D2_XInvY)) {
@@ -128,7 +197,7 @@ class StorageConsumerIntegrationTest {
       for(var pair:libraries.getFirst().exporters()) {
         var descriptor=pair.getSecond();
         var call=org.integratedmodelling.common.lang.ServiceCallImpl.create(descriptor.serviceInfo.getName());
-        doReturn(List.of(descriptor)).when(registry).getFunctionDescriptor(call);
+        doReturn(List.of(descriptor)).when(registry).getFunctionDescriptor(eq(call),any());
         if(registry.implementation(descriptor).method.getName().equals("failure")) {
           assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,
               ()->language.execute(call,scope(f),InputStream.class,f.storage.temporalOwner()));

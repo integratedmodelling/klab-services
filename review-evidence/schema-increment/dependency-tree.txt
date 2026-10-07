@@ -1,0 +1,30 @@
+[INFO] ----------< org.integratedmodelling:klab.services.resources >-----------
+[INFO] Building k.LAB resources service 1.0.0-SNAPSHOT                    [7/7]
+[INFO]   from klab.services.resources\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- dependency:3.6.1:tree (default-cli) @ klab.services.resources ---
+[INFO] org.integratedmodelling:klab.services.resources:jar:1.0.0-SNAPSHOT
+[INFO] +- com.networknt:json-schema-validator:jar:2.0.4:compile
+[INFO] |  +- com.ethlo.time:itu:jar:1.14.0:compile
+[INFO] |  +- com.fasterxml.jackson.core:jackson-databind:jar:2.19.0:compile
+[INFO] |  |  \- com.fasterxml.jackson.core:jackson-annotations:jar:2.19.0:compile
+[INFO] |  \- org.slf4j:slf4j-api:jar:2.0.17:compile
+[INFO] \- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.19.0:compile
+[INFO]    \- com.fasterxml.jackson.core:jackson-core:jar:2.19.0:compile
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for klab-services 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] klab-services ...................................... SUCCESS [  1.568 s]
+[INFO] Core API classes ................................... SUCCESS [  0.109 s]
+[INFO] klab.core.common ................................... SUCCESS [  0.853 s]
+[INFO] k.LAB services core ................................ SUCCESS [  2.102 s]
+[INFO] k.LAB reasoner service ............................. SUCCESS [  0.719 s]
+[INFO] klab.services.resolver ............................. SUCCESS [  0.215 s]
+[INFO] k.LAB resources service ............................ SUCCESS [  0.487 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.982 s
+[INFO] Finished at: 2026-10-04T08:34:30+02:00
+[INFO] ------------------------------------------------------------------------

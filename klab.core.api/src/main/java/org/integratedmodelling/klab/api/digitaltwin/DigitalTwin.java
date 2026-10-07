@@ -32,6 +32,12 @@ public interface DigitalTwin extends RuntimeAsset {
    * connection.
    */
   interface Configuration {
+    /** URN of the single k.IM define grid instruction requested for this twin. */
+    default String getGridUrn() { return null; }
+    /** Immutable inline grid instructions, or null for a named definition. */
+    default java.util.Map<String, Object> getGridDefinition() { return null; }
+    /** Frozen lattice restored from the Context node, never recomputed on resume. */
+    default GridAlignment getGridAlignment() { return null; }
 
     default org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return null; }
 

@@ -53,8 +53,8 @@ public abstract class H2Kbox {
 	public H2Kbox(String name) {
 		try {
 			database = H2Database.create(name);
-		} catch (Throwable t) {
-			System.out.println("DIO MAIALE " + t.getMessage()) ;
+		} catch (Exception t) {
+			throw new KlabStorageException(t);
 		}
 	}
 

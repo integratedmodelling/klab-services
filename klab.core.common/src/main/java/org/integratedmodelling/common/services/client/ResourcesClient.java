@@ -30,8 +30,10 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
@@ -101,6 +103,19 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
+  public List<WorkflowBehavior.AvailableAction> getFlowActions(String flowId, String stateId, UserScope scope) {
+    return client.withScope(scope).getCollection(ServicesAPI.RESOURCES.FLOW_ACTIONS,
+        WorkflowBehavior.AvailableAction.class, "flowId", flowId, "stateId", stateId);
+  }
+
+  @Override
+  public Flow executeFlowAction(String flowId, String stateId, String actionId,
+      WorkflowBehavior.ActionRequest request, UserScope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.RESOURCES.FLOW_ACTION, request, Flow.class,
+        "flowId", flowId, "stateId", stateId, "actionId", actionId);
+  }
+
+  @Override
   public Flow transitionFlow(String flowId, Flow.TransitionRequest request, UserScope scope) {
     return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_TRANSITIONS, request, Flow.class, "flowId", flowId);
   }
@@ -157,16 +172,18 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
-    // TODO RESOURCES-CRUD Utils.Http.Client currently discards DELETE response bodies. Preserve the
-    // server-side changesets when typed DELETE support is added to the HTTP client.
-    client
-        .withScope(scope)
-        .delete(ServicesAPI.RESOURCES.DELETE, "urn", urn, "knowledgeClass", knowledgeClass);
-    return List.of();
+    var result = client.withScope(scope).deleteCollectionOrThrow(
+        ServicesAPI.RESOURCES.DELETE_QUERY, ResourceSet.class,
+        "urn", urn, "knowledgeClass", knowledgeClass);
+    invalidateCaches();
+    return result;
   }
 
   @Override
   public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
+
+    Logging.INSTANCE.info("Resolving " + assetClass + " " + urn + " in service " + serviceName());
+
     // Media types contain slashes (and may contain parameters), so they cannot be carried in
     // the generic resolver's single URN path segment. Use the existing query-based endpoints.
     if (assetClass == KnowledgeClass.INFORMATION && urn.startsWith("export-schema:")) {
@@ -177,7 +194,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
       return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_IMPORT_SCHEMA,
           ResourceSet.class, "mediaType", urn.substring("import-schema:".length()));
     }
-    return client
+    ResourceSet resolution = client
         .withScope(scope)
         .get(
             ServicesAPI.RESOURCES.RESOLVE,
@@ -186,6 +203,51 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
             urn,
             "knowledgeClass",
             assetClass);
+    if (assetClass == KnowledgeClass.RESOURCE_ADAPTER
+        && (resolution == null || resolution.isEmpty())) {
+      // Older providers may advertise a component without implementing adapter resolution.
+      // Return its dependency coordinates, leaving source prioritization and installation to
+      // the merger and the Runtime, just like a normal successful resolution response.
+      var advertised = resolveAdvertisedAdapter(urn, scope);
+      if (!advertised.isEmpty()) {
+        return advertised;
+      }
+    }
+    return resolution;
+  }
+
+  private ResourceSet resolveAdvertisedAdapter(String urn, UserScope scope) {
+    var requested = Version.splitVersion(urn);
+    var capabilities = capabilities(scope);
+    if (capabilities == null || capabilities.getComponents() == null) {
+      return ResourceSet.empty();
+    }
+    var results = new ResourceSet();
+    for (var component : capabilities.getComponents()) {
+      if (Extensions.LOCAL_SERVICE_COMPONENT.equals(component.id())
+          || component.adapters() == null
+          || component.adapters().stream().noneMatch(adapter ->
+              requested.getFirst().equals(adapter.getName())
+                  && adapter.isEmbeddable()
+                  && adapter.getVersion() != null
+                  && adapter.getVersion().compatible(requested.getSecond()))) {
+        continue;
+      }
+      var resource = new ResourceSet.Resource(
+          serviceId(), component.id(), null, component.version(), KnowledgeClass.COMPONENT,
+          component.timestamp(), false);
+      resource.setLocal(isLocal());
+      if (component.mavenCoordinates() != null) {
+        resource.getMetadata().put(
+            Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY, component.mavenCoordinates());
+      }
+      results.getResults().add(resource);
+    }
+    results.setEmpty(results.getResults().isEmpty());
+    if (!results.isEmpty()) {
+      results.getServices().put(serviceId(), getUrl());
+    }
+    return results;
   }
 
   @Override
@@ -194,7 +256,8 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     return client
         .withScope(scope)
         .putCollectionOrThrow(
-            ServicesAPI.RESOURCES.SUBMIT,
+            asset instanceof org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial
+                ? ServicesAPI.RESOURCES.SUBMIT_QUERY : ServicesAPI.RESOURCES.SUBMIT,
             Utils.Json.asString(asset),
             ResourceSet.class,
             "knowledgeClass",
@@ -246,7 +309,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     return client
         .withScope(scope)
         .get(
-            ServicesAPI.RESOURCES.RETRIEVE,
+            urn.contains("/") ? ServicesAPI.RESOURCES.RETRIEVE_QUERY : ServicesAPI.RESOURCES.RETRIEVE,
             assetClass,
             "urn",
             urn,
@@ -388,7 +451,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
       }
     }
     var ret =
-        client.postCollection(
+        client.postCollectionOrThrow(
             ServicesAPI.RESOURCES.MANAGE_PROJECT, request, ResourceSet.class, "urn", projectName);
 
     invalidateCaches();

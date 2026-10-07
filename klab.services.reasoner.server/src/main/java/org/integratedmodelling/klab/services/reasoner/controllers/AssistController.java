@@ -32,7 +32,13 @@ public class AssistController {
       @ApiResponse(responseCode = "200", description = "Search completed successfully")
   })
   @PostMapping(ServicesAPI.REASONER.SEMANTIC_SEARCH)
-  SemanticSearchResponse semanticSearch(@RequestBody @Parameter(description = "Semantic search parameters") SemanticSearchRequest request) {
-    return reasoner.klabService().semanticSearch(request);
+  SemanticSearchResponse semanticSearch(@RequestBody @Parameter(description = "Semantic search parameters") SemanticSearchRequest request,
+      java.security.Principal principal) {
+    var scope = AuthoritySearchController.authorizedScope(principal);
+    try { return reasoner.klabService().semanticSearch(request, scope); }
+    catch (SecurityException e) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
+          "Semantic session access denied");
+    }
   }
 }

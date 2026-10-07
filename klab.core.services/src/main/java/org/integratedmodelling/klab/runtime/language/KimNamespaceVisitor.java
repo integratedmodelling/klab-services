@@ -121,7 +121,7 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
 
   public void visit(KimNamespace namespace) {
     var context = beginDocument(namespace);
-    addNotifications(namespaceValidator.validateNamespace(namespace, context));
+    addNotifications(namespaceValidator.validateNamespace(namespace, context), context);
     if (namespace.getImports() != null) {
       namespace
           .getImports()
@@ -144,7 +144,7 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
   }
 
   private void visitModel(KimModel model, Context context) {
-    addNotifications(namespaceValidator.validateModel(model, context));
+    addNotifications(namespaceValidator.validateModel(model, context), context);
     for (var observable : safe(model.getObservables())) visitObservable(observable, context);
     for (var dependency : safe(model.getDependencies())) visitObservable(dependency, context);
     for (var contextualizable : safe(model.getContextualization())) {
@@ -157,7 +157,7 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
   }
 
   private void visitSymbol(KimSymbolDefinition symbol, Context context) {
-    addNotifications(namespaceValidator.validateSymbol(symbol, context));
+    addNotifications(namespaceValidator.validateSymbol(symbol, context), context);
     visitValue(symbol.getValue(), context);
   }
 

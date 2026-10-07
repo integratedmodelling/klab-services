@@ -10,6 +10,21 @@ import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.junit.jupiter.api.Test;
 
 class ColorRampTest {
+  @Test void copyingAnAnnotationPreservesOneUnnamedPalette() {
+    var original = new org.integratedmodelling.klab.api.lang.AnnotationImpl();
+    original.setName("colormap");
+    original.putUnnamed("terrain");
+    original.put("center", 0);
+    var copy = new org.integratedmodelling.klab.api.lang.AnnotationImpl(original);
+    var secondCopy = new org.integratedmodelling.klab.api.lang.AnnotationImpl(copy);
+    assertEquals(List.of("terrain"), secondCopy.getUnnamedArguments());
+    assertEquals(0xffe8e6b5, ColorRamp.fromAnnotation(secondCopy).argb(0, -1, 1));
+    var observation = new ObservationImpl();
+    observation.mergeAnnotations(List.of(secondCopy), 0);
+    assertEquals(0xffe8e6b5, ColorRamp.fromObservation(observation).argb(0, -1, 1));
+    assertEquals(List.of("terrain"), original.getUnnamedArguments());
+  }
+
   @Test void continuousRampsInterpolateAndClamp() {
     var ramp = ramp("colors", List.of("#000", "#fff"));
     assertEquals(0xff808080, ramp.argb(5, 0, 10));

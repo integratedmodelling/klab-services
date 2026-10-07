@@ -49,7 +49,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.runtime.kactors.RuntimeAgentBase;
@@ -175,11 +174,7 @@ public enum AgentRegistry {
     }
 
     try {
-      var resources = scope.getService(ResourcesService.class);
-      var behavior =
-          resources == null
-              ? null
-              : resources.retrieve(agent.getBehaviorUrn(), KActorsBehavior.class, userScope);
+      var behavior = resolver.resolveBehavior(agent.getBehaviorUrn(), userScope);
       if (behavior == null) {
         return failedHandle(agent, "Cannot resolve k.Actors behavior " + agent.getBehaviorUrn());
       }
@@ -532,6 +527,52 @@ public enum AgentRegistry {
           Notification.error(
               "Cannot translate k.Actors behavior " + behavior.getUrn(), unwrap(failure)));
       return new CompiledBehavior(null, null, List.copyOf(notifications));
+    }
+  }
+
+  /** Compile an isolated finite agent. The caller owns its lifecycle and durable state. */
+  public RuntimeAgentBase checkpointAgent(KActorsBehavior behavior, UserScope scope,
+      AgentCompiler.Resolver resolver, Map<String, Object> snapshot, Object[] initArguments) {
+    return checkpointAgent(behavior, scope, resolver, snapshot, initArguments, scope);
+  }
+
+  public RuntimeAgentBase checkpointAgent(KActorsBehavior behavior, UserScope scope,
+      AgentCompiler.Resolver resolver, Map<String, Object> snapshot, Object[] initArguments, UserScope participant) {
+    var environment = AgentCompiler.runtimeEnvironment(resolver, scope);
+    var compiled = compileBehavior(behavior, scope, environment.validator(), resolver);
+    if (!compiled.successful())
+      throw new IllegalArgumentException("Cannot compile workflow behavior: " + compiled.notifications());
+    requireFinite(behavior, scope, resolver, new java.util.HashSet<>());
+    try {
+      java.util.concurrent.Callable<RuntimeAgentBase> construct = () ->
+          RuntimeAgentBase.constructWithRuntimeCallbacks(resolver::adaptToBehavior,
+              resolver::negotiateParameterMatch,
+              (actual, required) -> resolver.implementsBehavior(actual, required, scope),
+              () -> compiled.agentClass().getConstructor(KActorsBehavior.class, SessionScope.class,
+                  Observation.class, Scope.class, Map.class, Object[].class)
+                  .newInstance(behavior, null, null, scope, Map.of(), (Object) initArguments));
+      var runtime = RuntimeAgentBase.restoringCheckpoint(construct);
+      runtime.setCheckpointParticipant(participant);
+      try {
+        if (snapshot != null) runtime.restoreCheckpointState(snapshot);
+        else runtime.initializeCheckpoint(initArguments);
+        return runtime;
+      } catch (RuntimeException failure) { runtime.stop(); throw failure; }
+    } catch (Exception failure) {
+      throw new IllegalStateException("Cannot construct workflow behavior " + behavior.getUrn(), unwrap(failure));
+    }
+  }
+
+  private void requireFinite(KActorsBehavior behavior, UserScope scope,
+      AgentCompiler.Resolver resolver, java.util.Set<String> visited) {
+    if (!visited.add(behavior.getUrn())) return;
+    for (var action : behavior.getStatements())
+      if (action.getActionType() == org.integratedmodelling.klab.api.services.runtime.extension.Verb.Type.EMITTER)
+        throw new IllegalArgumentException("Checkpointed behaviors do not support EMITTER actions: " + action.getUrn());
+    for (var parent : behavior.getInheritedBehaviors()) {
+      var inherited = resolver.resolveBehavior(parent.getImportedBehavior(), scope);
+      if (inherited == null) throw new IllegalArgumentException("Missing inherited behavior");
+      requireFinite(inherited, scope, resolver, visited);
     }
   }
 

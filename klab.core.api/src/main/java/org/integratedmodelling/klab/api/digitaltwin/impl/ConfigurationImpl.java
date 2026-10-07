@@ -36,6 +36,25 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private String owner;
   private boolean empty;
   private String behaviorUrn;
+  private String gridUrn;
+  private java.util.Map<String, Object> gridDefinition;
+  public java.util.Map<String, Object> getGridDefinition() { return gridDefinition; }
+  public void setGridDefinition(java.util.Map<String, ?> value) {
+    gridDefinition = value == null ? null : org.integratedmodelling.klab.api.digitaltwin.GridSpecification.copyOf(value);
+    if (value != null) {
+      String urn = org.integratedmodelling.klab.api.digitaltwin.GridSpecification.urn(gridDefinition);
+      if (gridUrn != null && !gridUrn.equals(urn)) throw new IllegalArgumentException("Only one grid instruction is allowed per twin");
+      gridUrn = urn;
+    }
+  }
+  private org.integratedmodelling.klab.api.digitaltwin.GridAlignment gridAlignment;
+  public String getGridUrn() { return gridUrn; }
+  public void setGridUrn(String value) { gridUrn = value; }
+  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment getGridAlignment() { return gridAlignment; }
+  public void setGridAlignment(org.integratedmodelling.klab.api.digitaltwin.GridAlignment value) {
+    gridAlignment = value;
+    if (value != null) gridUrn = value.definitionUrn();
+  }
   private org.integratedmodelling.klab.api.knowledge.WorldviewCommitment worldviewCommitment;
   public org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return worldviewCommitment; }
   public void setWorldviewCommitment(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment value) { worldviewCommitment = value; }
@@ -260,6 +279,9 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   @Override
   public void defineFromExisting(DigitalTwin.Configuration descriptor) {
+    this.gridUrn = descriptor.getGridUrn();
+    setGridDefinition(descriptor.getGridDefinition());
+    this.gridAlignment = descriptor.getGridAlignment();
     this.observer = descriptor.getObserver();
     if (descriptor.getAccessRights() != null) {
       this.accessRights = descriptor.getAccessRights();

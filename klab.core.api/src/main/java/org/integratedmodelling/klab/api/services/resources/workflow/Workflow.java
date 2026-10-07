@@ -18,6 +18,10 @@ public interface Workflow extends KlabAsset {
 
   String INIT = "INIT";
 
+  /** Optional URN of a k.Actors behavior instrumenting each flow. */
+  String getBehavior();
+  void setBehavior(String behavior);
+
   interface AttachmentRule extends Serializable {
     String getType();
 
@@ -42,6 +46,12 @@ public interface Workflow extends KlabAsset {
   }
 
   interface StateSchema extends KlabAsset {
+    List<WorkflowBehavior.Action> getOnStart();
+    void setOnStart(List<WorkflowBehavior.Action> actions);
+    List<WorkflowBehavior.Action> getOnCommit();
+    void setOnCommit(List<WorkflowBehavior.Action> actions);
+    List<WorkflowBehavior.Action> getActions();
+    void setActions(List<WorkflowBehavior.Action> actions);
     String getId();
 
     void setId(String id);
@@ -96,6 +106,8 @@ public interface Workflow extends KlabAsset {
   }
 
   interface TransitionSchema extends KlabAsset {
+    List<WorkflowBehavior.Action> getActions();
+    void setActions(List<WorkflowBehavior.Action> actions);
     String getId();
 
     void setId(String id);

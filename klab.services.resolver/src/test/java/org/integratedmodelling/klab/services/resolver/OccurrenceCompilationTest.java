@@ -70,6 +70,15 @@ class OccurrenceCompilationTest {
   }
 
   @Test
+  void functionalRelationshipRemainsInitialization() {
+    var model = model(SemanticType.RELATIONSHIP, false);
+    ((ConceptImpl) model.getObservables().getFirst().getSemantics()).getType().add(SemanticType.FUNCTIONAL);
+    var actuator = compile(model);
+    assertEquals(Actuator.ExecutionRole.INITIALIZATION, actuator.getExecutionRole());
+    assertTrue(actuator.getOccurrenceSchedules().isEmpty());
+  }
+
+  @Test
   void missingScheduleReportsTheModelAndDoesNotCompileAsStatic() {
     var error = assertThrows(KlabValidationException.class, () -> compile(model(SemanticType.PROCESS, false)));
     assertTrue(error.getMessage().contains("test:occurrenceModel"));

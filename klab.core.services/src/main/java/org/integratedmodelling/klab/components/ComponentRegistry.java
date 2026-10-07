@@ -431,16 +431,13 @@ public class ComponentRegistry {
     return switch (refreshDependencyComponent(component, scope)) {
       case UPDATED ->
           ResourceSet.empty(
-              Notification.info(
-                  "Component " + component.id() + " was updated successfully"));
+              Notification.info("Component " + component.id() + " was updated successfully"));
       case NO_CHANGE ->
           ResourceSet.empty(
-              Notification.info(
-                  "Component " + component.id() + " is already up to date"));
+              Notification.info("Component " + component.id() + " is already up to date"));
       case FAILED ->
           ResourceSet.empty(
-              Notification.error(
-                  "Component " + component.id() + " could not be updated"));
+              Notification.error("Component " + component.id() + " could not be updated"));
     };
   }
 
@@ -534,11 +531,16 @@ public class ComponentRegistry {
           ComponentHistory.Outcome.INFO,
           "Selected a newer local Maven SNAPSHOT ahead of the advertising Resources service",
           Map.of(
-              "decision", "LOCAL_MAVEN_PRECEDENCE",
-              "policy", DEPENDENCY_SOURCE_POLICY,
-              "selectedSource", "LOCAL_MAVEN",
-              "resourcesSourceServiceId", Objects.toString(component.sourceServiceId(), ""),
-              "latestTimestamp", Long.toString(availability.latestVersionTimestamp())));
+              "decision",
+              "LOCAL_MAVEN_PRECEDENCE",
+              "policy",
+              DEPENDENCY_SOURCE_POLICY,
+              "selectedSource",
+              "LOCAL_MAVEN",
+              "resourcesSourceServiceId",
+              Objects.toString(component.sourceServiceId(), ""),
+              "latestTimestamp",
+              Long.toString(availability.latestVersionTimestamp())));
       return;
     }
     recordComponentEvent(
@@ -568,10 +570,14 @@ public class ComponentRegistry {
     var decisionDetails =
         dependency
             ? Map.of(
-                "decision", "LOCAL_MAVEN_PRECEDENCE",
-                "policy", DEPENDENCY_SOURCE_POLICY,
-                "selectedSource", "LOCAL_MAVEN",
-                "resourcesSourceServiceId", Objects.toString(component.sourceServiceId(), ""))
+                "decision",
+                "LOCAL_MAVEN_PRECEDENCE",
+                "policy",
+                DEPENDENCY_SOURCE_POLICY,
+                "selectedSource",
+                "LOCAL_MAVEN",
+                "resourcesSourceServiceId",
+                Objects.toString(component.sourceServiceId(), ""))
             : Map.of("decision", "MAVEN_SOURCE_SELECTED", "source", updateSource(status));
 
     recordComponentEvent(
@@ -1022,15 +1028,13 @@ public class ComponentRegistry {
 
   private Extensions.ComponentDescriptor computeDependencyUpdateStatus(
       Extensions.ComponentDescriptor component, Scope scope) {
-    if (component.mavenCoordinates() != null
-        && component.mavenCoordinates().contains("SNAPSHOT")) {
+    if (component.mavenCoordinates() != null && component.mavenCoordinates().contains("SNAPSHOT")) {
       var coordinates = component.mavenCoordinates().split(":");
       if (coordinates.length == 3) {
         var local = mavenAvailability(component, coordinates);
         if (local.status() == MavenComponentCache.Status.NEEDS_UPDATE_FROM_LOCAL_REPOSITORY) {
           return component.withUpdateStatus(
-              Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE,
-              local.latestVersionTimestamp());
+              Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE, local.latestVersionTimestamp());
         }
       }
     }
@@ -1140,9 +1144,7 @@ public class ComponentRegistry {
           recordMavenUpdateDecision(dependency, local);
           notifyComponentSynchronization(
               scope,
-              "Synchronizing component "
-                  + dependency.id()
-                  + " from the local Maven repository");
+              "Synchronizing component " + dependency.id() + " from the local Maven repository");
           var oldHash = dependency.fileHash();
           applyMavenSnapshotUpdate(dependency, local.status());
           var refreshed = getExactComponent(dependency.id(), dependency.version());
@@ -1189,12 +1191,18 @@ public class ComponentRegistry {
           ComponentHistory.Outcome.INFO,
           "No newer local Maven SNAPSHOT was available; selected the authoritative Resources service build",
           Map.of(
-              "decision", "RESOURCES_AUTHORITY",
-              "policy", DEPENDENCY_SOURCE_POLICY,
-              "selectedSource", "RESOURCES",
-              "localCandidate", "ABSENT_OR_NOT_NEWER",
-              "sourceServiceId", Objects.toString(dependency.sourceServiceId(), ""),
-              "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+              "decision",
+              "RESOURCES_AUTHORITY",
+              "policy",
+              DEPENDENCY_SOURCE_POLICY,
+              "selectedSource",
+              "RESOURCES",
+              "localCandidate",
+              "ABSENT_OR_NOT_NEWER",
+              "sourceServiceId",
+              Objects.toString(dependency.sourceServiceId(), ""),
+              "sourceTimestamp",
+              Long.toString(sourceDescriptor.timestamp())));
       recordComponentEvent(
           dependency,
           ComponentHistory.EventType.UPDATE_STARTED,
@@ -1233,10 +1241,14 @@ public class ComponentRegistry {
             ComponentHistory.Outcome.SUCCESS,
             "Installed the newer dependency build from its source Resources service",
             Map.of(
-                "decision", "RESOURCES_AUTHORITY",
-                "policy", DEPENDENCY_SOURCE_POLICY,
-                "selectedSource", "RESOURCES",
-                "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+                "decision",
+                "RESOURCES_AUTHORITY",
+                "policy",
+                DEPENDENCY_SOURCE_POLICY,
+                "selectedSource",
+                "RESOURCES",
+                "sourceTimestamp",
+                Long.toString(sourceDescriptor.timestamp())));
         notifyComponentSynchronization(
             scope,
             "Component "
@@ -1259,10 +1271,14 @@ public class ComponentRegistry {
           ComponentHistory.Outcome.FAILURE,
           "The newer dependency build could not be installed; the stale build was rejected",
           Map.of(
-              "decision", "RESOURCES_AUTHORITY",
-              "policy", DEPENDENCY_SOURCE_POLICY,
-              "selectedSource", "RESOURCES",
-              "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+              "decision",
+              "RESOURCES_AUTHORITY",
+              "policy",
+              DEPENDENCY_SOURCE_POLICY,
+              "selectedSource",
+              "RESOURCES",
+              "sourceTimestamp",
+              Long.toString(sourceDescriptor.timestamp())));
       return DependencyRefreshResult.FAILED;
     } catch (Throwable t) {
       Logging.INSTANCE.error(
@@ -1773,7 +1789,8 @@ public class ComponentRegistry {
         Utils.Files.deleteQuietly(pluginDestination);
       }
     } catch (Throwable t) {
-      ret = ResourceSet.empty(Notification.error(t.getMessage()));
+      Logging.INSTANCE.error("Failed to install component " + pluginDestination, t);
+      ret = ResourceSet.empty(Notification.error(t));
       Utils.Files.deleteQuietly(pluginDestination);
     }
 
@@ -1809,8 +1826,7 @@ public class ComponentRegistry {
       var resources =
           scope
               .getService(ResourcesService.class)
-              .resolve(
-                  requestedUrn, KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION, userScope);
+              .resolve(requestedUrn, KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION, userScope);
       if (resources != null && !resources.isEmpty() && loadComponents(resources, scope)) {
         descriptors = getFunctionDescriptor(urn, version);
       }
@@ -2253,12 +2269,20 @@ public class ComponentRegistry {
     ret.javaClassName = cls.getName();
 
     // annotated methods
-    for (Method method : cls.getDeclaredMethods()) {
+    for (Method method : cls.getMethods()) {
+      if (method.isBridge() || method.isSynthetic()) continue;
+      if (method.getDeclaringClass() != cls) {
+        try {
+          cls.getDeclaredMethod(method.getName(), method.getParameterTypes());
+          continue; // A subclass may hide a static factory with a covariant return type.
+        } catch (NoSuchMethodException inherited) { /* Keep the inherited public contract. */ }
+      }
       if (Modifier.isPublic(method.getModifiers())
           && method.isAnnotationPresent(Verb.class)) { // no verbs in libraries
         var serviceInfo = createVerbPrototype(ret.urn + ".", method.getAnnotation(Verb.class));
         ret.verbs.add(createFunctionDescriptor(serviceInfo, cls, method));
-      } else if (method.isAnnotationPresent(AgentAdapter.class)) {
+      }
+      if (method.isAnnotationPresent(AgentAdapter.class)) {
         var serviceInfo = createAgentAdapterPrototype(ret.urn, method);
         var adapter = createFunctionDescriptor(serviceInfo, cls, method);
         if (!Modifier.isPublic(method.getModifiers())
@@ -2442,8 +2466,12 @@ public class ComponentRegistry {
       if (verb != null && !verb.producesAgent().isBlank()) {
         ret.behaviorUrn = verb.producesAgent().trim();
       }
-      if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers())
-          || serviceInfo.isReentrant()) {
+      if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers())) {
+        // A static factory/adapter needs no constructible instance of its bound actor class.
+        ret.staticMethod = true;
+      } else if (clss.isAnnotationPresent(Actor.class) && !clss.getAnnotation(Actor.class).singleton()) {
+        // Instance verbs receive the actual actor handle. Adapters instantiate lazily if needed.
+      } else if (serviceInfo.isReentrant()) {
         // use a global class instance
         implementation.mainClassInstance = createGlobalClassInstance(ret);
         ret.staticMethod =
@@ -2713,7 +2741,7 @@ public class ComponentRegistry {
       Logging.INSTANCE.error("Ignoring @Authority with an empty URN on " + cls.getCanonicalName());
       return;
     }
-    if (!org.integratedmodelling.klab.api.knowledge.Authority.class.isAssignableFrom(cls)) {
+    if (!org.integratedmodelling.klab.api.services.Authority.class.isAssignableFrom(cls)) {
       Logging.INSTANCE.error(
           "Ignoring @Authority "
               + annotation.urn()
@@ -2726,19 +2754,24 @@ public class ComponentRegistry {
       var constructor = cls.getDeclaredConstructor();
       authorityDescriptors.add(
           new Extensions.AuthorityDescriptor(
-              annotation.urn(), annotation.embeddable(), List.of(annotation.subAuthorities())));
+              annotation.urn(),
+              Version.create(annotation.version()),
+              annotation.embeddable(),
+              annotation.searchable(),
+              List.of(annotation.subAuthorities()),
+              List.of(annotation.codelists())));
 
       // Resources advertise and deliver authority components, but only Reasoners host them.
       if (service.serviceType() == KlabService.Type.REASONER) {
         var implementation =
-            (org.integratedmodelling.klab.api.knowledge.Authority) constructor.newInstance();
-        if (!annotation.urn().equals(implementation.getURN())) {
+            (org.integratedmodelling.klab.api.services.Authority) constructor.newInstance();
+        if (!annotation.urn().equals(implementation.getUrn())) {
           authorityDescriptors.removeLast();
           Logging.INSTANCE.error(
               "Ignoring @Authority "
                   + annotation.urn()
                   + ": implementation reports URN "
-                  + implementation.getURN());
+                  + implementation.getUrn());
           return;
         }
         authorities.put(
@@ -2753,8 +2786,24 @@ public class ComponentRegistry {
     }
   }
 
+  /** Exact worldview selection; never substitute a compatible version or another component. */
+  public org.integratedmodelling.klab.api.services.Authority getAuthority(
+      org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding binding, Scope scope) {
+    var matching = authorities.get(binding.provider().urn()).stream()
+        .filter(candidate -> binding.componentUrn().equals(candidate.componentUrn())
+            && binding.componentVersion().equals(candidate.componentVersion()))
+        .toList();
+    if (matching.size() != 1) return null;
+    var component = components.get(binding.componentUrn()).stream()
+        .filter(candidate -> binding.componentVersion().equals(candidate.version()))
+        .findFirst().orElse(null);
+    if (component == null || !binding.componentVersion().equals(component.version())
+        || component.authorities().stream().noneMatch(binding.provider()::equals)) return null;
+    return matching.getFirst().implementation();
+  }
+
   /** Return the best locally hosted implementation of an authority, if this is a Reasoner. */
-  public org.integratedmodelling.klab.api.knowledge.Authority getAuthority(
+  public org.integratedmodelling.klab.api.services.Authority getAuthority(
       String urn, Version version, Scope scope) {
     AuthorityRegistration selected = null;
     for (var candidate : authorities.get(urn)) {
@@ -2880,6 +2929,13 @@ public class ComponentRegistry {
    */
   public synchronized boolean loadComponents(ResourceSet resourceSet, Scope scope) {
 
+    if (pluginPath == null || componentManager == null) {
+      var diagnostic = Notification.error("Component registry has not been initialized");
+      resourceSet.getNotifications().add(diagnostic);
+      scope.error(diagnostic.getMessage());
+      return false;
+    }
+
     var requestedComponents =
         resourceSet.getResults().stream()
             .filter(resource -> resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.COMPONENT)
@@ -2899,16 +2955,24 @@ public class ComponentRegistry {
               ComponentHistory.Outcome.FAILURE,
               "The dependency build advertised by Resources could not be installed",
               Map.of(
-                  "decision", "RESOURCES_AUTHORITY",
-                  "policy", DEPENDENCY_SOURCE_POLICY,
-                  "selectedSource", "RESOURCES",
-                  "sourceTimestamp", Long.toString(result.getTimestamp()),
-                  "sourceServiceId", Objects.toString(result.getServiceId(), "")));
+                  "decision",
+                  "RESOURCES_AUTHORITY",
+                  "policy",
+                  DEPENDENCY_SOURCE_POLICY,
+                  "selectedSource",
+                  "RESOURCES",
+                  "sourceTimestamp",
+                  Long.toString(result.getTimestamp()),
+                  "sourceServiceId",
+                  Objects.toString(result.getServiceId(), "")));
           scope.error(
               "Component "
                   + installed.id()
                   + " is older than the copy advertised by Resources service "
                   + result.getServiceId());
+          resourceSet.getNotifications().add(
+              Notification.error("Failed to refresh component " + result.getResourceUrn()
+                  + " from Resources service " + result.getServiceId()));
           return false;
         }
         continue;
@@ -2922,6 +2986,9 @@ public class ComponentRegistry {
               .orElse(null);
 
       if (service == null) {
+        resourceSet.getNotifications().add(
+            Notification.error("Resources service " + result.getServiceId()
+                + " is unavailable for component " + result.getResourceUrn()));
         recordComponentEvent(
             coordinates.getFirst(),
             coordinates.getSecond(),
@@ -2970,6 +3037,7 @@ public class ComponentRegistry {
         // give the OS time to react - found that often the file is truncated
         TimeUnit.SECONDS.sleep(2);
       } catch (Exception e) {
+        resourceSet.getNotifications().add(Notification.error(e));
         scope.error(e);
         return false;
       }
@@ -2983,6 +3051,11 @@ public class ComponentRegistry {
               result.getServiceId(),
               result.getTimestamp());
       if (installation == null || installation.getFirst() == null) {
+        resourceSet.getNotifications().add(
+            Notification.error("Failed to install component " + result.getResourceUrn()));
+        if (installation != null) {
+          resourceSet.getNotifications().addAll(installation.getSecond().getNotifications());
+        }
         recordComponentEvent(
             coordinates.getFirst(),
             coordinates.getSecond(),
@@ -3021,8 +3094,7 @@ public class ComponentRegistry {
 
   private boolean refreshDependencyComponent(
       Extensions.ComponentDescriptor installed, ResourceSet.Resource requested, Scope scope) {
-    if (installed.mavenCoordinates() != null
-        && installed.mavenCoordinates().contains("SNAPSHOT")) {
+    if (installed.mavenCoordinates() != null && installed.mavenCoordinates().contains("SNAPSHOT")) {
       var coordinates = installed.mavenCoordinates().split(":");
       if (coordinates.length == 3) {
         var local = mavenAvailability(installed, coordinates);
@@ -3030,9 +3102,7 @@ public class ComponentRegistry {
           recordMavenUpdateDecision(installed, local);
           notifyComponentSynchronization(
               scope,
-              "Synchronizing component "
-                  + installed.id()
-                  + " from the local Maven repository");
+              "Synchronizing component " + installed.id() + " from the local Maven repository");
           var oldHash = installed.fileHash();
           applyMavenSnapshotUpdate(installed, local.status());
           var refreshed = getExactComponent(installed.id(), installed.version());
@@ -3074,12 +3144,18 @@ public class ComponentRegistry {
           ComponentHistory.Outcome.INFO,
           "No newer local Maven SNAPSHOT was available; selected the authoritative Resources service build",
           Map.of(
-              "decision", "RESOURCES_AUTHORITY",
-              "policy", DEPENDENCY_SOURCE_POLICY,
-              "selectedSource", "RESOURCES",
-              "localCandidate", "ABSENT_OR_NOT_NEWER",
-              "sourceServiceId", Objects.toString(installed.sourceServiceId(), ""),
-              "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+              "decision",
+              "RESOURCES_AUTHORITY",
+              "policy",
+              DEPENDENCY_SOURCE_POLICY,
+              "selectedSource",
+              "RESOURCES",
+              "localCandidate",
+              "ABSENT_OR_NOT_NEWER",
+              "sourceServiceId",
+              Objects.toString(installed.sourceServiceId(), ""),
+              "sourceTimestamp",
+              Long.toString(sourceDescriptor.timestamp())));
       recordComponentEvent(
           installed,
           ComponentHistory.EventType.UPDATE_STARTED,
@@ -3104,10 +3180,14 @@ public class ComponentRegistry {
             ComponentHistory.Outcome.SUCCESS,
             "Installed the newer dependency build required by the incoming resource set",
             Map.of(
-                "decision", "RESOURCES_AUTHORITY",
-                "policy", DEPENDENCY_SOURCE_POLICY,
-                "selectedSource", "RESOURCES",
-                "sourceTimestamp", Long.toString(sourceDescriptor.timestamp())));
+                "decision",
+                "RESOURCES_AUTHORITY",
+                "policy",
+                DEPENDENCY_SOURCE_POLICY,
+                "selectedSource",
+                "RESOURCES",
+                "sourceTimestamp",
+                Long.toString(sourceDescriptor.timestamp())));
         notifyComponentSynchronization(
             scope,
             "Component "
@@ -3486,7 +3566,7 @@ public class ComponentRegistry {
   }
 
   private record AuthorityRegistration(
-      org.integratedmodelling.klab.api.knowledge.Authority implementation,
+      org.integratedmodelling.klab.api.services.Authority implementation,
       String componentUrn,
       Version componentVersion) {}
 

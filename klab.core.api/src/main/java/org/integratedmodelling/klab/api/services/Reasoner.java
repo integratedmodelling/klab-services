@@ -22,6 +22,32 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 /** The reasoner service collects all functionalities that use semantics in k.LAB. */
 public interface Reasoner extends KlabService {
 
+  /** Authenticated provider search; failures are explicit statuses, never empty successful results. */
+  default org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse searchAuthority(
+      org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {
+    throw new UnsupportedOperationException("Authority search is not supported");
+  }
+
+  /** Scoped semantic sessions. HTTP callers must retain the same authenticated user. */
+  default SemanticSearchResponse semanticSearch(SemanticSearchRequest request, Scope scope) {
+    return semanticSearch(request);
+  }
+
+  /** Configure a bridge to an existing identity in the loaded worldview; returns the provider ID. */
+  default String configureAuthority(Authority.ConfigurationRequest request, Scope scope) {
+    throw new UnsupportedOperationException("Authority configuration is not supported");
+  }
+
+  /**
+   * Documentation for an identity in a configured worldview-local authority (or its advertised
+   * search rank alias). Does not materialize an OWL concept. Embedded services return provider
+   * URLs; the HTTP metadata endpoint publishes local files through authenticated content URLs.
+   */
+  default Map<String, java.net.URL> getAuthorityDocumentation(
+      String authority, String identity, Scope scope) {
+    throw new UnsupportedOperationException("Authority documentation is not supported");
+  }
+
   /**
    * All services publish capabilities and have a call to get them. Capabilities may depend on
    * authentication but the endpoint should be publicly available as well.
@@ -34,6 +60,14 @@ public interface Reasoner extends KlabService {
      * @return
      */
     boolean isConsistent();
+
+    /** Only successfully configured bindings, with public host URLs and no configuration IDs. */
+    default java.util.List<org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding>
+        getAuthorityBindings() { return java.util.List.of(); }
+
+    /** Stable worldview name for matching authority configurations across Reasoners. */
+    default String getWorldviewUrn() { return null; }
+
 
     /**
      * Get the unique ID of the worldview loaded in this service. If this is null, the service knows

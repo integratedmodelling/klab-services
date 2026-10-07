@@ -1718,7 +1718,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public <T> T post(
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 
-        return post(false, apiRequest, payload, resultClass, parameters);
+        return post(false, true, apiRequest, payload, resultClass, parameters);
       }
 
       /**
@@ -1728,11 +1728,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public <T> T postRequired(
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 
-        return post(true, apiRequest, payload, resultClass, parameters);
+        return post(true, true, apiRequest, payload, resultClass, parameters);
+      }
+
+      /** Best-effort delivery: failed responses return null without logging or notifying scopes. */
+      public <T> T postQuietly(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+        return post(false, false, apiRequest, payload, resultClass, parameters);
       }
 
       private <T> T post(
           boolean propagateFailure,
+          boolean reportFailure,
           String apiRequest,
           Object payload,
           Class<T> resultClass,
@@ -1795,32 +1802,35 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return resultClass == byte[].class ? resultClass.cast(response.body())
                 : parseResponse(new String(response.body(), java.nio.charset.StandardCharsets.UTF_8), resultClass);
           } else {
-            Logging.INSTANCE.error(
-                "========== POST " + apiCall + " return " + response.statusCode());
-            var responseText = new String(response.body(), java.nio.charset.StandardCharsets.UTF_8);
-            var log = parseResponse(responseText, Map.class);
-            Logging.INSTANCE.error(
-                "============ POST " + request.uri() + " EXCEPTION REPORT ==============");
-            Logging.INSTANCE.error(Maps.debugPrint(log));
-            Logging.INSTANCE.error("============ END OF REPORT  ==============");
+            var failure = "POST " + apiCall + " failed with HTTP "
+                + (response == null ? 0 : response.statusCode());
+            // Gateways commonly return HTML or no body at all. Extract structured details only
+            // when present; never run error pages through the normal JSON result parser.
+            if (reportFailure && response != null && response.body().length <= 16384) {
+              try {
+                var log = new ObjectMapper().readValue(response.body(), Map.class);
+                if (log.get("body") instanceof Map nested) log = nested;
+                var detail = log.get("detail");
+                if (detail == null) detail = log.get("message");
+                if (detail instanceof String text && !text.isBlank()) {
+                  failure += ": " + text.substring(0, Math.min(512, text.length()));
+                }
+              } catch (Exception ignored) { /* Not a structured error response. */ }
+            }
+            if (reportFailure) Logging.INSTANCE.error(failure);
             if (propagateFailure) {
-              var detail = log.get("detail");
-              if (detail == null) detail = log.get("message");
-              if (detail == null && log.get("body") instanceof Map<?, ?> errorBody) {
-                detail = errorBody.get("detail");
-                if (detail == null) detail = errorBody.get("message");
-              }
-              throw new KlabServiceAccessException(
-                  detail == null
-                      ? (responseText.isBlank()
-                          ? "POST " + apiCall + " failed with HTTP " + response.statusCode()
-                          : responseText)
-                      : detail.toString());
+              throw new KlabServiceAccessException(failure);
             }
           }
 
+        } catch (InterruptedException cancelled) {
+          // An obsolete search is deliberately interrupted by its caller. Preserve the
+          // cancellation signal without publishing a service-error notification.
+          Thread.currentThread().interrupt();
+          if (propagateFailure) throw new KlabServiceAccessException(cancelled);
+          return null;
         } catch (Throwable e) {
-          if (scope != null) {
+          if (reportFailure && scope != null) {
             scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else {
             //                        e.printStackTrace();
@@ -2493,6 +2503,52 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         return java.util.Collections.emptyList();
+      }
+
+      /** DELETE a resource and preserve its changesets and failures. */
+      public <T> List<T> deleteCollectionOrThrow(
+          String apiRequest, Class<T> resultClass, Object... parameters) {
+        var options = new Options();
+        var params = makeKeyMap(options, parameters);
+        var apiCall = substituteTemplateParameters(apiRequest, params);
+        responseHeaders.clear();
+
+        try {
+          var requestBuilder = HttpRequest.newBuilder().DELETE();
+          if (authorization != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+          }
+          for (String header : headers.keySet()) {
+            requestBuilder = requestBuilder.header(header, headers.get(header));
+          }
+
+          if (forcedAcceptHeader != null) {
+            requestBuilder = requestBuilder.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
+          }
+
+          var response =
+              client.send(
+                  requestBuilder
+                      .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                      .timeout(Duration.ofSeconds(timeoutSeconds))
+                      .build(),
+                  HttpResponse.BodyHandlers.ofString());
+
+          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+            parseHeaders(response);
+            return parseResponseList(response.body(), resultClass);
+          }
+
+          throw new RequestFailure(response == null ? 0 : response.statusCode(),
+              RequestFailure.collectionFailureDetail(response == null ? null : response.body()), null);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new RequestFailure(0, "Delete request interrupted", e);
+        } catch (RequestFailure e) {
+          throw e;
+        } catch (Exception e) {
+          throw new RequestFailure(0, "Delete request failed", e);
+        }
       }
 
       /**

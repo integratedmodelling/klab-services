@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -16,8 +17,8 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Properties;
-import com.sun.net.httpserver.HttpServer;
 import org.apache.commons.exec.CommandLine;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
@@ -25,9 +26,9 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.LocalInstance;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class StackImplTest {
@@ -91,7 +92,8 @@ class StackImplTest {
     var distributionRoot =
         repository.resolve("klab.distribution").resolve("target").resolve("distribution");
     createDistribution(distributionRoot, true);
-    Files.delete(distributionRoot.resolve("klab").resolve(Distribution.DISTRIBUTION_PROPERTIES_FILE));
+    Files.delete(
+        distributionRoot.resolve("klab").resolve(Distribution.DISTRIBUTION_PROPERTIES_FILE));
     Files.delete(
         distributionRoot
             .resolve("klab")
@@ -105,7 +107,8 @@ class StackImplTest {
             .resolve(Distribution.RELEASE_PROPERTIES_FILE));
 
     var distribution =
-        DistributionImpl.developmentDistribution("klab", repository.toFile());
+        DistributionImpl.developmentDistribution(
+            "klab", repository.toFile(), SettingsImpl.forEngine());
 
     assertTrue(distribution != null);
     assertEquals(1, distribution.getTags().size());
@@ -182,12 +185,9 @@ class StackImplTest {
     var middle = "202608041200";
     createDistribution(remoteDirectory, true, oldest, middle, BUILD);
     var current = Stack.Tag.of(Version.create(VERSION), RELEASE, oldest, false, false);
-    var stack =
-        new StackImpl(
-            "klab", settings(local, 1, DistributionTagCodec.encode(current)));
+    var stack = new StackImpl("klab", settings(local, 1, DistributionTagCodec.encode(current)));
 
-    assertTrue(
-        stack.synchronize(stack.tags().getFirst(), DistributionImpl.actingSynchronizer));
+    assertTrue(stack.synchronize(stack.tags().getFirst(), DistributionImpl.actingSynchronizer));
 
     var installedBuilds =
         stack.tags().stream().filter(Stack.Tag::availableLocally).map(Stack.Tag::build).toList();
@@ -232,10 +232,7 @@ class StackImplTest {
     var pidFile = runDirectory.resolve(Distribution.Product.Type.CLI.getId() + ".pid");
     Files.writeString(
         pidFile,
-        ProcessHandle.current().pid()
-            + ":"
-            + Distribution.Product.Type.CLI.getId()
-            + ":0");
+        ProcessHandle.current().pid() + ":" + Distribution.Product.Type.CLI.getId() + ":0");
 
     var instance =
         new TestLocalInstance(
@@ -252,8 +249,7 @@ class StackImplTest {
 
   private Settings settings(Path local, int distributionsToKeep, String currentDistribution) {
     var settings = mock(Settings.class);
-    when(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class))
-        .thenReturn(remoteUrl);
+    when(settings.get(Setting.DISTRIBUTION_SOURCE_URL, String.class)).thenReturn(remoteUrl);
     when(settings.get(Setting.DISTRIBUTION_DIRECTORY, File.class)).thenReturn(local.toFile());
     when(settings.get(Setting.USE_DEVELOPMENT_DISTRIBUTION_IF_AVAILABLE, Boolean.class))
         .thenReturn(false);
@@ -341,8 +337,7 @@ class StackImplTest {
 
   private static final class TestLocalInstance extends LocalInstanceImpl {
 
-    private TestLocalInstance(
-        Distribution.Product product, Settings settings, Stack.Tag tag) {
+    private TestLocalInstance(Distribution.Product product, Settings settings, Stack.Tag tag) {
       super(product, settings, tag);
     }
 

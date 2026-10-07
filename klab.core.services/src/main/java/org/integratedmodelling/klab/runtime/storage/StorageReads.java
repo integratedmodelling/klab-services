@@ -178,6 +178,7 @@ public final class StorageReads {
       throw new IndexOutOfBoundsException("Cell offset " + point.offset());
     try (var session = storage.open(plan)) {
       var scanner = session.scanners().getFirst(); scanner.seek(point.offset());
+      if (scanner.position() != point.offset()) return "null";
       return StorageScan.textValue(scanner);
     }
   }
@@ -188,6 +189,7 @@ public final class StorageReads {
     try (var session = open(observation, scope, event, curve, Storage.Scanner.class)) {
       var scanner = session.scanners().getFirst();
       scanner.seek(offset);
+      if (scanner.position() != offset) return "null";
       return StorageScan.textValue(scanner);
     }
   }

@@ -446,6 +446,12 @@ public class ResolutionCompiler {
             ResourceSet requirements =
                 runtime.resolveContextualizables(operation.getContextualizables(), scope);
 
+            if (requirements == null) {
+              scope.error(
+                  "Runtime returned no contextualizer resolution; check that the Runtime and "
+                      + "Resolver services use compatible API versions");
+              return ResolutionGraph.empty();
+            }
             if (requirements.isEmpty()) {
               return ResolutionGraph.empty();
             }
@@ -524,6 +530,13 @@ public class ResolutionCompiler {
     var runtime = scope.getService(RuntimeService.class);
     ResourceSet requirements = runtime.resolveContextualizables(model.getComputation(), scope);
 
+    if (requirements == null) {
+      scope.error(
+          "Runtime returned no contextualizer resolution for model ",
+          model.getUrn(),
+          "; check that the Runtime and Resolver services use compatible API versions");
+      return ResolutionGraph.empty();
+    }
     // TODO filter the results to accommodate constraints w.r.t. the geometry and (possibly) the
     // semantics.
 

@@ -1,7 +1,6 @@
 package org.integratedmodelling.common.lang;
 
 import org.integratedmodelling.klab.api.lang.Quantity;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.Serial;
 
@@ -47,24 +46,14 @@ public class QuantityImpl implements Quantity {
 
     public static Quantity parse(String specification) {
 
-        QuantityImpl ret = null;
-        int dot = specification.indexOf('.');
-        if (dot < 0) {
-            dot = specification.indexOf(' ');
-        }
-
-        if (dot > 0) {
-            String number = specification.substring(0,dot);
-            String unit = specification.substring(dot +1);
-            ret = new QuantityImpl();
-            ret.setValue(Utils.Data.parseAsType(number, Double.class));
-            if (unit.contains("@")) {
-                ret.setCurrency(unit);
-            } else {
-                ret.setUnit(unit);
-            }
-        }
-
+        if (specification == null) return null;
+        var match=java.util.regex.Pattern.compile("^([+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[eE][+-]?\\d+)?)[.\\s]+(.+)$")
+            .matcher(specification.trim());
+        if (!match.matches()) return null;
+        var ret=new QuantityImpl();
+        ret.setValue(Double.parseDouble(match.group(1)));
+        String unit=match.group(2).trim();
+        if (unit.contains("@")) ret.setCurrency(unit); else ret.setUnit(unit);
         return ret;
     }
 }

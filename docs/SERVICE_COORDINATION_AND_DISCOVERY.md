@@ -5,6 +5,81 @@ Section 1 describes the existing implementation, including the scope propagation
 on that date. Section 2 proposes new contracts and components; these are not implemented.
 This document does not authorize replacing the current discovery mechanism.
 
+## Worldview composition and authority provenance
+
+This section records the intended production integrity contract discussed on 2026-09-30. The
+distributed assembly and authority source restrictions below are not yet implemented. They must
+retain the existing bounded-network mode and full-local editing/testing support.
+
+### Current boundary
+
+`ReasonerService.checkWorldview()` iterates Resources services, selects one advertising
+`isWorldviewProvider`, and loads the first worldview that makes the Reasoner operational. A local
+Reasoner currently excludes remote Resources providers in that startup path. It does not assemble
+a worldview from several certified contributors. The `Worldview` API describes an ordered root
+and higher-tier ontologies, but that model is not evidence of a complete distributed acquisition,
+ownership, or synchronization protocol.
+
+That localhost-only startup filter is an implementation limitation, not the intended integrity
+rule. A remote Resources service may supply a worldview to a local service when it serves the
+same worldview as the local provider.
+
+Authority configuration with a user scope currently queries all Resources services in that scope.
+Startup configuration with a service scope uses locally installed providers only. Resources
+authority resolution checks embeddability and component availability, but not the provider's role
+in the loaded worldview. Consequently, authority source integrity is not presently enforced.
+
+### Intended production contract
+
+Remote Reasoners use their service certificate to establish permitted peers. From those peers,
+worldview assembly must select an explicit root provider and certified contributors supplying
+higher-tier ontologies and associated observation strategies. Authority plug-ins must come from
+that same authorized contributor set. Ordinary Resources providers outside the set cannot supply
+an authority bridge. General user-scope advertisements and self-reported capability flags cannot
+expand the certificate-backed contributor set.
+
+Distributed assembly needs a coherent snapshot with:
+
+- the worldview identity and commitment, root provider, and contributor service identities;
+- ownership and permitted contributions for projects/namespaces and ontology tiers;
+- ontology and strategy source revisions, dependency order, and compatibility constraints;
+- authority URNs, component provenance/revisions, and their declaring root identity concepts;
+- deterministic handling of duplicate namespaces, missing contributors and incompatible revisions;
+- update provenance and coordinated invalidation of concepts, configured bridges and caches.
+
+The assembly must validate dependencies and source authorization before publishing an operational
+worldview. Missing or conflicting certified content cannot be substituted from an arbitrary
+reachable service. Readiness must distinguish a usable committed snapshot from an incomplete
+candidate; refreshing one contributor must not silently mix incompatible revisions.
+
+### Local development contract
+
+A local Resources service may supply the complete editable worldview and its authority plug-ins.
+The local Reasoner must support acquisition at startup, local Maven/archive builds, project updates,
+and source-bound diagnostics without requiring production infrastructure. Development configuration
+explicitly identifies the trusted local provider. Editing with diagnostics remains supported; it
+does not turn every reachable local Resources service into an eligible authority source.
+
+A local stack may also consume the worldview, compatible higher-tier contributions and associated
+authority components from authorized remote providers serving the same worldview as its local
+provider. Eligibility depends on worldview identity and contributor authorization, not whether an
+endpoint is local or remote. Revision compatibility is checked separately; a local editable working
+copy need not be byte-identical to a remote published snapshot. Acquisition must preserve the local
+editing/update workflow and diagnose incompatible contributions rather than switch worldviews.
+
+### Decisions before enforcement
+
+The policy is established here, but several protocol choices still require steering before code
+enforcement: whether a primary Resources service assembles the snapshot or the Reasoner acquires
+each contribution; how certificates and manifests authorize tiers/namespaces and delegation; how
+replicas and competing offerings are selected; how component provenance is associated with local
+development builds; and how compatible distributed revisions are committed and replaced.
+
+The existing `isWorldviewProvider` boolean should not be overloaded to imply all these guarantees.
+A certified higher-tier contributor need not serve a complete root worldview itself. These roles
+need an explicit representation before excluding legitimate contributors. Authority-specific
+source rules and remaining runtime gaps are described in [Authorities](AUTHORITIES.md#worldview-provider-integrity-rule).
+
 ## 1. Current service discovery and scope propagation
 
 ### 1.1. Retain the existing mode
@@ -44,6 +119,9 @@ The principal steps are:
    across ready peers, including peers already notified. `ScopeAdvertisements` retains the latest
    pending payload per target, serializes deliveries to that target, and retries unsuccessful
    deliveries every five seconds. An older acknowledgement cannot discard a newer pending payload.
+   HTTP failures, including HTML gateway responses, and connection failures leave the payload
+   pending without emitting client-side parsing exceptions or scope errors. Only an explicit
+   `true` acknowledgement completes delivery; these retries do not deactivate the service client.
 
 The last step repairs incomplete startup snapshots and failed delivery; it is not a general
 membership protocol. Advertisements add or replace service entries rather than reconcile an

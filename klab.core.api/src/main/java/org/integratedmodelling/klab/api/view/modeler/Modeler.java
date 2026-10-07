@@ -79,6 +79,12 @@ public interface Modeler extends UIController {
    */
   ContextScope createDefaultContext();
 
+  /** Create a default twin with its grid frozen before preparing the implicit observer. */
+  default ContextScope createDefaultContext(String gridUrn) {
+    if (gridUrn!=null) throw new UnsupportedOperationException("Grid-aware context creation is unavailable");
+    return createDefaultContext();
+  }
+
   /**
    * Transparently create (if needed) a local web server and publish the passed file so that it can
    * be accessed in a browser using the returned URL. The workspace argument may be null; if passed,

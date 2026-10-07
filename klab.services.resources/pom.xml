@@ -22,6 +22,18 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>4.9.1</version>
+        </dependency>
+        <!-- 2.0.4 targets Jackson 2.18.4; the reactor manages Jackson 2.19.0.
+             NetworkNT 3.x requires Jackson 3 and is not compatible with this stack. -->
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>2.0.4</version>
+        </dependency>
         <!-- Exercise the parsed strategy across both service boundaries without runtime dependencies. -->
         <dependency>
             <groupId>org.integratedmodelling</groupId>

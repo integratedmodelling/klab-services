@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.resources.workflow.impl;
 
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,6 +18,10 @@ import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns
 
 /** Persistent active or closed instance of a {@link Workflow}. */
 public class FlowImpl implements Flow {
+  private WorkflowBehavior.Checkpoint behaviorCheckpoint;
+  public WorkflowBehavior.Checkpoint getBehaviorCheckpoint() { return behaviorCheckpoint; }
+  public void setBehaviorCheckpoint(WorkflowBehavior.Checkpoint value) { behaviorCheckpoint = value; }
+
 
   @SuppressWarnings("unchecked")
   public static Metadata metadata(Map<String, Object> value) {
@@ -162,6 +167,14 @@ public class FlowImpl implements Flow {
   }
 
   public static class StateImpl implements Flow.State {
+  private WorkflowBehavior.Checkpoint behaviorCheckpoint;
+  public WorkflowBehavior.Checkpoint getBehaviorCheckpoint() { return behaviorCheckpoint; }
+  public void setBehaviorCheckpoint(WorkflowBehavior.Checkpoint value) { behaviorCheckpoint = value; }
+
+    private org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.StageData proposalReview;
+    public org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.StageData getProposalReview() { return proposalReview; }
+    public void setProposalReview(org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.StageData value) { proposalReview = value; }
+
     private String id;
     private String flowId;
     private String schemaId;
@@ -420,6 +433,10 @@ public class FlowImpl implements Flow {
   }
 
   public static class TransitionRequestImpl implements Flow.TransitionRequest {
+    private org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.Command proposalReview;
+    public org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.Command getProposalReview() { return proposalReview; }
+    public void setProposalReview(org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.Command value) { proposalReview = value; }
+
     private String transactionId;
     private String transitionId;
     private String sourceStateId;

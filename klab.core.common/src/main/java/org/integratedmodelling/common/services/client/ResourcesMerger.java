@@ -35,6 +35,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
@@ -66,11 +67,52 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   private List<ResourcesService> services() {
-    var available = owningScope.getServices(ResourcesService.class);
-    if (available == null) {
-      return List.of();
+    /*
+     * A service-side scope retains every service advertised by the client but its typed view is a
+     * live, status-filtered projection. In particular, a merger may have been created while two
+     * Resources services were usable and later see only one of them through that projection. Do
+     * not let this transient view silently turn a federated query into a local-only query: include
+     * advertised Resources clients as well and let the failure-isolated query machinery below
+     * decide which responses are usable.
+     */
+    var ret = new LinkedHashMap<String, ResourcesService>();
+    addServices(ret, owningScope.getServices(ResourcesService.class));
+    try {
+      var advertised = owningScope.getServices(KlabService.class);
+      if (advertised != null) {
+        addServices(
+            ret,
+            advertised.stream()
+                .filter(ResourcesService.class::isInstance)
+                .map(ResourcesService.class::cast)
+                .toList());
+      }
+    } catch (RuntimeException ignored) {
+      // Some delegating scopes expose only typed service views. The typed snapshot above remains
+      // authoritative for those scopes.
     }
-    return available.stream().filter(Objects::nonNull).filter(service -> service != this).toList();
+    return List.copyOf(ret.values());
+  }
+
+  private void addServices(
+      Map<String, ResourcesService> destination,
+      Collection<? extends ResourcesService> services) {
+    if (services == null) {
+      return;
+    }
+    for (var service : services) {
+      if (service == null || service == this) {
+        continue;
+      }
+      var key = service.serviceId();
+      if (key == null && service.getUrl() != null) {
+        key = service.getUrl().toExternalForm();
+      }
+      if (key == null) {
+        key = service.getClass().getName() + "@" + System.identityHashCode(service);
+      }
+      destination.putIfAbsent(key, service);
+    }
   }
 
   private ResourcesService primary() {
@@ -92,7 +134,17 @@ public class ResourcesMerger implements ResourcesService {
     var responses = new ArrayList<CompletableFuture<ResourceSet>>(services.size());
     for (var service : services) {
       responses.add(
-          CompletableFuture.supplyAsync(() -> operation.apply(service))
+          CompletableFuture.supplyAsync(
+                  () -> {
+                    var result = operation.apply(service);
+                    return result == null
+                        ? ResourceSet.empty(
+                            Notification.warning(
+                                "Resource query returned no result from "
+                                    + service.serviceName()
+                                    + "; its API may be out of date"))
+                        : result;
+                  })
               .exceptionally(
                   failure ->
                       ResourceSet.empty(

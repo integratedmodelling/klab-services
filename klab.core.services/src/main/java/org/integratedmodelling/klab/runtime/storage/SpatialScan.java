@@ -141,11 +141,12 @@ final class SpatialScan implements ScanMapping {
     targetLattice = new Lattice(targetGrid);
     // Fully qualify the virtual owner so omitted partition CRSs inherit the target, not the source.
     targetGeometry = targetLattice.geometry(new Box(new long[2], targetGrid.shape()));
-    domain(sourceGrid);
-    domain(targetGrid);
+    boolean sameCRS = sourceGrid.projection().equals(targetGrid.projection());
+    domain(sourceGrid,!sameCRS);
+    domain(targetGrid,!sameCRS);
     // Validate every source shard, including those outside a target window.
     for (var descriptor : descriptors)
-      domain(Grid.read(descriptor.geometry(), sourceGrid.projection()));
+      domain(Grid.read(descriptor.geometry(), sourceGrid.projection()),!sameCRS);
     var virtual =
         new StorageScan.SourceShard(
             "target-grid",
@@ -170,7 +171,6 @@ final class SpatialScan implements ScanMapping {
                 StorageScan.Sampling.EXACT,
                 request.budget()),
             targetGeometry);
-    boolean sameCRS = sourceGrid.projection().equals(targetGrid.projection());
     if (!sameCRS
         && !(Set.of("EPSG:4326", "EPSG:3857").contains(sourceGrid.projection())
             && Set.of("EPSG:4326", "EPSG:3857").contains(targetGrid.projection())))
@@ -202,6 +202,23 @@ final class SpatialScan implements ScanMapping {
     double[] lower = new double[2], upper = new double[2];
     for (int i = 0; i < target.targets.length; i++) {
       Box box = target.targets[i];
+      if (source.longitudePeriod>0) {
+        world(box.start[0],box.start[1],lower);
+        world(box.start[0]+box.shape[0],box.start[1]+box.shape[1],upper);
+        long[] lo={floor(coordinate(lower[0],0))-1,floor(coordinate(lower[1],1))-1};
+        long[] shape={Math.max(1,floor(coordinate(upper[0],0))+2-lo[0]),Math.max(1,floor(coordinate(upper[1],1))+2-lo[1])};
+        long shift=Math.floorDiv(source.directory.bounds.start[0]-lo[0],source.longitudePeriod);
+        var links=new ArrayList<Integer>();
+        for(long delta=shift;delta<=shift+1;delta++) {
+          long[] start=lo.clone();start[0]=Math.addExact(start[0],Math.multiplyExact(delta,source.longitudePeriod));
+          var found=new ArrayList<Integer>();source.directory.collect(new Box(start,shape),found,remaining);
+          for(int link:found) if(!links.contains(link)) links.add(link);
+        }
+        if(links.size()>remaining) throw new IllegalArgumentException("Source-link budget exceeded");
+        dependencies[i]=links.stream().mapToInt(Integer::intValue).toArray();remaining-=links.size();
+        if (coverage==StorageScan.Coverage.EXACT) validateWrappedCoverage(box);
+        continue;
+      }
       world(box.start[0], box.start[1], lower);
       world(box.start[0] + box.shape[0], box.start[1] + box.shape[1], upper);
       long[] lo = new long[2], shape = new long[2];
@@ -227,13 +244,27 @@ final class SpatialScan implements ScanMapping {
         || sampling == StorageScan.Sampling.CONSERVATIVE_TOTAL;
   }
 
-  private static void domain(Grid grid) {
+  private void validateWrappedCoverage(Box targetBox) {
+    double[] low=new double[2],high=new double[2];
+    world(targetBox.start[0],targetBox.start[1],low);
+    world(targetBox.start[0]+targetBox.shape[0],targetBox.start[1]+targetBox.shape[1],high);
+    var bounds=source.directory.bounds;
+    double south=Math.max(sourceLattice.reference.world()[2],sourceLattice.reference.bounds()[2]+bounds.start[1]*sourceLattice.step[1]);
+    double north=Math.min(sourceLattice.reference.world()[3],sourceLattice.reference.bounds()[2]+(bounds.start[1]+bounds.shape[1])*sourceLattice.step[1]);
+    double x0=coordinate(low[0],0),x1=coordinate(high[0],0);
+    double start=bounds.start[0]+((x0-bounds.start[0])%source.longitudePeriod+source.longitudePeriod)%source.longitudePeriod;
+    if (low[1]<south-1e-8 || high[1]>north+1e-8 || x1-x0>source.longitudePeriod+1e-8
+        || bounds.shape[0]<source.longitudePeriod && start+(x1-x0)>bounds.start[0]+bounds.shape[0]+1e-8)
+      throw ConformantScan.unsupported("incomplete periodic source coverage");
+  }
+
+  private static void domain(Grid grid, boolean transforming) {
     double[] b = grid.bounds();
-    if (grid.projection().equals("EPSG:4326")
+    if (grid.projection().equals("EPSG:4326") && (transforming || grid.world().length==0)
         && (b[0] < -180 || b[1] > 180 || b[2] <= -85.0511287798066 || b[3] >= 85.0511287798066))
       throw ConformantScan.unsupported(
           "geographic domain crosses wraparound or polar/Mercator limits");
-    if (grid.projection().equals("EPSG:3857")
+    if (grid.projection().equals("EPSG:3857") && (transforming || grid.world().length==0)
         && Arrays.stream(b).anyMatch(v -> Math.abs(v) >= 20037508.342789244))
       throw ConformantScan.unsupported(
           "Web Mercator domain crosses wraparound or projection limits");
@@ -248,6 +279,10 @@ final class SpatialScan implements ScanMapping {
   void world(double x, double y, double[] into) {
     into[0] = targetLattice.reference.bounds()[0] + x * targetLattice.step[0];
     into[1] = targetLattice.reference.bounds()[2] + y * targetLattice.step[1];
+    if (targetLattice.reference.world().length==4) {
+      double[] limits=targetLattice.reference.world();
+      into[1]=Math.max(limits[2],Math.min(limits[3],into[1]));
+    }
     if (transform != null)
       try {
         transform.transform(into, 0, into, 0, 1);
@@ -273,7 +308,16 @@ final class SpatialScan implements ScanMapping {
     if (sourceLattice.reference.projection().equals("EPSG:4326")) {
       double south = sourceLattice.reference.bounds()[2] + y0 * sourceLattice.step[1];
       double north = sourceLattice.reference.bounds()[2] + y1 * sourceLattice.step[1];
+      if (sourceLattice.reference.world().length==4) {
+        south=Math.max(-90,Math.min(90,south)); north=Math.max(-90,Math.min(90,north));
+      }
       return (x1 - x0) * (Math.sin(Math.toRadians(north)) - Math.sin(Math.toRadians(south)));
+    }
+    if (sourceLattice.reference.world().length==4) {
+      double[] world=sourceLattice.reference.world();
+      double min=(world[2]-sourceLattice.reference.bounds()[2])/sourceLattice.step[1];
+      double max=(world[3]-sourceLattice.reference.bounds()[2])/sourceLattice.step[1];
+      y0=Math.max(min,Math.min(max,y0));y1=Math.max(min,Math.min(max,y1));
     }
     return (x1 - x0) * (y1 - y0);
   }

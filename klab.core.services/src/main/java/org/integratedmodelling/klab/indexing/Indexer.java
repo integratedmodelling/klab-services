@@ -292,6 +292,8 @@ public class Indexer {
      */
     public List<SemanticMatch> query(String term, SemanticScope composer, int maxResults) {
 
+          composer.checkSearchCancelled();
+
         List<SemanticMatch> ret = new ArrayList<>();
 
         if (maxResults <= 0) {
@@ -299,6 +301,7 @@ public class Indexer {
         }
 
         for (SemanticRole role : composer.getAdmittedLexicalInput()) {
+              composer.checkSearchCancelled();
             if (role.kimDeclaration.isEmpty() || role.kimDeclaration.startsWith(term)) {
                 switch (role) {
                     case ADJACENT:
@@ -361,6 +364,8 @@ public class Indexer {
             }
         }
 
+        if (ret.size() >= maxResults) return new ArrayList<>(ret.subList(0, maxResults));
+
         if (composer.getAdmittedLogicalInput().size() > 0) {
 
             IndexSearcher searcher;
@@ -374,10 +379,16 @@ public class Indexer {
             Set<String> ids = new HashSet<>();
             try {
 
-                TopDocs docs = searcher.search(buildQuery(term, this.analyzer), Math.max(1000, maxResults));
-                ScoreDoc[] hits = docs.scoreDocs;
-
-                for (ScoreDoc hit : hits) {
+                Query query = buildQuery(term, this.analyzer);
+                ScoreDoc after = null;
+                // Apply semantic constraints before limiting results. A fixed first page can
+                // contain no qualities even when eligible qualities exist later in the index.
+                while (ret.size() < maxResults) {
+                  composer.checkSearchCancelled();
+                  ScoreDoc[] hits = searcher.searchAfter(after, query, 256).scoreDocs;
+                  if (hits.length == 0) break;
+                  for (ScoreDoc hit : hits) {
+                    composer.checkSearchCancelled();
 
                     Document document = searcher.storedFields().document(hit.doc);
                     Concept concept = scope.getService(Reasoner.class).resolveConcept(document.get("id"));
@@ -391,6 +402,7 @@ public class Indexer {
                     for (SemanticScope.Constraint constraint : composer.getAdmittedLogicalInput()) {
 
                         if (constraint.matches(concept)) {
+                            if (!composer.candidateFilter.test(concept)) break;
 
                             SemanticMatch match = new SemanticMatch();
                             match.setId(document.get("id"));
@@ -409,8 +421,13 @@ public class Indexer {
                             break;
                         }
                     }
+                    if (ret.size() >= maxResults) break;
+                  }
+                  after = hits[hits.length - 1];
                 }
 
+            } catch (java.util.concurrent.CancellationException cancelled) {
+                throw cancelled;
             } catch (Exception e) {
                 throw new KlabIOException(e);
             } finally {

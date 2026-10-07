@@ -78,7 +78,7 @@ workspaces, worldviews, components, and service implementations. Special informa
 identifiers are:
 
 - `export-schema:<media-type>` and `import-schema:<media-type>` with `INFORMATION`;
-- an adapter identifier, optionally versioned, with `COMPONENT`;
+- an adapter identifier, optionally versioned, with `RESOURCE_ADAPTER`;
 - `<service-call-urn>@<version>` with `SERVICE_IMPLEMENTATION`.
 
 Model resolution through `query` uses the typed convention
@@ -94,13 +94,14 @@ RESOURCE descriptor and, when available, the embeddable COMPONENT that supplies 
 
 A consuming Runtime must not interpret the RESOURCE descriptor as a catalog object. If the adapter
 is missing and the RESOURCE dependency set did not carry its component, Runtime resolves the
-adapter identifier separately as `COMPONENT` through the merged Resources client, installs that
-dependency, and verifies the embeddable adapter before continuing. Retrieval is deferred until the
-compiled dataflow uses the URN; at that point any Resources service with the adapter can synthesize
-the Resource. Ordinary non-`klab` resource URNs retain the owner-specific resolve-then-retrieve
-contract.
+adapter identifier separately as `RESOURCE_ADAPTER` through the merged Resources client. The
+result identifies the providing `COMPONENT`, which Runtime installs before verifying the
+embeddable adapter. Retrieval is deferred until the compiled dataflow uses the URN; at that point
+any Resources service with the adapter can synthesize the Resource. Ordinary non-`klab` resource
+URNs retain the owner-specific resolve-then-retrieve contract. Adapter descriptor retrieval and
+queries use `RESOURCE_ADAPTER`; the former `INFORMATION` projection is not part of this contract.
 
-The same component lookup is also a compatibility fallback when the merged RESOURCE lookup is
+The same adapter lookup is also a compatibility fallback when the merged RESOURCE lookup is
 empty. If it installs an embeddable adapter, Runtime synthesizes the universal RESOURCE descriptor
 locally and continues resolution. This lets a newer Runtime consume an adapter advertised by a
 Resources service that does not yet implement synthetic universal-RESOURCE resolution.
@@ -118,11 +119,23 @@ workspaces, projects, namespaces, ontologies, observation-strategy documents, be
 and symbol definitions. The provider additionally retrieves resources, concepts, observables, and
 the served worldview.
 
+Worldview retrieval currently supplies a container from one provider; it does not establish a
+complete protocol for assembling certified higher-tier contributions from several services.
+The intended production rule also restricts authority plug-ins to the authorized services supplying
+the loaded worldview. Ordinary Resources providers must not acquire that role through general
+component distribution. These source restrictions are not yet enforced. See
+[worldview composition and authority provenance](SERVICE_COORDINATION_AND_DISCOVERY.md#worldview-composition-and-authority-provenance)
+for the proposed distributed contract and full-local development requirements.
+
 `list` has no search semantics. Clients that need matching, sorting, or a different representation
 must use `query`. In a multi-service scope, `ResourcesMerger` snapshots all resource services,
-excludes itself, queries them concurrently, tolerates an individual failure, and returns distinct
-results in service order. `retrieve`, writes, and operational calls go to the primary service
-because their results cannot be combined safely.
+including Resources clients advertised in a service-side scope even when they are temporarily
+absent from its live status-filtered typed projection. It de-duplicates the snapshot by service ID
+(or URL when no ID is known), excludes itself, queries the services concurrently, tolerates an
+individual failure, and returns distinct results in service order. This prevents a cached merger
+from silently becoming local-only while the advertised federation still contains a remote
+provider. `retrieve`, writes, and operational calls go to the primary service because their results
+cannot be combined safely.
 
 ### Info
 
@@ -178,6 +191,43 @@ file-backed k.IM documents carrying both `projectName` and `sourceCode`. A new p
 the `workspace/project` URN. `Resource` updates preserve the previous current representation in the
 embedded history and require the submitted version to be newer. k.Actors document mutation,
 project/workspace update, and merge semantics remain pending and return explicit notifications.
+
+## Additional project material
+
+`ProjectMaterial` is a binary-safe `KlabAsset` with knowledge class and project resource type
+`ADDITIONAL_MATERIAL`. It contains `projectName`, `path` (canonical project-relative path),
+`content` (`byte[]`, Base64 in JSON), and service/metadata fields. Its URN is `project/path`.
+It is not a `KlabDocument` and is never parsed as k.IM or k.Actors source.
+
+Use the existing generic `submit`, `retrieve` and `delete` methods. The client uses these
+query-coordinate routes so relative paths never depend on encoded slashes in a path segment:
+
+- `PUT /api/v1/submit/ADDITIONAL_MATERIAL/{mode}?urn=project/review/notes.txt`
+- `GET /api/v1/retrieve/ADDITIONAL_MATERIAL?urn=project/review/notes.txt`
+- `DELETE /api/v1/delete/ADDITIONAL_MATERIAL?urn=project/review/notes.txt`
+
+The submitted body and query URN must agree. Modes are ADD (requires absence), UPDATE (requires
+existence), and CREATE_OR_UPDATE; REPLACE, MERGE and PUBLISH are rejected. The filename, including
+extension, is part of `path`; bytes are preserved without transcoding. `core.project.write_text`
+is the UTF-8 convenience operation.
+
+Creation/update require service UPDATE_METADATA and access to the containing project (ownership
+or its existing user/group rights). Reading requires READ or UPDATE_METADATA. Deletion requires
+DELETE. Administrators retain their override. A user with UPDATE_METADATA alone cannot perform
+document CRUD, replace project settings, or delete material. Project API permission descriptors
+report these effective operation grants; actors enforce the same rules as the service.
+
+Only service-owned `FileProjectStorage` is writable. Parent directories are created automatically;
+paths must already be canonical, use `/`, and remain within the project. Absolute paths, traversal,
+platform aliases, symlink traversal, language-document paths (including case variants), Git control
+files, `META-INF`, and managed `resources` paths are rejected even if the target does not yet exist.
+Thus additional material cannot replace canonical documents or bypass their permissions. Payloads
+are limited to 32 MiB. Ignored or conflicted Git paths fail explicitly.
+
+Mutations stage the one affected path in Git without committing or pushing; unrelated staged
+changes remain intact. An unlocked project accepts metadata contributions without requiring UPDATE.
+A project locked by another user rejects mutations. Workflow checkpoints and project Git writes
+are separate persistence operations; retrying a workflow does not undo previous project effects.
 
 ## Complete lifecycle of a concrete `Resource`
 

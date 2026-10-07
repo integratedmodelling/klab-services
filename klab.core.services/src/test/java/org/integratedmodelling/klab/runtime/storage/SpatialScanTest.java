@@ -281,4 +281,32 @@ class SpatialScanTest {
           StorageScan.Sampling.CONSERVATIVE,StorageScan.Coverage.MISSING_OUTSIDE,List.of())));
     }
   }
+  @Test void conservativeWorldAggregationWrapsAndUsesClippedPolarAreas() {
+    String source=ConformantScanTest.TIME+"S2(4,2){proj=EPSG:4326,bbox=[1 361 -91 89],world=[-180 180 -90 90]}";
+    String target=ConformantScanTest.TIME+"S2(2,1){proj=EPSG:4326,bbox=[-179 181 -91 89],world=[-180 180 -90 90]}";
+    try(var f=new ConformantScanTest.Fixture(1,Storage.Type.DOUBLE,FillCurve.D2_XY,source)) {
+      gate(f,true);
+      var plan=f.storage.plan(request(target,FillCurve.D2_XY,StorageScan.Sampling.CONSERVATIVE,StorageScan.Coverage.EXACT,List.of()));
+      double lower=1-Math.sin(Math.toRadians(1));
+      double upper=Math.sin(Math.toRadians(89))+Math.sin(Math.toRadians(1));
+      double rowCorrection=upper/(lower+upper);
+      try(var session=f.storage.open(plan)) {
+        var scanner=(Storage.DoubleScanner)session.scanners().getFirst();
+        assertTrue(scanner.isValid());assertEquals(259.25+rowCorrection,scanner.get(),1e-9);
+        assertTrue(scanner.isValid());assertEquals(59.25+rowCorrection,scanner.get(),1e-9);
+        assertFalse(scanner.hasNext());
+      }
+      try(var session=f.storage.open(f.storage.plan(request(target,FillCurve.D2_XY,StorageScan.Sampling.CONSERVATIVE_TOTAL,StorageScan.Coverage.EXACT,List.of())))) {
+        var scanner=(Storage.DoubleScanner)session.scanners().getFirst();
+        assertEquals(1039,scanner.get(),1e-9);assertEquals(239,scanner.get(),1e-9);
+      }
+      try(var session=f.storage.open(f.storage.plan(request(target,FillCurve.D2_XY,StorageScan.Sampling.INTERPOLATE,StorageScan.Coverage.EXACT,List.of())))) {
+        var scanner=(Storage.DoubleScanner)session.scanners().getFirst();
+        double weight=45.0/89.5; // Physical row centres are -45.5 and 44, target centre is -0.5.
+        assertTrue(scanner.isValid());assertEquals(259.25+weight,scanner.get(),1e-9);
+        assertTrue(scanner.isValid());assertEquals(59.25+weight,scanner.get(),1e-9);
+      }
+    }
+  }
+
 }

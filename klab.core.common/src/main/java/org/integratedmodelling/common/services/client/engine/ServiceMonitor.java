@@ -752,9 +752,9 @@ public class ServiceMonitor {
     }
 
     var ret = product.start();
-    if (ret && user != null) {
-      user.info("Service " + serviceType + " is starting");
-    }
+//    if (ret && user != null) {
+//      user.info("Service " + serviceType + " is starting");
+//    }
     if (publishStatus) {
       recomputeEngineStatus();
     }
@@ -866,15 +866,15 @@ public class ServiceMonitor {
                       + serviceType
                       + " is already reachable; authentication package was not sent");
             }
-            user.info(
-                "Service "
-                    + serviceType
-                    + " is already reachable: will be attempting connection to locally running "
-                    + serviceType);
+//            user.info(
+//                "Service "
+//                    + serviceType
+//                    + " is already reachable: will be attempting connection to locally running "
+//                    + serviceType);
           } else if (product.getStatus() == LocalInstance.Status.STOPPED) {
             prepareLocalAuthenticationHandoff(product, serviceType, user);
             if (product.start()) {
-              user.info("Service " + serviceType + " is starting");
+//              user.info("Service " + serviceType + " is starting");
             }
           } else {
             if (localAuthenticationPackage != null) {
