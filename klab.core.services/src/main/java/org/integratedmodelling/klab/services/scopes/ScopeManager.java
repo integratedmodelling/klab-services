@@ -48,13 +48,14 @@ public class ScopeManager {
   static boolean allowsManagedScope(ServiceUserScope managed, UserScope requester) {
     if (requester == null || requester.getUser() == null) return false;
     String username = requester.getUser().getUsername();
+    if (username == null || username.isBlank()) return false;
     if (managed instanceof ContextScope context) {
       var configuration = context.getConfiguration();
       String owner = configuration == null ? null : configuration.getOwner();
       if (owner == null && managed.getUser() != null) owner = managed.getUser().getUsername();
       return Objects.equals(owner, username) || (configuration != null
           && configuration.getAccessRights() != null
-          && configuration.getAccessRights().checkAuthorization(requester));
+          && configuration.getAccessRights().checkAuthorization(username, requester.getUser().getGroups()));
     }
     Object restoredOwner = managed.getData().get(PERSISTED_SESSION_OWNER);
     String owner = restoredOwner instanceof String persisted ? persisted

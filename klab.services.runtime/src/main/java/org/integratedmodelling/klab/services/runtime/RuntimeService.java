@@ -2761,7 +2761,8 @@ public class RuntimeService extends BaseService
   @Override
   public DigitalTwin.Configuration getConfiguration(String scopeId, UserScope scope) {
     var contextScope = getScopeManager().getScope(scopeId, ContextScope.class);
-    if (contextScope == null || scope == null) {
+    if (contextScope == null || scope == null || scope.getUser() == null
+        || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) {
       return null;
     }
 
@@ -2770,7 +2771,8 @@ public class RuntimeService extends BaseService
     var owner = configuration.getOwner();
     var accessRights = configuration.getAccessRights();
     if ((owner != null && owner.equals(requestingUser.getUsername()))
-        || (accessRights != null && accessRights.checkAuthorization(scope))) {
+        || (accessRights != null && accessRights.checkAuthorization(
+            requestingUser.getUsername(), requestingUser.getGroups()))) {
       return configuration;
     }
 

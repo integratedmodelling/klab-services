@@ -12,6 +12,8 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.driver.EagerResult;
 import org.neo4j.driver.Values;
@@ -42,8 +44,10 @@ class PersistedContextAccessTest {
                     name:'Private', description:'test', expiration:'EXPLICIT_ACTION', created:1, lastUpdate:1}),
                  (:Context {id:'owner.shared', user:'alice', rights:'alice,bob', federation:'local',
                     name:'Shared', description:'test', expiration:'EXPLICIT_ACTION', created:1, lastUpdate:1}),
-                 (:Context {id:'owner.public', user:'alice', rights:'*', federation:'other',
-                    name:'Public', description:'test', expiration:'EXPLICIT_ACTION', created:1, lastUpdate:1})
+                  (:Context {id:'owner.public', user:'alice', rights:'*', federation:'other',
+                     name:'Public', description:'test', expiration:'EXPLICIT_ACTION', created:1, lastUpdate:1}),
+                  (:Context {id:'owner.excluded', user:'alice', rights:'*,!bob', federation:'local',
+                     name:'Excluded', description:'test', expiration:'EXPLICIT_ACTION', created:1, lastUpdate:1})
           """);
       // Execute actual Cypher/ACL restoration without enabling Bolt: this module's
       // test dependency graph uses a Netty version incompatible with the harness
@@ -67,6 +71,7 @@ class PersistedContextAccessTest {
         return result;
       }).when(graph).query(anyString(), anyMap(), any(Scope.class));
       assertNull(graph.getAuthorizedConfiguration("owner.private", user("bob")));
+      assertNull(graph.getAuthorizedConfiguration("owner.excluded", user("bob")));
       var original = graph.getAuthorizedConfiguration("owner.private", user("alice"));
       assertEquals("alice", original.getOwner());
       assertEquals("alice", original.getAccessRights().toString());
@@ -87,5 +92,21 @@ class PersistedContextAccessTest {
     assertFalse(KnowledgeGraphNeo4j.authorizesPersistedContext(Map.of("rights", "*"), bob));
     assertThrows(org.integratedmodelling.klab.api.exceptions.KlabStorageException.class,
         () -> KnowledgeGraphNeo4j.authorizesPersistedContext(Map.of("user", "alice", "rights", 123), bob));
+  }
+
+  @ParameterizedTest
+  @CsvSource(delimiter = ';', value = {
+      "*;bob;READERS;true", "*,!bob;bob;READERS;false",
+      "*,!READERS;bob;READERS;false", "READERS;bob;READERS;true",
+      "READERS,!bob;bob;READERS;false", "bob,!READERS;bob;READERS;false",
+      "alice;bob;READERS;false", "*,!alice;alice;READERS;true"})
+  void persistedAclHonorsSameOwnerUserAndGroupDecisions(String rights, String username,
+      String groupName, boolean expected) throws Exception {
+    var requester = user(username);
+    var group = mock(org.integratedmodelling.klab.api.identities.Group.class);
+    when(group.getName()).thenReturn(groupName);
+    when(requester.getUser().getGroups()).thenReturn(List.of(group));
+    assertEquals(expected, KnowledgeGraphNeo4j.authorizesPersistedContext(
+        Map.of("user", "alice", "rights", rights), requester));
   }
 }

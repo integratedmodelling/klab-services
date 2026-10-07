@@ -518,3 +518,34 @@ def test_missing_geometry_cannot_be_presented_as_scientific_data(observation):
         result = observation_from_wire(observation, Context(client, {"id": "s.c"}))
         with pytest.raises(ProtocolError, match="geometry"):
             result.fetch_data([0])
+
+
+@pytest.mark.parametrize("kind", ["context", "session"])
+def test_service_release_rejects_foreign_runtime_before_http(kind):
+    from klab_client import Session
+    with make_client(lambda r: pytest.fail("Foreign disposal must not make HTTP")) as first:
+        with Client("https://other-runtime.invalid") as second:
+            scope = Context(second, {"id": "s.c"}) if kind == "context" else Session(second, "s")
+            operation = first.runtime.release_context if kind == "context" else first.runtime.release_session
+            with pytest.raises(InvalidRequestError, match="different runtime"):
+                operation(scope)
+
+
+@pytest.mark.parametrize("kind", ["context", "session"])
+@pytest.mark.parametrize("raw", [False, True])
+def test_service_release_accepts_same_runtime_other_client_and_explicit_ids(kind, raw):
+    from klab_client import Session
+    calls = []
+    def handler(request):
+        calls.append(request.url.path)
+        assert request.headers["klab-scope"] == ("s.c" if kind == "context" else "s")
+        return httpx.Response(200, json=True)
+    with make_client(handler) as current:
+        old = Client("https://runtime.invalid/")
+        scope = Context(old, {"id": "s.c"}).within(8) if kind == "context" else Session(old, "s")
+        old.close()
+        operation = current.runtime.release_context if kind == "context" else current.runtime.release_session
+        if raw:
+            scope = scope.get_context_id() if kind == "context" else scope.id
+        assert operation(scope)
+    assert calls == ["/releaseContext" if kind == "context" else "/releaseSession"]

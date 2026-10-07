@@ -228,12 +228,24 @@ class RuntimeServiceImpl(_RemoteService, RuntimeService):
 
     def release_session(self, scope: SessionScope) -> bool:
         from klab_client.client import scope_token
+        self._check_release_binding(scope)
         return self._release("/releaseSession", scope_token(scope).split(".")[0])
 
     def release_context(self, scope: ContextScope) -> bool:
         from klab_client.client import scope_token
+        self._check_release_binding(scope)
         # Release the root context, never dispose an arbitrary focused observation.
         return self._release("/releaseContext", ".".join(scope_token(scope).split("#")[0].split(".")[:2]))
+
+    def _check_release_binding(self, scope):
+        """Bound handles must refer to this Runtime before destructive HTTP."""
+        from klab_client.errors import InvalidRequestError
+        self._require_client()
+        bound = getattr(scope, "client", None)
+        if bound is not None and (
+                bound.transport.endpoint("runtime").url.rstrip("/")
+                != self.client.transport.endpoint("runtime").url.rstrip("/")):
+            raise InvalidRequestError("Release scope belongs to a different runtime")
 
     def query_knowledge_graph(self, query: dict[str, Any], scope: Scope) -> list[dict[str, Any]]:
         from klab_client.errors import ProtocolError, UnsupportedOperationError
