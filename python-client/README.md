@@ -120,9 +120,9 @@ raw DTOs; scientific values are a distinct storage route.
 * [Live reference format](docs/live-acceptance.md)
 * [Reproducible local tests and throughput](docs/throughput.md)
 * [Separate server/client/tooling review](docs/review.md)
-* Developer history: `../notes/python-client/work-log.md` (not package documentation)
+* Resume note: `../notes/python-client/work-log.md` (not package documentation)
 
-Compatibility targets the server baseline 75bf1f7d2 plus the bounded corrections
+Compatibility was revalidated with develop 64754ea2b plus the bounded corrections
 in this branch. This is not a package-publication or maintainer-approved roadmap
 claim. CI runs offline tests; live tests require an explicit configured stack and
 fail, rather than skip-as-success, when prerequisites are missing.

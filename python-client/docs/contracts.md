@@ -1,8 +1,10 @@
 # Supported transport contracts
 
-Source baseline: klab-services **75bf1f7d2**, plus the bounded corrections in this
-branch. The specification's e24b756f revision was unavailable locally. Routes/DTOs
-were checked against the actual Java clients/controllers, not guessed from constants.
+Current integration target: klab-services develop **64754ea2b**, plus the bounded
+corrections in this branch. The initial route review used **75bf1f7d2** when the
+specification's e24b756f revision was unavailable locally. Routes/DTOs were checked
+against actual Java clients/controllers, with current integrated regression/live
+checks; they were not guessed from constants.
 
 | Python operation | Verb / route | DTO / identity |
 |---|---|---|
@@ -35,6 +37,9 @@ from scientific correctness; missing cell text is null, not zero/False.
 String units/null job outcomes and local semantic indexing/storage registration
 have bounded server corrections here. Context reconstruction uses exact persisted
 owner/ACL, defaults missing legacy ACL to owner-only, and never derives rights
-from requester or federation. Domain errors are mapped at REST/filter boundaries.
+from requester or federation. Public user/group exclusions apply to warm and
+cold access. Unresolved explicit scopes return 404 before controllers. Domain
+errors are mapped at REST/filter boundaries. Destructive release rejects foreign
+bound Runtime handles; explicit bare IDs carry no origin information.
 Unsupported methods and compatible legacy descriptor mappings are listed in
 [public-api.md](public-api.md). See [tests/reproduction](throughput.md).

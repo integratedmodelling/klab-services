@@ -40,7 +40,8 @@ The runner is Windows-only; the importable SDK/offline CI are cross-platform.
   user proves an allowed operation before private access must return explicit denial.
   5xx, malformed responses, timeout or transport failure cannot count as denial.
 * Private/shared context ACLs preserved across a real Runtime registry restart,
-  including users with the same local federation. Enumeration is not authority.
+  including users with the same local federation. Public exclusions deny listing,
+  attachment and scoped requests both warm and cold. Enumeration is not authority.
 
 This is an isolated test deployment and synthetic fields, not production-hub
 onboarding or observed terrain. The separate [provider/reference suite](live-acceptance.md)
@@ -70,17 +71,22 @@ counts and optional OS JVM CPU/RSS/IO counters. No private credentials are copie
   --warmup 1 --duration 15 --server-state-dir 'C:\state' --report 'C:\state\full.json'
 ```
 
-Baseline before the maintainer revisions (Windows 11, Python 3.11.9, JDK 21.0.12.1):
+Verified 7 October on integrated develop `64754ea2b` plus the reviewed
+remediation (Windows 11, Python 3.12.7, JDK 21.0.12.1+1; minimum 8 samples/15 seconds):
 
 | Phase | Verified / failed | Workflow or read-cycle rate/s |
 |---|---:|---:|
-| Full c1 | 8 / 0 | 0.355 workflows |
-| Full c2 | 12 / 0 | 0.678 workflows |
-| Full c4 | 17 / 0 | 0.949 workflows |
-| Repeated read c4 | 54 / 0 | 3.389 read cycles |
+| Full c1 | 8 / 0 | 0.283 workflows |
+| Full c2 | 10 / 0 | 0.549 workflows |
+| Full c4 | 14 / 0 | 0.721 workflows |
+| Repeated read c4 | 41 / 0 | 2.576 read cycles |
 
-[Baseline JSON](results/local-throughput.json) retains exact times/counters and
-source checkpoint. These are short, small-field point-read measurements, not
+[Measurement summary](results/local-throughput.json) records that measurement
+preceded the integration/remediation commits; full external reports retain compiled/source hashes,
+SNAPSHOT provenance, stage timings and resource counters. This is not a controlled
+before/after performance comparison.
+
+These are short, small-field point-read measurements, not
 maximum capacity, bulk bytes/s, cold-cache or robust tail-latency SLAs. Current
-revision checks/results are in [separate reviews](review.md); detailed development
-history is under repository `notes/python-client/` and is not shipped with the SDK.
+revision checks/results are in [the verification record](review.md). Earlier
+development drafts and measurements remain available in Git history.
