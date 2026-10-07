@@ -9,11 +9,16 @@ Shared decision IDs **OR-01 through OR-12** have the same meaning in both guides
 operation is explained under **DETAILED WORKFLOW TO BE DECIDED**, with the decision needed and an
 interim way to preserve useful work. Those entries are proposals for agreement, not adopted policy.
 
+This revision distinguishes current controls from a proposed repeatable public-review/integration
+cycle. Technical contracts are in the [behavior design](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md); the
+[land/agriculture note](ONTOLOGY_REVIEW_LAND_AGRICULTURE.md) is a worked boundary proposal for discussion.
+
 ## Find a task
 
 - [Obtain the case and access](#obtain-the-case-and-the-right-access).
 - [Find the proposal and source view](#find-the-proposal-and-inspect-source-beside-it), then [verify the candidate](#verify-what-you-are-being-asked-to-judge).
 - [Examine meaning and coverage](#examine-meaning-evidence-and-coverage), then [interpret automatic checks](#separate-automatic-checks-from-judgment).
+- [Use configured actions](#use-configured-stage-actions-when-available) and [discuss repeated contributions](#proposed-repeated-contributions-and-integration).
 - [Give feedback, return work and re-review](#give-actionable-feedback-and-return-work).
 - [Address public input and disagreements](#public-input-and-disagreements); consult the [state/action matrix](#state-and-action-reference) and [decision boundary](#or-09).
 - [Preserve decisions and recover](#preserve-a-reproducible-decision-and-recover-from-conflicts), then use the [reviewer's checklist](#reviewers-checklist).
@@ -22,37 +27,49 @@ interim way to preserve useful work. Those entries are proposals for agreement, 
 
 | Decision | Topic | Decision | Topic |
 | --- | --- | --- | --- |
-| [OR-01](#or-01) | Editor selection and ownership | [OR-07](#or-07) | Public and external participation |
+| [OR-01](#or-01) | Author/integrator ownership | [OR-07](#or-07) | Public and external participation |
 | [OR-02](#or-02) | Reviewers, quorum and conflicts of interest | [OR-08](#or-08) | Disagreement and escalation |
 | [OR-03](#or-03) | Scope, imports and authority policy | [OR-09](#or-09) | Acceptance and rejection policy |
 | [OR-04](#or-04) | Package and evidence binding | [OR-10](#or-10) | Application, Git and publication |
 | [OR-05](#or-05) | Semantic validation and probes | [OR-11](#or-11) | Retention, archival and migration |
-| [OR-06](#or-06) | Feedback and action records | [OR-12](#or-12) | Live operation and recovery |
+| [OR-06](#or-06) | Contributions and integration | [OR-12](#or-12) | Live operation and recovery |
 
 ## Current state and review boundary
 
-Verified on **2026-10-04** against newly fetched remote `develop` branches:
+Verified on **2026-10-07**, after fetching both repositories' remote `develop` branches:
 
-| Repository | Verified merged baseline |
-| --- | --- |
-| klab-services | [`efba529aa2ae384acd4eff6f9e4f33817a04f487`](https://github.com/integratedmodelling/klab-services/commit/efba529aa2ae384acd4eff6f9e4f33817a04f487), containing [PR #83](https://github.com/integratedmodelling/klab-services/pull/83) final head `45ac91ac51770649e3f6f84f004c5f20d176a700`, including schema increment `cf0798712`. |
-| klab-ide | [`90b3116c2eab1b712fa5a3e0eeadbd3065207eae`](https://github.com/integratedmodelling/klab-ide/commit/90b3116c2eab1b712fa5a3e0eeadbd3065207eae), containing [PR #1](https://github.com/integratedmodelling/klab-ide/pull/1) final head `474a9f9016d7e3ea18572911cd4c78312227cb71`. |
+| Repository | Verified source baseline | Relevant capability |
+| --- | --- | --- |
+| klab-services | [`5bae64208a7098c6ee1e81813bd494f3417ce3be`](https://github.com/integratedmodelling/klab-services/commit/5bae64208a7098c6ee1e81813bd494f3417ce3be) | Review protocol plus workflow behavior hooks, content attachments and document/project actors. |
+| klab-ide | [`70c4bd9ac0b42004511b8fd855483b31fb720467`](https://github.com/integratedmodelling/klab-ide/commit/70c4bd9ac0b42004511b8fd855483b31fb720467) | Native proposal forms plus configured stage buttons and parameter dialogs. |
 
-These guides describe bundled `ontology-expert-review` **1.1**, typed review extension **1**, and
-context-pack proposal format **1.3**. Existing flows keep their pinned workflow version. Confirm the
-version of the actual service/IDE before applying these instructions; merged source is not proof of
-deployment.
+The bundled `ontology-expert-review` remains **1.1**, typed review extension **1**, and context-pack
+proposal format **1.3**. It has **no configured behavior, lifecycle actions or stage buttons**.
+The generic mechanisms are shipped; the review automation and iterative contribution cycle proposed
+here are not. Existing flow versions and actual deployed service/IDE versions must be checked.
 
-**Production acceptance is blocked.** You can inspect, record a permitted review transition, request
-changes and inspect a superseding revision. Real server schema validation and isolated parsing are
-available. Authoritative import snapshots and isolated Reasoner validation are still missing, and
-imported adaptation is blocked. Neither a schema pass nor a parser pass establishes scientific
-validity. The workflow does not apply ontology changes, publish a PR or release a worldview.
+**Production acceptance remains blocked.** The server validates the document schema and parses
+candidate ontology bytes in isolation. Authoritative import snapshots and isolated Reasoner
+validation remain unavailable; imported adaptation is blocked. Schema/parser success does not
+establish scientific validity. This review protocol does not apply ontology changes, create a Git
+commit/PR or publish a release. Document/project actors now provide mutation primitives, but safe
+review application and release orchestration are still missing.
 
-The native UI has reported compilation, 20 focused tests, isolated source/stage rendering and an
-in-memory backend handoff. A live authenticated HTTP session and physical glyph selection through
-the complete Monaco bridge remain unverified. Instructions below describe source-backed controls,
-with that limit; [OR-12](#or-12) records the remaining operational decision.
+Use these labels throughout: **shipped mechanism** means present in source; **proposed wiring**
+means an action can be connected but is not configured; **missing primitive/API** needs implementation;
+**policy** needs human agreement. The [behavior design](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md) maps
+every operation to hooks, actors, contracts and decisions. Its examples are design pseudocode.
+
+The earlier native review tests and new bridge/input tests provide implementation evidence, not a
+live demonstration of the proposed workflow. This revision inspected source; it did not rerun
+runtime tests or verify a deployed HTTP/Monaco session. See [OR-12](#or-12).
+
+A **proposal** explains intended changes; its **candidate ontology** is the exact source offered
+for review. A **dossier** connects sources, concepts and questions. A **round** in the proposed design
+collects independently owned proposals against one immutable packet. A checksum identifies bytes,
+not scientific truth. Proposal revision, flow revision and document storage/base revision identify
+different things. You can gather sources and prepare packets offline; protected reads, uploads and
+recorded workflow actions require the authenticated Resources service.
 
 ## Obtain the case and the right access
 
@@ -70,20 +87,24 @@ read-only by the IDE. Missing stages/history may reflect access filtering, not m
 
 ### OR-01
 
-**DETAILED WORKFLOW TO BE DECIDED** — Editor appointment, co-authorship, ownership transfer and initial
-asset provisioning need a responsible authority and procedure. Identify the author to whom questions
-and returned work belong; do not assume that a visible stage owner establishes scientific expertise.
-The backend normally returns requested changes to the original flow author.
+**DETAILED WORKFLOW TO BE DECIDED** — Appoint the author/editor, contribution owners and an
+explicit integrator; decide competence, substitution, co-authorship and conflicts when one person
+holds several responsibilities. Recommend keeping each submitted proposal's actual author and
+letting the integrator own a separate integrated proposal. The flow owner and current stage owner
+are not interchangeable. The current return transition goes to the original author; the proposed
+review/integration loop need not detour through author editing every time. New bootstrap asset
+provisioning remains an operational decision. See [responsibility contracts](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#roles-access-and-public-participation).
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-01).
 
 ### OR-02
 
-**DETAILED WORKFLOW TO BE DECIDED** — Agree reviewer qualifications, appointment, quorum, recusal and
-conflicts-of-interest policy. Declare relevant interests and the limits of your expertise to the
-coordinator. Backend owner/assignee fields exist, but the native proposal form has no assignment
-selector or implemented invitation procedure. Decide how assignment is made and verified, how
-reviewers are notified, and how multiple judgments are retained before one transition closes the
-stage. No current gate enforces independent scientific consensus.
+**DETAILED WORKFLOW TO BE DECIDED** — Agree assigned-review qualifications, quorum, recusal,
+conflicts and notification. Assigned expertise complements PUBLIC participation; public contributors
+must not need invitations or special reviewer grants. Recommend a user-accessible, case-scoped Hub
+reviewer query in a separate controller, with profile consent and workflow visibility checks.
+`klab.hub` is not installed here: [the query contract](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#c06--user-accessible-hub-reviewer-query)
+is proposed, not an existing endpoint or IDE picker. Existing owner/assignee fields can support
+authorized assignment, but they do not implement discovery, assignment acceptance or consensus.
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-02).
 
 ## Find the proposal and inspect source beside it
@@ -114,6 +135,39 @@ clears its markers. **DETAILED WORKFLOW TO BE DECIDED (OR-04)** — Arbitrary-sp
 review anchors need a shared contract linking the span, artifact and revision; version 1 does not
 supply it. Use stable concept/issue references and exact attachment locators meanwhile.
 
+## Use configured stage actions when available
+
+The new generic mechanism renders buttons configured in a stage's `actions` list, separately from
+the transition selector. **The bundled ontology workflow configures none.** Names such as
+**Extract proposal**, **Attach current document snapshot** and **One more contribution** in this
+design are proposed operations, not current menu instructions.
+
+On an instrumented workflow supplied by an administrator, a persisted current stage must be
+editable by you. Provisional initial stages and read-only stages do not offer these buttons.
+
+1. Preserve unsaved notes and proposal form edits. A behavior uses saved server state. The native
+   proposal form has no separate Save-note operation; pressing a behavior button is not a save.
+   The existing unsaved-draft confirmation can ask to discard edits. Choose **Cancel** if those
+   edits have not been safely preserved.
+2. Select an available configured button. Its tooltip says it runs the named action using the
+   saved stage. Discovery rechecks availability and returns the authoritative revision.
+3. Read the dialog's saved-stage warning. Enter only the requested text, boolean or numeric
+   parameters. Agent/object selection, reviewer pickers and buffer capture need new UI contracts.
+   **Cancel** invokes no action; **Run** sends that configured action and discovered revision.
+4. Wait for the background request. On success the editor refreshes and clears proposal drafts;
+   inspect the saved result before taking another action. A button does not itself advance the
+   stage unless a future typed operation expressly provides that behavior.
+5. On a stale revision, failure or missing response, keep the draft and reconcile with a fresh case
+   before retrying. Current buttons have no durable execution receipt. An external effect or flow
+   save may already have happened; do not infer rollback from the error dialog.
+
+The `editor` injected into a behavior is a read-only saved-stage description, not the source-editor
+widget. `document` reads current server source. Capturing the unsaved document currently on screen
+needs an explicit freeze/upload step under [OR-04](#or-04). Existing content actors can attach text,
+bytes, an allowed server file or an HTTP(S) URL; a server-file path is not an IDE-local file path.
+Attachment rules and ownership still apply. Document/project changes use the acting participant's
+permissions and do not become safe merely because a workflow calls them.
+
 ## Verify what you are being asked to judge
 
 In **Candidate**, record proposal ID, revision ID, superseded revision, proposal and ontology attachment
@@ -131,27 +185,31 @@ For workflow 1.1 the logical types are `bootstrap-proposal`
 (`application/vnd.klab.proposal+yaml`), `bootstrap-comments`
 (`application/vnd.klab.comments+json`), `candidate-ontology`
 (`application/vnd.klab.ontology`), and `supporting-material` (general files). A research dossier is
-supporting evidence, not automatically a valid context-pack proposal. Version 1.0's historical
-comments mismatch needs the handling in [OR-11](#or-11).
+supporting evidence, not automatically a valid context-pack proposal. These instructions target 1.1;
+record older flow versions and resolve archival/migration under [OR-11](#or-11), rather than
+disguising an attachment's media type.
 
 ### OR-03
 
-**DETAILED WORKFLOW TO BE DECIDED** — Agree source standards, provisional domain boundaries/names,
-root/tier governance, authority providers, authoritative import revisions/hashes and invalidation
-when imports change. Check each claimed imported parent and ask for the exact supporting snapshot.
-Lower-tier work needs its authoritative Tier-1 context; only root accesses ODO directly. A missing
-parent is an upstream issue, not permission to invent one. Read the [context pack][context],
-[ontology language](ONTOLOGY_LANGUAGE.md) and [authority limits](AUTHORITIES.md).
+**DETAILED WORKFLOW TO BE DECIDED** — Agree domain boundaries/names, upper-ontology parentage,
+source standards, authority providers and immutable import policy. Recommend adding **agriculture**
+as a candidate domain while retaining **land** for cross-sector land use, management, relationships,
+conflicts and degradation. The [source-grounded boundary note](ONTOLOGY_REVIEW_LAND_AGRICULTURE.md)
+preserves all 27 candidate dispositions and blockers; it authorizes no ontology changes. The current
+`contextDigest` binds declared `existing_ontologies`, not their authority, completeness or freshness.
+Keep missing imports and disputed meanings open until their owners resolve them.
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-03).
 
 ### OR-04
 
-**DETAILED WORKFLOW TO BE DECIDED** — Establish the four-artifact transport manifest, comments format,
-evidence-role/revision binding and proof that candidate ontology bytes implement the approved action
-set against the correct base/preconditions. Current IDs and hashes prevent substitution; they do
-not prove that a requested rename, split, deletion or semantic change was correctly implemented.
-Inspect that correspondence manually and record missing mappings. The offline pilot supplies local
-evidence, not service acceptance; there is no automatic research-dossier conversion contract.
+**DETAILED WORKFLOW TO BE DECIDED** — Standardize immutable snapshots, base revisions, package
+manifest, evidence access/provenance and cross-proposal lineage. Current proposal bytes and candidate
+bindings are protected, but live document handles are not snapshots. A saved-source attachment can
+be prototyped with existing actors; atomic source/base capture and unsaved IDE-buffer capture need
+new contracts. Proposal extraction is a missing actor, not a current button. Never replace bytes
+after exact confirmation. See [snapshot](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#c03--saved-source-and-ide-buffer-snapshots)
+and [extraction contracts](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#c04--proposal-extraction-questions-and-predicates).
+The comments MIME alone does not define a complete comments schema or prove action/source correspondence.
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-04).
 
 ## Examine meaning, evidence and coverage
@@ -203,14 +261,14 @@ domain-expert review. The sandbox's fresh agent probes were candidate-visible.
 
 ### OR-05
 
-**DETAILED WORKFLOW TO BE DECIDED** — Define independent/blind probe arrangements, per-expression
-reference/type/ancestry results, imported adaptation, an isolated Reasoner over immutable snapshots,
-and representative observation/model checks. Agree required outcomes and who may attest to them.
-Do not casually run the existing Reasoner validation as read-only: it may synchronize authoritative
-knowledge. Change/cessation must remain driven by an occurrent (a process or event), `change in X` resolves separately, and
-unresolved change continues open-world rather than implying zero. Implication/detection are
-syntax-only here; proposed `confers` has no active executable clause. Review does not demonstrate
-execution of a future consequence engine. [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-05).
+**DETAILED WORKFLOW TO BE DECIDED** — Provide a typed action facade for isolated checks, immutable
+authoritative imports, isolated Reasoner validation, action/source correspondence and reproducible
+question probes. Existing document `notifications()` is not a candidate validation receipt.
+Do not invoke authoritative Reasoner operations as casual read-only checks: they may mutate knowledge.
+Record validator/version, exact inputs and PASS/FAIL/BLOCKED/NOT_RUN separately from human judgment.
+Candidate-visible automated probes are not blind or domain-expert review. See the
+[validation contract](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#c05--validation-and-readiness).
+[Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-05).
 
 ## Separate automatic checks from judgment
 
@@ -235,7 +293,47 @@ types; its zero exit status may accompany acceptance BLOCKED. Older [backend out
 and [IDE notes][ide-notes] predate the schema increment; the merged [schema implementation evidence][increment]
 supersedes that specific historical blocker.
 
+## Proposed repeated contributions and integration
+
+**DETAILED WORKFLOW TO BE DECIDED — OR-04, OR-06, OR-07, OR-08.** The intended PUBLIC path admits
+Hub-authorized people without invitations or special reviewer grants. Assigned review remains useful
+for targeted expertise. Both paths would use the following sequence; it is not a current UI flow.
+
+1. Open an accessible review round and its immutable published packet. Confirm round ID, candidate
+   and base revisions, evidence access, deadline and your allowed contribution operations. Public
+   read visibility alone is not permission to contribute; eligibility is checked through the Hub.
+2. Start your own proposal. Record evidence, questions, counterexamples, requested actions and any
+   alternative candidate snapshot. An endorsement or objection is still an attributed proposal.
+   Your proposal does not modify another reviewer's work or the author's frozen candidate.
+3. Submit against that exact round/base and retain the receipt. A proposed **One more contribution**
+   control prepares another owned draft without changing the shared review stage. For a new claim,
+   use a new proposal ID; to correct your earlier submission, explicitly supersede your own revision.
+   Ownership and immutable lineage apply to PUBLIC and assigned reviewers alike.
+4. If the round closes or its current material changes while you draft, keep your draft. Expect an
+   explicit late/stale response. Do not relabel an old review as if you inspected a new candidate;
+   compare/rebase deliberately before submitting to another round.
+5. Read the integrator's disposition of every submitted action and the resulting integrated
+   proposal. Raise an attributed correction or appeal if your meaning was lost. Dissent, deferred
+   work and unresolved semantics must remain visible to authorized readers.
+6. The editor may send revised material into another public round or judge it sufficient to move
+   to the next permitted stage. Re-review the new exact revision when a round repeats. Onward
+   progression is not final scientific acceptance, project application or publication.
+
+An editor may integrate provisionally while contributions continue, but final integration uses a
+frozen cutoff manifest, not the mutable current status. Contributions accepted after a provisional
+batch need explicit reconciliation; later-than-cutoff work needs a receipt and next-round/decline
+decision. Whether provisional integration and other reviewers' proposals are visible during review
+is a policy choice, especially for blind review.
+
+The narrow append operation is the recommended minimal addition. A contributor-local flow with a
+same-schema **contribute-again** transition is an alternative. A self-loop on the shared review stage
+would close it and disrupt other participants. Neither approach grants PUBLIC permission to integrate,
+advance the main review, accept or apply. See the [design and alternatives](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#proposed-round-and-proposal-model).
+
 ## Give actionable feedback and return work
+
+The steps in this section describe today's single-candidate return path. The proposed repeated
+contribution cycle above keeps individual feedback from closing the shared review stage.
 
 Write each finding so the editor can respond without guessing: identify the candidate revision,
 concept/question/action ID, field or expression, observed problem, source/counterexample, requested
@@ -249,13 +347,15 @@ is a proposed change, not a claim that the source has already been edited or tha
 
 ### OR-06
 
-**DETAILED WORKFLOW TO BE DECIDED** — Choose persistent feedback threads, source-line comments, issue
-states and the route from reviewer suggestions to approved revision/action records. The native
-**Decision / Your rationale** is usable now with a permitted transition; it has no separate Save-note
-operation. Proposal review does not implement comment creation through margin double-click. An
-assigned-reviewer role alone cannot upload attachments or edit the frozen dossier. An authorized
-stage editor may append admitted comments/support; agree how reviewers deliver such material and
-how its authorship/revision is preserved. Keep a local issue ledger meanwhile.
+**DETAILED WORKFLOW TO BE DECIDED** — Recommend independent reviewer proposals and an explicit
+editor-owned integration stage. A proposed **One more contribution** action appends only that
+person's submission to an exact open round; it does not transition the shared review stage. Each
+proposal has its own identity, revision, evidence, base and attribution. The integrator records
+dispositions and produces an integrated proposal, then chooses a new public round with revised
+material or progression to the next permitted stage. Author editing can be requested when needed.
+Current rationale/return controls do not implement this cycle. Decide new-versus-superseding
+contributions, draft storage and whether integration drafts are visible while collection is open.
+See [the proposed round model](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#proposed-round-and-proposal-model).
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-06).
 
 To request changes in an accessible current review stage:
@@ -287,27 +387,32 @@ review access/assignment must be checked again for the new stage.
 
 ### OR-07
 
-**DETAILED WORKFLOW TO BE DECIDED** — Decide external reviewer onboarding, public/anonymous access,
-invitations, moderation, accessible feedback channels and permitted publication of source evidence.
-`open-input` is available to admitted ADMIN/EDITOR actors and advances the same candidate to
-`community-review`; it does not contact anyone. `PUBLIC` is the authenticated known-real-person
-mechanism, including email and `workflow.knownRealPerson=true`, not anonymous participation.
-`publicRead` permits identified callers to browse and is read-only in the native UI. Prepare questions
-and an exact-version packet for external human feedback, then have the coordinator establish the
-participation/sharing route. No current button promises anonymous comments or invitations.
+**DETAILED WORKFLOW TO BE DECIDED** — Implement Hub-authorized PUBLIC participation without
+special reviewer grants or invitations, with an accessible published packet and a narrow operation
+for each person's own proposals. This is identified participation, not anonymous access. Agree
+moderation, quotas, evidence disclosure and the Hub assertion/renewal contract. In current source,
+`PUBLIC` is an admitted-group sentinel, not a `WorkflowRole` enum value. Known-person eligibility
+requires authentication, non-anonymity, email and `workflow.knownRealPerson=true`; default REVIEWER
+is added only if no workflow roles exist. PUBLIC access does not bypass stage ownership or make
+generic uploads/buttons public. `publicRead` separately controls visibility and is read-only in the
+IDE. See [the exact current and proposed distinction](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#roles-access-and-public-participation).
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-07).
 
 ### OR-08
 
-**DETAILED WORKFLOW TO BE DECIDED** — Agree escalation, adjudicator, disagreement records, coverage
-shortfall waivers and treatment of unresolved scientific alternatives. Identify the precise competing
-meanings and their evidence; distinguish lack of evidence from incompatible interpretations. Route
-root/import or cross-domain questions to their responsible owners once identified. Do not erase
-unresolved semantics or infer consensus from a stage description saying “assigned reviewers have
-recorded a decision.” The software does not implement a quorum vote.
+**DETAILED WORKFLOW TO BE DECIDED** — Choose adjudicator, escalation and appeal policy. Recommend
+an explicit disposition for every contribution action: adopt, modify, defer, reject or unresolved,
+with reasons and attribution. Preserve dissent and incompatible alternatives; no arrival order,
+vote count or generated summary establishes scientific truth. The editor may integrate provisionally
+while collection is open, but final integration must use an immutable cutoff manifest and reconcile
+all later admitted submissions. Decide whether reviewer acknowledgment or a pending appeal blocks
+progression. See [integration](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#c08--integration-and-the-next-step).
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-08).
 
 ## State and action reference
+
+This matrix describes **current bundled workflow 1.1 only**. It is not the proposed public
+contribution/integration topology, which needs new typed operations and wiring.
 
 The [workflow YAML][workflow] is the basis for this matrix. Every row is additionally constrained by
 workflow/stage/group access, current state, ownership or assignment, response deadline and exact
@@ -331,13 +436,13 @@ rejection, not source deletion. Do not use a terminal decision merely to save in
 
 ### OR-09
 
-**DETAILED WORKFLOW TO BE DECIDED** — Agree acceptance/rejection authority and meaning, partial or
-action-level approval/deferral, and a renewed-review route after rejection or changed dependencies.
-Current decisions bind the whole candidate and action set. An acceptance attempt requires the exact
-ontology, exactly one PASS each for IMPORT_CONTEXT, DOCUMENT_SCHEMA, PARSER, ADAPTATION and REASONER,
-no dossier unresolved semantics, and explicit authenticated human rationale. The server reruns checks;
-the native UI disables acceptance when required results are missing/non-PASS. Default production
-checks still block it. Do not treat synthetic acceptance fixtures as validation of a real ontology.
+**DETAILED WORKFLOW TO BE DECIDED** — Define the editor's sufficiency criteria for advancing
+integrated work, separately from final acceptance/rejection authority. Moving to the next stage is
+not acceptance or publication. Recommend whole-candidate human acceptance initially; partial approval
+requires a rebuilt exact candidate and revalidation. Current acceptance requires an ontology, exactly
+one PASS each for IMPORT_CONTEXT, DOCUMENT_SCHEMA, PARSER, ADAPTATION and REASONER, no unresolved
+semantics and authenticated human rationale. The server reruns checks; production defaults still
+block acceptance. Neither a behavior action nor an integrator's judgment may forge those gates.
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-09).
 
 The protocol's terminal `accepted` state would alias the verified proposal as `final-proposal` and
@@ -349,11 +454,13 @@ and retention arrangements remain [OR-11](#or-11).
 
 ### OR-10
 
-**DETAILED WORKFLOW TO BE DECIDED** — Decide authoritative application, approved-action execution,
-Git/PR destination and owner, release authority, publication, rollback and repeat validation. Even
-an accepted review does not perform these operations. `APPLICATION` and `PR_HANDOFF` remain BLOCKED.
-The YAML's publication provenance label is not proof of publication. A future handoff should carry
-exact candidate/base/import references, human rationale, unresolved gates and verification results.
+**DETAILED WORKFLOW TO BE DECIDED** — Define authorized application, Git/PR handoff, publication
+and rollback. `document.update` and project CRUD now provide real source mutation primitives;
+`project.write_text` can store additional material and stage its path in Git. They do not supply
+base-revision compare-and-swap, review application, an isolated commit/PR or release actor.
+Project writes survive a later workflow failure. Recommend a dry-run plan, exact base check,
+separate authorization and durable effect receipt before application. `APPLICATION` and `PR_HANDOFF`
+remain BLOCKED in the review protocol. See [application boundaries](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#c11--application-git-and-release-handoff).
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-10).
 
 ## Preserve a reproducible decision and recover from conflicts
@@ -389,23 +496,26 @@ delete/reopen shortcuts.
 
 ### OR-11
 
-**DETAILED WORKFLOW TO BE DECIDED** — Define retention period, enduring reviewer access, restricted-source
-handling, archival, withdrawal/correction and migration of old flows. Bound candidate payloads cannot
-be deleted and the opted-in lifecycle blocks direct review stage creation/deletion, flow deletion and reopen.
-That is audit protection, not a full archive policy. Pinned 1.0 flows may retain inconsistent
-editing-comments MIME declarations; no automatic migration or `comments+yaml` support exists. Refer
-such cases to the coordinator with version and error details rather than disguising the file type.
+**DETAILED WORKFLOW TO BE DECIDED** — Agree cutoff, late contributions, withdrawal, retained
+access, restricted-source handling and archival. Recommend sealed round/submission manifests;
+late input receives a receipt and an explicit next-round or rejection disposition. Reopening creates
+a linked new round rather than changing the old base. Current proposal flows block direct stage
+creation/deletion, flow deletion and generic reopen. Generic behavior-only flows have weaker closure
+protection and need typed guards before reuse. No backward-compatibility requirement dictates the
+new protocol; decide archival treatment of existing flows explicitly. See
+[closure policy](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#c09--decisions-closure-reopening-and-late-contributions).
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-11).
 
 ### OR-12
 
-**DETAILED WORKFLOW TO BE DECIDED** — Establish a supported live setup and authenticated HTTP access
-test, physical Monaco interaction checks, reliable assignment/notification, persistent draft recovery
-and concurrency recovery. Current UI/in-memory tests are not live service proof; effective HTTP
-Role.USER enforcement still needs integration verification. Whole-application shutdown draft recovery
-and nonblocking transition transport are follow-up work. Keep local notes. Catalog projection is
-separate from aggregate persistence and multi-process compare-and-set is not implemented; operational
-guarantees must be selected and tested before broad simultaneous use.
+**DETAILED WORKFLOW TO BE DECIDED** — Establish live authenticated HTTP/Monaco verification,
+durable operation receipts, idempotency/outbox, owner identity after restart and concurrency recovery.
+A catalog error can occur after the flow revision committed; project writes/email can also survive
+a failed action. Reconcile saved state and effects before retrying. New actions require exact flow,
+contributor and document/base checks as applicable; a negative revision must not bypass them.
+The manager currently serializes operations in one process; scalable public collection needs scoped
+coordination and storage-level atomic admission/closure. Pin behavior source and test upgrades,
+timeouts and revoked permissions. See [recovery contracts](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#c12--recovery-durability-and-behavior-updates).
 [Editor counterpart](ONTOLOGY_REVIEW_EDITING.md#or-12).
 
 ## Reviewer's checklist
@@ -421,8 +531,19 @@ guarantees must be selected and tested before broad simultaneous use.
 - [ ] Exact candidate/actions/import binding and rationale verified at confirmation; resulting history checked.
 - [ ] Superseding revisions re-reviewed; unresolved OR-01 through OR-12 decisions remain visible.
 - [ ] Acceptance, application, Git/PR and publication boundaries explicitly reported.
+- [ ] Current controls distinguished from proposed actions; no configured ontology behavior assumed.
+- [ ] PUBLIC eligibility separated from public visibility, assignment and integration/acceptance authority.
+- [ ] Each contribution and integration proposal preserves owner, immutable base and supersession lineage.
+- [ ] Round cutoff, late submissions, dissent and both integration exits accounted for.
+- [ ] Action error reconciled against persisted flow and external effects before retrying.
 
 ## Implementation references
+
+The [behavior design](ONTOLOGY_REVIEW_BEHAVIOR_DESIGN.md#implementation-references) links the exact
+bridge, content/target actor, authorization and IDE action sources inspected for this revision.
+[WORKFLOWS.md](WORKFLOWS.md#kactors-instrumentation) and
+[AGENTS_REFERENCE.md](AGENTS_REFERENCE.md#workflow-target-binding-and-restoration) describe shipped
+mechanisms; [WORKFLOW_EXTENSION.md](WORKFLOW_EXTENSION.md) records remaining generic contracts.
 
 Use merged source when prose differs. [PROPOSAL_REVIEW_CONTRACT.md](../PROPOSAL_REVIEW_CONTRACT.md) gives
 the typed protocol; [SCHEMA_VALIDATION_INCREMENT.md][increment] updates the older schema limitation.
@@ -446,13 +567,13 @@ in [WorkflowManager][manager] and [ProposalReviewProtocol][protocol] take preced
 [controller]: ../klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/WorkflowController.java
 [validator]: ../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/workflow/IsolatedProposalCandidateValidator.java
 [increment]: ../SCHEMA_VALIDATION_INCREMENT.md
-[ide-shell]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/WorkflowEditor.java
-[ide-stage]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/ProposalStageEditor.java
-[ide-workspace]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/WorkspaceEditor.java
-[ide-model]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/ProposalReviewModel.java
-[ide-tab-host]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/pages/EditorPage.java
-[ide-markers]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/src/main/java/org/integratedmodelling/klab/ide/components/ProposalLexicalMarkers.java
-[ide-notes]: https://github.com/integratedmodelling/klab-ide/blob/90b3116c2eab1b712fa5a3e0eeadbd3065207eae/docs/PROPOSAL_REVIEW.md
+[ide-shell]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/WorkflowEditor.java
+[ide-stage]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/ProposalStageEditor.java
+[ide-workspace]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/WorkspaceEditor.java
+[ide-model]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/ProposalReviewModel.java
+[ide-tab-host]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/pages/EditorPage.java
+[ide-markers]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/ProposalLexicalMarkers.java
+[ide-notes]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/docs/PROPOSAL_REVIEW.md
 [sandbox]: https://github.com/integratedmodelling/imod/tree/68a6cbc/experiments/strawman-2026/bootstrap
 [method]: https://github.com/integratedmodelling/imod/blob/68a6cbc/experiments/strawman-2026/bootstrap/METHOD.md
 [hydrology]: https://github.com/integratedmodelling/imod/blob/68a6cbc/experiments/strawman-2026/bootstrap/hydrology/BOOTSTRAP.md
