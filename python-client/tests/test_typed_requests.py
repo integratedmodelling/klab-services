@@ -110,6 +110,12 @@ def test_invalid_constraints(kind, values):
         ResolutionConstraint(kind, values)
 
 
+@pytest.mark.parametrize("kind", [None, {}, [], True])
+def test_constraint_kind_wrong_types_are_classified_validation_errors(kind):
+    with pytest.raises(InvalidRequestError, match="kind"):
+        ResolutionConstraint(kind, ["asset"])
+
+
 @pytest.mark.parametrize("changes", [
     {"scenarios": "bad"}, {"constraints": "bad"}, {"constraints": ["bad"]},
     {"namespace": ""}, {"project": 9}, {"scenarios": [True]}, {"observer": True},

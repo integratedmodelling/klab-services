@@ -83,6 +83,8 @@ class ResolutionConstraint:
     values: tuple[Any, ...]
 
     def __post_init__(self):
+        if not isinstance(self.kind, str):
+            raise InvalidRequestError("Constraint kind must be text")
         if self.kind not in {"ResolutionNamespace", "ResolutionProject", "Scenarios", "Observer"}:
             raise UnsupportedOperationError("Constraint kind has no supported typed consumer")
         if not isinstance(self.values, (list, tuple)) or not self.values:
