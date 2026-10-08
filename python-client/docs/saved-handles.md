@@ -151,8 +151,39 @@ test-owned state.
 python tools/run_local_acceptance.py --java C:\jdk\bin\java.exe --worldview C:\pinned-imod --state-dir C:\existing-parent\new-state --build --saved-handles --samples 1 --duration 1
 ```
 
-Exact candidate, coverage, matrix, wheel and real-stack results will be recorded
-after execution; these instructions are not passing evidence. A Python-process
+Executed candidate **ee96e7719**:
+
+* 241 tests passed, 5 live deselected, on Windows Python 3.12 and the
+  installed-package Ubuntu/WSL Python 3.11/3.12/3.13 matrix. Each Linux version
+  built wheel/sdist and passed new-module/changed-code coverage gates.
+* `handles.py`: 303 executable statements and 134 branches, all covered with
+  zero exclusions. Changed existing production lines/arcs passed independently.
+* Targeted Ruff checks passed. A fresh dependency-light Windows Python 3.11
+  environment installed the wheel and exercised import/offline round-trip with
+  HTTP forbidden and no optional tooling dependencies installed.
+* Exact-candidate fresh deployment `klab-handles-live1`, **2026-10-08
+  01:33:40–01:40:16 UTC**: 2 existing live tests, all four fresh-process example
+  modes, Runtime and Resolver jobs, scoped observation reads, actual pending-job
+  timeout/restoration/completion, collaborator positive/private-negative checks,
+  cold ACL checks and smoke phases passed. All five JVM exits were confirmed.
+  Processes A/B preserved job 15, observation 112 and pending job 16; the Resolver
+  retained peer job 23. These are run-specific identities, not public defaults.
+
+Evidence is retained externally under `C:\Users\lumsd\AppData\Local\Temp\opencode`:
+`handles-coverage.json`, per-version `handles-3.xx` CI/coverage/XML/distributions,
+and `klab-handles-live1` source/compiled/model provenance and reports. No generated
+credentials, handles or state files are tracked. Earlier failing tests exposed a
+default-port normalization edge and fixture-label issues; all required gates were
+rerun after correction. New production code is unchanged by this evidence update.
+
+Review examined strict local parsing, bounds and identity invariants, configured
+origin-only routing, capability versus access failures, observer/focus validation,
+fresh graph membership, result decoder allowlists, secret diagnostics, atomic
+publication/cleanup, mutation ambiguity and remote lifecycle. No extra server
+contract or typed-feature dependency was needed; no auto-retry or ownership
+transfer was introduced.
+
+A Python-process
 restart does not establish persistent job retention across Runtime restart or
 resumable simulation. No production onboarding, provider accuracy, automatic
 migration, bulk export or federation-policy redesign is certified.
