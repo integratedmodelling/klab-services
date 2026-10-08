@@ -110,25 +110,29 @@ Build a fresh fixture and include this example with:
 python tools/run_local_acceptance.py --java C:\jdk\bin\java.exe --worldview C:\pinned-imod --state-dir C:\existing-parent\new-state --build --typed-observe --samples 1 --duration 1
 ```
 
-Executed candidate **4c71ea76e** (production implementation introduced at 0ca4fc4ce):
+Executed final production candidate **3957f39fe** (implementation introduced at 0ca4fc4ce):
 
-* 226 offline tests passed, 5 live deselected, on Windows Python 3.12 and the
+* 230 offline tests passed, 5 live deselected, on Windows Python 3.12 and the
   installed-package Ubuntu/WSL Python 3.11/3.12/3.13 matrix. Each Linux version
   built wheel/sdist and passed the same coverage/changed-code gates.
-* `requests.py`: 240 executable statements and 98 branches, all covered, with
+* `requests.py`: 242 executable statements and 100 branches, all covered, with
   zero excluded lines. Changed existing production lines/arcs passed separately.
 * Ruff targeted checks passed. A fresh dependency-light Windows Python 3.11
   environment installed the wheel and exercised imports/construction without HTTP.
-* Exact-candidate fresh run `klab-typed-live-final`, **2026-10-08
-  00:33:11–00:35:39 UTC**: the typed example, 2 existing live tests, cold ACL checks
+* Exact-candidate fresh run `klab-typed-review-final`, **2026-10-08
+  01:57:27–02:00:03 UTC**: the typed example, 2 existing live tests, cold ACL checks
   and all smoke phases passed. Cleanup confirmed all five JVM exits. Java source
   is unchanged from the recorded baseline; compiled/source hashes are retained.
 
 Evidence is external under `C:\Users\lumsd\AppData\Local\Temp\opencode`:
 `typed-coverage.json`, per-version `typed-3.xx` CI/coverage/XML/distributions,
-`typed-handles-baseline-java.log`, and `klab-typed-live-final` reports/provenance.
+`typed-handles-baseline-java.log`, and `klab-typed-review-final` reports/provenance.
 The first attempted matrix rerun refused existing venv directories before tests;
 fresh SHA-qualified environments were then created and the complete matrix passed.
+The final Python 3.13 sdist build encountered a local shared-checkout staging race;
+its tests/coverage had passed, and a serialized wheel/sdist rebuild then passed.
+The external report preserves the failed attempt and successful retry. Hosted
+matrix jobs use separate checkouts, unlike this local parallel runner.
 
 Review: identity/scope and observer binding, immutable snapshots, model-option
 rejection, mutation ambiguity, wire compatibility and negative controls were
@@ -144,3 +148,7 @@ worker and automatic coordinate-conversion capabilities are not certified here.
 Shared additions with saved handles are expected in package exports, dev extras,
 the CI coverage step and README/API inventory. Merge exports additively and run
 the coverage checker for both new modules. Neither feature imports the other.
+An actual merge-tree check found only these content conflicts: coverage CI,
+`docs/public-api.md`, package `__init__.py` and local-runner feature flags.
+Resolve each additively; Client implementation, README, dev extras and identical
+coverage tooling merge automatically. This is a handoff, not a merged branch.
