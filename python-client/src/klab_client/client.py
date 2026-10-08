@@ -62,11 +62,12 @@ class ScientificData:
 
 
 class Job:
-    def __init__(self, client, id: int, scope, *, service="runtime", decoder=None):
+    def __init__(self, client, id: int, scope, *, service="runtime", decoder=None, result_kind=None):
         if type(id) is not int or id <= 0:
             raise ProtocolError("Submission must return a positive integer job ID")
         self.client, self.id, self.scope, self.service = client, id, scope, service
         self._decoder = decoder
+        self.result_kind = result_kind if result_kind is not None else ("mapping" if decoder is None else None)
         self.cancellation_requested = False
 
     def __repr__(self):
@@ -146,6 +147,11 @@ class Job:
 
     wait = result
 
+    def to_handle(self):
+        """Create an offline reference; custom decoders require a supported helper."""
+        from .handles import to_handle
+        return to_handle(self)
+
 
 class Session(SessionScopeImpl):
     def __init__(self, client, id):
@@ -200,7 +206,12 @@ class Context(ContextScopeImpl):
 
     def job(self, id: int) -> Job:
         """Resume a saved job in its original context, including focus path."""
-        return Job(self.client, id, self, decoder=lambda p: observation_from_wire(p, self))
+        return Job(self.client, id, self, decoder=lambda p: observation_from_wire(p, self), result_kind="observation")
+
+    def to_handle(self):
+        """Save exact focus/observer identity without ownership or credentials."""
+        from .handles import to_handle
+        return to_handle(self)
 
     def release(self) -> bool:
         """Explicit remote close; callers must intend disposal of this context."""
@@ -267,6 +278,7 @@ class Client:
                                    verify=verify, http_transport=http_transport)
         self.agent_name, self.runtime_service_id = agent_name, runtime_service_id
         self.service_ids = tuple(service_ids)
+        self._service_id_cache = {}
         self.runtime, self.reasoner = RuntimeServiceImpl(self), ReasonerImpl(self)
         self.resources, self.resolver = ResourcesServiceImpl(self), ResolverImpl(self)
 
@@ -362,7 +374,13 @@ class Client:
                                     json=envelope, scope=scope_token(scope), service_id=self.runtime_service_id,
                                     ambiguous=True)
         return Job(self, id, context, service=service,
-                   decoder=decoder or (lambda p: observation_from_wire(p, context)))
+                    decoder=decoder or (lambda p: observation_from_wire(p, context)),
+                    result_kind="observation" if decoder is None else "dataflow")
+
+    def restore_handle(self, reference, *, allow_relocation=False):
+        """Explicit capability verification/attach; never submit or create replacement work."""
+        from .handles import restore_handle
+        return restore_handle(self, reference, allow_relocation=allow_relocation)
 
     def close(self):
         """Close local connections only. Remote scopes require explicit release."""

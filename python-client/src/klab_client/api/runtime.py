@@ -133,6 +133,11 @@ class ObservationImpl(Observation):
             raise UnsupportedOperationError("Data retrieval requires a remotely bound observation")
         return self._context.fetch_data(self, offsets, curve=curve, slice=slice, semantics=semantics)
 
+    def to_handle(self):
+        """Create a reference from a bound observation, never serialize cached authority."""
+        from klab_client.handles import to_handle
+        return to_handle(self)
+
     def get_urn(self) -> str:
         return self.urn
 

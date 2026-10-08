@@ -14,11 +14,17 @@ jobs:
         python: ['3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install './python-client[dev,local]'
-      - run: python -m pytest -q
+      - run: python -m pytest -q --cov=klab_client --cov-branch --cov-report=json
+        working-directory: python-client
+      - run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/handles.py
+        working-directory: python-client
+      - run: python -m ruff check src/klab_client/handles.py tests/test_saved_handles.py tools/check_feature_coverage.py --select E9,F63,F7,F82
         working-directory: python-client
       - run: python -m build
         working-directory: python-client

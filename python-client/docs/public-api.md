@@ -38,6 +38,10 @@ result/wait/cancel; ObservationImpl.fetch_data; ScientificData; Endpoint;
 ResourcesServiceImpl.list; dto.storage_semantics for simple units;
 experiment.run_elevation. Error hierarchy is documented in README.
 
+Saved references: `Handle`, `to_handle`, `save_handle`, `load_handle`,
+`restore_handle`, source-object `to_handle()` and `Client.restore_handle`.
+See [versioned schema and verification](saved-handles.md).
+
 Remaining unsupported capabilities include Avro worker contextualization and job
 data decoding, bulk file export, automatic arbitrary query/consumer geometry
 conversion, pandas/xarray adapters, privileged server administration, full Modeler

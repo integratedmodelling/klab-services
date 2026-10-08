@@ -86,6 +86,10 @@ Reads are bounded to 1–256 cells per call; this is not a bulk export interface
 
 ## Ownership, jobs and errors
 
+Versioned, secret-free context/observation/job references are described in
+[saved handles](docs/saved-handles.md). Save/load are offline; `client.restore_handle`
+explicitly verifies configured service identities and current authorized work.
+
 `client.attach_context('session.context')` attaches to authorized existing state;
 `context.within(observation_id)` preserves a focus path. Save the job ID and scope
 before waiting; `context.job(saved_id).result(...)` resumes it after reconnect.

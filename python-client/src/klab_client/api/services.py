@@ -117,7 +117,9 @@ class _RemoteService:
         """Return the server ID and complete checked capabilities payload."""
         from klab_client.dto import required_text
         payload = self._checked(self._request("GET", "/public/capabilities", scope), "capabilities")
-        return ServiceCapabilities(required_text(payload, "serviceId"), payload)
+        identity = required_text(payload, "serviceId")
+        self.client._service_id_cache[self.service] = identity
+        return ServiceCapabilities(identity, payload)
 
 
 class ReasonerImpl(_RemoteService, Reasoner):
