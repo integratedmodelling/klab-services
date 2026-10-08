@@ -195,3 +195,7 @@ Client facade additions, README/API inventory, dev extras, coverage CI and the
 local runner's feature flags. Coverage-check tooling is identical and independently
 included; preserve both new-module arguments when combining. Neither feature
 depends on the other or changes Java session authority.
+An actual merge-tree check found four content conflicts when combining the two:
+coverage CI, `docs/public-api.md`, package `__init__.py` and local-runner feature
+flags. Resolve each additively. Client code, README, dev extras and identical
+coverage tooling merge automatically; neither independent branch was merged/reset.
