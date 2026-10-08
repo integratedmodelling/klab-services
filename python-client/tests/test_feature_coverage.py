@@ -25,3 +25,9 @@ def test_changed_decisions_are_checked_without_claiming_old_gaps_are_new():
     data["missing_branches"].append([2, 3])
     assert tool().evaluate({"files": {"src/existing.py": data}}, diff, [])
     assert tool().evaluate({"files": {}}, diff, ["src/new.py"])
+
+
+def test_gate_maps_installed_wheel_source_paths():
+    data = {"summary": {"num_statements": 1}, "missing_lines": [], "missing_branches": [], "excluded_lines": []}
+    report = {"files": {"/env/site-packages/klab_client/new.py": data}}
+    assert not tool().evaluate(report, "", ["src/klab_client/new.py"])

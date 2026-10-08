@@ -25,7 +25,12 @@ def changed_lines(diff):
 
 
 def evaluate(report, diff, new_modules):
-    files = {path.replace("\\", "/"): data for path, data in report["files"].items()}
+    files = {}
+    for path, data in report["files"].items():
+        path = path.replace("\\", "/")
+        if "klab_client/" in path:
+            path = "src/klab_client/" + path.rsplit("klab_client/", 1)[1]
+        files[path] = data
     errors = []
     for path in new_modules:
         data = files.get(path)

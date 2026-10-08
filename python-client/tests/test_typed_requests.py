@@ -364,3 +364,71 @@ def test_typed_wait_timeout_keeps_handle_and_can_resume(wire, monkeypatch):
         assert stopped.value.job is job
         finished[0] = True
         assert job.result(1).id == 42
+
+
+@pytest.mark.parametrize("persistence", ["ONE_OFF", "EXPLICIT_ACTION", "IDLE_TIMEOUT", "SERVICE_SHUTDOWN", "REINITIALIZED_ON_TIMEOUT"])
+def test_every_supported_persistence_value(persistence):
+    assert ContextOptions(persistence=persistence).to_wire()["persistence"] == persistence
+
+
+@pytest.mark.parametrize("strict,snap", [(False, False), (False, True), (True, False), (True, True)])
+def test_grid_normalization_options_are_explicit(strict, snap):
+    grid = GridOptions(0, 0, 1, strict=strict, snap=snap)
+    assert grid.to_wire()["strict"] is strict and grid.to_wire()["snap"] is snap
+
+
+@pytest.mark.parametrize("activity", ["INSTANTIATION", "ACKNOWLEDGEMENT", "DETECTION", "SIMULATION",
+    "MEASURE", "QUANTIFICATION", "VALUATION", "CATEGORIZATION", "VERIFICATION", "CLASSIFICATION",
+    "CHARACTERIZATION", "TRANSFORMATION", "CONNECTION"])
+def test_known_activity_names_are_preserved_not_reclassified(wire, activity):
+    wire["observable"]["contextualization"] = activity
+    request = ObservationRequest(observable_from_wire(wire["observable"]))
+    assert request.to_wire()["observable"]["contextualization"] == activity
+
+
+@pytest.mark.parametrize("accepted,state", [(True, "INTERRUPTED"), (True, "FINISHED"), (False, "FINISHED")])
+def test_typed_job_cancellation_is_acceptance_not_an_invented_outcome(wire, accepted, state):
+    def handler(request):
+        if request.url.path.endswith("/submit"):
+            return httpx.Response(200, json=5)
+        if "/cancel/" in request.url.path:
+            return httpx.Response(200, json=accepted)
+        if "/status/" in request.url.path:
+            return httpx.Response(200, json={"status": state})
+        return httpx.Response(200, json=wire)
+    with client(handler) as current:
+        job = Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]))
+        assert job.cancel() is accepted
+        if state == "INTERRUPTED":
+            with pytest.raises(JobCancelledError):
+                job.result(1)
+        else:
+            assert job.result(1).id == 42
+
+
+@pytest.mark.parametrize("response,error", [(httpx.Response(503, text="unavailable"), ServerError),
+    (httpx.Response(200, text="malformed"), ProtocolError), (httpx.Response(403, text="forbidden"), AuthorizationError)])
+def test_reasoner_failures_prevent_following_mutation(response, error):
+    calls = []
+    def handler(request):
+        calls.append(request.url.path)
+        return response
+    with client(handler) as current:
+        with pytest.raises(error):
+            Context(current, {"id": "s.c"}).observe("definition")
+    assert calls == ["/reasoner/api/v1/resolve/observable"]
+
+
+@pytest.mark.parametrize("result", [{"empty": True}, {"notifications": [{"level": "ERROR", "message": "secret"}]}])
+def test_typed_finished_job_still_checks_scientific_failure(wire, result):
+    def handler(request):
+        if request.url.path.endswith("/submit"):
+            return httpx.Response(200, json=5)
+        if "/status/" in request.url.path:
+            return httpx.Response(200, json={"status": "FINISHED"})
+        return httpx.Response(200, json={**wire, **result})
+    with client(handler) as current:
+        job = Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]))
+        with pytest.raises(JobFailedError) as error:
+            job.result(1)
+        assert "secret" not in str(error.value)
