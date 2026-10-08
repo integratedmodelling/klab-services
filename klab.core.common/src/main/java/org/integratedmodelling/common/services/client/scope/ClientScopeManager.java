@@ -109,7 +109,6 @@ public enum ClientScopeManager {
     scopes.put(ret.getId(), ret);
     if (ret instanceof ClientContextScope contextScope) {
       contextScope.createDigitalTwin(ret.getId());
-
       var engine = contextScope.getEngine();
       if (!engine.getSettings().get(Setting.DO_NOT_CREATE_A_DEFAULT_OBSERVER, Boolean.class)) {
         /*

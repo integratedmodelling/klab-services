@@ -33,8 +33,9 @@ class AuthorityIdentityResolverTest {
         "TAXA", "DomesticCat", "Cat", null, true));
     var request = new Authority.ConfigurationRequest("worldview", "TAXA", "biology:Species",
         Map.of("urn", "test.authority", "codelists", Map.of("species", "taxonomy.species")));
-    when(provider.configure(request)).thenReturn("bridge");
+    when(provider.configure(AuthorityBindings.providerRequest(request))).thenReturn("bridge");
     when(provider.getCodelists("bridge")).thenReturn(Map.of("species", seed));
+    when(provider.getCodelistDefinitions("bridge")).thenCallRealMethod();
     var cat = identity("Cat", null);
     when(provider.resolveIdentity("bridge", "Cat")).thenReturn(cat);
     var bindings = new AuthorityBindings(); bindings.configure(request, provider);

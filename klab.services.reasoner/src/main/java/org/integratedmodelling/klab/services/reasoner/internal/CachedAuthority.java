@@ -39,6 +39,9 @@ public final class CachedAuthority implements Authority {
   @Override public CachePolicy getCachePolicy() { return source.getCachePolicy(); }
   @Override public Map<String, Codelist> getCodelists() { return source.getCodelists(); }
   @Override public synchronized Map<String, Codelist> getCodelists(String id) { check(id); return source.getCodelists(providerId); }
+  @Override public synchronized Map<String, CodelistDefinition> getCodelistDefinitions(String id) {
+    check(id); return source.getCodelistDefinitions(providerId);
+  }
 
   @Override public synchronized String configure(ConfigurationRequest request) {
     if (this.request != null) {
@@ -48,7 +51,7 @@ public final class CachedAuthority implements Authority {
     policy = Objects.requireNonNull(source.getCachePolicy(), "Authority cache policy is required");
     String fingerprint = digest(canonical(List.of("authority-cache-v1", request.worldview(), request.name(),
         request.rootIdentity(), request.parameters(), getUrn(), revision, policy)));
-    String configured = source.configure(request);
+    String configured = source.configure(AuthorityBindings.providerRequest(request));
     if (configured == null || configured.isBlank()) return configured;
     this.request = request;
     providerId = configured;
@@ -220,6 +223,9 @@ public final class CachedAuthority implements Authority {
     @Override public CachePolicy getCachePolicy() { return delegate.getCachePolicy(); }
     @Override public Map<String, Codelist> getCodelists() { return delegate.getCodelists(); }
     @Override public Map<String, Codelist> getCodelists(String id) { check(id); return delegate.getCodelists(providerId); }
+    @Override public Map<String, CodelistDefinition> getCodelistDefinitions(String id) {
+      check(id); return delegate.getCodelistDefinitions(providerId);
+    }
     @Override public String configure(ConfigurationRequest request) { return CachedAuthority.this.configure(request); }
     @Override public void releaseConfiguration(String id) { CachedAuthority.this.releaseConfiguration(id); }
     @Override public Identity resolveIdentity(String id, String identity) {

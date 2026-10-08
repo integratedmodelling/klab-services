@@ -31,6 +31,8 @@ public interface Authority {
    * Create an independent bridge and return its opaque provider-held configuration ID. The provider
    * must retain configuration state separately for each bridge, and throw a validation exception on
    * failure. The root identity is supplied by the worldview, not by the provider.
+   * The Reasoner retains the reserved {@code codelists} namespace mappings and removes them before
+   * calling a provider; all provider parameters, including {@code urn}, are passed unchanged.
    */
   String configure(ConfigurationRequest request);
 
@@ -272,6 +274,25 @@ public interface Authority {
 
   /** Provider-local list IDs and seed data for one configured bridge. Never a mutable service store. */
   default Map<String, Codelist> getCodelists(String configurationId) { return getCodelists(); }
+
+  /** Provider-owned seed data and policy; namespace bindings remain owned by the worldview. */
+  record CodelistDefinition(Codelist codelist, boolean acceptsProposals) {
+    public CodelistDefinition {
+      java.util.Objects.requireNonNull(codelist, "Codelist seed data is required");
+    }
+  }
+
+  /**
+   * Declare provider lists with an explicit proposal policy. Legacy lists accept proposals for
+   * compatibility. A worldview may also bind IDs absent from this map: those become empty community
+   * lists accepting proposals. A declaration's policy cannot be overridden by the worldview.
+   */
+  default Map<String, CodelistDefinition> getCodelistDefinitions(String configurationId) {
+    var result = new java.util.LinkedHashMap<String, CodelistDefinition>();
+    getCodelists(configurationId).forEach((id, list) ->
+        result.put(id, new CodelistDefinition(list, true)));
+    return Map.copyOf(result);
+  }
 
   /**
    * If the authority has lower-level subcatalogs, return the singleton that will handle the catalog

@@ -97,12 +97,24 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
      * that hosts it.
      */
     var ret = new ClientContextScope(this, runtime, configuration.validate(this));
-    var id = runtime.declareContextScope(ret, this, userScope);
-    if (id == null) throw new KlabResourceAccessException("Runtime returned no digital twin configuration");
-    id.getNotifications().forEach(notification -> userScope.send(notification));
-    ret.setFromConfiguration(id);
-    if (!id.isEmpty()) {
+    var result = runtime.declareContextScope(ret, this, userScope);
+    if (result == null || result.getId() == null) {
+      throw new KlabResourceAccessException(
+          "Runtime returned a null or invalid digital twin configuration");
+    }
+    result.getNotifications().forEach(notification -> userScope.send(notification));
+    ret.setFromConfiguration(result);
+    if (ret.getId() == null) {
+      throw new KlabInternalErrorException(
+          "Session scope: no digital twin ID returned after valid server creation");
+    }
+    if (!result.isEmpty()) {
       ClientScopeManager.INSTANCE.register(ret);
+    }
+
+    if (ret.getId() == null) {
+      throw new KlabInternalErrorException(
+          "Session scope: no digital twin ID returned after registration");
     }
 
     return ret;

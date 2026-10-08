@@ -6,9 +6,11 @@ code. No alias ontology, class, or equivalence axiom is created.
 
 ## Configuration
 
-An authority advertises provider-local list IDs through `getCodelists(configurationId)`.
-The default delegates to the legacy `getCodelists()` method. TAXA advertises empty
-`species` and `genera` lists. Bind these in the existing worldview authority parameters:
+An authority declares provider-local list IDs, seed entries, and proposal policy through
+`getCodelistDefinitions(configurationId)`. Its default adapts the existing
+`getCodelists(configurationId)` method (which delegates to `getCodelists()`), preserving
+proposal acceptance for legacy declarations. TAXA advertises empty `species` and `genera`
+lists. Bind these in the existing worldview authority parameters:
 
 ```text
 identity Taxon requires authority TAXA {
@@ -21,7 +23,34 @@ identity Taxon requires authority TAXA {
 ```
 
 Keep any other parameters required by the provider, including its pinned release.
-The keys identify advertised provider lists; the values are local namespaces.
+The keys identify codelists; the values are local namespaces. When a key matches a provider
+declaration, the list retains that declaration's seed data and proposal policy. When the key
+is not declared by the provider, the worldview binding creates an empty community codelist
+that accepts proposals. Creating these bindings requires worldview editing rights; the review
+API cannot create arbitrary namespaces. For example, `local_species: "community.species"`
+can be added to the mapping without changing the provider.
+
+A provider can declare an officially curated list that rejects new proposals:
+
+```java
+@Override
+public Map<String, CodelistDefinition> getCodelistDefinitions(String configurationId) {
+    return Map.of("official_species", new CodelistDefinition(officialSpecies(), false));
+}
+```
+
+The worldview binds `official_species` to its preferred namespace but cannot override the
+provider's policy. Use `true` to accept proposals. Administrator CREATE, UPDATE, and DELETE
+operations remain available for directly managed entries in either kind of list. Provider
+seed entries remain defined by provider code; accepted community entries retain their existing
+protection. Closing a list blocks new submissions, including from administrators, without
+discarding prior proposals or approved aliases. Administrators can still review existing
+pending proposals. No ledger migration is required.
+
+LIST responses include `policies`, keyed by bound namespace, containing `listId`,
+`providerDeclared`, and `acceptsProposals`. The dashboard displays this policy. Old responses
+without the policy map remain readable. The reserved `codelists` parameter is retained by
+the Reasoner and is not passed into provider configuration.
 Namespace collisions with ontologies or other lists are rejected. Runtime configuration
 must match the loaded worldview declaration. Lists may be empty or contain seed entries.
 Seed values must be resolvable provider codes and are normalized to canonical codes.

@@ -46,7 +46,7 @@ public final class AuthorityBindings {
         && !request.worldview().equals(capabilities.getWorldview()))
       throw new KlabValidationException("Authority is incompatible with worldview " + request.worldview());
     Authority hosted = cacheRoot == null ? provider : new CachedAuthority(provider, cacheRoot);
-    String id = hosted.configure(request);
+    String id = hosted.configure(cacheRoot == null ? providerRequest(request) : request);
     if (id == null || id.isBlank())
       throw new KlabValidationException("Authority returned an empty configuration ID: " + request.name());
     var binding = new Binding(request, hosted, id);
@@ -59,6 +59,14 @@ public final class AuthorityBindings {
       bindings.put(request.name(), binding);
     } catch (RuntimeException failure) { hosted.releaseConfiguration(id); throw failure; }
     return id;
+  }
+
+  /** Namespace bindings belong to the Reasoner, not to the provider's parameter schema. */
+  public static Authority.ConfigurationRequest providerRequest(Authority.ConfigurationRequest request) {
+    var parameters = new LinkedHashMap<>(request.parameters());
+    parameters.remove("codelists");
+    return new Authority.ConfigurationRequest(request.worldview(), request.name(),
+        request.rootIdentity(), parameters);
   }
 
   /** Search only exact bindings. Dotted filter aliases must be supplied as explicit filters. */

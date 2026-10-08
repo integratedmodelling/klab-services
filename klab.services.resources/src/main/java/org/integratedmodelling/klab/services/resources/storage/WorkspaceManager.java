@@ -1415,6 +1415,7 @@ public class WorkspaceManager {
                   ontologyProjects.get(syntax.getName()),
                   notifications,
                   lastUpdates.get(syntax.getName()));
+          preserveDocumentSource(ontology, od.getFirst());
           validateSemanticAsset(ontology);
           documentURLs.put(ontology.getUrn(), urlCache.get(ontology.getUrn()));
         }
@@ -1601,6 +1602,7 @@ public class WorkspaceManager {
                   kimProjects.get(syntax.getUrn()),
                   notifications,
                   lastUpdates.get(syntax.getUrn()));
+          preserveDocumentSource(namespace, od.getFirst());
           validateSemanticAsset(namespace);
           documentURLs.put(namespace.getUrn(), urlCache.get(namespace.getUrn()));
         }
@@ -2823,6 +2825,14 @@ public class WorkspaceManager {
         : null;
   }
 
+  /** Preserve hidden tokens too: save acknowledgements and proposal hashes identify exact source. */
+  static void preserveDocumentSource(KlabDocument<?> document, EObject parsed) {
+    var node = org.eclipse.xtext.nodemodel.util.NodeModelUtils.getNode(parsed);
+    if (document instanceof KlabDocumentImpl<?> mutable && node != null) {
+      mutable.setSourceCode(node.getRootNode().getText());
+    }
+  }
+
   private <T extends KlabDocumentImpl<?>> T invalidDocument(
       T document,
       String urn,
@@ -3048,6 +3058,7 @@ public class WorkspaceManager {
       if (!errors.get()) {
         ret =
             LanguageAdapter.INSTANCE.adaptNamespace(syntax, projectName, notifications, timestamp);
+        preserveDocumentSource(ret, parsed);
         if (ret instanceof KimNamespaceImpl kActorsBehavior) {
           kActorsBehavior.setServiceId(service.serviceId());
         }
@@ -3196,6 +3207,7 @@ public class WorkspaceManager {
 
       if (!errors.get()) {
         ret = LanguageAdapter.INSTANCE.adaptOntology(syntax, projectName, notifications, timestamp);
+        preserveDocumentSource(ret, parsed);
         if (ret instanceof KimOntologyImpl kActorsBehavior) {
           kActorsBehavior.setServiceId(service.serviceId());
         }

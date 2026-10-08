@@ -1796,6 +1796,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           reconciled.addAll(authoritySnapshot.getAuthorityBindings().stream()
               .filter(binding -> binding.sourceOntology().equals(ontology.getUrn())).toList());
           mutable.setAuthorityBindings(reconciled);
+          org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport
+              .replaceOntology(mutable, ontology);
         }
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);

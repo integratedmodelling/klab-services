@@ -7,7 +7,9 @@ const context = {
   capabilities: { authorityBindings: [{ localId: "TAXA" }], permissions: location.search.includes("reader") ? ["READ"] : ["ADMINISTER"] },
   api: { request: async (_path: string, init: RequestInit) => {
     const command = JSON.parse(String(init.body)); calls.push(command);
-    return { revision: 7, codelists: { "taxonomy.species": { entries: [
+    return { revision: 7, policies: { "taxonomy.species": { listId: "species",
+      providerDeclared: !location.search.includes("community"), acceptsProposals: !location.search.includes("closed") } },
+      codelists: { "taxonomy.species": { entries: [
       { code: "CommunityCat", value: "3DXV3" }, { code: "ManagedCat", value: "3DXV3" }
     ] } },
       proposals: [

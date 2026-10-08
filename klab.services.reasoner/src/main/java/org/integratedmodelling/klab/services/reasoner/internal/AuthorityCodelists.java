@@ -15,6 +15,7 @@ public final class AuthorityCodelists {
   public record State(long revision, List<Proposal> proposals) {}
   private final AuthorityBindings.Binding binding;
   private final Map<String, Codelist> seeds;
+  private final Map<String, CodelistPolicy> policies;
   private final Path file;
   private State state;
 
@@ -22,28 +23,35 @@ public final class AuthorityCodelists {
     this.binding = binding;
     var configured = binding.request().parameters().get("codelists");
     var result = new LinkedHashMap<String, Codelist>();
+    var configuredPolicies = new LinkedHashMap<String, CodelistPolicy>();
     if (configured != null) {
       if (!(configured instanceof Map<?, ?> names)) throw new IllegalArgumentException("codelists must map provider IDs to local namespaces");
-      var advertised = binding.provider().getCodelists(binding.id());
+      var advertised = Objects.requireNonNull(binding.provider().getCodelistDefinitions(binding.id()),
+          "Provider returned no codelist definitions");
       for (var entry : names.entrySet()) {
-        if (!(entry.getKey() instanceof String id) || !(entry.getValue() instanceof String namespace)
+        if (!(entry.getKey() instanceof String id) || id.isBlank() || !(entry.getValue() instanceof String namespace)
             || !namespace.matches("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*"))
           throw new IllegalArgumentException("Invalid codelist namespace binding");
-        if (advertised == null || !advertised.containsKey(id) || advertised.get(id) == null)
-          throw new IllegalArgumentException("Provider does not advertise codelist " + id);
+        var definition = advertised.get(id);
+        if (advertised.containsKey(id) && definition == null)
+          throw new IllegalArgumentException("Provider returned an invalid codelist definition for " + id);
+        var seed = definition == null ? new CodelistImpl() : definition.codelist();
         var snapshot = new CodelistImpl();
         snapshot.setName(id);
-        for (var keyCode : advertised.get(id).codes()) {
-          if (!(keyCode instanceof String alias) || !(advertised.get(id).value(keyCode) instanceof String code))
+        for (var keyCode : seed.codes()) {
+          if (!(keyCode instanceof String alias) || !(seed.value(keyCode) instanceof String code))
             throw new IllegalArgumentException("Authority codelists require string aliases and authority codes");
           alias(alias);
           snapshot.getEntries().add(new CodelistImpl.Entry(requestAuthority(binding), alias, canonical(code), null, true));
         }
         if (result.putIfAbsent(namespace, snapshot) != null)
           throw new IllegalArgumentException("Duplicate codelist namespace " + namespace);
+        configuredPolicies.put(namespace, new CodelistPolicy(id, definition != null,
+            definition == null || definition.acceptsProposals()));
       }
     }
     seeds = Map.copyOf(result);
+    policies = Map.copyOf(configuredPolicies);
     String key = binding.request().worldview() + "\0" + binding.request().name() + "\0"
         + binding.request().rootIdentity() + "\0" + binding.request().parameters().get("urn");
     file = directory == null ? null : directory.resolve(CachedAuthority.digest(key) + ".json");
@@ -131,7 +139,7 @@ public final class AuthorityCodelists {
           binding.request().name(), alias, code, null, true)));
       lists.put(namespace, list);
     });
-    return new AuthorityCodelistResponse(state.revision(), Map.copyOf(lists), List.copyOf(state.proposals()));
+    return new AuthorityCodelistResponse(state.revision(), Map.copyOf(lists), List.copyOf(state.proposals()), policies);
   }
 
   public synchronized AuthorityCodelistResponse execute(AuthorityCodelistRequest request, String actor) {
@@ -140,6 +148,8 @@ public final class AuthorityCodelists {
     var next = new ArrayList<>(state.proposals());
     long revision = state.revision() + 1;
     if (request.operation() == AuthorityCodelistRequest.Operation.SUBMIT) {
+      if (!policies.get(request.namespace()).acceptsProposals())
+        throw new IllegalArgumentException("Codelist " + request.namespace() + " does not accept proposals");
       alias(request.alias());
       String identity = canonical(request.identity());
       String id = CachedAuthority.digest(request.namespace() + "\0" + request.alias() + "\0" + identity);

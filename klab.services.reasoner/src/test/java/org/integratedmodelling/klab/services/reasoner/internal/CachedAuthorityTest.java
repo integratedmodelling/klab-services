@@ -67,6 +67,11 @@ class CachedAuthorityTest {
     @Override public Capabilities getCapabilities() { return null; }
     @Override public Map<String,Codelist> getCodelists() { return Map.of(); }
     @Override public Map<String,Codelist> getCodelists(String id) { codelistConfiguration = id; return Map.of(); }
+    @Override public Map<String,CodelistDefinition> getCodelistDefinitions(String id) {
+      codelistConfiguration = id;
+      return Map.of("official", new CodelistDefinition(
+          new org.integratedmodelling.klab.api.knowledge.impl.CodelistImpl(), false));
+    }
     @Override public Authority subAuthority(String catalog) { return this; }
   }
 
@@ -76,6 +81,11 @@ class CachedAuthorityTest {
     String id = cached.configure(request());
     cached.getCodelists(id);
     assertEquals("session-1", provider.codelistConfiguration);
+    var definitions = cached.getCodelistDefinitions(id);
+    assertFalse(definitions.get("official").acceptsProposals());
+    assertEquals("session-1", provider.codelistConfiguration);
+    assertFalse(cached.subAuthority("rank").getCodelistDefinitions(id).get("official").acceptsProposals());
+    assertThrows(IllegalArgumentException.class, () -> cached.getCodelistDefinitions("unconfigured"));
     assertThrows(IllegalArgumentException.class, () -> cached.getCodelists("unconfigured"));
   }
 

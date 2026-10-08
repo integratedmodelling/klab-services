@@ -18,12 +18,77 @@ class AuthorityCodelistsTest {
     var identity = new AuthorityIdentity(); identity.setId("3DXV3"); identity.setConceptName("Cat"); identity.setLabel("Felis catus");
     when(provider.resolveIdentity("configured", "3DXV3")).thenReturn(identity);
     when(provider.getCodelists("configured")).thenReturn(Map.of("species", new CodelistImpl()));
+    when(provider.getCodelistDefinitions("configured")).thenCallRealMethod();
     return new AuthorityBindings.Binding(new Authority.ConfigurationRequest("worldview", "TAXA", "life:Identity",
         Map.of("urn", "taxa", "codelists", Map.of("species", "taxonomy.species"))), provider, "configured");
   }
   AuthorityCodelistRequest submit() {
     return new AuthorityCodelistRequest(AuthorityCodelistRequest.Operation.SUBMIT, "TAXA", "taxonomy.species",
         "FelisCatus", "3DXV3", null, 0, null, null, null, null);
+  }
+
+  @Test void undeclaredWorldviewListStartsEmptyAndUsesTheSameDurableReviewWorkflow() {
+    var binding = binding();
+    when(binding.provider().getCodelists("configured")).thenReturn(Map.of());
+    var store = new AuthorityCodelists(binding, directory);
+    var policy = store.snapshot().policies().get("taxonomy.species");
+    assertEquals("species", policy.listId());
+    assertFalse(policy.providerDeclared());
+    assertTrue(policy.acceptsProposals());
+    assertTrue(store.snapshot().codelists().get("taxonomy.species").codes().isEmpty());
+    var pending = store.execute(submit(), "community-member");
+    assertNull(store.resolve("taxonomy.species", "FelisCatus"));
+    store.execute(new AuthorityCodelistRequest(AuthorityCodelistRequest.Operation.REVIEW, "TAXA",
+        "taxonomy.species", null, null, pending.proposals().getFirst().id(), pending.revision(),
+        AuthorityCodelistRequest.Decision.ACCEPT, null, null, null), "admin");
+    assertEquals("3DXV3", new AuthorityCodelists(binding, directory).resolve("taxonomy.species", "FelisCatus"));
+    assertThrows(IllegalArgumentException.class, () -> store.execute(new AuthorityCodelistRequest(
+        AuthorityCodelistRequest.Operation.SUBMIT, "TAXA", "unbound.list", "Cat", "3DXV3",
+        null, 0, null, null, null, null), "user"));
+  }
+
+  @Test void providerPolicyRejectsNewProposalsButAllowsAdministratorManagement() throws Exception {
+    var binding = binding();
+    var seed = new CodelistImpl();
+    seed.getEntries().add(new CodelistImpl.Entry("TAXA", "OfficialCat", "3DXV3", null, true));
+    doReturn(Map.of("species", new Authority.CodelistDefinition(seed, false)))
+        .when(binding.provider()).getCodelistDefinitions("configured");
+    var store = new AuthorityCodelists(binding, directory);
+    assertEquals("3DXV3", store.resolve("taxonomy.species", "OfficialCat"));
+    var policy = store.snapshot().policies().get("taxonomy.species");
+    assertTrue(policy.providerDeclared());
+    assertFalse(policy.acceptsProposals());
+    assertTrue(assertThrows(IllegalArgumentException.class, () -> store.execute(submit(), "user"))
+        .getMessage().contains("does not accept proposals"));
+    assertEquals(0, store.revision());
+    assertTrue(store.snapshot().proposals().isEmpty());
+    store.execute(managed(AuthorityCodelistRequest.Operation.CREATE, "Cat", null, "3DXV3", 0), "admin");
+    store.execute(managed(AuthorityCodelistRequest.Operation.UPDATE, "Cat", "DomesticCat", "3DXV3", 1), "admin");
+    var restarted = new AuthorityCodelists(binding, directory);
+    assertEquals("3DXV3", restarted.resolve("taxonomy.species", "DomesticCat"));
+    restarted.execute(managed(AuthorityCodelistRequest.Operation.DELETE, "DomesticCat", null, null, 2), "admin");
+    assertNull(restarted.resolve("taxonomy.species", "DomesticCat"));
+    var mapper = org.integratedmodelling.common.utils.Utils.Json.newObjectMapper();
+    var response = mapper.readValue(mapper.writeValueAsBytes(restarted.snapshot()), AuthorityCodelistResponse.class);
+    assertEquals(restarted.snapshot().policies(), response.policies());
+  }
+
+  @Test void legacyDeclarationsRemainProposalEnabledAndPolicyChangesPreserveHistory() {
+    var binding = binding();
+    var store = new AuthorityCodelists(binding, directory);
+    var policy = store.snapshot().policies().get("taxonomy.species");
+    assertTrue(policy.providerDeclared());
+    assertTrue(policy.acceptsProposals());
+    var pending = store.execute(submit(), "user");
+    doReturn(Map.of("species", new Authority.CodelistDefinition(new CodelistImpl(), false)))
+        .when(binding.provider()).getCodelistDefinitions("configured");
+    var closed = new AuthorityCodelists(binding, directory);
+    assertEquals(pending.proposals(), closed.snapshot().proposals());
+    assertThrows(IllegalArgumentException.class, () -> closed.execute(submit(), "user"));
+    closed.execute(new AuthorityCodelistRequest(AuthorityCodelistRequest.Operation.REVIEW, "TAXA",
+        "taxonomy.species", null, null, pending.proposals().getFirst().id(), pending.revision(),
+        AuthorityCodelistRequest.Decision.REJECT, null, "List is now closed", null), "admin");
+    assertEquals(AuthorityCodelistResponse.Status.REJECTED, closed.snapshot().proposals().getFirst().status());
   }
   @Test void reviewPersistsAndNeverPublishesPendingProposals() {
     var binding = binding(); var store = new AuthorityCodelists(binding, directory);
@@ -97,7 +162,7 @@ class AuthorityCodelistsTest {
 
   @Test void searchFiltersListsAndAlwaysDecoratesCanonicalMatches() {
     var binding = binding(); var provider = binding.provider();
-    when(provider.configure(binding.request())).thenReturn("configured");
+    when(provider.configure(AuthorityBindings.providerRequest(binding.request()))).thenReturn("configured");
     var capabilities = mock(Authority.Capabilities.class); when(capabilities.isSearchable()).thenReturn(true);
     when(provider.getCapabilities()).thenReturn(capabilities);
     var identity = provider.resolveIdentity("configured", "3DXV3");
@@ -131,5 +196,8 @@ class AuthorityCodelistsTest {
     assertInstanceOf(org.integratedmodelling.klab.api.lang.kim.KimConcept.class, recovered.value(42L));
     assertEquals(recovered.value(42L), recovered.value(42));
     assertNull(recovered.value(42.5));
+    var legacy = mapper.valueToTree(response);
+    ((com.fasterxml.jackson.databind.node.ObjectNode) legacy).remove("policies");
+    assertTrue(mapper.treeToValue(legacy, AuthorityCodelistResponse.class).policies().isEmpty());
   }
 }
