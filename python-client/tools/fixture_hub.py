@@ -72,11 +72,19 @@ def prepare(state, worldview):
         '@split(1) @fillcurve("D2_XY")\n'
         'model geography:Aspect in degree_angle set to [org.integratedmodelling.klab.services.runtime.testing.FixtureControls.nextAspectValue()];\n'
         'model geography:BathymetricDepth in m set to [org.integratedmodelling.klab.services.runtime.testing.FixtureControls.awaitValue()];\n')
+    (fixture / "src/python.scenario.kim").write_text(
+        'scenario python.scenario;\nmodel geography:Elevation in m set to [200 + 34.5];\n')
+    (fixture / "src/python.lexical.kim").write_text(
+        'namespace python.lexical;\n'
+        'project private model geography:Slope in degree_angle set to [7.5];\n'
+        'private model geography:BathymetricDepth in m set to [66.5];\n')
     (state / "controls").mkdir()
     (state / "runtime-fixture.json").write_text(json.dumps({"classes": str(fixture_classes), "controls": str(state / "controls")}))
     (state / "fixture-provenance.json").write_text(json.dumps({"worldview_revision": revision,
         "worldview_manifest_sha256": hashlib.sha256((worldview / "META-INF/manifest.json").read_bytes()).hexdigest(),
-        "model_sha256": hashlib.sha256((fixture / "src/python.fixture.kim").read_bytes()).hexdigest()}))
+        "model_sha256": hashlib.sha256((fixture / "src/python.fixture.kim").read_bytes()).hexdigest(),
+        "typed_models_sha256": {file.name: hashlib.sha256(file.read_bytes()).hexdigest()
+            for file in (fixture / "src/python.scenario.kim", fixture / "src/python.lexical.kim")}}))
     projects = {}
     for name, directory, is_worldview in (("imod", worldview.resolve(), True), ("python.fixture", fixture.resolve(), False)):
         projects[name] = {"sourceUrl": directory.as_uri(), "served": True, "worldview": is_worldview,

@@ -38,6 +38,10 @@ result/wait/cancel; ObservationImpl.fetch_data; ScientificData; Endpoint;
 ResourcesServiceImpl.list; dto.storage_semantics for simple units;
 experiment.run_elevation. Error hierarchy is documented in README.
 
+Typed facade: `ObservationRequest`, `ObservationOptions`, `ResolutionConstraint`,
+`ContextOptions`, `GridOptions`, `RectangularGeometry`, `Context.observe`, and
+`Session.create_context(options=...)`. See [typed contracts and verification](typed-observe.md).
+
 Remaining unsupported capabilities include Avro worker contextualization and job
 data decoding, bulk file export, automatic arbitrary query/consumer geometry
 conversion, pandas/xarray adapters, privileged server administration, full Modeler

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .api.runtime import ObservationImpl
+from .api.knowledge import ObservableImpl
 from .api.scopes import ContextScopeImpl, SessionScopeImpl, UserScopeImpl
 from .dto import (check_notifications, configuration_to_wire, decode_cell, object_payload,
                   observation_from_wire, observation_to_wire, required_text)
@@ -17,6 +18,7 @@ from .errors import (ConfigurationError, InvalidRequestError, JobCancelledError,
                      JobUnavailableError, ProtocolError, TransportError,
                      UnsupportedOperationError, WaitTimeout)
 from .transport import Endpoint, Transport
+from .requests import ContextOptions, ObservationOptions, ObservationRequest
 
 _TOKEN = re.compile(r"^[^.\s#]+(?:\.[^.\s#]+)?(?:\.[1-9][0-9]*)*(?:#[1-9][0-9]*)?$")
 
@@ -156,8 +158,13 @@ class Session(SessionScopeImpl):
     def id(self):
         return self.session_id
 
-    def create_context(self, *, configuration: dict[str, Any] | None = None, name: str = "Python context") -> Context:
+    def create_context(self, *, configuration: dict[str, Any] | None = None, name: str = "Python context",
+                       options: ContextOptions | None = None) -> Context:
         """Create a remote context; default ONE_OFF is disposable on explicit release."""
+        if options is not None:
+            if not isinstance(options, ContextOptions) or configuration is not None or name != "Python context":
+                raise InvalidRequestError("Use ContextOptions or raw configuration/name, not both")
+            configuration = options.to_wire()
         payload = self.client.transport.request(
             "runtime", "POST", "/createContext", scope=self.id,
             json=self.client._scope_request({"name": name, "persistence": "ONE_OFF", **(configuration or {})}),
@@ -197,6 +204,12 @@ class Context(ContextScopeImpl):
     def submit(self, observation: ObservationImpl | dict[str, Any], *, resolution_constraints=()) -> Job:
         """Submit through Runtime; acceptance returns a job, not scientific success."""
         return self.client._submit(observation, self, resolution_constraints)
+
+    def observe(self, request: ObservationRequest | ObservableImpl | str, *,
+                options: ObservationOptions | None = None) -> Job:
+        """Submit a typed request, a resolved observable, or Reasoner definition text."""
+        from .requests import observe
+        return observe(self, request, options)
 
     def job(self, id: int) -> Job:
         """Resume a saved job in its original context, including focus path."""

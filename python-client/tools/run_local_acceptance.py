@@ -30,6 +30,7 @@ def main():
     parser.add_argument("--samples", type=int, default=8)
     parser.add_argument("--build", action="store_true")
     parser.add_argument("--step-timeout", type=float, default=900)
+    parser.add_argument("--typed-observe", action="store_true", help="Also verify the typed observation example")
     args = parser.parse_args()
     if os.name != "nt" or not args.java.is_file() or not args.state_dir.parent.is_dir():
         parser.error("Requires Windows, existing Java executable and existing state parent")
@@ -87,7 +88,10 @@ def main():
         started = True
         run("start", [sys.executable, "tools/local_stack.py", "start", "--java", str(args.java.resolve()), "--state-dir", str(state)])
         run("acceptance", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
-                           "-m", "live", "-s", "tests/test_local_workflow.py", "--junitxml=" + str(state / "acceptance.xml")])
+                            "-m", "live", "-s", "tests/test_local_workflow.py", "--junitxml=" + str(state / "acceptance.xml")])
+        if args.typed_observe:
+            run("typed-observe", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
+                "-m", "live", "-s", "tests/test_typed_live.py", "--junitxml=" + str(state / "typed-observe.xml")])
         run("cold-prepare", [sys.executable, "tools/cold_context_check.py", "prepare", "--state-dir", str(state)])
         run("restart-runtime-stop", [sys.executable, "tools/local_stack.py", "stop", "--only", "runtime", "--state-dir", str(state)])
         run("restart-runtime-start", [sys.executable, "tools/local_stack.py", "start", "--only", "runtime", "--java", str(args.java.resolve()), "--state-dir", str(state)])
