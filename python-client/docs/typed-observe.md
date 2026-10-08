@@ -110,8 +110,32 @@ Build a fresh fixture and include this example with:
 python tools/run_local_acceptance.py --java C:\jdk\bin\java.exe --worldview C:\pinned-imod --state-dir C:\existing-parent\new-state --build --typed-observe --samples 1 --duration 1
 ```
 
-Candidate SHA, Python matrix, packaging and live results will be recorded after
-the exact-candidate gates execute. These instructions are not a passing result.
+Executed candidate **4c71ea76e** (production implementation introduced at 0ca4fc4ce):
+
+* 226 offline tests passed, 5 live deselected, on Windows Python 3.12 and the
+  installed-package Ubuntu/WSL Python 3.11/3.12/3.13 matrix. Each Linux version
+  built wheel/sdist and passed the same coverage/changed-code gates.
+* `requests.py`: 240 executable statements and 98 branches, all covered, with
+  zero excluded lines. Changed existing production lines/arcs passed separately.
+* Ruff targeted checks passed. A fresh dependency-light Windows Python 3.11
+  environment installed the wheel and exercised imports/construction without HTTP.
+* Exact-candidate fresh run `klab-typed-live-final`, **2026-10-08
+  00:33:11–00:35:39 UTC**: the typed example, 2 existing live tests, cold ACL checks
+  and all smoke phases passed. Cleanup confirmed all five JVM exits. Java source
+  is unchanged from the recorded baseline; compiled/source hashes are retained.
+
+Evidence is external under `C:\Users\lumsd\AppData\Local\Temp\opencode`:
+`typed-coverage.json`, per-version `typed-3.xx` CI/coverage/XML/distributions,
+`typed-handles-baseline-java.log`, and `klab-typed-live-final` reports/provenance.
+The first attempted matrix rerun refused existing venv directories before tests;
+fresh SHA-qualified environments were then created and the complete matrix passed.
+
+Review: identity/scope and observer binding, immutable snapshots, model-option
+rejection, mutation ambiguity, wire compatibility and negative controls were
+checked against the Java consumers. The fixture confirms real option effects;
+the bare integer observer form remains subject to server authorization/validation.
+No saved-handles dependency or Java policy change is included.
+
 The broader federation/promotion gate and production/provider, bulk/temporal,
 worker and automatic coordinate-conversion capabilities are not certified here.
 
