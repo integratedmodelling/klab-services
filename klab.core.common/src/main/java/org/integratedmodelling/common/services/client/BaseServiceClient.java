@@ -49,7 +49,7 @@ public abstract class BaseServiceClient implements KlabService {
   protected final Settings settings;
   protected ServiceCapabilities capabilities;
 
-  List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
+  List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
   @SafeVarargs
   public BaseServiceClient(

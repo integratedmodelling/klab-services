@@ -34,6 +34,9 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
   private Observation observer;
   private Data.ShardingStrategy shardingStrategy = new Data.ShardingStrategy();
   private String owner;
+  private String sessionFederationId;
+  public String getSessionFederationId() { return sessionFederationId; }
+  public void setSessionFederationId(String value) { sessionFederationId = value; }
   private boolean empty;
   private String behaviorUrn;
   private String gridUrn;
@@ -279,6 +282,7 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   @Override
   public void defineFromExisting(DigitalTwin.Configuration descriptor) {
+    this.sessionFederationId = descriptor.getSessionFederationId();
     this.owner = descriptor.getOwner();
     this.serviceId = descriptor.getServiceId();
     this.worldviewCommitment = descriptor.getWorldviewCommitment();

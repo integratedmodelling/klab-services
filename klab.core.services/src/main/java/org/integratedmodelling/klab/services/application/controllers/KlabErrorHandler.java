@@ -41,6 +41,13 @@ public class KlabErrorHandler {
         .contentType(MediaType.APPLICATION_PROBLEM_JSON).body(ex.getBody());
   }
 
+  @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class)
+  public ResponseEntity<ProblemDetail> handleAuthorizationException(
+      org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_PROBLEM_JSON)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied"));
+  }
+
   @ExceptionHandler(Throwable.class)
   public @ResponseBody ResponseEntity<ErrorResponse> handleDefaultException(Throwable ex) {
     ErrorResponse errorResponse =

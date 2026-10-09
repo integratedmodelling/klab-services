@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -65,7 +68,7 @@ class ScopeManagerTest {
 
     assertNotNull(session);
     assertEquals("test_user", session.getId());
-    verify(fixture.ownerService).declareSessionScope(session, fixture.userScope, null);
+    verify(fixture.ownerService).declareSessionScope(eq(session), argThat(s -> s.getUser().getUsername().equals("test.user")), isNull());
   }
 
   @Test
@@ -80,7 +83,7 @@ class ScopeManagerTest {
             .accessRights(ResourcePrivileges.create("test.user"))
             .serviceId(fixture.runtime.serviceId())
             .build();
-    when(fixture.runtime.getConfiguration(contextId, fixture.userScope))
+    when(fixture.runtime.getConfiguration(eq(contextId), any()))
         .thenReturn(configuration);
 
     var context =
@@ -94,11 +97,12 @@ class ScopeManagerTest {
     assertEquals(contextId, context.getId());
     var parentSession = (SessionScope) context.getParentScope();
     assertEquals("test_user_agent-1", parentSession.getId());
-    verify(fixture.runtime).getConfiguration(contextId, fixture.userScope);
+    verify(fixture.runtime).getConfiguration(eq(contextId), argThat(s -> s.getUser().getUsername().equals("test.user")));
     verify(fixture.ownerService)
-        .declareSessionScope(parentSession, fixture.userScope, null);
+        .declareSessionScope(argThat(s -> s.getId().equals(parentSession.getId())), argThat(s -> s.getUser().getUsername().equals("test.user")), isNull());
     verify(fixture.ownerService)
-        .declareContextScope(context, parentSession, fixture.userScope);
+        .declareContextScope(argThat(s -> s.getId().equals(contextId) && s.getUser().getUsername().equals("test.user")),
+            argThat(s -> s.getId().equals(parentSession.getId())), argThat(s -> s.getUser().getUsername().equals("test.user")));
   }
 
   @Test

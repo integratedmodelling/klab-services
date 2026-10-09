@@ -1435,6 +1435,22 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
         var ret = new Client(this);
         ret.scope = scope;
+        // Do not retain another request's actor or contextual focus on a reused client.
+        for (var header : List.of(ServicesAPI.SCOPE_HEADER, ServicesAPI.SERVICE_ID_HEADER,
+            ServicesAPI.USERNAME_HEADER, ServicesAPI.FEDERATION_HEADER, ServicesAPI.TRANSACTION_ID_HEADER,
+            ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER, ServicesAPI.SOURCE_OBSERVATION_ID_HEADER,
+            ServicesAPI.TARGET_OBSERVATION_ID_HEADER)) ret.headers.remove(header);
+        if (scope instanceof org.integratedmodelling.klab.api.scope.UserScope userScope
+            && userScope.getUser() != null) {
+          var user = userScope.getUser();
+          ret.authorization = user.getId();
+          // Anonymous local calls may intentionally be resolved as the privileged service owner.
+          if (!user.isAnonymous() && !"anonymous".equals(user.getUsername())) {
+            if (user.getUsername() != null) ret.headers.put(ServicesAPI.USERNAME_HEADER, user.getUsername());
+            var federation = org.integratedmodelling.klab.api.Klab.INSTANCE.getFederationData(user);
+            if (federation != null) ret.headers.put(ServicesAPI.FEDERATION_HEADER, federation.getId());
+          }
+        }
         if (scope instanceof ContextScope contextScope) {
           ret.headers.put(ServicesAPI.SCOPE_HEADER, ContextScope.getScopeId(contextScope));
           ret.headers.put(ServicesAPI.SERVICE_ID_HEADER, contextScope.getHostServiceId());

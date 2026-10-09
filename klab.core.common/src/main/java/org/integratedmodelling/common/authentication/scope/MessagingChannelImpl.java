@@ -80,6 +80,12 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     }
   }
 
+  protected void disconnectMessaging() {
+    if (this.amqpChannel != null) {
+      this.amqpChannel.disconnect();
+    }
+  }
+
   /**
    * Sets up messaging by establishing an AMQP channel and configuring it for the specified queues.
    * This method ensures the messaging system is properly initialized and ready for operation.

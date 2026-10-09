@@ -18,14 +18,14 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
  * the scope manager at service side, this only manages Session and Context scopes, from different
  * runtimes. User scopes are always obtained by authentication on the client side.
  *
- * <p>Wire IDs remain runtime-owned. Local keys include the hosting runtime so identical user
- * session IDs on different runtimes cannot alias. Creation and reconnection publish initialized
+ * <p>Wire IDs remain runtime-owned. Local keys include the hosting runtime and caller so shared
+ * session IDs cannot alias between users or runtimes. Creation and reconnection publish initialized
  * peers through {@link #register(ClientSessionScope)}; failed and derived scopes are never published.
  */
 public enum ClientScopeManager {
   INSTANCE;
 
-  private record ScopeKey(String runtimeId, String scopeId) {}
+  private record ScopeKey(String runtimeId, String scopeId, String username) {}
   private final Map<ScopeKey, ClientSessionScope> scopes = new ConcurrentHashMap<>();
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -41,13 +41,20 @@ public enum ClientScopeManager {
     var matches = scopes.values().stream()
         .filter(s -> Objects.equals(scopeId, s.getId()) && scopeClass.isInstance(s)).toList();
     if (matches.size() > 1) {
-      throw new KlabIllegalStateException("Scope ID is ambiguous across runtimes: " + scopeId);
+      throw new KlabIllegalStateException("Scope ID is ambiguous across runtimes or users: " + scopeId);
     }
     return matches.isEmpty() ? null : scopeClass.cast(matches.getFirst());
   }
 
   public <T extends SessionScope> T getScope(String runtimeId, String scopeId, Class<T> scopeClass) {
-    var scope = scopes.get(new ScopeKey(runtimeId, scopeId));
+    var matches = scopes.values().stream().filter(s -> Objects.equals(runtimeId, s.getHostServiceId())
+        && Objects.equals(scopeId, s.getId()) && scopeClass.isInstance(s)).toList();
+    if (matches.size() > 1) throw new KlabIllegalStateException("Scope ID is ambiguous across users: " + scopeId);
+    return matches.isEmpty() ? null : scopeClass.cast(matches.getFirst());
+  }
+
+  public <T extends SessionScope> T getScope(String runtimeId, String scopeId, String username, Class<T> scopeClass) {
+    var scope = scopes.get(new ScopeKey(runtimeId, scopeId, username));
     return scopeClass.isInstance(scope) ? scopeClass.cast(scope) : null;
   }
 
@@ -73,7 +80,7 @@ public enum ClientScopeManager {
     }
 
     var service = findService(configuration, requestingScope);
-    var existing = getScope(service.serviceId(), configuration.getId(), ClientContextScope.class);
+    var existing = getScope(service.serviceId(), configuration.getId(), requestingScope.getUser().getUsername(), ClientContextScope.class);
     if (existing != null) return existing;
     if (createIfMissing) {
 
@@ -121,7 +128,7 @@ public enum ClientScopeManager {
         || ret.getHostServiceId() == null) {
       throw new KlabIllegalStateException("Cannot register an uninitialized client scope");
     }
-    var key = new ScopeKey(ret.getHostServiceId(), ret.getId());
+    var key = new ScopeKey(ret.getHostServiceId(), ret.getId(), ret.getUser().getUsername());
     var existing = scopes.get(key);
     if (existing != null && existing != ret) {
       throw new KlabIllegalStateException("A client peer is already registered for " + ret.getId());
@@ -142,7 +149,8 @@ public enum ClientScopeManager {
   }
 
   public void unregister(ClientSessionScope clientSessionScope) {
-    scopes.remove(new ScopeKey(clientSessionScope.getHostServiceId(), clientSessionScope.getId()), clientSessionScope);
+    scopes.remove(new ScopeKey(clientSessionScope.getHostServiceId(), clientSessionScope.getId(),
+        clientSessionScope.getUser() == null ? null : clientSessionScope.getUser().getUsername()), clientSessionScope);
   }
 
   /** Disconnect this client; remote twins are governed by the runtime's persistence policy. */

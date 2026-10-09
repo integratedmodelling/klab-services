@@ -13,7 +13,7 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
   private int loadPercentage = -1;
   private long memoryAvailableBytes = Runtime.getRuntime().totalMemory();
   private long memoryUsedBytes =
-      Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
+      memoryAvailableBytes - Runtime.getRuntime().freeMemory();
   private int connectedSessionCount = -1;
   private int knownSessionCount = -1;
   private long uptimeMs = -1;

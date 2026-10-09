@@ -44,6 +44,51 @@ import org.integratedmodelling.klab.services.application.security.Role;
  */
 public class ScopeManager {
 
+  public static final String PERSISTED_SESSION_OWNER = "klab.session.persisted-owner";
+  public static final String SESSION_FEDERATION = "klab.session.federation";
+
+  /** A context ACL is independent of membership in its parent session's federation. */
+  public static boolean allowsManagedScope(ServiceUserScope managed, UserScope requester) {
+    if (managed == null || requester == null || requester.getUser() == null) return false;
+    var username = requester.getUser().getUsername();
+    if (username == null || username.isBlank()) return false;
+    if (managed instanceof ContextScope context) {
+      var configuration = context.getConfiguration();
+      return configuration != null && (Objects.equals(configuration.getOwner(), username)
+          || (configuration.getAccessRights() != null
+              && configuration.getAccessRights().checkAuthorization(username, requester.getUser().getGroups())));
+    }
+    var restoredOwner = managed.getData().get(PERSISTED_SESSION_OWNER);
+    var owner = restoredOwner instanceof String persisted ? persisted
+        : managed.getUser() == null ? null : managed.getUser().getUsername();
+    return isSharedDefaultSession(managed) ? isSharedDefaultSession(managed, requester) : Objects.equals(owner, username);
+  }
+
+  private static String sharedSessionFederationId(ServiceUserScope managed) {
+    if (!(managed instanceof SessionScope) || managed.getUser() == null) return null;
+    var federationId = managed.getData().get(SESSION_FEDERATION);
+    if (!(federationId instanceof String) && !managed.getData().containsKey(PERSISTED_SESSION_OWNER)) {
+      var ownerFederation = Klab.INSTANCE.getFederationData(managed.getUser());
+      federationId = ownerFederation == null ? null : ownerFederation.getId();
+    }
+    return federationId instanceof String id && !id.isBlank()
+        && !Federation.LOCAL_FEDERATION_ID.equals(id)
+        && id.replace(".", "_").equals(managed.getId()) ? id : null;
+  }
+
+  /** Classify the registered parent independently of the caller's membership. */
+  public static boolean isSharedDefaultSession(ServiceUserScope managed) {
+    return sharedSessionFederationId(managed) != null;
+  }
+
+  /** Only a canonical default session with matching verified membership is shared. */
+  public static boolean isSharedDefaultSession(ServiceUserScope managed, UserScope requester) {
+    if (requester == null || requester.getUser() == null) return false;
+    var id = sharedSessionFederationId(managed);
+    var federation = Klab.INSTANCE.getFederationData(requester.getUser());
+    return id != null && federation != null && id.equals(federation.getId());
+  }
+
   //  private ReActorSystem actorSystem = null;
   private KlabService service;
 
@@ -55,7 +100,8 @@ public class ScopeManager {
   private final Map<String, ServiceUserScope> scopes = new ConcurrentHashMap<>();
 
   private Map<String, Long> idleScopeTime = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+  private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
+      Thread.ofPlatform().daemon(true).name("klab-scope-maintenance").factory());
 
   public ScopeManager(KlabService service) {
 
@@ -251,7 +297,7 @@ public class ScopeManager {
 
     var ret = scopes.get(authorization.getUsername());
     if (ret instanceof ServiceUserScope userScope) {
-      return userScope;
+      return userScope.forAuthorization(authorization);
     }
 
     ret = login(createUserIdentity(authorization));
@@ -277,7 +323,7 @@ public class ScopeManager {
             + (federation == null
                 ? " is not part of any federation"
                 : " part of federation " + federation.getId()));
-    return ret;
+    return ret.forAuthorization(authorization);
   }
 
   /**
@@ -531,10 +577,12 @@ public class ScopeManager {
 
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
-
-        if (scopeData.type() == Scope.Type.CONTEXT
-            && !ret.getUser().getUsername().equals(userScope.getUser().getUsername())) {
-          ret = ((ServiceContextScope) ret).withIdentity(userScope.getIdentity());
+        if (!allowsManagedScope(ret, userScope)) {
+          throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+              "Scope is not accessible to the requesting user");
+        }
+        if (ret instanceof ServiceContextScope context) {
+          ret = context.forRequest(userScope);
           Logging.INSTANCE.debug(
               "Using context scope "
                   + scopeId
@@ -542,6 +590,8 @@ public class ScopeManager {
                   + userScope.getUser().getUsername()
                   + " in service "
                   + serviceId());
+        } else if (ret instanceof ServiceSessionScope session) {
+          ret = session.forRequest(userScope);
         }
 
         return (T) ret;
@@ -609,7 +659,11 @@ public class ScopeManager {
               return null;
             }
 
-            ret = new ServiceContextScope(sessionScope, configuration, userScope.getUser());
+            sessionScope.getData().put(PERSISTED_SESSION_OWNER, configuration.getOwner());
+            if (configuration.getSessionFederationId() != null) {
+              sessionScope.getData().put(SESSION_FEDERATION, configuration.getSessionFederationId());
+            }
+            ret = new ServiceContextScope(sessionScope.forRequest(userScope), configuration, userScope.getUser());
             for (var service : sessionScope.getServices(KlabService.class)) {
               ret.addService(service);
             }
@@ -628,7 +682,7 @@ public class ScopeManager {
                     + runtimeId
                     + " in service "
                     + serviceId());
-            return (T) ret;
+            return (T) ((ServiceContextScope) ret).forRequest(userScope);
           } else if (configuration == null) {
             Logging.INSTANCE.warn(
                 "Runtime "
@@ -720,7 +774,11 @@ public class ScopeManager {
 
     var ret = getScope(sessionId, ServiceSessionScope.class);
     if (ret != null) {
-      return ret;
+      if (!verifiedByHostRuntime && !allowsManagedScope(ret, userScope)) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+            "Session is not accessible to the requesting user");
+      }
+      return ret.forRequest(userScope);
     }
 
     var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
@@ -772,9 +830,17 @@ public class ScopeManager {
   }
 
   public void shutdown() {
-    //    if (actorSystem != null) {
-    //      actorSystem.shutDown();
-    //    }
+    executor.shutdownNow();
+    // Local messaging cleanup must not invoke ContextScope.close(), which disposes digital twins.
+    for (var scope : List.copyOf(scopes.values())) {
+      try {
+        scope.releaseLocalResources();
+      } catch (Exception e) {
+        Logging.INSTANCE.warn("Cannot close messaging for scope " + scope.getId() + ": " + e);
+      }
+    }
+    scopes.clear();
+    idleScopeTime.clear();
   }
 
   /**

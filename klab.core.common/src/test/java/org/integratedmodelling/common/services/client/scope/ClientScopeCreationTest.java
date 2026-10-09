@@ -18,10 +18,16 @@ import org.junit.jupiter.api.Test;
 
 class ClientScopeCreationTest {
   private ClientUserScope user() {
+    return user("scope-test", null);
+  }
+
+  private ClientUserScope user(String username, org.integratedmodelling.klab.api.identities.Federation federation) {
     var identity = mock(UserIdentity.class);
-    when(identity.getId()).thenReturn("scope-test");
-    when(identity.getUsername()).thenReturn("scope-test");
-    when(identity.getData()).thenReturn(Parameters.create());
+    when(identity.getId()).thenReturn(username + "-credential");
+    when(identity.getUsername()).thenReturn(username);
+    var data = Parameters.<String>create();
+    if (federation != null) data.put(UserIdentity.FEDERATION_DATA_PROPERTY, federation);
+    when(identity.getData()).thenReturn(data);
     var engine = mock(EngineImpl.class, RETURNS_DEEP_STUBS);
     when(engine.getSettings().get(Setting.DO_NOT_CREATE_A_DEFAULT_OBSERVER, Boolean.class)).thenReturn(true);
     return spy(new ClientUserScope(identity, engine));
@@ -33,6 +39,26 @@ class ClientScopeCreationTest {
     when(runtime.getUrl()).thenReturn(new URL("http://localhost:8283"));
     when(runtime.declareSessionScope(any(), any(), isNull())).thenReturn("scope-test");
     return runtime;
+  }
+
+  @Test void federationSessionIdDoesNotAliasDifferentUsersLocalPeers() throws Exception {
+    var federation = new org.integratedmodelling.klab.api.identities.Federation("test.federation", null);
+    var alice = user("alice", federation);
+    var bob = user("bob", federation);
+    var runtime = runtime("shared-runtime");
+    when(runtime.declareSessionScope(any(), any(), isNull())).thenReturn("test_federation");
+    var a = (ClientSessionScope) alice.getUserSession(runtime);
+    var b = (ClientSessionScope) bob.getUserSession(runtime);
+    try {
+      assertEquals(a.getId(), b.getId());
+      assertNotSame(a, b);
+      assertEquals("alice", a.getUser().getUsername());
+      assertEquals("bob", b.getUser().getUsername());
+      assertSame(a, alice.getUserSession(runtime));
+      assertSame(b, bob.getUserSession(runtime));
+      a.closePeer();
+      assertSame(b, bob.getUserSession(runtime));
+    } finally { a.closePeer(); b.closePeer(); }
   }
 
   @Test void failedCreationPreservesReasonAndNeverReturnsAnUninitializedScope() throws Exception {

@@ -274,7 +274,7 @@ public class RuntimeClient extends BaseServiceClient
   @Override
   public synchronized ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
 
-    var ret = ClientScopeManager.INSTANCE.getScope(serviceId(), configuration.getId(), ClientContextScope.class);
+    var ret = ClientScopeManager.INSTANCE.getScope(serviceId(), configuration.getId(), userScope.getUser().getUsername(), ClientContextScope.class);
     if (ret != null) {
       return ret;
     }
@@ -298,7 +298,7 @@ public class RuntimeClient extends BaseServiceClient
         && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
 
       var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
-      var sessionScope = ClientScopeManager.INSTANCE.getScope(serviceId(), sessionId, ClientSessionScope.class);
+      var sessionScope = ClientScopeManager.INSTANCE.getScope(serviceId(), sessionId, userScope.getUser().getUsername(), ClientSessionScope.class);
       if (sessionScope == null) {
         sessionScope = (ClientSessionScope) userScope.getUserSession(this);
       }

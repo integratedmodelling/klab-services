@@ -41,6 +41,19 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
   private String name;
   private boolean operative = true;
 
+  /** Build a caller-owned peer without modifying the registered session or copying its owner. */
+  public ServiceSessionScope forRequest(ServiceUserScope requester) {
+    var ret = new ServiceSessionScope(requester);
+    ret.setId(getId());
+    ret.setName(getName());
+    ret.setHostServiceId(getHostServiceId());
+    ret.useRequestAuthority(requester);
+    ret.operative = operative;
+    ret.data.putAll(data);
+    ret.copyMessagingSetup(this);
+    return ret;
+  }
+
   public void setName(String name) {
     this.name = name;
   }
@@ -130,11 +143,20 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
   @Override
   public void close() {
+    BaseService host = null;
     try {
-      for (var context : getActiveContexts()) {
-        context.close();
+      var runtime = service instanceof RuntimeService r
+          && java.util.Objects.equals(r.serviceId(), getHostServiceId()) ? r : getService(RuntimeService.class);
+      if (!(runtime instanceof BaseService base)) {
+        throw new KlabInternalErrorException("Unexpected runtime service implementation for service-side session scope");
+      }
+      host = base;
+      // This is resource teardown after authorization, not a caller-filtered catalog query.
+      for (var context : host.getScopeManager().getScopes(Type.CONTEXT, ContextScope.class)) {
+        if (context.getId().startsWith(getId() + ".")) context.close();
       }
     } finally {
+      if (host != null) host.getScopeManager().releaseScope(getId());
       closeMessaging();
     }
   }
@@ -192,8 +214,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         //          }
         //        }
       }
-
-      baseService.getScopeManager().releaseScope(this.getId());
 
     } else {
       throw new KlabInternalErrorException(

@@ -105,7 +105,7 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
             ? user.getUsername().replace(".", "_")
             : federation.getId().replace(".", "_");
 
-    var existing = ClientScopeManager.INSTANCE.getScope(hostService.serviceId(), sessionId, SessionScope.class);
+    var existing = ClientScopeManager.INSTANCE.getScope(hostService.serviceId(), sessionId, user.getUsername(), SessionScope.class);
     if (existing != null) {
       return existing;
     }
