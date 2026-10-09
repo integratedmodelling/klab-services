@@ -98,14 +98,14 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   }
 
   @Override
-  public SessionScope getUserSession(RuntimeService hostService) {
+  public synchronized SessionScope getUserSession(RuntimeService hostService) {
 
     var sessionId =
         federation == null || Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
             ? user.getUsername().replace(".", "_")
             : federation.getId().replace(".", "_");
 
-    var existing = ClientScopeManager.INSTANCE.getScope(sessionId, SessionScope.class);
+    var existing = ClientScopeManager.INSTANCE.getScope(hostService.serviceId(), sessionId, SessionScope.class);
     if (existing != null) {
       return existing;
     }
@@ -114,11 +114,12 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
 
     var id = hostService.declareSessionScope(ret, this, null);
 
-    if (id != null) {
-      // should be the same
-      ret.setId(id);
-      ClientScopeManager.INSTANCE.register(ret);
+    if (id == null || id.isBlank()) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+          "Runtime failed to create session " + sessionId);
     }
+    ret.setId(id);
+    ClientScopeManager.INSTANCE.register(ret);
 
     return ret;
   }

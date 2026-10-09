@@ -279,30 +279,34 @@ public class ConfigurationImpl implements DigitalTwin.Configuration {
 
   @Override
   public void defineFromExisting(DigitalTwin.Configuration descriptor) {
+    this.owner = descriptor.getOwner();
+    this.serviceId = descriptor.getServiceId();
+    this.worldviewCommitment = descriptor.getWorldviewCommitment();
+    this.shardingStrategy = descriptor.getShardingStrategy();
     this.gridUrn = descriptor.getGridUrn();
     setGridDefinition(descriptor.getGridDefinition());
     this.gridAlignment = descriptor.getGridAlignment();
     this.observer = descriptor.getObserver();
     if (descriptor.getAccessRights() != null) {
-      this.accessRights = descriptor.getAccessRights();
       if (this.accessRights != null
           && !this.accessRights.toString().equals(descriptor.getAccessRights().toString())) {
         notifications.add(
             Notification.warning("Existing access rights do not match those requested"));
       }
+      this.accessRights = descriptor.getAccessRights();
     }
     if (descriptor.getPersistence() != null) {
-      this.persistence = descriptor.getPersistence();
       if (this.persistence != null && this.persistence != descriptor.getPersistence()) {
         notifications.add(
             Notification.warning("Existing persistence settings do not match those requested"));
       }
+      this.persistence = descriptor.getPersistence();
     }
     if (descriptor.getName() != null) {
-      this.name = descriptor.getName();
       if (this.name != null && !this.name.equals(descriptor.getName())) {
         notifications.add(Notification.warning("Existing name does not match those requested"));
       }
+      this.name = descriptor.getName();
     }
     if (descriptor.getDescription() != null) {
       this.description = descriptor.getDescription();

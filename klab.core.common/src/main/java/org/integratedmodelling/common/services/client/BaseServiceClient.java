@@ -279,7 +279,11 @@ public abstract class BaseServiceClient implements KlabService {
           client
               .withScope(sessionScope)
               .post(ServicesAPI.CREATE_CONTEXT, request, DigitalTwin.Configuration.class);
-      if (configuration != null && !configuration.isEmpty()) {
+      if (configuration != null && !configuration.isEmpty()
+          && configuration.getId() != null && !configuration.getId().isBlank()) {
+        if (contextScope instanceof org.integratedmodelling.common.services.client.scope.ClientContextScope peer) {
+          peer.setFromConfiguration(configuration);
+        }
         setupMessaging(contextScope, sessionScope, configuration.getId());
       }
       return configuration == null

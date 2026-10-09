@@ -335,6 +335,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
           .error("Cannot create a context without a runtime service", UIView.Interactivity.DISPLAY);
       return null;
     }
+    return openNewContext(configuration, runtimeService, dispatchEvent);
+  }
+
+  /** Create on the selected runtime and enter the same modeler lifecycle as default contexts. */
+  public ContextScope openNewContext(
+      DigitalTwin.Configuration configuration, RuntimeService runtimeService, boolean dispatchEvent) {
     var ret = user().getUserSession(runtimeService).createContext(configuration);
     if (ret != null) {
       contexts.put(ret.getId(), ret);

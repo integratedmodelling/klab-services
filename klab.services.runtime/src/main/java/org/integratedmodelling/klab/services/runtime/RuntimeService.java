@@ -421,6 +421,8 @@ public class RuntimeService extends BaseService
 
       if (serviceContextScope.getConfiguration() instanceof ConfigurationImpl configurationImpl) {
         configurationImpl.setServiceId(serviceId());
+        configurationImpl.setServiceUrl(getUrl());
+        configurationImpl.setUrl(Utils.URLs.newURL(getUrl() + "/dt/" + scopeId));
         if (configurationImpl.getOwner() == null) {
           configurationImpl.setOwner(userScope.getUser().getUsername());
         }

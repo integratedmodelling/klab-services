@@ -97,16 +97,14 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     var declaredConfiguration = runtimeService.declareContextScope(ret, this, userScope);
     if (declaredConfiguration == null || declaredConfiguration.isEmpty()) {
-      ret.setEmpty(true);
-      if (declaredConfiguration != null && declaredConfiguration != validatedConfiguration) {
-        validatedConfiguration
-            .getNotifications()
-            .addAll(declaredConfiguration.getNotifications());
-      }
-      return ret;
+      var detail = declaredConfiguration == null ? "No response" : declaredConfiguration
+          .getNotifications().stream().map(Notification::getMessage)
+          .collect(java.util.stream.Collectors.joining("; "));
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+          "Digital twin creation failed: " + detail);
     }
 
-    if (declaredConfiguration.getId() == null) {
+    if (declaredConfiguration.getId() == null || declaredConfiguration.getId().isBlank()) {
       throw new KlabInternalErrorException(
           "Runtime returned a context configuration without an ID");
     }

@@ -79,6 +79,8 @@ public class ConfigurationBuilder {
     this.notifications.addAll(configuration.getNotifications());
     this.createWhenAbsent = configuration.isCreateWhenAbsent();
     this.serviceId = configuration.getServiceId();
+    this.description = configuration.getDescription();
+    this.owner = configuration.getOwner();
     this.observer = configuration.getObserver();
     this.empty = configuration.isEmpty();
     this.behaviorUrn = configuration.getBehaviorUrn();

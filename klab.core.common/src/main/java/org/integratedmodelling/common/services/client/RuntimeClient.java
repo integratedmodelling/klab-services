@@ -272,9 +272,9 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
+  public synchronized ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
 
-    var ret = ClientScopeManager.INSTANCE.getScope(configuration.getId(), ClientContextScope.class);
+    var ret = ClientScopeManager.INSTANCE.getScope(serviceId(), configuration.getId(), ClientContextScope.class);
     if (ret != null) {
       return ret;
     }
@@ -292,23 +292,20 @@ public class RuntimeClient extends BaseServiceClient
             .withScope(userScope)
             .post(ServicesAPI.RUNTIME.CONNECT, request, DigitalTwin.Configuration.class);
 
-    if (descriptor != null && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
-
-      final var service = this;
-      descriptor.getNotifications().forEach(n -> userScope.send(n));
+    if (descriptor != null) descriptor.getNotifications().forEach(userScope::send);
+    if (descriptor != null && !descriptor.isEmpty() && descriptor.getId() != null
+        && !descriptor.getId().isBlank()
+        && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
 
       var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
-      var sessionScope = ClientScopeManager.INSTANCE.getScope(sessionId, ClientSessionScope.class);
+      var sessionScope = ClientScopeManager.INSTANCE.getScope(serviceId(), sessionId, ClientSessionScope.class);
       if (sessionScope == null) {
         sessionScope = (ClientSessionScope) userScope.getUserSession(this);
-        ClientScopeManager.INSTANCE.register(sessionScope);
       }
 
-      // Add the known data that are null; notify for anything that isn't and differs.
-      configuration.defineFromExisting(descriptor);
-
-      ret = new ClientContextScope(sessionScope, this, configuration);
-      ret.setId(descriptor.getId());
+      // Reconnect adopts the same authoritative descriptor as creation.
+      ret = new ClientContextScope(sessionScope, this, descriptor);
+      ret.setFromConfiguration(descriptor);
       var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
       if (federation != null && ret instanceof MessagingChannelImpl messagingChannel) {
         var queues =
@@ -320,7 +317,12 @@ public class RuntimeClient extends BaseServiceClient
         messagingChannel.setupMessaging(federation, ret.getId(), queues);
         Logging.INSTANCE.info("Connected to queue for context scope " + ret.getId());
       }
-      ret.createDigitalTwin(descriptor.getId());
+      try {
+        ClientScopeManager.INSTANCE.register(ret);
+      } catch (RuntimeException failure) {
+        ret.closePeer();
+        throw failure;
+      }
       return ret;
     }
 
