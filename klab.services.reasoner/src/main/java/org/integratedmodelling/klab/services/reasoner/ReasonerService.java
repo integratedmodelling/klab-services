@@ -251,6 +251,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             && requestRoot(statement).equals(selected.rootIdentity())).findFirst().orElseThrow();
     if (!Objects.equals(declared.getAuthorityParameters().get("codelists"), request.parameters().get("codelists")))
       throw new KlabValidationException("Codelists must match the worldview configuration");
+    if (!Objects.equals(declared.getAuthorityParameters().get("semanticBoundaries"), request.parameters().get("semanticBoundaries")))
+      throw new KlabValidationException("Semantic boundaries must match the worldview configuration");
     var provider = Utils.Resources.resolveAuthority(selected, scope, this, worldview);
     if (provider == null)
       throw new KlabValidationException("Authority provider is unavailable: " + urn);
@@ -262,6 +264,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return authorityBindings.configure(request, provider);
   }
   private volatile boolean knowledgeReady;
+  private org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver authorityIdentityResolver;
+
+  @Override public synchronized Concept resolveAuthorityHierarchy(String authority, String code, Scope scope) {
+    authorizedAuthority(authority, scope);
+    org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(authority, code);
+    return authorityIdentityResolver.resolve(authority, code, true);
+  }
   private volatile List<Notification> worldviewLoadDiagnostics = List.of();
   private SyntacticMatcher syntacticMatcher;
   private SemanticMatcher semanticMatcher;
@@ -601,9 +610,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
         BaseService.getConfigurationDirectory(options).toPath().resolve("authority-cache"));
     this.owl = new OWL(scope);
-    var authorityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
-        this.owl, authorityBindings);
-    this.owl.setAuthorityResolver(authorityResolver::resolve);
+    this.authorityIdentityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
+        this.owl, authorityBindings, this::invalidateSemanticCaches);
+    this.owl.setAuthorityResolver(authorityIdentityResolver::resolve);
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
     readConfiguration(options);
@@ -905,6 +914,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> parents(Semantics target) {
+    if (authorityIdentityResolver != null) authorityIdentityResolver.ensureHierarchy(target.asConcept());
     return this.owl.getParents(target.asConcept());
   }
 
@@ -1512,7 +1522,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return lexicalRoot(this.owl.getConcept(original), visited);
 
     if (trait.getMetadata().get(NS.BASE_DECLARATION) != null) return trait.asConcept();
-    for (Concept parent : parents(trait)) {
+    // Lexical categories are supplied by the worldview boundary. Composition must not turn
+    // this category check into an external ancestry request.
+    for (Concept parent : owl().getParents(trait.asConcept())) {
       Concept root = lexicalRoot(parent, visited);
       if (root != null) return root;
     }
@@ -1897,6 +1909,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return true;
     }
 
+    if (authorityIdentityResolver != null && other.asConcept().is(SemanticType.AUTHORITY_IDENTITY))
+      authorityIdentityResolver.ensureHierarchy(concept.asConcept());
     var key = new SubsumptionKey(knowledgeRevision(), concept.asConcept(), other.asConcept());
     return subsumption.get(key, ignored -> computeSubsumption(concept, other));
   }
@@ -1981,7 +1995,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (current.is(SemanticType.DOMAIN)) {
         return current;
       }
-      queue.addAll(parents(current));
+      // Domain is a worldview category, available through the configured boundary.
+      queue.addAll(owl.getParents(current));
     }
     return null;
   }

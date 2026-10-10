@@ -9,6 +9,39 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public interface Authority {
 
+  enum HierarchyStatus { COMPLETE, DEFERRED }
+  enum ResolutionMode { CONFIGURED, FULL_HIERARCHY }
+
+  /** Immutable provider helper. Deferral suppresses ancestry, never reconciliation or diagnostics. */
+  final class ClassifiedIdentity implements Identity {
+    private final Identity delegate;
+    private final java.util.Set<String> semanticBoundaries;
+    private final HierarchyStatus hierarchyStatus;
+    public ClassifiedIdentity(Identity delegate, java.util.Set<String> semanticBoundaries,
+        HierarchyStatus hierarchyStatus) {
+      this.delegate = java.util.Objects.requireNonNull(delegate);
+      this.semanticBoundaries = java.util.Set.copyOf(semanticBoundaries);
+      this.hierarchyStatus = java.util.Objects.requireNonNull(hierarchyStatus);
+    }
+    @Override public String getId() { return delegate.getId(); }
+    @Override public String getConceptName() { return delegate.getConceptName(); }
+    @Override public String getAuthorityName() { return delegate.getAuthorityName(); }
+    @Override public String getBaseIdentity() { return hierarchyStatus == HierarchyStatus.DEFERRED ? null : delegate.getBaseIdentity(); }
+    @Override public List<String> getParentIds() { return hierarchyStatus == HierarchyStatus.DEFERRED ? List.of() : delegate.getParentIds(); }
+    @Override public List<String> getParentRelationship() { return hierarchyStatus == HierarchyStatus.DEFERRED ? List.of() : delegate.getParentRelationship(); }
+    @Override public Map<String, URL> getDocumentation() { return delegate.getDocumentation(); }
+    @Override public String getDescription() { return delegate.getDescription(); }
+    @Override public String getLabel() { return delegate.getLabel(); }
+    @Override public float getScore() { return delegate.getScore(); }
+    @Override public String getLocator() { return delegate.getLocator(); }
+    @Override public List<Notification> getNotifications() { return delegate.getNotifications(); }
+    @Override public java.util.Set<String> getSemanticBoundaries() { return semanticBoundaries; }
+    @Override public HierarchyStatus getHierarchyStatus() { return hierarchyStatus; }
+  }
+
+  /** Stable metadata key on materialized concepts; DEFERRED is not an empty hierarchy. */
+  String HIERARCHY_STATUS = "authorityHierarchyStatus";
+
   /** Context for one independent worldview bridge. Parameters include the provider urn. */
   record ConfigurationRequest(
       String worldview, String name, String rootIdentity, Map<String, Object> parameters) {
@@ -23,7 +56,31 @@ public interface Authority {
         throw new IllegalArgumentException("A nonblank string urn parameter is required");
       var copy = new java.util.LinkedHashMap<>(parameters);
       if (copy.get("codelists") instanceof Map<?, ?> lists) copy.put("codelists", Map.copyOf(lists));
+      if (copy.containsKey("semanticBoundaries")) {
+        if (!(copy.get("semanticBoundaries") instanceof Map<?, ?> boundaries))
+          throw new IllegalArgumentException("semanticBoundaries must map provider boundary IDs to identity URNs");
+        var validated = new java.util.TreeMap<String, String>();
+        for (var entry : boundaries.entrySet()) {
+          if (!(entry.getKey() instanceof String id) || id.isBlank()
+              || !(entry.getValue() instanceof String target)
+              || !target.matches("[a-z][a-z0-9_.]*:[A-Z][A-Za-z0-9_]*"))
+            throw new IllegalArgumentException("Invalid semantic boundary binding");
+          validated.put(id, target);
+        }
+        copy.put("semanticBoundaries", Map.copyOf(validated));
+      }
       parameters = java.util.Collections.unmodifiableMap(copy);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, String> semanticBoundaries() {
+      return (Map<String, String>) parameters.getOrDefault("semanticBoundaries", Map.of());
+    }
+
+    /** Providers opt in explicitly, including authoritative codelist boundary IDs if supported. */
+    public void requireSupportedBoundaries(java.util.Set<String> supported) {
+      if (!supported.containsAll(semanticBoundaries().keySet()))
+        throw new IllegalArgumentException("Unsupported semantic boundary in " + semanticBoundaries().keySet());
     }
   }
 
@@ -38,6 +95,11 @@ public interface Authority {
 
   /** Release provider-held state when a bridge is removed or its worldview is reloaded. */
   default void releaseConfiguration(String configurationId) {}
+
+  /** Provider-defined categories whose membership can be established without reconstructing ancestry.
+   * These may be sub-authorities or authoritative codelists; search filters and community aliases
+   * alone do not establish membership. The empty default preserves legacy behavior. */
+  default java.util.Set<String> getSemanticBoundaries() { return java.util.Set.of(); }
 
   /**
    * Lifetimes in seconds for successful Reasoner-side cached results. Zero disables caching for an
@@ -63,6 +125,13 @@ public interface Authority {
   }
 
   interface Identity {
+
+    /** Boundaries established by reconciliation of the canonical identity, never by the search UI. */
+    default java.util.Set<String> getSemanticBoundaries() { return java.util.Set.of(); }
+
+    /** COMPLETE means the supplied ancestry is authoritative. DEFERRED requires a mapped boundary
+     * and carries no external parent/base edges; explicit full resolution must remain available. */
+    default HierarchyStatus getHierarchyStatus() { return HierarchyStatus.COMPLETE; }
 
     /**
      * The official authority ID, which may be different from what the user provided.
@@ -241,6 +310,16 @@ public interface Authority {
    * @return
    */
   Identity resolveIdentity(String configurationId, String identityId);
+
+  /** Resolve external ancestry on demand without changing canonical identity or configured boundaries.
+   * Providers supporting deferral must override this overload; legacy providers need no changes. */
+  default Identity resolveIdentity(String configurationId, String identityId, ResolutionMode mode) {
+    var identity = resolveIdentity(configurationId, identityId);
+    if (mode == ResolutionMode.FULL_HIERARCHY && identity != null
+        && identity.getHierarchyStatus() == HierarchyStatus.DEFERRED)
+      throw new UnsupportedOperationException("This authority cannot expand deferred ancestry");
+    return identity;
+  }
 
   /**
    * Explicitly reconcile a name or external identifier with optional disambiguating fields. Field

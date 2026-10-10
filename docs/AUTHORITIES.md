@@ -40,7 +40,8 @@ their authority URN. Each Reasoner owns bindings keyed by local name within its 
 
 Only an `identity` concept may declare an authority requirement. That concept is the worldview
 anchor for the provider's top-level/base identity. Other identities inherit through the provider's
-base identity and parent graph; the Reasoner does not add a direct anchor superclass to each leaf.
+base identity and parent graph. An explicit semantic boundary mapping can instead attach a
+reconciled identity directly to the anchor and mapped identity categories, deferring ancestry.
 The authority is responsible for the correctness of its hierarchy. Source validation and ingestion
 require an identity declaration, an uppercase local name, and a nonblank string `urn` parameter.
 
@@ -107,8 +108,66 @@ code identity, hierarchy, search, reconciliation, release selection and legacy G
 Providers may declare `Capabilities.areSubAuthoritiesSearchFilters()` when subdivisions only limit
 search space. For these providers, `NAME.RANK:<id>` resolves through the configured `NAME` bridge
 when `RANK` is advertised in capabilities. It shares the canonical concept, ontology and locator;
-the provider still resolves all parent ranks. An exact explicitly configured dotted binding takes
+the provider still resolves all parent ranks unless semantic boundaries are explicitly configured.
+An exact explicitly configured dotted binding takes
 precedence. Without this capability, the Reasoner does not infer subdivision semantics.
+
+### Semantic boundaries and deferred ancestry
+
+Reconciliation establishes what an identity denotes; reconstructing its external hierarchy is
+optional when the provider can establish a sufficiently precise semantic boundary. A worldview
+opts in by mapping provider-defined boundary IDs to declared worldview **identity** concepts:
+
+```kwv
+identity ChemicalIdentity requires authority CHEM {
+    urn: "klab.authority.pubchem",
+    semanticBoundaries: {
+        "COMPOUND": "chemistry:Compound"
+    }
+};
+```
+
+This example assumes `chemistry:Compound` is a declared identity category. The Resources validator
+rejects absent, invalid or non-identity targets. The Reasoner requires these mappings to match the
+worldview declaration. Providers advertise supported IDs through `getSemanticBoundaries()` and
+validate them during configuration with `request.requireSupportedBoundaries(...)`.
+
+The provider must reconcile and validate the canonical identity before assigning boundary
+membership. It returns that membership through `Identity.getSemanticBoundaries()`. Search filters,
+user-selected subdivisions and community aliases never establish membership by themselves.
+Boundaries may be provider subdivisions, or authoritative codelists whose membership the provider
+can independently attest. A provider could advertise `codelist:official` and classify members of
+that list using exactly the same contract; merely adding a codelist namespace does not opt in.
+
+For mapped identities, providers may return `HierarchyStatus.DEFERRED` without parent/base edges.
+The Reasoner adds the bridge anchor and every mapped category as superclasses, retains the canonical
+identity, and records `authorityHierarchyStatus=DEFERRED` in concept metadata. This explicitly
+distinguishes unavailable ancestry from an authoritative empty parent list. Providers can use the
+immutable `Authority.ClassifiedIdentity` helper. Unmapped identities and legacy providers retain
+the existing hierarchy behavior; default membership is empty and default status is `COMPLETE`.
+
+PubChem supports `COMPOUND` for reconciled PubChem CIDs and `CHEBI` for ChEBI identities that remain
+distinct after reconciliation. A ChEBI code reconciled to a CID belongs to `COMPOUND`, regardless
+of the search catalog. TAXA uses the **accepted usage's rank**, such as `SPECIES` or `GENUS`;
+synonym rank and the selected search filter cannot override it. For example, map `SPECIES` to
+`life:SpeciesIdentity` and `GENUS` to `life:GenusIdentity`, provided these are declared identities.
+
+Full ancestry remains available through
+`resolveIdentity(configurationId, code, ResolutionMode.FULL_HIERARCHY)`. Providers adopting
+deferral must implement this overload; it must never return deferred ancestry. The Reasoner exposes
+`resolveAuthorityHierarchy(authority, code, scope)` and authenticated
+`POST /api/v1/authority/hierarchy` with `{"authority":"CHEM","identity":"CID:2244"}`.
+This uses the configured authority name and a canonical code. It validates the complete graph,
+enriches the **same concept**, marks it complete and invalidates semantic caches. A failed provider
+lookup or graph validation leaves the accepted concept intact and retryable. Inspecting parents
+also requests enrichment, as does direct authority-identity subsumption. Operations that use only
+the declared worldview category need no ancestry. Other consumers of the OWL graph must inspect
+the status and explicitly request expansion before assuming external ancestry is complete.
+
+The persistent authority cache includes mappings in its configuration fingerprint and keeps
+configured and full-hierarchy resolution records separate. Membership and hierarchy status survive
+cache reloads; a deferred record cannot satisfy a full-hierarchy request. Deploy updated providers
+and services, then reload a worldview with the desired mappings to enable this behavior.
 
 ### Configuration endpoint
 
@@ -332,7 +391,9 @@ For each valid `requires authority NAME {...}` declaration, the Reasoner:
    binding, even when provider URNs match.
 5. Make `NAME:<identifier>` available to semantic parsing and resolve it lazily through
    `resolveIdentity(configurationId, identityId)`.
-6. Recursively obtains missing base/parent identities, stopping each branch at the first known
+6. For a provider-attested mapped boundary, attaches the reconciled identity directly to the
+   anchor and mapped categories and marks ancestry deferred. Otherwise recursively obtains
+   missing base/parent identities, stopping each branch at the first known
    concept. A visited graph prevents endless recursion; the provider remains responsible for
    hierarchy consistency. Top-level identities (no remaining base/parent edges) inherit from the
    worldview anchor; supplied base/parent edges carry that inheritance to descendants. A

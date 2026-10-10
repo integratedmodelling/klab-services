@@ -4,6 +4,11 @@ Authority codelists expose approved names as worldview-local namespaces. Resolvi
 `taxonomy.species:FelisCatus` returns the same concept as its canonical authority
 code. No alias ontology, class, or equivalence axiom is created.
 
+A provider-defined codelist can also establish a semantic boundary when the provider independently
+attests canonical membership. It advertises a boundary ID through `getSemanticBoundaries()` and the
+worldview maps that ID with `semanticBoundaries`; see [the boundary contract](AUTHORITIES.md#semantic-boundaries-and-deferred-ancestry).
+Community alias approval alone does not establish such membership or permit ancestry to be skipped.
+
 ## Configuration
 
 An authority declares provider-local list IDs, seed entries, and proposal policy through

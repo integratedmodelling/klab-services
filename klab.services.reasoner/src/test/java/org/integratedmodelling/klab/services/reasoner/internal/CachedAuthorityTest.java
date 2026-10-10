@@ -61,7 +61,17 @@ class CachedAuthorityTest {
         @Override public List<Notification> getNotifications() { return List.of(Notification.error("Unavailable")); }
       };
     }
-    @Override public Identity resolveIdentity(String config, String id) { lookups++; return identity(id); }
+    @Override public Set<String> getSemanticBoundaries() { return Set.of("SPECIES"); }
+    @Override public Identity resolveIdentity(String config, String id) {
+      lookups++;
+      var result = identity(id);
+      return request.semanticBoundaries().isEmpty() ? result
+          : new ClassifiedIdentity(result, Set.of("SPECIES"), HierarchyStatus.DEFERRED);
+    }
+    @Override public Identity resolveIdentity(String config, String id, ResolutionMode mode) {
+      if (mode == ResolutionMode.CONFIGURED) return resolveIdentity(config, id);
+      lookups++; return identity(id);
+    }
     @Override public List<Identity> search(String query, String sub, String config) { searches++; return List.of(identity("A")); }
     @Override public Identity reconcile(String config, Map<String,String> fields) { matches++; return identity("A"); }
     @Override public Capabilities getCapabilities() { return null; }
@@ -87,6 +97,30 @@ class CachedAuthorityTest {
     assertFalse(cached.subAuthority("rank").getCodelistDefinitions(id).get("official").acceptsProposals());
     assertThrows(IllegalArgumentException.class, () -> cached.getCodelistDefinitions("unconfigured"));
     assertThrows(IllegalArgumentException.class, () -> cached.getCodelists("unconfigured"));
+  }
+
+  @Test void deferredAndFullRecordsPersistSeparatelyAndMappingsIsolateConfigurations() {
+    var parameters = new HashMap<String, Object>(request().parameters());
+    parameters.put("semanticBoundaries", Map.of("SPECIES", "bio:Species"));
+    var request = new Authority.ConfigurationRequest("wv", "TAXA", "bio:Root", parameters);
+    var source = new Provider();
+    var first = new CachedAuthority(source, directory);
+    String id = first.configure(request);
+    assertEquals(Authority.HierarchyStatus.DEFERRED, first.resolveIdentity(id, "alias").getHierarchyStatus());
+    assertEquals(Set.of("SPECIES"), first.resolveIdentity(id, "A").getSemanticBoundaries());
+    assertEquals(1, source.lookups);
+    assertEquals(Authority.HierarchyStatus.COMPLETE,
+        first.resolveIdentity(id, "A", Authority.ResolutionMode.FULL_HIERARCHY).getHierarchyStatus());
+    assertEquals(2, source.lookups);
+    var restoredProvider = new Provider();
+    var restored = new CachedAuthority(restoredProvider, directory);
+    String restoredId = restored.configure(request);
+    assertEquals(Authority.HierarchyStatus.DEFERRED, restored.resolveIdentity(restoredId, "A").getHierarchyStatus());
+    assertFalse(restored.resolveIdentity(restoredId, "A", Authority.ResolutionMode.FULL_HIERARCHY).getParentIds().isEmpty());
+    assertEquals(0, restoredProvider.lookups);
+    parameters.put("semanticBoundaries", Map.of("SPECIES", "bio:Other"));
+    var changed = new CachedAuthority(new Provider(), directory);
+    assertNotEquals(restoredId, changed.configure(new Authority.ConfigurationRequest("wv", "TAXA", "bio:Root", parameters)));
   }
 
   @Test void persistsIdentitiesSearchAndReconciliationAcrossRestartWithStableBridgeId() {

@@ -15,6 +15,52 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class AuthorityIdentityResolverTest {
+  @Test void mappedBoundaryDefersAndLaterEnrichesTheSameConceptWithoutLosingItOnFailure() {
+    var owl = new TestOWL();
+    var roots = owl.requireOntology("biology");
+    roots.define(List.of(Axiom.ClassAssertion("Taxon", EnumSet.of(SemanticType.IDENTITY)),
+        Axiom.ClassAssertion("Species", EnumSet.of(SemanticType.IDENTITY))));
+    var provider = mock(Authority.class);
+    when(provider.getSemanticBoundaries()).thenReturn(Set.of("SPECIES"));
+    var request = new Authority.ConfigurationRequest("worldview", "TAXA", "biology:Taxon",
+        Map.of("urn", "test.authority", "semanticBoundaries", Map.of("SPECIES", "biology:Species")));
+    when(provider.configure(request)).thenReturn("bridge");
+    var leafIdentity = identity("Leaf", null);
+    when(leafIdentity.getHierarchyStatus()).thenReturn(Authority.HierarchyStatus.DEFERRED);
+    when(leafIdentity.getSemanticBoundaries()).thenReturn(Set.of("SPECIES"));
+    when(provider.resolveIdentity("bridge", "Alias")).thenReturn(leafIdentity);
+    var bindings = new AuthorityBindings(); bindings.configure(request, provider);
+    var expansions = new java.util.concurrent.atomic.AtomicInteger();
+    var resolver = new AuthorityIdentityResolver(owl, bindings, expansions::incrementAndGet);
+    when(leafIdentity.getSemanticBoundaries()).thenReturn(Set.of("UNKNOWN"));
+    assertThrows(KlabValidationException.class, () -> resolver.resolve("TAXA", "Alias"));
+    assertNull(owl.getOntology(AuthorityBindings.ontologyId(bindings.get("TAXA"))));
+    when(leafIdentity.getSemanticBoundaries()).thenReturn(Set.of("SPECIES"));
+    var leaf = resolver.resolve("TAXA", "Alias");
+    var ontology = owl.getOntology(leaf.getNamespace()).getOWLOntology();
+    assertTrue(ontology.containsAxiom(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(
+        owl.getOWLClass(leaf), owl.getOWLClass(roots.getConcept("Species")))));
+    assertEquals("DEFERRED", leaf.getMetadata().get(Authority.HIERARCHY_STATUS));
+    long count = ontology.getAxiomCount();
+    assertThrows(KlabValidationException.class, () -> resolver.resolve("TAXA", "Leaf", true));
+    assertEquals(count, ontology.getAxiomCount());
+    assertSame(leaf, resolver.resolve("TAXA", "Leaf"));
+    var full = identity("Leaf", null, "Parent");
+    when(provider.resolveIdentity("bridge", "Leaf", Authority.ResolutionMode.FULL_HIERARCHY)).thenReturn(full);
+    var parent = identity("Parent", "biology:Taxon");
+    when(provider.resolveIdentity("bridge", "Parent", Authority.ResolutionMode.FULL_HIERARCHY)).thenReturn(parent);
+    when(parent.getParentIds()).thenReturn(List.of("Leaf"));
+    assertThrows(KlabValidationException.class, () -> resolver.resolve("TAXA", "Leaf", true));
+    assertEquals(count, ontology.getAxiomCount());
+    when(parent.getParentIds()).thenReturn(List.of());
+    assertSame(leaf, resolver.resolve("TAXA", "Leaf", true));
+    assertEquals("COMPLETE", leaf.getMetadata().get(Authority.HIERARCHY_STATUS));
+    assertEquals(1, expansions.get());
+    resolver.ensureHierarchy(leaf);
+    assertEquals(1, expansions.get());
+    verify(provider, never()).resolveIdentity("bridge", "Parent");
+  }
+
   private static class TestOWL extends OWL {
     TestOWL() {
       super(mock(Scope.class));
