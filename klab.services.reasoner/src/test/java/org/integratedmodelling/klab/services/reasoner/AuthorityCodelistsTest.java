@@ -169,12 +169,23 @@ class AuthorityCodelistsTest {
     when(provider.search(anyString(), isNull(), eq("configured"))).thenReturn(List.of(identity));
     var bindings = new AuthorityBindings(); bindings.configure(binding.request(), provider);
     var lists = bindings.codelists("TAXA"); var pending = lists.execute(submit(), "user");
+    assertTrue(lists.aliases("3DXV3").isEmpty());
     lists.execute(new AuthorityCodelistRequest(AuthorityCodelistRequest.Operation.REVIEW, "TAXA", "taxonomy.species",
         null, null, pending.proposals().getFirst().id(), pending.revision(), AuthorityCodelistRequest.Decision.ACCEPT,
         null, null, null), "admin");
     var all = bindings.search(new AuthoritySearchRequest("TAXA", "3DXV3", null, 0, 10));
+    assertEquals(List.of("taxonomy.species:FelisCatus"), lists.aliases("3DXV3"));
     assertEquals(1, all.matches().size());
     assertEquals(List.of("taxonomy.species:FelisCatus"), all.matches().getFirst().getAliases());
+    when(provider.search(anyString(), isNull(), eq("configured"))).thenReturn(List.of());
+    var byName = bindings.search(new AuthoritySearchRequest("TAXA", "FelisCatus", null, 0, 10));
+    assertEquals("3DXV3", byName.matches().getFirst().getId());
+    assertEquals(List.of("taxonomy.species:FelisCatus"), byName.matches().getFirst().getAliases());
+    when(capabilities.areSubAuthoritiesSearchFilters()).thenReturn(true);
+    when(capabilities.getSubAuthorities()).thenReturn(List.of(org.integratedmodelling.klab.api.collections.Pair.of("SPECIES", "Species")));
+    when(provider.search("cat", "SPECIES", "configured")).thenReturn(List.of(identity));
+    assertEquals(List.of("taxonomy.species:FelisCatus"), bindings.search(
+        new AuthoritySearchRequest("TAXA", "cat", "SPECIES", 0, 10)).matches().getFirst().getAliases());
     clearInvocations(provider);
     var filtered = bindings.search(new AuthoritySearchRequest("TAXA", "FelisCatus", "taxonomy.species", 0, 10));
     assertEquals("3DXV3", filtered.matches().getFirst().getId());

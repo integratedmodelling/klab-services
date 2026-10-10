@@ -129,6 +129,15 @@ public final class AuthorityCodelists {
     return entries == null ? null : entries.get(alias);
   }
 
+  /** Reverse lookup in the published ledger; pending/rejected proposals are never suggestions. */
+  public synchronized List<String> aliases(String canonicalCode) {
+    var result = new ArrayList<String>();
+    published().forEach((namespace, entries) -> entries.forEach((alias, code) -> {
+      if (code.equals(canonicalCode)) result.add(namespace + ":" + alias);
+    }));
+    return result.stream().sorted().toList();
+  }
+
   public synchronized AuthorityCodelistResponse snapshot() {
     var lists = new LinkedHashMap<String, Codelist>();
     published().forEach((namespace, entries) -> {

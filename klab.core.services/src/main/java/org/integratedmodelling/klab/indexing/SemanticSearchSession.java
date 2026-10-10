@@ -25,7 +25,14 @@ public final class SemanticSearchSession {
     List<SemanticMatch> query(String text, SemanticScope scope, int limit);
   }
 
-  public record AuthoritySelection(Concept concept, String declaration) {}
+  public record AuthoritySelection(Concept concept, String declaration, List<String> aliases) {
+    public AuthoritySelection {
+      aliases = List.copyOf(aliases);
+    }
+    public AuthoritySelection(Concept concept, String declaration) {
+      this(concept, declaration, List.of());
+    }
+  }
   @FunctionalInterface public interface AuthorityResolver {
     AuthoritySelection resolve(String authority, String canonicalCode);
   }
@@ -61,6 +68,7 @@ public final class SemanticSearchSession {
     SemanticScope scope = SemanticScope.root();
     final Set<SemanticRole> used = EnumSet.noneOf(SemanticRole.class);
     Concept concept;
+    Observable observable;
     boolean complete;
     boolean value;
     boolean collectiveExpression;
@@ -72,6 +80,27 @@ public final class SemanticSearchSession {
     Concept enclosingOwner;
     SemanticRole enclosingRole;
     Frame(int start) { this.start = start; }
+
+    Frame copy() {
+      var copy = new Frame(start);
+      copy.scope = new SemanticScope();
+      copy.scope.logicalRealm.addAll(scope.logicalRealm);
+      copy.scope.lexicalRealm.addAll(scope.lexicalRealm);
+      copy.used.addAll(used);
+      copy.concept = concept;
+      copy.observable = observable;
+      copy.complete = complete;
+      copy.value = value;
+      copy.collectiveExpression = collectiveExpression;
+      copy.clauseOwner = clauseOwner;
+      copy.clauseRole = clauseRole;
+      copy.awaitingRelationshipTarget = awaitingRelationshipTarget;
+      copy.predicates.addAll(predicates);
+      copy.operandStart = operandStart;
+      copy.enclosingOwner = enclosingOwner;
+      copy.enclosingRole = enclosingRole;
+      return copy;
+    }
   }
 
   private record State(Deque<Frame> frames, Observable observable) {
@@ -300,8 +329,18 @@ public final class SemanticSearchSession {
 
   private State replay(List<Object> input) {
     Deque<Frame> frames = new ArrayDeque<>();
-    frames.push(new Frame(0));
-    for (int i = 0; i < input.size(); i++) {
+    int start = 0;
+    // Append to a private snapshot of the already validated prefix. Replaying it for
+    // every suggestion repeats Resources calls (including incomplete predicates) and
+    // DL checks. Undo still rebuilds from the beginning; trials never mutate accepted state.
+    if (state != null && input.size() == tokens.size() + 1
+        && input.subList(0, tokens.size()).equals(tokens)) {
+      state.frames().forEach(frame -> frames.addLast(frame.copy()));
+      start = tokens.size();
+    } else {
+      frames.push(new Frame(0));
+    }
+    for (int i = start; i < input.size(); i++) {
       Object token = input.get(i);
       if (token instanceof AuthoritySelection identity) token = identity.concept();
       Frame frame = frames.peek();
@@ -437,7 +476,7 @@ public final class SemanticSearchSession {
     }
     Observable observable = null;
     if (frames.size() == 1 && frames.peek().complete && !frames.peek().awaitingRelationshipTarget) {
-      observable = resolve(declaration(input));
+      observable = frames.peek().observable;
       require(observable.is(SemanticType.PREDICATE) && reasoner.inherent(observable.getSemantics()) == null
           || resultTypes.isEmpty() || resultTypes.stream().anyMatch(observable::is),
           "This observable does not match the requested result category.");
@@ -496,6 +535,7 @@ public final class SemanticSearchSession {
       frame.awaitingRelationshipTarget = false;
     }
     frame.concept = observable.getSemantics();
+    frame.observable = observable;
     frame.complete = true;
     frame.value = false;
     frame.scope = new SemanticScope();
@@ -570,6 +610,7 @@ public final class SemanticSearchSession {
     if (token instanceof AuthoritySelection identity) {
       var styled = StyledKimToken.create(identity.concept());
       styled.setValue(identity.declaration());
+      styled.setAliases(identity.aliases());
       return styled;
     }
     if (token == Qualifier.EACH) {

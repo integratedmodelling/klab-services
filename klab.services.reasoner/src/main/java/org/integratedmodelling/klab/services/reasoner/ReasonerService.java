@@ -165,7 +165,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
     var result = authorityBindings.codelists(request.authority()).execute(request, scope.getIdentity().getId());
     if (operation != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.LIST) {
-      concepts.invalidateAll(); observables.invalidateAll();
+      concepts.invalidateAll(); observables.invalidateAll(); conceptSyntax.clear();
     }
     return result;
   }
@@ -224,7 +224,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var concept = owl.getConcept(token);
     if (concept == null || !concept.is(SemanticType.IDENTITY) || concept.is(SemanticType.NOTHING))
       throw new KlabValidationException("Authority identity is unavailable");
-    return new SemanticSearchSession.AuthoritySelection(concept, token);
+    return new SemanticSearchSession.AuthoritySelection(concept, token,
+        authorityBindings.codelists(name).aliases(code));
   }
 
   private static String requestRoot(KimConceptStatement statement) {
@@ -272,6 +273,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   private final Cache<String, Observable> observables =
       Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
+
+  private final org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache conceptSyntax =
+      new org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache();
+
+  public org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache conceptSyntaxCache() {
+    return conceptSyntax;
+  }
 
   private final Cache<SubsumptionKey, Boolean> subsumption =
       Caffeine.newBuilder().maximumSize(20_000).recordStats().build();
@@ -476,6 +484,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     semanticExpressions.invalidateAll();
     concepts.invalidateAll();
     observables.invalidateAll();
+    conceptSyntax.clear();
     subsumption.invalidateAll();
     if (semanticMatcher != null) {
       semanticMatcher.resetCaches();
