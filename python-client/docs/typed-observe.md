@@ -25,6 +25,12 @@ provide foundations for roadmap export and provenance work, but this PR delivers
 neither an exporter nor full plan/provenance navigation. Reference this commit
 from those later issues rather than expanding or closing them through #87.
 
+The client PR retains integration base `ad2bc949c` on `feature/python-client`.
+The develop/federation merge is published separately under #89 to that same
+integration branch; neither client feature is stacked on the other. Live checks
+identify the separate server candidate explicitly. Promotion to develop remains
+subject to the server issue's remaining gates.
+
 ## API
 
 ```python
@@ -101,6 +107,13 @@ observer selections are preserved; conflicting observer selections and mismatche
 root tokens fail before submission. Raw Context.submit/ObservationImpl/mapping
 compatibility is unchanged.
 
+Focusing on a bound observation and reading its scientific cells use the same
+available-identity validation as submission: root IDs and canonical Runtime URLs
+must match, and configured/cached/reported Runtime IDs must be consistent. A
+known foreign Runtime cannot be relabelled by first turning its observation into
+a focused view. Raw integer focus IDs have no origin information and remain
+subject to server checks; legacy missing service IDs do not prove incarnation identity.
+
 ## Behavioral and coverage matrix
 
 | Requirement/failure | Named tests |
@@ -110,6 +123,7 @@ compatibility is unchanged.
 | Observer identity/focus and root mismatch | observer_object_is_bound_defensive_and_never_foreign, validation_and_unconfigured_reasoner_prevent_mutation |
 | Observer AGENT/type and stable identity omissions | bound_observer_requires_known_agent_semantics_before_any_http, same_endpoint_different_known_runtime_rejects_bound_observer, observer_same_runtime_and_documented_legacy_unknown_identity, inconsistent_or_invalid_known_observer_runtime_identity_is_local, reported_identity_fallback_and_destination_contradiction, destination_known_identity_is_checked_even_without_observer |
 | Existing selection overflow and valid boundaries | existing_selection_range_is_checked_before_resolution_or_mutation, existing_supported_selection_boundaries_remain_exact |
+| Bound focus/read origin and canonical URLs | test_runtime_binding.py: different_known_runtime_at_same_url_and_root_fails_before_http, same_runtime_equivalent_urls_and_legacy_unknown_ids_remain_supported, contradictory_or_invalid_binding_identity_is_local, different_root_context_is_rejected_before_http |
 | Typed context vs request settings | context_options_encode_grid_only_at_context_creation, context_creation_facade_and_raw_compatibility, invalid_context_options |
 | Geometry/finite numbers/IDs | rectangle_invalid_numbers, rectangle_bounds_and_square_cell_contract, rectangle_derived_extents_and_cell_sizes_are_finite, invalid_grid |
 | Frozen/copy isolation/extensions/old payload parity | typed_objects_are_defensive_and_wire_encoding_repeatable, checked_geometry_snapshot_and_old_new_payload_equivalence, reserved_extensions_are_rejected_before_http |
@@ -124,13 +138,11 @@ New production `requests.py` requires **100% executable lines and branches**;
 all changed production lines/arcs are checked separately from preexisting gaps.
 No exclusions or coverage pragmas are used. Coverage/lint remain dev extras.
 
-The scoped issue audit passed **258 maintained tests** on Windows Python 3.12
-and hash-verified installed-package Linux Python 3.11/3.12/3.13. The earlier
-**21 additional independent checks** passed against the same production source.
-`requests.py` has **274 statements / 120 branches, 100% covered**;
-changed-code gates and wheel/sdist builds passed. Isolated live acceptance passed
-against Java integration baseline `ad2bc949c`. See the linked validation record
-for snapshot identity, reviewer conclusions and acceptance boundaries.
+The Runtime-binding correction passed **297 maintained tests** on Windows Python
+3.12, including the shared focus/read regressions. New-module and changed-code
+coverage gates and targeted lint passed. Historical cross-version, package and
+live results are retained with their own source identities in the linked validation
+record; a changed candidate requires fresh checks before publication.
 
 The fixed coverage comparison base measures this contribution against its
 integration baseline. When integrating, retain the new-module gate and select

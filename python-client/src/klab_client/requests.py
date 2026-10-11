@@ -13,6 +13,7 @@ from .api.primitives import SemanticType
 from .api.runtime import GeometryImpl, ObservationImpl
 from .dto import OBSERVATION_CLASS, check_notifications, observable_to_wire, observation_to_wire
 from .errors import InvalidRequestError, UnsupportedOperationError
+from .transport import _normalize_service_url
 
 _CONSTRAINT_CLASS = "org.integratedmodelling.klab.api.services.resolver.objects.ResolutionConstraintImpl"
 _ACTIVITIES = frozenset({"INSTANTIATION", "ACKNOWLEDGEMENT", "DETECTION", "SIMULATION",
@@ -51,14 +52,7 @@ def _selection_id(text):
 
 
 def _known_runtime(context):
-    configured = context.client.runtime_service_id
-    reported = context.configuration.get("serviceId")
-    for identity in (configured, reported):
-        if identity is not None:
-            _text(identity, "Runtime identity")
-    if configured is not None and reported is not None and configured != reported:
-        raise InvalidRequestError("Context and configured Runtime identities differ")
-    return configured if configured is not None else reported
+    return context.client._known_runtime_identity(context.configuration)
 
 
 def _json_mapping(value):
@@ -160,7 +154,7 @@ class ObservationOptions:
                     or SemanticType.AGENT not in observer.observable.semantics.semantic_types):
                 raise InvalidRequestError("A bound observer must be a persisted AGENT observation")
             object.__setattr__(self, "_observer_binding", (
-                observer._context.client.transport.endpoint("runtime").url.rstrip("/"),
+                _normalize_service_url(observer._context.client.transport.endpoint("runtime").url),
                 observer._context.id, _known_runtime(observer._context)))
             observer = observer.id
         if observer is not None:
@@ -338,7 +332,7 @@ def observe(context, request, options=None):
     current = _known_runtime(context)
     binding = request.options._observer_binding
     if binding is not None:
-        if binding[:2] != (context.client.transport.endpoint("runtime").url.rstrip("/"), context.id):
+        if binding[:2] != (_normalize_service_url(context.client.transport.endpoint("runtime").url), context.id):
             raise InvalidRequestError("Observer belongs to a different Runtime/context")
         if binding[2] is not None and current is not None and binding[2] != current:
             raise InvalidRequestError("Observer belongs to a different Runtime service identity")
