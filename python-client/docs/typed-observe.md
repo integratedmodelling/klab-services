@@ -1,10 +1,29 @@
 # Typed observation requests
 
-Base: upstream integration **ad2bc949c167e1c2e370973ce4427fe67cb1cc30**.
-This branch is independent of saved handles and changes no Java contract/session
-policy. Baseline checks on that exact source: 97 Python tests and the strict
-56-case Java selection passed. The non-local federation-session concern in
+The maintained typed-request facade provides validated observation and context
+options while retaining the existing Job lifecycle and raw submission APIs.
+It is independent of saved handles and changes no Java contract/session policy.
+The non-local federation-session concern in
 `docs/PYTHON_CLIENT_FEDERATION_COMPATIBILITY.md` remains inherited and unresolved.
+
+Historical candidate hashes, dated validation evidence and the independent merge
+handoff are preserved in [Typed observation validation history](typed-observe-validation.md).
+
+## Issue and PR boundary
+
+This checkout implements [issue #87](https://github.com/integratedmodelling/klab-services/issues/87)
+for [PR #85](https://github.com/integratedmodelling/klab-services/pull/85).
+Its scope is typed request/context construction, supported option encoding,
+binding validation and retained submission/Job behavior. The test matrix below
+maps those implementation criteria to maintained regressions and live acceptance.
+Publication and exact published-candidate checks remain required before closing
+the issue; a local commit alone does not update the PR.
+
+Saved-handle work belongs to #88/PR #86; federation integration and its remaining
+rollout checks belong to #89 in a separate checkout. Geometry/metadata/constraints
+provide foundations for roadmap export and provenance work, but this PR delivers
+neither an exporter nor full plan/provenance navigation. Reference this commit
+from those later issues rather than expanding or closing them through #87.
 
 ## API
 
@@ -21,7 +40,7 @@ observation = job.result(120)
 cells = observation.fetch_data([0, 1], curve="D2_YX")
 ```
 
-`observe` accepts an immutable `ObservationRequest`, a resolved `ObservableImpl`,
+`observe` accepts a frozen `ObservationRequest`, a resolved `ObservableImpl`,
 or definition text (resolved through the configured Reasoner). It returns the
 existing Job immediately after acceptance. Closing the client only closes HTTP.
 Timeout, cancellation, failure, unavailable jobs and ambiguous mutations retain
@@ -33,6 +52,15 @@ metadata/extensions are recursively read-only. Extension keys cannot overwrite
 identity, discriminators or validated options. Unsupported/unknown semantic
 activities cannot become locally authoritative defaults. Unknown constructor
 keywords fail rather than being ignored.
+
+Contained legacy observable/geometry DTOs can still be mutated, but those changes
+do not alter an existing request's submission snapshot. The current refactor makes
+nested read-only metadata and extension mappings reusable in constructors or
+`dataclasses.replace`. Options
+retain explicit constraints separately from the effective submission constraints,
+so copying lexical options does not duplicate generated constraints. A bound
+observer's identity is snapshotted for submission; copying options revalidates
+the supplied observer object and its current binding.
 
 ## Supported options and source map
 
@@ -61,8 +89,14 @@ existing observer at submission. Grid is not a request-level substitute for
 context configuration. Typed and raw context settings cannot be mixed, and an
 attached context is never recreated/mutated to change its lattice.
 
-Observer objects must be bound to this Runtime/root context; integer IDs are
-validated signed-64-bit IDs and rechecked by the server. Existing focus and
+Bound observer objects must already describe a persisted AGENT and be bound to
+this Runtime/root context. Available client/configuration service IDs must agree;
+differing known source/destination Runtime IDs cannot alias merely because their
+URLs match. Legacy missing IDs retain URL/root checks plus server authorization,
+and do not establish service-incarnation identity. Integer observer IDs are
+validated signed-64-bit IDs and rechecked by the server. Every ID already present
+in focus/observer tokens is range-checked before resolution or submission, with
+a decimal-text bound before integer conversion. Existing focus and
 observer selections are preserved; conflicting observer selections and mismatched
 root tokens fail before submission. Raw Context.submit/ObservationImpl/mapping
 compatibility is unchanged.
@@ -74,9 +108,12 @@ compatibility is unchanged.
 | All supported request forms, DTO/header identity | observe_resolved_preserves_focused_observer_scope_and_constraints, string_resolution_is_explicit_and_preserves_extensions |
 | Every constraint and invalid combination | each_constraint_is_defensive, invalid_constraints, invalid_options, unsupported_constraints_never_silently_degrade |
 | Observer identity/focus and root mismatch | observer_object_is_bound_defensive_and_never_foreign, validation_and_unconfigured_reasoner_prevent_mutation |
+| Observer AGENT/type and stable identity omissions | bound_observer_requires_known_agent_semantics_before_any_http, same_endpoint_different_known_runtime_rejects_bound_observer, observer_same_runtime_and_documented_legacy_unknown_identity, inconsistent_or_invalid_known_observer_runtime_identity_is_local, reported_identity_fallback_and_destination_contradiction, destination_known_identity_is_checked_even_without_observer |
+| Existing selection overflow and valid boundaries | existing_selection_range_is_checked_before_resolution_or_mutation, existing_supported_selection_boundaries_remain_exact |
 | Typed context vs request settings | context_options_encode_grid_only_at_context_creation, context_creation_facade_and_raw_compatibility, invalid_context_options |
 | Geometry/finite numbers/IDs | rectangle_invalid_numbers, rectangle_bounds_and_square_cell_contract, rectangle_derived_extents_and_cell_sizes_are_finite, invalid_grid |
 | Frozen/copy isolation/extensions/old payload parity | typed_objects_are_defensive_and_wire_encoding_repeatable, checked_geometry_snapshot_and_old_new_payload_equivalence, reserved_extensions_are_rejected_before_http |
+| Reusable nested mappings and copied options | nested_read_only_metadata_and_extensions_can_be_reused, read_only_mapping_cycles_and_non_json_values_still_fail, copied_options_do_not_duplicate_generated_constraints, copying_bound_observer_options_preserves_identity_checks, observer_option_copies_revalidate_current_inputs_without_changing_original_snapshot |
 | Unsupported semantic/model/option contracts | unknown_activities_cannot_be_invented, selected_model_is_explicitly_unsupported, error_notifications_and_locally_invented_semantics_are_rejected |
 | Invalid JSON structure and cycles | invalid_request_structure, circular_json_is_rejected |
 | 401/403/404/5xx, lost mutation, no retry/redaction | submit_errors_are_classified_and_never_retried, lost_submission_outcome_and_resolution_failure |
@@ -87,6 +124,20 @@ New production `requests.py` requires **100% executable lines and branches**;
 all changed production lines/arcs are checked separately from preexisting gaps.
 No exclusions or coverage pragmas are used. Coverage/lint remain dev extras.
 
+The scoped issue audit passed **258 maintained tests** on Windows Python 3.12
+and hash-verified installed-package Linux Python 3.11/3.12/3.13. The earlier
+**21 additional independent checks** passed against the same production source.
+`requests.py` has **274 statements / 120 branches, 100% covered**;
+changed-code gates and wheel/sdist builds passed. Isolated live acceptance passed
+against Java integration baseline `ad2bc949c`. See the linked validation record
+for snapshot identity, reviewer conclusions and acceptance boundaries.
+
+The fixed coverage comparison base measures this contribution against its
+integration baseline. When integrating, retain the new-module gate and select
+the repository's maintained comparison base for future changes.
+
+Run these commands from `python-client` with the dev extras installed:
+
 ```powershell
 python -m pytest -q --cov=klab_client --cov-branch --cov-report=json
 python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py
@@ -94,7 +145,7 @@ python -m ruff check src/klab_client/requests.py tests/test_typed_requests.py to
 python -m build
 ```
 
-## Exact-candidate live acceptance
+## Reproducible live acceptance
 
 `examples/typed_observe.py --state-dir C:\prepared-state` runs only on an explicitly
 prepared synthetic fixture. It verifies the nonuniform 20-cell field, valid zero
@@ -110,45 +161,11 @@ Build a fresh fixture and include this example with:
 python tools/run_local_acceptance.py --java C:\jdk\bin\java.exe --worldview C:\pinned-imod --state-dir C:\existing-parent\new-state --build --typed-observe --samples 1 --duration 1
 ```
 
-Executed final production candidate **3957f39fe** (implementation introduced at 0ca4fc4ce):
-
-* 230 offline tests passed, 5 live deselected, on Windows Python 3.12 and the
-  installed-package Ubuntu/WSL Python 3.11/3.12/3.13 matrix. Each Linux version
-  built wheel/sdist and passed the same coverage/changed-code gates.
-* `requests.py`: 242 executable statements and 100 branches, all covered, with
-  zero excluded lines. Changed existing production lines/arcs passed separately.
-* Ruff targeted checks passed. A fresh dependency-light Windows Python 3.11
-  environment installed the wheel and exercised imports/construction without HTTP.
-* Exact-candidate fresh run `klab-typed-review-final`, **2026-10-08
-  01:57:27–02:00:03 UTC**: the typed example, 2 existing live tests, cold ACL checks
-  and all smoke phases passed. Cleanup confirmed all five JVM exits. Java source
-  is unchanged from the recorded baseline; compiled/source hashes are retained.
-
-Evidence is external under `C:\Users\lumsd\AppData\Local\Temp\opencode`:
-`typed-coverage.json`, per-version `typed-3.xx` CI/coverage/XML/distributions,
-`typed-handles-baseline-java.log`, and `klab-typed-review-final` reports/provenance.
-The first attempted matrix rerun refused existing venv directories before tests;
-fresh SHA-qualified environments were then created and the complete matrix passed.
-The final Python 3.13 sdist build encountered a local shared-checkout staging race;
-its tests/coverage had passed, and a serialized wheel/sdist rebuild then passed.
-The external report preserves the failed attempt and successful retry. Hosted
-matrix jobs use separate checkouts, unlike this local parallel runner.
-
-Review: identity/scope and observer binding, immutable snapshots, model-option
-rejection, mutation ambiguity, wire compatibility and negative controls were
-checked against the Java consumers. The fixture confirms real option effects;
-the bare integer observer form remains subject to server authorization/validation.
-No saved-handles dependency or Java policy change is included.
+The maintained live regression
+`test_bound_computed_quality_is_rejected_as_observer_without_any_http` checks
+an actual computed quality: rejection must precede both semantic resolution and
+submission. A remote authorization error does not satisfy this local-validation
+assertion.
 
 The broader federation/promotion gate and production/provider, bulk/temporal,
 worker and automatic coordinate-conversion capabilities are not certified here.
-
-## Independent merge handoff
-
-Shared additions with saved handles are expected in package exports, dev extras,
-the CI coverage step and README/API inventory. Merge exports additively and run
-the coverage checker for both new modules. Neither feature imports the other.
-An actual merge-tree check found only these content conflicts: coverage CI,
-`docs/public-api.md`, package `__init__.py` and local-runner feature flags.
-Resolve each additively; Client implementation, README, dev extras and identical
-coverage tooling merge automatically. This is a handoff, not a merged branch.

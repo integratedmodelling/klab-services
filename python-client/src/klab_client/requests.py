@@ -8,7 +8,8 @@ import math
 from types import MappingProxyType
 from typing import Any, Mapping
 
-from .api.knowledge import ObservableImpl
+from .api.knowledge import ConceptImpl, ObservableImpl
+from .api.primitives import SemanticType
 from .api.runtime import GeometryImpl, ObservationImpl
 from .dto import OBSERVATION_CLASS, check_notifications, observable_to_wire, observation_to_wire
 from .errors import InvalidRequestError, UnsupportedOperationError
@@ -41,9 +42,34 @@ def _positive_id(value):
     return value
 
 
+def _selection_id(text):
+    # scope_token already establishes positive decimal grammar. Bound the text
+    # before int conversion as well as the resulting Java long.
+    if len(text) > 19:
+        raise InvalidRequestError("Scope selection exceeds a signed-64-bit observation ID")
+    return _positive_id(int(text))
+
+
+def _known_runtime(context):
+    configured = context.client.runtime_service_id
+    reported = context.configuration.get("serviceId")
+    for identity in (configured, reported):
+        if identity is not None:
+            _text(identity, "Runtime identity")
+    if configured is not None and reported is not None and configured != reported:
+        raise InvalidRequestError("Context and configured Runtime identities differ")
+    return configured if configured is not None else reported
+
+
+def _json_mapping(value):
+    if isinstance(value, Mapping):
+        return dict(value)
+    raise TypeError("Not a JSON mapping")
+
+
 def _json(value):
     try:
-        return json.dumps(value, sort_keys=True, allow_nan=False, separators=(",", ":"))
+        return json.dumps(value, sort_keys=True, allow_nan=False, separators=(",", ":"), default=_json_mapping)
     except (TypeError, ValueError, RecursionError):
         raise InvalidRequestError("Request values must be finite JSON data") from None
 
@@ -108,7 +134,8 @@ class ObservationOptions:
     observer: int | ObservationImpl | None = None
     constraints: tuple[ResolutionConstraint, ...] = ()
     selected_model: str | None = None
-    _observer_binding: tuple[str, str] | None = field(default=None, init=False, repr=False)
+    _observer_binding: tuple[str, str, str | None] | None = field(default=None, init=False, repr=False)
+    _effective_constraints: tuple[ResolutionConstraint, ...] = field(init=False, repr=False)
 
     def __post_init__(self):
         if self.selected_model is not None:
@@ -127,16 +154,22 @@ class ObservationOptions:
         if isinstance(observer, ObservationImpl):
             if observer._context is None:
                 raise InvalidRequestError("Observer objects must be bound to a Runtime/context")
+            if (not isinstance(observer.observable, ObservableImpl)
+                    or not isinstance(observer.observable.semantics, ConceptImpl)
+                    or not isinstance(observer.observable.semantics.semantic_types, (set, frozenset))
+                    or SemanticType.AGENT not in observer.observable.semantics.semantic_types):
+                raise InvalidRequestError("A bound observer must be a persisted AGENT observation")
             object.__setattr__(self, "_observer_binding", (
-                observer._context.client.transport.endpoint("runtime").url.rstrip("/"), observer._context.id))
+                observer._context.client.transport.endpoint("runtime").url.rstrip("/"),
+                observer._context.id, _known_runtime(observer._context)))
             observer = observer.id
         if observer is not None:
             items.append(ResolutionConstraint("Observer", (observer,)))
         if len({item.kind for item in items}) != len(items):
             raise InvalidRequestError("Conflicting or duplicate resolution constraints")
-        object.__setattr__(self, "observer", observer)
         object.__setattr__(self, "scenarios", tuple(self.scenarios))
-        object.__setattr__(self, "constraints", tuple(sorted(items, key=lambda item: item.kind)))
+        object.__setattr__(self, "constraints", tuple(self.constraints))
+        object.__setattr__(self, "_effective_constraints", tuple(sorted(items, key=lambda item: item.kind)))
 
 
 @dataclass(frozen=True)
@@ -294,17 +327,28 @@ def observe(context, request, options=None):
     else:
         request = ObservationRequest(request, options=ObservationOptions() if options is None else options)
     token = scope_token(context)
-    if ".".join(token.split("#")[0].split(".")[:2]) != context.id:
+    base, marker, existing = token.partition("#")
+    parts = base.split(".")
+    if ".".join(parts[:2]) != context.id:
         raise InvalidRequestError("Focused scope token differs from the root context identity")
+    for selected in parts[2:]:
+        _selection_id(selected)
+    if marker:
+        _selection_id(existing)
+    current = _known_runtime(context)
     binding = request.options._observer_binding
-    if binding is not None and binding != (context.client.transport.endpoint("runtime").url.rstrip("/"), context.id):
-        raise InvalidRequestError("Observer belongs to a different Runtime/context")
-    observers = [item.values[0] for item in request.options.constraints if item.kind == "Observer"]
+    if binding is not None:
+        if binding[:2] != (context.client.transport.endpoint("runtime").url.rstrip("/"), context.id):
+            raise InvalidRequestError("Observer belongs to a different Runtime/context")
+        if binding[2] is not None and current is not None and binding[2] != current:
+            raise InvalidRequestError("Observer belongs to a different Runtime service identity")
+    constraints = request.options._effective_constraints
+    observers = [item.values[0] for item in constraints if item.kind == "Observer"]
     if observers:
-        base, marker, existing = token.partition("#")
         if marker and int(existing) != observers[0]:
             raise InvalidRequestError("Observer option conflicts with the existing scope selection")
         token = base + f"#{observers[0]}"
     resolved = context.client.reasoner.resolve_observable(request.observable) if request._observable_wire is None else None
-    return Context(context.client, context.configuration, owned=context.owned, token=token).submit(
-        request.to_wire(resolved), resolution_constraints=[item.to_wire() for item in request.options.constraints])
+    selected = context if token == scope_token(context) else Context(
+        context.client, context.configuration, owned=context.owned, token=token)
+    return selected.submit(request.to_wire(resolved), resolution_constraints=[item.to_wire() for item in constraints])
