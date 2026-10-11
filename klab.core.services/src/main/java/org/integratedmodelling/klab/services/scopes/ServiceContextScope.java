@@ -307,6 +307,17 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
+  /** Bind a root execution scope to the caller after its context ACL has been checked. */
+  public ServiceContextScope forRequest(ServiceUserScope requester) {
+    var ret = withIdentity(requester.getUser());
+    // Subsequent focused scopes must resolve their root to this caller, not the cached owner.
+    ret.parent = null;
+    ret.useRequestAuthority(requester);
+    var session = getParentScope(Type.SESSION, ServiceSessionScope.class);
+    ret.setParentScope(session == null ? requester : session.forRequest(requester));
+    return ret;
+  }
+
   //  @Override
   //  public CompletableFuture<Observation> submit(Observation observation) {
   //    if (!isOperative()) {
@@ -749,6 +760,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   public void setDigitalTwin(DigitalTwin digitalTwin) {
     this.digitalTwin = digitalTwin;
+  }
+
+  @Override
+  void releaseLocalResources() {
+    try {
+      if (digitalTwin != null && digitalTwin.isClient()) digitalTwin.dispose();
+    } finally {
+      super.releaseLocalResources();
+    }
   }
 
   @Override

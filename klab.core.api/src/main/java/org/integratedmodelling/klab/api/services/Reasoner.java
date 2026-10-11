@@ -22,6 +22,11 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 /** The reasoner service collects all functionalities that use semantics in k.LAB. */
 public interface Reasoner extends KlabService {
 
+  /** Explicitly expand deferred external ancestry in place. This may perform network I/O. */
+  default Concept resolveAuthorityHierarchy(String authority, String identity, Scope scope) {
+    throw new UnsupportedOperationException("Authority hierarchy expansion is unavailable");
+  }
+
   /** Authenticated provider search; failures are explicit statuses, never empty successful results. */
   default org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse authorityCodelists(
       org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest request, Scope scope) {

@@ -707,8 +707,11 @@ public class RuntimeServerController {
                   .getScopeManager()
                   .getScope(request.getConfiguration().getId(), SessionScope.class);
           if (existing != null) {
-            // TODO bookkeeping of users connected if user is different, possibly validate other
-            //  parameters
+            if (!(existing instanceof ServiceSessionScope managed)
+                || !org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(managed, userScope)) {
+              throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+                  "Session is not accessible to the requesting user");
+            }
             return existing.getId();
           }
         }
@@ -803,9 +806,27 @@ public class RuntimeServerController {
 
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
+          var requestedId = contextId == null ? request.getConfiguration().getId() : contextId;
+          if (requestedId != null) {
+            if (!requestedId.startsWith(sessionScope.getId() + ".")) {
+              throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context does not belong to the authorized session");
+            }
+            var existing = runtimeService.klabService().getConfiguration(requestedId, userScope);
+            if (existing != null) {
+              var connected = runtimeService.klabService().connectContext(existing, userScope);
+              return connected == null ? null : connected.getConfiguration();
+            }
+          }
+
           var ret =
               new ServiceContextScope(
-                  serviceSessionScope, request.getConfiguration(), userScope.getUser());
+                  serviceSessionScope.forRequest((ServiceUserScope) userScope), request.getConfiguration(), userScope.getUser());
+
+          if (request.getConfiguration() instanceof org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl configuration) {
+            configuration.setOwner(userScope.getUser().getUsername());
+            configuration.setSessionFederationId(org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(serviceSessionScope, userScope)
+                && federation != null ? federation.getId() : null);
+          }
 
           if (!ret.getUser().getUsername().equals(identity.getUsername())) {
             ret = ret.withIdentity(identity);
@@ -859,7 +880,17 @@ public class RuntimeServerController {
     if (principal instanceof EngineAuthorization authorization) {
       var sessionScope = authorization.getScope(SessionScope.class);
       if (sessionScope != null) {
-        sessionScope.close();
+        var registered = runtimeService.klabService().getScopeManager()
+            .getScope(sessionScope.getId(), ServiceSessionScope.class);
+        if (registered == null) return false;
+        var requester = runtimeService.klabService().getScopeManager().getOrCreateUserScope(authorization);
+        if (!org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(registered, requester)
+            || (org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(registered)
+                && !authorization.getRoles().contains(org.integratedmodelling.klab.services.application.security.Role.ROLE_ADMINISTRATOR))) {
+          throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+              "Only an administrator may release a shared federation session");
+        }
+        registered.close();
         return true;
       }
     }

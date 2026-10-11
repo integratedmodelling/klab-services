@@ -91,6 +91,9 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     String getOwner();
 
+    /** Host-issued parent policy; null denotes a private or legacy parent session. */
+    default String getSessionFederationId() { return null; }
+
     /**
      * Access rights define who can access the digital twin and the modality of the access.
      * Individual observations should also allow distinct levels of access within the scope of the

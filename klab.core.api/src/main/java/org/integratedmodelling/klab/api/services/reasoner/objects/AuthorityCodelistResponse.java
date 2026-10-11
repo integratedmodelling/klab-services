@@ -6,7 +6,15 @@ import org.integratedmodelling.klab.api.knowledge.Codelist;
 
 /** Published lists contain approved mappings only. Review history is separate and immutable. */
 public record AuthorityCodelistResponse(long revision, Map<String, Codelist> codelists,
-    List<Proposal> proposals) {
+    List<Proposal> proposals, Map<String, CodelistPolicy> policies) {
+  public AuthorityCodelistResponse {
+    policies = policies == null ? Map.of() : Map.copyOf(policies);
+  }
+  public AuthorityCodelistResponse(long revision, Map<String, Codelist> codelists, List<Proposal> proposals) {
+    this(revision, codelists, proposals, Map.of());
+  }
+  /** Keyed by bound namespace; listId retains the provider/worldview-local identifier. */
+  public record CodelistPolicy(String listId, boolean providerDeclared, boolean acceptsProposals) {}
   public enum Status { PENDING, ACCEPTED, REDIRECTED, REJECTED, DELETED, MANAGED }
   public record Proposal(String id, String namespace, String alias, String identity,
       Status status, String approvedAlias, String message, String submittedBy, String reviewedBy,

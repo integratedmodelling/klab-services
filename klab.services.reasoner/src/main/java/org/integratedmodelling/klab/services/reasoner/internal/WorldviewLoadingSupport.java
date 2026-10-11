@@ -10,6 +10,21 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public final class WorldviewLoadingSupport {
   private WorldviewLoadingSupport() {}
 
+  /** Keep configuration checks on the same saved declaration that is about to be compiled. */
+  public static void replaceOntology(
+      org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl worldview, KimOntology ontology) {
+    var ontologies = new ArrayList<>(worldview.getOntologies());
+    for (int i = 0; i < ontologies.size(); i++) {
+      if (ontologies.get(i).getUrn().equals(ontology.getUrn())) {
+        ontologies.set(i, ontology);
+        worldview.setOntologies(ontologies);
+        return;
+      }
+    }
+    ontologies.add(ontology);
+    worldview.setOntologies(ontologies);
+  }
+
   public static boolean loadable(Worldview worldview, boolean local) {
     if (worldview == null || worldview.getOntologies().isEmpty()) return false;
     var root = worldview.getOntologies().getFirst();

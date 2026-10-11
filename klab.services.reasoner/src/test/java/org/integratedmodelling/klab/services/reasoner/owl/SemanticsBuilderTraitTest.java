@@ -108,15 +108,19 @@ class SemanticsBuilderTraitTest {
 
   @Test void lexicalRootHandlesMissingConceptsAndCyclesWithoutHidingReachableRoots() {
     var reasoner = mock(ReasonerService.class);
+    var owl = mock(OWL.class);
+    when(reasoner.owl()).thenReturn(owl);
     when(reasoner.lexicalRoot(any())).thenCallRealMethod();
     assertNull(reasoner.lexicalRoot(null));
     var first = concept("First"); var second = concept("Second"); var root = concept("Root");
     root.getMetadata().put(CoreOntology.NS.BASE_DECLARATION, "true");
-    when(reasoner.parents(first)).thenReturn(List.of(second));
-    when(reasoner.parents(second)).thenReturn(List.of(first));
+    first.getMetadata().put(org.integratedmodelling.klab.api.services.Authority.HIERARCHY_STATUS, "DEFERRED");
+    when(owl.getParents(first)).thenReturn(List.of(second));
+    when(owl.getParents(second)).thenReturn(List.of(first));
     assertNull(reasoner.lexicalRoot(first));
-    when(reasoner.parents(second)).thenReturn(List.of(first, root));
+    when(owl.getParents(second)).thenReturn(List.of(first, root));
     assertSame(root, reasoner.lexicalRoot(first));
+    verify(reasoner, never()).parents(any());
     first.getType().add(SemanticType.NOTHING);
     assertNull(reasoner.lexicalRoot(first));
   }
