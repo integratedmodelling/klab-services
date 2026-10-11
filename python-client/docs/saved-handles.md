@@ -1,10 +1,30 @@
 # Saved scientific handles — version 1
 
-Base: upstream integration **ad2bc949c167e1c2e370973ce4427fe67cb1cc30**.
-This feature works with the original #84 objects and imports no typed-request
-module. It changes no Java contract or federation-session policy. Baseline Python
-97 and strict Java 56-case checks passed on the recorded base; the broader
-promotion/federation gate remains unresolved and is not certified here.
+The maintained saved-handle API provides local scientific references and explicit
+restoration for Context, ObservationImpl and Job. It works with the original #84
+objects and imports no typed-request module. It changes no Java contract or
+federation-session policy; the broader promotion/federation gate remains
+unresolved and is not certified here.
+
+Historical candidate hashes, dated validation evidence and the independent merge
+handoff are preserved in [Saved handles validation history](saved-handles-validation.md).
+
+## Issue and PR boundary
+
+This checkout implements [issue #88](https://github.com/integratedmodelling/klab-services/issues/88)
+for [PR #86](https://github.com/integratedmodelling/klab-services/pull/86).
+Its scope is strict portable references, offline file operations, safe binding
+and decoder identity, and explicit current-server restoration. Shared submission
+and URL helpers are included because normal helper jobs must preserve the same
+identity/decoder contracts as capture. The test matrix below maps implementation
+criteria to maintained regressions and live acceptance. Publication and exact
+published-candidate checks remain required before closing the issue.
+
+Typed-request work belongs to #87/PR #85; federation integration and remaining
+rollout checks belong to #89 in a separate checkout. Handles provide groundwork
+for later persistent-session and job-recovery work, but do not deliver durable
+jobs across server restart, simulation checkpoints or event replay. Reference
+this commit from later issues without treating those guarantees as completed.
 
 ## Local references and explicit restoration
 
@@ -44,6 +64,10 @@ Supported service helpers supply their result interpretation. Arbitrary custom
 callable decoders are refused unless an existing allowed interpretation is
 explicitly supplied; functions/import paths are never serialized or executed.
 
+The current refactor gives the Resolver helper explicit `result_kind="dataflow"`
+decoder metadata, so capture preserves its allowed interpretation without
+inferring it from a callable.
+
 No cached DTO/configuration, principal/owner flags, status, cancellation flags,
 profile or optional snapshot is stored. Unknown fields and all duplicate keys
 (including nested duplicates) are rejected. No pickle or executable imports are
@@ -53,10 +77,27 @@ explicitly. URL userinfo, queries/fragments, control characters, obvious
 authentication material and configured credential contents are refused without
 echoing their values in errors.
 
+Capture/restoration inspect raw string values and up to four percent-decoded
+representations for credentials configured on the supplied client. Inspection
+never rewrites identities/base paths, does not form-decode literal `+`, and never
+follows an inspected URL. Excessive encoding and invalid percent-encoded UTF-8
+fail locally without echoing data. This is bounded by both schema size and a fixed
+decoding count; a manually constructed reference cannot infer credentials that
+were never supplied to it.
+
 Capture needs an already configured or previously inspected stable home Runtime
 identity. Resolver capture additionally needs prior peer capabilities. Saving
 never fetches missing identities. Capability inspection caches only service IDs;
 it does not follow advertised origins or confer authority.
+Job capture also compares the bound scope client's available configured/cached
+Runtime ID with the job client's stable home ID, including legacy configuration
+that omits serviceId. Contradictory caches cannot be downgraded to URL-only checks.
+Same-Runtime second clients remain supported; a legacy source without a known ID
+still needs a compatible URL/configuration and the job client's stable identity.
+
+Submission and handle capture share Runtime binding validation, rejecting known
+identity conflicts before rebinding or HTTP. Both use the same URL normalization
+as restoration, including uppercase schemes and explicit default ports.
 
 ## Restoration contract and source map
 
@@ -90,7 +131,8 @@ logic, checked Python DTOs and existing Job routes. No new endpoint is invented.
 ## File policy and failures
 
 Save requires an existing destination parent and does not create directories.
-Default overwrite is refused atomically. A same-directory 0600 temporary file is
+Default overwrite is refused atomically. A same-directory temporary file (0600
+permissions on POSIX; filesystem ACLs govern Windows access) is
 fully written (including partial-write handling), synced and closed before
 publication. Explicit overwrite uses atomic replace; no-clobber publication uses
 hard-link creation and fails explicitly on unsupported filesystems. Failed write
@@ -113,6 +155,10 @@ distinct classes. Diagnostics never echo file-provided data or credentials.
 | Invalid version/kind/fields/types/IDs/URLs | invalid_schema_is_local_and_diagnostics_do_not_echo_input, unknown_version_is_explicit, observation_and_job_ids_are_exact_integers, job_cross_field_invariants |
 | JSON duplicates/size/UTF-8/nonfinite/snapshot secrets | malformed_duplicate_oversized_or_nonfinite_json_is_rejected, nested_duplicate_keys_and_missing_fields, unknown_or_secret_fields_are_rejected |
 | Offline capture, stable service IDs/custom decoder | offline_capture_identity_requirements_and_custom_jobs, configured_credential_cannot_be_smuggled_as_reference_metadata |
+| Known source identity versus legacy configuration | job_capture_rejects_differing_known_source_runtime_before_network, same_runtime_second_client_scope_and_legacy_unknown_capture, conflicting_source_cache_is_not_downgraded_to_configuration_only |
+| Submission binding and explicit decoder metadata | submission_rejects_known_foreign_scope_before_rebinding_or_http, submission_retains_same_runtime_and_legacy_scope_support, custom_submission_decoder_is_not_inferred_to_be_a_dataflow, runtime_job_capture_rejects_contradictory_home_capabilities |
+| Shared canonical URL equivalence | direct_job_capture_uses_same_url_normalization_as_restoration |
+| Encoded credential and bounded inspection | percent_encoded_configured_credential_cannot_enter_a_saved_hint, loaded_reference_credential_is_rejected_before_capabilities_or_attach, safe_percent_encoding_is_inspected_but_never_rewrites_identity, literal_plus_and_percent_are_not_form_decoded_as_credentials, inspection_budget_and_invalid_utf8_are_explicit_before_network |
 | Origin/base path, relocation, capability identity | mismatch_never_contacts_a_file_provided_origin, url_canonicalization_base_paths_and_explicit_verified_relocation, observer_requires_agent_and_service_identity_checks_are_explicit |
 | Fresh authorized graph/foreign result refusal | restore_observation_queries_current_authorized_graph_and_not_cached_dto, lookup_must_establish_fresh_context_identity, restored_observation_job_cannot_bind_a_foreign_result |
 | Runtime/resolver routing/decoder/state | runtime_and_resolver_job_references_do_not_cross_route, restored_job_decoder_allowlist_and_actual_result_routes, restore_does_not_wait_cancel_or_invent_job_state |
@@ -127,6 +173,8 @@ attach/job, transport and raw submission tests remain in the full suite.
 
 ## Gates and real-stack demonstration
 
+Run these commands from `python-client` with the dev extras installed:
+
 ```powershell
 python -m pytest -q --cov=klab_client --cov-branch --cov-report=json
 python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/handles.py
@@ -137,6 +185,17 @@ python -m build
 New production module requires unexcluded 100% executable line and branch coverage;
 changed existing production lines/decisions are checked separately from inherited
 gaps. CI applies these gates on Python 3.11/3.12/3.13. Coverage/lint are dev extras.
+
+The reviewed refactor passed **290 maintained tests and 22 additional independent
+checks** on Windows Python 3.12 and fresh installed-package Linux Python
+3.11/3.12/3.13. `handles.py` has **316 statements / 134 branches, 100% covered**;
+changed-code gates cover the shared helpers too. Wheel/sdist builds and isolated
+live acceptance passed against Java integration baseline `ad2bc949c`. See the
+linked validation record for snapshot identity and acceptance boundaries.
+
+The fixed coverage comparison base measures this contribution against its
+integration baseline. When integrating, retain the new-module gate and select
+the repository's maintained comparison base for future changes.
 
 `examples/saved_handles.py` has explicit create, restore, collaborator and release
 modes. Caller setup reads credentials separately and explicitly initializes peers;
@@ -151,51 +210,6 @@ test-owned state.
 python tools/run_local_acceptance.py --java C:\jdk\bin\java.exe --worldview C:\pinned-imod --state-dir C:\existing-parent\new-state --build --saved-handles --samples 1 --duration 1
 ```
 
-Executed candidate **ee96e7719**:
-
-* 241 tests passed, 5 live deselected, on Windows Python 3.12 and the
-  installed-package Ubuntu/WSL Python 3.11/3.12/3.13 matrix. Each Linux version
-  built wheel/sdist and passed new-module/changed-code coverage gates.
-* `handles.py`: 303 executable statements and 134 branches, all covered with
-  zero exclusions. Changed existing production lines/arcs passed independently.
-* Targeted Ruff checks passed. A fresh dependency-light Windows Python 3.11
-  environment installed the wheel and exercised import/offline round-trip with
-  HTTP forbidden and no optional tooling dependencies installed.
-* Exact-candidate fresh deployment `klab-handles-live1`, **2026-10-08
-  01:33:40–01:40:16 UTC**: 2 existing live tests, all four fresh-process example
-  modes, Runtime and Resolver jobs, scoped observation reads, actual pending-job
-  timeout/restoration/completion, collaborator positive/private-negative checks,
-  cold ACL checks and smoke phases passed. All five JVM exits were confirmed.
-  Processes A/B preserved job 15, observation 112 and pending job 16; the Resolver
-  retained peer job 23. These are run-specific identities, not public defaults.
-
-Evidence is retained externally under `C:\Users\lumsd\AppData\Local\Temp\opencode`:
-`handles-coverage.json`, per-version `handles-3.xx` CI/coverage/XML/distributions,
-and `klab-handles-live1` source/compiled/model provenance and reports. No generated
-credentials, handles or state files are tracked. Earlier failing tests exposed a
-default-port normalization edge and fixture-label issues; all required gates were
-rerun after correction. New production code is unchanged by this evidence update.
-
-Review examined strict local parsing, bounds and identity invariants, configured
-origin-only routing, capability versus access failures, observer/focus validation,
-fresh graph membership, result decoder allowlists, secret diagnostics, atomic
-publication/cleanup, mutation ambiguity and remote lifecycle. No extra server
-contract or typed-feature dependency was needed; no auto-retry or ownership
-transfer was introduced.
-
-A Python-process
-restart does not establish persistent job retention across Runtime restart or
+A Python-process restart does not establish persistent job retention across Runtime restart or
 resumable simulation. No production onboarding, provider accuracy, automatic
 migration, bulk export or federation-policy redesign is certified.
-
-## Independent merge handoff
-
-Both branches start at the same SHA. Expected overlaps: additive package exports,
-Client facade additions, README/API inventory, dev extras, coverage CI and the
-local runner's feature flags. Coverage-check tooling is identical and independently
-included; preserve both new-module arguments when combining. Neither feature
-depends on the other or changes Java session authority.
-An actual merge-tree check found four content conflicts when combining the two:
-coverage CI, `docs/public-api.md`, package `__init__.py` and local-runner feature
-flags. Resolve each additively. Client code, README, dev extras and identical
-coverage tooling merge automatically; neither independent branch was merged/reset.

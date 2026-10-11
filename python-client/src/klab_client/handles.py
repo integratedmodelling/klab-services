@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 import httpx
 
@@ -15,8 +15,10 @@ from .client import Client, Context, Job, scope_token
 from .dto import OBSERVATION_CLASS, object_payload, observation_from_wire
 from .errors import (ConfigurationError, InvalidRequestError, JobUnavailableError, KlabError,
                      MissingAssetError, ProtocolError, UnsupportedOperationError)
+from .transport import _normalize_service_url
 
 MAX_HANDLE_BYTES = 65536
+MAX_PERCENT_DECODINGS = 4
 _COMMON = {"version", "kind", "runtime_id", "runtime_url", "context_id", "scope"}
 _JOB_FIELDS = {"job_id", "service", "service_id", "service_url", "result_kind"}
 
@@ -65,10 +67,7 @@ def _url(value):
         if (parsed.scheme not in {"https", "http"} or not parsed.hostname or parsed.username is not None
                 or parsed.password is not None or "?" in value or "#" in value or any(c.isspace() for c in value)):
             raise HandleFormatError("Handle origins must be explicit credential-free HTTP(S) service URLs")
-        normalized = httpx.URL(value)
-        if normalized.port == {"http": 80, "https": 443}[normalized.scheme]:
-            normalized = normalized.copy_with(port=None)
-        return _text(str(normalized).rstrip("/"))
+        return _text(_normalize_service_url(value))
     except (ValueError, httpx.InvalidURL):
         raise HandleFormatError("Invalid handle service URL") from None
 
@@ -192,21 +191,36 @@ def _invalid_constant(value):
 
 
 def _runtime_identity(client):
-    known = client._service_id_cache.get("runtime")
-    configured = client.runtime_service_id
-    if known is not None and configured is not None and known != configured:
-        raise HandleIdentityError("Cached and configured home Runtime identities differ")
-    identity = configured or known
+    try:
+        identity = client._known_runtime_identity()
+    except InvalidRequestError as error:
+        raise HandleIdentityError(str(error)) from None
     if not identity:
         raise ConfigurationError("Initialize/configure the home Runtime identity before offline handle creation")
     return identity
 
 
 def _no_credentials(reference, client):
-    values = reference.to_dict().values()
-    if any(endpoint.credential and any(endpoint.credential in value for value in values if isinstance(value, str))
-           for endpoint in client.transport.endpoints.values()):
-        raise HandleFormatError("A saved reference cannot contain a configured credential")
+    credentials = tuple(endpoint.credential for endpoint in client.transport.endpoints.values() if endpoint.credential)
+    for value in reference.to_dict().values():
+        if not isinstance(value, str):
+            continue
+        # Inspection only: never rewrite identity/base paths or route to decoded URLs.
+        # Schema bounds each value; a fixed decoding budget bounds layered escapes.
+        depth = 0
+        while True:
+            if any(credential in value for credential in credentials):
+                raise HandleFormatError("A saved reference cannot contain a configured credential")
+            try:
+                decoded = unquote(value, encoding="utf-8", errors="strict")
+            except UnicodeError:
+                raise HandleFormatError("Saved reference contains invalid percent-encoded UTF-8") from None
+            if decoded == value:
+                break
+            if depth == MAX_PERCENT_DECODINGS:
+                raise HandleFormatError("Saved reference exceeds the percent-encoding inspection limit")
+            depth += 1
+            value = decoded
 
 
 def to_handle(source):
@@ -240,11 +254,11 @@ def to_handle(source):
     else:
         raise HandleFormatError("Only Context, bound ObservationImpl, Job or Handle objects can be saved")
     runtime_url = _url(client.transport.endpoint("runtime").url)
-    if _url(context.client.transport.endpoint("runtime").url) != runtime_url:
-        raise HandleIdentityError("Source scope belongs to another Runtime")
+    try:
+        client._validate_context_binding(context)
+    except InvalidRequestError as error:
+        raise HandleIdentityError(str(error)) from None
     runtime_id = _runtime_identity(client)
-    if context.configuration.get("serviceId") not in (None, runtime_id):
-        raise HandleIdentityError("Source context configuration has a different Runtime identity")
     reference = Handle(kind=kind, runtime_id=runtime_id, runtime_url=runtime_url,
         context_id=context.id, scope=scope_token(context), **extra)
     _no_credentials(reference, client)

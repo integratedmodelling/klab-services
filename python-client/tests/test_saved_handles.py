@@ -644,3 +644,165 @@ def test_os_write_and_fsync_errors_never_publish_a_partial_destination(tmp_path,
                 reference().save(tmp_path / "new")
             assert "sensitive" not in str(error.value)
         assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("source_kind", ["configured", "cached", "reported"])
+def test_job_capture_rejects_differing_known_source_runtime_before_network(wire, source_kind):
+    with Client("https://runtime.invalid/runtime", runtime_service_id="old" if source_kind == "configured" else None) as source:
+        configuration = {"id": "s.c", "serviceId": "old"} if source_kind == "reported" else {"id": "s.c"}
+        if source_kind == "cached":
+            source._service_id_cache["runtime"] = "old"
+        scope = Context(source, configuration)
+        source.close()
+        with client(lambda r: pytest.fail("Capture must remain offline")) as current:
+            with pytest.raises(HandleIdentityError):
+                Job(current, 5, scope).to_handle()
+
+
+@pytest.mark.parametrize("source_kind", ["configured", "cached", "unknown", "reported"])
+def test_same_runtime_second_client_scope_and_legacy_unknown_capture(source_kind):
+    with Client("https://runtime.invalid/runtime/", runtime_service_id="runtime-id" if source_kind == "configured" else None) as source:
+        if source_kind == "cached":
+            source._service_id_cache["runtime"] = "runtime-id"
+        configuration = {"id": "s.c", "serviceId": "runtime-id"} if source_kind == "reported" else {"id": "s.c"}
+        scope = Context(source, configuration, token="s.c.8#3")
+        source.close()
+        with client(lambda r: pytest.fail("Offline source capture")) as current:
+            handle = Job(current, 5, scope).to_handle()
+            assert handle.runtime_id == "runtime-id" and handle.scope == "s.c.8#3"
+
+
+def test_conflicting_source_cache_is_not_downgraded_to_configuration_only():
+    with Client("https://runtime.invalid/runtime", runtime_service_id="runtime-id") as source:
+        source._service_id_cache["runtime"] = "contradictory"
+        with client(lambda r: pytest.fail("Capture is offline")) as current:
+            with pytest.raises(HandleIdentityError, match="Cached"):
+                Job(current, 5, Context(source, {"id": "s.c"})).to_handle()
+
+
+@pytest.mark.parametrize("service", ["runtime", "resolver"])
+@pytest.mark.parametrize("source_kind", ["configured", "cached", "reported", "contradictory-cache"])
+def test_submission_rejects_known_foreign_scope_before_rebinding_or_http(wire, service, source_kind):
+    with Client("https://runtime.invalid/runtime", runtime_service_id="old" if source_kind == "configured" else None) as source:
+        if source_kind in ("cached", "contradictory-cache"):
+            source._service_id_cache["runtime"] = "old"
+        if source_kind == "contradictory-cache":
+            source.runtime_service_id = "runtime-id"
+        configuration = {"id": "s.c", "serviceId": "old"} if source_kind == "reported" else {"id": "s.c"}
+        scope = Context(source, configuration)
+        with client(lambda r: pytest.fail("Reject foreign source before any HTTP")) as current:
+            with pytest.raises(InvalidRequestError, match="Runtime"):
+                submit = current.runtime.submit if service == "runtime" else current.resolver.resolve
+                submit(observation_from_wire(wire), scope)
+
+
+@pytest.mark.parametrize("service", ["runtime", "resolver"])
+@pytest.mark.parametrize("source_kind", ["configured", "cached", "reported", "unknown"])
+def test_submission_retains_same_runtime_and_legacy_scope_support(wire, service, source_kind):
+    calls = []
+    def handler(request):
+        calls.append(request)
+        assert request.headers["klab-scope"] == "s.c.8#3"
+        return httpx.Response(200, json=5)
+    with Client("HTTPS://RUNTIME.invalid:443/runtime/", runtime_service_id="runtime-id" if source_kind == "configured" else None) as source:
+        if source_kind == "cached":
+            source._service_id_cache["runtime"] = "runtime-id"
+        configuration = {"id": "s.c", "serviceId": "runtime-id"} if source_kind == "reported" else {"id": "s.c"}
+        with client(handler) as current:
+            current._service_id_cache["resolver"] = "peer-id"
+            scope = Context(source, configuration, token="s.c.8#3")
+            submit = current.runtime.submit if service == "runtime" else current.resolver.resolve
+            handle = submit(observation_from_wire(wire), scope).to_handle()
+            assert handle.runtime_id == "runtime-id" and handle.scope == "s.c.8#3"
+            assert handle.result_kind == ("observation" if service == "runtime" else "dataflow")
+    assert len(calls) == 1
+
+
+def test_custom_submission_decoder_is_not_inferred_to_be_a_dataflow(wire):
+    with client(lambda r: httpx.Response(200, json=5)) as current:
+        job = current._submit(observation_from_wire(wire), Context(current, {"id": "s.c"}), decoder=lambda p: p)
+        assert job.result_kind is None
+        with pytest.raises(UnsupportedOperationError, match="Custom"):
+            job.to_handle()
+
+
+def test_runtime_job_capture_rejects_contradictory_home_capabilities():
+    with client(lambda r: pytest.fail("Capture must remain offline")) as current:
+        current._service_id_cache["runtime"] = "another-runtime"
+        with pytest.raises(HandleIdentityError, match="Cached"):
+            Job(current, 5, Context(current, {"id": "s.c"})).to_handle()
+
+
+@pytest.mark.parametrize("scheme,port", [("HTTPS", 443), ("HTTP", 80)])
+def test_direct_job_capture_uses_same_url_normalization_as_restoration(scheme, port):
+    with Client(f"{scheme}://RUNTIME.invalid:{port}/runtime/", runtime_service_id="home") as source:
+        with Client(f"{scheme.lower()}://runtime.invalid/runtime", runtime_service_id="home",
+                    http_transport=httpx.MockTransport(lambda r: pytest.fail("Offline capture"))) as current:
+            handle = Job(current, 5, Context(source, {"id": "s.c"})).to_handle()
+            assert handle.runtime_url == f"{scheme.lower()}://runtime.invalid/runtime"
+
+
+def percent_encode_all(value):
+    return "".join(f"%{byte:02X}" for byte in value.encode("utf-8"))
+
+
+@pytest.mark.parametrize("depth", [1, 2, 3, 4])
+@pytest.mark.parametrize("credential", ["issued-secret", 'quote"token', "token+with/slash"])
+def test_percent_encoded_configured_credential_cannot_enter_a_saved_hint(tmp_path, depth, credential):
+    encoded = credential
+    for _ in range(depth):
+        encoded = percent_encode_all(encoded)
+    with Client("https://runtime.invalid/runtime/" + encoded, credential, runtime_service_id="home",
+                http_transport=httpx.MockTransport(lambda r: pytest.fail("No capture network"))) as current:
+        destination = tmp_path / "handle.json"
+        with pytest.raises(HandleFormatError, match="credential") as error:
+            save_handle(Context(current, {"id": "s.c"}), destination)
+        assert credential not in str(error.value)
+        assert not destination.exists() and not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("field", ["runtime_url", "runtime_id"])
+def test_loaded_reference_credential_is_rejected_before_capabilities_or_attach(field):
+    credential = "issued-secret"
+    encoded = percent_encode_all(credential)
+    values = {field: "https://runtime.invalid/runtime/" + encoded if field == "runtime_url" else encoded}
+    handle = Handle.loads(reference(**values).dumps())
+    with client(lambda r: pytest.fail("No remote validation for a credential-bearing file")) as current:
+        with pytest.raises(HandleFormatError, match="credential") as error:
+            handle.restore(current, allow_relocation=True)
+        assert credential not in str(error.value)
+
+
+@pytest.mark.parametrize("depth", [1, 2, 3, 4])
+def test_safe_percent_encoding_is_inspected_but_never_rewrites_identity(depth):
+    value = "path"
+    for _ in range(depth):
+        value = percent_encode_all(value)
+    url = "https://runtime.invalid/runtime/" + value
+    with Client(url, "unrelated-credential", runtime_service_id="home") as current:
+        handle = Context(current, {"id": "s.c"}).to_handle()
+        assert handle.runtime_url == url
+        assert Handle.loads(handle.dumps()) == handle
+
+
+def test_literal_plus_and_percent_are_not_form_decoded_as_credentials():
+    with Client("https://runtime.invalid/runtime/public+data/100%", "public data", runtime_service_id="home") as current:
+        handle = Context(current, {"id": "s.c"}).to_handle()
+        assert "/public+data/100%" in handle.runtime_url
+
+
+def test_inspection_budget_and_invalid_utf8_are_explicit_before_network():
+    encoded = "path"
+    for _ in range(5):
+        encoded = percent_encode_all(encoded)
+    for suffix, message in ((encoded, "limit"), ("%FF", "UTF-8")):
+        handle = reference(runtime_url="https://runtime.invalid/runtime/" + suffix)
+        with client(lambda r: pytest.fail("Invalid inspection must precede all network")) as current:
+            with pytest.raises(HandleFormatError, match=message):
+                handle.restore(current, allow_relocation=True)
+
+
+def test_nested_reference_without_configured_credentials_retains_local_only_inspection():
+    with Client("https://runtime.invalid/runtime/%2F", runtime_service_id="home") as current:
+        handle = Context(current, {"id": "s.c"}).to_handle()
+        assert handle.runtime_url.endswith("/%2F")

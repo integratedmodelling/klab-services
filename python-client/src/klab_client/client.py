@@ -16,7 +16,7 @@ from .dto import (check_notifications, configuration_to_wire, decode_cell, objec
 from .errors import (ConfigurationError, InvalidRequestError, JobCancelledError, JobFailedError,
                      JobUnavailableError, ProtocolError, TransportError,
                      UnsupportedOperationError, WaitTimeout)
-from .transport import Endpoint, Transport
+from .transport import Endpoint, Transport, _normalize_service_url
 
 _TOKEN = re.compile(r"^[^.\s#]+(?:\.[^.\s#]+)?(?:\.[1-9][0-9]*)*(?:#[1-9][0-9]*)?$")
 
@@ -356,15 +356,30 @@ class Client:
         return self._context(self.transport.request("runtime", "POST", "/api/v1/connect",
                              json=self._scope_request({**(configuration or {}), "id": id}), ambiguous=True))
 
-    def _submit(self, observation, scope, constraints=(), *, service="runtime", decoder=None):
+    def _known_runtime_identity(self):
+        configured, cached = self.runtime_service_id, self._service_id_cache.get("runtime")
+        if configured is not None and cached is not None and configured != cached:
+            raise InvalidRequestError("Cached and configured home Runtime identities differ")
+        return configured if configured is not None else cached
+
+    def _validate_context_binding(self, context):
+        if _normalize_service_url(context.client.transport.endpoint("runtime").url) != _normalize_service_url(
+                self.transport.endpoint("runtime").url):
+            raise InvalidRequestError("Submission context belongs to a different runtime")
+        identities = (self._known_runtime_identity(), context.client._known_runtime_identity(),
+                      context.configuration.get("serviceId"))
+        known = [identity for identity in identities if identity is not None]
+        if known and any(identity != known[0] for identity in known):
+            raise InvalidRequestError("Source context has a different known Runtime identity")
+
+    def _submit(self, observation, scope, constraints=(), *, service="runtime", decoder=None, result_kind=None):
         if service == "runtime" and not self.agent_name:
             raise ConfigurationError("Set agent_name/KLAB_AGENT_NAME to the authorized user's existing provenance agent name")
         token = scope_token(scope)
         if token is None or len(token.split("#")[0].split(".")) < 2:
             raise InvalidRequestError("Observation submission requires a context scope")
         if isinstance(scope, Context):
-            if scope.client.transport.endpoint("runtime").url.rstrip("/") != self.transport.endpoint("runtime").url.rstrip("/"):
-                raise InvalidRequestError("Submission context belongs to a different runtime")
+            self._validate_context_binding(scope)
             context = Context(self, scope.configuration, owned=scope.owned, token=token)
         else:
             context = Context(self, {"id": ".".join(token.split("#")[0].split(".")[:2])}, token=token)
@@ -375,7 +390,7 @@ class Client:
                                     ambiguous=True)
         return Job(self, id, context, service=service,
                     decoder=decoder or (lambda p: observation_from_wire(p, context)),
-                    result_kind="observation" if decoder is None else "dataflow")
+                    result_kind="observation" if decoder is None else result_kind)
 
     def restore_handle(self, reference, *, allow_relocation=False):
         """Explicit capability verification/attach; never submit or create replacement work."""

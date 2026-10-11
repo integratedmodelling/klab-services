@@ -15,6 +15,14 @@ from .errors import (
 )
 
 
+def _normalize_service_url(value):
+    """Canonical service origin/base path, retaining path and escape semantics."""
+    url = httpx.URL(value)
+    if url.port == {"http": 80, "https": 443}[url.scheme]:
+        url = url.copy_with(port=None)
+    return str(url).rstrip("/")
+
+
 @dataclass(frozen=True)
 class Endpoint:
     url: str

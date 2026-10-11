@@ -266,7 +266,7 @@ class ResolverImpl(_RemoteService, Resolver):
         from klab_client.dto import object_payload
         self._require_client()
         return self.client._submit(observation, context_scope, service="resolver",
-                                   decoder=lambda p: object_payload(p, "dataflow"))
+                                   decoder=lambda p: object_payload(p, "dataflow"), result_kind="dataflow")
 
     def encode_dataflow(self, dataflow):
         from klab_client.errors import UnsupportedOperationError
