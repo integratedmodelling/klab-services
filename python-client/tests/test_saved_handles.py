@@ -742,6 +742,16 @@ def test_direct_job_capture_uses_same_url_normalization_as_restoration(scheme, p
             assert handle.runtime_url == f"{scheme.lower()}://runtime.invalid/runtime"
 
 
+def test_foreign_focus_cannot_be_relabelled_into_a_saved_handle(wire, tmp_path):
+    with Client("https://runtime.invalid/runtime", runtime_service_id="old") as source:
+        asset = observation_from_wire(wire, Context(source, {"id": "s.c"}))
+        with client(lambda r: pytest.fail("Reject focus before capture or HTTP")) as current:
+            destination = tmp_path / "foreign.json"
+            with pytest.raises(InvalidRequestError, match="Runtime"):
+                save_handle(Context(current, {"id": "s.c"}).within(asset), destination)
+            assert not destination.exists()
+
+
 def percent_encode_all(value):
     return "".join(f"%{byte:02X}" for byte in value.encode("utf-8"))
 

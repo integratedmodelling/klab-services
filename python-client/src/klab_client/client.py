@@ -194,8 +194,9 @@ class Context(ContextScopeImpl):
             raise InvalidRequestError("Focus requires a positive committed observation ID")
         if isinstance(observation, ObservationImpl) and observation._context is not None:
             bound = observation._context
-            if bound.id != self.id or bound.client.transport.endpoint("runtime").url.rstrip("/") != self.client.transport.endpoint("runtime").url.rstrip("/"):
+            if bound.id != self.id:
                 raise InvalidRequestError("Focused observation belongs to another runtime or context")
+            self.client._validate_context_binding(bound, configuration=self.configuration)
         base, marker, observer = scope_token(self).partition("#")
         token = base + f".{id}" + (marker + observer if marker else "")
         return Context(self.client, self.configuration, owned=self.owned, token=token)
@@ -219,10 +220,9 @@ class Context(ContextScopeImpl):
 
     def fetch_data(self, observation, offsets, *, curve, slice, semantics):
         bound = observation._context
-        if bound is None or bound.id != self.id or (
-                bound.client.transport.endpoint("runtime").url.rstrip("/")
-                != self.client.transport.endpoint("runtime").url.rstrip("/")):
+        if bound is None or bound.id != self.id:
             raise InvalidRequestError("Scientific reads require an observation bound to this runtime and context")
+        self.client._validate_context_binding(bound, configuration=self.configuration)
         if observation.geometry is None:
             raise ProtocolError("Scientific reads require geometry to preserve location and temporal semantics")
         offsets = tuple(offsets)
@@ -356,20 +356,23 @@ class Client:
         return self._context(self.transport.request("runtime", "POST", "/api/v1/connect",
                              json=self._scope_request({**(configuration or {}), "id": id}), ambiguous=True))
 
-    def _known_runtime_identity(self):
-        configured, cached = self.runtime_service_id, self._service_id_cache.get("runtime")
-        if configured is not None and cached is not None and configured != cached:
-            raise InvalidRequestError("Cached and configured home Runtime identities differ")
-        return configured if configured is not None else cached
+    def _known_runtime_identity(self, configuration=None):
+        identities = (self.runtime_service_id, getattr(self, "_service_id_cache", {}).get("runtime"),
+                      (configuration or {}).get("serviceId"))
+        known = [identity for identity in identities if identity is not None]
+        if any(not isinstance(identity, str) or not identity.strip() for identity in known):
+            raise InvalidRequestError("Runtime identity requires nonblank text")
+        if known and any(identity != known[0] for identity in known):
+            raise InvalidRequestError("Cached, configured and context Runtime identities differ")
+        return known[0] if known else None
 
-    def _validate_context_binding(self, context):
+    def _validate_context_binding(self, context, *, configuration=None):
         if _normalize_service_url(context.client.transport.endpoint("runtime").url) != _normalize_service_url(
                 self.transport.endpoint("runtime").url):
-            raise InvalidRequestError("Submission context belongs to a different runtime")
-        identities = (self._known_runtime_identity(), context.client._known_runtime_identity(),
-                      context.configuration.get("serviceId"))
-        known = [identity for identity in identities if identity is not None]
-        if known and any(identity != known[0] for identity in known):
+            raise InvalidRequestError("Source context is bound to a different runtime")
+        current = self._known_runtime_identity(configuration)
+        source = context.client._known_runtime_identity(context.configuration)
+        if current is not None and source is not None and current != source:
             raise InvalidRequestError("Source context has a different known Runtime identity")
 
     def _submit(self, observation, scope, constraints=(), *, service="runtime", decoder=None, result_kind=None):

@@ -26,6 +26,11 @@ for later persistent-session and job-recovery work, but do not deliver durable
 jobs across server restart, simulation checkpoints or event replay. Reference
 this commit from later issues without treating those guarantees as completed.
 
+The client PR retains integration base `ad2bc949c` on `feature/python-client`.
+The develop/federation merge is published separately under #89 to that same
+integration branch. Neither client feature is stacked on the other; live reports
+identify the separate server candidate. Broader federation promotion remains gated.
+
 ## Local references and explicit restoration
 
 ```python
@@ -99,6 +104,12 @@ Submission and handle capture share Runtime binding validation, rejecting known
 identity conflicts before rebinding or HTTP. Both use the same URL normalization
 as restoration, including uppercase schemes and explicit default ports.
 
+The same checks apply before focusing on a bound observation or reading its
+cells, including both contexts' reported identities. A known foreign asset cannot
+be turned into a destination-bound focus and then saved under that destination's
+Runtime ID. Bare integer IDs carry no origin information; missing legacy IDs
+retain canonical URL/root validation and current server authorization.
+
 ## Restoration contract and source map
 
 1. Match canonical configured origin **and service base path** before HTTP.
@@ -158,6 +169,7 @@ distinct classes. Diagnostics never echo file-provided data or credentials.
 | Known source identity versus legacy configuration | job_capture_rejects_differing_known_source_runtime_before_network, same_runtime_second_client_scope_and_legacy_unknown_capture, conflicting_source_cache_is_not_downgraded_to_configuration_only |
 | Submission binding and explicit decoder metadata | submission_rejects_known_foreign_scope_before_rebinding_or_http, submission_retains_same_runtime_and_legacy_scope_support, custom_submission_decoder_is_not_inferred_to_be_a_dataflow, runtime_job_capture_rejects_contradictory_home_capabilities |
 | Shared canonical URL equivalence | direct_job_capture_uses_same_url_normalization_as_restoration |
+| Focus/read binding before capture | test_runtime_binding.py, foreign_focus_cannot_be_relabelled_into_a_saved_handle |
 | Encoded credential and bounded inspection | percent_encoded_configured_credential_cannot_enter_a_saved_hint, loaded_reference_credential_is_rejected_before_capabilities_or_attach, safe_percent_encoding_is_inspected_but_never_rewrites_identity, literal_plus_and_percent_are_not_form_decoded_as_credentials, inspection_budget_and_invalid_utf8_are_explicit_before_network |
 | Origin/base path, relocation, capability identity | mismatch_never_contacts_a_file_provided_origin, url_canonicalization_base_paths_and_explicit_verified_relocation, observer_requires_agent_and_service_identity_checks_are_explicit |
 | Fresh authorized graph/foreign result refusal | restore_observation_queries_current_authorized_graph_and_not_cached_dto, lookup_must_establish_fresh_context_identity, restored_observation_job_cannot_bind_a_foreign_result |
@@ -186,12 +198,12 @@ New production module requires unexcluded 100% executable line and branch covera
 changed existing production lines/decisions are checked separately from inherited
 gaps. CI applies these gates on Python 3.11/3.12/3.13. Coverage/lint are dev extras.
 
-The reviewed refactor passed **290 maintained tests and 22 additional independent
-checks** on Windows Python 3.12 and fresh installed-package Linux Python
-3.11/3.12/3.13. `handles.py` has **316 statements / 134 branches, 100% covered**;
-changed-code gates cover the shared helpers too. Wheel/sdist builds and isolated
-live acceptance passed against Java integration baseline `ad2bc949c`. See the
-linked validation record for snapshot identity and acceptance boundaries.
+The Runtime-binding correction passed **330 maintained tests** on Windows Python
+3.12, including the shared focus/read checks and rejection before a foreign focus
+can be saved. New-module and changed-code gates cover the shared helpers too;
+targeted lint passed. Historical cross-version, package and live results retain
+their own source identities in the linked validation record. A changed candidate
+requires fresh checks before publication.
 
 The fixed coverage comparison base measures this contribution against its
 integration baseline. When integrating, retain the new-module gate and select
