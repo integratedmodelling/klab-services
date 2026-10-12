@@ -1729,6 +1729,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     for (KimOntology ontology : worldview.getOntologies()) {
       var declaringDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
           .validate(ontology, this::declareConcept);
+      org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport
+          .requireEffectiveGrounding(owl, declaringDomain);
       declarationDomains.put(ontology.getUrn(), declaringDomain);
       for (var statement : ontology.getStatements()) {
         defineConcept(statement, scope);
@@ -1839,6 +1841,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
         var declaringDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
             .validate(ontology, this::declareConcept);
+        org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport
+            .requireEffectiveGrounding(owl, declaringDomain);
         declarationDomains.put(ontology.getUrn(), declaringDomain);
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);
@@ -2999,12 +3003,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     concepts, ontology, concept.getOperands().get(0).getType())
                 : this.owl.getUnion(concepts, ontology, concept.getOperands().getFirst().getType());
 
-        this.owl.setConceptUrn((ConceptImpl) ret, concept.getUrn());
+        if (concept.getAbout().isEmpty())
+          this.owl.setConceptUrn((ConceptImpl) ret, concept.getUrn());
         ret.getType()
             .add(
                 concept.is(SemanticType.INTERSECTION)
                     ? SemanticType.INTERSECTION
                     : SemanticType.UNION);
+      }
+
+      // Subject matter restricts the complete domain expression, including a union.
+      if (!concept.getAbout().isEmpty()) {
+        ret = org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport.compose(
+            owl, ret, concept, target -> declareInternal(target, ontology, monitor));
       }
 
       //      // set the k.IM definition in the concept.This must only happen if the

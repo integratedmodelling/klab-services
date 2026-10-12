@@ -31,6 +31,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private KimConcept observable;
   private KimConcept parent;
   private KimConcept inherent;
+  private List<KimConcept> about = new ArrayList<>();
   private KimConcept goal;
   private KimConcept causant;
   private KimConcept caused;
@@ -76,6 +77,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.observable = other.observable;
     this.parent = other.parent;
     this.inherent = other.inherent;
+    this.about.addAll(other.about);
     this.goal = other.goal;
     this.causant = other.causant;
     this.caused = other.caused;
@@ -422,6 +424,19 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   public void setObservable(KimConcept observable) {
     this.observable = observable;
+  }
+
+  @Override
+  public List<KimConcept> getAbout() { return about; }
+
+  private List<KimConcept> canonicalAbout() {
+    return about.stream().sorted(Comparator.comparing(target ->
+        ((KimConceptImpl) target).finalizeDefinition())).toList();
+  }
+
+  public void setAbout(List<KimConcept> domains) {
+    about = domains == null ? new ArrayList<>() : new ArrayList<>(domains);
+    urn = null;
   }
 
   public void setInherent(KimConcept inherent) {
@@ -790,7 +805,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     if (semanticModifier != null) {
       ret.append(ret.isEmpty() ? "" : " ").append(semanticModifier.declaration[0]);
       ret.append((ret.isEmpty()) ? "" : " ")
-          .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
+          .append(name == null ? ((KimConceptImpl) observable).computeUrnAndParenthesize() : name);
       if (comparisonConcept != null) {
         ret.append(" ")
             .append(semanticModifier.declaration[1])
@@ -828,7 +843,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     if (semanticModifier == null) {
       ret.append((ret.isEmpty()) ? "" : " ")
-          .append(name == null ? ((KimConceptImpl) observable).finalizeDefinition() : name);
+          .append(name == null ? ((KimConceptImpl) observable).computeUrnAndParenthesize() : name);
     } else {
       ret.append((ret.isEmpty()) ? "" : " ").append(main);
     }
@@ -870,6 +885,11 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       }
     }
 
+    for (var target : canonicalAbout()) {
+      ret.append(" about ").append(((KimConceptImpl) target).computeUrnAndParenthesize());
+    }
+
+
     for (var operator : valueOperators) {
       ret.append(" ").append(operator.getFirst() == ValueOperator.IS ? "is" : operator.getFirst().declaration);
       if (operator.getSecond() != null) ret.append(" ").append(renderValue(operator.getSecond()));
@@ -901,7 +921,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private String computeUrnAndParenthesize() {
 
     String urn = finalizeDefinition();
-    boolean trivial = getModifiers().isEmpty() && valueOperators.isEmpty();
+    boolean trivial = getModifiers().isEmpty() && valueOperators.isEmpty() && about.isEmpty()
+        && operands.isEmpty() && !negated;
 
     if (trivial) {
       var allTraits = type.contains(SemanticType.PREDICATE);
@@ -1077,7 +1098,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       if (name != null) {
         appender.append(name, LexicalRole.CONCEPT, this);
       } else {
-        observable.format(appender);
+        ((KimConceptImpl) observable).formatParenthesized(appender, true);
       }
       if (comparisonConcept != null) {
         appender.append(semanticModifier.declaration[1], LexicalRole.PREFIX_SEMANTIC_OPERATOR);
@@ -1087,7 +1108,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       if (name != null) {
         appender.append(name, LexicalRole.CONCEPT, this);
       } else if (observable != null) {
-        observable.format(appender);
+        ((KimConceptImpl) observable).formatParenthesized(appender, true);
       }
     }
 
@@ -1133,6 +1154,11 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         appender.append("to", LexicalRole.KEYWORD);
         ((KimConceptImpl) relationshipTarget).formatParenthesized(appender, true);
       }
+    }
+
+    for (var target : canonicalAbout()) {
+      appender.append("about", LexicalRole.KEYWORD);
+      ((KimConceptImpl) target).formatParenthesized(appender, true);
     }
 
     // TODO value operators

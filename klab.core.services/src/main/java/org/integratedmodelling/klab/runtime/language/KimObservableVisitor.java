@@ -221,6 +221,7 @@ public class KimObservableVisitor {
     visitConcept(concept.getComparisonConcept(), conceptContext);
     visitConcept(concept.getRelationshipSource(), conceptContext);
     visitConcept(concept.getRelationshipTarget(), conceptContext);
+    for (var target : safe(concept.getAbout())) visitConcept(target, conceptContext);
     for (var trait : safe(concept.getTraits())) visitConcept(trait, conceptContext);
     for (var role : safe(concept.getRoles())) visitConcept(role, conceptContext);
     for (var operand : safe(concept.getOperands())) visitConcept(operand, conceptContext);

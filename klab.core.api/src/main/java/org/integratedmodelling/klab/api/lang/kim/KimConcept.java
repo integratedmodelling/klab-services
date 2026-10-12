@@ -74,6 +74,11 @@ public interface KimConcept extends KlabStatement {
    */
   KimConcept getObservable();
 
+  /** Authored subject-matter targets of ABOUT. The current domain interpretation compiles
+   * each target independently; other subject-matter contracts require their own specification.
+   * These are not bearer modifiers. Empty means no locally authored restriction. */
+  default List<KimConcept> getAbout() { return List.of(); }
+
   /**
    * The type contains all declared attributes for the concept. An empty type denotes an
    * inconsistent concept. The k.IM validator ensures that any non-empty types are internally

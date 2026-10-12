@@ -34,6 +34,9 @@ class DocumentSemanticValidatorTest {
     var reasoner = mock(ReasonerService.class, CALLS_REAL_METHODS);
     var owlField = ReasonerService.class.getDeclaredField("owl");
     owlField.setAccessible(true); owlField.set(reasoner, owl);
+    // CALLS_REAL_METHODS bypasses field initializers, including the ingestion domain registry.
+    var domainsField = ReasonerService.class.getDeclaredField("declarationDomains");
+    domainsField.setAccessible(true); domainsField.set(reasoner, new HashMap<>());
     var indexerField = ReasonerService.class.getDeclaredField("indexer");
     indexerField.setAccessible(true);
     indexerField.set(reasoner, mock(org.integratedmodelling.klab.indexing.Indexer.class));

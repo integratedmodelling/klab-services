@@ -281,7 +281,9 @@ public enum LanguageAdapter {
     }
     ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
-    if (semantics.isLeafDeclaration() && semantics.getUnaryOperator() == null) {
+    if (semantics.getHeadExpression() != null) {
+      ret.setObservable(adaptSemantics(semantics.getHeadExpression(), namespace, projectName, documentClass));
+    } else if (semantics.isLeafDeclaration() && semantics.getUnaryOperator() == null) {
       ret.setName(semantics.getObservable().concept().toString());
       ret.setNegated(semantics.isNegated() || semantics.getObservable().negated());
       retainReferenceFlags(ret, semantics.getObservable());
@@ -351,6 +353,10 @@ public enum LanguageAdapter {
     SemanticSyntax.BinaryOperator logicalOperator = null;
 
     for (var restriction : semantics.getRestrictions()) {
+      if (restriction.getFirst() == SemanticSyntax.BinaryOperator.ABOUT
+          && (restriction.getSecond().size() != 1 || restriction.getThird())) {
+        throw new IllegalArgumentException("ABOUT requires one target per clause; repeat about for independent targets");
+      }
 
       boolean collective = restriction.getThird();
       var operand =
@@ -369,6 +375,7 @@ public enum LanguageAdapter {
 
       if (operand != null) {
         switch (restriction.getFirst()) {
+          case ABOUT -> ret.getAbout().add(operand);
           case OF -> ret.setInherent(operand);
           case FOR -> ret.setGoal(operand);
           case WITH -> ret.setCompresent(operand);
