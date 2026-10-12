@@ -267,7 +267,8 @@ def test_discovery_and_resolver_contracts(observation):
         path = request.url.path
         seen.append(path)
         if path == "/public/capabilities":
-            return httpx.Response(200, json={"serviceId": "server-id", "type": "RUNTIME", "future": 7})
+            identity = "runtime-id" if request.url.host == "runtime.invalid" else "server-id"
+            return httpx.Response(200, json={"serviceId": identity, "type": "RUNTIME", "future": 7})
         if path == "/api/v1/resolve/concept":
             assert request.content == b"geography:Elevation"
             return httpx.Response(200, json=observation["observable"]["semantics"])

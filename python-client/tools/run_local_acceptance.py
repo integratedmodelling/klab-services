@@ -30,6 +30,7 @@ def main():
     parser.add_argument("--samples", type=int, default=8)
     parser.add_argument("--build", action="store_true")
     parser.add_argument("--step-timeout", type=float, default=900)
+    parser.add_argument("--saved-handles", action="store_true", help="Also verify fresh-process saved handle restoration")
     parser.add_argument("--typed-observe", action="store_true", help="Also verify the typed observation example")
     args = parser.parse_args()
     if os.name != "nt" or not args.java.is_file() or not args.state_dir.parent.is_dir():
@@ -89,6 +90,9 @@ def main():
         run("start", [sys.executable, "tools/local_stack.py", "start", "--java", str(args.java.resolve()), "--state-dir", str(state)])
         run("acceptance", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
                             "-m", "live", "-s", "tests/test_local_workflow.py", "--junitxml=" + str(state / "acceptance.xml")])
+        if args.saved_handles:
+            run("saved-handles", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
+                "-m", "live", "-s", "tests/test_handles_live.py", "--junitxml=" + str(state / "saved-handles.xml")])
         if args.typed_observe:
             run("typed-observe", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
                 "-m", "live", "-s", "tests/test_typed_live.py", "--junitxml=" + str(state / "typed-observe.xml")])

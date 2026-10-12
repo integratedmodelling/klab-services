@@ -18,7 +18,8 @@ local = ["cryptography>=44,<47", "psutil>=5.9,<8"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-m 'not live'"
-markers = ["live: opt-in acceptance against a configured k.LAB deployment"]
+markers = ["live: opt-in acceptance against a configured k.LAB deployment",
+           "integration: deterministic local HTTP/subprocess integration; not a real k.LAB service stack"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
