@@ -135,6 +135,33 @@ class MemberClassifierExecutorTest {
     }
   }
 
+  @Test void mixedExistingAndNewClassificationsRetainExistingKnowledge() throws Exception {
+    var f = new Fixture();
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(f.result));
+    var fresh = new ObservationImpl();
+    fresh.setId(43); fresh.setObservable(mock(Observable.class));
+    var pending = f.executor().execute(Map.of("cohort", List.of(f.member, fresh)),
+        Geometry.UNIVERSAL, f.event, f.scope);
+    assertEquals(1, pending.size());
+    assertSame(fresh, pending.getFirst().member());
+    assertEquals(1, f.classifier.calls.get());
+    assertEquals(List.of(f.result), f.reasoner.directTraits(f.member.getObservable()));
+  }
+
+  @Test void classifierReadsTentativeParentAttributionBeforeInvoking() throws Exception {
+    var f = new Fixture();
+    var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var transaction = mock(org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction.class);
+    when(scope.getCurrentTransaction()).thenReturn(transaction);
+    var view = f.member.copyForAttribution(mock(Observable.class));
+    when(transaction.readObservation(f.member)).thenReturn(view);
+    when(f.reasoner.directTraits(view.getObservable())).thenReturn(List.of(f.result));
+    assertTrue(f.executor().execute(Map.of("cohort", List.of(f.member)),
+        Geometry.UNIVERSAL, f.event, scope).isEmpty());
+    assertEquals(0, f.classifier.calls.get());
+    assertTrue(f.reasoner.directTraits(f.member.getObservable()).isEmpty());
+  }
+
   @Test void rejectsInvalidExistingAttributionAndPreservesOtherPredicates() throws Exception {
     var f = new Fixture(); var unrelated = mock(Concept.class);
     when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(unrelated));

@@ -36,12 +36,48 @@ class ConnectionExecutionTest {
     var child = mock(DigitalTwin.Transaction.class);
     when(scope.getCurrentTransaction()).thenReturn(child);
     when(child.getParent()).thenReturn(parent);
+    var transactionView = point.copyForAttribution(point.getObservable());
+    when(child.readObservation(point)).thenReturn(transactionView);
     var cohort = mock(org.integratedmodelling.klab.api.knowledge.Cohort.class);
     when(parent.outgoing(cohort)).thenReturn(List.of(
         new org.integratedmodelling.klab.api.data.impl.LinkImpl(cohort, point, GraphModel.Relationship.HAS_MEMBER)));
     var runtime = mock(RuntimeService.class, CALLS_REAL_METHODS);
     doReturn(cohort).when(runtime).getCohortFor(any(), eq(scope), eq(false));
-    assertEquals(List.of(point), runtime.getMembers(producer, scope));
+    assertEquals(List.of(transactionView), runtime.getMembers(producer, scope));
+    verify(child).readObservation(point);
+  }
+
+  @Test void classificationMembersIntersectsRealTransactionReadGeometry() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var producer = observation(10, SemanticType.SUBJECT, true, false);
+    var inside = observation(11, SemanticType.SUBJECT, false, false);
+    var outside = observation(12, SemanticType.SUBJECT, false, false);
+    producer.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+            "EPSG:4326 POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))").encode()));
+    inside.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create("EPSG:4326 POINT (1 1)").encode()));
+    outside.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create("EPSG:4326 POINT (3 3)").encode()));
+    var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var twin = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class);
+    when(scope.getDigitalTwin()).thenReturn(twin);
+    var parent = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
+        org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
+    var child = parent.getChild(Activity.of(Activity.Type.CLASSIFICATION), scope);
+    when(scope.getCurrentTransaction()).thenReturn(child);
+    var cohort = mock(org.integratedmodelling.klab.api.knowledge.Cohort.class);
+    when(cohort.getId()).thenReturn(-100L);
+    parent.link(cohort, inside, GraphModel.Relationship.HAS_MEMBER);
+    parent.link(cohort, outside, GraphModel.Relationship.HAS_MEMBER);
+    var runtime = mock(RuntimeService.class, CALLS_REAL_METHODS);
+    doReturn(cohort).when(runtime).getCohortFor(any(), eq(scope), eq(false));
+    var members = runtime.classificationMembers(producer, producer.getGeometry(), scope);
+    assertEquals(List.of(inside.getId()), members.stream().map(Observation::getId).toList());
+    assertNotSame(inside, members.getFirst());
+    assertNotSame(inside.getGeometry(), members.getFirst().getGeometry());
+    assertEquals(inside.getGeometry().encode(), members.getFirst().getGeometry().encode());
+    parent.fail(new java.util.concurrent.CancellationException());
   }
 
   @Test void namedReferenceUsesTheProducerInstanceRegardlessOfPortOrder() throws Exception {

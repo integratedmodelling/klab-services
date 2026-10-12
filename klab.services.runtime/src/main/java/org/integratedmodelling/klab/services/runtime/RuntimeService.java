@@ -1201,7 +1201,9 @@ public class RuntimeService extends BaseService
     var support = intersection(producer.getGeometry(), requested);
     if (!hasMemberSupport(support)) throw new IllegalStateException("Missing member support");
     var ret = new ArrayList<Observation>();
-    for (var member : members.values()) {
+    for (var candidate : members.values()) {
+      var member = scope.getCurrentTransaction() == null ? candidate
+          : scope.getCurrentTransaction().readObservation(candidate);
       var overlap = intersection(member.getGeometry(), support);
       if (hasMemberSupport(overlap)) ret.add(member);
     }

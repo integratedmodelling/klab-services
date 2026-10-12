@@ -103,6 +103,266 @@ public class DigitalTwinImpl implements DigitalTwin {
     return Type.CONTEXT;
   }
 
+  /** Native geometry operations over private backing values, with privacy retained by derivatives. */
+  private static final class LocalGeometry implements java.lang.reflect.InvocationHandler {
+    private final Geometry source;
+
+    private LocalGeometry(Geometry source) { this.source = source; }
+
+    static Geometry detach(Geometry geometry) {
+      var plain = geometry.isEmpty() ? Geometry.builder().build()
+          : (org.integratedmodelling.klab.api.geometry.impl.GeometryImpl) Geometry.create(geometry.encode());
+      if (geometry.isEmpty()) { plain.setScalar(false); plain.setEmpty(true); }
+      return geometry instanceof Scale
+          ? new org.integratedmodelling.klab.runtime.scale.ScaleImpl(plain) : plain;
+    }
+
+    static Geometry wrap(Geometry geometry) {
+      if (geometry instanceof Geometry.LocalSnapshot) return geometry;
+      var contracts = new LinkedHashSet<Class<?>>();
+      contracts.add(Geometry.LocalSnapshot.class);
+      for (Class<?> type = geometry.getClass(); type != null; type = type.getSuperclass())
+        for (var contract : type.getInterfaces())
+          if (contract.getName().startsWith("org.integratedmodelling.klab.api.")) contracts.add(contract);
+      return (Geometry) java.lang.reflect.Proxy.newProxyInstance(DigitalTwinImpl.class.getClassLoader(),
+          contracts.toArray(Class<?>[]::new), new LocalGeometry(geometry));
+    }
+
+    private static Geometry isolate(Geometry geometry) {
+      return (Geometry) ObservationReadView.copy(geometry, new IdentityHashMap<>());
+    }
+
+    private static Object nativeArgument(Object value) {
+      if (value != null && java.lang.reflect.Proxy.isProxyClass(value.getClass())
+          && java.lang.reflect.Proxy.getInvocationHandler(value) instanceof LocalExtent extent)
+        return extent.source;
+      if (value instanceof org.integratedmodelling.klab.api.knowledge.observation.scale.Extent<?> extent)
+        return new org.integratedmodelling.klab.runtime.scale.ScaleImpl(Geometry.create(extent.encode()))
+            .extent(extent.getType());
+      if (!(value instanceof Geometry geometry)) return value;
+      if (java.lang.reflect.Proxy.isProxyClass(geometry.getClass())
+          && java.lang.reflect.Proxy.getInvocationHandler(geometry) instanceof LocalGeometry local)
+        return local.source;
+      return detach(geometry);
+    }
+
+    private static Object result(Object value) {
+      if (value instanceof Geometry geometry)
+        return geometry == Geometry.EMPTY || geometry == Geometry.UNIVERSAL ? isolate(geometry) : wrap(geometry);
+      if (value instanceof org.integratedmodelling.klab.api.knowledge.observation.scale.Extent<?> extent)
+        return LocalExtent.wrap(extent);
+      if (value instanceof List<?> list) return list.stream().map(LocalGeometry::result).toList();
+      if (value instanceof Iterator<?> iterator) return new Iterator<Object>() {
+        public boolean hasNext() { return iterator.hasNext(); }
+        public Object next() { return result(iterator.next()); }
+      };
+      if (value instanceof java.util.stream.Stream<?> stream) return stream.map(LocalGeometry::result);
+      return value;
+    }
+
+    @Override public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] arguments)
+        throws Throwable {
+      if (method.getDeclaringClass() == Object.class) return switch (method.getName()) {
+        case "equals" -> proxy == arguments[0];
+        case "hashCode" -> source.encode().hashCode();
+        case "toString" -> source.encode();
+        default -> throw new UnsupportedOperationException(method.toString());
+      };
+      if (method.getDeclaringClass() == Geometry.LocalSnapshot.class) return switch (method.getName()) {
+        case "isolate" -> isolate((Geometry) arguments[0]);
+        case "promote" -> source instanceof Scale ? proxy
+            : wrap(new org.integratedmodelling.klab.runtime.scale.ScaleImpl(source,
+                (org.integratedmodelling.klab.api.scope.Scope) arguments[0]));
+        default -> throw new UnsupportedOperationException(method.toString());
+      };
+      if (method.getName().equals("key"))
+        return org.integratedmodelling.klab.api.utils.Utils.Strings.hash(source.encode());
+      if (method.getName().equals("as")) {
+        var requested = (Class<?>) arguments[0];
+        if (requested == Scale.class) return ((Geometry.LocalSnapshot) proxy).promote(null);
+        if (requested == Geometry.class && source instanceof Scale)
+          return isolate(Geometry.create(source.encode()));
+        if (requested.isInstance(proxy)) return proxy;
+        throw new UnsupportedOperationException("Local geometry exposes API views, not mutable implementation casts");
+      }
+      var inputs = arguments == null ? null : Arrays.stream(arguments).map(LocalGeometry::nativeArgument).toArray();
+      try { return result(method.invoke(source, inputs)); }
+      catch (java.lang.reflect.InvocationTargetException failure) { throw failure.getCause(); }
+    }
+  }
+  /** Keep geometry conversions from a private extent inside the same local boundary. */
+  private static final class LocalExtent implements java.lang.reflect.InvocationHandler {
+    private final org.integratedmodelling.klab.api.knowledge.observation.scale.Extent<?> source;
+    private LocalExtent(org.integratedmodelling.klab.api.knowledge.observation.scale.Extent<?> source) {
+      this.source = source;
+    }
+    static Object wrap(org.integratedmodelling.klab.api.knowledge.observation.scale.Extent<?> source) {
+      var contracts = new LinkedHashSet<Class<?>>();
+      for (Class<?> type = source.getClass(); type != null; type = type.getSuperclass())
+        for (var contract : type.getInterfaces())
+          if (contract.getName().startsWith("org.integratedmodelling.klab.api.")) contracts.add(contract);
+      return java.lang.reflect.Proxy.newProxyInstance(DigitalTwinImpl.class.getClassLoader(),
+          contracts.toArray(Class<?>[]::new), new LocalExtent(source));
+    }
+    @Override public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] arguments)
+        throws Throwable {
+      if (method.getDeclaringClass() == Object.class) return switch (method.getName()) {
+        case "equals" -> proxy == arguments[0];
+        case "hashCode" -> source.hashCode();
+        case "toString" -> source.toString();
+        default -> throw new UnsupportedOperationException(method.toString());
+      };
+      if (method.getName().equals("as")) {
+        var requested = (Class<?>) arguments[0];
+        if (requested.isInstance(proxy)) return proxy;
+        if (!requested.isInterface()) throw new UnsupportedOperationException("Private extents expose API views");
+      }
+      var inputs = arguments == null ? null : Arrays.stream(arguments).map(LocalGeometry::nativeArgument).toArray();
+      try { return LocalGeometry.result(method.invoke(source, inputs)); }
+      catch (java.lang.reflect.InvocationTargetException failure) { throw failure.getCause(); }
+    }
+  }
+  /** Read-only domain interfaces with detached mutable payloads; no serialization of parents. */
+  private static final class ObservationReadView implements java.lang.reflect.InvocationHandler {
+    private final Object source;
+    private final IdentityHashMap<Object, Object> copies;
+    private final Map<java.lang.reflect.Method, Object> values = new HashMap<>();
+
+    private ObservationReadView(Object source, IdentityHashMap<Object, Object> copies) {
+      this.source = source;
+      this.copies = copies;
+    }
+
+    static Observation of(Observation source) {
+      return (Observation) copy(source, new IdentityHashMap<>());
+    }
+
+    static Observation source(Observation observation) {
+      if (java.lang.reflect.Proxy.isProxyClass(observation.getClass())
+          && java.lang.reflect.Proxy.getInvocationHandler(observation) instanceof ObservationReadView view)
+        return (Observation) view.source;
+      return observation;
+    }
+
+    private static Object copy(Object value, IdentityHashMap<Object, Object> copies) {
+      if (value == null || value instanceof String || value instanceof Boolean
+          || value instanceof Character || value instanceof Enum<?> || value instanceof Class<?>
+          || value instanceof Byte || value instanceof Short || value instanceof Integer
+          || value instanceof Long || value instanceof Float || value instanceof Double
+          || value instanceof java.math.BigDecimal || value instanceof java.math.BigInteger
+          || value instanceof java.net.URI || value instanceof java.net.URL
+          || value instanceof UUID || value instanceof java.time.temporal.TemporalAccessor
+          || value instanceof java.time.Duration || value instanceof java.time.Period) return value;
+      if (copies.containsKey(value)) return copies.get(value);
+      if (value instanceof Geometry geometry
+          && !(value instanceof org.integratedmodelling.klab.api.knowledge.observation.scale.Extent<?>)
+          && !(value instanceof org.integratedmodelling.klab.api.services.resolver.Coverage)) {
+        var detached = LocalGeometry.detach(geometry);
+        var result = LocalGeometry.wrap(detached);
+        copies.put(value, result);
+        detached.getMetadata().putAll((Metadata) copy(geometry.getMetadata(), copies));
+        return result;
+      }
+      if (value instanceof Data.ShardingStrategy strategy) return strategy.copy();
+      if (value instanceof org.integratedmodelling.klab.api.knowledge.Urn urn) {
+        var result = org.integratedmodelling.klab.api.knowledge.Urn.of(urn.toString());
+        result.getParameters().clear();
+        result.getParameters().putAll(urn.getParameters());
+        copies.put(value, result);
+        return result;
+      }
+      if (value instanceof Map<?, ?> map) {
+        Map<Object, Object> result;
+        if (value instanceof Metadata) result = (Map) Metadata.create();
+        else if (value instanceof org.integratedmodelling.klab.api.lang.Annotation annotation)
+          result = (Map) new org.integratedmodelling.klab.api.lang.AnnotationImpl();
+        else if (value instanceof org.integratedmodelling.klab.api.collections.Parameters<?>)
+          result = (Map) org.integratedmodelling.klab.api.collections.Parameters.create();
+        else result = new LinkedHashMap<>();
+        copies.put(value, result);
+        map.forEach((key, item) -> result.put(copy(key, copies), copy(item, copies)));
+        if (value instanceof org.integratedmodelling.klab.api.collections.Parameters<?> parameters
+            && result instanceof org.integratedmodelling.klab.api.collections.impl.ParametersImpl copied) {
+          copied.setUnnamedKeys((List) copy(parameters.getUnnamedKeys(), copies));
+          if (parameters instanceof org.integratedmodelling.klab.api.collections.impl.ParametersImpl<?> implementation)
+            copied.setTemplateVariables((org.integratedmodelling.klab.api.collections.Parameters<String>)
+                copy(implementation.getTemplateVariables(), copies));
+        }
+        return result;
+      }
+      if (value instanceof Collection<?> collection) {
+        Collection<Object> result = value instanceof Set<?> ? new LinkedHashSet<>() : new ArrayList<>();
+        copies.put(value, result);
+        collection.forEach(item -> result.add(copy(item, copies)));
+        return result;
+      }
+      if (value.getClass().isArray()) {
+        int length = java.lang.reflect.Array.getLength(value);
+        var result = java.lang.reflect.Array.newInstance(value.getClass().getComponentType(), length);
+        copies.put(value, result);
+        for (int i = 0; i < length; i++)
+          java.lang.reflect.Array.set(result, i, copy(java.lang.reflect.Array.get(value, i), copies));
+        return result;
+      }
+      if (value instanceof Date date) return new Date(date.getTime());
+      var interfaces = new LinkedHashSet<Class<?>>();
+      for (var type = value.getClass(); type != null; type = type.getSuperclass()) {
+        for (var contract : type.getInterfaces()) {
+          if (contract.getName().startsWith("org.integratedmodelling.klab.api."))
+            interfaces.add(contract);
+        }
+      }
+      if (interfaces.isEmpty())
+        throw new UnsupportedOperationException("No safe observation read projection for " + value.getClass().getName());
+      var handler = new ObservationReadView(value, copies);
+      var proxy = java.lang.reflect.Proxy.newProxyInstance(DigitalTwinImpl.class.getClassLoader(),
+          interfaces.toArray(Class<?>[]::new), handler);
+      copies.put(value, proxy);
+      // Capture bean fields now, under the transaction monitor. Query methods may compute values,
+      // but never return unwrapped domain objects or mutable containers from the source.
+      for (var contract : interfaces) for (var method : contract.getMethods()) {
+        if (!java.lang.reflect.Modifier.isStatic(method.getModifiers())
+            && method.getParameterCount() == 0 && readable(method.getName())
+            && method.getReturnType() != void.class && !method.getName().equals("iterator")) {
+          try { handler.values.put(method, copy(method.invoke(value), copies)); }
+          catch (java.lang.reflect.InvocationTargetException error) {
+            throw new IllegalStateException("Cannot snapshot " + method, error.getCause());
+          } catch (ReflectiveOperationException error) { throw new IllegalStateException(error); }
+        }
+      }
+      return proxy;
+    }
+
+    private static boolean readable(String name) {
+      return name.startsWith("get") || name.startsWith("is") || name.startsWith("has")
+          || Set.of("name", "identity", "semantics", "geometry", "metadata", "empty",
+              "notifications", "children", "dataKey", "size", "encode", "displayName",
+              "displayLabel", "codeName", "classify", "groupSize").contains(name);
+    }
+
+    @Override public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] arguments)
+        throws Throwable {
+      if (method.getDeclaringClass() == Object.class) {
+        return switch (method.getName()) {
+          case "toString" -> source.toString();
+          case "hashCode" -> source.hashCode();
+          case "equals" -> proxy == arguments[0];
+          default -> throw new UnsupportedOperationException(method.toString());
+        };
+      }
+      if (values.containsKey(method)) return values.get(method);
+      if (method.getName().equals("iterator") && source instanceof Observation)
+        return List.of(proxy).iterator();
+      // Observable builders construct independent specifications by contract.
+      if (method.getName().equals("builder") && source instanceof org.integratedmodelling.klab.api.knowledge.Observable)
+        return method.invoke(source, arguments);
+      if (!readable(method.getName()) && !Set.of("singular", "collective", "asConcept", "dimension", "at", "contains", "intersects").contains(method.getName()))
+        throw new UnsupportedOperationException("Observation reads cannot invoke " + method.getName());
+      try { return copy(method.invoke(source, arguments), copies); }
+      catch (java.lang.reflect.InvocationTargetException error) { throw error.getCause(); }
+    }
+  }
+
   /**
    * The transactional graph is a directed acyclic graph that represents the execution of a digital
    * twin activity, capturing the relationships and changes between assets. The graph is robust to
@@ -110,12 +370,25 @@ public class DigitalTwinImpl implements DigitalTwin {
    */
   public class TransactionImpl implements Transaction {
 
+    private enum AttemptState { OPEN, COMMITTING, COMMITTED, FAILED }
+    private AttemptState attemptState = AttemptState.OPEN;
+
+    private TransactionImpl rootAttempt() {
+      return parent == null ? this : parent.rootAttempt();
+    }
+
+    private void requireOpen() {
+      if (rootAttempt().attemptState != AttemptState.OPEN)
+        throw new IllegalStateException("Transaction attempt is " + rootAttempt().attemptState);
+    }
+
     private final String id = Utils.Names.fastName();
     private final Set<RuntimeAsset> modified;
     private final Set<RuntimeAsset> added;
 
     private record Attribution(
-        ObservationImpl original, ObservationImpl replacement, String before) {}
+        ObservationImpl original, ObservationImpl replacement, String before,
+        List<Concept> families, Set<String> snapshots) {}
 
     private Map<Observation, Attribution> attributions = new IdentityHashMap<>();
     private Observation target;
@@ -130,7 +403,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override public void stageSchedulerJournal(java.util.function.Supplier<org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal> journal) {
       if (parent != null) { parent.stageSchedulerJournal(journal); return; }
-      journalFactories.add(journal);
+      synchronized (graph) { requireOpen(); journalFactories.add(journal); }
     }
 
     @Override public org.integratedmodelling.klab.api.data.TemporalWriteSet getTemporalWrites() {
@@ -138,9 +411,12 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
     @Override public void setTemporalWrites(org.integratedmodelling.klab.api.data.TemporalWriteSet writes) {
       if (parent != null) { parent.setTemporalWrites(writes); return; }
-      if (temporalWrites != null && temporalWrites != writes)
-        throw new IllegalStateException("A root transaction has only one temporal write set");
-      temporalWrites = writes;
+      synchronized (graph) {
+        requireOpen();
+        if (temporalWrites != null && temporalWrites != writes)
+          throw new IllegalStateException("A root transaction has only one temporal write set");
+        temporalWrites = writes;
+      }
     }
     private Map<Concept, Scale> cohortGeometries = new HashMap<>();
     private List<Runnable> beforeCommitActions = new ArrayList<>();
@@ -167,6 +443,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         String name,
         List<String> relations) {
       synchronized (graph) {
+        requireOpen();
         var owner = this;
         while (owner.parent != null) owner = owner.parent;
         final var rootOwner = owner;
@@ -235,6 +512,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public void beforeCommit(Runnable action) {
       synchronized (graph) {
+        requireOpen();
         beforeCommitActions.add(action);
       }
     }
@@ -242,6 +520,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public void afterCommit(Runnable action) {
       synchronized (graph) {
+        requireOpen();
         afterCommitActions.add(action);
       }
     }
@@ -249,6 +528,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public void afterRollback(Runnable action) {
       synchronized (graph) {
+        requireOpen();
         rollbackActions.add(action);
       }
     }
@@ -258,6 +538,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal journal) {
       if (journal.commitId() != 0) throw new IllegalArgumentException("Journal already committed");
       synchronized (graph) {
+        requireOpen();
         schedulerJournal.add(journal);
       }
     }
@@ -304,19 +585,22 @@ public class DigitalTwinImpl implements DigitalTwin {
     /** Call this before contextualization to commit to register any new executors. */
     @Override
     public void registerExecutors() {
-      for (var observation : contextualizers.keySet()) {
-        var executor = contextualizers.get(observation);
-        var previousExecution = observation.getMetadata().get(Scheduler.EXECUTION_METADATA_KEY);
-        observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, true);
-        afterRollback(
-            () -> {
-              if (previousExecution == null)
-                observation.getMetadata().remove(Scheduler.EXECUTION_METADATA_KEY);
-              else
-                observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, previousExecution);
-            });
-        update(observation);
-        afterCommit(() -> scheduler.registerExecutor(observation, executor::run));
+      synchronized (graph) {
+        requireOpen();
+        for (var observation : contextualizers.keySet()) {
+          var executor = contextualizers.get(observation);
+          var previousExecution = observation.getMetadata().get(Scheduler.EXECUTION_METADATA_KEY);
+          observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, true);
+          afterRollback(
+              () -> {
+                if (previousExecution == null)
+                  observation.getMetadata().remove(Scheduler.EXECUTION_METADATA_KEY);
+                else
+                  observation.getMetadata().put(Scheduler.EXECUTION_METADATA_KEY, previousExecution);
+              });
+          update(observation);
+          afterCommit(() -> scheduler.registerExecutor(observation, executor::run));
+        }
       }
     }
 
@@ -438,8 +722,9 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     public void setTarget(Observation observation) {
-      this.target = observation;
       synchronized (graph) {
+        requireOpen();
+        this.target = observation;
         this.graph.addVertex(observation);
         this.graph.addEdge(
             activity, observation, new RelationshipEdge(GraphModel.Relationship.CREATED));
@@ -457,6 +742,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         return;
       }
       synchronized (graph) {
+        requireOpen();
         var cohortObservable = cohort.getObservable().getSemantics();
         var currentGeometry = cohortGeometries.get(cohortObservable);
         var newGeometry =
@@ -516,6 +802,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public void add(RuntimeAsset asset) {
       synchronized (graph) {
+        requireOpen();
         asset = checkPresentAsset(asset);
         graph.addVertex(asset);
         added.add(asset);
@@ -529,6 +816,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         GraphModel.Relationship relationship,
         Object... data) {
       synchronized (graph) {
+        requireOpen();
         var source = checkPresentAsset(sourceOrig);
         var destination = checkPresentAsset(destinationOrig);
 
@@ -556,6 +844,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public void update(RuntimeAsset asset) {
       synchronized (graph) {
+        requireOpen();
         modified.add(checkPresentAsset(asset));
       }
     }
@@ -563,11 +852,13 @@ public class DigitalTwinImpl implements DigitalTwin {
     /** All members are validated and copied before any staged state becomes visible. */
     public void stageAttributions(
         List<MemberClassifierExecutor.PendingAttribution> pending, ContextScope executionScope) {
-      try {
-        stageValidatedAttributions(pending, executionScope);
-      } catch (RuntimeException failure) {
-        fail(failure);
-        throw failure;
+      synchronized (graph) {
+        try {
+          stageValidatedAttributions(pending, executionScope);
+        } catch (RuntimeException failure) {
+          fail(failure);
+          throw failure;
+        }
       }
     }
 
@@ -576,22 +867,52 @@ public class DigitalTwinImpl implements DigitalTwin {
       if (activity.getType() != Activity.Type.CLASSIFICATION)
         throw new IllegalStateException("Attributions require a CLASSIFICATION activity");
       synchronized (graph) {
+        requireOpen();
         if (!failures.isEmpty()) throw new IllegalStateException("Transaction already failed");
         var reasoner = executionScope.getService(Reasoner.class);
         var batch = new LinkedHashMap<Observation, Attribution>();
         var audit = new ArrayList<Map<String, Object>>();
+        var auditedMembers = new ArrayList<Observation>();
         for (var value : pending) {
-          var canonical = checkPresentAsset(value.member());
+          var canonical = checkPresentAsset(ObservationReadView.source(value.member()));
+          // The graph is unchanged until the entire batch validates, including aliases of a
+          // registered member supplied more than once within this batch.
+          for (var stagedMember : batch.keySet()) {
+            if (stagedMember.getId() == value.member().getId()) {
+              canonical = stagedMember;
+              break;
+            }
+          }
           if (!(canonical instanceof ObservationImpl member)
               || member.getId() == 0
               || member.getId() == -1)
             throw new IllegalArgumentException("Classification requires a registered member");
-          if (attributions.containsKey(member)
-              || batch.containsKey(member)
-              || !Objects.equals(
-                  member.getObservable().getUrn(), value.originalObservable().getUrn()))
-            throw new IllegalStateException("Concurrent or repeated member classification");
-          var builder = member.getObservable().builder(executionScope);
+          var previous = batch.containsKey(member) ? batch.get(member) : attributions.get(member);
+          var current = previous == null ? member : previous.replacement();
+          if (previous == null
+              ? !Objects.equals(member.getObservable().getUrn(), value.originalObservable().getUrn())
+              : !Objects.equals(member.getObservable().getUrn(), previous.before())
+                  || !previous.snapshots().contains(value.originalObservable().getUrn()))
+            throw new IllegalStateException("Concurrent member classification");
+          var families = new ArrayList<Concept>();
+          if (previous != null) families.addAll(previous.families());
+          for (var family : families) {
+            if (Objects.equals(family.getUrn(), value.abstractPredicate().getUrn())
+                || reasoner.is(family, value.abstractPredicate())
+                || reasoner.is(value.abstractPredicate(), family)
+                || reasoner.is(value.predicate(), family))
+              throw new IllegalStateException("Repeated classification in the same predicate family");
+          }
+          // A concrete attribution can belong to overlapping families even when neither family
+          // specializes the other. Never overwrite an existing result in the requested family.
+          var existing = new ArrayList<Concept>(reasoner.directTraits(current.getObservable()));
+          existing.addAll(reasoner.directRoles(current.getObservable()));
+          for (var predicate : existing) {
+            if (Objects.equals(predicate.getUrn(), value.abstractPredicate().getUrn())
+                || reasoner.is(predicate, value.abstractPredicate()))
+              throw new IllegalStateException("Member is already classified in this predicate family");
+          }
+          var builder = current.getObservable().builder(executionScope);
           if (value.predicate().is(SemanticType.ROLE)) builder.withRole(value.predicate());
           else if (value.predicate().is(SemanticType.PREDICATE))
             builder.withTrait(value.predicate());
@@ -600,21 +921,29 @@ public class DigitalTwinImpl implements DigitalTwin {
           var after = builder.buildObservable();
           if (after == null || !reasoner.satisfiable(after.getSemantics()))
             throw new IllegalArgumentException("Inconsistent attributed observable");
-          var replacement = member.copyForAttribution(after);
-          batch.put(member, new Attribution(member, replacement, member.getObservable().getUrn()));
+          var replacement = current.copyForAttribution(after);
+          families.add(value.abstractPredicate());
+          var snapshots = new HashSet<String>();
+          if (previous != null) snapshots.addAll(previous.snapshots());
+          snapshots.add(member.getObservable().getUrn());
+          snapshots.add(after.getUrn());
+          batch.put(member, new Attribution(member, replacement, member.getObservable().getUrn(),
+              List.copyOf(families), Set.copyOf(snapshots)));
           var item = new LinkedHashMap<String, Object>();
           item.put("memberTransientId", member.getTransientId());
           item.put("memberId", member.getId());
-          item.put("before", member.getObservable().getUrn());
+          item.put("before", current.getObservable().getUrn());
           item.put("after", after.getUrn());
           item.put("abstractPredicate", value.abstractPredicate().getUrn());
           item.put("predicate", value.predicate().getUrn());
           item.put("support", value.support().encode());
           item.put("event", value.event().toKey());
           audit.add(item);
+          auditedMembers.add(member);
         }
         int i = 0;
-        for (var attribution : batch.values()) {
+        for (var member : auditedMembers) {
+          var attribution = batch.get(member);
           var item = audit.get(i++);
           var data = new ArrayList<Object>();
           item.forEach(
@@ -627,7 +956,20 @@ public class DigitalTwinImpl implements DigitalTwin {
           if (attribution.original().getId() > 0) modified.add(attribution.original());
         }
         attributions.putAll(batch);
-        activity.getMetadata().put(Metadata.IM_ATTRIBUTIONS, audit);
+        var previousAudit = activity.getMetadata().get(Metadata.IM_ATTRIBUTIONS);
+        if (previousAudit instanceof List<?> entries) {
+          var combined = new ArrayList<Object>(entries);
+          combined.addAll(audit);
+          activity.getMetadata().put(Metadata.IM_ATTRIBUTIONS, combined);
+        } else activity.getMetadata().put(Metadata.IM_ATTRIBUTIONS, audit);
+      }
+    }
+
+    @Override
+    public Observation readObservation(Observation observation) {
+      synchronized (graph) {
+        if (!failures.isEmpty()) throw new IllegalStateException("Transaction already failed");
+        return ObservationReadView.of((Observation) staged(checkPresentAsset(ObservationReadView.source(observation))));
       }
     }
 
@@ -653,26 +995,48 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public void resolveWith(Observation observation, Executor executor) {
-      this.contextualizers.compute(
-          observation,
-          (key, previous) -> {
-            if (previous != null
-                && previous != executor
-                && ((previous.getActuator() != null
-                        && previous.getActuator().getExecutionRole()
-                            != Actuator.ExecutionRole.INITIALIZATION)
-                    || (executor.getActuator() != null
-                        && executor.getActuator().getExecutionRole()
-                            != Actuator.ExecutionRole.INITIALIZATION)))
-              throw new UnsupportedOperationException(
-                  "Multiple occurrence plans for one observation require coverage selection");
-            return executor;
-          });
+      synchronized (graph) {
+        requireOpen();
+        this.contextualizers.compute(
+            observation,
+            (key, previous) -> {
+              if (previous != null
+                  && previous != executor
+                  && ((previous.getActuator() != null
+                          && previous.getActuator().getExecutionRole()
+                              != Actuator.ExecutionRole.INITIALIZATION)
+                      || (executor.getActuator() != null
+                          && executor.getActuator().getExecutionRole()
+                              != Actuator.ExecutionRole.INITIALIZATION)))
+                throw new UnsupportedOperationException(
+                    "Multiple occurrence plans for one observation require coverage selection");
+              return executor;
+            });
+      }
     }
 
     @Override
     public long commit() {
+      // Commit owns the monitor through close and publication. A cancellation acquiring it
+      // first aborts the attempt; one arriving after durable commit cannot undo that commit.
+      synchronized (graph) {
+        var root = rootAttempt();
+        if (root.attemptState == AttemptState.FAILED) return -1;
+        requireOpen();
+        if (parent != null) return commitOpen();
+        attemptState = AttemptState.COMMITTING;
+        try {
+          return commitOpen();
+        } catch (Throwable failure) {
+          if (attemptState == AttemptState.COMMITTED) throw failure;
+          failLocked(failure);
+          scope.error(failure);
+          return -1;
+        }
+      }
+    }
 
+    private long commitOpen() {
       if (!failures.isEmpty()) {
         rollbackSchedulerState();
         failures.forEach(t -> scope.error(t));
@@ -822,6 +1186,8 @@ public class DigitalTwinImpl implements DigitalTwin {
         } catch (Exception e) {
           rollbackSchedulerState();
           attributions.clear();
+          rootAttempt().attemptState = AttemptState.FAILED;
+          failures.add(e); // A failed durable commit cannot be resumed with a cleared write set.
           scope.error(e);
           kgTransaction.fail(e);
           ((ActivityImpl) activity).setOutcome(Activity.Outcome.INTERNAL_FAILURE);
@@ -832,6 +1198,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           return -1;
         }
 
+        attemptState = AttemptState.COMMITTED;
         publishAttributions();
         var commit =
             createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
@@ -1033,11 +1400,14 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public Transaction getChild(Activity activity, ContextScope scope, Object... runtimeAssets) {
-      var ret = new TransactionImpl(this, activity, runtimeAssets);
-      if (scope instanceof ServiceContextScope serviceContextScope) {
-        serviceContextScope.registerTransaction(ret);
+      synchronized (graph) {
+        requireOpen();
+        var ret = new TransactionImpl(this, activity, runtimeAssets);
+        if (scope instanceof ServiceContextScope serviceContextScope) {
+          serviceContextScope.registerTransaction(ret);
+        }
+        return ret;
       }
-      return ret;
     }
 
     private Object[] getRelationshipData(RelationshipEdge edge) {
@@ -1088,6 +1458,19 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     @Override
     public Transaction fail(Throwable compilationError) {
+      synchronized (graph) {
+        var state = rootAttempt().attemptState;
+        if (state == AttemptState.COMMITTED || state == AttemptState.FAILED) return this;
+        // Only a reentrant commit callback can observe COMMITTING while holding this monitor.
+        // Throwing aborts the surrounding graph transaction instead of clearing its write set.
+        if (state == AttemptState.COMMITTING)
+          throw new IllegalStateException("Cannot cancel inside a commit callback", compilationError);
+        return failLocked(compilationError);
+      }
+    }
+
+    private Transaction failLocked(Throwable compilationError) {
+      rootAttempt().attemptState = AttemptState.FAILED;
       rollbackSchedulerState();
       ((ActivityImpl) activity).setOutcome(Activity.Outcome.FAILURE);
       ((ActivityImpl) activity).setName(activity.getType().name().substring(0, 3) + " FAIL");

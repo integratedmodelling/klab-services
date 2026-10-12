@@ -101,6 +101,7 @@ public enum ServiceConfiguration {
 
           @Override
           public Scale promoteGeometryToScale(Geometry geometry, Scope scope) {
+            if (geometry instanceof Geometry.LocalSnapshot local) return local.promote(scope);
             if (geometry instanceof Scale scale) {
               return scale;
             }
