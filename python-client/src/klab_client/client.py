@@ -10,13 +10,15 @@ from dataclasses import dataclass
 from typing import Any
 
 from .api.runtime import ObservationImpl
+from .api.knowledge import ObservableImpl
 from .api.scopes import ContextScopeImpl, SessionScopeImpl, UserScopeImpl
 from .dto import (check_notifications, configuration_to_wire, decode_cell, object_payload,
                   observation_from_wire, observation_to_wire, required_text)
 from .errors import (ConfigurationError, InvalidRequestError, JobCancelledError, JobFailedError,
                      JobUnavailableError, ProtocolError, TransportError,
                      UnsupportedOperationError, WaitTimeout)
-from .transport import Endpoint, Transport
+from .transport import Endpoint, Transport, _normalize_service_url
+from .requests import ContextOptions, ObservationOptions, ObservationRequest
 
 _TOKEN = re.compile(r"^[^.\s#]+(?:\.[^.\s#]+)?(?:\.[1-9][0-9]*)*(?:#[1-9][0-9]*)?$")
 
@@ -156,8 +158,13 @@ class Session(SessionScopeImpl):
     def id(self):
         return self.session_id
 
-    def create_context(self, *, configuration: dict[str, Any] | None = None, name: str = "Python context") -> Context:
+    def create_context(self, *, configuration: dict[str, Any] | None = None, name: str = "Python context",
+                       options: ContextOptions | None = None) -> Context:
         """Create a remote context; default ONE_OFF is disposable on explicit release."""
+        if options is not None:
+            if not isinstance(options, ContextOptions) or configuration is not None or name != "Python context":
+                raise InvalidRequestError("Use ContextOptions or raw configuration/name, not both")
+            configuration = options.to_wire()
         payload = self.client.transport.request(
             "runtime", "POST", "/createContext", scope=self.id,
             json=self.client._scope_request({"name": name, "persistence": "ONE_OFF", **(configuration or {})}),
@@ -188,8 +195,9 @@ class Context(ContextScopeImpl):
             raise InvalidRequestError("Focus requires a positive committed observation ID")
         if isinstance(observation, ObservationImpl) and observation._context is not None:
             bound = observation._context
-            if bound.id != self.id or bound.client.transport.endpoint("runtime").url.rstrip("/") != self.client.transport.endpoint("runtime").url.rstrip("/"):
+            if bound.id != self.id:
                 raise InvalidRequestError("Focused observation belongs to another runtime or context")
+            self.client._validate_context_binding(bound, configuration=self.configuration)
         base, marker, observer = scope_token(self).partition("#")
         token = base + f".{id}" + (marker + observer if marker else "")
         return Context(self.client, self.configuration, owned=self.owned, token=token)
@@ -197,6 +205,12 @@ class Context(ContextScopeImpl):
     def submit(self, observation: ObservationImpl | dict[str, Any], *, resolution_constraints=()) -> Job:
         """Submit through Runtime; acceptance returns a job, not scientific success."""
         return self.client._submit(observation, self, resolution_constraints)
+
+    def observe(self, request: ObservationRequest | ObservableImpl | str, *,
+                options: ObservationOptions | None = None) -> Job:
+        """Submit a typed request, a resolved observable, or Reasoner definition text."""
+        from .requests import observe
+        return observe(self, request, options)
 
     def job(self, id: int) -> Job:
         """Resume a saved job in its original context, including focus path."""
@@ -208,10 +222,9 @@ class Context(ContextScopeImpl):
 
     def fetch_data(self, observation, offsets, *, curve, slice, semantics):
         bound = observation._context
-        if bound is None or bound.id != self.id or (
-                bound.client.transport.endpoint("runtime").url.rstrip("/")
-                != self.client.transport.endpoint("runtime").url.rstrip("/")):
+        if bound is None or bound.id != self.id:
             raise InvalidRequestError("Scientific reads require an observation bound to this runtime and context")
+        self.client._validate_context_binding(bound, configuration=self.configuration)
         if observation.geometry is None:
             raise ProtocolError("Scientific reads require geometry to preserve location and temporal semantics")
         offsets = tuple(offsets)
@@ -344,6 +357,25 @@ class Client:
         return self._context(self.transport.request("runtime", "POST", "/api/v1/connect",
                              json=self._scope_request({**(configuration or {}), "id": id}), ambiguous=True))
 
+    def _known_runtime_identity(self, configuration=None):
+        identities = (self.runtime_service_id, getattr(self, "_service_id_cache", {}).get("runtime"),
+                      (configuration or {}).get("serviceId"))
+        known = [identity for identity in identities if identity is not None]
+        if any(not isinstance(identity, str) or not identity.strip() for identity in known):
+            raise InvalidRequestError("Runtime identity requires nonblank text")
+        if known and any(identity != known[0] for identity in known):
+            raise InvalidRequestError("Cached, configured and context Runtime identities differ")
+        return known[0] if known else None
+
+    def _validate_context_binding(self, context, *, configuration=None):
+        if _normalize_service_url(context.client.transport.endpoint("runtime").url) != _normalize_service_url(
+                self.transport.endpoint("runtime").url):
+            raise InvalidRequestError("Source context is bound to a different runtime")
+        current = self._known_runtime_identity(configuration)
+        source = context.client._known_runtime_identity(context.configuration)
+        if current is not None and source is not None and current != source:
+            raise InvalidRequestError("Source context has a different known Runtime identity")
+
     def _submit(self, observation, scope, constraints=(), *, service="runtime", decoder=None):
         if service == "runtime" and not self.agent_name:
             raise ConfigurationError("Set agent_name/KLAB_AGENT_NAME to the authorized user's existing provenance agent name")
@@ -351,8 +383,7 @@ class Client:
         if token is None or len(token.split("#")[0].split(".")) < 2:
             raise InvalidRequestError("Observation submission requires a context scope")
         if isinstance(scope, Context):
-            if scope.client.transport.endpoint("runtime").url.rstrip("/") != self.transport.endpoint("runtime").url.rstrip("/"):
-                raise InvalidRequestError("Submission context belongs to a different runtime")
+            self._validate_context_binding(scope)
             context = Context(self, scope.configuration, owned=scope.owned, token=token)
         else:
             context = Context(self, {"id": ".".join(token.split("#")[0].split(".")[:2])}, token=token)

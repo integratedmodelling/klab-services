@@ -1,0 +1,612 @@
+"""Behavioral contracts for the typed facade, using actual HTTP codecs."""
+from copy import deepcopy
+from dataclasses import FrozenInstanceError, replace
+import json
+from pathlib import Path
+
+import httpx
+import pytest
+
+from klab_client import (Client, Context, ContextOptions, Endpoint, GridOptions,
+                         ObservationOptions, ObservationRequest, RectangularGeometry,
+                         ResolutionConstraint, GeometryImpl, ObservationImpl, Session)
+from klab_client.dto import observable_from_wire, observation_from_wire, observation_to_wire
+from klab_client.errors import (InvalidRequestError, UnsupportedOperationError, ConfigurationError,
+    AuthenticationError, AuthorizationError, MissingAssetError, ProtocolError, ServerError,
+    SubmissionOutcomeUnknown, JobFailedError, JobCancelledError, JobUnavailableError, WaitTimeout)
+
+
+@pytest.fixture
+def wire():
+    payload = json.loads((Path(__file__).parent / "fixtures/elevation.json").read_text())
+    payload["observable"]["contextualization"] = "MEASURE"
+    return payload
+
+
+def client(handler, **kwargs):
+    return Client("https://runtime.invalid/runtime", "secret", agent_name="scientist",
+                  runtime_service_id="runtime-id", reasoner=Endpoint("https://reasoner.invalid/reasoner", "secret"),
+                  http_transport=httpx.MockTransport(handler), **kwargs)
+
+
+def test_observe_resolved_preserves_focused_observer_scope_and_constraints(wire):
+    calls = []
+    def handler(request):
+        calls.append(request)
+        assert request.url.path == "/runtime/api/v1/submit"
+        assert request.headers["klab-scope"] == "s.c.8.9#3"
+        assert request.headers["klab-service"] == "runtime-id"
+        posted = json.loads(request.content)
+        assert posted["agentName"] == "scientist"
+        assert posted["observation"]["observable"] == wire["observable"]
+        assert {c["type"]: c["data"] for c in posted["resolutionConstraints"]} == {
+            "ResolutionNamespace": ["python.fixture"], "ResolutionProject": ["fixture"], "Scenarios": ["scenario"]}
+        assert all(c["@CLASS"].endswith("ResolutionConstraintImpl") for c in posted["resolutionConstraints"])
+        return httpx.Response(200, json=4)
+    with client(handler) as current:
+        context = Context(current, {"id": "s.c"}, token="s.c.8.9#3")
+        request = ObservationRequest(observable_from_wire(wire["observable"]),
+            options=ObservationOptions(namespace="python.fixture", project="fixture", scenarios=["scenario"]))
+        job = context.observe(request)
+        assert job.id == 4 and job.scope.get_context_id() == "s.c.8.9#3"
+    assert len(calls) == 1  # close made no remote mutation
+
+
+def test_typed_objects_are_defensive_and_wire_encoding_repeatable(wire):
+    metadata = {"nested": [1, 2]}
+    observable = observable_from_wire(wire["observable"])
+    request = ObservationRequest(observable, metadata=metadata, extensions={"futureField": {"v": 1}})
+    first = request.to_wire(observable)
+    metadata["nested"].append(3)
+    observable.raw["urn"] = "mutated"
+    first["metadata"]["delegate"]["nested"].append(4)
+    assert request.to_wire()["metadata"]["delegate"]["nested"] == [1, 2]
+    assert request.to_wire()["observable"]["urn"] != "mutated"
+    with pytest.raises(FrozenInstanceError):
+        request.urn = "changed"
+
+
+def test_context_options_encode_grid_only_at_context_creation():
+    options = ContextOptions(name="grid", persistence="EXPLICIT_ACTION",
+        grid=GridOptions(anchor_x=200000, anchor_y=6000000, span=100, projection="EPSG:3857"))
+    assert options.to_wire()["gridDefinition"]["span"] == 100
+    assert options.to_wire()["persistence"] == "EXPLICIT_ACTION"
+
+
+def test_nested_read_only_metadata_and_extensions_can_be_reused(wire):
+    original = ObservationRequest(observable_from_wire(wire["observable"]),
+        metadata={"nested": {"values": [1, {"x": 2}]}}, extensions={"future": {"value": [3]}})
+    copied = replace(original, name="copy")
+    rebuilt = ObservationRequest(original.observable, metadata=original.metadata, extensions=original.extensions)
+    assert copied.to_wire()["metadata"] == rebuilt.to_wire()["metadata"] == original.to_wire()["metadata"]
+    assert copied.to_wire()["future"] == original.to_wire()["future"]
+    copied.to_wire()["metadata"]["delegate"]["nested"]["values"].clear()
+    assert original.to_wire()["metadata"]["delegate"]["nested"]["values"] == [1, {"x": 2}]
+    context = ContextOptions(extensions={"future": {"values": [1, {"x": 2}]}})
+    assert replace(context, name="copy").to_wire()["future"] == context.to_wire()["future"]
+
+
+def test_read_only_mapping_cycles_and_non_json_values_still_fail():
+    from types import MappingProxyType
+    recursive = {}
+    recursive["loop"] = MappingProxyType(recursive)
+    for values in (recursive, {"nested": MappingProxyType({"bad": object()})}):
+        with pytest.raises(InvalidRequestError, match="JSON"):
+            ObservationRequest("definition", metadata=values)
+
+
+def test_copied_options_do_not_duplicate_generated_constraints(wire):
+    calls = []
+    def handler(request):
+        calls.append(json.loads(request.content))
+        return httpx.Response(200, json=4)
+    explicit = ResolutionConstraint("Scenarios", ["scenario"])
+    original = ObservationOptions(namespace="old", constraints=[explicit])
+    copied = replace(original, namespace="new", project="project")
+    assert original.constraints == copied.constraints == (explicit,)
+    with client(handler) as current:
+        Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]), options=copied)
+    assert {item["type"]: item["data"] for item in calls[0]["resolutionConstraints"]} == {
+        "ResolutionNamespace": ["new"], "ResolutionProject": ["project"], "Scenarios": ["scenario"]}
+
+
+def test_copying_bound_observer_options_preserves_identity_checks(wire):
+    wire["observable"]["semantics"]["type"] = ["AGENT"]
+    with client(lambda r: pytest.fail("Foreign binding must fail before HTTP")) as source:
+        observer = observation_from_wire(wire, Context(source, {"id": "s.c"}))
+        copied = replace(ObservationOptions(observer=observer), namespace="models")
+        with Client("https://runtime.invalid/runtime", runtime_service_id="other") as destination:
+            with pytest.raises(InvalidRequestError, match="identity"):
+                Context(destination, {"id": "s.c"}).observe("definition", options=copied)
+
+
+def test_observer_option_copies_revalidate_current_inputs_without_changing_original_snapshot(wire):
+    from klab_client.api.primitives import SemanticType
+    calls = []
+    def handler(request):
+        calls.append(request.headers["klab-scope"])
+        return httpx.Response(200, json=4)
+    agent_wire = deepcopy(wire)
+    agent_wire["observable"]["semantics"]["type"] = ["AGENT"]
+    with client(handler) as current:
+        context = Context(current, {"id": "s.c"})
+        observer = observation_from_wire(agent_wire, context)
+        original = ObservationOptions(observer=observer)
+        observer.id = 99
+        copied = replace(original, namespace="models")
+        observable = observable_from_wire(wire["observable"])
+        context.observe(observable, options=original)
+        context.observe(observable, options=copied)
+        assert calls == ["s.c#42", "s.c#99"]
+        observer._context = Context(current, {"id": "s.other"})
+        with pytest.raises(InvalidRequestError, match="different"):
+            context.observe("definition", options=replace(original))
+        observer.observable.semantics.semantic_types = {SemanticType.QUALITY}
+        with pytest.raises(InvalidRequestError, match="AGENT"):
+            replace(original)
+        assert calls == ["s.c#42", "s.c#99"]  # Both copy failures precede HTTP.
+        context.observe(observable, options=original)
+        assert calls[-1] == "s.c#42"  # The original validated snapshot is unchanged.
+
+
+@pytest.mark.parametrize("kind", ["UsingModel", "Whitelist", "BlackList", "Geometry", "Unknown"])
+def test_unsupported_constraints_never_silently_degrade(kind):
+    with pytest.raises(UnsupportedOperationError):
+        ResolutionConstraint(kind, ["asset"])
+
+
+def test_selected_model_is_explicitly_unsupported():
+    with pytest.raises(UnsupportedOperationError, match="model"):
+        ObservationOptions(selected_model="model:ignored")
+
+
+def test_reserved_extensions_are_rejected_before_http(wire):
+    with pytest.raises(InvalidRequestError):
+        ObservationRequest(observable_from_wire(wire["observable"]), extensions={"id": 99})
+
+
+@pytest.mark.parametrize("kind,values", [
+    ("Scenarios", ["one", "two"]), ("ResolutionProject", ["project"]),
+    ("ResolutionNamespace", ["namespace"]), ("Observer", [9])])
+def test_each_constraint_is_defensive(kind, values):
+    source = list(values)
+    constraint = ResolutionConstraint(kind, source)
+    source.append("changed")
+    assert constraint.to_wire()["data"] == values
+    constraint.to_wire()["data"].clear()
+    assert constraint.values == tuple(values)
+
+
+@pytest.mark.parametrize("kind,values", [
+    ("Scenarios", "text"), ("Scenarios", []), ("Scenarios", [" "]),
+    ("Scenarios", ["one", "one"]), ("ResolutionProject", ["a", "b"]),
+    ("ResolutionNamespace", [1]), ("Observer", [True]), ("Observer", [0]),
+    ("Observer", [-1]), ("Observer", [2**63]), ("Observer", [1.0])])
+def test_invalid_constraints(kind, values):
+    with pytest.raises(InvalidRequestError):
+        ResolutionConstraint(kind, values)
+
+
+@pytest.mark.parametrize("kind", [None, {}, [], True])
+def test_constraint_kind_wrong_types_are_classified_validation_errors(kind):
+    with pytest.raises(InvalidRequestError, match="kind"):
+        ResolutionConstraint(kind, ["asset"])
+
+
+@pytest.mark.parametrize("changes", [
+    {"scenarios": "bad"}, {"constraints": "bad"}, {"constraints": ["bad"]},
+    {"namespace": ""}, {"project": 9}, {"scenarios": [True]}, {"observer": True},
+    {"namespace": "a", "constraints": [ResolutionConstraint("ResolutionNamespace", ["b"])]},
+    {"observer": 1, "constraints": [ResolutionConstraint("Observer", [2])]}])
+def test_invalid_options(changes):
+    with pytest.raises(InvalidRequestError):
+        ObservationOptions(**changes)
+
+
+def test_observer_object_is_bound_defensive_and_never_foreign(wire):
+    with client(lambda r: httpx.Response(200, json=7)) as current:
+        context = Context(current, {"id": "s.c"}, token="s.c.8")
+        agent_wire = deepcopy(wire)
+        agent_wire["observable"]["semantics"]["type"] = ["AGENT"]
+        agent_wire["observable"]["contextualization"] = "ACKNOWLEDGEMENT"
+        agent_wire["observable"]["artifactType"] = "OBJECT"
+        observer = observation_from_wire(agent_wire, context)
+        options = ObservationOptions(observer=observer)
+        observer.id = 99
+        assert options.observer is observer  # Submission retains its original ID snapshot.
+        job = context.observe(observable_from_wire(wire["observable"]), options=options)
+        assert job.scope.get_context_id() == "s.c.8#42"
+        same = context.observe(observable_from_wire(wire["observable"]),
+            options=ObservationOptions(constraints=[ResolutionConstraint("Observer", [42])]))
+        assert same.scope.get_context_id() == "s.c.8#42"
+        for foreign in (Context(current, {"id": "s.other"}),):
+            with pytest.raises(InvalidRequestError, match="different"):
+                foreign.observe(observable_from_wire(wire["observable"]), options=options)
+        with Client("https://other.invalid") as foreign_client:
+            with pytest.raises(InvalidRequestError, match="different"):
+                Context(foreign_client, {"id": "s.c"}).observe("definition", options=options)
+        with pytest.raises(InvalidRequestError, match="conflicts"):
+            Context(current, {"id": "s.c"}, token="s.c#9").observe("definition", options=options)
+        matched = Context(current, {"id": "s.c"}, token="s.c#42")
+        assert matched.observe(observable_from_wire(wire["observable"]), options=options).scope.get_context_id() == "s.c#42"
+    observer._context = None
+    with pytest.raises(InvalidRequestError, match="bound"):
+        ObservationOptions(observer=observer)
+
+
+@pytest.mark.parametrize("label,value", [
+    ("west", True), ("east", float("inf")), ("north", float("nan")),
+    ("south", "0"), ("west", 10**400), ("columns", True), ("rows", 0)])
+def test_rectangle_invalid_numbers(label, value):
+    arguments = dict(west=0, east=500, south=0, north=400, columns=5, rows=4)
+    arguments[label] = value
+    with pytest.raises(InvalidRequestError):
+        RectangularGeometry(**arguments)
+
+
+def test_rectangle_bounds_and_square_cell_contract():
+    with pytest.raises(InvalidRequestError):
+        RectangularGeometry(0, 0, 0, 400, 5, 4)
+    with pytest.raises(InvalidRequestError):
+        RectangularGeometry(0, 500, 1, 0, 5, 4)
+    with pytest.raises(UnsupportedOperationError):
+        RectangularGeometry(0, 501, 0, 400, 5, 4)
+    geometry = RectangularGeometry(0, 500, 0, 400, 5, 4).to_geometry()
+    assert geometry.shape == (5, 4)
+    assert geometry.raw["dimensions"][0]["parameters"]["delegate"]["sgrid"] == "100.0 m"
+
+
+@pytest.mark.parametrize("values", [
+    (-1e308, 1e308, 0, 400, 5, 4),
+    (0, 500, -1e308, 1e308, 5, 4),
+    (0, 500, 0, 400, 2**62, 4),
+    (0, 5e-324, 0, 400, 5, 4),
+    (0, 500, 0, 5e-324, 5, 4)])
+def test_rectangle_derived_extents_and_cell_sizes_are_finite(values):
+    with pytest.raises(InvalidRequestError):
+        RectangularGeometry(*values)
+
+
+@pytest.mark.parametrize("changes", [{"span": 0}, {"span": -1}, {"span": float("inf")},
+    {"anchor_y": False}, {"projection": ""}, {"strict": 0}, {"snap": "yes"}])
+def test_invalid_grid(changes):
+    arguments = dict(anchor_x=0, anchor_y=0, span=100)
+    arguments.update(changes)
+    with pytest.raises(InvalidRequestError):
+        GridOptions(**arguments)
+
+
+@pytest.mark.parametrize("changes", [{"name": " "}, {"persistence": "unknown"}, {"persistence": {}},
+    {"grid": 99}, {"grid": ""}, {"extensions": {"owner": "other"}}, {"extensions": [1]}])
+def test_invalid_context_options(changes):
+    with pytest.raises(InvalidRequestError):
+        ContextOptions(**changes)
+
+
+def test_context_creation_facade_and_raw_compatibility():
+    calls = []
+    def handler(request):
+        calls.append(json.loads(request.content))
+        assert request.url.path == "/runtime/createContext"
+        assert request.headers["klab-scope"] == "s"
+        return httpx.Response(200, json={"id": "s.c"})
+    with client(handler) as current:
+        session = Session(current, "s")
+        assert session.create_context(options=ContextOptions()).owned
+        assert session.create_context(options=ContextOptions(grid="namespace.grid", extensions={"future": [1]})).owned
+        assert calls[1]["configuration"]["gridUrn"] == "namespace.grid"
+        assert calls[1]["configuration"]["future"] == [1]
+        for arguments in ({"options": "bad"}, {"options": ContextOptions(), "configuration": {}},
+                          {"options": ContextOptions(), "name": "different"}):
+            with pytest.raises(InvalidRequestError):
+                session.create_context(**arguments)
+    assert len(calls) == 2
+    with pytest.raises(UnsupportedOperationError):
+        ContextOptions(observer=1)
+
+
+@pytest.mark.parametrize("changes", [
+    {"options": {}}, {"urn": 1}, {"name": " "}, {"observable": " "},
+    {"observable": None}, {"geometry": {}}, {"metadata": {1: "bad"}},
+    {"metadata": []}, {"extensions": {"observable": {}}},
+    {"metadata": {"value": float("nan")}}, {"metadata": {"value": object()}}])
+def test_invalid_request_structure(wire, changes):
+    arguments = {"observable": observable_from_wire(wire["observable"])}
+    arguments.update(changes)
+    with pytest.raises(InvalidRequestError):
+        ObservationRequest(**arguments)
+
+
+def test_circular_json_is_rejected(wire):
+    recursive = {}
+    recursive["loop"] = recursive
+    with pytest.raises(InvalidRequestError, match="JSON"):
+        ObservationRequest(observable_from_wire(wire["observable"]), metadata=recursive)
+
+
+@pytest.mark.parametrize("activity", [None, "VOID", "FUTURE_ACTIVITY", {}, True])
+def test_unknown_activities_cannot_be_invented(wire, activity):
+    wire["observable"]["contextualization"] = activity
+    observable = observable_from_wire({**wire["observable"], "contextualization": None})
+    observable.raw["contextualization"] = activity
+    with pytest.raises(UnsupportedOperationError):
+        ObservationRequest(observable)
+
+
+def test_error_notifications_and_locally_invented_semantics_are_rejected(wire):
+    from klab_client import ConceptImpl, ObservableImpl
+    with pytest.raises(UnsupportedOperationError):
+        ObservationRequest(ObservableImpl(ConceptImpl("local")))
+    for parent in (wire["observable"], wire["observable"]["semantics"]):
+        parent["notifications"] = [{"level": "ERROR", "message": "secret denied"}]
+        with pytest.raises(ServerError) as error:
+            ObservationRequest(observable_from_wire(wire["observable"]))
+        assert "secret" not in str(error.value)
+        parent["notifications"] = []
+
+
+def test_checked_geometry_snapshot_and_old_new_payload_equivalence(wire):
+    observable = observable_from_wire(wire["observable"])
+    geometry = RectangularGeometry(0, 500, 0, 400, 5, 4).to_geometry()
+    request = ObservationRequest(observable, urn="", name="test", geometry=geometry)
+    old = ObservationImpl(urn="", observable=observable, name="test", geometry=geometry)
+    assert request.to_wire() == observation_to_wire(old)
+    geometry.raw["dimensions"].clear()
+    assert request.to_wire()["geometry"]["dimensions"]
+    rectangular = ObservationRequest(observable, geometry=RectangularGeometry(0, 500, 0, 400, 5, 4))
+    assert rectangular.to_wire()["geometry"]["dimensions"][0]["shape"] == [5, 4]
+
+
+def test_string_resolution_is_explicit_and_preserves_extensions(wire):
+    calls = []
+    def handler(request):
+        calls.append(request.url.path)
+        if request.url.path.endswith("/resolve/observable"):
+            assert request.content == b"geography:Elevation in m"
+            return httpx.Response(200, json=wire["observable"])
+        assert json.loads(request.content)["observation"].get("future") in ({"v": None}, None)
+        return httpx.Response(200, json=8)
+    request = ObservationRequest("geography:Elevation in m", extensions={"future": {"v": None}})
+    with pytest.raises(InvalidRequestError, match="Resolve"):
+        request.to_wire()
+    with client(handler) as current:
+        assert Context(current, {"id": "s.c"}).observe(request).id == 8
+        assert Context(current, {"id": "s.c"}).observe("geography:Elevation in m").id == 8
+    assert calls == ["/reasoner/api/v1/resolve/observable", "/runtime/api/v1/submit"] * 2
+
+
+def test_validation_and_unconfigured_reasoner_prevent_mutation(wire):
+    with Client("https://runtime.invalid", agent_name="scientist",
+                http_transport=httpx.MockTransport(lambda r: pytest.fail("No HTTP allowed"))) as current:
+        context = Context(current, {"id": "s.c"})
+        with pytest.raises(ConfigurationError, match="reasoner"):
+            context.observe("definition")
+        with pytest.raises(InvalidRequestError, match="already"):
+            context.observe(ObservationRequest(observable_from_wire(wire["observable"])), options=ObservationOptions())
+        with pytest.raises(InvalidRequestError, match="root"):
+            Context(current, {"id": "s.c"}, token="s.other").observe("definition")
+    with pytest.raises(TypeError):
+        ObservationOptions(unrecognized=True)
+
+
+@pytest.mark.parametrize("code,error", [(401, AuthenticationError), (403, AuthorizationError),
+    (404, MissingAssetError), (503, SubmissionOutcomeUnknown)])
+def test_submit_errors_are_classified_and_never_retried(wire, code, error):
+    calls = []
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(code, text="secret")
+    with client(handler) as current:
+        with pytest.raises(error) as caught:
+            Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]))
+        assert "secret" not in str(caught.value)
+    assert len(calls) == 1
+
+
+def test_lost_submission_outcome_and_resolution_failure(wire):
+    calls = []
+    def lost(request):
+        calls.append(request.url.path)
+        raise httpx.ReadTimeout("secret", request=request)
+    with client(lost) as current:
+        with pytest.raises(SubmissionOutcomeUnknown):
+            Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]))
+    assert len(calls) == 1
+    calls.clear()
+    def unresolved(request):
+        calls.append(request.url.path)
+        return httpx.Response(200, json={**wire["observable"], "notifications": [{"level": "ERROR", "message": "secret"}]})
+    with client(unresolved) as current:
+        with pytest.raises(ServerError):
+            Context(current, {"id": "s.c"}).observe("definition")
+    assert calls == ["/reasoner/api/v1/resolve/observable"]
+
+
+@pytest.mark.parametrize("state,error", [("ABORTED", JobFailedError), ("INTERRUPTED", JobCancelledError),
+    ("EMPTY", JobUnavailableError), ("UNKNOWN", ProtocolError)])
+def test_typed_facade_preserves_job_terminal_states(wire, state, error):
+    def handler(request):
+        return httpx.Response(200, json=5 if request.url.path.endswith("/submit") else {"status": state})
+    with client(handler) as current:
+        job = Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]))
+        with pytest.raises(error):
+            job.result(1)
+
+
+def test_typed_wait_timeout_keeps_handle_and_can_resume(wire, monkeypatch):
+    now = [0.0]
+    monkeypatch.setattr("time.monotonic", lambda: now[0])
+    monkeypatch.setattr("time.sleep", lambda duration: now.__setitem__(0, now[0] + duration))
+    finished = [False]
+    def handler(request):
+        if request.url.path.endswith("/submit"):
+            return httpx.Response(200, json=5)
+        if "/status/" in request.url.path:
+            return httpx.Response(200, json={"status": "FINISHED" if finished[0] else "WAITING"})
+        return httpx.Response(200, json=wire)
+    with client(handler, poll_interval=.1) as current:
+        job = Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]))
+        with pytest.raises(WaitTimeout) as stopped:
+            job.result(.2)
+        assert stopped.value.job is job
+        finished[0] = True
+        assert job.result(1).id == 42
+
+
+@pytest.mark.parametrize("persistence", ["ONE_OFF", "EXPLICIT_ACTION", "IDLE_TIMEOUT", "SERVICE_SHUTDOWN", "REINITIALIZED_ON_TIMEOUT"])
+def test_every_supported_persistence_value(persistence):
+    assert ContextOptions(persistence=persistence).to_wire()["persistence"] == persistence
+
+
+@pytest.mark.parametrize("strict,snap", [(False, False), (False, True), (True, False), (True, True)])
+def test_grid_normalization_options_are_explicit(strict, snap):
+    grid = GridOptions(0, 0, 1, strict=strict, snap=snap)
+    assert grid.to_wire()["strict"] is strict and grid.to_wire()["snap"] is snap
+
+
+@pytest.mark.parametrize("activity", ["INSTANTIATION", "ACKNOWLEDGEMENT", "DETECTION", "SIMULATION",
+    "MEASURE", "QUANTIFICATION", "VALUATION", "CATEGORIZATION", "VERIFICATION", "CLASSIFICATION",
+    "CHARACTERIZATION", "TRANSFORMATION", "CONNECTION"])
+def test_known_activity_names_are_preserved_not_reclassified(wire, activity):
+    wire["observable"]["contextualization"] = activity
+    request = ObservationRequest(observable_from_wire(wire["observable"]))
+    assert request.to_wire()["observable"]["contextualization"] == activity
+
+
+@pytest.mark.parametrize("accepted,state", [(True, "INTERRUPTED"), (True, "FINISHED"), (False, "FINISHED")])
+def test_typed_job_cancellation_is_acceptance_not_an_invented_outcome(wire, accepted, state):
+    def handler(request):
+        if request.url.path.endswith("/submit"):
+            return httpx.Response(200, json=5)
+        if "/cancel/" in request.url.path:
+            return httpx.Response(200, json=accepted)
+        if "/status/" in request.url.path:
+            return httpx.Response(200, json={"status": state})
+        return httpx.Response(200, json=wire)
+    with client(handler) as current:
+        job = Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]))
+        assert job.cancel() is accepted
+        if state == "INTERRUPTED":
+            with pytest.raises(JobCancelledError):
+                job.result(1)
+        else:
+            assert job.result(1).id == 42
+
+
+@pytest.mark.parametrize("response,error", [(httpx.Response(503, text="unavailable"), ServerError),
+    (httpx.Response(200, text="malformed"), ProtocolError), (httpx.Response(403, text="forbidden"), AuthorizationError)])
+def test_reasoner_failures_prevent_following_mutation(response, error):
+    calls = []
+    def handler(request):
+        calls.append(request.url.path)
+        return response
+    with client(handler) as current:
+        with pytest.raises(error):
+            Context(current, {"id": "s.c"}).observe("definition")
+    assert calls == ["/reasoner/api/v1/resolve/observable"]
+
+
+@pytest.mark.parametrize("result", [{"empty": True}, {"notifications": [{"level": "ERROR", "message": "secret"}]}])
+def test_typed_finished_job_still_checks_scientific_failure(wire, result):
+    def handler(request):
+        if request.url.path.endswith("/submit"):
+            return httpx.Response(200, json=5)
+        if "/status/" in request.url.path:
+            return httpx.Response(200, json={"status": "FINISHED"})
+        return httpx.Response(200, json={**wire, **result})
+    with client(handler) as current:
+        job = Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]))
+        with pytest.raises(JobFailedError) as error:
+            job.result(1)
+        assert "secret" not in str(error.value)
+
+
+def agent_observation(wire, context):
+    value = deepcopy(wire)
+    value["observable"]["semantics"]["type"] = ["AGENT"]
+    value["observable"]["contextualization"] = "ACKNOWLEDGEMENT"
+    value["observable"]["artifactType"] = "OBJECT"
+    return observation_from_wire(value, context)
+
+
+@pytest.mark.parametrize("malformed", ["quality", "observable", "semantics", "types"])
+def test_bound_observer_requires_known_agent_semantics_before_any_http(wire, malformed):
+    with client(lambda r: pytest.fail("Invalid observer must not make HTTP")) as current:
+        context = Context(current, {"id": "s.c"})
+        observer = agent_observation(wire, context)
+        if malformed == "quality":
+            observer = observation_from_wire(wire, context)
+        elif malformed == "observable":
+            observer.observable = None
+        elif malformed == "semantics":
+            observer.observable.semantics = None
+        else:
+            observer.observable.semantics.semantic_types = "AGENT"
+        with pytest.raises(InvalidRequestError, match="AGENT"):
+            context.observe("definition", options=ObservationOptions(observer=observer))
+
+
+@pytest.mark.parametrize("source_kind", ["configured", "reported"])
+def test_same_endpoint_different_known_runtime_rejects_bound_observer(wire, source_kind):
+    calls = []
+    with Client("https://runtime.invalid/runtime", runtime_service_id="old" if source_kind == "configured" else None) as old:
+        configuration = {"id": "s.c", "serviceId": "old"} if source_kind == "reported" else {"id": "s.c"}
+        observer = agent_observation(wire, Context(old, configuration))
+        options = ObservationOptions(observer=observer)
+        old.close()
+        with client(lambda r: calls.append(r) or httpx.Response(200, json=1)) as current:
+            with pytest.raises(InvalidRequestError, match="identity"):
+                Context(current, {"id": "s.c"}).observe("definition", options=options)
+    assert not calls
+
+
+@pytest.mark.parametrize("source_id,destination_id", [("runtime-id", "runtime-id"), (None, None), (None, "runtime-id"), ("runtime-id", None)])
+def test_observer_same_runtime_and_documented_legacy_unknown_identity(wire, source_id, destination_id):
+    calls = []
+    with Client("https://runtime.invalid/runtime", runtime_service_id=source_id) as source:
+        observer = agent_observation(wire, Context(source, {"id": "s.c"}))
+        options = ObservationOptions(observer=observer)
+    with Client("https://runtime.invalid/runtime", runtime_service_id=destination_id, agent_name="scientist",
+                http_transport=httpx.MockTransport(lambda r: calls.append(r) or httpx.Response(200, json=7))) as current:
+        job = Context(current, {"id": "s.c"}).observe(observable_from_wire(wire["observable"]), options=options)
+        assert job.scope.get_context_id() == "s.c#42"
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize("configuration", [{"serviceId": "contradictory"}, {"serviceId": ""}, {"serviceId": 7}])
+def test_inconsistent_or_invalid_known_observer_runtime_identity_is_local(wire, configuration):
+    with client(lambda r: pytest.fail("Invalid identity must not make HTTP")) as current:
+        observer = agent_observation(wire, Context(current, {"id": "s.c", **configuration}))
+        with pytest.raises(InvalidRequestError, match="Runtime"):
+            ObservationOptions(observer=observer)
+
+
+def test_reported_identity_fallback_and_destination_contradiction(wire):
+    with Client("https://runtime.invalid/runtime") as source:
+        options = ObservationOptions(observer=agent_observation(wire, Context(source, {"id": "s.c", "serviceId": "runtime-id"})))
+    with client(lambda r: pytest.fail("Destination identity mismatch must be local")) as current:
+        with pytest.raises(InvalidRequestError, match="identities"):
+            Context(current, {"id": "s.c", "serviceId": "other"}).observe("definition", options=options)
+
+
+def test_destination_known_identity_is_checked_even_without_observer():
+    with client(lambda r: pytest.fail("Contradictory context must not resolve or submit")) as current:
+        with pytest.raises(InvalidRequestError, match="identities"):
+            Context(current, {"id": "s.c", "serviceId": "other"}).observe("definition")
+
+
+@pytest.mark.parametrize("token", ["s.c.9223372036854775808", "s.c#9223372036854775808", "s.c." + "9"*5000,
+    "s.c#" + "9"*5000, "s.c.7.9223372036854775808#1"], ids=["focus", "observer", "huge-focus", "huge-observer", "nested"])
+def test_existing_selection_range_is_checked_before_resolution_or_mutation(token):
+    with client(lambda r: pytest.fail("Invalid selection must not make HTTP")) as current:
+        with pytest.raises(InvalidRequestError, match="signed-64-bit"):
+            Context(current, {"id": "s.c"}, token=token).observe("definition")
+
+
+@pytest.mark.parametrize("token", ["s.c.1#1", "s.c.9223372036854775807#9223372036854775807", "s.c.7.8#9"])
+def test_existing_supported_selection_boundaries_remain_exact(wire, token):
+    calls = []
+    with client(lambda r: calls.append(r) or httpx.Response(200, json=8)) as current:
+        job = Context(current, {"id": "s.c"}, token=token).observe(observable_from_wire(wire["observable"]))
+        assert job.scope.get_context_id() == token
+    assert len(calls) == 1 and calls[0].headers["klab-scope"] == token

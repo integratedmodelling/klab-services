@@ -59,6 +59,10 @@ environment proxy/credential discovery are disabled.
 
 ## Scientific workflow
 
+Typed requests and context options are documented in
+[typed observation requests](docs/typed-observe.md); `Context.observe` accepts a
+resolved observable or definition text without manually authored Java DTOs.
+
 Configure endpoints, credentials and matching scientific assets first:
 
 ```python

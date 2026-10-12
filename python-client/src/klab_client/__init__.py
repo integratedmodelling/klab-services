@@ -21,9 +21,13 @@ from klab_client.api.services import (
 )
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData
 from klab_client.transport import Endpoint
+from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
+    ObservationRequest, RectangularGeometry, ResolutionConstraint)
 
 __all__ = [
     "Client", "Context", "Session", "Job", "JobStatus", "ScientificData", "Endpoint",
+    "ContextOptions", "GridOptions", "ObservationOptions", "ObservationRequest",
+    "RectangularGeometry", "ResolutionConstraint",
     "Concept",
     "ConceptImpl",
     "Observable",

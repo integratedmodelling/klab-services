@@ -6,3 +6,6 @@ __pycache__/
 build/
 dist/
 live-acceptance.xml
+.coverage*
+coverage.json
+htmlcov/
