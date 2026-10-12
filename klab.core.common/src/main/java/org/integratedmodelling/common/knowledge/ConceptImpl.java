@@ -177,6 +177,18 @@ public class ConceptImpl implements Concept {
     return result;
   }
 
+  /** Project description-value subjectivity onto a copy, preserving canonical semantics. */
+  public ConceptImpl withObservableStatus(
+      org.integratedmodelling.klab.api.lang.kim.KimObservable syntax,
+      java.util.function.Function<String, Concept> lookup) {
+    var result = new ConceptImpl(this);
+    if (org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(syntax, leaf -> {
+      var resolved = leaf.getName() == null ? null : lookup.apply(leaf.getName());
+      return resolved == null ? leaf.getType() : resolved.getType();
+    })) result.getType().add(SemanticType.SUBJECTIVE);
+    return result;
+  }
+
   @Override
   public boolean isAbstract() {
     return isAbstract;

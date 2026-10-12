@@ -3106,7 +3106,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // CHECK: fluidUnits = needsUnits() && !unitsSet;
 
     var result = (ObservableImpl) builder.buildObservable();
-    var semantics = new ConceptImpl((ConceptImpl) result.getSemantics());
+    var semantics = ((ConceptImpl) result.getSemantics()).withObservableStatus(concept, owl::getConcept);
     semantics.setAnnotations(main.getAnnotations());
     result.setSemantics(semantics);
     return result;

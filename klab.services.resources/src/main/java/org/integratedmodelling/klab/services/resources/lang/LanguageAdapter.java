@@ -416,6 +416,13 @@ public enum LanguageAdapter {
       ret.getOperands().addAll(logicalOperands);
     }
 
+    // Description values participate even where value-operator execution is not implemented.
+    for (var valueOperator : semantics.getValueOperators()) {
+      var value = adaptValue(valueOperator.getSecond(), namespace, projectName, documentClass);
+      if (org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(value)) {
+        ret.getType().add(SemanticType.SUBJECTIVE);
+      }
+    }
     applyExpressionStatus(ret);
     ret.finalizeDefinition();
 
@@ -864,6 +871,11 @@ public enum LanguageAdapter {
       if (obs.getSemantics().is(SemanticType.NOTHING)) {
         inactive = true;
       }
+    }
+
+    if (Stream.concat(ret.getObservables().stream(), ret.getDependencies().stream())
+        .anyMatch(org.integratedmodelling.klab.api.lang.kim.ExpressionStatus::isSubjective)) {
+      ret.setScope(KlabStatement.Scope.PRIVATE);
     }
 
     var modelDescriptionType =

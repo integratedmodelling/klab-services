@@ -190,6 +190,37 @@ class DocumentModelKboxTest {
       assertEquals(0, box.count());
     }
   }
+  @Test void privateDescriptorsStayInTheirNamespaceAfterReopeningEvenWhenScenarioSelected() {
+    var file = directory.resolve("private-models.db");
+    var model = descriptor();
+    model.setScope(KlabStatement.Scope.PRIVATE);
+    model.setInScenario(true);
+    var request = mock(Observable.class);
+    var head = mock(Concept.class);
+    when(head.getUrn()).thenReturn("test:Height");
+    when(reasoner.coreObservable(concept)).thenReturn(head);
+    when(reasoner.coreObservable(request)).thenReturn(head);
+    when(reasoner.resolving(head)).thenReturn(List.of(head));
+    try (var box = new DocumentModelKbox(service, new NitriteKboxStore(file))) {
+      box.store(model, scope);
+    }
+    try (var box = new DocumentModelKbox(service, new NitriteKboxStore(file))) {
+      var scale = mock(org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class);
+      for (String namespace : List.of("ns", "outside")) {
+        var constraints = new ArrayList<ResolutionConstraint>();
+        for (var entry : Map.of(ResolutionConstraint.Type.ResolutionNamespace, namespace,
+            ResolutionConstraint.Type.ResolutionProject, "project", ResolutionConstraint.Type.Scenarios, "ns").entrySet()) {
+          var constraint = mock(ResolutionConstraint.class);
+          when(constraint.getType()).thenReturn(entry.getKey());
+          when(constraint.payload(String.class)).thenReturn(List.of(entry.getValue()));
+          constraints.add(constraint);
+        }
+        assertEquals(namespace.equals("ns") ? 1 : 0,
+            box.queryModels(request, scale, null, constraints, null).size());
+      }
+    }
+  }
+
   @Test void discoveryPreservesVariantsAndAppliesCoverageAndExplicitPermissionDenials() {
     try (var box = new DocumentModelKbox(service, new NitriteKboxStore(null))) {
       var request = mock(Observable.class);

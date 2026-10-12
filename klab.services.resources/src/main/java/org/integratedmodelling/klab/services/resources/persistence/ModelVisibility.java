@@ -27,6 +27,11 @@ final class ModelVisibility {
     var scenarios = constraints(constraints, ResolutionConstraint.Type.Scenarios, String.class);
     String project = projects.isEmpty() ? null : projects.getFirst();
     String namespace = namespaces.isEmpty() ? null : namespaces.getFirst();
+    // Namespace authority is mandatory, including explicitly selected scenarios.
+    if ((model.getScope() == KlabStatement.Scope.PRIVATE
+        || model.getObservableConcept() != null
+            && model.getObservableConcept().is(SemanticType.SUBJECTIVE))
+        && (namespace == null || !namespace.equals(model.getNamespaceId()))) return false;
     boolean sameProject = project != null && Objects.equals(project, model.getProjectId());
     if (model.getScope() == KlabStatement.Scope.PROJECT_PRIVATE && !sameProject) return false;
     boolean visible = (namespace != null && namespace.equals(model.getNamespaceId()))
