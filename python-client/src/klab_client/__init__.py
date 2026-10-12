@@ -23,11 +23,15 @@ from klab_client.client import Client, Context, Session, Job, JobStatus, Scienti
 from klab_client.transport import Endpoint
 from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError, HandleIOError,
     load_handle, restore_handle, save_handle, to_handle)
+from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
+    ObservationRequest, RectangularGeometry, ResolutionConstraint)
 
 __all__ = [
     "Client", "Context", "Session", "Job", "JobStatus", "ScientificData", "Endpoint",
     "Handle", "HandleFormatError", "HandleIdentityError", "HandleIOError",
     "load_handle", "restore_handle", "save_handle", "to_handle",
+    "ContextOptions", "GridOptions", "ObservationOptions", "ObservationRequest",
+    "RectangularGeometry", "ResolutionConstraint",
     "Concept",
     "ConceptImpl",
     "Observable",

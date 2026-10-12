@@ -42,6 +42,10 @@ Saved references: `Handle`, `to_handle`, `save_handle`, `load_handle`,
 `restore_handle`, source-object `to_handle()` and `Client.restore_handle`.
 See [versioned schema and verification](saved-handles.md).
 
+Typed facade: `ObservationRequest`, `ObservationOptions`, `ResolutionConstraint`,
+`ContextOptions`, `GridOptions`, `RectangularGeometry`, `Context.observe`, and
+`Session.create_context(options=...)`. See [typed contracts and verification](typed-observe.md).
+
 Remaining unsupported capabilities include Avro worker contextualization and job
 data decoding, bulk file export, automatic arbitrary query/consumer geometry
 conversion, pandas/xarray adapters, privileged server administration, full Modeler
