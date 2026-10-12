@@ -281,6 +281,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       ContextScope context) {
 
     List<ModelReference> ret = new ArrayList<>();
+    ModelVisibility.requireReady(resourceService, context);
 
     if (!database.hasTable("model")) {
       return ret;

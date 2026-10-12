@@ -32,6 +32,10 @@ public class ObservableImpl implements Observable {
   private Collection<ResolutionDirective> resolutionDirectives =
       EnumSet.noneOf(ResolutionDirective.class);
   private Object defaultValue;
+  private Object value;
+
+  @Override public Object getValue() { return value; }
+  public void setValue(Object value) { this.value = value; }
   private String statedName;
   private List<Annotation> annotations = new ArrayList<>();
   private String referenceName;
@@ -88,6 +92,7 @@ public class ObservableImpl implements Observable {
     this.generic = other.generic;
     this.resolutionDirectives.addAll(other.resolutionDirectives);
     this.defaultValue = other.defaultValue;
+    this.value = other.value;
     this.statedName = other.statedName;
     this.annotations.addAll(other.annotations);
     this.referenceName = other.referenceName;

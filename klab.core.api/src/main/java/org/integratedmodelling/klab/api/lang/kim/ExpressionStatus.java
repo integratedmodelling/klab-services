@@ -10,7 +10,7 @@ public final class ExpressionStatus {
   private ExpressionStatus() {}
 
   public static Set<SemanticType> evaluate(KimConcept syntax) {
-    return evaluate(syntax, KimConcept::getType);
+    return evaluate(syntax, ExpressionStatus::declarationTypes);
   }
 
   /** The leaf lookup may supply resolved declaration status instead of syntax descriptors. */
@@ -40,7 +40,19 @@ public final class ExpressionStatus {
   }
 
   public static boolean isSubjective(Object value) {
-    return isSubjective(value, KimConcept::getType);
+    return isSubjective(value, ExpressionStatus::declarationTypes);
+  }
+
+  /** Declaration flags exclude subjectivity cached from a removed expression component. */
+  public static Set<SemanticType> declarationTypes(KimConcept concept) {
+    var result = EnumSet.noneOf(SemanticType.class);
+    result.addAll(concept.getType());
+    if (concept instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl impl
+        && impl.getDeclaredSubjective() != null) {
+      result.remove(SemanticType.SUBJECTIVE);
+      if (impl.getDeclaredSubjective()) result.add(SemanticType.SUBJECTIVE);
+    }
+    return result;
   }
 
   /** Resolve declaration flags inside description values as well as semantic expressions. */
@@ -53,8 +65,7 @@ public final class ExpressionStatus {
       Function<KimConcept, Set<SemanticType>> leafTypes, Set<Object> visited) {
     if (value == null || !visited.add(value)) return false;
     if (value instanceof KimConcept c) {
-      if (c.is(SemanticType.SUBJECTIVE)
-          || leafTypes.apply(c).contains(SemanticType.SUBJECTIVE)) return true;
+      if (c.getObservable() == null && leafTypes.apply(c).contains(SemanticType.SUBJECTIVE)) return true;
       return isSubjective(c.getObservable(), leafTypes, visited)
           || isSubjective(c.getTraits(), leafTypes, visited)
           || isSubjective(c.getRoles(), leafTypes, visited)
@@ -70,6 +81,10 @@ public final class ExpressionStatus {
           || isSubjective(o.getDefaultValue(), leafTypes, visited)
           || isSubjective(o.getValueOperators(), leafTypes, visited);
     }
+    if (value instanceof org.integratedmodelling.klab.api.knowledge.Observable o)
+      return o.is(SemanticType.SUBJECTIVE)
+          || isSubjective(o.getValue(), leafTypes, visited)
+          || isSubjective(o.getDefaultValue(), leafTypes, visited);
     if (value instanceof org.integratedmodelling.klab.api.knowledge.Semantics s)
       return s.is(SemanticType.SUBJECTIVE);
     if (value instanceof org.integratedmodelling.klab.api.collections.Pair<?, ?> p)

@@ -8,6 +8,15 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
 final class ModelVisibility {
+  /** Direct catalog consumers must honor the provider's existing indexing readiness gate. */
+  static void requireReady(org.integratedmodelling.klab.api.services.ResourcesService service,
+      org.integratedmodelling.klab.api.scope.ContextScope scope) {
+    if (service instanceof org.integratedmodelling.klab.services.resources.ResourcesProvider provider
+        && !provider.checkSemanticServices(scope)) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+          "Semantic search is not available: model indexing or reasoner availability failed");
+    }
+  }
   static boolean authorized(ModelReference model, org.integratedmodelling.klab.api.scope.ContextScope scope) {
     if (scope == null || scope.getUser() == null || model.getPermissions() == null) return false;
     // The scope overload returns immediately for public resources and bypasses explicit denials.

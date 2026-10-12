@@ -43,6 +43,23 @@ public class SemanticsBuilder implements Observable.Builder {
   private String statedName;
   private boolean optional;
   private boolean generic;
+  private Object defaultValue;
+  private Object value;
+  private boolean projectedSubjective;
+
+  public SemanticsBuilder withInlineValue(Object value) {
+    this.value = value;
+    return this;
+  }
+
+  private boolean subjective(Object value) {
+    return org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(value, leaf -> {
+      var resolved = leaf.getName() == null ? null : reasoner.resolveConcept(leaf.getName());
+      return resolved == null
+          ? org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.declarationTypes(leaf)
+          : resolved.getType();
+    });
+  }
   private List<Annotation> annotations = new ArrayList<>();
   private Collection<Notification> notifications = new ArrayList<>();
 
@@ -69,6 +86,7 @@ public class SemanticsBuilder implements Observable.Builder {
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
     var syntax = ret.conceptSyntax(concept.getUrn());
+    ret.projectedSubjective = concept.is(SemanticType.SUBJECTIVE) && !ret.subjective(syntax);
     if (syntax instanceof KimConceptImpl kimConcept) {
       // Isolate mutable builder state from Resources caches and other builders.
       ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
@@ -84,6 +102,10 @@ public class SemanticsBuilder implements Observable.Builder {
     ret.resourcesService = scope.getService(ResourcesService.class);
     var syntax =
         ret.conceptSyntax(observable.getSemantics().getUrn());
+    ret.defaultValue = observable.getDefaultValue();
+    ret.value = observable.getValue();
+    ret.projectedSubjective = observable.is(SemanticType.SUBJECTIVE)
+        && !ret.subjective(syntax) && !ret.subjective(ret.defaultValue) && !ret.subjective(ret.value);
     if (syntax instanceof KimConceptImpl kimConcept) {
       // Isolate mutable builder state from Resources caches and other builders.
       ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
@@ -305,6 +327,7 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withDefaultValue(Object defaultValue) {
+    this.defaultValue = defaultValue;
     return this;
   }
 
@@ -737,6 +760,9 @@ public class SemanticsBuilder implements Observable.Builder {
     var concept = buildConcept(syntax);
     if (concept == null) return null;
     var result = ((ConceptImpl) concept).withExpressionStatus(syntax, reasoner::resolveConcept);
+    if (projectedSubjective || subjective(defaultValue) || subjective(value)) {
+      result.getType().add(SemanticType.SUBJECTIVE);
+    }
     result.setAnnotations(AnnotationCollector.collect(syntax, reasoner::resolveConcept));
     return result;
   }
@@ -765,6 +791,8 @@ public class SemanticsBuilder implements Observable.Builder {
     ret.getAnnotations().addAll(annotations);
     ret.setGeneric(this.generic);
     ret.setRange(this.numericRange);
+    ret.setDefaultValue(this.defaultValue);
+    ret.setValue(this.value);
     //
     //    if (unitStatement != null) {
     //      /* TODO CHECK */

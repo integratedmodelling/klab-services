@@ -164,7 +164,7 @@ public class ConceptImpl implements Concept {
       java.util.function.Function<String, Concept> lookup) {
     var status = org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.evaluate(syntax, leaf -> {
       var resolved = leaf.getName() == null ? null : lookup.apply(leaf.getName());
-      if (resolved == null) return leaf.getType();
+      if (resolved == null) return org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.declarationTypes(leaf);
       var flags = EnumSet.noneOf(SemanticType.class);
       if (resolved.isAbstract()) flags.add(SemanticType.ABSTRACT);
       if (resolved.is(SemanticType.SUBJECTIVE)) flags.add(SemanticType.SUBJECTIVE);
@@ -184,7 +184,7 @@ public class ConceptImpl implements Concept {
     var result = new ConceptImpl(this);
     if (org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(syntax, leaf -> {
       var resolved = leaf.getName() == null ? null : lookup.apply(leaf.getName());
-      return resolved == null ? leaf.getType() : resolved.getType();
+      return resolved == null ? org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.declarationTypes(leaf) : resolved.getType();
     })) result.getType().add(SemanticType.SUBJECTIVE);
     return result;
   }

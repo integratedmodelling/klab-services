@@ -3055,13 +3055,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       builder = builder.withCurrency(concept.getCurrency());
     }
 
-    //    if (concept.getValue() != null) {
-    //      Object value = concept.getValue();
-    //      if (value instanceof KimConcept) {
-    //        value = declareConcept((KimConcept) value);
-    //      }
-    //      builder = builder.withInlineValue(value);
-    //    }
+    ((SemanticsBuilder) builder).withInlineValue(concept.getValue());
 
     if (concept.getDefaultValue() != null) {
       Object value = concept.getDefaultValue();

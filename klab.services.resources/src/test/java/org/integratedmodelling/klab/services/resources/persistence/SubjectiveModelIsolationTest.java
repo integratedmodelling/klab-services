@@ -14,6 +14,22 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.junit.jupiter.api.Test;
 
 class SubjectiveModelIsolationTest {
+  @Test void directCatalogQueriesHonorProviderIndexReadiness() {
+    var provider = mock(org.integratedmodelling.klab.services.resources.ResourcesProvider.class);
+    var scope = mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+    when(provider.serviceName()).thenReturn("readiness-" + UUID.randomUUID());
+    when(provider.serviceScope()).thenReturn(mock(org.integratedmodelling.klab.api.scope.ServiceScope.class));
+    try (var documents = new DocumentModelKbox(provider, new NitriteKboxStore(null));
+         var legacy = ModelKbox.create(provider)) {
+      for (ModelCatalog catalog : List.of(documents, legacy)) {
+        when(provider.checkSemanticServices(scope)).thenReturn(false);
+        assertThrows(org.integratedmodelling.klab.api.exceptions.KlabStorageException.class,
+            () -> catalog.queryModels(mock(Observable.class), null, null, List.of(), scope));
+        when(provider.checkSemanticServices(scope)).thenReturn(true);
+        assertTrue(catalog.queryModels(mock(Observable.class), null, null, List.of(), scope).isEmpty());
+      }
+    }
+  }
   @Test void everyOutputAndDependencyPrivatizesEveryDescriptorAndSurvivesSerialization() {
     for (int subjectivePosition : new int[] {-1, 0, 1, 2}) {
       var service = mock(ResourcesService.class);

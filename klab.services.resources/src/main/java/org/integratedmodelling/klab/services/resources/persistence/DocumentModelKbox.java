@@ -186,6 +186,7 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
       List<ResolutionConstraint> constraints, ContextScope scope) {
     List<ModelReference> result = new ArrayList<>();
+    ModelVisibility.requireReady(resourceService, scope);
     if (geometry == null || geometry.isEmpty()) return result;
     var scale = GeometryRepository.INSTANCE.scale(geometry);
     Object time = scale.getTime();

@@ -21,6 +21,13 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   private String name;
   private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
+  // Nullable for legacy syntax; distinct from the aggregate expression status in type.
+  private Boolean declaredSubjective;
+
+  public Boolean getDeclaredSubjective() { return declaredSubjective; }
+  public void setDeclaredSubjective(Boolean declaredSubjective) {
+    this.declaredSubjective = declaredSubjective;
+  }
   private KimConcept observable;
   private KimConcept parent;
   private KimConcept inherent;
@@ -65,6 +72,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     super(other);
     this.name = other.name;
     this.type = EnumSet.copyOf(other.type);
+    this.declaredSubjective = other.declaredSubjective;
     this.observable = other.observable;
     this.parent = other.parent;
     this.inherent = other.inherent;
@@ -405,6 +413,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         case TRAIT:
           ret.traits.clear();
           break;
+        case VALUE_OPERATOR:
+          ret.valueOperators.clear();
+          break;
         case UNARY_OPERATOR:
           ((KimConceptImpl) ret.observable).semanticModifier = null;
           break;
@@ -552,6 +563,11 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   /** Call after a setting made after the concept had been finalized */
   public void resetDefinition() {
     this.urn = null;
+    if (declaredSubjective != null) {
+      boolean subjective = org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(this);
+      type.remove(SemanticType.SUBJECTIVE);
+      if (subjective) type.add(SemanticType.SUBJECTIVE);
+    }
     finalizeDefinition();
   }
 
@@ -674,7 +690,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       }
     }
 
-    // TODO value operators
+    for (var operator : valueOperators) {
+      ret.append(" ").append(operator.getFirst() == ValueOperator.IS ? "is" : operator.getFirst().declaration);
+      if (operator.getSecond() != null) ret.append(" ").append(renderValue(operator.getSecond()));
+    }
 
     for (KimConcept operand : operands) {
       ret.append(" ")
@@ -725,6 +744,18 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       trivial = !allTraits || countElements == 1;
     }
     return trivial ? urn : ("(" + urn + ")");
+  }
+
+  private static String renderValue(Object value) {
+    if (value instanceof KimConceptImpl concept) return concept.computeUrnAndParenthesize();
+    if (value instanceof org.integratedmodelling.klab.api.knowledge.Semantics semantics) return semantics.getUrn();
+    if (value instanceof String text) return "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    if (value instanceof Iterable<?> items) {
+      var rendered = new ArrayList<String>();
+      for (var item : items) rendered.add(renderValue(item));
+      return "(" + String.join(", ", rendered) + ")";
+    }
+    return String.valueOf(value);
   }
 
   private String stringify(String term) {

@@ -132,6 +132,19 @@ class ExpressionStatusTest {
     assertTrue(ObservableImpl.promote(projected, null).is(SemanticType.SUBJECTIVE));
   }
 
+  @Test
+  void declarationLookupOverridesStaleAggregateStatusAfterRemoval() {
+    var expression = leaf("Height", SemanticType.QUALITY);
+    expression.setInherent(leaf("View", SemanticType.SUBJECT, SemanticType.SUBJECTIVE));
+    expression.getType().addAll(ExpressionStatus.evaluate(expression));
+    var removed = expression.removeComponents(org.integratedmodelling.klab.api.knowledge.SemanticRole.INHERENT);
+    assertFalse(ExpressionStatus.evaluate(removed, node -> EnumSet.of(SemanticType.QUALITY))
+        .contains(SemanticType.SUBJECTIVE));
+    assertTrue(expression.is(SemanticType.SUBJECTIVE));
+    assertTrue(ExpressionStatus.evaluate(removed, node -> EnumSet.of(SemanticType.QUALITY, SemanticType.SUBJECTIVE))
+        .contains(SemanticType.SUBJECTIVE));
+  }
+
   private KimConceptImpl leaf(String name, SemanticType... flags) {
     var result = new KimConceptImpl();
     result.setName("test:" + name);
