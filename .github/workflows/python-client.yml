@@ -22,7 +22,7 @@ jobs:
       - run: python -m pip install './python-client[dev,local]'
       - run: python -m pytest -q --cov=klab_client --cov-branch --cov-report=json
         working-directory: python-client
-      - run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py --new-module src/klab_client/handles.py
+      - run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py --new-module src/klab_client/handles.py --new-module src/klab_client/exports.py
         working-directory: python-client
       - run: python -m ruff check src tests examples tools/check_feature_coverage.py --select E9,F63,F7,F82
         working-directory: python-client

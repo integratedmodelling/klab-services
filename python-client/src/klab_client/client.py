@@ -413,6 +413,16 @@ class Client:
         from .handles import restore_handle
         return restore_handle(self, reference, allow_relocation=allow_relocation)
 
+    def export_formats(self, observation):
+        """Inspect native observation exporters advertised by the configured Runtime."""
+        from .exports import export_formats
+        return export_formats(self, observation)
+
+    def export_to_file(self, observation, path, *, media_type, overwrite=False, max_bytes=None):
+        """Stream a native observation representation into an atomically published file."""
+        from .exports import export_to_file
+        return export_to_file(self, observation, path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes)
+
     def close(self):
         """Close local connections only. Remote scopes require explicit release."""
         self.transport.close()
