@@ -14,6 +14,35 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.junit.jupiter.api.Test;
 
 class SubjectiveModelIsolationTest {
+  @Test void expandedCandidateStatusControlsCatalogNamespacePrivacy() {
+    for (boolean subjective : new boolean[] {false, true}) {
+      var source = new KimConceptImpl();
+      source.setName("test:Source");
+      source.setType(EnumSet.of(SemanticType.PREDICATE, SemanticType.ROLE, SemanticType.ANY));
+      source.setDeclaredSubjective(!subjective);
+      var candidate = new KimConceptImpl();
+      candidate.setName("test:Candidate");
+      candidate.setType(EnumSet.of(SemanticType.PREDICATE, SemanticType.ROLE));
+      candidate.setDeclaredSubjective(subjective);
+      var original = new KimObservableImpl(); original.setSemantics(source);
+      original.setNamespace("owner");
+      var expanded = DependencyExpansion.expand(original, name -> source, request ->
+          new DependencyExpansion.Classification(DependencyExpansion.Status.SUCCESS, List.of(candidate))).getFirst();
+      var resolved = mock(Concept.class);
+      when(resolved.is(SemanticType.SUBJECTIVE)).thenReturn(ExpressionStatus.isSubjective(expanded));
+      var model = new ModelReference();
+      model.setNamespaceId(expanded.getNamespace());
+      model.setScope(KlabStatement.Scope.PUBLIC);
+      model.setObservableConcept(resolved);
+      assertTrue(ModelVisibility.accepts(model, mock(Observable.class), List.of(
+          constraint(ResolutionConstraint.Type.ResolutionNamespace, "owner"))));
+      assertEquals(!subjective, ModelVisibility.accepts(model, mock(Observable.class), List.of(
+          constraint(ResolutionConstraint.Type.ResolutionNamespace, "outside"),
+          constraint(ResolutionConstraint.Type.Scenarios, "owner"))));
+      assertEquals(!subjective, source.getDeclaredSubjective());
+    }
+  }
+
   @Test void directCatalogQueriesHonorProviderIndexReadiness() {
     var provider = mock(org.integratedmodelling.klab.services.resources.ResourcesProvider.class);
     var scope = mock(org.integratedmodelling.klab.api.scope.ContextScope.class);

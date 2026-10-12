@@ -128,12 +128,14 @@ public final class DependencyExpansion {
         var candidate = combination.get(path);
         if (candidate == null) return;
         var flags = EnumSet.noneOf(SemanticType.class);
-        flags.addAll(candidate.getType());
+        flags.addAll(ExpressionStatus.declarationTypes(candidate));
         // The consumed ANY marks this expansion site only. Other selectors remain untouched.
         for (var selector : List.of(SemanticType.ALL, SemanticType.NONE))
           if (node.is(selector)) flags.add(selector);
         node.setName(candidate.getName());
         node.setType(flags);
+        // Substitution changes the declaration, not just its displayed name and cached flags.
+        node.setDeclaredSubjective(flags.contains(SemanticType.SUBJECTIVE));
         node.setFundamentalType(candidate.getFundamentalType());
         node.setAuthority(candidate.getAuthority());
         node.setAuthorityTerm(candidate.getAuthorityTerm());
