@@ -1548,6 +1548,11 @@ public class OWL {
         LogicalConnector.UNION,
         applicables,
         ontology);
+    if (!applicables.isEmpty()) {
+      var fillers = applicables.stream().map(this::getOWLClass).collect(java.util.stream.Collectors.toSet());
+      OWLSemanticClauseSupport.markUniversalBearer(this, type, getProperty(NS.APPLIES_TO_PROPERTY),
+          fillers.size() == 1 ? fillers.iterator().next() : manager.getOWLDataFactory().getOWLObjectUnionOf(fillers), ontology);
+    }
   }
 
   public void defineRelationship(

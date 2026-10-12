@@ -111,6 +111,14 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   private String urn;
   //    private boolean macro;
   private List<PairImpl<KimConcept, DescriptionType>> observablesDescribed = new ArrayList<>();
+  private List<KimConcept> interpretedPhysicalDomains = new ArrayList<>();
+
+  @Override
+  public List<KimConcept> getInterpretedPhysicalDomains() { return interpretedPhysicalDomains; }
+
+  public void setInterpretedPhysicalDomains(List<KimConcept> domains) {
+    interpretedPhysicalDomains = domains == null ? new ArrayList<>() : new ArrayList<>(domains);
+  }
   private List<ApplicableConcept> subjectsLinked = new ArrayList<>();
   private List<ApplicableConcept> appliesTo = new ArrayList<>();
   private String docstring;

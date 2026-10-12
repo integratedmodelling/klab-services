@@ -137,6 +137,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private final AtomicBoolean consistent = new AtomicBoolean(true);
   private final AtomicLong knowledgeRevision = new AtomicLong();
   private final Map<String, String> loadedOntologySources = new HashMap<>();
+  private final Map<String, Concept> declarationDomains = new HashMap<>();
   private final Map<String, List<Notification>> loadedOntologyDiagnostics = new HashMap<>();
 
   private record SubsumptionKey(long revision, Concept concept, Concept other) {}
@@ -335,6 +336,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       response.deduplicateNotifications();
       response.setStatus(SemanticValidationResponse.Status.SYNTAX_ERRORS);
       response.setReason("Semantic validation waits for parsing errors to be corrected");
+      return response;
+    }
+    if (document instanceof KimOntology ontology
+        && org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValues(ontology)) {
+      response.setStatus(SemanticValidationResponse.Status.UNAVAILABLE);
+      response.setReason("DESCRIPTION_VALUE_UNRESOLVED: describes-as source is retained for authoring; "
+          + "typed characterization validity and value matching cannot yet be certified");
+      response.addDocumentDiagnostic(request, Notification.Level.Warning);
       return response;
     }
     // An editor snapshot may predate Resources validation of the saved file. Surface those
@@ -1715,12 +1724,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.owl.initialize(worldview.getOntologies().getFirst());
     authorityBindings.clear();
     loadedOntologySources.clear();
+    declarationDomains.clear();
     loadedOntologyDiagnostics.clear();
     for (KimOntology ontology : worldview.getOntologies()) {
+      var declaringDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
+          .validate(ontology, this::declareConcept);
+      declarationDomains.put(ontology.getUrn(), declaringDomain);
       for (var statement : ontology.getStatements()) {
         defineConcept(statement, scope);
         tagConceptService(statement, ontology.getServiceId());
       }
+      org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(owl, ontology, declaringDomain);
       this.owl.registerWithReasoner(ontology);
       rememberOntologySource(ontology);
     }
@@ -1746,7 +1760,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     boolean logicallyConsistent = !this.owl.isOn() || this.owl.isConsistent();
     this.consistent.set(!Utils.Notifications.hasErrors(ret) && logicallyConsistent);
     if (!logicallyConsistent) {
-      ret.add(Notification.error("Reasoner knowledge base is logically inconsistent"));
+      ret.add(Notification.error(Utils.Notifications.hasErrors(ret)
+          ? "Rejected worldview produced inconsistent OWL"
+          : "VALIDATION_TRANSLATION_BUG: accepted worldview produced inconsistent OWL"));
     }
     this.advisories.addAll(ret);
 
@@ -1783,6 +1799,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
         authorityBindings.releaseNamespace(resource.getResourceUrn());
         loadedOntologySources.remove(resource.getResourceUrn());
+        declarationDomains.remove(resource.getResourceUrn());
         loadedOntologyDiagnostics.remove(resource.getResourceUrn());
         var ontology = this.owl.getOntology(resource.getResourceUrn());
         if (ontology != null) {
@@ -1820,10 +1837,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport
               .replaceOntology(mutable, ontology);
         }
+        var declaringDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
+            .validate(ontology, this::declareConcept);
+        declarationDomains.put(ontology.getUrn(), declaringDomain);
         for (var statement : ontology.getStatements()) {
           defineConcept(statement, parsingScope);
           tagConceptService(statement, resource.getServiceId());
         }
+        org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(owl, ontology, declaringDomain);
         this.owl.registerWithReasoner(ontology);
         rememberOntologySource(ontology);
         this.advisories.removeAll(
@@ -1868,15 +1889,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (this.owl.isOn() && !this.owl.isConsistent()) {
         inconsistent = true;
         this.advisories.add(
-            Notification.error("Reasoner knowledge base is logically inconsistent"));
+            Notification.error("VALIDATION_TRANSLATION_BUG: worldview validation or translation allowed inconsistent OWL"));
       }
     } catch (Throwable t) {
       inconsistent = true;
       changes
           .getNotifications()
           .add(Notification.error("Knowledge synchronization failed: " + t.getMessage()));
-      for (var resource : changes.getOntologies())
+      for (var resource : changes.getOntologies()) {
         loadedOntologySources.remove(resource.getResourceUrn());
+        declarationDomains.remove(resource.getResourceUrn());
+      }
       Logging.INSTANCE.error("failed to update knowledge", t);
       this.advisories.add(Notification.error(t));
     } finally {
@@ -1984,6 +2007,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (conceptImpl == null) {
       return null;
     }
+    var definingDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
+        .domain(owl, conceptImpl.asConcept());
+    if (definingDomain != null) return definingDomain;
     ArrayDeque<Concept> queue = new ArrayDeque<>();
     Set<Concept> visited = new HashSet<>();
     queue.add(conceptImpl.asConcept());
@@ -2644,8 +2670,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
     }
 
+    org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(
+        owl, ontology.getName(), concept, declarationDomains.get(ontology.getName()));
     org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compile(
         owl, ontology, main, concept, operand -> declare(operand, ontology, monitor));
+    if (org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValue(concept))
+      monitor.warn("DESCRIPTION_VALUE_UNRESOLVED: describes-as source is retained, but typed "
+          + "value/unit/category/modality validation and enforcement are not yet implemented", concept);
 
     for (var child : concept.getChildren()) {
       try {
@@ -3192,6 +3223,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     knowledgeReady = false;
     authorityBindings.clear();
     owl.reset();
+    declarationDomains.clear();
     return super.shutdown();
   }
 

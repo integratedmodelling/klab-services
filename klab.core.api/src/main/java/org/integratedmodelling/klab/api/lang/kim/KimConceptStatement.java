@@ -29,13 +29,26 @@ public interface KimConceptStatement extends KlabStatement {
    * @author ferdinando.villa
    */
   enum DescriptionType {
+    /** One-way necessary characterization; never reverse sufficiency or computation. */
     DESCRIBES,
+    /** Nondecreasing within scope with other conditions fixed; plateaus allowed, no causality. */
     INCREASES_WITH,
+    /** Nonincreasing within scope with other conditions fixed; plateaus allowed, no causality. */
     DECREASES_WITH,
+    /** Imposes no value, truth or threshold; models assign values. */
     MARKS,
+    /** Does not imply an exclusive or exhaustive partition. */
     CLASSIFIES,
+    /** Numeric nonoverlap, contiguity and complete declared-range coverage, with one endpoint owner. */
     DISCRETIZES
   }
+
+  /**
+   * Explicit PhysicalDomain targets interpreted by this KnowledgeDomain declaration.
+   * This is authored linkage, not evidence inferred from an OWL existential. Language surface
+   * syntax must populate this field once its spelling is settled.
+   */
+  default List<KimConcept> getInterpretedPhysicalDomains() { return List.of(); }
 
   /**
    * Anything that "applies to" (including subject linked by relationships) gets this descriptor. If

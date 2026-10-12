@@ -627,6 +627,10 @@ public class SemanticsBuilder implements Observable.Builder {
                         }),
                 modifying,
                 ontology);
+        if (modifier.getFirst() == SemanticRole.INHERENT)
+          org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport.markUniversalBearer(
+              reasoner.owl(), ret, reasoner.owl().getProperty(CoreOntology.NS.IS_INHERENT_TO_PROPERTY),
+              modifying, ontology);
       }
 
       // and value ops
