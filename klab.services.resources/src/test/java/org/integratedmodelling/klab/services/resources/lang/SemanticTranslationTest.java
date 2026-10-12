@@ -47,6 +47,7 @@ class SemanticTranslationTest {
     }
   }
   @Test void adapterMakesSubjectiveOutputsAndDependenciesPrivateEvenInPublicNamespaces() throws Exception {
+    for (boolean inAbout : List.of(false, true)) {
     for (int subjectivePosition : new int[] {-1, 0, 1}) {
       var namespace = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
       namespace.setUrn("owner");
@@ -60,7 +61,10 @@ class SemanticTranslationTest {
             new ConceptDescriptor("test", "Value" + i, SemanticSyntax.Type.LENGTH,
                 "Value", "", false, false, i == subjectivePosition, false), null, false));
         var observable = mock(org.integratedmodelling.languages.api.ObservableSyntax.class);
-        when(observable.getSemantics()).thenReturn(semantic);
+        var head = leaf("Head" + i, SemanticSyntax.Type.DOMAIN);
+        when(head.getRestrictions()).thenReturn(List.of(Tuples.create(
+            SemanticSyntax.BinaryOperator.ABOUT, List.of(semantic), false)));
+        when(observable.getSemantics()).thenReturn(inAbout ? head : semantic);
         when(observable.encode()).thenReturn("test:Value" + i);
         observables.add(observable);
       }
@@ -79,6 +83,7 @@ class SemanticTranslationTest {
           ? org.integratedmodelling.klab.api.lang.kim.KlabStatement.Scope.PUBLIC
           : org.integratedmodelling.klab.api.lang.kim.KlabStatement.Scope.PRIVATE, transported.getScope());
       assertEquals("owner", transported.getNamespace());
+    }
     }
   }
 

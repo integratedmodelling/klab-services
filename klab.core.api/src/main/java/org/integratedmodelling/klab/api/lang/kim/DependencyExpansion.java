@@ -47,6 +47,7 @@ public final class DependencyExpansion {
             || candidate.getRelationshipSource() != null || candidate.getRelationshipTarget() != null
             || candidate.getCooccurrent() != null || candidate.getAdjacent() != null
             || !candidate.getTraits().isEmpty() || !candidate.getRoles().isEmpty()
+            || !candidate.getAbout().isEmpty()
             || !candidate.getOperands().isEmpty() || !candidate.getValueOperators().isEmpty())
           throw new IllegalArgumentException("Classification must return concrete named predicates");
       }

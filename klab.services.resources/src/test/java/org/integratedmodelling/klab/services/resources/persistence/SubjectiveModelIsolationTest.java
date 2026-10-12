@@ -14,6 +14,35 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.junit.jupiter.api.Test;
 
 class SubjectiveModelIsolationTest {
+  @Test void aboutOperandCannotEscapeOwnerNamespaceAfterExpansion() {
+    for (boolean subjective : new boolean[] {false, true}) {
+      var selector = new KimConceptImpl(); selector.setName("test:Selector");
+      selector.setType(EnumSet.of(SemanticType.PREDICATE, SemanticType.ROLE, SemanticType.ANY));
+      selector.setDeclaredSubjective(!subjective);
+      var head = new KimConceptImpl(); head.setName("test:Head");
+      head.setType(EnumSet.of(SemanticType.SUBJECT)); head.setDeclaredSubjective(false);
+      head.getAbout().add(selector);
+      var candidate = new KimConceptImpl(); candidate.setName("test:Candidate");
+      candidate.setType(EnumSet.of(SemanticType.PREDICATE, SemanticType.ROLE));
+      candidate.setDeclaredSubjective(subjective);
+      var original = new KimObservableImpl(); original.setSemantics(head); original.setNamespace("owner");
+      var expanded = DependencyExpansion.expand(original, name -> name.equals("test:Head") ? head : selector,
+          request -> new DependencyExpansion.Classification(DependencyExpansion.Status.SUCCESS, List.of(candidate))).getFirst();
+      assertEquals(subjective, ExpressionStatus.isSubjective(expanded));
+      var resolved = mock(Concept.class);
+      when(resolved.is(SemanticType.SUBJECTIVE)).thenReturn(ExpressionStatus.isSubjective(expanded));
+      var model = new ModelReference(); model.setNamespaceId(expanded.getNamespace());
+      model.setScope(KlabStatement.Scope.PUBLIC); model.setObservableConcept(resolved);
+      assertTrue(ModelVisibility.accepts(model, mock(Observable.class), List.of(
+          constraint(ResolutionConstraint.Type.ResolutionNamespace, "owner"))));
+      assertEquals(!subjective, ModelVisibility.accepts(model, mock(Observable.class), List.of(
+          constraint(ResolutionConstraint.Type.ResolutionNamespace, "outside"),
+          constraint(ResolutionConstraint.Type.Scenarios, "owner"))));
+      assertEquals(!subjective, selector.getDeclaredSubjective());
+      assertEquals("test:Selector", selector.getName());
+    }
+  }
+
   @Test void expandedCandidateStatusControlsCatalogNamespacePrivacy() {
     for (boolean subjective : new boolean[] {false, true}) {
       var source = new KimConceptImpl();

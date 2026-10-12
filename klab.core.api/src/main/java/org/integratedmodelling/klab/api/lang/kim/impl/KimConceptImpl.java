@@ -176,6 +176,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     ret.adjacent = map(adjacent, childPath(path, "adjacent"), transform);
     ret.traits = map(traits, childPath(path, "traits"), transform);
     ret.roles = map(roles, childPath(path, "roles"), transform);
+    ret.about = map(about, childPath(path, "about"), transform);
     ret.operands = map(operands, childPath(path, "operands"), transform);
     ret.valueOperators = new ArrayList<>();
     for (int i = 0; i < valueOperators.size(); i++) {

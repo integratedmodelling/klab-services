@@ -40,9 +40,6 @@ class DocumentSemanticValidatorTest {
     var indexerField = ReasonerService.class.getDeclaredField("indexer");
     indexerField.setAccessible(true);
     indexerField.set(reasoner, mock(org.integratedmodelling.klab.indexing.Indexer.class));
-    // CALLS_REAL_METHODS skips the service constructor and its field initializers.
-    var domainsField = ReasonerService.class.getDeclaredField("declarationDomains");
-    domainsField.setAccessible(true); domainsField.set(reasoner, new HashMap<String, Concept>());
     var build = ReasonerService.class.getDeclaredMethod("buildInternal",
         org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.class, Ontology.class,
         org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.class, Scope.class);
