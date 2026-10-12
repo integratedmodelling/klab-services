@@ -66,12 +66,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
   public KimConceptImpl() {}
 
-  private transient Set<SemanticType> argumentType = EnumSet.noneOf(SemanticType.class);
+  private Set<SemanticType> argumentType = EnumSet.noneOf(SemanticType.class);
 
   private KimConceptImpl(KimConceptImpl other) {
     super(other);
     this.name = other.name;
-    this.type = EnumSet.copyOf(other.type);
+    this.type.addAll(other.type);
     this.declaredSubjective = other.declaredSubjective;
     this.observable = other.observable;
     this.parent = other.parent;
@@ -96,7 +96,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.fundamentalType = other.fundamentalType;
     this.cooccurrent = other.cooccurrent;
     this.adjacent = other.adjacent;
-    this.argumentType = EnumSet.copyOf(other.argumentType);
+    if (other.argumentType != null) this.argumentType.addAll(other.argumentType);
     this.pattern = other.pattern;
     this.patternVariables.addAll(other.patternVariables);
     this.valueOperators.addAll(other.valueOperators);
@@ -106,6 +106,186 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   @Override
   public String getName() {
     return this.name;
+  }
+
+  /** Copy every syntax position, excluding the parent back-reference, then transform each copy.
+   * The callback must not mutate the source. Cached definitions are invalidated on the copies.
+   */
+  public KimConceptImpl mapSyntax(java.util.function.Consumer<KimConceptImpl> transform) {
+    return mapSyntax(List.of(), (path, node) -> transform.accept(node));
+  }
+
+  /** Paths identify syntax positions, including clause roles and list indices, never object identity. */
+  public KimConceptImpl mapSyntax(List<String> path,
+      java.util.function.BiConsumer<List<String>, KimConceptImpl> transform) {
+    return mapSyntax(path, new SyntaxMapping(transform, true));
+  }
+
+  static final class SyntaxMapping {
+    private final java.util.function.BiConsumer<List<String>, KimConceptImpl> action;
+    private final boolean invalidateDefinitions;
+    private final boolean mapKey;
+    private final IdentityHashMap<Object, List<String>> active;
+
+    SyntaxMapping(java.util.function.BiConsumer<List<String>, KimConceptImpl> action,
+        boolean invalidateDefinitions) {
+      this(action, invalidateDefinitions, false, new IdentityHashMap<>());
+    }
+
+    private SyntaxMapping(java.util.function.BiConsumer<List<String>, KimConceptImpl> action,
+        boolean invalidateDefinitions, boolean mapKey, IdentityHashMap<Object, List<String>> active) {
+      this.action = action;
+      this.invalidateDefinitions = invalidateDefinitions;
+      this.mapKey = mapKey;
+      this.active = active;
+    }
+
+    boolean invalidateDefinitions() { return invalidateDefinitions; }
+
+    void enter(Object value, List<String> path) {
+      if (active.containsKey(value))
+        throw new IllegalArgumentException("Cyclic syntax value at " + path + "; ancestor " + active.get(value));
+      active.put(value, List.copyOf(path));
+    }
+
+    void leave(Object value) { active.remove(value); }
+
+    SyntaxMapping keyCopy() {
+      return new SyntaxMapping((path, node) -> {}, false, true, active);
+    }
+  }
+
+  private KimConceptImpl mapSyntax(List<String> path, SyntaxMapping transform) {
+    path = List.copyOf(path);
+    transform.enter(this, path);
+    try {
+    var ret = new KimConceptImpl(this);
+    ret.parent = null;
+    ret.observable = map(observable, childPath(path, "observable"), transform);
+    ret.inherent = map(inherent, childPath(path, "inherent"), transform);
+    ret.goal = map(goal, childPath(path, "goal"), transform);
+    ret.causant = map(causant, childPath(path, "causant"), transform);
+    ret.caused = map(caused, childPath(path, "caused"), transform);
+    ret.compresent = map(compresent, childPath(path, "compresent"), transform);
+    ret.comparisonConcept = map(comparisonConcept, childPath(path, "comparisonConcept"), transform);
+    ret.relationshipSource = map(relationshipSource, childPath(path, "relationshipSource"), transform);
+    ret.relationshipTarget = map(relationshipTarget, childPath(path, "relationshipTarget"), transform);
+    ret.cooccurrent = map(cooccurrent, childPath(path, "cooccurrent"), transform);
+    ret.adjacent = map(adjacent, childPath(path, "adjacent"), transform);
+    ret.traits = map(traits, childPath(path, "traits"), transform);
+    ret.roles = map(roles, childPath(path, "roles"), transform);
+    ret.operands = map(operands, childPath(path, "operands"), transform);
+    ret.valueOperators = new ArrayList<>();
+    for (int i = 0; i < valueOperators.size(); i++) {
+      var operator = valueOperators.get(i);
+      ret.valueOperators.add(Pair.of(operator.getFirst(), mapValue(operator.getSecond(),
+          childPath(path, "valueOperators", Integer.toString(i), "operand"), transform)));
+    }
+    if (transform.invalidateDefinitions()) ret.urn = null;
+    transform.action.accept(path, ret);
+    return ret;
+    } finally {
+      transform.leave(this);
+    }
+  }
+
+  /** Map a supported concept-valued slot; detach ordinary literal payloads without interpreting them. */
+  public static Object mapValue(Object value,
+      java.util.function.Consumer<KimConceptImpl> transform) {
+    return mapValue(value, List.of(), (path, node) -> transform.accept(node));
+  }
+
+  public static Object mapValue(Object value, List<String> path,
+      java.util.function.BiConsumer<List<String>, KimConceptImpl> transform) {
+    return mapValue(value, path, new SyntaxMapping(transform, true));
+  }
+
+  /** Detached structural copy preserving definitions, excluding the parent back-reference. */
+  public static Object copyValue(Object value) {
+    return mapValue(value, List.of(), new SyntaxMapping((path, node) -> {}, false));
+  }
+
+  /**
+   * Structural value traversal shared by copying and substitution. Collection elements and map
+   * values follow LanguageAdapter.adaptValue. Keys are detached labels, not classification sites.
+   * Map paths use encounter-order entry ordinals plus key/value sides, never key.toString(). The
+   * adapter's LinkedHashMap order is retained, and collisions after copying fail rather than lose data.
+   */
+  static Object mapValue(Object value, List<String> path, SyntaxMapping transform) {
+    if (value == null) return null;
+    if (value instanceof KimConcept concept) return map(concept, path, transform);
+    if (value instanceof KimObservableImpl observable)
+      return new KimObservableImpl(observable, childPath(path, "observable"), transform);
+    if (value instanceof org.integratedmodelling.klab.api.lang.kim.KimObservable)
+      throw new IllegalArgumentException("Unsupported observable syntax implementation: " + value.getClass());
+    if (value instanceof Map<?, ?> source) {
+      transform.enter(value, path);
+      try {
+        var result = new LinkedHashMap<Object, Object>();
+        int index = 0;
+        for (var entry : source.entrySet()) {
+          var entryPath = childPath(path, "entries", Integer.toString(index++));
+          var key = mapValue(entry.getKey(), childPath(entryPath, "key"), transform.keyCopy());
+          if (result.containsKey(key))
+            throw new IllegalArgumentException("Copied map keys collide at " + entryPath);
+          result.put(key, mapValue(entry.getValue(), childPath(entryPath, "value"), transform));
+        }
+        return result;
+      } finally { transform.leave(value); }
+    }
+    if (value instanceof Collection<?> source) {
+      transform.enter(value, path);
+      try {
+        // Adapter collections become lists. Preserve set equality when the collection is a key.
+        Collection<Object> result = transform.mapKey && source instanceof Set<?>
+            ? new LinkedHashSet<>() : new ArrayList<>();
+        int index = 0;
+        for (var item : source) {
+          var itemPath = childPath(path, "items", Integer.toString(index++));
+          if (!result.add(mapValue(item, itemPath, transform)))
+            throw new IllegalArgumentException("Copied set key elements collide at " + itemPath);
+        }
+        return result;
+      } finally { transform.leave(value); }
+    }
+    if (value.getClass().isArray()) {
+      transform.enter(value, path);
+      try {
+        var component = value.getClass().getComponentType();
+        int length = java.lang.reflect.Array.getLength(value);
+        var result = java.lang.reflect.Array.newInstance(component, length);
+        if (component.isPrimitive()) System.arraycopy(value, 0, result, 0, length);
+        else for (int i = 0; i < length; i++) {
+          var itemPath = childPath(path, "elements", Integer.toString(i));
+          var item = mapValue(java.lang.reflect.Array.get(value, i), itemPath, transform);
+          if (item != null && !component.isInstance(item))
+            throw new IllegalArgumentException("Mapped array element has incompatible type at " + itemPath);
+          java.lang.reflect.Array.set(result, i, item);
+        }
+        return result;
+      } finally { transform.leave(value); }
+    }
+    return KimSyntaxCopy.copy(value);
+  }
+
+  static List<String> childPath(List<String> path, String... components) {
+    var ret = new ArrayList<>(path);
+    ret.addAll(List.of(components));
+    return List.copyOf(ret);
+  }
+
+  private static KimConcept map(KimConcept concept, List<String> path, SyntaxMapping transform) {
+    if (concept == null) return null;
+    if (!(concept instanceof KimConceptImpl syntax))
+      throw new IllegalArgumentException("Unsupported syntax implementation: " + concept.getClass());
+    return syntax.mapSyntax(path, transform);
+  }
+
+  private static List<KimConcept> map(List<KimConcept> concepts, List<String> path, SyntaxMapping transform) {
+    var result = new ArrayList<KimConcept>();
+    for (int i = 0; i < concepts.size(); i++)
+      result.add(map(concepts.get(i), childPath(path, Integer.toString(i)), transform));
+    return result;
   }
 
   @Override
