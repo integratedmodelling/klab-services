@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.jar.JarFile;
 import javassist.Modifier;
@@ -984,11 +985,37 @@ public class ComponentRegistry {
     return ret;
   }
 
-  public Collection<Extensions.ComponentDescriptor> getComponents(Scope scope) {
+  /** Installed inventory for service capabilities. Discovery must not perform update checks or
+   * recursively request another service's capabilities. Explicit component listing still obtains
+   * fresh update status through {@link #getComponents(Scope)}.
+   */
+  public Collection<Extensions.ComponentDescriptor> getInstalledComponents(Scope scope) {
     return components.values().stream()
-        .filter(/* TODO permissions */ c -> true)
-        .map(component -> computeUpdateStatus(component, scope))
+        .filter(/* TODO permissions: same visibility as getComponents */ c -> true)
         .toList();
+  }
+
+  private final AtomicBoolean checkingComponentUpdates = new AtomicBoolean();
+
+  public Collection<Extensions.ComponentDescriptor> getComponents(Scope scope) {
+    // A dependency's explicit listing may return to this registry through another service.
+    // A registry-wide guard also breaks HTTP cycles arriving on another request thread.
+    if (!checkingComponentUpdates.compareAndSet(false, true)) {
+      return getInstalledComponents(scope).stream()
+          .map(component -> component.isUpdateable()
+                  && component.importType() != Extensions.ComponentImportType.FILE
+              ? component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L)
+              : component)
+          .toList();
+    }
+    try {
+      return components.values().stream()
+          .filter(/* TODO permissions */ c -> true)
+          .map(component -> computeUpdateStatus(component, scope))
+          .toList();
+    } finally {
+      checkingComponentUpdates.set(false);
+    }
   }
 
   private Extensions.ComponentDescriptor computeUpdateStatus(
@@ -1053,7 +1080,9 @@ public class ComponentRegistry {
     rememberSourceService(source);
     try {
       var sourceDescriptor =
-          source.capabilities(scope).getComponents().stream()
+          source.query(null, KlabAsset.KnowledgeClass.COMPONENT,
+                  Extensions.ComponentDescriptor.class, scope instanceof UserScope user ? user : null)
+              .stream()
               .filter(candidate -> Objects.equals(candidate.id(), component.id()))
               .filter(candidate -> Objects.equals(candidate.version(), component.version()))
               .findFirst()

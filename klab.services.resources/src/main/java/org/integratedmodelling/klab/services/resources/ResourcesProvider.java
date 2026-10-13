@@ -1171,7 +1171,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
     ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
     ret.getServiceNotifications().addAll(serviceNotifications());
-    ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
+    ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
 
     // TODO Must reflect the scope
     // permissions and roles! User must be in ADMIN group or be configured to access

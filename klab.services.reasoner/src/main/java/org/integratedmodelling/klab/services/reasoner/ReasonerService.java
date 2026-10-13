@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.net.URL;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
@@ -710,22 +711,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         // logic.
         // FIXME set up a worldview update check at a configurable interval in timedTasks
 
-        Worldview discovered = null;
-        int maxAttempts = 5;
-
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-          // Worldview discovery is public during service startup, so no user scope exists yet.
-          discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
-          if (discovered != null) {
-            break;
-          }
-          try {
-            Thread.sleep(1000); // wait 1 second before retry
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Retry interrupted", e);
-          }
-        }
+        // The service scheduler retries every five seconds. Sleeping/retrying here blocks its
+        // status and initialization work without making an unavailable worldview arrive sooner.
+        // Discovery is public during startup, before a user scope exists.
+        long discoveryStarted = System.nanoTime();
+        Worldview discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
+        if (discovered == null) continue;
+        serviceScope().info("Worldview discovered from " + resources.getUrl() + " in "
+            + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - discoveryStarted) + " ms");
         var notifications = loadKnowledge(discovered, serviceScope());
         if (knowledgeReady
             && (Utils.URLs.isLocalHost(getUrl()) || !Utils.Resources.hasErrors(notifications))) {
@@ -1485,7 +1478,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.setServiceId(configuration.getServiceId());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
-    ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
+    ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
     ret.setConsistent(this.consistent.get());
     ret.setKnowledgeRevision(knowledgeRevision());
     if (worldview != null && consistent.get() && !loadedOntologySources.isEmpty())
@@ -1721,12 +1714,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.worldview = worldview;
     this.observationReasoner = new ObservationReasoner(this);
 
+    long ingestionStarted = System.nanoTime();
     this.owl.initialize(worldview.getOntologies().getFirst());
+    serviceScope().info("Worldview OWL initialization completed in "
+        + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ingestionStarted) + " ms");
     authorityBindings.clear();
     loadedOntologySources.clear();
     declarationDomains.clear();
     loadedOntologyDiagnostics.clear();
     for (KimOntology ontology : worldview.getOntologies()) {
+      long ontologyStarted = System.nanoTime();
       var declaringDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
           .validate(ontology, this::declareConcept);
       org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport
@@ -1739,8 +1736,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(owl, ontology, declaringDomain);
       this.owl.registerWithReasoner(ontology);
       rememberOntologySource(ontology);
+      serviceScope().info("Worldview ontology " + ontology.getUrn() + " ingested in "
+          + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ontologyStarted) + " ms");
     }
+    long flushStarted = System.nanoTime();
     this.owl.flushReasoner();
+    serviceScope().info("Worldview OWL flush completed in "
+        + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - flushStarted) + " ms");
     for (var ontology : worldview.getOntologies()) {
       loadedOntologyDiagnostics.put(
           ontology.getUrn(),
@@ -1751,15 +1753,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                           && ontology.getUrn().equals(n.getLexicalContext().getDocumentUrn()))
               .toList());
     }
+    long strategiesStarted = System.nanoTime();
     for (var strategyDocument : worldview.getObservationStrategies()) {
       for (var strategy : strategyDocument.getStatements()) {
         observationReasoner.registerStrategy(strategy);
       }
     }
     observationReasoner.initializeStrategies();
+    serviceScope().info("Worldview strategy initialization completed in "
+        + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - strategiesStarted) + " ms");
 
     // assess consistent status and if consistent, set operational
+    long consistencyStarted = System.nanoTime();
     boolean logicallyConsistent = !this.owl.isOn() || this.owl.isConsistent();
+    serviceScope().info("Worldview consistency check completed in "
+        + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - consistencyStarted) + " ms");
     this.consistent.set(!Utils.Notifications.hasErrors(ret) && logicallyConsistent);
     if (!logicallyConsistent) {
       ret.add(Notification.error(Utils.Notifications.hasErrors(ret)
