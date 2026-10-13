@@ -68,6 +68,7 @@ import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.integratedmodelling.klab.services.reasoner.internal.IngestionNotifications;
+import org.integratedmodelling.klab.services.reasoner.internal.BeanIngestionPreflight;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.OwlDocumentation;
@@ -1752,6 +1753,24 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private ResourceSet loadKnowledge(Worldview worldview, Scope scope, List<Notification> ret) {
+    // Freeze and validate authoritative semantic beans before initialization or any OWL write.
+    // Aggregate isEmpty flags may be stale; current structured diagnostics own this gate.
+    if (worldview == null || worldview.getOntologies().isEmpty())
+      return ResourceSet.empty(Notification.error("Authoritative worldview is unavailable or contains no ontologies"));
+    try {
+      worldview = BeanIngestionPreflight.snapshot(worldview);
+      var beanErrors = BeanIngestionPreflight.errors(worldview);
+      if (!beanErrors.isEmpty()) {
+        worldviewLoadDiagnostics = List.copyOf(beanErrors);
+        var rejected = ResourceSet.empty();
+        rejected.getNotifications().addAll(beanErrors);
+        return rejected;
+      }
+    } catch (RuntimeException e) {
+      return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable: " + e.getMessage()));
+    }
+    if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(worldview, false))
+      return ResourceSet.empty(Notification.error("Authoritative worldview has no valid root ontology"));
     // this remains the only service whose initialization depends on others, so we set it up
     // manually when the specific conditions for initialization are met
     if (observationReasoner == null) {
@@ -1767,34 +1786,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var sourceDiagnostics =
         org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.diagnostics(
             worldview);
-    if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(
-        worldview, localAuthoring)) {
-      var failures = new ArrayList<>(sourceDiagnostics);
-      if (!Utils.Notifications.hasErrors(failures))
-        failures.add(
-            Notification.error("Worldview is unavailable or contains no loadable ontologies"));
-      var previous = worldviewLoadDiagnostics.stream().map(Notification::getMessage).toList();
-      var current = failures.stream().map(Notification::getMessage).toList();
-      worldviewLoadDiagnostics = List.copyOf(failures);
-      if (!current.equals(previous))
-        serviceScope()
-            .warn(
-                "Cannot initialize worldview: "
-                    + org.integratedmodelling.klab.services.reasoner.internal
-                        .WorldviewLoadingSupport.errorSummary(failures));
-      var rejected = ResourceSet.empty();
-      rejected.getNotifications().addAll(failures);
-      return rejected;
-    }
     worldviewLoadDiagnostics = List.of();
     ret.addAll(sourceDiagnostics);
-    if (worldview.isEmpty()) {
-      serviceScope()
-          .warn(
-              "Loading local worldview for editing with validation errors: "
-                  + org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport
-                      .errorSummary(sourceDiagnostics));
-    }
 
     semanticValidationState.begin(knowledgeRevision());
     capabilitiesGeneration++;
@@ -1878,11 +1871,58 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var ownResources = scope.getService(ResourcesService.class);
     Map<URL, ResourcesService> services = new HashMap<>();
 
-    serviceScope().setMaintenanceMode(true);
-
     var affectedKnowledge = new HashSet<String>();
     changes.getOntologies().forEach(r -> affectedKnowledge.add("ontology:" + r.getResourceUrn()));
     changes.getObservationStrategies().forEach(r -> affectedKnowledge.add("strategy:" + r.getResourceUrn()));
+    var ontologies = new LinkedHashMap<ResourceSet.Resource, PreparedOntology>();
+    var strategies = new LinkedHashMap<ResourceSet.Resource, PreparedStrategy>();
+    var sourceWorldviews = new ArrayList<Worldview>();
+    var documents = new ArrayList<KlabDocument<?>>();
+    try {
+      // Fetch the whole batch before releasing even one old ontology. Only these owned copies
+      // are validated and compiled; a later Resources edit cannot replace the validated beans.
+      for (var resource : changes.getOntologies()) {
+        var resources = resourcesForChange(resource, changes, ownResources, services, scope);
+        var notifications = new ArrayList<Notification>();
+        var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
+        var retrieved = resources.retrieve(resource.getResourceUrn(), KimOntology.class, parsingScope);
+        if (retrieved == null) throw new KlabValidationException("Authoritative ontology unavailable: " + resource.getResourceUrn());
+        var ontology = BeanIngestionPreflight.snapshot(retrieved);
+        notifications.addAll(ontology.getNotifications());
+        // The worldview may report aggregate errors from unrelated or superseded sources.
+        // Resolve from its structured beans; do not attribute its channel messages to this bean.
+        var authoritySnapshot = resources.retrieve(worldview.getUrn(), Worldview.class, scope);
+        if (authoritySnapshot == null) throw new KlabValidationException("Cannot synchronize worldview authority definitions");
+        authoritySnapshot = BeanIngestionPreflight.snapshot(authoritySnapshot);
+        sourceWorldviews.add(authoritySnapshot);
+        documents.add(ontology);
+        ontologies.put(resource, new PreparedOntology(ontology, authoritySnapshot, parsingScope, notifications));
+      }
+      for (var resource : changes.getObservationStrategies()) {
+        var resources = resourcesForChange(resource, changes, ownResources, services, scope);
+        var notifications = new ArrayList<Notification>();
+        var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
+        var retrieved = resources.retrieve(resource.getResourceUrn(), KimObservationStrategyDocument.class, parsingScope);
+        if (retrieved == null) throw new KlabValidationException("Authoritative strategy unavailable: " + resource.getResourceUrn());
+        var strategy = BeanIngestionPreflight.snapshot(retrieved);
+        notifications.addAll(strategy.getNotifications());
+        var sourceSnapshot = resources.retrieve(worldview.getUrn(), Worldview.class, scope);
+        if (sourceSnapshot == null) throw new KlabValidationException("Authoritative strategy dependencies unavailable");
+        sourceWorldviews.add(BeanIngestionPreflight.snapshot(sourceSnapshot));
+        documents.add(strategy);
+        strategies.put(resource, new PreparedStrategy(strategy, notifications));
+      }
+      var errors = new LinkedHashSet<>(BeanIngestionPreflight.errors(documents, sourceWorldviews));
+      ontologies.values().forEach(p -> errors.addAll(BeanIngestionPreflight.errors(p.notifications())));
+      strategies.values().forEach(p -> errors.addAll(BeanIngestionPreflight.errors(p.notifications())));
+      if (!errors.isEmpty()) return rejectBeanUpdate(changes, affectedKnowledge, List.copyOf(errors));
+    } catch (Exception e) {
+      return rejectBeanUpdate(changes, affectedKnowledge,
+          List.of(Notification.error("Authoritative bean preflight unavailable: " + e.getMessage())));
+    }
+
+    serviceScope().setMaintenanceMode(true);
+
     semanticValidationState.beginUpdate(knowledgeRevision(), affectedKnowledge);
     capabilitiesGeneration++;
     invalidateSemanticCaches();
@@ -1913,26 +1953,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
 
       for (var resource : changes.getOntologies()) {
-
-        var resourceService = ownResources;
-        if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
-          resourceService =
-              services.computeIfAbsent(
-                  changes.getServices().get(resource.getServiceId()),
-                  url ->
-                      ServiceClientCatalog.INSTANCE.getService(
-                          url, settingsForSlaveServices, scope, ResourcesService.class));
-        }
-
-        var notifications = new ArrayList<Notification>();
-        var parsingScope =
-            getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
-        var ontology =
-            resourceService.retrieve(resource.getResourceUrn(), KimOntology.class, parsingScope);
-        notifications.addAll(ontology.getNotifications());
-        var authoritySnapshot = resourceService.retrieve(worldview.getUrn(), Worldview.class, parsingScope);
-        if (authoritySnapshot == null)
-          throw new KlabValidationException("Cannot synchronize worldview authority definitions");
+        var prepared = ontologies.get(resource);
+        var notifications = prepared.notifications();
+        var parsingScope = prepared.scope();
+        var ontology = prepared.ontology();
+        var authoritySnapshot = prepared.worldview();
         if (worldview instanceof org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl mutable) {
           var reconciled = new ArrayList<>(mutable.getAuthorityBindings());
           reconciled.removeIf(binding -> binding.sourceOntology().equals(ontology.getUrn()));
@@ -1966,23 +1991,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
 
       for (var resource : changes.getObservationStrategies()) {
-
-        var resourceService = ownResources;
-        if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
-          resourceService =
-              services.computeIfAbsent(
-                  changes.getServices().get(resource.getServiceId()),
-                  url ->
-                      ServiceClientCatalog.INSTANCE.getService(
-                          url, settingsForSlaveServices, scope, ResourcesService.class));
-        }
-
-        var notifications = new ArrayList<Notification>();
-        var parsingScope =
-            getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
-        var observationStrategyDocument =
-            resourceService.retrieve(
-                resource.getResourceUrn(), KimObservationStrategyDocument.class, parsingScope);
+        var prepared = strategies.get(resource);
+        var notifications = prepared.notifications();
+        var observationStrategyDocument = prepared.document();
 
         observationReasoner.releaseNamespace(observationStrategyDocument.getUrn());
         for (var strategy : observationStrategyDocument.getStatements()) {
@@ -2020,6 +2031,31 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       publishSemanticCapabilities();
     }
 
+    return changes;
+  }
+
+  private record PreparedOntology(KimOntology ontology, Worldview worldview, Scope scope,
+      List<Notification> notifications) {}
+  private record PreparedStrategy(KimObservationStrategyDocument document,
+      List<Notification> notifications) {}
+
+  private ResourcesService resourcesForChange(ResourceSet.Resource resource, ResourceSet changes,
+      ResourcesService ownResources, Map<URL, ResourcesService> services, UserScope scope) {
+    if (ownResources.capabilities(scope).getServiceId().equals(resource.getServiceId())) return ownResources;
+    var url = changes.getServices().get(resource.getServiceId());
+    if (url == null) throw new KlabValidationException("Authoritative Resources service unavailable: " + resource.getServiceId());
+    return services.computeIfAbsent(url, target -> ServiceClientCatalog.INSTANCE.getService(
+        target, settingsForSlaveServices, scope, ResourcesService.class));
+  }
+
+  private ResourceSet rejectBeanUpdate(ResourceSet changes, Set<String> affected,
+      List<Notification> errors) {
+    changes.getNotifications().addAll(errors);
+    semanticValidationState.beginUpdate(knowledgeRevision(), affected);
+    semanticValidationState.settleUpdate(knowledgeRevision(), affected, false);
+    // Loaded OWL, source fingerprints, declarations and authority bindings remain untouched.
+    // Failure describes the saved source update, not a newly established logical contradiction.
+    publishSemanticCapabilities();
     return changes;
   }
 

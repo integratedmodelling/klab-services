@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
-/** Local authoring can compile a diagnostic-bearing snapshot without declaring it valid. */
+/** Source structure and diagnostics needed before any worldview OWL mutation. */
 public final class WorldviewLoadingSupport {
   private WorldviewLoadingSupport() {}
 
@@ -29,7 +29,7 @@ public final class WorldviewLoadingSupport {
     if (worldview == null || worldview.getOntologies().isEmpty()) return false;
     var root = worldview.getOntologies().getFirst();
     if (root.getDomain() != KimOntology.rootDomain) return false;
-    return !worldview.isEmpty() || local;
+    return BeanIngestionPreflight.errors(diagnostics(worldview)).isEmpty();
   }
 
   public static List<Notification> diagnostics(Worldview worldview) {
