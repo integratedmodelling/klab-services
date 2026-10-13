@@ -18,27 +18,78 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 /** Runs the production compiler in private semantic state, without normal service construction. */
 public final class SemanticEnvironmentFactory
     implements CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> {
+  public static final String CONFIGURATION_REVISION = "semantic-defaults-v1";
   private final Path assetRoot;
   private final Map<String, byte[]> core;
   private final String dependencyRevision;
+  private final Map<String, java.util.Set<String>> coreIdentities;
 
   public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore) throws Exception {
     assetRoot = privateAssetRoot.toAbsolutePath().normalize();
     var owned = new LinkedHashMap<String, byte[]>();
     var digest = MessageDigest.getInstance("SHA-256");
+    var identities = new LinkedHashMap<String, java.util.Set<String>>();
+    var identityOwners = new java.util.HashMap<String, String>();
     for (var name : capturedCore.keySet().stream().sorted().toList()) {
       if (!name.endsWith(".owl") || Path.of(name).isAbsolute()
           || !assetRoot.resolve(name).normalize().startsWith(assetRoot))
         throw new IllegalArgumentException("Invalid private core catalog entry " + name);
       byte[] bytes = capturedCore.get(name).clone(); owned.put(name, bytes);
+      var alias = Path.of(name).getFileName().toString().replaceFirst("\\.owl$", "");
+      if (identities.put(alias, ontologyIdentities(bytes)) != null)
+        throw new IllegalArgumentException("Ambiguous captured core alias " + alias);
+      for (var identity : identities.get(alias)) {
+        var previous = identityOwners.putIfAbsent(identity, name);
+        if (previous != null) throw new IllegalArgumentException(
+            "Ambiguous captured ontology identity " + identity + " in " + previous + " and " + name);
+      }
       digest.update(name.getBytes(java.nio.charset.StandardCharsets.UTF_8));
       digest.update((byte)0); digest.update(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
     if (owned.isEmpty()) throw new IllegalArgumentException("Candidate requires a captured core catalog");
     core = java.util.Collections.unmodifiableMap(owned);
+    coreIdentities = Map.copyOf(identities);
     dependencyRevision = HexFormat.of().formatHex(digest.digest());
   }
   public String dependencyRevision() { return dependencyRevision; }
+  private static java.util.Set<String> ontologyIdentities(byte[] bytes) throws Exception {
+    var parser = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+    parser.setNamespaceAware(true);
+    parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    parser.setFeature("http://xml.org/sax/features/external-general-entities", false);
+    parser.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+    parser.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, "");
+    parser.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+    var document = parser.newDocumentBuilder().parse(new java.io.ByteArrayInputStream(bytes));
+    var nodes = document.getElementsByTagNameNS("http://www.w3.org/2002/07/owl#", "Ontology");
+    var identities = new java.util.HashSet<String>();
+    for (int i = 0; i < nodes.getLength(); i++) {
+      var ontology = (org.w3c.dom.Element)nodes.item(i);
+      identities.add(ontology.getAttributeNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "about"));
+      var versions = ontology.getElementsByTagNameNS("http://www.w3.org/2002/07/owl#", "versionIRI");
+      for (int j = 0; j < versions.getLength(); j++) identities.add(((org.w3c.dom.Element)versions.item(j))
+          .getAttributeNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "resource"));
+    }
+    identities.remove("");
+    if (identities.isEmpty()) throw new IllegalArgumentException("Captured RDF/XML core has no ontology identity");
+    return java.util.Set.copyOf(identities);
+  }
+  /** Freeze at submission time; the worker never compiles a caller's mutable source trees. */
+  public CandidatePublicationCoordinator.Input<Worldview> capture(Worldview worldview) {
+    var owned = BeanIngestionPreflight.snapshot(worldview);
+    var errors = BeanIngestionPreflight.errors(owned);
+    return new CandidatePublicationCoordinator.Input<>(sources(owned), sourceOrder(owned),
+        dependencyRevision, CONFIGURATION_REVISION, owned,
+        errors.isEmpty() ? CandidatePublicationCoordinator.BeanStatus.VALID
+            : CandidatePublicationCoordinator.BeanStatus.INVALID,
+        errors.stream().map(Notification::getMessage).toList());
+  }
+  public static List<String> sourceOrder(Worldview worldview) {
+    var result = new ArrayList<String>();
+    worldview.getOntologies().forEach(d -> result.add(sourceKey(d)));
+    worldview.getObservationStrategies().forEach(d -> result.add(sourceKey(d)));
+    return List.copyOf(result);
+  }
   public static String sourceKey(KlabDocument<?> document) {
     return org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.classify(document.getClass()).name()
         + ":" + document.getUrn();
@@ -60,9 +111,54 @@ public final class SemanticEnvironmentFactory
     cancellation.checkpoint();
     if (input.beanStatus() != CandidatePublicationCoordinator.BeanStatus.VALID)
       throw new IllegalArgumentException("Private compiler requires passed bean preflight");
-    if (!input.sourceHashes().equals(sources(input.payload()))
+    var snapshot = BeanIngestionPreflight.snapshot(input.payload());
+    if (!input.sourceHashes().equals(sources(snapshot))
+        || !input.sourceOrder().equals(sourceOrder(snapshot))
+        || !CONFIGURATION_REVISION.equals(input.configurationRevision())
         || !input.dependencyRevision().equals(dependencyRevision))
-      throw new IllegalArgumentException("Candidate does not match its captured source/dependency manifest");
+      throw new IllegalArgumentException("Candidate does not match its captured source/dependency/configuration manifest");
+    var beanErrors = BeanIngestionPreflight.errors(snapshot);
+    if (!beanErrors.isEmpty())
+      return new CandidatePublicationCoordinator.Result<>(null,
+          CandidatePublicationCoordinator.LogicalStatus.NOT_RUN, true,
+          beanErrors.stream().map(Notification::getMessage).toList());
+    var unsupported = new ArrayList<String>();
+    for (var ontology : snapshot.getOntologies()) {
+      for (var imported : ontology.getOwlImports()) {
+        var captured = coreIdentities.get(imported.getSecond());
+        if (captured == null || !captured.contains(imported.getFirst())) unsupported.add(
+            "CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import " + imported);
+      }
+      if (!ontology.getVocabularyImports().isEmpty()) unsupported.add(
+          "CANDIDATE_ISOLATION_UNSUPPORTED: vocabulary provider for " + ontology.getUrn());
+      var visitor = new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor(
+          new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor.LenientValidator(), null);
+      visitor.visit(ontology);
+      if (visitor.getStatements().stream().anyMatch(s ->
+          s instanceof org.integratedmodelling.klab.api.lang.kim.KimConceptStatement declaration
+              && declaration.getAuthorityRequired() != null)) unsupported.add(
+          "CANDIDATE_ISOLATION_UNSUPPORTED: authority provider for " + ontology.getUrn());
+    }
+    for (var strategies : snapshot.getObservationStrategies()) {
+      var visitor = new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor(
+          new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor.LenientValidator() {
+            @Override public List<Notification> validatePlanNode(
+                org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.Node node,
+                org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Context context) {
+              if (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall
+                  || node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.ExternalMatcher)
+                return List.of(Notification.warning(
+                    "CANDIDATE_ISOLATION_UNSUPPORTED: strategy extension requires a captured component catalog"));
+              return List.of();
+            }
+          }, null);
+      visitor.visit(strategies);
+      unsupported.addAll(visitor.getNotifications().stream().map(Notification::getMessage).toList());
+    }
+    if (!snapshot.getAuthorityBindings().isEmpty()) unsupported.add(
+        "CANDIDATE_ISOLATION_UNSUPPORTED: authority bindings require an owned provider snapshot");
+    if (!unsupported.isEmpty()) return new CandidatePublicationCoordinator.Result<>(null,
+        CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, true, unsupported);
     Files.createDirectories(assetRoot);
     Path assets = Files.createTempDirectory(assetRoot, "semantic-");
     var knowledge = Files.createDirectories(assets.resolve("knowledge"));
@@ -75,20 +171,30 @@ public final class SemanticEnvironmentFactory
         Files.createDirectories(file.getParent()); Files.write(file, entry.getValue());
       }
       cancellation.checkpoint();
-      var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(input.payload()).service());
+      var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(snapshot).service());
       var actor = new ReasonerService(scope, knowledge, assets);
       environment = new SemanticEnvironment(actor, assets);
-      var loaded = actor.loadKnowledge(input.payload(), scope);
+      var loaded = actor.loadKnowledge(snapshot, scope);
       cancellation.checkpoint();
       var diagnostics = new ArrayList<Notification>(scope.getNotifications());
       diagnostics.addAll(loaded.getNotifications());
       if (scope.hasErrors() && !Utils.Notifications.hasErrors(diagnostics))
         diagnostics.add(Notification.error("Candidate compilation emitted errors without source-bound transport"));
       if (!Utils.Notifications.hasErrors(diagnostics)) {
-        for (var ontology : input.payload().getOntologies()) {
+        for (var ontology : snapshot.getOntologies()) {
           cancellation.checkpoint();
           diagnostics.addAll(new DocumentSemanticValidator(actor).validate(ontology));
         }
+        for (var strategies : snapshot.getObservationStrategies()) {
+          cancellation.checkpoint();
+          diagnostics.addAll(new DocumentSemanticValidator(actor).validate(strategies));
+        }
+      }
+      // Validators can materialize captured expressions. Include those final axioms in the check.
+      if (actor.owl().hasReasoner()) {
+        actor.owl().flushReasoner();
+        if (!actor.owl().isConsistent()) diagnostics.add(Notification.error(
+            "Candidate OWL is inconsistent after semantic expression validation"));
       }
       var messages = diagnostics.stream().map(Notification::getMessage).toList();
       var status = messages.stream().anyMatch(m -> m.contains("CANDIDATE_ISOLATION_UNSUPPORTED"))
@@ -97,7 +203,7 @@ public final class SemanticEnvironmentFactory
               ? CandidatePublicationCoordinator.LogicalStatus.INVALID
               : CandidatePublicationCoordinator.LogicalStatus.VALID;
       if (!actor.owl().hasReasoner()) status = CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED;
-      if (input.payload().getOntologies().stream()
+      if (snapshot.getOntologies().stream()
           .anyMatch(org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport::hasDeferredValues))
         status = CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED;
       var result = new CandidatePublicationCoordinator.Result<>(environment, status, true, messages);

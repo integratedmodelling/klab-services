@@ -703,9 +703,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         new org.integratedmodelling.klab.services.reasoner.internal.SemanticExecutionSettings(),
         semanticDisplayUrl());
     this.semanticOnly = true;
+    OWL ownedOwl = null;
+    try {
     this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
         privateState.resolve("authority-cache"));
-    this.owl = new OWL(scope, privateKnowledge.toFile());
+    this.owl = ownedOwl = new OWL(scope, privateKnowledge.toFile());
     this.authorityIdentityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
         this.owl, authorityBindings, this::invalidateSemanticCaches);
     this.owl.setAuthorityResolver((authority, code) -> {
@@ -718,15 +720,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
     this.configuration.setServiceId(UUID.randomUUID().toString());
-    try {
       scope.bind(this);
       // This overload owns its matcher/strategies without loading deployment extensions.
       this.observationReasoner = new ObservationReasoner((Reasoner)this, this::declareObservable);
       this.syntacticMatcher = new SyntacticMatcher(this);
       this.semanticMatcher = new SemanticMatcher(this);
     } catch (RuntimeException | Error failure) {
-      try { indexer.ensureClosed(); }
-      finally { owl.reset(); scope.close(); closeSemanticExecutor(); }
+      try { if (indexer != null) indexer.ensureClosed(); }
+      catch (RuntimeException cleanup) { failure.addSuppressed(cleanup); }
+      try { if (ownedOwl != null) ownedOwl.reset(); }
+      catch (RuntimeException cleanup) { failure.addSuppressed(cleanup); }
+      finally { scope.close(); closeSemanticExecutor(); }
       throw failure;
     }
   }

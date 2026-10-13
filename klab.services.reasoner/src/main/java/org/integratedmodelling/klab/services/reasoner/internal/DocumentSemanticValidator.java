@@ -15,7 +15,8 @@ import org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSuppo
  * Validation of source occurrences against a loaded knowledge snapshot; does not define ontologies.
  */
 public class DocumentSemanticValidator
-    implements KimNamespaceVisitor.Validator, KimOntologyVisitor.Validator {
+    implements KimNamespaceVisitor.Validator, KimOntologyVisitor.Validator,
+        KimObservationStrategyDocumentVisitor.Validator {
   private final ReasonerService reasoner;
   private final OWLSemanticClauseSupport clauses;
 
@@ -25,6 +26,11 @@ public class DocumentSemanticValidator
   }
 
   public List<Notification> validate(KlabDocument<?> document) {
+    if (document instanceof KimObservationStrategyDocument strategies) {
+      var visitor = new KimObservationStrategyDocumentVisitor(this, null);
+      visitor.visit(strategies);
+      return visitor.getNotifications();
+    }
     if (document instanceof KimNamespace namespace) {
       var visitor = new KimNamespaceVisitor(this, null);
       visitor.visit(namespace);
