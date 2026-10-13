@@ -114,9 +114,15 @@ public class OWL {
   private Concept nothing;
 
   private CoreOntology coreOntology;
+  private final File privateKnowledgeDirectory;
 
   public OWL(Scope scope) {
+    this(scope, null);
+  }
+
+  public OWL(Scope scope, File privateKnowledgeDirectory) {
     this.scope = scope;
+    this.privateKnowledgeDirectory = privateKnowledgeDirectory;
   }
 
   public Concept nothing(String urn, Throwable... exceptions) {
@@ -276,7 +282,30 @@ public class OWL {
 
     manager = OWLManager.createOWLOntologyManager();
     // this.loadPath = loadPath;
-    coreOntology = new CoreOntology(ServiceConfiguration.INSTANCE.getDataPath("knowledge"), this);
+    coreOntology = privateKnowledgeDirectory == null
+        ? new CoreOntology(ServiceConfiguration.INSTANCE.getDataPath("knowledge"), this)
+        : new CoreOntology(privateKnowledgeDirectory, this, false);
+    if (privateKnowledgeDirectory != null) {
+      var root = privateKnowledgeDirectory.toPath().toAbsolutePath().normalize();
+      var local = new AutoIRIMapper(privateKnowledgeDirectory, true);
+      manager.getIRIMappers().add(iri -> {
+        if ("file".equalsIgnoreCase(iri.toURI().getScheme())) {
+          if (!java.nio.file.Path.of(iri.toURI()).toAbsolutePath().normalize().startsWith(root))
+            throw new KlabValidationException("Candidate OWL import escaped its private catalog: " + iri);
+          return iri;
+        }
+        // The mapper also assigns document IRIs during creation of source/internal ontologies.
+        // Keep these generated documents local; a missing import then fails as a local file,
+        // rather than permitting an HTTP fallback. Core imports still require captured bytes.
+        if (iri.toString().startsWith(DEFAULT_ONTOLOGY_PREFIX + "/")) {
+          return IRI.create(root.resolve("generated-" + privateDocumentHash(iri) + ".owl").toUri());
+        }
+        var document = local.getDocumentIRI(iri);
+        if (document == null)
+          throw new KlabValidationException("Candidate OWL import is absent from its captured catalog: " + iri);
+        return document;
+      });
+    }
     // coreOntology.load(monitor);
     load(coreOntology.getRoot());
 
@@ -316,7 +345,7 @@ public class OWL {
     // overall),
     // monitor);
     // }
-    if (ServiceConfiguration.INSTANCE.useReasoner()) {
+    if (privateKnowledgeDirectory != null || ServiceConfiguration.INSTANCE.useReasoner()) {
       this.reasoner =
           new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
       reasonerActive = true;
@@ -347,6 +376,15 @@ public class OWL {
     conceptsById.clear();
     classId.set(1L);
     manager = null;
+  }
+
+  private static String privateDocumentHash(IRI iri) {
+    try {
+      return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+          .digest(iri.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (java.security.NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 is unavailable", e);
+    }
   }
 
   public CoreOntology getCoreOntology() {
@@ -676,6 +714,9 @@ public class OWL {
         }
 
       } catch (Exception e) {
+
+        if (privateKnowledgeDirectory != null)
+          throw new KlabValidationException("Candidate core ontology could not be loaded: " + f + ": " + e.getMessage());
 
         /*
          * everything else is probably an error

@@ -17,6 +17,12 @@ import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStr
 /** Select and instantiate portable observation plans. Matching never executes a resolution. */
 public class ObservationReasoner {
 
+  public static final Set<String> SUPPORTED_FUNCTIONS = Set.of(
+      "context.exists", "inherent", "transform.applicable", "request.fully_specified", "type.concrete",
+      "predicate.concrete", "predicates.split_first", "type.abstract", "type.collective",
+      "relationship.source", "type.relationship.source", "relationship.target", "type.relationship.target",
+      "collective", "type.arity.collective", "operands.same_countable_family", "operands.enumerable_compatible");
+
   private final Reasoner reasoner;
   private final Function<KimObservable, Observable> declare;
   private final ObservationPatternMatcher matcher;
@@ -24,9 +30,9 @@ public class ObservationReasoner {
 
   public ObservationReasoner(ReasonerService reasoner) {
     this(reasoner, reasoner::declareObservable);
-    reasoner
-        .getComponentRegistry()
-        .loadExtensions("org.integratedmodelling.klab.services.reasoner.functors");
+    if (!reasoner.isSemanticExecution())
+      reasoner.getComponentRegistry()
+          .loadExtensions("org.integratedmodelling.klab.services.reasoner.functors");
   }
 
   public ObservationReasoner(Reasoner reasoner, Function<KimObservable, Observable> declare) {
@@ -158,6 +164,14 @@ public class ObservationReasoner {
         if (argument.getName() != null)
           throw new UnsupportedOperationException("Named functor arguments");
         args.add(evaluate(argument.getValue(), variables, scope));
+      }
+      if (call.getFunction().equals("operands.same_countable_family") || call.getFunction().equals("operands.enumerable_compatible")) {
+        if (args.size() != 2 || !(args.get(0) instanceof Semantics first) || !(args.get(1) instanceof Semantics remaining))
+          throw new IllegalArgumentException("Expected two semantic arguments to " + call.getFunction());
+        var guards = new OperandGuards(reasoner);
+        return call.getFunction().equals("operands.same_countable_family")
+            ? guards.sameCountableFamily(first, remaining)
+            : guards.enumerableCompatible(first, remaining, (Semantics)variables.get("this"));
       }
       if (call.getFunction().equals("context.exists")) {
         if (!args.isEmpty())

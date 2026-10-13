@@ -330,9 +330,13 @@ public class CoreOntology {
   }
 
   public CoreOntology(File directory, OWL owl) {
+    this(directory, owl, true);
+  }
+
+  public CoreOntology(File directory, OWL owl, boolean extractClasspath) {
     this.root = directory;
     this.owl = owl;
-    Utils.Classpath.extractKnowledgeFromClasspath(this.root);
+    if (extractClasspath) Utils.Classpath.extractKnowledgeFromClasspath(this.root);
   }
 
   public CoreOntology(List<Pair<String, String>> ontologies, OWL owl) {

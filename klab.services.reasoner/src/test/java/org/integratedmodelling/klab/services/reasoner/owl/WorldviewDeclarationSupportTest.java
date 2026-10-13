@@ -75,6 +75,39 @@ class WorldviewDeclarationSupportTest {
     assertRestriction(
         owl, ontology, ontology.getConcept("Creator"), "creates", ontology.getConcept("Entity"));
   }
+  @Test void domainsDescribeConfigurationsWithoutBorrowingTheirBearersOrAddingDlCalls() {
+    var owl=org.mockito.Mockito.spy(owl());var ontology=owl.requireOntology("audit");
+    declare(ontology,"Domain",SemanticType.DOMAIN,SemanticType.PREDICATE);
+    declare(ontology,"System",SemanticType.CONFIGURATION);
+    declare(ontology,"Bearer",SemanticType.SUBJECT,SemanticType.COUNTABLE,SemanticType.OBSERVABLE);
+    owl.restrictSome(ontology.getConcept("System"),owl.getProperty("odo:isInherentTo"),ontology.getConcept("Bearer"),ontology);
+    var empty=new KimConceptStatementImpl();
+    WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),empty,v->owl.getConcept(v.getName()));
+    long calls=org.mockito.Mockito.mockingDetails(owl).getInvocations().stream().filter(i->Set.of("flushReasoner","isEntailed").contains(i.getMethod().getName())).count();
+    org.mockito.Mockito.clearInvocations(owl);
+    var statement=new KimConceptStatementImpl();statement.getObservablesDescribed().add(new PairImpl<>(syntax("System"),KimConceptStatement.DescriptionType.DESCRIBES));
+    WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),statement,v->owl.getConcept(v.getName()));
+    assertRestriction(owl,ontology,ontology.getConcept("Domain"),"describesConfiguration",ontology.getConcept("System"));
+    assertEquals(calls,org.mockito.Mockito.mockingDetails(owl).getInvocations().stream().filter(i->Set.of("flushReasoner","isEntailed").contains(i.getMethod().getName())).count());
+    var f=owl.manager.getOWLDataFactory();var owner=owl.getOWLClass(ontology.getConcept("Domain"));
+    for(var axiom:ontology.getOWLOntology().getSubClassAxiomsForSubClass(owner))
+      if(axiom.getSuperClass() instanceof OWLObjectSomeValuesFrom some)
+        assertNotEquals(owl.getProperty("odo:isInherentTo").getOWLEntity(),some.getProperty());
+    assertFalse(ontology.getOWLOntology().containsAxiom(f.getOWLSubClassOfAxiom(owner,f.getOWLObjectSomeValuesFrom(owl.getProperty("odo:describesQuality").getOWLEntity().asOWLObjectProperty(),owl.getOWLClass(ontology.getConcept("System"))))));
+  }
+  @Test void configurationDescriptionsRejectWrongOwnerAndMissingPropertyBeforeWrites() {
+    var owl=owl();var ontology=owl.requireOntology("audit");
+    declare(ontology,"Quality",SemanticType.QUALITY,SemanticType.OBSERVABLE);
+    declare(ontology,"Domain",SemanticType.DOMAIN,SemanticType.PREDICATE);
+    declare(ontology,"System",SemanticType.CONFIGURATION);
+    var statement=new KimConceptStatementImpl();statement.getObservablesDescribed().add(new PairImpl<>(syntax("System"),KimConceptStatement.DescriptionType.DESCRIBES));
+    long before=ontology.getOWLOntology().getAxiomCount();
+    assertThrows(KlabValidationException.class,()->WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Quality"),statement,v->owl.getConcept(v.getName())));
+    assertEquals(before,ontology.getOWLOntology().getAxiomCount());
+    var odo=owl.requireOntology("odo");odo.opropertyIDs.remove("describesConfiguration");odo.propertyIDs.remove("describesConfiguration");
+    assertThrows(KlabValidationException.class,()->WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),statement,v->owl.getConcept(v.getName())));
+    assertEquals(before,ontology.getOWLOntology().getAxiomCount());
+  }
   private OWL owl() {
     var scope = (org.integratedmodelling.klab.api.scope.Scope) java.lang.reflect.Proxy.newProxyInstance(
         getClass().getClassLoader(), new Class<?>[]{org.integratedmodelling.klab.api.scope.Scope.class},
@@ -84,7 +117,7 @@ class WorldviewDeclarationSupportTest {
     for (String name : List.of("affects", "creates", "requiresIdentity", "requiresRealm", "requiresExtent",
         "requiresAttribute", "impliesObservable", "emergesFrom", "describesQuality", "increasesWith",
         "decreasesWith", "marksQuality", "classifiesQuality", "discretizesQuality", "impliesSource",
-        "impliesDestination", "appliesTo", "isInherentTo")) properties.add(Axiom.ObjectPropertyAssertion(name));
+        "impliesDestination", "appliesTo", "isInherentTo", "describesConfiguration")) properties.add(Axiom.ObjectPropertyAssertion(name));
     owl.requireOntology("odo").define(properties);
     return owl;
   }

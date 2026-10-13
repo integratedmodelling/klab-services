@@ -31,7 +31,26 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
  * bridging to the ontology manager. Efficient if caching is implemented in both services and
  * clients.
  */
-public class SemanticsBuilder implements Observable.Builder {
+public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
+  private CandidatePublicationCoordinator<Worldview, SemanticEnvironment>.Lease readLease;
+  private SemanticEnvironment readEnvironment;
+  private volatile boolean completed;
+  private static final java.lang.ref.Cleaner LEASE_CLEANER = java.lang.ref.Cleaner.create();
+  private java.lang.ref.Cleaner.Cleanable abandonedLease;
+
+  private static SemanticsBuilder pin(ReasonerService root,
+      java.util.function.Function<ReasonerService, SemanticsBuilder> create) {
+    var lease = root.candidateRuntime().lease();
+    try {
+      var environment = lease.state();
+      synchronized (environment) {
+        var builder = create.apply(environment.actor());
+        builder.readLease = lease; builder.readEnvironment = environment;
+        builder.abandonedLease = LEASE_CLEANER.register(builder, lease::close);
+        return builder;
+      }
+    } catch (RuntimeException | Error failure) { lease.close(); throw failure; }
+  }
 
   private KimConceptImpl syntax;
   private KimConceptImpl observerSyntax;
@@ -70,6 +89,8 @@ public class SemanticsBuilder implements Observable.Builder {
   }
 
   public static SemanticsBuilder create(KimConcept concept, ReasonerService reasoner, Scope scope) {
+    if (reasoner.candidateRuntime() != null && !reasoner.isSemanticExecution())
+      return pin(reasoner, actor -> create(concept, actor, actor.serviceScope()));
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
@@ -82,6 +103,8 @@ public class SemanticsBuilder implements Observable.Builder {
   }
 
   public static SemanticsBuilder create(Concept concept, ReasonerService reasoner, Scope scope) {
+    if (reasoner.candidateRuntime() != null && !reasoner.isSemanticExecution())
+      return pin(reasoner, actor -> create(concept, actor, actor.serviceScope()));
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
@@ -97,6 +120,8 @@ public class SemanticsBuilder implements Observable.Builder {
 
   public static SemanticsBuilder create(
       Observable observable, ReasonerService reasoner, Scope scope) {
+    if (reasoner.candidateRuntime() != null && !reasoner.isSemanticExecution())
+      return pin(reasoner, actor -> create(observable, actor, actor.serviceScope()));
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
@@ -757,6 +782,16 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Concept buildConcept() throws KlabValidationException {
+    if (completed) throw new IllegalStateException("Leased semantic builder is complete");
+    if (readEnvironment == null) return buildConceptUnleased();
+    synchronized (readEnvironment) {
+      if (completed) throw new IllegalStateException("Leased semantic builder is complete");
+      try { return (Concept)AcceptedSemanticRuntime.copy(buildConceptUnleased()); }
+      finally { close(); }
+    }
+  }
+
+  private Concept buildConceptUnleased() throws KlabValidationException {
 
     if (syntax.isPattern()) {
       throw new KlabIllegalStateException("Cannot build a concept pattern: " + syntax.getUrn());
@@ -773,8 +808,18 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable buildObservable() {
+    if (completed) throw new IllegalStateException("Leased semantic builder is complete");
+    if (readEnvironment == null) return buildObservableUnleased();
+    synchronized (readEnvironment) {
+      if (completed) throw new IllegalStateException("Leased semantic builder is complete");
+      try { return (Observable)AcceptedSemanticRuntime.copy(buildObservableUnleased()); }
+      finally { close(); }
+    }
+  }
 
-    Concept obs = buildConcept();
+  private Observable buildObservableUnleased() {
+
+    Concept obs = buildConceptUnleased();
 
     var ret = ObservableImpl.promote(obs, reasoner.serviceScope());
 
@@ -827,5 +872,15 @@ public class SemanticsBuilder implements Observable.Builder {
     }
 
     return ret;
+  }
+  @Override public void close() {
+    if (readLease == null || completed) return;
+    synchronized (readEnvironment) {
+      if (!completed) {
+        completed = true; readLease.close();
+        if (abandonedLease != null) abandonedLease.clean();
+        readLease = null; reasoner = null; resourcesService = null;
+      }
+    }
   }
 }

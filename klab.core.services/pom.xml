@@ -155,6 +155,41 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.eclipse.xtext</groupId>
+            <artifactId>org.eclipse.xtext</artifactId>
+            <version>${xtextVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.xtext</groupId>
+            <artifactId>org.eclipse.xtext.util</artifactId>
+            <version>${xtextVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>org.integratedmodelling.languages.observable</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>org.integratedmodelling.languages.worldview</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>org.integratedmodelling.languages.kim</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>org.integratedmodelling.languages.observation</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>org.integratedmodelling.languages.kactors</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
             <exclusions>

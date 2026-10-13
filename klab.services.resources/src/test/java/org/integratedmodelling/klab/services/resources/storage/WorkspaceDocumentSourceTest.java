@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.services.resources.storage;
-import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
-import org.integratedmodelling.klab.services.resources.lang.WorldviewValidationScope;
+import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
+import org.integratedmodelling.klab.runtime.language.WorldviewValidationScope;
 import static org.junit.jupiter.api.Assertions.*;
 import java.io.StringReader;
 import java.util.List;

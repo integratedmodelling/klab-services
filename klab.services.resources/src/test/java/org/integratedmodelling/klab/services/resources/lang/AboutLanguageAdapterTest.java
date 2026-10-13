@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
+
 import static org.junit.jupiter.api.Assertions.*;
 import java.io.StringReader;
 import java.util.List;

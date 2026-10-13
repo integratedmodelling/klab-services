@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import org.integratedmodelling.klab.runtime.language.WorldviewValidationScope;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.*;
