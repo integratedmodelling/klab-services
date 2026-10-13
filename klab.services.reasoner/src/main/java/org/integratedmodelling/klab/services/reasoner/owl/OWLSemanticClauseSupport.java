@@ -72,7 +72,7 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   public boolean subPropertyOf(OWLObjectPropertyExpression property, OWLObjectPropertyExpression parent) {
     var supers = new HashSet<OWLObjectPropertyExpression>();
     collectSuperProperties(property, supers);
-    return supers.contains(parent) || (owl.hasReasoner() && owl.isEntailed(
+    return supers.contains(parent) || (owl.hasReasoner() && entails(
         owl.manager.getOWLDataFactory().getOWLSubObjectPropertyOfAxiom(property, parent)));
   }
 
@@ -111,17 +111,44 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   /** Unknown compatibility is retained, never mistaken for disjointness or established overlap. */
   public enum Compatibility { COMPATIBLE, IMPOSSIBLE, UNRESOLVED }
 
+  // Reuse only DL answers within one pinned, buffering reasoner computation.
+  // Asserted traversal remains uncached and false entailment never means incompatible.
+  private final ThreadLocal<Map<OWLAxiom, Boolean>> compatibilityEntailments = new ThreadLocal<>();
+
   public Compatibility bearerCompatibility(Collection<OWLClassExpression> constraints) {
+    synchronized (owl) {
+      if (owl.hasPinnedBufferingReasoner()) compatibilityEntailments.set(
+          new LinkedHashMap<>(128, .75f, true) {
+            @Override protected boolean removeEldestEntry(Map.Entry<OWLAxiom, Boolean> eldest) {
+              return size() > 8192;
+            }
+          });
+      try {
+        return checkBearerCompatibility(constraints);
+      } finally {
+        compatibilityEntailments.remove();
+      }
+    }
+  }
+
+  private Compatibility checkBearerCompatibility(Collection<OWLClassExpression> constraints) {
     if (constraints.isEmpty()) return Compatibility.UNRESOLVED;
     if (impossible(new LinkedHashSet<>(constraints), new int[] {4096}))
       return Compatibility.IMPOSSIBLE;
     var intersection = owl.manager.getOWLDataFactory()
         .getOWLObjectIntersectionOf(new HashSet<>(constraints));
     if (owl.hasReasoner()) {
+      // A flush can change DL meaning. Nothing is reused across it or the next call.
+      compatibilityEntailments.remove();
       owl.flushReasoner();
       return owl.isSatisfiable(intersection) ? Compatibility.COMPATIBLE : Compatibility.IMPOSSIBLE;
     }
     return Compatibility.UNRESOLVED;
+  }
+
+  private boolean entails(OWLAxiom axiom) {
+    var memo = compatibilityEntailments.get();
+    return memo == null ? owl.isEntailed(axiom) : memo.computeIfAbsent(axiom, owl::isEntailed);
   }
 
   private boolean impossible(Set<OWLClassExpression> constraints, int[] budget) {
@@ -348,7 +375,7 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
       OWLClassExpression candidate, OWLClassExpression bound, Set<OWLClassExpression> visited) {
     if (candidate.equals(bound) || bound.isOWLThing()) return true;
     if (owl.hasReasoner()
-        && owl.isEntailed(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(candidate, bound)))
+        && entails(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(candidate, bound)))
       return true;
     // During worldview loading, the DL reasoner may not yet exist. Check asserted
     // inheritance without weakening unions or multiple independent restrictions.
