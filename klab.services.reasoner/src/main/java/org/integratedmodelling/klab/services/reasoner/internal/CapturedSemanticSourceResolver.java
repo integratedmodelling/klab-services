@@ -18,8 +18,11 @@ import org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocum
 public final class CapturedSemanticSourceResolver {
   private final Map<String, KimConcept> concepts = new HashMap<>();
   private final Map<String, KimObservable> observables = new HashMap<>();
+  private final Worldview snapshot;
+  private org.integratedmodelling.klab.runtime.language.CapturedSemanticExpressionParser parser;
 
   public CapturedSemanticSourceResolver(Worldview input) {
+    snapshot = BeanIngestionPreflight.snapshot(input);
     for (var ontology : input.getOntologies()) new KimOntologyVisitor(new KimOntologyVisitor.LenientValidator() {
       @Override public List<Notification> validateConcept(KimConcept concept, KimObservableVisitor.Context context) {
         collect(concept); return List.of();
@@ -56,13 +59,19 @@ public final class CapturedSemanticSourceResolver {
       };
       if (method.getName().equals("declareConcept") && args != null && args[0] instanceof String definition) {
         var value = concepts.get(definition);
+        if (value == null) value = parser().concept(definition);
         if (value != null) return JacksonConfiguration.newObjectMapper().convertValue(value, KimConcept.class);
       }
       if (method.getName().equals("declareObservable") && args != null && args[0] instanceof String definition) {
         var value = observables.get(definition);
+        if (value == null) value = parser().observable(definition);
         if (value != null) return JacksonConfiguration.newObjectMapper().convertValue(value, KimObservable.class);
       }
       throw new UnsupportedOperationException("CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured source operation " + method.getName());
     });
+  }
+  private synchronized org.integratedmodelling.klab.runtime.language.CapturedSemanticExpressionParser parser() {
+    if (parser == null) parser = new org.integratedmodelling.klab.runtime.language.CapturedSemanticExpressionParser(snapshot);
+    return parser;
   }
 }

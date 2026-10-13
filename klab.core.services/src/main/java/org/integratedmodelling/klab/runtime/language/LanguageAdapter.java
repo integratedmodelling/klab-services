@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.resources.lang;
+package org.integratedmodelling.klab.runtime.language;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -49,8 +49,8 @@ import org.integratedmodelling.languages.RangeLiteral;
 import org.integratedmodelling.languages.api.*;
 
 /** Adapter to substitute the current ones, based on older k.IM grammars. */
-public enum LanguageAdapter {
-  INSTANCE;
+public class LanguageAdapter {
+  public static final LanguageAdapter INSTANCE = new LanguageAdapter();
 
   private static final Pattern STATIC_ACTION_PATTERN =
       Pattern.compile("^\\s*static\\s+action\\b", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);

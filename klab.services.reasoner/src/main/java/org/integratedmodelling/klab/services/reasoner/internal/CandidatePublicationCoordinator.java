@@ -38,6 +38,8 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
       Objects.requireNonNull(dependencyRevision);
       Objects.requireNonNull(configurationRevision);
       Objects.requireNonNull(payload);
+      if (payload instanceof org.integratedmodelling.klab.api.knowledge.Worldview worldview)
+        payload = (I)FrozenWorldviewSnapshot.freeze(worldview);
       Objects.requireNonNull(beanStatus);
       if (beanStatus == BeanStatus.NOT_CHECKED)
         throw new IllegalArgumentException("Candidate input needs a completed bean preflight");
@@ -96,6 +98,13 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
       return slot.state;
     }
     public long generation() { return slot.generation; }
+    public Map<String, String> sourceHashes() { return slot.input.sourceHashes(); }
+    public Lease retain() {
+      synchronized (CandidatePublicationCoordinator.this) {
+        if (released.get() || slot.disposed) throw new IllegalStateException("Accepted-state lease is closed");
+        slot.readers++; return new Lease(slot);
+      }
+    }
     @Override public void close() {
       if (!released.compareAndSet(false, true)) return;
       S dispose = null;
@@ -123,6 +132,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
     }
   }
   private final Builder<I, S> builder;
+  private BeanStatus latestBeanStatus = BeanStatus.NOT_CHECKED;
   private final PublicationGuard<I> guard;
   private final ExecutorService executor;
   private final List<String> cleanupFailures = new ArrayList<>();
@@ -163,6 +173,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
       if (closed) throw new IllegalStateException("Coordinator is closed");
       submitted = ++generation;
       currentInput = input;
+      latestBeanStatus = input.beanStatus();
       diagnostics = input.diagnostics();
       pending = null;
       if (input.beanStatus() == BeanStatus.INVALID) logicalStatus = LogicalStatus.NOT_RUN;
@@ -195,14 +206,21 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
     if (closed) return;
     generation++;
     pending = null;
+    latestBeanStatus = BeanStatus.NOT_CHECKED;
     logicalStatus = LogicalStatus.CANCELLED;
     diagnostics = List.of("Candidate inputs changed; resubmit an authoritative snapshot");
     notifyAll();
   }
+  public synchronized void rejectPreflight(List<String> failures) {
+    if (closed) return;
+    generation++; pending = null; currentInput = null;
+    latestBeanStatus = BeanStatus.INVALID; logicalStatus = LogicalStatus.NOT_RUN;
+    diagnostics = List.copyOf(failures); notifyAll();
+  }
 
   public synchronized Status status() {
     return new Status(generation, acceptedGeneration,
-        currentInput == null ? BeanStatus.NOT_CHECKED : currentInput.beanStatus(), logicalStatus,
+        latestBeanStatus, logicalStatus,
         currentInput == null ? Map.of() : currentInput.sourceHashes(),
         accepted == null ? Map.of() : accepted.input.sourceHashes(),
         List.copyOf(diagnostics), List.copyOf(cleanupFailures));

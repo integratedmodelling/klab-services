@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.resources.lang;
+package org.integratedmodelling.klab.runtime.language;
 
 import java.util.EnumSet;
 import java.util.HashSet;

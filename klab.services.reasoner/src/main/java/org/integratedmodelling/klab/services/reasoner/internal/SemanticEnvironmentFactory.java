@@ -8,6 +8,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
@@ -23,19 +24,30 @@ public final class SemanticEnvironmentFactory
   private final Map<String, byte[]> core;
   private final String dependencyRevision;
   private final Map<String, java.util.Set<String>> coreIdentities;
+  private final Map<String, String> documentLocators;
 
   public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore) throws Exception {
+    this(privateAssetRoot, capturedCore, Map.of());
+  }
+  public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore,
+      Map<String, String> capturedDocumentLocators) throws Exception {
+    this(privateAssetRoot, capturedCore, capturedDocumentLocators, Map.of());
+  }
+  public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore,
+      Map<String, String> capturedDocumentLocators, Map<String, String> expectedDocumentHashes) throws Exception {
     assetRoot = privateAssetRoot.toAbsolutePath().normalize();
     var owned = new LinkedHashMap<String, byte[]>();
     var digest = MessageDigest.getInstance("SHA-256");
     var identities = new LinkedHashMap<String, java.util.Set<String>>();
     var identityOwners = new java.util.HashMap<String, String>();
+    var contentHashes = new java.util.HashMap<String, String>();
     for (var name : capturedCore.keySet().stream().sorted().toList()) {
       if (!name.endsWith(".owl") || Path.of(name).isAbsolute()
           || !assetRoot.resolve(name).normalize().startsWith(assetRoot))
         throw new IllegalArgumentException("Invalid private core catalog entry " + name);
       byte[] bytes = capturedCore.get(name).clone(); owned.put(name, bytes);
       var alias = Path.of(name).getFileName().toString().replaceFirst("\\.owl$", "");
+      contentHashes.put(alias, HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
       if (identities.put(alias, ontologyIdentities(bytes)) != null)
         throw new IllegalArgumentException("Ambiguous captured core alias " + alias);
       for (var identity : identities.get(alias)) {
@@ -49,9 +61,53 @@ public final class SemanticEnvironmentFactory
     if (owned.isEmpty()) throw new IllegalArgumentException("Candidate requires a captured core catalog");
     core = java.util.Collections.unmodifiableMap(owned);
     coreIdentities = Map.copyOf(identities);
+    documentLocators = Map.copyOf(capturedDocumentLocators);
+    for (var alias : documentLocators.keySet().stream().sorted().toList()) {
+      if (!coreIdentities.containsKey(alias)) throw new IllegalArgumentException("Locator has no captured core alias: " + alias);
+      var locator = documentLocators.get(alias);
+      var expectedHash = expectedDocumentHashes.get(alias);
+      if (expectedHash != null && !expectedHash.equals(contentHashes.get(alias)))
+        throw new IllegalArgumentException("Captured document does not match its pinned source hash: " + locator);
+      var release = java.util.regex.Pattern.compile("/releases/([^/]+)/[^/]+\\.owl$").matcher(locator);
+      // Historical release directory names and ontology version IRIs can differ. An explicit
+      // pinned document hash authorizes those exact bytes without rewriting either identity.
+      if (expectedHash == null && release.find()
+          && coreIdentities.get(alias).stream().noneMatch(iri -> iri.endsWith("/" + release.group(1))))
+        throw new IllegalArgumentException("Captured document version does not match its numbered release locator: " + locator);
+      digest.update(alias.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      digest.update(locator.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
     dependencyRevision = HexFormat.of().formatHex(digest.digest());
   }
   public String dependencyRevision() { return dependencyRevision; }
+  /** Reads a local catalog only. Numbered document locators require an explicit local manifest. */
+  public static SemanticEnvironmentFactory fromLocalCatalog(Path privateAssets, Path catalog) throws Exception {
+    var files = new LinkedHashMap<String, byte[]>();
+    if (Files.isDirectory(catalog)) {
+      try (var entries = Files.walk(catalog)) {
+        for (var file : entries.filter(Files::isRegularFile).filter(p -> p.getFileName().toString().endsWith(".owl")).sorted().toList())
+          files.put(catalog.relativize(file).toString().replace('\\', '/'), Files.readAllBytes(file));
+      }
+    }
+    var locators = new java.util.Properties();
+    var manifest = catalog.resolve("source-catalog.properties");
+    if (Files.isRegularFile(manifest)) try (var input = Files.newInputStream(manifest)) { locators.load(input); }
+    if (files.isEmpty()) {
+      if (!locators.isEmpty()) throw new IllegalStateException("Explicit source catalog has no captured local OWL documents");
+      // Bootstrap supports unnamed core usage only; no numbered URL is certified by this fallback.
+      try (var input = SemanticEnvironmentFactory.class.getClassLoader().getResourceAsStream("knowledge/odo.owl")) {
+        if (input == null) throw new IllegalStateException("No local semantic core catalog is available");
+        files.put("odo.owl", input.readAllBytes());
+      }
+    }
+    var names = new LinkedHashMap<String, String>();
+    var hashes = new LinkedHashMap<String, String>();
+    locators.stringPropertyNames().stream().sorted().forEach(name -> {
+      if (name.endsWith(".sha256")) hashes.put(name.substring(0, name.length() - 7), locators.getProperty(name));
+      else names.put(name, locators.getProperty(name));
+    });
+    return new SemanticEnvironmentFactory(privateAssets, files, names, hashes);
+  }
   private static java.util.Set<String> ontologyIdentities(byte[] bytes) throws Exception {
     var parser = javax.xml.parsers.DocumentBuilderFactory.newInstance();
     parser.setNamespaceAware(true);
@@ -125,8 +181,9 @@ public final class SemanticEnvironmentFactory
     var unsupported = new ArrayList<String>();
     for (var ontology : snapshot.getOntologies()) {
       for (var imported : ontology.getOwlImports()) {
-        var captured = coreIdentities.get(imported.getSecond());
-        if (captured == null || !captured.contains(imported.getFirst())) unsupported.add(
+        var captured = coreIdentities.get(imported.getFirst());
+        if (captured == null || (!captured.contains(imported.getSecond())
+            && !Objects.equals(documentLocators.get(imported.getFirst()), imported.getSecond()))) unsupported.add(
             "CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import " + imported);
       }
       if (!ontology.getVocabularyImports().isEmpty()) unsupported.add(
@@ -145,10 +202,17 @@ public final class SemanticEnvironmentFactory
             @Override public List<Notification> validatePlanNode(
                 org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.Node node,
                 org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Context context) {
-              if (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall
-                  || node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.ExternalMatcher)
+              if ((node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall call
+                  && !java.util.Set.of("context.exists", "inherent", "transform.applicable", "request.fully_specified",
+                      "type.concrete", "predicate.concrete", "predicates.split_first", "type.abstract", "type.collective",
+                      "relationship.source", "type.relationship.source", "relationship.target", "type.relationship.target",
+                      "collective", "type.arity.collective").contains(call.getFunction()))
+                  || (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.ExternalMatcher matcher
+                      && matcher.getCall() == null))
                 return List.of(Notification.warning(
-                    "CANDIDATE_ISOLATION_UNSUPPORTED: strategy extension requires a captured component catalog"));
+                    "CANDIDATE_ISOLATION_UNSUPPORTED: strategy function is not implemented by the captured runtime: "
+                        + (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall call
+                            ? call.getFunction() : "missing external matcher call")));
               return List.of();
             }
           }, null);

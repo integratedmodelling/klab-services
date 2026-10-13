@@ -17,7 +17,7 @@ public final class BeanIngestionPreflight {
   private BeanIngestionPreflight() {}
 
   public static Worldview snapshot(Worldview worldview) {
-    return JacksonConfiguration.newObjectMapper().convertValue(worldview, Worldview.class);
+    return FrozenWorldviewSnapshot.copyOf(worldview);
   }
 
   public static KimOntology snapshot(KimOntology ontology) {

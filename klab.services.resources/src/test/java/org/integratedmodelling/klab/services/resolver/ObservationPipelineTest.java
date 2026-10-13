@@ -34,7 +34,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.integratedmodelling.klab.services.reasoner.ObservationReasoner;
-import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
+import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
 import org.integratedmodelling.languages.ObservationStandaloneSetup;
 import org.integratedmodelling.languages.ObservationSyntaxAdapter;
 import org.integratedmodelling.languages.api.*;

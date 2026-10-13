@@ -63,6 +63,15 @@ class SemanticEnvironmentFactoryTest {
         factory.dependencyRevision(), SemanticEnvironmentFactory.CONFIGURATION_REVISION, world,
         CandidatePublicationCoordinator.BeanStatus.VALID, List.of());
   }
+  private org.integratedmodelling.klab.services.reasoner.ReasonerService facade(SemanticEnvironmentFactory factory) throws Exception {
+    var facade = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class,
+        invocation -> {
+          if (invocation.getMethod().getName().equals("getUrl")) return java.net.URI.create("http://127.0.0.1").toURL();
+          if (invocation.getMethod().getName().equals("setOperational")) return null;
+          return invocation.callRealMethod();
+        });
+    facade.enableCandidatePublication(factory); return facade;
+  }
 
   @Test void realCompilerCreatesIndependentStateWithoutDeploymentSideEffects() throws Exception {
     var main = ServiceConfiguration.INSTANCE.getMainService(); var execution = Klab.INSTANCE.getExecutionContext();
@@ -120,7 +129,7 @@ class SemanticEnvironmentFactoryTest {
     var source = new CapturedSemanticSourceResolver(world("captured", false));
     var scope = new SemanticEnvironmentScope(source.service());
     assertThrows(UnsupportedOperationException.class, () -> scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class));
-    assertThrows(UnsupportedOperationException.class, () -> source.service().declareConcept("uncaptured:X"));
+    assertThrows(IllegalArgumentException.class, () -> source.service().declareConcept("within ("));
     assertThrows(UnsupportedOperationException.class, () -> scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class));
     scope.close();
   }
@@ -214,7 +223,7 @@ class SemanticEnvironmentFactoryTest {
     var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
     var source = world("unsupported-core", false);
     source.getOntologies().getFirst().getOwlImports().add(
-        org.integratedmodelling.klab.api.collections.Pair.of("http://integratedmodelling.org/odo/uncaptured", "odo"));
+        org.integratedmodelling.klab.api.collections.Pair.of("odo", "http://integratedmodelling.org/odo/uncaptured"));
     var result = factory.build(factory.capture(source), () -> false);
     assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, result.logicalStatus());
     assertNull(result.state());
@@ -227,4 +236,238 @@ class SemanticEnvironmentFactoryTest {
         directory.resolve("actors"), Map.of("odo.owl", bytes, "alias.owl", bytes)));
     assertFalse(Files.exists(directory.resolve("actors")));
   }
+
+  @Test void queuedSnapshotCannotLoseDeclarationsBeforeTheWorkerBuilds() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var input = factory.capture(world("queued", false));
+    var entered = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> delayed = (candidate, cancellation) -> {
+      entered.countDown();
+      if (!release.await(5, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("test timeout");
+      return factory.build(candidate, cancellation);
+    };
+    try (var coordinator = new CandidatePublicationCoordinator<Worldview, SemanticEnvironment>(delayed, i -> true)) {
+      coordinator.submit(input);
+      assertTrue(entered.await(5, java.util.concurrent.TimeUnit.SECONDS));
+      input.payload().getOntologies().getFirst().getStatements().removeIf(s -> s.getUrn().equals("Q1"));
+      release.countDown();
+      assertTrue(coordinator.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, coordinator.status().logicalStatus(),
+          coordinator.status().diagnostics().toString());
+      try (var reader = AcceptedSemanticReadSession.open(coordinator)) {
+        assertFalse(reader.resolveConcept("w:Q1").is(SemanticType.NOTHING));
+      }
+    } finally { release.countDown(); }
+  }
+
+  @Test void localParserUsesOnlyItsCapturedWorldview() {
+    var original = world("parser", false);
+    var resolver = new CapturedSemanticSourceResolver(original);
+    original.getOntologies().getFirst().getStatements().clear();
+    assertNotNull(resolver.service().declareConcept("w:Q1 of w:A"));
+    assertNotNull(resolver.service().declareObservable("w:Q1"));
+    assertThrows(IllegalArgumentException.class, () -> resolver.service().declareConcept("within ("));
+  }
+
+  @Test void productionLoadGateSchedulesAndApiReadsPreserveAcceptedActor() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var facade = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class,
+        invocation -> {
+          if (invocation.getMethod().getName().equals("getUrl")) return java.net.URI.create("http://127.0.0.1").toURL();
+          if (invocation.getMethod().getName().equals("setOperational")) return null;
+          return invocation.callRealMethod();
+        });
+    facade.enableCandidatePublication(factory);
+    var source = new CapturedSemanticSourceResolver(world("sources", false));
+    var scope = new SemanticEnvironmentScope(source.service());
+    try (var runtime = facade.candidateRuntime()) {
+      var pending = facade.loadKnowledge(world("accepted", false), scope);
+      assertFalse(org.integratedmodelling.klab.api.utils.Utils.Resources.hasErrors(pending));
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, runtime.status().logicalStatus(), runtime.status().diagnostics().toString());
+      var accepted = facade.resolveConcept("w:Q1");
+      assertTrue(facade.satisfiable(accepted));
+      facade.loadKnowledge(world("rejected", true), scope);
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.INVALID, runtime.status().logicalStatus(), runtime.status().diagnostics().toString());
+      assertEquals(1, facade.knowledgeRevision());
+      assertTrue(facade.satisfiable(facade.resolveConcept("w:Q1")));
+      assertTrue(facade.is(facade.resolveConcept("w:A"), facade.resolveConcept("w:Thing")));
+      accepted.getMetadata().put("outside", "client mutation");
+      assertNull(facade.resolveConcept("w:Q1").getMetadata().get("outside"));
+    } finally { scope.close(); }
+  }
+
+  @Test void controllerBuilderPinsOldActorThroughPublicationAndReleasesAtBuild() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var facade = facade(factory);
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var builder = SemanticsBuilder.create(facade.resolveConcept("w:Q1"), facade, scope);
+      facade.loadKnowledge(world("next", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(2, files.count()); }
+      assertNotNull(builder.buildObservable());
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(1, files.count()); }
+      assertThrows(IllegalStateException.class, builder::buildConcept);
+    } finally { scope.close(); }
+  }
+
+  @Test void tokenSearchPinsActorAcrossHttpCallsUntilCancellation() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var facade = facade(factory);
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest();
+      request.setQueryString(""); request.setRequestId(1);
+      var response = facade.semanticSearch(request, scope);
+      assertTrue(response.getSearchId() > 0, response.getErrors().toString());
+      facade.loadKnowledge(world("next", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(2, files.count()); }
+      request.setSearchId(response.getSearchId()); request.setRequestId(2); request.setQueryString("Q");
+      assertEquals(response.getSearchId(), facade.semanticSearch(request, scope).getSearchId());
+      request.setCancelSearch(true); request.setRequestId(3);
+      assertEquals(0, facade.semanticSearch(request, scope).getSearchId());
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(1, files.count()); }
+    } finally { scope.close(); }
+  }
+
+  @Test void productionUpdateCompilesPrefetchedBeanAndRetainsAcceptedOnBeanFailure() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var facade = facade(factory);
+    var resources = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var user = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    org.mockito.Mockito.when(user.getService(org.integratedmodelling.klab.api.services.ResourcesService.class)).thenReturn(resources);
+    var manager = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ScopeManager.class);
+    org.mockito.Mockito.when(manager.collectMessagePayload(org.mockito.ArgumentMatchers.eq(user),
+        org.mockito.ArgumentMatchers.eq(org.integratedmodelling.klab.api.services.runtime.Notification.class),
+        org.mockito.ArgumentMatchers.any())).thenReturn(user);
+    org.mockito.Mockito.doReturn(manager).when(facade).getScopeManager();
+    var capabilities = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.services.ResourcesService.Capabilities.class);
+    org.mockito.Mockito.when(capabilities.getServiceId()).thenReturn("resources");
+    org.mockito.Mockito.when(resources.capabilities(user)).thenReturn(capabilities);
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var saved = world("saved", false);
+      org.mockito.Mockito.when(resources.retrieve("w", org.integratedmodelling.klab.api.lang.kim.KimOntology.class, user))
+          .thenReturn(saved.getOntologies().getFirst());
+      org.mockito.Mockito.when(resources.retrieve("w", Worldview.class, user)).thenReturn(saved);
+      var changes = new org.integratedmodelling.klab.api.services.resources.ResourceSet();
+      changes.getOntologies().add(new org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource(
+          "resources", "w", "fixture", null, org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.ONTOLOGY, 0, false));
+      facade.updateKnowledge(changes, user);
+      saved.getOntologies().getFirst().getStatements().clear();
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(2, runtime.status().acceptedGeneration(), runtime.status().diagnostics().toString());
+      assertFalse(facade.resolveConcept("w:Q1").is(SemanticType.NOTHING));
+      org.mockito.Mockito.when(resources.retrieve("w", org.integratedmodelling.klab.api.lang.kim.KimOntology.class, user)).thenReturn(null);
+      var rejected = facade.updateKnowledge(changes, user);
+      assertTrue(org.integratedmodelling.klab.api.utils.Utils.Resources.hasErrors(rejected));
+      assertEquals(CandidatePublicationCoordinator.BeanStatus.INVALID, runtime.status().beanStatus());
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.NOT_RUN, runtime.status().logicalStatus());
+      assertEquals(2, runtime.status().acceptedGeneration());
+      assertTrue(facade.satisfiable(facade.resolveConcept("w:Q1")));
+    } finally { scope.close(); }
+  }
+
+  @Test void explicitDocumentLocatorUsesActualAliasUrlOrdering() throws Exception {
+    String document = "https://example.test/captured/odo.owl";
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core(), Map.of("odo", document));
+    var source = world("document", false);
+    source.getOntologies().getFirst().getOwlImports().add(org.integratedmodelling.klab.api.collections.Pair.of("odo", document));
+    var result = factory.build(factory.capture(source), () -> false);
+    try (var state = result.state()) {
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+    }
+    assertThrows(IllegalArgumentException.class, () -> new SemanticEnvironmentFactory(directory.resolve("other"), core(),
+        Map.of("odo", "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/uncaptured/odo.owl")));
+  }
+  @Test void documentationAndCompoundInputsUseOneAcceptedActor() throws Exception {
+    var facade = facade(new SemanticEnvironmentFactory(directory.resolve("actors"), core()));
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      String documentation = facade.info("w:Q1", org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.CONCEPT, String.class, null);
+      assertTrue(documentation.contains("Q1"));
+      assertThrows(IllegalStateException.class, facade::owl);
+      var exportDirectory = Files.createDirectory(directory.resolve("export"));
+      assertTrue(facade.exportNamespace("w", exportDirectory.toFile()));
+      try (var exports = Files.list(exportDirectory)) { assertTrue(exports.findAny().isPresent()); }
+      var strategy = new org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy(facade.resolveConcept("w:Q1"), scope);
+      var before = strategy.getBaseConcept();
+      facade.loadKnowledge(world("next", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      assertNotNull(facade.buildObservable(strategy, scope));
+      assertSame(before, strategy.getBaseConcept());
+      var a = facade.resolveConcept("w:A"); var thing = facade.resolveConcept("w:Thing");
+      assertEquals(thing.getUrn(), facade.concretize(a, Map.of(a, thing)).getUrn());
+      var context = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+      var observation = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+      var observable = facade.resolveObservable("w:Q1");
+      org.mockito.Mockito.when(observation.getObservable()).thenReturn(observable);
+      org.mockito.Mockito.when(context.getObservations()).thenReturn(List.of(observation));
+      org.mockito.Mockito.when(context.getServices(org.integratedmodelling.klab.api.services.KlabService.class)).thenReturn(List.of(facade));
+      try (var lease = runtime.lease()) {
+        var bound = (org.integratedmodelling.klab.api.scope.ContextScope)runtime.scope(context, lease.state().actor());
+        assertSame(lease.state().actor(), bound.getServices(org.integratedmodelling.klab.api.services.KlabService.class).iterator().next());
+        assertNotSame(observation, bound.getObservations().getFirst());
+        assertEquals("w:Q1", bound.getObservations().getFirst().getObservable().getSemantics().getUrn());
+      }
+    } finally { scope.close(); }
+  }
+
+  @Test void builderCloseWinsAgainstBlockedTerminalBuild() throws Exception {
+    var facade = facade(new SemanticEnvironmentFactory(directory.resolve("actors"), core()));
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var builder = SemanticsBuilder.create(facade.resolveConcept("w:Q1"), facade, scope);
+      try (var lease = runtime.lease()) {
+        var result = new java.util.concurrent.CompletableFuture<Throwable>();
+        Thread worker;
+        synchronized (lease.state()) {
+          worker = Thread.ofPlatform().start(() -> {
+            try { builder.buildConcept(); result.complete(null); } catch (Throwable failure) { result.complete(failure); }
+          });
+          long limit = System.nanoTime() + Duration.ofSeconds(3).toNanos();
+          while (worker.getState() != Thread.State.BLOCKED && System.nanoTime() < limit) Thread.onSpinWait();
+          assertEquals(Thread.State.BLOCKED, worker.getState());
+          builder.close();
+        }
+        assertInstanceOf(IllegalStateException.class, result.get(5, java.util.concurrent.TimeUnit.SECONDS));
+        worker.join(5000);
+      }
+    } finally { scope.close(); }
+  }
+
+  @Test void searchShutdownCannotRegisterLatePersistentLease() throws Exception {
+    var facade = facade(new SemanticEnvironmentFactory(directory.resolve("actors"), core()));
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    var runtime = facade.candidateRuntime();
+    try {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest();
+      request.setQueryString(""); request.setRequestId(1);
+      var result = new java.util.concurrent.CompletableFuture<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse>();
+      Thread worker;
+      try (var lease = runtime.lease()) {
+        synchronized (lease.state()) {
+          worker = Thread.ofPlatform().start(() -> {
+            try { result.complete(facade.semanticSearch(request, scope)); } catch (Throwable failure) { result.completeExceptionally(failure); }
+          });
+          long limit = System.nanoTime() + Duration.ofSeconds(3).toNanos();
+          while (worker.getState() != Thread.State.BLOCKED && System.nanoTime() < limit) Thread.onSpinWait();
+          assertEquals(Thread.State.BLOCKED, worker.getState());
+          runtime.close();
+        }
+        assertEquals(0, result.get(5, java.util.concurrent.TimeUnit.SECONDS).getSearchId());
+        worker.join(5000);
+      }
+      assertThrows(IllegalStateException.class, () -> facade.semanticSearch(request, scope));
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(0, files.count()); }
+    } finally { runtime.close(); scope.close(); }
+  }
+
 }

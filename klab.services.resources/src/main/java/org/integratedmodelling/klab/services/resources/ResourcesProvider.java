@@ -70,7 +70,7 @@ import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
+import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.lang.ConceptCodelistBuilder;
 import org.integratedmodelling.klab.services.resources.persistence.ModelCatalog;
 import org.integratedmodelling.klab.services.resources.persistence.ModelCatalogs;
