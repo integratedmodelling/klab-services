@@ -24,9 +24,9 @@ public class ObservationReasoner {
 
   public ObservationReasoner(ReasonerService reasoner) {
     this(reasoner, reasoner::declareObservable);
-    reasoner
-        .getComponentRegistry()
-        .loadExtensions("org.integratedmodelling.klab.services.reasoner.functors");
+    if (!reasoner.isSemanticExecution())
+      reasoner.getComponentRegistry()
+          .loadExtensions("org.integratedmodelling.klab.services.reasoner.functors");
   }
 
   public ObservationReasoner(Reasoner reasoner, Function<KimObservable, Observable> declare) {

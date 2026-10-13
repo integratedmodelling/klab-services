@@ -317,6 +317,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       Caffeine.newBuilder().maximumSize(1000).expireAfterAccess(Duration.ofMinutes(10)).build();
 
   private final OWL owl;
+  private final boolean semanticOnly;
   private final String hardwareSignature = Utils.Names.getHardwareId();
   static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
 
@@ -327,6 +328,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public OWL owl() {
     return owl;
   }
+
+  public boolean isSemanticExecution() { return semanticOnly; }
 
   public long knowledgeRevision() {
     return knowledgeRevision.get();
@@ -672,6 +675,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Autowired
   public ReasonerService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.REASONER, options);
+    this.semanticOnly = false;
     this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
         BaseService.getConfigurationDirectory(options).toPath().resolve("authority-cache"));
     this.owl = new OWL(scope);
@@ -689,6 +693,56 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.authorityIdentityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
         this.owl, authorityBindings, this::authorityKnowledgeChanged);
     this.owl.setAuthorityResolver(authorityIdentityResolver::resolve);
+  }
+
+  /** Private compiler actor: owns semantic state, never a deployment or registered main service. */
+  public ReasonerService(
+      org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
+      java.nio.file.Path privateKnowledge, java.nio.file.Path privateState) {
+    super(scope, Type.REASONER,
+        new org.integratedmodelling.klab.services.reasoner.internal.SemanticExecutionSettings(),
+        semanticDisplayUrl());
+    this.semanticOnly = true;
+    this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
+        privateState.resolve("authority-cache"));
+    this.owl = new OWL(scope, privateKnowledge.toFile());
+    this.authorityIdentityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
+        this.owl, authorityBindings, this::invalidateSemanticCaches);
+    this.owl.setAuthorityResolver((authority, code) -> {
+      // OWL consults this callback for ordinary namespaces too. Their absence is local,
+      // while an authority lookup must never fall back to a deployment provider.
+      if (!Character.isUpperCase(authority.charAt(0)) && authorityBindings.find(authority) == null
+          && authorityBindings.alias(authority, code) == null) return null;
+      throw new UnsupportedOperationException("CANDIDATE_ISOLATION_UNSUPPORTED: authority provider materialization");
+    });
+    this.indexer = new Indexer(scope);
+    this.emergence = new IntelligentMap<>(scope);
+    this.configuration.setServiceId(UUID.randomUUID().toString());
+    try {
+      scope.bind(this);
+      // This overload owns its matcher/strategies without loading deployment extensions.
+      this.observationReasoner = new ObservationReasoner((Reasoner)this, this::declareObservable);
+      this.syntacticMatcher = new SyntacticMatcher(this);
+      this.semanticMatcher = new SemanticMatcher(this);
+    } catch (RuntimeException | Error failure) {
+      try { indexer.ensureClosed(); }
+      finally { owl.reset(); scope.close(); closeSemanticExecutor(); }
+      throw failure;
+    }
+  }
+
+  private static java.net.URL semanticDisplayUrl() {
+    try { return java.net.URI.create("http://127.0.0.1/candidate").toURL(); }
+    catch (java.net.MalformedURLException e) { throw new IllegalStateException(e); }
+  }
+
+  public void disposeSemanticEnvironment() {
+    if (!semanticOnly) throw new IllegalStateException("Not a private semantic environment");
+    try { owl.reset(); }
+    finally {
+      try { indexer.ensureClosed(); }
+      finally { serviceScope().close(); closeSemanticExecutor(); }
+    }
   }
 
   private void readConfiguration(ServiceStartupOptions options) {
@@ -717,6 +771,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean initializeService() {
+
+    if (semanticOnly) return true;
 
     Logging.INSTANCE.setSystemIdentifier("Reasoner service: ");
     for (ProjectConfiguration authority : configuration.getAuthorities()) {
