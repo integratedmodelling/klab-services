@@ -8,7 +8,7 @@ and dataset, then set `KLAB_ELEVATION_REFERENCE` to independently obtained JSON.
 Run from python-client/:
 
 ```sh
-python -m pytest -o addopts='' -o junit_family=xunit1 -m live -s tests/test_live.py --junitxml=live-acceptance.xml
+python tools/run_functional_acceptance.py --suite provider-reference --report live-acceptance.xml
 ```
 
 PowerShell: prefix the same arguments with `& .\.venv\Scripts\python.exe`.

@@ -7,7 +7,8 @@ from decimal import Decimal
 
 from cryptography.hazmat.primitives import serialization
 from fixture_hub import token
-from workflow_benchmark import make_client, initialize, sample
+from workflows.compute_and_analyze import make_client, initialize, sample
+from workflows.scientific_checks import require
 from klab_client import Context, Session, ObservationImpl
 from klab_client.experiment import rectangle_geometry, verify_grid
 from klab_client.errors import (KlabError, WaitTimeout, JobFailedError, JobCancelledError,
@@ -50,9 +51,10 @@ def verify(state):
             job.result(0)
             raise AssertionError("Zero-budget wait did not time out")
         except WaitTimeout as error:
-            assert error.job is job
-        assert job.result(120).id == seed["observation_id"]
-        assert job.cancel() is False and job.result(120).id == seed["observation_id"]
+            require(error.job is job, "Timeout lost the original Job")
+        require(job.result(120).id == seed["observation_id"], "Resumed Job result identity changed")
+        require(job.cancel() is False and job.result(120).id == seed["observation_id"],
+            "Completed cancellation changed the original result")
         evidence["checks"].append("completed-job timeout/resume/cancel preserved actual result")
         slope = client.reasoner.resolve_observable("geography:Slope in degree_angle")
         failed = context.submit(ObservationImpl(urn="", observable=slope))
@@ -92,7 +94,7 @@ def verify(state):
             try:
                 pending.result(.1)
             except WaitTimeout as stopped:
-                assert stopped.job is pending
+                require(stopped.job is pending, "In-flight timeout lost the original Job")
                 with_timeout = True
             if not with_timeout or pending.status().status != "WAITING":
                 raise AssertionError("In-flight timeout did not preserve the running job")

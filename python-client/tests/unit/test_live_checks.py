@@ -9,7 +9,7 @@ import pytest
 
 from klab_client.errors import ConfigurationError
 from klab_client.experiment import verify_elevation
-from live_checks import load_reference, verify_reference, verify_traversals
+from workflows.scientific_checks import load_reference, verify_reference, verify_traversals
 
 
 def reference_payload():
@@ -74,9 +74,9 @@ def test_live_harness_reconnect_and_failed_fixture_retention(monkeypatch, corrup
     from klab_client import Client
     from klab_client.experiment import rectangle_geometry
     from test_client import make_client
-    from test_live import exercise_live
+    from workflows.provider_reference import exercise_live
 
-    base = json.loads((Path(__file__).parent / "fixtures" / "elevation.json").read_text())
+    base = json.loads((Path(__file__).parents[1] / "fixtures" / "elevation.json").read_text())
     base["geometry"] = rectangle_geometry().to_wire()
     base["geometry"]["dimensions"][0]["parameters"]["delegate"]["bbox"] = [200000, 200500, 6000000, 6000400]
     calls, properties = [], {}

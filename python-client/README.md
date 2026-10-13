@@ -1,5 +1,9 @@
 # k.LAB Python client
 
+Native observation exports can be streamed to files through existing advertised
+exporters, with bounded download memory and atomic publication. See
+[streamed export usage, file policy and live acceptance](docs/stream-exports.md).
+
 `klab-python-client` imports as `klab_client`, requires Python 3.11+, and provides
 a synchronous API for scripts/notebooks. The verified local workflow authenticates
 a signed user, creates a context, runs a model, reads actual scientific values,
@@ -126,6 +130,8 @@ raw DTOs; scientific values are a distinct storage route.
 
 * [Contract matrix](docs/contracts.md) and [public API inventory](docs/public-api.md)
 * [Live reference format](docs/live-acceptance.md)
+* [Functional workflows and test organization](docs/functional-testing.md)
+* [Current export/functional verification and review](docs/exports-verification.md)
 * [Reproducible local tests and throughput](docs/throughput.md)
 * [Separate server/client/tooling review](docs/review.md)
 * Resume note: `../notes/python-client/work-log.md` (not package documentation)

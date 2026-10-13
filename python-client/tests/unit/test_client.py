@@ -18,7 +18,7 @@ from klab_client.errors import (
 
 @pytest.fixture
 def observation():
-    return json.loads((Path(__file__).parent / "fixtures" / "elevation.json").read_text())
+    return json.loads((Path(__file__).parents[1] / "fixtures" / "elevation.json").read_text())
 
 
 def make_client(handler, **kwargs):
@@ -359,7 +359,7 @@ def test_submission_5xx_is_ambiguous_and_not_retried(observation):
 
 
 def test_live_captured_nothing_observable_is_not_success():
-    payload = json.loads((Path(__file__).parent / "fixtures" / "unresolved-observable.json").read_text())
+    payload = json.loads((Path(__file__).parents[1] / "fixtures" / "unresolved-observable.json").read_text())
     with make_client(lambda request: httpx.Response(200, json=payload)) as client:
         with pytest.raises(MissingAssetError, match="did not resolve"):
             client.reasoner.resolve_observable("geography:Region")

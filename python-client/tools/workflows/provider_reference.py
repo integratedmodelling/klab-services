@@ -2,13 +2,11 @@ import os
 import json
 from datetime import datetime, timezone
 
-import pytest
-
 from klab_client import Client, ObservationImpl, Session
 from klab_client.dto import storage_semantics
 from klab_client.errors import ConfigurationError, WaitTimeout
 from klab_client.experiment import rectangle_geometry, verify_elevation, verify_region, verify_grid
-from live_checks import load_reference, verify_reference, verify_traversals
+from .scientific_checks import release_owned, require, verify_reference, verify_traversals
 
 
 def exercise_live(record_property, *, reference=None):
@@ -23,7 +21,8 @@ def exercise_live(record_property, *, reference=None):
         evidence["runtime_service_id"] = client.runtime.capabilities().service_id
         evidence["reasoner_service_id"] = client.reasoner.capabilities().service_id
         if client.runtime_service_id:
-            assert evidence["runtime_service_id"] == client.runtime_service_id, "Configured home runtime ID differs from actual capabilities"
+            require(evidence["runtime_service_id"] == client.runtime_service_id,
+                "Configured home runtime ID differs from actual capabilities")
         id = os.environ.get("KLAB_CONTEXT_ID")
         if id:
             context = client.attach_context(id)
@@ -53,17 +52,22 @@ def exercise_live(record_property, *, reference=None):
                         submission_scope=focused.get_context_id(), initial_job_status=job.status().status)
         # A zero waiting budget tests preservation/resume without relying on a slow model.
         # It does not assert that the remote computation was still running.
-        with pytest.raises(WaitTimeout) as stopped:
+        try:
             job.result(timeout=0)
-        assert stopped.value.job is job
+        except WaitTimeout as stopped:
+            require(stopped.job is job, "Timeout lost the original Job")
+        else:
+            raise AssertionError("Zero-budget wait did not time out")
         elevation = job.result(120)
-        assert job.status().status == "FINISHED"
-        assert elevation.id > 0 and elevation.raw.get("resolvedCoverage") == 1
-        assert elevation.units == "m" and elevation.observable.raw["urn"] == elevation_semantics.raw["urn"]
-        assert elevation.geometry is not None
+        require(job.status().status == "FINISHED", "Job did not finish")
+        require(elevation.id > 0 and elevation.raw.get("resolvedCoverage") == 1,
+            "Result lacks a committed identity or full coverage")
+        require(elevation.units == "m" and elevation.observable.raw["urn"] == elevation_semantics.raw["urn"],
+            "Result unit/semantics differ from the requested observable")
+        require(elevation.geometry is not None, "Result geometry is missing")
         verify_grid(elevation)
         space = [d for d in elevation.geometry.raw["dimensions"] if d.get("type") == "SPACE"]
-        assert len(space) == 1 and space[0].get("shape") == [5, 4], "Returned scientific grid must be 5 x 4"
+        require(len(space) == 1 and space[0].get("shape") == [5, 4], "Returned scientific grid must be 5 x 4")
         evidence.update(elevation_id=elevation.id, semantic_definition=elevation.observable.raw["urn"],
                         coverage=elevation.raw["resolvedCoverage"], spatial_shape=space[0]["shape"], units=elevation.units)
         parameters = space[0].get("parameters", {})
@@ -76,7 +80,7 @@ def exercise_live(record_property, *, reference=None):
         verify_traversals(yx.values, xy.values, inverted.values)
         mm_semantics = storage_semantics(client.reasoner.resolve_observable("geography:Elevation in mm"))
         mm = elevation.fetch_data(range(20), curve="D2_YX", semantics=mm_semantics)
-        assert yx.units == "m" and mm.units == "mm"
+        require(yx.units == "m" and mm.units == "mm", "Read units differ from metres/millimetres")
         verify_elevation(yx.values, mm.values)
         evidence.update(curve="D2_YX", slice=yx.slice, metres=yx.text, millimetres=mm.text,
                         converted_units=mm.units, valid_cells=sum(value is not None for value in yx.values))
@@ -91,27 +95,28 @@ def exercise_live(record_property, *, reference=None):
                 absolute_tolerance_m=str(reference["absolute_tolerance_m"]),
                 relative_tolerance=str(reference["relative_tolerance"]))
             evidence["checks"].append("all cells matched separately obtained reference")
-        assert job.cancel() is False, "Completed-job cancellation should report no running job cancelled"
-        assert job.result(120).id == elevation.id
+        require(job.cancel() is False, "Completed-job cancellation should report no running job cancelled")
+        require(job.result(120).id == elevation.id, "Completed cancellation changed result identity")
         evidence["checks"].append("completed cancellation preserved result")
         # Persist enough identifiers before closing the original local transport.
         record_property("scientific_evidence_before_reconnect", client.transport.redact(json.dumps(evidence)))
 
     with Client.from_env() as reopened:
         attached = reopened.attach_context(context_id)
-        assert attached.id == context_id and attached.owned is False
+        require(attached.id == context_id and attached.owned is False, "Attachment changed identity or ownership")
         resumed = attached.within(region.id).job(job.id)
-        assert resumed.status().status == "FINISHED"
+        require(resumed.status().status == "FINISHED", "Resumed Job is not finished")
         retrieved = resumed.result(120)
-        assert retrieved.id == elevation.id and retrieved.units == elevation.units
-        assert retrieved.observable.raw["urn"] == elevation.observable.raw["urn"]
+        require(retrieved.id == elevation.id and retrieved.units == elevation.units,
+            "Recovered result identity/units changed")
+        require(retrieved.observable.raw["urn"] == elevation.observable.raw["urn"], "Recovered result semantics changed")
         repeated = retrieved.fetch_data(range(20), curve="D2_YX")
-        assert repeated.values == yx.values, "Local close/reconnect changed scientific values or missingness"
-        assert context_id in [id for info in reopened.runtime.get_context_info(attached) for id in info.context_ids]
+        require(repeated.values == yx.values, "Local close/reconnect changed scientific values or missingness")
+        require(context_id in [id for info in reopened.runtime.get_context_info(attached) for id in info.context_ids],
+            "Reattached context is not visible to the current caller")
         evidence["checks"].append("new client attachment, focused job resume, identical reread and context visibility")
         if session_id is not None:
-            assert attached.release(), "Disposable context release was not confirmed"
-            assert Session(reopened, session_id).release(), "Disposable session release was not confirmed"
+            release_owned(attached, Session(reopened, session_id))
             evidence["cleanup"] = "explicit disposable context and session release confirmed"
         else:
             evidence["cleanup"] = "user-owned context retained; no remote release requested"
@@ -119,14 +124,3 @@ def exercise_live(record_property, *, reference=None):
         sanitized = reopened.transport.redact(json.dumps(evidence))
         record_property("scientific_acceptance_evidence", sanitized)
         print(sanitized, flush=True)
-
-
-@pytest.mark.live
-def test_live_elevation(record_property):
-    exercise_live(record_property)
-
-
-@pytest.mark.live
-def test_live_elevation_reference(record_property):
-    reference = load_reference(os.environ.get("KLAB_ELEVATION_REFERENCE"))
-    exercise_live(record_property, reference=reference)

@@ -5,6 +5,7 @@ import math
 import re
 import time
 from dataclasses import dataclass, field
+from contextlib import contextmanager
 from urllib.parse import urlsplit
 
 import httpx
@@ -117,6 +118,33 @@ class Transport:
             return result.json()
         except ValueError:
             raise ProtocolError(f"{service} returned invalid JSON for {route}") from None
+
+    @contextmanager
+    def stream(self, service, route, *, media_type, scope=None, service_id=None):
+        """Origin-bound GET stream; errors never buffer or echo binary response bodies."""
+        endpoint = self.endpoint(service)
+        if not route.startswith("/") or ".." in route or route.startswith("//"):
+            raise InvalidRequestError("Route must be a service-relative absolute path")
+        headers = {"Accept": media_type, "Accept-Encoding": "identity"}
+        if endpoint.credential:
+            headers["Authorization"] = endpoint.credential
+        if scope:
+            headers["klab-scope"] = scope
+        if service_id:
+            headers["klab-service"] = service_id
+        try:
+            with self._http.stream("GET", endpoint.url.rstrip("/") + route, headers=headers,
+                                   timeout=self.timeout) as response:
+                if not 200 <= response.status_code < 300:
+                    error = {400: InvalidRequestError, 401: AuthenticationError,
+                        403: AuthorizationError, 404: MissingAssetError,
+                        422: InvalidRequestError}.get(response.status_code, ServerError)
+                    raise error(f"{service} export HTTP {response.status_code}")
+                yield response
+        except httpx.TransportError:
+            raise TransportError(f"{service} export transport failed; no file was published") from None
+        except httpx.StreamError:
+            raise ProtocolError("Export response was not an unread stream") from None
 
     def close(self):
         self._http.close()

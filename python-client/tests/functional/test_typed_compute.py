@@ -10,12 +10,13 @@ from klab_client import ObservationOptions, ObservationRequest, RectangularGeome
 from klab_client.errors import InvalidRequestError
 
 
+@pytest.mark.functional
 @pytest.mark.live
 def test_typed_observe_options_are_honored_by_actual_scientific_execution(record_property):
     state = os.environ.get("KLAB_FIXTURE_STATE_DIR")
     if not state:
         raise ConfigurationError("Typed live acceptance requires an explicitly prepared fixture state")
-    example = Path(__file__).parents[1] / "examples/typed_observe.py"
+    example = Path(__file__).parents[2] / "examples/typed_observe.py"
     spec = importlib.util.spec_from_file_location("typed_example", example)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -25,13 +26,14 @@ def test_typed_observe_options_are_honored_by_actual_scientific_execution(record
     assert result["passed"]
 
 
+@pytest.mark.functional
 @pytest.mark.live
 def test_bound_computed_quality_is_rejected_as_observer_without_any_http(record_property):
     state_value = os.environ.get("KLAB_FIXTURE_STATE_DIR")
     if not state_value:
         raise ConfigurationError("Observer live regression requires an explicitly prepared fixture state")
     state = Path(state_value)
-    example = Path(__file__).parents[1] / "examples/typed_observe.py"
+    example = Path(__file__).parents[2] / "examples/typed_observe.py"
     spec = importlib.util.spec_from_file_location("typed_observer_example", example)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

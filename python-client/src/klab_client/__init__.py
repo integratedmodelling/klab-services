@@ -21,6 +21,7 @@ from klab_client.api.services import (
 )
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData
 from klab_client.transport import Endpoint
+from klab_client.exports import ExportFormat, ExportResult, ExportIOError
 from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError, HandleIOError,
     load_handle, restore_handle, save_handle, to_handle)
 from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
@@ -28,6 +29,7 @@ from klab_client.requests import (ContextOptions, GridOptions, ObservationOption
 
 __all__ = [
     "Client", "Context", "Session", "Job", "JobStatus", "ScientificData", "Endpoint",
+    "ExportFormat", "ExportResult", "ExportIOError",
     "Handle", "HandleFormatError", "HandleIdentityError", "HandleIOError",
     "load_handle", "restore_handle", "save_handle", "to_handle",
     "ContextOptions", "GridOptions", "ObservationOptions", "ObservationRequest",

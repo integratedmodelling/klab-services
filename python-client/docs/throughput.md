@@ -1,5 +1,16 @@
 # Local acceptance and throughput
 
+See [functional workflow organization](functional-testing.md) for named suites,
+shared scenarios and the unit/integration/functional directory layout.
+
+The numerical saved-handle → fresh-process restore → GeoTIFF → independent reader
+workflow is covered by the [verified GeoTIFF throughput test](geotiff-throughput.md).
+It gates rates on scientific correctness; its first real pilot exposed an exporter
+orientation failure and emitted no successful throughput figures. The corrected
+local component subsequently passed serial recomputation and concurrency-two
+repeated export, including source-unit and nodata-mask validation; the linked
+record distinguishes the original failing published archive from that local build.
+
 ## Reproduce
 
 Prerequisites: Windows local runner, JDK 21, Maven wrapper, Python 3.11+ and the
@@ -51,7 +62,7 @@ Explicit live tests against running prepared state:
 
 ```powershell
 $env:KLAB_FIXTURE_STATE_DIR = 'C:\state'
-& .\.venv\Scripts\python.exe -m pytest -o "addopts=" -m live -s tests/test_local_workflow.py
+& .\.venv\Scripts\python.exe tools/run_functional_acceptance.py --state-dir C:\state --suite compute-and-analyze
 ```
 
 ## Measurements and evidence

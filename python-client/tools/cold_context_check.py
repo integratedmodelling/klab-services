@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from klab_client import Context, Session
-from workflow_benchmark import make_client, initialize
+from workflows.compute_and_analyze import make_client, initialize
 from verify_fixture import require_access_denied
 
 

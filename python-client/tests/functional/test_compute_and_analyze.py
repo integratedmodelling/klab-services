@@ -11,7 +11,7 @@ import pytest
 
 from klab_client.errors import ConfigurationError
 
-pytestmark = pytest.mark.live
+pytestmark = [pytest.mark.live, pytest.mark.functional]
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def fixture_tools(monkeypatch):
     state = Path(value)
     if not (state / "scientist.json").is_file():
         raise ConfigurationError("Fixture scientist.json missing; run fixture_hub.py prepare/serve")
-    monkeypatch.syspath_prepend(str(Path(__file__).parents[1] / "tools"))
+    monkeypatch.syspath_prepend(str(Path(__file__).parents[2] / "tools"))
     return state
 
 
@@ -37,7 +37,7 @@ def test_signed_authentication_scientific_lifecycle(fixture_tools, record_proper
 
 
 def test_actual_concurrent_full_workflow(fixture_tools, record_property):
-    from workflow_benchmark import initialize, make_client, run_workload, sample, summarize
+    from workflows.compute_and_analyze import initialize, make_client, run_workload, sample, summarize
     from klab_client import Session
     config = json.loads((fixture_tools / "scientist.json").read_text())
     initialize(config)
@@ -47,13 +47,15 @@ def test_actual_concurrent_full_workflow(fixture_tools, record_property):
     concurrency = int(os.environ.get("KLAB_FIXTURE_CONCURRENCY", "2"))
     if count < 1 or concurrency < 1:
         raise ConfigurationError("Fixture sample/concurrency counts must be positive")
-    records, elapsed = run_workload(lambda number: sample(config, session_id, number),
-        samples=count, concurrency=concurrency, duration=0, on_result=lambda result: print(json.dumps(result)))
-    summary = summarize(records, elapsed)
-    record_property("verified_workflow_throughput", json.dumps(summary))
-    assert summary["acceptance_passed"], json.dumps(records)
-    assert summary["verified_samples"] == count
-    assert len({record["observation_id"] for record in records}) == count
-    assert len({record["context_id"] for record in records}) == count
-    with make_client(config) as client:
-        assert Session(client, session_id).release()
+    try:
+        records, elapsed = run_workload(lambda number: sample(config, session_id, number),
+            samples=count, concurrency=concurrency, duration=0, on_result=lambda result: print(json.dumps(result)))
+        summary = summarize(records, elapsed)
+        record_property("verified_workflow_throughput", json.dumps(summary))
+        assert summary["acceptance_passed"], json.dumps(records)
+        assert summary["verified_samples"] == count
+        assert len({record["observation_id"] for record in records}) == count
+        assert len({record["context_id"] for record in records}) == count
+    finally:
+        with make_client(config) as client:
+            assert Session(client, session_id).release()

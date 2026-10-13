@@ -42,6 +42,10 @@ Saved references: `Handle`, `to_handle`, `save_handle`, `load_handle`,
 `restore_handle`, source-object `to_handle()` and `Client.restore_handle`.
 See [versioned schema and verification](saved-handles.md).
 
+Native export: `Client.export_formats`, `Client.export_to_file`,
+`ObservationImpl.export_to_file`, frozen `ExportFormat`/`ExportResult` and
+`ExportIOError`. See [streamed files and exporter limits](stream-exports.md).
+
 Typed facade: `ObservationRequest`, `ObservationOptions`, `ResolutionConstraint`,
 `ContextOptions`, `GridOptions`, `RectangularGeometry`, `Context.observe`, and
 `Session.create_context(options=...)`. See [typed contracts and verification](typed-observe.md).

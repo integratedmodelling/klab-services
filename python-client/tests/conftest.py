@@ -1,5 +1,12 @@
+from pathlib import Path
+import sys
+
 import httpx
 import pytest
+
+# Test-only helpers and development scenarios; never added to the SDK wheel.
+sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parents[1] / "tools"))
 
 
 @pytest.fixture(autouse=True)

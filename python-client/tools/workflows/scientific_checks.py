@@ -7,6 +7,31 @@ from pathlib import Path
 from klab_client.errors import ConfigurationError
 
 
+def require(condition, message):
+    """Acceptance checks must still execute when Python optimization is enabled."""
+    if not condition:
+        raise AssertionError(message)
+
+
+def release_owned(*scopes, failure=None):
+    """Attempt every owned release; preserve a primary failure and report cleanup."""
+    errors = []
+    for scope in scopes:
+        if scope is None:
+            continue
+        try:
+            require(scope.release(), "Owned scope release was not confirmed")
+        except BaseException as error:
+            errors.append(error)
+    if errors:
+        target = failure if failure is not None else errors[0]
+        for error in errors:
+            # Error types convey cleanup status without leaking server diagnostics.
+            target.add_note("Owned cleanup failed: " + type(error).__name__)
+        if failure is None:
+            raise target
+
+
 def verify_traversals(yx, xy, inverted_y):
     """Coordinate oracle for the maintained rectangular 5 x 4 grid.
 
