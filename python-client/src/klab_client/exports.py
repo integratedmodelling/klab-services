@@ -105,6 +105,8 @@ def export_to_file(client, observation, path, *, media_type, overwrite=False, ma
         raise InvalidRequestError("Export requires boolean overwrite and an optional positive byte limit")
     try:
         destination = Path(path)
+        if "\x00" in os.fspath(destination):
+            raise ValueError("Invalid destination pathname")
         if not destination.parent.is_dir() or (not overwrite and os.path.lexists(destination)):
             raise ExportIOError("Export destination parent must exist and default publication cannot overwrite")
     except (TypeError, ValueError, OSError):

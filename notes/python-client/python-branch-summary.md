@@ -5,8 +5,9 @@
 Functional suites and shared scenario entry points are described in
 `python-client/docs/functional-testing.md`. Offline tests are grouped under
 `tests/unit` and `tests/integration`; actual user workflows under `tests/functional`.
-The reorganization passed 573 offline tests across Windows 3.12 and installed Linux
-3.11/3.13, seven local functional checks, and both numerical throughput modes.
+Current review findings, validation and dependencies are recorded once in
+`python-client/docs/exports-verification.md`; older counts below describe their
+identified feature checkpoints, not validation of later revisions.
 
 - Upstream `feature/python-client` contains the #84 foundation and merged client
   PRs #85 (typed requests, issue #87) and #86 (saved handles, issue #88).

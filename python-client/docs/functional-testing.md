@@ -2,6 +2,9 @@
 
 Tests are grouped by execution level; functional suites are named for user outcomes.
 
+Current readiness, test results and deployment/component dependencies are recorded
+once in [export and functional verification](exports-verification.md).
+
 ```text
 tests/
   unit/          Offline contracts, validation, file semantics and oracle/rate guards
@@ -81,50 +84,19 @@ compatibility entry points, not duplicate scenario implementations.
 Multi-area batch modelling and richer nonuniform selection/conversion benchmarks
 remain proposed additions. They have not been implemented by this reorganization.
 
-## Reorganization verification — 13 October 2026
+## Validation and lifecycle
 
-- **573 offline tests** passed on Windows Python 3.12 and fresh installed-package
-  Linux Python 3.11/3.13. Existing new-module and changed-code coverage gates passed;
-  expanded lint includes all tools. Linux wheel/sdist builds and installed SDK
-  source-identity checks passed.
-- **Seven local functional tests** passed: GeoJSON acceptance plus the six selected
-  computation/lifecycle, recovery, typed and GeoTIFF checks. The two separate
-  provider/reference tests require external configured data and were not part of
-  this owned synthetic deployment.
-- Shared numerical throughput passed **3/3 serial** samples and **12/12 repeated
-  exports at concurrency two**, with no scientific failures. Each TIFF preserved
-  all 20 value/coordinate associations, source units and nodata mask. All five owned
-  JVM exits and session cleanup were confirmed.
-- Server `244883d7b`, local corrected component archive SHA-256
-  `46175d3ed1f81f90c4ac1ce60774091baff118cd1fbc3e6f61a7f2183ff00482`.
-  External evidence: `organized-functional-serial2` and
-  `organized-functional-repeated1`, including run reports, JUnit, worker reports
-  and unchanged TIFFs. Installed Linux source/test/tool snapshot digest:
-  `9fa8ad1cae21` (full digest and per-file hashes in the external matrix reports).
-- The initial combined run correctly failed typed scenario validation because the
-  older server preparation script omitted `python.scenario.kim` and
-  `python.lexical.kim`. The fixture-source selection was corrected; no scientific
-  oracle was relaxed and the original failed report remains available.
+Shared scenario checks use explicit validation, including under `PYTHONOPTIMIZE=1`.
+GeoJSON acceptance applies the same source ID/URN and complete known-rectangle
+validator to both files. It rejects holes and crossed/clustered corners while
+allowing valid cyclic starting-point changes and reversed winding at the declared
+precision, without altering the exported bytes.
+GeoJSON acceptance always attempts context and session release independently;
+cleanup failures are reported without masking an existing scientific failure.
+Provider acceptance preserves its documented diagnostic-retention policy on a
+failed experiment and never acquires disposal ownership of a caller-owned context.
+The saved-work example likewise retains failed test work/handles for diagnosis and
+its explicit owner-directed release mode; it does not silently dispose of restored work.
 
-These checks validate the reorganized workflows; the short, small-field measurements
-are not a controlled performance comparison or a production-capacity claim.
-
-## Development outside these tests
-
-- Streamed export SDK (#91): `Client.export_formats`, `export_to_file` and the
-  observation convenience method, with bounded-memory transfer, identity checks
-  and atomic local publication. Committed/pushed candidate `6b73dd9df`; issue open
-  for review/merge. On 13 October the user requested a combined export and
-  functional-workflow PR; the original feature checkpoint had no PR.
-- Geospatial exporter correction: separate local branch
-  `fix/geotiff-orientation-metadata`, correcting north-up value association, NaN
-  nodata/mask, source units and temporary-file cleanup. Verified locally, uncommitted.
-- Cross-service identity and permissions (#89 / draft #90): preserve caller/context
-  identity, independent context access rules and shared-session policy across the
-  cooperating services. Separate native Java process checks for nonlocal identity
-  groups, broader baseline comparison and server cross-Runtime scope-cache origin
-  isolation remain unfinished. Local service checks do not certify cooperation
-  between separately deployed installations.
-- Typed requests (#85) and saved handles (#86) are merged foundations, not new
-  unfinished features. Bulk scientific views, richer catalog/Resolver interfaces
-  and provenance are roadmap work rather than active completed implementations.
+Read [the authoritative verification record](exports-verification.md) for current
+results, historical evidence and development/dependency status outside these tests.

@@ -272,6 +272,18 @@ def test_invalid_destination_type_is_local():
             current.export_to_file(asset(current), None, media_type=MIME)
 
 
+@pytest.mark.parametrize("as_path", [False, True])
+@pytest.mark.parametrize("invalid_parent", [False, True])
+def test_nul_destination_is_a_local_export_error_before_http(tmp_path, as_path, invalid_parent):
+    destination = tmp_path / "bad\x00name"
+    if invalid_parent:
+        destination /= "result"
+    with Client("https://runtime.invalid", http_transport=httpx.MockTransport(lambda r: pytest.fail("No HTTP"))) as current:
+        with pytest.raises(ExportIOError, match="Invalid export destination"):
+            asset(current).export_to_file(destination if as_path else str(destination), media_type=MIME)
+    assert not list(tmp_path.iterdir())
+
+
 def test_zero_byte_os_write_is_a_file_error_not_an_infinite_loop(tmp_path, monkeypatch):
     import klab_client.exports as implementation
     monkeypatch.setattr(implementation.os, "write", lambda *a: 0)

@@ -3,6 +3,8 @@
 Tracking issue: [#91](https://github.com/integratedmodelling/klab-services/issues/91).
 Base: combined Python integration `90bebb5f35e60ad002f106c8d655e66d7e00d89d`.
 This implements the existing-exporter/file-transfer slice of the roadmap's Phase 2.
+Current review findings, validation and deployment dependencies are in
+[the authoritative verification record](exports-verification.md).
 
 ## Usage
 
@@ -72,8 +74,8 @@ representation/length/stream state is ProtocolError.
 ## Genuine exporter acceptance
 
 The isolated reference uses the official published **klab.component.geospatial**
-component archive `1.0-20260926.083046-222`, SHA-256
-`e7d470f69943e93ce48e9669bad6a41b618dfbe0e7bc748076e010583daef644`.
+component archive `1.0-20260926.083046-222`, explicitly hash-pinned in the runner
+and identified in the verification record.
 It advertises GeoJSON, GeoTIFF and PNG; the accepted example uses **GeoJSON for
 a substantial earth:Region**, not a numeric raster or rendered PNG.
 
@@ -86,24 +88,26 @@ components or fetch/follow component URLs from a file or capability response.
 python tools/run_export_acceptance.py --server-repo C:\explicit-server-checkout --java C:\jdk\bin\java.exe --worldview C:\pinned-imod --component C:\klab.component.geospatial-1.0-20260926.083046-222-component.kar --state-dir C:\existing-parent\new-export-state
 ```
 
-Server checkout must already have compiled test fixtures/classpaths. The tested
-server integration is `244883d7b04f1eae2cc22e799575d33a9bdb2a43` (draft PR #90,
-issue #89); it is not silently substituted for this feature's integration base.
+Server checkout must already have compiled test fixtures/classpaths. The selected
+server is recorded separately from this feature's integration base.
 The helper records both Git states and client source hashes, and confirms owned
 process cleanup. Fixture credentials/state remain outside the repository.
 
 The live test compares asset identity and every exported polygon corner against
 an independent inverse Web Mercator calculation using radius 6378137 m. The
+complete single-ring rectangle is required in boundary order, allowing rotation
+and either winding. Both original and fresh-process files are checked against the
+same source ID/URN and independent reference; clustered corners, crossed rings
+and extra holes are rejected. The
 pinned export quantizes this fixture to six decimal degrees; the declared
 `1e-6`-degree tolerance permits that precision, not swapped axes or wrong location.
 This substantial GeoJSON does not supply raster values, numeric units or a
 validity mask: zero/missingness for raster data and full scientific metadata are
 N/A here, not synthesized or certified.
 
-Current geospatial source tip `8d4ef866` fails to compile against the selected
-service API because its deprecated Reference.Exporter annotation is absent.
-That setup failure was recorded as Blocked. Acceptance uses the unmodified
-published archive above, not a fake exporter or a patched scientific algorithm.
+Source-build failures and the separate numerical component correction are recorded
+in the verification record. This bounded GeoJSON capability uses the unmodified
+published archive, not a fake exporter or client-side scientific repair.
 
 ## Focused checks and limits
 
