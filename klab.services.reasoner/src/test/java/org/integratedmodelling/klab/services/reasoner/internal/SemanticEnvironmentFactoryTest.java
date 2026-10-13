@@ -470,4 +470,36 @@ class SemanticEnvironmentFactoryTest {
     } finally { runtime.close(); scope.close(); }
   }
 
+  @Test void deploymentCapabilitiesRemainAvailableStableAndIndependentOfSemanticMonitor() throws Exception {
+    var facade = facade(new SemanticEnvironmentFactory(directory.resolve("actors"), core()));
+    var configuration = new org.integratedmodelling.klab.services.configuration.ReasonerConfiguration();
+    configuration.setServiceId("deployment-id");
+    var field = org.integratedmodelling.klab.services.reasoner.ReasonerService.class.getDeclaredField("configuration");
+    field.setAccessible(true); field.set(facade, configuration);
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      var initial = facade.capabilities(scope);
+      assertEquals("deployment-id", initial.getServiceId()); assertEquals(facade.getUrl(), initial.getUrl());
+      assertEquals(0, initial.getKnowledgeRevision()); assertFalse(initial.isConsistent());
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var accepted = facade.capabilities(scope);
+      assertEquals("deployment-id", accepted.getServiceId()); assertEquals(initial.getUrl(), accepted.getUrl());
+      assertEquals(1, accepted.getKnowledgeRevision()); assertTrue(accepted.isConsistent());
+      try (var lease = runtime.lease()) {
+        synchronized (lease.state()) {
+          var response = new java.util.concurrent.CompletableFuture<org.integratedmodelling.klab.api.services.Reasoner.Capabilities>();
+          var thread = Thread.ofPlatform().start(() -> {
+            try { response.complete(facade.capabilities(scope)); } catch (Throwable failure) { response.completeExceptionally(failure); }
+          });
+          assertEquals("deployment-id", response.get(2, java.util.concurrent.TimeUnit.SECONDS).getServiceId());
+          thread.join(2000);
+        }
+      }
+      facade.loadKnowledge(world("rejected", true), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var retained = facade.capabilities(scope);
+      assertEquals("deployment-id", retained.getServiceId()); assertEquals(initial.getUrl(), retained.getUrl());
+      assertEquals(1, retained.getKnowledgeRevision()); assertTrue(retained.isConsistent());
+    } finally { scope.close(); }
+  }
+
 }

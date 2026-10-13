@@ -1733,13 +1733,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Capabilities capabilities(Scope scope) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("capabilities", new Class<?>[] { Scope.class }, new Object[] { scope });
 
     var ret = new ReasonerCapabilitiesImpl();
     long revision = knowledgeRevision();
     long generation = capabilitiesGeneration;
-    String validation = semanticValidationState.signal();
+    String validation = candidateRuntime != null && !semanticOnly ? null : semanticValidationState.signal();
     var acceptedMetadata = candidateRuntime != null && !semanticOnly ? candidateRuntime.metadata() : null;
     var published = acceptedMetadata == null ? publishedSemanticCapabilities : acceptedMetadata.publication();
     if (acceptedMetadata != null) revision = acceptedMetadata.generation();
@@ -1758,13 +1756,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (getComponentRegistry() != null) ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
     // A request may straddle a complete mutation. Never label a newer publication with an
     // older revision, or certify metadata captured while readiness/generation changed.
-    boolean readable = published.generation() == generation
-        && generation == capabilitiesGeneration
-        && validation.equals(semanticValidationState.signal())
-        && validation.endsWith(":ready")
-        && revision == knowledgeRevision();
-    if (acceptedMetadata != null) readable = acceptedMetadata.generation() > 0;
-    if (readable) ret.setAuthorityBindings(published.authorityBindings());
+    boolean readable = acceptedMetadata != null ? acceptedMetadata.generation() > 0
+        : published.generation() == generation
+          && generation == capabilitiesGeneration
+          && validation.equals(semanticValidationState.signal())
+          && validation.endsWith(":ready")
+          && revision == knowledgeRevision();
+    if (readable) ret.setAuthorityBindings(published.authorityBindings().stream()
+        .map(binding -> new Worldview.AuthorityBinding(binding.localId(), binding.rootIdentity(),
+            binding.sourceOntology(), binding.sourceOffset(), binding.sourceLength(), binding.sourceHash(),
+            binding.provider(), binding.componentUrn(), binding.componentVersion(), getUrl())).toList());
     ret.setConsistent(readable && published.consistent());
     ret.setKnowledgeRevision(revision);
     if (readable) ret.setWorldviewCommitment(published.commitment());
