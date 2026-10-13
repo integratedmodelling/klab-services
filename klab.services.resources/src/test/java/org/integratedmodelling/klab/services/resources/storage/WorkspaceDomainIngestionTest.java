@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
-import org.integratedmodelling.klab.services.resources.lang.WorldviewValidationScope;
+import org.integratedmodelling.klab.runtime.language.WorldviewValidationScope;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
