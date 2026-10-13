@@ -16,6 +16,64 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class DocumentSemanticValidatorTest {
+  @Test void missingResourcesBecomeDocumentAnnotationsBeforeKnowledgeStartup() {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class))
+        .thenThrow(new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
+            "No suitable service for request of ResourcesService"));
+    var document = new KimOntologyImpl();
+    document.setUrn("imod"); document.setProjectName("worldview");
+    document.setSourceCode("ontology imod");
+    var response = reasoner.validateDocument(SemanticValidationRequest.of(document, "saved"), scope);
+    assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+    assertFalse(response.valid());
+    assertEquals(1, response.getNotifications().size());
+    var diagnostic = response.getNotifications().getFirst();
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.Notification.Level.Warning,
+        diagnostic.getLevel());
+    assertTrue(diagnostic.getMessage().contains("No suitable service"));
+    assertEquals("imod", diagnostic.getLexicalContext().getDocumentUrn());
+    assertEquals("worldview", diagnostic.getLexicalContext().getProjectUrn());
+    assertEquals(SemanticValidationRequest.sourceHash(document.getSourceCode()), response.getSourceHash());
+  }
+
+  @Test void sourceErrorsDoNotWaitForTheWorldviewIngestionMonitor() throws Exception {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var document = new KimOntologyImpl(); document.setUrn("imod");
+    var error = org.integratedmodelling.klab.api.services.runtime.Notification.error("Invalid domain");
+    document.getNotifications().add(error);
+    // Hold the same monitor used by loadKnowledge, and validate from another thread.
+    try (var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      synchronized (reasoner) {
+        var result = worker.submit(() -> reasoner.validateDocument(
+            SemanticValidationRequest.of(document, "saved"), null));
+        var response = result.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals(SemanticValidationResponse.Status.SYNTAX_ERRORS, response.getStatus());
+        assertEquals(List.of(error), response.getNotifications());
+      }
+    }
+  }
+
+  @Test void missingResourcesDuringNamespacePreflightAreUnavailableInsteadOfThrown() throws Exception {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var ready = ReasonerService.class.getDeclaredField("knowledgeReady");
+    ready.setAccessible(true); ready.set(reasoner, true);
+    var owl = mock(OWL.class); when(owl.isInitialized()).thenReturn(true);
+    when(reasoner.owl()).thenReturn(owl);
+    var scope = mock(Scope.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class))
+        .thenThrow(new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException("Resources offline"));
+    var document = new KimNamespaceImpl(); document.setUrn("models");
+    var response = reasoner.validateDocument(SemanticValidationRequest.of(document, "saved"), scope);
+    assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+    assertEquals("models", response.getNotifications().getFirst().getLexicalContext().getDocumentUrn());
+    assertTrue(response.getNotifications().getFirst().getMessage().contains("Resources offline"));
+  }
+
   @Test void genericDeclarationUsesResolvedParentTypesBeforeCreatingItsOwlClass() throws Exception {
     var scope = mock(Scope.class);
     var owl = new OWL(scope);
