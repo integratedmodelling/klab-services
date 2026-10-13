@@ -266,6 +266,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return authorityBindings.configure(request, provider);
   }
   private volatile boolean knowledgeReady;
+  private final org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState
+      semanticValidationState = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
   private org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver authorityIdentityResolver;
 
   @Override public synchronized Concept resolveAuthorityHierarchy(String authority, String code, Scope scope) {
@@ -393,7 +395,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return response;
       }
     }
-    if (!knowledgeReady
+    if ((semanticValidationState != null && semanticValidationState.loading())
+        || !knowledgeReady
         || owl() == null
         || !owl().isInitialized()
         || scope == null
@@ -452,6 +455,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           response.setStatus(SemanticValidationResponse.Status.COMPLETE);
           return response;
         }
+      }
+      // A failed in-place update is not an accepted readable snapshot. Ontologies above may
+      // synchronize a corrected saved source; unrelated namespaces must not certify partial OWL.
+      if (semanticValidationState != null && !semanticValidationState.ready()) {
+        response.setReason("Semantic validation requires a completed knowledge update");
+        return response;
       }
       response
           .getNotifications()
@@ -543,6 +552,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (syntacticMatcher != null) {
       syntacticMatcher.resetCaches();
     }
+  }
+
+  private void authorityKnowledgeChanged() {
+    invalidateSemanticCaches();
+    semanticValidationState.enriched(knowledgeRevision());
   }
 
   private Concept nothingConcept(String urn) {
@@ -652,9 +666,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
         BaseService.getConfigurationDirectory(options).toPath().resolve("authority-cache"));
     this.owl = new OWL(scope);
-    this.authorityIdentityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
-        this.owl, authorityBindings, this::invalidateSemanticCaches);
-    this.owl.setAuthorityResolver(authorityIdentityResolver::resolve);
+    initializeAuthorityIdentityResolver();
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
     readConfiguration(options);
@@ -662,6 +674,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     getComponentRegistry()
         .initializeComponents(getConfigurationSubdirectory(options, "components"));
     ServiceConfiguration.INSTANCE.setMainService(this);
+  }
+
+  void initializeAuthorityIdentityResolver() {
+    this.authorityIdentityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
+        this.owl, authorityBindings, this::authorityKnowledgeChanged);
+    this.owl.setAuthorityResolver(authorityIdentityResolver::resolve);
   }
 
   private void readConfiguration(ServiceStartupOptions options) {
@@ -820,6 +838,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public ServiceStatus status() {
     var ret = super.status();
+    ret.getMetadata().put(
+        org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState.METADATA_KEY,
+        semanticValidationState.signal());
     ret.getMetadata().put("authority.codelist.revisions", authorityBindings.codelistRevisions());
     ret.getAdvisories().addAll(this.advisories);
     ret.getAdvisories().addAll(this.worldviewLoadDiagnostics);
@@ -1693,6 +1714,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // detach the listener, so startup errors survive in the ontology validation diagnostics.
     try (var collector = new IngestionNotifications(scope, notifications)) {
       return loadKnowledge(worldview, scope, notifications);
+    } finally {
+      if (semanticValidationState.loading())
+        semanticValidationState.settle(knowledgeRevision(), false);
     }
   }
 
@@ -1741,6 +1765,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                       .errorSummary(sourceDiagnostics));
     }
 
+    semanticValidationState.begin(knowledgeRevision());
     knowledgeReady = false;
     invalidateSemanticCaches();
     this.worldview = worldview;
@@ -1809,6 +1834,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.advisories.addAll(ret);
 
     knowledgeReady = true;
+    semanticValidationState.settle(knowledgeRevision(), logicallyConsistent);
     setOperational(localAuthoring || this.consistent.get());
 
     return Utils.Resources.createFromLexicalNotifications(ret);
@@ -1822,6 +1848,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     serviceScope().setMaintenanceMode(true);
 
+    var affectedKnowledge = new HashSet<String>();
+    changes.getOntologies().forEach(r -> affectedKnowledge.add("ontology:" + r.getResourceUrn()));
+    changes.getObservationStrategies().forEach(r -> affectedKnowledge.add("strategy:" + r.getResourceUrn()));
+    semanticValidationState.beginUpdate(knowledgeRevision(), affectedKnowledge);
     invalidateSemanticCaches();
 
     boolean inconsistent = false;
@@ -1948,12 +1978,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       this.advisories.add(Notification.error(t));
     } finally {
       serviceScope().setMaintenanceMode(false);
+      semanticValidationState.settleUpdate(
+          knowledgeRevision(), affectedKnowledge, !inconsistent && knowledgeReady);
+      this.consistent.set(
+          semanticValidationState.ready()
+              && loadedOntologyDiagnostics.values().stream()
+                  .noneMatch(Utils.Notifications::hasErrors));
     }
-
-    this.consistent.set(
-        !inconsistent
-            && loadedOntologyDiagnostics.values().stream()
-                .noneMatch(Utils.Notifications::hasErrors));
 
     return changes;
   }
@@ -3270,6 +3301,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     //            Message.MessageClass.ServiceLifecycle,
     //            Message.MessageType.ServiceUnavailable,
     //            capabilities(serviceScope()));
+    semanticValidationState.settle(knowledgeRevision(), false);
     invalidateSemanticCaches();
     knowledgeReady = false;
     authorityBindings.clear();

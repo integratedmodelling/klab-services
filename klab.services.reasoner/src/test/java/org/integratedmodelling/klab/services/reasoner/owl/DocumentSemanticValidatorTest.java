@@ -16,6 +16,49 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class DocumentSemanticValidatorTest {
+  @Test void loadingKnowledgeReturnsBeforeTakingTheIngestionMonitor() throws Exception {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var state = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
+    state.begin(7);
+    var field = ReasonerService.class.getDeclaredField("semanticValidationState");
+    field.setAccessible(true); field.set(reasoner, state);
+    var document = new KimNamespaceImpl(); document.setUrn("models");
+    try (var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      synchronized (reasoner) {
+        var response = worker.submit(() -> reasoner.validateDocument(
+            SemanticValidationRequest.of(document, "saved"), mock(Scope.class)))
+            .get(1, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+        assertFalse(response.valid());
+      }
+    }
+  }
+
+  @Test void failedUpdateCannotCertifyANamespaceAgainstPartialKnowledge() throws Exception {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    when(reasoner.knowledgeRevision()).thenReturn(7L);
+    var state = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
+    state.settle(7, false);
+    var field = ReasonerService.class.getDeclaredField("semanticValidationState");
+    field.setAccessible(true); field.set(reasoner, state);
+    var ready = ReasonerService.class.getDeclaredField("knowledgeReady");
+    ready.setAccessible(true); ready.set(reasoner, true);
+    var owl = mock(OWL.class); when(owl.isInitialized()).thenReturn(true);
+    when(reasoner.owl()).thenReturn(owl);
+    var worldview = ReasonerService.class.getDeclaredField("worldview");
+    worldview.setAccessible(true); worldview.set(reasoner, mock(Worldview.class));
+    var scope = mock(Scope.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class))
+        .thenReturn(mock(org.integratedmodelling.klab.api.services.ResourcesService.class));
+    var document = new KimNamespaceImpl(); document.setUrn("models");
+    var request = SemanticValidationRequest.of(document, "saved"); request.setKnowledgeRevision(7);
+    var response = reasoner.validateDocument(request, scope);
+    assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+    assertFalse(response.valid());
+    assertTrue(response.getReason().contains("completed knowledge update"));
+  }
   @Test void missingResourcesBecomeDocumentAnnotationsBeforeKnowledgeStartup() {
     var reasoner = mock(ReasonerService.class);
     when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
@@ -311,6 +354,10 @@ class DocumentSemanticValidatorTest {
   @Test void savedOntologiesSynchronizeDependenciesBeforeValidationButDraftsDoNot() throws Exception {
     var reasoner = mock(ReasonerService.class);
     when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var state = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
+    state.settle(0, false);
+    var stateField = ReasonerService.class.getDeclaredField("semanticValidationState");
+    stateField.setAccessible(true); stateField.set(reasoner, state);
     var ready = ReasonerService.class.getDeclaredField("knowledgeReady"); ready.setAccessible(true); ready.set(reasoner, true);
     var owl = mock(OWL.class); when(owl.isInitialized()).thenReturn(true); when(reasoner.owl()).thenReturn(owl);
     var hashes = new HashMap<String,String>();
@@ -330,6 +377,7 @@ class DocumentSemanticValidatorTest {
       assertEquals(List.of("base", "earth"), changes.getOntologies().stream().map(r -> r.getResourceUrn()).toList());
       hashes.put("base", SemanticValidationRequest.sourceHash(dependency.getSourceCode()));
       hashes.put("earth", SemanticValidationRequest.sourceHash(ontology.getSourceCode()));
+      state.settle(0, true);
       return changes;
     });
     assertTrue(reasoner.validateDocument(SemanticValidationRequest.of(ontology, "1"), scope).valid());
