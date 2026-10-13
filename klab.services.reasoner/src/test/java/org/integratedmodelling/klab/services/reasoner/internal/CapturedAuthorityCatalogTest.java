@@ -51,7 +51,7 @@ class CapturedAuthorityCatalogTest {
     var ontology=new org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl();ontology.setUrn("w");ontology.getStatements().add(statement);
     var source=new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();source.setUrn("w");source.setWorldviewId("w");source.setEmpty(false);
     source.setOntologies(new ArrayList<>(List.of(ontology)));source.setAuthorityBindings(new ArrayList<>(List.of(fixture.binding())));
-    return CapturedAuthorityCatalog.captureRecorded(fixture.data(),source,Map.of("TAXA",0L));
+    return CapturedAuthorityCatalog.captureRecorded(fixture.data(),source,Map.of("TAXA",0L),CapturedAuthorityCatalog.captureProviderEvidence(fixture.data()));
   }
   private void response(Fixture fixture, String view, String id, long expires) throws Exception {
     var envelope=json.createObjectNode();envelope.put("expires",expires);var identity=envelope.putObject("value");
@@ -129,8 +129,23 @@ class CapturedAuthorityCatalogTest {
     byte[] contents=JacksonConfiguration.newObjectMapper().writeValueAsBytes(source);
     var state=Files.createDirectories(fixture.data().resolve("captured-authority-state"));Files.write(state.resolve("source.json"),contents);
     var proof=json.createObjectNode();proof.put("inputSha256",HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(contents)));proof.putObject("authorityVersions").put("TAXA",0);
+    proof.set("providerEvidence",json.valueToTree(CapturedAuthorityCatalog.captureProviderEvidence(fixture.data())));
     Files.write(state.resolve("proof.json"),json.writeValueAsBytes(proof));
     assertTrue(CapturedAuthorityCatalog.capture(fixture.data()).supports(fixture.binding()));
+    var archive=fixture.data().resolve("components/plugins/klab.authority.taxa-1.0.0-SNAPSHOT-component.jar");
+    var entries=new LinkedHashMap<String,byte[]>();
+    try(var input=new JarInputStream(Files.newInputStream(archive))) {
+      JarEntry entry;while((entry=input.getNextJarEntry())!=null)entries.put(entry.getName(),input.readAllBytes());
+    }
+    entries.put("replacement.txt","same URN/version, different implementation artifact".getBytes());
+    try(var output=new JarOutputStream(Files.newOutputStream(archive))) {
+      for(var entry:entries.entrySet()){output.putNextEntry(new JarEntry(entry.getKey()));output.write(entry.getValue());output.closeEntry();}
+    }
+    var descriptorFile=fixture.data().resolve("components/catalog.json");var descriptors=json.readTree(Files.readAllBytes(descriptorFile));
+    ((com.fasterxml.jackson.databind.node.ObjectNode)descriptors.get(0)).put("fileHash",HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(Files.readAllBytes(archive))));
+    Files.write(descriptorFile,json.writeValueAsBytes(descriptors));
+    // Both archive and its descriptor agree, but the old successful configuration did not use them.
+    assertThrows(UnsupportedOperationException.class,()->CapturedAuthorityCatalog.capture(fixture.data()));
     Files.writeString(state.resolve("source.json"),"modified producer input");
     assertThrows(UnsupportedOperationException.class,()->CapturedAuthorityCatalog.capture(fixture.data()));
   }

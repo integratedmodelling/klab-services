@@ -22,6 +22,7 @@ public final class CapturedAuthorityCatalog {
   private final Map<String, byte[]> records, documentation, codelists;
   private final Map<String, byte[]> validatedRequests;
   private final String revision;
+  public record ProviderEvidence(String implementation, String componentSha256, String policySha256, String metadataSha256) {}
   private record Provider(ComponentDescriptor component, String className, String implementation,
       Authority.CachePolicy policy, Set<String> boundaries, byte[] capabilities, byte[] seeds) {}
 
@@ -58,7 +59,9 @@ public final class CapturedAuthorityCatalog {
     if (!digest(source).equals(proof.path("inputSha256").asText())) throw unresolved("authority capture source differs from its successful producer input");
     var bindings = JSON.convertValue(proof.get("authorityVersions"), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Long>>() {});
     if (bindings == null) throw unresolved("authority capture has no successful configured-binding proof");
-    return captureRecorded(data, JacksonConfiguration.newObjectMapper().readValue(source, Worldview.class), bindings);
+    var evidence = JSON.convertValue(proof.get("providerEvidence"), new com.fasterxml.jackson.core.type.TypeReference<Map<String, ProviderEvidence>>() {});
+    if (evidence == null) throw unresolved("authority capture has no configured provider provenance");
+    return captureRecorded(data, JacksonConfiguration.newObjectMapper().readValue(source, Worldview.class), bindings, evidence);
   }
   private static CapturedAuthorityCatalog captureRaw(Path data) throws Exception {
     var metadata = data.resolve("components/catalog.json");
@@ -128,11 +131,16 @@ public final class CapturedAuthorityCatalog {
   /** The producer must supply the exact source and bindings successfully configured by its real compiler.
    * Response cache presence alone is insufficient proof for a configuration that fetched no identities. */
   public static CapturedAuthorityCatalog captureRecorded(Path data, Worldview source,
-      Map<String, Long> successfullyConfiguredBindings) throws Exception {
+      Map<String, Long> successfullyConfiguredBindings, Map<String, ProviderEvidence> configuredProviderEvidence) throws Exception {
     var captured = captureRaw(data); var requests = new LinkedHashMap<String, byte[]>();
+    var currentEvidence = captured.providerEvidence();
     for (var binding : source.getAuthorityBindings()) {
       if (!successfullyConfiguredBindings.containsKey(binding.localId())
           || successfullyConfiguredBindings.get(binding.localId()) < 0) throw unresolved("configuration has no successful producer proof: " + binding.localId());
+      var providerUrn = binding.provider().urn();
+      if (configuredProviderEvidence == null || !Objects.equals(currentEvidence.get(providerUrn), configuredProviderEvidence.get(providerUrn))
+          || !currentEvidence.containsKey(providerUrn))
+        throw unresolved("provider implementation or configuration metadata differs from successful producer proof: " + binding.localId());
       var declaration = source.allConceptStatements().stream().filter(statement ->
           binding.localId().equals(statement.getAuthorityRequired())
           && (statement.getNamespace() + ":" + statement.getUrn()).equals(binding.rootIdentity())).findFirst().orElseThrow();
@@ -152,6 +160,18 @@ public final class CapturedAuthorityCatalog {
       requests.put(binding.localId(), bytes(request));
     }
     return new CapturedAuthorityCatalog(captured.providers, captured.records, captured.documentation, captured.codelists, requests);
+  }
+  /** Capture this before the real producer configures providers; retain it with its successful result.
+   * Reading current metadata later is not evidence that an earlier producer configured that code. */
+  public static Map<String, ProviderEvidence> captureProviderEvidence(Path data) throws Exception {
+    return captureRaw(data).providerEvidence();
+  }
+  private Map<String, ProviderEvidence> providerEvidence() {
+    var result = new TreeMap<String, ProviderEvidence>();
+    providers.forEach((urn, p) -> result.put(urn, new ProviderEvidence(p.implementation(),
+        digest(bytes(p.component())), digest(bytes(p.policy())),
+        digest(bytes(List.of(p.boundaries().stream().sorted().toList(), digest(p.capabilities()), digest(p.seeds())))))));
+    return Map.copyOf(result);
   }
   private static void captureDocuments(JsonNode value, Map<String, byte[]> result) throws Exception {
     if (value.isArray()) { for (var item : value) captureDocuments(item, result); return; }
