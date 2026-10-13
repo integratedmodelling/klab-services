@@ -502,4 +502,15 @@ class SemanticEnvironmentFactoryTest {
     } finally { scope.close(); }
   }
 
+  @Test void disposableCandidateCannotAcknowledgeDurableCodelistMutation() throws Exception {
+    var facade=facade(new SemanticEnvironmentFactory(directory.resolve("actors"),core()));
+    try(var runtime=facade.candidateRuntime()) {
+      var request=new org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.SUBMIT,
+          "TAXA","taxonomy.species","human","1",null,0,null,null,null,null);
+      assertThrows(UnsupportedOperationException.class,()->facade.authorityCodelists(request,null));
+      assertEquals(0,runtime.status().acceptedGeneration());
+    }
+  }
+
 }

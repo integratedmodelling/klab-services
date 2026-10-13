@@ -166,8 +166,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public synchronized org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse authorityCodelists(
       org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest request, Scope scope) {
-      if (candidateRuntime != null && !semanticOnly)
+      if (candidateRuntime != null && !semanticOnly) {
+          if (request.operation() != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.LIST)
+            throw new UnsupportedOperationException("Authority ledger changes require authoritative persistence and candidate dependency publication");
           return candidateRuntime.invoke("authorityCodelists", new Class<?>[] { org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.class, Scope.class }, new Object[] { request, scope });
+      }
       authorizedAuthority(request.authority(), scope);
     var operation = request.operation();
     if (operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.REVIEW
@@ -208,6 +211,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var definition = worldview == null ? null : worldview.getAuthorityBindings().stream()
         .filter(binding -> binding.localId().equals(name)).findFirst().orElse(null);
     if (definition == null) throw new java.util.NoSuchElementException("Authority is not configured");
+    if (semanticOnly) {
+      if (!capturedAuthorities.authorized(definition, scope)) throw new SecurityException("Authority component access is not captured");
+      return definition;
+    }
     var component = getComponentRegistry().getComponents(scope).stream()
         .filter(candidate -> candidate.id().equals(definition.componentUrn())
             && candidate.version().equals(definition.componentVersion())).findFirst().orElse(null);
@@ -276,7 +283,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       throw new KlabValidationException("Codelists must match the worldview configuration");
     if (!Objects.equals(declared.getAuthorityParameters().get("semanticBoundaries"), request.parameters().get("semanticBoundaries")))
       throw new KlabValidationException("Semantic boundaries must match the worldview configuration");
-    var provider = Utils.Resources.resolveAuthority(selected, scope, this, worldview);
+    var provider = semanticOnly ? capturedAuthorities.provider(selected, request, semanticAssets)
+        : Utils.Resources.resolveAuthority(selected, scope, this, worldview);
     if (provider == null)
       throw new KlabValidationException("Authority provider is unavailable: " + urn);
     if (request.parameters().get("codelists") instanceof Map<?, ?> names) {
@@ -286,6 +294,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
     return authorityBindings.configure(request, provider);
   }
+  private org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog capturedAuthorities =
+      org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.empty();
+  private java.nio.file.Path semanticAssets;
   private volatile boolean knowledgeReady;
   private final org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState
       semanticValidationState = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
@@ -744,10 +755,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public ReasonerService(
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
       java.nio.file.Path privateKnowledge, java.nio.file.Path privateState) {
+    this(scope, privateKnowledge, privateState,
+        org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.empty());
+  }
+  public ReasonerService(
+      org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
+      java.nio.file.Path privateKnowledge, java.nio.file.Path privateState,
+      org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog authorities) {
     super(scope, Type.REASONER,
         new org.integratedmodelling.klab.services.reasoner.internal.SemanticExecutionSettings(),
         semanticDisplayUrl());
     this.semanticOnly = true;
+    this.capturedAuthorities = Objects.requireNonNull(authorities); this.semanticAssets = privateState;
     OWL ownedOwl = null;
     try {
     this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
@@ -760,7 +779,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       // while an authority lookup must never fall back to a deployment provider.
       if (!Character.isUpperCase(authority.charAt(0)) && authorityBindings.find(authority) == null
           && authorityBindings.alias(authority, code) == null) return null;
-      throw new UnsupportedOperationException("CANDIDATE_ISOLATION_UNSUPPORTED: authority provider materialization");
+      if (authorityBindings.find(authority) == null && authorityBindings.alias(authority, code) == null)
+        throw new UnsupportedOperationException("CANDIDATE_ISOLATION_UNSUPPORTED: authority binding is not captured: " + authority);
+      return authorityIdentityResolver.resolve(authority, code);
     });
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
@@ -787,10 +808,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public void disposeSemanticEnvironment() {
     if (!semanticOnly) throw new IllegalStateException("Not a private semantic environment");
+    try { authorityBindings.clear(); }
+    finally {
     try { owl.reset(); }
     finally {
       try { indexer.ensureClosed(); }
       finally { serviceScope().close(); closeSemanticExecutor(); }
+    }
     }
   }
 

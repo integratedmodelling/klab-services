@@ -25,6 +25,7 @@ public final class SemanticEnvironmentFactory
   private final String dependencyRevision;
   private final Map<String, java.util.Set<String>> coreIdentities;
   private final Map<String, String> documentLocators;
+  private final CapturedAuthorityCatalog authorities;
 
   public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore) throws Exception {
     this(privateAssetRoot, capturedCore, Map.of());
@@ -35,6 +36,12 @@ public final class SemanticEnvironmentFactory
   }
   public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore,
       Map<String, String> capturedDocumentLocators, Map<String, String> expectedDocumentHashes) throws Exception {
+    this(privateAssetRoot, capturedCore, capturedDocumentLocators, expectedDocumentHashes, CapturedAuthorityCatalog.empty());
+  }
+  public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore,
+      Map<String, String> capturedDocumentLocators, Map<String, String> expectedDocumentHashes,
+      CapturedAuthorityCatalog authorities) throws Exception {
+    this.authorities = Objects.requireNonNull(authorities);
     assetRoot = privateAssetRoot.toAbsolutePath().normalize();
     var owned = new LinkedHashMap<String, byte[]>();
     var digest = MessageDigest.getInstance("SHA-256");
@@ -77,11 +84,16 @@ public final class SemanticEnvironmentFactory
       digest.update(alias.getBytes(java.nio.charset.StandardCharsets.UTF_8));
       digest.update(locator.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
+    digest.update(org.integratedmodelling.klab.services.reasoner.OperandGuards.CONTRACT_REVISION.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    digest.update(authorities.revision().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     dependencyRevision = HexFormat.of().formatHex(digest.digest());
   }
   public String dependencyRevision() { return dependencyRevision; }
   /** Reads a local catalog only. Numbered document locators require an explicit local manifest. */
   public static SemanticEnvironmentFactory fromLocalCatalog(Path privateAssets, Path catalog) throws Exception {
+    return fromLocalCatalog(privateAssets, catalog, catalog.toAbsolutePath().getParent());
+  }
+  public static SemanticEnvironmentFactory fromLocalCatalog(Path privateAssets, Path catalog, Path authorityData) throws Exception {
     var files = new LinkedHashMap<String, byte[]>();
     if (Files.isDirectory(catalog)) {
       try (var entries = Files.walk(catalog)) {
@@ -106,7 +118,8 @@ public final class SemanticEnvironmentFactory
       if (name.endsWith(".sha256")) hashes.put(name.substring(0, name.length() - 7), locators.getProperty(name));
       else names.put(name, locators.getProperty(name));
     });
-    return new SemanticEnvironmentFactory(privateAssets, files, names, hashes);
+    return new SemanticEnvironmentFactory(privateAssets, files, names, hashes,
+        CapturedAuthorityCatalog.capture(authorityData));
   }
   private static java.util.Set<String> ontologyIdentities(byte[] bytes) throws Exception {
     var parser = javax.xml.parsers.DocumentBuilderFactory.newInstance();
@@ -193,7 +206,9 @@ public final class SemanticEnvironmentFactory
       visitor.visit(ontology);
       if (visitor.getStatements().stream().anyMatch(s ->
           s instanceof org.integratedmodelling.klab.api.lang.kim.KimConceptStatement declaration
-              && declaration.getAuthorityRequired() != null)) unsupported.add(
+              && declaration.getAuthorityRequired() != null
+              && snapshot.getAuthorityBindings().stream().noneMatch(binding ->
+                  binding.localId().equals(declaration.getAuthorityRequired()) && authorities.supports(binding)))) unsupported.add(
           "CANDIDATE_ISOLATION_UNSUPPORTED: authority provider for " + ontology.getUrn());
     }
     for (var strategies : snapshot.getObservationStrategies()) {
@@ -203,10 +218,7 @@ public final class SemanticEnvironmentFactory
                 org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.Node node,
                 org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Context context) {
               if ((node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall call
-                  && !java.util.Set.of("context.exists", "inherent", "transform.applicable", "request.fully_specified",
-                      "type.concrete", "predicate.concrete", "predicates.split_first", "type.abstract", "type.collective",
-                      "relationship.source", "type.relationship.source", "relationship.target", "type.relationship.target",
-                      "collective", "type.arity.collective").contains(call.getFunction()))
+                  && !org.integratedmodelling.klab.services.reasoner.ObservationReasoner.SUPPORTED_FUNCTIONS.contains(call.getFunction()))
                   || (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.ExternalMatcher matcher
                       && matcher.getCall() == null))
                 return List.of(Notification.warning(
@@ -219,8 +231,8 @@ public final class SemanticEnvironmentFactory
       visitor.visit(strategies);
       unsupported.addAll(visitor.getNotifications().stream().map(Notification::getMessage).toList());
     }
-    if (!snapshot.getAuthorityBindings().isEmpty()) unsupported.add(
-        "CANDIDATE_ISOLATION_UNSUPPORTED: authority bindings require an owned provider snapshot");
+    for (var binding : snapshot.getAuthorityBindings()) if (!authorities.supports(binding)) unsupported.add(
+        "CANDIDATE_ISOLATION_UNSUPPORTED: authority binding requires a matching owned provider snapshot: " + binding.localId());
     if (!unsupported.isEmpty()) return new CandidatePublicationCoordinator.Result<>(null,
         CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, true, unsupported);
     Files.createDirectories(assetRoot);
@@ -236,7 +248,8 @@ public final class SemanticEnvironmentFactory
       }
       cancellation.checkpoint();
       var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(snapshot).service());
-      var actor = new ReasonerService(scope, knowledge, assets);
+      authorities.materializeCodelists(assets);
+      var actor = new ReasonerService(scope, knowledge, assets, authorities);
       environment = new SemanticEnvironment(actor, assets);
       var loaded = actor.loadKnowledge(snapshot, scope);
       cancellation.checkpoint();
