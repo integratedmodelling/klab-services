@@ -289,7 +289,7 @@ public enum LanguageAdapter {
       retainReferenceFlags(ret, semantics.getObservable());
     } else {
       if (semantics.getType().is(SemanticSyntax.TypeCategory.VALID)) {
-        ret.setObservable(adaptSemantics(semantics.getObservable(), documentClass));
+        ret.setObservable(adaptSemantics(semantics.getObservable(), semantics, documentClass));
       } else {
         ret.setObservable(KimConceptImpl.nothing());
         //        ret.setCodeName("invalid_concept");
@@ -299,7 +299,7 @@ public enum LanguageAdapter {
         // categorized as an observable there and as a predicate in the service API).
         // A head reference must never also qualify itself.
         if (java.util.Objects.equals(cr, semantics.getObservable())) continue;
-        var trait = adaptSemantics(cr, documentClass);
+        var trait = adaptSemantics(cr, semantics, documentClass);
         if (trait.is(SemanticType.ROLE)) {
           ret.getRoles().add(trait);
         } else if (trait.is(SemanticType.PREDICATE)) {
@@ -1206,8 +1206,15 @@ public enum LanguageAdapter {
   //    }
 
   private KimConcept adaptSemantics(
-      SemanticSyntax.ConceptData observable, KlabAsset.KnowledgeClass documentClass) {
+      SemanticSyntax.ConceptData observable,
+      SemanticSyntax source,
+      KlabAsset.KnowledgeClass documentClass) {
     KimConceptImpl ret = new KimConceptImpl();
+    // ConceptData carries a resolved descriptor, not source coordinates. Keep the
+    // parsed token's span on its generated references as well as its wrapper so
+    // an old descriptor cannot bypass source-based declaration-order validation.
+    ret.setOffsetInDocument(source.getCodeOffset());
+    ret.setLength(source.getCodeLength());
     ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));
