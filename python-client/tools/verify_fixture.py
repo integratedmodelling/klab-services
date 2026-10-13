@@ -7,7 +7,7 @@ from decimal import Decimal
 
 from cryptography.hazmat.primitives import serialization
 from fixture_hub import token
-from workflow_benchmark import make_client, initialize, sample
+from workflows.compute_and_analyze import make_client, initialize, sample
 from klab_client import Context, Session, ObservationImpl
 from klab_client.experiment import rectangle_geometry, verify_grid
 from klab_client.errors import (KlabError, WaitTimeout, JobFailedError, JobCancelledError,

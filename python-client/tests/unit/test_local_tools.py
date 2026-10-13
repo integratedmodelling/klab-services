@@ -10,7 +10,7 @@ from klab_client.errors import (AuthorizationError, MissingAssetError, Authentic
 
 
 def load_tool(name):
-    path = Path(__file__).parents[1] / "tools" / (name + ".py")
+    path = Path(__file__).parents[2] / "tools" / (name + ".py")
     spec = importlib.util.spec_from_file_location("reviewed_" + name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -94,7 +94,7 @@ def test_partial_startup_failure_still_requests_owned_cleanup(tmp_path, monkeypa
 
 
 def security_tool(monkeypatch):
-    monkeypatch.syspath_prepend(str(Path(__file__).parents[1] / "tools"))
+    monkeypatch.syspath_prepend(str(Path(__file__).parents[2] / "tools"))
     # Optional fixture dependency is imported only by explicit local-tool tests.
     pytest.importorskip("cryptography")
     return load_tool("verify_fixture")

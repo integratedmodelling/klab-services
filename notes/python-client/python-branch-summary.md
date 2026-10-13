@@ -2,16 +2,23 @@
 
 ## Current branch boundaries
 
+Functional suites and shared scenario entry points are described in
+`python-client/docs/functional-testing.md`. Offline tests are grouped under
+`tests/unit` and `tests/integration`; actual user workflows under `tests/functional`.
+The reorganization passed 573 offline tests across Windows 3.12 and installed Linux
+3.11/3.13, seven local functional checks, and both numerical throughput modes.
+
 - Upstream `feature/python-client` contains the #84 foundation and merged client
   PRs #85 (typed requests, issue #87) and #86 (saved handles, issue #88).
 - Combined integration commit: `90bebb5f35e60ad002f106c8d655e66d7e00d89d`.
 - Both client issues are closed. Their additive merge passed 486 maintained tests,
   both coverage gates and hosted Python 3.11/3.12/3.13 checks.
-- Server/develop/federation integration is separately published as draft PR #90,
+- Server cross-service identity and permissions integration is separately published as draft PR #90,
   issue #89, candidate `244883d7b`. It has strict selected Java and live/restart
-  evidence, but nonlocal native-Java and server cached-origin gates remain open.
+  evidence, but separate native-Java process identity-group and server cached-origin gates remain open.
 - New work: issue #91 (Dobbes), `feature/python-client-stream-exports`, based on
-  the combined client. Commit/push are requested after checks; no PR is requested.
+  the combined client. The initial export commit was published without a PR;
+  on 13 October the user requested a combined export and functional-workflow PR.
 
 ## What we have built
 
@@ -124,8 +131,8 @@ Proposed acceptance:
    result without changing the stored scientific algorithm or re-encoding bytes.
 4. Use an independent optional test reader to check shape, orientation, transform,
    CRS, dtype/precision, every sampled coordinate/value, zero and missingness mask.
-5. Check units/revision metadata only where provided; report absent tags rather
-   than inferring scientific measurement units from the spatial CRS.
+5. Require the source measurement unit and NaN nodata/mask; report absent revision
+   tags rather than inferring metadata from the spatial CRS.
 6. Exercise interruption/access-negative cases and preserve existing output/work.
 7. Release only owned test scopes and confirm cleanup.
 
@@ -133,4 +140,12 @@ Why this is nearest: typed computation, exact references, controlled values,
 atomic streaming and a real advertised exporter already exist. The missing work
 is format-specific applicability and scientific raster validation, not a new
 protocol, broad metadata model or production provider study. This proposal has
-not been executed as a complete numeric GeoTIFF acceptance scenario.
+now been implemented as the development-only GeoTIFF throughput test. The original
+published exporter failed scientific validation and emitted no successful rates.
+A separate local geospatial correction now passes the independent oracle, including
+source units and the missing-cell mask: 3/3 serial recomputations and 14/14
+concurrency-two repeated exports. The component's 10 Java tests and client's 566
+maintained tests pass. See `python-client/docs/geotiff-throughput.md` for exact local
+artifact provenance and measurement limits. Python throughput/functional tooling
+is included in the export review branch; the component correction remains separate
+local, uncommitted work. The published archive remains the failing one.

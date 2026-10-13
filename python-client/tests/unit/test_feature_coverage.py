@@ -5,7 +5,7 @@ import pytest
 
 
 def tool():
-    spec = importlib.util.spec_from_file_location("feature_coverage", Path(__file__).parents[1] / "tools/check_feature_coverage.py")
+    spec = importlib.util.spec_from_file_location("feature_coverage", Path(__file__).parents[2] / "tools/check_feature_coverage.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

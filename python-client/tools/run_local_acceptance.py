@@ -88,23 +88,23 @@ def main():
                 raise RuntimeError("TEST authority listener did not start")
         started = True
         run("start", [sys.executable, "tools/local_stack.py", "start", "--java", str(args.java.resolve()), "--state-dir", str(state)])
-        run("acceptance", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
-                            "-m", "live", "-s", "tests/test_local_workflow.py", "--junitxml=" + str(state / "acceptance.xml")])
+        run("acceptance", [sys.executable, "tools/run_functional_acceptance.py", "--suite", "compute-and-analyze",
+            "--state-dir", str(state), "--report", str(state / "acceptance.xml")])
         if args.saved_handles:
-            run("saved-handles", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
-                "-m", "live", "-s", "tests/test_handles_live.py", "--junitxml=" + str(state / "saved-handles.xml")])
+            run("saved-handles", [sys.executable, "tools/run_functional_acceptance.py", "--suite", "resume-saved-work",
+                "--state-dir", str(state), "--report", str(state / "saved-handles.xml")])
         if args.typed_observe:
-            run("typed-observe", [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
-                "-m", "live", "-s", "tests/test_typed_live.py", "--junitxml=" + str(state / "typed-observe.xml")])
+            run("typed-observe", [sys.executable, "tools/run_functional_acceptance.py", "--suite", "typed-compute",
+                "--state-dir", str(state), "--report", str(state / "typed-observe.xml")])
         run("cold-prepare", [sys.executable, "tools/cold_context_check.py", "prepare", "--state-dir", str(state)])
         run("restart-runtime-stop", [sys.executable, "tools/local_stack.py", "stop", "--only", "runtime", "--state-dir", str(state)])
         run("restart-runtime-start", [sys.executable, "tools/local_stack.py", "start", "--only", "runtime", "--java", str(args.java.resolve()), "--state-dir", str(state)])
         run("cold-check", [sys.executable, "tools/cold_context_check.py", "check", "--state-dir", str(state)])
         for concurrency in (1, 2, 4):
-            run(f"full-c{concurrency}", [sys.executable, "tools/workflow_benchmark.py", "--fixture-config", str(state / "scientist.json"),
+            run(f"full-c{concurrency}", [sys.executable, "tools/run_workflow_throughput.py", "--workflow", "compute-and-analyze", "--fixture-config", str(state / "scientist.json"),
                 "--samples", str(args.samples), "--concurrency", str(concurrency), "--duration", str(args.duration),
                 "--warmup", "1", "--server-state-dir", str(state), "--report", str(state / f"full-c{concurrency}.json")])
-        run("repeated-read", [sys.executable, "tools/workflow_benchmark.py", "--fixture-config", str(state / "scientist.json"),
+        run("repeated-read", [sys.executable, "tools/run_workflow_throughput.py", "--workflow", "compute-and-analyze", "--fixture-config", str(state / "scientist.json"),
             "--mode", "repeated-read", "--samples", str(args.samples), "--concurrency", "4", "--duration", str(args.duration),
             "--warmup", "1", "--server-state-dir", str(state), "--report", str(state / "repeated-read.json")])
         report["passed"] = True

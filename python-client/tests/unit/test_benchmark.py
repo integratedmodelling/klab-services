@@ -7,7 +7,7 @@ import pytest
 
 
 def load_benchmark():
-    file = Path(__file__).parents[1] / "tools/workflow_benchmark.py"
+    file = Path(__file__).parents[2] / "tools/workflow_benchmark.py"
     spec = importlib.util.spec_from_file_location("benchmark_under_test", file)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

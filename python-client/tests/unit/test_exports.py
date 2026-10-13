@@ -46,7 +46,7 @@ def capabilities(entries=None):
 
 
 def asset(client):
-    value = json.loads((Path(__file__).parent / "fixtures/elevation.json").read_text())
+    value = json.loads((Path(__file__).parents[1] / "fixtures/elevation.json").read_text())
     value["urn"] = "s.c:individuals:named"  # Export derives the supported context-qualified numeric ID.
     return observation_from_wire(value, Context(client, {"id": "s.c", "serviceId": "home"}, token="s.c.8#3"))
 

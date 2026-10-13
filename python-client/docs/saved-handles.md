@@ -190,7 +190,7 @@ Run these commands from `python-client` with the dev extras installed:
 ```powershell
 python -m pytest -q --cov=klab_client --cov-branch --cov-report=json
 python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/handles.py
-python -m ruff check src/klab_client/handles.py tests/test_saved_handles.py tools/check_feature_coverage.py --select E9,F63,F7,F82
+python -m ruff check src/klab_client/handles.py tests/unit/test_saved_handles.py tools/check_feature_coverage.py --select E9,F63,F7,F82
 python -m build
 ```
 

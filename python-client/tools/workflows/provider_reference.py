@@ -8,7 +8,7 @@ from klab_client import Client, ObservationImpl, Session
 from klab_client.dto import storage_semantics
 from klab_client.errors import ConfigurationError, WaitTimeout
 from klab_client.experiment import rectangle_geometry, verify_elevation, verify_region, verify_grid
-from live_checks import load_reference, verify_reference, verify_traversals
+from .scientific_checks import verify_reference, verify_traversals
 
 
 def exercise_live(record_property, *, reference=None):
@@ -119,14 +119,3 @@ def exercise_live(record_property, *, reference=None):
         sanitized = reopened.transport.redact(json.dumps(evidence))
         record_property("scientific_acceptance_evidence", sanitized)
         print(sanitized, flush=True)
-
-
-@pytest.mark.live
-def test_live_elevation(record_property):
-    exercise_live(record_property)
-
-
-@pytest.mark.live
-def test_live_elevation_reference(record_property):
-    reference = load_reference(os.environ.get("KLAB_ELEVATION_REFERENCE"))
-    exercise_live(record_property, reference=reference)

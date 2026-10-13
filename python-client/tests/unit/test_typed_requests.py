@@ -18,7 +18,7 @@ from klab_client.errors import (InvalidRequestError, UnsupportedOperationError, 
 
 @pytest.fixture
 def wire():
-    payload = json.loads((Path(__file__).parent / "fixtures/elevation.json").read_text())
+    payload = json.loads((Path(__file__).parents[1] / "fixtures/elevation.json").read_text())
     payload["observable"]["contextualization"] = "MEASURE"
     return payload
 

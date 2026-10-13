@@ -22,7 +22,7 @@ def context(identity, kind, handler, url="https://same.invalid/runtime"):
 
 
 def observation(bound):
-    payload = json.loads((Path(__file__).parent / "fixtures/elevation.json").read_text())
+    payload = json.loads((Path(__file__).parents[1] / "fixtures/elevation.json").read_text())
     payload["urn"] = bound.id + ".42"
     return observation_from_wire(payload, bound)
 

@@ -130,6 +130,7 @@ raw DTOs; scientific values are a distinct storage route.
 
 * [Contract matrix](docs/contracts.md) and [public API inventory](docs/public-api.md)
 * [Live reference format](docs/live-acceptance.md)
+* [Functional workflows and test organization](docs/functional-testing.md)
 * [Reproducible local tests and throughput](docs/throughput.md)
 * [Separate server/client/tooling review](docs/review.md)
 * Resume note: `../notes/python-client/work-log.md` (not package documentation)

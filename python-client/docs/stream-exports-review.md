@@ -4,7 +4,7 @@
 
 **Ready for maintainer review as a bounded client contribution**, after the recorded
 candidate checks. This is not an official policy finding or acceptance guarantee.
-No PR is requested or opened. The scientific acceptance is substantial-observation
+At this original feature checkpoint, no PR was requested or opened. The scientific acceptance is substantial-observation
 GeoJSON, not all advertised formats, raster metadata or provider accuracy.
 
 ## Reviewed state
@@ -125,4 +125,14 @@ selection, bounded client download memory and failure-safe local publication.
 Provide a fresh-process handle-to-file example and meaningful stream/file/identity
 negative controls. Report the verified GeoJSON/reference geometry and exact
 server/component compatibility, while keeping other formats and scientific
-metadata/adapters explicitly unverified. No PR has been created for this feature.
+metadata/adapters explicitly unverified. No PR had been created at that checkpoint.
+
+## Follow-up review submission
+
+On 13 October 2026 the user requested the export feature and functional-workflow
+organization together in a PR to `feature/python-client`. See
+[functional testing](functional-testing.md) for the shared scenarios, 573-test
+offline matrix, seven local functional checks and rerun numerical throughput.
+The GeoTIFF evidence explicitly uses a separately corrected local component; its
+Java correction is not part of the Python PR, and the old published component's
+numerical scientific failure remains recorded.
