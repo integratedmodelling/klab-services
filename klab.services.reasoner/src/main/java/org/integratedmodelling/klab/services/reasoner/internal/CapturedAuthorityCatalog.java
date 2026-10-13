@@ -64,10 +64,15 @@ public final class CapturedAuthorityCatalog {
     return captureRecorded(data, JacksonConfiguration.newObjectMapper().readValue(source, Worldview.class), bindings, evidence);
   }
   private static CapturedAuthorityCatalog captureRaw(Path data) throws Exception {
-    var metadata = data.resolve("components/catalog.json");
+    var mutableComponents = data.resolve("components");
+    var immutableComponents = data.resolve("captured-authority-state/provider-components");
+    boolean hasImmutableComponents = Files.isRegularFile(immutableComponents.resolve("catalog.json"));
+    var components = hasImmutableComponents ? immutableComponents : mutableComponents;
+    var metadata = components.resolve("catalog.json");
     if (!Files.isRegularFile(metadata)) return empty();
     var mapper = JacksonConfiguration.newObjectMapper().addMixIn(ComponentDescriptor.class, ComponentWireMixin.class);
     var descriptors = mapper.readValue(Files.readAllBytes(metadata), ComponentDescriptor[].class);
+    if (hasImmutableComponents) verifyRegisteredComponents(mutableComponents, descriptors, mapper);
     var providers = new LinkedHashMap<String, Provider>();
     for (var descriptor : descriptors) {
       if (descriptor.authorities().isEmpty()) continue;
@@ -80,7 +85,7 @@ public final class CapturedAuthorityCatalog {
         case "klab.authority.pubchem" -> "org.integratedmodelling.klab.authority.pubchem.PubChemAuthority";
         default -> throw unresolved("unsupported captured provider implementation: " + descriptor.id());
       };
-      Path artifact = data.resolve("components/plugins").resolve(descriptor.sourceArchive().getName());
+      Path artifact = components.resolve("plugins").resolve(descriptor.sourceArchive().getName());
       byte[] archive = Files.readAllBytes(artifact);
       if (!HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(archive)).equals(descriptor.fileHash()))
         throw unresolved("installed component content disagrees with its descriptor: " + descriptor.id());
@@ -127,6 +132,35 @@ public final class CapturedAuthorityCatalog {
         ledgers.put(file.getFileName().toString(), Files.readAllBytes(file));
     }
     return new CapturedAuthorityCatalog(providers, records, documents, ledgers, Map.of());
+  }
+  /** Registration rewrites installation bookkeeping, not the proved configuration contract.
+   * Immutable proof metadata remains byte-pinned; current permissions/contributions and actual
+   * installed code must still match before that snapshot can serve authority requests. */
+  private static void verifyRegisteredComponents(Path currentRoot, ComponentDescriptor[] proved,
+      ObjectMapper mapper) throws Exception {
+    var file = currentRoot.resolve("catalog.json");
+    if (!Files.isRegularFile(file)) throw unresolved("registered component catalog is unavailable");
+    var registered = mapper.readValue(Files.readAllBytes(file), ComponentDescriptor[].class);
+    for (var expected : proved) {
+      if (expected.authorities().isEmpty()) continue;
+      var matches = Arrays.stream(registered).filter(c -> c.id().equals(expected.id())).toList();
+      if (matches.size() != 1 || !Arrays.equals(componentContract(matches.getFirst(), mapper), componentContract(expected, mapper)))
+        throw unresolved("registered provider permissions or configuration contract changed: " + expected.id());
+      var actual = matches.getFirst();
+      if (actual.sourceArchive() == null || expected.sourceArchive() == null)
+        throw unresolved("registered provider has no archive: " + expected.id());
+      var installed = currentRoot.resolve("plugins").resolve(actual.sourceArchive().getName());
+      var frozen = currentRoot.getParent().resolve("captured-authority-state/provider-components/plugins").resolve(expected.sourceArchive().getName());
+      if (!digest(Files.readAllBytes(installed)).equals(digest(Files.readAllBytes(frozen))))
+        throw unresolved("registered provider archive differs from immutable successful proof: " + expected.id());
+    }
+  }
+  private static byte[] componentContract(ComponentDescriptor descriptor, ObjectMapper mapper) throws Exception {
+    var tree = (com.fasterxml.jackson.databind.node.ObjectNode)mapper.valueToTree(descriptor);
+    // These fields identify installation location/update bookkeeping, not provider behavior,
+    // version, permissions, advertised authority contracts or contribution definitions.
+    tree.remove(List.of("sourceArchive", "timestamp", "latestVersionTimestamp", "updateStatus", "sourceServiceId", "updateable"));
+    return bytes(JSON.convertValue(tree, Object.class));
   }
   /** The producer must supply the exact source and bindings successfully configured by its real compiler.
    * Response cache presence alone is insufficient proof for a configuration that fetched no identities. */
