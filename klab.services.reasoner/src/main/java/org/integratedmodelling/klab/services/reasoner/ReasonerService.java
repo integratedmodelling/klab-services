@@ -140,6 +140,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private final Map<String, String> loadedOntologySources = new HashMap<>();
   private final Map<String, Concept> declarationDomains = new HashMap<>();
   private final Map<String, List<Notification>> loadedOntologyDiagnostics = new HashMap<>();
+  // Changed only under the existing mutation monitor. A generation mismatch hides an old
+  // publication during the interval between status settlement and publishing discovery data.
+  private volatile long capabilitiesGeneration;
+  private volatile org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot
+      publishedSemanticCapabilities =
+          org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot.initial();
 
   private record SubsumptionKey(long revision, Concept concept, Concept other) {}
 
@@ -174,7 +180,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public synchronized String configureAuthority(Authority.ConfigurationRequest request, Scope scope) {
-    return configureAuthorityBinding(request, scope);
+    var result = configureAuthorityBinding(request, scope);
+    if (semanticValidationState.ready()) publishSemanticCapabilities();
+    return result;
   }
 
   @Override
@@ -1507,23 +1515,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public synchronized Capabilities capabilities(Scope scope) {
+  public Capabilities capabilities(Scope scope) {
 
     var ret = new ReasonerCapabilitiesImpl();
+    long revision = knowledgeRevision();
+    long generation = capabilitiesGeneration;
+    String validation = semanticValidationState.signal();
+    var published = publishedSemanticCapabilities;
 
     ret.setPermissions(permissions(scope));
 
-    ret.setWorldviewId(worldview == null ? null : worldview.getWorldviewId());
-    ret.setWorldviewUrn(worldview == null ? null : worldview.getUrn());
-    if (worldview != null && knowledgeReady && consistent.get()) {
-      ret.setAuthorityBindings(worldview.getAuthorityBindings().stream()
-          .filter(binding -> authorityBindings.get(binding.localId()) != null
-              && binding.sourceHash() != null
-              && binding.sourceHash().equals(loadedOntologySources.get(binding.sourceOntology())))
-          .map(binding -> new Worldview.AuthorityBinding(binding.localId(), binding.rootIdentity(),
-              binding.sourceOntology(), binding.sourceOffset(), binding.sourceLength(), binding.sourceHash(), binding.provider(),
-              binding.componentUrn(), binding.componentVersion(), getUrl())).toList());
-    }
+    ret.setWorldviewId(published.worldviewId());
+    ret.setWorldviewUrn(published.worldviewUrn());
     ret.setServiceName(serviceName);
     ret.setType(Type.REASONER);
     ret.setUrl(getUrl());
@@ -1532,11 +1535,38 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
-    ret.setConsistent(this.consistent.get());
-    ret.setKnowledgeRevision(knowledgeRevision());
-    if (worldview != null && consistent.get() && !loadedOntologySources.isEmpty())
-      ret.setWorldviewCommitment(new org.integratedmodelling.klab.api.knowledge.WorldviewCommitment(1, worldview.getWorldviewId(), loadedOntologySources));
+    // A request may straddle a complete mutation. Never label a newer publication with an
+    // older revision, or certify metadata captured while readiness/generation changed.
+    boolean readable = published.generation() == generation
+        && generation == capabilitiesGeneration
+        && validation.equals(semanticValidationState.signal())
+        && validation.endsWith(":ready")
+        && revision == knowledgeRevision();
+    if (readable) ret.setAuthorityBindings(published.authorityBindings());
+    ret.setConsistent(readable && published.consistent());
+    ret.setKnowledgeRevision(revision);
+    if (readable) ret.setWorldviewCommitment(published.commitment());
     return ret;
+  }
+
+  /** Capture under the existing ingestion/update monitor; discovery never acquires that monitor. */
+  private void publishSemanticCapabilities() {
+    var loaded = worldview;
+    boolean usable = loaded != null && knowledgeReady && consistent.get();
+    var bindings = usable ? loaded.getAuthorityBindings().stream()
+        .filter(binding -> authorityBindings.get(binding.localId()) != null
+            && binding.sourceHash() != null
+            && binding.sourceHash().equals(loadedOntologySources.get(binding.sourceOntology())))
+        .map(binding -> new Worldview.AuthorityBinding(binding.localId(), binding.rootIdentity(),
+            binding.sourceOntology(), binding.sourceOffset(), binding.sourceLength(), binding.sourceHash(),
+            binding.provider(), binding.componentUrn(), binding.componentVersion(), getUrl())).toList()
+        : List.<Worldview.AuthorityBinding>of();
+    var id = loaded == null ? null : loaded.getWorldviewId();
+    var commitment = usable && id != null && !id.isBlank() && !loadedOntologySources.isEmpty()
+        ? new WorldviewCommitment(1, id, loadedOntologySources) : null;
+    publishedSemanticCapabilities =
+        org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot.capture(
+            capabilitiesGeneration, id, loaded == null ? null : loaded.getUrn(), usable, bindings, commitment);
   }
 
   @Override
@@ -1717,6 +1747,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     } finally {
       if (semanticValidationState.loading())
         semanticValidationState.settle(knowledgeRevision(), false);
+      publishSemanticCapabilities();
     }
   }
 
@@ -1766,6 +1797,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     semanticValidationState.begin(knowledgeRevision());
+    capabilitiesGeneration++;
     knowledgeReady = false;
     invalidateSemanticCaches();
     this.worldview = worldview;
@@ -1852,6 +1884,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     changes.getOntologies().forEach(r -> affectedKnowledge.add("ontology:" + r.getResourceUrn()));
     changes.getObservationStrategies().forEach(r -> affectedKnowledge.add("strategy:" + r.getResourceUrn()));
     semanticValidationState.beginUpdate(knowledgeRevision(), affectedKnowledge);
+    capabilitiesGeneration++;
     invalidateSemanticCaches();
 
     boolean inconsistent = false;
@@ -1984,6 +2017,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           semanticValidationState.ready()
               && loadedOntologyDiagnostics.values().stream()
                   .noneMatch(Utils.Notifications::hasErrors));
+      publishSemanticCapabilities();
     }
 
     return changes;
@@ -3302,6 +3336,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     //            Message.MessageType.ServiceUnavailable,
     //            capabilities(serviceScope()));
     semanticValidationState.settle(knowledgeRevision(), false);
+    capabilitiesGeneration++;
     invalidateSemanticCaches();
     knowledgeReady = false;
     authorityBindings.clear();
