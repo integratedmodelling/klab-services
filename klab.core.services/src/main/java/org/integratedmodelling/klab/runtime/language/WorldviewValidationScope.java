@@ -161,6 +161,17 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
             statement.isAbstract(),
             false, statement.isSubjective(), statement.isSealed());
     this.conceptTypes.put(defaultLabel, descriptor);
+    // A captured worldview must register the same core target descriptors that the normal
+    // parser registers through createConceptDescriptor(). The core RDF is deliberately
+    // untyped; omitting these source-defined aliases turns expressions such as odo:Speed
+    // into Nothing even though the captured declarations resolve them.
+    if (statement.getUpperConceptDefined() != null) {
+      var coreId = statement.getUpperConceptDefined();
+      var parts = coreId.split(":", 2);
+      if (parts.length == 2) conceptTypes.put(coreId, new ConceptDescriptor(parts[0], parts[1],
+          getMainType(statement.getType()), coreId,
+          "Core concept " + coreId + " for type " + getMainType(statement.getType()), true, false));
+    }
     for (var child : statement.getChildren()) {
       loadConcepts(child, namespace);
     }
@@ -180,7 +191,16 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
       // shouldn't happen in KimDeclarations
       return SemanticSyntax.Type.GENERIC_QUALITY;
     } else if (strippedType.size() == 1) {
-      return getMainType(strippedType.iterator().next());
+      var mainType = strippedType.iterator().next();
+      // Preserve the source relationship family only after validating one declarable type.
+      // Conflicting families are malformed source evidence, not an arbitrary choice.
+      if (mainType == SemanticType.RELATIONSHIP) {
+        if (type.contains(SemanticType.STRUCTURAL) && type.contains(SemanticType.FUNCTIONAL))
+          return SemanticSyntax.Type.NOTHING;
+        if (type.contains(SemanticType.STRUCTURAL)) return SemanticSyntax.Type.STRUCTURAL_RELATIONSHIP;
+        if (type.contains(SemanticType.FUNCTIONAL)) return SemanticSyntax.Type.FUNCTIONAL_RELATIONSHIP;
+      }
+      return getMainType(mainType);
     }
     // No VOID admitted if we have a worldview
     return SemanticSyntax.Type.NOTHING;

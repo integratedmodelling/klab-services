@@ -117,6 +117,17 @@ public final class WorldviewDeclarationSupport {
         SemanticType.OBSERVABLE,
         resolve);
     for (var description : statement.getObservablesDescribed()) {
+      // The approved Domain -> Configuration branch is a necessary class restriction.
+      // Its target is not a quality and contributes no bearer to the describing domain.
+      // Complete consistency/satisfiability checks run at the candidate publication boundary.
+      if (description.getSecond() == KimConceptStatement.DescriptionType.DESCRIBES) {
+        var target = description.getFirst() == null ? null : resolve.apply(description.getFirst());
+        if (owner.is(SemanticType.DOMAIN) && target != null && !target.is(SemanticType.NOTHING)
+            && target.is(SemanticType.CONFIGURATION)) {
+          restrictions.computeIfAbsent("odo:describesConfiguration", key -> new ArrayList<>()).add(target);
+          continue;
+        }
+      }
       boolean validOwner = switch (description.getSecond()) {
         case CLASSIFIES -> owner.is(SemanticType.PREDICATE);
         case DISCRETIZES -> owner.is(SemanticType.ORDERING);

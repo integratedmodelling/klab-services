@@ -35,8 +35,8 @@ public final class CapturedAuthorityCatalog {
     this.providers = Map.copyOf(providers); this.records = freeze(records);
     this.documentation = freeze(documentation); this.codelists = freeze(codelists); this.validatedRequests = freeze(validatedRequests);
     var manifest = new TreeMap<String, String>();
-    providers.forEach((urn, p) -> manifest.put("provider:" + urn, p.implementation() + ":" + digest(bytes(p.boundaries().stream().sorted().toList())) + ":" + digest(p.capabilities())
-        + ":" + digest(p.seeds()) + ":" + digest(bytes(p.component())) + ":" + digest(bytes(p.policy()))));
+    providers.forEach((urn, p) -> manifest.put("provider:" + urn, p.implementation() + ":" + digest(bytes(p.boundaries().stream().sorted().toList())) + ":" + canonicalMetadataDigest(p.capabilities())
+        + ":" + canonicalMetadataDigest(p.seeds()) + ":" + digest(bytes(p.component())) + ":" + digest(bytes(p.policy()))));
     this.records.forEach((k, v) -> manifest.put("response:" + k, digest(v)));
     this.documentation.forEach((k, v) -> manifest.put("documentation:" + k, digest(v)));
     this.codelists.forEach((k, v) -> manifest.put("codelist:" + k, digest(v)));
@@ -170,7 +170,7 @@ public final class CapturedAuthorityCatalog {
     var result = new TreeMap<String, ProviderEvidence>();
     providers.forEach((urn, p) -> result.put(urn, new ProviderEvidence(p.implementation(),
         digest(bytes(p.component())), digest(bytes(p.policy())),
-        digest(bytes(List.of(p.boundaries().stream().sorted().toList(), digest(p.capabilities()), digest(p.seeds())))))));
+        digest(bytes(List.of(p.boundaries().stream().sorted().toList(), canonicalMetadataDigest(p.capabilities()), canonicalMetadataDigest(p.seeds())))))));
     return Map.copyOf(result);
   }
   private static void captureDocuments(JsonNode value, Map<String, byte[]> result) throws Exception {
@@ -312,6 +312,12 @@ public final class CapturedAuthorityCatalog {
   }
   private static byte[] bytes(Object value) {
     try { return JSON.writeValueAsBytes(value); } catch (IOException failure) { throw new IllegalArgumentException(failure); }
+  }
+  /** Provider JSON object-member order can differ between JVMs. Preserve every value and
+   * array order, but encode nested object members canonically before provenance comparison. */
+  static String canonicalMetadataDigest(byte[] contents) {
+    try { return digest(bytes(JSON.readValue(contents, Object.class))); }
+    catch (IOException failure) { throw new IllegalArgumentException("Invalid provider metadata", failure); }
   }
   private static String digest(byte[] bytes) {
     try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)); }

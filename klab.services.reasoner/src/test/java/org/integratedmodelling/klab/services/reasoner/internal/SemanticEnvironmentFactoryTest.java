@@ -57,6 +57,69 @@ class SemanticEnvironmentFactoryTest {
     worldview.setEmpty(false); worldview.setOntologies(new ArrayList<>(List.of(ontology)));
     return worldview;
   }
+  private Map<String,byte[]> configurationCore() throws Exception {
+    String xml=new String(core().get("odo.owl"),java.nio.charset.StandardCharsets.UTF_8);
+    String additions="""
+      <owl:ObjectProperty rdf:about="http://integratedmodelling.org/odo#describesConfiguration">
+        <rdfs:domain rdf:resource="http://integratedmodelling.org/odo#Domain"/>
+        <rdfs:range rdf:resource="http://integratedmodelling.org/odo#Configuration"/>
+      </owl:ObjectProperty>
+      <owl:Class rdf:about="http://integratedmodelling.org/odo#NoConfigurationDomain">
+        <rdfs:subClassOf rdf:resource="http://integratedmodelling.org/odo#Domain"/>
+        <rdfs:subClassOf><owl:Restriction>
+          <owl:onProperty rdf:resource="http://integratedmodelling.org/odo#describesConfiguration"/>
+          <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:maxCardinality>
+        </owl:Restriction></rdfs:subClassOf>
+      </owl:Class>
+      """;
+    return Map.of("odo.owl",xml.replace("</rdf:RDF>",additions+"</rdf:RDF>").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+  }
+  private Worldview configurationWorld(boolean conflict) {
+    var world=world(conflict?"config-conflict":"config-independent",false);
+    var ontology=(KimOntologyImpl)world.getOntologies().getFirst();
+    var rootSystem=statement("SystemRoot",SemanticType.CONFIGURATION,11);rootSystem.setType(EnumSet.of(SemanticType.CONFIGURATION));rootSystem.setUpperConceptDefined("odo:Configuration");
+    var system=statement("System",SemanticType.CONFIGURATION,12);system.setType(EnumSet.of(SemanticType.CONFIGURATION));system.setDeclaredParent(reference("w:SystemRoot"));
+    system.setChildrenDisjoint(true);
+    for(String name:List.of("Earth","Mars")){var child=statement(name,SemanticType.CONFIGURATION,13);child.setType(EnumSet.of(SemanticType.CONFIGURATION));system.getChildren().add(child);}
+    var domain=statement("Perspective",SemanticType.DOMAIN,15);domain.setType(EnumSet.of(SemanticType.DOMAIN,SemanticType.PREDICATE));
+    var rootDomain=statement("DomainRoot",SemanticType.DOMAIN,14);rootDomain.setType(EnumSet.of(SemanticType.DOMAIN,SemanticType.PREDICATE));
+    rootDomain.setUpperConceptDefined(conflict?"odo:NoConfigurationDomain":"odo:Domain");domain.setDeclaredParent(reference("w:DomainRoot"));
+    for(String name:List.of("Earth","Mars"))domain.getObservablesDescribed().add(new org.integratedmodelling.klab.api.collections.impl.PairImpl<>(reference("w:"+name),org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.DescriptionType.DESCRIBES));
+    ontology.getStatements().addAll(List.of(rootSystem,system,rootDomain,domain));return world;
+  }
+  @Test void capturedParserRegistersCoreAliasTargetsFromTheAuthoritativeWorldview() throws Exception {
+    assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.NOTHING,
+        org.integratedmodelling.klab.runtime.language.WorldviewValidationScope.getMainType(EnumSet.of(SemanticType.RELATIONSHIP,SemanticType.STRUCTURAL,SemanticType.EVENT)));
+    assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.NOTHING,
+        org.integratedmodelling.klab.runtime.language.WorldviewValidationScope.getMainType(EnumSet.of(SemanticType.RELATIONSHIP,SemanticType.STRUCTURAL,SemanticType.FUNCTIONAL)));
+    var worldview=world("core-parser",false);var ontology=(KimOntologyImpl)worldview.getOntologies().getFirst();
+    var speed=statement("Speed",SemanticType.VELOCITY,19);speed.setType(EnumSet.of(SemanticType.QUALITY,SemanticType.OBSERVABLE,SemanticType.VELOCITY,SemanticType.INTENSIVE,SemanticType.QUANTIFIABLE,SemanticType.ABSTRACT));speed.setUpperConceptDefined("odo:Speed");ontology.getStatements().add(speed);
+    var relationship=statement("Relationship",SemanticType.RELATIONSHIP,20);relationship.setType(EnumSet.of(SemanticType.RELATIONSHIP,SemanticType.STRUCTURAL,SemanticType.OBSERVABLE,SemanticType.COUNTABLE,SemanticType.ABSTRACT));relationship.setUpperConceptDefined("odo:Relationship");ontology.getStatements().add(relationship);
+    var parser=new org.integratedmodelling.klab.runtime.language.CapturedSemanticExpressionParser(worldview);
+    var parsedRelationship=parser.concept("odo:Relationship");assertTrue(parsedRelationship.is(SemanticType.STRUCTURAL));assertFalse(parsedRelationship.is(SemanticType.FUNCTIONAL));
+    var expression=parser.concept("change rate of odo:Speed");
+    assertEquals("change rate of odo:Speed",expression.getUrn());
+    assertFalse(expression.is(SemanticType.NOTHING));
+    assertThrows(IllegalArgumentException.class,()->parser.concept("Nothing"));
+  }
+  @Test void wholeCandidateRejectsUnsatisfiableDescribingDomainAndKeepsIndependentWitnesses() throws Exception {
+    var factory=new SemanticEnvironmentFactory(directory.resolve("config-actors"),configurationCore());
+    var captured=factory.capture(configurationWorld(false));
+    assertEquals(CandidatePublicationCoordinator.BeanStatus.VALID,captured.beanStatus(),captured.diagnostics().toString());
+    var positive=factory.build(captured,()->false);
+    try(var state=positive.state()) {
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID,positive.logicalStatus(),positive.diagnostics().toString());
+      assertTrue(state.actor().owl().isConsistent());
+      assertTrue(state.actor().satisfiable(state.actor().resolveConcept("w:Perspective")));
+
+    }
+    try(var runtime=new AcceptedSemanticRuntime(factory)) {
+      runtime.submit(configurationWorld(false));assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));assertEquals(1,runtime.status().acceptedGeneration());
+      runtime.submit(configurationWorld(true));assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.INVALID,runtime.status().logicalStatus(),runtime.status().diagnostics().toString());
+      assertEquals(1,runtime.status().acceptedGeneration());
+    }
+  }
   private CandidatePublicationCoordinator.Input<Worldview> input(SemanticEnvironmentFactory factory, Worldview world) {
     var sources = SemanticEnvironmentFactory.sources(world);
     return new CandidatePublicationCoordinator.Input<>(sources, SemanticEnvironmentFactory.sourceOrder(world),

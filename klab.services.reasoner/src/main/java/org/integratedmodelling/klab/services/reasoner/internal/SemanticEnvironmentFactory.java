@@ -272,6 +272,14 @@ public final class SemanticEnvironmentFactory
         actor.owl().flushReasoner();
         if (!actor.owl().isConsistent()) diagnostics.add(Notification.error(
             "Candidate OWL is inconsistent after semantic expression validation"));
+        else {
+          // Expressions may add axioms after a source declaration was checked. Classify the
+          // final candidate once: global consistency alone does not reject impossible classes.
+          actor.owl().getUnsatisfiableClasses().entities().filter(c -> !c.isOWLNothing())
+              .sorted(java.util.Comparator.comparing(c -> c.getIRI().toString()))
+              .forEach(c -> diagnostics.add(Notification.error(
+                  "Candidate contains unsatisfiable named class: " + c.getIRI())));
+        }
       }
       var messages = diagnostics.stream().map(Notification::getMessage).toList();
       var status = messages.stream().anyMatch(m -> m.contains("CANDIDATE_ISOLATION_UNSUPPORTED"))

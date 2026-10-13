@@ -88,6 +88,13 @@ class CapturedAuthorityCatalogTest {
     Files.write(ledger,json.writeValueAsBytes(new AuthorityCodelists.State(0,List.of())));
     assertTrue(captured(fixture).supports(fixture.binding()));
   }
+  @Test void provenanceIgnoresOnlyJsonObjectMemberOrderAndPreservesArrayOrder() {
+    byte[] first="{\"b\":{\"x\":1,\"y\":2},\"a\":[1,2]}".getBytes();
+    byte[] reordered="{\"a\":[1,2],\"b\":{\"y\":2,\"x\":1}}".getBytes();
+    byte[] changedArray="{\"a\":[2,1],\"b\":{\"y\":2,\"x\":1}}".getBytes();
+    assertEquals(CapturedAuthorityCatalog.canonicalMetadataDigest(first),CapturedAuthorityCatalog.canonicalMetadataDigest(reordered));
+    assertNotEquals(CapturedAuthorityCatalog.canonicalMetadataDigest(first),CapturedAuthorityCatalog.canonicalMetadataDigest(changedArray));
+  }
   @Test void privateComponentPermissionsRequireAnExplicitAuthorizedCapture() throws Exception {
     var fixture=fixture();var file=fixture.data().resolve("components/catalog.json");var descriptors=json.readTree(Files.readAllBytes(file));
     ((com.fasterxml.jackson.databind.node.ObjectNode)descriptors.get(0).get("usageRights")).put("public",false);Files.write(file,json.writeValueAsBytes(descriptors));
