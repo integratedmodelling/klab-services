@@ -326,9 +326,28 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public synchronized SemanticValidationResponse validateDocument(
+  public SemanticValidationResponse validateDocument(
       SemanticValidationRequest request, Scope scope) {
     var response = SemanticValidationResponse.forRequest(request);
+    try {
+      return validateDocumentPreflight(request, scope, response);
+    } catch (org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException e) {
+      response.setStatus(SemanticValidationResponse.Status.UNAVAILABLE);
+      response.setReason("Semantic validation requires an available Resources service: " + e.getMessage());
+      response.addDocumentDiagnostic(request, Notification.Level.Warning);
+    } catch (RuntimeException e) {
+      response.setStatus(SemanticValidationResponse.Status.FAILED);
+      response.setReason("Semantic validation could not complete: " + e.getMessage());
+      response.addDocumentDiagnostic(request, Notification.Level.Error);
+    } finally {
+      response.deduplicateNotifications();
+    }
+    return response;
+  }
+
+  /** Source diagnostics and availability checks must not wait for worldview ingestion. */
+  private SemanticValidationResponse validateDocumentPreflight(
+      SemanticValidationRequest request, Scope scope, SemanticValidationResponse response) {
     response.setKnowledgeRevision(knowledgeRevision());
     var document = request.document();
     if (Utils.Notifications.hasErrors(document.getNotifications())) {
@@ -351,9 +370,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (document instanceof KimOntology
         && response.getSourceHash() != null
         && scope instanceof UserScope userScope) {
-      var resources = scope.getService(ResourcesService.class);
-      if (resources != null) {
-        try {
+      try {
+        var resources = scope.getService(ResourcesService.class);
+        if (resources != null) {
           var saved = resources.retrieve(document.getUrn(), KimOntology.class, userScope);
           if (saved != null
               && Objects.equals(
@@ -366,10 +385,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             response.setReason("The saved ontology contains validation errors");
             return response;
           }
-        } catch (RuntimeException e) {
-          response.setReason("Cannot retrieve saved ontology diagnostics: " + e.getMessage());
-          return response;
         }
+      } catch (RuntimeException e) {
+        response.setReason("Cannot retrieve saved ontology diagnostics: " + e.getMessage());
+        response.addDocumentDiagnostic(request, Notification.Level.Warning);
+        return response;
       }
     }
     if (!knowledgeReady
@@ -379,6 +399,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         || scope.getService(ResourcesService.class) == null) {
       response.setReason(
           "Semantic validation requires loaded knowledge and an available Resources service");
+      return response;
+    }
+    return validateReadyDocument(request, scope, response);
+  }
+
+  /** Keep OWL reads and synchronization serialized with knowledge loading. */
+  private synchronized SemanticValidationResponse validateReadyDocument(
+      SemanticValidationRequest request, Scope scope, SemanticValidationResponse response) {
+    var document = request.document();
+    // A reload may have begun between preflight and acquiring the ingestion monitor.
+    if (!knowledgeReady) {
+      response.setReason("Semantic validation requires loaded knowledge");
       return response;
     }
     if (request.getKnowledgeRevision() >= 0
