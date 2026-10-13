@@ -40,7 +40,7 @@ class WorldviewLoadingSupportTest {
     assertEquals(List.of(root, removed, added), worldview.getOntologies());
   }
 
-  @Test void warningsDoNotBlockLoadingAndLocalErrorsRemainEditable() {
+  @Test void warningsDoNotBlockLoadingAndBeanErrorsRejectLocalAndRemoteIngestion() {
     var worldview = mock(Worldview.class);
     var root = new KimOntologyImpl(); root.setUrn("imod");
     var earth = new KimOntologyImpl(); earth.setUrn("earth"); earth.setDomain(new KimConceptImpl());
@@ -52,7 +52,7 @@ class WorldviewLoadingSupportTest {
     earth.getNotifications().add(Notification.error("Unknown concept", Notification.LexicalContext.of(source, earth)));
     when(worldview.isEmpty()).thenReturn(true);
     assertFalse(WorldviewLoadingSupport.loadable(worldview, false));
-    assertTrue(WorldviewLoadingSupport.loadable(worldview, true));
+    assertFalse(WorldviewLoadingSupport.loadable(worldview, true));
     var diagnostics = WorldviewLoadingSupport.diagnostics(worldview);
     assertEquals(2, diagnostics.size());
     assertEquals("earth at 16528: Unknown concept", WorldviewLoadingSupport.errorSummary(diagnostics));

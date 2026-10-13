@@ -3038,6 +3038,12 @@ public class OWL {
     return reasoner != null;
   }
 
+  // Only the caller holding this monitor can pin a buffering reasoner between flushes.
+  boolean hasPinnedBufferingReasoner() {
+    return Thread.holdsLock(this) && reasoner != null
+        && reasoner.getBufferingMode() == org.semanticweb.owlapi.reasoner.BufferingMode.BUFFERING;
+  }
+
   public synchronized NodeSet<OWLClass> getSuperClasses(OWLClassExpression arg0, boolean arg1)
       throws InconsistentOntologyException,
           ClassExpressionNotInProfileException,
