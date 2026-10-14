@@ -9,6 +9,12 @@ the [authoritative verification record](exports-verification.md). The
 [original numerical pilots](history/geotiff-throughput-2026-10-13.md) are historical
 evidence, not validation of subsequent revisions.
 
+The reviewed Java correction is now carried on this branch as a
+[pinned buildable patch](../component-patches/geospatial/README.md). Use
+`tools/build_geospatial_component.py` to stage its base, apply the tracked changes,
+run component tests and obtain an explicitly hashed deployable archive. Acceptance
+can then use that archive and staged source path without an external open PR.
+
 ## Workflow and modes
 
 `full-roundtrip` creates an owned explicit-persistence context and typed 5×4

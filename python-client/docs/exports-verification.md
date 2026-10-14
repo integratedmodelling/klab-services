@@ -17,7 +17,50 @@ Review authority: Eric's `C:\Users\lumsd\Downloads\KLAB_CLI_Contribution_Review.
 dated 11 October 2026. Its inferred maintainer preferences are not official policy
 or a guarantee of acceptance. The issue agreement and actual contracts take precedence.
 
-## Reviewed submission
+## GeoTIFF correction integrated on feature/python-client
+
+The user requested that the reviewed component changes be carried on the Python-
+client branch and selected the buildable-patch approach. The actual correction,
+Java regressions and independent reader are now tracked under
+`python-client/component-patches/geospatial`, with
+`tools/build_geospatial_component.py` producing the corrected standalone package.
+No external open PR or new services reactor module is required.
+
+The staged checkout is verified against upstream base `8d4ef866`, the patch SHA-256
+`3100b1fb9c42398edfd00b43909dd7ba80857da5b6778fb8d45e3d58334885cc`, and the exact reviewed
+source tree `f05b578a14c707d8fd34348e56adc9a96bf25d66` from correction `a1d36d30`.
+The tree is rechecked after tests/packaging. Input component/user checkouts are not
+modified; output uses fresh external work with bounded child-step deadlines.
+
+Current integration checks:
+
+- **634 Python offline tests passed** on Windows 3.12.7, with the existing coverage
+  gates and lint. New checks reject changed patch content/unknown manifest versions
+  and preserve an existing work directory without invoking Git or a compiler.
+- Building solely from the branch-carried patch produced the exact reviewed tree,
+  ran **22 component tests** with zero failures/errors/skips, and passed all eight
+  independent written-file checks under optimization. The artifact was built with
+  the existing component packaging layout, not as copied SDK Java classes.
+- Fresh live acceptance used that staged source and its explicitly pinned artifact:
+  both GeoJSON and one-sample restored GeoTIFF acceptance passed; measured serial
+  roundtrip **3/3 verified**, zero failures, 17.843 seconds. Personal session and all
+  five owned JVM/authority exits were confirmed, cleanup exit 0.
+- Build report: `python-branch-geotiff-build2/component-build.json` in the external
+  test workspace. Local archive SHA-256:
+  `e9fa36a605013743669077dbb87874915d98006130acc8119834a23b3cfcc6fa`.
+  Live reports/untouched files: `python-branch-geotiff-live1`.
+- This was pre-publication branch integration evidence with explicit dirty-state/
+  source identities. Exact final commit and hosted checks are tracked in Git/branch
+  checks rather than relabelling these results as a new immutable-head run.
+
+The corrected code and a reproducible build are included on this branch. Upstream
+geospatial `main` and Maven distribution remain unchanged; earlier statements that
+the correction was separately local describe their historical checkpoints. Server
+compatibility #89/#90 and independent provider accuracy remain separate boundaries.
+
+See [branch patch/build instructions](../component-patches/geospatial/README.md).
+
+## Reviewed submission — original export PR #92
 
 - Repository: `integratedmodelling/klab-services`, `python-client/`.
 - Target/base: `feature/python-client`, `90bebb5f35e60ad002f106c8d655e66d7e00d89d`.

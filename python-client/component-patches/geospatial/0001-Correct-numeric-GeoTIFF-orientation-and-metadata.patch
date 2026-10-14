@@ -1,0 +1,1166 @@
+From a1d36d30bde17d853de71e0cc7d285e597666e4c Mon Sep 17 00:00:00 2001
+From: Dobbes <Dobbes@users.noreply.github.com>
+Date: Wed, 14 Oct 2026 08:40:27 -0400
+Subject: [PATCH] Correct numeric GeoTIFF orientation and metadata
+
+Preserve double-valued precision, explicit NaN nodata and source band units with ASCII-safe GDAL-compatible XML. Retain owned temporary-file cleanup and primary failures. Add written georeference, precision, Unicode and lifecycle regressions plus an independent reader oracle and contribution review record.
+
+diff --git a/README.md b/README.md
+index 406872fb9b42d8cb460e7b7f682c93ecaf94ded3..f93a8c57c67be599e40f7b54e4cd128d51bddf50 100644
+--- a/README.md
++++ b/README.md
+@@ -38,6 +38,59 @@ mvn clean install
+ mvn test
+ ```
+ 
++### Numeric GeoTIFF regression
++
++The exporter regression belongs in
++`src/test/java/org/integratedmodelling/geospatial/utils/GeotiffExportTest.java`,
++beside the coverage/rendering tests. Run it with:
++
++```bash
++./mvnw -Dtest=GeotiffExportTest,GeotiffStreamTest,RasterRendererTest,GeodataIOTest test
++```
++
++It independently specifies a 5×4 native XY field and checks every north-up pixel
++against its world coordinate, including valid zero and one NaN. Written fixtures
++cover projected/geographic CRSs, both geographic axis orders, shifted image origins,
++rotation/shear, float64 precision and ASCII-safe Unicode/unit metadata. Separate
++stream tests cover generation/close/delete failures and owned temporary-file cleanup.
++
++Native grid y increases northward, while TIFF rows increase southward. The coverage
++conversion must map `row = height - 1 - nativeY`. The numeric DoubleScanner exporter
++writes float64, widening float inputs without changing values rather than narrowing
++double values or converted views. Int64 is explicitly rejected because this scanner
++contract cannot establish exact integer preservation; categorical export remains
++unsupported. PNG continues to request its existing float32 rendering representation.
++
++The writer uses GeoTools georeferencing and its TIFF metadata encoder, explicitly
++retaining NaN nodata and the source `UnitImpl` definition in GDAL band-unit metadata.
++Supplied units without a serializable definition fail explicitly instead of being
++silently omitted; a genuinely absent measurement unit is not invented from the CRS.
++Numeric XML references keep Unicode source text inside the TIFF ASCII tag. GDAL's
++historical second unescape requires two escaping layers for reserved punctuation and
++literal entity-looking text. Coordinate-system units are not measurement units.
++
++For the independent written-file oracle, prepare a fresh existing evidence directory
++and run:
++
++```bash
++./mvnw -Dgeotiff.evidence.dir=/absolute/existing/evidence-directory test
++python -m pip install 'rasterio>=1.4,<2'
++python tools/check_geotiff_reference.py /absolute/existing/evidence-directory
++```
++
++The Python reader is optional development tooling, not a component runtime dependency.
++Its checks remain active with Python optimization enabled. Ordinary Java tests also
++assert written tags/transforms without requiring the optional reader.
++
++The full saved-handle/fresh-Python-process/export/Rasterio throughput test belongs
++in `klab-services/python-client/tools/workflows/export_deliverables.py`, with
++`tools/geotiff_throughput.py` retained as a compatibility command; its deterministic
++scientific/rate guards belong in `python-client/tests/unit/test_geotiff_throughput.py`.
++Current source/artifact identities, independent-reader results, live workflow
++evidence and contribution-guide reviews are recorded in `docs/GEOTIFF_REVIEW.md`.
++Earlier Python throughput results predate the current precision/unit corrections
++and are not relabelled as validation of this revised component.
++
+ ## License
+ 
+ This project is licensed under the GNU Affero General Public License (AGPL) version 3.0. See the [license text](http://www.gnu.org/licenses/agpl-3.0.en.html) for details.
+diff --git a/docs/GEOTIFF_REVIEW.md b/docs/GEOTIFF_REVIEW.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..5ea7b733a548074cccfb72804e6971833cfed00b
+--- /dev/null
++++ b/docs/GEOTIFF_REVIEW.md
+@@ -0,0 +1,175 @@
++# Native GeoTIFF correction and review record
++
++## Scope and reviewed state
++
++- Repository: `integratedmodelling/klab.component.geospatial`.
++- New branch: `fix/geotiff-scientific-export`.
++- Integration target/base: `main`, `8d4ef8665016761eb12a504a304f02eb3b55f1c7`.
++- Authorized local changes preserved from `fix/geotiff-orientation-metadata`:
++  README, Geotools coverage conversion, GeodataIO export/lifecycle, new native writer
++  and scientific regressions. The review checkpoint was local and uncommitted;
++  the user subsequently authorized publication as a component PR and merge.
++- User review guide: `C:\Users\lumsd\Downloads\KLAB_CLI_Contribution_Review.md`.
++  Inferred maintainer preferences are not official policy or acceptance guarantees.
++
++The user requested a fresh branch and iterative independent review/fixes until ready.
++
++## Capability and boundaries
++
++Native numeric GeoTIFF associates k.LAB's north-increasing grid y with north-up
++image rows, retains valid zero and NaN nodata/mask, preserves supplied source units
++and avoids float64 narrowing. GeoTools still defines CRS/affine encoding; native
++bytes are generated server-side, without Python-side flips or scientific re-encoding.
++This is a single-raster DoubleScanner exporter, not new window/multishard/temporal
++or categorical protocols. Int64 exactness requires a separate integer scanner
++contract and is explicitly rejected. Float64 is the output representation even
++when the input storage is float32; values are widened, not rounded down.
++
++## Review iteration 1 — Needs fixes
++
++An independent read-only reviewer inspected the new writer against GeoTools 34.4,
++ImageIO-Ext 2.0.2 and GDAL source contracts. Findings:
++
++1. **Important, reproduced unit defect:** TIFF ASCII serialization truncates Unicode
++   characters; the existing ASCII-only test missed this. Unicode/superscript source
++   text was changed on serialization. Numeric XML references now preserve it.
++2. **Written-georeferencing evidence gap:** coverage coordinates alone did not prove
++   serialized CRS/affine behavior. Actual written cases now cover geographic axis
++   orders, shifted image origin and rotated/sheared affine transforms, read by the
++   independent Rasterio/GDAL consumer.
++3. **GDAL escaping contract, resolved by reproduction:** GDAL unescapes a second
++   time after XML parsing. Single escaping truncated source units at a bare `&`.
++   The writer now follows GDAL's documented double-escaping convention for reserved
++   punctuation; Unicode numeric references remain in the outer XML layer. Ordinary
++   DOM tests check the specified intermediate value; Rasterio checks exact final
++   unit strings, including literal `&amp;`, decimal/hex entity-looking text.
++
++Additional implementation review reproduced float64 values being exported as
++float32. Numeric conversion now retains doubles and the DoubleScanner exporter
++writes float64. The `16777217.125` regression checks a value not representable in
++float32, with valid zero and a missing cell. Int64 is rejected before scanner reads.
++
++Owned stream cleanup now attempts deletion after close failure and suppresses a
++secondary delete failure onto the primary IOException. Generation failures remove
++the temporary file; no empty successful stream is returned for a null export.
++
++## Current verification
++
++Current candidate checks are local dirty-tree evidence, with LF-normalized Java
++source hashes and exact command vectors in the external test records. No older
++component build/live result is credited to these revised sources.
++
++- `mvnw.cmd -B -ntp -o -Dgeotiff.evidence.dir=<fresh-external-dir> test`:
++  **22 passed**, zero failures/errors/skips in `geotiff-tests-final1/maven.log`.
++  PNG renderer and GeoJSON regressions passed alongside new TIFF/lifecycle cases.
++- `mvnw.cmd -B -ntp -o -DskipTests package`: **Passed**, genuine component archive
++  produced; artifact/source identity recorded in `geotiff-package-final1/check.json`.
++- Independent Rasterio 1.5.2 / GDAL 3.12.2 checks: **eight actual Java-written TIFFs
++  passed**, every pixel/value/center, CRS, affine, dtype, nodata/mask and supplied
++  unit checked in `geotiff-tests-final1/independent-raster.json`. The repository-source
++  optional reader was run with `python -O`; a deliberately corrupted copy was
++  rejected under optimization, leaving original fixtures unchanged.
++- Cases: EPSG:3857 float32/float64, Unicode and literal entities; EPSG:4326 latitude-
++  and longitude-first CRSs; nonzero grid origin; rotation/shear. Valid zero and one
++  NaN are checked separately from masks in all cases.
++- Java GeoTools' convenience `gridToWorld` path rounded geographic positions to
++  float; the written file's independent double-coordinate checks were correct.
++  Tests use double transformation without relaxing the scientific tolerance.
++- The first failing tests and GDAL-unit diagnostics are retained. An external JSON
++  report initially failed because Windows' default text encoding cannot represent
++  superscripts; UTF-8 output fixed the harness, with checks rerun successfully.
++
++JNI GDAL plugins are unavailable in the Java test process and emit their existing
++optional-provider warning. These TIFF tests use ImageIO/GeoTools; independent GDAL
++validation uses Rasterio's separate GDAL installation. No skipped test is counted
++as passing native-GDAL Java execution.
++
++## Rebuilt component and live integration
++
++- Current archive:
++  `target/klab.component.geospatial-component-1.0-SNAPSHOT.jar`, SHA-256
++  `c38628db17df9356f8febcfeff4c671e66bc8bca348aad58676e8a1d9c5fe810`.
++- Client: merged `feature/python-client` commit
++  `a11462ddcf7aa0e2643c1f44faad95e8dd9fed36`, clean checkout.
++- Explicit compatible server: `244883d7b04f1eae2cc22e799575d33a9bdb2a43`, clean.
++- Pinned worldview: `608bef150ced0a109db98a5aad64ba4461beaa54`.
++- Both owned TEST runs first passed actual GeoJSON and one-sample saved-handle/
++  fresh-process GeoTIFF functional acceptance. Native computation/readback and the
++  unchanged independent north-up value/coordinate, zero, NaN/mask and unit oracle
++  passed through the rebuilt genuine component.
++- Serial full recomputation/export: **4/4 verified**, no failures, 21.325 measured
++  wall seconds. Bounded-concurrency repeated export (2 workers): **14/14 verified**,
++  no failures, 16.241 wall seconds. Verified warmups and repeated-mode seed are
++  excluded from rates. These are small 20-cell synthetic workflow measurements,
++  not capacity or a controlled before/after optimization claim.
++- Every live TIFF is float64; scanner values are preserved, not narrowed.
++  Source unit `degree_angle`, valid zero and one NaN with the correct nodata mask
++  are independently checked by Rasterio/GDAL.
++- Both personal test sessions and all five test-owned JVM/authority exits were
++  confirmed; cleanup exit code 0. Evidence:
++  `geotiff-final-live-serial1` and `geotiff-final-live-repeated1`, including run reports,
++  exact commands, source/archive hashes, worker metadata and untouched TIFFs.
++
++## Independent review iteration 2
++
++A complete independent read-only review found **no demonstrated within-scope
++implementation defect** and provisionally accepted the architecture/scientific
++behavior, but required current-revision tests/package and live evidence before
++recommending readiness. Those evidence gaps are now closed by the results above.
++Optional improvements were implemented: ordinary Java tests assert written
++transforms/entity-tag contents even without external capture; the optional independent
++reader is reproducible at `tools/check_geotiff_reference.py`; obsolete float-only
++comments were corrected and personal operational instructions removed from this
++maintainer-facing record.
++
++## Final independent review — Ready for maintainer review
++
++**No demonstrated blocking or important defect remains in the reviewed scope.**
++The independent read-only reviewer applied the same contribution guide to the
++complete authorized contribution, including the optional reader and documentation.
++All 31 current Java source hashes matched the final test/package records and both
++live records. The current archive independently matched the recorded SHA-256 and
++the live-deployed artifact.
++
++The reviewer rechecked all eight captured TIFF fixtures under optimization and the
++actual corrupted-copy negative control. It also revalidated all 22 retained live
++TIFF outputs, including measured samples, warmups and functional samples, against
++their recorded hashes and the independent scientific expectations. Both final runs
++recorded session cleanup and owned stack exit code 0. No source files, evidence or
++remote work were modified by the reviewer.
++
++### Findings and disposition
++
++- Unicode truncation: resolved by ASCII numeric references; exact GDAL units pass.
++- GDAL double-unescape/punctuation truncation: resolved by the documented convention;
++  Unicode, reserved punctuation and literal entity-looking source text pass.
++- Precision narrowing: resolved by double conversion/float64 output; exact precision
++  regression passes. Int64 and unsupported provided unit definitions fail explicitly.
++- Written georeference evidence: closed by projected/geographic, both axis orders,
++  origin-offset and rotation/shear tests plus the independent reader.
++- Lifecycle: generation/close/delete failures have regressions and preserve primary
++  failures. Runtime try-with-resources consumes/closes the owned export stream.
++- Regression/reproduction clarity: ordinary Maven tests now assert the written
++  transforms/tags; the optional independent reader is in the repository and documented.
++- The remaining nonblocking phrase "committed-source" was corrected to
++  "repository-source" to accurately describe the uncommitted review checkpoint.
++
++### Smallest next actions and contribution boundary
++
++No further implementation fix, build or live rerun was required by the final review.
++The user subsequently authorized commit/push, a component PR and merge; publication
++state and exact commit/check results are recorded in that PR's history/discussion.
++This review recommendation itself is not official maintainer acceptance. No component
++distribution or broad separate-deployment/provider-accuracy claim is made.
++
++### Suggested contribution summary
++
++Correct native numeric GeoTIFF orientation, precision, NaN missingness, measurement-
++unit metadata and temporary-file ownership. Native y maps to north-up image rows;
++DoubleScanner exports float64 without narrowing; zero stays valid and NaN gets the
++correct mask. Source text follows ASCII-safe/GDAL-compatible XML conventions.
++Validation: 22 component tests, eight independently read written fixtures, an
++optimized corruption negative control, and current-artifact fresh-process live
++workflows (4/4 serial, 14/14 repeated exports), with source/artifact identity and
++cleanup confirmed. Int64/categorical and new window/multishard protocols remain
++outside this bounded exporter contract.
+diff --git a/src/main/java/org/integratedmodelling/geospatial/library/GeodataIO.java b/src/main/java/org/integratedmodelling/geospatial/library/GeodataIO.java
+index cabd087fb71c92e2ac1d7a7b083e3626ff75b806..7015bce9b12e7a3d095f384bdb5d57d0cc8840d0 100644
+--- a/src/main/java/org/integratedmodelling/geospatial/library/GeodataIO.java
++++ b/src/main/java/org/integratedmodelling/geospatial/library/GeodataIO.java
+@@ -3,12 +3,13 @@ package org.integratedmodelling.geospatial.library;
+ import com.bedatadriven.jackson.datatype.jts.JtsModule;
+ import com.fasterxml.jackson.core.JsonGenerator;
+ import com.fasterxml.jackson.databind.ObjectMapper;
+-import it.geosolutions.imageio.plugins.tiff.BaselineTIFFTagSet;
+ import java.awt.*;
+ import java.awt.image.BufferedImage;
+ import java.awt.image.DataBuffer;
+ import java.io.*;
+ import java.nio.charset.Charset;
++import java.nio.file.Files;
++import java.nio.file.Path;
+ import java.util.Collection;
+ import java.util.LinkedHashMap;
+ import java.util.List;
+@@ -20,7 +21,6 @@ import org.geotools.api.style.Style;
+ import org.geotools.coverage.grid.GridCoverage2D;
+ import org.geotools.data.shapefile.dbf.DbaseFileHeader;
+ import org.geotools.data.shapefile.dbf.DbaseFileWriter;
+-import org.geotools.gce.geotiff.GeoTiffWriter;
+ import org.geotools.map.GridCoverageLayer;
+ import org.geotools.map.MapContent;
+ import org.geotools.renderer.lite.StreamingRenderer;
+@@ -30,6 +30,7 @@ import org.integratedmodelling.common.logging.Logging;
+ import org.integratedmodelling.geospatial.adapters.raster.*;
+ import org.integratedmodelling.geospatial.utils.Geotools;
+ import org.integratedmodelling.geospatial.utils.RasterRenderer;
++import org.integratedmodelling.geospatial.utils.NativeGeoTiffWriter;
+ import org.integratedmodelling.klab.api.collections.Pair;
+ import org.integratedmodelling.klab.api.collections.Parameters;
+ import org.integratedmodelling.klab.api.data.*;
+@@ -46,7 +47,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
+ import org.integratedmodelling.klab.api.services.resources.adapters.Exporter;
+ import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
+ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+-import org.integratedmodelling.klab.api.services.runtime.extension.Reference;
+ import org.integratedmodelling.klab.utilities.Utils;
+ 
+ @Library(
+@@ -298,16 +298,46 @@ public class GeodataIO {
+       description = "Export a numeric observation to a raw data GeoTiff")
+   public InputStream exportGeotiffContinuous(
+       Observation observation, Storage.DoubleScanner scanner, ContextScope scope) {
++    File file = null;
+     try {
+-      var file = File.createTempFile("klab", ".tiff");
+-      exportObservation(file, observation, scanner, "tiff", scope);
+-      return new FileInputStream(file);
++      file = File.createTempFile("klab", ".tiff");
++      var exported = exportObservation(file, observation, scanner, "tiff", scope);
++      if (exported == null) throw new IOException("Numeric GeoTIFF export produced no file");
++      return deleteOnClose(new FileInputStream(exported), exported.toPath());
+     } catch (IOException e) {
++      if (file != null) {
++        try { Files.deleteIfExists(file.toPath()); } catch (IOException cleanup) { e.addSuppressed(cleanup); }
++      }
+       scope.error(e);
+       throw new KlabIOException(e);
++    } catch (RuntimeException e) {
++      if (file != null) {
++        try { Files.deleteIfExists(file.toPath()); } catch (IOException cleanup) { e.addSuppressed(cleanup); }
++      }
++      throw e;
+     }
+   }
+ 
++  static InputStream deleteOnClose(InputStream input, Path ownedFile) {
++    return new FilterInputStream(input) {
++      @Override public void close() throws IOException {
++        IOException failure = null;
++        try {
++          super.close();
++        } catch (IOException error) {
++          failure = error;
++        }
++        try {
++          Files.deleteIfExists(ownedFile);
++        } catch (IOException cleanup) {
++          if (failure == null) failure = cleanup;
++          else failure.addSuppressed(cleanup);
++        }
++        if (failure != null) throw failure;
++      }
++    };
++  }
++
+   @Exporter(
+       schema = "png",
+       properties = {
+@@ -396,7 +426,7 @@ public class GeodataIO {
+     }
+   }
+ 
+-  @Reference.Exporter(name = "geotiff") // TODO support this!
++  // Categorical export remains unregistered until its scanner/coverage implementation is supported.
+   public InputStream exportGeotiffCategorical(
+       Observation observation, Storage.KeyScanner scanner, DataKey dataKey, ContextScope scope) {
+     try {
+@@ -483,22 +513,28 @@ public class GeodataIO {
+       //        // THIS SHOULD BE LOGGED THOUGH
+       //      }
+ 
+-      coverage =
+-          Geotools.stateToCoverage(
+-              observation, scanner, DataBuffer.TYPE_FLOAT, Float.NaN, scope, false);
++      var storageType = scanner.shard().getShardingStrategy().getDataType();
++      if (storageType == Storage.Type.LONG) {
++        throw new KlabIllegalArgumentException(
++            "Int64 GeoTIFF export requires an exact integer scanner contract; a DoubleScanner may lose integer precision");
++      }
++      // The public numeric exporter consumes doubles, including converted scanner
++      // views. Widen float inputs rather than narrowing a double-valued view.
++      coverage = Geotools.stateToCoverage(
++          observation, scanner, DataBuffer.TYPE_DOUBLE, Float.NaN, scope, false);
+     }
+ 
+     if (format.equalsIgnoreCase("tiff")) {
+       try {
+ 
+         File rasterFile = Utils.Files.changeExtension(out, "tiff");
+-        GeoTiffWriter writer = new GeoTiffWriter(rasterFile);
+-
+-        writer.setMetadataValue(
+-            Integer.toString(BaselineTIFFTagSet.TAG_SOFTWARE),
+-            "k.LAB (www.integratedmodelling.org)");
+-
+-        writer.write(coverage, null);
++        var unit = observation.getObservable().getUnit();
++        if (unit != null && !(unit instanceof org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl)) {
++          throw new KlabIllegalArgumentException("GeoTIFF requires a serializable source unit definition");
++        }
++        NativeGeoTiffWriter.write(rasterFile, coverage,
++            unit instanceof org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl sourceUnit
++                ? sourceUnit.getDefinition() : null);
+ 
+         if (dir != null && addStyle) {
+           if (!doNotZip) {
+@@ -517,7 +553,9 @@ public class GeodataIO {
+         }
+         return file;
+       } catch (IOException e) {
+-        return null;
++        throw new KlabIOException(e);
++      } finally {
++        if (coverage != null) coverage.dispose(true);
+       }
+     }
+ 
+diff --git a/src/main/java/org/integratedmodelling/geospatial/utils/Geotools.java b/src/main/java/org/integratedmodelling/geospatial/utils/Geotools.java
+index 6c925ef2f36226ad7c39db61d36d3e4f2382a8a3..c368a4b20e44597cca2e51183cabb99cb98b1293 100644
+--- a/src/main/java/org/integratedmodelling/geospatial/utils/Geotools.java
++++ b/src/main/java/org/integratedmodelling/geospatial/utils/Geotools.java
+@@ -11,6 +11,7 @@ import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
+ import org.geotools.coverage.GridSampleDimension;
+ import org.geotools.coverage.grid.GridCoverage2D;
+ import org.geotools.coverage.grid.GridCoverageFactory;
++import org.geotools.coverage.util.CoverageUtilities;
+ import org.geotools.geometry.jts.ReferencedEnvelope;
+ import org.geotools.metadata.iso.citation.Citations;
+ import org.geotools.referencing.CRS;
+@@ -177,8 +178,7 @@ public class Geotools {
+     /*
+      * build a coverage.
+      *
+-     * TODO use a raster of the appropriate type - for now there is apparently a bug in geotools
+-     * that makes it work only with float.
++     * Preserve the caller's requested raster representation.
+      */
+ 
+     WritableRaster raster =
+@@ -289,15 +289,16 @@ public class Geotools {
+     var grid = scale.getSpace().as(Tile.class).getGrid();
+     var envelope = scale.getSpace().getEnvelope();
+     var dataKey = scope.getDigitalTwin().getStorageManager().getStorage(state).getKey();
++    int width = Math.toIntExact(grid.getXCells());
++    int height = Math.toIntExact(grid.getYCells());
+     /*
+      * build a coverage.
+      *
+-     * TODO use a raster of the appropriate type - for now there is apparently a bug in geotools
+-     * that makes it work only with float.
++     * Preserve the requested float or double representation.
+      */
+     WritableRaster raster =
+         RasterFactory.createBandedRaster(
+-            type, (int) grid.getXCells(), (int) grid.getYCells(), 1, null);
++            type, width, height, 1, null);
+     /*
+      * pre-fill with nodata (the thing is filled with 0s).
+      */
+@@ -324,15 +325,19 @@ public class Geotools {
+     for (int i = 0; i < scanner.size(); i++) {
+ 
+       var xy = mapper.offsets(i);
++      int column = Math.toIntExact(xy[0]);
++      // k.LAB grid y increases northward; image rows increase southward.
++      int row = height - 1 - Math.toIntExact(xy[1]);
+ 
+       Object o = fetch(scanner);
+-      if (o == null || (o instanceof Double && Double.isNaN((Double) o))) {
+-        raster.setSample((int) xy[0], (int) xy[1], 0, noDataValue);
++      if (o == null || (o instanceof Number number && Double.isNaN(number.doubleValue()))) {
++        raster.setSample(column, row, 0, noDataValue);
+       } else if (o instanceof Number) {
+         if (transformation != null) {
+           o = transformation.apply(o);
+         }
+-        float value = ((Number) o).floatValue();
++        double value = ((Number) o).doubleValue();
++        if (type == DataBuffer.TYPE_FLOAT) value = (float) value;
+         if (Double.isNaN(min) || min > value) {
+           min = value;
+         }
+@@ -340,19 +345,19 @@ public class Geotools {
+           max = value;
+         }
+         ndata++;
+-        raster.setSample((int) xy[0], (int) xy[1], 0, value);
++        raster.setSample(column, row, 0, value);
+       } else if (o instanceof Boolean) {
+         if (transformation != null) {
+           o = transformation.apply(o);
+         }
+         ndata++;
+-        raster.setSample((int) xy[0], (int) xy[1], 0, (float) (((Boolean) o) ? 1. : 0.));
++        raster.setSample(column, row, 0, (float) (((Boolean) o) ? 1. : 0.));
+       } else if (o instanceof Concept) {
+         if (transformation != null) {
+           o = transformation.apply(o);
+         }
+         ndata++;
+-        raster.setSample((int) xy[0], (int) xy[1], 0, (float) dataKey.reverseLookup((Concept) o));
++        raster.setSample(column, row, 0, (float) dataKey.reverseLookup((Concept) o));
+       }
+     }
+ 
+@@ -400,17 +405,16 @@ public class Geotools {
+     Map<String, Object> properties = new HashMap<>();
+     properties.put("dataRange", new double[] {min, max});
+     properties.put("dataCount", ndata);
++    CoverageUtilities.setNoDataProperty(properties, noDataValue.doubleValue());
+ 
+     // System.out.println(state.getObservable().getReferenceName() + " raster has range " + min
+     // + " to " + max + " (" + ndata + ")");
+ 
+     var jtsEnvelope = checkEnvelope(envelope);
+-    if (key == null || pork) {
+-      return rasterFactory.create(state.getObservable().getName(), raster, jtsEnvelope);
+-    }
+-
+-    return rasterFactory.create(
+-        state.getObservable().getName(), raster, jtsEnvelope, new GridSampleDimension[] {key});
++    GridSampleDimension[] bands = key == null || pork ? null : new GridSampleDimension[] {key};
++    var base = rasterFactory.create(state.getObservable().getName(), raster, jtsEnvelope, bands);
++    return rasterFactory.create(state.getObservable().getName(), base.getRenderedImage(),
++        jtsEnvelope, base.getSampleDimensions(), null, properties);
+   }
+ 
+   private static Object fetch(Storage.Scanner scanner) {
+diff --git a/src/main/java/org/integratedmodelling/geospatial/utils/NativeGeoTiffWriter.java b/src/main/java/org/integratedmodelling/geospatial/utils/NativeGeoTiffWriter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b00a91626a7dd5f3a4160e4f7317ab61f2ae52a2
+--- /dev/null
++++ b/src/main/java/org/integratedmodelling/geospatial/utils/NativeGeoTiffWriter.java
+@@ -0,0 +1,106 @@
++package org.integratedmodelling.geospatial.utils;
++
++import it.geosolutions.imageio.plugins.tiff.TIFFField;
++import it.geosolutions.imageio.plugins.tiff.TIFFTag;
++import it.geosolutions.imageioimpl.plugins.tiff.TIFFImageMetadata;
++import java.awt.geom.AffineTransform;
++import java.io.File;
++import java.io.IOException;
++import java.io.StringWriter;
++import java.util.Map;
++import javax.imageio.IIOImage;
++import javax.imageio.ImageIO;
++import javax.imageio.ImageTypeSpecifier;
++import javax.xml.stream.XMLOutputFactory;
++import javax.xml.stream.XMLStreamException;
++import org.geotools.coverage.grid.GridCoverage2D;
++import org.geotools.coverage.grid.io.imageio.geotiff.CRS2GeoTiffMetadataAdapter;
++import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffConstants;
++import org.geotools.coverage.util.CoverageUtilities;
++import org.geotools.gce.geotiff.GeoTiffWriter;
++import org.geotools.referencing.CRS;
++import org.geotools.referencing.operation.matrix.XAffineTransform;
++
++/** GeoTools georeferencing with explicit NaN nodata and source band-unit metadata. */
++public final class NativeGeoTiffWriter {
++  private NativeGeoTiffWriter() {}
++
++  public static void write(File file, GridCoverage2D coverage, String unit) throws IOException {
++    var geometry = coverage.getGridGeometry();
++    var crs = geometry.getCoordinateReferenceSystem2D();
++    var metadata = new CRS2GeoTiffMetadataAdapter(crs).parseCoordinateReferenceSystem();
++    var transform = new AffineTransform((AffineTransform) geometry.getGridToCRS2D());
++    transform.concatenate(CoverageUtilities.CENTER_TO_CORNER);
++    // Match GeoTools' normal axis-order handling; pixel locations remain unchanged.
++    if (XAffineTransform.getSwapXY(transform) == -1 || CRS.getAxisOrder(crs) == CRS.AxisOrder.NORTH_EAST) {
++      transform.preConcatenate(CoverageUtilities.AXES_SWAP);
++    }
++    var range = geometry.getGridRange2D();
++    if (range.x != 0 || range.y != 0) {
++      transform.concatenate(AffineTransform.getTranslateInstance(range.x, range.y));
++    }
++    metadata.addGeoShortParam(GeoTiffConstants.GTRasterTypeGeoKey, GeoTiffConstants.RasterPixelIsArea);
++    metadata.setModelTransformation(transform);
++    var nodata = CoverageUtilities.getNoDataProperty(coverage);
++    if (nodata != null) {
++      // GeoTiffWriter.write omits NaN; its public encoder can correctly retain it.
++      metadata.setNoData(nodata.getAsSingleValue());
++    }
++    metadata.setTiffTagsMetadata(Map.of("305", "k.LAB (www.integratedmodelling.org)"));
++    var writer = new it.geosolutions.imageioimpl.plugins.tiff.TIFFImageWriterSpi().createWriterInstance();
++    try (var output = ImageIO.createImageOutputStream(file)) {
++      if (output == null) throw new IOException("Cannot create GeoTIFF output stream");
++      var parameters = writer.getDefaultWriteParam();
++      var imageMetadata = (TIFFImageMetadata) GeoTiffWriter.createGeoTiffIIOMetadata(writer,
++          ImageTypeSpecifier.createFromRenderedImage(coverage.getRenderedImage()), metadata, parameters);
++      if (unit != null && !unit.isBlank()) {
++        var tag = new TIFFTag("GDAL_METADATA", 42112, 1 << TIFFTag.TIFF_ASCII);
++        imageMetadata.getRootIFD().addTIFFField(new TIFFField(tag, TIFFTag.TIFF_ASCII, 1,
++            new String[] {unitMetadata(unit)}));
++      }
++      writer.setOutput(output);
++      writer.write(null, new IIOImage(coverage.getRenderedImage(), null, imageMetadata), parameters);
++    } finally {
++      writer.dispose();
++    }
++  }
++
++  private static String unitMetadata(String unit) throws IOException {
++    var text = new StringWriter();
++    try {
++      var xml = XMLOutputFactory.newFactory().createXMLStreamWriter(text);
++      xml.writeStartElement("GDALMetadata");
++      xml.writeStartElement("Item");
++      xml.writeAttribute("name", "UNITTYPE");
++      xml.writeAttribute("sample", "0");
++      xml.writeAttribute("role", "unittype");
++      // TIFF ASCII fields truncate Unicode characters. Numeric XML references
++      // keep the tag ASCII while preserving the exact source text for readers.
++      for (int offset = 0; offset < unit.length(); ) {
++        int character = unit.codePointAt(offset);
++        if (character > 0x7f) {
++          xml.writeEntityRef("#x" + Integer.toHexString(character));
++        } else {
++          // GDAL_METADATA values historically use two XML-escaping layers:
++          // GDAL unescapes again after parsing XML. Preserve literal punctuation
++          // and entity-looking source text rather than letting that pass truncate it.
++          String value = switch (character) {
++            case '&' -> "&amp;";
++            case '<' -> "&lt;";
++            case '>' -> "&gt;";
++            case '"' -> "&quot;";
++            default -> new String(Character.toChars(character));
++          };
++          xml.writeCharacters(value);
++        }
++        offset += Character.charCount(character);
++      }
++      xml.writeEndElement();
++      xml.writeEndElement();
++      xml.close();
++      return text.toString();
++    } catch (XMLStreamException e) {
++      throw new IOException("Cannot encode source measurement unit", e);
++    }
++  }
++}
+diff --git a/src/test/java/org/integratedmodelling/geospatial/library/GeotiffStreamTest.java b/src/test/java/org/integratedmodelling/geospatial/library/GeotiffStreamTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ac10f7537331c34018fc218616f8325be63d70e1
+--- /dev/null
++++ b/src/test/java/org/integratedmodelling/geospatial/library/GeotiffStreamTest.java
+@@ -0,0 +1,84 @@
++package org.integratedmodelling.geospatial.library;
++
++import static org.junit.jupiter.api.Assertions.*;
++import static org.mockito.Mockito.mock;
++
++import java.io.ByteArrayInputStream;
++import java.io.File;
++import java.io.IOException;
++import java.nio.file.DirectoryNotEmptyException;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import org.integratedmodelling.klab.api.data.Storage;
++import org.integratedmodelling.klab.api.exceptions.KlabIOException;
++import org.integratedmodelling.klab.api.knowledge.observation.Observation;
++import org.integratedmodelling.klab.api.scope.ContextScope;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.io.TempDir;
++
++class GeotiffStreamTest {
++  @TempDir Path directory;
++
++  @Test void closeFailureStillDeletesTheOwnedFile() throws Exception {
++    var file = directory.resolve("owned.tiff");
++    Files.write(file, new byte[] {1});
++    var failure = new IOException("close failed");
++    var input = new ByteArrayInputStream(new byte[] {1}) {
++      @Override public void close() throws IOException { throw failure; }
++    };
++    var stream = GeodataIO.deleteOnClose(input, file);
++    assertSame(failure, assertThrows(IOException.class, stream::close));
++    assertFalse(Files.exists(file));
++  }
++
++  @Test void cleanupFailureDoesNotMaskThePrimaryCloseFailure() throws Exception {
++    var owned = directory.resolve("nonempty");
++    Files.createDirectory(owned);
++    Files.write(owned.resolve("child"), new byte[] {1});
++    var failure = new IOException("close failed");
++    var input = new ByteArrayInputStream(new byte[] {1}) {
++      @Override public void close() throws IOException { throw failure; }
++    };
++    var stream = GeodataIO.deleteOnClose(input, owned);
++    assertSame(failure, assertThrows(IOException.class, stream::close));
++    assertEquals(1, failure.getSuppressed().length);
++    assertInstanceOf(DirectoryNotEmptyException.class, failure.getSuppressed()[0]);
++  }
++
++  @Test void cleanupFailureAloneIsReported() throws Exception {
++    var owned = directory.resolve("nonempty");
++    Files.createDirectory(owned);
++    Files.write(owned.resolve("child"), new byte[] {1});
++    var stream = GeodataIO.deleteOnClose(new ByteArrayInputStream(new byte[] {1}), owned);
++    assertThrows(DirectoryNotEmptyException.class, stream::close);
++  }
++
++  @Test void failedGenerationDeletesItsTemporaryFileAndPreservesFailure() {
++    File[] target = {null};
++    var failure = new IllegalStateException("generation failed");
++    var exporter = new GeodataIO() {
++      @Override public File exportObservation(File file, Observation observation,
++          Storage.DoubleScanner scanner, String format, ContextScope scope) {
++        target[0] = file;
++        throw failure;
++      }
++    };
++    assertSame(failure, assertThrows(IllegalStateException.class, () -> exporter.exportGeotiffContinuous(
++        mock(Observation.class), mock(Storage.DoubleScanner.class), mock(ContextScope.class))));
++    assertFalse(target[0].exists());
++  }
++
++  @Test void emptyGenerationDeletesItsTemporaryFileAndReportsIoFailure() {
++    File[] target = {null};
++    var exporter = new GeodataIO() {
++      @Override public File exportObservation(File file, Observation observation,
++          Storage.DoubleScanner scanner, String format, ContextScope scope) {
++        target[0] = file;
++        return null;
++      }
++    };
++    assertThrows(KlabIOException.class, () -> exporter.exportGeotiffContinuous(
++        mock(Observation.class), mock(Storage.DoubleScanner.class), mock(ContextScope.class)));
++    assertFalse(target[0].exists());
++  }
++}
+diff --git a/src/test/java/org/integratedmodelling/geospatial/utils/GeotiffExportTest.java b/src/test/java/org/integratedmodelling/geospatial/utils/GeotiffExportTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e1989bb2d0348840c722c220b1a3f24b7599b6e4
+--- /dev/null
++++ b/src/test/java/org/integratedmodelling/geospatial/utils/GeotiffExportTest.java
+@@ -0,0 +1,355 @@
++package org.integratedmodelling.geospatial.utils;
++
++import static org.junit.jupiter.api.Assertions.*;
++import static org.mockito.Mockito.*;
++
++import it.geosolutions.imageioimpl.plugins.tiff.TIFFImageMetadata;
++import java.awt.image.DataBuffer;
++import java.awt.geom.AffineTransform;
++import java.io.File;
++import java.nio.file.Path;
++import java.nio.file.Files;
++import java.util.List;
++import java.util.concurrent.atomic.AtomicInteger;
++import javax.imageio.ImageIO;
++import org.geotools.coverage.grid.GridCoverage2D;
++import org.geotools.coverage.grid.GridCoverageFactory;
++import org.geotools.coverage.util.CoverageUtilities;
++import org.geotools.gce.geotiff.GeoTiffReader;
++import org.geotools.referencing.CRS;
++import org.geotools.referencing.operation.transform.AffineTransform2D;
++import org.eclipse.imagen.TiledImage;
++import org.integratedmodelling.geospatial.library.GeodataIO;
++import org.integratedmodelling.klab.api.data.Data;
++import org.integratedmodelling.klab.api.data.Storage;
++import org.integratedmodelling.klab.api.knowledge.Observable;
++import org.integratedmodelling.klab.api.knowledge.observation.Observation;
++import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
++import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
++import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
++import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Tile;
++import org.integratedmodelling.klab.api.scope.ContextScope;
++import org.integratedmodelling.klab.runtime.scale.space.EnvelopeImpl;
++import org.integratedmodelling.klab.runtime.scale.space.ProjectionImpl;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.io.TempDir;
++
++class GeotiffExportTest {
++  @TempDir Path directory;
++
++  private void capture(File file, String name) throws Exception {
++    var target = System.getProperty("geotiff.evidence.dir");
++    if (target != null) {
++      var destination = Path.of(target);
++      assertTrue(Files.isDirectory(destination), "Evidence directory must be explicitly prepared");
++      Files.copy(file.toPath(), destination.resolve(name));
++    }
++  }
++
++  private void assertWrittenTransform(File file, double[] expected) throws Exception {
++    try (var input = new java.io.FileInputStream(file)) {
++      var reader = new GeoTiffReader(input);
++      try {
++        assertEquals(3857, CRS.lookupEpsgCode(reader.getCoordinateReferenceSystem(), true));
++        var transform = reader.getOriginalGridToWorld(org.geotools.api.referencing.datum.PixelInCell.CELL_CORNER);
++        for (var pixel : new double[][] {{0, 0}, {5, 0}, {0, 4}, {5, 4}}) {
++          var point = new double[2];
++          transform.transform(pixel, 0, point, 0, 1);
++          assertEquals(expected[2] + pixel[0] * expected[0] + pixel[1] * expected[1], point[0], 1e-8);
++          assertEquals(expected[5] + pixel[0] * expected[3] + pixel[1] * expected[4], point[1], 1e-8);
++        }
++      } finally {
++        reader.dispose();
++      }
++    }
++  }
++
++  private record Fixture(Observation observation, Storage.DoubleScanner scanner, ContextScope scope) {}
++
++  private Fixture fixture() {
++    return fixture(Storage.Type.FLOAT, new double[] {
++        0, 1, 2, 3, 10, 11, 12, 13, 20, Double.NaN, 22, 23, 30, 31, 32, 33, 40, 41, 42, 43});
++  }
++
++  private Fixture fixture(Storage.Type type, double[] values) {
++    var observation = mock(Observation.class);
++    var observable = mock(Observable.class);
++    when(observation.getObservable()).thenReturn(observable);
++    when(observable.getName()).thenReturn("Reference angle");
++    var space = mock(Space.class);
++    var tile = mock(Tile.class);
++    var grid = mock(Grid.class);
++    when(space.as(Tile.class)).thenReturn(tile);
++    when(tile.getGrid()).thenReturn(grid);
++    when(grid.getXCells()).thenReturn(5L);
++    when(grid.getYCells()).thenReturn(4L);
++    when(space.getShape()).thenReturn(List.of(5L, 4L));
++    when(space.getEnvelope()).thenReturn(EnvelopeImpl.create(200000, 200500, 6000000, 6000400,
++        new ProjectionImpl("EPSG:3857")));
++    var scale = mock(Scale.class);
++    when(scale.getSpace()).thenReturn(space);
++    var shard = mock(Storage.Shard.class);
++    when(shard.getGeometry()).thenReturn(scale);
++    when(shard.getShardingStrategy()).thenReturn(new Data.ShardingStrategy(
++        Data.FillCurve.D2_XY, 1, 0, 0, type));
++    var scanner = mock(Storage.DoubleScanner.class);
++    when(scanner.shard()).thenReturn(shard);
++    when(scanner.size()).thenReturn(20L);
++    // Native XY order; y is south-to-north. Values are independently specified.
++    var index = new AtomicInteger();
++    when(scanner.get()).thenAnswer(call -> values[index.getAndIncrement()]);
++    var scope = mock(ContextScope.class, RETURNS_DEEP_STUBS);
++    when(scope.getDigitalTwin().getStorageManager().getStorage(observation).getKey()).thenReturn(null);
++    return new Fixture(observation, scanner, scope);
++  }
++
++  private GridCoverage2D coverage() {
++    var fixture = fixture();
++    return Geotools.stateToCoverage(fixture.observation(), fixture.scanner(),
++        DataBuffer.TYPE_FLOAT, Float.NaN, fixture.scope(), false);
++  }
++
++  @Test void nativeYMapsToNorthUpRowsAtEveryWorldCoordinate() throws Exception {
++    var coverage = coverage();
++    try {
++      var raster = coverage.getRenderedImage().getData();
++      for (int row = 0; row < 4; row++) {
++        for (int column = 0; column < 5; column++) {
++          var world = coverage.getGridGeometry().gridToWorld(
++              new org.geotools.coverage.grid.GridCoordinates2D(column, row));
++          assertEquals(200050 + column * 100, world.getOrdinate(0), 1e-8);
++          assertEquals(6000350 - row * 100, world.getOrdinate(1), 1e-8);
++          float actual = raster.getSampleFloat(column, row, 0);
++          if (column == 2 && row == 2) assertTrue(Float.isNaN(actual));
++          else assertEquals(column * 10 + 3 - row, actual);
++        }
++      }
++      assertEquals(0, raster.getSampleFloat(0, 3, 0));
++      assertTrue(Double.isNaN(CoverageUtilities.getNoDataProperty(coverage).getAsSingleValue()));
++    } finally {
++      coverage.dispose(true);
++    }
++  }
++
++  @Test void writtenTiffPreservesNanAndSourceBandUnit() throws Exception {
++    var coverage = coverage();
++    var file = directory.resolve("reference.tiff").toFile();
++    try {
++      NativeGeoTiffWriter.write(file, coverage, "degree_angle & <source>");
++      var reader = new it.geosolutions.imageioimpl.plugins.tiff.TIFFImageReaderSpi().createReaderInstance();
++      try (var input = ImageIO.createImageInputStream(file)) {
++        reader.setInput(input);
++        var metadata = (TIFFImageMetadata) reader.getImageMetadata(0);
++        var nodata = metadata.getRootIFD().getTIFFField(42113);
++        assertNotNull(nodata);
++        assertTrue(Double.isNaN(Double.parseDouble(nodata.getAsString(0))));
++        var unit = metadata.getRootIFD().getTIFFField(42112).getAsString(0);
++        var xml = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
++            new org.xml.sax.InputSource(new java.io.StringReader(unit)));
++        assertEquals("degree_angle &amp; &lt;source&gt;", xml.getElementsByTagName("Item").item(0).getTextContent());
++        assertTrue(unit.chars().allMatch(character -> character < 128));
++        var raster = reader.read(0).getRaster();
++        assertEquals(3, raster.getSampleFloat(0, 0, 0));
++        assertEquals(0, raster.getSampleFloat(0, 3, 0));
++        assertTrue(Float.isNaN(raster.getSampleFloat(2, 2, 0)));
++        capture(file, "projected-float.tiff");
++      } finally {
++        reader.dispose();
++      }
++    } finally {
++      coverage.dispose(true);
++    }
++  }
++
++  @Test void absentMeasurementUnitIsNotInventedFromProjectedCrs() throws Exception {
++    var coverage = coverage();
++    try {
++      var file = directory.resolve("no-unit.tiff").toFile();
++      NativeGeoTiffWriter.write(file, coverage, null);
++      var reader = new it.geosolutions.imageioimpl.plugins.tiff.TIFFImageReaderSpi().createReaderInstance();
++      try (var input = ImageIO.createImageInputStream(file)) {
++        reader.setInput(input);
++        assertNull(((TIFFImageMetadata) reader.getImageMetadata(0)).getRootIFD().getTIFFField(42112));
++      } finally {
++        reader.dispose();
++      }
++    } finally {
++      coverage.dispose(true);
++    }
++  }
++
++  @Test void doubleStoragePreservesValuesThatFloatCannotRepresent() throws Exception {
++    var fixture = fixture(Storage.Type.DOUBLE, new double[] {
++        0, 1, 2, 16777217.125, 10, 11, 12, 13, 20, Double.NaN, 22, 23, 30, 31, 32, 33, 40, 41, 42, 43});
++    var file = directory.resolve("double.tiff").toFile();
++    new GeodataIO().exportObservation(file, fixture.observation(), fixture.scanner(), "tiff", fixture.scope());
++    var reader = new it.geosolutions.imageioimpl.plugins.tiff.TIFFImageReaderSpi().createReaderInstance();
++    try (var input = ImageIO.createImageInputStream(file)) {
++      reader.setInput(input);
++      var raster = reader.read(0).getRaster();
++      assertEquals(DataBuffer.TYPE_DOUBLE, raster.getDataBuffer().getDataType());
++      assertEquals(16777217.125, raster.getSampleDouble(0, 0, 0));
++      assertTrue(Double.isNaN(raster.getSampleDouble(2, 2, 0)));
++      capture(file, "projected-double.tiff");
++    } finally {
++      reader.dispose();
++    }
++  }
++
++  @Test void unicodeSourceUnitSurvivesTiffAsciiXmlMetadata() throws Exception {
++    var coverage = coverage();
++    var file = directory.resolve("unicode.tiff").toFile();
++    try {
++      NativeGeoTiffWriter.write(file, coverage, "µmol m⁻² s⁻¹ & <source>");
++      var reader = new it.geosolutions.imageioimpl.plugins.tiff.TIFFImageReaderSpi().createReaderInstance();
++      try (var input = ImageIO.createImageInputStream(file)) {
++        reader.setInput(input);
++        var unit = ((TIFFImageMetadata) reader.getImageMetadata(0)).getRootIFD().getTIFFField(42112).getAsString(0);
++        var xml = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
++            new org.xml.sax.InputSource(new java.io.StringReader(unit)));
++        assertEquals("µmol m⁻² s⁻¹ &amp; &lt;source&gt;", xml.getElementsByTagName("Item").item(0).getTextContent());
++        assertTrue(unit.chars().allMatch(character -> character < 128));
++        capture(file, "unicode-unit.tiff");
++      } finally {
++        reader.dispose();
++      }
++    } finally {
++      coverage.dispose(true);
++    }
++  }
++
++  @Test void int64IsRejectedBeforeAConvertedScannerCanLosePrecision() {
++    var fixture = fixture(Storage.Type.LONG, new double[20]);
++    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,
++        () -> new GeodataIO().exportObservation(directory.resolve("int64.tiff").toFile(),
++            fixture.observation(), fixture.scanner(), "tiff", fixture.scope()));
++    verify(fixture.scanner(), never()).get();
++    assertFalse(directory.resolve("int64.tiff").toFile().exists());
++  }
++
++  @Test void suppliedButUnserializableUnitIsNotSilentlyDropped() {
++    var fixture = fixture();
++    when(fixture.observation().getObservable().getUnit())
++        .thenReturn(mock(org.integratedmodelling.klab.api.data.mediation.Unit.class));
++    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class,
++        () -> new GeodataIO().exportObservation(directory.resolve("unsupported-unit.tiff").toFile(),
++            fixture.observation(), fixture.scanner(), "tiff", fixture.scope()));
++    assertFalse(directory.resolve("unsupported-unit.tiff").toFile().exists());
++  }
++
++  @Test void literalEntityTextIsNotReinterpretedAsAUnit() throws Exception {
++    var coverage = coverage();
++    try {
++      var file = directory.resolve("entities.tiff").toFile();
++      NativeGeoTiffWriter.write(file, coverage, "&amp; &#176; &#xB0;");
++      var reader = new it.geosolutions.imageioimpl.plugins.tiff.TIFFImageReaderSpi().createReaderInstance();
++      try (var input = ImageIO.createImageInputStream(file)) {
++        reader.setInput(input);
++        var unit = ((TIFFImageMetadata) reader.getImageMetadata(0)).getRootIFD().getTIFFField(42112).getAsString(0);
++        var xml = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
++            new org.xml.sax.InputSource(new java.io.StringReader(unit)));
++        assertEquals("&amp;amp; &amp;#176; &amp;#xB0;", xml.getElementsByTagName("Item").item(0).getTextContent());
++        assertTrue(unit.chars().allMatch(character -> character < 128));
++      } finally {
++        reader.dispose();
++      }
++      capture(file, "literal-entities.tiff");
++    } finally {
++      coverage.dispose(true);
++    }
++  }
++
++  @Test void geographicAxisOrdersHaveTheSameWrittenWorldCoordinates() throws Exception {
++    for (boolean latitudeFirst : new boolean[] {false, true}) {
++      var base = coverage();
++      var properties = new java.util.HashMap<String, Object>();
++      CoverageUtilities.setNoDataProperty(properties, Double.NaN);
++      var transform = latitudeFirst
++          ? new AffineTransform(0, .1, -.1, 0, 49.95, 10.05)
++          : new AffineTransform(.1, 0, 0, -.1, 10.05, 49.95);
++      var coverage = new GridCoverageFactory().create("geographic", base.getRenderedImage(),
++          CRS.decode("EPSG:4326", !latitudeFirst), new AffineTransform2D(transform),
++          base.getSampleDimensions(), null, properties);
++      try {
++        var file = directory.resolve(latitudeFirst ? "latfirst.tiff" : "lonfirst.tiff").toFile();
++        NativeGeoTiffWriter.write(file, coverage, null);
++        try (var input = new java.io.FileInputStream(file)) {
++          var reader = new GeoTiffReader(input);
++          try {
++            assertEquals(4326, CRS.lookupEpsgCode(reader.getCoordinateReferenceSystem(), true));
++            // Use double-coordinate transformation; gridToWorld's convenience
++            // position path narrows geographic coordinates to float in GeoTools.
++            var point = new double[2];
++            reader.getOriginalGridToWorld(org.geotools.api.referencing.datum.PixelInCell.CELL_CENTER)
++                .transform(new double[] {0, 0}, 0, point, 0, 1);
++            boolean readLatitudeFirst = CRS.getAxisOrder(reader.getCoordinateReferenceSystem()) == CRS.AxisOrder.NORTH_EAST;
++            assertEquals(10.05, point[readLatitudeFirst ? 1 : 0], 1e-8);
++            assertEquals(49.95, point[readLatitudeFirst ? 0 : 1], 1e-8);
++            capture(file, latitudeFirst ? "geographic-latfirst.tiff" : "geographic-lonfirst.tiff");
++          } finally {
++            reader.dispose();
++          }
++        }
++      } finally {
++        coverage.dispose(false);
++        base.dispose(true);
++      }
++    }
++  }
++
++  @Test void shiftedGridOriginAndRotatedAffineArePreservedInWrittenTiffs() throws Exception {
++    var base = coverage();
++    var properties = new java.util.HashMap<String, Object>();
++    CoverageUtilities.setNoDataProperty(properties, Double.NaN);
++    try {
++      var image = base.getRenderedImage();
++      var shifted = new TiledImage(7, -3, image.getWidth(), image.getHeight(), 7, -3,
++          image.getSampleModel(), image.getColorModel());
++      shifted.setData(image.getData().createTranslatedChild(7, -3));
++      var shiftedCoverage = new GridCoverageFactory().create("shifted", shifted,
++          base.getCoordinateReferenceSystem2D(), new AffineTransform2D(100, 0, 0, -100, 199350, 6000050),
++          base.getSampleDimensions(), null, properties);
++      try {
++        assertEquals(7, shiftedCoverage.getGridGeometry().getGridRange2D().x);
++        assertEquals(-3, shiftedCoverage.getGridGeometry().getGridRange2D().y);
++        var file = directory.resolve("shifted.tiff").toFile();
++        NativeGeoTiffWriter.write(file, shiftedCoverage, null);
++        assertWrittenTransform(file, new double[] {100, 0, 200000, 0, -100, 6000400});
++        capture(file, "shifted-origin.tiff");
++      } finally {
++        shiftedCoverage.dispose(true);
++      }
++      var rotatedCoverage = new GridCoverageFactory().create("rotated", image,
++          base.getCoordinateReferenceSystem2D(), new AffineTransform2D(100, 20, 10, -100, 200055, 6000360),
++          base.getSampleDimensions(), null, properties);
++      try {
++        var file = directory.resolve("rotated.tiff").toFile();
++        NativeGeoTiffWriter.write(file, rotatedCoverage, null);
++        assertWrittenTransform(file, new double[] {100, 10, 200000, 20, -100, 6000400});
++        capture(file, "rotated-affine.tiff");
++      } finally {
++        rotatedCoverage.dispose(false);
++      }
++    } finally {
++      base.dispose(true);
++    }
++  }
++
++  @Test void serverTemporaryExportIsDeletedWhenStreamCloses() throws Exception {
++    File[] file = {null};
++    var exporter = new GeodataIO() {
++      @Override public File exportObservation(File target, Observation observation,
++          Storage.DoubleScanner scanner, String format, ContextScope scope) {
++        file[0] = target;
++        try { java.nio.file.Files.write(target.toPath(), new byte[] {1, 2, 3}); }
++        catch (java.io.IOException e) { throw new java.io.UncheckedIOException(e); }
++        return target;
++      }
++    };
++    try (var stream = exporter.exportGeotiffContinuous(mock(Observation.class), mock(Storage.DoubleScanner.class), mock(ContextScope.class))) {
++      assertTrue(file[0].exists());
++      assertArrayEquals(new byte[] {1, 2, 3}, stream.readAllBytes());
++    }
++    assertFalse(file[0].exists());
++  }
++}
+diff --git a/tools/check_geotiff_reference.py b/tools/check_geotiff_reference.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..659962b5fb18d93d138f5d3b22bbe620c9f2917f
+--- /dev/null
++++ b/tools/check_geotiff_reference.py
+@@ -0,0 +1,79 @@
++"""Independent GDAL/Rasterio oracle for captured GeotiffExportTest files.
++
++Optional development dependency: rasterio>=1.4,<2. Pass the existing directory
++that was supplied to Maven's -Dgeotiff.evidence.dir property.
++"""
++import argparse
++import hashlib
++import json
++import math
++from pathlib import Path
++
++
++def require(condition, message):
++    if not condition:
++        raise AssertionError(message)
++
++
++def check(directory):
++    try:
++        import rasterio
++    except ImportError:
++        raise SystemExit("Install optional rasterio>=1.4,<2 for independent TIFF checks") from None
++    cases = {
++        "projected-float.tiff": (3857, (100, 0, 200000, 0, -100, 6000400), "float32", "degree_angle & <source>"),
++        "projected-double.tiff": (3857, (100, 0, 200000, 0, -100, 6000400), "float64", None),
++        "unicode-unit.tiff": (3857, (100, 0, 200000, 0, -100, 6000400), "float32", "µmol m⁻² s⁻¹ & <source>"),
++        "geographic-latfirst.tiff": (4326, (.1, 0, 10, 0, -.1, 50), "float32", None),
++        "geographic-lonfirst.tiff": (4326, (.1, 0, 10, 0, -.1, 50), "float32", None),
++        "shifted-origin.tiff": (3857, (100, 0, 200000, 0, -100, 6000400), "float32", None),
++        "rotated-affine.tiff": (3857, (100, 10, 200000, 20, -100, 6000400), "float32", None),
++        "literal-entities.tiff": (3857, (100, 0, 200000, 0, -100, 6000400), "float32", "&amp; &#176; &#xB0;"),
++    }
++    report = {"rasterio": rasterio.__version__, "gdal": rasterio.__gdal_version__, "passed": False, "files": []}
++    try:
++        for name, (epsg, transform, dtype, unit) in cases.items():
++            path = directory / name
++            with rasterio.open(path) as dataset:
++                require((dataset.width, dataset.height, dataset.count) == (5, 4, 1), name + ": wrong shape")
++                require(dataset.crs is not None and dataset.crs.to_epsg() == epsg, name + ": wrong CRS")
++                require(dataset.dtypes == (dtype,) and dataset.units == (unit,), name + ": wrong dtype/unit")
++                require(dataset.nodata is not None and math.isnan(dataset.nodata), name + ": missing NaN nodata")
++                require(all(math.isfinite(value) and abs(value - expected) < 1e-8
++                    for value, expected in zip(tuple(dataset.transform)[:6], transform)), name + ": wrong transform")
++                values, masks = dataset.read(1), dataset.read_masks(1)
++                a, b, c, d, e, f = transform
++                for row in range(4):
++                    for column in range(5):
++                        x, y = dataset.xy(row, column)
++                        require(math.isfinite(x) and math.isfinite(y) and
++                            abs(x - (c + (column + .5)*a + (row + .5)*b)) < 1e-8 and
++                            abs(y - (f + (column + .5)*d + (row + .5)*e)) < 1e-8, name + ": wrong cell center")
++                        if (column, row) == (2, 2):
++                            require(math.isnan(float(values[row, column])) and masks[row, column] == 0,
++                                name + ": missingness changed")
++                        else:
++                            expected = 16777217.125 if name == "projected-double.tiff" and (column, row) == (0, 0) else column*10 + 3-row
++                            require(float(values[row, column]) == expected and masks[row, column] == 255,
++                                name + ": value or validity changed")
++                require(values[3, 0] == 0 and masks[3, 0] == 255, name + ": valid zero lost")
++                report["files"].append({"name": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
++                    "crs": epsg, "dtype": dtype, "transform": list(transform), "unit": unit, "verified_cells": 20})
++            print(name, "verified", flush=True)
++        report["passed"] = True
++    finally:
++        (directory / "independent-raster.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
++    return report
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("directory", type=Path)
++    args = parser.parse_args()
++    if not args.directory.is_dir():
++        parser.error("Provide the existing Maven evidence directory")
++    check(args.directory)
++
++
++if __name__ == "__main__":
++    main()
+-- 
+2.53.0.windows.2
+

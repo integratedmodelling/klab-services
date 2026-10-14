@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/integratedmodelling/klab.component.geospatial.git",
+  "base_commit": "8d4ef8665016761eb12a504a304f02eb3b55f1c7",
+  "reviewed_commit": "a1d36d30bde17d853de71e0cc7d285e597666e4c",
+  "patch": "0001-Correct-numeric-GeoTIFF-orientation-and-metadata.patch",
+  "patch_sha256": "3100b1fb9c42398edfd00b43909dd7ba80857da5b6778fb8d45e3d58334885cc",
+  "patched_tree": "f05b578a14c707d8fd34348e56adc9a96bf25d66"
+}
