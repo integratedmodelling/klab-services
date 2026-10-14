@@ -27,13 +27,14 @@ class ExportResponseTest {
     implementation.method.setAccessible(true);
     when(registry.implementation(descriptor)).thenReturn(implementation);
     var call = org.integratedmodelling.common.lang.ServiceCallImpl.create("test.broken");
-    when(registry.getFunctionDescriptor(call)).thenReturn(java.util.List.of(descriptor));
+    var scope = mock(org.integratedmodelling.klab.api.scope.Scope.class);
+    when(registry.getFunctionDescriptor(call, scope)).thenReturn(java.util.List.of(descriptor));
     var language = new org.integratedmodelling.klab.runtime.language.LanguageService();
     var field = language.getClass().getDeclaredField("componentRegistry");
     field.setAccessible(true);
     field.set(language, registry);
     var failure = assertThrows(KlabResourceAccessException.class, () -> language.execute(call,
-        mock(org.integratedmodelling.klab.api.scope.Scope.class), java.io.InputStream.class));
+        scope, java.io.InputStream.class));
     assertInstanceOf(IllegalArgumentException.class, failure.getCause());
     assertEquals("Invalid ramp", failure.getCause().getMessage());
   }
