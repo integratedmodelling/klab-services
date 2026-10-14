@@ -113,6 +113,11 @@ public final class CapturedAuthorityCatalog {
       }
     }
     var records = new LinkedHashMap<String, byte[]>(); var documents = new LinkedHashMap<String, byte[]>();
+    var ownedDocuments = CapturedDocumentation.read(data.resolve("captured-authority-state"));
+    // An immutable transport must never discover replacement bytes through original URLs.
+    // Empty means reject any file documentation URI until its owned manifest is supplied.
+    if (ownedDocuments == null && (hasImmutableComponents
+        || Files.exists(data.resolve("captured-authority-state/proof.json")))) ownedDocuments = Map.of();
     var cache = data.resolve("authority-cache"); long total = 0;
     if (Files.isDirectory(cache)) try (var paths = Files.walk(cache)) {
       for (var file : paths.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".json")).sorted().toList()) {
@@ -123,7 +128,7 @@ public final class CapturedAuthorityCatalog {
         if (!entry.has("value") || !entry.path("expires").isIntegralNumber()) throw unresolved("invalid provider cache envelope");
         if (entry.path("expires").asLong() <= Clock.systemUTC().millis()) continue;
         records.put(cache.relativize(file).toString().replace('\\', '/'), contents);
-        captureDocuments(entry.get("value"), documents);
+        captureDocuments(entry.get("value"), documents, ownedDocuments);
       }
     }
     var ledgers = new LinkedHashMap<String, byte[]>(); var ledger = data.resolve("authority-codelists");
@@ -207,11 +212,15 @@ public final class CapturedAuthorityCatalog {
         digest(bytes(List.of(p.boundaries().stream().sorted().toList(), canonicalMetadataDigest(p.capabilities()), canonicalMetadataDigest(p.seeds())))))));
     return Map.copyOf(result);
   }
-  private static void captureDocuments(JsonNode value, Map<String, byte[]> result) throws Exception {
-    if (value.isArray()) { for (var item : value) captureDocuments(item, result); return; }
+  private static void captureDocuments(JsonNode value, Map<String, byte[]> result,
+      Map<String, byte[]> ownedDocuments) throws Exception {
+    if (value.isArray()) { for (var item : value) captureDocuments(item, result, ownedDocuments); return; }
     for (var document : value.path("documentation")) {
       var uri = URI.create(document.asText());
       if ("file".equals(uri.getScheme()) && !result.containsKey(uri.toString())) {
+        if (ownedDocuments != null) {
+          result.put(uri.toString(), CapturedDocumentation.lookup(ownedDocuments, uri.toString())); continue;
+        }
         Path file = Path.of(uri);
         var base = Path.of(System.getProperty("java.io.tmpdir"));
         boolean allowed = false;
@@ -309,11 +318,9 @@ public final class CapturedAuthorityCatalog {
         String location = entry.getValue().asText(); var bytes = documentation.get(location);
         if (bytes != null && bytes.length == 0) throw unresolved("captured provider documentation is unavailable: " + location);
         if (bytes != null) try {
-          var root = Files.createDirectories(assets.resolve("provider-documentation"));
-          var target = root.resolve(digest(bytes) + "." + suffix(location));
-          Files.write(target, bytes);
+          var target = CapturedDocumentation.materialize(assets, location, bytes);
           ((com.fasterxml.jackson.databind.node.ObjectNode)docs).put(entry.getKey(), target.toUri().toString());
-        } catch (IOException failure) { throw new UncheckedIOException(failure); }
+        } catch (Exception failure) { throw new IllegalStateException("Cannot materialize owned documentation", failure); }
       });
       try { return JSON.treeToValue(owned, CachedAuthority.StoredIdentity.class); }
       catch (IOException failure) { throw new IllegalStateException(failure); }
