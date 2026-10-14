@@ -95,6 +95,24 @@ class CapturedAuthorityCatalogTest {
     assertEquals(CapturedAuthorityCatalog.canonicalMetadataDigest(first),CapturedAuthorityCatalog.canonicalMetadataDigest(reordered));
     assertNotEquals(CapturedAuthorityCatalog.canonicalMetadataDigest(first),CapturedAuthorityCatalog.canonicalMetadataDigest(changedArray));
   }
+  @Test void immutableProofSurvivesInstallationBookkeepingButRejectsChangedRightsAndCode() throws Exception {
+    var fixture=fixture();var evidence=CapturedAuthorityCatalog.captureProviderEvidence(fixture.data());
+    var frozen=Files.createDirectories(fixture.data().resolve("captured-authority-state/provider-components/plugins"));
+    Files.copy(fixture.data().resolve("components/catalog.json"),frozen.getParent().resolve("catalog.json"));
+    Files.copy(fixture.data().resolve("components/plugins/klab.authority.taxa-1.0.0-SNAPSHOT-component.jar"),frozen.resolve("klab.authority.taxa-1.0.0-SNAPSHOT-component.jar"));
+    var file=fixture.data().resolve("components/catalog.json");var entries=json.readTree(Files.readAllBytes(file));
+    var descriptor=(com.fasterxml.jackson.databind.node.ObjectNode)entries.get(0);
+    descriptor.put("sourceArchive",directory.resolve("relocated/components/plugins/klab.authority.taxa-1.0.0-SNAPSHOT-component.jar").toString());
+    descriptor.put("timestamp",12345).put("latestVersionTimestamp",12345).put("sourceServiceId","relocated-deployment");
+    Files.write(file,json.writeValueAsBytes(entries));
+    assertEquals(evidence,CapturedAuthorityCatalog.captureProviderEvidence(fixture.data()));
+    assertTrue(captured(fixture).supports(fixture.binding()));
+    ((com.fasterxml.jackson.databind.node.ObjectNode)descriptor.get("usageRights")).put("public",false);Files.write(file,json.writeValueAsBytes(entries));
+    assertThrows(UnsupportedOperationException.class,()->CapturedAuthorityCatalog.captureProviderEvidence(fixture.data()));
+    ((com.fasterxml.jackson.databind.node.ObjectNode)descriptor.get("usageRights")).put("public",true);Files.write(file,json.writeValueAsBytes(entries));
+    Files.writeString(fixture.data().resolve("components/plugins/klab.authority.taxa-1.0.0-SNAPSHOT-component.jar"),"replacement code");
+    assertThrows(UnsupportedOperationException.class,()->CapturedAuthorityCatalog.captureProviderEvidence(fixture.data()));
+  }
   @Test void privateComponentPermissionsRequireAnExplicitAuthorizedCapture() throws Exception {
     var fixture=fixture();var file=fixture.data().resolve("components/catalog.json");var descriptors=json.readTree(Files.readAllBytes(file));
     ((com.fasterxml.jackson.databind.node.ObjectNode)descriptors.get(0).get("usageRights")).put("public",false);Files.write(file,json.writeValueAsBytes(descriptors));
