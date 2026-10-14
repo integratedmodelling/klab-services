@@ -141,3 +141,14 @@ Compatibility was revalidated with develop 64754ea2b plus the bounded correction
 in this branch. This is not a package-publication or maintainer-approved roadmap
 claim. CI runs offline tests; live tests require an explicit configured stack and
 fail, rather than skip-as-success, when prerequisites are missing.
+
+## Engine-like connections
+
+Use `connect(DeploymentProfile.load("deployment.json"), credentials=provider)`
+with `HubCertificateProvider` for native ENGINE certificates or
+`IssuedTokenProvider` for existing origin-bound credentials. See
+[connection-layer.md](docs/connection-layer.md) for the profile schema,
+readiness/selection, renewal and local-only lifecycle, and
+[examples/connect.py](examples/connect.py) for catalog/handle-export usage.
+Acceptance levels and remaining actual-Hub evidence are recorded in
+[connection-verification.md](docs/connection-verification.md).

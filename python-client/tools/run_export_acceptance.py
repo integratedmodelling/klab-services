@@ -24,7 +24,7 @@ def main():
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--throughput", action="store_true", help="Also verify numerical GeoTIFF fresh-process throughput")
     parser.add_argument("--functional-suite", action="append",
-        choices=("compute-and-analyze", "resume-saved-work", "typed-compute", "geotiff-export"),
+        choices=("compute-and-analyze", "resume-saved-work", "typed-compute", "geotiff-export", "connection-onboarding", "connection-recovery", "connection-access", "connection-readiness"),
         help="Additional named user workflows against the owned exporter-enabled stack")
     parser.add_argument("--samples", type=int, default=3)
     parser.add_argument("--duration", type=float, default=15)

@@ -54,3 +54,14 @@ Remaining unsupported capabilities include Avro worker contextualization and job
 data decoding, bulk file export, automatic arbitrary query/consumer geometry
 conversion, pandas/xarray adapters, privileged server administration, full Modeler
 UI emulation and Java API parity. These are explicit boundaries, not empty success.
+
+## Connection orchestration
+
+`DeploymentProfile`, `ConnectionIdentity`, `ServiceReference`, `CatalogEntry`,
+`ServiceCatalog`, `CredentialGrant`, `CredentialProvider`, `IssuedTokenProvider`,
+`HubCertificateProvider`, `SelectionPolicy`, `Connection` and `connect` are public.
+Connection exposes `identity/profile/catalog/selected/client`, synchronous
+`refresh/initialize_peers/wait_ready/renew`, and local `close`/context management.
+`CredentialExpiredError`, `ConnectionIdentityError`, `ServiceSelectionError`,
+`ReadinessError`, `ProfileIOError` and `CertificateError` supplement existing
+errors. See [profiles, providers, lifecycle and examples](connection-layer.md).

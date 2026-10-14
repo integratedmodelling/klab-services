@@ -7,7 +7,7 @@ import sys
 import uuid
 from pathlib import Path
 
-from klab_client import Client, Endpoint, ObservationRequest, RectangularGeometry
+from klab_client import Client, Endpoint, ObservationRequest, RectangularGeometry, Session
 from .scientific_checks import release_owned, require
 
 
@@ -49,22 +49,27 @@ def validate_reference(payload, observation):
     return feature
 
 
-def run(state):
+def run(state, *, client_factory=None, recovery_command=None, scientific_check=None, before_recovery=None):
     """Export actual GeoJSON and verify a fresh-process export of the same result."""
     state = Path(state)
     config = json.loads((state / "scientist.json").read_text())
     output = state / ("geojson-export-" + uuid.uuid4().hex)
     output.mkdir()
-    with Client(config["urls"]["runtime"], config["token"], agent_name=config["username"],
-            **{name: Endpoint(config["urls"][name], config["token"]) for name in ("reasoner", "resources", "resolver")}) as client:
-        client.initialize_user_scope(local_federation=True)
+    manager = client_factory() if client_factory else Client(config["urls"]["runtime"], config["token"], agent_name=config["username"],
+            **{name: Endpoint(config["urls"][name], config["token"]) for name in ("reasoner", "resources", "resolver")})
+    with manager as client:
+        if client_factory is None:
+            client.initialize_user_scope(local_federation=True)
         session = client.create_session(name="native-export-acceptance")
         context = None
+        context_handle = None
+        detached = False
         failure = None
         try:
             context = session.create_context()
             observation = context.observe(ObservationRequest("earth:Region", geometry=RectangularGeometry(
                 200000, 200500, 6000000, 6000400, 5, 4))).result(120)
+            scientific = scientific_check(client, context, observation) if scientific_check else None
             require(any(item.media_type == "application/geo+json" for item in client.export_formats(observation)),
                 "No advertised GeoJSON exporter")
             result = observation.export_to_file(output / "native-region.geojson", media_type="application/geo+json")
@@ -82,12 +87,21 @@ def run(state):
                 env["KLAB_" + name.upper() + "_TOKEN"] = config["token"]
             script = Path(__file__).parents[2] / "examples/stream_export.py"
             example_path = output / "example-region.geojson"
-            process = subprocess.run([sys.executable, str(script), str(reference), str(example_path),
-                "--media-type", "application/geo+json"], env=env, capture_output=True, text=True, timeout=120)
+            if before_recovery:
+                context_handle = context.to_handle()
+                before_recovery()
+                detached = True
+            command = (recovery_command(reference, example_path) if recovery_command else
+                [sys.executable, str(script), str(reference), str(example_path), "--media-type", "application/geo+json"])
+            if recovery_command:
+                # The worker obtains credentials from the explicitly selected provider,
+                # not inherited direct-Client environment settings.
+                env = {key: val for key, val in env.items() if not key.startswith("KLAB_")}
+            process = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120)
             require(process.returncode == 0, client.transport.redact(process.stderr))
             example = json.loads(example_path.read_bytes())
             validate_reference(example, observation)
-            return {"schema_id": result.schema_id,
+            return {"scientific_check": scientific, "schema_id": result.schema_id,
                 "media_type": result.media_type, "bytes": result.bytes_written,
                 "observation_id": observation.id, "geometry": feature["geometry"],
                 "tolerance_degrees": 1e-6, "units_raster_values_validity": "not supplied by this substantial GeoJSON export"}
@@ -95,4 +109,27 @@ def run(state):
             failure = error
             raise
         finally:
-            release_owned(context, session, failure=failure)
+            if detached:
+                try:
+                    with client_factory() as cleanup_client:
+                        # Handle restoration checks the original Runtime binding before
+                        # explicit caller-owned cleanup with a fresh local connection.
+                        restored = None
+                        cleanup_failure = failure
+                        try:
+                            restored = cleanup_client.restore_handle(context_handle)
+                        except BaseException as error:
+                            cleanup_failure = failure or error
+                            if failure is not None:
+                                failure.add_note("Owned context cleanup could not reconnect: " + type(error).__name__)
+                            else:
+                                raise
+                        finally:
+                            release_owned(restored, Session(cleanup_client, session.id), failure=cleanup_failure)
+                except BaseException as error:
+                    if failure is not None:
+                        failure.add_note("Owned cleanup failed: " + type(error).__name__)
+                    else:
+                        raise
+            else:
+                release_owned(context, session, failure=failure)

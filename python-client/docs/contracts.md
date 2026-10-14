@@ -43,3 +43,16 @@ errors are mapped at REST/filter boundaries. Destructive release rejects foreign
 bound Runtime handles; explicit bare IDs carry no origin information.
 Unsupported methods and compatible legacy descriptor mappings are listed in
 [public-api.md](public-api.md). See [tests/reproduction](throughput.md).
+
+## Engine-like connection contracts
+
+The connection feature is based on `feature/python-client` at
+`9c7c371539ff31a05238cfc7355395ca05f21ace`. The initial develop references above
+are historical route-review checkpoints, not the new feature's base.
+Native ENGINE authentication uses POST `/api/v2/engines/auth-cert`, Java
+properties encoding and the inspected EngineAuthenticationRequest/Response DTOs;
+capabilities/status remain GET `/public/capabilities` and `/public/status`.
+`notifyUserScope` retains native status `@CLASS` metadata needed by
+JacksonConfiguration's ServiceStatus polymorphic decoder. Exact contract/source
+inventory, Hub implementation provenance, assumptions and acceptance levels are
+in [connection-verification.md](connection-verification.md).

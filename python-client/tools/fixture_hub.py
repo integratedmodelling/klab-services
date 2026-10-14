@@ -106,6 +106,15 @@ def issue(state, key):
               "token": token(key, "python-scientist"), "other_token": token(key, "other-scientist"),
               "urls": {name: f"http://127.0.0.1:{port}/{name}" for name, port in SERVICES.items()}}
     (state / "scientist.json").write_text(json.dumps(config))
+    secret = json.loads((state / "fixture-authority.json").read_text())["enrollment_secret"]
+    (state / "engine.cert").write_text("\n".join([
+        "klab.certificate.type=ENGINE", "klab.certificate.level=TEST", "klab.username=python-scientist",
+        "klab.partner.hub=http://127.0.0.1:18090", "klab.user.email=test@example.invalid",
+        "klab.agreement=controlled-test-agreement", "klab.signature=" + secret, "klab.certificate=" + secret, ""]))
+    from klab_client import DeploymentProfile
+    path = state / "connection-profile.json"
+    DeploymentProfile.from_urls("owned-controlled-TEST", config["urls"], hub_url="http://127.0.0.1:18090",
+        test_loopback=True, local_federation=True, timeout=30, poll_interval=.2).save(path, overwrite=True)
 
 
 def serve(state):
@@ -116,7 +125,7 @@ def serve(state):
     issue(state, key)
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):
-            if self.path != "/api/v2/nodes/auth-cert":
+            if self.path not in {"/api/v2/nodes/auth-cert", "/api/v2/engines/auth-cert"}:
                 self.send_error(404)
                 return
             try:
@@ -135,7 +144,17 @@ def serve(state):
                 response = {"authenticatingHub": ISSUER, "publicKey": public, "groups": [], "services": references,
                     "userData": {"identity": {"id": "python-test-institution", "email": "test@example.invalid"},
                                  "token": token(key, "python-test-service", ("ROLE_USER", "ROLE_ENGINE"), lifetime=86400),
-                                 "expiry": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(), "groups": []}}
+                                  "expiry": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(), "groups": []}}
+                if self.path == "/api/v2/engines/auth-cert":
+                    if (body.get("userType") != "ENGINE" or body.get("level") != "TEST"
+                            or body.get("name") != "python-scientist" or body.get("idAgreement") != "controlled-test-agreement"
+                            or not secrets.compare_digest(body.get("key", ""), secret)):
+                        self.send_error(403)
+                        return
+                    response = {"hub": {"id": ISSUER}, "services": references,
+                        "userData": {"identity": {"id": "python-scientist", "email": "test@example.invalid"},
+                            "token": token(key, "python-scientist"), "groups": [],
+                            "expiry": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()}}
                 data = json.dumps(response).encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")

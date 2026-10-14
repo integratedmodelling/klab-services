@@ -20,6 +20,24 @@ import threading
 from klab_client import Client, Endpoint, ObservationImpl, Session
 from klab_client.dto import storage_semantics
 from klab_client.experiment import rectangle_geometry, verify_region, verify_grid
+from .scientific_checks import require
+
+
+def verify_constant_elevation(client, elevation, step=lambda name, operation: operation()):
+    """Independent owned-fixture value/unit oracle, shared by connection acceptance."""
+    require(elevation.id > 0 and elevation.raw.get("resolvedCoverage") == 1 and elevation.units == "m",
+            "Elevation is not a complete committed metre observation")
+    verify_grid(elevation)
+    values = step("read_20_cells", lambda: elevation.fetch_data(range(20), curve="D2_YX"))
+    require(all(value is not None and Decimal(value) == Decimal("123.25") for value in values.values),
+            "Actual server values differ from independent constant-field oracle 123.25 m")
+    require(len(values.values) == 20, "Constant field must contain all twenty requested cells")
+    semantics = storage_semantics(client.reasoner.resolve_observable("geography:Elevation in mm"))
+    converted = step("read_20_converted_cells", lambda: elevation.fetch_data(range(20), curve="D2_YX", semantics=semantics))
+    require(len(converted.values) == 20 and all(value is not None and Decimal(value) == Decimal("123250")
+            for value in converted.values), "Server unit conversion differs from oracle 123250 mm")
+    return {"verified_cells": 40, "value_m": "123.25", "value_mm": "123250",
+            "values_sha256": hashlib.sha256(json.dumps(values.text).encode()).hexdigest()}
 
 
 def make_client(configuration):
@@ -72,19 +90,8 @@ def sample(configuration, session_id, number, *, retain=False):
             job = step("submit_elevation", lambda: focused.submit(ObservationImpl(urn="", observable=semantics)))
             record["job_id"] = job.id
             elevation = step("wait_elevation", lambda: job.result(120))
-            if elevation.id <= 0 or elevation.raw.get("resolvedCoverage") != 1 or elevation.units != "m":
-                raise AssertionError("Elevation is not a complete committed metre observation")
             record["observation_id"] = elevation.id
-            verify_grid(elevation)
-            data = step("read_20_cells", lambda: elevation.fetch_data(range(20), curve="D2_YX"))
-            if any(value is None or Decimal(value) != Decimal("123.25") for value in data.values):
-                raise AssertionError("Actual server values differ from independent constant-field oracle 123.25 m")
-            mm_semantics = storage_semantics(client.reasoner.resolve_observable("geography:Elevation in mm"))
-            mm = step("read_20_converted_cells", lambda: elevation.fetch_data(range(20), curve="D2_YX", semantics=mm_semantics))
-            if any(value is None or Decimal(value) != Decimal("123250") for value in mm.values):
-                raise AssertionError("Server unit conversion differs from oracle 123250 mm")
-            record["values_sha256"] = hashlib.sha256(json.dumps(data.text).encode()).hexdigest()
-            record["verified_cells"] = 40
+            record.update(verify_constant_elevation(client, elevation, step))
             # A separate client must retrieve the actual persisted result and data.
             with make_client(configuration) as other:
                 attached = step("attach_context", lambda: other.attach_context(context.id))

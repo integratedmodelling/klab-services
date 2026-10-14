@@ -100,3 +100,40 @@ its explicit owner-directed release mode; it does not silently dispose of restor
 
 Read [the authoritative verification record](exports-verification.md) for current
 results, historical evidence and development/dependency status outside these tests.
+
+## Connection suites
+
+The existing runner also dispatches `connection-onboarding`,
+`connection-recovery`, `connection-access` and `connection-readiness`.
+Onboarding/recovery share the same two-provider compute/export/fresh-process
+scenario; requesting both is redundant. For a running owned TEST state:
+
+```text
+python tools/run_functional_acceptance.py --state-dir <owned-state> --suite connection-onboarding --suite connection-access --suite connection-readiness --report <fresh-report.xml>
+```
+
+Prepare using the current `fixture_hub.py`; it adds `connection-profile.json`
+and a private TEST `engine.cert`, retaining compatible `scientist.json`.
+Requested missing profile/certificate configuration fails, not skips. The
+authority implements the inspected ENGINE route/DTO using generated loopback
+enrollment material and signed TEST credentials accepted by genuine services.
+It does not validate production encrypted licenses or actual Hub agreements.
+
+`run_export_acceptance.py --functional-suite connection-onboarding
+--functional-suite connection-access --functional-suite connection-readiness`
+provisions/cleans the owned exporter-enabled stack using its existing explicit
+server/Java/worldview/component/state arguments. Connection acceptance uses
+the pinned **published** GeoJSON component; it does not require corrected TIFF.
+Shared value/unit and GeoJSON geometry validators remain active with Python
+optimization. The parent connection closes before the recovery subprocess;
+the original handle is restored without new scientific submission. Fresh
+owner connections perform explicit context/session cleanup afterward.
+
+Readiness disruption, unknown capability states, expiry/renewal, forbidden
+origins, redirects and ambiguous mutation controls additionally run in offline
+unit and local HTTP subprocess tests. Live readiness observes actual services
+without stopping shared deployments. Real Hub onboarding is a separate recipe:
+provide a trusted HTTPS profile and actual ENGINE certificate, run the example,
+then a deployment-authorized known scientific workflow through the selected
+Client and record Hub/server/worldview/component revisions and original IDs.
+That gate is not satisfied by the controlled authority.
