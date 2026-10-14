@@ -2,6 +2,7 @@
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
+import traceback
 
 import httpx
 import pytest
@@ -228,3 +229,77 @@ def test_java_properties_independent_escaping_continuation_and_encoding():
     assert parse_properties(b"emoji=\\uD83D\\uDE00") == {"emoji": "\U0001f600"}
     with pytest.raises(CertificateError):
         parse_properties(b"bad=\\uXYZ1")
+
+
+class FailingCloseTransport(httpx.MockTransport):
+    """Allow two metadata probes, then fail closing the scientific transport."""
+    def __init__(self, wire):
+        super().__init__(wire)
+        self.close_calls = 0
+
+    def close(self):
+        self.close_calls += 1
+        if self.close_calls >= 3:
+            raise OSError(TOKEN)
+
+
+def test_initialization_failure_preserved_when_cleanup_also_fails():
+    wire = Wire()
+    wire.ack = "invalid-acknowledgement"
+    transport = FailingCloseTransport(wire)
+    with pytest.raises(ProtocolError, match="boolean acknowledgement") as caught:
+        connect(profile(), credentials=IssuedTokenProvider(ConnectionIdentity("scientist"), {URL: TOKEN}),
+                http_transport=transport)
+    assert transport.close_calls == 3
+    assert caught.value.__notes__ == ["Connection cleanup failed: OSError"]
+    assert TOKEN not in "".join(traceback.format_exception(caught.value))
+    assert [request.method for request in wire.calls] == ["GET", "GET", "POST"]
+    assert wire.calls[-1].url.path.endswith("/notifyUserScope")
+
+
+@pytest.mark.parametrize("error_type", [SubmissionOutcomeUnknown, ProtocolError, KeyboardInterrupt])
+def test_context_exit_preserves_primary_identity_traceback_and_safe_cleanup_note(error_type):
+    wire = Wire()
+    transport = FailingCloseTransport(wire)
+    connection = connect(profile(), credentials=IssuedTokenProvider(ConnectionIdentity("scientist"), {URL: TOKEN}),
+                         http_transport=transport)
+    client = connection.client
+    requests_before_exit = len(wire.calls)
+    primary = error_type("primary operation failure")
+    def raise_primary():
+        raise primary
+    with pytest.raises(error_type) as caught:
+        with connection:
+            raise_primary()
+    assert caught.value is primary
+    assert traceback.extract_tb(primary.__traceback__)[-1].name == "raise_primary"
+    assert primary.__notes__ == ["Connection cleanup failed: OSError"]
+    assert TOKEN not in "".join(traceback.format_exception(primary))
+    assert transport.close_calls == 3
+    assert len(wire.calls) == requests_before_exit  # No release, cancellation or retry.
+    with pytest.raises(ConfigurationError, match="closed"):
+        client.create_session()
+
+
+def test_context_exit_without_primary_reports_cleanup_failure():
+    wire = Wire()
+    transport = FailingCloseTransport(wire)
+    connection = connect(profile(), credentials=IssuedTokenProvider(ConnectionIdentity("scientist"), {URL: TOKEN}),
+                         http_transport=transport)
+    with pytest.raises(OSError):
+        with connection:
+            pass
+    assert transport.close_calls == 3
+    with pytest.raises(ConfigurationError, match="closed"):
+        _ = connection.client
+
+
+def test_explicit_close_reports_cleanup_failure():
+    transport = FailingCloseTransport(Wire())
+    connection = connect(profile(), credentials=IssuedTokenProvider(ConnectionIdentity("scientist"), {URL: TOKEN}),
+                         http_transport=transport)
+    with pytest.raises(OSError):
+        connection.close()
+    assert transport.close_calls == 3
+    with pytest.raises(ConfigurationError, match="closed"):
+        connection.refresh()

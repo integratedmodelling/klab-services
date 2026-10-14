@@ -42,17 +42,20 @@ access has not been supplied. Real Hub onboarding is therefore not assumed accep
 | Safe retained DTO extensions | Wire decoder removes/redacts secrets; unknown correctness-affecting states reject or become unsupported/unknown. Raw login packages are not profile/cache authority. |
 | Latest pending peer snapshot per target | Scoped initializer with explicit bounded attempts, following native Engine notification semantics. No global registration/removal/replay guarantee. |
 
-## Acceptance status
+## Acceptance status — original connection milestone
 
-The implementation is locally validated against the available contract and
+Implementation commit `440a146117c3adf2fa0c5ec52546d64897cc5714` was locally
+validated against the available contract and
 controlled-service evidence levels. Actual Hub onboarding is **Not run**.
 The consolidated machine-readable record is
 [results/connection-verification.json](results/connection-verification.json).
 Its complete executable-file hash manifest binds these results to source digest
 `e476d83410bf3918242fe02bc0721fec79200006950191d678ac6936d5c1ac81`.
-Tests ran on the new branch over the base above with local changes; do not treat
-the base SHA alone as the tested implementation. Normal local commits preserve
-the verified source manifest; publication/hosted CI has not been performed.
+These results and the manifest describe that original implementation, including
+its then-current tests. The cleanup follow-up below changes the executable source;
+its checks are recorded separately rather than reusing the original live or
+installed-package results as acceptance of a changed revision. Publication/hosted
+CI has not been performed.
 
 | Check | Status | Exact scope and limits |
 |---|---|---|
@@ -125,6 +128,12 @@ tests and documentation. No remaining demonstrated blocking defect was identifie
 within this bounded contribution. This is an internal review, not independent
 reviewer approval or a guarantee of maintainer acceptance.
 
+A subsequent read-only review reproduced an important cleanup defect: an
+initialization `ProtocolError` was replaced by an `OSError` from transport closing.
+That finding superseded the initial recommendation until the focused correction
+below. The correction preserves the existing contract and is covered by explicit
+failure-path regressions.
+
 Two live-discovered contract defects were fixed before final validation:
 
 1. Native scope notification status needs Jackson `@CLASS`; an initially reduced
@@ -148,6 +157,41 @@ contacted or assigned. GeoTIFF algorithms/source patch were not changed.
 Remaining contract evidence is actual-Hub onboarding and the separate deployment/
 native identity-sharing server gates; these are not represented as passed.
 
+## Cleanup review follow-up
+
+Reviewed parent: `440a146117c3adf2fa0c5ec52546d64897cc5714`.
+
+`Connection` now uses a shared cleanup helper during failed initialization and
+context-manager exit. Cleanup is still attempted. If an operation is already
+failing, its original exception object and traceback propagate, with a note such
+as `Connection cleanup failed: OSError`. The note excludes the cleanup exception's
+message, credential values and other potentially sensitive diagnostics. With no
+primary failure, the cleanup exception propagates; explicit `close()` retains
+its existing error behavior. Local closing marks the connection closed even if
+the transport's close operation raises.
+
+Six additional unit cases in `tests/unit/test_connection.py` cover:
+
+- Malformed peer acknowledgement plus transport-close failure during startup.
+- Context exit with `SubmissionOutcomeUnknown`, `ProtocolError`, or
+  `KeyboardInterrupt` plus transport-close failure: same primary object, original
+  traceback origin, safe note, and no release/cancellation/retry requests.
+- Successful context body followed by a failing close.
+- Explicit failing `close()` and subsequent rejection of connection operations.
+
+Follow-up validation on Windows Python 3.12.7, using the same interpreter and
+commands listed above: **27 focused connection tests passed; 763 full offline
+unit/integration tests passed; the existing unexcluded 100% new-module line/branch
+and changed-code coverage gates passed; existing lint passed.** Actual services,
+installed Linux interpreter matrices and package builds were not rerun for this
+focused cleanup change. Their original milestone results remain identified above
+at their original source revision. No Java or scientific-validator change was
+needed for this correction.
+
+The reproduced connection cleanup finding is addressed at the deterministic
+fault-injection evidence level. Actual Hub onboarding and separate server
+identity-sharing acceptance remain outstanding as previously recorded.
+
 ## Suggested PR
 
 **Title:** Add Engine-like Python connections with certificate/token providers
@@ -160,9 +204,13 @@ existing typed compute/export/handle APIs. Origin-specific credential resolution
 preserves Runtime bindings, explicit renewal and mutation-uncertainty semantics.
 Named functional suites cover two-provider compute/known values/native GeoJSON,
 local close/fresh-process recovery, valid collaborator denial and expired TEST
-credentials. Validation: 757 offline tests on Windows and installed Linux
-3.11/3.12/3.13, existing coverage/lint/build gates, and seven owned real-service
-checks under optimization with cleanup and secret-free evidence. Actual Hub
+credentials. The cleanup correction adds primary-failure preservation and six
+fault-injection regression cases. Current follow-up validation: 763 offline tests
+on Windows and existing coverage/lint gates. Original milestone validation at
+`440a14611`: 757 tests on Windows and installed Linux 3.11/3.12/3.13, package
+builds, and seven owned real-service checks under optimization with cleanup and
+secret-free evidence; those deployment/matrix checks were not rerun for the
+cleanup correction. Actual Hub
 onboarding is not yet exercised; fixture exchange does not certify license or
 production-agreement validation. Server/global-discovery/worker and numerical
 TIFF delivery remain separate. No publication/PR/merge is performed by this report.

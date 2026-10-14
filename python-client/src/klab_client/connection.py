@@ -53,8 +53,8 @@ class Connection:
             self._grant = self._acquire(deadline)
             self._sensitive = self._grant.sensitive_values
             self.refresh(_deadline=deadline)
-        except BaseException:
-            self.close()
+        except BaseException as error:
+            self._close_preserving(error)
             raise
 
     def __repr__(self):
@@ -324,11 +324,20 @@ class Connection:
             if self._client is not None:
                 self._client.close()
 
+    def _close_preserving(self, primary):
+        """Attempt local cleanup without replacing an active operation failure."""
+        try:
+            self.close()
+        except BaseException as error:
+            if primary is None:
+                raise
+            primary.add_note("Connection cleanup failed: " + type(error).__name__)
+
     def __enter__(self):
         return self
 
-    def __exit__(self, *args):
-        self.close()
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._close_preserving(exc_value)
 
 
 def connect(profile, *, credentials, selection_policy=None, http_transport=None, initialize=True):
