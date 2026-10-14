@@ -192,6 +192,61 @@ The reproduced connection cleanup finding is addressed at the deterministic
 fault-injection evidence level. Actual Hub onboarding and separate server
 identity-sharing acceptance remain outstanding as previously recorded.
 
+## Bootstrap cleanup and deterministic-deadline correction
+
+Reviewed parent: `d71a8a02928a4318d51e71b4e5897866de42eef8`.
+The next read-only review reproduced two remaining findings: bootstrap resource
+closing could replace a primary authentication error and expose a cleanup
+message, and the mandatory coverage gate depended on a one-millisecond
+wall-clock timeout selecting a particular branch. Both are addressed here.
+
+The bootstrap adapter explicitly owns its HTTP response and client and attempts
+both closes independently. Primary authentication, authorization, protocol,
+transport and interruption failures retain their semantics, with cleanup notes
+containing only resource/error types. Standalone cleanup failures are reported
+without the raw cleanup message. HTTPX iterator-EOF closing failures are also
+sanitized; the certificate-provider regression checks that a known dummy
+signature cannot appear in the rendered exception. JSON object validation occurs
+before final resource cleanup, preserving malformed-package errors.
+
+Fourteen new cases in `tests/unit/test_bootstrap_cleanup.py` exercise denied
+authentication/authorization, certificate signature privacy, malformed/nonobject
+JSON, metadata limits, interrupted reads, interruption identity/traceback,
+iterator-EOF closing, standalone cleanup, both-resource failure and client
+construction failure. Deadline controls in `test_connection_guards.py` now
+advance module-local fake clocks during the exact probe/stream/notification
+phase; they do not rely on scheduler sleep duration to obtain coverage. Production
+timekeeping and the coverage gate remain intact.
+
+Current executable source digest:
+`b11a45bc8fc1225e0469e833349122d858bdb6c1c4b4fbfdad3de8ede3d8d687`.
+Full manifest and consolidated evidence:
+[results/bootstrap-cleanup-verification.json](results/bootstrap-cleanup-verification.json).
+
+| Current correction check | Status | Evidence |
+|---|---|---|
+| Focused bootstrap cleanup/deadline checks | Passed | 15 cases, including the previously reproduced masking/signature-exposure fault. |
+| Windows Python 3.12.7 full offline suite | Passed | 777 unit/integration tests; existing unexcluded new-module/changed-code coverage gate passed. |
+| Installed Linux Python 3.11 / 3.12 / 3.13 | Passed | 777 tests per interpreter, installed SDK hashes matched; coverage, lint, sdist and wheel gates passed for each. |
+| Existing lint | Passed | `E9,F63,F7,F82`. |
+| Owned real-service acceptance under optimization | Passed | Seven checks: both providers' compute/export/fresh-process recovery, access/expired-TEST-token rejection, readiness, and existing scientific/direct-export regressions. |
+| Cleanup and public-evidence privacy | Passed | Owned JVMs/authority stopped, ports closed, actual TEST secrets/JWT patterns absent from inspected public evidence. |
+| Actual Hub onboarding | Not run | No actual ENGINE certificate/deployment supplied; controlled exchange remains explicitly labelled. |
+
+The installed matrix uses the existing commands above. Final external records:
+`connection-3.11-b11a45bc8fc1-20261014T192643.json`,
+`connection-3.12-b11a45bc8fc1-20261014T192643.json`, and
+`connection-3.13-b11a45bc8fc1-20261014T192643.json`.
+The live invocation repeats the earlier explicit server/Java/worldview/published
+component arguments and the same four functional suite flags, with state directory
+`C:\Users\lumsd\AppData\Local\Temp\opencode\connection-bootstrap-correction-live1`
+and `PYTHONOPTIMIZE=1`. Server, worldview and published component pins are unchanged
+and explicitly recorded in the new evidence. No new Java-suite pass is claimed.
+
+At these evidence levels, the two reproduced review findings are corrected and
+the contribution is ready for maintainer review. Actual Hub and separate server
+identity-sharing gates remain outstanding; maintainer acceptance is not implied.
+
 ## Suggested PR
 
 **Title:** Add Engine-like Python connections with certificate/token providers
@@ -204,13 +259,13 @@ existing typed compute/export/handle APIs. Origin-specific credential resolution
 preserves Runtime bindings, explicit renewal and mutation-uncertainty semantics.
 Named functional suites cover two-provider compute/known values/native GeoJSON,
 local close/fresh-process recovery, valid collaborator denial and expired TEST
-credentials. The cleanup correction adds primary-failure preservation and six
-fault-injection regression cases. Current follow-up validation: 763 offline tests
-on Windows and existing coverage/lint gates. Original milestone validation at
-`440a14611`: 757 tests on Windows and installed Linux 3.11/3.12/3.13, package
-builds, and seven owned real-service checks under optimization with cleanup and
-secret-free evidence; those deployment/matrix checks were not rerun for the
-cleanup correction. Actual Hub
+credentials. Cleanup corrections preserve primary failures through Connection
+and bootstrap resource closing, sanitize cleanup diagnostics, and use deterministic
+deadline regression controls. Current validation: 777 offline tests on Windows
+and installed Linux 3.11/3.12/3.13, existing coverage/lint/build gates, and seven
+owned real-service checks under optimization with cleanup and secret-free evidence.
+Exact manifests and earlier milestone results remain separately traceable above.
+Actual Hub
 onboarding is not yet exercised; fixture exchange does not certify license or
 production-agreement validation. Server/global-discovery/worker and numerical
 TIFF delivery remain separate. No publication/PR/merge is performed by this report.

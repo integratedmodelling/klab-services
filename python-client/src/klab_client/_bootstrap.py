@@ -7,7 +7,7 @@ import time
 import httpx
 
 from .connection_models import ConnectionIdentity, CredentialExpiredError, ServiceReference, parse_expiry
-from .errors import AuthenticationError, AuthorizationError, ProtocolError, ServerError, TransportError
+from .errors import AuthenticationError, AuthorizationError, KlabError, ProtocolError, ServerError, TransportError
 
 ENGINE_AUTH_ROUTE = "/api/v2/engines/auth-cert"
 MAX_BOOTSTRAP_BYTES = 1024 * 1024
@@ -26,6 +26,23 @@ def public_fields(value, secrets=()):
     return value
 
 
+def _close_resources(response, client, primary):
+    """Attempt both local closes, preserving the primary and safe diagnostics."""
+    failure = primary
+    for name, resource in (("response", response), ("client", client)):
+        if resource is None:
+            continue
+        try:
+            resource.close()
+        except BaseException as error:
+            if failure is None:
+                failure = (TransportError("Connection endpoint cleanup failed")
+                           if isinstance(error, Exception) else error)
+            failure.add_note("Connection " + name + " cleanup failed: " + type(error).__name__)
+    if primary is None and failure is not None:
+        raise failure from None
+
+
 def wire_request(url, method, *, payload=None, credential=None, timeout=30, verify=True, transport=None, deadline=None):
     headers = {"Accept": "application/json"}
     if credential:
@@ -35,30 +52,43 @@ def wire_request(url, method, *, payload=None, credential=None, timeout=30, veri
         if remaining <= 0:
             raise TransportError("Connection waiting deadline expired")
         timeout = min(timeout, remaining)
+    client = response = primary = None
     try:
-        with httpx.Client(verify=verify, transport=transport, timeout=timeout, trust_env=False,
-                          follow_redirects=False) as client:
-            with client.stream(method, url, headers=headers, json=payload) as response:
-                if response.status_code != 200:
-                    error = {401: AuthenticationError, 403: AuthorizationError}.get(response.status_code, ServerError)
-                    raise error("Connection endpoint HTTP " + str(response.status_code))
-                content = bytearray()
-                for chunk in response.iter_bytes():
-                    if deadline is not None and time.monotonic() >= deadline:
-                        raise TransportError("Connection waiting deadline expired")
-                    if len(content) + len(chunk) > MAX_BOOTSTRAP_BYTES:
-                        raise ProtocolError("Connection response exceeds its bounded metadata budget")
-                    content.extend(chunk)
-                if deadline is not None and time.monotonic() >= deadline:
-                    raise TransportError("Connection waiting deadline expired")
-                result = json.loads(content)
-    except httpx.HTTPError:
-        raise TransportError("Connection endpoint transport failed") from None
+        client = httpx.Client(verify=verify, transport=transport, timeout=timeout, trust_env=False,
+                             follow_redirects=False)
+        response = client.send(client.build_request(method, url, headers=headers, json=payload), stream=True)
+        if response.status_code != 200:
+            error = {401: AuthenticationError, 403: AuthorizationError}.get(response.status_code, ServerError)
+            raise error("Connection endpoint HTTP " + str(response.status_code))
+        content = bytearray()
+        for chunk in response.iter_bytes():
+            if deadline is not None and time.monotonic() >= deadline:
+                raise TransportError("Connection waiting deadline expired")
+            if len(content) + len(chunk) > MAX_BOOTSTRAP_BYTES:
+                raise ProtocolError("Connection response exceeds its bounded metadata budget")
+            content.extend(chunk)
+        if deadline is not None and time.monotonic() >= deadline:
+            raise TransportError("Connection waiting deadline expired")
+        result = json.loads(content)
+        if not isinstance(result, dict):
+            raise ProtocolError("Connection endpoint returned no object")
+        return result
+    except KlabError as error:
+        primary = error
+        raise
     except (ValueError, TypeError):
-        raise ProtocolError("Connection endpoint returned invalid JSON") from None
-    if not isinstance(result, dict):
-        raise ProtocolError("Connection endpoint returned no object")
-    return result
+        primary = ProtocolError("Connection endpoint returned invalid JSON")
+        raise primary from None
+    except Exception:
+        # Includes failures from HTTPX's automatic response close at iterator EOF.
+        # Never expose exception text carrying request/certificate material.
+        primary = TransportError("Connection endpoint transport failed")
+        raise primary from None
+    except BaseException as error:
+        primary = error
+        raise
+    finally:
+        _close_resources(response, client, primary)
 
 
 def decode_bootstrap(payload, profile, expected_principal, secrets):

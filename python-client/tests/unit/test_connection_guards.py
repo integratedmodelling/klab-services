@@ -138,7 +138,9 @@ def test_invalid_or_unbounded_connection_response(value):
         wire_request(URL, "GET", transport=httpx.MockTransport(lambda request: httpx.Response(200, content=value)))
 
 
-def test_connection_wire_timeouts_and_transport_errors():
+def test_connection_wire_timeouts_and_transport_errors(monkeypatch):
+    from types import SimpleNamespace
+    import klab_client._bootstrap as bootstrap_module
     with pytest.raises(TransportError, match="deadline"):
         wire_request(URL, "GET", deadline=time.monotonic()-1)
     def failed(request):
@@ -148,10 +150,12 @@ def test_connection_wire_timeouts_and_transport_errors():
     assert TOKEN not in str(error.value)
     class Slow(httpx.SyncByteStream):
         def __iter__(self):
-            time.sleep(.02)
+            clock.now = 10
             yield b"{}"
+    clock = SimpleNamespace(now=0)
+    monkeypatch.setattr(bootstrap_module, "time", SimpleNamespace(monotonic=lambda: clock.now))
     with pytest.raises(TransportError):
-        wire_request(URL, "GET", deadline=time.monotonic()+.01,
+        wire_request(URL, "GET", deadline=10,
             transport=httpx.MockTransport(lambda request: httpx.Response(200, stream=Slow())))
 
 
@@ -309,6 +313,9 @@ def test_reacquisition_before_send_keeps_existing_client_identity(monkeypatch):
 
 
 def test_peer_denial_protocol_errors_and_bounded_wait(monkeypatch):
+    from types import SimpleNamespace
+    import klab_client.connection as connection_module
+    import klab_client._bootstrap as bootstrap_module
     from klab_client import ReadinessError
     from klab_client.errors import AuthorizationError
     wire = Wire()
@@ -317,14 +324,27 @@ def test_peer_denial_protocol_errors_and_bounded_wait(monkeypatch):
     with pytest.raises(ProtocolError, match="boolean"):
         connect(profile(), credentials=provider, http_transport=httpx.MockTransport(wire))
     wire.ack = False
-    with connect(profile(), credentials=provider, http_transport=httpx.MockTransport(wire)) as connection:
-        with pytest.raises(ReadinessError):
-            connection.wait_ready(timeout=.001)
-        def failed(**kwargs):
-            raise TransportError("read-only observation failed")
-        monkeypatch.setattr(connection, "refresh", failed)
-        with pytest.raises(TransportError):
-            connection.wait_ready(timeout=1)
+    transport = httpx.MockTransport(wire)
+    with connect(profile(), credentials=provider, http_transport=transport) as connection:
+        clock = SimpleNamespace(now=0)
+        def sleep(duration):
+            clock.now += duration
+        def expire_probe(request):
+            assert request.url.path.endswith("/public/capabilities")
+            clock.now = 10
+            raise httpx.ReadTimeout(TOKEN)
+        with monkeypatch.context() as patch:
+            patch.setattr(connection_module, "time", SimpleNamespace(monotonic=lambda: clock.now, sleep=sleep))
+            patch.setattr(bootstrap_module, "time", SimpleNamespace(monotonic=lambda: clock.now))
+            patch.setattr(transport, "handler", expire_probe)
+            with pytest.raises(ReadinessError):
+                connection.wait_ready(timeout=10)
+            assert clock.now == 10
+            def failed(**kwargs):
+                raise TransportError("read-only observation failed")
+            patch.setattr(connection, "refresh", failed)
+            with pytest.raises(TransportError):
+                connection.wait_ready(timeout=1)
     def denied(request):
         if request.url.path.endswith("notifyUserScope"):
             return httpx.Response(403, text=TOKEN)
@@ -413,13 +433,17 @@ def test_profile_publication_and_cleanup_failures_preserve_original(tmp_path, mo
         temporary.unlink()
 
 
-def test_deadline_checked_on_empty_response_completion():
+def test_deadline_checked_on_empty_response_completion(monkeypatch):
+    from types import SimpleNamespace
+    import klab_client._bootstrap as bootstrap_module
+    clock = SimpleNamespace(now=0)
+    monkeypatch.setattr(bootstrap_module, "time", SimpleNamespace(monotonic=lambda: clock.now))
     class EmptyDelayed(httpx.SyncByteStream):
         def __iter__(self):
-            time.sleep(.02)
+            clock.now = 10
             yield from ()
     with pytest.raises(TransportError, match="deadline"):
-        wire_request(URL, "GET", deadline=time.monotonic()+.01,
+        wire_request(URL, "GET", deadline=10,
             transport=httpx.MockTransport(lambda request: httpx.Response(200, stream=EmptyDelayed())))
 
 
@@ -440,14 +464,19 @@ def test_metadata_only_renewal_and_ready_diagnostics():
             connection.selected["runtime"] = "relabel"
 
 
-def test_peer_transient_failures_latest_snapshot_and_wait_deadline():
+def test_peer_transient_failures_latest_snapshot_and_wait_deadline(monkeypatch):
+    from types import SimpleNamespace
+    import klab_client.connection as connection_module
+    import klab_client._bootstrap as bootstrap_module
+    import klab_client.transport as transport_module
     from klab_client import ReadinessError
     wire = Wire()
+    clock = SimpleNamespace(now=0)
     status = 503
     def handler(request):
         if request.url.path.endswith("notifyUserScope"):
             if status == 504:
-                time.sleep(.6)
+                clock.now = 10
             return httpx.Response(status, text="temporary") if status != 200 else httpx.Response(200, json=True)
         return wire(request)
     with connect(profile(), credentials=IssuedTokenProvider(ConnectionIdentity("scientist"), {URL: TOKEN}),
@@ -458,8 +487,11 @@ def test_peer_transient_failures_latest_snapshot_and_wait_deadline():
         assert not connection._pending
         wire.operational = False
         status = 504
-        with pytest.raises(TransportError):
-            connection.refresh(_deadline=time.monotonic()+.5)
+        with monkeypatch.context() as patch:
+            for module in (connection_module, bootstrap_module, transport_module):
+                patch.setattr(module, "time", SimpleNamespace(monotonic=lambda: clock.now))
+            with pytest.raises(TransportError):
+                connection.refresh(_deadline=10)
         with pytest.raises(ReadinessError):
             _ = connection.client
 
