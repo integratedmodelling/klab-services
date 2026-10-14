@@ -322,20 +322,10 @@ public enum ServiceConfiguration {
 
   ServiceConfiguration() {
 
-    if (System.getProperty(KLAB_DATA_DIRECTORY) != null) {
-      this.dataPath = new File(System.getProperty(KLAB_DATA_DIRECTORY));
-    } else {
-      String home = System.getProperty("user.home");
-      if (System.getProperty(KLAB_WORK_DIRECTORY) != null) {
-        KLAB_RELATIVE_WORK_PATH = System.getProperty(KLAB_WORK_DIRECTORY);
-      }
-      this.dataPath = new File(home + File.separator + KLAB_RELATIVE_WORK_PATH);
-
-      /*
-       * make sure it's available for substitution in property files etc.
-       */
-      System.setProperty(KLAB_DATA_DIRECTORY, this.dataPath.toString());
-    }
+    this.dataPath =
+        org.integratedmodelling.klab.api.configuration.DataRootBootstrap.PROCESS
+            .claim(System.getProperties()).toFile();
+    System.setProperty(KLAB_DATA_DIRECTORY, this.dataPath.toString());
 
     this.dataPath.mkdirs();
 

@@ -344,6 +344,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
   public boolean start(ServiceStartupOptions options) {
 
+    options.prepareDataRoot();
     setEnvironment(options);
     this.serviceScope = createServiceScope();
     bootTime = System.currentTimeMillis();

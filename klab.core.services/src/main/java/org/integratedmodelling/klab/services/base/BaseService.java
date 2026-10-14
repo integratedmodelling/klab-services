@@ -119,6 +119,7 @@ public abstract class BaseService implements KlabService {
   protected BaseService(
       ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
 
+    options.prepareDataRoot();
     this.type = serviceType;
     settings = SettingsImpl.forService(this, serviceType);
     emailManager = new EmailManager(settings);
