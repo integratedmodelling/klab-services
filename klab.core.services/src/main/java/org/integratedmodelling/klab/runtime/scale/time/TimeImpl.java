@@ -296,7 +296,13 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
   @Override
   public boolean isGeneric() {
-    // TODO Auto-generated method stub
+    // Epoch zero anchors a positive, bounded PHYSICAL period. Other representations and
+    // zero-length/open-ended sentinels keep their existing genericity rules.
+    if (extentType == Time.Type.PHYSICAL && start != null && end != null
+        && start.getMilliseconds() == 0 && end.getMilliseconds() > 0
+        && end.getMilliseconds() != Long.MAX_VALUE) {
+      return false;
+    }
     return start == null
         || end == null
         || start.getMilliseconds() == 0
