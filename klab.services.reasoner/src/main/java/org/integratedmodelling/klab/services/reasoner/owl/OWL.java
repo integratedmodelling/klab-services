@@ -93,6 +93,22 @@ public class OWL {
 
   private boolean reasonerActive;
   private boolean reasonerSynchronizing = false;
+  private int declarationStagingDepth;
+  private long reasonerCreations, flushRequests, actualFlushes, satisfiabilityQueries, entailmentQueries;
+
+  /** Private compilation suppresses partial-graph DL queries until the complete candidate exists. */
+  public synchronized AutoCloseable stageDeclarations() {
+    declarationStagingDepth++;
+    return () -> { synchronized (this) {
+      if (declarationStagingDepth <= 0) throw new IllegalStateException("Unbalanced declaration staging");
+      declarationStagingDepth--;
+    }};
+  }
+  public synchronized Map<String,Long> compilationMetrics() {
+    return Map.of("reasonerCreations",reasonerCreations,"flushRequests",flushRequests,
+        "actualFlushes",actualFlushes,"satisfiabilityQueries",satisfiabilityQueries,
+        "entailmentQueries",entailmentQueries);
+  }
   private Ontology mergedReasonerOntology;
   private OWLReasoner reasoner;
   // HermiT queries mutate tableau state. Queries, flush, creation and disposal must
@@ -348,6 +364,7 @@ public class OWL {
     if (privateKnowledgeDirectory != null || ServiceConfiguration.INSTANCE.useReasoner()) {
       this.reasoner =
           new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
+      reasonerCreations++;
       reasonerActive = true;
     }
 
@@ -2779,7 +2796,9 @@ public class OWL {
   }
 
   public synchronized void flushReasoner() {
-    if (reasoner != null && !reasonerSynchronizing) {
+    flushRequests++;
+    if (reasoner != null && !reasonerSynchronizing && declarationStagingDepth == 0) {
+      actualFlushes++;
       reasoner.flush();
     }
   }
@@ -3076,12 +3095,12 @@ public class OWL {
   }
 
   public synchronized boolean hasReasoner() {
-    return reasoner != null;
+    return reasoner != null && declarationStagingDepth == 0;
   }
 
   // Only the caller holding this monitor can pin a buffering reasoner between flushes.
   boolean hasPinnedBufferingReasoner() {
-    return Thread.holdsLock(this) && reasoner != null
+    return Thread.holdsLock(this) && declarationStagingDepth == 0 && reasoner != null
         && reasoner.getBufferingMode() == org.semanticweb.owlapi.reasoner.BufferingMode.BUFFERING;
   }
 
@@ -3143,6 +3162,7 @@ public class OWL {
           AxiomNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    entailmentQueries++;
     return reasoner.isEntailed(arg0);
   }
 
@@ -3153,6 +3173,7 @@ public class OWL {
           AxiomNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    entailmentQueries++;
     return reasoner.isEntailed(arg0);
   }
 
@@ -3170,6 +3191,7 @@ public class OWL {
           ClassExpressionNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    satisfiabilityQueries++;
     return reasoner.isSatisfiable(arg0);
   }
 

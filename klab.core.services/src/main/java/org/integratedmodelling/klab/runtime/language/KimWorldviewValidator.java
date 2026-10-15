@@ -10,6 +10,17 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /** Worldview rules over service semantic beans; no parser or language-project dependencies. */
 public class KimWorldviewValidator extends KimValidator implements KimOntologyVisitor.Validator {
+  private final java.util.Map<KimOntology,WorldviewDeclarationRegistry> declarationRegistries = new java.util.IdentityHashMap<>();
+  private final WorldviewDeclarationRegistry completeRegistry;
+  public KimWorldviewValidator() { this(null); }
+  public KimWorldviewValidator(WorldviewDeclarationRegistry registry) { this.completeRegistry=registry; }
+  private WorldviewDeclarationRegistry registry(KimOntology ontology) {
+    if(completeRegistry!=null)return completeRegistry;
+    return declarationRegistries.computeIfAbsent(ontology,o->new WorldviewDeclarationRegistry(List.of(o)));
+  }
+  @Override public List<Notification> validateOntology(KimOntology ontology,KimObservableVisitor.Context context) {
+    return registry(ontology).errors();
+  }
   @Override
   public List<Notification> validateConceptStatement(
       KimConceptStatement statement, KimObservableVisitor.Context context) {
@@ -137,13 +148,19 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
       }
     }
     boolean local = reference.urn().startsWith(ontology.getUrn() + ":");
-    var declaration = local ? find(ontology.getStatements(), ontology.getUrn(), reference.urn()) : null;
+    var declaration = local ? registry(ontology).get(reference.urn()) : null;
+    // Complete, source-owned typed registration makes semantic reference order irrelevant.
+    // Structural parent/alias cycles and unresolved kinds are rejected by the registry.
     boolean known = local ? declaration != null : reference.resolved() != null;
-    if (declaration != null && source.getLength() > 0 && declaration.getLength() > 0
-        && declaration.getOffsetInDocument() > source.getOffsetInDocument()) {
-      return List.of(Notification.error(
-          "Concept is referenced before its declaration: " + reference.urn(),
-          Notification.LexicalContext.of(source, ontology)));
+    if (declaration != null && source.getLength()>0 && declaration.statement().getLength()>0
+        && declaration.statement().getOffsetInDocument()>source.getOffsetInDocument()) {
+      KimConceptStatement enclosing=null;
+      for(var node:context.getPath())if(node instanceof KimConceptStatement s)enclosing=s;
+      // Staging admits semantic clause reciprocity, not a new preamble/parent/alias
+      // ordering policy. The language header overlay preserves these same boundaries.
+      if(enclosing==null||parentHead(enclosing.getDeclaredParent(),reference.urn(),ontology.getUrn()))
+        return List.of(Notification.error("Concept is referenced before its declaration: "+reference.urn(),
+            Notification.LexicalContext.of(source,ontology)));
     }
     // Preserve authority identity handling when no workspace declaration is expected.
     if (!local && !reference.urn().isEmpty() && Character.isUpperCase(reference.urn().charAt(0)))
@@ -164,5 +181,11 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
       if (child != null) return child;
     }
     return null;
+  }
+  private boolean parentHead(KimConcept parent,String urn,String namespace) {
+    if(parent==null)return false;
+    if(parent.getName()!=null&&WorldviewDeclarationRegistry.urn(namespace,parent.getName()).equals(urn))return true;
+    if(parentHead(parent.getObservable(),urn,namespace))return true;
+    return parent.getOperands().stream().anyMatch(p->parentHead(p,urn,namespace));
   }
 }

@@ -50,6 +50,7 @@ public final class BeanIngestionPreflight {
       if (document instanceof KimOntology ontology) ontologies.put(ontology.getUrn(), ontology);
       else if (document instanceof KimObservationStrategyDocument strategy) strategyDocuments.put(strategy.getUrn(), strategy);
     }
+    var registry = new WorldviewDeclarationRegistry(ontologies.values());
     var concepts = new HashMap<String, KimConceptStatement>();
     var owners = new IdentityHashMap<KimConceptStatement, String>();
     for (var ontology : ontologies.values())
@@ -70,7 +71,7 @@ public final class BeanIngestionPreflight {
     for (var document : documents)
       if (document instanceof KimOntology) included.add(document.getUrn());
       else if (document instanceof KimObservationStrategyDocument) includedStrategies.add(document.getUrn());
-    var result = new ArrayList<Notification>();
+    var result = new ArrayList<Notification>(registry.errors());
     // Follow the requested imports and semantic references. Unknown dependencies never become
     // valid merely because a strategy's default visitor does not check reference existence.
     for (int i = 0; i < validating.size(); i++) {
@@ -84,7 +85,7 @@ public final class BeanIngestionPreflight {
                 Notification.LexicalContext.of(new KimConceptImpl(), ontology)));
           else include(imported, ontologies, validating, included);
         }
-        var ontologyVisitor = new KimOntologyVisitor(null, resolver);
+        var ontologyVisitor = new KimOntologyVisitor(new KimWorldviewValidator(registry), resolver);
         ontologyVisitor.visit(ontology);
         visitor = ontologyVisitor;
       } else if (document instanceof KimObservationStrategyDocument strategies) {
@@ -206,7 +207,7 @@ public final class BeanIngestionPreflight {
       Map<KimConceptStatement, String> owners, String namespace,
       KimConceptStatement statement) {
     var urn = statement.getUrn();
-    if (urn != null && !urn.isBlank()) concepts.put(urn.contains(":") ? urn : namespace + ":" + urn, statement);
+    if (urn != null && !urn.isBlank()) concepts.putIfAbsent(urn.contains(":") ? urn : namespace + ":" + urn, statement);
     owners.put(statement, namespace);
     for (var child : statement.getChildren()) index(concepts, owners, namespace, child);
   }

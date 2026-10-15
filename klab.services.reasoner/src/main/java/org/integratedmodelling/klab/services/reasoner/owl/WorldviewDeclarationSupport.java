@@ -34,6 +34,16 @@ public final class WorldviewDeclarationSupport {
       Concept owner,
       KimConceptStatement statement,
       Function<KimConcept, Concept> resolve) {
+    compile(owl,ontology,owner,statement,resolve,false);
+  }
+
+  public static void compileAuthored(OWL owl, Ontology ontology, Concept owner,
+      KimConceptStatement statement, Function<KimConcept, Concept> resolve) {
+    compile(owl,ontology,owner,statement,resolve,true);
+  }
+
+  private static void compile(OWL owl, Ontology ontology, Concept owner,
+      KimConceptStatement statement, Function<KimConcept, Concept> resolve, boolean staged) {
     // Resolve and validate all operands before writing any of these restrictions.
     // Legal source-language values must not become invalid merely because this transport still
     // carries raw text. Preserve them explicitly as unresolved authoring evidence, not validated
@@ -48,9 +58,9 @@ public final class WorldviewDeclarationSupport {
     var authoredBearer = statement.getDeclaredInherent() == null ? null
         : require(resolve, statement.getDeclaredInherent(), SemanticType.OBSERVABLE);
     var restrictions = new LinkedHashMap<String, List<Concept>>();
-    var interpretations = WorldviewDomainSupport.interpretations(owl, owner, statement, resolve);
+    var interpretations = WorldviewDomainSupport.interpretations(owl, owner, statement, resolve, !staged);
     if (!interpretations.isEmpty()) restrictions.put("odo:interpretsPhysicalDomain", interpretations);
-    WorldviewDomainSupport.validateGrounding(owl, owner, statement);
+    if (!staged) WorldviewDomainSupport.validateGrounding(owl, owner, statement);
     if (!statement.getQualitiesAffected().isEmpty()
         && !(owner.is(SemanticType.PROCESS) || owner.is(SemanticType.EVENT)))
       throw new KlabValidationException("affects requires a process or event source");
@@ -173,8 +183,11 @@ public final class WorldviewDeclarationSupport {
       if (!inheritedDomain.applicableTo(owner, applicable))
         throw new KlabValidationException(
             "applies to must specialize every inherited applicability domain");
-    var bearerAxioms = DescriptionBearerSupport.prepare(owl, owner, authoredBearer, described, applicables,
-        independentlyCheckedDescriptions);
+    // Staging validates the complete bearer conjunction once, after closure.
+    // Local authored bounds are seeds in that closure, not partially reconciled OWL.
+    var bearerAxioms = staged ? List.<org.semanticweb.owlapi.model.OWLAxiom>of()
+        : DescriptionBearerSupport.prepare(owl, owner, authoredBearer,
+            described, applicables, independentlyCheckedDescriptions);
     var propertyNames = new LinkedHashSet<>(restrictions.keySet());
     propertyNames.addAll(inverseRestrictions.keySet());
     if (!applicables.isEmpty()) propertyNames.add("odo:appliesTo");

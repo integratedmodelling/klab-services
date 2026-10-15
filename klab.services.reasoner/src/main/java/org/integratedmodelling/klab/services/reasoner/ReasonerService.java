@@ -2098,23 +2098,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     loadedOntologySources.clear();
     declarationDomains.clear();
     loadedOntologyDiagnostics.clear();
-    for (KimOntology ontology : worldview.getOntologies()) {
-      long ontologyStarted = System.nanoTime();
-      var declaringDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
-          .validate(ontology, this::declareConcept);
-      org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport
-          .requireEffectiveGrounding(owl, declaringDomain);
-      declarationDomains.put(ontology.getUrn(), declaringDomain);
-      for (var statement : ontology.getStatements()) {
-        defineConcept(statement, scope);
-        tagConceptService(statement, ontology.getServiceId());
-      }
-      org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(owl, ontology, declaringDomain);
-      this.owl.registerWithReasoner(ontology);
-      rememberOntologySource(ontology);
-      serviceScope().info("Worldview ontology " + ontology.getUrn() + " ingested in "
-          + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ontologyStarted) + " ms");
-    }
+    compileStagedOntologies(worldview.getOntologies(),scope);
     long flushStarted = System.nanoTime();
     this.owl.flushReasoner();
     serviceScope().info("Worldview OWL flush completed in "
@@ -2287,6 +2271,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
       }
 
+      var stagedScopes = new LinkedHashMap<KimOntology,Scope>();
       for (var resource : changes.getOntologies()) {
         var prepared = ontologies.get(resource);
         var notifications = prepared.notifications();
@@ -2302,18 +2287,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport
               .replaceOntology(mutable, ontology);
         }
-        var declaringDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
-            .validate(ontology, this::declareConcept);
-        org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport
-            .requireEffectiveGrounding(owl, declaringDomain);
-        declarationDomains.put(ontology.getUrn(), declaringDomain);
-        for (var statement : ontology.getStatements()) {
-          defineConcept(statement, parsingScope);
-          tagConceptService(statement, resource.getServiceId());
-        }
-        org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(owl, ontology, declaringDomain);
-        this.owl.registerWithReasoner(ontology);
-        rememberOntologySource(ontology);
+        stagedScopes.put(ontology,parsingScope);
         this.advisories.removeAll(
             loadedOntologyDiagnostics.getOrDefault(ontology.getUrn(), List.of()));
         loadedOntologyDiagnostics.put(ontology.getUrn(), List.copyOf(notifications));
@@ -2324,6 +2298,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           inconsistent = true;
         }
       }
+
+      compileStagedOntologies(stagedScopes);
 
       for (var resource : changes.getObservationStrategies()) {
         var prepared = strategies.get(resource);
@@ -3026,7 +3002,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
       }
 
-      if (ret != null && concept.getAuthorityRequired() != null) {
+      if (!stagingDeclarationStructure && ret != null && concept.getAuthorityRequired() != null) {
         configureAuthorityBinding(new Authority.ConfigurationRequest(
             worldview.getUrn(), concept.getAuthorityRequired(), ret.getUrn(),
             concept.getAuthorityParameters()), monitor);
@@ -3062,6 +3038,87 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           AnnotationCollector.merge(parent.getAnnotations(), concept.getAnnotations()));
       ontology.addDelegateConcept(concept.getUrn(), ontology.getName(), annotated);
     }
+  }
+
+  private boolean stagingDeclarationStructure;
+  private Map<String,Long> declarationStagingMetrics = Map.of();
+  public Map<String,Long> declarationStagingMetrics() { return declarationStagingMetrics; }
+
+  private void compileStagedOntologies(List<KimOntology> ontologies, Scope scope) {
+    var scopes = new LinkedHashMap<KimOntology,Scope>();
+    ontologies.forEach(ontology -> scopes.put(ontology,scope));
+    compileStagedOntologies(scopes);
+  }
+
+  /** Only private compilation reaches this shared full/incremental staging primitive. */
+  private void compileStagedOntologies(Map<KimOntology,Scope> scopes) {
+    var registry = new org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry(scopes.keySet());
+    if (!registry.errors().isEmpty()) throw new KlabValidationException(registry.errors().toString());
+    var metricsBeforeStaging=owl.compilationMetrics();
+    try (var deferred = owl.stageDeclarations()) {
+      // Typed names are actual source declarations, private to this candidate actor.
+      for (var entry : registry.ordered()) {
+        var statement=entry.statement(); var ontology=owl.requireOntology(entry.ontology().getUrn());
+        if (statement.getUpperConceptDefined()!=null) {
+          installAlias(statement,ontology,scopes.get(entry.ontology()));
+        } else if (!statement.isAlias()) {
+          ontology.add(Axiom.ClassAssertion(statement.getUrn(),new HashSet<>(statement.getType())));
+          ontology.define();
+        }
+      }
+      // Authority roots must exist before parent expressions can resolve authority identities.
+      for (var entry : registry.ordered()) if (entry.statement().getAuthorityRequired()!=null) {
+        var statement=entry.statement();var owner=owl.getConcept(entry.urn());
+        configureAuthorityBinding(new Authority.ConfigurationRequest(worldview.getUrn(),
+            statement.getAuthorityRequired(),owner.getUrn(),statement.getAuthorityParameters()),scopes.get(entry.ontology()));
+      }
+      stagingDeclarationStructure=true;
+      try {
+        for (var entry : registry.ordered()) if (entry.statement().getUpperConceptDefined()==null) {
+          var ontology=owl.getOntology(entry.ontology().getUrn());var scope=scopes.get(entry.ontology());
+          if (entry.statement().isAlias()) installAlias(entry.statement(),ontology,scope);
+          else if (entry.enclosing()==null) build(entry.statement(),ontology,null,scope);
+          else buildInternal(entry.statement(),ontology,entry.enclosing(),scope);
+        }
+      } finally { stagingDeclarationStructure=false; }
+      // ABOUT in a preamble needs the complete named domain hierarchy, not just
+      // typed signatures. Its endpoint and grounding contracts remain unchanged.
+      scopes.forEach((source,scope)->declarationDomains.put(source.getUrn(),
+          org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.validate(source,this::declareConcept)));
+      scopes.forEach((source,scope)->org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(
+          owl,source,declarationDomains.get(source.getUrn())));
+      var clauses=new ArrayList<org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry>();
+      for (var entry : registry.ordered()) if (!entry.statement().isAlias()
+          && entry.statement().getUpperConceptDefined()==null) {
+        var ontology=owl.getOntology(entry.ontology().getUrn());var owner=owl.getConcept(entry.urn());
+        var scope=scopes.get(entry.ontology());
+        java.util.function.Function<KimConcept,Concept> resolve=operand->declare(operand,ontology,scope);
+        try {
+          org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compileAuthored(
+              owl,ontology,owner,entry.statement(),resolve);
+          clauses.add(new org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry(
+              ontology,entry.ontology(),owner,entry.statement(),resolve,scope));
+          if (!entry.statement().getEmergenceTriggers().isEmpty())
+            registerEmergent(owner,entry.statement().getEmergenceTriggers().stream().map(resolve).toList());
+          if (org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValue(entry.statement()))
+            scope.warn("DESCRIPTION_VALUE_UNRESOLVED: typed value semantics remain unresolved",entry.statement());
+        } catch (RuntimeException error) { scope.error(error,entry.statement()); }
+      }
+      declarationStagingMetrics=org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.reconcile(owl,clauses);
+      scopes.forEach((source,scope)->{
+        try { org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport.requireEffectiveGrounding(
+            owl,declarationDomains.get(source.getUrn())); }
+        catch (RuntimeException error) {scope.error(error,source);}
+        for(var statement:source.getStatements())tagConceptService(statement,source.getServiceId());
+        owl.registerWithReasoner(source);rememberOntologySource(source);
+      });
+      var measured=new LinkedHashMap<String,Long>(declarationStagingMetrics);
+      var metricsAfterStaging=owl.compilationMetrics();
+      for(var name:List.of("reasonerCreations","actualFlushes","satisfiabilityQueries","entailmentQueries"))
+        measured.put("staged_"+name,metricsAfterStaging.get(name)-metricsBeforeStaging.get(name));
+      declarationStagingMetrics=Map.copyOf(measured);
+    } catch (RuntimeException error) { throw error; }
+    catch (Exception error) { throw new KlabValidationException(error); }
   }
 
   private Concept buildInternal(
@@ -3209,13 +3266,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(
         owl, ontology.getName(), concept, declarationDomains.get(ontology.getName()));
-    org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compile(
-        owl, ontology, main, concept, operand -> declare(operand, ontology, monitor));
-    if (org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValue(concept))
+    if (!stagingDeclarationStructure)
+      org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compile(
+          owl, ontology, main, concept, operand -> declare(operand, ontology, monitor));
+    if (!stagingDeclarationStructure && org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValue(concept))
       monitor.warn("DESCRIPTION_VALUE_UNRESOLVED: describes-as source is retained, but typed "
           + "value/unit/category/modality validation and enforcement are not yet implemented", concept);
 
-    for (var child : concept.getChildren()) {
+    if (!stagingDeclarationStructure) for (var child : concept.getChildren()) {
       try {
         // KimConceptStatement chobj = kimObject == null ? null : new
         // KimConceptStatement((IKimConceptStatement) child);
@@ -3243,7 +3301,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                       .toArray(String[]::new))));
     }
 
-    if (!concept.getEmergenceTriggers().isEmpty()) {
+    if (!stagingDeclarationStructure && !concept.getEmergenceTriggers().isEmpty()) {
       List<Concept> triggers = new ArrayList<>();
       for (KimConcept trigger : concept.getEmergenceTriggers()) {
         triggers.add(declare(trigger, ontology, monitor));

@@ -22,9 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 class SemanticEnvironmentFactoryTest {
   @TempDir Path directory;
   private Map<String, byte[]> core() throws Exception {
-    try (var stream = getClass().getClassLoader().getResourceAsStream("knowledge/odo.owl")) {
-      assertNotNull(stream); return Map.of("odo.owl", stream.readAllBytes());
-    }
+    return Map.of("odo.owl",Files.readAllBytes(Path.of(System.getProperty("klab.test.core.directory"),"odo.owl")));
   }
   private KimConceptStatementImpl statement(String name, SemanticType type, int position) {
     var statement = new KimConceptStatementImpl(); statement.setUrn(name); statement.setNamespace("w");
@@ -67,7 +65,7 @@ class SemanticEnvironmentFactoryTest {
       <owl:Class rdf:about="http://integratedmodelling.org/odo#NoConfigurationDomain">
         <rdfs:subClassOf rdf:resource="http://integratedmodelling.org/odo#Domain"/>
         <rdfs:subClassOf><owl:Restriction>
-          <owl:onProperty rdf:resource="http://integratedmodelling.org/odo#describesConfiguration"/>
+          <owl:onProperty rdf:resource="http://integratedmodelling.org/odo#describes"/>
           <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:maxCardinality>
         </owl:Restriction></rdfs:subClassOf>
       </owl:Class>

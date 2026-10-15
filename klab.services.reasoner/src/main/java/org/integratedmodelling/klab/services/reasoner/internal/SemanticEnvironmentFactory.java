@@ -19,13 +19,14 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 /** Runs the production compiler in private semantic state, without normal service construction. */
 public final class SemanticEnvironmentFactory
     implements CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> {
-  public static final String CONFIGURATION_REVISION = "semantic-defaults-v1";
+  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v2";
   private final Path assetRoot;
   private final Map<String, byte[]> core;
   private final String dependencyRevision;
   private final Map<String, java.util.Set<String>> coreIdentities;
   private final Map<String, String> documentLocators;
   private final CapturedAuthorityCatalog authorities;
+  private final Map<String,java.util.Set<String>> coreClassNames;
 
   public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore) throws Exception {
     this(privateAssetRoot, capturedCore, Map.of());
@@ -67,6 +68,12 @@ public final class SemanticEnvironmentFactory
     }
     if (owned.isEmpty()) throw new IllegalArgumentException("Candidate requires a captured core catalog");
     core = java.util.Collections.unmodifiableMap(owned);
+    var classes = new LinkedHashMap<String,java.util.Set<String>>();
+    for (var entry:owned.entrySet()) {
+      var alias=Path.of(entry.getKey()).getFileName().toString().replaceFirst("\\.owl$","");
+      classes.put(alias,ontologyClassNames(entry.getValue()));
+    }
+    coreClassNames=Map.copyOf(classes);
     coreIdentities = Map.copyOf(identities);
     documentLocators = Map.copyOf(capturedDocumentLocators);
     for (var alias : documentLocators.keySet().stream().sorted().toList()) {
@@ -143,10 +150,41 @@ public final class SemanticEnvironmentFactory
     if (identities.isEmpty()) throw new IllegalArgumentException("Captured RDF/XML core has no ontology identity");
     return java.util.Set.copyOf(identities);
   }
+  private static java.util.Set<String> ontologyClassNames(byte[] bytes) throws Exception {
+    var factory=javax.xml.parsers.DocumentBuilderFactory.newInstance();factory.setNamespaceAware(true);
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl",true);
+    factory.setFeature("http://xml.org/sax/features/external-general-entities",false);
+    factory.setFeature("http://xml.org/sax/features/external-parameter-entities",false);
+    factory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD,"");
+    factory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_SCHEMA,"");
+    var document=factory.newDocumentBuilder().parse(new java.io.ByteArrayInputStream(bytes));
+    var nodes=document.getElementsByTagNameNS("http://www.w3.org/2002/07/owl#","Class");
+    var result=new java.util.HashSet<String>();
+    for(int i=0;i<nodes.getLength();i++) {
+      var iri=((org.w3c.dom.Element)nodes.item(i)).getAttributeNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#","about");
+      int split=iri.lastIndexOf('#');if(split<0)split=iri.lastIndexOf('/');
+      if(split>=0)result.add(iri.substring(split+1));
+    }
+    return java.util.Set.copyOf(result);
+  }
+  private List<Notification> coreAliasErrors(Worldview worldview) {
+    var errors=new ArrayList<Notification>();
+    var registry=new org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry(worldview.getOntologies());
+    for(var declaration:registry.declarations()) {
+      var target=declaration.statement().getUpperConceptDefined();if(target==null)continue;
+      var parts=target.split(":",2);
+      if(parts.length!=2||!coreClassNames.getOrDefault(parts[0],java.util.Set.of()).contains(parts[1]))
+        errors.add(Notification.error("CORE_ALIAS_TARGET_UNAVAILABLE: "+target,
+            Notification.LexicalContext.of(declaration.statement(),declaration.ontology())));
+    }
+    return errors;
+  }
+
   /** Freeze at submission time; the worker never compiles a caller's mutable source trees. */
   public CandidatePublicationCoordinator.Input<Worldview> capture(Worldview worldview) {
     var owned = BeanIngestionPreflight.snapshot(worldview);
-    var errors = BeanIngestionPreflight.errors(owned);
+    var errors = new ArrayList<>(BeanIngestionPreflight.errors(owned));
+    errors.addAll(coreAliasErrors(owned));
     return new CandidatePublicationCoordinator.Input<>(sources(owned), sourceOrder(owned),
         dependencyRevision, CONFIGURATION_REVISION, owned,
         errors.isEmpty() ? CandidatePublicationCoordinator.BeanStatus.VALID
@@ -186,7 +224,8 @@ public final class SemanticEnvironmentFactory
         || !CONFIGURATION_REVISION.equals(input.configurationRevision())
         || !input.dependencyRevision().equals(dependencyRevision))
       throw new IllegalArgumentException("Candidate does not match its captured source/dependency/configuration manifest");
-    var beanErrors = BeanIngestionPreflight.errors(snapshot);
+    var beanErrors = new ArrayList<>(BeanIngestionPreflight.errors(snapshot));
+    beanErrors.addAll(coreAliasErrors(snapshot));
     if (!beanErrors.isEmpty())
       return new CandidatePublicationCoordinator.Result<>(null,
           CandidatePublicationCoordinator.LogicalStatus.NOT_RUN, true,

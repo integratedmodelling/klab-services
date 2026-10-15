@@ -219,13 +219,16 @@ class DocumentSemanticValidatorTest {
     var document = new KimOntologyImpl(); document.setUrn("earth");
     var earlier = new KimConceptStatementImpl(); earlier.setUrn("Earlier"); earlier.setOffsetInDocument(10); earlier.setLength(40);
     var later = new KimConceptStatementImpl(); later.setUrn("Later"); later.setOffsetInDocument(100); later.setLength(20);
-    earlier.getDeclaredReferences().add(syntax("Later", 30));
+    earlier.setType(EnumSet.of(SemanticType.QUALITY,SemanticType.OBSERVABLE));
+    later.setType(EnumSet.of(SemanticType.QUALITY,SemanticType.OBSERVABLE));
+    earlier.setDeclaredParent(syntax("Later", 30));
     document.getStatements().addAll(List.of(earlier, later));
     var loaded = mock(Concept.class);
     when(reasoner.resolveConcept(anyString())).thenReturn(loaded);
+    when(reasoner.declareConcept(any())).thenReturn(loaded);
     when(reasoner.satisfiable(loaded)).thenReturn(true);
     var errors = new DocumentSemanticValidator(reasoner).validate(document);
-    assertEquals(1, errors.size());
+    assertEquals(1, errors.size(),errors.toString());
     assertTrue(errors.getFirst().getMessage().contains("before its declaration"));
     assertEquals(30, errors.getFirst().getLexicalContext().getOffsetInDocument());
     later.setOffsetInDocument(1);

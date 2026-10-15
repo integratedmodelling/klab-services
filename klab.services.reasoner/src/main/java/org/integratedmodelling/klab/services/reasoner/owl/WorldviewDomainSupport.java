@@ -48,13 +48,18 @@ public final class WorldviewDomainSupport {
 
   public static java.util.List<Concept> interpretations(OWL owl, Concept owner,
       KimConceptStatement statement, Function<KimConcept, Concept> resolve) {
+    return interpretations(owl,owner,statement,resolve,true);
+  }
+
+  static java.util.List<Concept> interpretations(OWL owl, Concept owner,
+      KimConceptStatement statement, Function<KimConcept, Concept> resolve, boolean requireGrounding) {
     var support = new OWLSemanticClauseSupport(owl);
     var knowledge = owl.getConcept("odo:KnowledgeDomain");
     var physical = owl.getConcept("odo:PhysicalDomain");
     boolean knowledgeDomain = knowledge != null && support.specializes(owner, knowledge);
     var links = statement.getInterpretedPhysicalDomains();
     var effective = effectiveInterpretations(owl, owner);
-    if (knowledgeDomain && links.isEmpty() && effective.isEmpty())
+    if (requireGrounding && knowledgeDomain && links.isEmpty() && effective.isEmpty())
       throw new KlabValidationException("KNOWLEDGE_DOMAIN_INTERPRETATION_REQUIRED: " + owner.getUrn()
           + " requires an explicitly authored or inherited PhysicalDomain link; anonymous OWL inference is insufficient");
     if (links.isEmpty() && effective.isEmpty()) return java.util.List.of();

@@ -20,6 +20,13 @@ final class DescriptionBearerSupport {
   static List<OWLAxiom> prepare(OWL owl, Concept owner, Concept authoredBearer,
       Collection<Concept> described, Collection<Concept> applicables,
       Collection<Concept> independentlyCheckedDescriptions) {
+    return prepare(owl,owner,authoredBearer,described,applicables,independentlyCheckedDescriptions,Map.of());
+  }
+
+  static List<OWLAxiom> prepare(OWL owl, Concept owner, Concept authoredBearer,
+      Collection<Concept> described, Collection<Concept> applicables,
+      Collection<Concept> independentlyCheckedDescriptions,
+      Map<OWLClass,Set<OWLClassExpression>> completedBearers) {
     var support = new OWLSemanticClauseSupport(owl);
     var own = new ArrayList<>(support.bearerConstraints(owner));
     var f = owl.manager.getOWLDataFactory();
@@ -32,7 +39,8 @@ final class DescriptionBearerSupport {
     var targetStatuses = new ArrayList<String>();
     for (var target : independentlyCheckedDescriptions) {
       var constraints = support.bearerConstraints(target);
-      var semantic = semanticFillers(constraints, inherent);
+      var semantic = new LinkedHashSet<>(semanticFillers(constraints, inherent));
+      semantic.addAll(completedBearers.getOrDefault(owl.getOWLClass(target),Set.of()));
       validateWitnesses(support, constraints, semantic, inherent, target.getUrn());
       var targetStatus = validateConjunction(owl, support, target, constraints, semantic, inherent);
       if (constraints.stream().anyMatch(b -> !b.semantic()))
@@ -53,9 +61,11 @@ final class DescriptionBearerSupport {
     boolean unresolvedTarget = false;
     var evidence = new ArrayList<>(own);
     var derived = new LinkedHashSet<>(semanticFillers(own, inherent));
+    derived.addAll(completedBearers.getOrDefault(owl.getOWLClass(owner),Set.of()));
     for (var target : described) {
       var constraints = support.bearerConstraints(target);
-      var semantic = semanticFillers(constraints, inherent);
+      var semantic = new LinkedHashSet<>(semanticFillers(constraints, inherent));
+      semantic.addAll(completedBearers.getOrDefault(owl.getOWLClass(target),Set.of()));
       // First check the target's own restrictions independently. A substantial
       // characterized directly is itself the describing quality's bearer type;
       // its host (if any) is not substituted for that substantial.
@@ -63,7 +73,8 @@ final class DescriptionBearerSupport {
       validateConjunction(owl, support, target, constraints, semantic, inherent);
       boolean substantial = target.is(SemanticType.SUBJECT) || target.is(SemanticType.AGENT);
       Set<OWLClassExpression> contribution = substantial
-          ? Set.of(owl.getOWLClass(target)) : semantic;
+          ? Set.of(owl.getOWLClass(target))
+          : completedBearers.getOrDefault(owl.getOWLClass(target),semantic);
       boolean unresolved = contribution.isEmpty();
       unresolvedTarget |= unresolved;
       targetStatuses.add(target.getUrn() + " " + target.getType() + " : "

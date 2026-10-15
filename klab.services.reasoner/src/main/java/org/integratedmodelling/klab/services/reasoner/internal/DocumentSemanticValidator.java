@@ -19,6 +19,7 @@ public class DocumentSemanticValidator
         KimObservationStrategyDocumentVisitor.Validator {
   private final ReasonerService reasoner;
   private final OWLSemanticClauseSupport clauses;
+  private final KimWorldviewValidator sourceValidator = new KimWorldviewValidator();
 
   public DocumentSemanticValidator(ReasonerService reasoner) {
     this.reasoner = reasoner;
@@ -117,7 +118,7 @@ public class DocumentSemanticValidator
     if (context.getDocument() instanceof KimOntology ontology
         && reference.urn().startsWith(ontology.getUrn() + ":")) {
       // The loaded OWL may contain a later (or deleted) declaration from the previous save.
-      return new KimWorldviewValidator().validateReference(reference, context);
+      return sourceValidator.validateReference(reference, context);
     }
     return List.of();
   }

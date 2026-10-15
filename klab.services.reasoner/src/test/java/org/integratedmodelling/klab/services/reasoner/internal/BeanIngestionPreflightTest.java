@@ -42,10 +42,10 @@ class BeanIngestionPreflightTest {
 
   @Test void referencesResolveAgainstCurrentSourceBeansAndChangedBatchOverlays() {
     var alpha = ontology("alpha"); var beta = ontology("beta");
-    var declaration = new KimConceptStatementImpl(); declaration.setUrn("Derived");
+    var declaration = new KimConceptStatementImpl(); declaration.setUrn("Derived"); declaration.getType().add(SemanticType.SUBJECT);
     var reference = new KimConceptImpl(); reference.setName("beta:Known");
     declaration.setDeclaredParent(reference); alpha.getStatements().add(declaration);
-    var known = new KimConceptStatementImpl(); known.setUrn("Known"); beta.getStatements().add(known);
+    var known = new KimConceptStatementImpl(); known.setUrn("Known"); known.getType().add(SemanticType.SUBJECT); beta.getStatements().add(known);
     assertTrue(BeanIngestionPreflight.errors(List.of(alpha), List.of(world(alpha, beta))).isEmpty());
     var replacement = ontology("beta");
     assertTrue(BeanIngestionPreflight.errors(List.of(alpha, replacement), List.of(world(alpha, beta)))
@@ -90,7 +90,7 @@ class BeanIngestionPreflightTest {
 
   @Test void strategyReferencesMustExistAndTheirCurrentDependencyErrorsAreCollected() {
     var dependency = ontology("earth");
-    var known = new KimConceptStatementImpl(); known.setUrn("Known"); dependency.getStatements().add(known);
+    var known = new KimConceptStatementImpl(); known.setUrn("Known"); known.getType().add(SemanticType.SUBJECT); dependency.getStatements().add(known);
     assertTrue(BeanIngestionPreflight.errors(List.of(strategy("missing:Thing")), List.of(world(dependency)))
         .stream().anyMatch(n -> n.getMessage().contains("Undefined strategy concept: missing:Thing")));
     dependency.getNotifications().add(Notification.error("current dependency error"));

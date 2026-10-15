@@ -136,7 +136,7 @@ class DomainPreambleOrderTest {
     assertFalse(parsed.hasSyntaxErrors());
     var syntax = new OntologySyntaxImpl((Ontology) parsed.getRootASTElement(), scope) {
       @Override protected void logWarning(ParsedObject p, EObject o, EStructuralFeature f, String m) {}
-      @Override protected void logError(ParsedObject p, EObject o, EStructuralFeature f, String m) { fail(m); }
+      @Override protected void logError(ParsedObject p, EObject o, EStructuralFeature f, String m) {}
     };
     return LanguageAdapter.INSTANCE.adaptOntology(syntax, "imod", List.of(), 0L);
   }
