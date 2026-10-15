@@ -14,11 +14,19 @@ public final class DomainInterpretationSupport {
   private DomainInterpretationSupport() {}
 
 
-  /** Validate a domain selected by an ontology, without inventing a new authored link. */
+  /**
+   * Validate a domain selected by an ontology, without inventing a new authored link.
+   * The canonical KnowledgeDomain category may own cross-domain vocabulary without
+   * selecting a physical interpretation. Aliases of that same OWL entity count;
+   * distinct specialized domains still require authored or inherited grounding.
+   * This preamble exception does not relax declaration or concrete-quality checks.
+   */
   public static void requireEffectiveGrounding(OWL owl, Concept domain) {
-    if (domain != null)
-      WorldviewDomainSupport.interpretations(owl, domain,
-          new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl(), ignored -> null);
+    if (domain == null) return;
+    var knowledge = owl.getConcept("odo:KnowledgeDomain");
+    if (knowledge != null && owl.getOWLClass(knowledge).equals(owl.getOWLClass(domain))) return;
+    WorldviewDomainSupport.interpretations(owl, domain,
+        new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl(), ignored -> null);
   }
 
   public static Concept compose(OWL owl, Concept base, KimConcept syntax,
