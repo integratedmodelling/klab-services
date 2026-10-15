@@ -144,6 +144,18 @@ public class CoreOntology {
                   + ")");
         } else {
           var type = implemented.iterator().next();
+          // Specialized Domain aliases name distinct canonical ODO classes; they
+          // do not each claim the fundamental Domain slot.
+          if (type == SemanticType.DOMAIN
+              && !sameCoreIdentity(concept.getUpperConceptDefined(), NS.CORE_DOMAIN)) {
+            if (Set.of("odo:PhysicalDomain", "odo:KnowledgeDomain", "odo:NormativeDomain")
+                .stream().anyMatch(id -> sameCoreIdentity(concept.getUpperConceptDefined(), id)))
+              continue;
+            scope.warn("Inconsistent worldview: core alias " + concept.getNamespace() + ":"
+                + concept.getUrn() + " declares fundamental type DOMAIN but targets "
+                + concept.getUpperConceptDefined() + " instead of a canonical ODO Domain kind");
+            continue;
+          }
           if (coreConcepts.containsKey(type)) {
             // should be an error
             scope.warn(
@@ -170,6 +182,14 @@ public class CoreOntology {
                 + " is not assigned to a worldview concept");
       }
     }
+  }
+
+  /** Compare resolved canonical concept identities, independently of local alias spelling. */
+  private boolean sameCoreIdentity(String declared, String canonical) {
+    var target = owl.getConcept(declared);
+    var expected = owl.getConcept(canonical);
+    return target != null && expected != null
+        && Objects.equals(target.getUrn(), expected.getUrn());
   }
 
   public static interface NS {
