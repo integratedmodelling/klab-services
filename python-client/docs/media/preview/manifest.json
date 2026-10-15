@@ -1,0 +1,63 @@
+{
+  "presentation": "API sketches and actual verified results; not screen capture; waiting time omitted",
+  "deployment": "controlled TEST services, not actual Hub onboarding",
+  "source_reports_sha256": {
+    "functional.xml": "ca94dd4a4da55e4af469cea127f1db5590a5deffb1082524e436eda5ddf33ed7",
+    "exports.xml": "1da08f1324d15a3c94ac04118505d93d6e6300d4121a8353fcdd5cd09c686aa2"
+  },
+  "tested_identity": {
+    "client_head": "4ad3887cc6f5d4a816fc9aec5e0f170cfa5efcec",
+    "client_dirty": true,
+    "server_checkout": "244883d7b04f1eae2cc22e799575d33a9bdb2a43",
+    "component_sha256": "e9fa36a605013743669077dbb87874915d98006130acc8119834a23b3cfcc6fa",
+    "source_manifest_sha256": "2d338bf3d82fb306e40933e83fa530c0405c5283a63951f43ccb0d369cc38cd4"
+  },
+  "raster_sha256": "42f5382ce76fb6b3376465c6e483592f02955ab5c14465bd72985178535f6998",
+  "videos": [
+    {
+      "file": "connect-and-compute.mp4",
+      "seconds": 18.0,
+      "width": 1280,
+      "height": 720,
+      "bytes": 65829,
+      "sha256": "9d314c9e75bf59d0f54da1be9e269dda496fff41f7510e2c8713ddd7a2066d6f",
+      "decode_verified": true
+    },
+    {
+      "file": "save-and-resume.mp4",
+      "seconds": 18.0,
+      "width": 1280,
+      "height": 720,
+      "bytes": 62330,
+      "sha256": "6fa0958cfc3551c3bfeb48c31c48bce73a1c974d9d4ec2e1ecbb12337d0259d6",
+      "decode_verified": true
+    },
+    {
+      "file": "native-exports.mp4",
+      "seconds": 18.0,
+      "width": 1280,
+      "height": 720,
+      "bytes": 90636,
+      "sha256": "52fa77a2cadb2734e71a519638936fc0959b21fbef8023715f9c21df1ad25205",
+      "decode_verified": true
+    },
+    {
+      "file": "analyze-and-trace.mp4",
+      "seconds": 18.0,
+      "width": 1280,
+      "height": 720,
+      "bytes": 116695,
+      "sha256": "bb7be9205812ae600d48f3d438398f2e70b05d68bc0828f983e7104b52449f1c",
+      "decode_verified": true
+    },
+    {
+      "file": "jobs-and-access.mp4",
+      "seconds": 18.0,
+      "width": 1280,
+      "height": 720,
+      "bytes": 62447,
+      "sha256": "ab3199a7e0073bb27f506de065f3650e312184ad7a62e7c2d5d3a76eb24c0d88",
+      "decode_verified": true
+    }
+  ]
+}

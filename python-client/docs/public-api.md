@@ -50,9 +50,14 @@ Typed facade: `ObservationRequest`, `ObservationOptions`, `ResolutionConstraint`
 `ContextOptions`, `GridOptions`, `RectangularGeometry`, `Context.observe`, and
 `Session.create_context(options=...)`. See [typed contracts and verification](typed-observe.md).
 
+Scientific analysis: `export_for_analysis`, `open_raster`, `trace_analysis`,
+`AnalysisArtifact`, `RasterDescriptor`, `RasterAnalysis`, `TracedAnalysis`;
+recorded neighborhoods: `fetch_provenance`, `ProvenanceNode`, `ProvenanceLink`,
+`ProvenanceView`. See [supported representations and consistency limits](scientific-analysis.md).
+
 Remaining unsupported capabilities include Avro worker contextualization and job
-data decoding, bulk file export, automatic arbitrary query/consumer geometry
-conversion, pandas/xarray adapters, privileged server administration, full Modeler
+data decoding, general chunk/window access, automatic arbitrary query/consumer geometry
+conversion, general pandas/multidimensional adapters, privileged server administration, full Modeler
 UI emulation and Java API parity. These are explicit boundaries, not empty success.
 
 ## Connection orchestration

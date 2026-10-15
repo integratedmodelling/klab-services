@@ -1,0 +1,14 @@
+{
+  "client_commit": "4ad3887cc6f5d4a816fc9aec5e0f170cfa5efcec",
+  "client_dirty": true,
+  "server_commit": "244883d7b04f1eae2cc22e799575d33a9bdb2a43",
+  "server_dirty": false,
+  "component_sha256": "e9fa36a605013743669077dbb87874915d98006130acc8119834a23b3cfcc6fa",
+  "cleanup_exit_code": 0,
+  "started_utc": "2026-10-15T16:01:12.509080+00:00",
+  "finished_utc": "2026-10-15T16:12:50.301413+00:00",
+  "run_report_sha256": "764e96a661da5848fc617b6a135a2c4c203d0b11dd06a9471def5d509cd9fa70",
+  "notebook_manifest_sha256": "7196f13d660fb409b7219792b48f38acd8286fd2861c735fe8489f1ace1228ef",
+  "all_22_sdk_hashes_match": true,
+  "known_private_values_absent": true
+}

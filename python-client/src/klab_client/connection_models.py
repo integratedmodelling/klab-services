@@ -248,17 +248,28 @@ class DeploymentProfile:
         if type(overwrite) is not bool:
             raise InvalidRequestError("Profile overwrite must be boolean")
         temporary = None
-        failure = None
+        failure = close_note = None
         try:
             destination = Path(path)
             if "\x00" in str(destination) or not destination.parent.is_dir() or not overwrite and os.path.lexists(destination):
                 raise ProfileIOError("Profile parent must exist; default save cannot overwrite")
             descriptor, name = tempfile.mkstemp(prefix=".klab-profile-", dir=destination.parent)
             temporary = Path(name)
-            with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-                json.dump(self.to_dict(), stream, indent=2)
-                stream.flush()
-                os.fsync(stream.fileno())
+            try:
+                with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+                    try:
+                        json.dump(self.to_dict(), stream, indent=2)
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                    except BaseException as error:
+                        failure = error
+                        raise
+            except BaseException as error:
+                if failure is not None and error is not failure:
+                    close_note = "Profile stream cleanup failed: " + type(error).__name__
+                    failure.add_note(close_note)
+                    raise failure from None
+                raise
             if overwrite:
                 os.replace(temporary, destination)
                 temporary = None
@@ -266,14 +277,18 @@ class DeploymentProfile:
                 os.link(temporary, destination)
         except (OSError, ValueError, TypeError):
             failure = ProfileIOError("Profile save/publication failed")
+            if close_note is not None:
+                failure.add_note(close_note)
             raise failure from None
+        except BaseException as error:
+            failure = error
+            raise
         finally:
             if temporary is not None:
                 try:
                     temporary.unlink(missing_ok=True)
                 except OSError:
-                    if failure is not None:
-                        failure.add_note("Profile temporary cleanup failed")
-                    else:
+                    if failure is None:
                         raise ProfileIOError("Profile temporary cleanup failed") from None
+                    failure.add_note("Profile temporary cleanup failed")
         return destination

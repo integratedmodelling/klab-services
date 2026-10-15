@@ -129,11 +129,11 @@ def worker(configuration, bundle, output):
     return record
 
 
-def compute(configuration, session_id, controls, directory, number):
+def compute(configuration, session_id, controls, directory, number, *, client_factory=None):
     record = {"sample": number, "stages_seconds": {}, "outcome": "failed"}
     context = None
     started = time.perf_counter()
-    with make_client(configuration) as client:
+    with client_factory() if client_factory else make_client(configuration) as client:
         try:
             at = time.perf_counter()
             context = Session(client, session_id).create_context(options=ContextOptions(persistence="EXPLICIT_ACTION", name=f"geotiff-{number}"))

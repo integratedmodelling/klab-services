@@ -23,7 +23,7 @@ Final offline reactor: **BUILD SUCCESS; 69 Java tests, zero failures/errors/skip
 Dependencies were resolved into a task-local writable Maven repository with Maven 3.9.6's chained read-only tail pointing at the existing cache. No shared Maven cache writes were needed. Reproduce after resolving dependencies with:
 
 ```powershell
-./run-review-tests.ps1 -LocalRepository '<task-local-repository>' -ReadOnlyRepository '<existing-cache>'
+./tools/review/run-review-tests.ps1 -LocalRepository '<task-local-repository>' -ReadOnlyRepository '<existing-cache>'
 ```
 
 Both repository arguments are optional for ordinary developer environments. The script runs offline and uses a task-local test home. `review-evidence/schema-increment/dependency-tree.txt` records the effective versions.

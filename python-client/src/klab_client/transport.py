@@ -76,11 +76,16 @@ class Transport:
     def request(self, service: str, method: str, route: str, *, scope: str | None = None,
                 service_id: str | None = None, json=None, text: str | None = None,
                 params=None, response: str = "json", ambiguous: bool = False,
-                timeout: float | None = None, deadline: float | None = None):
+                 timeout: float | None = None, deadline: float | None = None,
+                 max_response_bytes: int | None = None):
+        if max_response_bytes is not None and (type(max_response_bytes) is not int or max_response_bytes <= 0):
+            raise InvalidRequestError("Response byte budget must be a positive integer")
         endpoint = self.endpoint(service)
         if not route.startswith("/") or ".." in route or route.startswith("//"):
             raise InvalidRequestError("Route must be a service-relative absolute path")
         headers = {"Accept": "text/plain, application/json;q=0.9" if response == "text" else "application/json"}
+        if max_response_bytes is not None:
+            headers["Accept-Encoding"] = "identity"
         credential = self._credential(service, endpoint, deadline)
         if credential:
             headers["Authorization"] = credential
@@ -96,9 +101,15 @@ class Transport:
             with self._http.stream(method, endpoint.url.rstrip("/") + route,
                                         headers=headers, json=json,
                                         content=text.encode() if text is not None else None,
-                                        params=params, timeout=timeout or self.timeout) as streamed:
+                                         params=params, timeout=timeout or self.timeout) as streamed:
+                if max_response_bytes is not None and streamed.headers.get("content-encoding", "identity").lower() != "identity":
+                    raise ProtocolError("Byte-bounded responses require identity content encoding")
                 chunks = []
-                for chunk in streamed.iter_bytes():
+                received = 0
+                for chunk in streamed.iter_bytes(chunk_size=65536 if max_response_bytes is not None else None):
+                    received += len(chunk)
+                    if max_response_bytes is not None and received > max_response_bytes:
+                        raise ProtocolError("Response exceeded the requested byte budget")
                     if deadline is not None and time.monotonic() >= deadline:
                         raise TransportError("Request waiting deadline expired")
                     chunks.append(chunk)
@@ -121,8 +132,10 @@ class Transport:
                     + self.redact(result.text)[:2000])
             error = {401: AuthenticationError, 403: AuthorizationError, 400: InvalidRequestError,
                      404: MissingAssetError, 422: InvalidRequestError}.get(result.status_code, ServerError)
-            raise error(f"{service} {method} HTTP {result.status_code}: "
-                        + self.redact(result.text)[:2000])
+            failure = error(f"{service} {method} HTTP {result.status_code}: "
+                            + self.redact(result.text)[:2000])
+            failure.status_code = result.status_code
+            raise failure
         if response == "text":
             return result.text
         try:

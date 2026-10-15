@@ -7,6 +7,7 @@ import re
 import time
 import uuid
 from dataclasses import dataclass
+from itertools import islice
 from typing import Any
 
 from .api.runtime import ObservationImpl
@@ -15,7 +16,7 @@ from .api.scopes import ContextScopeImpl, SessionScopeImpl, UserScopeImpl
 from .dto import (check_notifications, configuration_to_wire, decode_cell, object_payload,
                   observation_from_wire, observation_to_wire, required_text)
 from .errors import (ConfigurationError, InvalidRequestError, JobCancelledError, JobFailedError,
-                     JobUnavailableError, ProtocolError, TransportError,
+                     JobUnavailableError, ProtocolError, ServerError, TransportError,
                      UnsupportedOperationError, WaitTimeout)
 from .transport import Endpoint, Transport, _normalize_service_url
 from .requests import ContextOptions, ObservationOptions, ObservationRequest
@@ -122,11 +123,8 @@ class Job:
                     payload = object_payload(payload, "job result")
                     try:
                         check_notifications(payload, self.client.transport.redact)
-                    except Exception as error:
-                        from .errors import ServerError
-                        if isinstance(error, ServerError):
-                            raise JobFailedError(self.id, str(error)) from None
-                        raise
+                    except ServerError as error:
+                        raise JobFailedError(self.id, str(error)) from None
                     if payload.get("empty"):
                         raise JobFailedError(self.id, "Server returned an empty scientific result")
                     result = self._decoder(payload) if self._decoder else payload
@@ -238,7 +236,10 @@ class Context(ContextScopeImpl):
         self.client._validate_context_binding(bound, configuration=self.configuration)
         if observation.geometry is None:
             raise ProtocolError("Scientific reads require geometry to preserve location and temporal semantics")
-        offsets = tuple(offsets)
+        try:
+            offsets = tuple(islice(offsets, 257))
+        except TypeError:
+            raise InvalidRequestError("Read 1–256 explicit cell offsets from an iterable") from None
         if not offsets or len(offsets) > 256 or any(type(i) is not int or i < 0 for i in offsets):
             raise InvalidRequestError("Read 1–256 explicit nonnegative cell offsets per call")
         curves = {"UNSPECIFIED", "D1_LINEAR", "D2_XY", "D2_YX", "D2_XInvY", "D3_XYZ", "D3_ZYX", "D2_HILBERT", "D3_HILBERT"}
@@ -430,5 +431,10 @@ class Client:
     def __enter__(self):
         return self
 
-    def __exit__(self, *args):
-        self.close()
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            self.close()
+        except BaseException as cleanup:
+            if exc_value is None:
+                raise
+            exc_value.add_note("Client cleanup failed: " + type(cleanup).__name__)

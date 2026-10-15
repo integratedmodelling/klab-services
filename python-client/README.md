@@ -1,5 +1,15 @@
 # k.LAB Python client
 
+**[Python-client branch review: capabilities, next steps and seven notebook demos](docs/release-preview.md).**
+
+For development planning and CLI review, see the
+[contributor guides](../docs/contributor-guides/README.md) and the
+[current reconciled planning guide](../docs/PYTHON_CLIENT_PLANNING_GUIDE.md).
+
+Optional [scientific analysis and recorded provenance](docs/scientific-analysis.md)
+open native rasters as labeled xarray values plus validity and inspect bounded,
+read-only partial neighborhoods without claiming revision-consistent snapshots.
+
 Native observation exports can be streamed to files through existing advertised
 exporters, with bounded download memory and atomic publication. See
 [streamed export usage, file policy and live acceptance](docs/stream-exports.md).
@@ -16,7 +26,7 @@ remain deployment-specific.
 ```sh
 python -m pip install /path/to/python-client
 # Developers, from python-client/:
-python -m pip install '.[dev,local]'
+python -m pip install '.[dev,local,analysis]'
 python -m pytest -q
 python -m build
 ```
@@ -25,13 +35,15 @@ PowerShell uses the same commands through a virtual environment:
 
 ```powershell
 py -3.11 -m venv .venv
-& .\.venv\Scripts\python.exe -m pip install ".[dev,local]"
+& .\.venv\Scripts\python.exe -m pip install ".[dev,local,analysis]"
 & .\.venv\Scripts\python.exe -m pytest -q
 ```
 
 In a notebook, `%pip install /path/to/python-client` installs into the kernel's
 environment. No import-time networking, background event loop, NumPy or pandas
 is required. Cryptography/psutil are optional local-test tooling dependencies.
+The developer commands above include the optional analysis readers so the full
+offline suite runs instead of skipping its scientific-reader tests.
 
 ## Connect through a supported credential path
 
@@ -122,13 +134,15 @@ only compatible activities and raise UnsupportedOperationError otherwise.
 
 ## Boundaries and further reading
 
-Unsupported: binary Avro worker/job data, dataflow encoding, bulk export, automatic
+Unsupported: binary Avro worker/job data, dataflow encoding, general chunk/window reads, automatic
 query/consumer geometry conversion, contextual-unit/range/currency adapters, full
 Java Modeler/API parity and mandatory array integrations. Unsupported methods
 raise named errors rather than fake success. Generic assets/graph queries retain
 raw DTOs; scientific values are a distinct storage route.
 
 * [Contract matrix](docs/contracts.md) and [public API inventory](docs/public-api.md)
+* [Analysis/provenance guide and limits](docs/scientific-analysis.md)
+* [Review corrections and current validation](docs/review-corrections.md)
 * [Live reference format](docs/live-acceptance.md)
 * [Functional workflows and test organization](docs/functional-testing.md)
 * [Current export/functional verification and review](docs/exports-verification.md)

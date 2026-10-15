@@ -201,7 +201,8 @@ def _runtime_identity(client):
 
 
 def _no_credentials(reference, client):
-    credentials = tuple(endpoint.credential for endpoint in client.transport.endpoints.values() if endpoint.credential)
+    credentials = (tuple(endpoint.credential for endpoint in client.transport.endpoints.values() if endpoint.credential)
+                   + tuple(client.transport.sensitive_values))
     for value in reference.to_dict().values():
         if not isinstance(value, str):
             continue
@@ -209,7 +210,7 @@ def _no_credentials(reference, client):
         # Schema bounds each value; a fixed decoding budget bounds layered escapes.
         depth = 0
         while True:
-            if any(credential in value for credential in credentials):
+            if any(credential and credential in value for credential in credentials):
                 raise HandleFormatError("A saved reference cannot contain a configured credential")
             try:
                 decoded = unquote(value, encoding="utf-8", errors="strict")
@@ -271,6 +272,7 @@ def save_handle(source, path, *, overwrite=False):
     reference = to_handle(source)
     data = reference.dumps().encode("utf-8")
     temporary = None
+    failure = close_note = None
     try:
         destination = Path(path)
         if not destination.parent.is_dir():
@@ -285,8 +287,17 @@ def save_handle(source, path, *, overwrite=False):
                     raise OSError("Short handle write")
                 view = view[written:]
             os.fsync(descriptor)
+        except BaseException as error:
+            failure = error
+            raise
         finally:
-            os.close(descriptor)
+            try:
+                os.close(descriptor)
+            except BaseException as cleanup:
+                close_note = "Handle descriptor cleanup failed: " + type(cleanup).__name__
+                if failure is None:
+                    raise
+                failure.add_note(close_note)
         if overwrite:
             os.replace(temporary, destination)
             temporary = None
@@ -294,13 +305,21 @@ def save_handle(source, path, *, overwrite=False):
             # Atomic no-clobber publication; unsupported filesystems fail explicitly.
             os.link(temporary, destination)
     except (OSError, TypeError, ValueError):
-        raise HandleIOError("Handle write/publication failed; inspect the requested destination") from None
+        failure = HandleIOError("Handle write/publication failed; inspect the requested destination")
+        if close_note is not None:
+            failure.add_note(close_note)
+        raise failure from None
+    except BaseException as error:
+        failure = error
+        raise
     finally:
         if temporary is not None:
             try:
                 temporary.unlink(missing_ok=True)
             except OSError:
-                raise HandleIOError("Handle temporary-file cleanup failed; inspect the requested destination") from None
+                if failure is None:
+                    raise HandleIOError("Handle temporary-file cleanup failed; inspect the requested destination") from None
+                failure.add_note("Handle temporary-file cleanup failed: OSError")
     return reference
 
 

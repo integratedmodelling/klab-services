@@ -80,6 +80,11 @@ reconstruction and replication path is planned; the current source encoder is in
 | `klab.cli` | Command-line tooling (will probably be provided separately). |
 | `klab.distribution` | Distribution and local service-stack management |
 | `support` | Graph database, language-server and AMQP messaging support modules for local deployments. |
+| `python-client` | Python SDK, package documentation, examples and acceptance tooling. |
+| `docs` | [Documentation index](docs/README.md), architecture and language references, contributor guides and review records. |
+| `notes` | [Working notes and history](notes/README.md), including Python branch logs, historical plans and PR preparation records. |
+| `tools/review` | Offline proposal-package validator and proposal-review test runner. |
+| `llm` | Domain context pack used by review tooling and contributors. |
 
 The k.LAB Modeler IDE, a specialized Maven plug-in to aid deployment and testing, and several plug-in components are available in this same Github repository as separate projects. New component repositories can be bootstrapped with the sibling `klab.component.archetype`; see the [Maven and component archetype guide](docs/MAVEN.md).
 
@@ -103,6 +108,10 @@ No release is available yet, but the artifacts are deployed as SNAPSHOTs in the 
 
 ## Documentation
 
+- [Documentation index](docs/README.md): topic navigation and where new documents belong
+- [Contributor guides](docs/contributor-guides/README.md): Eric's complete Python planning guide, CLI review guide and connection-layer specification
+- [Python client](python-client/README.md) and [current planning guide](docs/PYTHON_CLIENT_PLANNING_GUIDE.md): SDK usage and reconciled planning status
+- [Proposal-review records](docs/review/README.md): backend contract, implementation reports and historical test evidence
 - [k.LAB technical note](docs/KLAB.md): the semantic commons, service architecture, federated network and composable digital twins
 - [Architecture](docs/ARCHITECTURE.md): service ownership and end-to-end observation lifecycle
 - [Observable expressions](docs/OBSERVABLES.md), [worldview ontologies](docs/ONTOLOGY_LANGUAGE.md), [k.IM](docs/KIM.md) and [k.Actors](docs/AGENTS.md): the user-facing language guides

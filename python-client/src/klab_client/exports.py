@@ -117,6 +117,7 @@ def export_to_file(client, observation, path, *, media_type, overwrite=False, ma
     context = _context(client, observation)
     urn = quote(context.id + f".{observation.id}", safe="")
     temporary = None
+    failure = close_note = None
     written = 0
     try:
         descriptor, name = tempfile.mkstemp(prefix=".klab-export-", dir=destination.parent)
@@ -145,19 +146,36 @@ def export_to_file(client, observation, path, *, media_type, overwrite=False, ma
                 if not written or length is not None and length != written:
                     raise ProtocolError("Export is empty or differs from its declared byte count")
             os.fsync(descriptor)
+        except BaseException as error:
+            failure = error
+            raise
         finally:
-            os.close(descriptor)
+            try:
+                os.close(descriptor)
+            except BaseException as cleanup:
+                close_note = "Export descriptor cleanup failed: " + type(cleanup).__name__
+                if failure is None:
+                    raise
+                failure.add_note(close_note)
         if overwrite:
             os.replace(temporary, destination)
             temporary = None
         else:
             os.link(temporary, destination)
     except OSError:
-        raise ExportIOError("Export write/publication failed; inspect the requested destination") from None
+        failure = ExportIOError("Export write/publication failed; inspect the requested destination")
+        if close_note is not None:
+            failure.add_note(close_note)
+        raise failure from None
+    except BaseException as error:
+        failure = error
+        raise
     finally:
         if temporary is not None:
             try:
                 temporary.unlink(missing_ok=True)
             except OSError:
-                raise ExportIOError("Export temporary cleanup failed; inspect the requested destination") from None
+                if failure is None:
+                    raise ExportIOError("Export temporary cleanup failed; inspect the requested destination") from None
+                failure.add_note("Export temporary cleanup failed: OSError")
     return ExportResult(destination, written, media_type, formats[0].schema_id)
