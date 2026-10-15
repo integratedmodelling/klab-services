@@ -47,10 +47,15 @@ class Transport:
         self.endpoints = dict(endpoints)
         self.timeout = timeout
         self.poll_interval = poll_interval
+        self.credential_resolver = None
+        self.sensitive_values = ()
         self._http = httpx.Client(timeout=timeout, verify=verify, transport=http_transport,
                                   follow_redirects=False, trust_env=False)
 
     def redact(self, text: str) -> str:
+        for value in self.sensitive_values:
+            if value:
+                text = text.replace(value, "[REDACTED]")
         for endpoint in self.endpoints.values():
             if endpoint.credential:
                 text = text.replace(endpoint.credential, "[REDACTED]")
@@ -63,6 +68,11 @@ class Transport:
         except KeyError:
             raise ConfigurationError(f"Configure the {service} endpoint explicitly") from None
 
+    def _credential(self, service, endpoint, deadline=None):
+        if self.credential_resolver is not None:
+            return self.credential_resolver(service, endpoint.url, deadline)
+        return endpoint.credential
+
     def request(self, service: str, method: str, route: str, *, scope: str | None = None,
                 service_id: str | None = None, json=None, text: str | None = None,
                 params=None, response: str = "json", ambiguous: bool = False,
@@ -71,8 +81,9 @@ class Transport:
         if not route.startswith("/") or ".." in route or route.startswith("//"):
             raise InvalidRequestError("Route must be a service-relative absolute path")
         headers = {"Accept": "text/plain, application/json;q=0.9" if response == "text" else "application/json"}
-        if endpoint.credential:
-            headers["Authorization"] = endpoint.credential
+        credential = self._credential(service, endpoint, deadline)
+        if credential:
+            headers["Authorization"] = credential
         if scope:
             headers["klab-scope"] = scope
         if service_id:
@@ -126,8 +137,9 @@ class Transport:
         if not route.startswith("/") or ".." in route or route.startswith("//"):
             raise InvalidRequestError("Route must be a service-relative absolute path")
         headers = {"Accept": media_type, "Accept-Encoding": "identity"}
-        if endpoint.credential:
-            headers["Authorization"] = endpoint.credential
+        credential = self._credential(service, endpoint)
+        if credential:
+            headers["Authorization"] = credential
         if scope:
             headers["klab-scope"] = scope
         if service_id:

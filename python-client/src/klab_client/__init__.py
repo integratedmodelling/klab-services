@@ -21,6 +21,11 @@ from klab_client.api.services import (
 )
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData
 from klab_client.transport import Endpoint
+from klab_client.connection import Connection, SelectionPolicy, connect
+from klab_client.connection_models import (DeploymentProfile, ConnectionIdentity, ServiceReference,
+    ServiceCatalog, CatalogEntry, CredentialExpiredError, ConnectionIdentityError,
+    ServiceSelectionError, ReadinessError, ProfileIOError)
+from klab_client.credentials import CredentialProvider, CredentialGrant, IssuedTokenProvider, HubCertificateProvider, CertificateError
 from klab_client.exports import ExportFormat, ExportResult, ExportIOError
 from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError, HandleIOError,
     load_handle, restore_handle, save_handle, to_handle)
@@ -28,6 +33,10 @@ from klab_client.requests import (ContextOptions, GridOptions, ObservationOption
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
 
 __all__ = [
+    "Connection", "SelectionPolicy", "connect", "DeploymentProfile", "ConnectionIdentity", "ServiceReference",
+    "ServiceCatalog", "CatalogEntry", "CredentialExpiredError", "ConnectionIdentityError", "ServiceSelectionError",
+    "ReadinessError", "ProfileIOError", "CredentialProvider", "CredentialGrant", "IssuedTokenProvider",
+    "HubCertificateProvider", "CertificateError",
     "Client", "Context", "Session", "Job", "JobStatus", "ScientificData", "Endpoint",
     "ExportFormat", "ExportResult", "ExportIOError",
     "Handle", "HandleFormatError", "HandleIdentityError", "HandleIOError",

@@ -6,6 +6,10 @@ import subprocess
 import sys
 
 SUITES = {
+    "connection-onboarding": "tests/functional/test_connection.py::test_connection_onboarding_and_fresh_process_recovery",
+    "connection-recovery": "tests/functional/test_connection.py::test_connection_onboarding_and_fresh_process_recovery",
+    "connection-access": "tests/functional/test_connection.py::test_connection_access",
+    "connection-readiness": "tests/functional/test_connection.py::test_connection_readiness",
     "compute-and-analyze": "tests/functional/test_compute_and_analyze.py",
     "resume-saved-work": "tests/functional/test_resume_saved_work.py",
     "typed-compute": "tests/functional/test_typed_compute.py",

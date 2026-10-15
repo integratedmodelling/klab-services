@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "verified_utc": "2026-10-14T19:42:54.360919+00:00",
+  "base_commit": "9c7c371539ff31a05238cfc7355395ca05f21ace",
+  "source_digest": "b11a45bc8fc1225e0469e833349122d858bdb6c1c4b4fbfdad3de8ede3d8d687",
+  "reviewed_parent": "d71a8a02928a4318d51e71b4e5897866de42eef8",
+  "source_digest_definition": "SHA256 of sorted JSON mapping of LF-normalized pyproject/src/tests/tools/examples file SHA256 values",
+  "files_sha256_lf": {
+    "pyproject.toml": "73ef03d93f17db68fb8d2853b0ce2230b327ae00f13f4789ff38ec24b82d8f5b",
+    "src/klab_client/__init__.py": "39f9d6b38e8b4365581a4a21b479402164c9c73a25c2e53ba0d160913b3a1fd9",
+    "src/klab_client/_bootstrap.py": "6eb770720dc980622dd6a73909998637e4d328c11e2d4fdb6cb1f97af01ecf90",
+    "src/klab_client/api/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/klab_client/api/knowledge.py": "42b137374e06284a1d05ca73a01c17857cc3ef20ea25e362ea6295c257da029f",
+    "src/klab_client/api/modeler.py": "8303c2042817f99a374b58ab6a1e25cbe234e77b38fe3415a04389665072231b",
+    "src/klab_client/api/primitives.py": "c613ad3c5814ce22b5f3bb1688f55ea2e205d9af0f9a0b3131e0966f0278d96d",
+    "src/klab_client/api/runtime.py": "157cca73116f3878058a62d8ef848a3847f4f5e51b4427f72b2250469dc13920",
+    "src/klab_client/api/scopes.py": "441dc3e4c9d779bf746ef940f7201526a2085a70d6b0f6bc56abcd23c3d2e5b2",
+    "src/klab_client/api/services.py": "8e921b7d8a54e8a6ac8bc817985c8d043d24a9abbb8b88ae4b9f3006cc53c122",
+    "src/klab_client/client.py": "4c797863e7f65c74150451cc562c997a08dc74de63eb8ce63a74da7f2f2d07d7",
+    "src/klab_client/connection.py": "14b4e57a49e73bd090c23d74937b148be3ad1c4c464eb93e1915360a807cde3f",
+    "src/klab_client/connection_models.py": "ea6c0dd124a866f1be725405dc3431c8a407374bb6717e192cb0caad83c53500",
+    "src/klab_client/credentials.py": "41abc3f9d0fb63c5665ae241187194669938300e75129b330e3d42d1b6f2c547",
+    "src/klab_client/dto.py": "5ad5e3b1e83a982bca47dc754d139ac3cb578a99524dc8b342be5e8d580d9c66",
+    "src/klab_client/errors.py": "b737a587efb0576a1f67e7d5ea299883bacfcb6f027b108b92127cf9909a5e8b",
+    "src/klab_client/experiment.py": "b3b1751061b1fbd0c6881da7c9b47c03f9a84c1d18ea5fc80871235486d5bb11",
+    "src/klab_client/exports.py": "2dacfb762a68eacf69f28eff6a62651e0f58410fd4d15e2942135cac5d41a504",
+    "src/klab_client/handles.py": "143d04f6249386538f2df79e85dd5adcc00a8648aae7d34fab2d131230c61d21",
+    "src/klab_client/requests.py": "69e196d12f88e08aff4763f152cea7d8b812e72f4c2b11a5a987f90ed4c15b1c",
+    "src/klab_client/transport.py": "17d4b050bc433d8871328edff8df4a1a7cf7de79be9873547bb56ad87be704ef",
+    "tests/conftest.py": "81a237dd01643d421d2020719069c1205cad176f9bf3969f2f7683cc20667ed1",
+    "tests/fixtures/connection_http.py": "e7523ec1e7d236b930fb73c6a35583bcf61ec1db29d2d1bae2fe7e74df9360e7",
+    "tests/fixtures/handle_process.py": "126ab342ed69891ffe06fd92d55a2ce84d54c7d8b1a889a5f7ebb6706afaa140",
+    "tests/fixtures/workflow_process.py": "65bf13e86f910b1f2438a9d6d75400fb47590f129ae30e33a04bef84069ef4f9",
+    "tests/functional/conftest.py": "c537b97aaa6ee160c3d1bf857ed0aaf49d4baaf31133e5707d62be973d68c479",
+    "tests/functional/test_compute_and_analyze.py": "853fc3ee78c78c13228e1f969bc5308fc0a8c86852d85784ffab8edf54b5ca58",
+    "tests/functional/test_connection.py": "b6f22c9896ddf01a4f8622ffd9db3e978e503fcb6d180a5aaf85cfcc44cf0d5e",
+    "tests/functional/test_export_deliverables.py": "a0e405d9fa18565901bbcef2f3547f9c5de055993915ebb097cf7ccba25ad423",
+    "tests/functional/test_provider_reference.py": "2276643872a40a12b2baab4960dffa6780cb721645a35611b1d0d2be671ada6a",
+    "tests/functional/test_resume_saved_work.py": "33bae97222e03f53015873c4b84a2810c19714292a4755070b2e71d491e69daa",
+    "tests/functional/test_typed_compute.py": "7c1f420a8d89c020bafc2ba0621f591340afb1bca58ef701ab588de88d363154",
+    "tests/integration/test_connection_http.py": "273e1679d35bd2aef9a8199d227bcd0a83b00ade9b2b516bea193dce0497eafe",
+    "tests/integration/test_handle_process.py": "94e331b4d9065b72362dff6f87203ae3f9cb3bfbb642ae92a8b61d3b836e0911",
+    "tests/unit/test_benchmark.py": "b51f68f3c13ef929d9d53cb36affbcd9aba0635f78252c1b4338aa21aeb6cb0e",
+    "tests/unit/test_bootstrap_cleanup.py": "145bdf62b222ef9b9c9b1f484b19c9f7f89b1ff9d2b322cd0aef2e62b1c19ecf",
+    "tests/unit/test_client.py": "2833918fba3e03a683017ae99e7481305786767a1c2cc273bd4c6f9ad86db51b",
+    "tests/unit/test_component_patch.py": "58dfb8c6aaec436dea69abcfe300f584004e4ecf8d89c98d99e0cc8c25951d52",
+    "tests/unit/test_connection.py": "e60c511d91f86b57ead42832c89d21d25d2a29ff1ef68a4caab872bed7736487",
+    "tests/unit/test_connection_guards.py": "60aea119d494377cd77888ab6d286394a3a94ca4b28b9e417750cf6022b979b3",
+    "tests/unit/test_exports.py": "33738f1ec2d4948212674ec5103739638c9588f1107870f3e206a089f986bbd7",
+    "tests/unit/test_feature_coverage.py": "59277349ca01ce76198676d8d3d0bdfeee64c76b3e8631dd065408e464237725",
+    "tests/unit/test_functional_runners.py": "5551bf4ce26c5e1f8ee27431d5e5070d85339353a2ff93cc0a55df987778bd29",
+    "tests/unit/test_geotiff_throughput.py": "6382af45e8604cfe55f0b2037e9710d0dd9d36fab72e07caedb6e65aae376872",
+    "tests/unit/test_live_checks.py": "62950485eefbef49669e1ad25ad39449bc640b6fefa66c3139db5bd59c78d8f8",
+    "tests/unit/test_local_tools.py": "12a1f641be2bfb8d0df16090e1f6b751cadcdf4bfae0f7e1de2f2bde6a04ecee",
+    "tests/unit/test_runtime_binding.py": "b278a46da8b43b1838a134ccf489030631b75fb6cbbc7c44177623faef820e00",
+    "tests/unit/test_saved_handles.py": "791e8894afa857bff89f46073a7c13e19de1c72835a9746ff7aa62599b00fd05",
+    "tests/unit/test_scaffold.py": "9bc8e3b427f0497de4c317c972923f82bab1b458be7e84a1a0118031b9895bd7",
+    "tests/unit/test_typed_requests.py": "117cc0e8ae97c68e8ccac5cda5cd19f0b30ddc625a5483fece4b1a85d9d61a32",
+    "tests/unit/test_workflow_validation.py": "a14a6e8538e8b8f7c9f7d4397a375559005b721127e19ec3e2bfc4555d8763a9",
+    "tools/build_geospatial_component.py": "88634b21e40c6693a1591c4618052c8154542c00854d739aacd99946235ce21f",
+    "tools/check_feature_coverage.py": "104a99edca2945fa9499cf489e6075954518314e312b57e4122b466583a9ba00",
+    "tools/cold_context_check.py": "a5b10f31dd3c5a2def86c2f26aef7412745c2df3cfd105694af664c9728cfb47",
+    "tools/fixture_hub.py": "10f986502f85d47c59db787a3ad1cd403042c403075a41a6fe85b8a2310f14c2",
+    "tools/geotiff_throughput.py": "fc5418c578e5af4fccca2b355d40342fb838c36353ee9e5a55173bd2b3a9212f",
+    "tools/local_stack.py": "b66ae348a96ffee00b507aae41c39d8dd3d61ae72fe6b89b7b79e86107036a6d",
+    "tools/recover_connection.py": "05661534a488f9cbcb2e65d235b61b99f8918c01bd5a9f1f6138f597be872b70",
+    "tools/run_export_acceptance.py": "31d3593d18e0cc34733b03720a23aa8114ba0169d96f7493e86a2921c0bf52ce",
+    "tools/run_functional_acceptance.py": "09642a6c0a5fcb734a38fb3893d6955361bf63d3464373c29a65b5ee65ff7539",
+    "tools/run_local_acceptance.py": "09ccda33585843f33d20c88a60f15f65820dc62a5a66449c412bdf89d9843b07",
+    "tools/run_workflow_throughput.py": "5372ff59a2db403727db63b680a8e547c03ad5210654dac6442152272de297b6",
+    "tools/verify_fixture.py": "4b4878e897938942cbaa3611ac9685ea4b7c5d49e25fa2a7efa25f1be117f9ab",
+    "tools/workflow_benchmark.py": "9db12aa5f35410cfd4a64f95809727fa0c5707984601ff8a5aefde04f35a1e61",
+    "tools/workflows/__init__.py": "eaa9f103ab4b696a66f8484c0fa5d548f3e5478ad11ae41def5275a5400bfc30",
+    "tools/workflows/compute_and_analyze.py": "84db242d84418983fec3ba2849da72b0883752b32559b5e2b1e8d94e45dc81e3",
+    "tools/workflows/connection.py": "6c63901f43f8830a62ec19e64214172198e4ad504530ebae1b657f0bb37bf8a2",
+    "tools/workflows/export_deliverables.py": "90f826ea303cd6e4decc04767fc197858e5fc0ecc3ee8f8abd0aff3ed1a7f62c",
+    "tools/workflows/geojson_export.py": "b7415ac661d30e6c5b79e268a679a9444d9f48431dd47e3cc4212c3c79b17c70",
+    "tools/workflows/provider_reference.py": "ce2e5f93e4e98e5a0bb6ca2db57c5d96fd7233c225591a52cf180777392ed1cd",
+    "tools/workflows/resume_saved_work.py": "6e76b21dec333be04e08cc2bd811700fe9243b8bfee63e172e06f2d62ef55a08",
+    "tools/workflows/scientific_checks.py": "d1d9e7da97f483dbe0493a4947e4d5871321690ee73a158fbdea1874679f5f19",
+    "examples/connect.py": "6059a9d24da838f39972a90294448bd0d462e7888c3dda762d68acc6368bae2b",
+    "examples/elevation.py": "db4c381c69571764bf8869c01200546fcfabae243e3820491ad23e61cad3ed40",
+    "examples/saved_handles.py": "89afe93338fb481ef1b6ea29ef935b6182d782fb39abeab54648b7f42a138d68",
+    "examples/stream_export.py": "ca90020143a99539c94052241181b4c49229190b9c418df76f812f68e1e7ce96",
+    "examples/typed_observe.py": "cc485f6f872c717bf692a0c8d230e2dc2d553a6abd33d72e52a4d41c19aec318"
+  },
+  "offline": {
+    "tests_per_environment": 777,
+    "platforms": [
+      "Windows Python 3.12.7",
+      "installed Linux Python 3.11",
+      "installed Linux Python 3.12",
+      "installed Linux Python 3.13"
+    ],
+    "new_module_lines_and_branches": "100%, unexcluded",
+    "changed_code_gate": "passed",
+    "lint": "E9,F63,F7,F82 passed",
+    "sdist_and_wheel": "passed",
+    "installed_records": [
+      "connection-3.11-b11a45bc8fc1-20261014T192643.json",
+      "connection-3.12-b11a45bc8fc1-20261014T192643.json",
+      "connection-3.13-b11a45bc8fc1-20261014T192643.json"
+    ]
+  },
+  "controlled_live": {
+    "functional_tests": 6,
+    "direct_native_geojson_regression_tests": 1,
+    "python_optimization": 1,
+    "scientific_workflows": [
+      {
+        "scientific_check": {
+          "verified_cells": 40,
+          "value_m": "123.25",
+          "value_mm": "123250",
+          "values_sha256": "979c5a572bb9358d3b7c1912795b2ec7f4313e8dc5cced0721b6918cad756391"
+        },
+        "schema_id": "geospatial.io.geojson",
+        "media_type": "application/geo+json",
+        "bytes": 805,
+        "observation_id": 22,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                1.796631,
+                47.353705
+              ],
+              [
+                1.796631,
+                47.356139
+              ],
+              [
+                1.801122,
+                47.356139
+              ],
+              [
+                1.801122,
+                47.353705
+              ],
+              [
+                1.796631,
+                47.353705
+              ]
+            ]
+          ]
+        },
+        "tolerance_degrees": 1e-06,
+        "units_raster_values_validity": "not supplied by this substantial GeoJSON export",
+        "provider": "certificate",
+        "authentication_evidence": "controlled TEST authority, not actual Hub onboarding",
+        "fresh_process": "original handle restored and exported without scientific resubmission"
+      },
+      {
+        "scientific_check": {
+          "verified_cells": 40,
+          "value_m": "123.25",
+          "value_mm": "123250",
+          "values_sha256": "979c5a572bb9358d3b7c1912795b2ec7f4313e8dc5cced0721b6918cad756391"
+        },
+        "schema_id": "geospatial.io.geojson",
+        "media_type": "application/geo+json",
+        "bytes": 805,
+        "observation_id": 40,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                1.796631,
+                47.353705
+              ],
+              [
+                1.796631,
+                47.356139
+              ],
+              [
+                1.801122,
+                47.356139
+              ],
+              [
+                1.801122,
+                47.353705
+              ],
+              [
+                1.796631,
+                47.353705
+              ]
+            ]
+          ]
+        },
+        "tolerance_degrees": 1e-06,
+        "units_raster_values_validity": "not supplied by this substantial GeoJSON export",
+        "provider": "token",
+        "authentication_evidence": "controlled TEST authority, not actual Hub onboarding",
+        "fresh_process": "original handle restored and exported without scientific resubmission"
+      }
+    ],
+    "access": {
+      "owner_reconnected": true,
+      "valid_collaborator_positive_control": true,
+      "private_context_denial": "AuthorizationError",
+      "known_expired_TEST_JWT_rejection": "AuthorizationError"
+    },
+    "server_commit": "244883d7b04f1eae2cc22e799575d33a9bdb2a43",
+    "deployed_java_classes_sha256": {
+      "klab.services.runtime/target/classes/org/integratedmodelling/klab/services/runtime/RuntimeService.class": "dcd2fd5964f748d4f5fa82d2dc86bdbb8c77f50763ad9ced621b604ac8ef1190",
+      "klab.core.services/target/classes/org/integratedmodelling/klab/services/scopes/ScopeManager.class": "d1ba10c7bcd56de07f9eaf1df2d8782aa37d4eb63d1aa5e3bce4f06d11a4d8b8",
+      "klab.services.runtime/target/classes/org/integratedmodelling/klab/services/runtime/neo4j/KnowledgeGraphNeo4j.class": "688d1e35df1a881b3c38fb837c9355276b11c677936b73b3a4f6ce2943e56e64",
+      "klab.services.reasoner/target/classes/org/integratedmodelling/klab/services/reasoner/internal/SemanticsBuilder.class": "97936947eb59cf0205bd2635ab9d6de3f0b2022608d7cd9a1fdd389e6db249c5",
+      "klab.services.runtime/target/test-classes/org/integratedmodelling/klab/services/runtime/testing/FixtureControls.class": "9edb9f9807c843e5609b8159932353b3a53533d7c2392daafab093433bf67d53"
+    },
+    "worldview": {
+      "worldview_revision": "608bef150ced0a109db98a5aad64ba4461beaa54",
+      "worldview_manifest_sha256": "44d6ae17b2d85d43d09b8056349706682c6bb9ada7858f4b28c4a07074f7fab5",
+      "model_sha256": "9bc51d4fa89c20136fe6b0951a4840120dce0da948156a08203868fb1b92db70",
+      "typed_models_sha256": {
+        "python.scenario.kim": "1eefb808116d3b1db866211bd2279ab07c97b0eef1d310442a3bf8c4afeb0859",
+        "python.lexical.kim": "eabc48ece18ee9d463734514e64cd66e58bf0adaab2bff18f8de6cde2217d194"
+      }
+    },
+    "component_version": "1.0-20260926.083046-222",
+    "component_sha256": "e7d470f69943e93ce48e9669bad6a41b618dfbe0e7bc748076e010583daef644",
+    "cleanup_exit_code": 0,
+    "owned_ports_closed": true,
+    "public_evidence_secret_scan": "passed",
+    "external_evidence_directory": "connection-bootstrap-correction-live1"
+  },
+  "actual_hub_onboarding": {
+    "status": "Not run",
+    "reason": "No actual ENGINE certificate and supported Hub deployment supplied"
+  },
+  "boundaries": [
+    "Controlled Hub contract fixture does not decrypt/validate actual licenses or production agreements",
+    "No provider-reference accuracy or numerical TIFF acceptance claimed by this feature",
+    "Separate-deployment/native identity-sharing server gates remain outside this client contribution"
+  ],
+  "executed_commands": {
+    "windows_offline": "python -m pytest tests/unit tests/integration -q --cov=klab_client --cov-branch --cov-report=json",
+    "installed_matrix": "wsl.exe --exec python3 /mnt/c/Users/lumsd/AppData/Local/Temp/opencode/run_connection_matrix.py",
+    "live": "PYTHONOPTIMIZE=1 python tools/run_export_acceptance.py --server-repo <klab-python-federation-integration> --java <jdk21/bin/java.exe> --worldview <imod> --component <published-geospatial.jar> --state-dir <connection-bootstrap-correction-live1> --functional-suite connection-onboarding --functional-suite connection-access --functional-suite connection-readiness --functional-suite compute-and-analyze"
+  }
+}
