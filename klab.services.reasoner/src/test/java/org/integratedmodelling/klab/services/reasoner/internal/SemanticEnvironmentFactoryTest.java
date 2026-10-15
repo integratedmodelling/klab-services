@@ -574,4 +574,39 @@ class SemanticEnvironmentFactoryTest {
     }
   }
 
+  @Test void acceptedBottomRemainsStructuredAndUnsatisfiable() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("bottom-actors"), core());
+    try (var runtime = new AcceptedSemanticRuntime(factory)) {
+      runtime.submit(world("bottom-contract", false));
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(1, runtime.status().acceptedGeneration());
+      var bottom = new org.integratedmodelling.common.knowledge.ConceptImpl();
+      bottom.setUrn("owl:Nothing"); bottom.setNamespace("owl");
+      bottom.setNonSemanticId(org.integratedmodelling.common.knowledge.ConceptImpl.NOTHING_ID);
+      bottom.getType().add(SemanticType.NOTHING);
+      org.integratedmodelling.klab.api.knowledge.Concept result = runtime.invoke("coreObservable",
+          new Class<?>[]{org.integratedmodelling.klab.api.knowledge.Semantics.class}, new Object[]{bottom});
+      assertNotNull(result); assertEquals("owl:Nothing", result.getUrn());
+      assertTrue(result.is(SemanticType.NOTHING)); assertNotSame(bottom, result);
+      assertFalse(runtime.<Boolean>invoke("satisfiable",
+          new Class<?>[]{org.integratedmodelling.klab.api.knowledge.Semantics.class}, new Object[]{bottom}));
+    }
+  }
+  @Test void acceptedRoutingStillRejectsUnknownNamedIdentityAndResolvesKnownIdentity() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("named-actors"), core());
+    try (var runtime = new AcceptedSemanticRuntime(factory)) {
+      runtime.submit(world("named-contract", false)); assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
+      var supplied = new org.integratedmodelling.common.knowledge.ConceptImpl();
+      supplied.setUrn("w:Missing"); supplied.getType().add(SemanticType.NOTHING);
+      assertThrows(IllegalArgumentException.class, () -> runtime.invoke("coreObservable",
+          new Class<?>[]{org.integratedmodelling.klab.api.knowledge.Semantics.class}, new Object[]{supplied}));
+      supplied.setUrn("w:Q1"); supplied.getType().clear();
+      org.integratedmodelling.klab.api.knowledge.Concept result = runtime.invoke("coreObservable",
+          new Class<?>[]{org.integratedmodelling.klab.api.knowledge.Semantics.class}, new Object[]{supplied});
+      assertNotNull(result); assertFalse(result.is(SemanticType.NOTHING));
+      assertEquals("w:Q1", supplied.getUrn()); assertTrue(supplied.getType().isEmpty());
+      assertEquals(1, runtime.status().acceptedGeneration());
+    }
+  }
+
 }

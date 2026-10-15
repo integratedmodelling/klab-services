@@ -206,7 +206,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     }
     if (value instanceof Concept concept) {
       var owned = actor.resolveConcept(concept.getUrn());
-      if (owned == null || owned.is(SemanticType.NOTHING)) throw new IllegalArgumentException(
+      // Bottom is a lawful semantic value; unresolved named identities must still be rejected.
+      boolean canonicalBottom = "owl:Nothing".equals(concept.getUrn())
+          && owned != null && "owl:Nothing".equals(owned.getUrn());
+      if (owned == null || (owned.is(SemanticType.NOTHING) && !canonicalBottom)) throw new IllegalArgumentException(
           "Semantic identity is unavailable in the accepted generation: " + concept.getUrn());
       return owned;
     }
