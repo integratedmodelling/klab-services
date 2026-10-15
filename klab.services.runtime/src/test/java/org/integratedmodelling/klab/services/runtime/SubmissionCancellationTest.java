@@ -8,7 +8,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
+import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -137,7 +137,8 @@ class SubmissionCancellationTest {
       when(status.isOperational()).thenReturn(true);
       when(resolver.status()).thenReturn(status);
       scope.addService(resolver);
-      when(twin.getKnowledgeGraph()).thenReturn(mock(KnowledgeGraph.class));
+      when(twin.getKnowledgeGraph()).thenReturn(mock(KnowledgeGraphNeo4j.class));
+      when(twin.getOptions()).thenReturn(scope.getConfiguration());
       when(twin.getScheduler()).thenReturn(scheduler);
       when(twin.transaction(any(), any(), any(Object[].class))).thenAnswer(call -> {
         when(rootTransaction.getActivity()).thenReturn(call.getArgument(0));
