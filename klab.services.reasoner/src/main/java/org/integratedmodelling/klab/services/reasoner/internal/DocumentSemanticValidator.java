@@ -276,7 +276,11 @@ public class DocumentSemanticValidator
         statement.getUrn().contains(":")
             ? statement.getUrn()
             : context.getDocument().getUrn() + ":" + statement.getUrn();
-    collect(reasoner.resolveConcept(urn), statement, context, result);
+    var concept = reasoner.resolveConcept(urn);
+    collect(concept, statement, context, result);
+    for (var message : org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
+        .unresolvedDescriptionBearers(reasoner.owl(), concept))
+      result.add(Notification.warning(message, Notification.LexicalContext.of(statement, context.getDocument())));
     return result;
   }
 

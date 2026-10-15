@@ -87,7 +87,7 @@ class WorldviewDeclarationSupportTest {
     org.mockito.Mockito.clearInvocations(owl);
     var statement=new KimConceptStatementImpl();statement.getObservablesDescribed().add(new PairImpl<>(syntax("System"),KimConceptStatement.DescriptionType.DESCRIBES));
     WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),statement,v->owl.getConcept(v.getName()));
-    assertRestriction(owl,ontology,ontology.getConcept("Domain"),"describesConfiguration",ontology.getConcept("System"));
+    assertRestriction(owl,ontology,ontology.getConcept("Domain"),"describes",ontology.getConcept("System"));
     assertEquals(calls,org.mockito.Mockito.mockingDetails(owl).getInvocations().stream().filter(i->Set.of("flushReasoner","isEntailed").contains(i.getMethod().getName())).count());
     var f=owl.manager.getOWLDataFactory();var owner=owl.getOWLClass(ontology.getConcept("Domain"));
     for(var axiom:ontology.getOWLOntology().getSubClassAxiomsForSubClass(owner))
@@ -95,16 +95,16 @@ class WorldviewDeclarationSupportTest {
         assertNotEquals(owl.getProperty("odo:isInherentTo").getOWLEntity(),some.getProperty());
     assertFalse(ontology.getOWLOntology().containsAxiom(f.getOWLSubClassOfAxiom(owner,f.getOWLObjectSomeValuesFrom(owl.getProperty("odo:describesQuality").getOWLEntity().asOWLObjectProperty(),owl.getOWLClass(ontology.getConcept("System"))))));
   }
-  @Test void configurationDescriptionsRejectWrongOwnerAndMissingPropertyBeforeWrites() {
+  @Test void configurationDescriptionsAcceptQualityAndRejectMissingPropertyBeforeWrites() {
     var owl=owl();var ontology=owl.requireOntology("audit");
     declare(ontology,"Quality",SemanticType.QUALITY,SemanticType.OBSERVABLE);
     declare(ontology,"Domain",SemanticType.DOMAIN,SemanticType.PREDICATE);
     declare(ontology,"System",SemanticType.CONFIGURATION);
     var statement=new KimConceptStatementImpl();statement.getObservablesDescribed().add(new PairImpl<>(syntax("System"),KimConceptStatement.DescriptionType.DESCRIBES));
     long before=ontology.getOWLOntology().getAxiomCount();
-    assertThrows(KlabValidationException.class,()->WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Quality"),statement,v->owl.getConcept(v.getName())));
-    assertEquals(before,ontology.getOWLOntology().getAxiomCount());
-    var odo=owl.requireOntology("odo");odo.opropertyIDs.remove("describesConfiguration");odo.propertyIDs.remove("describesConfiguration");
+    assertDoesNotThrow(()->WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Quality"),statement,v->owl.getConcept(v.getName())));
+    before=ontology.getOWLOntology().getAxiomCount();
+    var odo=owl.requireOntology("odo");odo.opropertyIDs.remove("describes");odo.propertyIDs.remove("describes");
     assertThrows(KlabValidationException.class,()->WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),statement,v->owl.getConcept(v.getName())));
     assertEquals(before,ontology.getOWLOntology().getAxiomCount());
   }
@@ -115,7 +115,7 @@ class WorldviewDeclarationSupportTest {
     var owl = new OWL(scope); owl.manager = OWLManager.createOWLOntologyManager();
     var properties = new ArrayList<Axiom>();
     for (String name : List.of("affects", "creates", "requiresIdentity", "requiresRealm", "requiresExtent",
-        "requiresAttribute", "impliesObservable", "emergesFrom", "describesQuality", "increasesWith",
+        "requiresAttribute", "impliesObservable", "emergesFrom", "describes", "describesQuality", "increasesWith",
         "decreasesWith", "marksQuality", "classifiesQuality", "discretizesQuality", "impliesSource",
         "impliesDestination", "appliesTo", "isInherentTo", "describesConfiguration")) properties.add(Axiom.ObjectPropertyAssertion(name));
     owl.requireOntology("odo").define(properties);
@@ -123,7 +123,10 @@ class WorldviewDeclarationSupportTest {
   }
   private KimConcept syntax(String name) { var value = new KimConceptImpl(); value.setName("audit:" + name); return value; }
   private void declare(Ontology ontology, String name, SemanticType... types) {
-    ontology.define(List.of(Axiom.ClassAssertion(name, EnumSet.copyOf(List.of(types)))));
+    var flags = EnumSet.copyOf(List.of(types));
+    if (flags.contains(SemanticType.QUALITY) || flags.contains(SemanticType.CONFIGURATION))
+      flags.add(SemanticType.OBSERVABLE);
+    ontology.define(List.of(Axiom.ClassAssertion(name, flags)));
   }
   private void assertRestriction(OWL owl, Ontology ontology, Concept owner, String property, Concept target) {
     var f = owl.manager.getOWLDataFactory();

@@ -44,6 +44,7 @@ public final class WorldviewDeclarationSupport {
           + "an applicability range and numeric categories with explicit endpoint ownership to "
           + "validate nonoverlap, contiguity and complete coverage");
     var described = new ArrayList<Concept>();
+    var independentlyCheckedDescriptions = new ArrayList<Concept>();
     var authoredBearer = statement.getDeclaredInherent() == null ? null
         : require(resolve, statement.getDeclaredInherent(), SemanticType.OBSERVABLE);
     var restrictions = new LinkedHashMap<String, List<Concept>>();
@@ -117,17 +118,6 @@ public final class WorldviewDeclarationSupport {
         SemanticType.OBSERVABLE,
         resolve);
     for (var description : statement.getObservablesDescribed()) {
-      // The approved Domain -> Configuration branch is a necessary class restriction.
-      // Its target is not a quality and contributes no bearer to the describing domain.
-      // Complete consistency/satisfiability checks run at the candidate publication boundary.
-      if (description.getSecond() == KimConceptStatement.DescriptionType.DESCRIBES) {
-        var target = description.getFirst() == null ? null : resolve.apply(description.getFirst());
-        if (owner.is(SemanticType.DOMAIN) && target != null && !target.is(SemanticType.NOTHING)
-            && target.is(SemanticType.CONFIGURATION)) {
-          restrictions.computeIfAbsent("odo:describesConfiguration", key -> new ArrayList<>()).add(target);
-          continue;
-        }
-      }
       boolean validOwner = switch (description.getSecond()) {
         case CLASSIFIES -> owner.is(SemanticType.PREDICATE);
         case DISCRETIZES -> owner.is(SemanticType.ORDERING);
@@ -137,21 +127,28 @@ public final class WorldviewDeclarationSupport {
       if (!validOwner) throw new KlabValidationException("Invalid source for " + description.getSecond());
       String property =
           switch (description.getSecond()) {
-            case DESCRIBES -> "odo:describesQuality";
+            case DESCRIBES -> "odo:describes";
             case INCREASES_WITH -> "odo:increasesWith";
             case DECREASES_WITH -> "odo:decreasesWith";
             case MARKS -> "odo:marksQuality";
             case CLASSIFIES -> "odo:classifiesQuality";
             case DISCRETIZES -> "odo:discretizesQuality";
           };
-      // No truth, threshold or value is implied by marks. Keep the existing broad type
-      // matrix pending review; all six relations share the bearer contract.
+      // Plain describes admits any Observable. Specialized clauses retain their bounds;
+      // neither relation asserts values, computations, or particular bearer identity.
       var target = require(resolve, description.getFirst(),
-          description.getSecond() == KimConceptStatement.DescriptionType.MARKS
+          description.getSecond() == KimConceptStatement.DescriptionType.DESCRIBES
+              ? SemanticType.OBSERVABLE
+              : description.getSecond() == KimConceptStatement.DescriptionType.MARKS
               ? SemanticType.PRESENCE
               : description.getSecond() == KimConceptStatement.DescriptionType.DISCRETIZES
                   ? SemanticType.QUANTIFIABLE : SemanticType.QUALITY);
-      described.add(target);
+      // Domain -> Configuration validates the target independently, without
+      // transferring the configuration's bearer constraints to a Domain.
+      if (description.getSecond() == KimConceptStatement.DescriptionType.DESCRIBES
+          && owner.is(SemanticType.DOMAIN) && target.is(SemanticType.CONFIGURATION))
+        independentlyCheckedDescriptions.add(target);
+      else described.add(target);
       restrictions.computeIfAbsent(property, key -> new ArrayList<>()).add(target);
     }
     for (var link : statement.getSubjectsLinked()) {
@@ -176,7 +173,8 @@ public final class WorldviewDeclarationSupport {
       if (!inheritedDomain.applicableTo(owner, applicable))
         throw new KlabValidationException(
             "applies to must specialize every inherited applicability domain");
-    var bearerAxioms = DescriptionBearerSupport.prepare(owl, owner, authoredBearer, described, applicables);
+    var bearerAxioms = DescriptionBearerSupport.prepare(owl, owner, authoredBearer, described, applicables,
+        independentlyCheckedDescriptions);
     var propertyNames = new LinkedHashSet<>(restrictions.keySet());
     propertyNames.addAll(inverseRestrictions.keySet());
     if (!applicables.isEmpty()) propertyNames.add("odo:appliesTo");
@@ -211,6 +209,19 @@ public final class WorldviewDeclarationSupport {
       owl.manager.addAxiom(ontology.getOWLOntology(), factory.getOWLAnnotationAssertionAxiom(
           factory.getOWLAnnotationProperty(VALUE_STATUS), source, factory.getOWLLiteral("UNRESOLVED")));
     }
+  }
+
+  /** Unsettled bearer contributions are durable evidence, not successful alignment. */
+  public static List<String> unresolvedDescriptionBearers(OWL owl, Concept owner) {
+    if (owl == null || owl.manager == null || owner == null || owner.getUrn() == null) return List.of();
+    var type = owl.getOWLClass(owner);
+    if (type == null) return List.of();
+    return owl.manager.ontologies().flatMap(o -> o.getAnnotationAssertionAxioms(type.getIRI()).stream())
+        .filter(a -> a.getProperty().getIRI().equals(DescriptionBearerSupport.TARGET_STATUS))
+        .map(a -> a.getValue()).filter(org.semanticweb.owlapi.model.OWLLiteral.class::isInstance)
+        .map(org.semanticweb.owlapi.model.OWLLiteral.class::cast).map(v -> v.getLiteral())
+        .filter(v -> v.contains("UNRESOLVED")).distinct().sorted()
+        .map(v -> "DESCRIPTION_BEARER_UNRESOLVED: " + owner.getUrn() + " describes " + v).toList();
   }
 
   private static void add(

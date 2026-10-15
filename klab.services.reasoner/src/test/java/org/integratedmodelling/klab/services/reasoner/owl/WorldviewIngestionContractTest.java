@@ -43,7 +43,7 @@ class WorldviewIngestionContractTest {
     owl.manager = OWLManager.createOWLOntologyManager();
     f = owl.manager.getOWLDataFactory();
     ontology = owl.requireOntology("audit");
-    for (String property : List.of("isInherentTo", "describesQuality", "increasesWith", "decreasesWith",
+    for (String property : List.of("isInherentTo", "describes", "describesQuality", "increasesWith", "decreasesWith",
         "marksQuality", "classifiesQuality", "discretizesQuality", "appliesTo"))
       owl.requireOntology("odo").define(List.of(Axiom.ObjectPropertyAssertion(property)));
     for (String name : List.of("X", "Y", "Z", "Parent"))

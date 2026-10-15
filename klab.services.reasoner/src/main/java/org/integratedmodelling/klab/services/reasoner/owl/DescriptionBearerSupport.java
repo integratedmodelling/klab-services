@@ -9,19 +9,37 @@ import org.semanticweb.owlapi.model.*;
 final class DescriptionBearerSupport {
   static final IRI PROVENANCE = IRI.create("urn:klab:validation:bearer-provenance");
   static final IRI COMPATIBILITY = IRI.create("urn:klab:validation:bearer-compatibility");
+  static final IRI TARGET_STATUS = IRI.create("urn:klab:validation:description-bearer-target-status");
   private DescriptionBearerSupport() {}
 
   static List<OWLAxiom> prepare(OWL owl, Concept owner, Concept authoredBearer,
       Collection<Concept> described, Collection<Concept> applicables) {
+    return prepare(owl, owner, authoredBearer, described, applicables, List.of());
+  }
+
+  static List<OWLAxiom> prepare(OWL owl, Concept owner, Concept authoredBearer,
+      Collection<Concept> described, Collection<Concept> applicables,
+      Collection<Concept> independentlyCheckedDescriptions) {
     var support = new OWLSemanticClauseSupport(owl);
     var own = new ArrayList<>(support.bearerConstraints(owner));
     var f = owl.manager.getOWLDataFactory();
     var property = owl.getProperty("odo:isInherentTo");
     if (property == null && own.isEmpty() && authoredBearer == null
         && (applicables.isEmpty() || !SemanticType.isDependent(owner.getType()))
-        && described.stream().allMatch(c -> support.bearerConstraints(c).isEmpty())) return List.of();
+        && described.isEmpty() && independentlyCheckedDescriptions.isEmpty()) return List.of();
     if (property == null) throw new KlabValidationException("Missing ontology property odo:isInherentTo");
     var inherent = property.getOWLEntity().asOWLObjectProperty();
+    var targetStatuses = new ArrayList<String>();
+    for (var target : independentlyCheckedDescriptions) {
+      var constraints = support.bearerConstraints(target);
+      var semantic = semanticFillers(constraints, inherent);
+      validateWitnesses(support, constraints, semantic, inherent, target.getUrn());
+      var targetStatus = validateConjunction(owl, support, target, constraints, semantic, inherent);
+      if (constraints.stream().anyMatch(b -> !b.semantic()))
+        targetStatus = OWLSemanticClauseSupport.Compatibility.UNRESOLVED;
+      targetStatuses.add(target.getUrn() + " " + target.getType()
+          + " : INDEPENDENT_TARGET_" + targetStatus.name());
+    }
     if (authoredBearer != null)
       own.add(authored(f, inherent, owl.getOWLClass(authoredBearer), owner.getUrn() + " within", false));
     if (!applicables.isEmpty() && SemanticType.isDependent(owner.getType())) {
@@ -32,24 +50,43 @@ final class DescriptionBearerSupport {
           fillers.size() == 1 ? fillers.iterator().next() : f.getOWLObjectUnionOf(fillers),
           owner.getUrn() + " applies to", true));
     }
+    boolean unresolvedTarget = false;
     var evidence = new ArrayList<>(own);
     var derived = new LinkedHashSet<>(semanticFillers(own, inherent));
     for (var target : described) {
       var constraints = support.bearerConstraints(target);
       var semantic = semanticFillers(constraints, inherent);
+      // First check the target's own restrictions independently. A substantial
+      // characterized directly is itself the describing quality's bearer type;
+      // its host (if any) is not substituted for that substantial.
       validateWitnesses(support, constraints, semantic, inherent, target.getUrn());
       validateConjunction(owl, support, target, constraints, semantic, inherent);
+      boolean substantial = target.is(SemanticType.SUBJECT) || target.is(SemanticType.AGENT);
+      Set<OWLClassExpression> contribution = substantial
+          ? Set.of(owl.getOWLClass(target)) : semantic;
+      boolean unresolved = contribution.isEmpty();
+      unresolvedTarget |= unresolved;
+      targetStatuses.add(target.getUrn() + " " + target.getType() + " : "
+          + (unresolved ? "UNRESOLVED: no established universal bearer contribution"
+              : substantial ? "SUBSTANTIAL_TARGET_BEARER" : "UNIVERSAL_BEARER_CONTRIBUTION"));
       evidence.addAll(constraints);
-      derived.addAll(semantic);
+      derived.addAll(contribution);
     }
     // Check inherited-only declarations as well as local descriptions and applicability.
     validateWitnesses(support, own, derived, inherent, owner.getUrn());
     var status = validateConjunction(owl, support, owner, own, derived, inherent);
-    if (evidence.isEmpty()) return List.of();
+    if (evidence.isEmpty() && targetStatuses.isEmpty()) return List.of();
     var source = owl.getOWLClass(owner).getIRI();
-    if (derived.isEmpty())
-      return List.of(f.getOWLAnnotationAssertionAxiom(f.getOWLAnnotationProperty(COMPATIBILITY),
+    var result = new ArrayList<OWLAxiom>();
+    for (var targetStatus : targetStatuses)
+      result.add(f.getOWLAnnotationAssertionAxiom(f.getOWLAnnotationProperty(TARGET_STATUS),
+          source, f.getOWLLiteral(targetStatus)));
+    if (derived.isEmpty()) {
+      result.add(f.getOWLAnnotationAssertionAxiom(f.getOWLAnnotationProperty(COMPATIBILITY),
           source, f.getOWLLiteral("UNRESOLVED")));
+      return result;
+    }
+    if (unresolvedTarget) status = OWLSemanticClauseSupport.Compatibility.UNRESOLVED;
     // Imported untagged constraints have not established k.LAB bearer alignment.
     if (evidence.stream().anyMatch(b -> !b.semantic())) status = OWLSemanticClauseSupport.Compatibility.UNRESOLVED;
     var filler = derived.size() == 1 ? derived.iterator().next() : f.getOWLObjectIntersectionOf(derived);
@@ -64,9 +101,9 @@ final class DescriptionBearerSupport {
         f.getOWLLiteral("derived:description-bearer-intersection")));
     annotations.add(f.getOWLAnnotation(f.getOWLAnnotationProperty(COMPATIBILITY), f.getOWLLiteral(status.name())));
     annotations.add(f.getOWLAnnotation(f.getOWLAnnotationProperty(OWLSemanticClauseSupport.UNIVERSAL_BEARER), f.getOWLLiteral(true)));
-    return List.of(
-        f.getOWLSubClassOfAxiom(owl.getOWLClass(owner), f.getOWLObjectSomeValuesFrom(inherent, filler), annotations),
-        f.getOWLSubClassOfAxiom(owl.getOWLClass(owner), f.getOWLObjectAllValuesFrom(inherent, filler), annotations));
+    result.add(f.getOWLSubClassOfAxiom(owl.getOWLClass(owner), f.getOWLObjectSomeValuesFrom(inherent, filler), annotations));
+    result.add(f.getOWLSubClassOfAxiom(owl.getOWLClass(owner), f.getOWLObjectAllValuesFrom(inherent, filler), annotations));
+    return result;
   }
 
   private static OWLSemanticClauseSupport.Compatibility validateConjunction(OWL owl,

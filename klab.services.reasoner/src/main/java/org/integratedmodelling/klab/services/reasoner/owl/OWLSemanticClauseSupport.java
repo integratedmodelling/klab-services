@@ -102,9 +102,26 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     else if (expression instanceof OWLObjectSomeValuesFrom restriction) {
       var properties = new HashSet<OWLObjectPropertyExpression>();
       collectSuperProperties(restriction.getProperty(), properties);
+      if (matchesProperty(properties, "odo:describes"))
+        return observableDescriptionTarget(restriction.getFiller());
       return List.of("describesQuality", "marksQuality", "classifiesQuality", "discretizesQuality",
           "increasesWith", "decreasesWith").stream().anyMatch(p -> matchesProperty(properties, "odo:" + p));
     }
+    return false;
+  }
+
+  private boolean observableDescriptionTarget(OWLClassExpression expression) {
+    var observable = owl.getConcept("odo:Observable");
+    if (observable != null && specializes(expression, owl.getOWLClass(observable), new HashSet<>()))
+      return true;
+    if (expression instanceof OWLClass named) {
+      var concept = owl.getConceptFor(named);
+      return concept != null && concept.is(SemanticType.OBSERVABLE) && !concept.is(SemanticType.NOTHING);
+    }
+    if (expression instanceof OWLObjectIntersectionOf intersection)
+      return intersection.operands().anyMatch(this::observableDescriptionTarget);
+    if (expression instanceof OWLObjectUnionOf union)
+      return union.operands().allMatch(this::observableDescriptionTarget);
     return false;
   }
 
