@@ -68,7 +68,7 @@ def test_certificate_denial_survives_close_failure_without_signature_exposure(tm
     assert_private(caught.value, signature)
 
 
-@pytest.mark.parametrize("content", [b"invalid-json", b"[]"], ids=["malformed-json", "nonobject"])
+@pytest.mark.parametrize("content", [b"invalid-json", b"[]", b"\xff"], ids=["malformed-json", "nonobject", "invalid-encoding"])
 def test_protocol_failure_survives_client_close_failure(content):
     stream = FaultStream(content)
     transport = FaultTransport(lambda request: httpx.Response(200, stream=stream), close_error=OSError(TOKEN))
@@ -112,12 +112,14 @@ def test_interrupt_remains_the_primary_exception_when_cleanup_fails():
     assert_private(primary, TOKEN)
 
 
-@pytest.mark.parametrize("close_error", [OSError(TOKEN), RuntimeError(TOKEN)], ids=["os-error", "runtime-error"])
+@pytest.mark.parametrize("close_error", [OSError(TOKEN), RuntimeError(TOKEN), ValueError(TOKEN), TypeError(TOKEN)],
+                         ids=["os-error", "runtime-error", "value-error", "type-error"])
 def test_iterator_EOF_close_failure_is_sanitized(close_error):
     stream = FaultStream(close_error=close_error)
     transport = FaultTransport(lambda request: httpx.Response(200, stream=stream))
     with pytest.raises(TransportError, match="transport failed") as caught:
         wire_request(HUB, "GET", transport=transport)
+    assert not isinstance(caught.value, ProtocolError)
     assert stream.close_calls == transport.close_calls == 1
     assert_private(caught.value, TOKEN)
 

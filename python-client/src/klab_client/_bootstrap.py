@@ -69,16 +69,16 @@ def wire_request(url, method, *, payload=None, credential=None, timeout=30, veri
             content.extend(chunk)
         if deadline is not None and time.monotonic() >= deadline:
             raise TransportError("Connection waiting deadline expired")
-        result = json.loads(content)
+        try:
+            result = json.loads(content)
+        except (ValueError, TypeError):
+            raise ProtocolError("Connection endpoint returned invalid JSON") from None
         if not isinstance(result, dict):
             raise ProtocolError("Connection endpoint returned no object")
         return result
     except KlabError as error:
         primary = error
         raise
-    except (ValueError, TypeError):
-        primary = ProtocolError("Connection endpoint returned invalid JSON")
-        raise primary from None
     except Exception:
         # Includes failures from HTTPX's automatic response close at iterator EOF.
         # Never expose exception text carrying request/certificate material.

@@ -218,7 +218,7 @@ advance module-local fake clocks during the exact probe/stream/notification
 phase; they do not rely on scheduler sleep duration to obtain coverage. Production
 timekeeping and the coverage gate remain intact.
 
-Current executable source digest:
+Executable source digest for the `1bb607ea0` bootstrap cleanup milestone:
 `b11a45bc8fc1225e0469e833349122d858bdb6c1c4b4fbfdad3de8ede3d8d687`.
 Full manifest and consolidated evidence:
 [results/bootstrap-cleanup-verification.json](results/bootstrap-cleanup-verification.json).
@@ -247,6 +247,25 @@ At these evidence levels, the two reproduced review findings are corrected and
 the contribution is ready for maintainer review. Actual Hub and separate server
 identity-sharing gates remain outstanding; maintainer acceptance is not implied.
 
+## PR #93 JSON diagnostic refinement
+
+Reviewed parent: `1bb607ea08e5acdc86f294afa634cc16dead6cb1`.
+The optional review finding is now corrected: only errors raised by the JSON
+decoding step are classified as invalid JSON. A `ValueError` or `TypeError` from
+HTTPX response closing after a valid body instead follows the sanitized transport
+failure path. Existing authentication, protocol and interruption preservation and
+independent resource cleanup semantics remain covered.
+
+The bootstrap cleanup tests now include closing `ValueError`/`TypeError` cases
+with a valid `{}` body and a malformed-encoding negative control. Current checks
+on Windows Python 3.12.7: **17 focused tests and 780 full offline tests passed;
+required coverage and lint gates passed.** The same commands and coverage module
+set listed above were used. Installed-interpreter matrices, builds and actual
+services were not rerun for this narrow diagnostic-only change. The earlier
+777-test matrix and seven controlled-service checks remain explicitly tied to
+their earlier executable manifest; they are not new execution results for this
+follow-up. PR #93 hosted checks will validate the updated branch independently.
+
 ## Suggested PR
 
 **Title:** Add Engine-like Python connections with certificate/token providers
@@ -265,6 +284,9 @@ deadline regression controls. Current validation: 777 offline tests on Windows
 and installed Linux 3.11/3.12/3.13, existing coverage/lint/build gates, and seven
 owned real-service checks under optimization with cleanup and secret-free evidence.
 Exact manifests and earlier milestone results remain separately traceable above.
+The subsequent PR #93 diagnostic refinement adds precise JSON-error scoping and
+passes 780 offline tests plus coverage/lint on Windows; its earlier matrix/live
+evidence is distinguished in the follow-up section above.
 Actual Hub
 onboarding is not yet exercised; fixture exchange does not certify license or
 production-agreement validation. Server/global-discovery/worker and numerical
