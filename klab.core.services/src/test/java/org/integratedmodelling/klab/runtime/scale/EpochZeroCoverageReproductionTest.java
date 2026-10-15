@@ -175,6 +175,66 @@ class EpochZeroCoverageReproductionTest {
     }
   }
 
+  @Test void restoredGenericKindsSurviveCoverageGeometryRoundTrip() {
+    var checks = new java.util.ArrayList<org.junit.jupiter.api.function.Executable>();
+    for (Time.Type type : Time.Type.values()) if (type != Time.Type.PHYSICAL) {
+      checks.add(() -> {
+        Time source = type == Time.Type.GRID
+            ? TimeImpl.create(type, Time.Resolution.Type.SECOND, 1.0,
+                org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant.create(0L),
+                org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant.create(5000L),
+                null, null, null, null)
+            : runtimeTime(type, 0L, 5000L);
+        Scale original = new ScaleImpl(new java.util.ArrayList<>(java.util.List.of(source)));
+        var full = CoverageImpl.full(original);
+        String encoded = full.encode();
+        Scale decoded = new ScaleImpl(Geometry.create(encoded));
+        Time time = decoded.getTime();
+        assertAll(type + " round trip: " + encoded,
+            () -> assertEquals(type, time.getTimeType()),
+            () -> assertEquals(0L, time.getStart().getMilliseconds()),
+            () -> assertEquals(5000L, time.getEnd().getMilliseconds()),
+            () -> assertEquals(1L, time.size()),
+            () -> assertTrue(time.isGeneric()),
+            () -> assertEquals(encoded, decoded.encode()),
+            () -> assertEquals(type, source.getTimeType()),
+            () -> assertEquals(type == Time.Type.GRID ? 6L : 1L, source.size()),
+            () -> assertEquals(5000L, source.getEnd().getMilliseconds()));
+        for (LogicalConnector how : new LogicalConnector[]{LogicalConnector.UNION, LogicalConnector.INTERSECTION}) {
+          Scale physical = new ScaleImpl(Geometry.create(
+              "T0(1){tstart=0,tend=10000,ttype=PHYSICAL}"));
+          var seed = CoverageImpl.empty(physical).merge(
+              Geometry.create("T0(1){tstart=1000,tend=2000,ttype=PHYSICAL}"), LogicalConnector.UNION);
+          var incomingResult = seed.merge(decoded, how);
+          var contextResult = CoverageImpl.empty(decoded).merge(
+              Geometry.create("T0(1){tstart=1000,tend=2000,ttype=PHYSICAL}"), how);
+          double expected = how == LogicalConnector.UNION ? 0.2 : 0.0;
+          assertAll(type + " persisted coverage " + how,
+              () -> assertEquals(1.0, incomingResult.getCoverage(), 1e-9),
+              () -> assertEquals(1.0, incomingResult.getCoverage(Geometry.Dimension.Type.TIME), 1e-9),
+              () -> assertEquals(0.0, incomingResult.getGain(), 1e-9),
+              () -> assertEquals(expected, contextResult.getCoverage(), 1e-9),
+              () -> assertEquals(expected, contextResult.getCoverage(Geometry.Dimension.Type.TIME), 1e-9),
+              () -> assertEquals(expected, contextResult.getGain(), 1e-9));
+        }
+      });
+    }
+    assertAll(checks);
+  }
+
+  @Test void distributedGridDecodingKeepsMultipleStatesAtEpochAndPositiveOrigins() {
+    for (long start : new long[]{0L, 1000L}) {
+      String encoded = "T1(6){ttype=GRID,tstart=" + start + ",tend=" + (start + 5000L)
+          + ",tscope=1.0,tunit=SECOND}";
+      Time time = new ScaleImpl(Geometry.create(encoded)).getTime();
+      assertAll("distributed grid origin=" + start,
+          () -> assertEquals(Time.Type.GRID, time.getTimeType()),
+          () -> assertEquals(6L, time.size()),
+          () -> assertEquals(start, time.getStart().getMilliseconds()),
+          () -> assertEquals(start + 5000L, time.getEnd().getMilliseconds()));
+    }
+  }
+
   private static Time runtimeTime(Time.Type type, Long start, Long end) {
     return TimeImpl.create(type, null, null,
         start == null ? null : org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant.create(start.longValue()),

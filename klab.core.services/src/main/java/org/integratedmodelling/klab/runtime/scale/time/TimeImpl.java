@@ -580,7 +580,12 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     Time.Type type =
         representation == null ? null : Time.Type.valueOf(representation.toUpperCase());
 
-    if (type == Time.Type.TERMINATION) {
+    // CoverageImpl preserves generic kinds on collapsed finite epoch periods. Decode that
+    // bounded single-state representation as a period, rather than a termination sentinel.
+    boolean collapsedEpochPeriod = !dimension.isGeneric() && dimension.size() == 1
+        && period == null && locator == null && tstart != null && tstart == 0L
+        && tend != null && tend > 0L && tend != Long.MAX_VALUE;
+    if (type == Time.Type.TERMINATION && !collapsedEpochPeriod) {
       return termination((Scale) null);
     }
 
@@ -620,7 +625,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
       }
     }
 
-    return create(
+    TimeImpl ret = (TimeImpl) create(
         type,
         resType,
         scope,
@@ -630,6 +635,11 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
         coverage,
         (cstart == null ? -1 : cstart),
         (cend == null ? -1 : cend));
+    // A collapsed GRID's resolution still describes its duration, not extra states.
+    if (collapsedEpochPeriod && type == Time.Type.GRID) {
+      ret.size = 1;
+    }
+    return ret;
   }
 
   private static Time initialization(Scale scale) {
