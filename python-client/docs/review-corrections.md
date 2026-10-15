@@ -3,7 +3,7 @@
 The read-only contribution review found four remaining issues after the earlier
 polish pass. This follow-up corrects them without changing public APIs, Java
 source, coverage thresholds or exclusions. The complete polish pass, scientific
-analysis and provenance work are being delivered together in draft PR
+analysis and provenance work are delivered together in PR
 [#94](https://github.com/integratedmodelling/klab-services/pull/94), with an empty
 description as requested. The initial core-fix commit is `fcf64ad6d`.
 

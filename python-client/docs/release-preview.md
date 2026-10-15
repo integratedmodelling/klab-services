@@ -110,10 +110,11 @@ deployment, not just a more elaborate animation.
 | [#86](https://github.com/integratedmodelling/klab-services/pull/86) | Save references and reopen work |
 | [#92](https://github.com/integratedmodelling/klab-services/pull/92) | Download advertised native file formats |
 | [#93](https://github.com/integratedmodelling/klab-services/pull/93) | Connect through profiles and credential providers; inspect service readiness |
-| Current local work | Open supported rasters in xarray, inspect recorded origins, and improve reliability and examples |
+| [#94](https://github.com/integratedmodelling/klab-services/pull/94) | Open supported rasters in xarray, inspect recorded origins, and improve reliability, documentation and notebook examples |
 
-These PRs were merged into `feature/python-client`, not necessarily `develop`.
-The current local work has not been committed or published. The branch also
+These contributions target `feature/python-client`, not necessarily `develop`.
+PR #94 contains the complete scientific-analysis/provenance and polish pass;
+this remains a branch preview, not a tagged package release. The branch also
 carries a [correction for the separate GeoTIFF component](../component-patches/geospatial/README.md);
 it is not an upstream component release.
 
@@ -132,7 +133,9 @@ do not certify production onboarding. The separate server integration
 is not claimed as delivered here. Saved work does not promise server-crash
 recovery; exports and provenance reads do not share a revision-pinned snapshot.
 
-The reliability pass bounds cell-read input and preserves the original error if
-local cleanup also fails. See the [review and test evidence](polish-review.md),
+The reliability pass bounds cell-read input, checks Runtime identity before
+release, keeps renewed credentials out of saved references, and preserves the
+original error if local cleanup also fails. See the [current corrections and
+verification](review-corrections.md), [branch review](polish-review.md),
 [API inventory](public-api.md) and [functional suites](functional-testing.md) for
 the exact behavior, tested versions and remaining limits.

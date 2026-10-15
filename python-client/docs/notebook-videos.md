@@ -75,7 +75,7 @@ coordinates and missing cells, and keep an existing file from being overwritten.
 Select part of a field with xarray, compare the selection to the whole grid, and
 inspect the distribution. Draw the relationships returned by the server and look
 for the recorded numerical activity. The graph is a partial neighborhood, not
-complete lineage or a reproducibility recipe. **Current local analysis work.**
+complete lineage or a reproducibility recipe. **Analysis/provenance work in #94.**
 
 <video controls playsinline preload="metadata" poster="media/notebooks/06_analyze.png" src="media/notebooks/06_analyze.mp4"></video>
 
@@ -103,7 +103,8 @@ The [manifest](media/notebooks/manifest.json) records execution and video hashes
 The downloadable setup helper reads credentials from a private owned TEST state;
 it does not include certificates, tokens or enrollment material.
 
-The merged PRs target `feature/python-client`. The analysis work and component
+The contributions target `feature/python-client`. Analysis/provenance and the
+complete polish pass are included in PR #94. The component
 patch are labeled separately; these recordings do not turn them into published
 releases. Production Hub onboarding, independent separate-deployment acceptance,
 server-crash recovery and complete provenance are not demonstrated.
