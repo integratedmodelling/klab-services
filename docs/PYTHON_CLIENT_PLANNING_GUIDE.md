@@ -159,6 +159,13 @@ The current connection implementation specification, contract inventory, assumpt
 ledger and results are in `python-client/docs/connection-layer.md` and
 `python-client/docs/connection-verification.md` as those deliverables are completed.
 
+The next bounded scientific analysis/provenance slice is now implemented in the
+working feature branch: optional faithful raster/xarray reading and partial
+read-only recorded neighborhoods. See [usage](../python-client/docs/scientific-analysis.md)
+and [current validation/review](../python-client/docs/scientific-analysis-review.md).
+This does not declare the broader graph, snapshot/replay or public-deployment
+roadmap complete.
+
 ## Part II — Complete historical upstream roadmap
 
 The full supplied historical snapshot remains at

@@ -40,7 +40,7 @@ Unbound attachment removal now persists descriptor removal before attempting pay
 
 ## Reproduction
 
-Java: `./run-review-tests.ps1` (offline reactor; test home inside task-7).
+Java: `./tools/review/run-review-tests.ps1` from the repository root (offline reactor; test home inside task-7).
 
 Offline package checks require Python's existing jsonschema and PyYAML packages. In this workspace they were read from task-4/.python-deps through a process-local PYTHONPATH; no packages were installed and no shared cache was changed:
 

@@ -27,6 +27,9 @@ from klab_client.connection_models import (DeploymentProfile, ConnectionIdentity
     ServiceSelectionError, ReadinessError, ProfileIOError)
 from klab_client.credentials import CredentialProvider, CredentialGrant, IssuedTokenProvider, HubCertificateProvider, CertificateError
 from klab_client.exports import ExportFormat, ExportResult, ExportIOError
+from klab_client.analysis import (AnalysisArtifact, RasterDescriptor, RasterAnalysis, TracedAnalysis,
+    export_for_analysis, open_raster, trace_analysis)
+from klab_client.provenance import ProvenanceNode, ProvenanceLink, ProvenanceView, fetch_provenance
 from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError, HandleIOError,
     load_handle, restore_handle, save_handle, to_handle)
 from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
@@ -39,6 +42,9 @@ __all__ = [
     "HubCertificateProvider", "CertificateError",
     "Client", "Context", "Session", "Job", "JobStatus", "ScientificData", "Endpoint",
     "ExportFormat", "ExportResult", "ExportIOError",
+    "AnalysisArtifact", "RasterDescriptor", "RasterAnalysis", "export_for_analysis", "open_raster",
+    "TracedAnalysis", "trace_analysis",
+    "ProvenanceNode", "ProvenanceLink", "ProvenanceView", "fetch_provenance",
     "Handle", "HandleFormatError", "HandleIdentityError", "HandleIOError",
     "load_handle", "restore_handle", "save_handle", "to_handle",
     "ContextOptions", "GridOptions", "ObservationOptions", "ObservationRequest",

@@ -1,5 +1,15 @@
 # k.LAB Python client
 
+**[Branch preview: what changed, what is next, and five short demos](docs/release-preview.md).**
+
+For development planning and CLI review, see the
+[contributor guides](../docs/contributor-guides/README.md) and the
+[current reconciled planning guide](../docs/PYTHON_CLIENT_PLANNING_GUIDE.md).
+
+Optional [scientific analysis and recorded provenance](docs/scientific-analysis.md)
+open native rasters as labeled xarray values plus validity and inspect bounded,
+read-only partial neighborhoods without claiming revision-consistent snapshots.
+
 Native observation exports can be streamed to files through existing advertised
 exporters, with bounded download memory and atomic publication. See
 [streamed export usage, file policy and live acceptance](docs/stream-exports.md).

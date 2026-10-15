@@ -27,6 +27,8 @@ tools/
 | `typed-compute` | Execute supported typed requests and reject an invalid bound observer | existing typed-observe example |
 | `geojson-export` | Produce independently verified geographic geometry, including fresh-process export | `workflows/geojson_export.py` |
 | `geotiff-export` | Compute, save, restore and export a raster preserving every coordinate/value, unit and missing-cell mask | `workflows/export_deliverables.py` |
+| `scientific-analysis-provenance` | Restore original numerical work in a fresh process, open labeled values/validity, inspect recorded execution links and test denied access | `workflows/scientific_analysis.py` |
+| `release-notebook` | Certificate-based typed computation followed by fresh-process token-provider restoration, native export, analysis and recorded origins | Same scientific workflow with connection providers; no duplicate scientific oracle |
 | `provider-reference` | Verify real configured model output, optionally against separately obtained reference data | `workflows/provider_reference.py`, `workflows/scientific_checks.py` |
 
 `functional` identifies complete user workflows. `live` identifies their real-service
@@ -54,6 +56,10 @@ installed component; GeoTIFF requires the corrected exporter and optional
 `[throughput]` Rasterio dependency. Missing configuration or failed scientific
 validation is a failure, not a skip. The provider-reference suite uses its separate
 environment/reference contract from [live acceptance](live-acceptance.md).
+
+The `scientific-analysis-provenance` suite requires `[analysis]` and the corrected
+component. Its observed neighborhood remains partial and cross-fetch consistency
+unknown even when acceptance passes. See [analysis workflow](scientific-analysis.md).
 
 For owned stack creation/cleanup, use `run_local_acceptance.py` or
 `run_export_acceptance.py`. Both invoke these named suites; the export runner keeps

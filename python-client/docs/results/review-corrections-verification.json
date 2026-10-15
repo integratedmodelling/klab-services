@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-15",
+  "status": "Passed",
+  "scope": "Complete local polish pass, scientific analysis and provenance candidate; not only the initial five-file PR commit",
+  "pr": 94,
+  "pr_description": "empty as requested",
+  "initial_core_fix_commit": "fcf64ad6d",
+  "live_capture_head": "4ad3887cc6f5d4a816fc9aec5e0f170cfa5efcec",
+  "live_capture_dirty": true,
+  "source_identity_note": "Capture began before the initial PR commit. All 22 SDK file hashes still match; source manifests, not HEAD alone, identify the tested working candidate.",
+  "sdk_manifest": {
+    "files": 22,
+    "sha256_lf": "2af939d6673a8c5b28df44aff343f2ec7335f21bbd7dcfbd7954cd273757891e"
+  },
+  "executable_manifest": {
+    "files": 101,
+    "sha256_lf": "e9e2b9203c84a413f6234745551c35aed82d543b46751b734e6ed33c471456df"
+  },
+  "windows_source": {
+    "tests": 988,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "windows_installed_wheel": {
+    "tests": 988,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "linux_installed_wheel": {
+    "3.11": {
+      "tests": 988,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "3.12": {
+      "tests": 988,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "3.13": {
+      "tests": 988,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "coverage": {
+    "statement_percent": 96.08768971332209,
+    "branch_percent": 93.40551181102362,
+    "existing_nine_module_and_changed_code_gates": "Passed; unchanged thresholds and exclusions"
+  },
+  "lint": "Passed: E9,F63,F7,F82",
+  "regressions_added": 46,
+  "before_fix_targeted_failures": 38,
+  "core_only_wheel": "Passed: all 22 source hashes match; handles and release work without scientific/notebook dependencies installed or imported",
+  "dependency_checks": "Passed: core-only and installed scientific wheel",
+  "functional": {
+    "tests": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "geojson_regression": {
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "notebooks": {
+    "status": "Passed: all seven preflighted and recorded again against corrected SDK",
+    "code_cells_per_pass": 34,
+    "plots_per_pass": 10,
+    "actual_kernel_restarts_per_pass": 1,
+    "all_videos_decoded": true,
+    "manifest": "../media/notebooks/manifest.json"
+  },
+  "cleanup_exit_code": 0,
+  "owned_jvms_exited": 5,
+  "pythonoptimize": "0",
+  "server_checkout": "244883d7b04f1eae2cc22e799575d33a9bdb2a43",
+  "component_sha256": "e9fa36a605013743669077dbb87874915d98006130acc8119834a23b3cfcc6fa",
+  "actual_production_Hub_acceptance": "Not run",
+  "separate_deployment_acceptance": "Not run; open PR #90 remains separate",
+  "current_broad_java_run": "Not run; these corrections make no Java changes",
+  "evidence_root": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode",
+  "live_evidence_directory": "review-fixes-live1",
+  "evidence_sha256": {
+    "review-fixes-offline.xml": "debc58aefe06a6f1885197cb834790f4a2b99443f681043ac11f62c4176d9306",
+    "review-fixes-installed.xml": "455ed173ae3dad4c6d89273719956c4bf148589e1dc3401d0af8bddc1ebb280b",
+    "review-fixes-coverage.json": "b0fab8e711f65012ec2d97a747cb37dced375d6c42b5894046b13333736ef8c1",
+    "review-fixes-live1/functional.xml": "bddaaf8212f020110ae3208fd6ef1e790ab5ade5eb2737cdd790239639172a50",
+    "review-fixes-live1/exports.xml": "59fa5ec5ff9515b2d2599dc4d42a3320a2d4e843e18440ecfcd55e0a6cf0129d",
+    "review-fixes-live1/run-report.json": "764e96a661da5848fc617b6a135a2c4c203d0b11dd06a9471def5d509cd9fa70"
+  },
+  "recommendation": "Ready for maintainer review within documented bounded scope",
+  "detail": "../review-corrections.md"
+}

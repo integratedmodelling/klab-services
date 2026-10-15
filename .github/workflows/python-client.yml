@@ -19,12 +19,33 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: python -m pip install './python-client[dev,local]'
+      - run: python -m pip install './python-client[dev,local,analysis]'
       - run: python -m pytest -q tests/unit tests/integration --cov=klab_client --cov-branch --cov-report=json
         working-directory: python-client
-      - run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py --new-module src/klab_client/handles.py --new-module src/klab_client/exports.py --new-module src/klab_client/connection.py --new-module src/klab_client/connection_models.py --new-module src/klab_client/credentials.py --new-module src/klab_client/_bootstrap.py
+      - run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py --new-module src/klab_client/handles.py --new-module src/klab_client/exports.py --new-module src/klab_client/connection.py --new-module src/klab_client/connection_models.py --new-module src/klab_client/credentials.py --new-module src/klab_client/_bootstrap.py --new-module src/klab_client/analysis.py --new-module src/klab_client/provenance.py
         working-directory: python-client
       - run: python -m ruff check src tests examples tools --select E9,F63,F7,F82
         working-directory: python-client
       - run: python -m build
         working-directory: python-client
+  core-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install ./python-client
+      - name: Core installation does not require or import scientific dependencies
+        run: |
+          python -I - <<'PY'
+          import importlib.util
+          import sys
+          from klab_client import Client, Handle
+          assert all(importlib.util.find_spec(name) is None for name in ('numpy', 'rasterio', 'xarray'))
+          assert all(name not in sys.modules for name in ('numpy', 'rasterio', 'xarray'))
+          with Client('https://runtime.invalid/runtime', 'secret'):
+              pass
+          handle = Handle('observation', 'home', 'https://runtime.invalid/runtime', 's.c', 's.c', observation_id=42)
+          assert Handle.loads(handle.dumps()) == handle
+          PY

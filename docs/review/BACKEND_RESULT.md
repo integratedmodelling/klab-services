@@ -12,7 +12,7 @@ API handoff: [PROPOSAL_REVIEW_CONTRACT.md](PROPOSAL_REVIEW_CONTRACT.md). Researc
 
 ## Verification
 
-Final offline reactor results are appended below after completion. Reproduce with `./run-review-tests.ps1` in a normal authorized shell. The restricted Java sandbox initially caused missing-package compilation errors; the same normal offline reactor used by the earlier assessment builds successfully. No install, deploy, network dependency resolution, or shared Maven cache edits were performed.
+Final offline reactor results are appended below after completion. Reproduce from the repository root with `./tools/review/run-review-tests.ps1` in a normal authorized shell. The restricted Java sandbox initially caused missing-package compilation errors; the same normal offline reactor used by the earlier assessment builds successfully. No install, deploy, network dependency resolution, or shared Maven cache edits were performed.
 
 The baseline reproduced 14 tests with 3 stale expectation failures. Fixes update the bundled workflow count and optional asset-review candidate expectation, and explicitly require a fixture attachment in the atomic-initialization test. The original defect-characterization source remains unchanged as historical evidence; the new protocol tests assert desired safety behavior.
 

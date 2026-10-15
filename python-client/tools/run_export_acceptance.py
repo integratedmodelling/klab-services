@@ -23,8 +23,11 @@ def main():
     parser.add_argument("--component-source", type=Path, help="Source checkout for the explicitly pinned local component")
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--throughput", action="store_true", help="Also verify numerical GeoTIFF fresh-process throughput")
+    parser.add_argument("--notebook-output", type=Path,
+        help="Also execute and record the PR walkthrough notebooks into this fresh public-output directory")
+    parser.add_argument("--notebook-check-only", action="store_true", help="Execute notebook assertions without recording")
     parser.add_argument("--functional-suite", action="append",
-        choices=("compute-and-analyze", "resume-saved-work", "typed-compute", "geotiff-export", "connection-onboarding", "connection-recovery", "connection-access", "connection-readiness"),
+        choices=("compute-and-analyze", "resume-saved-work", "typed-compute", "geotiff-export", "connection-onboarding", "connection-recovery", "connection-access", "connection-readiness", "scientific-analysis-provenance", "release-notebook"),
         help="Additional named user workflows against the owned exporter-enabled stack")
     parser.add_argument("--samples", type=int, default=3)
     parser.add_argument("--duration", type=float, default=15)
@@ -71,9 +74,9 @@ def main():
     report["client_production_sha256_lf"] = {str(path.relative_to(directory)): hashlib.sha256(
         path.read_bytes().replace(b"\r\n", b"\n")).hexdigest() for path in (directory / "src/klab_client").rglob("*.py")}
     hub, started = None, False
-    def run(label, command, cwd):
+    def run(label, command, cwd, timeout=900):
         with (state / (label + ".log")).open("wb") as log:
-            code = run_command(command, cwd=cwd, env=env, log=log, timeout=900)
+            code = run_command(command, cwd=cwd, env=env, log=log, timeout=timeout)
         report["steps"].append({"name": label, "exit_code": code})
         print(label, code, flush=True)
         if code:
@@ -113,7 +116,11 @@ def main():
                 "--fixture-config", str(state / "scientist.json"), "--server-state-dir", str(state),
                 "--work-dir", str(state), "--report", str(state / "geotiff-throughput.json"),
                 "--samples", str(args.samples), "--duration", str(args.duration), "--warmup", str(args.warmup),
-                "--concurrency", str(args.concurrency), "--mode", args.throughput_mode], directory)
+                 "--concurrency", str(args.concurrency), "--mode", args.throughput_mode], directory)
+        if args.notebook_output:
+            run("notebook-demos", [sys.executable, "tools/record_notebook_demos.py", "--state-dir", str(state),
+                "--output", str(args.notebook_output.resolve()),
+                *(["--check-only"] if args.notebook_check_only else [])], directory, timeout=2400)
         report["passed"] = True
     except Exception as error:
         report["error"] = type(error).__name__ + ": " + str(error)

@@ -17,6 +17,21 @@ from klab_client.errors import (AuthenticationError, AuthorizationError, Invalid
 MIME = "application/geo+json"
 
 
+def test_denied_export_keeps_primary_error_when_temporary_cleanup_also_fails(tmp_path, monkeypatch):
+    import klab_client.exports as module
+    stream = Stream([b"private response"])
+    def failed_cleanup(*args, **kwargs):
+        raise OSError("private unlink diagnostics")
+    with monkeypatch.context() as patch:
+        patch.setattr(module.Path, "unlink", failed_cleanup)
+        with client(stream, status=403) as current:
+            with pytest.raises(AuthorizationError) as caught:
+                asset(current).export_to_file(tmp_path / "denied.geojson", media_type=MIME)
+            assert "Export temporary cleanup failed: OSError" in caught.value.__notes__
+            assert "private unlink" not in str(caught.value.__notes__)
+    assert stream.closed and not (tmp_path / "denied.geojson").exists()
+
+
 class Stream(httpx.SyncByteStream):
     def __init__(self, chunks, error=None, callback=None):
         self.chunks, self.error, self.callback = chunks, error, callback
