@@ -319,4 +319,24 @@ class BroadDescriptionContractTest {
       } catch(ReflectiveOperationException error) {throw new AssertionError(error);}
     });
   }
+
+  @Test void observableKindsWithoutRedundantObservableFlagAreAccepted() {
+    int index=0;
+    for(var target:List.of("Pattern","Flow","Tree","Actor","Happening","Connection","ChildQ","Space")) {
+      c(target).getType().remove(SemanticType.OBSERVABLE);
+      var source="SubtypeFlagSource"+(index++);declare(source,"Quality",SemanticType.QUALITY);
+      assertDoesNotThrow(()->compile(source,description(target)),target);
+      hasDescription(source,target);
+      assertTrue(new OWLSemanticClauseSupport(owl).hasDescription(c(source)),target);
+    }
+  }
+
+  @Test void observableSubtypeRecognitionStillRejectsPredicatesAndNothing() {
+    assertFalse(WorldviewDeclarationSupport.isObservableDescriptionTarget(c("Identity")));
+    c("Generic").getType().add(SemanticType.NOTHING);
+    assertFalse(WorldviewDeclarationSupport.isObservableDescriptionTarget(c("Generic")));
+    var before=axioms();assertThrows(KlabValidationException.class,()->compile("Q",description("Generic")));
+    assertEquals(before,axioms());
+  }
+
 }

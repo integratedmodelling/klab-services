@@ -136,10 +136,10 @@ public final class WorldviewDeclarationSupport {
           };
       // Plain describes admits any Observable. Specialized clauses retain their bounds;
       // neither relation asserts values, computations, or particular bearer identity.
-      var target = require(resolve, description.getFirst(),
-          description.getSecond() == KimConceptStatement.DescriptionType.DESCRIBES
-              ? SemanticType.OBSERVABLE
-              : description.getSecond() == KimConceptStatement.DescriptionType.MARKS
+      var target = description.getSecond() == KimConceptStatement.DescriptionType.DESCRIBES
+          ? requireObservableDescription(resolve, description.getFirst())
+          : require(resolve, description.getFirst(),
+          description.getSecond() == KimConceptStatement.DescriptionType.MARKS
               ? SemanticType.PRESENCE
               : description.getSecond() == KimConceptStatement.DescriptionType.DISCRETIZES
                   ? SemanticType.QUANTIFIABLE : SemanticType.QUALITY);
@@ -234,6 +234,23 @@ public final class WorldviewDeclarationSupport {
       var targets = restrictions.computeIfAbsent(property, key -> new ArrayList<>());
       for (var operand : operands) targets.add(require(resolve, operand, expected));
     }
+  }
+
+  /** Observable subtype flags need not carry the redundant OBSERVABLE bit. */
+  static boolean isObservableDescriptionTarget(Concept concept) {
+    return concept != null && !concept.is(SemanticType.NOTHING)
+        && (concept.is(SemanticType.OBSERVABLE) || concept.is(SemanticType.CONFIGURATION)
+            || concept.is(SemanticType.EXTENT)
+            || SemanticType.BASE_OBSERVABLE_TYPES.stream().anyMatch(concept::is));
+  }
+
+  private static Concept requireObservableDescription(
+      Function<KimConcept, Concept> resolve, KimConcept syntax) {
+    var concept = syntax == null ? null : resolve.apply(syntax);
+    if (!isObservableDescriptionTarget(concept))
+      throw new KlabValidationException("Expected a resolved OBSERVABLE target: "
+          + (syntax == null ? "missing operand" : syntax.getUrn()));
+    return concept;
   }
 
   private static Concept require(

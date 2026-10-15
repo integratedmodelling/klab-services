@@ -116,7 +116,7 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
       return true;
     if (expression instanceof OWLClass named) {
       var concept = owl.getConceptFor(named);
-      return concept != null && concept.is(SemanticType.OBSERVABLE) && !concept.is(SemanticType.NOTHING);
+      return WorldviewDeclarationSupport.isObservableDescriptionTarget(concept);
     }
     if (expression instanceof OWLObjectIntersectionOf intersection)
       return intersection.operands().anyMatch(this::observableDescriptionTarget);
