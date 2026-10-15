@@ -80,8 +80,22 @@ class SemanticValidationPublicationTest {
     return (String) reasoner.status().getMetadata().get(SemanticValidationState.METADATA_KEY);
   }
 
-  @Test void unrelatedOntologyAndStrategySuccessCannotPublishMissingKnowledgeAsReady() throws Exception {
+  /** Empty publication fixtures still traverse the real declaration-staging primitive. */
+  private static OWL stagingOwl() throws Exception {
     var owl = mock(OWL.class);
+    var manager = OWLManager.createOWLOntologyManager();
+    field(owl, "manager", manager);
+    var property = manager.getOWLDataFactory().getOWLObjectProperty(
+        org.semanticweb.owlapi.model.IRI.create("http://integratedmodelling.org/ks/odo#isInherentTo"));
+    when(owl.getProperty("odo:isInherentTo")).thenReturn(new Property(property, "odo"));
+    when(owl.compilationMetrics()).thenReturn(Map.of(
+        "reasonerCreations", 0L, "actualFlushes", 0L,
+        "satisfiabilityQueries", 0L, "entailmentQueries", 0L));
+    return owl;
+  }
+
+  @Test void unrelatedOntologyAndStrategySuccessCannotPublishMissingKnowledgeAsReady() throws Exception {
+    var owl = stagingOwl();
     var releasedA = mock(Ontology.class); when(owl.getOntology("A")).thenReturn(releasedA);
     var reasoner = reasoner(owl, new AuthorityBindings());
     var scope = mock(UserScope.class); var resources = mock(ResourcesService.class);
@@ -187,7 +201,7 @@ class SemanticValidationPublicationTest {
   }
 
   @Test void freshRepairIgnoresOldAggregateErrorsAndCompilesTheFrozenValidatedBean() throws Exception {
-    var owl = mock(OWL.class); var reasoner = reasoner(owl, new AuthorityBindings());
+    var owl = stagingOwl(); var reasoner = reasoner(owl, new AuthorityBindings());
     var resources = mock(ResourcesService.class); var scope = mock(UserScope.class);
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     var capabilities = mock(ResourcesService.Capabilities.class);
