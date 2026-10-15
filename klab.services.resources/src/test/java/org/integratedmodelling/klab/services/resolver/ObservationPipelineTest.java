@@ -113,6 +113,33 @@ class ObservationPipelineTest {
     exercise(SemanticType.RELATIONSHIP, true, false, true, true);
   }
 
+  @Test void aSharedNewEndpointResolvesOnceAndFeedsBothDataflowPorts() throws Exception {
+    // Keep the original identical, initially missing source/target endpoint all the way
+    // through strategy selection, resolution and the one final dataflow compilation.
+    var dataflow = exercise(SemanticType.RELATIONSHIP, true, true, false, false, false);
+    var root = dataflow.getComputation().getFirst();
+    var producers = root.getChildren().stream().filter(a -> a.getActuatorType()
+        == org.integratedmodelling.klab.api.services.runtime.Actuator.Type.OBSERVE).toList();
+    var references = root.getChildren().stream().filter(a -> a.getActuatorType()
+        == org.integratedmodelling.klab.api.services.runtime.Actuator.Type.REFERENCE).toList();
+    assertEquals(1, producers.size());
+    assertEquals(1, references.size());
+    var producer = producers.getFirst();
+    var reference = references.getFirst();
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.Actuator.Type.OBSERVE, producer.getActuatorType());
+    assertFalse(producer.getComputation().isEmpty());
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.Actuator.Type.REFERENCE, reference.getActuatorType());
+    assertTrue(reference.getComputation().isEmpty());
+    assertEquals(producer.getId(), reference.getId());
+    assertTrue(producer.getId() < 0, "The shared endpoint was newly resolved, not an existing KG reference");
+    assertEquals(Set.of("source", "target"), Set.of(producer.getName(), reference.getName()));
+    var parameters = root.getComputation().getFirst().getParameters();
+    assertEquals("source", assertInstanceOf(org.integratedmodelling.klab.api.collections.Identifier.class,
+        parameters.get("source")).getValue());
+    assertEquals("target", assertInstanceOf(org.integratedmodelling.klab.api.collections.Identifier.class,
+        parameters.get("target")).getValue());
+  }
+
   @Test void endpointCoverageCannotResolveARelationshipWithoutAModel() throws Exception {
     exercise(SemanticType.RELATIONSHIP, true, false);
   }
@@ -183,6 +210,7 @@ class ObservationPipelineTest {
       });
       for (var observable : List.of(owner, freshwater, elevation, slope)) {
         var model = mock(Model.class);
+        when(model.getObservables()).thenReturn(List.of(observable));
         when(model.getNamespace()).thenReturn(observable == freshwater ? "freshwater.example" : "private.example");
         when(model.getProjectName()).thenReturn(observable == freshwater ? "freshwater.project" : "example.project");
         when(model.getCoverage()).thenReturn(geometry);
@@ -272,8 +300,13 @@ class ObservationPipelineTest {
     exercise(kind, collective, modelAvailable, endpointsExist, false);
   }
 
-  private void exercise(SemanticType kind, boolean collective, boolean modelAvailable,
+  private Dataflow exercise(SemanticType kind, boolean collective, boolean modelAvailable,
       boolean endpointsExist, boolean unnamed) throws Exception {
+    return exercise(kind, collective, modelAvailable, endpointsExist, unnamed, true);
+  }
+
+  private Dataflow exercise(SemanticType kind, boolean collective, boolean modelAvailable,
+      boolean endpointsExist, boolean unnamed, boolean distinctMissingEndpoints) throws Exception {
     var geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
     var observable = observable(kind, collective);
     var requested = observation(observable, -2L, geometry);
@@ -296,6 +329,16 @@ class ObservationPipelineTest {
     when(reasoner.relationshipSource(any())).thenReturn(endpoint);
     when(reasoner.relationshipTarget(any())).thenReturn(endpoint);
     when(reasoner.resolveObservable("each test:SUBJECT")).thenReturn(observable(SemanticType.SUBJECT, true));
+    if (!endpointsExist && distinctMissingEndpoints) {
+      var source = DependencyContextFixture.named(SemanticType.SUBJECT, false, "Source");
+      var target = DependencyContextFixture.named(SemanticType.SUBJECT, false, "Target");
+      when(reasoner.relationshipSource(any())).thenReturn(source.getSemantics());
+      when(reasoner.relationshipTarget(any())).thenReturn(target.getSemantics());
+      when(reasoner.resolveObservable("each test:Source")).thenReturn(
+          DependencyContextFixture.named(SemanticType.SUBJECT, true, "Source"));
+      when(reasoner.resolveObservable("each test:Target")).thenReturn(
+          DependencyContextFixture.named(SemanticType.SUBJECT, true, "Target"));
+    }
     var strategyReasoner = new ObservationReasoner(reasoner, ignored -> { throw new AssertionError("No closed observables in tier zero"); });
     var strategies = document();
     if (unnamed) {
@@ -365,7 +408,7 @@ class ObservationPipelineTest {
     };
     var graph = compiler.resolve(requested, scope);
     assertEquals(!modelAvailable, graph.isEmpty());
-    if (!modelAvailable) return;
+    if (!modelAvailable) return null;
     assertTrue(graph.getCoverage().isComplete());
     Dataflow dataflow = new DataflowCompiler(requested, graph, scope).compile();
     var actuator = dataflow.getComputation().getFirst();
@@ -377,10 +420,14 @@ class ObservationPipelineTest {
       assertEquals(2, actuator.getChildren().size(), "The same endpoint may feed two distinct ports");
       assertTrue(actuator.getComputation().getFirst().getParameters().containsKey("source"));
       assertTrue(actuator.getComputation().getFirst().getParameters().containsKey("target"));
-      if (!endpointsExist) {
+      if (!endpointsExist && distinctMissingEndpoints) {
         assertTrue(actuator.getChildren().stream().allMatch(a -> !a.getComputation().isEmpty()));
         verify(reasoner, atLeast(3)).computeObservationStrategies(any(), eq(scope));
       }
+      if (!endpointsExist && !distinctMissingEndpoints) {
+        verify(reasoner, times(2)).computeObservationStrategies(any(), eq(scope));
+      }
     }
+    return dataflow;
   }
 }

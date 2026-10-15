@@ -64,7 +64,7 @@ class LookupTableLanguageAdapterTest {
 
                 model test:Score
                   observing test:Elevation
-                  set elevation to [1];
+                  set unbound_target to [1];
                 """),
             "test-project",
             List.of(),
@@ -84,7 +84,7 @@ class LookupTableLanguageAdapterTest {
                 notification ->
                     notification
                         .getMessage()
-                        .contains("Unknown contextualization target elevation"))
+                        .contains("Unknown contextualization target unbound_target"))
             .toList();
     assertEquals(1, errors.size());
   }
