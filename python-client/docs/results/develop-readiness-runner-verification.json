@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-16",
+  "status": "Readiness runner exercised; platform semantic blocker reproduced",
+  "passed": false,
+  "scope": "python-client/** only; no Java, worldview or ontology source changes",
+  "python_parent": "fb7f9140ffc2499b689cfc4641a7824c7d5aeece",
+  "python_working_tree": "Uncommitted review fixes; executable source hashes below identify the tested code",
+  "server_commit": "671a8181551a51b8a6b8080c3a13a2bf1cd0f048",
+  "server_dirty": false,
+  "java": "Temurin 21.0.12.1+1",
+  "python": "3.12.7",
+  "platform": "Windows",
+  "worldview_commit": "608bef150ced0a109db98a5aad64ba4461beaa54",
+  "same_28_candidate_source_hashes_as_historical_baseline": true,
+  "odo_sha256": "eb7318d725a16bd6e68a4cc12955c7b94b885a48d9c3c4f7837d4cd24a8ec7e4",
+  "command": "python tools/run_local_acceptance.py --server-repo <unchanged-develop-671a818> --java <jdk21>/bin/java.exe --worldview <pinned-imod> --semantic-catalog <verified-exact-ODO-catalog> --state-dir <fresh-pr95-readiness-state> --readiness-only",
+  "exit_code": 1,
+  "build_this_run": false,
+  "build_note": "Used previously compiled unchanged develop and existing dependency classpaths/Web UI. New --build routing tested offline; fresh-clone build recipe not executed in this pass.",
+  "steps": {"prepare": 0, "start-graphdb": 0, "start-resources": 0, "start-reasoner": 0, "semantic-readiness": 1},
+  "readiness": {
+    "acceptedGeneration": 0,
+    "beanStatus": "VALID",
+    "logicalStatus": "FAILED",
+    "diagnostics": ["Candidate build failed: ONTOLOGY_DOMAIN_INVALID: land requires a resolved domain"]
+  },
+  "functional": {"tests": 1, "failures": 1, "errors": 0, "skipped": 0},
+  "scientific_acceptance": false,
+  "not_run": ["Scientific roundtrips", "Runtime restart", "Cold ACL checks", "Saved-handle/typed suites", "Throughput", "New Java tests", "Fresh-clone build recipe"],
+  "cleanup_exit_code": 0,
+  "owned_service_exits_confirmed": true,
+  "remaining_test_port_listeners": 0,
+  "offline": {
+    "command": "python -m pytest -q tests/unit tests/integration --junitxml=<temp>/pr95-review-fixes-offline-final.xml",
+    "tests": 1028, "failures": 0, "errors": 0, "skipped": 0, "warnings": 1,
+    "exit_code": 0,
+    "lint_command": "python -m ruff check src tests examples tools --select E9,F63,F7,F82",
+    "lint_exit_code": 0
+  },
+  "executable_source_sha256_lf": {
+    "tools/run_local_acceptance.py": "3244442690b1dca19ef6587d67ce0a5400ec6fdd78b0aa296627ddbe57c8b150",
+    "tools/fixture_hub.py": "c84deb0683a674d4fcb4f2d6cffc4eda50479f99e2c9694ca115ccab85478f76",
+    "tools/run_functional_acceptance.py": "fe2385eeee0e249ba4130ba44f9e7f0db76368e9c28351b2106ee82c93c4e409",
+    "tools/workflows/develop_compatibility.py": "4064e529d872216ca8479690f599ca7b49e81f6d666893f8b53540a00dab490a",
+    "tests/functional/test_develop_compatibility.py": "3604f0d52fff2e16f6f97e0622e9bd49bdf1b0a32634b51212c9cfbcd1dfac99"
+  },
+  "evidence_root": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode",
+  "evidence_sha256": {
+    "pr95-readiness-runner-verification/run-report.json": "bd248d25db5ea07e79fbeae900f6b7e51019a4fd8c5831a07cca0f8877d910c8",
+    "pr95-readiness-runner-verification/develop-readiness.json": "eb39c49f6cf589380de1a5d17a82e9c10f8b5a1d38568b3fa3ffe07bc403dc99",
+    "pr95-readiness-runner-verification/semantic-readiness.xml": "ab6bef100f865379e5c92e92a989d1123373a099edc38d364385fae830c225db",
+    "pr95-review-fixes-offline-final.xml": "0440991c9c7b2c2e9d0790bafbbde7ee799cc1f0c6c9ce95f6e2f7992ee36cd0"
+  }
+}
