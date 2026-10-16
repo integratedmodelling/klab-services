@@ -58,7 +58,7 @@ can publish accepted semantic knowledge. Capture the worldview's **declared** OD
 
 ```powershell
 python tools/semantic_dependencies.py --output C:\fresh-semantic-catalog
-python tools/run_local_acceptance.py --java C:\jdk21\bin\java.exe --worldview C:\pinned-imod --semantic-catalog C:\fresh-semantic-catalog --state-dir C:\fresh-owned-state --saved-handles --typed-observe
+python tools/run_local_acceptance.py --server-repo C:\explicit-server-checkout --java C:\jdk21\bin\java.exe --worldview C:\pinned-imod --semantic-catalog C:\fresh-semantic-catalog --state-dir C:\fresh-owned-state --build --saved-handles --typed-observe
 ```
 
 The capture is bounded, rejects redirects and mismatching bytes, and creates a
@@ -74,6 +74,29 @@ that release. No Java/API, worldview, or ontology source is patched, and publica
 checks remain enabled. Correctly provisioning an import does not make an invalid
 semantic candidate acceptable; the current pinned worldview still fails the
 domain check noted above.
+
+`--server-repo` selects the Java checkout for **all** builds, classpaths, fixture
+controls and initial/restarted services. If omitted, the runner uses the repository
+containing the Python tools; it does **not** select develop automatically. The
+console and `run-report.json` identify the selected checkout, HEAD commit, dirty
+state and merge parent (if any). A dirty flag is not a complete source manifest;
+use a clean pinned checkout and `--build` for reproducible comparisons. Without
+`--build`, compiled outputs must already match that selected source revision.
+
+Unchanged develop may lack the Python scientific Runtime controls. Reproduce
+semantic publication independently without requiring or installing those controls:
+
+```powershell
+python tools/run_local_acceptance.py --server-repo C:\pinned-develop --java C:\jdk21\bin\java.exe --worldview C:\pinned-imod --semantic-catalog C:\fresh-semantic-catalog --state-dir C:\fresh-readiness-state --build --readiness-only
+```
+
+This mode starts only graphdb/Resources/Reasoner, runs the named `semantic-readiness`
+suite and stops its owned services/authority. `passed` means readiness only;
+`scientific_acceptance` remains false even on a readiness pass. There are no
+scientific/restart/ACL/throughput assertions in this mode. Full acceptance still
+requires compiled Runtime controls; the original prerequisite is not relaxed.
+See the [issue runbook](develop-worldview-compatibility-issue.md#reproduction-and-evidence)
+for exact revisions, prerequisites, the expected failure and Java investigation steps.
 
 `develop-compatibility` is deliberately **mutating and owned-stack-only**. It
 validates all five PID/argument-file identities before starting, restarts only

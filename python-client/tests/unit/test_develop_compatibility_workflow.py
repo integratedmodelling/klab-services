@@ -9,6 +9,32 @@ import pytest
 from workflows import develop_compatibility as workflow
 
 
+@pytest.mark.parametrize("primary_kind", ["scientific", "cancelled", "none"])
+def test_roundtrip_preserves_primary_failure_when_release_also_fails(tmp_path, monkeypatch, primary_kind):
+    (tmp_path / "scientist.json").write_text("{}")
+    monkeypatch.setattr(workflow, "initialize", lambda config: None)
+    class Client:
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        def create_session(self, **kwargs): return SimpleNamespace(id="owned")
+    monkeypatch.setattr(workflow, "make_client", lambda config: Client())
+    primary = KeyboardInterrupt() if primary_kind == "cancelled" else AssertionError("original scientific failure")
+    def sample(*args):
+        if primary_kind != "none":
+            raise primary
+        return {"outcome": "verified", "verified_cells": 40}
+    monkeypatch.setattr(workflow, "sample", sample)
+    def release():
+        raise RuntimeError("secret cleanup detail must not be copied")
+    monkeypatch.setattr(workflow, "Session", lambda *args: SimpleNamespace(release=release))
+    expected = RuntimeError if primary_kind == "none" else type(primary)
+    with pytest.raises(expected) as captured:
+        workflow.scientific_roundtrip(tmp_path, "before")
+    if primary_kind != "none":
+        assert captured.value is primary
+        assert primary.__notes__ == ["Compatibility session cleanup also failed: RuntimeError"]
+
+
 def test_process_must_match_the_explicit_state_before_it_can_be_restarted(tmp_path, monkeypatch):
     (tmp_path / "runtime.pid").write_text("123")
     fake = SimpleNamespace(pid=123, exe=lambda: "java.exe", cmdline=lambda: ["java.exe", "@other-state/runtime.args"])

@@ -1,7 +1,6 @@
 """Python/Java acceptance and a Runtime-only restart on an explicitly owned TEST stack."""
 import json
 from pathlib import Path
-import subprocess
 import sys
 import time
 
@@ -38,14 +37,26 @@ def scientific_roundtrip(state, label):
     initialize(config)
     with make_client(config) as client:
         session = client.create_session(name="develop-compatibility-" + label)
+    primary = None
     try:
         report = sample(config, session.id, 910000 if label == "before" else 910001)
         require(report["outcome"] == "verified", "Python/Java scientific roundtrip failed: " + report.get("error", "no diagnostic supplied"))
         require(report["verified_cells"] == 40, "Value and unit-conversion oracle was not exercised")
         return report
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        with make_client(config) as client:
-            require(Session(client, session.id).release(), "Compatibility session cleanup failed")
+        try:
+            with make_client(config) as client:
+                require(Session(client, session.id).release(), "Compatibility session cleanup failed")
+        except BaseException as cleanup:
+            if primary is None:
+                raise
+            # Keep the original operation failure (including cancellation) as the
+            # reported exception, while making cleanup failure visible and redacted.
+            primary.add_note("Compatibility session cleanup also failed: " +
+                             type(cleanup).__name__)
 
 
 def require_semantic_readiness(state, timeout=60):

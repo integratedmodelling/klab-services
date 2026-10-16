@@ -64,6 +64,7 @@ def test_partial_startup_failure_still_requests_owned_cleanup(tmp_path, monkeypa
     import os
     import sys
     tool = load_tool("run_local_acceptance")
+    monkeypatch.setattr(tool, "checkout_identity", lambda root: {"directory": str(root), "commit": "test-sha", "dirty": False})
     java = tmp_path / "java.exe"
     java.write_text("not executed")
     state = tmp_path / "new-state"
