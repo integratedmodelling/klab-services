@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-16",
+  "status": "Blocked by server/worldview semantic validation",
+  "passed": false,
+  "source_edit_scope_this_pass": "python-client/** only; no Java/API, imod or ODO source edits",
+  "python_parent": "188caeb47b86f2eb114cd6f557cf839df0eb10ee",
+  "develop_parent": "671a8181551a51b8a6b8080c3a13a2bf1cd0f048",
+  "uncommitted_merge": true,
+  "dependency": {
+    "declared_locator": "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl",
+    "immutable_source": "https://raw.githubusercontent.com/integratedmodelling/odo-im/aa2cc5611799ceed2aad52ae2c2a349da29e3c4b/releases/0.1.0/odo.owl",
+    "commit": "aa2cc5611799ceed2aad52ae2c2a349da29e3c4b",
+    "sha256": "eb7318d725a16bd6e68a4cc12955c7b94b885a48d9c3c4f7837d4cd24a8ec7e4",
+    "bytes": 76338,
+    "exact_bytes_staged_without_reencoding": true,
+    "source_catalog_and_hash_pin_staged": true,
+    "capture_cli_executed_successfully": true,
+    "bundled_substitution": false,
+    "missing_import_resolved": true
+  },
+  "worldview_revision": "608bef150ced0a109db98a5aad64ba4461beaa54",
+  "readiness": {
+    "acceptedGeneration": 0,
+    "beanStatus": "VALID",
+    "logicalStatus": "FAILED",
+    "diagnostics": ["Candidate build failed: ONTOLOGY_DOMAIN_INVALID: land requires a resolved domain"]
+  },
+  "baseline_comparison": {
+    "server": "Unchanged develop 671a81815; actual graphdb, Resources and Reasoner processes",
+    "same_28_worldview_source_hashes": true,
+    "same_exact_odo_bytes": true,
+    "same_diagnostic": true,
+    "logicalStatus": "FAILED",
+    "acceptedGeneration": 0,
+    "scope": "Readiness/candidate-build reproduction, not a complete baseline workflow or native Java-client acceptance"
+  },
+  "functional": {"suite": "develop-compatibility", "tests": 1, "failures": 1, "errors": 0, "skipped": 0},
+  "offline": {"tests": 1018, "failures": 0, "errors": 0, "skipped": 0, "lint": "Passed: E9,F63,F7,F82"},
+  "not_reached": ["Scientific roundtrips", "Runtime restart", "Cold ACL checks", "Saved-handle/typed suites", "Throughput"],
+  "validation_bypassed": false,
+  "cleanup_exit_code": 0,
+  "owned_service_exits_confirmed": true,
+  "remaining_test_port_listeners": 0,
+  "production_stack_changed": false,
+  "earlier_staged_java_merge_work": "Preserved separately and not changed during this Python-only provisioning pass",
+  "functional_harness_manifest_sha256_lf": "1e6b2975e86846a08766f44467389d77edc242b14135d0651aace3ff2c385e25",
+  "evidence_root": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode",
+  "evidence": {
+    "candidate": "python-develop-live3",
+    "baseline": "python-develop-baseline-deps1",
+    "provenance": "python-develop-live3/semantic-provisioning-provenance.json",
+    "offline": "python-semantic-provisioning-offline.xml"
+  },
+  "evidence_sha256": {
+    "python-develop-live3/run-report.json": "1f131ee9e056b9aed0a6e5d3b2c5e4fb10e1651a5dd7aec26ce9c64072dcaef6",
+    "python-develop-live3/develop-readiness.json": "f9c547de905338eda4a787970cf3825d695d1aff252dfd8020b1addf40eeba2c",
+    "python-develop-live3/develop-compatibility.xml": "170e6593441c0a30190771245f2bb355dc75ff3648b4d118d32244c68f9f4a5e",
+    "python-develop-live3/semantic-dependencies.json": "cc0a797fab2fd9168ed7807d9b2a0351d71ebd9c7815134cb61556cbb5fd570f",
+    "python-develop-baseline-deps1/reasoner-status.json": "8921a2e3c63a6f7224159291d29b3310eb4dac4beadd8efc8a310a92a6242cf7",
+    "python-semantic-provisioning-offline.xml": "72438483a4279eb92f890ced145cdd6582abd84cafbeaab2609008340fa88a4d"
+  },
+  "next_gate": "A supported, semantically valid server/worldview combination is required. Retain the failing functional gate; do not rewrite ontology domains, substitute ODO releases, or weaken Java validation as a Python workaround."
+}

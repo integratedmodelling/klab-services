@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--server-repo", type=Path, required=True, help="Explicit compiled server checkout; never silently change the integration base")
     parser.add_argument("--java", type=Path, required=True)
     parser.add_argument("--worldview", type=Path, required=True)
+    parser.add_argument("--semantic-catalog", type=Path, help="Verified pinned local semantic dependency catalog")
     parser.add_argument("--component", type=Path, required=True, help="Genuine published or locally built geospatial component archive")
     parser.add_argument("--component-sha256", help="Explicit expected hash for a locally built component")
     parser.add_argument("--component-source", type=Path, help="Source checkout for the explicitly pinned local component")
@@ -27,7 +28,7 @@ def main():
         help="Also execute and record the PR walkthrough notebooks into this fresh public-output directory")
     parser.add_argument("--notebook-check-only", action="store_true", help="Execute notebook assertions without recording")
     parser.add_argument("--functional-suite", action="append",
-        choices=("compute-and-analyze", "resume-saved-work", "typed-compute", "geotiff-export", "connection-onboarding", "connection-recovery", "connection-access", "connection-readiness", "scientific-analysis-provenance", "release-notebook"),
+        choices=("compute-and-analyze", "resume-saved-work", "typed-compute", "geotiff-export", "connection-onboarding", "connection-recovery", "connection-access", "connection-readiness", "scientific-analysis-provenance", "release-notebook", "develop-compatibility"),
         help="Additional named user workflows against the owned exporter-enabled stack")
     parser.add_argument("--samples", type=int, default=3)
     parser.add_argument("--duration", type=float, default=15)
@@ -84,7 +85,8 @@ def main():
     try:
         # Current scenario assets with explicitly selected compiled Runtime controls.
         run("prepare", [sys.executable, "tools/fixture_hub.py", "prepare", "--state-dir", str(state),
-            "--worldview", str(args.worldview.resolve()), "--server-repo", str(server)], directory)
+            "--worldview", str(args.worldview.resolve()), "--server-repo", str(server),
+            *(["--semantic-catalog", str(args.semantic_catalog.resolve())] if args.semantic_catalog else [])], directory)
         for service in ("runtime", "resources"):
             plugins = state / "home/.klab/services" / service / "components/plugins"
             plugins.mkdir(parents=True)

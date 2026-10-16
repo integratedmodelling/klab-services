@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "develop-compatibility": "tests/functional/test_develop_compatibility.py",
     "release-notebook": "tests/functional/test_scientific_analysis.py::test_release_notebook_journey_uses_connections_and_recovers_the_original_field",
     "scientific-analysis-provenance": "tests/functional/test_scientific_analysis.py",
     "connection-onboarding": "tests/functional/test_connection.py::test_connection_onboarding_and_fresh_process_recovery",

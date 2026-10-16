@@ -5,6 +5,17 @@ Tests are grouped by execution level; functional suites are named for user outco
 Current readiness, test results and deployment/component dependencies are recorded
 once in [export and functional verification](exports-verification.md).
 
+**16 October integration check:** `develop-compatibility` remains **blocked**, not
+green. The initial missing numbered ODO import was reproduced on unchanged develop.
+Provisioning its exact source bytes removes that error, but candidate construction
+then fails with `ONTOLOGY_DOMAIN_INVALID: land requires a resolved domain`.
+See the [initial result](results/develop-compatibility-verification.json) and
+[dependency-provisioned rerun](results/develop-semantic-dependencies-verification.json).
+Scientific/restart assertions behind the readiness gate were not reached.
+
+See [the detailed issue report and Java/source locations](develop-worldview-compatibility-issue.md)
+for the observed call chain, comparison boundaries and unresolved platform question.
+
 ```text
 tests/
   unit/          Offline contracts, validation, file semantics and oracle/rate guards
@@ -23,6 +34,7 @@ tools/
 | Suite | User outcome | Shared implementation |
 |---|---|---|
 | `compute-and-analyze` | Compute, read in metres/millimetres, reconnect; validate Jobs, identity, access and lifecycle | `workflows/compute_and_analyze.py`, `verify_fixture.py` |
+| `develop-compatibility` | Python scientific roundtrips against the combined Java services before/after an actual Runtime-only restart; retain graph and verify private/shared/excluded context ACLs | `workflows/develop_compatibility.py`, `cold_context_check.py` |
 | `resume-saved-work` | Save original work and restore/share it in separate authorized Python processes | `workflows/resume_saved_work.py`, existing saved-handles example |
 | `typed-compute` | Execute supported typed requests and reject an invalid bound observer | existing typed-observe example |
 | `geojson-export` | Produce independently verified geographic geometry, including fresh-process export | `workflows/geojson_export.py` |
@@ -35,6 +47,56 @@ tools/
 requirement. Functional tests carry both markers, so ordinary pytest still excludes
 them. Local subprocess integration has its own marker and remains in offline CI.
 No assertion was converted into a skip to make the reorganization pass.
+
+## Captured semantic dependencies
+
+Current develop's Reasoner requires explicit captured ontology imports before it
+can publish accepted semantic knowledge. Capture the worldview's **declared** ODO
+0.1.0 document from immutable upstream commit
+`aa2cc5611799ceed2aad52ae2c2a349da29e3c4b`, with SHA-256
+`eb7318d725a16bd6e68a4cc12955c7b94b885a48d9c3c4f7837d4cd24a8ec7e4`:
+
+```powershell
+python tools/semantic_dependencies.py --output C:\fresh-semantic-catalog
+python tools/run_local_acceptance.py --java C:\jdk21\bin\java.exe --worldview C:\pinned-imod --semantic-catalog C:\fresh-semantic-catalog --state-dir C:\fresh-owned-state --saved-handles --typed-observe
+```
+
+The capture is bounded, rejects redirects and mismatching bytes, and creates a
+fresh directory. The fixture validates the bytes and `source-catalog.properties`
+before staging them into its private `home/.klab/knowledge`; it records the source,
+declared locator and hash in `semantic-dependencies.json`. Existing knowledge is
+never overwritten. The exporter-enabled runner and direct `fixture_hub.py prepare`
+also accept `--semantic-catalog`. Omit it only when deliberately testing an older
+server contract or the missing-dependency failure.
+
+This supplies the actual numbered release, **not** bundled ODO bytes relabeled as
+that release. No Java/API, worldview, or ontology source is patched, and publication
+checks remain enabled. Correctly provisioning an import does not make an invalid
+semantic candidate acceptable; the current pinned worldview still fails the
+domain check noted above.
+
+`develop-compatibility` is deliberately **mutating and owned-stack-only**. It
+validates all five PID/argument-file identities before starting, restarts only
+the owned Runtime, and verifies graphdb/Resources/Reasoner/Resolver keep their
+original PIDs. Do not point it at production/shared state. It requires `[local]`
+and Windows, as does the existing owned-stack launcher. The default
+`run_local_acceptance.py` now invokes this named suite instead of keeping its
+restart checks outside functional pytest.
+
+The suite preserves the explicitly compiled server checkout when restarting,
+even when the Python tools are in another checkout. It checks accepted semantic
+readiness before scientific mutations: an available endpoint or local-authoring
+operational flag is insufficient when `semantic.candidate.acceptedGeneration`
+is zero. Pending/invalidation states receive a bounded readiness wait; rejected
+or unresolved candidates fail with their diagnostics. The last redacted status
+is retained as `develop-readiness.json`.
+
+The test verifies the known 20-cell field in metres and millimetres (40 checks)
+on each side of the restart, reuses actual context permission/restoration checks,
+and reports JUnit properties plus `develop-compatibility.json` in the private
+state directory. It does not claim persistent scientific buffer durability,
+native Java-client interoperability, nonlocal shared-session acceptance, or
+production Hub/provider accuracy.
 
 ## Run
 
@@ -49,6 +111,7 @@ Against an already running explicitly prepared TEST stack:
 ```powershell
 python tools/run_functional_acceptance.py --state-dir C:\state --suite compute-and-analyze --suite typed-compute --suite resume-saved-work --report C:\state\functional.xml
 python tools/run_functional_acceptance.py --state-dir C:\state --suite geojson-export --suite geotiff-export --report C:\state\exports.xml
+python tools/run_functional_acceptance.py --state-dir C:\owned-test-state --suite develop-compatibility --report C:\owned-test-state\develop-compatibility.xml
 ```
 
 Reports require a fresh destination. Export suites require the appropriate genuine
