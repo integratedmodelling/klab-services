@@ -136,10 +136,48 @@ That expression is an investigation target, not a proposed Python-side rewrite.
 
 ## How the Python functional test exposes it
 
-`tests/functional/test_develop_compatibility.py` selects the maintained
-`develop-compatibility` suite. In `tools/workflows/develop_compatibility.py`,
-`require_semantic_readiness` reads `GET /reasoner/public/status`, including the
-Java metadata `delegate` wrapper, and checks `semantic.candidate`.
+### Exact tests to run (not the offline suite)
+
+All node IDs below are relative to **`python-client/`** in tools revision
+`c9d2f18a082d287c7d55561bf90761004d053504` (the merged PR #95). Use that checkout's
+Python tests against the **separate** pinned Java checkout; do not run the old
+develop checkout's Python tools and assume these tests exist there.
+
+| Purpose | Exact pytest node ID | Named runner suite | What fails / prerequisite |
+|---|---|---|---|
+| **Minimal reproducer for both semantic blockers** | `tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge` | `semantic-readiness` | Calls `require_semantic_readiness`; generation zero with logical `UNRESOLVED` or `FAILED` raises with the server diagnostic. Needs only graphdb, Resources, Reasoner and the owned TEST authority; no Runtime controls. |
+| **Full compatibility gate that also exposed the blockers** | `tests/functional/test_develop_compatibility.py::test_python_and_java_services_work_before_and_after_runtime_restart` | `develop-compatibility` | Calls `verify`, validates owned processes/server checkout, then the **same readiness check** before scientific work. Needs all five services and Runtime controls. The historical failures occurred at readiness, not at the later value/restart assertions. |
+| Original scientific symptom, before the explicit gate was added | `tests/functional/test_compute_and_analyze.py::test_signed_authentication_scientific_lifecycle` and `tests/functional/test_compute_and_analyze.py::test_actual_concurrent_full_workflow` | `compute-and-analyze` | Historical full-stack run encountered Reasoner HTTP 500, `Accepted semantic knowledge is unavailable`. These are broader scientific tests, **not** the minimal baseline reproduction. |
+
+Source: [the two compatibility test functions](../tests/functional/test_develop_compatibility.py),
+[the original scientific tests](../tests/functional/test_compute_and_analyze.py),
+[suite-to-test mapping](../tools/run_functional_acceptance.py), and
+[the shared readiness assertion](../tools/workflows/develop_compatibility.py).
+
+The readiness assertion reads `GET /reasoner/public/status`, including the Java
+metadata `delegate` wrapper, and checks `semantic.candidate`. With the recorded
+inputs the selected minimal test fails with:
+
+```text
+FAILED tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge
+AssertionError: Reasoner has no accepted semantic generation: <candidate JSON including diagnostics>
+```
+
+The diagnostic **inside that JSON** distinguishes the cases:
+
+| Case | Test setup difference | Expected server state and diagnostic | Evidence |
+|---|---|---|---|
+| A: missing captured import | No `--semantic-catalog`; fresh TEST state | `acceptedGeneration: 0`, `logicalStatus: UNRESOLVED`; `CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import {odo,https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl}` | [Historical full-gate failure/baseline status](results/develop-compatibility-verification.json) |
+| B: domain compilation failure | Supply the exact captured ODO catalog; otherwise identical pinned inputs and fresh TEST state | `acceptedGeneration: 0`, `logicalStatus: FAILED`; `Candidate build failed: ONTOLOGY_DOMAIN_INVALID: land requires a resolved domain` | [Minimal test actually run on unchanged develop](results/develop-readiness-runner-verification.json), plus [historical full-gate comparison](results/develop-semantic-dependencies-verification.json) |
+
+Case A through the **new minimal test** is a reproduction recipe based on the
+same assertion; the recorded Case A run used the full gate and a separate baseline
+status capture. Case B has an actual recorded run of the minimal test. Do not
+mislabel a new recipe as already executed evidence.
+
+Ordinary `python -m pytest tests/unit tests/integration` does **not** expose these
+server defects: those are offline tests. Live tests are excluded by default by
+`pyproject.toml`'s `-m 'not live'`. The commands below explicitly select them.
 
 An HTTP 200 or local-authoring operational flag does not override accepted
 generation zero. Transient publication states receive a bounded wait; a failed or
@@ -157,12 +195,9 @@ not been reached in these runs.** No test was skipped or weakened to get a pass.
 
 Use Windows/PowerShell, Git, a JDK 21 (including `javac`), Python 3.12 and Maven
 wrapper download access. These are development-only Windows lifecycle tools, not
-production deployment instructions. Run Python commands from this PR checkout's
-`python-client/` directory, with its dependencies installed:
-
-```powershell
-python -m pip install -e ".[dev,local,analysis]"
-```
+production deployment instructions. Step 1 obtains the exact Python tools and
+installs their dependencies; subsequent Python commands run from that checkout's
+`python-client/` directory. The Java baseline is a separate checkout.
 
 Ensure ports **8382, 8091, 8092 and 18090** are unused for readiness-only; full
 acceptance also needs **8093 and 8094**. Do not stop unrelated listeners, reuse
@@ -181,6 +216,10 @@ reproduction.
 ```powershell
 $root = "C:\klab-compat-repro"
 New-Item -ItemType Directory -Path $root -ErrorAction Stop | Out-Null
+git clone https://github.com/integratedmodelling/klab-services.git "$root\client"
+if ($LASTEXITCODE) { throw "Python tools clone failed" }
+git -C "$root\client" checkout --detach c9d2f18a082d287c7d55561bf90761004d053504
+if ($LASTEXITCODE) { throw "Python tools pin failed" }
 git clone https://github.com/integratedmodelling/klab-services.git "$root\server"
 if ($LASTEXITCODE) { throw "Server clone failed" }
 git -C "$root\server" checkout --detach 671a8181551a51b8a6b8080c3a13a2bf1cd0f048
@@ -191,6 +230,12 @@ git -C "$root\imod" checkout --detach 608bef150ced0a109db98a5aad64ba4461beaa54
 if ($LASTEXITCODE) { throw "Worldview pin failed" }
 git -C "$root\server" status --short
 git -C "$root\imod" status --short
+Set-Location "$root\client\python-client"
+python -m venv "$root\venv"
+if ($LASTEXITCODE) { throw "Python environment creation failed" }
+& "$root\venv\Scripts\Activate.ps1"
+python -m pip install -e ".[dev,local,analysis]"
+if ($LASTEXITCODE) { throw "Python dependencies failed" }
 ```
 
 Both status listings must be empty before building. Use a fresh clone to avoid
@@ -210,6 +255,22 @@ $readinessExit = $LASTEXITCODE
 Get-Content "$root\readiness-state\run-report.json"
 Get-Content "$root\readiness-state\develop-readiness.json"
 ```
+
+This is **Case B** from the test table. The runner starts the three services,
+then executes precisely:
+
+```text
+python tools/run_functional_acceptance.py --suite semantic-readiness --state-dir <readiness-state> --report <readiness-state>/semantic-readiness.xml
+```
+
+That suite selects only
+`tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge`.
+Inspect `semantic-readiness.log` for its pytest failure and
+`semantic-readiness.xml` for **1 test, 1 failure, 0 errors/skips** on the recorded
+bad inputs. Inspect `develop-readiness.json` for the Java diagnostic and source
+hashes. `run-report.json` must show successful prepare/service starts followed by
+`semantic-readiness` exit 1. File-not-found, connection-refused, fixture/configuration
+errors or a test that is deselected are **not** reproduction of the semantic bug.
 
 `--build` builds the selected server modules, Web UI resources and runtime
 dependency classpaths; it uses `-DskipTests`, **not a Java test certification**.
@@ -237,10 +298,56 @@ That command stops only services whose PID files match the explicit state. The
 runner separately owns/stops its TEST authority process. Do not kill arbitrary
 port owners or reuse a state with uncertain live processes.
 
-To isolate the **earlier missing-import trigger**, rerun with a fresh state path
-and omit only `--semantic-catalog`; reuse the already built pinned server (omit
-`--build` if unchanged). Expected diagnostic is the uncaptured ODO import, not the
-post-provisioning domain error. Do not omit the import in the proposed final fix.
+### 2a. Isolate Case A: the earlier missing-import trigger
+
+After the previous runner exits and confirms cleanup, use the same compiled
+baseline and worldview, but a **new** state directory and **no catalog option**:
+
+```powershell
+python tools/run_local_acceptance.py --server-repo "$root\server" --java $java --worldview "$root\imod" --state-dir "$root\missing-import-state" --readiness-only
+$missingImportExit = $LASTEXITCODE
+Get-Content "$root\missing-import-state\semantic-readiness.log"
+Get-Content "$root\missing-import-state\develop-readiness.json"
+Get-Content "$root\missing-import-state\run-report.json"
+```
+
+The **same minimal test ID** now should fail with the Case A uncaptured-import
+diagnostic, not the Case B domain diagnostic. This command intentionally reuses
+already compiled artifacts, so it omits `--build`; use that flag if Step 2 never
+built successfully. Do not omit the import in the proposed final fix.
+
+### 2b. Exact pytest invocation for debugging an already running stack
+
+The all-in-one runner above stops its services before returning. **Do not run
+pytest against its stopped state.** If the three services and authority are
+instead already running on explicitly prepared owned state, the equivalent
+single-test invocation is:
+
+```powershell
+$state = "C:\already-running-owned-test-state"
+$env:KLAB_FIXTURE_STATE_DIR = $state
+python -m pytest -o addopts= -o junit_family=xunit1 -m functional -vv -s tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge --junitxml="$state\manual-semantic-readiness.xml"
+```
+
+The state must contain the actual fixture's `scientist.json`; choose a fresh XML
+destination. `-o addopts=` removes the default live-test exclusion. This direct
+command does not provision, start or stop services. For a quick **server-only**
+cross-check while services are running (no Python scientific operation involved):
+
+```powershell
+$status = Invoke-RestMethod http://127.0.0.1:8091/reasoner/public/status
+$status.metadata.delegate.'semantic.candidate' | ConvertTo-Json -Depth 20
+```
+
+For the pinned Java baseline this shows the same zero accepted generation and
+diagnostic. Candidate construction is triggered by server worldview loading; the
+Python test observes that server failure, it does not create the invalid domain.
+
+To confirm the test IDs exist **without starting services or running live work**:
+
+```powershell
+python -m pytest -o addopts= -m functional --collect-only -q tests/functional/test_develop_compatibility.py
+```
 
 ### 3. Run full Python acceptance after the semantic contract is repaired
 
@@ -266,6 +373,20 @@ python tools/run_functional_acceptance.py --state-dir C:\owned-test-state --suit
 It is a read-only HTTP gate, not permission/restart acceptance. The full
 `develop-compatibility` workflow is owned-stack-only and mutates scientific state
 and restarts Runtime. The selected server checkout is preserved across restart.
+
+Its exact full-workflow pytest equivalent is:
+
+```powershell
+$env:KLAB_FIXTURE_STATE_DIR = "C:\already-running-owned-full-test-state"
+python -m pytest -o addopts= -o junit_family=xunit1 -m functional -vv -s tests/functional/test_develop_compatibility.py::test_python_and_java_services_work_before_and_after_runtime_restart --junitxml="$env:KLAB_FIXTURE_STATE_DIR\manual-develop-compatibility.xml"
+```
+
+Unlike the minimal test, this requires five owned services and compiled Runtime
+test controls, creates/releases scientific objects and restarts Runtime. Only run
+it against your disposable full TEST stack. It must get past readiness before its
+40-cell value/unit assertions and changed-Runtime-PID assertion can be exercised.
+An eventual pass here is a necessary local compatibility gate, not native
+Java-client or production-provider certification.
 
 ### Evidence boundary
 
