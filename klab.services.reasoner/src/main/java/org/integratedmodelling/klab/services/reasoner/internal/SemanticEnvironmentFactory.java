@@ -26,6 +26,32 @@ public final class SemanticEnvironmentFactory
   private final Map<String, java.util.Set<String>> coreIdentities;
   private final Map<String, String> documentLocators;
   private final CapturedAuthorityCatalog authorities;
+  private final Map<String,String> expectedDocumentHashes;
+  private volatile AuthorityBootstrap bootstrap;
+  private record BootstrapInput(org.integratedmodelling.klab.api.scope.Scope owner, String key) {}
+  private final Map<String,BootstrapInput> bootstrapInputs = new java.util.concurrent.ConcurrentHashMap<>();
+  public synchronized void enableAuthorityBootstrap() {
+    if (bootstrap != null) throw new IllegalStateException("Bootstrap is already enabled");
+    bootstrap = new AuthorityBootstrap(assetRoot.resolve("authority-bootstrap"), core);
+  }
+  public boolean authorityBootstrapEnabled() { return bootstrap != null; }
+  boolean publicationCurrent(CandidatePublicationCoordinator.Input<Worldview> input) {
+    if (bootstrap==null || input.payload().getAuthorityBindings().isEmpty()) return true;
+    var context=bootstrapInputs.get(input.dependencyRevision());
+    return context!=null && context.key().equals(AuthorityBootstrap.key(input.payload(),context.owner()));
+  }
+  void invalidateBootstrap() { if (bootstrap != null) bootstrap.invalidate(); bootstrapInputs.clear(); }
+  public CandidatePublicationCoordinator.Input<Worldview> capture(Worldview source, org.integratedmodelling.klab.api.scope.Scope owner) {
+    var input = capture(source);
+    if (bootstrap == null || source.getAuthorityBindings().isEmpty()) return input;
+    String key = AuthorityBootstrap.key(input.payload(), owner);
+    String revision = dependencyRevision + ":" + key;
+    while (bootstrapInputs.size() >= 64 && !bootstrapInputs.containsKey(revision))
+      bootstrapInputs.remove(bootstrapInputs.keySet().iterator().next());
+    bootstrapInputs.put(revision, new BootstrapInput(owner, key));
+    return new CandidatePublicationCoordinator.Input<>(input.sourceHashes(), input.sourceOrder(), revision,
+        input.configurationRevision(), input.payload(), input.beanStatus(), input.diagnostics());
+  }
   private final Map<String,java.util.Set<String>> coreClassNames;
 
   public SemanticEnvironmentFactory(Path privateAssetRoot, Map<String, byte[]> capturedCore) throws Exception {
@@ -43,6 +69,7 @@ public final class SemanticEnvironmentFactory
       Map<String, String> capturedDocumentLocators, Map<String, String> expectedDocumentHashes,
       CapturedAuthorityCatalog authorities) throws Exception {
     this.authorities = Objects.requireNonNull(authorities);
+    this.expectedDocumentHashes = Map.copyOf(expectedDocumentHashes);
     assetRoot = privateAssetRoot.toAbsolutePath().normalize();
     var owned = new LinkedHashMap<String, byte[]>();
     var digest = MessageDigest.getInstance("SHA-256");
@@ -219,6 +246,31 @@ public final class SemanticEnvironmentFactory
     return Map.copyOf(result);
   }
   @Override public CandidatePublicationCoordinator.Result<SemanticEnvironment> build(
+      CandidatePublicationCoordinator.Input<Worldview> input,
+      CandidatePublicationCoordinator.Cancellation cancellation) throws Exception {
+    var context = bootstrapInputs.get(input.dependencyRevision());
+    if (context == null) return buildCaptured(input, cancellation);
+    var owned = BeanIngestionPreflight.snapshot(input.payload());
+    if (!input.sourceHashes().equals(sources(owned)) || !input.sourceOrder().equals(sourceOrder(owned))
+        || input.beanStatus() != CandidatePublicationCoordinator.BeanStatus.VALID
+        || !CONFIGURATION_REVISION.equals(input.configurationRevision())
+        || !input.dependencyRevision().equals(dependencyRevision + ":" + context.key())
+        || !BeanIngestionPreflight.errors(owned).isEmpty() || !coreAliasErrors(owned).isEmpty())
+      throw new IllegalArgumentException("Bootstrap input does not match frozen validated manifest");
+    var catalog = bootstrap.prepare(owned, context.owner(), context.key(), cancellation);
+    var isolated = new SemanticEnvironmentFactory(assetRoot, core, documentLocators, expectedDocumentHashes, catalog);
+    var result = isolated.buildCaptured(isolated.capture(owned), cancellation);
+    try {
+      cancellation.checkpoint();
+      // Re-resolve exact metadata after compilation too; no publication of stale rights/artifacts.
+      bootstrap.prepare(owned, context.owner(), context.key(), cancellation);
+      return result;
+    } catch (Throwable stale) {
+      if (result.state() != null) result.state().close();
+      throw stale;
+    }
+  }
+  private CandidatePublicationCoordinator.Result<SemanticEnvironment> buildCaptured(
       CandidatePublicationCoordinator.Input<Worldview> input,
       CandidatePublicationCoordinator.Cancellation cancellation) throws Exception {
     cancellation.checkpoint();

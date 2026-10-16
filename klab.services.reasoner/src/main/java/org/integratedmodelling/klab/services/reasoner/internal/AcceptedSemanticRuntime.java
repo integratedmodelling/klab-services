@@ -21,6 +21,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   private void requireOpen() { if (closed) throw new IllegalStateException("Semantic runtime is closed"); }
   private final java.util.function.LongSupplier retryClock;
   private String rejectedKey;
+  private String submittedKey;
   private long retryAfter;
   private int rejectionCount;
   public record PreflightAttempt(Worldview snapshot, String key, long generation, boolean retry) {}
@@ -41,7 +42,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   AcceptedSemanticRuntime(SemanticEnvironmentFactory factory, java.util.function.LongSupplier clock) {
     this.factory = Objects.requireNonNull(factory);
     this.retryClock = Objects.requireNonNull(clock);
-    coordinator = new CandidatePublicationCoordinator<>(factory, input -> true);
+    coordinator = new CandidatePublicationCoordinator<>(factory,
+        input -> !factory.authorityBootstrapEnabled() || factory.publicationCurrent(input));
   }
 
   /** A failed poll is not a new authoritative revision. Recheck transient failures with capped backoff. */
@@ -54,6 +56,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       synchronized (lifecycle) { return !closed; }
     }
     synchronized (lifecycle) {
+      if (factory.authorityBootstrapEnabled() && Objects.equals(key, submittedKey)) return false;
       return !closed && (!Objects.equals(key, rejectedKey) || retryClock.getAsLong() - retryAfter >= 0);
     }
   }
@@ -65,7 +68,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     var owned = BeanIngestionPreflight.snapshot(snapshot);
     var key = preflightKey(owned, scope);
     synchronized (lifecycle) {
-      if (closed || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))
+      if (closed || (factory.authorityBootstrapEnabled() && Objects.equals(key, submittedKey))
+          || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))
         return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), false);
       coordinator.invalidate();
       return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), true);
@@ -87,10 +91,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
 
   public boolean submit(Worldview snapshot, PreflightAttempt attempt, Scope scope) {
     synchronized (lifecycle) { if (closed) return false; }
-    var input = factory.capture(snapshot);
+    var input = factory.authorityBootstrapEnabled() ? factory.capture(snapshot, scope) : factory.capture(snapshot);
     synchronized (lifecycle) {
       if (!current(attempt, scope) || !attempt.key().equals(preflightKey(snapshot, scope))) return false;
-      clearRejected(); submittedSources = input.sourceHashes(); coordinator.submit(input); return true;
+      clearRejected(); submittedKey = attempt.key(); submittedSources = input.sourceHashes(); coordinator.submit(input); return true;
     }
   }
 
@@ -117,8 +121,14 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     } catch (Exception failure) { throw new IllegalArgumentException("Cannot fingerprint preflight input", failure); }
   }
   public long submit(Worldview snapshot) {
+    if(factory.authorityBootstrapEnabled()) throw new SecurityException("Bootstrap submission requires its requesting scope");
     var input = factory.capture(snapshot);
     synchronized (lifecycle) { requireOpen(); clearRejected(); submittedSources = input.sourceHashes(); return coordinator.submit(input); }
+  }
+  public long submit(Worldview snapshot, Scope owner) {
+    var attempt=beginPreflight(snapshot,owner);
+    if(attempt.retry()) submit(attempt.snapshot(),attempt,owner);
+    return coordinator.status().inputGeneration();
   }
   public Map<String, String> submittedSources() { return submittedSources; }
   public record Metadata(long generation, SemanticCapabilitiesSnapshot publication) {}
@@ -126,7 +136,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     try (var lease = lease()) { return new Metadata(lease.generation(), lease.state().actor().semanticCapabilitiesSnapshot()); }
     catch (IllegalStateException unavailable) { return new Metadata(0, SemanticCapabilitiesSnapshot.initial()); }
   }
-  public void invalidate() { synchronized (lifecycle) { if (!closed) { clearRejected(); coordinator.invalidate(); } } }
+  public boolean authorityBootstrapEnabled() { return factory.authorityBootstrapEnabled(); }
+  public void invalidate() { synchronized (lifecycle) { if (!closed) { clearRejected(); submittedKey=null; factory.invalidateBootstrap(); coordinator.invalidate(); } } }
   public void rejectPreflight(List<org.integratedmodelling.klab.api.services.runtime.Notification> failures) {
     synchronized (lifecycle) {
       if (closed) return;
@@ -360,5 +371,6 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       closed = true; searches.invalidateAll(); searches.cleanUp();
     }
     coordinator.close();
+    factory.invalidateBootstrap();
   }
 }

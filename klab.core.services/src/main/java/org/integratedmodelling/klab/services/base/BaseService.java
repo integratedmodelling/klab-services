@@ -181,6 +181,10 @@ public abstract class BaseService implements KlabService {
     this.componentRegistry = new ComponentRegistry(this, this.startupOptions);
   }
 
+  protected void setOwnedBootstrapRegistry(java.nio.file.Path root) throws java.io.IOException {
+    this.componentRegistry = ComponentRegistry.ownedBootstrap(this, startupOptions, root);
+  }
+
   public ComponentRegistry getComponentRegistry() {
     return componentRegistry;
   }

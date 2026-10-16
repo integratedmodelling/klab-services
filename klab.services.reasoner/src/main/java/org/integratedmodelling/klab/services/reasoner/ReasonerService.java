@@ -212,7 +212,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var definition = worldview == null ? null : worldview.getAuthorityBindings().stream()
         .filter(binding -> binding.localId().equals(name)).findFirst().orElse(null);
     if (definition == null) throw new java.util.NoSuchElementException("Authority is not configured");
-    if (semanticOnly) {
+    if (semanticOnly && !authorityBootstrapActor) {
       if (!capturedAuthorities.authorized(definition, scope)) throw new SecurityException("Authority component access is not captured");
       return definition;
     }
@@ -284,7 +284,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       throw new KlabValidationException("Codelists must match the worldview configuration");
     if (!Objects.equals(declared.getAuthorityParameters().get("semanticBoundaries"), request.parameters().get("semanticBoundaries")))
       throw new KlabValidationException("Semantic boundaries must match the worldview configuration");
-    var provider = semanticOnly ? capturedAuthorities.provider(selected, request, semanticAssets)
+    var provider = authorityBootstrapActor ? getComponentRegistry().getAuthority(selected,scope)
+        : semanticOnly ? capturedAuthorities.provider(selected, request, semanticAssets)
         : Utils.Resources.resolveAuthority(selected, scope, this, worldview);
     if (provider == null)
       throw new KlabValidationException("Authority provider is unavailable: " + urn);
@@ -345,6 +346,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   private final OWL owl;
   private final boolean semanticOnly;
+  private boolean authorityBootstrapActor;
+  private List<Worldview.AuthorityBinding> bootstrapDisposalBindings=List.of();
+  public void bootstrapDisposalBindings(Worldview source) {
+    if (!authorityBootstrapActor) throw new IllegalStateException("Not a bootstrap actor");
+    bootstrapDisposalBindings=List.copyOf(source.getAuthorityBindings());
+  }
   private volatile org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime candidateRuntime;
 
   public org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime candidateRuntime() { return candidateRuntime; }
@@ -763,10 +770,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
       java.nio.file.Path privateKnowledge, java.nio.file.Path privateState,
       org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog authorities) {
+    this(scope, privateKnowledge, privateState, authorities, false);
+  }
+  public ReasonerService(
+      org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
+      java.nio.file.Path privateKnowledge, java.nio.file.Path privateState,
+      org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog authorities,
+      boolean authorityBootstrapActor) {
     super(scope, Type.REASONER,
         new org.integratedmodelling.klab.services.reasoner.internal.SemanticExecutionSettings(),
         semanticDisplayUrl());
     this.semanticOnly = true;
+    this.authorityBootstrapActor = authorityBootstrapActor;
     this.capturedAuthorities = Objects.requireNonNull(authorities); this.semanticAssets = privateState;
     OWL ownedOwl = null;
     try {
@@ -787,6 +802,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.indexer = new Indexer(scope);
     this.emergence = new IntelligentMap<>(scope);
     this.configuration.setServiceId(UUID.randomUUID().toString());
+      if (authorityBootstrapActor) {
+        startupOptions.setUpdateComponents(false); startupOptions.setAutoUpdateComponents(false);
+        try { setOwnedBootstrapRegistry(privateState.resolve("components")); }
+        catch (java.io.IOException failure) { throw new IllegalStateException("Cannot create owned provider registry", failure); }
+      }
       scope.bind(this);
       // This overload owns its matcher/strategies without loading deployment extensions.
       this.observationReasoner = new ObservationReasoner((Reasoner)this, this::declareObservable);
@@ -807,9 +827,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     catch (java.net.MalformedURLException e) { throw new IllegalStateException(e); }
   }
 
+  public Map<String, Long> successfulAuthorityConfigurations() { return authorityBindings.codelistRevisions(); }
+
   public void disposeSemanticEnvironment() {
     if (!semanticOnly) throw new IllegalStateException("Not a private semantic environment");
-    try { authorityBindings.clear(); }
+    try {
+      if (authorityBootstrapActor && getComponentRegistry() != null) {
+        try {
+          for (var binding : bootstrapDisposalBindings) {
+            var provider = getComponentRegistry().getAuthority(binding, serviceScope());
+            if (provider != null) org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.closeOwnedProvider(provider);
+          }
+        } finally { getComponentRegistry().closeOwnedBootstrap(); }
+      }
+      authorityBindings.clear();
+    }
     finally {
     try { owl.reset(); }
     finally {
@@ -877,7 +909,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    */
   boolean checkWorldview() {
 
-    if (candidateRuntime != null && !semanticOnly && worldview != null) {
+    if (candidateRuntime != null && !semanticOnly && worldview != null && !candidateRuntime.authorityBootstrapEnabled()) {
       boolean available = candidateRuntime.status().acceptedGeneration() > 0 || Utils.URLs.isLocalHost(getUrl());
       setOperational(available);
       return available;
@@ -2303,7 +2335,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       var errors = BeanIngestionPreflight.errors(complete);
       if (!errors.isEmpty()) return rejectBeanUpdate(changes, affectedKnowledge, errors);
       this.worldview = complete;
-      candidateRuntime.submit(complete);
+      if (candidateRuntime.authorityBootstrapEnabled()) candidateRuntime.submit(complete,scope);
+      else candidateRuntime.submit(complete);
       changes.getNotifications().add(Notification.info("Bean preflight passed; whole-worldview logical validation is pending"));
       return changes;
     }

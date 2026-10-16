@@ -19,8 +19,11 @@ public final class SemanticEnvironmentScope extends AbstractServiceDelegatingSco
   private final ResourcesService sourceResolver;
   private final java.util.List<Notification> messages = new java.util.concurrent.CopyOnWriteArrayList<>();
 
-  public SemanticEnvironmentScope(ResourcesService capturedSourceResolver) {
-    super(new ChannelImpl((org.integratedmodelling.klab.api.identities.Identity)null) {
+  public SemanticEnvironmentScope(ResourcesService capturedSourceResolver) { this(capturedSourceResolver, null); }
+  /** Only a bootstrap producer receives this explicit owner; accepted actors keep no live fallback. */
+  public SemanticEnvironmentScope(ResourcesService capturedSourceResolver, org.integratedmodelling.klab.api.scope.Scope bootstrapOwner) {
+    super(new ChannelImpl(bootstrapOwner instanceof org.integratedmodelling.klab.api.scope.UserScope user ? user.getUser()
+        : bootstrapOwner == null ? null : bootstrapOwner.getIdentity()) {
       private final String id = "candidate-" + UUID.randomUUID();
       private boolean errors;
       @Override public String getDispatchId() { return id; }

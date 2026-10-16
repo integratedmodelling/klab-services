@@ -258,4 +258,21 @@ class AuthorityComponentResolverTest {
         && "fixture:component:2.0.0".equals(resource.getMetadata().get(Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY)))),same(scope));
   }
 
+
+  @Test void bootstrapArtifactHashIsCheckedAtRealDownloadBoundaryBeforePluginExecution() throws Exception {
+    var remote=source("remote",component("selected",publicRights(),"1.0.0","2.0.0"));services(remote);
+    var schema=org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.create("jar",
+        org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.Type.STREAM,KlabAsset.KnowledgeClass.COMPONENT,"fixture").mediaType("application/java-archive");
+    remote.capabilities(scope).getExportSchemata().put("jar",List.of(schema));
+    var resolution=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);
+    resolution.resources().getResults().iterator().next().getMetadata().put("authority.bootstrap.expected.md5","00000000000000000000000000000000");
+    var registry=initializedRegistry(component("installed",publicRights(),"1.0.0","3.0.0"));
+    when(scope.findService(eq(ResourcesService.class),any())).thenReturn(Optional.of(remote));
+    when(remote.exportAsset(anyString(),any(),anyString(),any(),same(scope))).thenReturn(new java.io.ByteArrayInputStream("wrong artifact".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    assertFalse(registry.loadComponents(resolution.resources(),scope));
+    assertTrue(resolution.resources().getNotifications().stream().anyMatch(n->n.getMessage().contains("differs from selected descriptor")));
+    var field=ComponentRegistry.class.getDeclaredField("componentManager");field.setAccessible(true);
+    verify((org.pf4j.PluginManager)field.get(registry),never()).loadPlugin(any());
+  }
+
 }

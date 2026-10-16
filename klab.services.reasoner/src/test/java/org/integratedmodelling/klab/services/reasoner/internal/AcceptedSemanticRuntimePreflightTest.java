@@ -116,4 +116,55 @@ class AcceptedSemanticRuntimePreflightTest {
     assertFalse(runtime.shouldRetryPreflight(source,scope));assertFalse(runtime.beginPreflight(source,scope).retry());
     assertFalse(runtime.rejectPreflight(attempt,errors,scope));assertFalse(runtime.submit(source,attempt,scope));
   }
+
+  private void bootstrapEnabled() {
+    when(factory.authorityBootstrapEnabled()).thenReturn(true);
+    when(factory.publicationCurrent(any())).thenReturn(true);
+    when(factory.capture(any(),same(scope))).thenAnswer(i->factory.capture(i.getArgument(0)));
+  }
+  @Test void optInBootstrapDoesNotRepeatSubmittedInputOnEveryPoll() throws Exception {
+    bootstrapEnabled();try(var runtime=runtime()) {
+      var source=world("first");assertTrue(runtime.submit(source,runtime.beginPreflight(source,scope),scope));
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));long generation=runtime.status().inputGeneration();
+      for(int i=0;i<5;i++) {assertFalse(runtime.shouldRetryPreflight(source,scope));assertFalse(runtime.beginPreflight(source,scope).retry());}
+      assertEquals(generation,runtime.status().inputGeneration());assertTrue(runtime.shouldRetryPreflight(world("changed"),scope));
+      verify(factory,times(1)).capture(any(),same(scope));
+    }
+  }
+  @Test void bootstrapPendingAndFailureKeepPreviousAcceptedGenerationAvailable() throws Exception {
+    bootstrapEnabled();var entered=new java.util.concurrent.CountDownLatch(1);var finish=new java.util.concurrent.CountDownLatch(1);
+    when(factory.build(any(),any())).thenAnswer(i->{
+      CandidatePublicationCoordinator.Input<Worldview> input=i.getArgument(0);
+      if(input.payload().getOntologies().getFirst().getSourceCode().equals("first"))
+        return new CandidatePublicationCoordinator.Result<>(state,CandidatePublicationCoordinator.LogicalStatus.VALID,true,List.of());
+      entered.countDown();assertTrue(finish.await(5,java.util.concurrent.TimeUnit.SECONDS));throw new IllegalStateException("bootstrap failed");
+    });
+    try(var runtime=runtime()) {
+      runtime.submit(world("first"),scope);assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));long accepted=runtime.status().acceptedGeneration();assertTrue(accepted>0);
+      runtime.submit(world("changed"),scope);assertTrue(entered.await(5,java.util.concurrent.TimeUnit.SECONDS));
+      assertEquals(accepted,runtime.status().acceptedGeneration());try(var lease=runtime.lease()){assertSame(state,lease.state());}
+      finish.countDown();assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));assertEquals(CandidatePublicationCoordinator.LogicalStatus.FAILED,runtime.status().logicalStatus());
+      assertEquals(accepted,runtime.status().acceptedGeneration());try(var lease=runtime.lease()){assertSame(state,lease.state());}
+      verify(state,never()).close();assertFalse(runtime.shouldRetryPreflight(world("changed"),scope));
+    } finally {finish.countDown();}
+  }
+  @Test void bootstrapPublicationGuardRejectsChangedOwnerAndPreservesAcceptedState() throws Exception {
+    bootstrapEnabled();var replacement=mock(SemanticEnvironment.class);
+    when(factory.build(any(),any())).thenReturn(new CandidatePublicationCoordinator.Result<>(state,CandidatePublicationCoordinator.LogicalStatus.VALID,true,List.of()),
+        new CandidatePublicationCoordinator.Result<>(replacement,CandidatePublicationCoordinator.LogicalStatus.VALID,true,List.of()));
+    try(var runtime=runtime()) {
+      runtime.submit(world("first"),scope);assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));long accepted=runtime.status().acceptedGeneration();
+      when(factory.publicationCurrent(any())).thenReturn(false);runtime.submit(world("changed"),scope);assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertEquals(accepted,runtime.status().acceptedGeneration());verify(replacement).close();verify(state,never()).close();
+    }
+  }
+  @Test void bootstrapRejectsUnscopedSubmitAndExplicitRetryClearsCachedAttempt() throws Exception {
+    bootstrapEnabled();try(var runtime=runtime()) {
+      assertThrows(SecurityException.class,()->runtime.submit(world("first")));
+      runtime.submit(world("first"),scope);assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertFalse(runtime.shouldRetryPreflight(world("first"),scope));runtime.invalidate();
+      verify(factory).invalidateBootstrap();assertTrue(runtime.shouldRetryPreflight(world("first"),scope));
+    }
+  }
+
 }

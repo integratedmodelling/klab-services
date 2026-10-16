@@ -367,6 +367,10 @@ public final class CapturedAuthorityCatalog {
   private static UnsupportedOperationException unresolved(String reason) {
     return new UnsupportedOperationException("CANDIDATE_ISOLATION_UNSUPPORTED: " + reason);
   }
+  public static void closeOwnedProvider(Authority provider) {
+    try { closeOwnedClients(provider, provider.getClass().getClassLoader(), Collections.newSetFromMap(new IdentityHashMap<>())); }
+    catch (Exception failure) { throw new IllegalStateException("Owned provider cleanup failed", failure); }
+  }
   private static void closeOwnedClients(Object value, ClassLoader owner, Set<Object> seen) throws Exception {
     if (value == null || !seen.add(value)) return;
     if (value instanceof HttpClient client) { client.close(); return; }

@@ -132,6 +132,29 @@ public class ComponentRegistry {
   private ComponentEventLog componentEventLog = new ComponentEventLog(null);
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+  private boolean ownedBootstrapRegistry;
+  /** Explicit owned staging paths; never reads global deployment catalog/cache or schedules updates. */
+  public static ComponentRegistry ownedBootstrap(BaseService service, StartupOptions options,
+      java.nio.file.Path root) throws java.io.IOException {
+    var path = root.toAbsolutePath().normalize();
+    if (java.nio.file.Files.exists(path)) throw new IllegalArgumentException("Bootstrap registry must be fresh");
+    java.nio.file.Files.createDirectories(path);
+    java.nio.file.Files.createDirectories(path.resolve("cache"));
+    var registry = new ComponentRegistry(service, options,
+        new MavenComponentCache(path.resolve("cache").toFile()), List.of());
+    registry.ownedBootstrapRegistry = true;
+    registry.catalogFile = path.resolve("catalog.json").toFile();
+    java.nio.file.Files.writeString(registry.catalogFile.toPath(), "[]");
+    registry.componentEventLog = new ComponentEventLog(path.resolve("history.jsonl").toFile());
+    registry.initializeComponents(path.toFile());
+    return registry;
+  }
+  public synchronized void closeOwnedBootstrap() {
+    if (!ownedBootstrapRegistry) throw new IllegalStateException("Not an owned bootstrap registry");
+    scheduler.shutdownNow();
+    if (componentManager != null) { componentManager.stopPlugins(); componentManager.unloadPlugins(); }
+  }
+
   public ComponentRegistry(BaseService service, StartupOptions options) {
     this(service, options, null, List.of());
     readConfiguration(service, options);
@@ -3068,6 +3091,12 @@ public class ComponentRegistry {
       } catch (Exception e) {
         resourceSet.getNotifications().add(Notification.error(e));
         scope.error(e);
+        return false;
+      }
+      // Bootstrap adds a descriptor-vetted content pin; verify before executing plugin code.
+      var expectedHash = result.getMetadata().get("authority.bootstrap.expected.md5", String.class);
+      if (expectedHash != null && !expectedHash.equals(Utils.Files.hash(plugin))) {
+        resourceSet.getNotifications().add(Notification.error("Authority artifact differs from selected descriptor"));
         return false;
       }
       var installation =
