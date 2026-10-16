@@ -112,29 +112,29 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     /**
      * Resolve an authority into a Reasoner, installing its component from a Resources service when
-     * the authority is advertised as embeddable. Only Resources providers of the loaded worldview
-     * participate in discovery. Locally installed providers remain available without discovery.
+     * the authority is advertised as embeddable. Connected owner-authorized Resources
+     * services participate through COMPONENT resolution; worldview hosting is unrelated.
+     * Locally installed providers remain available without discovery.
      */
     public static org.integratedmodelling.klab.api.services.Authority resolveAuthority(
         Worldview.AuthorityBinding binding, Scope scope, BaseService targetService, Worldview worldview) {
       var registry = targetService.getComponentRegistry();
       var provider = registry.getAuthority(binding, scope);
       if (provider != null || !binding.provider().embeddable()) return provider;
-      for (var service : scope.getServices(ResourcesService.class)) {
-        var capabilities = service.capabilities(scope);
-        if (capabilities == null || !capabilities.isWorldviewProvider()
-            || !Objects.equals(worldview.getUrn(), capabilities.getAdoptedWorldview())) continue;
-        var response = service.resolve(binding.componentUrn() + "@" + binding.componentVersion(),
-            KlabAsset.KnowledgeClass.COMPONENT, scope instanceof UserScope user ? user : null);
-        if (response == null || response.isEmpty()) continue;
-        // Existing component resolution may choose a compatible version. Reject substitutions.
-        if (response.getResults().stream().noneMatch(resource ->
-            binding.componentUrn().equals(resource.getResourceUrn())
-                && binding.componentVersion().equals(resource.getResourceVersion()))) continue;
-        if (registry.loadComponents(response, scope)) {
-          provider = registry.getAuthority(binding, scope);
-          if (provider != null) return provider;
-        }
+      var resolution = org.integratedmodelling.klab.components.AuthorityComponentResolver.resolve(
+          binding.provider().urn() + "@" + binding.provider().version(), scope);
+      var exact = resolution.components().stream()
+          .filter(component -> component.id().equals(binding.componentUrn())
+              && component.version().equals(binding.componentVersion())
+              && component.authorities().contains(binding.provider())).toList();
+      if (exact.size() > 1) throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+          "Ambiguous authority component content for " + binding.provider().urn());
+      if (exact.size() == 1) {
+        var resources = resolution.resources();
+        resources.getResults().removeIf(resource -> !binding.componentUrn().equals(Version.splitVersion(resource.getResourceUrn()).getFirst())
+            || !binding.componentVersion().equals(resource.getResourceVersion()));
+        if (!resources.isEmpty() && loadAuthorityComponents(resources, scope, registry))
+          return registry.getAuthority(binding, scope);
       }
       return null;
     }
@@ -150,37 +150,45 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           targetService
               .getComponentRegistry()
               .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
-      // Startup has a service scope, not a user scope. The client retains its authenticated
-      // service-owner credentials when no user scope is supplied to the resolver.
-      var responses = new ArrayList<ResourceSet>();
-      for (var service : scope.getServices(ResourcesService.class)) {
-        try {
-          var capabilities = service.capabilities(scope);
-          if (capabilities == null || !capabilities.isWorldviewProvider()
-              // adoptedWorldview is a name, not the opaque ID of a loaded worldview instance.
-              || worldview == null || worldview.getUrn() == null
-              || !Objects.equals(worldview.getUrn(), capabilities.getAdoptedWorldview())) {
-            continue;
-          }
-          var response = service.resolve(urn, KlabAsset.KnowledgeClass.COMPONENT,
-              scope instanceof UserScope userScope ? userScope : null);
-          if (response != null && !response.isEmpty()) responses.add(response);
-        } catch (RuntimeException e) {
-          scope.warn("Cannot discover authority " + urn + " from " + service.serviceName()
-              + ": " + e.getMessage());
-        }
-      }
-      var result = merge(responses.toArray(ResourceSet[]::new));
+      if (ret != null) return ret;
+      var resolved = org.integratedmodelling.klab.components.AuthorityComponentResolver.resolve(urn, scope);
+      if (resolved.components().size() > 1)
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+            "Ambiguous authority component content for " + coordinates.getFirst());
+      var result = resolved.resources();
       if (!result.isEmpty()) {
-        if (!targetService.getComponentRegistry().loadComponents(result, scope)) {
+        if (!loadAuthorityComponents(result, scope, targetService.getComponentRegistry())) {
           throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
               "Failed to load component for authority " + urn + ": " + result.getNotifications());
         }
-        return targetService
-            .getComponentRegistry()
-            .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
+        var component = resolved.components().getFirst();
+        var authorities = component.authorities().stream().filter(authority ->
+            coordinates.getFirst().equals(authority.urn())
+                && (!urn.contains("@") || coordinates.getSecond().equals(authority.version()))).toList();
+        if (authorities.size() != 1)
+          throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+              "Cannot honor an exact authority descriptor for " + urn);
+        return targetService.getComponentRegistry().getAuthority(new Worldview.AuthorityBinding(
+            coordinates.getFirst(), "", "", 0, 0, "", authorities.getFirst(),
+            component.id(), component.version(), null), scope);
       }
       return result.isEmpty() ? ret : null;
+    }
+
+    private static boolean loadAuthorityComponents(ResourceSet resources, Scope scope,
+        org.integratedmodelling.klab.components.ComponentRegistry registry) {
+      synchronized (registry) {
+        for (var resource : resources.getResults()) {
+          var requested = Version.splitVersion(resource.getResourceUrn());
+          var installed = registry.getComponent(requested.getFirst(), requested.getSecond());
+          // The legacy loader accepts compatible installed components. Authority binding is exact.
+          if (installed != null && !installed.version().equals(requested.getSecond()))
+            throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+                "Cannot honor exact authority component " + resource.getResourceUrn()
+                    + ": installed compatible version " + installed.version() + " would be selected");
+        }
+        return registry.loadComponents(resources, scope);
+      }
     }
   }
 

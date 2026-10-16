@@ -427,10 +427,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     snapshot.getObservationStrategies().addAll(source.getObservationStrategies());
     snapshot.getNotifications().addAll(source.getNotifications());
     snapshot.getAnnotations().addAll(source.getAnnotations());
+    var installed = getComponentRegistry().getComponents(scope).stream()
+        .filter(component -> component.usageRights() == null
+            || component.usageRights().checkAuthorization(scope)).toList();
+    var authorityMetadata = org.integratedmodelling.klab.components.AuthorityComponentResolver
+        .forWorldview(snapshot, installed, scope);
+    snapshot.getMetadata().put(org.integratedmodelling.klab.components.AuthorityComponentResolver.REVISION_METADATA,
+        authorityMetadata.revision());
+    snapshot.getNotifications().addAll(authorityMetadata.diagnostics());
     org.integratedmodelling.klab.services.resources.lang.WorldviewAuthorityValidator.validate(
-        snapshot, getComponentRegistry().getComponents(scope).stream()
-            .filter(component -> component.usageRights() == null
-                || component.usageRights().checkAuthorization(scope)).toList());
+        snapshot, authorityMetadata.components());
     return snapshot;
   }
 

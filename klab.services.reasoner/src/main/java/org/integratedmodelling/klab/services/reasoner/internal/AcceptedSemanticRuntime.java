@@ -19,6 +19,11 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   private final Object lifecycle = new Object();
   private volatile boolean closed;
   private void requireOpen() { if (closed) throw new IllegalStateException("Semantic runtime is closed"); }
+  private final java.util.function.LongSupplier retryClock;
+  private String rejectedKey;
+  private long retryAfter;
+  private int rejectionCount;
+  public record PreflightAttempt(Worldview snapshot, String key, long generation, boolean retry) {}
   private volatile Map<String, String> submittedSources = Map.of();
   private record SearchLease(Object owner, int actorId,
       CandidatePublicationCoordinator<Worldview, SemanticEnvironment>.Lease lease, Scope scope) {}
@@ -31,12 +36,89 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           }).build();
 
   public AcceptedSemanticRuntime(SemanticEnvironmentFactory factory) {
+    this(factory, System::nanoTime);
+  }
+  AcceptedSemanticRuntime(SemanticEnvironmentFactory factory, java.util.function.LongSupplier clock) {
     this.factory = Objects.requireNonNull(factory);
+    this.retryClock = Objects.requireNonNull(clock);
     coordinator = new CandidatePublicationCoordinator<>(factory, input -> true);
+  }
+
+  /** A failed poll is not a new authoritative revision. Recheck transient failures with capped backoff. */
+  public boolean shouldRetryPreflight(Worldview snapshot, Scope scope) {
+    synchronized (lifecycle) { if (closed) return false; }
+    final String key;
+    try { key = preflightKey(snapshot, scope); }
+    catch (IllegalArgumentException malformed) {
+      // Let the normal preflight report malformed inputs; an unreadable key must not hide them.
+      synchronized (lifecycle) { return !closed; }
+    }
+    synchronized (lifecycle) {
+      return !closed && (!Objects.equals(key, rejectedKey) || retryClock.getAsLong() - retryAfter >= 0);
+    }
+  }
+
+  public PreflightAttempt beginPreflight(Worldview snapshot, Scope scope) {
+    synchronized (lifecycle) {
+      if (closed) return new PreflightAttempt(null, "", coordinator.status().inputGeneration(), false);
+    }
+    var owned = BeanIngestionPreflight.snapshot(snapshot);
+    var key = preflightKey(owned, scope);
+    synchronized (lifecycle) {
+      if (closed || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))
+        return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), false);
+      coordinator.invalidate();
+      return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), true);
+    }
+  }
+
+  public boolean rejectPreflight(PreflightAttempt attempt,
+      List<org.integratedmodelling.klab.api.services.runtime.Notification> failures, Scope scope) {
+    synchronized (lifecycle) {
+      if (!current(attempt, scope)) return false;
+      rejectionCount = Objects.equals(rejectedKey, attempt.key()) ? Math.min(4, rejectionCount + 1) : 1;
+      rejectedKey = attempt.key();
+      retryAfter = retryClock.getAsLong() + Duration.ofSeconds(Math.min(60, 10L << (rejectionCount - 1))).toNanos();
+      coordinator.rejectPreflight(failures.stream()
+          .map(org.integratedmodelling.klab.api.services.runtime.Notification::getMessage).toList());
+      return true;
+    }
+  }
+
+  public boolean submit(Worldview snapshot, PreflightAttempt attempt, Scope scope) {
+    synchronized (lifecycle) { if (closed) return false; }
+    var input = factory.capture(snapshot);
+    synchronized (lifecycle) {
+      if (!current(attempt, scope) || !attempt.key().equals(preflightKey(snapshot, scope))) return false;
+      clearRejected(); submittedSources = input.sourceHashes(); coordinator.submit(input); return true;
+    }
+  }
+
+  private boolean current(PreflightAttempt attempt, Scope scope) {
+    return !closed && attempt != null && attempt.retry()
+        && coordinator.status().inputGeneration() == attempt.generation()
+        && attempt.key().equals(preflightKey(attempt.snapshot(), scope));
+  }
+
+  private void clearRejected() { rejectedKey = null; rejectionCount = 0; retryAfter = 0; }
+
+  private String preflightKey(Worldview snapshot, Scope scope) {
+    try {
+      var metadataRevision = snapshot.getMetadata().get(
+          org.integratedmodelling.klab.components.AuthorityComponentResolver.REVISION_METADATA);
+      var payload = Arrays.asList(new TreeMap<>(SemanticEnvironmentFactory.sources(snapshot)),
+          SemanticEnvironmentFactory.sourceOrder(snapshot), factory.dependencyRevision(),
+          SemanticEnvironmentFactory.CONFIGURATION_REVISION, metadataRevision,
+          snapshot.getAuthorityBindings().stream().sorted(Comparator.comparing(Worldview.AuthorityBinding::localId)).toList(),
+          org.integratedmodelling.klab.components.AuthorityComponentResolver.ownerRevision(scope));
+      var bytes = JacksonConfiguration.newObjectMapper()
+          .enable(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsBytes(payload);
+      return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes));
+    } catch (Exception failure) { throw new IllegalArgumentException("Cannot fingerprint preflight input", failure); }
   }
   public long submit(Worldview snapshot) {
     var input = factory.capture(snapshot);
-    synchronized (lifecycle) { requireOpen(); submittedSources = input.sourceHashes(); return coordinator.submit(input); }
+    synchronized (lifecycle) { requireOpen(); clearRejected(); submittedSources = input.sourceHashes(); return coordinator.submit(input); }
   }
   public Map<String, String> submittedSources() { return submittedSources; }
   public record Metadata(long generation, SemanticCapabilitiesSnapshot publication) {}
@@ -44,9 +126,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     try (var lease = lease()) { return new Metadata(lease.generation(), lease.state().actor().semanticCapabilitiesSnapshot()); }
     catch (IllegalStateException unavailable) { return new Metadata(0, SemanticCapabilitiesSnapshot.initial()); }
   }
-  public void invalidate() { coordinator.invalidate(); }
+  public void invalidate() { synchronized (lifecycle) { if (!closed) { clearRejected(); coordinator.invalidate(); } } }
   public void rejectPreflight(List<org.integratedmodelling.klab.api.services.runtime.Notification> failures) {
-    coordinator.rejectPreflight(failures.stream().map(org.integratedmodelling.klab.api.services.runtime.Notification::getMessage).toList());
+    synchronized (lifecycle) {
+      if (closed) return;
+      clearRejected();
+      coordinator.rejectPreflight(failures.stream().map(org.integratedmodelling.klab.api.services.runtime.Notification::getMessage).toList());
+    }
   }
   public CandidatePublicationCoordinator.Status status() { return coordinator.status(); }
   public boolean awaitIdle(Duration timeout) throws InterruptedException { return coordinator.awaitIdle(timeout); }

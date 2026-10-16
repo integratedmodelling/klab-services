@@ -912,6 +912,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         long discoveryStarted = System.nanoTime();
         Worldview discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
         if (discovered == null) continue;
+        if (candidateRuntime != null && !semanticOnly
+            && !candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) continue;
         serviceScope().info("Worldview discovered from " + resources.getUrl() + " in "
             + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - discoveryStarted) + " ms");
         var notifications = loadKnowledge(discovered, serviceScope());
@@ -2025,12 +2027,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public synchronized ResourceSet loadKnowledge(Worldview worldview, Scope scope) {
-    if (candidateRuntime != null && !semanticOnly) candidateRuntime.invalidate();
+    org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt = null;
+    if (candidateRuntime != null && !semanticOnly && worldview != null && !worldview.getOntologies().isEmpty()) {
+      try { attempt = candidateRuntime.beginPreflight(worldview, scope); }
+      catch (RuntimeException failure) {
+        candidateRuntime.invalidate();
+        return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable"));
+      }
+      if (!attempt.retry()) return ResourceSet.empty();
+      worldview = attempt.snapshot();
+    } else if (candidateRuntime != null && !semanticOnly) {
+      candidateRuntime.invalidate();
+    }
     List<Notification> notifications = new ArrayList<>();
     // Ingestion also runs before user scopes exist. Collect on the supplied channel and always
     // detach the listener, so startup errors survive in the ontology validation diagnostics.
     try (var collector = new IngestionNotifications(scope, notifications)) {
-      return loadKnowledge(worldview, scope, notifications);
+      return loadKnowledge(worldview, scope, notifications, attempt);
     } finally {
       if (candidateRuntime == null || semanticOnly) {
       if (semanticValidationState.loading())
@@ -2040,7 +2053,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
   }
 
-  private ResourceSet loadKnowledge(Worldview worldview, Scope scope, List<Notification> ret) {
+  private ResourceSet loadKnowledge(Worldview worldview, Scope scope, List<Notification> ret,
+      org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt) {
     // Freeze and validate authoritative semantic beans before initialization or any OWL write.
     // Aggregate isEmpty flags may be stale; current structured diagnostics own this gate.
     if (worldview == null || worldview.getOntologies().isEmpty())
@@ -2049,7 +2063,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       worldview = BeanIngestionPreflight.snapshot(worldview);
       var beanErrors = BeanIngestionPreflight.errors(worldview);
       if (!beanErrors.isEmpty()) {
-        if (candidateRuntime != null && !semanticOnly) candidateRuntime.rejectPreflight(beanErrors);
+        if (candidateRuntime != null && !semanticOnly
+            && !candidateRuntime.rejectPreflight(attempt, beanErrors, scope))
+          return ResourceSet.empty(Notification.info("Stale bean preflight discarded"));
         worldviewLoadDiagnostics = List.copyOf(beanErrors);
         var rejected = ResourceSet.empty();
         rejected.getNotifications().addAll(beanErrors);
@@ -2058,11 +2074,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     } catch (RuntimeException e) {
       return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable: " + e.getMessage()));
     }
-    if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(worldview, false))
-      return ResourceSet.empty(Notification.error("Authoritative worldview has no valid root ontology"));
+    if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(worldview, false)) {
+      List<Notification> failures = List.of(Notification.error("Authoritative worldview has no valid root ontology"));
+      if (candidateRuntime != null && !semanticOnly
+          && !candidateRuntime.rejectPreflight(attempt, failures, scope))
+        return ResourceSet.empty(Notification.info("Stale bean preflight discarded"));
+      worldviewLoadDiagnostics = failures;
+      return ResourceSet.empty(failures.getFirst());
+    }
     if (candidateRuntime != null && !semanticOnly) {
+      if (!candidateRuntime.submit(worldview, attempt, scope))
+        return ResourceSet.empty(Notification.info("Stale worldview submission discarded"));
       this.worldview = BeanIngestionPreflight.snapshot(worldview);
-      candidateRuntime.submit(worldview);
       setOperational(Utils.URLs.isLocalHost(getUrl()));
       return ResourceSet.empty(Notification.info("Bean preflight passed; whole-worldview logical validation is pending"));
     }
