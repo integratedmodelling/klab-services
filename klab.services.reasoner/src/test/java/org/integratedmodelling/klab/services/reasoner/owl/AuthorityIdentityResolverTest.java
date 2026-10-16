@@ -41,6 +41,7 @@ class AuthorityIdentityResolverTest {
     assertTrue(ontology.containsAxiom(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(
         owl.getOWLClass(leaf), owl.getOWLClass(roots.getConcept("Species")))));
     assertEquals("DEFERRED", leaf.getMetadata().get(Authority.HIERARCHY_STATUS));
+    assertFalse(resolver.acceptedFor(leaf, bindings.get("TAXA")));
     long count = ontology.getAxiomCount();
     assertThrows(KlabValidationException.class, () -> resolver.resolve("TAXA", "Leaf", true));
     assertEquals(count, ontology.getAxiomCount());
@@ -55,6 +56,10 @@ class AuthorityIdentityResolverTest {
     when(parent.getParentIds()).thenReturn(List.of());
     assertSame(leaf, resolver.resolve("TAXA", "Leaf", true));
     assertEquals("COMPLETE", leaf.getMetadata().get(Authority.HIERARCHY_STATUS));
+    assertTrue(resolver.acceptedFor(leaf, bindings.get("TAXA")));
+    assertFalse(resolver.acceptedFor(new org.integratedmodelling.common.knowledge.ConceptImpl(
+        (org.integratedmodelling.common.knowledge.ConceptImpl) leaf), bindings.get("TAXA")),
+        "A caller-provided copy is not captured resolver admission evidence");
     assertEquals(1, expansions.get());
     resolver.ensureHierarchy(leaf);
     assertEquals(1, expansions.get());

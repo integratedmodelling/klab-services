@@ -109,6 +109,15 @@ public final class AuthorityIdentityResolver {
     if (reference != null) resolve(reference[0], reference[1], true);
   }
 
+  /** Admission evidence from this captured resolver, never from a namespace or caller flags. */
+  public synchronized boolean acceptedFor(Concept concept, AuthorityBindings.Binding binding) {
+    if (binding == null || bindings.get(binding.request().name()) != binding
+        || !Authority.HierarchyStatus.COMPLETE.name().equals(
+            concept.getMetadata().get(Authority.HIERARCHY_STATUS))) return false;
+    var known = resolved.get(binding);
+    return known != null && known.values().stream().anyMatch(value -> value == concept);
+  }
+
   private List<String> boundaryRoots(AuthorityBindings.Binding binding, Authority.Identity identity) {
     var roots = new ArrayList<String>();
     for (var boundary : identity.getSemanticBoundaries()) {

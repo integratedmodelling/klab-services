@@ -162,6 +162,14 @@ public class ConceptImpl implements Concept {
   public ConceptImpl withExpressionStatus(
       org.integratedmodelling.klab.api.lang.kim.KimConcept syntax,
       java.util.function.Function<String, Concept> lookup) {
+    return withExpressionStatus(syntax, lookup, null);
+  }
+
+  /** Backend head evaluation may add dischargeable requirements without changing declarations. */
+  public ConceptImpl withExpressionStatus(
+      org.integratedmodelling.klab.api.lang.kim.KimConcept syntax,
+      java.util.function.Function<String, Concept> lookup,
+      java.util.function.Predicate<org.integratedmodelling.klab.api.lang.kim.KimConcept> abstractHead) {
     var status = org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.evaluate(syntax, leaf -> {
       var resolved = leaf.getName() == null ? null : lookup.apply(leaf.getName());
       if (resolved == null) return org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.declarationTypes(leaf);
@@ -169,7 +177,7 @@ public class ConceptImpl implements Concept {
       if (resolved.isAbstract()) flags.add(SemanticType.ABSTRACT);
       if (resolved.is(SemanticType.SUBJECTIVE)) flags.add(SemanticType.SUBJECTIVE);
       return flags;
-    });
+    }, abstractHead);
     var result = withSelectors(syntax.getType());
     result.setAbstract(status.contains(SemanticType.ABSTRACT));
     result.getType().remove(SemanticType.SUBJECTIVE);

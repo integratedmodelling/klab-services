@@ -1052,7 +1052,31 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ret = declareConcept(parsed);
       }
     }
-    return ret == null ? owl.nothing(definition) : ret;
+    return ret == null ? owl.nothing(definition)
+        : Urn.isAtomicConcept(definition) ? identityRequirements().project((ConceptImpl) ret) : ret;
+  }
+
+  /** Requirements change expression eligibility; canonical declarations retain explicit flags. */
+  public ConceptImpl projectExpressionStatus(ConceptImpl concept, KimConcept syntax) {
+    return identityRequirements().project(concept, syntax);
+  }
+
+  private org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport identityRequirements() {
+    return new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(owl, this::identityEligible);
+  }
+
+  /** Retain existing captured bridge restrictions without triggering provider lookup. */
+  public boolean identityEligible(Concept root, Concept identity) {
+    var hierarchy = new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(owl);
+    if (worldview != null) for (var declared : worldview.getAuthorityBindings()) {
+      var bridgeRoot = owl.getConcept(declared.rootIdentity());
+      if (bridgeRoot != null && hierarchy.proves(root, bridgeRoot)
+          && !authorityIdentityResolver.acceptedFor(identity, authorityBindings.get(declared.localId())))
+        return false;
+    }
+    return !identity.is(SemanticType.AUTHORITY_IDENTITY)
+        || authorityBindings.snapshot().stream()
+            .anyMatch(binding -> authorityIdentityResolver.acceptedFor(identity, binding));
   }
 
   public Observable resolveObservableInternal(String definition) {
@@ -1078,14 +1102,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       ret.add(target.asConcept());
     }
 
-    return ret;
+    return projectHierarchy(ret);
   }
 
   @Override
   public Collection<Concept> children(Semantics target) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("children", new Class<?>[] { Semantics.class }, new Object[] { target });
-  return this.owl.getChildren(target.asConcept());
+  return projectHierarchy(this.owl.getChildren(target.asConcept()));
   }
 
   public Map<Concept, Collection<Observation>> emergentResolvables(
@@ -1152,7 +1176,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("parents", new Class<?>[] { Semantics.class }, new Object[] { target });
   if (authorityIdentityResolver != null) authorityIdentityResolver.ensureHierarchy(target.asConcept());
-    return this.owl.getParents(target.asConcept());
+    return projectHierarchy(this.owl.getParents(target.asConcept()));
   }
 
   @Override
@@ -1203,7 +1227,27 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public Collection<Concept> closure(Semantics target) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("closure", new Class<?>[] { Semantics.class }, new Object[] { target });
-  return this.owl.getSemanticClosure(target.asConcept());
+  return projectHierarchy(this.owl.getSemanticClosure(target.asConcept()));
+  }
+
+  private Collection<Concept> projectHierarchy(Collection<Concept> concepts) {
+    return concepts.stream().map(this::effectiveConcept).toList();
+  }
+
+  /** Public semantic traversals expose effective eligibility, not raw declaration flags. */
+  private Concept effectiveConcept(Concept concept) {
+    if (concept == null || !concept.is(SemanticType.OBSERVABLE)) return concept;
+    if (!Urn.isAtomicConcept(concept.getUrn())) {
+      // Preserve the separately supplied identity witnesses in qualified expressions;
+      // the OWL hasIdentity union alone cannot reconstruct their authored scope.
+      try {
+        var syntax = serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
+        if (syntax != null) return projectExpressionStatus((ConceptImpl) concept, syntax);
+      } catch (RuntimeException unavailable) {
+        // Without captured syntax, use conservative evidence from the semantic graph.
+      }
+    }
+    return identityRequirements().project((ConceptImpl) concept);
   }
 
   @Override
@@ -1427,11 +1471,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     while (ret != null && visited.add(ret.getUrn())) {
       String next = ret.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
       if (next == null) {
-        return ret;
+        return effectiveConcept(ret);
       }
       ret = resolveConcept(next);
     }
-    return ret == null ? nothingConcept(first.getUrn()) : ret;
+    return ret == null ? nothingConcept(first.getUrn()) : effectiveConcept(ret);
   }
 
   @Override
@@ -1464,7 +1508,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.DESCRIBES_OBSERVABLE_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1532,7 +1576,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_INHERENT_TO_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1544,7 +1588,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_INHERENT_TO_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   /** OWL restrictions retain the inherent class but cannot encode its k.LAB collective flag. */
@@ -1563,7 +1607,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_PURPOSE_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1573,7 +1617,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_PURPOSE_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1583,7 +1627,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.OCCURS_DURING_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1593,7 +1637,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_CAUSANT_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1603,7 +1647,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_CAUSED_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1613,7 +1657,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_ADJACENT_TO_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1623,7 +1667,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_COMPRESENT_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1633,7 +1677,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_COMPARED_TO_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1643,7 +1687,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.OCCURS_DURING_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1653,7 +1697,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_CAUSANT_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1663,7 +1707,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_CAUSED_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1673,7 +1717,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_ADJACENT_TO_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1683,7 +1727,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_COMPRESENT_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1693,7 +1737,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_COMPARED_TO_PROPERTY));
-    return cls.isEmpty() ? null : cls.iterator().next();
+    return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
   }
 
   @Override
@@ -1977,11 +2021,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public Collection<Concept> relationshipSources(Semantics relationship) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("relationshipSources", new Class<?>[] { Semantics.class }, new Object[] { relationship });
-  return org.integratedmodelling.common.utils.Utils.Collections.join(
+  return projectHierarchy(org.integratedmodelling.common.utils.Utils.Collections.join(
         this.owl.getDirectRestrictedClasses(
             relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)),
         this.owl.getRestrictedClasses(
-            relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)));
+            relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY))));
   }
 
   @Override
@@ -1996,11 +2040,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public Collection<Concept> relationshipTargets(Semantics relationship) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("relationshipTargets", new Class<?>[] { Semantics.class }, new Object[] { relationship });
-  return org.integratedmodelling.common.utils.Utils.Collections.join(
+  return projectHierarchy(org.integratedmodelling.common.utils.Utils.Collections.join(
         this.owl.getDirectRestrictedClasses(
             relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)),
         this.owl.getRestrictedClasses(
-            relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)));
+            relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY))));
   }
 
   @Override
@@ -2014,7 +2058,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public Collection<Concept> applicableObservables(Concept main) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("applicableObservables", new Class<?>[] { Concept.class }, new Object[] { main });
-  return this.owl.getRestrictedClasses(main, this.owl.getProperty(NS.APPLIES_TO_PROPERTY));
+  return projectHierarchy(this.owl.getRestrictedClasses(main, this.owl.getProperty(NS.APPLIES_TO_PROPERTY)));
   }
 
   @Override
@@ -2779,7 +2823,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           if (!occurrence && !source.equals(query) && !target.equals(query)
               && !is(query, target)) continue;
           result.add(new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(
-              source, target, kind, owl.restrictionProvenance(source, property, target)));
+              effectiveConcept(source), effectiveConcept(target), kind, owl.restrictionProvenance(source, property, target)));
         }
       }
     }
@@ -2800,7 +2844,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ret.add(c);
       }
     }
-    return ret;
+    return projectHierarchy(ret);
   }
 
   @Override
@@ -2815,7 +2859,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ret.add(c);
       }
     }
-    return ret;
+    return projectHierarchy(ret);
   }
 
   @Override
@@ -2897,13 +2941,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return candidateRuntime.invoke("baseObservable", new Class<?>[] { Semantics.class }, new Object[] { c });
 
     if (c instanceof Concept concept) {
-      return concept;
+      return effectiveConcept(concept);
     }
 
     Collection<Concept> traits = directTraits(c);
     Collection<Concept> roles = directRoles(c);
     if (traits.isEmpty() && roles.isEmpty() && derived(c)) {
-      return c.asConcept();
+      return effectiveConcept(c.asConcept());
     }
 
     return baseObservable(parent(c));
@@ -2914,7 +2958,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("parent", new Class<?>[] { Semantics.class }, new Object[] { c });
   Collection<Concept> parents = this.owl.getParents(c.asConcept());
-    return parents.isEmpty() ? null : parents.iterator().next();
+    return parents.isEmpty() ? null : effectiveConcept(parents.iterator().next());
   }
 
   @Override
@@ -2952,7 +2996,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (def != null) {
       ret = resolveConcept(def);
     }
-    return ret;
+    return effectiveConcept(ret);
   }
 
   /*
@@ -3376,7 +3420,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ret.add(c);
       }
     }
-    return ret;
+    return projectHierarchy(ret);
   }
 
   /**
@@ -3405,7 +3449,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
     }
 
-    return ret;
+    return effectiveConcept(ret);
   }
 
   /*
@@ -3481,7 +3525,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var resolved = compileInternal(concept, ontology, monitor);
     return resolved == null
         ? null
-        : ((ConceptImpl) resolved).withExpressionStatus(concept, owl::getConcept);
+        : projectExpressionStatus((ConceptImpl) resolved, concept);
   }
 
   private Concept compileInternal(KimConcept concept, Ontology ontology, Scope monitor) {

@@ -35,6 +35,9 @@ class SemanticEnvironmentFactoryTest {
     var reference = new KimConceptImpl(); reference.setName(name); reference.setUrn(name); reference.setOffsetInDocument(999);
     return reference;
   }
+  private KimConceptImpl typedReference(String name, SemanticType... types) {
+    var value = reference(name); value.setType(EnumSet.copyOf(List.of(types))); return value;
+  }
   private Worldview world(String version, boolean conflict) {
     var ontology = new KimOntologyImpl(); ontology.setUrn("w"); ontology.setProjectName("fixture");
     ontology.setSourceCode(" ".repeat(1100) + version);
@@ -71,6 +74,77 @@ class SemanticEnvironmentFactoryTest {
       </owl:Class>
       """;
     return Map.of("odo.owl",xml.replace("</rdf:RDF>",additions+"</rdf:RDF>").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+  }
+
+  @Test void identityRequirementsSurviveCandidateCompilationAndBothCompositionPaths() throws Exception {
+    var worldview = world("identity-requirements", false);
+    var ontology = worldview.getOntologies().getFirst();
+    var identity = statement("Identity", SemanticType.IDENTITY, 21);
+    identity.setType(EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+    identity.setUpperConceptDefined("odo:Identity"); identity.setAbstract(true);
+    var root = statement("IdentityRoot", SemanticType.IDENTITY, 22);
+    root.setType(EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+    root.setDeclaredParent(typedReference("w:Identity", SemanticType.IDENTITY, SemanticType.PREDICATE)); root.setAbstract(true);
+    var concrete = statement("ConcreteIdentity", SemanticType.IDENTITY, 23);
+    concrete.setType(EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+    concrete.setDeclaredParent(typedReference("w:IdentityRoot", SemanticType.IDENTITY, SemanticType.PREDICATE));
+    var process = statement("Process", SemanticType.PROCESS, 24);
+    process.setUpperConceptDefined("odo:Process"); process.setAbstract(true);
+    var qualified = statement("IdentifiedProcess", SemanticType.PROCESS, 25);
+    qualified.setDeclaredParent(typedReference("w:Process", SemanticType.PROCESS, SemanticType.OBSERVABLE));
+    qualified.getRequiredIdentities().add(typedReference("w:IdentityRoot", SemanticType.IDENTITY, SemanticType.PREDICATE));
+    var inherited = statement("InheritedGroup", SemanticType.SUBJECT, 26);
+    inherited.setDeclaredParent(typedReference("w:Group", SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE));
+    ontology.getStatements().addAll(List.of(identity, root, concrete, process, qualified, inherited));
+    for (var name : List.of("ConditionOne", "ConditionTwo", "RequiredRule", "InferredDerived")) {
+      var declaration = statement(name, SemanticType.SUBJECT, 27);
+      declaration.setDeclaredParent(typedReference("w:Thing", SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE));
+      if (name.equals("RequiredRule")) {
+        declaration.setAbstract(true);
+        declaration.getRequiredIdentities().add(typedReference("w:IdentityRoot", SemanticType.IDENTITY, SemanticType.PREDICATE));
+      }
+      ontology.getStatements().add(declaration);
+    }
+    ontology.getStatements().stream().filter(s -> s.getUrn().equals("Group")).findFirst().orElseThrow()
+        .getRequiredIdentities().add(typedReference("w:IdentityRoot", SemanticType.IDENTITY, SemanticType.PREDICATE));
+    var factory = new SemanticEnvironmentFactory(directory.resolve("identity-actors"), core());
+    var result = factory.build(input(factory, worldview), () -> false);
+    assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+    try (var state = result.state()) {
+      var actor = state.actor();
+      // Install an imported-style rule in this private fixture: the source declaration
+      // model does not express equivalence to a conjunction. No active graph is touched.
+      var graph = actor.owl().getOntology("w").getOWLOntology();
+      var manager = graph.getOWLOntologyManager(); var f = manager.getOWLDataFactory();
+      java.util.function.Function<String, org.semanticweb.owlapi.model.OWLClass> named = name -> graph.classesInSignature()
+          .filter(c -> c.getIRI().getRemainder().orElse("").equals(name)).findFirst().orElseThrow();
+      manager.addAxioms(graph, java.util.Set.of(
+          f.getOWLEquivalentClassesAxiom(named.apply("RequiredRule"),
+              f.getOWLObjectIntersectionOf(named.apply("ConditionOne"), named.apply("ConditionTwo"))),
+          f.getOWLSubClassOfAxiom(named.apply("InferredDerived"), named.apply("ConditionOne")),
+          f.getOWLSubClassOfAxiom(named.apply("InferredDerived"), named.apply("ConditionTwo"))));
+      actor.owl().flushReasoner();
+      var invalidate = actor.getClass().getDeclaredMethod("invalidateSemanticCaches");
+      invalidate.setAccessible(true); invalidate.invoke(actor);
+      // Resolve the shared trait before nested composition, avoiding a recursive
+      // Caffeine loader computation after this fixture deliberately clears caches.
+      actor.resolveConcept("w:ConcreteIdentity");
+      assertTrue(actor.owl().isEntailed(f.getOWLSubClassOfAxiom(named.apply("InferredDerived"), named.apply("RequiredRule"))));
+      for (var head : List.of("w:Group", "w:InheritedGroup", "w:IdentifiedProcess", "w:InferredDerived")) {
+        assertTrue(actor.resolveConcept(head).isAbstract(), head);
+        var parsed = actor.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class).declareConcept(head);
+        assertFalse(parsed.getType().isEmpty(), "Parsed atomic head has types: " + head);
+        assertFalse(actor.resolveConcept("w:ConcreteIdentity " + head).isAbstract(), head);
+        assertFalse(actor.resolveConceptWithBuilder("w:ConcreteIdentity " + head, actor.serviceScope()).isAbstract(), head);
+        assertTrue(actor.resolveConcept(head).isAbstract(), "Qualified resolution must not mutate " + head);
+      }
+      assertTrue(actor.resolveConcept("w:ConcreteIdentity w:Process").isAbstract(), "Explicit abstract stays binding");
+      assertTrue(actor.resolveConcept("w:ConcreteIdentity w:RequiredRule").isAbstract(), "Inferred children do not inherit this independent flag");
+      assertTrue(actor.children(actor.resolveConcept("w:Group")).stream()
+          .filter(c -> c.getUrn().equals("w:InheritedGroup")).findFirst().orElseThrow().isAbstract());
+      assertTrue(actor.closure(actor.resolveConcept("w:Group")).stream()
+          .filter(c -> c.getUrn().equals("w:InheritedGroup")).findFirst().orElseThrow().isAbstract());
+    }
   }
   private Worldview configurationWorld(boolean conflict) {
     var world=world(conflict?"config-conflict":"config-independent",false);

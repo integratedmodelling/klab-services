@@ -798,7 +798,8 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     }
     var concept = buildConcept(syntax);
     if (concept == null) return null;
-    var result = ((ConceptImpl) concept).withExpressionStatus(syntax, reasoner::resolveConcept);
+    var result = new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(
+        reasoner.owl(), reasoner::identityEligible).project((ConceptImpl) concept, syntax);
     if (projectedSubjective || subjective(defaultValue) || subjective(value)) {
       result.getType().add(SemanticType.SUBJECTIVE);
     }

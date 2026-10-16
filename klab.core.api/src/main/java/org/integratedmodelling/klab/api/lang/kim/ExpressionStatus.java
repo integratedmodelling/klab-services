@@ -16,7 +16,14 @@ public final class ExpressionStatus {
   /** The leaf lookup may supply resolved declaration status instead of syntax descriptors. */
   public static Set<SemanticType> evaluate(
       KimConcept syntax, Function<KimConcept, Set<SemanticType>> leafTypes) {
-    var result = abstractStatus(syntax, leafTypes);
+    return evaluate(syntax, leafTypes, null);
+  }
+
+  /** A semantic backend may evaluate the whole qualified head, preserving identity scope. */
+  public static Set<SemanticType> evaluate(
+      KimConcept syntax, Function<KimConcept, Set<SemanticType>> leafTypes,
+      java.util.function.Predicate<KimConcept> abstractHead) {
+    var result = abstractStatus(syntax, leafTypes, abstractHead);
     if (isSubjective(syntax, leafTypes, java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()))) {
       result.add(SemanticType.SUBJECTIVE);
     }
@@ -24,15 +31,20 @@ public final class ExpressionStatus {
   }
 
   private static Set<SemanticType> abstractStatus(
-      KimConcept syntax, Function<KimConcept, Set<SemanticType>> leafTypes) {
+      KimConcept syntax, Function<KimConcept, Set<SemanticType>> leafTypes,
+      java.util.function.Predicate<KimConcept> abstractHead) {
     var result = EnumSet.noneOf(SemanticType.class);
     if (syntax.getSemanticModifier() == null) {
-      result.addAll(syntax.getObservable() == null
-          ? leafTypes.apply(syntax) : abstractStatus(syntax.getObservable(), leafTypes));
+      if (abstractHead != null) {
+        if (abstractHead.test(syntax)) result.add(SemanticType.ABSTRACT);
+      } else {
+        result.addAll(syntax.getObservable() == null
+            ? leafTypes.apply(syntax) : abstractStatus(syntax.getObservable(), leafTypes, null));
+      }
     }
     for (var attribute : syntax.getTraits()) {
       if (attribute.is(SemanticType.ATTRIBUTE)) {
-        result.addAll(abstractStatus(attribute, leafTypes));
+        result.addAll(abstractStatus(attribute, leafTypes, abstractHead));
       }
     }
     result.retainAll(EnumSet.of(SemanticType.ABSTRACT));
