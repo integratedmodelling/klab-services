@@ -88,6 +88,25 @@ class RemoteAuthorityMetadataAdmissionTest {
     verify(fixture.registry(),never()).loadComponents(any(),any());
   }
 
+  @Test void unrelatedInstalledAdapterCannotTurnWorldviewRetrievalIntoServerError() throws Exception {
+    var rights=new ResourcePrivileges();rights.setPublic(true);var fixture=fixture(rights);
+    var adapter=new org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor();
+    adapter.setName("geospatial.fixture");adapter.setVersion(Version.create("1.0.0"));
+    adapter.getMetadata().put("nested",Map.of("kind","live-shaped capability metadata"));
+    var wire=org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper().valueToTree(adapter);
+    assertEquals(adapter.getClass().getName(),wire.path("@CLASS").asText());
+    var unrelated=new Extensions.ComponentDescriptor("fixture.geospatial",Version.create("1.0.0"),"adapter-only component",
+        new File("geospatial.jar"),"adapter-hash",null,rights,List.of(),List.of(adapter),List.of(),
+        Map.of(),Map.of(),Map.of(),Map.of(),Map.of(),"local",1,null,null,0);
+    when(fixture.registry().getComponents(fixture.scope())).thenReturn(List.of(unrelated));
+    var result=retrieve(fixture);
+    assertFalse(result.isEmpty());assertEquals(1,result.getAuthorityBindings().size());
+    assertEquals("fixture.component",result.getAuthorityBindings().getFirst().componentUrn());
+    assertEquals(Version.create("2.0.0"),result.getAuthorityBindings().getFirst().componentVersion());
+    assertEquals(1,unrelated.adapters().size());verify(fixture.registry(),never()).loadComponents(any(),any());
+    verify(fixture.remote(),never()).exportAsset(anyString(),any(),anyString(),any(),any());
+  }
+
   @Test void deniedRemoteOwnerRemainsAnUnresolvedAuthority() throws Exception {
     var rights=new ResourcePrivileges();rights.setPublic(true);rights.setExcludedUsers(Set.of("owner"));
     var result=retrieve(fixture(rights));assertTrue(result.getAuthorityBindings().isEmpty());

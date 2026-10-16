@@ -36,6 +36,49 @@ class AuthorityComponentResolverTest {
         Map.of(),Map.of(),Map.of(),Map.of(),Map.of(),null,1,null,null,0);
   }
   private ResourcePrivileges publicRights() { var rights = new ResourcePrivileges(); rights.setPublic(true); return rights; }
+  private Extensions.ComponentDescriptor withAdapter(Extensions.ComponentDescriptor component) {
+    var adapter = new org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor();
+    adapter.setName("geospatial.fixture");adapter.setVersion(Version.create("1.0.0"));
+    adapter.getMetadata().put("runtime.details",Map.of("nested",List.of("unused by authority admission")));
+    var wire=org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper().valueToTree(adapter);
+    assertEquals(adapter.getClass().getName(),wire.path("@CLASS").asText()); // Matches the live nested capability shape.
+    return new Extensions.ComponentDescriptor(component.id(),component.version(),component.description(),component.sourceArchive().getAbsoluteFile(),
+        component.fileHash(),component.mavenCoordinates(),component.usageRights(),component.libraries(),List.of(adapter),component.authorities(),
+        component.services(),component.annotations(),component.actors(),component.exporters(),component.importers(),"origin-service",42,
+        component.importType(),component.updateStatus(),123);
+  }
+
+  @Test void installedMixedAdapterMetadataCannotBreakOwnedAuthorityAdmission() {
+    var original=withAdapter(component("hash",publicRights(),"1.0.0"));
+    var result=AuthorityComponentResolver.forWorldview(worldview(),List.of(original),scope);
+    var owned=result.components().getFirst();
+    assertEquals(original.id(),owned.id());assertEquals(original.fileHash(),owned.fileHash());
+    assertEquals(original.mavenCoordinates(),owned.mavenCoordinates());assertEquals(original.sourceArchive(),owned.sourceArchive());
+    assertEquals("origin-service",owned.sourceServiceId());assertEquals(42,owned.timestamp());assertEquals(123,owned.latestVersionTimestamp());
+    assertEquals(original.importType(),owned.importType());assertEquals(original.updateStatus(),owned.updateStatus());
+    assertEquals(original.authorities(),owned.authorities());assertFalse(owned.usageRights()==original.usageRights());
+    assertTrue(owned.adapters().isEmpty());assertTrue(owned.libraries().isEmpty());assertTrue(owned.services().isEmpty());
+    assertEquals(1,original.adapters().size());
+    original.version().setMajor(9);original.authorities().getFirst().version().setMajor(8);original.usageRights().setExcludedUsers(Set.of("owner"));
+    assertEquals(Version.create("2.0.0"),owned.version());assertEquals(Version.create("1.0.0"),owned.authorities().getFirst().version());
+    assertTrue(owned.usageRights().getExcludedUsers().isEmpty());
+    verify(scope,never()).getServices(ResourcesService.class);
+  }
+
+  @Test void remoteMixedAdapterMetadataPreservesExactAuthorizedProvenance() throws Exception {
+    var rights=new ResourcePrivileges();rights.setAllowedUsers(Set.of("owner"));
+    var original=withAdapter(component("hash",rights,"1.0.0"));var remote=source("remote",original);services(remote);
+    var result=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);
+    assertEquals(1,result.components().size());assertTrue(result.components().getFirst().adapters().isEmpty());
+    assertFalse(result.components().getFirst().usageRights().isPublic());
+    var resource=result.resources().getResults().iterator().next();
+    assertEquals("fixture.component@2.0.0",resource.getResourceUrn());assertEquals("remote",resource.getServiceId());
+    assertEquals("fixture:component:2.0.0",resource.getMetadata().get(Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY));
+    assertEquals(remote.getUrl(),result.resources().getServices().get("remote"));
+    rights.setExcludedUsers(Set.of("owner"));
+    assertTrue(AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope).components().isEmpty());
+    verify(remote,never()).exportAsset(anyString(),any(),anyString(),any(),any());
+  }
   private ResourcesService source(String id, Extensions.ComponentDescriptor descriptor) throws Exception {
     var service = mock(ResourcesService.class); when(service.serviceId()).thenReturn(id);
     when(service.getUrl()).thenReturn(URI.create("https://"+id+".invalid/resources").toURL());

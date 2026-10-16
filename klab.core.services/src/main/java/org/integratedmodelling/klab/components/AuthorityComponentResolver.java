@@ -207,7 +207,17 @@ public final class AuthorityComponentResolver {
   }
 
   private static Extensions.ComponentDescriptor copy(Extensions.ComponentDescriptor descriptor) {
-    return JSON.convertValue(descriptor, Extensions.ComponentDescriptor.class);
+    // Authority admission needs owned descriptor/provenance data, not runtime extension payloads.
+    // Adapter and function metadata can contain polymorphic KlabAsset objects whose wire-only
+    // @CLASS fields cannot be roundtripped as their concrete types by convertValue.lss
+    var authorityMetadata = new Extensions.ComponentDescriptor(
+        descriptor.id(), descriptor.version(), descriptor.description(), descriptor.sourceArchive(),
+        descriptor.fileHash(), descriptor.mavenCoordinates(), descriptor.usageRights(),
+        List.of(), List.of(), descriptor.authorities(),
+        Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
+        descriptor.sourceServiceId(), descriptor.timestamp(), descriptor.importType(),
+        descriptor.updateStatus(), descriptor.latestVersionTimestamp());
+    return JSON.convertValue(authorityMetadata, Extensions.ComponentDescriptor.class);
   }
 
   private static String digest(Object value) {
