@@ -393,6 +393,7 @@ public class OWL {
     conceptsById.clear();
     classId.set(1L);
     manager = null;
+    coreAliasDocumentation.reset();
   }
 
   private static String privateDocumentHash(IRI iri) {
@@ -403,6 +404,10 @@ public class OWL {
       throw new IllegalStateException("SHA-256 is unavailable", e);
     }
   }
+
+  private final CoreAliasDocumentation coreAliasDocumentation = new CoreAliasDocumentation(this);
+
+  public CoreAliasDocumentation coreAliasDocumentation() { return coreAliasDocumentation; }
 
   public CoreOntology getCoreOntology() {
     return this.coreOntology;
@@ -477,6 +482,8 @@ public class OWL {
       }
     }
 
+    if (result != null && CoreOntology.CORE_ONTOLOGY_NAME.equals(result.getNamespace()))
+      coreAliasDocumentation.track(result);
     return result;
   }
 
@@ -919,6 +926,7 @@ public class OWL {
 
   public void releaseOntology(Ontology ontology) {
 
+    var documentedSubjects = coreAliasDocumentation.documentedSubjects(ontology);
     this.namespaces.remove(ontology.getName());
     var onto = ontologies.remove(ontology.getName());
     for (var concept : onto.getConcepts()) {
@@ -929,6 +937,7 @@ public class OWL {
     }
     iri2ns.remove(((Ontology) ontology).getPrefix());
     manager.removeOntology(((Ontology) ontology).ontology);
+    coreAliasDocumentation.refresh(documentedSubjects);
   }
 
   public void clear() {

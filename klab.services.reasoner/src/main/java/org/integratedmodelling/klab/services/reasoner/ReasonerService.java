@@ -100,6 +100,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           "# Semantic documentation\n\n"
               + SemanticDocumentation.code(urn)
               + "\n\n"
+              + owl.coreAliasDocumentation().describe(asset.asConcept())
               + SemanticDocumentation.describe("Resolved bean and metadata", asset)
               + SemanticInfoDocumentation.clauses(this, asset)
               + OwlDocumentation.describe(owl, asset.asConcept());
@@ -3037,6 +3038,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       annotated.setAnnotations(
           AnnotationCollector.merge(parent.getAnnotations(), concept.getAnnotations()));
       ontology.addDelegateConcept(concept.getUrn(), ontology.getName(), annotated);
+      if (concept.getUpperConceptDefined() != null
+          || CoreOntology.CORE_ONTOLOGY_NAME.equals(parent.getNamespace())) {
+        var source = worldview == null ? null : worldview.getOntologies().stream()
+            .filter(o -> o.getUrn().equals(ontology.getName())).findFirst().orElse(null);
+        owl.coreAliasDocumentation().replace(ontology, parent, annotated, concept, source,
+            worldview == null ? concept.getProjectName() : worldview.getWorldviewId());
+      }
     }
   }
 
