@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 /** Runs the production compiler in private semantic state, without normal service construction. */
 public final class SemanticEnvironmentFactory
     implements CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> {
-  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v2";
+  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v3";
   private final Path assetRoot;
   private final Map<String, byte[]> core;
   private final String dependencyRevision;
@@ -49,15 +49,19 @@ public final class SemanticEnvironmentFactory
     var identities = new LinkedHashMap<String, java.util.Set<String>>();
     var identityOwners = new java.util.HashMap<String, String>();
     var contentHashes = new java.util.HashMap<String, String>();
+    var aliasOwners = new java.util.HashMap<String, String>();
     for (var name : capturedCore.keySet().stream().sorted().toList()) {
       if (!name.endsWith(".owl") || Path.of(name).isAbsolute()
-          || !assetRoot.resolve(name).normalize().startsWith(assetRoot))
+          || !assetRoot.resolve(name).normalize().startsWith(assetRoot)
+          || !CoreOntologyCatalog.isVisible(Path.of(name)))
         throw new IllegalArgumentException("Invalid private core catalog entry " + name);
       byte[] bytes = capturedCore.get(name).clone(); owned.put(name, bytes);
-      var alias = Path.of(name).getFileName().toString().replaceFirst("\\.owl$", "");
+      var alias = CoreOntologyCatalog.alias(Path.of(name));
+      var previousAlias = aliasOwners.putIfAbsent(alias, name);
+      if (previousAlias != null) throw new IllegalArgumentException(
+          "Ambiguous captured core alias " + alias + " in " + previousAlias + " and " + name);
       contentHashes.put(alias, HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
-      if (identities.put(alias, ontologyIdentities(bytes)) != null)
-        throw new IllegalArgumentException("Ambiguous captured core alias " + alias);
+      identities.put(alias, ontologyIdentities(bytes));
       for (var identity : identities.get(alias)) {
         var previous = identityOwners.putIfAbsent(identity, name);
         if (previous != null) throw new IllegalArgumentException(
@@ -70,7 +74,7 @@ public final class SemanticEnvironmentFactory
     core = java.util.Collections.unmodifiableMap(owned);
     var classes = new LinkedHashMap<String,java.util.Set<String>>();
     for (var entry:owned.entrySet()) {
-      var alias=Path.of(entry.getKey()).getFileName().toString().replaceFirst("\\.owl$","");
+      var alias = CoreOntologyCatalog.alias(Path.of(entry.getKey()));
       classes.put(alias,ontologyClassNames(entry.getValue()));
     }
     coreClassNames=Map.copyOf(classes);
@@ -104,7 +108,9 @@ public final class SemanticEnvironmentFactory
     var files = new LinkedHashMap<String, byte[]>();
     if (Files.isDirectory(catalog)) {
       try (var entries = Files.walk(catalog)) {
-        for (var file : entries.filter(Files::isRegularFile).filter(p -> p.getFileName().toString().endsWith(".owl")).sorted().toList())
+        for (var file : entries.filter(Files::isRegularFile)
+            .filter(p -> CoreOntologyCatalog.isVisible(catalog.relativize(p)))
+            .filter(p -> p.getFileName().toString().endsWith(".owl")).sorted().toList())
           files.put(catalog.relativize(file).toString().replace('\\', '/'), Files.readAllBytes(file));
       }
     }

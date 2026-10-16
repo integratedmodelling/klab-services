@@ -298,6 +298,65 @@ class SemanticEnvironmentFactoryTest {
     assertFalse(Files.exists(directory.resolve("actors")));
   }
 
+  @Test void localCaptureIgnoresHiddenImportCachesAtEveryDepth() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("catalog"));
+    Files.write(catalog.resolve("odo.owl"), core().get("odo.owl"));
+    var before = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
+    // Cache entries can be stale, conflicting, or incomplete; the core loader skips them.
+    Files.createDirectories(catalog.resolve(".imports"));
+    Files.writeString(catalog.resolve(".imports/odo.owl"), "not an ontology");
+    Files.createDirectories(catalog.resolve("nested/.cache"));
+    Files.writeString(catalog.resolve("nested/.cache/odo.owl"), "also not an ontology");
+    var after = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
+    assertEquals(before.dependencyRevision(), after.dependencyRevision());
+    var result = after.build(after.capture(world("hidden-cache", false)), () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment);
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(),
+          result.diagnostics().toString());
+    }
+  }
+
+  @Test void qualifiedCoreAliasMatchesTheLoadedOntologyAndItsVersion() throws Exception {
+    var captured = new java.util.LinkedHashMap<>(core());
+    captured.put("external/CustomCore.owl", """
+        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                 xmlns:owl="http://www.w3.org/2002/07/owl#">
+          <owl:Ontology rdf:about="http://example.org/custom">
+            <owl:versionIRI rdf:resource="http://example.org/custom/1"/>
+          </owl:Ontology>
+          <owl:Class rdf:about="http://example.org/custom#Thing"/>
+        </rdf:RDF>
+        """.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), captured);
+    var source = world("qualified", false);
+    source.getOntologies().getFirst().getOwlImports().add(
+        org.integratedmodelling.klab.api.collections.Pair.of(
+            "external.custom-core", "http://example.org/custom/1"));
+    var result = factory.build(factory.capture(source), () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment);
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(),
+          result.diagnostics().toString());
+      var concept = environment.actor().owl().getConcept("external.custom-core:Thing");
+      assertNotNull(concept);
+      assertEquals("external.custom-core", concept.getNamespace());
+    }
+    source.getOntologies().getFirst().getOwlImports().clear();
+    source.getOntologies().getFirst().getOwlImports().add(
+        org.integratedmodelling.klab.api.collections.Pair.of("odo", "http://example.org/custom/1"));
+    assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED,
+        factory.build(factory.capture(source), () -> false).logicalStatus());
+  }
+
+  @Test void normalizedAliasCollisionsIdentifyBothDocuments() throws Exception {
+    var error = assertThrows(IllegalArgumentException.class, () -> new SemanticEnvironmentFactory(
+        directory.resolve("actors"), Map.of("ODO.owl", core().get("odo.owl"), "odo.owl", core().get("odo.owl"))));
+    assertTrue(error.getMessage().contains("ODO.owl"));
+    assertTrue(error.getMessage().contains("odo.owl"));
+    assertTrue(error.getMessage().contains("alias odo"));
+  }
+
   @Test void queuedSnapshotCannotLoseDeclarationsBeforeTheWorkerBuilds() throws Exception {
     var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
     var input = factory.capture(world("queued", false));

@@ -695,14 +695,14 @@ public class OWL {
             ? ""
             : (path
                 + (path.isEmpty() ? "" : ".")
-                + Utils.CamelCase.toLowerCase(Utils.Files.getFileBaseName(f.toString()), '-'));
+                + org.integratedmodelling.klab.services.reasoner.internal.CoreOntologyCatalog.segment(f.getName()));
 
     if (forcePath) {
       pth = path;
     }
 
     if (f.isDirectory()) {
-      if (!Utils.Files.getFileBaseName(f.toString()).startsWith(".")) {
+      if (!f.getName().startsWith(".")) {
         for (File fl : Objects.requireNonNull(f.listFiles())) {
           loadInternal(fl, pth, false, monitor);
         }
