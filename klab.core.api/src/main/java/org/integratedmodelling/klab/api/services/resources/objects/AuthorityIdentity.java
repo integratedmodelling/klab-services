@@ -10,6 +10,13 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class AuthorityIdentity implements Authority.Identity {
 
+  private java.util.Set<String> semanticBoundaries = java.util.Set.of();
+  private Authority.HierarchyStatus hierarchyStatus = Authority.HierarchyStatus.COMPLETE;
+  @Override public java.util.Set<String> getSemanticBoundaries() { return semanticBoundaries; }
+  public void setSemanticBoundaries(java.util.Set<String> value) { semanticBoundaries = value == null ? java.util.Set.of() : java.util.Set.copyOf(value); }
+  @Override public Authority.HierarchyStatus getHierarchyStatus() { return hierarchyStatus; }
+  public void setHierarchyStatus(Authority.HierarchyStatus value) { hierarchyStatus = value == null ? Authority.HierarchyStatus.COMPLETE : value; }
+
 	private List<String> parentRelationships = new ArrayList<>();
   private List<String> aliases = new ArrayList<>();
   /** Approved worldview-local names for this canonical authority identity. */

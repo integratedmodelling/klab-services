@@ -159,6 +159,27 @@ public class EngineAuthorization extends AbstractAuthenticationToken
     return username.value;
   }
 
+  /** Identity headers are assertions, never a replacement for the verified credential. */
+  public void validateIdentityHeaders(Map<String, String> headers, org.integratedmodelling.klab.api.scope.UserScope requester) {
+    if (requester == null || requester.getUser() == null
+        || !Objects.equals(getUsername(), requester.getUser().getUsername())) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Credential and user scope differ");
+    }
+    String assertedUser = headers.get(ServicesAPI.USERNAME_HEADER);
+    if (assertedUser != null && !Objects.equals(assertedUser, getUsername())) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+          "Caller header does not match authenticated user");
+    }
+    String assertedFederation = headers.get(ServicesAPI.FEDERATION_HEADER);
+    if (assertedFederation != null) {
+      var federation = org.integratedmodelling.klab.api.Klab.INSTANCE.getFederationData(requester.getUser());
+      if (federation == null || !Objects.equals(assertedFederation, federation.getId())) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+            "Federation header does not match verified membership");
+      }
+    }
+  }
+
   public boolean isAdministrator() {
     return getAuthorities().contains(Role.ROLE_ADMINISTRATOR);
   }

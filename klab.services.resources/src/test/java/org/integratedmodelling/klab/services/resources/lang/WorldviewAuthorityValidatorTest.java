@@ -11,6 +11,25 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.junit.jupiter.api.Test;
 
 class WorldviewAuthorityValidatorTest {
+  @Test void semanticBoundariesMustReferenceWorldviewIdentities() {
+    var root = statement("TAXA", "Taxon");
+    var category = statement(null, "Species");
+    root.getAuthorityParameters().put("semanticBoundaries", Map.of("SPECIES", "test:Species"));
+    var valid = worldview(root, category);
+    WorldviewAuthorityValidator.validate(valid, List.of(component("taxa")));
+    assertEquals(1, valid.getAuthorityBindings().size());
+    var missing = worldview(root);
+    WorldviewAuthorityValidator.validate(missing, List.of(component("taxa")));
+    assertTrue(missing.getAuthorityBindings().isEmpty());
+    // Use fresh declarations because failed validation records diagnostics on the source.
+    root = statement("TAXA", "Taxon");
+    root.getAuthorityParameters().put("semanticBoundaries", Map.of("SPECIES", "test:Species"));
+    category.getType().clear(); category.getType().add(SemanticType.SUBJECT);
+    var wrongType = worldview(root, category);
+    WorldviewAuthorityValidator.validate(wrongType, List.of(component("taxa")));
+    assertTrue(wrongType.getAuthorityBindings().isEmpty());
+  }
+
   final Extensions.AuthorityDescriptor descriptor = new Extensions.AuthorityDescriptor(
       "provider.taxa", Version.create("1.0.0"), true, true, List.of("GENUS"), List.of());
 

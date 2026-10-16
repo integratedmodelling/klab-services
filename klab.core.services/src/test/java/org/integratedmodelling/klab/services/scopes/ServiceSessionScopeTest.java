@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.services.scopes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
@@ -22,6 +24,25 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.junit.jupiter.api.Test;
 
 class ServiceSessionScopeTest {
+
+  @Test
+  void failedActorContextCreationPreservesRuntimeReason() {
+    var user = mock(UserIdentity.class);
+    var runtime = mock(RuntimeService.class);
+    when(user.getUsername()).thenReturn("test.user");
+    when(runtime.serviceId()).thenReturn("runtime-id");
+    var runtimeStatus = mock(KlabService.ServiceStatus.class);
+    when(runtime.status()).thenReturn(runtimeStatus);
+    when(runtimeStatus.isOperational()).thenReturn(true);
+    var userScope = new ServiceUserScope(user, runtime);
+    userScope.addService(runtime);
+    var session = new ServiceSessionScope(userScope);
+    when(runtime.declareContextScope(any(), any(), any())).thenReturn(
+        DigitalTwin.Configuration.empty(org.integratedmodelling.klab.api.services.runtime.Notification.error("Storage unavailable")));
+    var failure = assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,
+        () -> session.createContext(DigitalTwin.Configuration.builder().name("test").build()));
+    assertTrue(failure.getMessage().contains("Storage unavailable"));
+  }
 
   @Test
   void sharesOneObservationCacheWithoutCapturingTheUninstrumentedParent() {
