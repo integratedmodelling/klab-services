@@ -45,7 +45,7 @@ public final class SemanticEnvironmentFactory
     var input = capture(source);
     if (bootstrap == null || source.getAuthorityBindings().isEmpty()) return input;
     String key = AuthorityBootstrap.key(input.payload(), owner);
-    String revision = dependencyRevision + ":" + key;
+    String revision = dependencyRevision() + ":" + key;
     while (bootstrapInputs.size() >= 64 && !bootstrapInputs.containsKey(revision))
       bootstrapInputs.remove(bootstrapInputs.keySet().iterator().next());
     bootstrapInputs.put(revision, new BootstrapInput(owner, key));
@@ -126,7 +126,9 @@ public final class SemanticEnvironmentFactory
     digest.update(authorities.revision().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     dependencyRevision = HexFormat.of().formatHex(digest.digest());
   }
-  public String dependencyRevision() { return dependencyRevision; }
+  public String dependencyRevision() {
+    return bootstrap!=null && bootstrap.policyRevision()!=null?dependencyRevision+":"+bootstrap.policyRevision():dependencyRevision;
+  }
   /** Reads a local catalog only. Numbered document locators require an explicit local manifest. */
   public static SemanticEnvironmentFactory fromLocalCatalog(Path privateAssets, Path catalog) throws Exception {
     return fromLocalCatalog(privateAssets, catalog, catalog.toAbsolutePath().getParent());
@@ -254,7 +256,7 @@ public final class SemanticEnvironmentFactory
     if (!input.sourceHashes().equals(sources(owned)) || !input.sourceOrder().equals(sourceOrder(owned))
         || input.beanStatus() != CandidatePublicationCoordinator.BeanStatus.VALID
         || !CONFIGURATION_REVISION.equals(input.configurationRevision())
-        || !input.dependencyRevision().equals(dependencyRevision + ":" + context.key())
+        || !input.dependencyRevision().equals(dependencyRevision() + ":" + context.key())
         || !BeanIngestionPreflight.errors(owned).isEmpty() || !coreAliasErrors(owned).isEmpty())
       throw new IllegalArgumentException("Bootstrap input does not match frozen validated manifest");
     var catalog = bootstrap.prepare(owned, context.owner(), context.key(), cancellation);

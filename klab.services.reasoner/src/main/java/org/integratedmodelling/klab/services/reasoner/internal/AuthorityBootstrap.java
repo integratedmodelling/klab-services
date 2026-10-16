@@ -24,14 +24,22 @@ public final class AuthorityBootstrap {
   private record Outcome(long epoch, CapturedAuthorityCatalog catalog, String failure, Plan plan) {}
   private final Resolver resolver;
   private final Producer producer;
+  private final String policyRevision;
+  String policyRevision() { return policyRevision; }
   private final Map<String, Outcome> outcomes = new java.util.concurrent.ConcurrentHashMap<>();
   private final java.util.concurrent.atomic.AtomicLong epoch = new java.util.concurrent.atomic.AtomicLong();
 
   public AuthorityBootstrap(Path root, Map<String, byte[]> core) {
-    this(AuthorityBootstrap::resolve, (source, owner, plan, cancellation) ->
-        produce(root, core, source, owner, plan, cancellation));
+    this(BootstrapSourcePin.fromSystemProperty(),root,core);
   }
-  AuthorityBootstrap(Resolver resolver, Producer producer) { this.resolver=resolver; this.producer=producer; }
+  private AuthorityBootstrap(BootstrapSourcePin pin,Path root,Map<String,byte[]> core) {
+    this((source,owner)->resolve(source,owner,pin), (source, owner, plan, cancellation) ->
+        produce(root, core, source, owner, plan, cancellation), pin==null?null:pin.revision());
+  }
+  AuthorityBootstrap(Resolver resolver, Producer producer) { this(resolver,producer,null); }
+  private AuthorityBootstrap(Resolver resolver, Producer producer,String policyRevision) {
+    this.resolver=resolver; this.producer=producer; this.policyRevision=policyRevision;
+  }
 
   static String key(Worldview source, Scope owner) {
     try {
@@ -94,16 +102,20 @@ public final class AuthorityBootstrap {
   // Called under the runtime lifecycle lock: never wait on provider network/configuration.
   void invalidate() { epoch.incrementAndGet(); outcomes.clear(); }
 
-  static Plan resolve(Worldview source, Scope owner) {
+  static Plan resolve(Worldview source, Scope owner) { return resolve(source,owner,null); }
+  static Plan resolve(Worldview source, Scope owner,BootstrapSourcePin pin) {
     var identity = owner instanceof org.integratedmodelling.klab.api.scope.UserScope user ? user.getUser()
         : owner != null && owner.getIdentity() instanceof org.integratedmodelling.klab.api.identities.UserIdentity user ? user : null;
     if (identity==null || identity.isAnonymous() || identity.getUsername()==null || identity.getId()==null)
       throw new SecurityException("Authority bootstrap requires its authenticated requesting owner");
+    var selectionScope=pin==null?owner:pin.scope(owner);
     var components=new ArrayList<ComponentDescriptor>(); var resources=new ResourceSet(); var revisions=new TreeMap<String,String>();
+    if(pin!=null)revisions.put("explicit.approval",pin.revision());
     for (var binding:source.getAuthorityBindings()) {
       if (!Set.of("klab.authority.taxa","klab.authority.pubchem").contains(binding.componentUrn()))
         throw new UnsupportedOperationException("Only explicitly supported captured implementations may bootstrap");
-      var resolution=AuthorityComponentResolver.resolve(binding.provider().urn()+"@"+binding.provider().version(),owner);
+      if(pin!=null)pin.requireBinding(binding);
+      var resolution=AuthorityComponentResolver.resolve(binding.provider().urn()+"@"+binding.provider().version(),selectionScope);
       var selected=resolution.components().stream().filter(c->c.id().equals(binding.componentUrn())
           && c.version().equals(binding.componentVersion()) && c.authorities().contains(binding.provider())).toList();
       if (selected.size()!=1) throw new IllegalStateException("Exact authorized provider metadata unavailable");
@@ -117,7 +129,9 @@ public final class AuthorityBootstrap {
       var selectedResources=resolution.resources().getResults().stream().filter(r->
           r.getResourceUrn().equals(component.id()+"@"+component.version()) && component.version().equals(r.getResourceVersion())).toList();
       if (selectedResources.size()!=1) throw new IllegalStateException("Provider has no unique authorized component source");
-      var resource=selectedResources.getFirst();resource.getMetadata().put("authority.bootstrap.expected.md5",component.fileHash());
+      var resource=selectedResources.getFirst();
+      if(pin!=null)pin.pinResource(component,resource,resolution.resources());
+      resource.getMetadata().put("authority.bootstrap.expected.md5",component.fileHash());
       resources.getResults().add(resource);resources.getServices().putAll(resolution.resources().getServices());
       components.add(component);revisions.put(binding.localId(),resolution.revision());
     }

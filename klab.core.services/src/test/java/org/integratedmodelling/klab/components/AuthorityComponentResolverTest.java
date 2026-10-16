@@ -275,4 +275,31 @@ class AuthorityComponentResolverTest {
     verify((org.pf4j.PluginManager)field.get(registry),never()).loadPlugin(any());
   }
 
+
+  @Test void explicitStrongPinRejectsDifferentBytesEvenWhenDescriptorMd5Matches() throws Exception {
+    var remote=source("remote",component("selected",publicRights(),"1.0.0","2.0.0"));services(remote);
+    var schema=org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.create("jar",
+        org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.Type.STREAM,KlabAsset.KnowledgeClass.COMPONENT,"fixture").mediaType("application/java-archive");
+    remote.capabilities(scope).getExportSchemata().put("jar",List.of(schema));
+    var resolution=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);var resource=resolution.resources().getResults().iterator().next();
+    byte[] bytes="different content".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    resource.getMetadata().put("authority.bootstrap.expected.md5",HexFormat.of().formatHex(java.security.MessageDigest.getInstance("MD5").digest(bytes)));
+    resource.getMetadata().put("authority.bootstrap.expected.sha256","0".repeat(64));
+    var registry=initializedRegistry(component("installed",publicRights(),"1.0.0","3.0.0"));
+    when(scope.findService(eq(ResourcesService.class),any())).thenReturn(Optional.of(remote));
+    when(remote.exportAsset(anyString(),any(),anyString(),any(),same(scope))).thenReturn(new java.io.ByteArrayInputStream(bytes));
+    assertFalse(registry.loadComponents(resolution.resources(),scope));
+    assertTrue(resolution.resources().getNotifications().stream().anyMatch(n->n.getMessage().contains("differs from approved SHA-256")));
+    var field=ComponentRegistry.class.getDeclaredField("componentManager");field.setAccessible(true);verify((org.pf4j.PluginManager)field.get(registry),never()).loadPlugin(any());
+  }
+  @Test void explicitSourceUrlMismatchRejectsBeforeAnyExport() throws Exception {
+    var remote=source("remote",component("selected",publicRights(),"1.0.0","2.0.0"));services(remote);
+    var resolution=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);
+    resolution.resources().getResults().iterator().next().getMetadata().put("authority.bootstrap.source.url","http://127.0.0.1:8092/resources");
+    var registry=initializedRegistry(component("installed",publicRights(),"1.0.0","3.0.0"));
+    when(scope.findService(eq(ResourcesService.class),any())).thenReturn(Optional.of(remote));
+    assertFalse(registry.loadComponents(resolution.resources(),scope));
+    assertTrue(resolution.resources().getNotifications().stream().anyMatch(n->n.getMessage().contains("source differs from explicit approval")));
+    verify(remote,never()).exportAsset(anyString(),any(),anyString(),any(),any());assertEquals(0,Objects.requireNonNull(directory.toFile().list()).length);
+  }
 }

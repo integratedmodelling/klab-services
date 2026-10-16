@@ -3052,6 +3052,12 @@ public class ComponentRegistry {
             Map.of());
         return false;
       }
+      var approvedSource=result.getMetadata().get("authority.bootstrap.source.url",String.class);
+      if(approvedSource!=null && (service.getUrl()==null
+          || !approvedSource.equals(service.getUrl().toExternalForm().replaceFirst("/+$", "")))) {
+        resourceSet.getNotifications().add(Notification.error("Authority component source differs from explicit approval"));
+        return false;
+      }
       rememberSourceService(service);
 
       notifyComponentSynchronization(
@@ -3097,6 +3103,16 @@ public class ComponentRegistry {
       var expectedHash = result.getMetadata().get("authority.bootstrap.expected.md5", String.class);
       if (expectedHash != null && !expectedHash.equals(Utils.Files.hash(plugin))) {
         resourceSet.getNotifications().add(Notification.error("Authority artifact differs from selected descriptor"));
+        return false;
+      }
+      var approvedSha256=result.getMetadata().get("authority.bootstrap.expected.sha256",String.class);
+      if(approvedSha256!=null) try(var input=new java.io.FileInputStream(plugin)) {
+        if(!approvedSha256.equals(org.apache.commons.codec.digest.DigestUtils.sha256Hex(input))) {
+          resourceSet.getNotifications().add(Notification.error("Authority artifact differs from approved SHA-256"));
+          return false;
+        }
+      } catch(IOException failure) {
+        resourceSet.getNotifications().add(Notification.error("Cannot verify approved authority artifact SHA-256"));
         return false;
       }
       var installation =
