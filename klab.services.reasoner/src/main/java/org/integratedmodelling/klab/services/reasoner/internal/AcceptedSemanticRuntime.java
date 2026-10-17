@@ -252,6 +252,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       var environment = lease.state();
       synchronized (environment) {
         var actor = environment.actor();
+        if (factory.authorityBootstrapEnabled()) actor.enableInteractiveAuthorities();
         var arguments = new Object[supplied.length];
         for (int i = 0; i < arguments.length; i++) arguments[i] = bind(supplied[i], actor);
         var method = ReasonerService.class.getMethod(name, signature);
@@ -289,6 +290,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     try (var operation = persistent.retain()) {
       synchronized (operation.state()) {
         var actor = operation.state().actor();
+        if (factory.authorityBootstrapEnabled()) actor.enableInteractiveAuthorities();
         var scoped = existing == null ? scope(originalScope, actor) : existing.scope();
         var ownedRequest = JacksonConfiguration.newObjectMapper().convertValue(request,
             org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest.class);

@@ -287,7 +287,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (!Objects.equals(declared.getAuthorityParameters().get("semanticBoundaries"), request.parameters().get("semanticBoundaries")))
       throw new KlabValidationException("Semantic boundaries must match the worldview configuration");
     var provider = authorityBootstrapActor ? getComponentRegistry().getAuthority(selected,scope)
-        : semanticOnly ? capturedAuthorities.provider(selected, request, semanticAssets)
+        : semanticOnly ? capturedAuthorities.provider(selected, request, semanticAssets, () -> interactiveAuthoritiesEnabled)
         : Utils.Resources.resolveAuthority(selected, scope, this, worldview);
     if (provider == null)
       throw new KlabValidationException("Authority provider is unavailable: " + urn);
@@ -305,6 +305,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return capturedAuthorities.components();
   }
   private java.nio.file.Path semanticAssets;
+  private volatile boolean interactiveAuthoritiesEnabled;
+
+  /** Called under an accepted environment lease, never during candidate compilation. */
+  public void enableInteractiveAuthorities() {
+    if (!semanticOnly || authorityBootstrapActor) throw new IllegalStateException("Not an accepted semantic actor");
+    interactiveAuthoritiesEnabled = true;
+  }
   private volatile boolean knowledgeReady;
   private final org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState
       semanticValidationState = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();

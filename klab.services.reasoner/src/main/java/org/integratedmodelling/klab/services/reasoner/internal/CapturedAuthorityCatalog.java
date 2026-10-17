@@ -15,7 +15,8 @@ import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor;
 
-/** Immutable public-provider response catalog. It executes no provider configuration or network calls. */
+/** Immutable public-provider catalog. Candidates replay responses; accepted runtimes may opt into
+ * live operations using the owned provider archives. Capture itself never configures providers. */
 public final class CapturedAuthorityCatalog {
   private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
   private final Map<String, Provider> providers;
@@ -24,7 +25,7 @@ public final class CapturedAuthorityCatalog {
   private final String revision;
   public record ProviderEvidence(String implementation, String componentSha256, String policySha256, String metadataSha256) {}
   private record Provider(ComponentDescriptor component, String className, String implementation,
-      Authority.CachePolicy policy, Set<String> boundaries, byte[] capabilities, byte[] seeds) {}
+      Authority.CachePolicy policy, Set<String> boundaries, byte[] capabilities, byte[] seeds, byte[] archive) {}
 
   @com.fasterxml.jackson.annotation.JsonIgnoreProperties("updateable")
   private abstract static class ComponentWireMixin {}
@@ -116,7 +117,7 @@ public final class CapturedAuthorityCatalog {
         ((com.fasterxml.jackson.databind.node.ObjectNode)capabilities).put("subAuthoritiesSearchFilters", instance.getCapabilities().areSubAuthoritiesSearchFilters());
         var record = new Provider(mapper.convertValue(descriptor, ComponentDescriptor.class), className,
             className + ":" + annotation.version() + ":" + digest(archive), instance.getCachePolicy(),
-            Set.copyOf(instance.getSemanticBoundaries()), mapper.writeValueAsBytes(capabilities), mapper.writeValueAsBytes(instance.getCodelistDefinitions(null)));
+            Set.copyOf(instance.getSemanticBoundaries()), mapper.writeValueAsBytes(capabilities), mapper.writeValueAsBytes(instance.getCodelistDefinitions(null)), archive);
         if (providers.put(instance.getUrn(), record) != null) throw unresolved("duplicate provider: " + instance.getUrn());
       } finally {
         if (instance != null) closeOwnedClients(instance, loader, Collections.newSetFromMap(new IdentityHashMap<>()));
@@ -260,6 +261,11 @@ public final class CapturedAuthorityCatalog {
     }
   }
   public Authority provider(Worldview.AuthorityBinding binding, Authority.ConfigurationRequest request, Path assets) {
+    return provider(binding, request, assets, () -> false);
+  }
+  /** Only an accepted runtime may opt into live operations; compilation keeps replay-only providers. */
+  public Authority provider(Worldview.AuthorityBinding binding, Authority.ConfigurationRequest request, Path assets,
+      java.util.function.BooleanSupplier interactive) {
     if (!supports(binding)) throw unresolved("provider binding is absent or changed: " + binding.localId());
     if (!Arrays.equals(validatedRequests.get(binding.localId()), bytes(request)))
       throw unresolved("authority configuration changed since its validated capture: " + binding.localId());
@@ -267,20 +273,25 @@ public final class CapturedAuthorityCatalog {
     String fingerprint = digest(bytes(List.of("authority-cache-v2", request.worldview(), request.name(),
         request.rootIdentity(), request.parameters(), binding.provider().urn(), provider.implementation(), provider.policy())));
     String prefix = segment("wv", request.worldview()) + "/" + segment("configuration", request.name()) + "/" + fingerprint + "/";
-    return new Snapshot(provider, request, prefix, assets, "");
+    return new Snapshot(provider, request, prefix, assets, "", new BridgeState(), interactive);
   }
   public boolean authorized(Worldview.AuthorityBinding binding, org.integratedmodelling.klab.api.scope.Scope scope) {
     return supports(binding) && providers.get(binding.provider().urn()).component().usageRights().checkAuthorization(scope);
   }
-  private static final class BridgeState { volatile String configured; }
+  private static final class BridgeState {
+    volatile String configured;
+    Authority live, implementation;
+    String liveId;
+    CapturedLoader loader;
+  }
   private final class Snapshot implements Authority {
     private final Provider provider; private final ConfigurationRequest original;
     private final String prefix, view; private final Path assets; private final BridgeState bridge;
-    Snapshot(Provider provider, ConfigurationRequest original, String prefix, Path assets, String view) {
-      this(provider, original, prefix, assets, view, new BridgeState());
-    }
-    Snapshot(Provider provider, ConfigurationRequest original, String prefix, Path assets, String view, BridgeState bridge) {
+    private final java.util.function.BooleanSupplier interactive;
+    Snapshot(Provider provider, ConfigurationRequest original, String prefix, Path assets, String view, BridgeState bridge,
+        java.util.function.BooleanSupplier interactive) {
       this.provider = provider; this.original = original; this.prefix = prefix; this.assets = assets; this.view = view; this.bridge = bridge;
+      this.interactive = interactive;
     }
     @Override public String getUrn() { return provider.component().id(); }
     @Override public CachePolicy getCachePolicy() { return provider.policy(); }
@@ -311,7 +322,45 @@ public final class CapturedAuthorityCatalog {
       if (!AuthorityBindings.providerRequest(original).equals(request)) throw unresolved("provider parameters changed since capture: " + original.name());
       bridge.configured = "snapshot:" + revision + ":" + original.name(); return bridge.configured;
     }
-    @Override public synchronized void releaseConfiguration(String id) { check(id); bridge.configured = null; }
+    @Override public synchronized void releaseConfiguration(String id) {
+      check(id);
+      synchronized (bridge) {
+        bridge.configured = null;
+        try { if (bridge.live != null) bridge.live.releaseConfiguration(bridge.liveId); }
+        finally { closeLive(); }
+      }
+    }
+    private void closeLive() {
+      try { if (bridge.implementation != null) closeOwnedProvider(bridge.implementation); }
+      finally {
+        if (bridge.loader != null) bridge.loader.clear();
+        bridge.live = null; bridge.implementation = null; bridge.loader = null; bridge.liveId = null;
+      }
+    }
+    private Authority live() {
+      synchronized (bridge) {
+        if (bridge.live == null) {
+          try {
+            // Use owned archive bytes, never a mutable installed plug-in or its original path.
+            bridge.loader = new CapturedLoader(provider.archive(), provider.className().substring(0, provider.className().lastIndexOf('.') + 1));
+            bridge.implementation = (Authority)bridge.loader.loadClass(provider.className()).getConstructor().newInstance();
+            var cached = new CachedAuthority(bridge.implementation, assets.resolve("interactive-authority-cache"),
+                Clock.systemUTC(), provider.implementation());
+            bridge.liveId = cached.configure(original);
+            bridge.live = cached;
+          } catch (Exception failure) {
+            closeLive();
+            throw new IllegalStateException("Cannot initialize accepted authority provider", failure);
+          }
+        }
+        Authority result = bridge.live;
+        if (!view.isEmpty()) for (var segment : view.split("/")) {
+          result = result.subAuthority(segment);
+          if (result == null) throw new IllegalStateException("Accepted authority view is unavailable");
+        }
+        return result;
+      }
+    }
     private void check(String id) { if (bridge.configured == null || !bridge.configured.equals(id)) throw new IllegalStateException("Unknown or released captured authority bridge"); }
     private JsonNode response(Object operation) {
       var contents = records.get(prefix + digest(bytes(operation)) + ".json");
@@ -338,18 +387,23 @@ public final class CapturedAuthorityCatalog {
     }
     @Override public synchronized Identity resolveIdentity(String id, String code) { return resolveIdentity(id, code, ResolutionMode.CONFIGURED); }
     @Override public synchronized Identity resolveIdentity(String id, String code, ResolutionMode mode) {
-      check(id); return identity(response(List.of(mode == ResolutionMode.FULL_HIERARCHY ? "identity-full" : "identity", view, code)));
+      check(id);
+      if (interactive.getAsBoolean()) return live().resolveIdentity(bridge.liveId, code, mode);
+      return identity(response(List.of(mode == ResolutionMode.FULL_HIERARCHY ? "identity-full" : "identity", view, code)));
     }
     @Override public synchronized List<Identity> search(String query, String filter, String id) {
       check(id); var result = new ArrayList<Identity>();
+      if (interactive.getAsBoolean()) return live().search(query, filter, bridge.liveId);
       response(Arrays.asList("search", view, query, filter)).forEach(item -> result.add(identity(item))); return result;
     }
     @Override public synchronized Identity reconcile(String id, Map<String, String> fields) {
-      check(id); return identity(response(List.of("reconcile", view, fields)));
+      check(id);
+      if (interactive.getAsBoolean()) return live().reconcile(bridge.liveId, fields);
+      return identity(response(List.of("reconcile", view, fields)));
     }
     @Override public Authority subAuthority(String name) {
       if (provider.boundaries().contains(name)) {
-        return new Snapshot(provider, original, prefix, assets, view.isEmpty() ? name : view + "/" + name, bridge);
+        return new Snapshot(provider, original, prefix, assets, view.isEmpty() ? name : view + "/" + name, bridge, interactive);
       }
       return null;
     }

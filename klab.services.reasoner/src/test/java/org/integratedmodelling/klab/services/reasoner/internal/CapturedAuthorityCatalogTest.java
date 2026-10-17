@@ -11,6 +11,34 @@ import org.integratedmodelling.klab.api.services.Authority;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 class CapturedAuthorityCatalogTest {
+  @Test void acceptedSearchUsesOwnedProviderWhileCandidatesRemainReplayOnly() throws Exception {
+    var fixture = fixture(); var catalog = captured(fixture);
+    var enabled = new java.util.concurrent.atomic.AtomicBoolean();
+    var provider = catalog.provider(fixture.binding(), request(), directory.resolve("interactive"), enabled::get);
+    var id = provider.configure(AuthorityBindings.providerRequest(request()));
+    assertTrue(provider.getCapabilities().isSearchable());
+    assertThrows(UnsupportedOperationException.class, () -> provider.search("new-query", null, id));
+    // The original installation can disappear after capture: accepted requests use owned bytes.
+    Files.delete(fixture.data().resolve("components/plugins/klab.authority.taxa-1.0.0-SNAPSHOT-component.jar"));
+    enabled.set(true);
+    assertEquals("new-query", provider.search("new-query", "SPECIES", id).getFirst().getId());
+    assertEquals("selected-code", provider.resolveIdentity(id, "selected-code").getId());
+    var view = provider.subAuthority("SPECIES");
+    assertEquals("other-code", view.resolveIdentity(id, "other-code").getId());
+    var bindings = new AuthorityBindings();
+    bindings.configure(request(), provider);
+    var reply = bindings.search(new org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest(
+        "TAXA", "fresh-search", "SPECIES", 0, 10));
+    assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.OK, reply.status());
+    assertEquals("fresh-search", reply.matches().getFirst().getId());
+    assertEquals("TAXA", reply.matches().getFirst().getAuthorityName());
+    var frozen = catalog.provider(fixture.binding(), request(), directory.resolve("frozen"));
+    var frozenId = frozen.configure(AuthorityBindings.providerRequest(request()));
+    assertThrows(UnsupportedOperationException.class, () -> frozen.search("new-query", null, frozenId));
+    provider.releaseConfiguration(id);
+    assertThrows(IllegalStateException.class, () -> view.search("new-query", null, id));
+    frozen.releaseConfiguration(frozenId);
+  }
   @Test void discoveryDescriptorsAreDetachedFromCapturedAuthorityState() throws Exception {
     var catalog = captured(fixture());
     var descriptor = catalog.components().getFirst();

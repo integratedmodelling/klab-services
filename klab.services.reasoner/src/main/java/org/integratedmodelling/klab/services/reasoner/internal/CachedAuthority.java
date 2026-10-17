@@ -28,10 +28,14 @@ public final class CachedAuthority implements Authority {
 
   public CachedAuthority(Authority source, Path root) { this(source, root, Clock.systemUTC()); }
   CachedAuthority(Authority source, Path root, Clock clock) {
+    this(source, root, clock, implementationRevision(source));
+  }
+  /** Owned in-memory archives already have a verified implementation digest. */
+  CachedAuthority(Authority source, Path root, Clock clock, String revision) {
     this.source = Objects.requireNonNull(source);
     this.root = Objects.requireNonNull(root);
     this.clock = clock;
-    this.revision = implementationRevision(source);
+    this.revision = Objects.requireNonNull(revision);
   }
   public boolean wraps(Authority provider) { return source == provider; }
   @Override public String getUrn() { return source.getUrn(); }

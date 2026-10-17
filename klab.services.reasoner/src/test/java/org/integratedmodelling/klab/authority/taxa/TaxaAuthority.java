@@ -7,9 +7,16 @@ public class TaxaAuthority implements Authority {
   public String getUrn() { return "klab.authority.taxa"; }
   public CachePolicy getCachePolicy() { return new CachePolicy("fixture-1",Long.MAX_VALUE,86400,86400); }
   public Set<String> getSemanticBoundaries() { return Set.of("SPECIES"); }
-  public String configure(ConfigurationRequest request) { throw new AssertionError("Capture must not configure live providers"); }
-  public Identity resolveIdentity(String configuration, String id) { throw new AssertionError("Capture must not fetch identities"); }
-  public List<Identity> search(String query, String filter, String id) { throw new AssertionError("Capture must not search providers"); }
+  private String configured;
+  public String configure(ConfigurationRequest request) { return configured = "live:" + request.name(); }
+  public void releaseConfiguration(String id) { if (!Objects.equals(id, configured)) throw new IllegalStateException(); configured = null; }
+  public Identity resolveIdentity(String configuration, String id) {
+    if (configured == null || !configured.equals(configuration)) throw new IllegalStateException("Unconfigured fixture");
+    return new org.integratedmodelling.klab.services.reasoner.internal.CachedAuthority.StoredIdentity(
+        id, "taxon_" + id, "TAXA", null, List.of(), List.of(), "Live result", "Live " + id,
+        1, "TAXA:" + id, Map.of(), Set.of("SPECIES"), HierarchyStatus.COMPLETE);
+  }
+  public List<Identity> search(String query, String filter, String id) { return List.of(resolveIdentity(id, query)); }
   public Authority subAuthority(String catalog) { return this; }
   public Capabilities getCapabilities() { return new FixtureCapabilities(); }
   public static class FixtureCapabilities implements Capabilities {
