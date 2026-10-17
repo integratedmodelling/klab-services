@@ -18,9 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * There is one job manager per session at service side. Jobs expire when the session is closed.
- */
+/** There is one job manager per session at service side. Jobs expire when the session is closed. */
 public class JobManager {
 
   private record Job(

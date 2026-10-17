@@ -105,7 +105,8 @@ public class KlabAdminController {
    * @return true if the credentials were there and were deleted, false otherwise
    */
   @Operation(
-      summary = "Delete credentials", description = "Delete stored credentials by identifier")
+      summary = "Delete credentials",
+      description = "Delete stored credentials by identifier")
   @DeleteMapping(ServicesAPI.ADMIN.CREDENTIALS)
   public boolean removeCredentials(@RequestParam("id") String id) {
     return Authentication.INSTANCE.removeCredentials(id);
@@ -161,14 +162,13 @@ public class KlabAdminController {
         var body = Utils.Json.parseObject(dataBody, s.valueClass);
         return userScope
             .getJobManager()
-            .submit(
-                settings.set(s, body),
-                "Setting change: " + setting);
+            .submit(settings.set(s, body), "Setting change: " + setting);
       }
     }
     if (scope instanceof ServiceUserScope userScope
         && !userScope.isAuthorized(CRUDOperation.ADMINISTER)) {
-      throw new KlabAuthorizationException("ADMINISTER permission is required for service settings");
+      throw new KlabAuthorizationException(
+          "ADMINISTER permission is required for service settings");
     }
     throw new KlabIllegalArgumentException("Invalid setting: " + setting);
   }

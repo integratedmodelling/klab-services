@@ -15,22 +15,44 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
   private final String spatialProjection;
   private final AtomicBoolean closed = new AtomicBoolean();
 
-  LocalScanSession(StorageScan.Plan<T> plan, List<Storage.Shard> shards,
-      List<IndexedStorageReader> readers, ScanMapping mapping, Runnable release) {
-    this(plan, shards, readers, mapping, release,
-        plan.description().mask() == null ? null : SpatialCoverage.support(plan.description().mask().sourceGeometry()),
-        plan.description().mask() == null ? null : SpatialCoverage.support(plan.description().mask().targetGeometry()));
+  LocalScanSession(
+      StorageScan.Plan<T> plan,
+      List<Storage.Shard> shards,
+      List<IndexedStorageReader> readers,
+      ScanMapping mapping,
+      Runnable release) {
+    this(
+        plan,
+        shards,
+        readers,
+        mapping,
+        release,
+        plan.description().mask() == null
+            ? null
+            : SpatialCoverage.support(plan.description().mask().sourceGeometry()),
+        plan.description().mask() == null
+            ? null
+            : SpatialCoverage.support(plan.description().mask().targetGeometry()));
   }
 
-  LocalScanSession(StorageScan.Plan<T> plan, List<Storage.Shard> shards,
-      List<IndexedStorageReader> readers, ScanMapping mapping, Runnable release,
-      SpatialCoverage.Support sourceSupport, SpatialCoverage.Support targetSupport) {
+  LocalScanSession(
+      StorageScan.Plan<T> plan,
+      List<Storage.Shard> shards,
+      List<IndexedStorageReader> readers,
+      ScanMapping mapping,
+      Runnable release,
+      SpatialCoverage.Support sourceSupport,
+      SpatialCoverage.Support targetSupport) {
     var coveredReaders = new ArrayList<IndexedStorageReader>(readers.size());
     for (int i = 0; i < readers.size(); i++) {
       var reader = readers.get(i);
       if (sourceSupport != null) {
-        var coverage = new SpatialCoverage(plan.description().sources().get(i).geometry(), sourceSupport.projection,
-            plan.description().nativeLayout().curve(), sourceSupport);
+        var coverage =
+            new SpatialCoverage(
+                plan.description().sources().get(i).geometry(),
+                sourceSupport.projection,
+                plan.description().nativeLayout().curve(),
+                sourceSupport);
         if (!coverage.unrestricted) reader = new CoverageReader(reader, coverage);
       }
       coveredReaders.add(reader);
@@ -40,13 +62,18 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
     this.release = release;
     var description = plan.description();
     this.description = description;
-    if (mapping instanceof SpatialScan spatial) spatialProjection = spatial.targetLattice.reference.projection();
-    else if (mapping instanceof ConformantScan conformant) spatialProjection = conformant.projection;
+    if (mapping instanceof SpatialScan spatial)
+      spatialProjection = spatial.targetLattice.reference.projection();
+    else if (mapping instanceof ConformantScan conformant)
+      spatialProjection = conformant.projection;
     else {
-      var space = StorageScan.parseGeometry(description.sources().getFirst().geometry())
-          .dimension(org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type.SPACE);
-      spatialProjection = targetSupport != null ? targetSupport.projection
-          : space == null ? null : Objects.toString(space.getParameters().get("proj"), null);
+      var space =
+          StorageScan.parseGeometry(description.sources().getFirst().geometry())
+              .dimension(org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type.SPACE);
+      spatialProjection =
+          targetSupport != null
+              ? targetSupport.projection
+              : space == null ? null : Objects.toString(space.getParameters().get("proj"), null);
     }
     this.kernel = ValueMediation.kernel(description.conversion());
     var cursors = new ArrayList<T>();
@@ -55,47 +82,87 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
       Storage.Shard shard;
       IndexedStorageReader reader;
       if (mapping == null) {
-        physical = List.of(description.sources().get(i)); shard = shards.get(i); reader = readers.get(i);
+        physical = List.of(description.sources().get(i));
+        shard = shards.get(i);
+        reader = readers.get(i);
       } else {
         var links = mapping.dependencies()[i];
         var linked = new ArrayList<StorageScan.SourceShard>(links.length);
         for (int source : links) linked.add(description.sources().get(source));
         physical = List.copyOf(linked);
-        shard = !(mapping instanceof SpatialScan) && links.length == 1 ? shards.get(links[0]) : null;
+        shard =
+            !(mapping instanceof SpatialScan) && links.length == 1 ? shards.get(links[0]) : null;
         reader = mapping.reader(i, this.readers, description.budget().blockValues());
       }
-      var view = new StorageScan.View(description.partitions().get(i), description.requestedLayout().curve(),
-          description.valueType(), description.targetSemantics(), description.slice(),
-          physical, description.histogram(), description.spatial());
-      Storage.Scanner scanner = switch (description.valueType()) {
-        case DOUBLE -> new DoubleCursor(shard, reader, view);
-        case FLOAT -> new FloatCursor(shard, reader, view);
-        case INTEGER -> new IntCursor(shard, reader, view);
-        case LONG -> new LongCursor(shard, reader, view);
-        case BOOLEAN -> new BooleanCursor(shard, reader, view);
-        case KEYED -> new KeyCursor(shard,reader,view);
-      };
-      if (targetSupport != null) scanner = CoveredScanner.wrap(scanner,
-          new SpatialCoverage(view.partition().geometry(), targetSupport.projection, view.curve(), targetSupport));
+      var view =
+          new StorageScan.View(
+              description.partitions().get(i),
+              description.requestedLayout().curve(),
+              description.valueType(),
+              description.targetSemantics(),
+              description.slice(),
+              physical,
+              description.histogram(),
+              description.spatial());
+      Storage.Scanner scanner =
+          switch (description.valueType()) {
+            case DOUBLE -> new DoubleCursor(shard, reader, view);
+            case FLOAT -> new FloatCursor(shard, reader, view);
+            case INTEGER -> new IntCursor(shard, reader, view);
+            case LONG -> new LongCursor(shard, reader, view);
+            case BOOLEAN -> new BooleanCursor(shard, reader, view);
+            case KEYED -> new KeyCursor(shard, reader, view);
+          };
+      if (targetSupport != null)
+        scanner =
+            CoveredScanner.wrap(
+                scanner,
+                new SpatialCoverage(
+                    view.partition().geometry(),
+                    targetSupport.projection,
+                    view.curve(),
+                    targetSupport));
       cursors.add(plan.scannerClass().cast(scanner));
     }
     scanners = List.copyOf(cursors);
   }
 
-  @Override public List<T> scanners() { checkOpen(); return scanners; }
-  @Override public StorageScan.Description description() { return description; }
-  @Override public boolean isClosed() { return closed.get(); }
-  private void checkOpen() { if (isClosed()) throw new IllegalStateException("Scan session is closed"); }
+  @Override
+  public List<T> scanners() {
+    checkOpen();
+    return scanners;
+  }
 
-  @Override public void close() {
+  @Override
+  public StorageScan.Description description() {
+    return description;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return closed.get();
+  }
+
+  private void checkOpen() {
+    if (isClosed()) throw new IllegalStateException("Scan session is closed");
+  }
+
+  @Override
+  public void close() {
     if (!closed.compareAndSet(false, true)) return;
     RuntimeException failure = null;
     try {
       for (var reader : readers) {
-        try { reader.close(); }
-        catch (RuntimeException e) { if (failure == null) failure = e; else failure.addSuppressed(e); }
+        try {
+          reader.close();
+        } catch (RuntimeException e) {
+          if (failure == null) failure = e;
+          else failure.addSuppressed(e);
+        }
       }
-    } finally { release.run(); }
+    } finally {
+      release.run();
+    }
     if (failure != null) throw failure;
   }
 
@@ -105,68 +172,229 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
     final StorageScan.View view;
     long index;
     SpatialCoverage spatial;
+
     Cursor(Storage.Shard shard, IndexedStorageReader reader, StorageScan.View view) {
-      this.shard = shard; this.reader = reader; this.view = view;
+      this.shard = shard;
+      this.reader = reader;
+      this.view = view;
     }
-    @Override public Storage.Shard shard() { checkOpen();
-      if (shard == null) throw new UnsupportedOperationException("View has no single physical shard; use view().sources()");
-      return shard; }
-    @Override public StorageScan.View view() { checkOpen(); return view; }
-    @Override public long size() { checkOpen(); return view.partition().size(); }
-    @Override public void seek(long offset) {
+
+    @Override
+    public Storage.Shard shard() {
       checkOpen();
-      if (offset < 0 || offset > view.partition().size()) throw new IndexOutOfBoundsException("Scan offset " + offset);
+      if (shard == null)
+        throw new UnsupportedOperationException(
+            "View has no single physical shard; use view().sources()");
+      return shard;
+    }
+
+    @Override
+    public StorageScan.View view() {
+      checkOpen();
+      return view;
+    }
+
+    @Override
+    public long size() {
+      checkOpen();
+      return view.partition().size();
+    }
+
+    @Override
+    public void seek(long offset) {
+      checkOpen();
+      if (offset < 0 || offset > view.partition().size())
+        throw new IndexOutOfBoundsException("Scan offset " + offset);
       index = offset;
     }
-    @Override public long position() { checkOpen(); return index; }
+
+    @Override
+    public long position() {
+      checkOpen();
+      return index;
+    }
+
     private SpatialCoverage spatial() {
       checkValue();
-      if (spatial == null) spatial = new SpatialCoverage(view.partition().geometry(), spatialProjection, view.curve(), null);
+      if (spatial == null)
+        spatial =
+            new SpatialCoverage(view.partition().geometry(), spatialProjection, view.curve(), null);
       return spatial;
     }
-    @Override public void spatialCoordinates(long[] coordinates) { spatial().coordinates(index, coordinates); }
-    @Override public StorageScan.Cell cell() { return spatial().cell(index); }
-    @Override public boolean hasNext() { checkOpen(); return index < view.partition().size(); }
-    @Override public long nextLong() { checkValue(); return index++; }
-    @Override public boolean isValid() { checkValue(); return reader.isValid(index); }
-    void checkValue() { if (!hasNext()) throw new NoSuchElementException("Scan exhausted"); }
-    void rejectWrite() { checkOpen(); throw new IllegalStateException("Planned scans are read-only"); }
+
+    @Override
+    public void spatialCoordinates(long[] coordinates) {
+      spatial().coordinates(index, coordinates);
+    }
+
+    @Override
+    public StorageScan.Cell cell() {
+      return spatial().cell(index);
+    }
+
+    @Override
+    public boolean hasNext() {
+      checkOpen();
+      return index < view.partition().size();
+    }
+
+    @Override
+    public long nextLong() {
+      checkValue();
+      return index++;
+    }
+
+    @Override
+    public boolean isValid() {
+      checkValue();
+      return reader.isValid(index);
+    }
+
+    void checkValue() {
+      if (!hasNext()) throw new NoSuchElementException("Scan exhausted");
+    }
+
+    void rejectWrite() {
+      checkOpen();
+      throw new IllegalStateException("Planned scans are read-only");
+    }
   }
-  private final class KeyCursor extends Cursor implements Storage.KeyScanner<org.integratedmodelling.klab.api.knowledge.Concept> {
-    KeyCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); if(r.key()==null)throw new IllegalStateException("Missing dictionary"); }
-    public org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() { return reader.key(); }
-    public org.integratedmodelling.klab.api.knowledge.Concept peek() { checkValue(); return reader.isValid(index) ? (org.integratedmodelling.klab.api.knowledge.Concept)key().lookup(reader.readInt(index)) : null; }
-    public org.integratedmodelling.klab.api.knowledge.Concept get() { var value=peek();index++;return value; }
-    public void add(org.integratedmodelling.klab.api.knowledge.Concept value) { rejectWrite(); }
+
+  private final class KeyCursor extends Cursor
+      implements Storage.KeyScanner<org.integratedmodelling.klab.api.knowledge.Concept> {
+    KeyCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) {
+      super(s, r, v);
+      if (r.key() == null) throw new IllegalStateException("Missing dictionary");
+    }
+
+    public org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() {
+      return reader.key();
+    }
+
+    public org.integratedmodelling.klab.api.knowledge.Concept peek() {
+      checkValue();
+      return reader.isValid(index)
+          ? (org.integratedmodelling.klab.api.knowledge.Concept) key().lookup(reader.readInt(index))
+          : null;
+    }
+
+    public org.integratedmodelling.klab.api.knowledge.Concept get() {
+      var value = peek();
+      index++;
+      return value;
+    }
+
+    public void add(org.integratedmodelling.klab.api.knowledge.Concept value) {
+      rejectWrite();
+    }
   }
+
   private final class DoubleCursor extends Cursor implements Storage.DoubleScanner {
-    DoubleCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); }
-    public double peek() { checkValue(); return kernel.apply(reader.type() == Storage.Type.FLOAT ? reader.readFloat(index) : reader.readDouble(index)); }
-    public double get() { double value = peek(); index++; return value; }
-    public void add(double value) { rejectWrite(); }
+    DoubleCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) {
+      super(s, r, v);
+    }
+
+    public double peek() {
+      checkValue();
+      return kernel.apply(
+          reader.type() == Storage.Type.FLOAT ? reader.readFloat(index) : reader.readDouble(index));
+    }
+
+    public double get() {
+      double value = peek();
+      index++;
+      return value;
+    }
+
+    public void add(double value) {
+      rejectWrite();
+    }
   }
+
   private final class FloatCursor extends Cursor implements Storage.FloatScanner {
-    FloatCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); }
-    public float peek() { checkValue(); return kernel.applyFloat(reader.type() == Storage.Type.DOUBLE ? reader.readDouble(index) : reader.readFloat(index)); }
-    public float get() { float value = peek(); index++; return value; }
-    public void add(float value) { rejectWrite(); }
+    FloatCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) {
+      super(s, r, v);
+    }
+
+    public float peek() {
+      checkValue();
+      return kernel.applyFloat(
+          reader.type() == Storage.Type.DOUBLE
+              ? reader.readDouble(index)
+              : reader.readFloat(index));
+    }
+
+    public float get() {
+      float value = peek();
+      index++;
+      return value;
+    }
+
+    public void add(float value) {
+      rejectWrite();
+    }
   }
+
   private final class IntCursor extends Cursor implements Storage.IntScanner {
-    IntCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); }
-    public int peek() { checkValue(); return reader.readInt(index); }
-    public int get() { int value = peek(); index++; return value; }
-    public void add(int value) { rejectWrite(); }
+    IntCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) {
+      super(s, r, v);
+    }
+
+    public int peek() {
+      checkValue();
+      return reader.readInt(index);
+    }
+
+    public int get() {
+      int value = peek();
+      index++;
+      return value;
+    }
+
+    public void add(int value) {
+      rejectWrite();
+    }
   }
+
   private final class LongCursor extends Cursor implements Storage.LongScanner {
-    LongCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); }
-    public long peek() { checkValue(); return reader.readLong(index); }
-    public long get() { long value = peek(); index++; return value; }
-    public void add(long value) { rejectWrite(); }
+    LongCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) {
+      super(s, r, v);
+    }
+
+    public long peek() {
+      checkValue();
+      return reader.readLong(index);
+    }
+
+    public long get() {
+      long value = peek();
+      index++;
+      return value;
+    }
+
+    public void add(long value) {
+      rejectWrite();
+    }
   }
+
   private final class BooleanCursor extends Cursor implements Storage.BooleanScanner {
-    BooleanCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) { super(s,r,v); }
-    public boolean peek() { checkValue(); return reader.readBoolean(index); }
-    public boolean get() { boolean value = peek(); index++; return value; }
-    public void add(boolean value) { rejectWrite(); }
+    BooleanCursor(Storage.Shard s, IndexedStorageReader r, StorageScan.View v) {
+      super(s, r, v);
+    }
+
+    public boolean peek() {
+      checkValue();
+      return reader.readBoolean(index);
+    }
+
+    public boolean get() {
+      boolean value = peek();
+      index++;
+      return value;
+    }
+
+    public void add(boolean value) {
+      rejectWrite();
+    }
   }
 }

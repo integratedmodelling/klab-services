@@ -155,8 +155,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.setName(configuration.getName());
     // TODO use the configuration to override the sharding strategy
     this.shardingStrategy = Data.ShardingStrategy.neutral();
-    this.observationCache =
-        CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build();
+    this.observationCache = CacheBuilder.newBuilder().maximumSize(MAX_CACHED_OBSERVATIONS).build();
   }
 
   @Override
@@ -174,10 +173,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation getObserver() {
-    if (observer != null && observer.getId() > 0 && digitalTwin != null && currentTransaction == null) {
+    if (observer != null
+        && observer.getId() > 0
+        && digitalTwin != null
+        && currentTransaction == null) {
       long revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
       if (revision != observerRevision) {
-        var current = digitalTwin.getKnowledgeGraph().getAsset(observer.getId(), this, Observation.class);
+        var current =
+            digitalTwin.getKnowledgeGraph().getAsset(observer.getId(), this, Observation.class);
         if (current != null) observer = current;
         observerRevision = revision;
       }
@@ -188,7 +191,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   /** A connection configuration is private to its user; the registered twin scope stays neutral. */
   public ServiceContextScope forObserverConnection(Observation observer) {
     var ret = withObserver(observer);
-    ret.configuration = Utils.Json.parseObject(Utils.Json.asString(configuration), ConfigurationImpl.class);
+    ret.configuration =
+        Utils.Json.parseObject(Utils.Json.asString(configuration), ConfigurationImpl.class);
     ((ConfigurationImpl) ret.configuration).setObserver(Observation.forTransport(observer));
     return ret;
   }
@@ -286,15 +290,19 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public ServiceContextScope withObserver(Observation observer) {
-    if (observer != null && (observer.getId() <= 0 || observer.getObservable() == null
-        || !observer.getObservable().is(SemanticType.AGENT))) {
+    if (observer != null
+        && (observer.getId() <= 0
+            || observer.getObservable() == null
+            || !observer.getObservable().is(SemanticType.AGENT))) {
       throw new IllegalArgumentException("An observer must be a persisted agent");
     }
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.observer = observer;
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
-    if (observer != null) ret.resolutionConstraints.put(ResolutionConstraint.Type.Observer,
-        ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
+    if (observer != null)
+      ret.resolutionConstraints.put(
+          ResolutionConstraint.Type.Observer,
+          ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
     return ret;
   }
 
@@ -394,16 +402,22 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Collection<RuntimeAsset> getOutgoingRelationshipsOf(RuntimeAsset observation) {
-    return new ArrayList<>(participantLinks(observation, false,
-        GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE,
-        GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT));
+    return new ArrayList<>(
+        participantLinks(
+            observation,
+            false,
+            GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE,
+            GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT));
   }
 
   @Override
   public Collection<RuntimeAsset> getIncomingRelationshipsOf(RuntimeAsset observation) {
-    return new ArrayList<>(participantLinks(observation, false,
-        GraphModel.Relationship.HAS_RELATIONSHIP_TARGET,
-        GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT));
+    return new ArrayList<>(
+        participantLinks(
+            observation,
+            false,
+            GraphModel.Relationship.HAS_RELATIONSHIP_TARGET,
+            GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT));
   }
 
   @Override
@@ -412,17 +426,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         || relationship.getObservable().getSemantics().isCollective()) return List.of();
     return relationship.getObservable().is(SemanticType.BIDIRECTIONAL)
         ? participantLinks(relationship, true, GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT)
-        : participantLinks(relationship, true, GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE,
+        : participantLinks(
+            relationship,
+            true,
+            GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE,
             GraphModel.Relationship.HAS_RELATIONSHIP_TARGET);
   }
 
-  private List<Observation> participantLinks(RuntimeAsset anchor, boolean outgoing,
-      GraphModel.Relationship... types) {
+  private List<Observation> participantLinks(
+      RuntimeAsset anchor, boolean outgoing, GraphModel.Relationship... types) {
     var result = new LinkedHashMap<Long, Observation>();
     for (var type : types) {
       // An existing participant need not itself belong to assets() to have new incoming edges.
       if (currentTransaction != null) {
-        var links = outgoing ? currentTransaction.outgoing(anchor) : currentTransaction.incoming(anchor);
+        var links =
+            outgoing ? currentTransaction.outgoing(anchor) : currentTransaction.incoming(anchor);
         for (var link : links) {
           var other = outgoing ? link.target() : link.source();
           if (link.type() == type && other instanceof Observation observation)
@@ -431,12 +449,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       }
       if (anchor.getId() > 0) {
         var query = digitalTwin.getKnowledgeGraph().query(Observation.class, this).along(type);
-        if (outgoing) query.source(anchor); else query.target(anchor);
-        for (var observation : query.run(this)) result.putIfAbsent(observation.getId(), observation);
+        if (outgoing) query.source(anchor);
+        else query.target(anchor);
+        for (var observation : query.run(this))
+          result.putIfAbsent(observation.getId(), observation);
       }
     }
     return new ArrayList<>(result.values());
   }
+
   //  @Override
   //  public Collection<Observation> affecting(Observation observation) {
   //
@@ -576,7 +597,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     try {
       send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
     } catch (RuntimeException deliveryFailure) {
-      warn("Activity delivery failed; committed temporal history remains available",deliveryFailure);
+      warn(
+          "Activity delivery failed; committed temporal history remains available",
+          deliveryFailure);
     }
     return ret;
   }
@@ -645,8 +668,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (constraint.getType() == ResolutionConstraint.Type.UnresolvedContextObservation) {
           ret.contextObservation = constraint.payload(Observation.class).getFirst();
         } else if (constraint.getType() == ResolutionConstraint.Type.Observer) {
-          var selected = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
-              constraint.payload(Long.class).getFirst(), ret, Observation.class);
+          var selected =
+              ret.getDigitalTwin()
+                  .getKnowledgeGraph()
+                  .getAsset(constraint.payload(Long.class).getFirst(), ret, Observation.class);
           if (selected == null) throw new IllegalArgumentException("Unknown observer");
           ret = ret.withObserver(selected);
         } else if (constraint.getType().incremental
@@ -870,9 +895,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             .along(GraphModel.Relationship.HAS_CHILD);
 
     if (!querySourceIds.isEmpty()) {
-      query =
-          query.where(
-              "id", KnowledgeGraph.Query.Operator.EQUALS, querySourceIds.getFirst());
+      query = query.where("id", KnowledgeGraph.Query.Operator.EQUALS, querySourceIds.getFirst());
     } else if (!observation.getObservable().getSemantics().isCollective()
         && SemanticType.isEnumerableSubstantial(
             observation.getObservable().getSemantics().getType())) {

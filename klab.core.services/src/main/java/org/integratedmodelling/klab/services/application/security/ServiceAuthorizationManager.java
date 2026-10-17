@@ -272,7 +272,8 @@ public class ServiceAuthorizationManager {
 
     if (token != null && token.startsWith(HubWebAuthentication.PREFIX)) {
       var web = webAuthentication.authorize(token, requestHeaders);
-      if (web != null && web.getScope() instanceof org.integratedmodelling.klab.api.scope.UserScope requester) {
+      if (web != null
+          && web.getScope() instanceof org.integratedmodelling.klab.api.scope.UserScope requester) {
         web.validateIdentityHeaders(requestHeaders, requester);
       }
       return web;
@@ -501,8 +502,7 @@ public class ServiceAuthorizationManager {
               + scopeHeader);
     }
 
-    ret.setInfo(
-        "scopeHeader=" + scopeHeader + "; runtimeId=" + runtimeId);
+    ret.setInfo("scopeHeader=" + scopeHeader + "; runtimeId=" + runtimeId);
 
     ret.setScope(resolvedScope);
 

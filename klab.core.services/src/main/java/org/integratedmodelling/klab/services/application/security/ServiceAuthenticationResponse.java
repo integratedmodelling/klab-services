@@ -66,7 +66,7 @@ public class ServiceAuthenticationResponse {
   public ServiceAuthenticationResponse() {}
 
   public ServiceAuthenticationResponse(
-          AuthenticatedIdentityImpl userData,
+      AuthenticatedIdentityImpl userData,
       String authenticatingNodeId,
       Collection<GroupImpl> groups,
       String publicKey,

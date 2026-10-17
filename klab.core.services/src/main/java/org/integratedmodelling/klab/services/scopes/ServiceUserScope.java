@@ -152,9 +152,12 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   }
 
   /** Keep trusted membership and resources, but use this request's credential and roles. */
-  public ServiceUserScope forAuthorization(org.integratedmodelling.klab.services.application.security.EngineAuthorization authorization) {
+  public ServiceUserScope forAuthorization(
+      org.integratedmodelling.klab.services.application.security.EngineAuthorization
+          authorization) {
     if (!Objects.equals(user.getUsername(), authorization.getUsername())) {
-      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Credential and user scope differ");
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+          "Credential and user scope differ");
     }
     var identity = new org.integratedmodelling.common.authentication.UserIdentityImpl();
     identity.setUsername(user.getUsername());
@@ -188,10 +191,12 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     ret.copyMessagingSetup(this);
     ret.setRoles(List.copyOf(authorization.getRoles()));
     ret.setLocal(authorization.isLocal());
-    ret.setPermissions(authorization.isLocal()
-        || authorization.getRoles().contains(Role.ROLE_ADMINISTRATOR)
-        || authorization.getRoles().contains(Role.ROLE_SYSTEM)
-        ? EnumSet.allOf(CRUDOperation.class) : EnumSet.of(CRUDOperation.READ));
+    ret.setPermissions(
+        authorization.isLocal()
+                || authorization.getRoles().contains(Role.ROLE_ADMINISTRATOR)
+                || authorization.getRoles().contains(Role.ROLE_SYSTEM)
+            ? EnumSet.allOf(CRUDOperation.class)
+            : EnumSet.of(CRUDOperation.READ));
     return ret;
   }
 
@@ -205,7 +210,8 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     this.jobManager = requester.jobManager;
     copyServicesFrom(requester);
     if (getHostServiceId() != null && getType() != Type.USER) {
-      serviceList(KlabService.Type.RUNTIME).removeIf(s -> !getHostServiceId().equals(s.serviceId()));
+      serviceList(KlabService.Type.RUNTIME)
+          .removeIf(s -> !getHostServiceId().equals(s.serviceId()));
     }
   }
 
@@ -284,8 +290,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     var scope = scopeManager == null ? null : scopeManager.getScope(scopeId, SessionScope.class);
 
     if (scope != null) {
-      if (!(scope instanceof ServiceSessionScope session) || !ScopeManager.allowsManagedScope(session, this)) {
-        throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Session is not accessible to the requesting user");
+      if (!(scope instanceof ServiceSessionScope session)
+          || !ScopeManager.allowsManagedScope(session, this)) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+            "Session is not accessible to the requesting user");
       }
       return session.forRequest(this);
     }
@@ -464,7 +472,8 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   @Override
   public void warn(Object... o) {
     var notification = Notification.warning(o);
-    if (org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(notification.getLevel(),o)) return;
+    if (org.integratedmodelling.klab.api.lang.NotificationSuppression.suppresses(
+        notification.getLevel(), o)) return;
     super.warn(o);
     if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
       payloadCollector.add(notification.withIdentity(getId()));
@@ -492,7 +501,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   public boolean validateServices() {
     // TODO check that all essential services are available and online, waiting a bit for connection
     //  if necessary
-//    Logging.INSTANCE.info("Services for " + user.getUsername() + " validated");
+    //    Logging.INSTANCE.info("Services for " + user.getUsername() + " validated");
     return true;
   }
 
@@ -509,10 +518,13 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private void installAdvertisement(UserScopeNotification snapshot) {
     Map<KlabService.Type, List<KlabService>> replacement = new ConcurrentHashMap<>();
     for (var info : snapshot.getServices()) {
-      var client = Objects.equals(service.serviceId(), info.getId())
-          ? service : ServiceClientCatalog.INSTANCE.getService(info, service, this);
-      var clients = replacement.computeIfAbsent(KlabService.Type.classify(client),
-          key -> new CopyOnWriteArrayList<>());
+      var client =
+          Objects.equals(service.serviceId(), info.getId())
+              ? service
+              : ServiceClientCatalog.INSTANCE.getService(info, service, this);
+      var clients =
+          replacement.computeIfAbsent(
+              KlabService.Type.classify(client), key -> new CopyOnWriteArrayList<>());
       clients.removeIf(existing -> sameService(existing, client));
       clients.add(client);
     }

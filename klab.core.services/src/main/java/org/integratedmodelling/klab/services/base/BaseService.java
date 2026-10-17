@@ -160,9 +160,11 @@ public abstract class BaseService implements KlabService {
         });
   }
 
-  /** Deployment-free semantic execution: no persisted settings, secret, registry or main service. */
-  protected BaseService(ServiceScope scope, KlabService.Type serviceType,
-      Settings privateSettings, URL displayUrl) {
+  /**
+   * Deployment-free semantic execution: no persisted settings, secret, registry or main service.
+   */
+  protected BaseService(
+      ServiceScope scope, KlabService.Type serviceType, Settings privateSettings, URL displayUrl) {
     this.type = Objects.requireNonNull(serviceType);
     this.serviceScope = Objects.requireNonNull(scope);
     this.startupOptions = ServiceStartupOptions.defaultOptions(serviceType);
@@ -350,17 +352,23 @@ public abstract class BaseService implements KlabService {
   private final FlowChartService flowCharts = new FlowChartService();
 
   /** Register additional process adapters here during service initialization. */
-  public FlowChartService flowCharts() { return flowCharts; }
+  public FlowChartService flowCharts() {
+    return flowCharts;
+  }
 
   @Override
-  public byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
-      UserScope scope) {
+  public byte[] adapt(
+      String source, String mediaType, KlabAsset.KnowledgeClass assetClass, UserScope scope) {
     if (assetClass == null && "image/png".equalsIgnoreCase(mediaType)) {
       try {
         // Accept both plain JSON and the IDE serializer's @CLASS metadata, without loading types.
-        return flowCharts.png(new com.fasterxml.jackson.databind.ObjectMapper()
-            .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .readValue(source, FlowChart.class));
+        return flowCharts.png(
+            new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(
+                    com.fasterxml.jackson.databind.DeserializationFeature
+                        .FAIL_ON_UNKNOWN_PROPERTIES,
+                    false)
+                .readValue(source, FlowChart.class));
       } catch (IOException | NullPointerException e) {
         throw new IllegalArgumentException("Invalid FlowChart JSON", e);
       }
@@ -368,12 +376,14 @@ public abstract class BaseService implements KlabService {
     throw new UnsupportedOperationException("Unsupported adaptation to " + mediaType);
   }
 
-
   /** Resolve a process through the same visibility checks as ordinary information requests. */
-  protected Object flowChartSource(String urn, KlabAsset.KnowledgeClass objectClass, UserScope scope) {
-    var common = commonInformationObjects(objectClass, scope).stream()
-        .filter(candidate -> Objects.equals(urn, informationIdentifier(candidate)))
-        .findFirst().orElse(null);
+  protected Object flowChartSource(
+      String urn, KlabAsset.KnowledgeClass objectClass, UserScope scope) {
+    var common =
+        commonInformationObjects(objectClass, scope).stream()
+            .filter(candidate -> Objects.equals(urn, informationIdentifier(candidate)))
+            .findFirst()
+            .orElse(null);
     if (common != null) return common;
     if (objectClass == KlabAsset.KnowledgeClass.COMPONENT
         || objectClass == KlabAsset.KnowledgeClass.RESOURCE_ADAPTER
@@ -390,7 +400,8 @@ public abstract class BaseService implements KlabService {
       // Resolve through the service's normal typed information path, retaining its access checks.
       var source = flowChartSource(urn, objectClass, scope);
       if (source == null) return null;
-      return infoClass.cast(infoClass == FlowChart.class ? flowCharts.layout(source) : flowCharts.image(source));
+      return infoClass.cast(
+          infoClass == FlowChart.class ? flowCharts.layout(source) : flowCharts.image(source));
     }
 
     if (ServiceCapabilities.class.isAssignableFrom(infoClass) && identifiesThisService(urn)) {
@@ -410,9 +421,7 @@ public abstract class BaseService implements KlabService {
                       Objects.equals(component.id(), coordinates.getFirst())
                           && (Version.isAny(coordinates.getSecond())
                               || Objects.equals(component.version(), coordinates.getSecond())));
-      return visible
-          ? infoClass.cast(getComponentRegistry().getComponentHistory(urn))
-          : null;
+      return visible ? infoClass.cast(getComponentRegistry().getComponentHistory(urn)) : null;
     }
 
     var object =
@@ -850,18 +859,29 @@ public abstract class BaseService implements KlabService {
     }
 
     if (parameters != null && parameters.containsKey("storageObservable")) {
-      if (!(asset instanceof Observation observation) || !(scope instanceof org.integratedmodelling.klab.api.scope.ContextScope))
-        throw new IllegalArgumentException("A mediated export requires an observation in a context scope");
-      var requested = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)
-          .resolveObservable(parameters.get("storageObservable").toString());
+      if (!(asset instanceof Observation observation)
+          || !(scope instanceof org.integratedmodelling.klab.api.scope.ContextScope))
+        throw new IllegalArgumentException(
+            "A mediated export requires an observation in a context scope");
+      var requested =
+          scope
+              .getService(org.integratedmodelling.klab.api.services.Reasoner.class)
+              .resolveObservable(parameters.get("storageObservable").toString());
       if (requested == null) throw new IllegalArgumentException("Unknown export observable");
-      asset = org.integratedmodelling.klab.runtime.storage.StorageReads.binding(observation, requested);
+      asset =
+          org.integratedmodelling.klab.runtime.storage.StorageReads.binding(observation, requested);
     }
     if (parameters != null && parameters.containsKey("storageCurrencyRate")) {
-      if (!(asset instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl observation))
+      if (!(asset
+          instanceof
+          org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl observation))
         throw new IllegalArgumentException("Currency export requires an observation");
       var detached = observation.copyForAttribution(observation.getObservable());
-      detached.getMetadata().put(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE, parameters.get("storageCurrencyRate").toString());
+      detached
+          .getMetadata()
+          .put(
+              org.integratedmodelling.klab.runtime.storage.StorageReads.RATE,
+              parameters.get("storageCurrencyRate").toString());
       asset = detached;
     }
 
@@ -871,7 +891,10 @@ public abstract class BaseService implements KlabService {
 
     if (schemata.isEmpty()) {
       throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
-          "No export schema for " + knowledgeClass + " with media type " + mediaType
+          "No export schema for "
+              + knowledgeClass
+              + " with media type "
+              + mediaType
               + " is available after component discovery; check Resources service discovery and component installation");
     } else if (schemata.size() > 1) {
       scope.warn(
@@ -881,8 +904,8 @@ public abstract class BaseService implements KlabService {
               + " is available");
     }
     var exportSchema = schemata.getFirst();
-    getComponentRegistry().refreshDependencyComponentIfAvailable(
-        exportSchema.getSchemaId(), null, scope);
+    getComponentRegistry()
+        .refreshDependencyComponentIfAvailable(exportSchema.getSchemaId(), null, scope);
     // TODO if the schema is in an adapter, we must either ensure that we have the data (i.e., scope
     // is
     //  a context scope and the DT is local) or call the exported parametrically from a resources
@@ -894,15 +917,26 @@ public abstract class BaseService implements KlabService {
     serviceCall.getParameters().putUnnamed(this);
     var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
     org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event event = null;
-    if (parameters != null && (parameters.containsKey("storageEvent") || parameters.containsKey("storageStart") || parameters.containsKey("storageEnd"))) {
-      if (!(parameters.containsKey("storageEvent") && parameters.containsKey("storageStart") && parameters.containsKey("storageEnd")))
-        throw new IllegalArgumentException("Temporal export requires storageEvent, storageStart and storageEnd");
-      event = new org.integratedmodelling.klab.api.data.StorageScan.Slice(
-          org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Type.TEMPORAL_TRANSITION,
-          parameters.get("storageEvent").toString(), Long.parseLong(parameters.get("storageStart").toString()),
-          Long.parseLong(parameters.get("storageEnd").toString())).event();
+    if (parameters != null
+        && (parameters.containsKey("storageEvent")
+            || parameters.containsKey("storageStart")
+            || parameters.containsKey("storageEnd"))) {
+      if (!(parameters.containsKey("storageEvent")
+          && parameters.containsKey("storageStart")
+          && parameters.containsKey("storageEnd")))
+        throw new IllegalArgumentException(
+            "Temporal export requires storageEvent, storageStart and storageEnd");
+      event =
+          new org.integratedmodelling.klab.api.data.StorageScan.Slice(
+                  org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event.Type
+                      .TEMPORAL_TRANSITION,
+                  parameters.get("storageEvent").toString(),
+                  Long.parseLong(parameters.get("storageStart").toString()),
+                  Long.parseLong(parameters.get("storageEnd").toString()))
+              .event();
     }
-    return languageService.execute(serviceCall, scope, InputStream.class, asset, this, parameters, event);
+    return languageService.execute(
+        serviceCall, scope, InputStream.class, asset, this, parameters, event);
   }
 
   public RuntimeAsset resolveUrn(String urn, KlabAsset.KnowledgeClass knowledgeClass, Scope scope) {

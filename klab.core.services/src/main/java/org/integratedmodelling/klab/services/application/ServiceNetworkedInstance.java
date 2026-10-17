@@ -133,10 +133,14 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     var authentication = Authentication.INSTANCE.getLastEngineAuthenticationResponse();
     if (authentication != null && authentication.getHub() != null) {
       var hub = authentication.getHub();
-      var url = hub.getUrls() == null ? null : hub.getUrls().stream()
-          .filter(Objects::nonNull)
-          .filter(candidate -> candidate.regionMatches(true, 0, "https://", 0, 8))
-          .findFirst().orElse(null);
+      var url =
+          hub.getUrls() == null
+              ? null
+              : hub.getUrls().stream()
+                  .filter(Objects::nonNull)
+                  .filter(candidate -> candidate.regionMatches(true, 0, "https://", 0, 8))
+                  .findFirst()
+                  .orElse(null);
       webAuthentication.configureHub(url, hub.getId());
     }
     return identity;

@@ -110,9 +110,12 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     var declaredConfiguration = runtimeService.declareContextScope(ret, this, userScope);
     if (declaredConfiguration == null || declaredConfiguration.isEmpty()) {
-      var detail = declaredConfiguration == null ? "No response" : declaredConfiguration
-          .getNotifications().stream().map(Notification::getMessage)
-          .collect(java.util.stream.Collectors.joining("; "));
+      var detail =
+          declaredConfiguration == null
+              ? "No response"
+              : declaredConfiguration.getNotifications().stream()
+                  .map(Notification::getMessage)
+                  .collect(java.util.stream.Collectors.joining("; "));
       throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
           "Digital twin creation failed: " + detail);
     }
@@ -145,10 +148,14 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
   public void close() {
     BaseService host = null;
     try {
-      var runtime = service instanceof RuntimeService r
-          && java.util.Objects.equals(r.serviceId(), getHostServiceId()) ? r : getService(RuntimeService.class);
+      var runtime =
+          service instanceof RuntimeService r
+                  && java.util.Objects.equals(r.serviceId(), getHostServiceId())
+              ? r
+              : getService(RuntimeService.class);
       if (!(runtime instanceof BaseService base)) {
-        throw new KlabInternalErrorException("Unexpected runtime service implementation for service-side session scope");
+        throw new KlabInternalErrorException(
+            "Unexpected runtime service implementation for service-side session scope");
       }
       host = base;
       // This is resource teardown after authorization, not a caller-filtered catalog query.

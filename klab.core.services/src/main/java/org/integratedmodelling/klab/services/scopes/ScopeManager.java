@@ -54,26 +54,37 @@ public class ScopeManager {
     if (username == null || username.isBlank()) return false;
     if (managed instanceof ContextScope context) {
       var configuration = context.getConfiguration();
-      return configuration != null && (Objects.equals(configuration.getOwner(), username)
-          || (configuration.getAccessRights() != null
-              && configuration.getAccessRights().checkAuthorization(username, requester.getUser().getGroups())));
+      return configuration != null
+          && (Objects.equals(configuration.getOwner(), username)
+              || (configuration.getAccessRights() != null
+                  && configuration
+                      .getAccessRights()
+                      .checkAuthorization(username, requester.getUser().getGroups())));
     }
     var restoredOwner = managed.getData().get(PERSISTED_SESSION_OWNER);
-    var owner = restoredOwner instanceof String persisted ? persisted
-        : managed.getUser() == null ? null : managed.getUser().getUsername();
-    return isSharedDefaultSession(managed) ? isSharedDefaultSession(managed, requester) : Objects.equals(owner, username);
+    var owner =
+        restoredOwner instanceof String persisted
+            ? persisted
+            : managed.getUser() == null ? null : managed.getUser().getUsername();
+    return isSharedDefaultSession(managed)
+        ? isSharedDefaultSession(managed, requester)
+        : Objects.equals(owner, username);
   }
 
   private static String sharedSessionFederationId(ServiceUserScope managed) {
     if (!(managed instanceof SessionScope) || managed.getUser() == null) return null;
     var federationId = managed.getData().get(SESSION_FEDERATION);
-    if (!(federationId instanceof String) && !managed.getData().containsKey(PERSISTED_SESSION_OWNER)) {
+    if (!(federationId instanceof String)
+        && !managed.getData().containsKey(PERSISTED_SESSION_OWNER)) {
       var ownerFederation = Klab.INSTANCE.getFederationData(managed.getUser());
       federationId = ownerFederation == null ? null : ownerFederation.getId();
     }
-    return federationId instanceof String id && !id.isBlank()
-        && !Federation.LOCAL_FEDERATION_ID.equals(id)
-        && id.replace(".", "_").equals(managed.getId()) ? id : null;
+    return federationId instanceof String id
+            && !id.isBlank()
+            && !Federation.LOCAL_FEDERATION_ID.equals(id)
+            && id.replace(".", "_").equals(managed.getId())
+        ? id
+        : null;
   }
 
   /** Classify the registered parent independently of the caller's membership. */
@@ -100,8 +111,9 @@ public class ScopeManager {
   private final Map<String, ServiceUserScope> scopes = new ConcurrentHashMap<>();
 
   private Map<String, Long> idleScopeTime = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
-      Thread.ofPlatform().daemon(true).name("klab-scope-maintenance").factory());
+  private final ScheduledExecutorService executor =
+      Executors.newSingleThreadScheduledExecutor(
+          Thread.ofPlatform().daemon(true).name("klab-scope-maintenance").factory());
 
   public ScopeManager(KlabService service) {
 
@@ -222,10 +234,7 @@ public class ScopeManager {
       ret.setId(user.getUsername());
       scopes.put(user.getUsername(), ret);
       Logging.INSTANCE.info(
-          "Created service user scope for "
-              + user.getUsername()
-              + " in service "
-              + serviceId());
+          "Created service user scope for " + user.getUsername() + " in service " + serviceId());
     }
 
     return ret;
@@ -246,7 +255,10 @@ public class ScopeManager {
 
   private UserIdentity createUserIdentity(EngineAuthorization engineAuthorization) {
 
-    Logging.INSTANCE.info(service.serviceName() + " received user identity request for " + engineAuthorization.getUsername());
+    Logging.INSTANCE.info(
+        service.serviceName()
+            + " received user identity request for "
+            + engineAuthorization.getUsername());
 
     UserIdentityImpl ret = new UserIdentityImpl();
     ret.setUsername(engineAuthorization.getUsername());
@@ -357,8 +369,10 @@ public class ScopeManager {
     }
 
     if (contextualization.observerId() != Observation.UNASSIGNED_ID) {
-      var observer = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
-          contextualization.observerId(), ret, Observation.class);
+      var observer =
+          ret.getDigitalTwin()
+              .getKnowledgeGraph()
+              .getAsset(contextualization.observerId(), ret, Observation.class);
       if (observer == null) {
         throw new KlabResourceAccessException(
             "Subject with ID "
@@ -624,8 +638,7 @@ public class ScopeManager {
         }
 
         // we need the original service to retrieve the configuration
-        var originalService =
-            findOriginatingRuntime(userScope, runtimeId);
+        var originalService = findOriginatingRuntime(userScope, runtimeId);
 
         if (originalService != null) {
           Logging.INSTANCE.debug(
@@ -644,8 +657,7 @@ public class ScopeManager {
              */
             var sessionId = scopeId.split("\\.")[0];
             var sessionScope =
-                getOrCreateSessionScope(
-                    sessionId, authorization, userScope, runtimeId, true);
+                getOrCreateSessionScope(sessionId, authorization, userScope, runtimeId, true);
             if (sessionScope == null) {
               Logging.INSTANCE.warn(
                   "Cannot reconstruct context scope "
@@ -661,9 +673,13 @@ public class ScopeManager {
 
             sessionScope.getData().put(PERSISTED_SESSION_OWNER, configuration.getOwner());
             if (configuration.getSessionFederationId() != null) {
-              sessionScope.getData().put(SESSION_FEDERATION, configuration.getSessionFederationId());
+              sessionScope
+                  .getData()
+                  .put(SESSION_FEDERATION, configuration.getSessionFederationId());
             }
-            ret = new ServiceContextScope(sessionScope.forRequest(userScope), configuration, userScope.getUser());
+            ret =
+                new ServiceContextScope(
+                    sessionScope.forRequest(userScope), configuration, userScope.getUser());
             for (var service : sessionScope.getServices(KlabService.class)) {
               ret.addService(service);
             }
@@ -732,7 +748,9 @@ public class ScopeManager {
     return null;
   }
 
-  /** Refresh only a known, authorized Runtime; never discover a service from an arbitrary header. */
+  /**
+   * Refresh only a known, authorized Runtime; never discover a service from an arbitrary header.
+   */
   RuntimeService findOriginatingRuntime(ServiceUserScope userScope, String runtimeId) {
     var usable = userScope.findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()));
     if (usable.isPresent()) {
@@ -748,12 +766,16 @@ public class ScopeManager {
             return null;
           }
         }
-        return userScope.findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()))
+        return userScope
+            .findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()))
             .orElse(null);
       }
     }
-    Logging.INSTANCE.warn("Originating Runtime " + runtimeId
-        + " has not been advertised to user scope " + userScope.getId());
+    Logging.INSTANCE.warn(
+        "Originating Runtime "
+            + runtimeId
+            + " has not been advertised to user scope "
+            + userScope.getId());
     return null;
   }
 

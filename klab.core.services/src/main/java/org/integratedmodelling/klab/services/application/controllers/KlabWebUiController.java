@@ -31,6 +31,7 @@ public class KlabWebUiController {
 
   /**
    * Used by tests
+   *
    * @param instance
    * @param dashboardHtml
    */
@@ -43,22 +44,20 @@ public class KlabWebUiController {
     try (var input = new ClassPathResource("static/index.html").getInputStream()) {
       return new String(input.readAllBytes(), StandardCharsets.UTF_8);
     } catch (IOException e) {
-      throw new IllegalStateException(
-              "Cannot load the Web UI index.html from the classpath", e);
+      throw new IllegalStateException("Cannot load the Web UI index.html from the classpath", e);
     }
   }
 
-  @GetMapping(value = {"", "/"}, produces = MediaType.TEXT_HTML_VALUE)
+  @GetMapping(
+      value = {"", "/"},
+      produces = MediaType.TEXT_HTML_VALUE)
   public ResponseEntity<String> dashboard(HttpServletRequest request) {
     return dashboardResponse(request);
   }
 
   /** Lets a user enter a compiled full-page extension directly without authenticating first. */
   @GetMapping(
-      value = {
-        "/ui/{componentName:[a-z0-9][a-z0-9-]*}",
-        "/ui/{componentName:[a-z0-9][a-z0-9-]*}/"
-      },
+      value = {"/ui/{componentName:[a-z0-9][a-z0-9-]*}", "/ui/{componentName:[a-z0-9][a-z0-9-]*}/"},
       produces = MediaType.TEXT_HTML_VALUE)
   public ResponseEntity<String> fullPageComponent(HttpServletRequest request) {
     return dashboardResponse(request);
@@ -88,8 +87,7 @@ public class KlabWebUiController {
       return ResponseEntity.notFound().build();
     }
     var mediaType =
-        resource.get().filename().endsWith(".js")
-                || resource.get().filename().endsWith(".mjs")
+        resource.get().filename().endsWith(".js") || resource.get().filename().endsWith(".mjs")
             ? MediaType.valueOf("text/javascript")
             : MediaTypeFactory.getMediaType(resource.get().filename())
                 .orElse(MediaType.APPLICATION_OCTET_STREAM);
@@ -106,8 +104,8 @@ public class KlabWebUiController {
     var baseHref = contextPath == null || contextPath.isBlank() ? "/" : contextPath + "/";
     var html = dashboardHtml.replace("__KLAB_BASE_HREF__", baseHref);
     return ResponseEntity.ok()
-            .cacheControl(CacheControl.noCache())
-            .contentType(MediaType.TEXT_HTML)
-            .body(html);
+        .cacheControl(CacheControl.noCache())
+        .contentType(MediaType.TEXT_HTML)
+        .body(html);
   }
 }
