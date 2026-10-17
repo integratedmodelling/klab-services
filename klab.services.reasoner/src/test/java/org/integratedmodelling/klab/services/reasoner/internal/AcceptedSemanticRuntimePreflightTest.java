@@ -35,6 +35,48 @@ class AcceptedSemanticRuntimePreflightTest {
   }
   private AcceptedSemanticRuntime runtime(){return new AcceptedSemanticRuntime(factory,clock::get);}
 
+  @Test void acceptedMetadataIncludesOwnedComponentsAndRetainsThemAfterRejection() throws Exception {
+    var actor = mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class);
+    var descriptor = mock(org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor.class);
+    when(state.actor()).thenReturn(actor);
+    when(actor.semanticCapabilitiesSnapshot()).thenReturn(SemanticCapabilitiesSnapshot.initial());
+    when(actor.capturedAuthorityComponents()).thenReturn(List.of(descriptor));
+    try (var runtime = runtime()) {
+      assertTrue(runtime.metadata().components().isEmpty());
+      runtime.submit(world("accepted")); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      var accepted = runtime.metadata();
+      assertTrue(accepted.generation() > 0);
+      assertEquals(List.of(descriptor), accepted.components());
+      runtime.rejectPreflight(runtime.beginPreflight(world("rejected"), scope), errors, scope);
+      assertEquals(accepted, runtime.metadata());
+    }
+  }
+
+  @Test void blockedCorePreflightExplainsUnavailableValidationWithoutStartingWorker() throws Exception {
+    var source = world("first");
+    var diagnostic = "CORE_ALIAS_TARGET_UNAVAILABLE: odo:PhysicalDomain";
+    doReturn(new CandidatePublicationCoordinator.Input<>(
+        SemanticEnvironmentFactory.sources(source), SemanticEnvironmentFactory.sourceOrder(source),
+        dependency.get(), SemanticEnvironmentFactory.CONFIGURATION_REVISION, source,
+        CandidatePublicationCoordinator.BeanStatus.INVALID, List.of(diagnostic))).when(factory).capture(any());
+    try (var runtime = runtime()) {
+      runtime.submit(source);
+      var request = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(
+          source.getOntologies().getFirst(), "1");
+      var response = runtime.validate(request,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(request));
+      assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.FAILED,
+          response.getStatus());
+      assertTrue(response.getReason().contains(diagnostic));
+      assertTrue(response.getReason().contains("blocked"));
+      assertEquals(0, response.getKnowledgeRevision());
+      assertFalse(response.valid());
+      assertEquals(1, response.getNotifications().size());
+      assertNotNull(response.getNotifications().getFirst().getLexicalContext());
+      verify(factory, never()).build(any(), any());
+    }
+  }
+
   @Test void unchangedRejectedInputDoesNotInvalidateOrAdvanceGenerationBeforeBackoff() {
     try(var runtime=runtime()) {
       var source=world("first");var first=runtime.beginPreflight(source,scope);assertTrue(runtime.rejectPreflight(first,errors,scope));
@@ -164,6 +206,81 @@ class AcceptedSemanticRuntimePreflightTest {
       runtime.submit(world("first"),scope);assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
       assertFalse(runtime.shouldRetryPreflight(world("first"),scope));runtime.invalidate();
       verify(factory).invalidateBootstrap();assertTrue(runtime.shouldRetryPreflight(world("first"),scope));
+    }
+  }
+
+  @Test void failedBootstrapRetriesAfterDelayAndClearsFailedProviderCapture() throws Exception {
+    bootstrapEnabled();
+    when(factory.build(any(),any())).thenThrow(new IllegalStateException("provider temporarily unavailable"));
+    try (var runtime=runtime()) {
+      var source=world("first");
+      runtime.submit(source,scope);
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertFalse(runtime.shouldRetryPreflight(source,scope));
+      clock.addAndGet(Duration.ofSeconds(60).toNanos());
+      assertTrue(runtime.shouldRetryPreflight(source,scope));
+      var retry=runtime.beginPreflight(source,scope);
+      assertTrue(retry.retry());
+      verify(factory).invalidateBootstrap();
+      assertTrue(runtime.submit(source,retry,scope));
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      verify(factory,times(2)).capture(any(),same(scope));
+    }
+  }
+
+  @Test void pollingWithoutBootstrapAlsoDeduplicatesSubmittedSources() throws Exception {
+    try (var runtime=runtime()) {
+      var source=world("first");
+      assertTrue(runtime.submit(source,runtime.beginPreflight(source,scope),scope));
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertFalse(runtime.shouldRetryPreflight(source,scope));
+      assertTrue(runtime.shouldRetryPreflight(world("changed"),scope));
+    }
+  }
+
+  @Test void providerOnlyTakeoverPreservesAcceptedGenerationUntilReplacementSucceeds() throws Exception {
+    bootstrapEnabled();
+    var selection=new AtomicReference<>("remote-artifact");
+    var replacement=mock(SemanticEnvironment.class);
+    var failReplacement=new AtomicBoolean(true);
+    var source=world("unchanged worldview");
+    var version=org.integratedmodelling.klab.api.data.Version.create("1.0.0");
+    var descriptor=new org.integratedmodelling.klab.api.services.runtime.extension.Extensions.AuthorityDescriptor(
+        "klab.authority.taxa",version,true,true,List.of(),List.of());
+    source.getAuthorityBindings().add(new Worldview.AuthorityBinding("TAXA","w:Identity","w",0,1,"hash",descriptor,"klab.authority.taxa",version,null));
+    String metadata=org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA;
+    when(factory.refreshAuthoritySelection(any(),same(scope))).thenAnswer(call->{
+      var owned=BeanIngestionPreflight.snapshot((Worldview)call.getArgument(0));
+      owned.getMetadata().put(metadata,selection.get()); return owned;
+    });
+    when(factory.build(any(),any())).thenAnswer(call->{
+      CandidatePublicationCoordinator.Input<Worldview> input=call.getArgument(0);
+      boolean local="local-artifact".equals(input.payload().getMetadata().get(metadata));
+      if(local && failReplacement.get()) throw new IllegalStateException("local provider failed configuration");
+      return new CandidatePublicationCoordinator.Result<>(local?replacement:state,CandidatePublicationCoordinator.LogicalStatus.VALID,true,List.of());
+    });
+    try(var runtime=runtime()) {
+      runtime.submit(source,scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      long first=runtime.status().acceptedGeneration(); assertTrue(first>0);
+      assertFalse(runtime.shouldRetryPreflight(source,scope));
+      selection.set("local-artifact"); assertTrue(runtime.shouldRetryPreflight(source,scope));
+      runtime.submit(source,scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertEquals(first,runtime.status().acceptedGeneration());
+      try(var lease=runtime.lease()){ assertSame(state,lease.state()); }
+      verify(state,never()).close();
+      assertFalse(runtime.shouldRetryPreflight(source,scope));
+      failReplacement.set(false); clock.addAndGet(Duration.ofSeconds(60).toNanos());
+      runtime.submit(source,scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertEquals(first+1,runtime.status().acceptedGeneration());
+      try(var lease=runtime.lease()){ assertSame(replacement,lease.state()); }
+      long generation=runtime.status().inputGeneration();
+      for(int i=0;i<5;i++) {
+        assertFalse(runtime.shouldRetryPreflight(source,scope));
+        assertFalse(runtime.beginPreflight(source,scope).retry());
+      }
+      assertEquals(generation,runtime.status().inputGeneration());
+      verify(factory,times(3)).build(any(),any());
+      assertNull(source.getMetadata().get(metadata));
     }
   }
 

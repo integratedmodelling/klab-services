@@ -356,7 +356,14 @@ public class CoreOntology {
   public CoreOntology(File directory, OWL owl, boolean extractClasspath) {
     this.root = directory;
     this.owl = owl;
-    if (extractClasspath) Utils.Classpath.extractKnowledgeFromClasspath(this.root);
+    if (extractClasspath) {
+      Utils.Classpath.extractKnowledgeFromClasspath(this.root);
+      try {
+        CoreOntologyCatalog.synchronizeBundledOdo(this.root.toPath());
+      } catch (java.io.IOException failure) {
+        throw new IllegalStateException("Cannot synchronize bundled core ontology", failure);
+      }
+    }
   }
 
   public CoreOntology(List<Pair<String, String>> ontologies, OWL owl) {

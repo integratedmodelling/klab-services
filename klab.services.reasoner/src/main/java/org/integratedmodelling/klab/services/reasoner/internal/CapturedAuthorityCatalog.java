@@ -49,6 +49,17 @@ public final class CapturedAuthorityCatalog {
   }
   public String revision() { return revision; }
 
+  /** Owned public descriptors for discovery; callers cannot mutate the captured catalog. */
+  public List<ComponentDescriptor> components() {
+    var mapper = JacksonConfiguration.newObjectMapper().addMixIn(ComponentDescriptor.class, ComponentWireMixin.class);
+    var result = new TreeMap<String, ComponentDescriptor>();
+    for (var provider : providers.values()) {
+      var component = provider.component();
+      result.putIfAbsent(component.id(), mapper.convertValue(component, ComponentDescriptor.class));
+    }
+    return List.copyOf(result.values());
+  }
+
   /** Read a previously captured local Reasoner data directory, with its original public rights. */
   public static CapturedAuthorityCatalog capture(Path data) throws Exception {
     var sourceFile = data.resolve("captured-authority-state/source.json");

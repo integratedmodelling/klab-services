@@ -69,8 +69,8 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
               org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE.getDataPath("semantic-candidates").toPath(),
               org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE.getDataPath("knowledge").toPath(),
               org.integratedmodelling.klab.services.base.BaseService.getConfigurationDirectory(options).toPath());
-      // Explicit operational opt-in; review alone never starts provider network/configuration work.
-      if (Boolean.getBoolean("klab.authority.bootstrap")) factory.enableAuthorityBootstrap();
+      // Production ingestion must synchronize providers before compiling the candidate.
+      factory.enableAuthorityBootstrap();
       service.enableCandidatePublication(factory);
     } catch (Exception failure) {
       throw new IllegalStateException("Cannot capture local semantic dependencies", failure);

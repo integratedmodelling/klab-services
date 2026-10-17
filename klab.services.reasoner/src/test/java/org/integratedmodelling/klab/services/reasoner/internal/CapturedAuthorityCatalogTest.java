@@ -11,6 +11,15 @@ import org.integratedmodelling.klab.api.services.Authority;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 class CapturedAuthorityCatalogTest {
+  @Test void discoveryDescriptorsAreDetachedFromCapturedAuthorityState() throws Exception {
+    var catalog = captured(fixture());
+    var descriptor = catalog.components().getFirst();
+    assertEquals("klab.authority.taxa", descriptor.id());
+    var hash = descriptor.fileHash();
+    descriptor.authorities().clear();
+    assertFalse(catalog.components().getFirst().authorities().isEmpty());
+    assertEquals(hash, catalog.components().getFirst().fileHash());
+  }
   @TempDir Path directory;
   private final ObjectMapper json = new ObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
   private Authority.ConfigurationRequest request() { return new Authority.ConfigurationRequest("w","TAXA","w:Identity",Map.of("urn","klab.authority.taxa")); }

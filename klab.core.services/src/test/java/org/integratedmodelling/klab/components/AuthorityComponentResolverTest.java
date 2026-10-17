@@ -19,6 +19,15 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.junit.jupiter.api.Test;
 
 class AuthorityComponentResolverTest {
+  @Test void serviceCertificateSelectsPublicProvidersWithoutInventingUserGrants() throws Exception {
+    when(scope.getIdentity()).thenReturn(mock(PartnerIdentity.class));
+    var rights=publicRights();
+    var remote=source("remote",component("hash",rights,"1.0.0")); services(remote);
+    assertEquals(1,AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope).components().size());
+    rights.setPublic(false); rights.setAllowedUsers(Set.of("owner"));
+    assertTrue(AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope).components().isEmpty());
+  }
+
   @org.junit.jupiter.api.io.TempDir java.nio.file.Path directory;
   private final UserIdentity owner = mock(UserIdentity.class);
   private final ServiceScope scope = mock(ServiceScope.class);
@@ -166,11 +175,51 @@ class AuthorityComponentResolverTest {
     verify(remote,never()).resolve(anyString(),any(),any());
   }
 
-  @Test void identicalMirrorsDeduplicateButDifferentArtifactsRemainAmbiguous() throws Exception {
+  @Test void mergedResourceProvenanceSelectsTheMatchingDescriptor() throws Exception {
     var a=source("mirror-a",component("same-hash",publicRights(),"1.0.0"));var b=source("mirror-b",component("same-hash",publicRights(),"1.0.0"));services(a,b);
     assertEquals(1,AuthorityComponentResolver.resolve("fixture.authority",scope).components().size());
     services(a,source("different",component("different-hash",publicRights(),"1.0.0")));
-    assertEquals(2,AuthorityComponentResolver.resolve("fixture.authority",scope).components().size());
+    var selected=AuthorityComponentResolver.resolve("fixture.authority",scope);
+    assertEquals(1,selected.components().size());
+    assertEquals("mirror-a",selected.resources().getResults().iterator().next().getServiceId());
+    assertEquals("same-hash",selected.components().getFirst().fileHash());
+  }
+
+  private ResourcesService localSource(Extensions.ComponentDescriptor descriptor) throws Exception {
+    var local=source("local",descriptor);
+    when(local.getUrl()).thenReturn(URI.create("http://127.0.0.1:8092/resources").toURL());
+    local.resolve("fixture.authority",KlabAsset.KnowledgeClass.COMPONENT,null)
+        .getServices().put("local",local.getUrl());
+    return local;
+  }
+
+  @Test void lateLocalProviderReplacesRemoteAndUnselectedChangesStayQuiet() throws Exception {
+    var remote=source("remote",component("remote-hash",publicRights(),"1.0.0")); services(remote);
+    var first=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);
+    var local=localSource(component("local-hash",publicRights(),"1.0.0")); services(remote,local);
+    var second=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);
+    assertEquals(1,second.components().size()); assertEquals("local-hash",second.components().getFirst().fileHash());
+    var resource=second.resources().getResults().iterator().next();
+    assertTrue(resource.isLocal()); assertEquals("local",resource.getServiceId());
+    assertNotEquals(first.revision(),second.revision());
+    services(local,source("other-remote",component("new-remote-hash",publicRights(),"1.0.0")));
+    assertEquals(second.revision(),AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope).revision());
+    local.capabilities(scope).getComponents().clear();
+    local.capabilities(scope).getComponents().add(component("rebuilt-local-hash",publicRights(),"1.0.0"));
+    assertNotEquals(second.revision(),AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope).revision());
+    verify(local,never()).exportAsset(anyString(),any(),anyString(),any(),any());
+    when(local.status().isOperational()).thenReturn(false); services(local,remote);
+    assertEquals(first.revision(),AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope).revision());
+  }
+
+  @Test void unauthorizedOrIncompatibleLocalProviderCannotDisplaceRemote() throws Exception {
+    var remote=source("remote",component("remote-hash",publicRights(),"1.0.0"));
+    var rights=publicRights(); rights.setExcludedUsers(Set.of("owner"));
+    var local=localSource(component("local-hash",rights,"1.0.0")); services(remote,local);
+    assertEquals("remote-hash",AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope).components().getFirst().fileHash());
+    local.capabilities(scope).getComponents().clear();
+    local.capabilities(scope).getComponents().add(component("incompatible",publicRights(),"2.0.0"));
+    assertEquals("remote-hash",AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope).components().getFirst().fileHash());
   }
 
   @Test void resolvedMetadataIsOwnedAndRightsChangesAlterRevision() throws Exception {
@@ -194,6 +243,24 @@ class AuthorityComponentResolverTest {
     var stale=new ResourcesCapabilitiesImpl();var fresh=new ResourcesCapabilitiesImpl();fresh.getComponents().add(component);
     when(client.capabilities(scope)).thenReturn(stale,fresh);services(client);
     assertEquals(1,AuthorityComponentResolver.resolve("fixture.authority",scope).components().size());verify(client,times(1)).invalidateCapabilities();verify(client,times(2)).capabilities(scope);
+  }
+
+  @Test void matchingCachedLocalCoordinatesStillRefreshRebuiltSnapshotHash() throws Exception {
+    var seeded=localSource(component("old-hash",publicRights(),"1.0.0"));
+    var client=mock(org.integratedmodelling.common.services.client.ResourcesClient.class);
+    var url=seeded.getUrl(); var status=seeded.status();
+    var response=seeded.resolve("fixture.authority",KlabAsset.KnowledgeClass.COMPONENT,null);
+    when(client.serviceId()).thenReturn("local"); when(client.getUrl()).thenReturn(url); when(client.status()).thenReturn(status);
+    when(client.resolve(anyString(),eq(KlabAsset.KnowledgeClass.COMPONENT),any())).thenReturn(response);
+    var fresh=new ResourcesCapabilitiesImpl(); fresh.getComponents().add(component("new-hash",publicRights(),"1.0.0"));
+    var cached=new java.util.concurrent.atomic.AtomicReference<>(seeded.capabilities(scope));
+    when(client.capabilities(scope)).thenAnswer(call->cached.get());
+    doAnswer(call->{cached.set(fresh); return null;}).when(client).invalidateCapabilities();
+    services(client);
+    var selected=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);
+    assertEquals("new-hash",selected.components().getFirst().fileHash());
+    verify(client,times(1)).invalidateCapabilities();
+    verify(client,never()).exportAsset(anyString(),any(),anyString(),any(),any());
   }
 
   @Test void genericResolversLatestChoiceCannotHideAnotherEligibleComponentVersion() throws Exception {

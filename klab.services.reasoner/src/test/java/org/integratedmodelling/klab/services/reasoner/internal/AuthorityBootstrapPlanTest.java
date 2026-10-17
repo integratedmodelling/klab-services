@@ -68,4 +68,44 @@ class AuthorityBootstrapPlanTest {
     assertThrows(IllegalStateException.class,()->bootstrap.prepare(source,scope,AuthorityBootstrap.key(source,scope),()->false));assertEquals(0,producers.get());
     verify(resources,never()).resolve(anyString(),any(),any());
   }
+
+  @Test void serviceCertificateCanBootstrapPublicBackboneWithoutUserIdentity() {
+    when(scope.getIdentity()).thenReturn(mock(org.integratedmodelling.klab.api.identities.PartnerIdentity.class));
+    assertEquals(1,AuthorityBootstrap.resolve(source(),scope).components().size());
+    rights.setPublic(false);
+    rights.setAllowedUsers(Set.of("owner"));
+    assertThrows(IllegalStateException.class,()->AuthorityBootstrap.resolve(source(),scope));
+  }
+
+  @Test void lateLocalArtifactUsesNewCaptureAndUnchangedSelectionReusesIt() throws Exception {
+    var bootstrap=bootstrap(); var source=source();
+    source.getMetadata().put(org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA,
+        bootstrap.selectionRevision(source,scope));
+    var remoteKey=AuthorityBootstrap.key(source,scope);
+    bootstrap.prepare(source,scope,remoteKey,()->false);
+    var local=mock(ResourcesService.class);
+    when(local.serviceId()).thenReturn("local");
+    when(local.getUrl()).thenReturn(URI.create("http://localhost:8092/resources").toURL());
+    var available=resources.status(); when(local.status()).thenReturn(available);
+    var localCaps=new ResourcesCapabilitiesImpl();
+    localCaps.getComponents().add(new Extensions.ComponentDescriptor("klab.authority.taxa",Version.create("1.0.0-SNAPSHOT"),"local fixture",new File("local.jar"),
+        "abcdef0123456789abcdef0123456789","vetted:taxa:1.0.0-SNAPSHOT",rights,List.of(),List.of(),List.of(authority),Map.of(),Map.of(),Map.of(),Map.of(),Map.of(),"local",1,null,null,0));
+    when(local.capabilities(any())).thenReturn(localCaps);
+    var response=ResourceSet.of(new ResourceSet.Resource("local","klab.authority.taxa@1.0.0-SNAPSHOT",null,Version.create("1.0.0-SNAPSHOT"),KlabAsset.KnowledgeClass.COMPONENT,1,false));
+    response.getServices().put("local",local.getUrl());
+    when(local.resolve(anyString(),eq(KlabAsset.KnowledgeClass.COMPONENT),any())).thenReturn(response);
+    when(scope.getServices(ResourcesService.class)).thenReturn(List.of(resources,local));
+    assertThrows(IllegalStateException.class,()->bootstrap.prepare(source,scope,remoteKey,()->false));
+    assertEquals(1,producers.get());
+    var selected=AuthorityBootstrap.resolve(source,scope);
+    assertEquals("local",selected.resources().getResults().iterator().next().getServiceId());
+    assertEquals("abcdef0123456789abcdef0123456789",selected.components().getFirst().fileHash());
+    source.getMetadata().put(org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA,
+        bootstrap.selectionRevision(source,scope));
+    var localKey=AuthorityBootstrap.key(source,scope); assertNotEquals(remoteKey,localKey);
+    bootstrap.prepare(source,scope,localKey,()->false);
+    bootstrap.prepare(source,scope,localKey,()->false);
+    assertEquals(2,producers.get());
+    verify(local,never()).exportAsset(anyString(),any(),anyString(),any(),any());
+  }
 }

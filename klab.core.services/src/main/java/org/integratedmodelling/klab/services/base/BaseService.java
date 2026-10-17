@@ -737,7 +737,7 @@ public abstract class BaseService implements KlabService {
    * @param b
    */
   public void setOperational(boolean b, Notification... notifications) {
-    this.operational = true;
+    this.operational = b;
     if (notifications != null) {
       this.serviceNotifications.addAll(Arrays.asList(notifications));
     }

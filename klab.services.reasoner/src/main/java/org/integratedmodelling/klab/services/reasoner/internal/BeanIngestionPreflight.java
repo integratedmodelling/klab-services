@@ -34,7 +34,16 @@ public final class BeanIngestionPreflight {
     documents.addAll(worldview.getObservationStrategies());
     var errors = new ArrayList<>(errors(worldview.getNotifications()));
     errors.addAll(errors(documents, List.of(worldview)));
-    return errors;
+    record Occurrence(Notification.Level level, String message, String document, String project, int offset, int length) {}
+    var unique = new LinkedHashMap<Occurrence, Notification>();
+    for (var error : errors) {
+      var context = error.getLexicalContext();
+      var key = new Occurrence(error.getLevel(), error.getMessage(),
+          context == null ? null : context.getDocumentUrn(), context == null ? null : context.getProjectUrn(),
+          context == null ? -1 : context.getOffsetInDocument(), context == null ? -1 : context.getLength());
+      unique.putIfAbsent(key, error);
+    }
+    return List.copyOf(unique.values());
   }
 
   /** Changed beans overlay the source snapshot, so saved replacements resolve each other. */

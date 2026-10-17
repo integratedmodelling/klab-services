@@ -416,6 +416,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   private Worldview retrieveWorldview(Scope scope) {
+    if (scope == null) scope = serviceScope();
+    final var authorizationScope = scope;
     var source = this.workspaceManager.getWorldview();
     var snapshot = new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();
     snapshot.setUrn(source.getUrn());
@@ -429,9 +431,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     snapshot.getAnnotations().addAll(source.getAnnotations());
     var installed = getComponentRegistry().getComponents(scope).stream()
         .filter(component -> component.usageRights() == null
-            || component.usageRights().checkAuthorization(scope)).toList();
+            || component.usageRights().checkAuthorization(authorizationScope)).toList();
     var authorityMetadata = org.integratedmodelling.klab.components.AuthorityComponentResolver
-        .forWorldview(snapshot, installed, scope);
+        .forWorldview(snapshot, installed, scope, serviceScope());
     snapshot.getMetadata().put(org.integratedmodelling.klab.components.AuthorityComponentResolver.REVISION_METADATA,
         authorityMetadata.revision());
     snapshot.getNotifications().addAll(authorityMetadata.diagnostics());

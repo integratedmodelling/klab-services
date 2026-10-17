@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 /** Descriptor admission over the existing COMPONENT resolver. Never installs/configures a provider. */
 public final class AuthorityComponentResolver {
   public static final String REVISION_METADATA = "authority.catalog.revision";
+  public static final String SELECTION_METADATA = "authority.selection.revision";
   private AuthorityComponentResolver() {}
   @com.fasterxml.jackson.annotation.JsonIgnoreProperties("updateable")
   private abstract static class ComponentWire {}
@@ -33,6 +34,12 @@ public final class AuthorityComponentResolver {
   /** Preserve installed precedence; resolve only authored authority requirements missing locally. */
   public static Resolution forWorldview(Worldview worldview,
       Collection<Extensions.ComponentDescriptor> installed, Scope scope) {
+    return forWorldview(worldview, installed, scope, scope);
+  }
+
+  /** Discover through the host's service network while preserving request authorization. */
+  public static Resolution forWorldview(Worldview worldview,
+      Collection<Extensions.ComponentDescriptor> installed, Scope scope, Scope discoveryScope) {
     var local = installed.stream().map(AuthorityComponentResolver::copy).toList();
     var selected = new LinkedHashMap<String, Extensions.ComponentDescriptor>();
     local.forEach(component -> selected.put(identity(component), component));
@@ -48,7 +55,7 @@ public final class AuthorityComponentResolver {
     for (var urn : requested) {
       // Leave local ambiguity to WorldviewAuthorityValidator; never override it with a remote hit.
       if (local.stream().anyMatch(component -> matches(component, urn, false))) continue;
-      var resolved = resolve(urn, scope);
+      var resolved = resolve(urn, scope, discoveryScope);
       resolved.components().forEach(component -> selected.putIfAbsent(identity(component), component));
       resources.getResults().addAll(resolved.resources().getResults());
       resources.getServices().putAll(resolved.resources().getServices());
@@ -64,23 +71,34 @@ public final class AuthorityComponentResolver {
 
   /** Query supported COMPONENT resolution, not the unimplemented COMPONENT query branch. */
   public static Resolution resolve(String authorityUrn, Scope scope) {
+    return resolve(authorityUrn, scope, scope);
+  }
+
+  private static Resolution resolve(String authorityUrn, Scope scope, Scope discoveryScope) {
     var owner = owner(scope);
-    if (owner == null) return new Resolution(List.of(), ResourceSet.empty(), digest("no-authorized-owner"),
+    if (owner == null && !publicServiceScope(scope)) return new Resolution(List.of(), ResourceSet.empty(), digest("no-authorized-owner"),
         List.of(Notification.warning("AUTHORITY_METADATA_UNAVAILABLE: authenticated owner required")));
     var candidates = Collections.synchronizedMap(new TreeMap<String, Extensions.ComponentDescriptor>());
-    var origins = Collections.synchronizedSet(new TreeSet<String>());
-    var diagnostics = Collections.synchronizedList(new ArrayList<Notification>());
+    var serviceDiagnostics = new java.util.concurrent.ConcurrentHashMap<String, List<Notification>>();
+    var localServices = java.util.concurrent.ConcurrentHashMap.<String>newKeySet();
     var resources = org.integratedmodelling.klab.api.utils.Utils.Resources.queryResources(
-        scope, ResourcesService.class, service -> {
+        discoveryScope, ResourcesService.class, service -> {
+          var diagnostics = new ArrayList<Notification>();
+          serviceDiagnostics.put(service.serviceId(), diagnostics);
+          if (org.integratedmodelling.klab.api.utils.Utils.URLs.isLocalHost(service.getUrl()))
+            localServices.add(service.serviceId());
           try {
             var status = service.status();
             if (status == null || !status.isOperational()) return ResourceSet.empty();
-            origins.add(service.serviceId() + "|" + service.getUrl());
             // This endpoint interprets a suffix as a COMPONENT version, not an authority version.
             // Discover by authority name, then enforce the requested authority version below.
             var response = service.resolve(Version.splitVersion(authorityUrn).getFirst(), KnowledgeClass.COMPONENT,
                 scope instanceof UserScope user ? user : null);
             if (response == null || response.isEmpty()) return ResourceSet.empty();
+            // A development SNAPSHOT can change bytes without changing its coordinates.
+            // Refresh local descriptors on metadata polls, without loading provider code.
+            if (service instanceof BaseServiceClient client && localServices.contains(service.serviceId()))
+              client.invalidateCapabilities();
             var capabilities = service.capabilities(scope);
             var metadata = capabilities == null ? List.<Extensions.ComponentDescriptor>of() : capabilities.getComponents();
             // A successful resolution newer than cached capabilities warrants one metadata refresh.
@@ -97,10 +115,11 @@ public final class AuthorityComponentResolver {
             var admitted = matching(response, metadata, authorityUrn, service, owner);
             var filtered = new ResourceSet();
             for (var component : admitted) {
-              candidates.putIfAbsent(identity(component), copy(component));
+              candidates.put(service.serviceId() + "|" + component.id() + "@" + component.version(), copy(component));
               // Construct owned provenance from the selected client, not arbitrary returned URLs.
               var resource = new ResourceSet.Resource(service.serviceId(), component.id() + "@" + component.version(), null,
                   component.version(), KnowledgeClass.COMPONENT, component.timestamp(), false);
+              resource.setLocal(org.integratedmodelling.klab.api.utils.Utils.URLs.isLocalHost(service.getUrl()));
               // Installation consumes the URN suffix and these coordinates, not just resourceVersion.
               // Copy only descriptor-vetted coordinates; do not forward arbitrary response metadata.
               if (component.mavenCoordinates() != null)
@@ -118,12 +137,33 @@ public final class AuthorityComponentResolver {
             return ResourceSet.empty();
           }
         });
-    var components = List.copyOf(candidates.values());
+    // ResourceSet has already chosen provenance for identical component URNs. An eligible
+    // local implementation also outranks remote implementations with other component URNs.
+    if (resources.getResults().stream().anyMatch(ResourceSet.Resource::isLocal))
+      resources.getResults().removeIf(resource -> !resource.isLocal());
+    var selected = new TreeMap<String, Extensions.ComponentDescriptor>();
+    var origins = new TreeSet<String>();
+    var selectedServices = new HashSet<String>();
+    for (var resource : resources.getResults()) {
+      var component = candidates.get(resource.getServiceId() + "|" + resource.getResourceUrn());
+      if (component != null) {
+        selected.put(identity(component), component);
+        selectedServices.add(resource.getServiceId());
+        origins.add(resource.getServiceId() + "|" + resources.getServices().get(resource.getServiceId())
+            + "|" + resource.getResourceUrn() + "|" + identity(component));
+      }
+    }
+    var diagnostics = serviceDiagnostics.entrySet().stream()
+        .filter(entry -> selectedServices.isEmpty() || selectedServices.contains(entry.getKey())
+            || (localServices.contains(entry.getKey())
+                && entry.getValue().stream().anyMatch(note -> note.getLevel() == Notification.Level.Error)))
+        .sorted(Map.Entry.comparingByKey()).flatMap(entry -> entry.getValue().stream()).toList();
+    var components = List.copyOf(selected.values());
     if (diagnostics.stream().anyMatch(note -> note.getLevel() == Notification.Level.Error)) {
       components = List.of(); resources = ResourceSet.empty();
     }
     return new Resolution(components, resources,
-        digest(List.of("authority-resolution-v1", authorityUrn, ownerRevision(owner), List.copyOf(origins),
+        digest(List.of("authority-resolution-v1", authorityUrn, ownerRevision(scope), List.copyOf(origins),
             components.stream().map(AuthorityComponentResolver::identity).toList())), diagnostics);
   }
 
@@ -148,8 +188,7 @@ public final class AuthorityComponentResolver {
             || descriptor.fileHash() == null || descriptor.fileHash().isBlank()
             || !matches(descriptor, urn, true) || descriptor.usageRights() == null) continue;
         // ServiceScope is trusted for local access. It must not bypass a remote owner's exclusions.
-        var groups = owner.getGroups() == null ? List.<org.integratedmodelling.klab.api.identities.Group>of() : owner.getGroups();
-        if (descriptor.usageRights().checkAuthorization(owner.getUsername(), groups)) result.add(descriptor);
+        if (authorized(descriptor, owner)) result.add(descriptor);
       }
     }
     return result;
@@ -157,11 +196,24 @@ public final class AuthorityComponentResolver {
 
   private static boolean ambiguous(Collection<Extensions.ComponentDescriptor> metadata, String urn, UserIdentity owner) {
     if (metadata == null) return false;
-    var groups = owner.getGroups() == null ? List.<org.integratedmodelling.klab.api.identities.Group>of() : owner.getGroups();
     return metadata.stream().map(AuthorityComponentResolver::copy)
         .filter(component -> matches(component, urn, true) && component.fileHash() != null && !component.fileHash().isBlank()
-            && component.usageRights() != null && component.usageRights().checkAuthorization(owner.getUsername(), groups))
+            && authorized(component, owner))
         .map(AuthorityComponentResolver::identity).distinct().limit(2).count() > 1;
+  }
+
+  /** Certificate-backed service ingestion selects public providers without impersonating a user. */
+  public static boolean publicServiceScope(Scope scope) {
+    return scope instanceof org.integratedmodelling.klab.api.scope.ServiceScope
+        && !(scope instanceof UserScope)
+        && scope.getIdentity() != null
+        && !(scope.getIdentity() instanceof UserIdentity);
+  }
+
+  private static boolean authorized(Extensions.ComponentDescriptor component, UserIdentity owner) {
+    var rights = component.usageRights();
+    return rights != null && (owner == null ? rights.isPublic()
+        : rights.checkAuthorization(owner.getUsername(), owner.getGroups() == null ? List.of() : owner.getGroups()));
   }
 
   private static boolean matches(Extensions.ComponentDescriptor component, String urn, boolean embeddable) {
@@ -188,7 +240,10 @@ public final class AuthorityComponentResolver {
 
   public static String ownerRevision(Scope scope) {
     var user = owner(scope);
-    return user == null ? digest("no-authorized-owner") : ownerRevision(user);
+    if (user != null) return ownerRevision(user);
+    return publicServiceScope(scope)
+        ? digest(Arrays.asList("public-service-ingestion", scope.getIdentity().getId()))
+        : digest("no-authorized-owner");
   }
 
   private static String ownerRevision(UserIdentity user) {

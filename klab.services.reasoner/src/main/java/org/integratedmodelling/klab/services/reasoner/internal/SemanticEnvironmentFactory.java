@@ -35,6 +35,14 @@ public final class SemanticEnvironmentFactory
     bootstrap = new AuthorityBootstrap(assetRoot.resolve("authority-bootstrap"), core);
   }
   public boolean authorityBootstrapEnabled() { return bootstrap != null; }
+
+  public Worldview refreshAuthoritySelection(Worldview source, org.integratedmodelling.klab.api.scope.Scope owner) {
+    if (bootstrap == null || source.getAuthorityBindings().isEmpty()) return source;
+    var snapshot = BeanIngestionPreflight.snapshot(source);
+    snapshot.getMetadata().put(org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA,
+        bootstrap.selectionRevision(snapshot, owner));
+    return snapshot;
+  }
   boolean publicationCurrent(CandidatePublicationCoordinator.Input<Worldview> input) {
     if (bootstrap==null || input.payload().getAuthorityBindings().isEmpty()) return true;
     var context=bootstrapInputs.get(input.dependencyRevision());
@@ -129,7 +137,7 @@ public final class SemanticEnvironmentFactory
   public String dependencyRevision() {
     return bootstrap!=null && bootstrap.policyRevision()!=null?dependencyRevision+":"+bootstrap.policyRevision():dependencyRevision;
   }
-  /** Reads a local catalog only. Numbered document locators require an explicit local manifest. */
+  /** Captures bundled ODO plus local extensions. Local ODO bytes and provenance cannot override the distribution. */
   public static SemanticEnvironmentFactory fromLocalCatalog(Path privateAssets, Path catalog) throws Exception {
     return fromLocalCatalog(privateAssets, catalog, catalog.toAbsolutePath().getParent());
   }
@@ -139,6 +147,7 @@ public final class SemanticEnvironmentFactory
       try (var entries = Files.walk(catalog)) {
         for (var file : entries.filter(Files::isRegularFile)
             .filter(p -> CoreOntologyCatalog.isVisible(catalog.relativize(p)))
+            .filter(p -> !CoreOntologyCatalog.alias(catalog.relativize(p)).equals("odo"))
             .filter(p -> p.getFileName().toString().endsWith(".owl")).sorted().toList())
           files.put(catalog.relativize(file).toString().replace('\\', '/'), Files.readAllBytes(file));
       }
@@ -146,14 +155,11 @@ public final class SemanticEnvironmentFactory
     var locators = new java.util.Properties();
     var manifest = catalog.resolve("source-catalog.properties");
     if (Files.isRegularFile(manifest)) try (var input = Files.newInputStream(manifest)) { locators.load(input); }
-    if (files.isEmpty()) {
-      if (!locators.isEmpty()) throw new IllegalStateException("Explicit source catalog has no captured local OWL documents");
-      // Bootstrap supports unnamed core usage only; no numbered URL is certified by this fallback.
-      try (var input = SemanticEnvironmentFactory.class.getClassLoader().getResourceAsStream("knowledge/odo.owl")) {
-        if (input == null) throw new IllegalStateException("No local semantic core catalog is available");
-        files.put("odo.owl", input.readAllBytes());
-      }
-    }
+    files.put("odo.owl", CoreOntologyCatalog.bundledOdo());
+    // These entries describe installed bytes, not the authoritative bundled document. Do not
+    // certify an obsolete release URL or hash as the provenance of the new bundled ODO.
+    locators.remove("odo");
+    locators.remove("odo.sha256");
     var names = new LinkedHashMap<String, String>();
     var hashes = new LinkedHashMap<String, String>();
     locators.stringPropertyNames().stream().sorted().forEach(name -> {
@@ -294,7 +300,10 @@ public final class SemanticEnvironmentFactory
     for (var ontology : snapshot.getOntologies()) {
       for (var imported : ontology.getOwlImports()) {
         var captured = coreIdentities.get(imported.getFirst());
+        var odoRelease = "odo".equals(imported.getFirst())
+            ? CoreOntologyCatalog.odoReleaseIdentity(imported.getSecond()) : null;
         if (captured == null || (!captured.contains(imported.getSecond())
+            && !(odoRelease != null && captured.contains(odoRelease))
             && !Objects.equals(documentLocators.get(imported.getFirst()), imported.getSecond()))) unsupported.add(
             "CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import " + imported);
       }

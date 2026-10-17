@@ -21,6 +21,34 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class SemanticValidationPublicationTest {
+  @Test void operationalSetterCanClearReadiness() throws Exception {
+    var reasoner = reasoner(mock(OWL.class), new AuthorityBindings());
+    reasoner.setOperational(true);
+    assertTrue(reasoner.status().isOperational());
+    reasoner.setOperational(false);
+    assertFalse(reasoner.status().isOperational());
+  }
+
+  @Test void candidateReadinessRequiresAcceptedGenerationEvenForLocalWorldview() throws Exception {
+    var reasoner = reasoner(mock(OWL.class), new AuthorityBindings());
+    var runtime = mock(AcceptedSemanticRuntime.class);
+    field(reasoner, "candidateRuntime", runtime);
+    field(reasoner, "worldview", new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl());
+    doReturn(java.net.URI.create("http://localhost:8091/reasoner").toURL()).when(reasoner).getUrl();
+    reasoner.setOperational(true);
+    for (long accepted : List.of(0L, 1L)) {
+      when(runtime.status()).thenReturn(new CandidatePublicationCoordinator.Status(2, accepted,
+          CandidatePublicationCoordinator.BeanStatus.INVALID, CandidatePublicationCoordinator.LogicalStatus.NOT_RUN,
+          Map.of(), Map.of(), List.of("CORE_ALIAS_TARGET_UNAVAILABLE: odo:PhysicalDomain"), List.of()));
+      assertEquals(accepted > 0, reasoner.operationalizeService());
+      var status = reasoner.status();
+      assertEquals(accepted > 0, status.isOperational());
+      assertTrue(status.getMetadata().get("semantic.validation.reason").toString().contains("odo:PhysicalDomain"));
+      assertEquals(true, status.getMetadata().get("semantic.validation.blocked"));
+      assertEquals("accepted:" + accepted + (accepted > 0 ? ":ready" : ":unavailable"),
+          status.getMetadata().get("semantic.validation"));
+    }
+  }
   private static void field(Object instance, String name, Object value) throws Exception {
     for (var type = instance.getClass(); type != null; type = type.getSuperclass()) {
       try {
@@ -55,7 +83,7 @@ class SemanticValidationPublicationTest {
     for (var cache : List.of("semanticExpressions", "concepts", "observables", "subsumption"))
       field(reasoner, cache, mock(Cache.class));
     field(reasoner, "cachedLoadPercentage", new AtomicInteger());
-    field(reasoner, "serviceNotifications", List.of());
+    field(reasoner, "serviceNotifications", new ArrayList<Notification>());
     var scope = mock(ServiceScope.class);
     doReturn(scope).when(reasoner).serviceScope();
     doReturn("reasoner").when(reasoner).serviceId();

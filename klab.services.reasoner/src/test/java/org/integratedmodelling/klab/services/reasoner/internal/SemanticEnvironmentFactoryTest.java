@@ -365,6 +365,29 @@ class SemanticEnvironmentFactoryTest {
     assertFalse(Files.exists(directory.resolve("actors")));
   }
 
+  @Test void officialOdoReleaseUrlUsesMatchingCapturedVersionWithoutNetwork() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"),
+        Map.of("odo.owl", CoreOntologyCatalog.bundledOdo()));
+    for (var url : List.of(
+        "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.1/odo.owl",
+        "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl",
+        "https://example.org/releases/0.1.1/odo.owl")) {
+      var source = world("release-import", false);
+      source.getOntologies().getFirst().getOwlImports().add(
+          org.integratedmodelling.klab.api.collections.Pair.of("odo", url));
+      var result = factory.build(factory.capture(source), () -> false);
+      try (var environment = result.state()) {
+        if (url.equals("https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.1/odo.owl")) {
+          assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+          assertNotNull(environment);
+        } else {
+          assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, result.logicalStatus());
+          assertNull(environment);
+        }
+      }
+    }
+  }
+
   @Test void ambiguousCoreDocumentsAreRejectedBeforeAnyActor() throws Exception {
     var bytes = core().get("odo.owl");
     assertThrows(IllegalArgumentException.class, () -> new SemanticEnvironmentFactory(
@@ -389,6 +412,41 @@ class SemanticEnvironmentFactoryTest {
       assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(),
           result.diagnostics().toString());
     }
+  }
+
+  @Test void bundledOdoOverridesStaleInstalledBytesAndTheirManifest() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("catalog"));
+    var bundled = CoreOntologyCatalog.bundledOdo();
+    assertTrue(new String(bundled, java.nio.charset.StandardCharsets.UTF_8)
+        .contains("http://integratedmodelling.org/odo/0.1.1"));
+    Files.writeString(catalog.resolve("odo.owl"), "obsolete installed ontology");
+    Files.writeString(catalog.resolve("source-catalog.properties"),
+        "odo=https://example.org/releases/0.1.0/odo.owl\nodo.sha256=obsolete\n");
+    var captured = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
+    var bundledOnly = new SemanticEnvironmentFactory(directory.resolve("actors"), Map.of("odo.owl", bundled));
+    assertEquals(bundledOnly.dependencyRevision(), captured.dependencyRevision());
+    var source = world("bundled", false);
+    for (var name : List.of("PhysicalDomain", "KnowledgeDomain", "NormativeDomain")) {
+      var declaration = statement(name, SemanticType.SUBJECT, 10);
+      declaration.setUpperConceptDefined("odo:" + name);
+      source.getOntologies().getFirst().getStatements().add(declaration);
+    }
+    assertFalse(captured.capture(source).diagnostics().stream()
+        .anyMatch(message -> message.contains("CORE_ALIAS_TARGET_UNAVAILABLE")));
+    // Re-capture after a stale local edit still has the exact same dependency identity.
+    Files.writeString(catalog.resolve("odo.owl"), "another stale local copy");
+    assertEquals(captured.dependencyRevision(),
+        SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog).dependencyRevision());
+  }
+
+  @Test void legacyCoreExtractionReplacesStaleOdoButPrivateSnapshotsStayFrozen() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("legacy"));
+    Files.writeString(catalog.resolve("odo.owl"), "old core");
+    new CoreOntology(catalog.toFile(), null, true);
+    assertArrayEquals(CoreOntologyCatalog.bundledOdo(), Files.readAllBytes(catalog.resolve("odo.owl")));
+    Files.writeString(catalog.resolve("odo.owl"), "captured private core");
+    new CoreOntology(catalog.toFile(), null, false);
+    assertEquals("captured private core", Files.readString(catalog.resolve("odo.owl")));
   }
 
   @Test void qualifiedCoreAliasMatchesTheLoadedOntologyAndItsVersion() throws Exception {

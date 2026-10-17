@@ -51,8 +51,10 @@ class BootstrapSourcePinTest {
     return new BootstrapSourcePin(id,endpoint,Map.of("klab.authority.taxa",new BootstrapSourcePin.Artifact(version,"1.0.0",digest,strong),"klab.authority.pubchem",new BootstrapSourcePin.Artifact("1.0.0-SNAPSHOT","1.0.0","c".repeat(32),"d".repeat(64))));
   }
   private BootstrapSourcePin pin(){return pin("local",url,"1.0.0-SNAPSHOT",md5,sha);}
-  @Test void defaultDiscoveryStillRejectsSameVersionDifferentContent() {
-    assertThrows(IllegalStateException.class,()->AuthorityBootstrap.resolve(source(),owner));
+  @Test void defaultDiscoveryPrefersLocalBuildWithSameVersionDifferentContent() {
+    var plan=AuthorityBootstrap.resolve(source(),owner);
+    assertEquals(md5,plan.components().getFirst().fileHash());
+    assertEquals("local",plan.resources().getResults().iterator().next().getServiceId());
     verify(local,never()).exportAsset(anyString(),any(),anyString(),any(),any());
   }
   @Test void explicitPinQueriesOnlyApprovedSourceAndCarriesBothContentAndSourceGuards() {

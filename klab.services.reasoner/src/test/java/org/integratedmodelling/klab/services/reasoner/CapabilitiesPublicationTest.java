@@ -23,6 +23,24 @@ import org.junit.jupiter.api.Test;
 class CapabilitiesPublicationTest {
   private static final String HASH = "a".repeat(64);
 
+  @Test void acceptedCandidateComponentsArePublishedAlongsideHostComponents() throws Exception {
+    var fixture = fixture();
+    var runtime = mock(AcceptedSemanticRuntime.class);
+    field(fixture.reasoner(), "candidateRuntime", runtime);
+    var owned = mock(Extensions.ComponentDescriptor.class);
+    var previous = mock(Extensions.ComponentDescriptor.class);
+    var builtin = mock(Extensions.ComponentDescriptor.class);
+    when(owned.id()).thenReturn("authority"); when(previous.id()).thenReturn("authority");
+    when(builtin.id()).thenReturn("builtin");
+    when(fixture.registry().getInstalledComponents(any())).thenReturn(List.of(builtin, previous));
+    var publication = SemanticCapabilitiesSnapshot.capture(1, "worldview-id", "imod", true, List.of(binding()), null);
+    when(runtime.metadata()).thenReturn(new AcceptedSemanticRuntime.Metadata(1, publication, List.of(owned)));
+    var capabilities = fixture.reasoner().capabilities(mock(Scope.class));
+    assertEquals(List.of(builtin, owned), capabilities.getComponents());
+    assertEquals(1, capabilities.getKnowledgeRevision());
+    assertEquals(1, capabilities.getAuthorityBindings().size());
+  }
+
   private static void field(Object instance, String name, Object value) throws Exception {
     for (var type = instance.getClass(); type != null; type = type.getSuperclass()) {
       try {

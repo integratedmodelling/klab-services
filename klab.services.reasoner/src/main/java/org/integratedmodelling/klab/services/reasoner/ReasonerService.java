@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.reasoner;
 
+import org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime;
+
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
 
@@ -298,6 +300,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
   private org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog capturedAuthorities =
       org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.empty();
+
+  public List<org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor> capturedAuthorityComponents() {
+    return capturedAuthorities.components();
+  }
   private java.nio.file.Path semanticAssets;
   private volatile boolean knowledgeReady;
   private final org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState
@@ -896,10 +902,28 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public void runAdditionalTimedTasks() {
     try {
       checkWorldview();
+      if (candidateRuntime != null && !semanticOnly) {
+        var status = candidateRuntime.status();
+        switch (status.logicalStatus()) {
+          case FAILED, UNAVAILABLE, INVALID, UNRESOLVED, NOT_RUN -> {
+            if (status.diagnostics().isEmpty()) break;
+            var diagnostic = "Worldview semantic validation " + status.logicalStatus() + ": "
+                + String.join("; ", status.diagnostics());
+            if (!diagnostic.equals(lastCandidateDiagnostic)) {
+              lastCandidateDiagnostic = diagnostic;
+              Logging.INSTANCE.warn(diagnostic);
+            }
+          }
+          case VALID -> lastCandidateDiagnostic = null;
+          default -> { }
+        }
+      }
     } catch (Throwable t) {
       Logging.INSTANCE.error(t);
     }
   }
+
+  private String lastCandidateDiagnostic;
 
   /**
    * TODO this must become more dynamic and integrate existing worldview contributors. Priority must
@@ -909,27 +933,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    */
   boolean checkWorldview() {
 
-    if (candidateRuntime != null && !semanticOnly && worldview != null && !candidateRuntime.authorityBootstrapEnabled()) {
-      boolean available = candidateRuntime.status().acceptedGeneration() > 0 || Utils.URLs.isLocalHost(getUrl());
-      setOperational(available);
-      return available;
-    }
-
-    if (knowledgeReady) {
+    boolean candidatePublication = candidateRuntime != null && !semanticOnly;
+    if (knowledgeReady && !candidatePublication) {
       return true;
     }
 
-    var ret = false;
-    for (var resources : serviceScope().getServices(ResourcesService.class)) {
-
-      /*
-       * FIXME this makes the local reasoner only initialize from a local resources service, which
-       *  is correct if the modeler is able to operate on the worldview, but it should be
-       *  configurable or linked to groups.
-       */
-      if (Utils.URLs.isLocalHost(this.getUrl()) && !Utils.URLs.isLocalHost(resources.getUrl())) {
-        continue;
-      }
+    var ret = candidatePublication && candidateRuntime.status().acceptedGeneration() > 0;
+    if (candidatePublication) setOperational(ret);
+    // Prefer local authoring sources, while allowing certificate-advertised remote sources
+    // when no local worldview is available. Never replace an unchanged local selection remotely.
+    var sources = serviceScope().getServices(ResourcesService.class).stream()
+        .sorted(Comparator.comparing(resources -> !Utils.URLs.isLocalHost(resources.getUrl())))
+        .toList();
+    for (var resources : sources) {
 
       if (resources.status().isAvailable()
           && resources.capabilities(serviceScope()).isWorldviewProvider()) {
@@ -945,10 +961,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         Worldview discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
         if (discovered == null) continue;
         if (candidateRuntime != null && !semanticOnly
-            && !candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) continue;
+            && !candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) return ret;
         serviceScope().info("Worldview discovered from " + resources.getUrl() + " in "
             + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - discoveryStarted) + " ms");
         var notifications = loadKnowledge(discovered, serviceScope());
+        if (candidatePublication) {
+          // A submitted candidate compiles asynchronously. Keep this source selected while
+          // pending, and poll it again for source/provider changes on the next scheduler tick.
+          ret = candidateRuntime.status().acceptedGeneration() > 0;
+          setOperational(ret);
+          break;
+        }
         if (knowledgeReady
             && (Utils.URLs.isLocalHost(getUrl()) || !Utils.Resources.hasErrors(notifications))) {
           setOperational(true);
@@ -976,7 +999,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public boolean operationalizeService() {
     if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.status().acceptedGeneration() > 0 || (worldview != null && Utils.URLs.isLocalHost(getUrl()));
+      return candidateRuntime.status().acceptedGeneration() > 0;
     return knowledgeReady;
   }
 
@@ -1026,7 +1049,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       ret.getMetadata().put(org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState.METADATA_KEY,
           "accepted:" + status.acceptedGeneration() + (status.acceptedGeneration() > 0 ? ":ready" : ":unavailable"));
       ret.getMetadata().put("semantic.candidate", status);
-      ret.getAdvisories().addAll(worldviewLoadDiagnostics);
+      ((org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl) ret)
+          .setOperational(status.acceptedGeneration() > 0);
+      ret.getMetadata().put("semantic.validation.reason", AcceptedSemanticRuntime.validationReason(status));
+      ret.getMetadata().put("semantic.validation.blocked", AcceptedSemanticRuntime.validationBlocked(status));
       status.diagnostics().forEach(message -> ret.getAdvisories().add(Notification.warning(message)));
       return ret;
     }
@@ -1857,6 +1883,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     if (getComponentRegistry() != null) ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
+    if (acceptedMetadata != null) {
+      var owned = acceptedMetadata.components();
+      ret.getComponents().removeIf(component -> owned.stream().anyMatch(c -> c.id().equals(component.id())));
+      ret.getComponents().addAll(owned);
+    }
     // A request may straddle a complete mutation. Never label a newer publication with an
     // older revision, or certify metadata captured while readiness/generation changed.
     boolean readable = acceptedMetadata != null ? acceptedMetadata.generation() > 0
@@ -2162,8 +2193,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (!candidateRuntime.submit(worldview, attempt, scope))
         return ResourceSet.empty(Notification.info("Stale worldview submission discarded"));
       this.worldview = BeanIngestionPreflight.snapshot(worldview);
-      setOperational(Utils.URLs.isLocalHost(getUrl()));
-      return ResourceSet.empty(Notification.info("Bean preflight passed; whole-worldview logical validation is pending"));
+      var status = candidateRuntime.status();
+      setOperational(status.acceptedGeneration() > 0);
+      return ResourceSet.empty(Notification.info(AcceptedSemanticRuntime.validationReason(status)));
     }
     // this remains the only service whose initialization depends on others, so we set it up
     // manually when the specific conditions for initialization are met
@@ -2245,8 +2277,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public synchronized ResourceSet updateKnowledge(ResourceSet changes, UserScope scope) {
-    if (candidateRuntime != null && !semanticOnly) candidateRuntime.invalidate();
-
     var ownResources = scope.getService(ResourcesService.class);
     Map<URL, ResourcesService> services = new HashMap<>();
 
@@ -2334,10 +2364,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       mutable.setObservationStrategies(completeStrategies);
       var errors = BeanIngestionPreflight.errors(complete);
       if (!errors.isEmpty()) return rejectBeanUpdate(changes, affectedKnowledge, errors);
-      this.worldview = complete;
-      if (candidateRuntime.authorityBootstrapEnabled()) candidateRuntime.submit(complete,scope);
-      else candidateRuntime.submit(complete);
-      changes.getNotifications().add(Notification.info("Bean preflight passed; whole-worldview logical validation is pending"));
+      // Use the same fingerprint/preflight gate as startup polling. Duplicate change events
+      // must not cancel a pending candidate, reconfigure providers, or notify editors again.
+      changes.getNotifications().addAll(loadKnowledge(complete, scope).getNotifications());
       return changes;
     }
 
@@ -2465,6 +2494,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     changes.getNotifications().addAll(errors);
     if (candidateRuntime != null && !semanticOnly) {
       worldviewLoadDiagnostics = List.copyOf(errors);
+      candidateRuntime.invalidate();
       candidateRuntime.rejectPreflight(errors);
       return changes;
     }

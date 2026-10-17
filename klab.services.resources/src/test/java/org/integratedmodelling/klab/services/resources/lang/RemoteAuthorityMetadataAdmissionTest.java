@@ -38,7 +38,7 @@ class RemoteAuthorityMetadataAdmissionTest {
     var source=new WorldviewImpl();source.setUrn("w");source.setWorldviewId("w");source.setEmpty(false);source.setOntologies(new ArrayList<>(List.of(ontology)));
     var registry=mock(ComponentRegistry.class);when(registry.getComponents(scope)).thenReturn(List.of());
     var manager=mock(WorkspaceManager.class);when(manager.getWorldview()).thenReturn(source);
-    var provider=mock(ResourcesProvider.class,CALLS_REAL_METHODS);doReturn(registry).when(provider).getComponentRegistry();doReturn("local").when(provider).serviceId();
+    var provider=mock(ResourcesProvider.class,CALLS_REAL_METHODS);doReturn(registry).when(provider).getComponentRegistry();doReturn("local").when(provider).serviceId();doReturn(scope).when(provider).serviceScope();
     var field=ResourcesProvider.class.getDeclaredField("workspaceManager");field.setAccessible(true);field.set(provider,manager);
     var remote=mock(ResourcesService.class);when(remote.serviceId()).thenReturn("remote");when(remote.getUrl()).thenReturn(URI.create("https://remote.invalid/resources").toURL());
     var status=mock(KlabService.ServiceStatus.class);when(status.isOperational()).thenReturn(true);when(remote.status()).thenReturn(status);
@@ -51,6 +51,20 @@ class RemoteAuthorityMetadataAdmissionTest {
   }
   private Worldview retrieve(Fixture fixture)throws Exception {
     var method=ResourcesProvider.class.getDeclaredMethod("retrieveWorldview",Scope.class);method.setAccessible(true);return (Worldview)method.invoke(fixture.provider(),fixture.scope());
+  }
+
+  @Test void requestScopeWithoutPeersStillDiscoversThroughHostServices() throws Exception {
+    var rights = new ResourcePrivileges(); rights.setPublic(true);
+    var fixture = fixture(rights);
+    var request = mock(UserScope.class);
+    var owner = (UserIdentity) fixture.scope().getIdentity();
+    when(request.getUser()).thenReturn(owner); when(request.getIdentity()).thenReturn(owner);
+    when(request.getServices(ResourcesService.class)).thenReturn(List.of());
+    var worldview = fixture.provider().list(Worldview.class, request).getFirst();
+    assertEquals(1, worldview.getAuthorityBindings().size());
+    assertTrue(worldview.getNotifications().isEmpty());
+    verify(fixture.remote()).resolve(eq("fixture.authority"), eq(KlabAsset.KnowledgeClass.COMPONENT), same(request));
+    verify(fixture.registry(), never()).loadComponents(any(), any());
   }
 
   @Test void realServerResolverKeepsAuthorityVersionSeparateFromComponentVersion() throws Exception {

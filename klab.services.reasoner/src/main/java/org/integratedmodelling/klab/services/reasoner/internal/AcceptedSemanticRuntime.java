@@ -22,6 +22,16 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   private final java.util.function.LongSupplier retryClock;
   private String rejectedKey;
   private String submittedKey;
+  private long submittedRetryAfter;
+
+  private boolean suppressSubmitted(String key) {
+    if (!Objects.equals(key, submittedKey)) return false;
+    var status = coordinator.status().logicalStatus();
+    return switch (status) {
+      case FAILED, UNAVAILABLE, CANCELLED -> retryClock.getAsLong() - submittedRetryAfter < 0;
+      default -> true;
+    };
+  }
   private long retryAfter;
   private int rejectionCount;
   public record PreflightAttempt(Worldview snapshot, String key, long generation, boolean retry) {}
@@ -50,13 +60,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   public boolean shouldRetryPreflight(Worldview snapshot, Scope scope) {
     synchronized (lifecycle) { if (closed) return false; }
     final String key;
-    try { key = preflightKey(snapshot, scope); }
+    try { key = preflightKey(refreshAuthoritySelection(snapshot, scope), scope); }
     catch (IllegalArgumentException malformed) {
       // Let the normal preflight report malformed inputs; an unreadable key must not hide them.
       synchronized (lifecycle) { return !closed; }
     }
     synchronized (lifecycle) {
-      if (factory.authorityBootstrapEnabled() && Objects.equals(key, submittedKey)) return false;
+      if (suppressSubmitted(key)) return false;
       return !closed && (!Objects.equals(key, rejectedKey) || retryClock.getAsLong() - retryAfter >= 0);
     }
   }
@@ -65,12 +75,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     synchronized (lifecycle) {
       if (closed) return new PreflightAttempt(null, "", coordinator.status().inputGeneration(), false);
     }
-    var owned = BeanIngestionPreflight.snapshot(snapshot);
+    var owned = BeanIngestionPreflight.snapshot(refreshAuthoritySelection(snapshot, scope));
     var key = preflightKey(owned, scope);
     synchronized (lifecycle) {
-      if (closed || (factory.authorityBootstrapEnabled() && Objects.equals(key, submittedKey))
+      if (closed || suppressSubmitted(key)
           || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))
         return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), false);
+      if (Objects.equals(key, submittedKey)) factory.invalidateBootstrap();
       coordinator.invalidate();
       return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), true);
     }
@@ -94,7 +105,9 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     var input = factory.authorityBootstrapEnabled() ? factory.capture(snapshot, scope) : factory.capture(snapshot);
     synchronized (lifecycle) {
       if (!current(attempt, scope) || !attempt.key().equals(preflightKey(snapshot, scope))) return false;
-      clearRejected(); submittedKey = attempt.key(); submittedSources = input.sourceHashes(); coordinator.submit(input); return true;
+      clearRejected(); submittedKey = attempt.key();
+      submittedRetryAfter = retryClock.getAsLong() + Duration.ofSeconds(60).toNanos();
+      submittedSources = input.sourceHashes(); coordinator.submit(input); return true;
     }
   }
 
@@ -106,6 +119,12 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
 
   private void clearRejected() { rejectedKey = null; rejectionCount = 0; retryAfter = 0; }
 
+  private Worldview refreshAuthoritySelection(Worldview source, Scope scope) {
+    // Resolve outside the lifecycle lock: accepted generations remain readable during discovery.
+    return factory.authorityBootstrapEnabled() && !source.getAuthorityBindings().isEmpty()
+        ? factory.refreshAuthoritySelection(source, scope) : source;
+  }
+
   private String preflightKey(Worldview snapshot, Scope scope) {
     try {
       var metadataRevision = snapshot.getMetadata().get(
@@ -113,6 +132,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       var payload = Arrays.asList(new TreeMap<>(SemanticEnvironmentFactory.sources(snapshot)),
           SemanticEnvironmentFactory.sourceOrder(snapshot), factory.dependencyRevision(),
           SemanticEnvironmentFactory.CONFIGURATION_REVISION, metadataRevision,
+          snapshot.getMetadata().get(org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA),
           snapshot.getAuthorityBindings().stream().sorted(Comparator.comparing(Worldview.AuthorityBinding::localId)).toList(),
           org.integratedmodelling.klab.components.AuthorityComponentResolver.ownerRevision(scope));
       var bytes = JacksonConfiguration.newObjectMapper()
@@ -131,10 +151,12 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     return coordinator.status().inputGeneration();
   }
   public Map<String, String> submittedSources() { return submittedSources; }
-  public record Metadata(long generation, SemanticCapabilitiesSnapshot publication) {}
+  public record Metadata(long generation, SemanticCapabilitiesSnapshot publication,
+      List<org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor> components) {}
   public Metadata metadata() {
-    try (var lease = lease()) { return new Metadata(lease.generation(), lease.state().actor().semanticCapabilitiesSnapshot()); }
-    catch (IllegalStateException unavailable) { return new Metadata(0, SemanticCapabilitiesSnapshot.initial()); }
+    try (var lease = lease()) { return new Metadata(lease.generation(), lease.state().actor().semanticCapabilitiesSnapshot(),
+        lease.state().actor().capturedAuthorityComponents()); }
+    catch (IllegalStateException unavailable) { return new Metadata(0, SemanticCapabilitiesSnapshot.initial(), List.of()); }
   }
   public boolean authorityBootstrapEnabled() { return factory.authorityBootstrapEnabled(); }
   public void invalidate() { synchronized (lifecycle) { if (!closed) { clearRejected(); submittedKey=null; factory.invalidateBootstrap(); coordinator.invalidate(); } } }
@@ -169,8 +191,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       }
       if (request.document() instanceof org.integratedmodelling.klab.api.lang.kim.KimOntology
           && !Objects.equals(response.getSourceHash(), lease.sourceHashes().get(SemanticEnvironmentFactory.sourceKey(request.document())))) {
-        response.setReason("Saved source logical validation is pending or rejected; the prior accepted snapshot remains readable");
-        return response;
+        return unavailableValidation(request, response);
       }
       synchronized (lease.state()) {
         response.getNotifications().addAll(new DocumentSemanticValidator(lease.state().actor()).validate(request.document()));
@@ -178,9 +199,52 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         return response;
       }
     } catch (IllegalStateException unavailable) {
-      response.setReason("Accepted semantic knowledge is unavailable while whole-worldview validation is pending or rejected");
-      return response;
+      return unavailableValidation(request, response);
     }
+  }
+
+  /** Stable, client-readable explanation; polling does not initiate validation. */
+  public static boolean validationBlocked(CandidatePublicationCoordinator.Status status) {
+    return status.beanStatus() == CandidatePublicationCoordinator.BeanStatus.INVALID
+        || switch (status.logicalStatus()) {
+          case INVALID, UNRESOLVED, FAILED -> true;
+          default -> false;
+        };
+  }
+
+  public static String validationReason(CandidatePublicationCoordinator.Status status) {
+    String reason;
+    if (status.beanStatus() == CandidatePublicationCoordinator.BeanStatus.INVALID) {
+      reason = "Worldview ingestion blocked by preflight errors";
+    } else {
+      reason = switch (status.logicalStatus()) {
+        case VALID -> "Worldview semantic validation completed";
+        case PENDING -> "Whole-worldview semantic validation is in progress";
+        case NOT_RUN -> "Waiting for worldview ingestion";
+        default -> "Worldview semantic validation " + status.logicalStatus().name().toLowerCase(Locale.ROOT);
+      };
+    }
+    if (!status.diagnostics().isEmpty()) reason += ": " + String.join("; ", status.diagnostics());
+    if (status.acceptedGeneration() > 0 && status.logicalStatus() != CandidatePublicationCoordinator.LogicalStatus.VALID)
+      reason += "; the prior accepted semantic generation remains available";
+    return reason;
+  }
+
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse unavailableValidation(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
+    var status = coordinator.status();
+    response.setKnowledgeRevision(status.acceptedGeneration());
+    response.setStatus(validationBlocked(status)
+        ? org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.FAILED
+        : org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.UNAVAILABLE);
+    response.setReason(status.logicalStatus() == CandidatePublicationCoordinator.LogicalStatus.VALID
+        ? "The saved document is not part of the accepted semantic generation; waiting for worldview synchronization"
+        : validationReason(status));
+    response.addDocumentDiagnostic(request, validationBlocked(status)
+        ? org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error
+        : org.integratedmodelling.klab.api.services.runtime.Notification.Level.Warning);
+    return response;
   }
 
   public <T> T invoke(String name, Class<?>[] signature, Object[] supplied) {

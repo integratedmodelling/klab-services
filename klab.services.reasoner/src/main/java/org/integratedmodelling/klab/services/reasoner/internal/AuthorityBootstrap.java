@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions.Co
 import org.integratedmodelling.klab.components.AuthorityComponentResolver;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 
-/** Opt-in, single-flight producer of real, independently owned authority state. No deployment writes. */
+/** Single-flight producer of real, independently owned authority state. No deployment writes. */
 public final class AuthorityBootstrap {
   static final String CONTRACT = "owned-authority-bootstrap-v1";
   private static final com.fasterxml.jackson.databind.ObjectMapper JSON = JacksonConfiguration.newObjectMapper();
@@ -41,11 +41,20 @@ public final class AuthorityBootstrap {
     this.resolver=resolver; this.producer=producer; this.policyRevision=policyRevision;
   }
 
+  /** Metadata-only poll: never download, configure, or run provider code here. */
+  String selectionRevision(Worldview source, Scope owner) {
+    try { return resolver.resolve(source, owner).revision(); }
+    catch (RuntimeException unavailable) {
+      return "unavailable:" + unavailable.getClass().getSimpleName();
+    }
+  }
+
   static String key(Worldview source, Scope owner) {
     try {
       var value=Arrays.asList(CONTRACT, new TreeMap<>(SemanticEnvironmentFactory.sources(source)),
           SemanticEnvironmentFactory.sourceOrder(source), source.getAuthorityBindings(),
           source.getMetadata().get(AuthorityComponentResolver.REVISION_METADATA),
+          source.getMetadata().get(AuthorityComponentResolver.SELECTION_METADATA),
           AuthorityComponentResolver.ownerRevision(owner));
       return digest(JSON.writer().with(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsBytes(value));
     } catch (Exception failure) { throw new IllegalArgumentException("Cannot fingerprint authority bootstrap input"); }
@@ -67,6 +76,9 @@ public final class AuthorityBootstrap {
     }
     try {
       var plan=resolver.resolve(source,owner); cancellation.checkpoint();
+      var selectedRevision = source.getMetadata().get(AuthorityComponentResolver.SELECTION_METADATA);
+      if (selectedRevision != null && !selectedRevision.equals(plan.revision()))
+        throw new IllegalStateException("Authority selection changed after preflight");
       var catalog=producer.produce(source,owner,plan,cancellation); cancellation.checkpoint();
       if (catalog==null || source.getAuthorityBindings().stream().anyMatch(b->!catalog.supports(b)))
         throw new IllegalStateException("Producer supplied no matching configured proof");
@@ -106,8 +118,9 @@ public final class AuthorityBootstrap {
   static Plan resolve(Worldview source, Scope owner,BootstrapSourcePin pin) {
     var identity = owner instanceof org.integratedmodelling.klab.api.scope.UserScope user ? user.getUser()
         : owner != null && owner.getIdentity() instanceof org.integratedmodelling.klab.api.identities.UserIdentity user ? user : null;
-    if (identity==null || identity.isAnonymous() || identity.getUsername()==null || identity.getId()==null)
-      throw new SecurityException("Authority bootstrap requires its authenticated requesting owner");
+    if (!AuthorityComponentResolver.publicServiceScope(owner)
+        && (identity==null || identity.isAnonymous() || identity.getUsername()==null || identity.getId()==null))
+      throw new SecurityException("Authority bootstrap requires an authenticated user or service scope");
     var selectionScope=pin==null?owner:pin.scope(owner);
     var components=new ArrayList<ComponentDescriptor>(); var resources=new ResourceSet(); var revisions=new TreeMap<String,String>();
     if(pin!=null)revisions.put("explicit.approval",pin.revision());
@@ -122,7 +135,7 @@ public final class AuthorityBootstrap {
       var component=selected.getFirst();
       // Current immutable catalog explicitly rejects non-public capture; do not invent a principal grant.
       if (component.usageRights()==null || !component.usageRights().isPublic()
-          || !component.usageRights().checkAuthorization(identity.getUsername(),identity.getGroups()==null?List.of():identity.getGroups()))
+          || (identity != null && !component.usageRights().checkAuthorization(identity.getUsername(),identity.getGroups()==null?List.of():identity.getGroups())))
         throw new SecurityException("Unsupported or denied capture rights");
       if (component.fileHash()==null || !component.fileHash().matches("[0-9a-fA-F]{32}"))
         throw new IllegalStateException("Provider has no verifiable artifact pin");
