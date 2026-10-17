@@ -2,5 +2,6 @@ recursive-include docs *.md *.json
 recursive-include docs/media *.mp4 *.gif *.png *.html *.ipynb *.py
 recursive-include component-patches *.md *.json *.patch .gitattributes
 recursive-include examples *.py
+include examples/hosted-deployment.json
 recursive-include tools *.py
 recursive-include tests *.py *.json *.md
