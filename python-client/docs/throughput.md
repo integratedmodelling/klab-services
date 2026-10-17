@@ -3,6 +3,13 @@
 See [functional workflow organization](functional-testing.md) for named suites,
 shared scenarios and the unit/integration/functional directory layout.
 
+For a real ENGINE certificate and already-running services, see
+[IDE-connected testing](ide-connected-testing.md). It records successful native
+Hub/Python authentication, the deployed test-model inventory, a paced read-only
+semantic API measurement, and the separately failing unit-metadata gate. These
+results are not scientific computation-throughput acceptance; do not point the
+owned-stack runner below at an IDE-managed or shared deployment.
+
 The numerical saved-handle → fresh-process restore → GeoTIFF → independent reader
 workflow is covered by the [verified GeoTIFF throughput test](geotiff-throughput.md).
 It gates rates on scientific correctness; its first real pilot exposed an exporter

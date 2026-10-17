@@ -1,482 +1,281 @@
-# Develop interoperability blocker: Reasoner cannot accept the pinned worldview
+# Python/Java compatibility: current verified state
 
-**Observed:** 16 October 2026. **Status:** unresolved; live compatibility is not certified.
-**Change scope:** this contribution changes only `python-client/`. It does not
-merge develop, modify Java/API code, edit the worldview, or alter ODO semantics.
+**Last verified: 17 October 2026.** Python base:
+`3ef427d2058c2b1b140c92fbc4832a1c4dadc1e4`; current work is on
+`feature/python-client-ide-throughput`. Changes are confined to `python-client/`.
+No Java/API, worldview or ODO source was changed to obtain these results.
 
-## Summary
+## Bottom line
 
-The Python client can reach the locally deployed Java services, but the Reasoner
-cannot publish accepted semantic knowledge for the tested imod worldview. The
-same failure occurs on **unchanged develop**, using the same ontology source
-hashes and exact ODO dependency. This is an existing server/worldview compatibility
-blocker under these inputs, not a demonstrated Python-client regression.
+**The Python client can authenticate to and use the real hosted Java services.**
+The original semantic-publication failure is not universal to Python/Java
+interaction: the hosted environment has accepted semantic knowledge and passes
+the shared readiness gate. However, full scientific workflow compatibility is
+**not certified**. The current hosted unit-preservation contract fails two actual
+functional tests. Computation, conversion, exports, cancellation, saved-handle
+recovery and restart/ACL workflows have not been rerun successfully on this
+deployment.
 
-There were two distinct failures:
+The original report concerned a different, pinned local server/worldview/ODO
+combination. Its failures remain valid historical evidence; that exact tuple has
+not been rerun or demonstrated repaired in this pass.
 
-1. **Dependency provisioning, addressed in the Python test tooling:** the Reasoner
-   initially rejected an uncaptured numbered ODO import. Capturing and staging the
-   exact declared release removes that diagnostic.
-2. **Semantic candidate construction, still unresolved:** after that provisioning,
-   the Java compiler rejects the `land` ontology's domain. No accepted generation
-   becomes available, so scientific and restart acceptance cannot proceed.
+## Verified compatibility matrix
 
-The evidence does **not** establish whether the remaining root cause is a Java
-compiler defect, unsupported legacy domain syntax, an invalid worldview, or an
-unsupported server/worldview version pairing. Fixing it by changing scientific
-meaning or relaxing Java validation is outside this Python-only contribution.
+| Capability / environment | Result | Evidence and limit |
+|---|---|---|
+| Offline unit/local-integration checks | **Passed** | 1,060 tests, zero failures/errors/skips; existing Ruff selection passed; not live scientific acceptance |
+| Real ENGINE certificate authentication | **Passed** | Existing `HubCertificateProvider` authenticated through the certificate's matching HTTPS Hub; no TEST identity, disabled TLS, or SDK authentication workaround |
+| Hosted service discovery and selection | **Passed** | Actual Python connection selected the four explicit HTTPS services below |
+| Hosted model inventory | **Passed** | Resources advertises `im-main`, adopts `imod`, and returns 26 MODEL entries from `klab.staging.vxii`; entries can contain duplicate URNs; no suitable scientific reference model was selected |
+| Hosted semantic publication/readiness | **Passed** | Accepted generation 1, bean/logical VALID, with 32 retained diagnostics; passing test ID below |
+| Hosted observable preserves requested metres | **Failed** | Actual raw response lacks `unit`; `[m]` test below |
+| Hosted observable preserves requested millimetres | **Failed** | Actual raw response lacks `unit`; `[mm]` test below |
+| Paced semantic-identity diagnostic | **Passed, narrow scope** | Eight sequential requests, median 130.84 ms; NOT computation throughput, unit verification, independent scientific accuracy, or capacity testing |
+| Local IDE service startup and identity handoff | **Passed at last local inspection** | Local services started and identify as the authenticated user after fixing the Java executable path and replacing stale anonymous processes; no source changes involved |
+| Local IDE scientific readiness | **Blocked** | Local Resources has no workspaces/adopted worldview; local Reasoner input/accepted generation 0, NOT_CHECKED/UNAVAILABLE; no domain compilation was attempted |
+| Original pinned local tuple, including exact ODO 0.1.0 capture | **Historical failure; not rerun** | Missing-import/domain failures recorded on 16 October, explained below |
+| Full scientific computation/throughput, exports, cancellation, saved handles, Runtime restart and cold ACL restoration | **Not run in this pass / not accepted on this deployment** | Readiness and offline success do not establish these capabilities; owned-stack mutation/restart tests must not target shared services |
 
-## Exact inputs
+Full evidence, service IDs, source-manifest hashes, commands and timing samples:
+[current verification record](results/ide-connected-semantic-verification.json).
+Environment: Windows 11, Python 3.12.7. The deployed hosted binary Git revision
+has **not** been established. An opaque worldview ID is not a source revision.
 
-| Input | Revision or identity |
-|---|---|
-| Python-client parent | `188caeb47b86f2eb114cd6f557cf839df0eb10ee` |
-| Unchanged develop baseline | `671a8181551a51b8a6b8080c3a13a2bf1cd0f048` |
-| imod worldview | `608bef150ced0a109db98a5aad64ba4461beaa54` |
-| Declared ontology | `https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl` |
-| Immutable ODO source commit | `aa2cc5611799ceed2aad52ae2c2a349da29e3c4b` |
-| ODO SHA-256 | `eb7318d725a16bd6e68a4cc12955c7b94b885a48d9c3c4f7837d4cd24a8ec7e4` |
-| Environment | Windows, Temurin 21.0.12.1+1, Python 3.12.7 |
+## Exact live test IDs and results
 
-The first combined-server run used the earlier **uncommitted integration tree**,
-not this PR branch's Java tree. That tree's source manifest and evidence are
-identified in the linked JSON records. The independent baseline reproduction used
-compiled unchanged develop. This PR intentionally carries neither that Java merge
-nor an alleged Java fix.
+The current opt-in connected suite was **actually executed against the hosted
+services**: **3 tests, 1 passed, 2 failed, 0 errors, 0 skips**, process exit 1.
+These are ordinary failures, not expected-failure marks or converted skips.
 
-## What was observed
-
-### Before dependency provisioning
-
-All five actual Java services exposed their public HTTP endpoints. The original
-scientific acceptance then received Reasoner HTTP 500:
+**Passed:**
 
 ```text
-Accepted semantic knowledge is unavailable
+tests/functional/test_connected_semantics.py::test_connected_reasoner_publishes_accepted_semantic_knowledge
 ```
 
-The Reasoner status explained the missing dependency:
+**Failed:**
+
+```text
+tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit[m]
+tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit[mm]
+```
+
+The readiness test invokes the **same**
+`workflows.develop_compatibility.require_semantic_readiness` gate used by the old
+compatibility tests, borrowing an authenticated client. The old TEST-state call
+path and assertions are unchanged. No real token is written to `scientist.json`,
+and the borrowed client is not closed by that helper.
+
+The unit tests issue a raw Reasoner request **before DTO conversion**, also call
+the SDK's observable resolver, and check the requested unit. Their actual failure:
+
+```text
+AssertionError: Reasoner wire response does not preserve requested unit m; Python must not invent mediation
+AssertionError: Reasoner wire response does not preserve requested unit mm; Python must not invent mediation
+```
+
+Source: [live connected tests](../tests/functional/test_connected_semantics.py),
+[named-suite mapping](../tools/run_functional_acceptance.py),
+[shared readiness gate](../tools/workflows/develop_compatibility.py).
+
+### Reproduce the current hosted results
+
+Use the Python branch/revision containing the connected tests above. **They are
+newer than the original frozen `3ef427d20` report.** From its `python-client/`
+directory, install the package and test dependencies:
+
+```powershell
+python -m pip install -e ".[dev]"
+```
+
+Review [the secret-free profile](../examples/hosted-deployment.json). It explicitly
+trusts these destinations; the observed Hub advertisements matched them:
+
+```text
+Hub:       https://integratedmodelling.org/hub
+Resources: https://services.integratedmodelling.org/resources/main
+Reasoner:  https://services.integratedmodelling.org/reasoner
+Resolver:  https://services.integratedmodelling.org/resolver
+Runtime:   https://services.integratedmodelling.org/runtime/main
+```
+
+Use your own valid private ENGINE certificate and an existing parent directory.
+Do not upload certificates/tokens or paste them into profiles/reports. Create a
+fresh report directory, then run:
+
+```powershell
+$reports = "C:\existing-parent\fresh-connected-tests"
+New-Item -ItemType Directory -Path $reports -ErrorAction Stop | Out-Null
+python tools/run_functional_acceptance.py --suite connected-semantic-readiness --suite connected-unit-contract --profile examples/hosted-deployment.json --certificate "$HOME\.klab\klab.cert" --report "$reports\connected.xml"
+$testExit = $LASTEXITCODE
+```
+
+No `--state-dir` or synthetic fixture is required for these two connected suites.
+The runner requires explicit profile/certificate paths; it does not silently use
+ambient credentials. XML records the request, presence/absence of the unit in the
+wire and SDK DTO, and accepted-generation evidence. File/configuration errors,
+authentication failures and connection timeouts are different outcomes, not
+reproduction of the unit failure.
+
+For a direct pytest invocation of a single failing parameter:
+
+```powershell
+$env:KLAB_CONNECTED_PROFILE = (Resolve-Path examples/hosted-deployment.json).Path
+$env:KLAB_CONNECTED_CERTIFICATE = "$HOME\.klab\klab.cert"
+python -m pytest -o addopts= -o junit_family=xunit1 -m functional -vv -s "tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit[m]" --junitxml="$reports\metres.xml"
+```
+
+Replace `[m]` with `[mm]` for the other failing case. `-o addopts=` is essential:
+ordinary pytest excludes `live` tests. Missing configuration fails, not skips.
+
+These tests use `connect(..., initialize=False)`. They authenticate, read service
+metadata and resolve observables; semantic resolution can warm server caches.
+They **do not** update peer catalogs, import/edit projects, create sessions,
+contexts or observations, or stop/restart services. Do not turn this small shared
+environment diagnostic into an unapproved load test.
+
+## Current issue: requested units are missing from the deployed response
+
+**Trigger:** authenticated `POST /api/v1/resolve/observable` on the selected hosted
+Reasoner, with text/plain request bodies:
+
+```text
+geography:Elevation in m
+geography:Elevation in mm
+```
+
+**Observed:** both return semantic URN and observable URN `geography:Elevation`,
+numeric artifact type, and **no `unit` field**. The complete decoded wire payloads
+were identical under canonical JSON hashing:
+
+```text
+de827c664051702ed4304f2f139b721088fb4ed9481f1a7d113688807979a7b8
+```
+
+**Python impact:** authentication, discovery and semantic identity resolution work,
+but the current value/unit-conversion workflow cannot verify the requested
+mediator. Reporting scientifically valid metre/millimetre throughput would be
+unjustified. No scientific computation was submitted, so this is **not evidence
+that computed values are wrong**.
+
+**Ownership/uncertainty:** Python did not discard the unit; it is absent before
+DTO conversion. The deployed Java binary revision and any replacement mediation
+contract are unknown. This is a demonstrated wire-contract gap for the existing
+Python workflow, **not a proven Java root cause**. If a different supported
+contract is intended, provide its specification for Python adaptation. Python must
+not synthesize response units from the requested string.
+
+### Java/platform investigation handoff for this issue
+
+1. Reproduce both unit tests with the same explicit endpoints; identify deployed
+   Reasoner, Resources, parser and API builds before comparing source behavior.
+2. Trace the request through `ReasonerController.resolveObservable`,
+   `ReasonerService.resolveObservableInternal`, Resources observable parsing,
+   `declareObservable`/`declare`, and `SemanticsBuilder.buildObservable`. Inspect
+   parsed units, constructed Unit, observable URN, candidate-actor copy/bridge and
+   final HTTP serialization. Compare m versus mm at each boundary.
+3. The inspected source at develop `d8e16b277a616b63165b857018722bba658c0007`
+   contains `Observable.getUnit()`, unit handling in `ReasonerService.declare`
+   and `SemanticsBuilder.buildObservable`. That does not establish what the
+   hosted binary implements or identify the loss point.
+4. Correct the owning layer or specify the supported alternative; preserve unit
+   distinctions and add Java regressions across the actual private-candidate and
+   HTTP paths. Rerun the two live Python tests without weakening their checks.
+5. Only then validate a tiny test-owned scientific computation and its actual
+   values, units, geometry, missingness and readback before reporting computation
+   throughput. Independent provider accuracy is a separate reference gate.
+
+## Original pinned-worldview findings: retained, not declared fixed
+
+The [original frozen report](https://github.com/integratedmodelling/klab-services/blob/3ef427d2058c2b1b140c92fbc4832a1c4dadc1e4/python-client/docs/develop-worldview-compatibility-issue.md)
+contains the complete historical Java call chain and original reproduction
+runbook. Exact inputs:
+
+| Input | Original identity |
+|---|---|
+| Java develop | `671a8181551a51b8a6b8080c3a13a2bf1cd0f048` |
+| IMOD | `608bef150ced0a109db98a5aad64ba4461beaa54` |
+| ODO | Release 0.1.0 from commit `aa2cc5611799ceed2aad52ae2c2a349da29e3c4b` |
+| ODO SHA-256 | `eb7318d725a16bd6e68a4cc12955c7b94b885a48d9c3c4f7837d4cd24a8ec7e4` |
+
+### Original issue A: uncaptured import
+
+With no exact local ODO capture, the original Reasoner reported generation zero,
+logical UNRESOLVED, and `CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import`
+for the declared ODO 0.1.0 URL. Exact dependency provisioning in the Python test
+tooling removed that diagnostic. It did not alter or bypass Java isolation.
+
+### Original issue B: domain compilation after provisioning
+
+With the exact import supplied, both the combined candidate and **unchanged
+develop** reported:
 
 ```text
 acceptedGeneration: 0
 beanStatus: VALID
-logicalStatus: UNRESOLVED
-CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import
-{odo,https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl}
+logicalStatus: FAILED
+Candidate build failed: ONTOLOGY_DOMAIN_INVALID: land requires a resolved domain
 ```
 
-The new `tools/semantic_dependencies.py` captures the exact immutable source,
-checks its hash, and writes the declared locator and hash into
-`source-catalog.properties`. `fixture_hub.py prepare --semantic-catalog ...`
-stages those bytes into disposable TEST state. It does not relabel the bundled
-ontology as a numbered release, follow a remote fallback, or disable validation.
+The throw site is `WorldviewDomainSupport.validate`, called from
+`ReasonerService.compileStagedOntologies`. It rejects a null/NOTHING/non-DOMAIN
+resolution. The old `land` declaration used
+`in domain imod:Knowledge of (imod:Geosphere or imod:Biosphere)`.
+The same guard still exists in inspected develop `d8e16b277`; it was not removed.
 
-### After dependency provisioning
-
-The missing-import diagnostic disappears. The Reasoner instead reports:
-
-```json
-{
-  "acceptedGeneration": 0,
-  "beanStatus": "VALID",
-  "logicalStatus": "FAILED",
-  "diagnostics": [
-    "Candidate build failed: ONTOLOGY_DOMAIN_INVALID: land requires a resolved domain"
-  ]
-}
-```
-
-The baseline and combined candidate have identical **28 worldview source hashes**,
-the same exact ODO bytes, and the same resulting diagnostic. The baseline
-comparison exercised actual graphdb, Resources and Reasoner processes. It was a
-readiness/candidate-build reproduction, not a successful full baseline workflow.
-
-## Where the failure occurs
-
-The links below are pinned to develop `671a81815`; they are references to existing
-Java code, **not files modified by this contribution**.
-
-1. [ReasonerServer.createPrimaryService, lines 64–75](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner.server/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerServer.java#L64-L75)
-   enables candidate publication using an explicitly captured local catalog.
-2. [SemanticEnvironmentFactory.fromLocalCatalog, lines 99–129](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/SemanticEnvironmentFactory.java#L99-L129)
-   reads captured ontology bytes and document locators. Its
-   [build guard, lines 233–240](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/SemanticEnvironmentFactory.java#L233-L240)
-   explains the initial uncaptured-import failure.
-3. [ReasonerService.checkWorldview, lines 909–918](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java#L909-L918)
-   retrieves the authoritative worldview from Resources and calls `loadKnowledge`.
-4. [ReasonerService.loadKnowledge, lines 2043–2067](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java#L2043-L2067)
-   performs bean preflight and submits the complete worldview for isolated candidate
-   construction. Bean validity is not proof of successful semantic compilation.
-5. [SemanticEnvironmentFactory.build, lines 277–295](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/SemanticEnvironmentFactory.java#L277-L295)
-   constructs a private compiler actor and loads the snapshot there.
-6. [ReasonerService.compileStagedOntologies, lines 3092–3097](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java#L3092-L3097)
-   validates each ontology preamble through
-   `WorldviewDomainSupport.validate(source, this::declareConcept)`.
-7. **[WorldviewDomainSupport.validate, lines 15–21](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/owl/WorldviewDomainSupport.java#L15-L21)**
-   is the exact throw site. It rejects a resolved domain that is null, `NOTHING`,
-   or not of semantic type `DOMAIN`. The recorded diagnostic does not distinguish
-   which of those conditions occurred; further Java-side diagnosis is required.
-8. [CandidatePublicationCoordinator, lines 271–276](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/CandidatePublicationCoordinator.java#L271-L276)
-   records the exception as `FAILED`, prefixed with `Candidate build failed:`.
-   [AcceptedSemanticRuntime.lease, lines 53–56](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/AcceptedSemanticRuntime.java#L53-L56)
-   then cannot serve scientific operations because no accepted generation exists.
-
-The relevant unchanged source is
-[`imod/src/land.kwv`, lines 5–9](https://github.com/integratedmodelling/imod/blob/608bef150ced0a109db98a5aad64ba4461beaa54/src/land.kwv#L5-L9):
+**Historical failing test IDs / symptoms:**
 
 ```text
-ontology land
-    ""
-    version 1.0
-    using imod, society, earth, life
-    in domain imod:Knowledge of (imod:Geosphere or imod:Biosphere);
+tests/functional/test_develop_compatibility.py::test_python_and_java_services_work_before_and_after_runtime_restart
+tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge
+tests/functional/test_compute_and_analyze.py::test_signed_authentication_scientific_lifecycle
+tests/functional/test_compute_and_analyze.py::test_actual_concurrent_full_workflow
 ```
 
-That expression is an investigation target, not a proposed Python-side rewrite.
+The full compatibility test failed at readiness, **before** computation/restart
+assertions. The minimal readiness test was actually run for the post-provisioning
+domain failure; its missing-import variant was a documented recipe, not a recorded
+execution of that new minimal test. The two original scientific tests encountered
+Reasoner HTTP 500, `Accepted semantic knowledge is unavailable`.
 
-## How the Python functional test exposes it
+Historical evidence: [initial missing-import failure](results/develop-compatibility-verification.json),
+[exact-dependency failure/baseline comparison](results/develop-semantic-dependencies-verification.json),
+[minimal readiness runner verification](results/develop-readiness-runner-verification.json).
+Their commands/pins must be used to reproduce the **old** environment; do not load
+old inputs into the shared hosted services to recreate a negative test.
 
-### Exact tests to run (not the offline suite)
+### What the reinspection establishes—and does not
 
-All node IDs below are relative to **`python-client/`** in tools revision
-`c9d2f18a082d287c7d55561bf90761004d053504` (the merged PR #95). Use that checkout's
-Python tests against the **separate** pinned Java checkout; do not run the old
-develop checkout's Python tools and assume these tests exist there.
+- Hosted services pass both the shared gate and the new connected readiness test
+  with accepted generation 1. Neither original error was exposed there.
+- The old candidate and hosted accepted-source maps each contain 28 entries, with
+  27 common keys and **zero matching hashes** among those keys. Hash differences
+  are not a count of semantic changes; line endings may also differ. Neither
+  input equivalence nor a controlled old-input before/after repair is established.
+- The local IDE stack has not loaded a worldview, so neither original failure
+  has been exercised there after authentication.
+- New upstream Java validation documentation names IMOD `253d1046a1e04b4b45bc67a32b93a65829faa2f5`
+  and ODO 0.1.1. The public ODO 0.1.1 text matches the documented private core
+  after CRLF conversion; the inspected newer `land` uses a simpler domain clause.
+  This is a traceable alternative to investigate, **not** a locally deployed fix
+  or proof that it matches the hosted corpus. See [input investigation](ide-connected-testing.md#local-worldview-investigation-traceable-inputs-not-a-deployed-fix).
 
-| Purpose | Exact pytest node ID | Named runner suite | What fails / prerequisite |
-|---|---|---|---|
-| **Minimal reproducer for both semantic blockers** | `tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge` | `semantic-readiness` | Calls `require_semantic_readiness`; generation zero with logical `UNRESOLVED` or `FAILED` raises with the server diagnostic. Needs only graphdb, Resources, Reasoner and the owned TEST authority; no Runtime controls. |
-| **Full compatibility gate that also exposed the blockers** | `tests/functional/test_develop_compatibility.py::test_python_and_java_services_work_before_and_after_runtime_restart` | `develop-compatibility` | Calls `verify`, validates owned processes/server checkout, then the **same readiness check** before scientific work. Needs all five services and Runtime controls. The historical failures occurred at readiness, not at the later value/restart assertions. |
-| Original scientific symptom, before the explicit gate was added | `tests/functional/test_compute_and_analyze.py::test_signed_authentication_scientific_lifecycle` and `tests/functional/test_compute_and_analyze.py::test_actual_concurrent_full_workflow` | `compute-and-analyze` | Historical full-stack run encountered Reasoner HTTP 500, `Accepted semantic knowledge is unavailable`. These are broader scientific tests, **not** the minimal baseline reproduction. |
+For the old tuple, platform owners must still distinguish compiler defects from
+unsupported/invalid worldview/ODO semantics. Reproduce in an isolated stack,
+inspect parsed domain/resolver return/type, preserve candidate isolation and
+last-known-good generation behavior, and obtain a supported input pairing or
+correct the owning source. No Python retry, DTO coercion or relabeled ontology
+can manufacture accepted server-owned scientific meaning.
 
-Source: [the two compatibility test functions](../tests/functional/test_develop_compatibility.py),
-[the original scientific tests](../tests/functional/test_compute_and_analyze.py),
-[suite-to-test mapping](../tools/run_functional_acceptance.py), and
-[the shared readiness assertion](../tools/workflows/develop_compatibility.py).
+## Remaining acceptance boundary
 
-The readiness assertion reads `GET /reasoner/public/status`, including the Java
-metadata `delegate` wrapper, and checks `semantic.candidate`. With the recorded
-inputs the selected minimal test fails with:
+Passing offline tests and the connected readiness test does not mean all
+functional tests pass. The **two current live failures above remain explicit**.
+Full computation, cancellation, saved-handle, export, Runtime restart and ACL
+acceptance remain separate unrun gates on this deployment. Existing deterministic
+TEST-fixture tests may require Java test controls and must not simply target
+Ferdinando's shared services or the user's IDE-managed processes.
 
-```text
-FAILED tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge
-AssertionError: Reasoner has no accepted semantic generation: <candidate JSON including diagnostics>
-```
-
-The diagnostic **inside that JSON** distinguishes the cases:
-
-| Case | Test setup difference | Expected server state and diagnostic | Evidence |
-|---|---|---|---|
-| A: missing captured import | No `--semantic-catalog`; fresh TEST state | `acceptedGeneration: 0`, `logicalStatus: UNRESOLVED`; `CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import {odo,https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl}` | [Historical full-gate failure/baseline status](results/develop-compatibility-verification.json) |
-| B: domain compilation failure | Supply the exact captured ODO catalog; otherwise identical pinned inputs and fresh TEST state | `acceptedGeneration: 0`, `logicalStatus: FAILED`; `Candidate build failed: ONTOLOGY_DOMAIN_INVALID: land requires a resolved domain` | [Minimal test actually run on unchanged develop](results/develop-readiness-runner-verification.json), plus [historical full-gate comparison](results/develop-semantic-dependencies-verification.json) |
-
-Case A through the **new minimal test** is a reproduction recipe based on the
-same assertion; the recorded Case A run used the full gate and a separate baseline
-status capture. Case B has an actual recorded run of the minimal test. Do not
-mislabel a new recipe as already executed evidence.
-
-Ordinary `python -m pytest tests/unit tests/integration` does **not** expose these
-server defects: those are offline tests. Live tests are excluded by default by
-`pyproject.toml`'s `-m 'not live'`. The commands below explicitly select them.
-
-An HTTP 200 or local-authoring operational flag does not override accepted
-generation zero. Transient publication states receive a bounded wait; a failed or
-unresolved candidate fails the test with its diagnostic. Full redacted status is
-retained as `develop-readiness.json`.
-
-Once this gate can pass, the suite is designed to verify the known field and unit
-conversion before/after a Runtime-only restart, plus private/shared/excluded
-context permissions and collaborator-first restoration. **Those assertions have
-not been reached in these runs.** No test was skipped or weakened to get a pass.
-
-## Reproduction and evidence
-
-### Prerequisites and safety
-
-Use Windows/PowerShell, Git, a JDK 21 (including `javac`), Python 3.12 and Maven
-wrapper download access. These are development-only Windows lifecycle tools, not
-production deployment instructions. Step 1 obtains the exact Python tools and
-installs their dependencies; subsequent Python commands run from that checkout's
-`python-client/` directory. The Java baseline is a separate checkout.
-
-Ensure ports **8382, 8091, 8092 and 18090** are unused for readiness-only; full
-acceptance also needs **8093 and 8094**. Do not stop unrelated listeners, reuse
-shared state, or supply production credentials. Each run needs a new state
-directory whose parent exists. The runner creates local TEST credentials and
-attempts owned-process cleanup even on failure; inspect cleanup status before
-another run. State contains private keys/tokens: do not attach it wholesale.
-
-### 1. Obtain exact, clean baseline inputs
-
-Choose a new parent directory, replacing the example path below. Commands assume
-Git is available and must stop on nonzero native-command exits. Do not replace an
-existing checkout, reset changes, or update these pins to floating HEAD for this
-reproduction.
-
-```powershell
-$root = "C:\klab-compat-repro"
-New-Item -ItemType Directory -Path $root -ErrorAction Stop | Out-Null
-git clone https://github.com/integratedmodelling/klab-services.git "$root\client"
-if ($LASTEXITCODE) { throw "Python tools clone failed" }
-git -C "$root\client" checkout --detach c9d2f18a082d287c7d55561bf90761004d053504
-if ($LASTEXITCODE) { throw "Python tools pin failed" }
-git clone https://github.com/integratedmodelling/klab-services.git "$root\server"
-if ($LASTEXITCODE) { throw "Server clone failed" }
-git -C "$root\server" checkout --detach 671a8181551a51b8a6b8080c3a13a2bf1cd0f048
-if ($LASTEXITCODE) { throw "Server pin failed" }
-git clone https://github.com/integratedmodelling/imod.git "$root\imod"
-if ($LASTEXITCODE) { throw "Worldview clone failed" }
-git -C "$root\imod" checkout --detach 608bef150ced0a109db98a5aad64ba4461beaa54
-if ($LASTEXITCODE) { throw "Worldview pin failed" }
-git -C "$root\server" status --short
-git -C "$root\imod" status --short
-Set-Location "$root\client\python-client"
-python -m venv "$root\venv"
-if ($LASTEXITCODE) { throw "Python environment creation failed" }
-& "$root\venv\Scripts\Activate.ps1"
-python -m pip install -e ".[dev,local,analysis]"
-if ($LASTEXITCODE) { throw "Python dependencies failed" }
-```
-
-Both status listings must be empty before building. Use a fresh clone to avoid
-stale compiled outputs. The fixture verifies worldview HEAD but does not prove
-all working files are clean; that remains an explicit reproduction prerequisite.
-
-### 2. Capture ODO and run the minimal semantic reproduction
-
-Still from the PR's `python-client/` directory, set your actual JDK path:
-
-```powershell
-$java = "C:\jdk21\bin\java.exe"
-python tools/semantic_dependencies.py --output "$root\catalog"
-if ($LASTEXITCODE) { throw "Exact ODO capture failed" }
-python tools/run_local_acceptance.py --server-repo "$root\server" --java $java --worldview "$root\imod" --semantic-catalog "$root\catalog" --state-dir "$root\readiness-state" --build --readiness-only
-$readinessExit = $LASTEXITCODE
-Get-Content "$root\readiness-state\run-report.json"
-Get-Content "$root\readiness-state\develop-readiness.json"
-```
-
-This is **Case B** from the test table. The runner starts the three services,
-then executes precisely:
-
-```text
-python tools/run_functional_acceptance.py --suite semantic-readiness --state-dir <readiness-state> --report <readiness-state>/semantic-readiness.xml
-```
-
-That suite selects only
-`tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge`.
-Inspect `semantic-readiness.log` for its pytest failure and
-`semantic-readiness.xml` for **1 test, 1 failure, 0 errors/skips** on the recorded
-bad inputs. Inspect `develop-readiness.json` for the Java diagnostic and source
-hashes. `run-report.json` must show successful prepare/service starts followed by
-`semantic-readiness` exit 1. File-not-found, connection-refused, fixture/configuration
-errors or a test that is deselected are **not** reproduction of the semantic bug.
-
-`--build` builds the selected server modules, Web UI resources and runtime
-dependency classpaths; it uses `-DskipTests`, **not a Java test certification**.
-The selected checkout and HEAD are printed and recorded in `run-report.json`.
-Readiness-only prepares no Runtime test-control classpath and launches no
-Resolver/Runtime. Its expected historical failure is exit **1**, with the domain
-diagnostic shown above in `develop-readiness.json`/`semantic-readiness.xml` and
-`cleanup_exit_code: 0`. A build/startup failure is a different outcome: inspect
-the corresponding step log and do not call it a reproduced semantic failure.
-The new runner was exercised against the previously compiled clean baseline and
-reproduced that failure with confirmed cleanup; the **fresh-clone `--build`
-sequence was not rerun** in this pass. Missing Maven artifacts/build failures are
-environment blockers, not a reproduced domain failure. See the new verification
-record below. No live scientific acceptance pass is claimed.
-
-After completion, check `cleanup_exit_code` and verify there are no remaining
-listeners on the test ports. If cleanup fails, inspect PID/argument-file ownership
-before retrying only this state:
-
-```powershell
-python tools/local_stack.py stop --repo "$root\server" --state-dir "$root\readiness-state"
-```
-
-That command stops only services whose PID files match the explicit state. The
-runner separately owns/stops its TEST authority process. Do not kill arbitrary
-port owners or reuse a state with uncertain live processes.
-
-### 2a. Isolate Case A: the earlier missing-import trigger
-
-After the previous runner exits and confirms cleanup, use the same compiled
-baseline and worldview, but a **new** state directory and **no catalog option**:
-
-```powershell
-python tools/run_local_acceptance.py --server-repo "$root\server" --java $java --worldview "$root\imod" --state-dir "$root\missing-import-state" --readiness-only
-$missingImportExit = $LASTEXITCODE
-Get-Content "$root\missing-import-state\semantic-readiness.log"
-Get-Content "$root\missing-import-state\develop-readiness.json"
-Get-Content "$root\missing-import-state\run-report.json"
-```
-
-The **same minimal test ID** now should fail with the Case A uncaptured-import
-diagnostic, not the Case B domain diagnostic. This command intentionally reuses
-already compiled artifacts, so it omits `--build`; use that flag if Step 2 never
-built successfully. Do not omit the import in the proposed final fix.
-
-### 2b. Exact pytest invocation for debugging an already running stack
-
-The all-in-one runner above stops its services before returning. **Do not run
-pytest against its stopped state.** If the three services and authority are
-instead already running on explicitly prepared owned state, the equivalent
-single-test invocation is:
-
-```powershell
-$state = "C:\already-running-owned-test-state"
-$env:KLAB_FIXTURE_STATE_DIR = $state
-python -m pytest -o addopts= -o junit_family=xunit1 -m functional -vv -s tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge --junitxml="$state\manual-semantic-readiness.xml"
-```
-
-The state must contain the actual fixture's `scientist.json`; choose a fresh XML
-destination. `-o addopts=` removes the default live-test exclusion. This direct
-command does not provision, start or stop services. For a quick **server-only**
-cross-check while services are running (no Python scientific operation involved):
-
-```powershell
-$status = Invoke-RestMethod http://127.0.0.1:8091/reasoner/public/status
-$status.metadata.delegate.'semantic.candidate' | ConvertTo-Json -Depth 20
-```
-
-For the pinned Java baseline this shows the same zero accepted generation and
-diagnostic. Candidate construction is triggered by server worldview loading; the
-Python test observes that server failure, it does not create the invalid domain.
-
-To confirm the test IDs exist **without starting services or running live work**:
-
-```powershell
-python -m pytest -o addopts= -m functional --collect-only -q tests/functional/test_develop_compatibility.py
-```
-
-### 3. Run full Python acceptance after the semantic contract is repaired
-
-Use the agreed server revision with compiled Runtime `FixtureControls`; baseline
-develop alone does not supply those scientific test controls. Do not copy classes
-from a different server build into the baseline to force acceptance. In a new
-state directory, run:
-
-```powershell
-python tools/run_local_acceptance.py --server-repo C:\supported-server-with-test-controls --java $java --worldview "$root\imod" --semantic-catalog "$root\catalog" --state-dir "$root\full-state" --build --duration 1 --samples 1 --saved-handles --typed-observe
-```
-
-If maintainers require a newer worldview/ODO pairing, update the Python fixture's
-explicit compatibility pins and dependency hashes in a reviewed follow-up rather
-than silently substituting inputs. For an already running explicitly owned full
-TEST stack, the named workflow alone is:
-
-```powershell
-python tools/run_functional_acceptance.py --state-dir C:\owned-test-state --suite develop-compatibility --report C:\owned-test-state\develop-compatibility.xml
-```
-
-`semantic-readiness` can likewise be selected alone on prepared running state.
-It is a read-only HTTP gate, not permission/restart acceptance. The full
-`develop-compatibility` workflow is owned-stack-only and mutates scientific state
-and restarts Runtime. The selected server checkout is preserved across restart.
-
-Its exact full-workflow pytest equivalent is:
-
-```powershell
-$env:KLAB_FIXTURE_STATE_DIR = "C:\already-running-owned-full-test-state"
-python -m pytest -o addopts= -o junit_family=xunit1 -m functional -vv -s tests/functional/test_develop_compatibility.py::test_python_and_java_services_work_before_and_after_runtime_restart --junitxml="$env:KLAB_FIXTURE_STATE_DIR\manual-develop-compatibility.xml"
-```
-
-Unlike the minimal test, this requires five owned services and compiled Runtime
-test controls, creates/releases scientific objects and restarts Runtime. Only run
-it against your disposable full TEST stack. It must get past readiness before its
-40-cell value/unit assertions and changed-Runtime-PID assertion can be exercised.
-An eventual pass here is a necessary local compatibility gate, not native
-Java-client or production-provider certification.
-
-### Evidence boundary
-
-- [Initial missing-dependency record](results/develop-compatibility-verification.json).
-- [Exact-dependency rerun and baseline comparison](results/develop-semantic-dependencies-verification.json).
-- [New explicit-server/readiness-only runner verification](results/develop-readiness-runner-verification.json):
-  clean develop `671a81815`, previously compiled outputs, all three service starts
-  successful; one readiness test failed with the same domain diagnostic and
-  identical 28 candidate source hashes. Exit 1; cleanup exit 0; no test-port
-  listeners remained. Fresh offline suite: **1,028 passed**, zero failures/errors/
-  skips; existing Ruff selection passed. Tested working-code hashes and commands
-  are recorded so the uncommitted review-fix run is not confused with its parent.
-- The records contain revision boundaries, evidence filenames and SHA-256 hashes.
-  Full local logs are not shipped and temporary evidence paths are not portable.
-- Historical offline unit/local-integration validation: **1,018 passed**, no failures, errors
-  or skips; existing Ruff selection passed. This is not a green live-suite claim.
-- Owned service exits were confirmed and no test-port listeners remained.
-  Production services and credentials were not used.
-
-## Resolution boundary
-
-This PR addresses Python test provisioning, readiness diagnostics, repeatable
-functional routing and owned-process safety. It deliberately leaves Java,
-worldview and ontology source unchanged and is not promotion to develop.
-
-The platform maintainers need to identify a supported semantically valid
-server/worldview/ODO combination, or diagnose and correct the compiler/domain
-contract separately. Once available, rerun the exact pinned stack through this
-functional suite before claiming scientific, restart or deployment compatibility.
-Native Java-client interoperability, nonlocal shared-session acceptance and
-production Hub/provider accuracy remain separate gates.
-
-## Java-side investigation and acceptance checklist
-
-This is a platform compatibility handoff, not a conclusion that Java must change.
-Investigate on a separate Java/platform branch; this Python-only PR must not
-implement a semantic workaround.
-
-1. **Reproduce with the pinned inputs first.** Save the redacted readiness status,
-   JUnit, step logs, selected server revision/dirty state, worldview source hashes
-   and dependency hash. Compare Java changes against unchanged develop with the
-   exact same inputs. Distinguish missing-import provisioning from domain failure.
-2. **Inspect the domain contract at the throw site.** Break/log around
-   `WorldviewDomainSupport.validate` and the `this::declareConcept` invocation in
-   `compileStagedOntologies`. Record the parsed domain expression for `land`, its
-   namespace/import context, the resolver return (null, NOTHING, or actual concept)
-   and whether that result has `SemanticType.DOMAIN`. The existing diagnostic
-   conflates those paths; it does not prove which one is wrong.
-3. **Trace referenced semantics and compilation order.** Check how `imod:Knowledge`,
-   `imod:Geosphere`, `imod:Biosphere` and the composite domain expression resolve in
-   the isolated candidate actor, including prerequisites/imports and source/domain
-   mapping. Confirm whether the pinned worldview syntax and numbered ODO 0.1.0 are
-   supported by that server's contract. Bundled ODO has different classes; do not
-   relabel it as release 0.1.0 or infer equivalence from a passing parse.
-   In particular, the same Java helper's
-   [interpretations method, lines 54–67](https://github.com/integratedmodelling/klab-services/blob/671a8181551a51b8a6b8080c3a13a2bf1cd0f048/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/owl/WorldviewDomainSupport.java#L54-L67)
-   references `odo:KnowledgeDomain`/`odo:PhysicalDomain` and explicitly mentions ODO
-   0.1.1 domain kinds. That is a concrete version-contract investigation clue,
-   **not evidence that this later guard ran or caused the recorded land failure**.
-4. **Choose the correct repair boundary.** If supported semantics are lost in
-   parsing, resolution or candidate compilation, fix Java and add a minimal
-   regression for the failing path. If the inputs are unsupported/invalid, obtain
-   a maintainer-approved worldview/ODO version pairing or source correction in its
-   owning project. Do not simply remove the DOMAIN guard, accept bean validity as
-   logical validity, or publish a failed candidate. Preserve last-known-good
-   generation isolation when a later candidate fails.
-5. **Validate publication and rejection.** Run relevant Java domain/compiler and
-   candidate-publication tests. Add a supported-domain success regression and an
-   invalid/unresolved-domain rejection regression. Demonstrate a positive accepted
-   generation, usable semantic resolution and clear diagnostics for bad inputs on
-   actual services; HTTP health/beanStatus alone are insufficient.
-6. **Return to the Python gates.** Rerun readiness-only, then full owned-stack
-   acceptance on the agreed controls-capable server. Confirm field values/units,
-   actual Runtime restart, collaborator-first ACL restoration, saved handles and
-   typed workflows. Record any later failures separately; removing this blocker
-   is not proof those unreached gates pass.
-
-### Trigger, Python impact and why this branch cannot repair semantics
-
-| Issue | Trigger and owner | Python-client impact | Python-only boundary |
-|---|---|---|---|
-| Uncaptured numbered ODO import | Startup/candidate construction with no exact local capture; Java candidate isolation refuses the external import | No accepted semantic generation; scientific calls cannot run | Addressed here by exact dependency provisioning, not by changing Java isolation or substituting scientific content |
-| `land` domain invalid/unresolved | After exact ODO staging, authoritative worldview compilation calls Java domain validation on the unchanged `land` declaration | Generation stays zero; historical scientific calls return HTTP 500, while the new gate fails earlier with the actual reason; computation, conversions, restart/ACL/saved-handle suites are blocked before execution | Resolution/type checking and publication belong to Reasoner/worldview/ODO; the Python client only transports requests and cannot manufacture an accepted concept or generation |
-| Wrong server selection in reproduction | Running tools from a feature checkout without specifying the Java checkout | Could diagnose the wrong server/version as develop | Addressed here through `--server-repo`, build/start/restart preservation and checkout identity reporting |
-| Full fixture prerequisite absent on unchanged develop | Full preparation requires compiled Runtime `FixtureControls`, which that baseline lacks | Full scientific acceptance cannot be prepared; this alone is not a product compatibility defect | Readiness-only now isolates the semantic issue without those controls; full test-control support belongs in the chosen Java test environment, not copied or fabricated by Python |
-| Cleanup masks scientific failure | Scientific operation fails and session release also raises | Previously the top-level error became cleanup, obscuring the triggering failure | Addressed here: retain the original exception and add the cleanup exception type as a redacted note; cleanup-only errors still fail |
-
-Neither HTTP retries, client DTO changes, skipping readiness, coercing the domain
-expression, nor using a bundled ontology under another release's name can correct
-server-owned scientific meaning. Authentication succeeds far enough to reach the
-semantic failure; no evidence here establishes an identity/ACL defect. Full native
-Java-client interoperability and production deployment remain untested, not
-implicitly certified by fixing this local Reasoner prerequisite.
+No scientific throughput result is claimed. For the bounded read-only timing
+commands and their limitations, see [IDE-connected testing](ide-connected-testing.md).

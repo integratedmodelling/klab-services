@@ -9,6 +9,26 @@ import pytest
 from workflows import develop_compatibility as workflow
 
 
+def test_readiness_can_borrow_real_connection_without_test_credentials_or_closing_it(tmp_path, monkeypatch):
+    accepted = {"acceptedGeneration": 1, "logicalStatus": "VALID"}
+    client = SimpleNamespace(transport=SimpleNamespace(request=lambda *args: {
+        "metadata": {"delegate": {"semantic.candidate": accepted}}}, redact=lambda value: value))
+    monkeypatch.setattr(workflow, "make_client", lambda *args: pytest.fail("Do not read or create TEST credentials"))
+    assert workflow.require_semantic_readiness(tmp_path, client=client) == accepted
+    assert not (tmp_path / "scientist.json").exists()
+    assert json.loads((tmp_path / "develop-readiness.json").read_text())["metadata"]["delegate"]["semantic.candidate"] == accepted
+
+
+@pytest.mark.parametrize("logical", ["UNRESOLVED", "FAILED"])
+def test_borrowed_connection_does_not_weaken_original_missing_import_or_domain_gate(tmp_path, logical):
+    client = SimpleNamespace(transport=SimpleNamespace(request=lambda *args: {
+        "operational": True, "metadata": {"delegate": {"semantic.candidate": {
+            "acceptedGeneration": 0, "logicalStatus": logical, "diagnostics": ["original blocker"]}}}},
+        redact=lambda value: value))
+    with pytest.raises(AssertionError, match="original blocker"):
+        workflow.require_semantic_readiness(tmp_path, client=client)
+
+
 @pytest.mark.parametrize("primary_kind", ["scientific", "cancelled", "none"])
 def test_roundtrip_preserves_primary_failure_when_release_also_fails(tmp_path, monkeypatch, primary_kind):
     (tmp_path / "scientist.json").write_text("{}")
