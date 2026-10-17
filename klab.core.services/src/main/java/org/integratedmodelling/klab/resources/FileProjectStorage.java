@@ -472,10 +472,15 @@ public class FileProjectStorage implements ProjectStorage {
   public URL create(String resourceId, ResourceType resourceType, String contents, Scope scope) {
     if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
       try {
-        ProjectMaterialIO.write(this, resourceId, contents.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+        ProjectMaterialIO.write(
+            this,
+            resourceId,
+            contents.getBytes(java.nio.charset.StandardCharsets.UTF_8),
             org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.ADD);
         return locate(resourceId, resourceType);
-      } catch (IOException e) { throw new KlabIOException(e); }
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
     }
 
     if (!rootFolder.exists()) {
@@ -549,27 +554,33 @@ public class FileProjectStorage implements ProjectStorage {
       String content,
       boolean overwriteExisting) {
     if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
-      if (!previousUrn.equals(updatedUrn)) throw new KlabIOException("Material rename requires explicit create and delete");
+      if (!previousUrn.equals(updatedUrn))
+        throw new KlabIOException("Material rename requires explicit create and delete");
       try {
-        ProjectMaterialIO.write(this, updatedUrn, content.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-            overwriteExisting ? org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.CREATE_OR_UPDATE
+        ProjectMaterialIO.write(
+            this,
+            updatedUrn,
+            content.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            overwriteExisting
+                ? org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode
+                    .CREATE_OR_UPDATE
                 : org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.UPDATE);
         return locate(updatedUrn, resourceType);
-      } catch (IOException e) { throw new KlabIOException(e); }
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
     }
     try {
       File previousFile =
           new File(
               rootFolder
                   + File.separator
-                  + ProjectStorage.getRelativeFilePath(
-                      previousUrn, resourceType, File.separator));
+                  + ProjectStorage.getRelativeFilePath(previousUrn, resourceType, File.separator));
       File updatedFile =
           new File(
               rootFolder
                   + File.separator
-                  + ProjectStorage.getRelativeFilePath(
-                      updatedUrn, resourceType, File.separator));
+                  + ProjectStorage.getRelativeFilePath(updatedUrn, resourceType, File.separator));
 
       if (!previousFile.equals(updatedFile)) {
         if (!previousFile.isFile()) {
@@ -609,8 +620,12 @@ public class FileProjectStorage implements ProjectStorage {
   /** Remove a document from the working tree and stage its removal when tracked. */
   public void deleteDocument(String urn, ResourceType resourceType) {
     if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
-      try { ProjectMaterialIO.delete(this, urn); return; }
-      catch (IOException e) { throw new KlabIOException(e); }
+      try {
+        ProjectMaterialIO.delete(this, urn);
+        return;
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
     }
     var document = locate(urn, resourceType);
     if (document == null) {
@@ -641,7 +656,8 @@ public class FileProjectStorage implements ProjectStorage {
   /** Return the URL of an existing document, or null if it is absent. */
   public URL locate(String urn, ResourceType resourceType) {
     try {
-      if (resourceType == ResourceType.ADDITIONAL_MATERIAL && ProjectMaterialIO.read(this, urn) == null) return null;
+      if (resourceType == ResourceType.ADDITIONAL_MATERIAL
+          && ProjectMaterialIO.read(this, urn) == null) return null;
       File resourceFile =
           new File(
               rootFolder
