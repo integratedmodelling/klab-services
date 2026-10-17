@@ -143,6 +143,10 @@ public interface ResourcesService extends KlabService {
      * of the asset and storing the previous. Must have update permissions.
      */
     UPDATE,
+    /** Save an existing ontology/namespace without publishing dependent semantic changes. */
+    UPDATE_DEFERRED,
+    /** Validate the caller's deferred documents in the submitted workspace. */
+    VALIDATE,
     /**
      * Merge the contents of the submitted asset into the existing one, creating a new version of
      * the asset and storing the previous. Must have update permissions and the adapter must support
@@ -166,6 +170,9 @@ public interface ResourcesService extends KlabService {
      */
     CREATE_OR_UPDATE
   }
+
+  /** True on a saved document whose dependency/semantic validation has been deferred. */
+  String VALIDATION_DEFERRED_METADATA = "klab.validation.deferred";
 
   /** Metadata key used to nominate an editor when a non-editor publishes a resource. */
   String INTENDED_EDITOR_METADATA = "klab.publication.intendedEditor";

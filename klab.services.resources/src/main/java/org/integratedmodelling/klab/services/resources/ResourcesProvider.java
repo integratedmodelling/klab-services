@@ -1487,6 +1487,20 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           ResourceSet.empty(
               Notification.error("PUBLISH is only supported for the Resource contract")));
     }
+    if (submissionMode == SubmissionMode.VALIDATE) {
+      if (!(asset instanceof Workspace)) throw new KlabIllegalArgumentException("VALIDATE requires a workspace");
+      var changes = workspaceManager.validateDeferred(asset.getUrn(), scope);
+      invalidateCaches();
+      return changes;
+    }
+    if (submissionMode == SubmissionMode.UPDATE_DEFERRED) {
+      if (!(asset instanceof org.integratedmodelling.klab.api.lang.kim.KimOntology
+          || asset instanceof org.integratedmodelling.klab.api.lang.kim.KimNamespace))
+        throw new KlabIllegalArgumentException("Deferred validation requires an ontology or namespace");
+      var document = (KlabDocument<?>) asset;
+      requireProjectOperation(document.getProjectName(), CRUDOperation.UPDATE, scope);
+      return workspaceManager.saveDeferred(document, scope);
+    }
     switch (asset) {
       case org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material:
         requireProjectOperation(material.getProjectName(), CRUDOperation.UPDATE_METADATA, scope);
@@ -2540,17 +2554,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public boolean lockProject(String urn, UserScope scope) {
-    String token = scope.getIdentity().getId();
-    boolean local =
-        scope instanceof ServiceScope
-            || (scope instanceof ServiceUserScope userScope && userScope.isLocal());
-    return workspaceManager.lockProject(urn, token, local);
+    return workspaceManager.lockProject(urn, scope);
   }
 
   @Override
   public boolean unlockProject(String urn, UserScope scope) {
-    String token = scope.getIdentity().getId();
-    return workspaceManager.unlockProject(urn, token);
+    return workspaceManager.unlockProject(urn, scope);
   }
 
   public ResourceSet resolve(String urn, Scope scope) {

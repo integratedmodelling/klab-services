@@ -24,6 +24,8 @@ import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.identities.Federation;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -113,11 +115,13 @@ public class WorkspaceManager {
   /** Default interval to check for changes in Git (15 minutes in milliseconds) */
   private int DEFAULT_GIT_SYNC_INTERVAL_MINUTES = 15;
 
-  // project locks are mappings usertoken->projectName and enable remote updating of projects for
-  // one
-  // user at
-  // a time, while inhibiting file change logging in project storage
+  // Project name -> principal owner; credentials may rotate while the IDE reconnects.
   private final Map<String, String> projectLocks = new ConcurrentHashMap<>();
+  private record DeferredDocument(String owner, String project, String workspace,
+      ProjectStorage.ResourceType type, URL url, KlabDocument<?> baseline, KlabDocument<?> saved) {}
+  private final Map<String, DeferredDocument> deferredDocuments = new LinkedHashMap<>();
+  private final ThreadLocal<Boolean> syntaxOnly = ThreadLocal.withInitial(() -> false);
+
   private final AtomicBoolean loading = new AtomicBoolean(false);
   private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
   private List<KimOntology> _ontologyOrder;
@@ -316,30 +320,57 @@ public class WorkspaceManager {
     return _behaviorMap == null ? Collections.emptySet() : _behaviorMap.keySet();
   }
 
-  public synchronized boolean lockProject(String urn, String token, boolean isLocal) {
+  /** Stable authenticated principal; anonymous and non-user identities remain credential-scoped. */
+  static String projectLockOwner(Scope requester) {
+    if (requester == null || requester.getIdentity() == null) return null;
+    var identity = requester.getIdentity();
+    if (identity.getId() == null || identity.getId().isBlank()) return null;
+    if (identity instanceof UserIdentity user && !user.isAnonymous()
+        && user.getUsername() != null && !user.getUsername().isBlank()) {
+      var federation = user.getData() == null ? null
+          : user.getData().get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+      // Length-prefix each part to avoid collisions between names and identity providers.
+      var owner = new StringBuilder("principal:");
+      for (var part : Arrays.asList(user.getServerURL(),
+          federation == null ? null : federation.getId(), user.getUsername())) {
+        String value = part == null ? "" : part.toString();
+        owner.append(value.length()).append(':').append(value);
+      }
+      return owner.toString();
+    }
+    return "credential:" + identity.getId();
+  }
+
+  public synchronized boolean lockProject(String urn, Scope requester) {
 
     var descriptor = projectDescriptors.get(urn);
     if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage)) {
       return false;
     }
 
+    String owner = projectLockOwner(requester);
+    if (owner == null) return false;
+    if (owner.equals(projectLocks.get(urn))) return true;
+
     // check and record lock
-    if (projectLocks.containsKey(urn) && !projectLocks.get(urn).equals(token)) {
+    if (projectLocks.containsKey(urn) && !projectLocks.get(urn).equals(owner)) {
       scope.info("Lock attempt failed: project " + urn + " is already locked");
       return false;
     }
 
-    projectLocks.put(urn, token);
+    projectLocks.put(urn, owner);
     ((FileProjectStorage) descriptor.storage).lock(true);
     scope.info("Project " + urn + " is locked");
 
     return true;
   }
 
-  public synchronized boolean unlockProject(String urn, String token) {
+  public synchronized boolean unlockProject(String urn, Scope requester) {
+    String owner = projectLockOwner(requester);
+    if (owner == null) return false;
     if (projectLocks.containsKey(urn)) {
 
-      if (projectLocks.get(urn).equals(token)) {
+      if (projectLocks.get(urn).equals(owner)) {
         var descriptor = projectDescriptors.get(urn);
         ((FileProjectStorage) descriptor.storage).lock(false);
         projectLocks.remove(urn);
@@ -2054,6 +2085,11 @@ public class WorkspaceManager {
     if (loading.get()) {
       return Collections.emptyList();
     }
+    // File-watcher echoes must not turn a deferred save into automatic validation.
+    changes = changes.stream().filter(change -> deferredDocuments == null || deferredDocuments.values().stream()
+        .noneMatch(pending -> pending.project().equals(project)
+            && pending.url().toExternalForm().equals(change.getThird().toExternalForm()))).toList();
+    if (changes.isEmpty()) return List.of();
 
     /*
     populate the resource set changes in order of workspace affected
@@ -2788,6 +2824,11 @@ public class WorkspaceManager {
   }
 
   private KimOntology loadOntology(URL url, String project) {
+    // Another editor's update must not validate this editor's deferred source as a dependency.
+    if (deferredDocuments != null) for (var pending : deferredDocuments.values()) {
+      if (pending.url().toExternalForm().equals(url.toExternalForm())
+          && pending.baseline() instanceof KimOntology baseline) return baseline;
+    }
     try (var input = url.openStream()) {
       return readOntology(
           new String(input.readAllBytes(), StandardCharsets.UTF_8),
@@ -2803,6 +2844,11 @@ public class WorkspaceManager {
   }
 
   private KimNamespace loadNamespace(URL url, String project) {
+    // Another editor's update must not validate this editor's deferred source as a dependency.
+    if (deferredDocuments != null) for (var pending : deferredDocuments.values()) {
+      if (pending.url().toExternalForm().equals(url.toExternalForm())
+          && pending.baseline() instanceof KimNamespace baseline) return baseline;
+    }
     try (var input = url.openStream()) {
       return readNamespace(
           new String(input.readAllBytes(), StandardCharsets.UTF_8),
@@ -3256,7 +3302,7 @@ public class WorkspaceManager {
    * deliberately does not call the public lazy-loading accessors while a workspace is being loaded.
    */
   private <T extends KlabDocument<?>> T validateSemanticAsset(T asset) {
-    return validateSemanticAsset(asset, this::resolveKimReference);
+    return syntaxOnly != null && syntaxOnly.get() ? asset : validateSemanticAsset(asset, this::resolveKimReference);
   }
 
   static <T extends KlabDocument<?>> T validateSemanticAsset(
@@ -3842,7 +3888,7 @@ public class WorkspaceManager {
         || !(descriptor.storage instanceof FileProjectStorage storage)
         || userScope == null || userScope.getIdentity() == null
         || userScope.getIdentity().getId() == null || !projectLocks.containsKey(projectName)
-        || !Objects.equals(projectLocks.get(projectName), userScope.getIdentity().getId())) {
+        || !Objects.equals(projectLocks.get(projectName), projectLockOwner(userScope))) {
       return ResourceSet.empty(Notification.error("Project settings require a local project locked by the requesting user"));
     }
     if (settings == null) return ResourceSet.empty(Notification.error("Missing project settings"));
@@ -3915,7 +3961,7 @@ public class WorkspaceManager {
     if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage storage))
       throw new IllegalArgumentException("Project material requires service-owned FileProjectStorage");
     if (mutation && projectLocks.containsKey(project)
-        && !Objects.equals(projectLocks.get(project), user.getIdentity().getId()))
+        && !Objects.equals(projectLocks.get(project), projectLockOwner(user)))
       throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Project is locked by another user");
     return storage;
   }
@@ -4152,7 +4198,91 @@ public class WorkspaceManager {
    * @param lockingScope
    * @return
    */
-  public List<ResourceSet> updateDocument(
+  /** Save source and syntax diagnostics only. All queue operations share the file-change monitor. */
+  public synchronized List<ResourceSet> saveDeferred(KlabDocument<?> document, UserScope requester) {
+    var project = document.getProjectName();
+    var owner = projectLockOwner(requester);
+    if (owner == null || !owner.equals(projectLocks.get(project)) || !service.canEditProject(project, requester))
+      throw new KlabIllegalArgumentException("Deferred save requires the project's edit lock");
+    var descriptor = projectDescriptors.get(project);
+    if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage storage))
+      throw new KlabIllegalArgumentException("Project is not locally editable");
+    var type = ProjectStorage.ResourceType.classify(document);
+    if (type != ProjectStorage.ResourceType.ONTOLOGY && type != ProjectStorage.ResourceType.MODEL_NAMESPACE)
+      throw new KlabIllegalArgumentException("Only ontologies and namespaces support deferred validation");
+    var urn = document.getUrn();
+    if (document.getSourceCode() == null || storage.locate(urn, type) == null)
+      throw new KlabIllegalArgumentException("Deferred save requires an existing document and source");
+    KlabDocument<?> parsed;
+    syntaxOnly.set(true);
+    try {
+      parsed = type == ProjectStorage.ResourceType.ONTOLOGY
+          ? readOntology(document.getSourceCode(), System.currentTimeMillis(), project, urn)
+          : readNamespace(document.getSourceCode(), System.currentTimeMillis(), project, urn);
+    } finally { syntaxOnly.remove(); }
+    if (parsed == null || !urn.equals(parsed.getUrn()))
+      throw new KlabIllegalArgumentException("Save namespace renames with automatic validation enabled");
+    var key = project + ":" + type + ":" + urn;
+    var previous = deferredDocuments.get(key);
+    var baseline = previous != null ? previous.baseline()
+        : type == ProjectStorage.ResourceType.ONTOLOGY ? getOntology(urn) : getNamespace(urn);
+    var url = storage.update(type, urn, urn, document.getSourceCode(), false);
+    deferredDocuments.put(key, new DeferredDocument(owner, project, descriptor.workspace, type, url, baseline, parsed));
+    parsed.getMetadata().put(org.integratedmodelling.klab.api.services.ResourcesService.VALIDATION_DEFERRED_METADATA, true);
+    if (parsed instanceof KimOntology ontology) {
+      _ontologyMap.put(urn, ontology);
+      if (_ontologyOrder != null) _ontologyOrder = _ontologyOrder.stream()
+          .map(existing -> urn.equals(existing.getUrn()) ? ontology : existing).collect(toList());
+    } else {
+      var namespace = (KimNamespace) parsed;
+      _namespaceMap.put(urn, namespace);
+      if (_namespaceOrder != null) _namespaceOrder = _namespaceOrder.stream()
+          .map(existing -> urn.equals(existing.getUrn()) ? namespace : existing).collect(toList());
+    }
+    var result = new LinkedHashMap<String, ResourceSet>();
+    addToResultSet(parsed, descriptor.workspace, result).setOperation(CRUDOperation.UPDATE);
+    // No worldview event: dependents and the reasoner retain the last validated version.
+    return new ArrayList<>(result.values());
+  }
+
+  /** Flush only this principal's queued edits, using the latest saved source for each document. */
+  public synchronized List<ResourceSet> validateDeferred(String workspace, UserScope requester) {
+    var owner = projectLockOwner(requester);
+    if (owner == null) throw new KlabIllegalArgumentException("Validation requires an authenticated editor");
+    var pending = deferredDocuments.entrySet().stream()
+        .filter(e -> e.getValue().workspace().equals(workspace)
+            && (e.getValue().owner().equals(owner) || owner.equals(projectLocks.get(e.getValue().project())))).toList();
+    for (var entry : pending) {
+      var project = entry.getValue().project();
+      if (!owner.equals(projectLocks.get(project)) || !service.canEditProject(project, requester))
+        throw new KlabIllegalArgumentException("Validation requires edit permission and the project lock");
+    }
+    var changes = new LinkedHashMap<String, List<Triple<ProjectStorage.ResourceType, CRUDOperation, URL>>>();
+    for (var entry : pending) {
+      var edit = entry.getValue();
+      deferredDocuments.remove(entry.getKey());
+      if (edit.baseline() instanceof KimOntology ontology) _ontologyMap.put(ontology.getUrn(), ontology);
+      else if (edit.baseline() instanceof KimNamespace namespace) _namespaceMap.put(namespace.getUrn(), namespace);
+      changes.computeIfAbsent(edit.project(), ignored -> new ArrayList<>())
+          .add(Triple.of(edit.type(), CRUDOperation.UPDATE, edit.url()));
+    }
+    var results = new ArrayList<ResourceSet>();
+    try {
+      for (var change : changes.entrySet()) results.addAll(handleFileChange(change.getKey(), change.getValue()));
+    } catch (RuntimeException failure) {
+      loading.set(false);
+      pending.forEach(entry -> {
+        deferredDocuments.put(entry.getKey(), entry.getValue());
+        var saved = entry.getValue().saved();
+        if (saved instanceof KimOntology ontology) _ontologyMap.put(ontology.getUrn(), ontology);
+        else if (saved instanceof KimNamespace namespace) _namespaceMap.put(namespace.getUrn(), namespace);
+      });
+      throw failure;
+    }
+    return results;
+  }
+
+  public synchronized List<ResourceSet> updateDocument(
       String projectName,
       String documentUrn,
       ProjectStorage.ResourceType documentType,
@@ -4160,7 +4290,7 @@ public class WorkspaceManager {
       boolean overwriteExisting,
       Scope lockingScope) {
 
-    String lockingAuthorization = lockingScope.getIdentity().getId();
+    String lockingAuthorization = projectLockOwner(lockingScope);
     List<ResourceSet> ret = new ArrayList<>();
 
     if (lockingAuthorization == null
@@ -4176,6 +4306,12 @@ public class WorkspaceManager {
           ResourceSet.empty(
               Notification.error(
                   "Project " + projectName + " is not handled by this service. Update ignored.")));
+    }
+
+    if (lockingScope instanceof UserScope requester && deferredDocuments != null
+        && deferredDocuments.values().stream().anyMatch(edit -> edit.project().equals(projectName)
+            && edit.owner().equals(lockingAuthorization))) {
+      ret.addAll(validateDeferred(pd.workspace, requester));
     }
 
     /*
@@ -4224,7 +4360,7 @@ public class WorkspaceManager {
       var url =
           fileProjectStorage.update(documentType, documentUrn, parsed, contents, overwriteExisting);
 
-      ret =
+      ret.addAll(
           documentUrn.equals(parsed)
               ? handleFileChange(
                   projectName, List.of(Triple.of(documentType, CRUDOperation.UPDATE, url)))
@@ -4235,7 +4371,7 @@ public class WorkspaceManager {
                       Triple.of(
                           documentType,
                           targetExisted ? CRUDOperation.UPDATE : CRUDOperation.CREATE,
-                          url)));
+                          url))));
     }
 
     return ret;
@@ -4248,7 +4384,7 @@ public class WorkspaceManager {
       Scope lockingScope) {
 
     List<ResourceSet> ret = new ArrayList<>();
-    String lockingAuthorization = lockingScope.getIdentity().getId();
+    String lockingAuthorization = projectLockOwner(lockingScope);
 
     if (lockingAuthorization == null
         || !lockingAuthorization.equals(projectLocks.get(projectName))) {
@@ -4460,7 +4596,7 @@ public class WorkspaceManager {
       Scope lockingScope) {
 
     List<ResourceSet> ret = new ArrayList<>();
-    String lockingAuthorization = lockingScope.getIdentity().getId();
+    String lockingAuthorization = projectLockOwner(lockingScope);
 
     if (lockingAuthorization == null
         || !lockingAuthorization.equals(projectLocks.get(projectName))) {
