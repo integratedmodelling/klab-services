@@ -1,0 +1,91 @@
+{
+  "urn": "imod",
+  "metadata": {
+    "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+    "delegate": {
+      "klab.user.observer": "agency:Volitional society:HumanIndividual",
+      "authority.catalog.revision": "c7b88db7bbc2f2babd5a505060384ca67b213230e0ebdcaeae0e7026176bf9ca"
+    },
+    "unnamedKeys": []
+  },
+  "authorityBindings": [
+    {
+      "localId": "TAXA",
+      "rootIdentity": "life:TaxonomicIdentity",
+      "sourceOntology": "life",
+      "sourceOffset": 429,
+      "sourceLength": 225,
+      "sourceHash": "9619e6bf31056ed4b68856d633f01e6cdeba4e20b8e3539e1fba2324917d8e35",
+      "provider": {
+        "urn": "klab.authority.taxa",
+        "version": {
+          "major": 1,
+          "minor": 0,
+          "build": 0,
+          "modifier": null,
+          "constraints": []
+        },
+        "embeddable": true,
+        "searchable": true,
+        "subAuthorities": [
+          "DOMAIN",
+          "KINGDOM",
+          "PHYLUM",
+          "CLASS",
+          "ORDER",
+          "FAMILY",
+          "TRIBE",
+          "GENUS",
+          "SPECIES",
+          "SUBSPECIES",
+          "VARIETY",
+          "FORM"
+        ],
+        "codelists": []
+      },
+      "componentUrn": "klab.authority.taxa",
+      "componentVersion": {
+        "major": 1,
+        "minor": 0,
+        "build": 0,
+        "modifier": "SNAPSHOT",
+        "constraints": []
+      },
+      "reasonerUrl": null
+    },
+    {
+      "localId": "CHEM",
+      "rootIdentity": "chemistry:ChemicalIdentity",
+      "sourceOntology": "chemistry",
+      "sourceOffset": 358,
+      "sourceLength": 243,
+      "sourceHash": "8c7cb338282790fea19e7fda63378134bfcc4d6a48553adb0b8c0a89a4adf60d",
+      "provider": {
+        "urn": "klab.authority.pubchem",
+        "version": {
+          "major": 1,
+          "minor": 0,
+          "build": 0,
+          "modifier": null,
+          "constraints": []
+        },
+        "embeddable": true,
+        "searchable": true,
+        "subAuthorities": [
+          "COMPOUND",
+          "CHEBI"
+        ],
+        "codelists": []
+      },
+      "componentUrn": "klab.authority.pubchem",
+      "componentVersion": {
+        "major": 1,
+        "minor": 0,
+        "build": 0,
+        "modifier": "SNAPSHOT",
+        "constraints": []
+      },
+      "reasonerUrl": null
+    }
+  ]
+}

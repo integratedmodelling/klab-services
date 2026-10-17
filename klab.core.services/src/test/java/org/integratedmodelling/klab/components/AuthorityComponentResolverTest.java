@@ -19,6 +19,14 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.junit.jupiter.api.Test;
 
 class AuthorityComponentResolverTest {
+  @Test void credentialRotationDoesNotChangeAuthorizedArtifactSelection() throws Exception {
+    var remote = source("remote", component("hash-a", publicRights(), "1.0.0")); services(remote);
+    var before = AuthorityComponentResolver.resolve("fixture.authority", scope).revision();
+    when(owner.getId()).thenReturn("renewed-request-credential");
+    assertEquals(before, AuthorityComponentResolver.resolve("fixture.authority", scope).revision());
+    when(owner.getUsername()).thenReturn("another-user");
+    assertNotEquals(before, AuthorityComponentResolver.resolve("fixture.authority", scope).revision());
+  }
   @Test void serviceCertificateSelectsPublicProvidersWithoutInventingUserGrants() throws Exception {
     when(scope.getIdentity()).thenReturn(mock(PartnerIdentity.class));
     var rights=publicRights();

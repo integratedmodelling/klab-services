@@ -249,7 +249,13 @@ public final class AuthorityComponentResolver {
   private static String ownerRevision(UserIdentity user) {
     var groups = user.getGroups() == null ? List.<String>of()
         : user.getGroups().stream().map(org.integratedmodelling.klab.api.identities.Group::getName).sorted().toList();
-    return digest(Arrays.asList(user.getId(), user.getUsername(), groups));
+    // getId() is the request credential, not the principal. Local service discovery and
+    // IDE requests can authenticate the same user with different tokens. Credential rotation
+    // must not invalidate identical authorized provider selections.
+    var federation = user.getData() == null ? null : user.getData().get(
+        UserIdentity.FEDERATION_DATA_PROPERTY, org.integratedmodelling.klab.api.identities.Federation.class);
+    return digest(Arrays.asList(user.getServerURL(), federation == null ? null : federation.getId(),
+        user.getUsername(), groups));
   }
 
   private static String identity(Extensions.ComponentDescriptor component) {

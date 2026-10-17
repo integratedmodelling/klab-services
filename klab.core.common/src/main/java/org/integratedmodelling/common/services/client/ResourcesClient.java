@@ -467,12 +467,12 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public boolean lockProject(String urn, UserScope scope) {
-    return client.get(ServicesAPI.RESOURCES.LOCK_PROJECT, Boolean.class, "urn", urn);
+    return client.withScope(scope).get(ServicesAPI.RESOURCES.LOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   @Override
   public boolean unlockProject(String urn, UserScope scope) {
-    return client.get(ServicesAPI.RESOURCES.UNLOCK_PROJECT, Boolean.class, "urn", urn);
+    return client.withScope(scope).get(ServicesAPI.RESOURCES.UNLOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   private void invalidateCaches() {

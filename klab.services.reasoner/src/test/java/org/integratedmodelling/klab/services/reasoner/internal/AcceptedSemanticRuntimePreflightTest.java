@@ -35,6 +35,24 @@ class AcceptedSemanticRuntimePreflightTest {
   }
   private AcceptedSemanticRuntime runtime(){return new AcceptedSemanticRuntime(factory,clock::get);}
 
+  @Test void repeatedSamePrincipalRequestsWithDifferentCredentialsDoNotRebuild() throws Exception {
+    try (var runtime = runtime()) {
+      var source = world("unchanged");
+      runtime.submit(source, scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      var generation = runtime.status().acceptedGeneration();
+      for (int i = 0; i < 5; i++) {
+        when(owner.getId()).thenReturn("credential-" + i);
+        assertFalse(runtime.shouldRetryPreflight(source, scope));
+        assertFalse(runtime.beginPreflight(source, scope).retry());
+      }
+      assertEquals(generation, runtime.status().acceptedGeneration());
+      verify(factory, times(1)).build(any(), any());
+      var group = mock(Group.class); when(group.getName()).thenReturn("changed-membership");
+      when(owner.getGroups()).thenReturn(List.of(group));
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
+    }
+  }
+
   @Test void acceptedMetadataIncludesOwnedComponentsAndRetainsThemAfterRejection() throws Exception {
     var actor = mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class);
     var descriptor = mock(org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor.class);
