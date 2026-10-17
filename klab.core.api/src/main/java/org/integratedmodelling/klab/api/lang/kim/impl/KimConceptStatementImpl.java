@@ -13,6 +13,12 @@ import java.util.Set;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
   private boolean genericQuality;
+  private String deniedAlias;
+
+  @Override
+  public String getDeniedAlias() { return deniedAlias; }
+
+  public void setDeniedAlias(String deniedAlias) { this.deniedAlias = deniedAlias; }
 
   @Override
   public boolean isGenericQuality() {

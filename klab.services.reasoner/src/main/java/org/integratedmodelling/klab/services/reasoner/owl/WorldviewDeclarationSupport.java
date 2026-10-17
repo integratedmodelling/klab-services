@@ -15,6 +15,32 @@ public final class WorldviewDeclarationSupport {
 
   private WorldviewDeclarationSupport() {}
 
+  /** Install the same canonical delegate used by an equals declaration. */
+  public static void compileDeniability(OWL owl, Ontology ontology, Concept owner,
+      KimConceptStatement statement) {
+    var alias = statement.deniedAlias();
+    if (!statement.deniable()) return;
+    if (!owner.is(SemanticType.ATTRIBUTE))
+      throw new KlabValidationException("deniable requires an attribute");
+    owner.getType().add(SemanticType.DENIABLE);
+    if (alias != null) {
+      var existing = ontology.getConcept(alias);
+      if (existing != null && !owner.getUrn().equals(
+          existing.getMetadata().get(
+              org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS.IS_NEGATION_OF,
+              String.class)))
+        throw new KlabValidationException("Denial alias already in use: " + ontology.getName() + ":" + alias);
+    }
+    var negation = owl.makeNegation(owner);
+    ontology.define(List.of(org.integratedmodelling.common.lang.Axiom.AnnotationAssertion(
+        owner.getNamespace() + ":" + owner.getName(),
+        org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS.DENIABILITY_PROPERTY,
+        "true")));
+    if (alias != null && (!alias.equals(negation.getName())
+        || !ontology.getName().equals(negation.getNamespace())))
+      ontology.addDelegateConcept(alias, ontology.getName(), negation);
+  }
+
   public static boolean hasDeferredValue(KimConceptStatement statement) {
     return statement.getDescriptionValue() != null && !statement.getDescriptionValue().isBlank();
   }
@@ -222,6 +248,7 @@ public final class WorldviewDeclarationSupport {
       owl.manager.addAxiom(ontology.getOWLOntology(), factory.getOWLAnnotationAssertionAxiom(
           factory.getOWLAnnotationProperty(VALUE_STATUS), source, factory.getOWLLiteral("UNRESOLVED")));
     }
+    compileDeniability(owl, ontology, owner, statement);
   }
 
   /** Unsettled bearer contributions are durable evidence, not successful alignment. */

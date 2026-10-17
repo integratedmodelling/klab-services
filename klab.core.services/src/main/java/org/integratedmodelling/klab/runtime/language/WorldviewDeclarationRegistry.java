@@ -13,10 +13,26 @@ public final class WorldviewDeclarationRegistry {
   private final List<Notification> errors = new ArrayList<>();
   private final List<Declaration> ordered = new ArrayList<>();
   private final Map<String,Set<SemanticType>> coreTypes = new HashMap<>();
+  private final Map<String,String> denialOwners = new LinkedHashMap<>();
 
   public WorldviewDeclarationRegistry(Collection<KimOntology> ontologies) {
     for (var ontology : ontologies)
       for (var statement : ontology.getStatements()) index(ontology,statement,null);
+    for (var entry : declarations.values()) {
+      try {
+        var alias = entry.statement().deniedAlias();
+        if (!entry.statement().deniable()) continue;
+        if (!entry.statement().getType().contains(SemanticType.ATTRIBUTE))
+          error("DENIAL_SOURCE_INVALID: deniable requires an attribute", entry);
+        var names = new LinkedHashSet<String>();
+        names.add(urn(entry.ontology().getUrn(), "Not" + entry.statement().getUrn().replaceFirst("^.*:", "")));
+        if (alias != null) names.add(urn(entry.ontology().getUrn(), alias));
+        for (var name : names) {
+          if (declarations.containsKey(name) || denialOwners.putIfAbsent(name, entry.urn()) != null)
+            error("DENIAL_NAME_COLLISION: " + name, entry);
+        }
+      } catch (IllegalArgumentException error) { error(error.getMessage(), entry); }
+    }
     var dependencies = new LinkedHashMap<String,Set<String>>();
     var dependents = new HashMap<String,List<String>>();
     for (var entry : declarations.values()) {
@@ -25,6 +41,9 @@ public final class WorldviewDeclarationRegistry {
           && entry.statement().getUpperConceptDefined()==null)
         needed.add(urn(entry.ontology().getUrn(),entry.enclosing().getUrn()));
       structuralHeads(entry.statement().getDeclaredParent(),entry.ontology().getUrn(),needed);
+      var resolved = new LinkedHashSet<String>();
+      for (var name : needed) resolved.add(denialOwners.getOrDefault(name, name));
+      needed = resolved;
       needed.removeIf(name->!declarations.containsKey(name));
       dependencies.put(entry.urn(),needed);
       needed.forEach(parent->dependents.computeIfAbsent(parent,k->new ArrayList<>()).add(entry.urn()));
@@ -50,7 +69,7 @@ public final class WorldviewDeclarationRegistry {
   public List<Notification> errors(){return List.copyOf(errors);}
   public List<Declaration> ordered(){return List.copyOf(ordered);}
   public Collection<Declaration> declarations(){return Collections.unmodifiableCollection(declarations.values());}
-  public Declaration get(String urn){return declarations.get(urn);}
+  public Declaration get(String urn){return declarations.get(denialOwners.getOrDefault(urn, urn));}
   public static String urn(String namespace,String name){return name!=null&&name.contains(":")?name:namespace+":"+name;}
 
   private void index(KimOntology ontology,KimConceptStatement statement,KimConceptStatement parent) {
@@ -106,7 +125,8 @@ public final class WorldviewDeclarationRegistry {
   }
   private Set<SemanticType> namedType(KimConcept expression,String namespace) {
     if(expression.getName()!=null) {
-      var named=declarations.get(urn(namespace,expression.getName()));
+      var name = urn(namespace,expression.getName());
+      var named=declarations.get(denialOwners.getOrDefault(name, name));
       if(named!=null)return named.statement().getType();
       if(coreTypes.containsKey(expression.getName()))return coreTypes.get(expression.getName());
     }

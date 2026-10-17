@@ -15,6 +15,37 @@ import org.junit.jupiter.api.io.TempDir;
 
 class StagedDeclarationContractTest {
   @TempDir Path directory;
+
+  @Test void denialAliasesAndNotResolveToTheSameConceptDuringWorldviewCompilation() throws Exception {
+    for (boolean alias : List.of(false, true)) {
+      var world = world("denial-" + alias, false, false, false);
+      var source = (KimOntologyImpl) world.getOntologies().getFirst();
+      var owner = declaration("w", "Feasible", SemanticType.ATTRIBUTE);
+      owner.getDeclarationClauses().add(new KimConceptStatement.DeclarationClause(
+          "deniabilityClause", alias ? "deniable as Unfeasible" : "deniable", 0, 8));
+      var child = declaration("w", "Impossible", SemanticType.ATTRIBUTE);
+      child.setDeclaredParent(reference(alias ? "w:Unfeasible" : "w:NotFeasible"));
+      source.getStatements().addFirst(child);
+      source.getStatements().add(owner);
+      var factory = factory("denial-" + alias);
+      try (var coordinator = new CandidatePublicationCoordinator<Worldview, SemanticEnvironment>(factory, input -> true)) {
+        coordinator.submit(factory.capture(world));
+        assertTrue(coordinator.awaitIdle(Duration.ofSeconds(20)));
+        assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID,
+            coordinator.status().logicalStatus(), coordinator.status().diagnostics().toString());
+        try (var lease = coordinator.accepted().orElseThrow()) {
+          var actor = lease.state().actor(); var owl = actor.owl();
+          var positive = owl.getConcept("w:Feasible");
+          var negative = owl.getConcept("w:NotFeasible");
+          assertNotNull(negative);
+          assertEquals(negative, actor.negated(positive));
+          assertEquals(positive, actor.negated(negative));
+          assertEquals(negative, actor.resolveConcept("not w:Feasible"));
+          if (alias) assertEquals(negative, actor.resolveConcept("w:Unfeasible"));
+        }
+      }
+    }
+  }
   static KimConceptStatementImpl declaration(String namespace,String name,SemanticType kind) {
     var s=new KimConceptStatementImpl();s.setNamespace(namespace);s.setUrn(name);s.setLength(10);
     s.setType(EnumSet.of(kind));

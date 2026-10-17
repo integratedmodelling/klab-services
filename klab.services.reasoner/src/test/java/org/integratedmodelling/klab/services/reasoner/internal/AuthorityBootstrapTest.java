@@ -50,10 +50,42 @@ class AuthorityBootstrapTest {
     }
     assertEquals(1,calls.get());
   }
-  @Test void changedAuthoritativeSourceRetriesWithFreshProducer() throws Exception {
+  @Test void unrelatedSourceChangesReuseSuccessfulProviderCapture() throws Exception {
     var bootstrap=bootstrap((w,s,p,c)->{calls.incrementAndGet();return catalog;});
     for(String text:List.of("first","second")) {var source=source(text);bootstrap.prepare(source,scope,AuthorityBootstrap.key(source,scope),()->false);}
+    assertEquals(1,calls.get());
+  }
+  @Test void newAuthorityIdentityAndChangedConfigurationRequireFreshCapture() throws Exception {
+    var bootstrap=bootstrap((w,s,p,c)->{calls.incrementAndGet();return catalog;});
+    var world=source("first");
+    var root=new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl();
+    root.setUrn("Identity");root.setNamespace("w");root.setAuthorityRequired("TAXA");
+    root.getAuthorityParameters().put("urn","klab.authority.taxa");
+    world.getOntologies().getFirst().getStatements().add(root);
+    bootstrap.prepare(world,scope,AuthorityBootstrap.key(world,scope),()->false);
+    // A new unrelated document changes the compilation manifest, not the provider inputs.
+    var unrelated=new KimOntologyImpl();unrelated.setUrn("unrelated");unrelated.setSourceCode("unrelated");
+    world.getOntologies().add(unrelated);
+    bootstrap.prepare(world,scope,AuthorityBootstrap.key(world,scope),()->false);
+    assertEquals(1,calls.get());
+    var identity=new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
+    identity.setAuthority("TAXA");identity.setAuthorityTerm("new-code");root.setDeclaredParent(identity);
+    ((KimOntologyImpl)world.getOntologies().getFirst()).setSourceCode("new identity");
+    bootstrap.prepare(world,scope,AuthorityBootstrap.key(world,scope),()->false);
     assertEquals(2,calls.get());
+    root.getAuthorityParameters().put("datasetKey",123);
+    ((KimOntologyImpl)world.getOntologies().getFirst()).setSourceCode("new configuration");
+    bootstrap.prepare(world,scope,AuthorityBootstrap.key(world,scope),()->false);
+    assertEquals(3,calls.get());
+  }
+  @Test void failuresStillRetryAfterSourceChangesAndExpiredResponsesAreNotReused() throws Exception {
+    var bootstrap=bootstrap((w,s,p,c)->{if(calls.incrementAndGet()==1)throw new IllegalStateException();return catalog;});
+    var first=source("first");
+    assertThrows(IllegalStateException.class,()->bootstrap.prepare(first,scope,AuthorityBootstrap.key(first,scope),()->false));
+    var second=source("second");bootstrap.prepare(second,scope,AuthorityBootstrap.key(second,scope),()->false);
+    when(catalog.hasExpiredResponses()).thenReturn(true);
+    var third=source("third");bootstrap.prepare(third,scope,AuthorityBootstrap.key(third,scope),()->false);
+    assertEquals(3,calls.get());
   }
   @Test void changedDescriptorRevisionInvalidatesSuccessfulReuse() throws Exception {
     var bootstrap=bootstrap((w,s,p,c)->{calls.incrementAndGet();return catalog;});var source=source("first");var key=AuthorityBootstrap.key(source,scope);

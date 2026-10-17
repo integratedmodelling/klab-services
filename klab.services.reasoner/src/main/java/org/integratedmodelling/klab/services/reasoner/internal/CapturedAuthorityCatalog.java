@@ -49,6 +49,14 @@ public final class CapturedAuthorityCatalog {
     return Collections.unmodifiableMap(owned);
   }
   public String revision() { return revision; }
+  /** Expired provider responses need a fresh capture before compiling another candidate. */
+  public boolean hasExpiredResponses() {
+    for (var response : records.values()) {
+      try { if (JSON.readTree(response).path("expires").asLong() <= Clock.systemUTC().millis()) return true; }
+      catch (IOException malformed) { return true; }
+    }
+    return false;
+  }
 
   /** Owned public descriptors for discovery; callers cannot mutate the captured catalog. */
   public List<ComponentDescriptor> components() {

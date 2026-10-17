@@ -1760,6 +1760,7 @@ public class LanguageAdapter {
     ret.setSubjective(definition.isSubjective());
     ret.setDocstring(definition.getDescription());
     ret.setAlias(definition.isAlias());
+    ret.setDeniedAlias(definition.getDeniedAlias());
     for (var clause : definition.getDeclarationClauses()) {
       ret.getDeclarationClauses()
           .add(
@@ -1791,7 +1792,7 @@ public class LanguageAdapter {
                   annotation, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY));
     }
 
-    if (definition.isDeniable()) {
+    if (definition.isDeniable() || ret.deniable()) {
       ret.getType().add(SemanticType.DENIABLE);
     }
     if (definition.isAbstract()) {

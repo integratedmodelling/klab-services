@@ -41,7 +41,6 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
     }
     for (var clause : statement.getDeclarationClauses()) {
       if (clause.kind().equals("within")
-          || clause.kind().equals("deniabilityClause")
           || ((clause.kind().equals("impliesClause") || clause.kind().equals("emergesFromClause"))
               && clause.source().matches("(?s).*\\bwithin\\b.*")))
         result.add(
@@ -148,11 +147,11 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
       }
     }
     boolean local = reference.urn().startsWith(ontology.getUrn() + ":");
-    var declaration = local ? registry(ontology).get(reference.urn()) : null;
+    var declaration = registry(ontology).get(reference.urn());
     // Complete, source-owned typed registration makes semantic reference order irrelevant.
     // Structural parent/alias cycles and unresolved kinds are rejected by the registry.
-    boolean known = local ? declaration != null : reference.resolved() != null;
-    if (declaration != null && source.getLength()>0 && declaration.statement().getLength()>0
+    boolean known = declaration != null || (!local && reference.resolved() != null);
+    if (local && declaration != null && source.getLength()>0 && declaration.statement().getLength()>0
         && declaration.statement().getOffsetInDocument()>source.getOffsetInDocument()) {
       KimConceptStatement enclosing=null;
       for(var node:context.getPath())if(node instanceof KimConceptStatement s)enclosing=s;

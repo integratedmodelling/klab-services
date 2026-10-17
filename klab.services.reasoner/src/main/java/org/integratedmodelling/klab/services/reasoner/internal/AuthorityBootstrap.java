@@ -21,7 +21,8 @@ public final class AuthorityBootstrap {
     CapturedAuthorityCatalog produce(Worldview source, Scope owner, Plan plan,
         CandidatePublicationCoordinator.Cancellation cancellation) throws Exception;
   }
-  private record Outcome(long epoch, CapturedAuthorityCatalog catalog, String failure, Plan plan) {}
+  private record Outcome(long epoch, CapturedAuthorityCatalog catalog, String failure, Plan plan,
+                         String providerInput) {}
   private final Resolver resolver;
   private final Producer producer;
   private final String policyRevision;
@@ -59,6 +60,49 @@ public final class AuthorityBootstrap {
       return digest(JSON.writer().with(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsBytes(value));
     } catch (Exception failure) { throw new IllegalArgumentException("Cannot fingerprint authority bootstrap input"); }
   }
+  /** Provider configuration and identity lookups do not depend on unrelated worldview source text.
+   * Keep the full source key above for candidate cancellation and failed-attempt retry semantics. */
+  static String providerInput(Worldview source, Scope owner) {
+    var declarations = source.allConceptStatements().stream()
+        .filter(s -> s.getAuthorityRequired() != null)
+        .map(s -> new org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest(
+            source.getUrn(), s.getAuthorityRequired(), s.getNamespace() + ":" + s.getUrn(), s.getAuthorityParameters()))
+        .sorted(Comparator.comparing(org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest::name)).toList();
+    var bindings = source.getAuthorityBindings().stream().sorted(Comparator.comparing(Worldview.AuthorityBinding::localId))
+        .map(b -> List.of(b.localId(), b.rootIdentity(), b.provider(), b.componentUrn(), b.componentVersion())).toList();
+    var namespaces = new HashSet<String>();
+    source.getAuthorityBindings().forEach(b -> namespaces.add(b.localId()));
+    for (var declaration : declarations) {
+      if (declaration.parameters().get("codelists") instanceof Map<?, ?> lists)
+        lists.values().stream().filter(String.class::isInstance).map(String.class::cast).forEach(namespaces::add);
+    }
+    var references = new TreeSet<String>();
+    java.util.function.Consumer<org.integratedmodelling.klab.runtime.language.KimObservableVisitor> collect = visitor -> {
+      for (var concept : visitor.getConcepts())
+        if (concept.getAuthority() != null)
+          references.add(org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax
+              .encode(concept.getAuthority(), concept.getAuthorityTerm()));
+      for (var reference : visitor.getReferences()) {
+        String urn = reference.urn();
+        if (urn != null && namespaces.stream().anyMatch(n -> urn.startsWith(n + ":") || urn.startsWith(n + ".")))
+          references.add(urn);
+      }
+    };
+    for (var ontology : source.getOntologies()) {
+      var visitor = new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor(
+          new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor.LenientValidator(), null);
+      visitor.visit(ontology); collect.accept(visitor);
+    }
+    for (var document : source.getObservationStrategies()) {
+      var visitor = new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor(
+          new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor.LenientValidator(), null);
+      visitor.visit(document); collect.accept(visitor);
+    }
+    try {
+      return digest(JSON.writer().with(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+          .writeValueAsBytes(List.of(source.getUrn(), declarations, bindings, references, AuthorityComponentResolver.ownerRevision(owner))));
+    } catch (Exception failure) { throw new IllegalArgumentException("Cannot fingerprint authority provider input"); }
+  }
   /** Failed input is remembered too. Only changed input or explicit invalidation retries side effects. */
   synchronized CapturedAuthorityCatalog prepare(Worldview source, Scope owner, String expectedKey,
       CandidatePublicationCoordinator.Cancellation cancellation) throws Exception {
@@ -79,16 +123,26 @@ public final class AuthorityBootstrap {
       var selectedRevision = source.getMetadata().get(AuthorityComponentResolver.SELECTION_METADATA);
       if (selectedRevision != null && !selectedRevision.equals(plan.revision()))
         throw new IllegalStateException("Authority selection changed after preflight");
+      var providerInput = providerInput(source, owner);
+      for (var outcome : outcomes.values()) {
+        if (outcome.epoch() == startedEpoch && outcome.failure() == null
+            && providerInput.equals(outcome.providerInput()) && plan.revision().equals(outcome.plan().revision())
+            && !outcome.catalog().hasExpiredResponses()) {
+          verify(source, owner, plan, expectedKey); cancellation.checkpoint();
+          remember(expectedKey, new Outcome(startedEpoch, outcome.catalog(), null, plan, providerInput));
+          return outcome.catalog();
+        }
+      }
       var catalog=producer.produce(source,owner,plan,cancellation); cancellation.checkpoint();
       if (catalog==null || source.getAuthorityBindings().stream().anyMatch(b->!catalog.supports(b)))
         throw new IllegalStateException("Producer supplied no matching configured proof");
       verify(source,owner,plan,expectedKey); cancellation.checkpoint();
-      remember(expectedKey,new Outcome(startedEpoch,catalog,null,plan)); return catalog;
+      remember(expectedKey,new Outcome(startedEpoch,catalog,null,plan,providerInput)); return catalog;
     } catch (java.util.concurrent.CancellationException cancelled) { throw cancelled; }
     catch (Exception failure) {
       // Provider exceptions can contain private parameters, URLs, or headers.
       String message="AUTHORITY_BOOTSTRAP_FAILED: "+failure.getClass().getSimpleName();
-      remember(expectedKey,new Outcome(startedEpoch,null,message,null));
+      remember(expectedKey,new Outcome(startedEpoch,null,message,null,null));
       throw new IllegalStateException(message);
     }
   }

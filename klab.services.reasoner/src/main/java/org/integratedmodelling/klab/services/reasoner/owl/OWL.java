@@ -1692,27 +1692,34 @@ public class OWL {
   }
 
   public Concept makeNegation(Concept attribute) {
-
-    var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-
     String orig = attribute.getMetadata().get(NS.IS_NEGATION_OF, String.class);
     if (orig != null) {
       return getConcept(orig);
     }
 
+    if (!attribute.is(SemanticType.ATTRIBUTE))
+      throw new KlabValidationException("Only attributes can be negated");
+
     Ontology aontology = getOntology(attribute.getNamespace());
     String prop =
         attribute.getMetadata().get(CoreOntology.NS.TRAIT_RESTRICTING_PROPERTY, String.class);
-    String conceptId = "Not" + getCleanId(attribute);
+    // Labels are authored presentation and must never determine semantic identity.
+    String conceptId = "Not" + attribute.getName();
     Concept ret = aontology.getConcept(conceptId);
-    Concept parent = reas.parent(attribute);
+    if (ret != null) {
+      if (!attribute.getUrn().equals(ret.getMetadata().get(NS.IS_NEGATION_OF, String.class)))
+        throw new KlabValidationException("Negation name already in use: "
+            + aontology.getName() + ":" + conceptId);
+      return ret;
+    }
 
     if (ret == null) {
 
       EnumSet<SemanticType> newType = EnumSet.copyOf(attribute.getType());
 
       aontology.add(Axiom.ClassAssertion(conceptId, newType));
-      aontology.add(Axiom.SubClass(parent.getNamespace() + ":" + parent.getName(), conceptId));
+      // A complement includes everything outside the original class. Inheriting its
+      // parent would incorrectly constrain that complement (and can make it empty).
       aontology.add(Axiom.AnnotationAssertion(conceptId, CoreOntology.NS.BASE_DECLARATION, "true"));
       aontology.add(
           Axiom.AnnotationAssertion(
@@ -1723,7 +1730,7 @@ public class OWL {
           Axiom.AnnotationAssertion(conceptId, "rdfs:label", "Not" + getCleanId(attribute)));
       aontology.add(
           Axiom.AnnotationAssertion(
-              conceptId, NS.CONCEPT_DEFINITION_PROPERTY, "not  " + attribute.getUrn()));
+              conceptId, NS.CONCEPT_DEFINITION_PROPERTY, "not " + attribute.getUrn()));
 
       if (prop != null) {
         aontology.add(Axiom.AnnotationAssertion(conceptId, NS.TRAIT_RESTRICTING_PROPERTY, prop));
@@ -1732,12 +1739,20 @@ public class OWL {
       aontology.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
           org.integratedmodelling.common.knowledge.SemanticLabels.unary(
               UnarySemanticOperator.NOT, attribute.displayLabel(), null)));
+      var factory = manager.getOWLDataFactory();
+      var negationOf = factory.getOWLAnnotationProperty(
+          IRI.create("http://integratedmodelling.org/ks/klab.owl#negationOf"));
+      manager.addAxiom(aontology.getOWLOntology(), factory.getOWLDeclarationAxiom(negationOf));
+      manager.addAxiom(aontology.getOWLOntology(), factory.getOWLAnnotationAssertionAxiom(
+          negationOf, IRI.create(aontology.getPrefix() + "#" + conceptId),
+          factory.getOWLLiteral(attribute.getUrn())));
       aontology.define();
 
       ret = aontology.getConcept(conceptId);
+      ret.getMetadata().put(NS.IS_NEGATION_OF, attribute.getUrn());
 
-      restrictSome(
-          ret, getProperty(CoreOntology.NS.IS_NEGATION_OF), attribute, (Ontology) aontology);
+      manager.addAxiom(aontology.getOWLOntology(), factory.getOWLEquivalentClassesAxiom(
+          getOWLClass(ret), factory.getOWLObjectComplementOf(getOWLClass(attribute))));
     }
 
     return ret;

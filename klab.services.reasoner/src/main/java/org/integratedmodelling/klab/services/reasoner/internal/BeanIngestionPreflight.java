@@ -70,6 +70,12 @@ public final class BeanIngestionPreflight {
         var resolved = concepts.get(urn);
         if (resolved == null && context.getDocument() instanceof KimOntology current)
           resolved = concepts.get(current.getUrn() + ":" + urn);
+        if (resolved == null) {
+          var generated = registry.get(urn);
+          if (generated == null && context.getDocument() instanceof KimOntology current)
+            generated = registry.get(current.getUrn() + ":" + urn);
+          if (generated != null) resolved = generated.statement();
+        }
         yield resolved;
       }
       default -> null;

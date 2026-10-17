@@ -3346,6 +3346,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     main.getMetadata().putAll(concept.getMetadata());
     ((ConceptImpl) main).setAnnotations(AnnotationCollector.merge(concept.getAnnotations()));
 
+    org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compileDeniability(
+        owl, ontology, main, concept);
+
     indexer.index(concept);
 
     if (concept.getDeclaredParent() != null) {

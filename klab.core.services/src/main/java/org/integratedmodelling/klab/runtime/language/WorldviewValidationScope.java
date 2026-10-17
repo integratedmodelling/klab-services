@@ -161,6 +161,15 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
             statement.isAbstract(),
             false, statement.isSubjective(), statement.isSealed());
     this.conceptTypes.put(defaultLabel, descriptor);
+    if (statement.deniable() && statement.getType().contains(SemanticType.ATTRIBUTE)) {
+      var names = new java.util.LinkedHashSet<String>();
+      names.add("Not" + statement.getUrn());
+      if (statement.deniedAlias() != null) names.add(statement.deniedAlias());
+      for (var name : names) conceptTypes.put(namespace + ":" + name,
+          new ConceptDescriptor(namespace, name, SemanticSyntax.Type.ATTRIBUTE,
+              "Not " + descriptor.label(), descriptor.description(), false, false,
+              statement.isSubjective(), statement.isSealed()));
+    }
     // A captured worldview must register the same core target descriptors that the normal
     // parser registers through createConceptDescriptor(). The core RDF is deliberately
     // untyped; omitting these source-defined aliases turns expressions such as odo:Speed

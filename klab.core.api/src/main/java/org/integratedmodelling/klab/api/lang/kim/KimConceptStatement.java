@@ -18,6 +18,35 @@ public interface KimConceptStatement extends KlabStatement {
     return List.of();
   }
 
+  /** Local name introduced by {@code deniable as}, retained across bean transport. */
+  default String getDeniedAlias() { return null; }
+
+  /** Also accepts source-only beans produced before the typed alias field was available. */
+  default String deniedAlias() {
+    if (getDeniedAlias() != null) {
+      if (!getDeniedAlias().matches("[A-Z][a-zA-Z0-9_]*"))
+        throw new IllegalArgumentException("Invalid denial alias: " + getDeniedAlias());
+      return getDeniedAlias();
+    }
+    for (var clause : getDeclarationClauses()) {
+      if ("deniabilityClause".equals(clause.kind())) {
+        var matcher = java.util.regex.Pattern.compile(
+            "(?s)\\s*deniable(?:\\s+as\\s+([A-Z][a-zA-Z0-9_]*))?\\s*;?\\s*")
+            .matcher(clause.source().replaceAll("(?s)/\\*.*?\\*/|//[^\\r\\n]*", " "));
+        if (!matcher.matches())
+          throw new IllegalArgumentException("Invalid deniable as clause: " + clause.source());
+        return matcher.group(1);
+      }
+    }
+    return null;
+  }
+
+  /** Deniability may be a declaration modifier or a clause with an optional alias. */
+  default boolean deniable() {
+    return getDeniedAlias() != null || getType().contains(SemanticType.DENIABLE)
+        || getDeclarationClauses().stream().anyMatch(c -> "deniabilityClause".equals(c.kind()));
+  }
+
   /** Source references, including references in clauses not yet compiled to OWL. */
   default List<KimConcept> getDeclaredReferences() {
     return List.of();

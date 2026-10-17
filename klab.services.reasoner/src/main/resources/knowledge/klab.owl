@@ -65,6 +65,9 @@
     <!-- http://integratedmodelling.org/ks/klab.owl#originalTrait -->
 
     <owl:AnnotationProperty rdf:about="http://integratedmodelling.org/ks/klab.owl#originalTrait"/>
+    <owl:AnnotationProperty rdf:about="http://integratedmodelling.org/ks/klab.owl#negationOf">
+        <rdfs:comment>The canonical concept URN whose OWL complement defines this generated attribute.</rdfs:comment>
+    </owl:AnnotationProperty>
     
 
 

@@ -197,12 +197,12 @@ class KimVisitorsTest {
         visitor.getNotifications().stream()
             .filter(n -> n.getMessage().contains("scoped/denial semantics"))
             .toList();
-    assertEquals(2, warnings.size());
+    assertEquals(1, warnings.size());
     assertEquals(
-        List.of(42, 74),
+        List.of(74),
         warnings.stream().map(n -> n.getLexicalContext().getOffsetInDocument()).toList());
     assertEquals(
-        List.of(25, 19),
+        List.of(19),
         warnings.stream().map(n -> n.getLexicalContext().getLength()).toList());
   }
 
