@@ -1,5 +1,6 @@
 """Python/Java acceptance and a Runtime-only restart on an explicitly owned TEST stack."""
 import json
+from contextlib import nullcontext
 from pathlib import Path
 import sys
 import time
@@ -59,11 +60,15 @@ def scientific_roundtrip(state, label):
                              type(cleanup).__name__)
 
 
-def require_semantic_readiness(state, timeout=60):
+def require_semantic_readiness(state, timeout=60, *, client=None):
     """HTTP 200/local-authoring operational status is not accepted scientific knowledge."""
-    config = json.loads((state / "scientist.json").read_text())
+    # An authenticated existing connection can re-exercise this same read-only
+    # gate without writing its real token to an owned TEST scientist.json file.
+    # Borrowed clients are never closed here; legacy TEST callers are unchanged.
+    context = nullcontext(client) if client is not None else make_client(
+        json.loads((state / "scientist.json").read_text()))
     deadline = time.monotonic() + timeout
-    with make_client(config) as client:
+    with context as client:
         while True:
             status = client.transport.request("reasoner", "GET", "/public/status")
             (state / "develop-readiness.json").write_text(client.transport.redact(json.dumps(status, indent=2)))

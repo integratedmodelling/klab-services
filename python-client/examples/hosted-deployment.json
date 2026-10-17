@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "name": "explicit-hosted-IDE-peers-read-only",
+  "hub_url": "https://integratedmodelling.org/hub",
+  "services": [
+    {"type": "resources", "url": "https://services.integratedmodelling.org/resources/main"},
+    {"type": "reasoner", "url": "https://services.integratedmodelling.org/reasoner"},
+    {"type": "resolver", "url": "https://services.integratedmodelling.org/resolver"},
+    {"type": "runtime", "url": "https://services.integratedmodelling.org/runtime/main"}
+  ]
+}

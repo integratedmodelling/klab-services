@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-17",
+  "checklist": "https://eric-resume.up.railway.app/python-client-progress/",
+  "tested_code_revision": "a4dbc5f93693afbc433cbc858348b9cde85979c8",
+  "base": "3ef427d2058c2b1b140c92fbc4832a1c4dadc1e4",
+  "target_branch": "feature/python-client",
+  "platform": "Windows 11 / Python 3.12.7",
+  "deployment": "Real authenticated hosted HTTPS Java services, not IDE-managed localhost services",
+  "environment_provenance": "ide-connected-semantic-verification.json retains service URLs/IDs, accepted-source manifest and original read-only evidence; deployed binary Git revision remains unknown",
+  "live_runs": [
+    {
+      "command": "python tools/run_functional_acceptance.py --suite connected-semantic-readiness --suite connected-unit-contract --suite connected-onboarding --suite connected-context-recovery --suite connected-tiny-compute --allow-owned-work --profile examples/hosted-deployment.json --certificate <private-ENGINE-certificate-path> --report <fresh-reports>/progress-page-retest.xml",
+      "tests": 6, "passed": 3, "failed": 3, "errors": 0, "skipped": 0, "exit_code": 1
+    },
+    {
+      "command": "python tools/run_functional_acceptance.py --suite connected-credential-renewal --profile examples/hosted-deployment.json --certificate <private-ENGINE-certificate-path> --report <fresh-reports>/progress-renewal.xml",
+      "tests": 1, "passed": 1, "failed": 0, "errors": 0, "skipped": 0, "exit_code": 0
+    }
+  ],
+  "passed_ids": [
+    "tests/functional/test_connected_semantics.py::test_connected_reasoner_publishes_accepted_semantic_knowledge",
+    "tests/functional/test_connected_workflows.py::test_connected_onboarding_and_profile_roundtrip",
+    "tests/functional/test_connected_workflows.py::test_connected_context_recovers_in_a_fresh_process",
+    "tests/functional/test_connected_workflows.py::test_connected_certificate_renewal_preserves_identity"
+  ],
+  "failed_ids": [
+    "tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit[m]",
+    "tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit[mm]",
+    "tests/functional/test_connected_workflows.py::test_connected_tiny_terrestrial_region_completes"
+  ],
+  "compute_failure": {
+    "model_inspected": "staging.vxii.dependencies.terrestrial-region-explainer",
+    "definition": "earth:Terrestrial earth:Region",
+    "namespace": "staging.vxii.dependencies",
+    "namespace_is_forced_model_selection": false,
+    "projection": "EPSG:3857",
+    "bounds": [200000, 200500, 6000000, 6000400],
+    "grid": [5, 4],
+    "result_wait_timeout_seconds": 90,
+    "observed_runtime_job_id": 3,
+    "error_type": "JobFailedError",
+    "error": "Job 3: Resolution of earth:Terrestrial earth:Region failed: empty dataflow; Submission failed",
+    "computed_observation_available": false,
+    "java_root_cause_established": false
+  },
+  "scope_and_cleanup": {
+    "normal_peer_initialization": true,
+    "only_test_owned_sessions_contexts_jobs": true,
+    "context_and_session_release": "Pilot releases returned true; functional teardown had zero errors and requires true release responses",
+    "project_imports_or_edits": false,
+    "service_restarts_or_TEST_controls": false,
+    "load_or_capacity_test": false,
+    "pilot_terminal_job_cancel_false_is_not_cancellation_acceptance": true,
+    "preliminary_script_error": "Unsupported models_allowed keyword caused local TypeError; corrected to supported namespace option before actual functional retest; not a product defect"
+  },
+  "blocked_or_unrun": [
+    "Computed values/coordinates/geometry/native units, m/mm numeric mediation and scenario/observer/grid execution",
+    "Active cancellation, timeout recovery and successful retained observation/Runtime Job/Resolver Job recovery",
+    "GeoJSON/GeoTIFF native export, mask/orientation/overwrite/stream acceptance against hosted stack",
+    "xarray analysis and observation provenance against a real computed hosted result",
+    "Second-scientist sharing/private restoration/export/provenance denial and cold ACL checks",
+    "Runtime restart durability and original exact pinned-worldview rerun",
+    "Independent provider scientific accuracy and computation throughput",
+    "Deliberate credential expiry/principal switching and independent issued-token onboarding"
+  ],
+  "python_fixes": [
+    "Explicitly include only examples/hosted-deployment.json in source distribution; verified absent before and present after",
+    "Explicit owned-work authorization, direct-work guard, cleared ambient mutation flag on metadata-only runs, and rejection of mixed connected/owned-TEST suites"
+  ],
+  "offline": {
+    "final_tests": 1073, "failures": 0, "errors": 0, "skipped": 0,
+    "warnings": "One existing Rasterio NotGeoreferencedWarning",
+    "preceding_branch_coverage_run_tests": 1072,
+    "coverage_count_difference": "Final certificate-renewal suite-routing parameter added after coverage run; no SDK production code changed",
+    "existing_new_module_and_changed_code_coverage_gates": "passed",
+    "ruff_E9_F63_F7_F82": "passed",
+    "sdist_and_wheel_build": "passed",
+    "fresh_core_only_installed_wheel": "passed; Client/Handle smoke, numpy/rasterio/xarray absent"
+  },
+  "evidence_root": "C:/Users/lumsd/AppData/Local/Temp/opencode/ide-throughput-hosted-probe-20261017",
+  "evidence_sha256": {
+    "progress-page-retest.xml": "d847d5dc9a993eaaeb665c4289c8df1bc2ce2b2a579bdf57ccb17d026909264d",
+    "progress-renewal.xml": "12c26195cf065062925fd6ed43840cd33a6d346f41d8a3e662de557adee7818a",
+    "progress-final-offline-complete.xml": "1151cbf60baded270c1c4fc8f3423fc8c36e02cb12764c3451b4420c70b7cabe",
+    "progress-final-offline.xml": "36f8a7d8e4c20d7f1c3953e4bd2269282be32f1862680747686fb087632af8f0",
+    "progress-final-coverage.json": "a128893c545f5a14767dffcaf292c78158138d4a5919200e89f33a889abe4fc7"
+  },
+  "executable_sha256_lf": {
+    "tests/functional/test_connected_workflows.py": "ed9b284fedd41b275035e5bc2afd8c3a0ca6f0d43ada0cf67a8390d98d49ada9",
+    "tools/run_functional_acceptance.py": "ac2084c6fea70b84b5967e848aaf3a4b69dacffc6ebfa58acb6f7e5924645623"
+  },
+  "scientific_acceptance": false,
+  "original_pinned_failure_declared_fixed": false
+}

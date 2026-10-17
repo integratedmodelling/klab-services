@@ -123,6 +123,23 @@ production Hub/provider accuracy.
 
 ## Run
 
+### Existing authenticated deployments (read-only)
+
+The current hosted compatibility results and exact passing/failing node IDs are
+in [the compatibility report](develop-worldview-compatibility-issue.md). These
+two suites require explicit trusted endpoints and a private ENGINE certificate,
+not an owned TEST state:
+
+```powershell
+python tools/run_functional_acceptance.py --suite connected-semantic-readiness --suite connected-unit-contract --profile examples/hosted-deployment.json --certificate "$HOME\.klab\klab.cert" --report C:\existing-parent\fresh-connected.xml
+```
+
+They perform authentication, metadata reads and semantic resolution only. They
+do not initialize peer catalogs, create scientific objects, import projects or
+restart services. Do not substitute the mutating owned-stack suites below when
+targeting shared services. These opt-in tests are excluded from ordinary pytest;
+missing configuration is a failure, not a skip.
+
 From `python-client/`, offline checks:
 
 ```powershell

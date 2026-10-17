@@ -1,0 +1,149 @@
+{
+  "date": "2026-10-17",
+  "branch": "feature/python-client-ide-throughput",
+  "base": "3ef427d2058c2b1b140c92fbc4832a1c4dadc1e4",
+  "tested_tree": "Uncommitted Python-only diagnostic changes; executable source hashes below",
+  "platform": "Windows 11 / Python 3.12.7",
+  "authentication": "Actual private ENGINE certificate against its matching verified HTTPS Hub; passed through existing Python HubCertificateProvider",
+  "hub": "https://integratedmodelling.org/hub",
+  "deployment": "Explicitly selected hosted HTTPS services; not the user's IDE-managed localhost services",
+  "service_urls": {
+    "resources": "https://services.integratedmodelling.org/resources/main",
+    "reasoner": "https://services.integratedmodelling.org/reasoner",
+    "resolver": "https://services.integratedmodelling.org/resolver",
+    "runtime": "https://services.integratedmodelling.org/runtime/main"
+  },
+  "hosted_resources": {
+    "advertised_workspace": "im-main",
+    "adopted_worldview": "imod",
+    "model_entries": 26,
+    "model_project": "klab.staging.vxii",
+    "generic_workspace_project_lists": "Returned empty lists; this alone does not establish access rights or absent projects",
+    "example_models": ["staging.vxii.basic.elevation-quantifier", "staging.vxii.devtests.elevation-quantifier"],
+    "suitable_scientific_reference_model_selected": false
+  },
+  "hosted_reasoner": {
+    "accepted_generation_before": 1,
+    "accepted_generation_after": 1,
+    "bean_status": "VALID",
+    "logical_status": "VALID",
+    "diagnostic_count": 32,
+    "accepted_source_manifest_sha256_before_and_after": "8927eae17adba604aa8c841196bdf5ed470a9990df1b7a25820a44960c68314c",
+    "deployed_binary_git_revision": "Not established"
+  },
+  "identity_only_diagnostic": {
+    "command": "python tools/run_connected_semantic_probe.py --profile examples/hosted-deployment.json --certificate <private-ENGINE-cert> --definition \"geography:Elevation in m\" --expected-urn geography:Elevation --samples 8 --warmup 1 --interval 1 --report <fresh-report.json>",
+    "exit_code": 0,
+    "passed": true,
+    "verified_requests": 8,
+    "warmup_requests": 1,
+    "concurrency": 1,
+    "idle_seconds_between_requests": 1,
+    "measurement_wall_seconds": 8.050175700016553,
+    "paced_diagnostic_requests_per_second": 0.9937671298259428,
+    "latency_seconds": [0.13149430000339635, 0.1308333000051789, 0.13084540001000278, 0.1307630000228528, 0.1322197999979835, 0.1299042000027839, 0.13555629999609664, 0.1264810000138823],
+    "median_latency_seconds": 0.13083935000759084,
+    "scope": "Warm, paced semantic HTTP/API requests and identity/numeric-type oracle only; not scientific or maximum-capacity throughput"
+  },
+  "strict_unit_gate": {
+    "command": "python tools/run_connected_semantic_probe.py --profile examples/hosted-deployment.json --certificate <private-ENGINE-cert> --definition \"geography:Elevation in m\" --expected-urn geography:Elevation --expected-unit m --samples 1 --warmup 0 --interval 1 --report <fresh-unit-report.json>",
+    "exit_code": 1,
+    "passed": false,
+    "validation_error": "Requested unit is absent or differs in the resolved observable; do not invent mediation"
+  },
+  "connected_functional_tests": {
+    "command": "python tools/run_functional_acceptance.py --suite connected-semantic-readiness --suite connected-unit-contract --profile examples/hosted-deployment.json --certificate <private-ENGINE-cert> --report <evidence-root>/connected-functional.xml",
+    "exit_code": 1,
+    "tests": 3,
+    "passed": 1,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0,
+    "passed_ids": ["tests/functional/test_connected_semantics.py::test_connected_reasoner_publishes_accepted_semantic_knowledge"],
+    "failed_ids": [
+      "tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit[m]",
+      "tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit[mm]"
+    ],
+    "failure": "Raw Reasoner response does not preserve the requested unit; sdk_unit_present also false. No data values computed."
+  },
+  "raw_wire_cross_check": {
+    "route": "POST /reasoner/api/v1/resolve/observable on the selected hosted Reasoner base",
+    "sdk_transport_path": "POST /api/v1/resolve/observable",
+    "request_bodies": ["geography:Elevation in m", "geography:Elevation in mm"],
+    "both_semantic_urns": "geography:Elevation",
+    "both_observable_urns": "geography:Elevation",
+    "unit_field_present_in_either_response": false,
+    "same_entire_decoded_payload": true,
+    "canonical_wire_payload_sha256": "de827c664051702ed4304f2f139b721088fb4ed9481f1a7d113688807979a7b8",
+    "hash_encoding": "UTF-8 of json.dumps(payload,sort_keys=True,separators=(',',':')) before DTO conversion",
+    "root_cause": "Not established; deployed observable response lacks the existing workflow's unit contract. No computed-value failure was tested."
+  },
+  "scientific_acceptance": false,
+  "original_issue_reinspection": {
+    "shared_gate": "tools/workflows/develop_compatibility.py::require_semantic_readiness",
+    "actual_hosted_shared_gate_run": "Passed via borrowed authenticated SDK client; no TEST token file",
+    "original_minimal_test_calling_this_gate": "tests/functional/test_develop_compatibility.py::test_reasoner_publishes_accepted_semantic_knowledge",
+    "original_full_functional_test_or_restart_run_on_hosted_stack": false,
+    "new_connected_functional_readiness_test_run_on_hosted_stack": "Passed; calls the same original readiness helper",
+    "original_missing_import_and_domain_cases_rerun_with_old_pins_this_pass": false,
+    "old_pinned_candidate_source_entries": 28,
+    "hosted_accepted_source_entries": 28,
+    "common_keys": 27,
+    "matching_common_hashes": 0,
+    "source_keys_unique_to_each_map": 1,
+    "source_hash_note": "No same-input comparison; byte-level hash differences do not count semantic changes",
+    "local_ide": {"authenticated": true, "adopted_worldview": null, "workspace_names": [], "input_generation": 0, "accepted_generation": 0, "bean_status": "NOT_CHECKED", "logical_status": "UNAVAILABLE"},
+    "missing_import_status": "Historical repro retained; not exercised in unloaded local stack; not exposed by accepted hosted snapshot",
+    "domain_failure_status": "Historical repro retained; hosted readiness passes under different unproven-equivalent inputs; old tuple not declared repaired",
+    "java_guard_source_reinspected": "WorldviewDomainSupport.validate unchanged null/NOTHING/DOMAIN guard at develop d8e16b277a616b63165b857018722bba658c0007"
+  },
+  "scientific_computation_throughput": "Not run",
+  "offline_validation": {
+    "command": "python -m pytest -q tests/unit tests/integration --junitxml=<evidence-root>/offline-connected-tests.xml",
+    "tests": 1060,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "warnings": 1,
+    "exit_code": 0,
+    "lint_command": "python -m ruff check src tests examples tools --select E9,F63,F7,F82",
+    "lint_exit_code": 0
+  },
+  "sessions_created": 0,
+  "contexts_created": 0,
+  "observations_submitted": 0,
+  "peer_catalog_initialization": false,
+  "projects_imported": 0,
+  "service_restarts": 0,
+  "tls_relaxed": false,
+  "credentials_in_reports": false,
+  "local_ide_state_modified": false,
+  "upstream_local_input_research": {
+    "java_validation_document_revision": "d8e16b277a616b63165b857018722bba658c0007",
+    "imod_corpus_revision": "253d1046a1e04b4b45bc67a32b93a65829faa2f5",
+    "odo_release": "0.1.1",
+    "odo_source_revision": "f49f894ad788ba26656941069518c7eb7b904998",
+    "public_odo_lf_sha256": "f21d59b13afcb5c5629a2823d04c2a6560b09c374ca4c85f8d55edfce5431b8c",
+    "public_odo_converted_to_crlf_sha256_matches_documented_private_core": "2e840f49147a07b971146c24111c56f6831ea87347ff86e45588c1233a58c9bc",
+    "local_import_or_readiness_test_of_this_pair": "Not run; authority/component availability and complete deployment still require validation"
+  },
+  "executable_source_sha256_lf": {
+    "tools/run_connected_semantic_probe.py": "cf3af9e79127a1562778af754ead7744df895ce2205c5eb3f6b86d95138430ba",
+    "tests/unit/test_connected_semantic_probe.py": "192edabf69e26c23b8714d91aca858f1dcd09978cec9e80679a17a1464da3c3d",
+    "tools/workflows/develop_compatibility.py": "7fc135efbfd8f6b1bcaedb226f4d84bc6dc8dbaf804d29b5e2fa9ac36c3ec0bd",
+    "tests/unit/test_develop_compatibility_workflow.py": "21b66996abea57f45b0d32b5fbba5f94a3311de9b285736379bd413799554a22",
+    "tools/run_functional_acceptance.py": "03f99a6ccd6c1c87711abb8ed5fa3affe186a9fc99cdb7c2e1d16921430aebe6",
+    "tests/functional/test_connected_semantics.py": "1460c68a4861ab6ba5aa5ee8210587941939270ae8f80e69b7a026848063a3f7",
+    "tests/unit/test_functional_runners.py": "0b7b1f0bdea7829e07de49289439bd3978bc7735bcbd29b0a78b966591c8eeba"
+  },
+  "evidence_root": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ide-throughput-hosted-probe-20261017",
+  "evidence_sha256": {
+    "deployment.json": "8b690edff10f4a5474ae3c68a4e95893f0a3263b46792d5fb348fba1dcca54fc",
+    "strict-unit.json": "9075c1b4d736bbf49b0a89c7c78eb174f6e1d70c3c9d68ec58d6a44c725f4f37",
+    "semantic-identity.json": "e9395965bc704da347997d63722452fe4e3404af8042be0ed829a21eb28e1c51",
+    "original-readiness-gate/develop-readiness.json": "30065a424bbd38ad1bf58b72a6386b5ded353f17fda2630d9d42626b24d02c65",
+    "offline-final.xml": "ab528e3bf46a889441fc91d7d5bd4a4784829964eb63fac526c61be3bd0cf83f",
+    "connected-functional.xml": "b3dc597fdeca88c255f9b464b2104efc62c8dabe88b5abaf2453b6add9ec9274",
+    "offline-connected-tests.xml": "506e5cd2581312cfd286cf95ec39deb08eb435b3b9f3095d5634d7eb700ed7b3"
+  }
+}
