@@ -97,10 +97,34 @@ public final class AuthorityIdentityResolver {
       }
       concept.getMetadata().put(Authority.HIERARCHY_STATUS,
           (pending ? Authority.HierarchyStatus.DEFERRED : Authority.HierarchyStatus.COMPLETE).name());
-      references.put(concept.getUrn(), new String[] {authorityName, externalId});
+      references.put(concept.getUrn(), new String[] {authorityName, identity.getId()});
     });
     if (expanded) enriched.run();
     return known.get(id);
+  }
+
+  /** Only concepts admitted by this live resolver can select a configured provider. Metadata alone
+   * never authorizes dispatch. Different bindings are deliberately not compared by one provider. */
+  public synchronized Authority.SemanticDistance semanticDistance(Concept target, Concept candidate) {
+    var a = admittedReference(target); var b = admittedReference(candidate);
+    if (a == null || b == null) return Authority.SemanticDistance.unsupported();
+    var binding = bindings.get(a[0]);
+    if (!a[0].equals(b[0])) return Authority.SemanticDistance.unknown("Different authority configurations");
+    try {
+      var result = binding.provider().semanticDistance(binding.id(), a[1], b[1]);
+      return result == null ? Authority.SemanticDistance.unknown("Provider returned no distance") : result;
+    } catch (RuntimeException failure) {
+      return Authority.SemanticDistance.unknown("Authority distance evaluation failed");
+    }
+  }
+
+  private String[] admittedReference(Concept concept) {
+    var reference = references.get(concept.getUrn());
+    if (reference == null) return null;
+    var binding = bindings.get(reference[0]);
+    var known = binding == null ? null : resolved.get(binding);
+    return known != null && known.values().stream().anyMatch(c -> c.getUrn().equals(concept.getUrn()))
+        ? reference : null;
   }
 
   /** Explicit parent inspection or authority-to-authority subsumption may request enrichment. */

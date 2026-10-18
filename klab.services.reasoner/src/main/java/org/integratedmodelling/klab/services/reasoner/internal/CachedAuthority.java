@@ -78,6 +78,11 @@ public final class CachedAuthority implements Authority {
     }
   }
 
+  @Override public synchronized SemanticDistance semanticDistance(String id, String target, String candidate) {
+    check(id);
+    return source.semanticDistance(providerId, target, candidate);
+  }
+
   @Override public synchronized Identity resolveIdentity(String id, String identity) {
     check(id);
     return resolve(source, "", identity, ResolutionMode.CONFIGURED);

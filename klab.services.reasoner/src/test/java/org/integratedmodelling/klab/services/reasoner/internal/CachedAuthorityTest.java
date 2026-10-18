@@ -18,6 +18,24 @@ class CachedAuthorityTest {
     catch (java.net.MalformedURLException e) { throw new AssertionError(e); }
   }
 
+  @Test void distanceForwardsTheTransientBridgeAndIsNeverPersistentlyCached() {
+    var source=org.mockito.Mockito.mock(Authority.class);
+    var request=request();
+    org.mockito.Mockito.when(source.getUrn()).thenReturn("test.authority");
+    org.mockito.Mockito.when(source.getCachePolicy()).thenReturn(new Authority.CachePolicy("v1",100,100,100));
+    org.mockito.Mockito.when(source.configure(request)).thenReturn("transient");
+    org.mockito.Mockito.when(source.semanticDistance("transient","target","candidate"))
+        .thenReturn(new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE,1,List.of()))
+        .thenReturn(Authority.SemanticDistance.unknown("changed"));
+    var wrapper=new CachedAuthority(source,directory,Clock.systemUTC(),"implementation");
+    String id=wrapper.configure(request);
+    assertEquals(1,wrapper.semanticDistance(id,"target","candidate").distance());
+    assertEquals(Authority.DistanceStatus.UNKNOWN,wrapper.semanticDistance(id,"target","candidate").status());
+    org.mockito.Mockito.verify(source,org.mockito.Mockito.times(2)).semanticDistance("transient","target","candidate");
+    wrapper.releaseConfiguration(id);
+    assertThrows(IllegalArgumentException.class,()->wrapper.semanticDistance(id,"target","candidate"));
+  }
+
   private Authority.ConfigurationRequest request(String worldview, String name, String root, int release) {
     return new Authority.ConfigurationRequest(worldview, name, root,
         Map.of("urn", "test.authority", "release", release));

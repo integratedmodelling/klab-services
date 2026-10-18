@@ -16,10 +16,15 @@ public class TaxaAuthority implements Authority {
         id, "taxon_" + id, "TAXA", null, List.of(), List.of(), "Live result", "Live " + id,
         1, "TAXA:" + id, Map.of(), Set.of("SPECIES"), HierarchyStatus.COMPLETE);
   }
+  public SemanticDistance semanticDistance(String configuration,String target,String candidate) {
+    if (!Objects.equals(configuration,configured)) throw new IllegalStateException("Unconfigured fixture");
+    return new SemanticDistance(DistanceStatus.COMPATIBLE,2,List.of("Owned live fixture"));
+  }
   public List<Identity> search(String query, String filter, String id) { return List.of(resolveIdentity(id, query)); }
   public Authority subAuthority(String catalog) { return this; }
   public Capabilities getCapabilities() { return new FixtureCapabilities(); }
   public static class FixtureCapabilities implements Capabilities {
+    public boolean isSemanticDistanceSupported() { return true; }
     public String getDescription() { return "Portable recorded public-provider fixture"; }
     public boolean isSearchable() { return true; } public boolean isFuzzy() { return false; }
     public boolean areSubAuthoritiesSearchFilters() { return true; }

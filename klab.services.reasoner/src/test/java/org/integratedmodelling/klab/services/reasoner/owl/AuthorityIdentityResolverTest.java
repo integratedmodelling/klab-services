@@ -66,6 +66,27 @@ class AuthorityIdentityResolverTest {
     verify(provider, never()).resolveIdentity("bridge", "Parent");
   }
 
+  @Test void distanceDispatchUsesCanonicalCodesAndExactLiveBindingsAndFailsClosed() {
+    var owl=new TestOWL(); owl.requireOntology("bio").define(List.of(Axiom.ClassAssertion("Root",EnumSet.of(SemanticType.IDENTITY))));
+    var provider=mock(Authority.class); var bindings=new AuthorityBindings();
+    for(String name:List.of("AA","BB")) {
+      var request=new Authority.ConfigurationRequest("wv",name,"bio:Root",Map.of("urn","test"));
+      when(provider.configure(request)).thenReturn("bridge-"+name); bindings.configure(request,provider);
+      var canonicalIdentity=identity("Canonical",null); var otherIdentity=identity("Other",null);
+      when(provider.resolveIdentity("bridge-"+name,"alias")).thenReturn(canonicalIdentity);
+      when(provider.resolveIdentity("bridge-"+name,"Other")).thenReturn(otherIdentity);
+    }
+    var resolver=new AuthorityIdentityResolver(owl,bindings);
+    var a=resolver.resolve("AA","alias"); var other=resolver.resolve("AA","Other"); var b=resolver.resolve("BB","alias");
+    when(provider.semanticDistance("bridge-AA","Canonical","Other")).thenReturn(new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE,3,List.of()));
+    assertEquals(3,resolver.semanticDistance(a,other).distance());
+    assertEquals(Authority.DistanceStatus.UNKNOWN,resolver.semanticDistance(a,b).status());
+    verify(provider,never()).semanticDistance(eq("bridge-BB"),anyString(),anyString());
+    when(provider.semanticDistance("bridge-AA","Canonical","Other")).thenThrow(new IllegalStateException("unavailable"));
+    assertEquals(Authority.DistanceStatus.UNKNOWN,resolver.semanticDistance(a,other).status());
+    bindings.clear(); assertEquals(Authority.DistanceStatus.UNSUPPORTED,resolver.semanticDistance(a,other).status());
+  }
+
   private static class TestOWL extends OWL {
     TestOWL() {
       super(mock(Scope.class));

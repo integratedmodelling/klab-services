@@ -393,6 +393,14 @@ public final class CapturedAuthorityCatalog {
       try { return JSON.treeToValue(owned, CachedAuthority.StoredIdentity.class); }
       catch (IOException failure) { throw new IllegalStateException(failure); }
     }
+    @Override public synchronized SemanticDistance semanticDistance(String id, String target, String candidate) {
+      check(id);
+      if (!getCapabilities().isSemanticDistanceSupported()) return SemanticDistance.unsupported();
+      if (interactive.getAsBoolean()) return live().semanticDistance(bridge.liveId, target, candidate);
+      // Candidate compilation must not instantiate a mutable live provider or invent uncaptured results.
+      return SemanticDistance.unknown("Authority distance is not captured for candidate compilation");
+    }
+
     @Override public synchronized Identity resolveIdentity(String id, String code) { return resolveIdentity(id, code, ResolutionMode.CONFIGURED); }
     @Override public synchronized Identity resolveIdentity(String id, String code, ResolutionMode mode) {
       check(id);

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
+import java.util.ArrayList;
+import org.integratedmodelling.klab.api.services.Authority;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,6 +167,186 @@ class SemanticMatcherTest {
     assertTrue(matcher.semanticDistance(characterization, classification) < 0);
   }
 
+  @Test void authorityDistanceIsDirectionalAndUnknownDoesNotFallBackToParentsOrCaches() {
+    var graph = new FakeOperations(); var target = predicate("AuthorityTarget"); var candidate = predicate("AuthorityCandidate");
+    graph.parents.put(candidate,List.of(target));
+    graph.delegated.put(Pair.of(target,candidate), new org.integratedmodelling.klab.api.services.Authority.SemanticDistance(
+        org.integratedmodelling.klab.api.services.Authority.DistanceStatus.COMPATIBLE,2,List.of()));
+    var matcher = new SemanticMatcher(graph);
+    assertEquals(100,matcher.semanticDistance(target,candidate));
+    graph.delegated.put(Pair.of(target,candidate),org.integratedmodelling.klab.api.services.Authority.SemanticDistance.unknown("Policy changed"));
+    assertTrue(matcher.semanticDistance(target,candidate)<0);
+    graph.delegated.put(Pair.of(candidate,target),org.integratedmodelling.klab.api.services.Authority.SemanticDistance.unknown("Not a refinement"));
+    assertTrue(matcher.semanticDistance(candidate,target)<0);
+    graph.delegated.clear(); assertTrue(matcher.semanticDistance(target,candidate)>0);
+  }
+
+  @Test void authorityTraitsMediateWithoutSkippingOrdinaryHeadAndContextChecks() {
+    var graph = new FakeOperations(); var a=predicate("PatternA"); var b=predicate("PatternB");
+    var target=concept("TreeA"); var candidate=concept("TreeB"); var head=concept("Tree");
+    graph.heads.put(target,head); graph.heads.put(candidate,head);
+    graph.traits.put(target,List.of(a)); graph.traits.put(candidate,List.of(b));
+    graph.delegated.put(Pair.of(a,b),new org.integratedmodelling.klab.api.services.Authority.SemanticDistance(
+        org.integratedmodelling.klab.api.services.Authority.DistanceStatus.COMPATIBLE,1,List.of()));
+    var matcher=new SemanticMatcher(graph); assertEquals(1,matcher.semanticDistance(target,candidate));
+    graph.heads.put(candidate,concept("WrongHead")); assertTrue(matcher.semanticDistance(target,candidate)<0);
+    graph.heads.put(candidate,head); graph.inherent.put(candidate,concept("WrongContext"));
+    assertTrue(matcher.semanticDistance(target,candidate,concept("Context"))<0);
+  }
+
+  @Test void identicalAuthorityTraitMustRemainReflexiveWhenProviderIsUnknown() {
+    var g=new FakeOperations(); var a=predicate("A"); var target=concept("Target"); var candidate=concept("Candidate"); var head=concept("Head");
+    g.heads.put(target,head);g.heads.put(candidate,head);g.traits.put(target,List.of(a));g.traits.put(candidate,List.of(a));
+    g.delegated.put(Pair.of(a,a),org.integratedmodelling.klab.api.services.Authority.SemanticDistance.unknown("Replay-only evidence unavailable"));
+    assertEquals(0,new SemanticMatcher(g).semanticDistance(target,candidate));
+  }
+  @Test void unrelatedCrossBindingUnknownMustNotVetoAnUnsupportedExactTrait() {
+    var g=new FakeOperations(); var a=predicate("LegacyA");var b=predicate("OtherBindingB");var target=concept("Target");var candidate=concept("Candidate");var head=concept("Head");
+    g.heads.put(target,head);g.heads.put(candidate,head);g.traits.put(target,List.of(a,b));g.traits.put(candidate,List.of(a,b));
+    g.delegated.put(Pair.of(a,b),org.integratedmodelling.klab.api.services.Authority.SemanticDistance.unknown("Different authority configurations"));
+    g.delegated.put(Pair.of(b,a),org.integratedmodelling.klab.api.services.Authority.SemanticDistance.unknown("Different authority configurations"));
+    assertEquals(0,new SemanticMatcher(g).semanticDistance(target,candidate));
+  }
+
+
+  @Test void unknownNestedAuthorityTraitMustBlockInherentFillerHierarchyFallback() {
+    var g=new FakeOperations();var a=predicate("PatternA");var b=predicate("PatternB");var target=concept("Target");var candidate=concept("Candidate");var head=concept("Head");var targetFiller=concept("TargetFiller");var candidateFiller=concept("CandidateFiller");
+    g.heads.put(target,head);g.heads.put(candidate,head);g.directInherent.put(target,targetFiller);g.directInherent.put(candidate,candidateFiller);
+    g.parents.put(candidateFiller,List.of(targetFiller));g.traits.put(targetFiller,List.of(a));g.traits.put(candidateFiller,List.of(b));g.parents.put(b,List.of(a));
+    g.delegated.put(Pair.of(a,b),org.integratedmodelling.klab.api.services.Authority.SemanticDistance.unknown("Policy cannot admit candidate"));
+    assertTrue(new SemanticMatcher(g).semanticDistance(target,candidate)<0,"UNKNOWN nested identity must not fall back to OWL traits");
+  }
+
+  @Test void exactAuthorityHeadsAndTraitsDoNotAskTheProviderForReflexivity() {
+    var g = new FakeOperations(); var a = predicate("A");
+    g.delegated.put(Pair.of(a, a), Authority.SemanticDistance.unknown("Replay only"));
+    var matcher = new SemanticMatcher(g);
+    assertEquals(0, matcher.semanticDistance(a, a));
+    var target = concept("Target"); var candidate = concept("Candidate"); var head = concept("Head");
+    g.heads.put(target, head); g.heads.put(candidate, head);
+    g.traits.put(target, List.of(a)); g.traits.put(candidate, List.of(a));
+    assertEquals(0, matcher.semanticDistance(target, candidate));
+    assertTrue(g.distanceCalls.isEmpty());
+  }
+
+  @Test void onlyUnsupportedFallsBackToOrdinaryAuthorityHeadHierarchy() {
+    var g = new FakeOperations(); var a = predicate("A"); var b = predicate("B");
+    g.parents.put(b, List.of(a)); var matcher = new SemanticMatcher(g);
+    for (var status : List.of(Authority.DistanceStatus.UNKNOWN, Authority.DistanceStatus.INCOMPATIBLE,
+        Authority.DistanceStatus.UNSUPPORTED)) {
+      g.delegated.put(Pair.of(a, b), new Authority.SemanticDistance(status, -1, List.of()));
+      int actual = matcher.semanticDistance(a, b);
+      if (status == Authority.DistanceStatus.UNSUPPORTED) assertEquals(50, actual);
+      else assertTrue(actual < 0, status.toString());
+    }
+  }
+
+  @Test void crossBindingAlternativeOrderDoesNotChangeLegacyExactMatches() {
+    var g = new FakeOperations(); var a = predicate("LegacyA"); var b = predicate("OtherBindingB");
+    var target = concept("Target"); var candidate = concept("Candidate"); var head = concept("Head");
+    g.heads.put(target, head); g.heads.put(candidate, head); g.traits.put(target, List.of(a, b));
+    g.delegated.put(Pair.of(a, b), Authority.SemanticDistance.unknown("Different bindings"));
+    g.delegated.put(Pair.of(b, a), Authority.SemanticDistance.unknown("Different bindings"));
+    var matcher = new SemanticMatcher(g);
+    for (var order : List.of(List.of(a, b), List.of(b, a))) {
+      g.traits.put(candidate, order); assertEquals(0, matcher.semanticDistance(target, candidate));
+    }
+  }
+
+  @Test void providerAlternativesChooseTheLowestCompatibleDistance() {
+    var g = new FakeOperations(); var a = predicate("A"); var b = predicate("B"); var c = predicate("C");
+    var target = concept("Target"); var candidate = concept("Candidate"); var head = concept("Head");
+    g.heads.put(target, head); g.heads.put(candidate, head);
+    g.traits.put(target, List.of(a, b, c));
+    g.delegated.put(Pair.of(a, b), new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE, 4, List.of()));
+    g.delegated.put(Pair.of(a, c), new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE, 1, List.of()));
+    var matcher = new SemanticMatcher(g);
+    for (var order : List.of(List.of(b, c), List.of(c, b))) {
+      g.traits.put(candidate, order); assertEquals(1, matcher.semanticDistance(target, candidate));
+    }
+  }
+
+  @Test void ordinaryTraitSpecializationsAndExtraTraitsKeepTheirExistingRestrictions() {
+    var g = new FakeOperations(); var a = predicate("A"); var b = predicate("B");
+    var target = concept("Target"); var candidate = concept("Candidate"); var head = concept("Head");
+    g.heads.put(target, head); g.heads.put(candidate, head); g.traits.put(target, List.of(a));
+    g.parents.put(b, List.of(a)); g.traits.put(candidate, List.of(b));
+    var matcher = new SemanticMatcher(g);
+    assertTrue(matcher.semanticDistance(target, candidate) < 0);
+    g.delegated.put(Pair.of(a, b), new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE, 1, List.of()));
+    assertEquals(1, matcher.semanticDistance(target, candidate));
+    g.traits.put(candidate, List.of(a, b));
+    assertTrue(matcher.semanticDistance(target, candidate) < 0);
+  }
+
+  @Test void everyFillerPathHonorsProviderPolicyAndRetainsUnsupportedHierarchyScores() {
+    for (String path : List.of("directInherent", "inherent", "goal", "cooccurrent", "causant", "caused",
+        "adjacent", "compresent", "relativeTo")) {
+      var g = new FakeOperations(); var a = predicate("A"); var b = predicate("B");
+      var target = concept("Target"); var candidate = concept("Candidate"); var head = concept("Head");
+      var targetFiller = concept("TargetFiller"); var candidateFiller = concept("CandidateFiller");
+      g.heads.put(target, head); g.heads.put(candidate, head);
+      setFiller(g, path, target, targetFiller); setFiller(g, path, candidate, candidateFiller);
+      g.parents.put(candidateFiller, List.of(targetFiller)); g.parents.put(b, List.of(a));
+      g.traits.put(targetFiller, List.of(a)); g.traits.put(candidateFiller, List.of(b));
+      var matcher = new SemanticMatcher(g);
+      for (var status : Authority.DistanceStatus.values()) {
+        g.delegated.put(Pair.of(a, b), new Authority.SemanticDistance(status,
+            status == Authority.DistanceStatus.COMPATIBLE ? 4 : -1, List.of()));
+        int actual = matcher.semanticDistance(target, candidate);
+        switch (status) {
+          case COMPATIBLE -> assertEquals(5, actual, path);
+          case UNSUPPORTED -> assertEquals(11, actual, path);
+          case UNKNOWN, INCOMPATIBLE -> assertTrue(actual < 0, path + ": " + status);
+        }
+      }
+    }
+  }
+
+  @Test void identicalFillerTraitsAndUnrelatedUnknownAlternativesRemainUsable() {
+    var g = new FakeOperations(); var a = predicate("A"); var b = predicate("B");
+    var target = concept("Target"); var candidate = concept("Candidate"); var head = concept("Head");
+    var targetFiller = concept("TargetFiller"); var candidateFiller = concept("CandidateFiller");
+    g.heads.put(target, head); g.heads.put(candidate, head);
+    g.inherent.put(target, targetFiller); g.inherent.put(candidate, candidateFiller);
+    g.parents.put(candidateFiller, List.of(targetFiller));
+    g.traits.put(targetFiller, List.of(a, b)); g.traits.put(candidateFiller, List.of(b, a));
+    g.delegated.put(Pair.of(a, a), Authority.SemanticDistance.unknown("Replay only"));
+    g.delegated.put(Pair.of(a, b), Authority.SemanticDistance.unknown("Different bindings"));
+    g.delegated.put(Pair.of(b, a), Authority.SemanticDistance.unknown("Different bindings"));
+    assertEquals(1, new SemanticMatcher(g).semanticDistance(target, candidate));
+  }
+
+  @Test void changingTraitPolicyCannotReuseAnEarlierCompatibleResult() {
+    var g = new FakeOperations(); var a = predicate("A"); var b = predicate("B");
+    var target = concept("Target"); var candidate = concept("Candidate"); var head = concept("Head");
+    g.heads.put(target, head); g.heads.put(candidate, head);
+    g.traits.put(target, List.of(a)); g.traits.put(candidate, List.of(b));
+    g.delegated.put(Pair.of(a, b), new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE, 2, List.of()));
+    var matcher = new SemanticMatcher(g); assertEquals(2, matcher.semanticDistance(target, candidate));
+    g.delegated.put(Pair.of(a, b), Authority.SemanticDistance.unknown("Evidence changed"));
+    assertTrue(matcher.semanticDistance(target, candidate) < 0);
+  }
+
+  @Test void compatibleMediationPrecedesAnUnsupportedHierarchyAlternative() {
+    var g = new FakeOperations(); var a = predicate("A"); var b = predicate("B"); var c = predicate("C");
+    var target = concept("Target"); var candidate = concept("Candidate"); var head = concept("Head");
+    g.heads.put(target, head); g.heads.put(candidate, head);
+    g.traits.put(target, List.of(a, b)); g.parents.put(b, List.of(a));
+    g.delegated.put(Pair.of(a, c), new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE, 4, List.of()));
+    g.delegated.put(Pair.of(b, c), Authority.SemanticDistance.unknown("Different bindings"));
+    var matcher = new SemanticMatcher(g);
+    for (var order : List.of(List.of(b, c), List.of(c, b))) {
+      g.traits.put(candidate, order); assertEquals(4, matcher.semanticDistance(target, candidate));
+    }
+  }
+
+  private static void setFiller(FakeOperations g, String path, Concept owner, Concept filler) {
+    if (path.equals("directInherent")) g.directInherent.put(owner, filler);
+    else if (path.equals("inherent")) g.inherent.put(owner, filler);
+    else g.fillers.computeIfAbsent(path, ignored -> new HashMap<>()).put(owner, filler);
+  }
+
   private static Concept concept(String name) {
     var ret = new ConceptImpl();
     ret.setUrn("test:" + name);
@@ -186,15 +368,24 @@ class SemanticMatcherTest {
     private final Map<Concept, Concept> directInherent = new HashMap<>();
     private final Map<Concept, Concept> heads = new HashMap<>();
     private long revision;
+    private final Map<String, Map<Concept, Concept>> fillers = new HashMap<>();
+    private final List<Pair<Concept, Concept>> distanceCalls = new ArrayList<>();
+    private final Map<Concept,Collection<Concept>> traits = new HashMap<>();
+    private final Map<Pair<Concept,Concept>,org.integratedmodelling.klab.api.services.Authority.SemanticDistance> delegated = new HashMap<>();
+    @Override public boolean hasConfiguredAuthorities() { return !delegated.isEmpty(); }
+    @Override public org.integratedmodelling.klab.api.services.Authority.SemanticDistance authorityDistance(Concept target,Concept candidate) {
+      distanceCalls.add(Pair.of(target, candidate));
+      return delegated.getOrDefault(Pair.of(target,candidate),org.integratedmodelling.klab.api.services.Authority.SemanticDistance.unsupported());
+    }
 
     @Override
     public Collection<Concept> traits(Semantics concept) {
-      return List.of();
+      return traits.getOrDefault(concept.asConcept(),List.of());
     }
 
     @Override
     public boolean hasTrait(Semantics concept, Concept trait) {
-      return false;
+      return traits(concept).stream().anyMatch(candidate -> is(candidate, trait));
     }
 
     @Override
@@ -219,37 +410,37 @@ class SemanticMatcherTest {
 
     @Override
     public Concept goal(Semantics concept) {
-      return null;
+      return fillers.getOrDefault("goal", Map.of()).get(concept.asConcept());
     }
 
     @Override
     public Concept cooccurrent(Semantics concept) {
-      return null;
+      return fillers.getOrDefault("cooccurrent", Map.of()).get(concept.asConcept());
     }
 
     @Override
     public Concept causant(Semantics concept) {
-      return null;
+      return fillers.getOrDefault("causant", Map.of()).get(concept.asConcept());
     }
 
     @Override
     public Concept caused(Semantics concept) {
-      return null;
+      return fillers.getOrDefault("caused", Map.of()).get(concept.asConcept());
     }
 
     @Override
     public Concept adjacent(Semantics concept) {
-      return null;
+      return fillers.getOrDefault("adjacent", Map.of()).get(concept.asConcept());
     }
 
     @Override
     public Concept compresent(Semantics concept) {
-      return null;
+      return fillers.getOrDefault("compresent", Map.of()).get(concept.asConcept());
     }
 
     @Override
     public Concept relativeTo(Semantics concept) {
-      return null;
+      return fillers.getOrDefault("relativeTo", Map.of()).get(concept.asConcept());
     }
 
     @Override

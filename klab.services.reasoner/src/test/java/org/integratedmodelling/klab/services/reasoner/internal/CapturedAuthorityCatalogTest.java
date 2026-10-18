@@ -17,10 +17,13 @@ class CapturedAuthorityCatalogTest {
     var provider = catalog.provider(fixture.binding(), request(), directory.resolve("interactive"), enabled::get);
     var id = provider.configure(AuthorityBindings.providerRequest(request()));
     assertTrue(provider.getCapabilities().isSearchable());
+    assertTrue(provider.getCapabilities().isSemanticDistanceSupported());
+    assertEquals(Authority.DistanceStatus.UNKNOWN,provider.semanticDistance(id,"target","candidate").status());
     assertThrows(UnsupportedOperationException.class, () -> provider.search("new-query", null, id));
     // The original installation can disappear after capture: accepted requests use owned bytes.
     Files.delete(fixture.data().resolve("components/plugins/klab.authority.taxa-1.0.0-SNAPSHOT-component.jar"));
     enabled.set(true);
+    assertEquals(2,provider.semanticDistance(id,"target","candidate").distance());
     assertEquals("new-query", provider.search("new-query", "SPECIES", id).getFirst().getId());
     assertEquals("selected-code", provider.resolveIdentity(id, "selected-code").getId());
     var view = provider.subAuthority("SPECIES");
