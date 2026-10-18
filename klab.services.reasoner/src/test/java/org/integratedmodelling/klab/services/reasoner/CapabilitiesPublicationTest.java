@@ -35,10 +35,15 @@ class CapabilitiesPublicationTest {
     when(fixture.registry().getInstalledComponents(any())).thenReturn(List.of(builtin, previous));
     var publication = SemanticCapabilitiesSnapshot.capture(1, "worldview-id", "imod", true, List.of(binding()), null);
     when(runtime.metadata()).thenReturn(new AcceptedSemanticRuntime.Metadata(1, publication, List.of(owned)));
+    when(runtime.status()).thenReturn(new CandidatePublicationCoordinator.Status(
+        1, 1, CandidatePublicationCoordinator.BeanStatus.VALID,
+        CandidatePublicationCoordinator.LogicalStatus.VALID,
+        Map.of("biology", HASH), Map.of("biology", HASH), List.of(), List.of()));
     var capabilities = fixture.reasoner().capabilities(mock(Scope.class));
     assertEquals(List.of(builtin, owned), capabilities.getComponents());
     assertEquals(1, capabilities.getKnowledgeRevision());
     assertEquals(1, capabilities.getAuthorityBindings().size());
+    verify(runtime, atLeastOnce()).status();
   }
 
   private static void field(Object instance, String name, Object value) throws Exception {

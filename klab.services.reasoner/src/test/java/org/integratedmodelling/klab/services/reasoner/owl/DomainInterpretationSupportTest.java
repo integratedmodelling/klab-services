@@ -154,6 +154,11 @@ class DomainInterpretationSupportTest {
     });
     var serviceClass = org.integratedmodelling.klab.services.reasoner.ReasonerService.class;
     var owlField = serviceClass.getDeclaredField("owl"); owlField.setAccessible(true); owlField.set(service, owl);
+    // Exercise the real expression-status projection. An unstubbed Mockito return
+    // is null and falsely makes the valid PhysicalDomain target unresolved.
+    org.mockito.Mockito.doCallRealMethod().when(service).projectExpressionStatus(
+        org.mockito.ArgumentMatchers.any(org.integratedmodelling.common.knowledge.ConceptImpl.class),
+        org.mockito.ArgumentMatchers.any(org.integratedmodelling.klab.api.lang.kim.KimConcept.class));
     var compile = serviceClass.getDeclaredMethod("compileInternal",
         org.integratedmodelling.klab.api.lang.kim.KimConcept.class, Ontology.class,
         org.integratedmodelling.klab.api.scope.Scope.class);
@@ -175,5 +180,8 @@ class DomainInterpretationSupportTest {
     assertEquals(1, WorldviewDomainSupport.effectiveInterpretations(owl, wholeResult).size());
     assertTrue(WorldviewDomainSupport.effectiveInterpretations(owl, owl.getConcept("odo:Other")).isEmpty());
     assertTrue(WorldviewDomainSupport.effectiveInterpretations(owl, owl.getConcept("odo:Knowledge")).isEmpty());
+    org.mockito.Mockito.verify(service, org.mockito.Mockito.atLeastOnce()).projectExpressionStatus(
+        org.mockito.ArgumentMatchers.any(org.integratedmodelling.common.knowledge.ConceptImpl.class),
+        org.mockito.ArgumentMatchers.any(org.integratedmodelling.klab.api.lang.kim.KimConcept.class));
   }
 }

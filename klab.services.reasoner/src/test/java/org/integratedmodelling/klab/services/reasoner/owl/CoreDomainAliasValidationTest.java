@@ -47,14 +47,20 @@ class CoreDomainAliasValidationTest {
         alias("Physical", "odo:PhysicalDomain"), alias("Knowledge", "odo:KnowledgeDomain"),
         alias("Normative", "odo:NormativeDomain")).isEmpty());
   }
-  @Test void duplicateFundamentalIdentityStillReportsReassignment() {
+  @Test void duplicateFundamentalAliasesPreserveTheDisabledBlanketWarningPolicy() {
     var messages = validate(fixture(), alias("First", "odo:Domain"), alias("Second", "odo:Domain"));
-    assertEquals(1, messages.size()); assertTrue(messages.getFirst().contains("being reassigned"));
+    assertTrue(messages.isEmpty());
+    assertTrue(warnings.stream().noneMatch(s -> s.contains("being reassigned")));
   }
-  @Test void specializedAliasesDoNotFillMissingFundamentalSlot() {
+  @Test void specializedAliasesDoNotEnableTheDisabledMissingSlotWarning() {
     var messages = validate(fixture(), alias("Physical", "odo:PhysicalDomain"),
         alias("Knowledge", "odo:KnowledgeDomain"), alias("Normative", "odo:NormativeDomain"));
-    assertEquals(1, messages.size()); assertTrue(messages.getFirst().contains("is not assigned"));
+    assertTrue(messages.isEmpty());
+    assertTrue(warnings.stream().noneMatch(s -> s.contains("is not assigned")));
+  }
+  @Test void anEmptyRootDoesNotEmitDisabledBlanketMissingTypeWarnings() {
+    validate(fixture());
+    assertTrue(warnings.isEmpty(), warnings.toString());
   }
   @Test void resolvedCanonicalIdentityWorksThroughDifferentAliasSpelling() {
     var owl=fixture(); owl.requireOntology("alias").addDelegateConcept("PhysicalKind", "alias", owl.getConcept("odo:PhysicalDomain"));
@@ -64,10 +70,10 @@ class CoreDomainAliasValidationTest {
     var messages=validate(fixture(), alias("Domain", "odo:Domain"), alias("Physical", "odo:OtherDomain"));
     assertEquals(1,messages.size()); assertTrue(messages.getFirst().contains("instead of a canonical"));
   }
-  @Test void unknownEndpointIsReportedAndCannotFillFundamentalSlot() {
+  @Test void unknownEndpointStillReportsItsActiveCanonicalKindViolation() {
     var messages=validate(fixture(), alias("Domain", "odo:Missing"));
-    assertEquals(2,messages.size()); assertTrue(messages.stream().anyMatch(s->s.contains("instead of a canonical")));
-    assertTrue(messages.stream().anyMatch(s->s.contains("is not assigned")));
+    assertEquals(1,messages.size()); assertTrue(messages.getFirst().contains("instead of a canonical"));
+    assertTrue(warnings.stream().noneMatch(s->s.contains("is not assigned")));
   }
   @Test void specializedDeclarationOrderDoesNotAffectFundamentalClaim() {
     assertTrue(validate(fixture(), alias("Normative", "odo:NormativeDomain"),
