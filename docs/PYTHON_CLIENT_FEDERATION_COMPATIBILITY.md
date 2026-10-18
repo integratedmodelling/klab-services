@@ -1,6 +1,64 @@
 # Python client integration: federation-session compatibility
 
-## Status and scope
+## Current isolated integration — 10 October 2026
+
+Tracking scope: [issue #89](https://github.com/integratedmodelling/klab-services/issues/89).
+The typed-request (#87/PR #85) and saved-handles (#88/PR #86) implementations stay
+on their independent client branches. This integration preserves the upstream
+dependency histories and reviewed Java merge resolutions; imported authority/cache
+work is upstream dependency history, not a claim that either client issue delivers
+those broader roadmap capabilities. The remaining #89 criteria stay open.
+
+The earlier diagnosis below is historical. The upstream federation implementation
+in `16e1be908` has now been integrated locally with the Python foundation at
+`ad2bc949c` and latest fetched develop `3b01ceaa907000ffccafac97444029027c81d30b`.
+The merge remains uncommitted in `klab-python-federation-integration`; neither
+independent client feature branch was merged or reset.
+
+The exact tested server tree is `158b1908e199bffec4296d2163c4f3c42996ee91`.
+This is a Git tree identity, **not a published commit**. Subsequent documentation
+edits do not change the tested Java source.
+
+Implemented policy:
+
+- Canonical nonlocal federation default sessions can be reused only by verified
+  members. Request-local peers preserve each caller's identity, roles and jobs.
+- Context ownership and explicit ACLs remain independent of federation membership.
+- Shared-session release requires administrator authority; ordinary members do
+  not acquire disposal authority over each other's contexts.
+- Cold restoration preserves `sessionFederationId` and the persisted parent owner.
+  Legacy missing federation metadata does not establish a shared parent policy.
+- Java client peers are keyed by Runtime, scope ID and username, rather than
+  relying on the earlier scope-ID-only cache.
+- Denied configuration/connection requests raise authorization exceptions; absent
+  contexts remain distinct missing-resource failures.
+
+Verification on that server tree: **249 strict Java tests passed, zero failures,
+errors or skips**. The selection includes the earlier affected regressions,
+federation session/controller/header/client-transport tests and newer authority,
+language/cache tests. Both current uncommitted typed-observe and saved-handles
+clients passed live acceptance and independent controls. A real Runtime restart
+with the graph retained passed private/shared/public-exclusion checks and
+collaborator-first restoration without parent-session authority transfer.
+
+This supports internal compatibility testing, not closure of the complete
+promotion gate below. The two-process native Java workflow with two independently
+authenticated ordinary members of the same **nonlocal** federation remains
+unexecuted. The live fixture used signed ordinary users and local federation.
+The broader candidate-versus-unchanged-latest-baseline comparison was not rerun.
+
+An inherited server limitation also remains: cached `ScopeManager` entries are
+keyed by bare scope ID and do not validate the requested origin Runtime on cached
+hits. Origin-qualified registration/lookup and a two-Runtime identical-ID test
+remain required for cross-Runtime isolation; see [scope propagation work](SCOPE_PROPAGATION_TODO.md).
+
+External evidence is retained under `C:\Users\lumsd\AppData\Local\Temp\opencode`:
+`federation-integration-strict-retry.json`, `pr85-federation-live-retry`,
+`pr86-federation-live`, and `federation-integration-cold-live`. Initial failed
+merge/harness attempts are retained separately. No commit, push, PR reopening or
+promotion was performed.
+
+## Historical diagnosis and scope — 7 October 2026
 
 **Open source-level compatibility concern, identified 7 October 2026.** The
 existing Java default-session contract and the managed-session authorization

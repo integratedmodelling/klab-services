@@ -31,6 +31,12 @@ public interface ServicesAPI {
    */
   String SCOPE_HEADER = "klab-scope";
 
+  /** Optional assertion of the credential's user; never grants authority to impersonate a user. */
+  String USERNAME_HEADER = "klab-user";
+
+  /** Optional federation assertion, verified against server-authoritative user membership. */
+  String FEDERATION_HEADER = "klab-federation";
+
   /** Should be checked at each request at production */
   String KLAB_VERSION_HEADER = "klab-version";
 
@@ -226,6 +232,7 @@ public interface ServicesAPI {
     String AUTHORITY_CODELISTS = API_BASE + "/authority/codelists";
 
     String AUTHORITY_SEARCH = API_BASE + "/authority/search";
+    String AUTHORITY_HIERARCHY = API_BASE + "/authority/hierarchy";
 
     String CONFIGURE_AUTHORITY = API_BASE + "/authority/configure";
 
