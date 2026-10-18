@@ -134,6 +134,7 @@ public class CoreOntology {
                   + " is ambiguous: "
                   + implemented);
         } else if (implemented.isEmpty()) {
+          // FIXME these are mostly wrong, should reconsider core inheritance
           scope.warn(
               "Inconsistent worldview: can't establish the fundamental type for core concept "
                   + concept.getNamespace()
@@ -156,30 +157,32 @@ public class CoreOntology {
                 + concept.getUpperConceptDefined() + " instead of a canonical ODO Domain kind");
             continue;
           }
-          if (coreConcepts.containsKey(type)) {
+//          if (coreConcepts.containsKey(type)) {
             // should be an error
-            scope.warn(
-                "Inconsistent worldview: fundamental type "
-                    + type
-                    + ", assigned to core concept "
-                    + coreConcepts.get(type)
-                    + ", is being reassigned to "
-                    + concept.getNamespace()
-                    + ":"
-                    + concept.getUrn());
-          } else {
+            // FIXME these are mostly wrong, should reconsider core inheritance
+//            scope.warn(
+//                "Inconsistent worldview: fundamental type "
+//                    + type
+//                    + ", assigned to core concept "
+//                    + coreConcepts.get(type)
+//                    + ", is being reassigned to "
+//                    + concept.getNamespace()
+//                    + ":"
+//                    + concept.getUrn());
+//          } else {
             coreConcepts.put(type, concept.getNamespace() + ":" + concept.getUrn());
-          }
+//          }
         }
       }
     }
 
     for (SemanticType type : SemanticType.DECLARABLE_TYPES) {
       if (!coreConcepts.containsKey(type)) {
-        scope.warn(
-            "Inconsistent worldview: fundamental type "
-                + type
-                + " is not assigned to a worldview concept");
+        // FIXME these are mostly wrong, should reconsider core inheritance
+//        scope.warn(
+//            "Inconsistent worldview: fundamental type "
+//                + type
+//                + " is not assigned to a worldview concept");
       }
     }
   }
