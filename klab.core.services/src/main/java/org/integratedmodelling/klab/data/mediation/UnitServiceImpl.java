@@ -155,11 +155,18 @@ public class UnitServiceImpl implements UnitService {
   public Conversion conversion(Unit destination, Unit source) {
     try {
       var converter = peer(source).getConverterToAny(peer(destination));
-      for (var step : converter.getConversionSteps())
-        if (!step.isLinear() && !(step instanceof tech.units.indriya.function.AddConverter))
+      double factor = 1.0;
+      for (var step : converter.getConversionSteps()) {
+        if (step.isLinear()) {
+          // Compose slopes directly: subtracting converted absolute values loses
+          // small affine scales through cancellation against the temperature offset.
+          factor *= step.convert(1.0);
+        } else if (!(step instanceof tech.units.indriya.function.AddConverter)) {
           throw new UnsupportedOperationException("Non-affine unit conversion is not supported");
+        }
+      }
       double zero = converter.convert(0.0);
-      return new Conversion(converter.convert(1.0) - zero, zero);
+      return new Conversion(factor, zero);
     } catch (javax.measure.IncommensurableException | javax.measure.UnconvertibleException e) {
       throw new IllegalArgumentException("Incompatible units", e);
     }

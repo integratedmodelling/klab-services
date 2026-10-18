@@ -32,6 +32,23 @@ class TemporalDerivativeUnitTest {
     assertEquals(-3,conversion.convert(-3));
     assertEquals(273.15,units.convert(0,units.getUnit("K"),units.getUnit("Cel")).doubleValue(),1e-10);
   }
+  @Test void scaledAffineDerivativesRetainSmallAndLargeDifferenceScales() {
+    for (double scale : new double[] {1e-12, 1e-9, 0.001, 1.0, 1e9, 1e12}) {
+      var source = units.getUnit(scale + " Cel");
+      var ordinary = units.conversion(units.getUnit("K"), source);
+      assertEquals(scale, ordinary.factor(), Math.abs(scale) * 1e-14);
+      assertEquals(273.15, ordinary.offset(), 1e-10);
+      var first = (UnitImpl) units.temporalDerivative(source);
+      var portable = units.getUnit(first.getDefinition());
+      var conversion = units.conversion(units.getUnit("K/s"), portable);
+      assertEquals(scale, conversion.factor(), Math.abs(scale) * 1e-14);
+      assertEquals(0, conversion.offset());
+      assertEquals(-3 * scale, conversion.convert(-3), Math.abs(scale) * 1e-13);
+      var second = (UnitImpl) units.temporalDerivative(first);
+      assertEquals(scale, units.conversion(units.getUnit("K/s^2"),
+          units.getUnit(second.getDefinition())).factor(), Math.abs(scale) * 1e-14);
+    }
+  }
   @Test void temporalDistributionDoesNotOverwriteSpatialDistributionOrEnableContextualMediation() {
     var total = (UnitImpl)units.getUnit("kg");total.setAggregatedDimensions(Map.of(ExtentDimension.AREAL,ExtentDistribution.EXTENSIVE));
     var density = (UnitImpl)units.getUnit("kg/m^2");density.setAggregatedDimensions(Map.of(ExtentDimension.AREAL,ExtentDistribution.INTENSIVE));

@@ -88,6 +88,51 @@ class TemporalDerivativeTest {
       assertTrue(owl.isConsistent());assertTrue(actor.satisfiable(rate));assertTrue(actor.satisfiable(second));
     }
   }
+  @Test void serializedHigherDerivativesPreserveIdentityUnitsAndOperandRestrictions() throws Exception {
+    try (var state = environment()) {
+      var actor = state.actor();
+      var owl = actor.owl();
+      var units = ServiceConfiguration.INSTANCE.getService(UnitService.class);
+      var expected = owl.getConcept("odo:Mass");
+      for (int order = 1; order <= 3; order++) {
+        var operand = expected;
+        expected = owl.makeRate(operand);
+        var restored = actor.resolveConcept(expected.getUrn());
+        assertNotNull(restored, expected.getUrn());
+        assertEquals(expected.getUrn(), restored.getUrn());
+        assertEquals(expected.getNamespace(), restored.getNamespace());
+        assertEquals(expected.getName(), restored.getName());
+        assertNotEquals(operand.getUrn(), restored.getUrn());
+        String serialized = restored.getUrn();
+        var builderRoundtrip = actor.resolveConceptWithBuilder(serialized, actor.serviceScope());
+        assertEquals(serialized, builderRoundtrip.getUrn());
+        assertEquals(restored.getName(), builderRoundtrip.getName());
+        var unit = units.getUnit(restored.getMetadata().get("odo:unit").toString());
+        assertTrue(units.isCompatible(unit, units.getUnit("kg/s^" + order)));
+        assertEquals(1, units.conversion(units.getUnit("kg/s^" + order), unit).factor());
+        owl.flushReasoner();
+        var factory = owl.getOntology(restored.getNamespace()).getOWLOntology()
+            .getOWLOntologyManager().getOWLDataFactory();
+        var describes = factory.getOWLObjectProperty(IRI.create("http://integratedmodelling.org/odo#describesQuality"));
+        assertTrue(owl.isEntailed(factory.getOWLSubClassOfAxiom(owlClass(state, restored),
+            factory.getOWLObjectSomeValuesFrom(describes, owlClass(state, operand)))));
+        assertTrue(actor.satisfiable(restored));
+      }
+      assertTrue(owl.isConsistent());
+    }
+  }
+  @Test void fullyParenthesizedSecondDerivativeResolvesWithoutAPriorGeneratedDefinition() throws Exception {
+    try (var state = environment()) {
+      var actor = state.actor();
+      var restored = actor.resolveConcept("change rate of (change rate of (odo:Mass))");
+      var units = ServiceConfiguration.INSTANCE.getService(UnitService.class);
+      var unit = units.getUnit(restored.getMetadata().get("odo:unit").toString());
+      assertTrue(units.isCompatible(unit, units.getUnit("kg/s^2")));
+      var expected = actor.owl().makeRate(actor.owl().makeRate(actor.owl().getConcept("odo:Mass")));
+      assertEquals(expected.getName(), restored.getName());
+      assertEquals(expected.getUrn(), restored.getUrn());
+    }
+  }
   @Test void categoricalAndInvalidUnitRejectionsDoNotWritePartialDefinitions() throws Exception {
     try(var state=environment()) {
       var owl=state.actor().owl();var ontology=owl.getOntology("odo").getOWLOntology();var before=Set.copyOf(ontology.getAxioms());

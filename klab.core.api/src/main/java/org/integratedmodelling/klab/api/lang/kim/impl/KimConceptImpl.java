@@ -922,7 +922,13 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private String computeUrnAndParenthesize() {
 
     String urn = finalizeDefinition();
-    boolean trivial = getModifiers().isEmpty() && valueOperators.isEmpty() && about.isEmpty()
+    // Transparent parser wrappers have already parenthesized their operand. Do
+    // not add a new pair at every parse/build round trip of a nested operator.
+    if (semanticModifier == null && observable instanceof KimConceptImpl child
+        && urn.equals(child.computeUrnAndParenthesize())) return urn;
+    boolean trivial = semanticModifier == null
+        && (observable == null || observable.getSemanticModifier() == null)
+        && getModifiers().isEmpty() && valueOperators.isEmpty() && about.isEmpty()
         && operands.isEmpty() && !negated;
 
     if (trivial) {

@@ -191,6 +191,15 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
   @Override
   public Observable.Builder as(UnarySemanticOperator type, Concept... participants)
       throws KlabValidationException {
+    if (type == UnarySemanticOperator.RATE && syntax.getSemanticModifier() != null) {
+      // A temporal derivative applies to the whole existing operator expression.
+      // Replacing its modifier would collapse higher derivatives during resolution.
+      var operand = syntax;
+      syntax = new KimConceptImpl();
+      syntax.setObservable(operand);
+      syntax.setArgumentType(EnumSet.copyOf(operand.getType()));
+      syntax.setType(type.getApplicableType(operand.getType()));
+    }
     syntax.setSemanticModifier(type);
     if (participants != null && participants.length > 0) {
       syntax.setComparisonConcept(conceptSyntax(participants[0].getUrn()));
