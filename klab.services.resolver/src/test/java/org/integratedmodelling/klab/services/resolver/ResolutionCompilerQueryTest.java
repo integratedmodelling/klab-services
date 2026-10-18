@@ -106,8 +106,9 @@ class ResolutionCompilerQueryTest {
     var compiler=new ResolutionCompiler(mock(ResolverService.class));
     var failure=org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,
         ()->compiler.query(observable,requested,scope));
-    assertTrue(failure.getMessage().contains("ACCEPT_LOSSY_MEDIATIONS=false"));
-    assertTrue(failure.getMessage().contains("resolution differs"));
+    assertTrue(failure.getMessage().startsWith(
+        "ACCEPT_LOSSY_MEDIATIONS is false: spatial extents do not match: "));
+    assertTrue(failure.getMessage().contains("cell resolution differs"));
     when(settings.get(org.integratedmodelling.klab.api.configuration.Setting.ACCEPT_LOSSY_MEDIATIONS,Boolean.class)).thenReturn(true);
     assertSame(existing,compiler.query(observable,requested,scope).reference());
     org.junit.jupiter.api.Assertions.assertEquals(Boolean.TRUE,
