@@ -1960,7 +1960,7 @@ public class OWL {
           units.temporalDerivative(units.getUnit(operandUnit))).getDefinition();
     }
 
-    String definition = UnarySemanticOperator.RATE.declaration[0] + " " + concept.getUrn();
+    String definition = UnarySemanticOperator.RATE.declaration[0] + " (" + concept.getUrn() + ")";
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);
     Concept context = reas.inherent(concept);

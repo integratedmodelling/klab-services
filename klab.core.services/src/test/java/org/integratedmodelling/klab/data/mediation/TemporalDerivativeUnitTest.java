@@ -19,6 +19,10 @@ class TemporalDerivativeUnitTest {
     assertTrue(units.isCompatible(units.getUnit(second.getDefinition()),units.getUnit("kg/s^2")));
     assertEquals(ExtentDistribution.INTENSIVE,mass.getAggregatedDimensions().get(ExtentDimension.TEMPORAL));
     assertEquals(-2,units.convert(-2,units.getUnit("kg/s"),units.getUnit(mass.getDefinition())).doubleValue());
+    var scaled = derivative("km/h");
+    assertEquals(1,units.convert(3.6,units.getUnit("m/s^2"),units.getUnit(scaled.getDefinition())).doubleValue(),1e-12);
+    var viscosity = derivative("100 Pa*s");
+    assertEquals(100,units.convert(1,units.getUnit("Pa"),units.getUnit(viscosity.getDefinition())).doubleValue(),1e-10);
   }
   @Test void affineTemperatureUsesDifferenceScaleWithoutOffset() {
     var celsius = derivative("Cel");var kelvin = derivative("K");

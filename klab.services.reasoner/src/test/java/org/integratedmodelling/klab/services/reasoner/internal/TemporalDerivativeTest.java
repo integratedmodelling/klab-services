@@ -64,6 +64,10 @@ class TemporalDerivativeTest {
     try(var state=environment()) {
       var actor=state.actor();var owl=actor.owl();var units=ServiceConfiguration.INSTANCE.getService(UnitService.class);
       var mass=owl.getConcept("imod:Mass");var rate=owl.makeRate(mass);var second=owl.makeRate(rate);var speed=owl.makeRate(owl.getConcept("imod:Velocity"));
+      var injector=new org.integratedmodelling.languages.ObservableStandaloneSetup().createInjector();
+      var parser=injector.getInstance(org.eclipse.xtext.parser.IParser.class);
+      var grammar=injector.getInstance(org.integratedmodelling.languages.services.ObservableGrammarAccess.class);
+      assertFalse(parser.parse(grammar.getConceptExpressionRule(),new java.io.StringReader(second.getUrn())).hasSyntaxErrors(),second.getUrn());
       // These constructions occur after the fixture's completed compiler batch. Commit that
       // batch to HermiT before testing entailments, as production staged compilation does.
       owl.flushReasoner();
