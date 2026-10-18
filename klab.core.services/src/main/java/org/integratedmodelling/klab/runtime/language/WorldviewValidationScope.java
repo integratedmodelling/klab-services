@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.languages.api.ConceptDeclarationSyntax;
 import org.integratedmodelling.languages.api.ObservableSyntax;
@@ -48,6 +49,7 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
         loadConcepts(statement, ontology.getUrn());
       }
     }
+    refreshGenericDescriptors(worldview.getOntologies().stream().flatMap(o->o.getStatements().stream()).toList());
   }
 
   /** Isolated editing scope: old declarations from the edited ontology cannot resolve references. */
@@ -82,6 +84,7 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
     for (var statement : ontology.getStatements()) {
       loadConcepts(statement, ontology.getUrn());
     }
+    refreshGenericDescriptors(ontology.getStatements());
   }
 
   @Override
@@ -92,21 +95,22 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
       SemanticSyntax coreConcept = declaration.getDeclaredParent();
       var coreId = coreConcept.encode();
       var cname = coreConcept.encode().split(":");
+      var declaredType=CoreAliasTypeSupport.syntaxType(coreId,declaration.getDeclaredType());
 
       this.conceptTypes.put(
           coreConcept.encode(),
           new ConceptDescriptor(
               cname[0],
               cname[1],
-              declaration.getDeclaredType(),
+              declaredType,
               coreConcept.encode(),
-              "Core concept " + coreConcept.encode() + " for type " + declaration.getDeclaredType(),
+              "Core concept " + coreConcept.encode() + " for type " + declaredType,
               true,
               false));
       // Do not delegate core registration to language versions that infer generic types
       // from the intentionally untyped core parent.
       var descriptor = new ConceptDescriptor(declaration.getNamespace(), declaration.getName(),
-          declaration.getDeclaredType(), declaration.getDescription(), declaration.getName(),
+          declaredType, declaration.getDescription(), declaration.getName(),
           declaration.isAbstract(), false, declaration.isSubjective(), declaration.isSealed());
       conceptTypes.put(declaration.getNamespace() + ":" + declaration.getName(), descriptor);
       return descriptor;
@@ -115,6 +119,8 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
       // Descriptor registration must not compile syntax. Core parents in particular are
       // intentionally untyped: the declaration supplies their type, not vice versa.
       var type = inheritedType(declaration.getDeclaredParent());
+      var namedParent=conceptTypes.get(declaration.getDeclaredParent().encode());
+      if(namedParent!=null)type=namedParent.mainType();
       var descriptor = new ConceptDescriptor(declaration.getNamespace(), declaration.getName(),
           type, declaration.getDescription(), declaration.getName(),
           declaration.isAbstract(), false, declaration.isSubjective(), declaration.isSealed());
@@ -143,6 +149,45 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
     return result == null ? SemanticSyntax.Type.NOTHING : result;
   }
 
+  /** Older transported beans can still carry the coarse kind on named generic children. */
+  private void refreshGenericDescriptors(List<KimConceptStatement> roots) {
+    var declarations=new java.util.ArrayList<KimConceptStatement>();
+    java.util.function.Consumer<KimConceptStatement> collect=new java.util.function.Consumer<>() {
+      @Override public void accept(KimConceptStatement statement) {
+        declarations.add(statement);statement.getChildren().forEach(this);
+      }
+    };
+    roots.forEach(collect);
+    for(int pass=0;pass<declarations.size();pass++) {
+      boolean changed=false;
+      for(var statement:declarations) {
+        if(!statement.isGenericQuality() || statement.getUpperConceptDefined()!=null
+            || statement.getDeclaredParent()==null)continue;
+        var key=statement.getNamespace()+":"+statement.getUrn();
+        var previous=conceptTypes.get(key);
+        var type=capturedParentType(statement.getDeclaredParent(),statement.getNamespace());
+        if(previous==null || type==SemanticSyntax.Type.NOTHING || previous.mainType()==type)continue;
+        conceptTypes.put(key,new ConceptDescriptor(statement.getNamespace(),statement.getUrn(),type,
+            previous.label(),previous.description(),statement.isAbstract(),false,
+            statement.isSubjective(),statement.isSealed()));
+        changed=true;
+      }
+      if(!changed)break;
+    }
+  }
+
+  private SemanticSyntax.Type capturedParentType(KimConcept parent,String namespace) {
+    if(parent.getSemanticModifier()==null && parent.getName()!=null) {
+      var name=parent.getName();if(!name.contains(":"))name=namespace+":"+name;
+      var descriptor=conceptTypes.get(name);
+      if(descriptor!=null)return descriptor.mainType();
+    }
+    if(parent.getSemanticModifier()==null && parent.getObservable()!=null)
+      return capturedParentType(parent.getObservable(),namespace);
+    return parent.getType()==null || parent.getType().isEmpty()
+        ? SemanticSyntax.Type.NOTHING:getMainType(parent.getType());
+  }
+
   private void loadConcepts(KimConceptStatement statement, String namespace) {
     if (statement.getAuthorityRequired() != null && statement.getAuthorityParameters() != null
         && statement.getAuthorityParameters().get("codelists") instanceof java.util.Map<?, ?> names)
@@ -150,12 +195,13 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
         authorityCodelistNamespaces.add(name);
         codelistOwners.computeIfAbsent(namespace, key -> new HashSet<>()).add(name);
       }
+    var effectiveTypes=CoreAliasTypeSupport.types(statement.getUpperConceptDefined(),statement.getType());
     String defaultLabel = namespace + ":" + statement.getUrn();
     ConceptDescriptor descriptor =
         new ConceptDescriptor(
             namespace,
             statement.getUrn(),
-            getMainType(statement.getType()),
+            getMainType(effectiveTypes),
             statement.getMetadata().get(Metadata.DC_LABEL, defaultLabel),
             statement.getMetadata().get(Metadata.DC_COMMENT, String.class),
             statement.isAbstract(),
@@ -178,8 +224,8 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
       var coreId = statement.getUpperConceptDefined();
       var parts = coreId.split(":", 2);
       if (parts.length == 2) conceptTypes.put(coreId, new ConceptDescriptor(parts[0], parts[1],
-          getMainType(statement.getType()), coreId,
-          "Core concept " + coreId + " for type " + getMainType(statement.getType()), true, false));
+          getMainType(effectiveTypes), coreId,
+          "Core concept " + coreId + " for type " + getMainType(effectiveTypes), true, false));
     }
     for (var child : statement.getChildren()) {
       loadConcepts(child, namespace);

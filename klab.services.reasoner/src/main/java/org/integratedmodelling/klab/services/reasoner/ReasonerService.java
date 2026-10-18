@@ -3165,7 +3165,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (parent == null) {
         monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
       } else {
-        parent.getType().addAll(concept.getType());
+        var canonicalTypes=org.integratedmodelling.klab.runtime.language.CoreAliasTypeSupport.types(parent.getUrn(),parent.getType());
+        var declarationTypes=org.integratedmodelling.klab.runtime.language.CoreAliasTypeSupport.types(parent.getUrn(),concept.getType());
+        parent.getType().clear();parent.getType().addAll(canonicalTypes);parent.getType().addAll(declarationTypes);
       }
     } else if (concept.getDeclaredParent() != null) {
       parent = declareConcept(concept.getDeclaredParent());
@@ -3294,6 +3296,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       var inherited = new java.util.HashSet<>(resolvedParent.getType());
       inherited.removeAll(flags);
       declarationType.addAll(inherited);
+      // Staged signatures may still carry a legacy coarse kind. This declaration's resolved
+      // parent determines its final kind; merging would retain competing QUANTITY/RATIO flags.
+      var predeclared=ontology.getConcept(mainId);
+      if(predeclared!=null) {
+        predeclared.getType().clear();predeclared.getType().addAll(declarationType);
+      }
     }
 
     ontology.add(

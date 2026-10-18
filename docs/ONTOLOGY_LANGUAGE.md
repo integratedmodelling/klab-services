@@ -273,6 +273,14 @@ Its abstractness does not automatically make a new child abstract: use the child
 keyword for that independent constraint. Thus `abstract quality Heterogeneity;` remains abstract,
 while a generic-keyword child without that keyword does not acquire it merely from its parent.
 
+Core aliases to `odo:Ratio`, `odo:Numerosity`, and `odo:Proportion` refine the coarse `quantity`
+keyword to their existing specific semantic kinds. For example, `abstract quantity Ratio is core
+odo:Ratio;` and `quality NamedRatio is imod:Ratio;` retain RATIO rather than competing QUANTITY
+and RATIO kinds. Refinement follows the canonical target, not the alias's name, and preserves local
+abstractness and worldview interpretation. It adds neither a `ratio Name;` declaration keyword
+nor a denominator-free `ratio of X` operator. Named specialization alone does not infer units,
+dimensionlessness, or a numerical quotient.
+
 The grammar also provides property keywords whose physical behavior is known:
 
 | Extensive properties | Intensive properties |

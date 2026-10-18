@@ -1737,6 +1737,28 @@ public class LanguageAdapter {
       ret.getStatements().add(adaptConceptDefinition(definition, ontology.getName(), projectName));
     }
 
+    // Local language headers may predate canonical core-alias refinement. Reconcile the owned
+    // adapted declarations and atomic parent references after all aliases are available.
+    var refinedScope=new WorldviewValidationScope();refinedScope.addNamespace(ret);
+    java.util.function.Consumer<KimConceptStatement> refine=new java.util.function.Consumer<>() {
+      @Override public void accept(KimConceptStatement statement) {
+        if(statement.isGenericQuality() && statement.getUpperConceptDefined()==null) {
+          var kind=refinedScope.getConceptDescriptor(statement.getNamespace()+":"+statement.getUrn()).mainType();
+          var refined=CoreAliasTypeSupport.forSyntaxType(kind,statement.getType());
+          statement.getType().clear();statement.getType().addAll(refined);
+          var parent=statement.getDeclaredParent();
+          if(parent!=null && parent.getSemanticModifier()==null && parent.getName()!=null) {
+            var name=parent.getName();if(!name.contains(":"))name=statement.getNamespace()+":"+name;
+            var parentKind=refinedScope.getConceptDescriptor(name).mainType();
+            var parentTypes=CoreAliasTypeSupport.forSyntaxType(parentKind,parent.getType());
+            parent.getType().clear();parent.getType().addAll(parentTypes);
+          }
+        }
+        statement.getChildren().forEach(this);
+      }
+    };
+    ret.getStatements().forEach(refine);
+
     ret.getNotifications().addAll(notifications);
 
     return ret;
@@ -1784,7 +1806,10 @@ public class LanguageAdapter {
     ret.setDeprecation(definition.getDeprecation());
     ret.setDeprecated(definition.getDeprecation() != null);
     ret.setProjectName(projectName);
-    ret.setType(adaptSemanticType(definition.getDeclaredType()));
+    var declaredType=definition.getDeclaredType();
+    if(definition.isCoreDeclaration() && definition.getDeclaredParent()!=null)
+      declaredType=CoreAliasTypeSupport.syntaxType(definition.getDeclaredParent().encode(),declaredType);
+    ret.setType(adaptSemanticType(declaredType));
     ret.setGenericQuality(definition.isGenericQuality());
     ret.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
     for (var annotation : definition.getAnnotations()) {
