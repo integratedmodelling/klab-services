@@ -77,8 +77,14 @@ public class UnitServiceImpl implements UnitService {
     // Use only the affine scale: d(a*x+b)/dt = a*dx/dt. In particular Cel/s is K/s,
     // without adding 273.15 to a derivative value. No numerical integration occurs here.
     double factor = conversion(systemUnit, ordinary).factor();
-    var derivative = system.multiply(factor).divide(tech.units.indriya.unit.Units.SECOND);
-    var result = new UnitImpl(formatter.format(derivative)).withData(new FunctionalUnit(derivative));
+    var physicalDerivative = system.divide(tech.units.indriya.unit.Units.SECOND);
+    var derivative = physicalDerivative.multiply(factor);
+    // Indriya may format a transformed unit with a numeric factor inside a product,
+    // which its ASCII parser cannot read back. Our portable unit syntax already
+    // supports an explicit leading scale followed by an ordinary physical unit.
+    String physicalDefinition = formatter.format(physicalDerivative);
+    String portableDefinition = factor == 1.0 ? physicalDefinition : factor + " " + physicalDefinition;
+    var result = new UnitImpl(portableDefinition).withData(new FunctionalUnit(derivative));
     var distributions = new HashMap<>(operand.getAggregatedDimensions());
     distributions.put(ExtentDimension.TEMPORAL,
         org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistribution.INTENSIVE);
