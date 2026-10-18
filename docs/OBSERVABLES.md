@@ -457,6 +457,9 @@ percentage ecology:Wetland in earth:Watershed;
 ratio of hydrology:WaterVolume to hydrology:CatchmentArea;
 ```
 
+The hydrology identifiers above are hypothetical quantity names; they are not
+asserted to be declarations in the active worldview.
+
 The `in` operand of proportion or percentage states the whole. Do not insert
 `of` after those keywords; it is not in the current grammar. The **ratio
 expression operator** requires both operands: `ratio of numerator to denominator`.
@@ -510,8 +513,11 @@ abstract quality Quality is core odo:Quality;
 quality UnspecifiedQuality is generic:Quality;
 ```
 
-This last parent supplies no specific measurable kind. Abstractness is declared
-locally and is independent of quality-type inheritance. See section 14 for the
+This last parent supplies no specific measurable kind. The explicit `abstract`
+declaration flag is local and is separate from quality-type inheritance.
+Effective semantic abstractness can also depend on unresolved identity
+requirements, including inherited requirements; see
+[Identity requirements](IDENTITY_REQUIREMENTS.md). See section 14 for the
 current named Ratio alias limitation and unsupported bare `ratio` keyword.
 
 ### 4.6 Value
