@@ -66,6 +66,24 @@ class CapturedConfiguredAuthorityTest {
     assertFalse(Files.exists(directory.resolve("owned/interactive-authority-cache")));
     provider.releaseConfiguration(id);assertThrows(IllegalStateException.class,()->provider.resolveIdentity(id,"Spain"));
   }
+  @Test void configuredSnapshotDistanceRemainsUnknownUntilInteractiveAndAfterReturningToCandidate()throws Exception{
+    var f=fixture();var catalog=capture(f);Files.delete(f.archive);
+    var interactive=new java.util.concurrent.atomic.AtomicBoolean();
+    var provider=catalog.provider(f.binding,f.request,directory.resolve("distance-owned"),interactive::get);
+    assertTrue(provider.getCapabilities().isSemanticDistanceSupported());
+    String id=provider.configure(AuthorityBindings.providerRequest(f.request));
+    assertEquals(0,provider.getCachePolicy().identitySeconds());
+    assertEquals("Spain",provider.resolveIdentity(id,"Spain").getId());
+    assertEquals(Authority.DistanceStatus.UNKNOWN,provider.semanticDistance(id,"Europe","Spain").status());
+    interactive.set(true);
+    var distance=provider.semanticDistance(id,"Europe","Spain");
+    assertEquals(Authority.DistanceStatus.COMPATIBLE,distance.status());assertEquals(2,distance.distance());
+    interactive.set(false);
+    assertEquals(Authority.DistanceStatus.UNKNOWN,provider.semanticDistance(id,"Europe","Spain").status());
+    assertFalse(Files.exists(directory.resolve("distance-owned/interactive-authority-cache")));
+    provider.releaseConfiguration(id);
+    assertThrows(IllegalStateException.class,()->provider.semanticDistance(id,"Europe","Spain"));
+  }
   @Test void configuredStateRequiresSuccessfulExactProducerProof()throws Exception{
     var f=fixture();
     assertThrows(UnsupportedOperationException.class,()->CapturedAuthorityCatalog.captureRecorded(f.data,f.source,Map.of("UN.M49",0L),CapturedAuthorityCatalog.captureProviderEvidence(f.data)));

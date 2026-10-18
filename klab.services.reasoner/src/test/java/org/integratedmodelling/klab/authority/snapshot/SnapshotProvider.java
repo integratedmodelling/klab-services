@@ -32,11 +32,15 @@ public class SnapshotProvider implements SnapshottingAuthority {
   }
   public List<Identity> search(String query,String filter,String configuration){return List.of(resolveIdentity(configuration,query));}
   public Identity reconcile(String configuration,Map<String,String> fields){return resolveIdentity(configuration,fields.get("name"));}
+  public SemanticDistance semanticDistance(String configuration,String target,String candidate){
+    check(configuration);return new SemanticDistance(DistanceStatus.COMPATIBLE,target.equals(candidate)?0:2,List.of());
+  }
   public Authority subAuthority(String name){return null;}
   public Capabilities getCapabilities(){return new SnapshotCapabilities();}
   public static class SnapshotCapabilities implements Capabilities {
     public String getDescription(){return "Offline configured snapshot fixture";}
     public boolean isSearchable(){return true;}public boolean isFuzzy(){return false;}
+    public boolean isSemanticDistanceSupported(){return true;}
     public List<Pair<String,String>> getSubAuthorities(){return List.of();}
     public List<String> getDocumentationFormats(){return List.of();}public String getWorldview(){return null;}
   }
