@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -196,6 +197,25 @@ public abstract class BaseServiceClient implements KlabService {
             returnType,
             "setting",
             setting.name());
+  }
+
+  /** Update an installed component and retrieve the administration job's result. */
+  public CompletableFuture<Map<?, ?>> updateComponent(String component, Version version) {
+    return componentAction(ServicesAPI.ADMIN.UPDATE_COMPONENT, component, version);
+  }
+
+  /** Remove an installed component and retrieve the administration job's result. */
+  public CompletableFuture<Map<?, ?>> removeComponent(String component, Version version) {
+    return componentAction(ServicesAPI.ADMIN.REMOVE_COMPONENT, component, version);
+  }
+
+  private CompletableFuture<Map<?, ?>> componentAction(
+      String endpoint, String component, Version version) {
+    Map<String, Object> request = new LinkedHashMap<>();
+    request.put("component", component);
+    if (version != null) request.put("version", version.toString());
+    return client.withScope(userScope).postAsync(endpoint, request, Map.class)
+        .thenApply(result -> result);
   }
 
   @Override

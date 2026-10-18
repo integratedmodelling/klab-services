@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -171,6 +172,26 @@ public class KlabAdminController {
           "ADMINISTER permission is required for service settings");
     }
     throw new KlabIllegalArgumentException("Invalid setting: " + setting);
+  }
+
+  @Operation(
+      summary = "Update an installed component",
+      description =
+          "Submit a component update job. The body contains component (ID) and optional version; "
+              + "the job returns action, component, version, result and message.")
+  @PostMapping(ServicesAPI.ADMIN.UPDATE_COMPONENT)
+  public long updateComponent(@RequestBody Map<String, Object> request, Principal principal) {
+    return postSetting(Utils.Json.asString(request), Setting.UPDATE_COMPONENT.name(), principal);
+  }
+
+  @Operation(
+      summary = "Remove an installed component",
+      description =
+          "Submit a component removal job. The body contains component (ID) and optional version; "
+              + "built-in components cannot be removed.")
+  @PostMapping(ServicesAPI.ADMIN.REMOVE_COMPONENT)
+  public long removeComponent(@RequestBody Map<String, Object> request, Principal principal) {
+    return postSetting(Utils.Json.asString(request), Setting.REMOVE_COMPONENT.name(), principal);
   }
 
   @Operation(

@@ -155,6 +155,9 @@ public interface ServicesAPI {
     String CREDENTIALS = "/credentials";
     String SETTINGS = "/settings";
     String SET = "/set/{setting}";
+    /** Submit component maintenance jobs; bodies contain component and optional version. */
+    String UPDATE_COMPONENT = "/components/update";
+    String REMOVE_COMPONENT = "/components/remove";
   }
 
   /**
