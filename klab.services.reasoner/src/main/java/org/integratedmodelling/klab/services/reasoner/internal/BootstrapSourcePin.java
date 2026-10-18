@@ -30,8 +30,9 @@ public record BootstrapSourcePin(String serviceId, String url, Map<String, Artif
       throw new IllegalArgumentException("Bootstrap source pin must name an explicit loopback service URL");
     url=uri.normalize().toString().replaceFirst("/+$", "");
     components=Map.copyOf(components);
-    if(!components.keySet().equals(Set.of("klab.authority.taxa","klab.authority.pubchem")))
-      throw new IllegalArgumentException("Both supported authority artifacts must be explicitly pinned");
+    if(components.isEmpty() || components.size()>32 || components.keySet().stream().anyMatch(
+        id -> !id.matches("[a-z][a-z0-9_.-]{0,127}")))
+      throw new IllegalArgumentException("Explicit bootstrap pins require bounded component identities");
   }
   static BootstrapSourcePin fromSystemProperty() {
     String path=System.getProperty(PROPERTY);if(path==null)return null;

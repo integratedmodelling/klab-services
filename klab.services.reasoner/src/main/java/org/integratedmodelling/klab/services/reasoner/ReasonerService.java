@@ -841,6 +841,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   public Map<String, Long> successfulAuthorityConfigurations() { return authorityBindings.codelistRevisions(); }
+  public Map<String, org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot> configuredAuthoritySnapshots() { return authorityBindings.configuredSnapshots(); }
 
   public void disposeSemanticEnvironment() {
     if (!semanticOnly) throw new IllegalStateException("Not a private semantic environment");

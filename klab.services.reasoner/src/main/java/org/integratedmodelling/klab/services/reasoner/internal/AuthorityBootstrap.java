@@ -179,8 +179,6 @@ public final class AuthorityBootstrap {
     var components=new ArrayList<ComponentDescriptor>(); var resources=new ResourceSet(); var revisions=new TreeMap<String,String>();
     if(pin!=null)revisions.put("explicit.approval",pin.revision());
     for (var binding:source.getAuthorityBindings()) {
-      if (!Set.of("klab.authority.taxa","klab.authority.pubchem").contains(binding.componentUrn()))
-        throw new UnsupportedOperationException("Only explicitly supported captured implementations may bootstrap");
       if(pin!=null)pin.requireBinding(binding);
       var resolution=AuthorityComponentResolver.resolve(binding.provider().urn()+"@"+binding.provider().version(),selectionScope);
       var selected=resolution.components().stream().filter(c->c.id().equals(binding.componentUrn())
@@ -253,8 +251,16 @@ public final class AuthorityBootstrap {
         ownedDocuments.add(Map.of("originalUri",entry.getKey(),"bundlePath",relative.toString().replace('\\','/'),"sha256",hash,"bytes",bytes.length,"missingAtCapture",false));
       }
       Files.write(capture.resolve("documentation-materialization.json"),JSON.writeValueAsBytes(ownedDocuments));
+      var snapshotHashes = new TreeMap<String, String>();
+      for (var entry : actor.configuredAuthoritySnapshots().entrySet()) {
+        var bytes = JSON.writeValueAsBytes(entry.getValue());
+        var folder = Files.createDirectories(capture.resolve("configured-snapshots"));
+        Files.write(folder.resolve(digest(entry.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8))+".json"), bytes);
+        snapshotHashes.put(entry.getKey(), digest(bytes));
+      }
       var sourceBytes=JSON.writeValueAsBytes(source);Files.write(capture.resolve("source.json"),sourceBytes);
-      var proof=Map.of("inputSha256",digest(sourceBytes),"authorityVersions",versions,"providerEvidence",evidence);
+      var proof=Map.of("inputSha256",digest(sourceBytes),"authorityVersions",versions,"providerEvidence",evidence,
+          "configuredSnapshots",snapshotHashes);
       Files.write(capture.resolve("proof.json"),JSON.writeValueAsBytes(proof));
       var result=CapturedAuthorityCatalog.capture(state);cancellation.checkpoint();return result;
     } finally {

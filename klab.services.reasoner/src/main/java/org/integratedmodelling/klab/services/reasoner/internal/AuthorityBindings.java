@@ -62,6 +62,23 @@ public final class AuthorityBindings {
     return id;
   }
 
+  public synchronized Map<String, org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot> configuredSnapshots() {
+    var result = new java.util.TreeMap<String, org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot>();
+    long total = 0;
+    for (var binding : bindings.values()) {
+      var snapshot = binding.provider() instanceof CachedAuthority cached ? cached.configuredSnapshot(binding.id())
+          : binding.provider() instanceof org.integratedmodelling.klab.api.services.SnapshottingAuthority snapshotting
+              ? snapshotting.captureConfiguration(binding.id()) : null;
+      if (snapshot == null) continue;
+      if (!snapshot.providerUrn().equals(binding.provider().getUrn()) || !snapshot.request().equals(providerRequest(binding.request())))
+        throw new KlabValidationException("Configured snapshot differs from its successful bridge");
+      total += snapshot.state().length;
+      if (total > 256L * 1024 * 1024) throw new KlabValidationException("Configured snapshots exceed total bound");
+      result.put(binding.request().name(), snapshot);
+    }
+    return Map.copyOf(result);
+  }
+
   /** Namespace bindings belong to the Reasoner, not to the provider's parameter schema. */
   public static Authority.ConfigurationRequest providerRequest(Authority.ConfigurationRequest request) {
     var parameters = new LinkedHashMap<>(request.parameters());

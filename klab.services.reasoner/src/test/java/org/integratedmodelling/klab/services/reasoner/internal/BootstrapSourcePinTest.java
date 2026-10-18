@@ -19,6 +19,13 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 class BootstrapSourcePinTest {
+  @Test void explicitPinsSupportAdditionalSnapshotProvidersWithoutDroppingArtifactChecks() {
+    var artifact=new BootstrapSourcePin.Artifact("1.0.0-SNAPSHOT","1.0.0","a".repeat(32),"b".repeat(64));
+    var extended=new BootstrapSourcePin("local","http://127.0.0.1:8092/resources",Map.of("klab.authority.un",artifact));
+    assertTrue(extended.components().containsKey("klab.authority.un"));
+    assertThrows(IllegalArgumentException.class,()->new BootstrapSourcePin("local","http://127.0.0.1:8092/resources",Map.of()));
+    assertThrows(IllegalArgumentException.class,()->new BootstrapSourcePin("local","http://127.0.0.1:8092/resources",Map.of("invalid/id",artifact)));
+  }
   @TempDir Path directory;
   private final String url="http://127.0.0.1:8092/resources",md5="1".repeat(32),sha="3".repeat(64);
   private final UserIdentity identity=mock(UserIdentity.class);

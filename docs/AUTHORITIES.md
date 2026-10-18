@@ -169,6 +169,42 @@ configured and full-hierarchy resolution records separate. Membership and hierar
 cache reloads; a deferred record cannot satisfy a full-hierarchy request. Deploy updated providers
 and services, then reload a worldview with the desired mappings to enable this behavior.
 
+### Configured snapshots for candidate isolation
+
+`SnapshottingAuthority` is an optional capability for providers whose configured
+state can be restored independently. It exports a `ConfiguredAuthoritySnapshot`
+with a format/version identifier, provider URN, exact provider configuration and
+owned payload bytes (maximum 32 MiB). Parameters and payload are defensively owned.
+`restoreConfiguration` must validate the exact request and format, create a new
+bridge without network access or mutable discovery, and support identity, full
+hierarchy, search and reconciliation from the frozen state. Closing the provider
+must release its owned clients and bridge state.
+
+The bootstrap resolves authorized component descriptors and verifies artifact
+content before execution. Captured implementations are discovered from annotations
+in that exact archive, not from a global classpath or provider-name allowlist.
+New implementations must implement the snapshot capability; the existing TAXA
+and PubChem cache-replay implementations remain supported for compatibility.
+Providers with configuration-dependent codelist definitions still require explicit
+frozen codelist support and are rejected by the existing admission gate.
+
+After successful producer compilation, snapshot bytes are bound to its source,
+configuration, provider artifact/metadata, rights and codelist revision proof.
+Missing, changed, extra/unbound or unproved snapshot state cannot certify a bridge.
+The immutable catalog fingerprints the exact bytes read. Snapshot files are bounded
+to 48 MiB each and 384 MiB total (allowing JSON/base64 transport overhead); producer
+payloads are bounded to 256 MiB total. Isolated compilation never calls the live
+configuration route for a snapshot provider. Accepted operations restore and retain
+that same owned state. Legacy accepted providers retain their existing interactive
+route; a failed candidate leaves the prior accepted environment intact.
+
+This capture contract is separate from `CachePolicy`: a zero response lifetime
+still writes no persistent identity/search/reconciliation cache entries. UN uses
+the snapshot contract to freeze its selected Caliper scheme and vocabulary while
+retaining all-zero response-cache lifetimes. Explicit source pins, when supplied,
+must include every selected component with exact versions and MD5/SHA256; up to
+32 explicitly named component identities are supported. Missing pins fail closed.
+
 ### Configuration endpoint
 
 `POST /api/v1/authority/configure` is exposed by the Reasoner, through

@@ -48,6 +48,13 @@ public final class CachedAuthority implements Authority {
     check(id); return source.getCodelistDefinitions(providerId);
   }
 
+  /** Export the exact live configured bridge without changing response-cache lifetimes. */
+  synchronized org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot configuredSnapshot(String id) {
+    check(id);
+    return source instanceof org.integratedmodelling.klab.api.services.SnapshottingAuthority snapshotting
+        ? snapshotting.captureConfiguration(providerId) : null;
+  }
+
   @Override public synchronized String configure(ConfigurationRequest request) {
     if (this.request != null) {
       if (this.request.equals(request)) return stableId;

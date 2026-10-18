@@ -13,19 +13,24 @@ import java.util.jar.*;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.services.Authority;
+import org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot;
+import org.integratedmodelling.klab.api.services.SnapshottingAuthority;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor;
 
-/** Immutable public-provider catalog. Candidates replay responses; accepted runtimes may opt into
- * live operations using the owned provider archives. Capture itself never configures providers. */
+/** Immutable public-provider catalog. Configured snapshots restore offline for candidates and
+ * accepted lookups. Legacy providers replay responses; accepted runtimes may opt into their live
+ * operations using owned archives. Capture itself never configures providers. */
 public final class CapturedAuthorityCatalog {
   private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
   private final Map<String, Provider> providers;
   private final Map<String, byte[]> records, documentation, codelists;
   private final Map<String, byte[]> validatedRequests;
   private final String revision;
+  private record FrozenConfiguredSnapshot(ConfiguredAuthoritySnapshot snapshot, String contentSha256) {}
+  private final Map<String, FrozenConfiguredSnapshot> configuredSnapshots;
   public record ProviderEvidence(String implementation, String componentSha256, String policySha256, String metadataSha256) {}
-  private record Provider(ComponentDescriptor component, String className, String implementation,
-      Authority.CachePolicy policy, Set<String> boundaries, byte[] capabilities, byte[] seeds, byte[] archive) {}
+  private record Provider(ComponentDescriptor component, String className, String providerUrn, String implementation,
+      Authority.CachePolicy policy, Set<String> boundaries, byte[] capabilities, byte[] seeds, byte[] archive, boolean snapshotCapable) {}
 
   @com.fasterxml.jackson.annotation.JsonIgnoreProperties("updateable")
   private abstract static class ComponentWireMixin {}
@@ -33,12 +38,19 @@ public final class CapturedAuthorityCatalog {
   public static CapturedAuthorityCatalog empty() { return new CapturedAuthorityCatalog(Map.of(), Map.of(), Map.of(), Map.of(), Map.of()); }
   private CapturedAuthorityCatalog(Map<String, Provider> providers, Map<String, byte[]> records,
       Map<String, byte[]> documentation, Map<String, byte[]> codelists, Map<String, byte[]> validatedRequests) {
+    this(providers, records, documentation, codelists, validatedRequests, Map.of());
+  }
+  private CapturedAuthorityCatalog(Map<String, Provider> providers, Map<String, byte[]> records,
+      Map<String, byte[]> documentation, Map<String, byte[]> codelists, Map<String, byte[]> validatedRequests,
+      Map<String, FrozenConfiguredSnapshot> configuredSnapshots) {
+    this.configuredSnapshots = Map.copyOf(configuredSnapshots);
     this.providers = Map.copyOf(providers); this.records = freeze(records);
     this.documentation = freeze(documentation); this.codelists = freeze(codelists); this.validatedRequests = freeze(validatedRequests);
     var manifest = new TreeMap<String, String>();
     providers.forEach((urn, p) -> manifest.put("provider:" + urn, p.implementation() + ":" + digest(bytes(p.boundaries().stream().sorted().toList())) + ":" + canonicalMetadataDigest(p.capabilities())
         + ":" + canonicalMetadataDigest(p.seeds()) + ":" + digest(bytes(p.component())) + ":" + digest(bytes(p.policy()))));
     this.records.forEach((k, v) -> manifest.put("response:" + k, digest(v)));
+    this.configuredSnapshots.forEach((k, v) -> manifest.put("configured-snapshot:" + k, v.contentSha256()));
     this.documentation.forEach((k, v) -> manifest.put("documentation:" + k, digest(v)));
     this.codelists.forEach((k, v) -> manifest.put("codelist:" + k, digest(v)));
     this.validatedRequests.forEach((k, v) -> manifest.put("validated-request:" + k, digest(v)));
@@ -81,7 +93,9 @@ public final class CapturedAuthorityCatalog {
     if (bindings == null) throw unresolved("authority capture has no successful configured-binding proof");
     var evidence = JSON.convertValue(proof.get("providerEvidence"), new com.fasterxml.jackson.core.type.TypeReference<Map<String, ProviderEvidence>>() {});
     if (evidence == null) throw unresolved("authority capture has no configured provider provenance");
-    return captureRecorded(data, JacksonConfiguration.newObjectMapper().readValue(source, Worldview.class), bindings, evidence);
+    var snapshotHashes = proof.has("configuredSnapshots") ? JSON.convertValue(proof.get("configuredSnapshots"),
+        new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>() {}) : Map.<String,String>of();
+    return captureRecorded(data, JacksonConfiguration.newObjectMapper().readValue(source, Worldview.class), bindings, evidence, snapshotHashes);
   }
   private static CapturedAuthorityCatalog captureRaw(Path data) throws Exception {
     var mutableComponents = data.resolve("components");
@@ -100,15 +114,11 @@ public final class CapturedAuthorityCatalog {
       var rights = mapper.valueToTree(descriptor.usageRights());
       if (rights == null || !rights.path("public").asBoolean(false))
         throw unresolved("non-public component requires a captured authorized principal: " + descriptor.id());
-      String className = switch (descriptor.id()) {
-        case "klab.authority.taxa" -> "org.integratedmodelling.klab.authority.taxa.TaxaAuthority";
-        case "klab.authority.pubchem" -> "org.integratedmodelling.klab.authority.pubchem.PubChemAuthority";
-        default -> throw unresolved("unsupported captured provider implementation: " + descriptor.id());
-      };
       Path artifact = components.resolve("plugins").resolve(descriptor.sourceArchive().getName());
       byte[] archive = Files.readAllBytes(artifact);
       if (!HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(archive)).equals(descriptor.fileHash()))
         throw unresolved("installed component content disagrees with its descriptor: " + descriptor.id());
+      for (String className : CapturedProviderImplementations.discover(artifact, descriptor)) {
       var loader = new CapturedLoader(archive, className.substring(0, className.lastIndexOf('.') + 1));
       Authority instance = null;
       try {
@@ -116,6 +126,9 @@ public final class CapturedAuthorityCatalog {
         instance = (Authority)type.getConstructor().newInstance();
         var annotation = type.getAnnotation(org.integratedmodelling.klab.api.services.reasoner.Authority.class);
         if (annotation == null || !annotation.urn().equals(instance.getUrn())) throw unresolved("provider annotation mismatch");
+        boolean snapshotCapable = instance instanceof SnapshottingAuthority;
+        if (!snapshotCapable && !CapturedProviderImplementations.legacy(descriptor, className))
+          throw unresolved("provider requires a configured snapshot capability: " + descriptor.id());
         var advertised = descriptor.authorities().stream().filter(a -> a.urn().equals(annotation.urn())).findFirst().orElseThrow();
         if (!advertised.version().toString().equals(annotation.version())) throw unresolved("provider version mismatch");
         if (type.getMethod("getCodelists", String.class).getDeclaringClass() != Authority.class
@@ -123,13 +136,14 @@ public final class CapturedAuthorityCatalog {
           throw unresolved("configuration-dependent provider codelists need an explicit frozen response");
         var capabilities = mapper.valueToTree(instance.getCapabilities());
         ((com.fasterxml.jackson.databind.node.ObjectNode)capabilities).put("subAuthoritiesSearchFilters", instance.getCapabilities().areSubAuthoritiesSearchFilters());
-        var record = new Provider(mapper.convertValue(descriptor, ComponentDescriptor.class), className,
+        var record = new Provider(mapper.convertValue(descriptor, ComponentDescriptor.class), className, instance.getUrn(),
             className + ":" + annotation.version() + ":" + digest(archive), instance.getCachePolicy(),
-            Set.copyOf(instance.getSemanticBoundaries()), mapper.writeValueAsBytes(capabilities), mapper.writeValueAsBytes(instance.getCodelistDefinitions(null)), archive);
+            Set.copyOf(instance.getSemanticBoundaries()), mapper.writeValueAsBytes(capabilities), mapper.writeValueAsBytes(instance.getCodelistDefinitions(null)), archive, snapshotCapable);
         if (providers.put(instance.getUrn(), record) != null) throw unresolved("duplicate provider: " + instance.getUrn());
       } finally {
-        if (instance != null) closeOwnedClients(instance, loader, Collections.newSetFromMap(new IdentityHashMap<>()));
-        loader.clear();
+        try { if (instance != null) closeOwnedProvider(instance); }
+        finally { loader.clear(); }
+      }
       }
     }
     var records = new LinkedHashMap<String, byte[]>(); var documents = new LinkedHashMap<String, byte[]>();
@@ -156,7 +170,22 @@ public final class CapturedAuthorityCatalog {
       for (var file : paths.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".json")).sorted().toList())
         ledgers.put(file.getFileName().toString(), Files.readAllBytes(file));
     }
-    return new CapturedAuthorityCatalog(providers, records, documents, ledgers, Map.of());
+    var snapshots = new TreeMap<String, FrozenConfiguredSnapshot>();
+    Path snapshotRoot = data.resolve("captured-authority-state/configured-snapshots"); long snapshotBytes = 0;
+    if (Files.isDirectory(snapshotRoot)) try (var paths = Files.list(snapshotRoot)) {
+      for (var file : paths.filter(Files::isRegularFile).sorted().toList()) {
+        if (Files.isSymbolicLink(file) || Files.size(file) > 48L * 1024 * 1024)
+          throw unresolved("configured snapshot exceeds file bounds");
+        snapshotBytes += Files.size(file);
+        if (snapshotBytes > 384L * 1024 * 1024) throw unresolved("configured snapshots exceed total bounds");
+        var contents = Files.readAllBytes(file);
+        var snapshot = JSON.readValue(contents, ConfiguredAuthoritySnapshot.class);
+        if (snapshot == null || !file.getFileName().toString().equals(digest(snapshot.request().name().getBytes(java.nio.charset.StandardCharsets.UTF_8))+".json")
+            || snapshots.putIfAbsent(snapshot.request().name(), new FrozenConfiguredSnapshot(snapshot, digest(contents))) != null)
+          throw unresolved("invalid configured snapshot identity");
+      }
+    }
+    return new CapturedAuthorityCatalog(providers, records, documents, ledgers, Map.of(), snapshots);
   }
   /** Registration rewrites installation bookkeeping, not the proved configuration contract.
    * Immutable proof metadata remains byte-pinned; current permissions/contributions and actual
@@ -191,7 +220,20 @@ public final class CapturedAuthorityCatalog {
    * Response cache presence alone is insufficient proof for a configuration that fetched no identities. */
   public static CapturedAuthorityCatalog captureRecorded(Path data, Worldview source,
       Map<String, Long> successfullyConfiguredBindings, Map<String, ProviderEvidence> configuredProviderEvidence) throws Exception {
+    return captureRecorded(data, source, successfullyConfiguredBindings, configuredProviderEvidence, Map.of());
+  }
+  public static CapturedAuthorityCatalog captureRecorded(Path data, Worldview source,
+      Map<String, Long> successfullyConfiguredBindings, Map<String, ProviderEvidence> configuredProviderEvidence,
+      Map<String, String> configuredSnapshotHashes) throws Exception {
     var captured = captureRaw(data); var requests = new LinkedHashMap<String, byte[]>();
+    if (configuredSnapshotHashes == null || !configuredSnapshotHashes.keySet().equals(captured.configuredSnapshots.keySet()))
+      throw unresolved("configured snapshots differ from successful producer proof");
+    for (var entry : captured.configuredSnapshots.entrySet()) {
+      if (!entry.getValue().contentSha256().equals(configuredSnapshotHashes.get(entry.getKey())))
+        throw unresolved("configured snapshot content differs from successful producer proof");
+    }
+    if (!source.getAuthorityBindings().stream().map(Worldview.AuthorityBinding::localId).toList()
+        .containsAll(captured.configuredSnapshots.keySet())) throw unresolved("unbound configured snapshot");
     var currentEvidence = captured.providerEvidence();
     for (var binding : source.getAuthorityBindings()) {
       if (!successfullyConfiguredBindings.containsKey(binding.localId())
@@ -204,6 +246,13 @@ public final class CapturedAuthorityCatalog {
           binding.localId().equals(statement.getAuthorityRequired())
           && (statement.getNamespace() + ":" + statement.getUrn()).equals(binding.rootIdentity())).findFirst().orElseThrow();
       var request = new Authority.ConfigurationRequest(source.getUrn(), binding.localId(), binding.rootIdentity(), declaration.getAuthorityParameters());
+      var provider = captured.providers.get(providerUrn);
+      var frozenSnapshot = captured.configuredSnapshots.get(binding.localId());
+      var snapshot = frozenSnapshot == null ? null : frozenSnapshot.snapshot();
+      if (provider.snapshotCapable() && (snapshot == null || !snapshot.providerUrn().equals(providerUrn)
+          || !snapshot.request().equals(AuthorityBindings.providerRequest(request))))
+        throw unresolved("configured snapshot is absent or changed: " + binding.localId());
+      if (!provider.snapshotCapable() && snapshot != null) throw unresolved("provider cannot restore configured state");
       String ledgerKey = request.worldview() + "\0" + request.name() + "\0"
           + request.rootIdentity() + "\0" + request.parameters().get("urn");
       byte[] ledger = captured.codelists.get(CachedAuthority.digest(ledgerKey) + ".json");
@@ -218,7 +267,7 @@ public final class CapturedAuthorityCatalog {
         throw unresolved("authority ledger differs from successful producer revision: " + binding.localId());
       requests.put(binding.localId(), bytes(request));
     }
-    return new CapturedAuthorityCatalog(captured.providers, captured.records, captured.documentation, captured.codelists, requests);
+    return new CapturedAuthorityCatalog(captured.providers, captured.records, captured.documentation, captured.codelists, requests, captured.configuredSnapshots);
   }
   /** Capture this before the real producer configures providers; retain it with its successful result.
    * Reading current metadata later is not evidence that an earlier producer configured that code. */
@@ -301,7 +350,7 @@ public final class CapturedAuthorityCatalog {
       this.provider = provider; this.original = original; this.prefix = prefix; this.assets = assets; this.view = view; this.bridge = bridge;
       this.interactive = interactive;
     }
-    @Override public String getUrn() { return provider.component().id(); }
+    @Override public String getUrn() { return provider.providerUrn(); }
     @Override public CachePolicy getCachePolicy() { return provider.policy(); }
     @Override public Set<String> getSemanticBoundaries() { return provider.boundaries(); }
     @Override public Map<String, CodelistDefinition> getCodelistDefinitions(String id) {
@@ -328,7 +377,10 @@ public final class CapturedAuthorityCatalog {
     }
     @Override public synchronized String configure(ConfigurationRequest request) {
       if (!AuthorityBindings.providerRequest(original).equals(request)) throw unresolved("provider parameters changed since capture: " + original.name());
-      bridge.configured = "snapshot:" + revision + ":" + original.name(); return bridge.configured;
+      bridge.configured = "snapshot:" + revision + ":" + original.name();
+      if (configuredSnapshots.containsKey(original.name())) try { live(); }
+      catch (RuntimeException failure) { bridge.configured = null; throw failure; }
+      return bridge.configured;
     }
     @Override public synchronized void releaseConfiguration(String id) {
       check(id);
@@ -352,10 +404,19 @@ public final class CapturedAuthorityCatalog {
             // Use owned archive bytes, never a mutable installed plug-in or its original path.
             bridge.loader = new CapturedLoader(provider.archive(), provider.className().substring(0, provider.className().lastIndexOf('.') + 1));
             bridge.implementation = (Authority)bridge.loader.loadClass(provider.className()).getConstructor().newInstance();
-            var cached = new CachedAuthority(bridge.implementation, assets.resolve("interactive-authority-cache"),
-                Clock.systemUTC(), provider.implementation());
-            bridge.liveId = cached.configure(original);
-            bridge.live = cached;
+            var snapshot = configuredSnapshots.get(original.name());
+            if (snapshot != null) {
+              if (!(bridge.implementation instanceof SnapshottingAuthority restoring))
+                throw unresolved("configured snapshot implementation lost its restore capability");
+              bridge.liveId = restoring.restoreConfiguration(AuthorityBindings.providerRequest(original), snapshot.snapshot());
+              if (bridge.liveId == null || bridge.liveId.isBlank()) throw unresolved("snapshot restore returned no bridge");
+              bridge.live = restoring;
+            } else {
+              var cached = new CachedAuthority(bridge.implementation, assets.resolve("interactive-authority-cache"),
+                  Clock.systemUTC(), provider.implementation());
+              bridge.liveId = cached.configure(original);
+              bridge.live = cached;
+            }
           } catch (Exception failure) {
             closeLive();
             throw new IllegalStateException("Cannot initialize accepted authority provider", failure);
@@ -396,17 +457,17 @@ public final class CapturedAuthorityCatalog {
     @Override public synchronized Identity resolveIdentity(String id, String code) { return resolveIdentity(id, code, ResolutionMode.CONFIGURED); }
     @Override public synchronized Identity resolveIdentity(String id, String code, ResolutionMode mode) {
       check(id);
-      if (interactive.getAsBoolean()) return live().resolveIdentity(bridge.liveId, code, mode);
+      if (configuredSnapshots.containsKey(original.name()) || interactive.getAsBoolean()) return live().resolveIdentity(bridge.liveId, code, mode);
       return identity(response(List.of(mode == ResolutionMode.FULL_HIERARCHY ? "identity-full" : "identity", view, code)));
     }
     @Override public synchronized List<Identity> search(String query, String filter, String id) {
       check(id); var result = new ArrayList<Identity>();
-      if (interactive.getAsBoolean()) return live().search(query, filter, bridge.liveId);
+      if (configuredSnapshots.containsKey(original.name()) || interactive.getAsBoolean()) return live().search(query, filter, bridge.liveId);
       response(Arrays.asList("search", view, query, filter)).forEach(item -> result.add(identity(item))); return result;
     }
     @Override public synchronized Identity reconcile(String id, Map<String, String> fields) {
       check(id);
-      if (interactive.getAsBoolean()) return live().reconcile(bridge.liveId, fields);
+      if (configuredSnapshots.containsKey(original.name()) || interactive.getAsBoolean()) return live().reconcile(bridge.liveId, fields);
       return identity(response(List.of("reconcile", view, fields)));
     }
     @Override public Authority subAuthority(String name) {
@@ -441,7 +502,10 @@ public final class CapturedAuthorityCatalog {
     return new UnsupportedOperationException("CANDIDATE_ISOLATION_UNSUPPORTED: " + reason);
   }
   public static void closeOwnedProvider(Authority provider) {
-    try { closeOwnedClients(provider, provider.getClass().getClassLoader(), Collections.newSetFromMap(new IdentityHashMap<>())); }
+    try {
+      try { if (provider instanceof AutoCloseable closeable) closeable.close(); }
+      finally { closeOwnedClients(provider, provider.getClass().getClassLoader(), Collections.newSetFromMap(new IdentityHashMap<>())); }
+    }
     catch (Exception failure) { throw new IllegalStateException("Owned provider cleanup failed", failure); }
   }
   private static void closeOwnedClients(Object value, ClassLoader owner, Set<Object> seen) throws Exception {
