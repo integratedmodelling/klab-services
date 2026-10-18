@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax;
 import org.integratedmodelling.klab.runtime.language.*;
 
 /** Uses the Resources bean validators and authoritative source beans, never loaded OWL. */
@@ -17,7 +18,11 @@ public final class BeanIngestionPreflight {
   private BeanIngestionPreflight() {}
 
   public static Worldview snapshot(Worldview worldview) {
-    return FrozenWorldviewSnapshot.copyOf(worldview);
+    var owned = FrozenWorldviewSnapshot.copyOf(worldview);
+    var namespaces = authorityNamespaces(owned.getOntologies(), List.of(owned));
+    owned.getOntologies().forEach(o -> typeAuthorityReferences(o, namespaces));
+    owned.getObservationStrategies().forEach(o -> typeAuthorityReferences(o, namespaces));
+    return owned;
   }
 
   public static KimOntology snapshot(KimOntology ontology) {
@@ -59,6 +64,13 @@ public final class BeanIngestionPreflight {
       if (document instanceof KimOntology ontology) ontologies.put(ontology.getUrn(), ontology);
       else if (document instanceof KimObservationStrategyDocument strategy) strategyDocuments.put(strategy.getUrn(), strategy);
     }
+    // Refine private validation beans only. A declaration grants a provisional identity kind,
+    // never existence of a provider code; the configured Reasoner must still resolve that code.
+    var namespaces = authorityNamespaces(ontologies.values(), snapshots);
+    ontologies.replaceAll((name, ontology) -> snapshot(ontology));
+    strategyDocuments.replaceAll((name, strategy) -> snapshot(strategy));
+    ontologies.values().forEach(o -> typeAuthorityReferences(o, namespaces));
+    strategyDocuments.values().forEach(o -> typeAuthorityReferences(o, namespaces));
     var registry = new WorldviewDeclarationRegistry(ontologies.values());
     var concepts = new HashMap<String, KimConceptStatement>();
     var owners = new IdentityHashMap<KimConceptStatement, String>();
@@ -76,11 +88,14 @@ public final class BeanIngestionPreflight {
             generated = registry.get(current.getUrn() + ":" + urn);
           if (generated != null) resolved = generated.statement();
         }
-        yield resolved;
+        yield resolved != null ? resolved : authorityOwner(urn, namespaces);
       }
       default -> null;
     };
-    var validating = new ArrayList<KlabDocument<?>>(documents);
+    var validating = new ArrayList<KlabDocument<?>>();
+    for (var document : documents) validating.add(document instanceof KimOntology
+        ? ontologies.get(document.getUrn()) : document instanceof KimObservationStrategyDocument
+            ? strategyDocuments.get(document.getUrn()) : document);
     var included = new HashSet<String>();
     var includedStrategies = new HashSet<String>();
     for (var document : documents)
@@ -100,7 +115,8 @@ public final class BeanIngestionPreflight {
                 Notification.LexicalContext.of(new KimConceptImpl(), ontology)));
           else include(imported, ontologies, validating, included);
         }
-        var ontologyVisitor = new KimOntologyVisitor(new KimWorldviewValidator(registry), resolver);
+        var ontologyVisitor = new KimOntologyVisitor(new KimWorldviewValidator(registry,
+            urn -> authorityOwner(urn, namespaces) != null), resolver);
         ontologyVisitor.visit(ontology);
         visitor = ontologyVisitor;
       } else if (document instanceof KimObservationStrategyDocument strategies) {
@@ -144,6 +160,8 @@ public final class BeanIngestionPreflight {
           case CONCEPT, CONCEPT_STATEMENT -> {
             if (reference.resolved() instanceof KimConceptStatement declaration)
               include(owners.get(declaration), ontologies, validating, included);
+            else if (reference.resolved() instanceof AuthorityNamespace authority)
+              include(authority.ontology(), ontologies, validating, included);
             else if (document instanceof KimObservationStrategyDocument) {
               var roots = concepts.values().stream().filter(d -> authorityReference(d, reference.urn())).toList();
               if (!roots.isEmpty())
@@ -181,14 +199,7 @@ public final class BeanIngestionPreflight {
     var root = declaration.getUrn().contains(":") ? declaration.getUrn()
         : ontology.getUrn() + ":" + declaration.getUrn();
     var hash = SemanticValidationRequest.sourceHash(ontology.getSourceCode());
-    var requested = declaration.getAuthorityParameters().get("urn");
-    var coordinates = providerCoordinates(requested);
-    boolean validated = hash != null && snapshots.stream().flatMap(s -> s.getAuthorityBindings().stream())
-        .anyMatch(b -> name.equals(b.localId()) && root.equals(b.rootIdentity())
-            && ontology.getUrn().equals(b.sourceOntology()) && hash.equals(b.sourceHash())
-            && b.provider() != null && coordinates != null
-            && coordinates.getFirst().equals(b.provider().urn())
-            && (!((String) requested).contains("@") || coordinates.getSecond().equals(b.provider().version())));
+    boolean validated = validatedAuthority(ontology, declaration, snapshots);
     if (validated) return List.of(); // A current accepted binding supersedes old aggregate messages.
     var current = snapshots.stream()
         .filter(s -> s.getOntologies().stream().anyMatch(o -> ontology.getUrn().equals(o.getUrn())
@@ -203,6 +214,95 @@ public final class BeanIngestionPreflight {
     if (!current.isEmpty()) return current;
     return List.of(Notification.error("Authoritative authority validation is unavailable for " + name
         + " at " + root, Notification.LexicalContext.of(declaration, ontology)));
+  }
+
+  private static boolean validatedAuthority(KimOntology ontology, KimConceptStatement declaration,
+      Collection<? extends Worldview> snapshots) {
+    var name = declaration.getAuthorityRequired();
+    var root = declaration.getUrn().contains(":") ? declaration.getUrn()
+        : ontology.getUrn() + ":" + declaration.getUrn();
+    var hash = SemanticValidationRequest.sourceHash(ontology.getSourceCode());
+    var requested = declaration.getAuthorityParameters().get("urn");
+    var coordinates = providerCoordinates(requested);
+    return hash != null && snapshots.stream().flatMap(s -> s.getAuthorityBindings().stream())
+        .anyMatch(b -> name.equals(b.localId()) && root.equals(b.rootIdentity())
+            && ontology.getUrn().equals(b.sourceOntology()) && hash.equals(b.sourceHash())
+            && b.provider() != null && coordinates != null
+            && coordinates.getFirst().equals(b.provider().urn())
+            && (!((String) requested).contains("@") || coordinates.getSecond().equals(b.provider().version())));
+  }
+
+  private record AuthorityNamespace(String ontology) {}
+
+  private static Map<String, AuthorityNamespace> authorityNamespaces(
+      Collection<KimOntology> ontologies, Collection<? extends Worldview> snapshots) {
+    var result = new HashMap<String, AuthorityNamespace>();
+    var occupied = new HashSet<String>();
+    ontologies.forEach(o -> occupied.add(o.getUrn()));
+    var declarations = new HashMap<String, KimConceptStatement>();
+    var owners = new IdentityHashMap<KimConceptStatement, String>();
+    var byName = new HashMap<String, KimOntology>();
+    for (var ontology : ontologies) {
+      byName.put(ontology.getUrn(), ontology);
+      ontology.getStatements().forEach(s -> index(declarations, owners, ontology.getUrn(), s));
+    }
+    for (var declaration : declarations.values()) {
+      if (declaration.getAuthorityRequired() == null) continue;
+      var ontology = byName.get(owners.get(declaration));
+      if (!KimWorldviewValidator.authorityErrors(declaration).isEmpty()
+          || declaration.getType().contains(SemanticType.NOTHING)
+          || !errors(declaration.getNotifications()).isEmpty()
+          || !validatedAuthority(ontology, declaration, snapshots)) continue;
+      var authority = declaration.getAuthorityRequired();
+      if (occupied.add(authority)) result.put(authority, new AuthorityNamespace(ontology.getUrn()));
+      else result.remove(authority);
+      if (declaration.getAuthorityParameters().get("codelists") instanceof Map<?, ?> names)
+        for (var entry : names.entrySet()) {
+          if (!(entry.getKey() instanceof String id) || id.isBlank()
+              || !(entry.getValue() instanceof String name)
+              || !name.matches("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*")) continue;
+          if (occupied.add(name)) result.put(name, new AuthorityNamespace(ontology.getUrn()));
+          else result.remove(name); // No placeholder may shadow an ontology or another codelist.
+        }
+    }
+    return result;
+  }
+
+  private static AuthorityNamespace authorityOwner(String urn, Map<String, AuthorityNamespace> namespaces) {
+    if (urn == null) return null;
+    var colon = urn.indexOf(':');
+    if (colon <= 0) return null;
+    var namespace = urn.substring(0, colon);
+    var code = urn.substring(colon + 1);
+    if (Character.isUpperCase(namespace.charAt(0))) {
+      try {
+        AuthorityIdentitySyntax.validateAuthority(namespace);
+        if (!code.startsWith("[") && !code.matches("[a-z][a-z0-9_]*|[A-Z][A-Z0-9_]+|[0-9]+")) return null;
+        var decoded = AuthorityIdentitySyntax.decode(code);
+        AuthorityIdentitySyntax.encode(namespace, decoded);
+      } catch (IllegalArgumentException invalid) { return null; }
+      return namespaces.get(namespace);
+    }
+    return code.matches("[A-Z][a-zA-Z0-9_]*") ? namespaces.get(namespace) : null;
+  }
+
+  private static void typeAuthorityReferences(KlabDocument<?> document,
+      Map<String, AuthorityNamespace> namespaces) {
+    KimObservableVisitor visitor;
+    if (document instanceof KimOntology ontology) {
+      var traversal = new KimOntologyVisitor(new KimOntologyVisitor.LenientValidator(), null);
+      traversal.visit(ontology); visitor = traversal;
+    } else if (document instanceof KimObservationStrategyDocument strategy) {
+      var traversal = new KimObservationStrategyDocumentVisitor(null, null);
+      traversal.visit(strategy); visitor = traversal;
+    } else return;
+    for (var concept : visitor.getConcepts())
+      if (authorityOwner(concept.getName(), namespaces) != null
+          && concept.getSemanticModifier() == null && concept.getObservable() == null
+          && concept.getType().contains(SemanticType.NOTHING)) {
+        concept.getType().remove(SemanticType.NOTHING);
+        concept.getType().addAll(EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+      }
   }
 
   private static boolean authorityReference(KimConceptStatement declaration, String urn) {

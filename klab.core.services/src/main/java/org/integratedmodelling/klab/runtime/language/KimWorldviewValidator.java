@@ -12,14 +12,56 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public class KimWorldviewValidator extends KimValidator implements KimOntologyVisitor.Validator {
   private final java.util.Map<KimOntology,WorldviewDeclarationRegistry> declarationRegistries = new java.util.IdentityHashMap<>();
   private final WorldviewDeclarationRegistry completeRegistry;
+  private final java.util.function.Predicate<String> acceptedAuthorityReference;
   public KimWorldviewValidator() { this(null); }
-  public KimWorldviewValidator(WorldviewDeclarationRegistry registry) { this.completeRegistry=registry; }
+  public KimWorldviewValidator(WorldviewDeclarationRegistry registry) { this(registry, null); }
+  /** Authoritative ingestion supplies its source-current validated binding predicate. */
+  public KimWorldviewValidator(WorldviewDeclarationRegistry registry,
+      java.util.function.Predicate<String> acceptedAuthorityReference) {
+    this.completeRegistry=registry; this.acceptedAuthorityReference=acceptedAuthorityReference;
+  }
   private WorldviewDeclarationRegistry registry(KimOntology ontology) {
     if(completeRegistry!=null)return completeRegistry;
     return declarationRegistries.computeIfAbsent(ontology,o->new WorldviewDeclarationRegistry(List.of(o)));
   }
   @Override public List<Notification> validateOntology(KimOntology ontology,KimObservableVisitor.Context context) {
     return registry(ontology).errors();
+  }
+
+  private boolean authorityReference(String urn, KimObservableVisitor.Context context) {
+    if (urn == null || !(context.getDocument() instanceof KimOntology ontology)) return false;
+    if (acceptedAuthorityReference != null) return acceptedAuthorityReference.test(urn);
+    var parts = urn.split(":", -1);
+    if (parts.length != 2 || !parts[1].matches("[A-Z][a-zA-Z0-9_]*")) return false;
+    var declarations = registry(ontology).declarations();
+    if (java.util.Objects.equals(ontology.getUrn(), parts[0])
+        || declarations.stream().anyMatch(d -> java.util.Objects.equals(d.ontology().getUrn(), parts[0]))) return false;
+    int owners = 0;
+    for (var entry : declarations) {
+      var root = entry.statement();
+      if (root.getAuthorityRequired() == null || !authorityErrors(root).isEmpty()
+          || root.getType().contains(SemanticType.NOTHING)) continue;
+      if (root.getAuthorityParameters().get("codelists") instanceof java.util.Map<?, ?> names)
+        for (var binding : names.entrySet())
+          if (binding.getKey() instanceof String id && !id.isBlank()
+              && binding.getValue() instanceof String namespace
+              && namespace.matches("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*")
+              && namespace.equals(parts[0])) owners++;
+    }
+    return owners == 1; // Source shape only; provider/code approval belongs to the Reasoner.
+  }
+
+  @Override public List<Notification> validateConcept(KimConcept concept, KimObservableVisitor.Context context) {
+    if (concept != null && concept.is(SemanticType.NOTHING)
+        && concept.getSemanticModifier() == null && concept.getObservable() == null
+        && authorityReference(concept.getName(), context)) {
+      var typed = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper()
+          .convertValue(concept, KimConcept.class);
+      typed.getType().remove(SemanticType.NOTHING);
+      typed.getType().addAll(java.util.EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+      return super.validateConcept(typed, context);
+    }
+    return super.validateConcept(concept, context);
   }
   @Override
   public List<Notification> validateConceptStatement(
@@ -151,6 +193,7 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
     // Complete, source-owned typed registration makes semantic reference order irrelevant.
     // Structural parent/alias cycles and unresolved kinds are rejected by the registry.
     boolean known = declaration != null || (!local && reference.resolved() != null);
+    if (!local && authorityReference(reference.urn(), context)) known = true;
     if (local && declaration != null && source.getLength()>0 && declaration.statement().getLength()>0
         && declaration.statement().getOffsetInDocument()>source.getOffsetInDocument()) {
       KimConceptStatement enclosing=null;
@@ -163,7 +206,7 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
     }
     // Preserve authority identity handling when no workspace declaration is expected.
     if (!local && !reference.urn().isEmpty() && Character.isUpperCase(reference.urn().charAt(0)))
-      known = true;
+      known = acceptedAuthorityReference == null || acceptedAuthorityReference.test(reference.urn());
     if (!known)
       return List.of(
           Notification.error(
