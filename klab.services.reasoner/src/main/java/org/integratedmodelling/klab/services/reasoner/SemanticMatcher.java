@@ -254,6 +254,7 @@ public class SemanticMatcher {
     // should have all the same traits - additional traits are allowed only
     // in contextual types
     Set<Concept> acceptedTraits = new HashSet<>();
+    List<Concept> requiredTraits = new ArrayList<>();
     for (Concept t : operations.traits(from)) {
       if (t.isAbstract()
           && resolvedAbstractPredicates != null
@@ -265,12 +266,14 @@ public class SemanticMatcher {
         distance += predicateDistance;
         acceptedTraits.add(resolvedAbstractPredicates.get(t));
       } else {
-        var match = matchTrait(t, operations.traits(to));
-        if (match == null) return -50;
-        distance += match.distance();
-        if (match.mediated()) acceptedTraits.add(match.candidate());
+        requiredTraits.add(t);
       }
     }
+    var traitMatches = matchTraits(requiredTraits, operations.traits(to),
+        candidate -> acceptedTraits.contains(candidate) || operations.hasTrait(from, candidate));
+    if (traitMatches == null) return -50;
+    distance += traitMatches.distance();
+    acceptedTraits.addAll(traitMatches.acceptedCandidates());
 
     for (Concept t : operations.traits(to)) {
       if (!acceptedTraits.contains(t) && !operations.hasTrait(from, t)) {
@@ -474,31 +477,71 @@ public class SemanticMatcher {
     return assertedDistance(core2, core1);
   }
 
-  private record TraitMatch(Concept candidate, int distance, boolean mediated) {}
+  private record TraitOptions(int distance, boolean mediated, List<Concept> candidates) {}
+  private record TraitMatches(int distance, Set<Concept> acceptedCandidates) {}
 
-  /** Compare alternatives independently: rejection of one trait cannot veto another match.
-   * Keep legacy hierarchy scores and reverse-trait checks; only provider mediation replaces
-   * those checks for a selected candidate. As before, provider mediation takes precedence over
-   * hierarchy fallback; then choose its lowest distance. Equal canonical traits are reflexive. */
-  private TraitMatch matchTrait(Concept target, Collection<Concept> candidates) {
-    TraitMatch best = null;
+  /** Retain every equally ranked alternative instead of letting set iteration select one.
+   * Exact canonical identity takes precedence over distinct provider-equivalent identities;
+   * otherwise keep compatible mediation before hierarchy fallback, then its lowest distance. */
+  private TraitOptions traitOptions(Concept target, List<Concept> candidates) {
+    var exact = candidates.stream().filter(candidate -> target.getUrn().equals(candidate.getUrn())).toList();
+    if (!exact.isEmpty()) return new TraitOptions(0, true, exact);
+    var best = new ArrayList<Concept>();
+    int distance = Integer.MAX_VALUE;
+    boolean mediated = false;
     for (Concept candidate : candidates) {
-      TraitMatch match;
-      if (target.getUrn().equals(candidate.getUrn())) {
-        match = new TraitMatch(candidate, 0, true);
-      } else {
-        var result = operations.authorityDistance(target, candidate);
-        match = switch (result.status()) {
-          case COMPATIBLE -> new TraitMatch(candidate, result.distance(), true);
-          case UNSUPPORTED -> operations.is(candidate, target)
-              ? new TraitMatch(candidate, 0, false) : null;
-          case UNKNOWN, INCOMPATIBLE -> null;
-        };
+      var result = operations.authorityDistance(target, candidate);
+      switch (result.status()) {
+        case COMPATIBLE -> {
+          if (!mediated || result.distance() < distance) {
+            best.clear(); distance = result.distance(); mediated = true;
+          }
+          if (result.distance() == distance) best.add(candidate);
+        }
+        case UNSUPPORTED -> {
+          if (!mediated && operations.is(candidate, target)) {
+            distance = 0; best.add(candidate);
+          }
+        }
+        case UNKNOWN, INCOMPATIBLE -> { }
       }
-      if (match != null && (best == null || (match.mediated() && !best.mediated())
-          || (match.mediated() == best.mediated() && match.distance() < best.distance()))) best = match;
     }
-    return best;
+    return best.isEmpty() ? null : new TraitOptions(distance, mediated, List.copyOf(best));
+  }
+
+  /** Maximize coverage of otherwise-extra traits among the equally best alternatives.
+   * Each required trait can mediate at most one candidate. Augmenting paths reconsider earlier
+   * choices, so a lexical or iteration-order winner cannot hide a valid complete assignment.
+   * Uncovered extras retain the caller's existing rejection or contextual penalty. */
+  private TraitMatches matchTraits(Collection<Concept> required, Collection<Concept> candidates,
+      java.util.function.Predicate<Concept> alreadyAccepted) {
+    var orderedCandidates = candidates.stream().distinct().sorted(Comparator.comparing(Concept::getUrn)).toList();
+    var options = new ArrayList<TraitOptions>();
+    int distance = 0;
+    for (Concept target : required.stream().distinct().sorted(Comparator.comparing(Concept::getUrn)).toList()) {
+      var row = traitOptions(target, orderedCandidates);
+      if (row == null) return null;
+      options.add(row); distance += row.distance();
+    }
+    Map<Integer, Concept> claimed = new HashMap<>();
+    for (Concept candidate : orderedCandidates) {
+      if (!alreadyAccepted.test(candidate)) claimTrait(candidate, options, claimed, new HashSet<>());
+    }
+    return new TraitMatches(distance, new HashSet<>(claimed.values()));
+  }
+
+  private boolean claimTrait(Concept candidate, List<TraitOptions> options,
+      Map<Integer, Concept> claimed, Set<Integer> visited) {
+    for (int row = 0; row < options.size(); row++) {
+      var choices = options.get(row);
+      if (!choices.mediated() || !choices.candidates().contains(candidate) || !visited.add(row)) continue;
+      var previous = claimed.get(row);
+      if (previous == null || claimTrait(previous, options, claimed, visited)) {
+        claimed.put(row, candidate);
+        return true;
+      }
+    }
+    return false;
   }
 
   private int distance(Concept from, Concept to, boolean acceptAbsent) {
@@ -511,15 +554,12 @@ public class SemanticMatcher {
     } else if (from != null) {
       ret = assertedDistance(to, from);
       if (ret >= 0) {
-        Set<Concept> acceptedTraits = new HashSet<>();
-        for (Concept t : operations.traits(from)) {
-          var match = matchTrait(t, operations.traits(to));
-          if (match == null) return -50;
-          ret += match.distance();
-          if (match.mediated()) acceptedTraits.add(match.candidate());
-        }
+        var matches = matchTraits(operations.traits(from), operations.traits(to),
+            candidate -> operations.hasTrait(from, candidate));
+        if (matches == null) return -50;
+        ret += matches.distance();
         for (Concept t : operations.traits(to)) {
-          if (!acceptedTraits.contains(t) && !operations.hasTrait(from, t)) {
+          if (!matches.acceptedCandidates().contains(t) && !operations.hasTrait(from, t)) {
             ret += 10;
           }
         }

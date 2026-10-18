@@ -40,6 +40,16 @@ that pair's ordinary hierarchy fallback. An unrelated cross-binding failure cann
 valid trait. The same comparison applies to traits within inherent and other modifier fillers;
 legacy hierarchy scores, ordinary extra-trait restrictions and filler head checks remain in place.
 
+Exact canonical identity has precedence over distinct provider-equivalent alternatives. Otherwise,
+compatible mediation retains precedence over unsupported hierarchy fallback, followed by the lowest
+compatible distance. All alternatives tied at that rank participate in the extra-trait check.
+The matcher uses augmenting paths to maximize coverage of otherwise-extra candidates: each required
+trait can mediate at most one candidate, and earlier assignments can be reconsidered. This avoids
+both iteration-order decisions and treating every tied alternative as simultaneously accepted.
+Top-level uncovered extra traits still reject the match; contextual fillers retain their existing
+penalty for each uncovered extra. Sorting only stabilizes traversal among equivalent assignments;
+lexical order cannot determine compatibility or the resulting score.
+
 `CachedAuthority` translates its stable bridge handle back to the transient provider handle and
 forwards every comparison. Distance is deliberately neither persisted nor cached. Aggregate semantic
 distance caching is bypassed while authorities are configured because a comparison policy can change

@@ -341,6 +341,166 @@ class SemanticMatcherTest {
     }
   }
 
+  @Test void exactCanonicalIdentityHasStablePrecedenceOverRedundantEquivalentExtras() {
+    for (String path : tiePaths()) {
+      var f = tieFixture(path); var g = f.graph(); var a = predicate("A"); var b = predicate("B");
+      g.traits.put(f.targetOwner(), List.of(a));
+      g.delegated.put(Pair.of(a, b), compatible(0));
+      var matcher = new SemanticMatcher(g);
+      for (var order : permutations(List.of(a, b))) {
+        g.traits.put(f.candidateOwner(), order);
+        int actual = matcher.semanticDistance(f.target(), f.candidate());
+        if (path.equals("traits")) assertEquals(-50, actual, path);
+        else assertEquals(11, actual, path);
+      }
+    }
+  }
+
+  @Test void equalDistanceAlternativesChooseSemanticallyValidCoverageInEveryPath() {
+    for (String path : tiePaths()) {
+      var f = tieFixture(path); var g = f.graph();
+      var a = predicate("A"); var b = predicate("B"); var c = predicate("C");
+      g.traits.put(f.targetOwner(), List.of(a));
+      // B is already admitted by the reverse hierarchy check. C must receive mediation.
+      g.parents.put(a, List.of(b));
+      g.delegated.put(Pair.of(a, b), compatible(2)); g.delegated.put(Pair.of(a, c), compatible(2));
+      var matcher = new SemanticMatcher(g);
+      for (var order : permutations(List.of(b, c))) {
+        g.traits.put(f.candidateOwner(), order);
+        assertEquals(path.equals("traits") ? 2 : 3,
+            matcher.semanticDistance(f.target(), f.candidate()), path + order);
+      }
+    }
+  }
+
+  @Test void equalDistanceAssignmentsReconsiderEarlierChoicesInEveryPath() {
+    for (String path : tiePaths()) {
+      var f = tieFixture(path); var g = f.graph();
+      var a = predicate("A"); var d = predicate("D"); var e = predicate("E");
+      var b = predicate("B"); var c = predicate("C"); var last = predicate("F");
+      g.delegated.put(Pair.of(a, b), compatible(2)); g.delegated.put(Pair.of(a, c), compatible(2));
+      g.delegated.put(Pair.of(a, last), compatible(2));
+      g.delegated.put(Pair.of(d, b), compatible(1)); g.delegated.put(Pair.of(d, c), compatible(1));
+      g.delegated.put(Pair.of(d, last), Authority.SemanticDistance.unknown("Different binding"));
+      g.delegated.put(Pair.of(e, b), compatible(3));
+      g.delegated.put(Pair.of(e, c), Authority.SemanticDistance.unknown("Unavailable"));
+      g.delegated.put(Pair.of(e, last), new Authority.SemanticDistance(Authority.DistanceStatus.INCOMPATIBLE, -1, List.of()));
+      var matcher = new SemanticMatcher(g);
+      for (var targetOrder : permutations(List.of(a, d, e))) {
+        g.traits.put(f.targetOwner(), targetOrder);
+        for (var candidateOrder : permutations(List.of(b, c, last))) {
+          g.traits.put(f.candidateOwner(), candidateOrder);
+          assertEquals(path.equals("traits") ? 6 : 7,
+              matcher.semanticDistance(f.target(), f.candidate()), path + targetOrder + candidateOrder);
+        }
+      }
+    }
+  }
+
+  @Test void equalDistanceAlternativesCannotCollectivelyAuthorizeTooManyExtraTraits() {
+    for (String path : tiePaths()) {
+      var f = tieFixture(path); var g = f.graph();
+      var a = predicate("A"); var b = predicate("B"); var c = predicate("C");
+      g.traits.put(f.targetOwner(), List.of(a));
+      g.delegated.put(Pair.of(a, b), compatible(2)); g.delegated.put(Pair.of(a, c), compatible(2));
+      var matcher = new SemanticMatcher(g);
+      for (var order : permutations(List.of(b, c))) {
+        g.traits.put(f.candidateOwner(), order);
+        int actual = matcher.semanticDistance(f.target(), f.candidate());
+        if (path.equals("traits")) assertTrue(actual < 0, path);
+        else assertEquals(13, actual, path);
+      }
+    }
+  }
+
+  @Test void rejectedOrUnsupportedEdgesCannotCoverAnExtraAlongsideACompatibleAlternative() {
+    for (String path : tiePaths()) {
+      for (var status : List.of(Authority.DistanceStatus.UNKNOWN, Authority.DistanceStatus.INCOMPATIBLE,
+          Authority.DistanceStatus.UNSUPPORTED)) {
+        var f = tieFixture(path); var g = f.graph();
+        var a = predicate("A"); var b = predicate("B"); var c = predicate("C");
+        g.traits.put(f.targetOwner(), List.of(a)); g.parents.put(c, List.of(a));
+        g.delegated.put(Pair.of(a, b), compatible(2));
+        g.delegated.put(Pair.of(a, c), new Authority.SemanticDistance(status, -1, List.of()));
+        var matcher = new SemanticMatcher(g);
+        for (var order : permutations(List.of(b, c))) {
+          g.traits.put(f.candidateOwner(), order);
+          int actual = matcher.semanticDistance(f.target(), f.candidate());
+          if (path.equals("traits")) assertTrue(actual < 0, path + status);
+          else assertEquals(13, actual, path + status);
+        }
+      }
+    }
+  }
+
+  @Test void unsupportedTiesPreserveOrdinaryReverseTraitRestrictionsInEveryPath() {
+    for (String path : tiePaths()) {
+      var f = tieFixture(path); var g = f.graph();
+      var a = predicate("A"); var b = predicate("B"); var c = predicate("C");
+      g.traits.put(f.targetOwner(), List.of(a));
+      g.parents.put(b, List.of(a)); g.parents.put(c, List.of(a));
+      g.delegated.put(Pair.of(a, b), Authority.SemanticDistance.unsupported());
+      var matcher = new SemanticMatcher(g);
+      for (var order : permutations(List.of(b, c))) {
+        g.traits.put(f.candidateOwner(), order);
+        int actual = matcher.semanticDistance(f.target(), f.candidate());
+        if (path.equals("traits")) assertTrue(actual < 0, path);
+        else assertEquals(21, actual, path);
+      }
+    }
+  }
+
+  @Test void missingRequiredEvidenceCannotBeMaskedByTiesForAnotherRequirement() {
+    for (String path : tiePaths()) {
+      var f = tieFixture(path); var g = f.graph();
+      var a = predicate("A"); var d = predicate("D"); var b = predicate("B"); var c = predicate("C");
+      g.delegated.put(Pair.of(a, b), compatible(2)); g.delegated.put(Pair.of(a, c), compatible(2));
+      g.delegated.put(Pair.of(d, b), Authority.SemanticDistance.unknown("Unavailable"));
+      g.delegated.put(Pair.of(d, c), new Authority.SemanticDistance(Authority.DistanceStatus.INCOMPATIBLE, -1, List.of()));
+      var matcher = new SemanticMatcher(g);
+      for (var targetOrder : permutations(List.of(a, d))) {
+        g.traits.put(f.targetOwner(), targetOrder);
+        for (var candidateOrder : permutations(List.of(b, c))) {
+          g.traits.put(f.candidateOwner(), candidateOrder);
+          assertTrue(matcher.semanticDistance(f.target(), f.candidate()) < 0, path);
+        }
+      }
+    }
+  }
+
+  private record TieFixture(FakeOperations graph, Concept target, Concept candidate,
+      Concept targetOwner, Concept candidateOwner) {}
+
+  private static TieFixture tieFixture(String path) {
+    var g = new FakeOperations(); var target = concept("Target"); var candidate = concept("Candidate");
+    var head = concept("Head"); g.heads.put(target, head); g.heads.put(candidate, head);
+    if (path.equals("traits")) return new TieFixture(g, target, candidate, target, candidate);
+    var tf = concept("TargetFiller"); var cf = concept("CandidateFiller");
+    setFiller(g, path, target, tf); setFiller(g, path, candidate, cf); g.parents.put(cf, List.of(tf));
+    return new TieFixture(g, target, candidate, tf, cf);
+  }
+
+  private static List<String> tiePaths() {
+    return List.of("traits", "directInherent", "inherent", "goal", "cooccurrent", "causant", "caused",
+        "adjacent", "compresent", "relativeTo");
+  }
+
+  private static Authority.SemanticDistance compatible(int distance) {
+    return new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE, distance, List.of());
+  }
+
+  private static <T> List<List<T>> permutations(List<T> values) {
+    if (values.isEmpty()) return List.of(List.of());
+    var result = new ArrayList<List<T>>();
+    for (int i = 0; i < values.size(); i++) {
+      var remainder = new ArrayList<>(values); var first = remainder.remove(i);
+      for (var tail : permutations(remainder)) {
+        var order = new ArrayList<T>(); order.add(first); order.addAll(tail); result.add(order);
+      }
+    }
+    return result;
+  }
+
   private static void setFiller(FakeOperations g, String path, Concept owner, Concept filler) {
     if (path.equals("directInherent")) g.directInherent.put(owner, filler);
     else if (path.equals("inherent")) g.inherent.put(owner, filler);
@@ -472,5 +632,32 @@ class SemanticMatcherTest {
     public long knowledgeRevision() {
       return revision;
     }
+  }
+  @Test void independentEquivalentAlternativeTieCannotChangeTopLevelAcceptanceByOrder() {
+    var g=new FakeOperations();var a=predicate("A");var b=predicate("B");
+    var target=concept("Target");var candidate=concept("Candidate");var head=concept("Head");
+    g.heads.put(target,head);g.heads.put(candidate,head);g.traits.put(target,List.of(a));
+    g.delegated.put(Pair.of(a,b),new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE,0,List.of("Equivalent")));
+    var matcher=new SemanticMatcher(g);
+    g.traits.put(candidate,List.of(a,b));int first=matcher.semanticDistance(target,candidate);
+    g.traits.put(candidate,List.of(b,a));int second=matcher.semanticDistance(target,candidate);
+    assertEquals(first,second,"Reordering the same candidate identity set must not change compatibility");
+  }
+
+  @Test void independentEquivalentAlternativeTieCannotChangeAnyFillerScoreByOrder() {
+    var firstScores=new java.util.LinkedHashMap<String,Integer>();
+    var secondScores=new java.util.LinkedHashMap<String,Integer>();
+    for(var path:List.of("directInherent","inherent","goal","cooccurrent","causant","caused","adjacent","compresent","relativeTo")) {
+      var g=new FakeOperations();var a=predicate("A");var b=predicate("B");
+      var target=concept("Target");var candidate=concept("Candidate");var head=concept("Head");
+      var tf=concept("TargetFiller");var cf=concept("CandidateFiller");
+      g.heads.put(target,head);g.heads.put(candidate,head);setFiller(g,path,target,tf);setFiller(g,path,candidate,cf);
+      g.parents.put(cf,List.of(tf));g.traits.put(tf,List.of(a));
+      g.delegated.put(Pair.of(a,b),new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE,0,List.of("Equivalent")));
+      var matcher=new SemanticMatcher(g);g.traits.put(cf,List.of(a,b));int first=matcher.semanticDistance(target,candidate);
+      g.traits.put(cf,List.of(b,a));int second=matcher.semanticDistance(target,candidate);
+      firstScores.put(path,first);secondScores.put(path,second);
+    }
+    assertEquals(firstScores,secondScores,"All nine paths must be independent of identity iteration order");
   }
 }
