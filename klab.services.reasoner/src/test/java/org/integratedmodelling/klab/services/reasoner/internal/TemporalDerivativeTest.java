@@ -138,7 +138,8 @@ class TemporalDerivativeTest {
         var originalClasses = manager.ontologies().flatMap(o -> o.classesInSignature())
             .map(OWLClass::getIRI).collect(java.util.stream.Collectors.toSet());
         for (int order : resolutionOrder) {
-          for (String atomic : List.of("odo:Mass", "(odo:Mass)", "((odo:Mass))")) {
+          for (String atomic : List.of("odo:Mass", "(odo:Mass)", "((odo:Mass))",
+              "imod:Mass", "(imod:Mass)", "((imod:Mass))")) {
             String expression = atomic;
             for (int level = 0; level < order; level++) expression = "change rate of (" + expression + ")";
             for (var restored : List.of(actor.resolveConcept(expression),
@@ -156,6 +157,32 @@ class TemporalDerivativeTest {
             .map(OWLClass::getIRI).collect(java.util.stream.Collectors.toSet()),
             "Equivalent syntax must not allocate duplicate generated OWL classes");
       }
+    }
+  }
+  @Test void mixedOperatorOrdersAndSpecializationsRemainDistinctThroughResolution() throws Exception {
+    try (var state = environment()) {
+      var actor = state.actor(); var owl = actor.owl();
+      var mass = owl.getConcept("odo:Mass"); var temperature = owl.getConcept("odo:Temperature");
+      var rate = owl.makeRate(mass);
+      assertNotEquals(rate.getName(), owl.makeRate(temperature).getName());
+      assertNotEquals(rate.getName(), owl.makeRate(owl.getConcept("imod:Stock")).getName());
+      var rateOfRatio = owl.makeRate(owl.makeRatio(mass, temperature));
+      var ratioOfRate = owl.makeRatio(rate, temperature);
+      assertNotEquals(rateOfRatio.getName(), ratioOfRate.getName());
+      var manager = owl.getOntology("odo").getOWLOntology().getOWLOntologyManager();
+      var before = manager.ontologies().flatMap(o -> o.classesInSignature())
+          .map(OWLClass::getIRI).collect(java.util.stream.Collectors.toSet());
+      for (var expected : List.of(rateOfRatio, ratioOfRate)) {
+        for (String expression : List.of(expected.getUrn(), "((" + expected.getUrn() + "))")) {
+          for (var actual : List.of(actor.resolveConcept(expression),
+              actor.resolveConceptWithBuilder(expression, actor.serviceScope()))) {
+            assertEquals(expected.getName(), actual.getName(), expression);
+            assertEquals(expected.getNamespace(), actual.getNamespace());
+          }
+        }
+      }
+      assertEquals(before, manager.ontologies().flatMap(o -> o.classesInSignature())
+          .map(OWLClass::getIRI).collect(java.util.stream.Collectors.toSet()));
     }
   }
   @Test void fullyParenthesizedSecondDerivativeResolvesWithoutAPriorGeneratedDefinition() throws Exception {

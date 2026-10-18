@@ -1964,11 +1964,7 @@ public class OWL {
     // Definition IDs must use the same syntax normalization as subsequent source
     // resolution. Otherwise constructing every derivative first can distinguish
     // equivalent atomic parentheses and allocate duplicate OWL classes.
-    var syntax = scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class)
-        .declareConcept(definition);
-    if (syntax == null || syntax.is(SemanticType.NOTHING))
-      throw new KlabValidationException("Cannot normalize temporal derivative definition");
-    definition = syntax.getUrn();
+    definition = canonicalOperatorDefinition(definition);
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);
     Concept context = reas.inherent(concept);
@@ -2017,6 +2013,31 @@ public class OWL {
     }
 
     return ontology.getConcept(conceptId);
+  }
+
+  /** Normalize syntax and already verified exact aliases, without authority lookup or
+   * equivalence based on units, subclassing, algebra or operator commutation. */
+  private String canonicalOperatorDefinition(String definition) {
+    var parsed = scope.getService(ResourcesService.class).declareConcept(definition);
+    return canonicalOperatorDefinition(parsed);
+  }
+
+  /** Canonical identity text for a builder-owned syntax tree; source metadata stays authored. */
+  public String canonicalOperatorDefinition(org.integratedmodelling.klab.api.lang.kim.KimConcept parsed) {
+    if (!(parsed instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl syntax)
+        || syntax.is(SemanticType.NOTHING))
+      throw new KlabValidationException("Cannot normalize operator definition");
+    var canonical = syntax.mapSyntax(node -> {
+      if (node.getName() == null || !QualifiedName.validate(node.getName())) return;
+      var name = new QualifiedName(node.getName());
+      var ontology = getOntology(name.getNamespace());
+      // Ontology delegates contain exact, previously verified aliases. Do not
+      // call getConcept here: its authority resolver can perform external discovery.
+      var resolved = ontology == null ? null : ontology.getConcept(name.getName());
+      if (resolved != null && QualifiedName.validate(resolved.getUrn())) node.setName(resolved.getUrn());
+    });
+    canonical.resetDefinition();
+    return canonical.getUrn();
   }
 
   /** Nearest unit on each asserted ancestor branch; differing branches require an authored unit.
@@ -2685,6 +2706,8 @@ public class OWL {
                         + " ("
                         + comparison.getUrn()
                         + ")"));
+
+    definition = canonicalOperatorDefinition(definition);
 
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);

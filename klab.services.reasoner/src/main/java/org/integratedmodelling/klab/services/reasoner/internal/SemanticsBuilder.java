@@ -191,9 +191,9 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
   @Override
   public Observable.Builder as(UnarySemanticOperator type, Concept... participants)
       throws KlabValidationException {
-    if (type == UnarySemanticOperator.RATE && syntax.getSemanticModifier() != null) {
-      // A temporal derivative applies to the whole existing operator expression.
-      // Replacing its modifier would collapse higher derivatives during resolution.
+    if (syntax.getSemanticModifier() != null) {
+      // Each operator consumes the whole existing expression. Replacing its
+      // modifier loses nested rates, including rates used as ratio operands.
       var operand = syntax;
       syntax = new KimConceptImpl();
       syntax.setObservable(operand);
@@ -411,6 +411,10 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
       return null;
     }
 
+    String definition = kimConcept.getSemanticModifier() == UnarySemanticOperator.RATE
+            || kimConcept.getSemanticModifier() == UnarySemanticOperator.RATIO
+        ? reasoner.owl().canonicalOperatorDefinition(kimConcept) : kimConcept.getUrn();
+
     var ret =
         (ConceptImpl)
             (kimConcept.getName() != null
@@ -494,7 +498,7 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     if ((valueOperators.size() + modifiers.size() + traits.size()) + roles.size() > 0) {
 
       var parent = ret;
-      ret = (ConceptImpl) reasoner.owl().makeSubclass(ret, kimConcept.getUrn());
+      ret = (ConceptImpl) reasoner.owl().makeSubclass(ret, definition);
 
       Set<Concept> baseTraits = new HashSet<>();
       // add traits and the proper axioms for each (move restrictions to OWL, handle the base trait)
@@ -721,7 +725,7 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
      * long as the OWL registry is rekeyed with them.
      */
     if (ret != resolvedConcept) {
-      reasoner.owl().setConceptUrn(ret, kimConcept.getUrn());
+      reasoner.owl().setConceptUrn(ret, definition);
     }
     ret.setDescriptionType(Contextualization.forSemantics(kimConcept));
 
