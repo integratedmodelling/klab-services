@@ -454,12 +454,65 @@ constrain its endpoints.
 ```observable
 proportion ecology:Forest in earth:Region;
 percentage ecology:Wetland in earth:Watershed;
-ratio of ecology:Input to ecology:Output;
+ratio of hydrology:WaterVolume to hydrology:CatchmentArea;
 ```
 
 The `in` operand of proportion or percentage states the whole. Do not insert
-`of` after those keywords; it is not in the current grammar. A ratio requires
-both operands.
+`of` after those keywords; it is not in the current grammar. The **ratio
+expression operator** requires both operands: `ratio of numerator to denominator`.
+The quantities must have an appropriate comparison meaning.
+
+A **named ratio declaration** is a different operation. A worldview can name a
+ratio without spelling out its components in the declaration. The following
+form parses; its current alias typing limitation is described in section 14:
+
+```kwv
+quality LeafAreaIndex
+  "One-sided leaf area per unit ground area."
+  is imod:Ratio;
+```
+
+This specializes the named worldview concept `imod:Ratio`; it does not invoke
+an incomplete `ratio of` expression. The component meaning is supplied by the
+concept's definition and observation convention. Here area is compared with
+area, which justifies a dimensionless value. The declaration's omission of
+components does **not** itself establish dimensionlessness, infer dimensions,
+or supply a computation. Ratios need not be unitless: mass divided by volume,
+for example, has different dimensions from area divided by area.
+
+When the components are part of the formal meaning, express them explicitly.
+The generic declaration keyword `quality` preserves the specific quality type
+of its parent expression:
+
+```kwv
+ontology ratios in domain root version 1.0.0;
+
+volume VoidVolume;
+volume BulkVolume;
+quality PoreFraction is ratio of ratios:VoidVolume to ratios:BulkVolume;
+quality Porosity is ratios:PoreFraction;
+```
+
+Both named qualities retain `RATIO`; `quality` does not widen them to a generic
+quality. Explicit component types and compatible unit metadata permit
+inference of quotient dimensions. Volume divided by volume justifies the
+unitless pore fraction in this example. Parser acceptance alone does not prove
+unit inference, numerical division, or a particular value range at runtime.
+
+The same inheritance rule applies to other specific quality kinds, such as
+`quality LocalHeight is geography:Elevation` when the parent is a length.
+It is distinct from the generic-quality root fallback:
+
+```kwv
+ontology generic in domain root version 1.0.0;
+
+abstract quality Quality is core odo:Quality;
+quality UnspecifiedQuality is generic:Quality;
+```
+
+This last parent supplies no specific measurable kind. Abstractness is declared
+locally and is independent of quality-type inheritance. See section 14 for the
+current named Ratio alias limitation and unsupported bare `ratio` keyword.
 
 ### 4.6 Value
 
@@ -681,10 +734,10 @@ define elevation_query as {{geography:Elevation in m}};
 Worldview clauses use expressions directly:
 
 ```kwv
-process Flooding
-  affects geography:Region
-  emerges from probability of hydrology:FloodEvent
-;
+ontology flooding in domain root version 1.0.0;
+
+length WaterLevel;
+process Flooding affects flooding:WaterLevel;
 ```
 
 Annotations, maps, and other value positions can carry `{{ ... }}`.
@@ -739,9 +792,12 @@ concept-expression [within concept-expression]
 ```
 
 ```kwv
+ontology catchments in domain root version 1.0.0;
+
+thing Watershed;
+area DrainageArea;
 quality UpstreamArea
-  is geography:Area within hydrology:Watershed
-;
+  is catchments:DrainageArea within catchments:Watershed;
 ```
 
 `within` is not part of a stand-alone observable statement. It is accepted only
@@ -819,6 +875,14 @@ The grammar defines source structure; full validity requires semantic services:
 - the bare `!=` form has no operand;
 - numeric exponents such as `m^2` are not accepted by the current `Unit` rule
   because `^` is followed by a unit element;
+- `ratio` is currently an expression operator, not a declaration keyword:
+  neither `ratio Index;` nor `ratio of X;` is accepted. A named specialization
+  such as `quality LeafAreaIndex is imod:Ratio;` parses, but the current
+  `quantity Ratio is core odo:Ratio` alias is represented as `QUANTITY` in
+  parser/adaptor descriptors. Do not infer preservation of the `RATIO` flag
+  from that alias alone. In contrast, `quality X is ratio of Y to Z` and its
+  named children retain `RATIO`. Aligning the alias and adding a bare ratio
+  declaration require coordinated implementation and regression checks;
 - authorities, units, and semantic relationships need runtime registries or
   worldview reasoning;
 - `KimObservableImpl.namespaces()` currently returns an empty set, and its
