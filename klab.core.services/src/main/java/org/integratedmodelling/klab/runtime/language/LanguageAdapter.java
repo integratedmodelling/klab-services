@@ -1349,7 +1349,7 @@ public class LanguageAdapter {
                   SemanticType.RELATIONSHIP,
                   SemanticType.FUNCTIONAL);
           case GENERIC_QUALITY ->
-              // this only happens with core im:Quality. It's deprecated and should not get here.
+              // A declared parent supplies specialized quality types; otherwise use Quality.
               EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUALITY);
           case IDENTITY -> EnumSet.of(SemanticType.PREDICATE, SemanticType.IDENTITY);
           case INDIVIDUAL_IDENTITY ->

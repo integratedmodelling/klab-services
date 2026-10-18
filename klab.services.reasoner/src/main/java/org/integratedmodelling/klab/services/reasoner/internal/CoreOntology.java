@@ -58,6 +58,7 @@ public class CoreOntology {
     coreConceptIds.put(SemanticType.CONFIGURATION, NS.CORE_CONFIGURATION);
     coreConceptIds.put(SemanticType.CLASS, NS.CORE_TYPE);
     coreConceptIds.put(SemanticType.QUANTITY, NS.CORE_QUANTITY);
+    coreConceptIds.put(SemanticType.QUALITY, NS.CORE_QUALITY);
     coreConceptIds.put(SemanticType.DOMAIN, NS.CORE_DOMAIN);
     coreConceptIds.put(SemanticType.ENERGY, NS.CORE_ENERGY);
     coreConceptIds.put(SemanticType.ENTROPY, NS.CORE_ENTROPY);
@@ -301,6 +302,7 @@ public class CoreOntology {
     public static final String CORE_PROCESS = "odo:Process";
     public static final String CORE_EVENT = "odo:Event";
     public static final String CORE_IDENTITY = "odo:Identity";
+    public static final String CORE_QUALITY = "odo:Quality";
     public static final String CORE_QUANTITY = "odo:ContinuousNumericallyQuantifiableQuality";
     public static final String CORE_SUBJECT = "odo:Subject";
     public static final String CORE_EXTENSIVE_PHYSICAL_PROPERTY = "odo:ExtensivePhysicalProperty";
@@ -517,6 +519,9 @@ public class CoreOntology {
       ret = SemanticType.EXTENSIVE;
     } else if (type.contains(SemanticType.INTENSIVE)) {
       ret = SemanticType.INTENSIVE;
+    } else if (type.contains(SemanticType.QUALITY)) {
+      // A bare quality has no specialized parent. More specific quality types take precedence.
+      ret = SemanticType.QUALITY;
     } /*
        * else if (type.contains(Type.ASSESSMENT)) { ret = Type.ASSESSMENT; }
        */

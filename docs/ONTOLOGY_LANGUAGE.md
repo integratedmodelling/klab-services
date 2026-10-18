@@ -261,8 +261,19 @@ require a qualifier for concrete declarations where the distinction matters.
 
 ### 5.2. Qualities and properties
 
-The generic declarations are `quality`, `class`, `quantity`, `ordering`, and `extent`. The grammar
-also provides property keywords whose physical behavior is known:
+The generic declarations are `quality`, `class`, `quantity`, `ordering`, and `extent`.
+
+The `quality` keyword inherits its specific quality type from a declared superclass or parent
+expression. For example, `quality X is ratio of Y to Z;` has the RATIO type of that expression,
+rather than losing its specialization to generic QUALITY. A further `quality W is X;` retains
+that specialization too. The parent expression and its operator ancestry are preserved.
+When no parent or specialized quality type is supplied, the declaration inherits `odo:Quality`.
+This abstract core class is also available through a worldview alias such as `imod:Quality`.
+Its abstractness does not automatically make a new child abstract: use the child's own `abstract`
+keyword for that independent constraint. Thus `abstract quality Heterogeneity;` remains abstract,
+while a generic-keyword child without that keyword does not acquire it merely from its parent.
+
+The grammar also provides property keywords whose physical behavior is known:
 
 | Extensive properties | Intensive properties |
 | --- | --- |
