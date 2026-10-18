@@ -3313,12 +3313,19 @@ public class ComponentRegistry {
       KlabComponent component,
       Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) {
 
+    var discovery = new ClassGraph().enableAnnotationInfo().ignoreParentClassLoaders();
+    var componentPath = component.getWrapper().getPluginPath();
+    if (Files.isRegularFile(componentPath)) {
+      // Discover only this component's contributions. Adding its loader to the host
+      // classpath scans unrelated contributions and identical archive copies; ClassGraph
+      // 4.8.162 can then lose an owned file slice and leave the JAR locked on Windows.
+      discovery.overrideClasspath(componentPath.toFile());
+    } else {
+      // Development plug-ins may keep classes below target/classes rather than their root.
+      discovery.overrideClassLoaders(component.getWrapper().getPluginClassLoader());
+    }
     try (ScanResult scanResult =
-        new ClassGraph()
-            .enableAnnotationInfo()
-            .addClassLoader(component.getWrapper().getPluginClassLoader())
-            .acceptPackages(component.getClass().getPackageName())
-            .scan()) {
+        discovery.acceptPackages(component.getClass().getPackageName()).scan()) {
       for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
         for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(ah)) {
           try {
