@@ -89,6 +89,20 @@ class CapturedConfiguredAuthorityTest {
     assertThrows(UnsupportedOperationException.class,()->CapturedAuthorityCatalog.captureRecorded(f.data,f.source,Map.of("UN.M49",0L),CapturedAuthorityCatalog.captureProviderEvidence(f.data)));
     Files.writeString(f.state,"{}");assertThrows(Exception.class,()->capture(f));
   }
+  @Test void configuredCodelistsReplayWithoutConfigureOrInteractiveFallbackAndObeyRelease()throws Exception{
+    var f=fixture();var catalog=capture(f);Files.delete(f.archive);
+    var provider=catalog.provider(f.binding,f.request,directory.resolve("codelist-offline"),()->false);
+    var id=provider.configure(AuthorityBindings.providerRequest(f.request));
+    var definitions=provider.getCodelistDefinitions(id);
+    assertEquals(1,definitions.get("countries").codelist().size());
+    assertEquals("UN.M49",definitions.get("countries").codelist().getAuthorityId());
+    assertFalse(definitions.get("countries").acceptsProposals());
+    assertEquals(definitions.keySet(),provider.getCodelists(id).keySet());
+    assertThrows(IllegalStateException.class,()->provider.getCodelistDefinitions("wrong"));
+    provider.releaseConfiguration(id);
+    assertThrows(IllegalStateException.class,()->provider.getCodelistDefinitions(id));
+    assertFalse(Files.exists(directory.resolve("codelist-offline/interactive-authority-cache")));
+  }
   @Test void missingConfiguredSnapshotCannotCertifyAnUnusedBridge()throws Exception{
     var f=fixture();Files.delete(f.state);
     assertThrows(UnsupportedOperationException.class,()->CapturedAuthorityCatalog.captureRecorded(f.data,f.source,Map.of("UN.M49",0L),CapturedAuthorityCatalog.captureProviderEvidence(f.data),Map.of()));

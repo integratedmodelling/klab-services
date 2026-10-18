@@ -13,6 +13,13 @@ public class SnapshotProvider implements SnapshottingAuthority {
   public CachePolicy getCachePolicy(){return new CachePolicy("snapshot-test",0,0,0);}
   public Set<String> getSemanticBoundaries(){return Set.of("COUNTRY");}
   public String configure(ConfigurationRequest request){throw new AssertionError("Offline replay must never call live configure");}
+  public Map<String,CodelistDefinition> getCodelistDefinitions(String configuration){
+    check(configuration); // null metadata discovery must never invoke configured codelists.
+    var list=new org.integratedmodelling.klab.api.knowledge.impl.CodelistImpl();
+    list.setName("countries");list.setAuthorityId("UN.M49");list.setWorldview("w");
+    list.setEntries(List.of(new org.integratedmodelling.klab.api.knowledge.impl.CodelistImpl.Entry("UN.M49","Spain","Spain","Frozen country",true)));
+    return Map.of("countries",new CodelistDefinition(list,false));
+  }
   public String restoreConfiguration(ConfigurationRequest request,ConfiguredAuthoritySnapshot snapshot){
     if(!snapshot.request().equals(request)||!snapshot.format().equals("fixture-v1")
         ||!new String(snapshot.state(),StandardCharsets.UTF_8).equals("frozen-vocabulary"))throw new IllegalArgumentException("Changed snapshot");

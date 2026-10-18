@@ -131,14 +131,16 @@ public final class CapturedAuthorityCatalog {
           throw unresolved("provider requires a configured snapshot capability: " + descriptor.id());
         var advertised = descriptor.authorities().stream().filter(a -> a.urn().equals(annotation.urn())).findFirst().orElseThrow();
         if (!advertised.version().toString().equals(annotation.version())) throw unresolved("provider version mismatch");
-        if (type.getMethod("getCodelists", String.class).getDeclaringClass() != Authority.class
-            || type.getMethod("getCodelistDefinitions", String.class).getDeclaringClass() != Authority.class)
+        boolean configuredCodelists = type.getMethod("getCodelists", String.class).getDeclaringClass() != Authority.class
+            || type.getMethod("getCodelistDefinitions", String.class).getDeclaringClass() != Authority.class;
+        if (configuredCodelists && !snapshotCapable)
           throw unresolved("configuration-dependent provider codelists need an explicit frozen response");
         var capabilities = mapper.valueToTree(instance.getCapabilities());
         ((com.fasterxml.jackson.databind.node.ObjectNode)capabilities).put("subAuthoritiesSearchFilters", instance.getCapabilities().areSubAuthoritiesSearchFilters());
         var record = new Provider(mapper.convertValue(descriptor, ComponentDescriptor.class), className, instance.getUrn(),
             className + ":" + annotation.version() + ":" + digest(archive), instance.getCachePolicy(),
-            Set.copyOf(instance.getSemanticBoundaries()), mapper.writeValueAsBytes(capabilities), mapper.writeValueAsBytes(instance.getCodelistDefinitions(null)), archive, snapshotCapable);
+            Set.copyOf(instance.getSemanticBoundaries()), mapper.writeValueAsBytes(capabilities),
+            mapper.writeValueAsBytes(configuredCodelists ? Map.of() : instance.getCodelistDefinitions(null)), archive, snapshotCapable);
         if (providers.put(instance.getUrn(), record) != null) throw unresolved("duplicate provider: " + instance.getUrn());
       } finally {
         try { if (instance != null) closeOwnedProvider(instance); }
@@ -354,7 +356,13 @@ public final class CapturedAuthorityCatalog {
     @Override public CachePolicy getCachePolicy() { return provider.policy(); }
     @Override public Set<String> getSemanticBoundaries() { return provider.boundaries(); }
     @Override public Map<String, CodelistDefinition> getCodelistDefinitions(String id) {
-      check(id);
+      synchronized (bridge) {
+        check(id);
+        // Only a proven configured snapshot can supply configured codelists offline.
+        // Never invoke ordinary configure or an interactive fallback for this path.
+        if (configuredSnapshots.containsKey(original.name()))
+          return live().getCodelistDefinitions(bridge.liveId);
+      }
       try { return JacksonConfiguration.newObjectMapper().readValue(provider.seeds(),
           new com.fasterxml.jackson.core.type.TypeReference<Map<String, CodelistDefinition>>() {}); }
       catch (IOException failure) { throw new IllegalStateException(failure); }
