@@ -121,6 +121,43 @@ class TemporalDerivativeTest {
       assertTrue(owl.isConsistent());
     }
   }
+  @Test void directConstructionAndEquivalentParenthesesReuseOneOwlClassAtEveryOrder() throws Exception {
+    for (int[] resolutionOrder : List.of(new int[] {1, 2, 3}, new int[] {3, 2, 1}, new int[] {2, 1, 3})) {
+      try (var state = environment()) {
+        var actor = state.actor(); var owl = actor.owl();
+        var derivatives = new ArrayList<Concept>();
+        var operand = owl.getConcept("odo:Mass");
+        // Construct every level before resolving any expression: normalization of
+        // a lower derivative must not be a prerequisite for stable OWL identity.
+        for (int order = 1; order <= 3; order++) {
+          operand = owl.makeRate(operand); derivatives.add(operand);
+        }
+        var expectedNames = derivatives.stream().map(Concept::getName).toList();
+        assertEquals(3, new HashSet<>(expectedNames).size());
+        var manager = owl.getOntology("odo").getOWLOntology().getOWLOntologyManager();
+        var originalClasses = manager.ontologies().flatMap(o -> o.classesInSignature())
+            .map(OWLClass::getIRI).collect(java.util.stream.Collectors.toSet());
+        for (int order : resolutionOrder) {
+          for (String atomic : List.of("odo:Mass", "(odo:Mass)", "((odo:Mass))")) {
+            String expression = atomic;
+            for (int level = 0; level < order; level++) expression = "change rate of (" + expression + ")";
+            for (var restored : List.of(actor.resolveConcept(expression),
+                actor.resolveConcept(expression), actor.resolveConceptWithBuilder(expression, actor.serviceScope()))) {
+              assertEquals(expectedNames.get(order - 1), restored.getName(), expression);
+              assertEquals(derivatives.get(order - 1).getNamespace(), restored.getNamespace());
+              assertEquals(derivatives.get(order - 1).getUrn(), restored.getUrn());
+              var units = ServiceConfiguration.INSTANCE.getService(UnitService.class);
+              assertTrue(units.isCompatible(units.getUnit(restored.getMetadata().get("odo:unit").toString()),
+                  units.getUnit("kg/s^" + order)));
+            }
+          }
+        }
+        assertEquals(originalClasses, manager.ontologies().flatMap(o -> o.classesInSignature())
+            .map(OWLClass::getIRI).collect(java.util.stream.Collectors.toSet()),
+            "Equivalent syntax must not allocate duplicate generated OWL classes");
+      }
+    }
+  }
   @Test void fullyParenthesizedSecondDerivativeResolvesWithoutAPriorGeneratedDefinition() throws Exception {
     try (var state = environment()) {
       var actor = state.actor();

@@ -1961,6 +1961,14 @@ public class OWL {
     }
 
     String definition = UnarySemanticOperator.RATE.declaration[0] + " (" + concept.getUrn() + ")";
+    // Definition IDs must use the same syntax normalization as subsequent source
+    // resolution. Otherwise constructing every derivative first can distinguish
+    // equivalent atomic parentheses and allocate duplicate OWL classes.
+    var syntax = scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class)
+        .declareConcept(definition);
+    if (syntax == null || syntax.is(SemanticType.NOTHING))
+      throw new KlabValidationException("Cannot normalize temporal derivative definition");
+    definition = syntax.getUrn();
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);
     Concept context = reas.inherent(concept);
