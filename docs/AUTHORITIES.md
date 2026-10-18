@@ -96,7 +96,7 @@ must prevent concept creation.
 The old `api.knowledge.Authority` interface is deprecated and is no longer a discoverable provider
 contract. Its `setup()`, `Configuration.getResolutionEndpoint()`, documentation, and distance methods
 have not been carried over as an operational remote protocol. New providers use `api.services.Authority`.
-Distance delegation still needs an API decision. Identity documentation is published through the authenticated Reasoner documentation routes.
+Configured distance delegation is described in [authority distance](AUTHORITY_DISTANCE.md). Identity documentation is published through the authenticated Reasoner documentation routes.
 
 Provider projects using the previous service interface must add `configure(ConfigurationRequest)`,
 pass configuration IDs to `resolveIdentity` and `search`, and return the annotated URN from
@@ -454,7 +454,7 @@ This syntax must preserve the complete bracketed payload rather than applying or
 rules. It enables an authority to expose intuitive local aliases while evaluating equivalence,
 subsumption, or distance from a multidimensional external definition. Ordinary OWL reasoning can
 still use the materialized parent structure; comparisons whose meaning belongs to the external
-classification will need a configured-provider distance API, which is not currently exposed.
+classification can use the configured-provider distance hook described in [authority distance](AUTHORITY_DISTANCE.md).
 
 Concepts materialized from an authority should behave like normal concepts for hierarchy,
 restriction, caching, display, and transport. Their origin remains significant: normal asserted
@@ -467,7 +467,7 @@ configuration equivalence.
 
 | Area | Status |
 | --- | --- |
-| Java annotation and provider interface | Available for provider identity, bridge configuration, search, codelists and hierarchy data. Reasoner documentation transport is available; authority-specific distance remains pending. |
+| Java annotation and provider interface | Available for provider identity, bridge configuration, search, codelists and hierarchy data. Reasoner documentation transport and configured authority distance are available; remote provider hosting remains pending. |
 | Component scanning and validation | Available. Empty URNs, wrong interface types, missing no-argument constructors, and annotation/implementation URN mismatches are rejected. |
 | Descriptor advertisement and serialization | Available. `ComponentDescriptor.authorities()` is published with service capabilities. |
 | Reasoner-only instantiation | Available. Resources indexes and advertises providers without hosting them. |
@@ -483,7 +483,7 @@ configuration equivalence.
 | Search-only sub-authority dispatch | Implemented for opted-in providers: advertised dotted suffixes resolve through the base bridge, cache and canonical ontology. Exact configured dotted bindings take precedence. |
 | Taxonomic provider | The sibling `klab.authority.taxa` implements pinned COL XR configuration, code lookup, synonym canonicalization, hierarchy validation, scientific/vernacular search and explicit reconciliation. See its README for parameters and limits. |
 | Explicit reconciliation | Optional shared Java API and capability flag available. TAXA rejects ambiguous and higher-rank matches; service/UI transport remains pending. |
-| Authority-aware semantic distance | Not implemented in Reasoner matching. |
+| Authority-aware semantic distance | Configured provider hook and normal matcher delegation implemented; see [direction, status, caching and capture limits](AUTHORITY_DISTANCE.md). |
 | Bracketed complex expressions (`NAME:[...]`) | Canonical serialization, Resources parser/adapter retention, OWL decoding, and HTTP semantic insertion/undo are implemented and regression-tested. |
 | Remote authority API | Authenticated Reasoner configuration, search, documentation, and semantic identity insertion are available. Standalone provider hosting, distance, and CRUD protocols remain undefined. |
 
@@ -508,9 +508,9 @@ The next implementation work should proceed in dependency order:
    expressions (`NAME:[...]`). Preserve payloads, including embedded colons and escaped closing
    brackets, through qualified-name splitting, provider dispatch and canonicalization. Canonical
    forms must remain unambiguous and round-trip through service DTOs.
-6. **Integrate reasoning.** Route authority identity comparisons to the correct configured binding,
-   combine provider distance with ordinary concept reasoning, and invalidate all related caches on
-   binding, component, or worldview revision changes.
+6. **Extend reasoning integration.** Configured authority identity comparisons now delegate through
+   the normal matcher. Specify policy-revision caching, cross-binding mediation and captured distance
+   replay; preserve ordinary observable-head and contextual restrictions.
 7. **Define remote hosting.** Specify request/response DTOs for capabilities, configuration,
    identity lookup, search, distance, documentation, and optional CRUD. Include authorization,
    timeouts, cancellation, health, and failure semantics before treating

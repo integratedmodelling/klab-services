@@ -324,6 +324,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(authority, code);
     return authorityIdentityResolver.resolve(authority, code, true);
   }
+  /** Internal matching hook; public semanticDistance routes retain contextual and head checks. */
+  public Authority.SemanticDistance authoritySemanticDistance(Concept target, Concept candidate) {
+    return authorityIdentityResolver == null ? Authority.SemanticDistance.unsupported()
+        : authorityIdentityResolver.semanticDistance(target, candidate);
+  }
+
+  public boolean hasConfiguredAuthorities() { return !authorityBindings.snapshot().isEmpty(); }
+
   private volatile List<Notification> worldviewLoadDiagnostics = List.of();
   private SyntacticMatcher syntacticMatcher;
   private SemanticMatcher semanticMatcher;

@@ -9,6 +9,33 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public interface Authority {
 
+  /** Directional resolution result: can candidate supply target? UNKNOWN is not disjointness.
+   * UNSUPPORTED alone permits fallback to ordinary asserted hierarchy matching. */
+  record SemanticDistance(DistanceStatus status, int distance, List<String> explanations) {
+    public SemanticDistance {
+      java.util.Objects.requireNonNull(status);
+      explanations = List.copyOf(explanations);
+      if (status == DistanceStatus.COMPATIBLE ? distance < 0 || distance > 100 : distance != -1)
+        throw new IllegalArgumentException("Compatible distance must be 0..100; other statuses use -1");
+    }
+    public static SemanticDistance unsupported() {
+      return new SemanticDistance(DistanceStatus.UNSUPPORTED, -1, List.of());
+    }
+    public static SemanticDistance unknown(String reason) {
+      return new SemanticDistance(DistanceStatus.UNKNOWN, -1, List.of(reason));
+    }
+  }
+  enum DistanceStatus { COMPATIBLE, INCOMPATIBLE, UNKNOWN, UNSUPPORTED }
+
+  /** Compare canonical IDs within this exact live bridge. Zero is equivalence; positive values
+   * rank admitted candidate specializations. Do not return compatibility for mere overlap.
+   * Providers own their comparison policy in ConfigurationRequest parameters. Results are not cached
+   * by the host: mutable policy/evidence must not reuse identity/search cache lifetimes.
+   * Default preserves existing providers' asserted-hierarchy behavior. */
+  default SemanticDistance semanticDistance(String configurationId, String targetId, String candidateId) {
+    return SemanticDistance.unsupported();
+  }
+
   enum HierarchyStatus { COMPLETE, DEFERRED }
   enum ResolutionMode { CONFIGURED, FULL_HIERARCHY }
 
@@ -229,6 +256,9 @@ public interface Authority {
   }
 
   interface Capabilities {
+    /** Advertises provider-defined distance for captured/accepted execution environments. */
+    default boolean isSemanticDistanceSupported() { return false; }
+
 
     /**
      * @return
