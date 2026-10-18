@@ -1513,7 +1513,9 @@ public class LanguageAdapter {
         };
 
     // single source of truth for intensive/extensive nature
-    if (type.is(SemanticSyntax.TypeCategory.INTENSIVE)) {
+    // Language RATE's historical category is temporal. It must not impose a spatial flag;
+    // the operator constructor obtains that character from the numeric operand.
+    if (type != SemanticSyntax.Type.RATE && type.is(SemanticSyntax.TypeCategory.INTENSIVE)) {
       ret.add(SemanticType.INTENSIVE);
     } else if (type.is(SemanticSyntax.TypeCategory.EXTENSIVE)) {
       ret.add(SemanticType.EXTENSIVE);

@@ -1935,29 +1935,30 @@ public class OWL {
     return ontology.getConcept(conceptId);
   }
 
-  /**
-   * Turn a concept into its change if it's not already one, implementing the corresponding semantic
-   * operator.
-   *
-   * @param concept the untransformed concept
-   * @return the transformed concept
-   */
+  /** Construct a signed numeric temporal derivative. Reapplying RATE produces a distinct
+   * higher derivative; the same operand still reuses its existing definition. */
   public synchronized Concept makeRate(Concept concept) {
-
-    if (concept.is(SemanticType.RATE)) {
-      return concept;
-    }
+    if (concept == null || !concept.is(SemanticType.QUALITY)
+        || !concept.is(SemanticType.QUANTIFIABLE) || concept.is(SemanticType.CLASS)
+        || concept.is(SemanticType.ORDERING) || concept.is(SemanticType.PRESENCE))
+      throw new KlabValidationException("Temporal derivatives require a numeric quality operand");
 
     String cName = getCleanId(concept) + "ChangeRate";
-
-    if (!concept.is(SemanticType.QUALITY)) {
-      return null;
-    }
 
     // this.hasUnaryOp = true;
     var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
     requireOperatorSuperclass(NS.CORE_CHANGE_RATE);
+
+    // Resolve/validate units before allocating a generated definition. Missing units on an
+    // abstract numeric quality remain unknown, never silently dimensionless.
+    String operandUnit = derivativeOperandUnit(concept);
+    String derivativeUnit = null;
+    if (operandUnit != null) {
+      var units = ServiceConfiguration.INSTANCE.getService(org.integratedmodelling.klab.api.services.UnitService.class);
+      derivativeUnit = ((org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl)
+          units.temporalDerivative(units.getUnit(operandUnit))).getDefinition();
+    }
 
     String definition = UnarySemanticOperator.RATE.declaration[0] + " " + concept.getUrn();
     Ontology ontology = getOntology(concept.getNamespace());
@@ -1976,9 +1977,14 @@ public class OWL {
       ArrayList<Axiom> ax = new ArrayList<>();
       ax.add(Axiom.ClassAssertion(conceptId, newType));
       ax.add(Axiom.SubClass(NS.CORE_CHANGE_RATE, conceptId));
+      if (concept.is(SemanticType.EXTENSIVE))
+        ax.add(Axiom.SubClass(NS.CORE_EXTENSIVE_PHYSICAL_PROPERTY, conceptId));
+      if (concept.is(SemanticType.INTENSIVE))
+        ax.add(Axiom.SubClass(NS.CORE_INTENSIVE_PHYSICAL_PROPERTY, conceptId));
+      if (derivativeUnit != null)
+        ax.add(Axiom.AnnotationAssertion(conceptId, NS.SI_UNIT_PROPERTY, derivativeUnit));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
-      ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
@@ -1990,6 +1996,7 @@ public class OWL {
 
       restrictSome(
           ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
+      restrictSome(ret, getProperty(NS.DESCRIBES_QUALITY_PROPERTY), concept, ontology);
 
       /*
        * context of the change is the same context as the quality it describes - FIXME
@@ -2002,6 +2009,39 @@ public class OWL {
     }
 
     return ontology.getConcept(conceptId);
+  }
+
+  /** Nearest unit on each asserted ancestor branch; differing branches require an authored unit.
+   * No reasoner flush or mutable service discovery is required during staged compilation. */
+  private String derivativeOperandUnit(Concept concept) {
+    var pending = new ArrayList<Concept>(); pending.add(concept);
+    var visited = new HashSet<String>();
+    var units = new TreeSet<String>();
+    while (!pending.isEmpty()) {
+      var next = new ArrayList<Concept>();
+      for (var current : pending) {
+        if (!visited.add(current.getUrn())) continue;
+        if (visited.size() > 1024) throw new KlabValidationException("Derivative unit ancestry exceeds bounds");
+        var value = current.getMetadata().get(NS.SI_UNIT_PROPERTY);
+        if (value != null) {
+          if (!(value instanceof String text) || text.isBlank())
+            throw new KlabValidationException("Invalid derivative operand unit");
+          units.add((String)value);
+        } else {
+          // Imported foundation annotations need not be materialized in Concept metadata.
+          // Read the pinned OWL annotations without altering canonical alias documentation.
+          var declared = new TreeSet<String>();
+          manager.ontologies().flatMap(o -> EntitySearcher.getAnnotations(getOWLClass(current), o))
+              .filter(a -> a.getProperty().getIRI().toString().equals("http://integratedmodelling.org/odo#unit"))
+              .forEach(a -> a.getValue().asLiteral().ifPresent(l -> declared.add(l.getLiteral())));
+          if (declared.isEmpty()) next.addAll(getParents(current));
+          else units.addAll(declared);
+        }
+      }
+      if (units.size() > 1) throw new KlabValidationException("Ambiguous derivative operand units require an explicit unit");
+      pending = next;
+    }
+    return units.isEmpty() ? null : units.first();
   }
 
   /**

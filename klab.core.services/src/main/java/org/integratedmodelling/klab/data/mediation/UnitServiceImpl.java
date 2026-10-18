@@ -54,8 +54,36 @@ public class UnitServiceImpl implements UnitService {
 
   @Override
   public Unit getDefaultUnitFor(Concept concept) {
-    // TODO Auto-generated method stub
-    return null;
+    // Direct annotations only; operator construction materializes an unambiguous inherited unit.
+    Object definition = concept.getMetadata().get("odo:unit");
+    if (definition == null) return null;
+    if (!(definition instanceof String text) || text.isBlank())
+      throw new IllegalArgumentException("Invalid default unit annotation");
+    var result = (UnitImpl)getUnit(text);
+    if (concept.is(org.integratedmodelling.klab.api.knowledge.SemanticType.RATE))
+      result.setAggregatedDimensions(Map.of(ExtentDimension.TEMPORAL,
+          org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistribution.INTENSIVE));
+    return result;
+  }
+
+  @Override
+  public Unit temporalDerivative(Unit operand) {
+    if (!(operand instanceof UnitImpl definition) || definition.isContextual())
+      throw new UnsupportedOperationException("Derivative units require an ordinary unit definition");
+    var ordinary = getUnit(definition.getDefinition());
+    var source = peer(ordinary);
+    var system = source.getSystemUnit();
+    var systemUnit = getUnit(formatter.format(system));
+    // Use only the affine scale: d(a*x+b)/dt = a*dx/dt. In particular Cel/s is K/s,
+    // without adding 273.15 to a derivative value. No numerical integration occurs here.
+    double factor = conversion(systemUnit, ordinary).factor();
+    var derivative = system.multiply(factor).divide(tech.units.indriya.unit.Units.SECOND);
+    var result = new UnitImpl(formatter.format(derivative)).withData(new FunctionalUnit(derivative));
+    var distributions = new HashMap<>(operand.getAggregatedDimensions());
+    distributions.put(ExtentDimension.TEMPORAL,
+        org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistribution.INTENSIVE);
+    result.setAggregatedDimensions(distributions);
+    return result;
   }
 
   @Override

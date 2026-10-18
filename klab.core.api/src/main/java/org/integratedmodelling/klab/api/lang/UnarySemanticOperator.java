@@ -338,7 +338,10 @@ public enum UnarySemanticOperator {
                 SemanticType.QUANTIFIABLE);
         if (original.contains(SemanticType.EXTENSIVE)
             || original.contains(SemanticType.INTENSIVE)) {
-          ret.add(SemanticType.INTENSIVE);
+          // These flags retain the operand's spatial aggregation character. Temporal
+          // distribution of a derivative is separately INTENSIVE (Unit extent metadata).
+          if (original.contains(SemanticType.EXTENSIVE)) ret.add(SemanticType.EXTENSIVE);
+          if (original.contains(SemanticType.INTENSIVE)) ret.add(SemanticType.INTENSIVE);
         }
         return ret;
       case "acceleration":

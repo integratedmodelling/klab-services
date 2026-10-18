@@ -112,7 +112,8 @@ class CoreAlignmentRegressionTest {
       var graph=actor.owl().getOntology("imod").getOWLOntology();
       var original=Set.copyOf(graph.getAxioms());
       var operations=new LinkedHashMap<String,java.util.function.Supplier<Concept>>();
-      operations.put("ChangeRate",()->actor.owl().makeRate(q));operations.put("Magnitude",()->actor.owl().makeMagnitude(q));
+      // ChangeRate now has the separately approved foundation and dedicated derivative tests.
+      operations.put("Magnitude",()->actor.owl().makeMagnitude(q));
       operations.put("Level",()->actor.owl().makeLevel(q));operations.put("Occurrence",()->actor.owl().makeOccurrence(b));
       for(var entry:operations.entrySet()) {
         assertNull(actor.owl().getConcept("odo:"+entry.getKey()));

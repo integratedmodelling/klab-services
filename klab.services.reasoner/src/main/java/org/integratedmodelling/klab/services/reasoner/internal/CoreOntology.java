@@ -89,6 +89,7 @@ public class CoreOntology {
     coreConceptIds.put(SemanticType.RATIO, NS.CORE_RATIO);
     coreConceptIds.put(SemanticType.VALUE, NS.CORE_VALUE);
     coreConceptIds.put(SemanticType.CHANGE, NS.CORE_CHANGE);
+    coreConceptIds.put(SemanticType.RATE, NS.CORE_CHANGE_RATE);
     coreConceptIds.put(SemanticType.OCCURRENCE, NS.CORE_OCCURRENCE);
     coreConceptIds.put(SemanticType.PRESENCE, NS.CORE_PRESENCE);
     coreConceptIds.put(SemanticType.EXTENT, NS.CORE_EXTENT);
@@ -217,6 +218,7 @@ public class CoreOntology {
     public static final String IS_INHERENT_TO_PROPERTY = "odo:isInherentTo";
     // TODO decide which ones go in klab and which in ODO
     public static final String DESCRIBES_OBSERVABLE_PROPERTY = "klab:describesObservable";
+    public static final String DESCRIBES_QUALITY_PROPERTY = "odo:describesQuality";
     public static final String IS_COMPARED_TO_PROPERTY = "klab:isComparedTo";
     public static final String HAS_ROLE_PROPERTY = "odo:hasRole";
     public static final String DENIABILITY_PROPERTY = "odo:isDeniable";
@@ -507,6 +509,8 @@ public class CoreOntology {
       ret = SemanticType.VALUE;
     } else if (type.contains(SemanticType.MONETARY_VALUE)) {
       ret = SemanticType.MONETARY_VALUE;
+    } else if (type.contains(SemanticType.RATE)) {
+      ret = SemanticType.RATE;
     } else if (type.contains(SemanticType.OCCURRENCE)) {
       ret = SemanticType.OCCURRENCE;
     } else if (type.contains(SemanticType.PRESENCE)) {
