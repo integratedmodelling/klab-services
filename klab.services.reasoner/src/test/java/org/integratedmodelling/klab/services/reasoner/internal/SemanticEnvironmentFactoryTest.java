@@ -527,6 +527,65 @@ class SemanticEnvironmentFactoryTest {
       assertEquals("private " + name, Files.readString(catalog.resolve(name)));
   }
 
+  @Test void immutableOfficialReleaseRequiresTheVerifiedCommitPathAndExactCapturedHash() throws Exception {
+    String url = "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
+        + "9cfe20e306e39747a0474bf6754c24e49d99df71/releases/0.1.1/odo.owl";
+    String lf = "d8771dc5456a48e0d1d64f7ba1c92f8e6a9f89ddddfd1fa6cabf1c93e363ea52";
+    String crlf = "6851a4a34aa66191687232e9c37c2dc12e8b779b73e1a10bdf5abd1dd31ab038";
+    for (var hash : List.of(lf, crlf))
+      assertEquals("http://integratedmodelling.org/odo/0.1.1", CoreOntologyCatalog.odoReleaseIdentity(url, hash));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(url, null));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(url, "0".repeat(64)));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(null, lf));
+    for (var rejected : List.of(
+        url.replace("raw.githubusercontent.com", "raw.githubusercontent.com.evil.test"),
+        url.replace("integratedmodelling/odo-im/", "other/odo-im/"),
+        url.replace("odo-im/", "other-repository/"),
+        url.replace("https:", "http:"),
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "0".repeat(40)),
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "develop"),
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "9cfe20e"),
+        url.replace("0.1.1/odo.owl", "latest/odo.owl"),
+        url.replace("0.1.1/odo.owl", "0.1.0/odo.owl"),
+        url.replace("releases/", "other/"),
+        url.replace("/odo.owl", "/other.owl"), url + "?download=1", url + "#fragment",
+        url.replace("/releases/", "/x/../releases/")))
+      assertNull(CoreOntologyCatalog.odoReleaseIdentity(rejected, lf), rejected);
+    assertEquals("http://integratedmodelling.org/odo/0.1.1", CoreOntologyCatalog.odoReleaseIdentity(
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "master"), lf));
+  }
+
+  @Test void localCatalogAdmitsVerifiedImmutableReleaseWithoutInjectedLocatorOrPin() throws Exception {
+    var factory = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), directory.resolve("absent"));
+    var url = "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
+        + "9cfe20e306e39747a0474bf6754c24e49d99df71/releases/0.1.1/odo.owl";
+    var source = world("immutable-local-catalog", false);
+    source.getOntologies().getFirst().getOwlImports().add(
+        org.integratedmodelling.klab.api.collections.Pair.of("odo", url));
+    var result = factory.build(factory.capture(source), () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment);
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+    }
+    // Same ontology identity/version is insufficient if the exact captured document differs.
+    var different = new java.util.LinkedHashMap<>(CoreOntologyCatalog.bundledCore());
+    different.put("odo.owl", (new String(different.get("odo.owl"), java.nio.charset.StandardCharsets.UTF_8)
+        + "\n<!-- unverified byte change -->\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    var unverified = new SemanticEnvironmentFactory(directory.resolve("unverified"), different);
+    assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED,
+        unverified.build(unverified.capture(source), () -> false).logicalStatus());
+    for (var rejected : List.of(url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "0".repeat(40)),
+        url.replace("odo-im/", "wrong-repo/"), url.replace("raw.githubusercontent.com", "example.org"),
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "develop"),
+        url.replace("/releases/", "/wrong-path/"))) {
+      source.getOntologies().getFirst().getOwlImports().clear();
+      source.getOntologies().getFirst().getOwlImports().add(
+          org.integratedmodelling.klab.api.collections.Pair.of("odo", rejected));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED,
+          factory.build(factory.capture(source), () -> false).logicalStatus(), rejected);
+    }
+  }
+
   @Test void qualifiedCoreAliasMatchesTheLoadedOntologyAndItsVersion() throws Exception {
     var captured = new java.util.LinkedHashMap<>(core());
     captured.put("external/CustomCore.owl", """

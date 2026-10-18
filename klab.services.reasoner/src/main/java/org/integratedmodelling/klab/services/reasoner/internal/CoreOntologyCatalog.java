@@ -9,6 +9,15 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public final class CoreOntologyCatalog {
   private static final java.util.List<String> BUNDLED_DOCUMENTS =
       java.util.List.of("odo.owl", "dc.owl", "klab.owl");
+  // Verified official publication, not a general permission to resolve GitHub URLs.
+  // Keep the published LF hash and the exact Windows CRLF distribution hash separate;
+  // admission never rewrites bytes or treats arbitrary same-version documents as this release.
+  private static final String VERIFIED_ODO_RELEASE =
+      "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
+          + "9cfe20e306e39747a0474bf6754c24e49d99df71/releases/0.1.1/odo.owl";
+  private static final java.util.Set<String> VERIFIED_ODO_HASHES = java.util.Set.of(
+      "d8771dc5456a48e0d1d64f7ba1c92f8e6a9f89ddddfd1fa6cabf1c93e363ea52",
+      "6851a4a34aa66191687232e9c37c2dc12e8b779b73e1a10bdf5abd1dd31ab038");
   private CoreOntologyCatalog() {}
 
   /** Only the distribution's three root documents are protected; extensions remain local. */
@@ -36,9 +45,12 @@ public final class CoreOntologyCatalog {
     return bundledDocument("odo.owl");
   }
 
-  /** A release document URL names the matching captured ODO version; it is never fetched. */
-  static String odoReleaseIdentity(String locator) {
+  /** A release locator names captured bytes; neither master nor verified immutable URLs are fetched. */
+  static String odoReleaseIdentity(String locator, String capturedSha256) {
     if (locator == null) return null;
+    if (VERIFIED_ODO_RELEASE.equals(locator))
+      return capturedSha256 != null && VERIFIED_ODO_HASHES.contains(capturedSha256)
+          ? "http://integratedmodelling.org/odo/0.1.1" : null;
     var match = java.util.regex.Pattern.compile(
         "https://raw\\.githubusercontent\\.com/integratedmodelling/odo-im/master/releases/([0-9]+\\.[0-9]+\\.[0-9]+)/odo\\.owl")
         .matcher(locator);

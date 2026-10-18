@@ -19,11 +19,12 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 /** Runs the production compiler in private semantic state, without normal service construction. */
 public final class SemanticEnvironmentFactory
     implements CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> {
-  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v10-identity-closure-core-alignment-generic-quality-canonical-aliases-configured-authority-snapshots-temporal-derivatives-nested-rates-affine-scales-canonical-rate-identity-verified-aliases-mixed-operators";
+  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v10-identity-closure-core-alignment-generic-quality-canonical-aliases-configured-authority-snapshots-temporal-derivatives-nested-rates-affine-scales-canonical-rate-identity-verified-aliases-mixed-operators-verified-immutable-odo";
   private final Path assetRoot;
   private final Map<String, byte[]> core;
   private final String dependencyRevision;
   private final Map<String, java.util.Set<String>> coreIdentities;
+  private final Map<String, String> coreContentHashes;
   private final Map<String, String> documentLocators;
   private final CapturedAuthorityCatalog authorities;
   private final Map<String,String> expectedDocumentHashes;
@@ -107,6 +108,7 @@ public final class SemanticEnvironmentFactory
     }
     if (owned.isEmpty()) throw new IllegalArgumentException("Candidate requires a captured core catalog");
     core = java.util.Collections.unmodifiableMap(owned);
+    coreContentHashes = Map.copyOf(contentHashes);
     var classes = new LinkedHashMap<String,java.util.Set<String>>();
     for (var entry:owned.entrySet()) {
       var alias = CoreOntologyCatalog.alias(Path.of(entry.getKey()));
@@ -305,7 +307,7 @@ public final class SemanticEnvironmentFactory
       for (var imported : ontology.getOwlImports()) {
         var captured = coreIdentities.get(imported.getFirst());
         var odoRelease = "odo".equals(imported.getFirst())
-            ? CoreOntologyCatalog.odoReleaseIdentity(imported.getSecond()) : null;
+            ? CoreOntologyCatalog.odoReleaseIdentity(imported.getSecond(), coreContentHashes.get("odo")) : null;
         if (captured == null || (!captured.contains(imported.getSecond())
             && !(odoRelease != null && captured.contains(odoRelease))
             && !Objects.equals(documentLocators.get(imported.getFirst()), imported.getSecond()))) unsupported.add(
