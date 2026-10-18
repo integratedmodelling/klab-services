@@ -1395,7 +1395,7 @@ public class LanguageAdapter {
                   SemanticType.QUANTITY);
           case AGENT ->
               EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.AGENT);
-          case REALM -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+          case REALM -> EnumSet.of(SemanticType.PREDICATE, SemanticType.REALM);
           case RESISTANCE ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,

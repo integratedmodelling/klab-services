@@ -454,7 +454,7 @@ public class CoreOntology {
     } else if (type.contains(SemanticType.LENGTH)) {
       ret = SemanticType.LENGTH;
     } else if (type.contains(SemanticType.MASS)) {
-      ret = SemanticType.LENGTH;
+      ret = SemanticType.MASS;
     } else if (type.contains(SemanticType.VOLUME)) {
       ret = SemanticType.VOLUME;
     } else if (type.contains(SemanticType.WEIGHT)) {

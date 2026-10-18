@@ -413,6 +413,14 @@ public class OWL {
     return this.coreOntology;
   }
 
+  /** Reject unavailable operator bases before creating a definition or writing any axioms. */
+  private void requireOperatorSuperclass(String coreId) {
+    if (getConcept(coreId) == null) {
+      throw new KlabValidationException(
+          "Required operator superclass is unavailable in the core ontology: " + coreId);
+    }
+  }
+
   String importOntology(
       OWLOntology ontology, String resource, String namespace, boolean imported, Channel monitor) {
 
@@ -1949,6 +1957,8 @@ public class OWL {
     // this.hasUnaryOp = true;
     var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
+    requireOperatorSuperclass(NS.CORE_CHANGE_RATE);
+
     String definition = UnarySemanticOperator.RATE.declaration[0] + " " + concept.getUrn();
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);
@@ -2257,6 +2267,8 @@ public class OWL {
 
     // this.hasUnaryOp = true;
 
+    requireOperatorSuperclass(NS.CORE_OCCURRENCE);
+
     String cName = getCleanId(concept) + "Occurrence";
     String definition = UnarySemanticOperator.OCCURRENCE.declaration[0] + " " + concept.getUrn();
     Ontology ontology = getOntology(concept.getNamespace());
@@ -2311,6 +2323,8 @@ public class OWL {
     }
 
     // this.hasUnaryOp = true;
+
+    requireOperatorSuperclass(NS.CORE_MAGNITUDE);
 
     String cName = getCleanId(concept) + "Magnitude";
     String definition = UnarySemanticOperator.MAGNITUDE.declaration[0] + " " + concept.getUrn();
@@ -2367,6 +2381,8 @@ public class OWL {
     }
 
     // this.hasUnaryOp = true;
+
+    requireOperatorSuperclass(NS.CORE_LEVEL);
 
     String cName = getCleanId(concept) + "Level";
     String definition = UnarySemanticOperator.LEVEL.declaration[0] + " " + concept.getUrn();
