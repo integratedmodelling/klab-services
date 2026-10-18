@@ -22,6 +22,9 @@ class TemporalDerivativeTest {
     return EnumSet.copyOf((Set<SemanticType>)m.invoke(LanguageAdapter.INSTANCE,type));
   }
   private SemanticEnvironment environment() throws Exception {
+    return environment(true);
+  }
+  private SemanticEnvironment environment(boolean includeDerivativeFoundation) throws Exception {
     var ontology=new KimOntologyImpl();ontology.setUrn("imod");ontology.setProjectName("derivative-test");ontology.setSourceCode(" ".repeat(2048));
     for(var entry:List.of(Map.entry("Mass",SemanticSyntax.Type.MASS),Map.entry("Velocity",SemanticSyntax.Type.VELOCITY),Map.entry("Temperature",SemanticSyntax.Type.TEMPERATURE))) {
       var value=new KimConceptStatementImpl();value.setUrn(entry.getKey());value.setNamespace("imod");value.setAbstract(true);value.setType(types(entry.getValue()));value.getType().add(SemanticType.ABSTRACT);value.setOffsetInDocument(1);
@@ -37,6 +40,13 @@ class TemporalDerivativeTest {
       String root=System.getProperty("klab.test.core.directory");
       if(root!=null)core.put(name,Files.readAllBytes(Path.of(root,name)));
       else try(var in=getClass().getResourceAsStream("/knowledge/"+name)){assertNotNull(in);core.put(name,in.readAllBytes());}
+    }
+    if(!includeDerivativeFoundation) {
+      var manager=org.semanticweb.owlapi.apibinding.OWLManager.createOWLOntologyManager();
+      var ontologyCore=manager.loadOntologyFromOntologyDocument(new java.io.ByteArrayInputStream(core.get("odo.owl")));
+      var derivative=manager.getOWLDataFactory().getOWLClass(IRI.create("http://integratedmodelling.org/odo#ChangeRate"));
+      manager.removeAxioms(ontologyCore,ontologyCore.axioms().filter(a->a.containsEntityInSignature(derivative)).collect(java.util.stream.Collectors.toSet()));
+      var bytes=new java.io.ByteArrayOutputStream();manager.saveOntology(ontologyCore,new org.semanticweb.owlapi.formats.RDFXMLDocumentFormat(),bytes);core.put("odo.owl",bytes.toByteArray());
     }
     var factory=new SemanticEnvironmentFactory(directory.resolve(UUID.randomUUID().toString()),core);var input=factory.capture(world);
     assertEquals(CandidatePublicationCoordinator.BeanStatus.VALID,input.beanStatus(),input.diagnostics().toString());
@@ -95,6 +105,16 @@ class TemporalDerivativeTest {
       assertTrue(units.isCompatible(units.getUnit(rate.getMetadata().get("odo:unit").toString()),units.getUnit("kg/s")));
       var unknown=actor.owl().makeRate(actor.owl().getConcept("imod:UnknownUnit"));
       assertNull(unknown.getMetadata().get("odo:unit"));assertNull(units.getDefaultUnitFor(unknown));
+    }
+  }
+  @Test void legacyFoundationStillRejectsBeforeWritingAnyAxioms() throws Exception {
+    try(var state=environment(false)) {
+      var owl=state.actor().owl();var manager=owl.getOntology("imod").getOWLOntology().getOWLOntologyManager();
+      var before=manager.ontologies().collect(java.util.stream.Collectors.toMap(o->o.getOntologyID().toString(),o->Set.copyOf(o.getAxioms())));
+      assertNull(owl.getConcept("odo:ChangeRate"));
+      var failure=assertThrows(org.integratedmodelling.klab.api.exceptions.KlabValidationException.class,()->owl.makeRate(owl.getConcept("imod:Mass")));
+      assertTrue(failure.getMessage().contains("odo:ChangeRate"));
+      assertEquals(before,manager.ontologies().collect(java.util.stream.Collectors.toMap(o->o.getOntologyID().toString(),o->Set.copyOf(o.getAxioms()))));
     }
   }
 }
