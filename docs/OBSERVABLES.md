@@ -466,8 +466,7 @@ expression operator** requires both operands: `ratio of numerator to denominator
 The quantities must have an appropriate comparison meaning.
 
 A **named ratio declaration** is a different operation. A worldview can name a
-ratio without spelling out its components in the declaration. The following
-form parses; its current alias typing limitation is described in section 14:
+ratio without spelling out its components in the declaration:
 
 ```kwv
 quality LeafAreaIndex
@@ -476,7 +475,11 @@ quality LeafAreaIndex
 ```
 
 This specializes the named worldview concept `imod:Ratio`; it does not invoke
-an incomplete `ratio of` expression. The component meaning is supplied by the
+an incomplete `ratio of` expression. A core alias targeting canonical `odo:Ratio`
+and its named `quality` specializations consistently retain the specific
+`RATIO` kind in descriptors, adapted declarations, and runtime concepts, even
+when the alias uses the broad declaration keyword `quantity`. Canonical core
+identity determines that kind, not the alias's local name. The component meaning is supplied by the
 concept's definition and observation convention. Here area is compared with
 area, which justifies a dimensionless value. The declaration's omission of
 components does **not** itself establish dimensionlessness, infer dimensions,
@@ -518,7 +521,7 @@ declaration flag is local and is separate from quality-type inheritance.
 Effective semantic abstractness can also depend on unresolved identity
 requirements, including inherited requirements; see
 [Identity requirements](IDENTITY_REQUIREMENTS.md). See section 14 for the
-current named Ratio alias limitation and unsupported bare `ratio` keyword.
+unsupported bare `ratio` declaration keyword.
 
 ### 4.6 Value
 
@@ -881,14 +884,10 @@ The grammar defines source structure; full validity requires semantic services:
 - the bare `!=` form has no operand;
 - numeric exponents such as `m^2` are not accepted by the current `Unit` rule
   because `^` is followed by a unit element;
-- `ratio` is currently an expression operator, not a declaration keyword:
-  neither `ratio Index;` nor `ratio of X;` is accepted. A named specialization
-  such as `quality LeafAreaIndex is imod:Ratio;` parses, but the current
-  `quantity Ratio is core odo:Ratio` alias is represented as `QUANTITY` in
-  parser/adaptor descriptors. Do not infer preservation of the `RATIO` flag
-  from that alias alone. In contrast, `quality X is ratio of Y to Z` and its
-  named children retain `RATIO`. Aligning the alias and adding a bare ratio
-  declaration require coordinated implementation and regression checks;
+- `ratio` is an expression operator, not a declaration keyword. Neither
+  `ratio Index;` nor `ratio of X;` is accepted. Use a named specialization such
+  as `quality LeafAreaIndex is imod:Ratio;`, or an explicit two-operand
+  expression such as `quality X is ratio of Y to Z;`;
 - authorities, units, and semantic relationships need runtime registries or
   worldview reasoning;
 - `KimObservableImpl.namespaces()` currently returns an empty set, and its
