@@ -137,7 +137,7 @@ public final class SemanticEnvironmentFactory
   public String dependencyRevision() {
     return bootstrap!=null && bootstrap.policyRevision()!=null?dependencyRevision+":"+bootstrap.policyRevision():dependencyRevision;
   }
-  /** Captures bundled ODO plus local extensions. Local ODO bytes and provenance cannot override the distribution. */
+  /** Captures bundled structural core plus local extensions; installed core cannot override the distribution. */
   public static SemanticEnvironmentFactory fromLocalCatalog(Path privateAssets, Path catalog) throws Exception {
     return fromLocalCatalog(privateAssets, catalog, catalog.toAbsolutePath().getParent());
   }
@@ -147,7 +147,7 @@ public final class SemanticEnvironmentFactory
       try (var entries = Files.walk(catalog)) {
         for (var file : entries.filter(Files::isRegularFile)
             .filter(p -> CoreOntologyCatalog.isVisible(catalog.relativize(p)))
-            .filter(p -> !CoreOntologyCatalog.alias(catalog.relativize(p)).equals("odo"))
+            .filter(p -> !CoreOntologyCatalog.isBundledDocument(catalog.relativize(p)))
             .filter(p -> p.getFileName().toString().endsWith(".owl")).sorted().toList())
           files.put(catalog.relativize(file).toString().replace('\\', '/'), Files.readAllBytes(file));
       }
@@ -155,11 +155,15 @@ public final class SemanticEnvironmentFactory
     var locators = new java.util.Properties();
     var manifest = catalog.resolve("source-catalog.properties");
     if (Files.isRegularFile(manifest)) try (var input = Files.newInputStream(manifest)) { locators.load(input); }
-    files.put("odo.owl", CoreOntologyCatalog.bundledOdo());
+    var bundled = CoreOntologyCatalog.bundledCore();
+    files.putAll(bundled);
     // These entries describe installed bytes, not the authoritative bundled document. Do not
-    // certify an obsolete release URL or hash as the provenance of the new bundled ODO.
-    locators.remove("odo");
-    locators.remove("odo.sha256");
+    // certify installed provenance as the origin of the bundled structural documents.
+    for (var document : bundled.keySet()) {
+      var alias = CoreOntologyCatalog.alias(Path.of(document));
+      locators.remove(alias);
+      locators.remove(alias + ".sha256");
+    }
     var names = new LinkedHashMap<String, String>();
     var hashes = new LinkedHashMap<String, String>();
     locators.stringPropertyNames().stream().sorted().forEach(name -> {

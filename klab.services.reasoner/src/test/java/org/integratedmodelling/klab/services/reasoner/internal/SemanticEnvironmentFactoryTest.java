@@ -423,7 +423,7 @@ class SemanticEnvironmentFactoryTest {
     Files.writeString(catalog.resolve("source-catalog.properties"),
         "odo=https://example.org/releases/0.1.0/odo.owl\nodo.sha256=obsolete\n");
     var captured = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
-    var bundledOnly = new SemanticEnvironmentFactory(directory.resolve("actors"), Map.of("odo.owl", bundled));
+    var bundledOnly = new SemanticEnvironmentFactory(directory.resolve("actors"), CoreOntologyCatalog.bundledCore());
     assertEquals(bundledOnly.dependencyRevision(), captured.dependencyRevision());
     var source = world("bundled", false);
     for (var name : List.of("PhysicalDomain", "KnowledgeDomain", "NormativeDomain")) {
@@ -447,6 +447,84 @@ class SemanticEnvironmentFactoryTest {
     Files.writeString(catalog.resolve("odo.owl"), "captured private core");
     new CoreOntology(catalog.toFile(), null, false);
     assertEquals("captured private core", Files.readString(catalog.resolve("odo.owl")));
+  }
+
+  @Test void bundledStructuralCoreIgnoresStaleInstalledDocumentsAndProvenanceWithoutWriting() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("stale"));
+    var properties = new StringBuilder();
+    for (var name : List.of("odo", "dc", "klab")) {
+      Files.writeString(catalog.resolve(name.equals("dc") ? "DC.owl" : name + ".owl"), "stale " + name);
+      properties.append(name).append("=https://example.org/obsolete\n")
+          .append(name).append(".sha256=obsolete\n");
+    }
+    Files.writeString(catalog.resolve("source-catalog.properties"), properties);
+    var expected = new SemanticEnvironmentFactory(directory.resolve("actors"), CoreOntologyCatalog.bundledCore());
+    assertEquals(expected.dependencyRevision(),
+        SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog).dependencyRevision());
+    for (var name : List.of("odo", "dc", "klab"))
+      assertEquals("stale " + name, Files.readString(catalog.resolve(name.equals("dc") ? "DC.owl" : name + ".owl")));
+    assertEquals(properties.toString(), Files.readString(catalog.resolve("source-catalog.properties")));
+    var absent = directory.resolve("absent");
+    assertEquals(expected.dependencyRevision(),
+        SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), absent).dependencyRevision());
+    assertFalse(Files.exists(absent));
+    assertFalse(Files.exists(directory.resolve("actors")));
+  }
+
+  @Test void bundledStructuralCorePreservesCustomImportsMetadataLocatorsAndPins() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("extensions/external" )).getParent();
+    var extension = """
+        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                 xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+                 xmlns:owl="http://www.w3.org/2002/07/owl#">
+          <owl:Ontology rdf:about="http://example.org/custom">
+            <rdfs:comment>Custom authored metadata</rdfs:comment>
+            <owl:imports rdf:resource="http://protege.stanford.edu/plugins/owl/dc/protege-dc.owl"/>
+          </owl:Ontology>
+          <owl:Class rdf:about="http://example.org/custom#Thing"/>
+        </rdf:RDF>
+        """.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    Files.write(catalog.resolve("external/klab.owl"), extension);
+    var pin = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(extension));
+    var properties = "external.klab=https://example.org/custom-document.owl\nexternal.klab.sha256=" + pin + "\n";
+    Files.writeString(catalog.resolve("source-catalog.properties"), properties);
+    Files.createDirectories(catalog.resolve(".imports"));
+    Files.writeString(catalog.resolve(".imports/klab.owl"), "hidden stale core");
+    var core = new java.util.LinkedHashMap<>(CoreOntologyCatalog.bundledCore());
+    core.put("external/klab.owl", extension);
+    var expected = new SemanticEnvironmentFactory(directory.resolve("actors"), core,
+        Map.of("external.klab", "https://example.org/custom-document.owl"), Map.of("external.klab", pin));
+    var actual = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
+    assertEquals(expected.dependencyRevision(), actual.dependencyRevision());
+    var result = actual.build(actual.capture(world("custom-structural", false)), () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment);
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+      assertNotNull(environment.actor().owl().getConcept("external.klab:Thing"));
+    }
+    assertArrayEquals(extension, Files.readAllBytes(catalog.resolve("external/klab.owl")));
+    assertEquals(properties, Files.readString(catalog.resolve("source-catalog.properties")));
+    Files.writeString(catalog.resolve("source-catalog.properties"), properties.replace(pin, "incorrect-pin"));
+    assertThrows(IllegalArgumentException.class,
+        () -> SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog));
+  }
+
+  @Test void ordinaryStructuralSynchronizationPreservesExtensionsAndPrivateSnapshots() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("ordinary"));
+    for (var name : List.of("odo.owl", "dc.owl", "klab.owl"))
+      Files.writeString(catalog.resolve(name), "old " + name);
+    Files.writeString(catalog.resolve("custom.owl"), "owned custom bytes");
+    Files.writeString(catalog.resolve("source-catalog.properties"), "custom=authored-locator\n");
+    new CoreOntology(catalog.toFile(), null, true);
+    for (var entry : CoreOntologyCatalog.bundledCore().entrySet())
+      assertArrayEquals(entry.getValue(), Files.readAllBytes(catalog.resolve(entry.getKey())));
+    assertEquals("owned custom bytes", Files.readString(catalog.resolve("custom.owl")));
+    assertEquals("custom=authored-locator\n", Files.readString(catalog.resolve("source-catalog.properties")));
+    for (var name : List.of("odo.owl", "dc.owl", "klab.owl"))
+      Files.writeString(catalog.resolve(name), "private " + name);
+    new CoreOntology(catalog.toFile(), null, false);
+    for (var name : List.of("odo.owl", "dc.owl", "klab.owl"))
+      assertEquals("private " + name, Files.readString(catalog.resolve(name)));
   }
 
   @Test void qualifiedCoreAliasMatchesTheLoadedOntologyAndItsVersion() throws Exception {

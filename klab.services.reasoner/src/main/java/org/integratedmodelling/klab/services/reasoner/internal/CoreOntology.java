@@ -366,7 +366,7 @@ public class CoreOntology {
     if (extractClasspath) {
       Utils.Classpath.extractKnowledgeFromClasspath(this.root);
       try {
-        CoreOntologyCatalog.synchronizeBundledOdo(this.root.toPath());
+        CoreOntologyCatalog.synchronizeBundledCore(this.root.toPath());
       } catch (java.io.IOException failure) {
         throw new IllegalStateException("Cannot synchronize bundled core ontology", failure);
       }
