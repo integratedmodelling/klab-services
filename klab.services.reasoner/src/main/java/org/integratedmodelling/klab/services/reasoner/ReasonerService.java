@@ -492,7 +492,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.SAVED_SOURCE_REPAIR,
                 candidateRuntime.status().inputGeneration(), -1, -1, response.getSourceHash(), null,
                 org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER);
-            loadKnowledge(complete, scope);
+            var admission = loadKnowledge(complete, scope);
+            if (Utils.Resources.hasErrors(admission)) {
+              response.getNotifications().addAll(admission.getNotifications());
+              response.setStatus(SemanticValidationResponse.Status.UNAVAILABLE);
+              response.setReason("Saved source could not be admitted to the service worldview");
+              response.addDocumentDiagnostic(request, Notification.Level.Warning);
+              return response;
+            }
           }
         }
       }
@@ -2168,6 +2175,25 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         null, null, scope instanceof UserScope
             ? org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER
             : org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.SERVICE);
+    if (candidateRuntime != null && !semanticOnly && scope instanceof UserScope) {
+      // User retrieval/validation stays authorized by the request. The one global runtime
+      // must use the same independently discovered sources and owner as startup polling.
+      // Reject a private, stale or unavailable request without invalidating global state.
+      try {
+        if (worldview == null) return ResourceSet.empty(Notification.error("Requested worldview is unavailable"));
+        var errors = BeanIngestionPreflight.errors(worldview);
+        if (!errors.isEmpty()) {
+          var rejected = ResourceSet.empty();
+          rejected.getNotifications().addAll(errors);
+          return rejected;
+        }
+        worldview = org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission.resolve(
+            worldview, serviceScope());
+        scope = serviceScope();
+      } catch (RuntimeException failure) {
+        return ResourceSet.empty(Notification.error("Service worldview admission unavailable: " + failure.getMessage()));
+      }
+    }
     org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt = null;
     if (candidateRuntime != null && !semanticOnly && worldview != null && !worldview.getOntologies().isEmpty()) {
       try { attempt = candidateRuntime.beginPreflight(worldview, scope); }
@@ -2392,8 +2418,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       mutable.setAuthorityBindings(preparedBindings);
       var completeStrategies = new ArrayList<>(mutable.getObservationStrategies());
       for (var prepared : strategies.values()) {
-        completeStrategies.removeIf(s -> s.getUrn().equals(prepared.document().getUrn()));
-        completeStrategies.add(prepared.document());
+        int position = -1;
+        for (int i = 0; i < completeStrategies.size(); i++) {
+          if (completeStrategies.get(i).getUrn().equals(prepared.document().getUrn())) {
+            position = i;
+            break;
+          }
+        }
+        if (position < 0) return rejectBeanUpdate(changes, affectedKnowledge,
+            List.of(Notification.error("Authoritative strategy dependency order is unavailable; retry the complete batch")));
+        completeStrategies.set(position, prepared.document());
       }
       mutable.setObservationStrategies(completeStrategies);
       var errors = BeanIngestionPreflight.errors(complete);
@@ -2531,9 +2565,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       List<Notification> errors) {
     changes.getNotifications().addAll(errors);
     if (candidateRuntime != null && !semanticOnly) {
-      worldviewLoadDiagnostics = List.copyOf(errors);
-      candidateRuntime.invalidate(org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.UPDATE_REJECTED);
-      candidateRuntime.rejectPreflight(errors);
+      // A failed user batch may be private or stale. Keep its diagnostics on the request;
+      // only independently discovered service beans may invalidate/reject global state.
+      try {
+        var discovered = org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission.discover(serviceScope());
+        if (candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) {
+          changes.getNotifications().addAll(loadKnowledge(discovered, serviceScope()).getNotifications());
+        }
+      } catch (RuntimeException unavailable) {
+        changes.getNotifications().add(Notification.warning(
+            "Service worldview refresh unavailable after rejected request: " + unavailable.getMessage()));
+      }
       return changes;
     }
     semanticValidationState.beginUpdate(knowledgeRevision(), affected);
