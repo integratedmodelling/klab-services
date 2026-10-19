@@ -16,6 +16,12 @@ public final class WorldviewDescriptionStaging {
   private WorldviewDescriptionStaging() {}
 
   public static Map<String,Long> reconcile(OWL owl,List<Entry> entries) {
+    return reconcile(owl,entries,OWLSemanticClauseSupport.NO_CHECKPOINT);
+  }
+
+  /** The callback belongs only to this private compilation's stack; never to accepted state. */
+  public static Map<String,Long> reconcile(OWL owl,List<Entry> entries,Runnable checkpoint) {
+    Objects.requireNonNull(checkpoint).run();
     var support=new OWLSemanticClauseSupport(owl);
     var nodes=new LinkedHashMap<OWLClass,Concept>();
     var bounds=new LinkedHashMap<OWLClass,Set<OWLClassExpression>>();
@@ -25,9 +31,11 @@ public final class WorldviewDescriptionStaging {
     var outgoing=new HashMap<OWLClass,Set<OWLClass>>();
     var inherent=owl.getProperty("odo:isInherentTo").getOWLEntity().asOWLObjectProperty();
     for(var entry:entries) {
+      checkpoint.run();
       addNode(owl,entry.owner(),nodes,bounds);
       sourceEntries.put(owl.getOWLClass(entry.owner()),entry);
       for(var description:entry.statement().getObservablesDescribed()) {
+        checkpoint.run();
         var target=entry.resolve().apply(description.getFirst());
         addNode(owl,target,nodes,bounds);
       }
@@ -36,21 +44,27 @@ public final class WorldviewDescriptionStaging {
     // Fillers, union alternatives and semantic reference edges are not ancestry.
     var pending=new ArrayList<>(nodes.keySet());
     for(int i=0;i<pending.size();i++) {
+      checkpoint.run();
       var child=pending.get(i);var parents=new LinkedHashSet<OWLClass>();
       for(var ontology:owl.manager.getOntologies()) {
-        for(var axiom:ontology.getSubClassAxiomsForSubClass(child))namedHeads(axiom.getSuperClass(),parents);
+        checkpoint.run();
+        for(var axiom:ontology.getSubClassAxiomsForSubClass(child))namedHeads(axiom.getSuperClass(),parents,checkpoint);
         for(var axiom:ontology.getEquivalentClassesAxioms(child))axiom.classExpressions()
-            .filter(e->!e.equals(child)).forEach(e->namedHeads(e,parents));
+            .filter(e->!e.equals(child)).forEach(e->namedHeads(e,parents,checkpoint));
       }
       for(var parent:parents) {
+        checkpoint.run();
         var concept=owl.getConceptFor(parent);if(concept==null)continue;
         if(!nodes.containsKey(parent)) {addNode(owl,concept,nodes,bounds);pending.add(parent);}
         outgoing.computeIfAbsent(parent,k->new LinkedHashSet<>()).add(child);
       }
     }
-    for(var node:nodes.entrySet())
-      for(var bound:support.bearerConstraints(node.getValue()))
+    for(var node:nodes.entrySet()) {
+      checkpoint.run();
+      for(var bound:support.bearerConstraints(node.getValue(),checkpoint)) {
+        checkpoint.run();
         if(bound.semantic()&&(bound.property().equals(inherent)||bound.applicability())) {
+          checkpoint.run();
           var owner=owl.manager.getOWLDataFactory().getOWLClass(IRI.create(bound.source()));
           var entry=sourceEntries.get(owner);
           String origin;
@@ -65,13 +79,16 @@ public final class WorldviewDescriptionStaging {
             origin="origin:"+org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.sourceHash(metadata);
             definitions.putIfAbsent(origin,new OriginDefinition(ontology,owner,origin+"|"+metadata));
           }
-          var flattened=new LinkedHashSet<OWLClassExpression>();flatten(bound.filler(),flattened);
+          var flattened=new LinkedHashSet<OWLClassExpression>();flatten(bound.filler(),flattened,checkpoint);
           for(var filler:flattened)seed(node.getKey(),filler,origin,bounds,origins);
         }
+      }
+    }
     // Keep authored seeds in the finite closure rather than running expensive
     // compatibility/provenance reconciliation once here and again when complete.
     var factory=owl.manager.getOWLDataFactory();
     for(var entry:entries) {
+      checkpoint.run();
       var owner=owl.getOWLClass(entry.owner());
       if(entry.statement().getDeclaredInherent()!=null) {
         var filler=owl.getOWLClass(entry.resolve().apply(entry.statement().getDeclaredInherent()));
@@ -79,15 +96,17 @@ public final class WorldviewDescriptionStaging {
       }
       if(!entry.statement().getAppliesTo().isEmpty()&&SemanticType.isDependent(entry.owner().getType())) {
         var fillers=entry.statement().getAppliesTo().stream()
-            .map(a->owl.getOWLClass(entry.resolve().apply(a.getTarget())))
+            .map(a->{checkpoint.run();return owl.getOWLClass(entry.resolve().apply(a.getTarget()));})
             .collect(java.util.stream.Collectors.toSet());
         var filler=fillers.size()==1?fillers.iterator().next():factory.getOWLObjectUnionOf(fillers);
         seed(owner,filler,origin(owl,entry,"applies-to",filler,definitions),bounds,origins);
       }
     }
     for(var entry:entries) {
+      checkpoint.run();
       var source=owl.getOWLClass(entry.owner());
       for(var description:entry.statement().getObservablesDescribed()) {
+        checkpoint.run();
         var target=entry.resolve().apply(description.getFirst());
         if(entry.owner().is(SemanticType.DOMAIN)&&target.is(SemanticType.CONFIGURATION)
             &&description.getSecond()==KimConceptStatement.DescriptionType.DESCRIBES)continue;
@@ -100,49 +119,70 @@ public final class WorldviewDescriptionStaging {
     }
     var queue=new ArrayDeque<>(nodes.keySet());var queued=new HashSet<>(nodes.keySet());long visits=0;
     while(!queue.isEmpty()) {
+      checkpoint.run();
       var target=queue.remove();queued.remove(target);visits++;
       for(var source:outgoing.getOrDefault(target,Set.of())) {
+        checkpoint.run();
         boolean changed=bounds.get(source).addAll(bounds.get(target));
-        for(var evidence:origins.getOrDefault(target,Map.of()).entrySet())
+        for(var evidence:origins.getOrDefault(target,Map.of()).entrySet()) {
+          checkpoint.run();
           changed|=origins.computeIfAbsent(source,k->new LinkedHashMap<>())
               .computeIfAbsent(evidence.getKey(),k->new LinkedHashSet<>()).addAll(evidence.getValue());
+        }
         if(changed&&queued.add(source))queue.add(source);
       }
     }
     var completed=new LinkedHashMap<OWLClass,Set<OWLClassExpression>>();
-    bounds.forEach((name,values)->completed.put(name,Set.copyOf(values)));
+    bounds.forEach((name,values)->{checkpoint.run();completed.put(name,Set.copyOf(values));});
     var prepared=new LinkedHashMap<Ontology,Set<OWLAxiom>>();
     for(var entry:entries) try {
+      checkpoint.run();
       var described=new ArrayList<Concept>();var independent=new ArrayList<Concept>();
       for(var description:entry.statement().getObservablesDescribed()) {
+        checkpoint.run();
         var target=entry.resolve().apply(description.getFirst());
         if(entry.owner().is(SemanticType.DOMAIN)&&target.is(SemanticType.CONFIGURATION)
             &&description.getSecond()==KimConceptStatement.DescriptionType.DESCRIBES)independent.add(target);
         else described.add(target);
       }
       var authored=entry.statement().getDeclaredInherent()==null?null:entry.resolve().apply(entry.statement().getDeclaredInherent());
-      var applies=entry.statement().getAppliesTo().stream().map(a->entry.resolve().apply(a.getTarget())).toList();
-      var axioms=DescriptionBearerSupport.prepare(owl,entry.owner(),authored,described,applies,independent,completed);
+      var applies=entry.statement().getAppliesTo().stream().map(a->{checkpoint.run();return entry.resolve().apply(a.getTarget());}).toList();
+      var axioms=DescriptionBearerSupport.prepare(owl,entry.owner(),authored,described,applies,independent,completed,checkpoint);
+      checkpoint.run();
       var references=new LinkedHashSet<String>();
       origins.getOrDefault(owl.getOWLClass(entry.owner()),Map.of()).values().forEach(references::addAll);
       var destination=prepared.computeIfAbsent(entry.ontology(),k->new LinkedHashSet<>());
       for(var axiom:axioms) {
+        checkpoint.run();
         if(axiom instanceof OWLSubClassOfAxiom subclass&&!references.isEmpty()) {
           var annotations=new LinkedHashSet<>(axiom.getAnnotations());
-          for(var reference:references)annotations.add(factory.getOWLAnnotation(
+          for(var reference:references) {
+            checkpoint.run();
+            annotations.add(factory.getOWLAnnotation(
               factory.getOWLAnnotationProperty(DescriptionBearerSupport.PROVENANCE),factory.getOWLLiteral(reference)));
+          }
           destination.add(factory.getOWLSubClassOfAxiom(subclass.getSubClass(),subclass.getSuperClass(),annotations));
         } else destination.add(axiom);
       }
-    } catch(RuntimeException error) {entry.scope().error(error,entry.statement());}
-    prepared.forEach((ontology,axioms)->owl.manager.addAxioms(ontology.getOWLOntology(),axioms));
-    for(var definition:definitions.values())owl.manager.addAxiom(definition.ontology().getOWLOntology(),
+    } catch(java.util.concurrent.CancellationException cancelled) {throw cancelled;}
+      catch(RuntimeException error) {entry.scope().error(error,entry.statement());}
+    prepared.forEach((ontology,axioms)->{
+      checkpoint.run();
+      owl.manager.addAxioms(ontology.getOWLOntology(),axioms);
+    });
+    for(var definition:definitions.values()) {
+      checkpoint.run();
+      owl.manager.addAxiom(definition.ontology().getOWLOntology(),
         factory.getOWLAnnotationAssertionAxiom(factory.getOWLAnnotationProperty(BEARER_ORIGIN),
             definition.owner().getIRI(),factory.getOWLLiteral(definition.value())));
+    }
     for(var entry:entries) try {
-      WorldviewDomainSupport.interpretations(owl,entry.owner(),entry.statement(),entry.resolve());
-      WorldviewDomainSupport.validateGrounding(owl,entry.owner(),entry.statement());
-    } catch(RuntimeException error) {entry.scope().error(error,entry.statement());}
+      checkpoint.run();
+      WorldviewDomainSupport.interpretations(owl,entry.owner(),entry.statement(),entry.resolve(),checkpoint);
+      WorldviewDomainSupport.validateGrounding(owl,entry.owner(),entry.statement(),checkpoint);
+    } catch(java.util.concurrent.CancellationException cancelled) {throw cancelled;}
+      catch(RuntimeException error) {entry.scope().error(error,entry.statement());}
+    checkpoint.run();
     return Map.of("nodes",(long)nodes.size(),"edges",outgoing.values().stream().mapToLong(Set::size).sum(),
         "queueVisits",visits,"universalBounds",bounds.values().stream().mapToLong(Set::size).sum(),
         "originDefinitions",(long)definitions.size());
@@ -172,12 +212,14 @@ public final class WorldviewDescriptionStaging {
     if(concept==null||concept.is(SemanticType.NOTHING))throw new IllegalArgumentException("Unresolved staged description endpoint");
     var type=owl.getOWLClass(concept);nodes.putIfAbsent(type,concept);bounds.computeIfAbsent(type,k->new LinkedHashSet<>());
   }
-  private static void flatten(OWLClassExpression expression,Set<OWLClassExpression> result) {
-    if(expression instanceof OWLObjectIntersectionOf intersection)intersection.operands().forEach(e->flatten(e,result));
+  private static void flatten(OWLClassExpression expression,Set<OWLClassExpression> result,Runnable checkpoint) {
+    checkpoint.run();
+    if(expression instanceof OWLObjectIntersectionOf intersection)intersection.operands().forEach(e->flatten(e,result,checkpoint));
     else result.add(expression);
   }
-  private static void namedHeads(OWLClassExpression expression,Set<OWLClass> result) {
+  private static void namedHeads(OWLClassExpression expression,Set<OWLClass> result,Runnable checkpoint) {
+    checkpoint.run();
     if(expression instanceof OWLClass named)result.add(named);
-    else if(expression instanceof OWLObjectIntersectionOf intersection)intersection.operands().forEach(e->namedHeads(e,result));
+    else if(expression instanceof OWLObjectIntersectionOf intersection)intersection.operands().forEach(e->namedHeads(e,result,checkpoint));
   }
 }

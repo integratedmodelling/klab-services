@@ -48,17 +48,28 @@ public final class WorldviewDomainSupport {
 
   public static java.util.List<Concept> interpretations(OWL owl, Concept owner,
       KimConceptStatement statement, Function<KimConcept, Concept> resolve) {
-    return interpretations(owl,owner,statement,resolve,true);
+    return interpretations(owl,owner,statement,resolve,true,OWLSemanticClauseSupport.NO_CHECKPOINT);
   }
 
   static java.util.List<Concept> interpretations(OWL owl, Concept owner,
       KimConceptStatement statement, Function<KimConcept, Concept> resolve, boolean requireGrounding) {
+    return interpretations(owl,owner,statement,resolve,requireGrounding,OWLSemanticClauseSupport.NO_CHECKPOINT);
+  }
+
+  static java.util.List<Concept> interpretations(OWL owl, Concept owner,
+      KimConceptStatement statement, Function<KimConcept, Concept> resolve,Runnable checkpoint) {
+    return interpretations(owl,owner,statement,resolve,true,checkpoint);
+  }
+
+  private static java.util.List<Concept> interpretations(OWL owl, Concept owner,
+      KimConceptStatement statement, Function<KimConcept, Concept> resolve, boolean requireGrounding,Runnable checkpoint) {
+    checkpoint.run();
     var support = new OWLSemanticClauseSupport(owl);
     var knowledge = owl.getConcept("odo:KnowledgeDomain");
     var physical = owl.getConcept("odo:PhysicalDomain");
-    boolean knowledgeDomain = knowledge != null && support.specializes(owner, knowledge);
+    boolean knowledgeDomain = knowledge != null && support.specializes(owner, knowledge,checkpoint);
     var links = statement.getInterpretedPhysicalDomains();
-    var effective = effectiveInterpretations(owl, owner);
+    var effective = effectiveInterpretations(owl, owner,checkpoint);
     if (requireGrounding && knowledgeDomain && links.isEmpty() && effective.isEmpty())
       throw new KlabValidationException("KNOWLEDGE_DOMAIN_INTERPRETATION_REQUIRED: " + owner.getUrn()
           + " requires an explicitly authored or inherited PhysicalDomain link; anonymous OWL inference is insufficient");
@@ -68,13 +79,14 @@ public final class WorldviewDomainSupport {
     if (!knowledgeDomain)
       throw new KlabValidationException("INTERPRETATION_SOURCE_INVALID: expected a KnowledgeDomain");
     for (var inherited : effective)
-      if (inherited.target() == null || !support.specializes(inherited.target(), physical))
+      if (inherited.target() == null || !support.specializes(inherited.target(), physical,checkpoint))
         throw new KlabValidationException("INTERPRETATION_TARGET_INVALID: inherited authored link from "
             + inherited.declaringConcept() + " requires a resolved PhysicalDomain");
     var targets = new java.util.ArrayList<Concept>();
     for (var link : links) {
+      checkpoint.run();
       var target = resolve.apply(link);
-      if (target == null || target.is(SemanticType.NOTHING) || !support.specializes(target, physical))
+      if (target == null || target.is(SemanticType.NOTHING) || !support.specializes(target, physical,checkpoint))
         throw new KlabValidationException("INTERPRETATION_TARGET_INVALID: expected a resolved PhysicalDomain");
       targets.add(target);
     }
@@ -93,22 +105,28 @@ public final class WorldviewDomainSupport {
   }
 
   public static java.util.List<InterpretationGrounding> effectiveInterpretations(OWL owl, Concept owner) {
+    return effectiveInterpretations(owl,owner,OWLSemanticClauseSupport.NO_CHECKPOINT);
+  }
+
+  private static java.util.List<InterpretationGrounding> effectiveInterpretations(OWL owl, Concept owner,Runnable checkpoint) {
+    checkpoint.run();
     var result = new java.util.LinkedHashSet<InterpretationGrounding>();
     var root = owl.getOWLClass(owner);
     if (root == null) return java.util.List.of();
     var visited = new java.util.HashSet<OWLClassExpression>();
-    collectInterpretations(owl, root, root, visited, result);
+    collectInterpretations(owl, root, root, visited, result,checkpoint);
     if (owl.hasReasoner()) {
       owl.flushReasoner();
       java.util.stream.Stream.concat(owl.getSuperClasses(root, false).entities(),
           owl.getEquivalentClasses(root).entities())
-          .forEach(c -> collectInterpretations(owl, root, c, visited, result));
+          .forEach(c -> collectInterpretations(owl, root, c, visited, result,checkpoint));
     }
     return java.util.List.copyOf(result);
   }
 
   private static void collectInterpretations(OWL owl, OWLClass root, OWLClassExpression expression,
-      java.util.Set<OWLClassExpression> visited, java.util.Set<InterpretationGrounding> result) {
+      java.util.Set<OWLClassExpression> visited, java.util.Set<InterpretationGrounding> result,Runnable checkpoint) {
+    checkpoint.run();
     if (!visited.add(expression)) return;
     if (expression instanceof OWLClass named) {
       for (var ontology : owl.manager.getOntologies()) {
@@ -121,35 +139,47 @@ public final class WorldviewDomainSupport {
               && restriction.getProperty().equals(owl.getProperty("odo:interpretsPhysicalDomain").getOWLEntity()))
             result.add(new InterpretationGrounding(owl.getConceptFor(target),
                 named.getIRI().toString(), !named.equals(root)));
-          collectInterpretations(owl, root, axiom.getSuperClass(), visited, result);
+          collectInterpretations(owl, root, axiom.getSuperClass(), visited, result,checkpoint);
         }
         for (var axiom : ontology.getEquivalentClassesAxioms(named))
-          axiom.classExpressions().forEach(c -> collectInterpretations(owl, root, c, visited, result));
+          axiom.classExpressions().forEach(c -> collectInterpretations(owl, root, c, visited, result,checkpoint));
       }
     } else if (expression instanceof OWLObjectIntersectionOf intersection)
-      intersection.operands().forEach(c -> collectInterpretations(owl, root, c, visited, result));
+      intersection.operands().forEach(c -> collectInterpretations(owl, root, c, visited, result,checkpoint));
     // A union does not establish either branch's explicit obligation independently.
   }
 
   public static void validateGrounding(OWL owl, Concept owner, KimConceptStatement statement) {
+    validateGrounding(owl,owner,statement,OWLSemanticClauseSupport.NO_CHECKPOINT);
+  }
+
+  static void validateGrounding(OWL owl, Concept owner, KimConceptStatement statement,Runnable checkpoint) {
+    checkpoint.run();
     if (!owner.is(SemanticType.QUALITY) || statement.isAbstract()) return;
     var knowledge = owl.getConcept("odo:KnowledgeDomain");
-    var domain = domain(owl, owner);
+    var domain = domain(owl, owner,checkpoint);
     var support = new OWLSemanticClauseSupport(owl);
-    if (knowledge != null && domain != null && support.specializes(domain, knowledge)
-        && statement.getObservablesDescribed().isEmpty() && !support.hasDescription(owner))
+    if (knowledge != null && domain != null && support.specializes(domain, knowledge,checkpoint)
+        && statement.getObservablesDescribed().isEmpty() && !support.hasDescription(owner,checkpoint))
       throw new KlabValidationException("KNOWLEDGE_QUALITY_GROUNDING_REQUIRED: concrete quality "
           + owner.getUrn() + " requires effective describes grounding; inherited grounding counts");
   }
 
   public static Concept domain(OWL owl, Concept concept) {
+    return domain(owl,concept,OWLSemanticClauseSupport.NO_CHECKPOINT);
+  }
+
+  private static Concept domain(OWL owl, Concept concept,Runnable checkpoint) {
+    checkpoint.run();
     var type = owl.getOWLClass(concept);
     if (type == null) return null;
     for (var ontology : owl.manager.getOntologies())
-      for (var annotation : ontology.getAnnotationAssertionAxioms(type.getIRI()))
+      for (var annotation : ontology.getAnnotationAssertionAxioms(type.getIRI())) {
+        checkpoint.run();
         if (annotation.getProperty().getIRI().equals(DOMAIN)
             && annotation.getValue() instanceof IRI iri)
           return owl.getConceptFor(owl.manager.getOWLDataFactory().getOWLClass(iri));
+      }
     return null;
   }
 }

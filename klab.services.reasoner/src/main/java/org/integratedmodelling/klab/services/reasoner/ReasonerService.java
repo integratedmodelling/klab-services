@@ -3419,7 +3419,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORED_CLAUSES);
       compilationCheckpoint(cancellation,CandidateTrace.Phase.DESCRIPTION_RECONCILE);
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DESCRIPTION_RECONCILE,null)) {
-        declarationStagingMetrics=org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.reconcile(owl,clauses);
+        declarationStagingMetrics=org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.reconcile(owl,clauses,
+            () -> compilationCheckpoint(cancellation,CandidateTrace.Phase.DESCRIPTION_RECONCILE));
       }
       compilationCheckpoint(cancellation,CandidateTrace.Phase.DESCRIPTION_RECONCILE);
       compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);

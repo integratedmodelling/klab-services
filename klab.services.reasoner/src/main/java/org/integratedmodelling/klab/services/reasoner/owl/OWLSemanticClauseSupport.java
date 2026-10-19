@@ -12,6 +12,7 @@ import org.semanticweb.owlapi.search.EntitySearcher;
 /** Preserves complete OWL fillers: a union is one bound, multiple restrictions are conjunctive. */
 public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   private final OWL owl;
+  static final Runnable NO_CHECKPOINT = () -> {};
   public static final IRI UNIVERSAL_BEARER = IRI.create("urn:klab:validation:universal-bearer");
 
   private record Bound(
@@ -48,7 +49,12 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
       boolean semantic, boolean applicability) {}
 
   public List<BearerConstraint> bearerConstraints(Concept concept) {
-    return bounds(concept).stream()
+    return bearerConstraints(concept,NO_CHECKPOINT);
+  }
+
+  List<BearerConstraint> bearerConstraints(Concept concept,Runnable checkpoint) {
+    checkpoint.run();
+    return bounds(concept,checkpoint).stream()
         .filter(b -> constrains(b, concept, SemanticRole.INHERENT))
         .map(b -> new BearerConstraint(b.filler(), b.source(), b.inherited(), b.property(),
             b.restriction(), b.semantic(), b.applicability()))
@@ -70,58 +76,74 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   }
 
   public boolean subPropertyOf(OWLObjectPropertyExpression property, OWLObjectPropertyExpression parent) {
+    return subPropertyOf(property,parent,NO_CHECKPOINT);
+  }
+
+  boolean subPropertyOf(OWLObjectPropertyExpression property, OWLObjectPropertyExpression parent,Runnable checkpoint) {
+    checkpoint.run();
     var supers = new HashSet<OWLObjectPropertyExpression>();
-    collectSuperProperties(property, supers);
+    collectSuperProperties(property, supers,checkpoint);
     return supers.contains(parent) || (owl.hasReasoner() && entails(
         owl.manager.getOWLDataFactory().getOWLSubObjectPropertyOfAxiom(property, parent)));
   }
 
   public boolean specializes(Concept concept, Concept parent) {
+    return specializes(concept,parent,NO_CHECKPOINT);
+  }
+
+  boolean specializes(Concept concept, Concept parent,Runnable checkpoint) {
+    checkpoint.run();
     return concept != null && parent != null
-        && specializes(owl.getOWLClass(concept), owl.getOWLClass(parent), new HashSet<>());
+        && specializes(owl.getOWLClass(concept), owl.getOWLClass(parent), new HashSet<>(),checkpoint);
   }
 
   public boolean hasDescription(Concept concept) {
-    return hasDescription(owl.getOWLClass(concept), new HashSet<>());
+    return hasDescription(concept,NO_CHECKPOINT);
   }
 
-  private boolean hasDescription(OWLClassExpression expression, Set<OWLClassExpression> visited) {
+  boolean hasDescription(Concept concept,Runnable checkpoint) {
+    return hasDescription(owl.getOWLClass(concept), new HashSet<>(),checkpoint);
+  }
+
+  private boolean hasDescription(OWLClassExpression expression, Set<OWLClassExpression> visited,Runnable checkpoint) {
+    checkpoint.run();
     if (expression == null || !visited.add(expression)) return false;
     if (expression instanceof OWLClass named) {
       if (java.util.stream.Stream.concat(
           EntitySearcher.getSuperClasses(named, owl.manager.ontologies()),
           EntitySearcher.getEquivalentClasses(named, owl.manager.ontologies()))
-          .anyMatch(c -> hasDescription(c, visited))) return true;
+          .anyMatch(c -> hasDescription(c, visited,checkpoint))) return true;
       if (owl.hasReasoner()) {
         owl.flushReasoner();
         return java.util.stream.Stream.concat(owl.getSuperClasses(named, false).entities(),
-            owl.getEquivalentClasses(named).entities()).anyMatch(c -> hasDescription(c, visited));
+            owl.getEquivalentClasses(named).entities()).anyMatch(c -> hasDescription(c, visited,checkpoint));
       }
     } else if (expression instanceof OWLObjectIntersectionOf intersection)
-      return intersection.operands().anyMatch(c -> hasDescription(c, visited));
+      return intersection.operands().anyMatch(c -> hasDescription(c, visited,checkpoint));
     else if (expression instanceof OWLObjectSomeValuesFrom restriction) {
       var properties = new HashSet<OWLObjectPropertyExpression>();
       collectSuperProperties(restriction.getProperty(), properties);
       if (matchesProperty(properties, "odo:describes"))
-        return observableDescriptionTarget(restriction.getFiller());
+        return observableDescriptionTarget(restriction.getFiller(),checkpoint);
       return List.of("describesQuality", "marksQuality", "classifiesQuality", "discretizesQuality",
           "increasesWith", "decreasesWith").stream().anyMatch(p -> matchesProperty(properties, "odo:" + p));
     }
     return false;
   }
 
-  private boolean observableDescriptionTarget(OWLClassExpression expression) {
+  private boolean observableDescriptionTarget(OWLClassExpression expression,Runnable checkpoint) {
+    checkpoint.run();
     var observable = owl.getConcept("odo:Observable");
-    if (observable != null && specializes(expression, owl.getOWLClass(observable), new HashSet<>()))
+    if (observable != null && specializes(expression, owl.getOWLClass(observable), new HashSet<>(),checkpoint))
       return true;
     if (expression instanceof OWLClass named) {
       var concept = owl.getConceptFor(named);
       return WorldviewDeclarationSupport.isObservableDescriptionTarget(concept);
     }
     if (expression instanceof OWLObjectIntersectionOf intersection)
-      return intersection.operands().anyMatch(this::observableDescriptionTarget);
+      return intersection.operands().anyMatch(c -> observableDescriptionTarget(c,checkpoint));
     if (expression instanceof OWLObjectUnionOf union)
-      return union.operands().allMatch(this::observableDescriptionTarget);
+      return union.operands().allMatch(c -> observableDescriptionTarget(c,checkpoint));
     return false;
   }
 
@@ -133,6 +155,11 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   private final ThreadLocal<Map<OWLAxiom, Boolean>> compatibilityEntailments = new ThreadLocal<>();
 
   public Compatibility bearerCompatibility(Collection<OWLClassExpression> constraints) {
+    return bearerCompatibility(constraints,NO_CHECKPOINT);
+  }
+
+  Compatibility bearerCompatibility(Collection<OWLClassExpression> constraints,Runnable checkpoint) {
+    checkpoint.run();
     synchronized (owl) {
       if (owl.hasPinnedBufferingReasoner()) compatibilityEntailments.set(
           new LinkedHashMap<>(128, .75f, true) {
@@ -141,16 +168,17 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
             }
           });
       try {
-        return checkBearerCompatibility(constraints);
+        return checkBearerCompatibility(constraints,checkpoint);
       } finally {
         compatibilityEntailments.remove();
       }
     }
   }
 
-  private Compatibility checkBearerCompatibility(Collection<OWLClassExpression> constraints) {
+  private Compatibility checkBearerCompatibility(Collection<OWLClassExpression> constraints,Runnable checkpoint) {
+    checkpoint.run();
     if (constraints.isEmpty()) return Compatibility.UNRESOLVED;
-    if (impossible(new LinkedHashSet<>(constraints), new int[] {4096}))
+    if (impossible(new LinkedHashSet<>(constraints), new int[] {4096},checkpoint))
       return Compatibility.IMPOSSIBLE;
     var intersection = owl.manager.getOWLDataFactory()
         .getOWLObjectIntersectionOf(new HashSet<>(constraints));
@@ -168,38 +196,43 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     return memo == null ? owl.isEntailed(axiom) : memo.computeIfAbsent(axiom, owl::isEntailed);
   }
 
-  private boolean impossible(Set<OWLClassExpression> constraints, int[] budget) {
+  private boolean impossible(Set<OWLClassExpression> constraints, int[] budget,Runnable checkpoint) {
+    checkpoint.run();
     var expanded = new LinkedHashSet<OWLClassExpression>();
-    for (var constraint : constraints) expandTypes(constraint, expanded);
-    return impossibleExpanded(expanded, budget);
+    for (var constraint : constraints) expandTypes(constraint, expanded,checkpoint);
+    return impossibleExpanded(expanded, budget,checkpoint);
   }
-  private boolean impossibleExpanded(Set<OWLClassExpression> expanded, int[] budget) {
+  private boolean impossibleExpanded(Set<OWLClassExpression> expanded, int[] budget,Runnable checkpoint) {
+    checkpoint.run();
     if (--budget[0] < 0) return false;
-    if (expanded.stream().anyMatch(OWLClassExpression::isOWLNothing) || disjoint(expanded)
-        || cardinalityConflict(expanded)) return true;
+    if (expanded.stream().anyMatch(OWLClassExpression::isOWLNothing) || disjoint(expanded,checkpoint)
+        || cardinalityConflict(expanded,checkpoint)) return true;
     for (var expression : expanded) {
       if (expression instanceof OWLObjectComplementOf complement
-          && expanded.stream().anyMatch(c -> specializes(c, complement.getOperand(), new HashSet<>())))
+          && expanded.stream().anyMatch(c -> specializes(c, complement.getOperand(), new HashSet<>(),checkpoint)))
         return true;
       if (expression instanceof OWLObjectUnionOf union)
         return union.operands().allMatch(branch -> {
           var next = new LinkedHashSet<>(expanded);
           next.remove(expression);
-          expandTypes(branch, next);
+          expandTypes(branch, next,checkpoint);
           next.remove(expression);
-          return impossibleExpanded(next, budget);
+          return impossibleExpanded(next, budget,checkpoint);
         });
     }
     return false;
   }
 
   /** Sound bootstrap bounds only: never sum independent witnesses or assume their identity. */
-  private boolean cardinalityConflict(Set<OWLClassExpression> constraints) {
+  private boolean cardinalityConflict(Set<OWLClassExpression> constraints,Runnable checkpoint) {
+    checkpoint.run();
     for (var expression : constraints) {
+      checkpoint.run();
       if (!(expression instanceof OWLObjectMaxCardinality
           || expression instanceof OWLObjectExactCardinality)) continue;
       var maximum = (OWLObjectCardinalityRestriction) expression;
       for (var required : constraints) {
+        checkpoint.run();
         int count;
         OWLObjectPropertyExpression property;
         OWLClassExpression filler;
@@ -210,35 +243,38 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
           var minimum = (OWLObjectCardinalityRestriction) required;
           count = minimum.getCardinality(); property = minimum.getProperty(); filler = minimum.getFiller();
         } else continue;
-        if (count <= maximum.getCardinality() || !subPropertyOf(property, maximum.getProperty())) continue;
+        if (count <= maximum.getCardinality() || !subPropertyOf(property, maximum.getProperty(),checkpoint)) continue;
         var effective = new LinkedHashSet<OWLClassExpression>();
         effective.add(filler);
         for (var restriction : constraints)
           if (restriction instanceof OWLObjectAllValuesFrom all
-              && subPropertyOf(property, all.getProperty())) effective.add(all.getFiller());
+              && subPropertyOf(property, all.getProperty(),checkpoint)) effective.add(all.getFiller());
         var witnessType = effective.size() == 1 ? filler
             : owl.manager.getOWLDataFactory().getOWLObjectIntersectionOf(effective);
-        if (specializes(witnessType, maximum.getFiller(), new HashSet<>())) return true;
+        if (specializes(witnessType, maximum.getFiller(), new HashSet<>(),checkpoint)) return true;
       }
     }
     return false;
   }
 
-  private void expandTypes(OWLClassExpression expression, Set<OWLClassExpression> result) {
+  private void expandTypes(OWLClassExpression expression, Set<OWLClassExpression> result,Runnable checkpoint) {
+    checkpoint.run();
     if (!result.add(expression)) return;
     if (expression instanceof OWLObjectIntersectionOf intersection)
-      intersection.operands().forEach(c -> expandTypes(c, result));
+      intersection.operands().forEach(c -> expandTypes(c, result,checkpoint));
     else if (expression instanceof OWLClass named) {
-      EntitySearcher.getSuperClasses(named, owl.manager.ontologies()).forEach(c -> expandTypes(c, result));
-      EntitySearcher.getEquivalentClasses(named, owl.manager.ontologies()).forEach(c -> expandTypes(c, result));
+      EntitySearcher.getSuperClasses(named, owl.manager.ontologies()).forEach(c -> expandTypes(c, result,checkpoint));
+      EntitySearcher.getEquivalentClasses(named, owl.manager.ontologies()).forEach(c -> expandTypes(c, result,checkpoint));
     }
   }
 
-  private boolean disjoint(Set<OWLClassExpression> constraints) {
+  private boolean disjoint(Set<OWLClassExpression> constraints,Runnable checkpoint) {
+    checkpoint.run();
     for (var ontology : owl.manager.getOntologies())
       for (var axiom : ontology.getAxioms(AxiomType.DISJOINT_CLASSES)) {
+        checkpoint.run();
         long matched = axiom.classExpressions().filter(bound -> constraints.stream()
-            .anyMatch(c -> specializes(c, bound, new HashSet<>()))).count();
+            .anyMatch(c -> specializes(c, bound, new HashSet<>(),checkpoint))).count();
         if (matched > 1) return true;
       }
     return false;
@@ -269,6 +305,11 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   }
 
   private List<Bound> bounds(Concept concept) {
+    return bounds(concept,NO_CHECKPOINT);
+  }
+
+  private List<Bound> bounds(Concept concept,Runnable checkpoint) {
+    checkpoint.run();
     synchronized (owl) {
       return cache.computeIfAbsent(
           concept.getUrn(),
@@ -276,16 +317,16 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
             var result = new ArrayList<Bound>();
             var root = owl.getOWLClass(concept);
             if (root == null) throw new IllegalArgumentException("No ontology class for " + key);
-            visit(root, false, new HashSet<>(), result);
+            visit(root, false, new HashSet<>(), result,checkpoint);
             // Include inferred superclasses as well as asserted/equivalent class definitions.
             if (owl.hasReasoner()) {
               owl.flushReasoner();
               for (var parent : owl.getSuperClasses(root, false).getFlattened())
                 if (!parent.isOWLThing() && !parent.equals(root))
-                  visit(parent, true, new HashSet<>(), result);
+                  visit(parent, true, new HashSet<>(), result,checkpoint);
               for (var equivalent : owl.getEquivalentClasses(root).getEntities())
                 if (!equivalent.isOWLThing() && !equivalent.equals(root))
-                  visit(equivalent, true, new HashSet<>(), result);
+                  visit(equivalent, true, new HashSet<>(), result,checkpoint);
             }
             return result.stream()
                 .distinct()
@@ -299,34 +340,36 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   }
 
   private void visit(
-      OWLClassExpression expression, boolean inherited, Set<OWLClass> visited, List<Bound> result) {
-    visit(expression, inherited, visited, result, "unknown", false);
+      OWLClassExpression expression, boolean inherited, Set<OWLClass> visited, List<Bound> result,Runnable checkpoint) {
+    checkpoint.run();
+    visit(expression, inherited, visited, result, "unknown", false,checkpoint);
   }
 
   private void visit(OWLClassExpression expression, boolean inherited, Set<OWLClass> visited,
-      List<Bound> result, String source, boolean semantic) {
+      List<Bound> result, String source, boolean semantic,Runnable checkpoint) {
+    checkpoint.run();
     if (expression instanceof OWLClass named) {
       if (!visited.add(named)) return;
       source = named.getIRI().toString();
       for (var ontology : owl.manager.getOntologies()) {
         for (var axiom : ontology.getSubClassAxiomsForSubClass(named)) {
           var parent = axiom.getSuperClass();
-          visit(parent, inherited || parent instanceof OWLClass, visited, result, source, marked(axiom));
+          visit(parent, inherited || parent instanceof OWLClass, visited, result, source, marked(axiom),checkpoint);
         }
         for (var axiom : ontology.getEquivalentClassesAxioms(named))
           for (var equivalent : axiom.getClassExpressionsMinus(named))
-            visit(equivalent, inherited || equivalent instanceof OWLClass, visited, result, source, marked(axiom));
+            visit(equivalent, inherited || equivalent instanceof OWLClass, visited, result, source, marked(axiom),checkpoint);
       }
     } else if (expression instanceof OWLObjectIntersectionOf intersection) {
       for (var operand : intersection.getOperands())
-        visit(operand, inherited || operand instanceof OWLClass, visited, result, source, semantic);
+        visit(operand, inherited || operand instanceof OWLClass, visited, result, source, semantic,checkpoint);
     } else if (expression instanceof OWLQuantifiedRestriction<?> restriction
         && restriction.getFiller() instanceof OWLClassExpression filler) {
       if (!(restriction.getProperty() instanceof OWLObjectPropertyExpression property)) return;
       // Imported vocabularies (e.g. PROV) need not have a k.LAB namespace. Match OWL
       // properties directly, retaining semantic subproperties without resolving unrelated IRIs.
       var properties = new HashSet<OWLObjectPropertyExpression>();
-      collectSuperProperties(property, properties);
+      collectSuperProperties(property, properties,checkpoint);
       for (var entry : PROPERTIES.entrySet())
         if (matchesProperty(properties, entry.getValue()))
           result.add(new Bound(entry.getKey(), filler, inherited, false, source, property, expression,
@@ -337,7 +380,7 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
       var inherent = owl.getProperty(NS.IS_INHERENT_TO_PROPERTY);
       if (expression instanceof OWLObjectAllValuesFrom && inherent != null
           && !matchesProperty(properties, NS.IS_INHERENT_TO_PROPERTY)
-          && subPropertyOf(inherent.getOWLEntity().asOWLObjectProperty(), property))
+          && subPropertyOf(inherent.getOWLEntity().asOWLObjectProperty(), property,checkpoint))
         result.add(new Bound(SemanticRole.INHERENT, filler, inherited, false, source, property, expression, false));
     }
     // A union in the superclass hierarchy does not assert either branch individually.
@@ -350,9 +393,15 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
 
   private void collectSuperProperties(
       OWLObjectPropertyExpression property, Set<OWLObjectPropertyExpression> properties) {
+    collectSuperProperties(property,properties,NO_CHECKPOINT);
+  }
+
+  private void collectSuperProperties(
+      OWLObjectPropertyExpression property, Set<OWLObjectPropertyExpression> properties,Runnable checkpoint) {
+    checkpoint.run();
     if (!properties.add(property)) return;
     EntitySearcher.getSuperProperties(property, owl.manager.ontologies())
-        .forEach(parent -> collectSuperProperties(parent, properties));
+        .forEach(parent -> collectSuperProperties(parent, properties,checkpoint));
   }
 
   private boolean matchesProperty(Set<OWLObjectPropertyExpression> properties, String name) {
@@ -390,6 +439,12 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
 
   private boolean specializes(
       OWLClassExpression candidate, OWLClassExpression bound, Set<OWLClassExpression> visited) {
+    return specializes(candidate,bound,visited,NO_CHECKPOINT);
+  }
+
+  private boolean specializes(
+      OWLClassExpression candidate, OWLClassExpression bound, Set<OWLClassExpression> visited,Runnable checkpoint) {
+    checkpoint.run();
     if (candidate.equals(bound) || bound.isOWLThing()) return true;
     if (owl.hasReasoner()
         && entails(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(candidate, bound)))
@@ -399,23 +454,23 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     if (bound instanceof OWLObjectUnionOf union)
       return union
           .operands()
-          .anyMatch(value -> specializes(candidate, value, new HashSet<>(visited)));
+          .anyMatch(value -> specializes(candidate, value, new HashSet<>(visited),checkpoint));
     if (bound instanceof OWLObjectIntersectionOf intersection)
       return intersection
           .operands()
-          .allMatch(value -> specializes(candidate, value, new HashSet<>(visited)));
+          .allMatch(value -> specializes(candidate, value, new HashSet<>(visited),checkpoint));
     if (!visited.add(candidate)) return false;
     if (candidate instanceof OWLClass named)
       return java.util.stream.Stream.concat(
               EntitySearcher.getSuperClasses(named, owl.manager.ontologies()),
               EntitySearcher.getEquivalentClasses(named, owl.manager.ontologies()))
-          .anyMatch(value -> specializes(value, bound, new HashSet<>(visited)));
+          .anyMatch(value -> specializes(value, bound, new HashSet<>(visited),checkpoint));
     if (candidate instanceof OWLObjectIntersectionOf intersection)
       return intersection
           .operands()
-          .anyMatch(value -> specializes(value, bound, new HashSet<>(visited)));
+          .anyMatch(value -> specializes(value, bound, new HashSet<>(visited),checkpoint));
     if (candidate instanceof OWLObjectUnionOf union)
-      return union.operands().allMatch(value -> specializes(value, bound, new HashSet<>(visited)));
+      return union.operands().allMatch(value -> specializes(value, bound, new HashSet<>(visited),checkpoint));
     return false;
   }
 
