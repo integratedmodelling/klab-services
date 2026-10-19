@@ -68,6 +68,7 @@ import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace;
+import org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.integratedmodelling.klab.services.reasoner.internal.IngestionNotifications;
@@ -2168,8 +2169,31 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         concept.asConcept(), this.owl.getProperty(NS.HAS_ROLE_PROPERTY));
   }
 
+  private static final CandidatePublicationCoordinator.Cancellation NO_COMPILATION_CANCELLATION = () -> false;
+  private boolean initialPrivateCompilationStarted;
+
   @Override
   public synchronized ResourceSet loadKnowledge(Worldview worldview, Scope scope) {
+    if (semanticOnly) initialPrivateCompilationStarted = true;
+    return loadKnowledgeEntry(worldview, scope, NO_COMPILATION_CANCELLATION);
+  }
+
+  /** Internal one-shot entry. Its generation predicate must never be retained by an accepted actor. */
+  public synchronized ResourceSet compilePrivateKnowledge(Worldview worldview,
+      org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
+      CandidatePublicationCoordinator.Cancellation cancellation) {
+    if (!semanticOnly || knowledgeReady || initialPrivateCompilationStarted || scope != serviceScope())
+      throw new IllegalStateException("Compilation cancellation requires a fresh private actor and its owned scope");
+    Objects.requireNonNull(cancellation);
+    initialPrivateCompilationStarted = true;
+    return loadKnowledgeEntry(worldview, scope, cancellation);
+  }
+
+  private static void compilationCheckpoint(CandidatePublicationCoordinator.Cancellation cancellation, CandidateTrace.Phase phase) {
+    CandidateTrace.checkpoint(cancellation, phase);
+  }
+
+  private ResourceSet loadKnowledgeEntry(Worldview worldview, Scope scope, CandidatePublicationCoordinator.Cancellation cancellation) {
     if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
         org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.LOAD_REQUEST,
         candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(), -1, -1,
@@ -2211,7 +2235,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // Ingestion also runs before user scopes exist. Collect on the supplied channel and always
     // detach the listener, so startup errors survive in the ontology validation diagnostics.
     try (var collector = new IngestionNotifications(scope, notifications)) {
-      return loadKnowledge(worldview, scope, notifications, attempt);
+      return loadKnowledge(worldview, scope, notifications, attempt, cancellation);
     } finally {
       if (candidateRuntime == null || semanticOnly) {
       if (semanticValidationState.loading())
@@ -2222,7 +2246,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private ResourceSet loadKnowledge(Worldview worldview, Scope scope, List<Notification> ret,
-      org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt) {
+      org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt,
+      CandidatePublicationCoordinator.Cancellation cancellation) {
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.INPUT_PREFLIGHT);
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.INPUT_PREFLIGHT,null)) {
       // Freeze and validate authoritative semantic beans before initialization or any OWL write.
       // Aggregate isEmpty flags may be stale; current structured diagnostics own this gate.
@@ -2243,6 +2269,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       } catch (RuntimeException e) {
         return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable: " + e.getMessage()));
       }
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.INPUT_PREFLIGHT);
       if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(worldview, false)) {
         List<Notification> failures = List.of(Notification.error("Authoritative worldview has no valid root ontology"));
         if (candidateRuntime != null && !semanticOnly
@@ -2286,22 +2313,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.observationReasoner = new ObservationReasoner(this);
 
     long ingestionStarted = System.nanoTime();
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.OWL_INITIALIZE);
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.OWL_INITIALIZE,null)) {
       this.owl.initialize(worldview.getOntologies().getFirst());
       serviceScope().info("Worldview OWL initialization completed in "
           + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ingestionStarted) + " ms");
     }
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.OWL_INITIALIZE);
     authorityBindings.clear();
     loadedOntologySources.clear();
     declarationDomains.clear();
     loadedOntologyDiagnostics.clear();
-    compileStagedOntologies(worldview.getOntologies(),scope);
+    compileStagedOntologies(worldview.getOntologies(),scope,cancellation);
     long flushStarted = System.nanoTime();
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_FLUSH);
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_FLUSH,null)) {
       this.owl.flushReasoner();
       serviceScope().info("Worldview OWL flush completed in "
           + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - flushStarted) + " ms");
     }
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_FLUSH);
     for (var ontology : worldview.getOntologies()) {
       loadedOntologyDiagnostics.put(
           ontology.getUrn(),
@@ -2313,6 +2344,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
               .toList());
     }
     long strategiesStarted = System.nanoTime();
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.STRATEGIES);
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.STRATEGIES,null)) {
       for (var strategyDocument : worldview.getObservationStrategies()) {
         for (var strategy : strategyDocument.getStatements()) {
@@ -2323,13 +2355,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       serviceScope().info("Worldview strategy initialization completed in "
           + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - strategiesStarted) + " ms");
     }
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.STRATEGIES);
 
     // assess consistent status and if consistent, set operational
     long consistencyStarted = System.nanoTime();
     boolean logicallyConsistent;
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_CONSISTENCY);
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_CONSISTENCY,null)) {
       logicallyConsistent = !this.owl.isOn() || this.owl.isConsistent();
     }
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_CONSISTENCY);
     serviceScope().info("Worldview consistency check completed in "
         + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - consistencyStarted) + " ms");
     this.consistent.set(!Utils.Notifications.hasErrors(ret) && logicallyConsistent);
@@ -3281,19 +3316,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ontologies.forEach(ontology -> scopes.put(ontology,scope));
     compileStagedOntologies(scopes);
   }
+  private void compileStagedOntologies(List<KimOntology> ontologies, Scope scope,
+      CandidatePublicationCoordinator.Cancellation cancellation) {
+    var scopes = new LinkedHashMap<KimOntology,Scope>();
+    ontologies.forEach(ontology -> scopes.put(ontology,scope));
+    compileStagedOntologies(scopes,cancellation);
+  }
+  private void compileStagedOntologies(Map<KimOntology,Scope> scopes) {
+    compileStagedOntologies(scopes,NO_COMPILATION_CANCELLATION);
+  }
 
   /** Only private compilation reaches this shared full/incremental staging primitive. */
-  private void compileStagedOntologies(Map<KimOntology,Scope> scopes) {
+  private void compileStagedOntologies(Map<KimOntology,Scope> scopes, CandidatePublicationCoordinator.Cancellation cancellation) {
     org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry registry;
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_REGISTRY);
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DECLARATION_REGISTRY,null)) {
       registry = new org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry(scopes.keySet());
       if (!registry.errors().isEmpty()) throw new KlabValidationException(registry.errors().toString());
     }
+    compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_REGISTRY);
     var metricsBeforeStaging=owl.compilationMetrics();
     try (var deferred = owl.stageDeclarations()) {
       // Typed names are actual source declarations, private to this candidate actor.
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.NAMED_DECLARATIONS);
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.NAMED_DECLARATIONS,null)) {
         for (var entry : registry.ordered()) {
+          compilationCheckpoint(cancellation,CandidateTrace.Phase.NAMED_DECLARATIONS);
           var statement=entry.statement(); var ontology=owl.requireOntology(entry.ontology().getUrn());
           if (statement.getUpperConceptDefined()!=null) {
             installAlias(statement,ontology,scopes.get(entry.ontology()));
@@ -3303,37 +3351,56 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           }
         }
       }
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.NAMED_DECLARATIONS);
       // Authority roots must exist before parent expressions can resolve authority identities.
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.AUTHORITY_CONFIGURATION,null)) {
         for (var entry : registry.ordered()) if (entry.statement().getAuthorityRequired()!=null) {
+          compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
           var statement=entry.statement();var owner=owl.getConcept(entry.urn());
           configureAuthorityBinding(new Authority.ConfigurationRequest(worldview.getUrn(),
               statement.getAuthorityRequired(),owner.getUrn(),statement.getAuthorityParameters()),scopes.get(entry.ontology()));
         }
       }
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
       stagingDeclarationStructure=true;
       try {
+        compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_STRUCTURE);
         try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DECLARATION_STRUCTURE,null)) {
           for (var entry : registry.ordered()) if (entry.statement().getUpperConceptDefined()==null) {
+          compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_STRUCTURE);
             var ontology=owl.getOntology(entry.ontology().getUrn());var scope=scopes.get(entry.ontology());
             if (entry.statement().isAlias()) installAlias(entry.statement(),ontology,scope);
             else if (entry.enclosing()==null) build(entry.statement(),ontology,null,scope);
             else buildInternal(entry.statement(),ontology,entry.enclosing(),scope);
           }
         }
+        compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_STRUCTURE);
       } finally { stagingDeclarationStructure=false; }
       // ABOUT in a preamble needs the complete named domain hierarchy, not just
       // typed signatures. Its endpoint and grounding contracts remain unchanged.
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.DOMAIN_BINDING);
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOMAIN_BINDING,null)) {
-        scopes.forEach((source,scope)->declarationDomains.put(source.getUrn(),
-            org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.validate(source,this::declareConcept)));
-        scopes.forEach((source,scope)->org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(
-            owl,source,declarationDomains.get(source.getUrn())));
+        for (var entry : scopes.entrySet()) {
+          compilationCheckpoint(cancellation,CandidateTrace.Phase.DOMAIN_BINDING);
+          var source = entry.getKey();
+          declarationDomains.put(source.getUrn(),
+              org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.validate(source,this::declareConcept));
+        }
+        for (var entry : scopes.entrySet()) {
+          compilationCheckpoint(cancellation,CandidateTrace.Phase.DOMAIN_BINDING);
+          var source = entry.getKey();
+          org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(
+              owl,source,declarationDomains.get(source.getUrn()));
+        }
       }
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.DOMAIN_BINDING);
       var clauses=new ArrayList<org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry>();
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORED_CLAUSES);
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.AUTHORED_CLAUSES,null)) {
         for (var entry : registry.ordered()) if (!entry.statement().isAlias()
             && entry.statement().getUpperConceptDefined()==null) {
+          compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORED_CLAUSES);
           var ontology=owl.getOntology(entry.ontology().getUrn());var owner=owl.getConcept(entry.urn());
           var scope=scopes.get(entry.ontology());
           java.util.function.Function<KimConcept,Concept> resolve=operand->declare(operand,ontology,scope);
@@ -3349,18 +3416,28 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           } catch (RuntimeException error) { scope.error(error,entry.statement()); }
         }
       }
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORED_CLAUSES);
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.DESCRIPTION_RECONCILE);
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DESCRIPTION_RECONCILE,null)) {
         declarationStagingMetrics=org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.reconcile(owl,clauses);
       }
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.DESCRIPTION_RECONCILE);
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.ONTOLOGY_REGISTER,null)) {
-        scopes.forEach((source,scope)->{
+        for (var entry : scopes.entrySet()) {
+          compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);
+          var source = entry.getKey(); var scope = entry.getValue();
           try { org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport.requireEffectiveGrounding(
               owl,declarationDomains.get(source.getUrn())); }
           catch (RuntimeException error) {scope.error(error,source);}
-          for(var statement:source.getStatements())tagConceptService(statement,source.getServiceId());
+          for(var statement:source.getStatements()) {
+            compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);
+            tagConceptService(statement,source.getServiceId());
+          }
           owl.registerWithReasoner(source);rememberOntologySource(source);
-        });
+        }
       }
+      compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);
       var measured=new LinkedHashMap<String,Long>(declarationStagingMetrics);
       var metricsAfterStaging=owl.compilationMetrics();
       for(var name:List.of("reasonerCreations","actualFlushes","satisfiabilityQueries","entailmentQueries"))

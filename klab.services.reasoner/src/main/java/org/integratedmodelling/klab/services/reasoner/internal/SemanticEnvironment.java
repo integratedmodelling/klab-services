@@ -34,11 +34,31 @@ public final class SemanticEnvironment implements AutoCloseable {
   @Override public void close() throws Exception {
     if (!closed.compareAndSet(false, true)) return;
     try (var phase = CandidateTrace.phaseAt(CandidateTrace.Phase.PRIVATE_DISPOSE,traceKey,traceGeneration)) {
+      Throwable failure=null;
       try { actor.disposeSemanticEnvironment(); }
+      catch (Exception | Error error) { failure=error; throw error; }
       finally {
         // This fresh private directory contains only captured bytes written by its factory.
-        removeAssets(assets,traceGeneration,traceKey);
+        try { removeAssets(assets,traceGeneration,traceKey); }
+        catch (Exception | Error cleanup) {
+          if(failure!=null) { if(cleanup!=failure) failure.addSuppressed(cleanup); }
+          else throw cleanup;
+        }
       }
+    }
+  }
+  static void closeAfterFailure(AutoCloseable owned,Throwable primary) throws Exception {
+    try { owned.close(); }
+    catch (Exception | Error cleanup) {
+      if(primary!=null) { if(cleanup!=primary) primary.addSuppressed(cleanup); }
+      else throw cleanup;
+    }
+  }
+  static void removeAssetsAfterFailure(Path assets,Throwable primary) throws Exception {
+    try { removeAssets(assets); }
+    catch (Exception | Error cleanup) {
+      if(primary!=null) { if(cleanup!=primary) primary.addSuppressed(cleanup); }
+      else throw cleanup;
     }
   }
   static void removeAssets(Path assets) throws Exception {

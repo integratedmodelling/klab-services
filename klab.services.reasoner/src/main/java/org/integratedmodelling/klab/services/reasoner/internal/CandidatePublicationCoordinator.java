@@ -253,7 +253,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
       Result<S> result = null;
       Throwable failure = null;
       try { result = builder.build(job.input(), () -> cancelled(job)); }
-      catch (Throwable e) { failure = e; }
+      catch (Throwable e) { failure = e; recordSuppressedCleanup(e); }
       boolean guardCurrent = false;
       // A guard may invalidate or close reentrantly. It must never hold up semantic readers
       // or cause disposal while our monitor is held. Publication rechecks both generations.
@@ -263,7 +263,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
         try (var phase = CandidateTrace.phase(CandidateTrace.Phase.PUBLICATION_GUARD,job.input().dependencyRevision())) {
           guardCurrent = guard.current(job.input());
         }
-        catch (Throwable e) { failure = e; }
+        catch (Throwable e) { failure = e; recordSuppressedCleanup(e); }
       }
       if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.GUARD,job.generation(),status().inputGeneration(),-1,
           null,null,guardCurrent ? CandidateTrace.Reason.SUCCESS : CandidateTrace.Reason.NONE);
@@ -327,6 +327,25 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
       }
       CandidateTrace.clearJob();
       dispose(discard); dispose(retire);
+    }
+  }
+
+  /** Builder-owned cleanup can fail before any result is handed to this coordinator. */
+  private void recordSuppressedCleanup(Throwable failure) {
+    if (failure.getSuppressed().length == 0) return;
+    var pending = new java.util.ArrayDeque<Throwable>();
+    var seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Throwable,Boolean>());
+    java.util.Collections.addAll(pending,failure.getSuppressed());
+    int recorded=0;
+    while (!pending.isEmpty() && recorded<128) {
+      var cleanup=pending.removeFirst();
+      if (!seen.add(cleanup)) continue;
+      synchronized (this) {
+        if (cleanupFailures.size()==128) cleanupFailures.remove(0);
+        cleanupFailures.add("Candidate suppressed cleanup failure: "+cleanup.getMessage());
+      }
+      recorded++;
+      java.util.Collections.addAll(pending,cleanup.getSuppressed());
     }
   }
 

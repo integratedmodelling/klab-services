@@ -21,7 +21,19 @@ public final class AuthorityBootstrap {
     CapturedAuthorityCatalog produce(Worldview source, Scope owner, Plan plan,
         CandidatePublicationCoordinator.Cancellation cancellation) throws Exception;
   }
-  private record Outcome(long epoch, CapturedAuthorityCatalog catalog, String failure, Plan plan,
+  static final String CLEANUP_FAILURE_CODE = "AUTHORITY_BOOTSTRAP_OWNED_CLEANUP_FAILED";
+  /** Only sanitized value data crosses the provider failure boundary or enters memoization. */
+  private record Failure(String message, boolean cleanupFailed) {
+    IllegalStateException exception() {
+      var result = new IllegalStateException(message);
+      if (cleanupFailed) result.addSuppressed(new IllegalStateException(CLEANUP_FAILURE_CODE));
+      return result;
+    }
+  }
+  private static final class OwnedCleanupFailure extends Exception {
+    OwnedCleanupFailure(Exception cleanup) { super(CLEANUP_FAILURE_CODE, cleanup); }
+  }
+  private record Outcome(long epoch, CapturedAuthorityCatalog catalog, Failure failure, Plan plan,
                          String providerInput) {}
   private final Resolver resolver;
   private final Producer producer;
@@ -118,7 +130,7 @@ public final class AuthorityBootstrap {
       CandidateTrace.stage(CandidateTrace.Event.CACHE_HIT,expectedKey,startedEpoch,
           previous.failure()==null ? CandidateTrace.Reason.EXACT_SUCCESS : CandidateTrace.Reason.EXACT_FAILURE);
       requireEpoch(startedEpoch);
-      if (previous.failure()!=null) throw new IllegalStateException(previous.failure());
+      if (previous.failure()!=null) throw previous.failure().exception();
       verify(source,owner,previous.plan(),expectedKey); requireEpoch(startedEpoch); return previous.catalog();
     }
     try {
@@ -157,9 +169,10 @@ public final class AuthorityBootstrap {
     catch (Exception failure) {
       CandidateTrace.stage(CandidateTrace.Event.BOOTSTRAP_FAILURE,expectedKey,startedEpoch,CandidateTrace.Reason.FAILURE);
       // Provider exceptions can contain private parameters, URLs, or headers.
-      String message="AUTHORITY_BOOTSTRAP_FAILED: "+failure.getClass().getSimpleName();
-      remember(expectedKey,new Outcome(startedEpoch,null,message,null,null));
-      throw new IllegalStateException(message);
+      var sanitized = new Failure("AUTHORITY_BOOTSTRAP_FAILED: "+failure.getClass().getSimpleName(),
+          failure instanceof OwnedCleanupFailure || failure.getSuppressed().length > 0);
+      remember(expectedKey,new Outcome(startedEpoch,null,sanitized,null,null));
+      throw sanitized.exception();
     }
   }
   void verify(Worldview source, Scope owner, Plan plan, String expectedKey) {
@@ -227,6 +240,7 @@ public final class AuthorityBootstrap {
     Files.createDirectories(root);var job=Files.createTempDirectory(root,"capture-");
     var knowledge=Files.createDirectories(job.resolve("knowledge"));var state=Files.createDirectories(job.resolve("data/services/reasoner"));
     ReasonerService actor=null;
+    Throwable failure=null;
     try {
       for(var entry:core.entrySet()) {
         var target=knowledge.resolve(entry.getKey()).normalize();if(!target.startsWith(knowledge))throw new IllegalArgumentException("Core escapes staging");
@@ -252,7 +266,7 @@ public final class AuthorityBootstrap {
       CandidateTrace.stage(CandidateTrace.Event.BEFORE_PRIVATE_LOAD,null,-1,CandidateTrace.Reason.NONE);
       org.integratedmodelling.klab.api.services.resources.ResourceSet loaded;
       try (var phase=CandidateTrace.phase(CandidateTrace.Phase.BOOTSTRAP_LOAD,null)) {
-        loaded=actor.loadKnowledge(source,scope);
+        loaded=actor.compilePrivateKnowledge(source,scope,cancellation);
       }
       CandidateTrace.stage(CandidateTrace.Event.AFTER_PRIVATE_LOAD,null,-1,CandidateTrace.Reason.NONE);
       CandidateTrace.checkpoint(cancellation,null,-1,CandidateTrace.Reason.POST_PRIVATE_LOAD);
@@ -292,10 +306,26 @@ public final class AuthorityBootstrap {
       var result=CapturedAuthorityCatalog.capture(state);cancellation.checkpoint();
       CandidateTrace.stage(CandidateTrace.Event.CAPTURE_COMPLETE,null,-1,CandidateTrace.Reason.SUCCESS);
       return result;
+    } catch (Throwable error) {
+      failure=error;
+      throw error;
     } finally {
       CandidateTrace.stage(CandidateTrace.Event.PRODUCER_DISPOSE,null,-1,CandidateTrace.Reason.NONE);
-      try { if(actor!=null) actor.disposeSemanticEnvironment(); }
-      finally { SemanticEnvironment.removeAssets(job); }
+      try {
+      Throwable cleanupFailure=failure;
+      try {
+        if(actor!=null) {
+          try { actor.disposeSemanticEnvironment(); }
+          catch (Exception | Error cleanup) {
+            if (failure != null) { if(cleanup!=failure) failure.addSuppressed(cleanup); }
+            else { cleanupFailure=cleanup; throw cleanup; }
+          }
+        }
+      } finally { SemanticEnvironment.removeAssetsAfterFailure(job,cleanupFailure); }
+      } catch (Exception cleanup) {
+        if (failure == null) throw new OwnedCleanupFailure(cleanup);
+        throw cleanup;
+      }
     }
   }
   private static void copy(Path from,Path to)throws Exception {

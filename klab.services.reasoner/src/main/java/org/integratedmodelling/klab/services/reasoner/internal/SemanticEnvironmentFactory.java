@@ -262,6 +262,7 @@ public final class SemanticEnvironmentFactory
   @Override public CandidatePublicationCoordinator.Result<SemanticEnvironment> build(
       CandidatePublicationCoordinator.Input<Worldview> input,
       CandidatePublicationCoordinator.Cancellation cancellation) throws Exception {
+    cancellation.checkpoint();
     var context = bootstrapInputs.get(input.dependencyRevision());
     if (context == null) return buildCaptured(input, cancellation);
     Worldview owned;
@@ -274,6 +275,7 @@ public final class SemanticEnvironmentFactory
           || !BeanIngestionPreflight.errors(owned).isEmpty() || !coreAliasErrors(owned).isEmpty())
         throw new IllegalArgumentException("Bootstrap input does not match frozen validated manifest");
     }
+    cancellation.checkpoint();
     CapturedAuthorityCatalog catalog;
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.PROVIDER_PREPARE,context.key())) {
       catalog = bootstrap.prepare(owned, context.owner(), context.key(), cancellation);
@@ -284,6 +286,7 @@ public final class SemanticEnvironmentFactory
       isolated = new SemanticEnvironmentFactory(assetRoot, core, documentLocators, expectedDocumentHashes, catalog);
       captured = isolated.capture(owned);
     }
+    cancellation.checkpoint();
     var result = isolated.buildCaptured(captured, cancellation);
     try {
       cancellation.checkpoint();
@@ -293,7 +296,7 @@ public final class SemanticEnvironmentFactory
       }
       return result;
     } catch (Throwable stale) {
-      if (result.state() != null) result.state().close();
+      if (result.state() != null) SemanticEnvironment.closeAfterFailure(result.state(),stale);
       throw stale;
     }
   }
@@ -318,9 +321,11 @@ public final class SemanticEnvironmentFactory
             CandidatePublicationCoordinator.LogicalStatus.NOT_RUN, true,
             beanErrors.stream().map(Notification::getMessage).toList());
     }
+    cancellation.checkpoint();
     var unsupported = new ArrayList<String>();
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.SOURCE_SUPPORT,input.dependencyRevision())) {
       for (var ontology : snapshot.getOntologies()) {
+        cancellation.checkpoint();
         for (var imported : ontology.getOwlImports()) {
           var captured = coreIdentities.get(imported.getFirst());
           var odoRelease = "odo".equals(imported.getFirst())
@@ -343,6 +348,7 @@ public final class SemanticEnvironmentFactory
             "CANDIDATE_ISOLATION_UNSUPPORTED: authority provider for " + ontology.getUrn());
       }
       for (var strategies : snapshot.getObservationStrategies()) {
+        cancellation.checkpoint();
         var visitor = new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor(
             new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor.LenientValidator() {
               @Override public List<Notification> validatePlanNode(
@@ -367,14 +373,17 @@ public final class SemanticEnvironmentFactory
       if (!unsupported.isEmpty()) return new CandidatePublicationCoordinator.Result<>(null,
           CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, true, unsupported);
     }
+    cancellation.checkpoint();
     Files.createDirectories(assetRoot);
     Path assets = Files.createTempDirectory(assetRoot, "semantic-");
     var knowledge = Files.createDirectories(assets.resolve("knowledge"));
     SemanticEnvironment environment = null;
     boolean transferred = false;
+    Throwable failure = null;
     try {
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.CORE_MATERIALIZATION,input.dependencyRevision())) {
         for (var entry : core.entrySet()) {
+          cancellation.checkpoint();
           var file = knowledge.resolve(entry.getKey()).normalize();
           if (!file.startsWith(knowledge)) throw new IllegalArgumentException("Core catalog escaped private assets");
           Files.createDirectories(file.getParent()); Files.write(file, entry.getValue());
@@ -385,14 +394,16 @@ public final class SemanticEnvironmentFactory
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.CODELIST_MATERIALIZATION,input.dependencyRevision())) {
         authorities.materializeCodelists(assets);
       }
+      cancellation.checkpoint();
       ReasonerService actor;
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.ACTOR_CREATE,input.dependencyRevision())) {
         actor = new ReasonerService(scope, knowledge, assets, authorities);
       }
       environment = new SemanticEnvironment(actor, assets);
+      cancellation.checkpoint();
       org.integratedmodelling.klab.api.services.resources.ResourceSet loaded;
       try (var phase = CandidateTrace.phase(CandidateTrace.Phase.ACCEPTED_ACTOR_LOAD,input.dependencyRevision())) {
-        loaded = actor.loadKnowledge(snapshot, scope);
+        loaded = actor.compilePrivateKnowledge(snapshot, scope, cancellation);
       }
       cancellation.checkpoint();
       var diagnostics = new ArrayList<Notification>(scope.getNotifications());
@@ -405,36 +416,45 @@ public final class SemanticEnvironmentFactory
           try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOCUMENT_VALIDATE,ontology.getUrn())) {
             diagnostics.addAll(new DocumentSemanticValidator(actor).validate(ontology));
           }
+          cancellation.checkpoint();
         }
         for (var strategies : snapshot.getObservationStrategies()) {
           cancellation.checkpoint();
           try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOCUMENT_VALIDATE,strategies.getUrn())) {
             diagnostics.addAll(new DocumentSemanticValidator(actor).validate(strategies));
           }
+          cancellation.checkpoint();
         }
       }
       // Validators can materialize captured expressions. Include those final axioms in the check.
       if (actor.owl().hasReasoner()) {
+        CandidateTrace.checkpoint(cancellation,CandidateTrace.Phase.FINAL_FLUSH);
         try (var phase = CandidateTrace.phase(CandidateTrace.Phase.FINAL_FLUSH,input.dependencyRevision())) {
           actor.owl().flushReasoner();
         }
+        CandidateTrace.checkpoint(cancellation,CandidateTrace.Phase.FINAL_FLUSH);
         boolean finalConsistent;
+        CandidateTrace.checkpoint(cancellation,CandidateTrace.Phase.FINAL_CONSISTENCY);
         try (var phase = CandidateTrace.phase(CandidateTrace.Phase.FINAL_CONSISTENCY,input.dependencyRevision())) {
           finalConsistent = actor.owl().isConsistent();
         }
+        CandidateTrace.checkpoint(cancellation,CandidateTrace.Phase.FINAL_CONSISTENCY);
         if (!finalConsistent) diagnostics.add(Notification.error(
             "Candidate OWL is inconsistent after semantic expression validation"));
         else {
           // Expressions may add axioms after a source declaration was checked. Classify the
           // final candidate once: global consistency alone does not reject impossible classes.
+          CandidateTrace.checkpoint(cancellation,CandidateTrace.Phase.FINAL_CLASSIFY);
           try (var phase = CandidateTrace.phase(CandidateTrace.Phase.FINAL_CLASSIFY,input.dependencyRevision())) {
             actor.owl().getUnsatisfiableClasses().entities().filter(c -> !c.isOWLNothing())
                 .sorted(java.util.Comparator.comparing(c -> c.getIRI().toString()))
                 .forEach(c -> diagnostics.add(Notification.error(
                     "Candidate contains unsatisfiable named class: " + c.getIRI())));
           }
+          CandidateTrace.checkpoint(cancellation,CandidateTrace.Phase.FINAL_CLASSIFY);
         }
       }
+      cancellation.checkpoint();
       var messages = diagnostics.stream().map(Notification::getMessage).toList();
       var status = messages.stream().anyMatch(m -> m.contains("CANDIDATE_ISOLATION_UNSUPPORTED"))
           ? CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED
@@ -449,10 +469,13 @@ public final class SemanticEnvironmentFactory
       transferred = true;
       environment = null; // Coordinator now owns disposal of returned state.
       return result;
+    } catch (Throwable error) {
+      failure = error;
+      throw error;
     } finally {
       if (!transferred) {
-        if (environment != null) environment.close();
-        else SemanticEnvironment.removeAssets(assets);
+        if (environment != null) SemanticEnvironment.closeAfterFailure(environment,failure);
+        else SemanticEnvironment.removeAssetsAfterFailure(assets,failure);
       }
     }
   }
