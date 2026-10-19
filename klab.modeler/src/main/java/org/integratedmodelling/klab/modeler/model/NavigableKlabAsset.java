@@ -292,7 +292,14 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             changes.getNamespaces(),
             changes.getObservationStrategies(),
             changes.getBehaviors())) {
-      applyChange(change, scope, ret);
+      NavigableKlabAsset<?> target = this;
+      if (change.getKnowledgeClass() == KnowledgeClass.ONTOLOGY && change.getProjectUrn() != null) {
+        var project = this instanceof NavigableProject receiver && Objects.equals(receiver.getUrn(), change.getProjectUrn())
+            ? receiver : findAsset(change.getProjectUrn(), NavigableProject.class, KnowledgeClass.PROJECT);
+        if (project != null) target = project;
+        else if (this instanceof NavigableWorkspace || this instanceof NavigableProject) continue;
+      }
+      target.applyChange(change, scope, ret);
     }
     for (var change : changes.getProjects()) {
       applyProjectChange(change, scope, ret);
@@ -411,7 +418,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
       case CREATE -> {
         var ret =
             addChild(
-                resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
+                resolveChangedDocument(change, service, scope));
         if (ret != null) {
           changedAssets.add(ret);
           ret.localMetadata()
@@ -437,9 +444,12 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         }
       }
       case UPDATE -> {
+        var resolved = resolveChangedDocument(change, service, scope);
+        // An ambiguous rejected source has no authoritative file winner.
+        if (resolved == null) return false;
         var physicalChanges =
             updateChild(
-                resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
+                resolved);
         var asset =
             findAsset(change.getResourceUrn(), NavigableAsset.class, change.getKnowledgeClass());
         var metadataChanges =
@@ -470,6 +480,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     }
 
     return false;
+  }
+
+  private KlabAsset resolveChangedDocument(ResourceSet.Resource change, ResourcesService service, Scope scope) {
+    var urn = change.getResourceUrn();
+    if (change.getKnowledgeClass() == KnowledgeClass.ONTOLOGY && this instanceof NavigableProject project
+        && project.getManifest() != null
+        && !org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy.definesWorldview(project.getManifest()))
+      urn = project.getUrn() + "/" + urn;
+    return resolveAsset(change.getKnowledgeClass(), urn, service, scope);
   }
 
   @Override

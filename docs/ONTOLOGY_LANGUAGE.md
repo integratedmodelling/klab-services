@@ -1,5 +1,19 @@
 # Worldview ontology language guide
 
+## Project placement
+
+In this release, `.kwv` ontologies belong only to worldview-defining projects:
+the owning project's manifest must have a nonblank `definedWorldview`. Adopting
+an existing worldview does not make an ordinary project a worldview definition.
+Use `.kim` namespaces for models in ordinary projects. Unsupported `.kwv` files
+remain on disk and receive an `ONTOLOGY_PROJECT_REQUIRES_WORLDVIEW` error bound
+to the document; retrying synchronization cannot admit them. Duplicate ontology
+URNs also require correction rather than selecting one physical file.
+
+This rule does not add user publication permissions or a local/remote reasoner
+policy. Project-isolated semantic environments remain a deferred design, described
+in [the staged-validation engineering note](STAGED_WORLDVIEW_VALIDATION.md#deferred-project-semantic-environments).
+
 The [reasoner documentation](REASONING.md) covers semantic APIs, knowledge loading and
 [document validation after synchronization](REASONING.md#ontology-synchronization-boundary).
 

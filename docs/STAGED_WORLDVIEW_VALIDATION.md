@@ -95,3 +95,48 @@ builder wrapper provides the pending-build barrier; production source and
 bytecode are unchanged. Shared dependency installs, packaged core replacement,
 service restarts and pushes are separate operations, excluded from this local
 integration.
+
+## Deferred project semantic environments
+
+The current release restricts ontologies to worldview-defining projects. Ordinary
+projects may still contain k.IM namespaces and use the adopted worldview. The
+restriction is explicit validation feedback, not an attempt to repair the global
+worldview by adding private project definitions. No new publication permissions
+or local-reasoner-only enforcement are implied by this decision.
+
+A bounded isolated prototype demonstrated a possible future alternative: a
+semantic environment owned around the reasoner, rather than lexical scope inside
+OWL. Seven focused tests used real private compiler/OWL actors and the resolver's
+actual observable translator. They covered shared validation/resolution ownership,
+exact-input reuse, separation between projects/principals, dependency/access/base
+revision invalidation, stale-build rejection, failed-build cleanup, and lease-based
+retirement. Full model resolution and live Resources authorization were not proven.
+
+The prospective API would capture an immutable, authoritative project/dependency
+manifest against one accepted worldview generation, acquire a private environment
+lease, and expose both document validation and a bound Reasoner facade through it.
+A resolution graph must keep one environment reference throughout; lexical project
+ranking must not switch its ontology graph. Core/provider/configuration evidence,
+exact saved-source hashes and import order, principal/access scope, project identity,
+and accepted boot/generation all participate in freshness. Duplicate semantic URNs
+remain errors. Nothing is published into the global accepted actor or its source map.
+
+This cannot safely be implemented as a validation-only overlay. Concept equality
+currently uses URN; observable equality also omits environment identity. Reasoner
+client caches and the shared KnowledgeRepository document/model caches need an
+owned partition or an environment key. Scope derivation, transport, semantic search,
+observation reuse, dataflow compilation, and persisted Runtime/digital-twin semantics
+must retain the same environment provenance. Current global rebinding must not
+silently send project concepts back to the global accepted actor.
+
+A production design also needs bounded active/idle environments, exact-manifest
+single-flight reuse, cancellation and last-reader cleanup, plus cheap authoritative
+freshness checks separated from heavy capture. The toy prototype measured about
+479 ms for one project build, 112-153 ms for three later builds, and 17 ms per reused
+acquisition with deliberately naive capture/copying. Its core and graph were tiny;
+these observations do not establish real-worldview latency or memory per actor.
+Duplicating full worldview reasoning for many projects may be expensive.
+
+This design is preserved for later discussion and is not implemented in the current
+service or resolver. The worldview-only rule was selected for now to avoid expanding
+this release into the required cross-service identity/cache/lifecycle redesign.

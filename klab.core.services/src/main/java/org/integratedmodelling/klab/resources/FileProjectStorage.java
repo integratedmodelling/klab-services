@@ -617,6 +617,46 @@ public class FileProjectStorage implements ProjectStorage {
     }
   }
 
+  /** Mutate a retained authoring source by its physical identity, never by a declared URN. */
+  private Path existingOntologySource(URL source) throws Exception {
+    if (source == null || !"file".equalsIgnoreCase(source.getProtocol()))
+      throw new IOException("Ontology source must be a project-owned file");
+    var requested = Path.of(source.toURI());
+    if (Files.isSymbolicLink(requested)) throw new IOException("Symbolic ontology source is not editable");
+    var root = rootFolder.toPath().toRealPath();
+    var target = requested.toRealPath();
+    if (!target.startsWith(root.resolve("src")) || !Files.isRegularFile(target)
+        || !target.getFileName().toString().endsWith(".kwv"))
+      throw new IOException("Ontology source is outside the project's source tree");
+    return target;
+  }
+
+  public String readExistingOntologySource(URL source) {
+    try { return Files.readString(existingOntologySource(source), java.nio.charset.StandardCharsets.UTF_8); }
+    catch (Exception failure) { throw new KlabIOException(failure); }
+  }
+
+  /** Keep the physical path even when an unsupported authoring declaration is renamed. */
+  public void writeExistingOntologySource(URL source, String content) {
+    try {
+      Files.writeString(existingOntologySource(source), content, java.nio.charset.StandardCharsets.UTF_8,
+          StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, LinkOption.NOFOLLOW_LINKS);
+    } catch (Exception failure) { throw new KlabIOException(failure); }
+  }
+
+  public void deleteExistingOntologySource(URL source) {
+    try {
+      var target = existingOntologySource(source);
+      if (isTracked()) try (var git = Git.open(rootFolder)) {
+        var relative = rootFolder.toPath().toRealPath().relativize(target).toString().replace('\\', '/');
+        if (git.getRepository().readDirCache().getEntry(relative) != null) {
+          git.rm().addFilepattern(relative).call(); return;
+        }
+      }
+      Files.delete(target);
+    } catch (Exception failure) { throw new KlabIOException(failure); }
+  }
+
   /** Remove a document from the working tree and stage its removal when tracked. */
   public void deleteDocument(String urn, ResourceType resourceType) {
     if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {

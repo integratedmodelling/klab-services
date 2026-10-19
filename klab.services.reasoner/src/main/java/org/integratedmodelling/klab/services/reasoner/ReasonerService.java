@@ -453,6 +453,25 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       SemanticValidationRequest request, Scope scope, SemanticValidationResponse response) {
     response.setKnowledgeRevision(knowledgeRevision());
     var document = request.document();
+    // Project type is authoritative Resources metadata. Reject unsupported .kwv documents before
+    // attempting a worldview repair: an unchanged adopted worldview cannot ever admit them.
+    if (document instanceof KimOntology ontology && scope instanceof UserScope userScope
+        && document.getProjectName() != null && !document.getProjectName().isBlank()) {
+      var resources = scope.getService(ResourcesService.class);
+      var project = resources == null ? null : resources.retrieve(document.getProjectName(),
+          org.integratedmodelling.klab.api.knowledge.organization.Project.class, userScope);
+      if (project != null && Objects.equals(project.getUrn(), document.getProjectName())
+          && project.getManifest() != null
+          && !org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy
+              .definesWorldview(project.getManifest())) {
+        response.setStatus(SemanticValidationResponse.Status.COMPLETE);
+        response.setReason("Ontology validation is blocked by the document's project type");
+        response.getNotifications().addAll(document.getNotifications());
+        response.getNotifications().add(
+            org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy.diagnostic(ontology));
+        return response;
+      }
+    }
     if (Utils.Notifications.hasErrors(document.getNotifications())) {
       response.getNotifications().addAll(document.getNotifications());
       response.deduplicateNotifications();

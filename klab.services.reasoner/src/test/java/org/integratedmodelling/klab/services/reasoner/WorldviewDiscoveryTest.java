@@ -18,6 +18,11 @@ class WorldviewDiscoveryTest {
     var reasoner = mock(ReasonerService.class, CALLS_REAL_METHODS);
     var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
     var runtime = mock(org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.class);
+    // The existing trace-only UPDATE_BATCH observation reads this metadata too.
+    when(runtime.status()).thenReturn(new org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.Status(
+        1, 1, org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.BeanStatus.VALID,
+        org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.LogicalStatus.VALID,
+        java.util.Map.of(), java.util.Map.of(), List.of(), List.of()));
     var source = new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();
     source.setUrn("w"); source.setWorldviewId("w");
     var runtimeField = ReasonerService.class.getDeclaredField("candidateRuntime");

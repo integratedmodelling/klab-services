@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
 import org.integratedmodelling.common.diagnostics.DocumentValidationTrace;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.Sets;
@@ -127,6 +128,9 @@ public class WorkspaceManager {
   private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
   private List<KimOntology> _ontologyOrder;
   private Map<String, KimOntology> _ontologyMap;
+  // Rejected authoring sources belong to projects, never to the canonical semantic registry.
+  private record RejectedOntology(KimOntology document, URL source) {}
+  private Map<String, Map<String, List<RejectedOntology>>> rejectedOntologies;
   private List<KimNamespace> _namespaceOrder;
   private Map<String, KimNamespace> _namespaceMap;
   private List<KActorsBehavior> _behaviorOrder;
@@ -157,13 +161,24 @@ public class WorkspaceManager {
   public List<Project> getProjects() {
     var ret = new ArrayList<Project>();
     for (var project : projects.values()) {
-      ret.add(updateStatus(project));
+      ret.add(updateStatus(getProject(project.getUrn())));
     }
     return ret;
   }
 
   public Project getProject(String projectName) {
-    return projects.get(projectName);
+    var project = projects.get(projectName);
+    var descriptor = projectDescriptors.get(projectName);
+    if (project == null && descriptor != null) project = descriptor.externalProject;
+    if (project != null && descriptor != null && descriptor.externalProject != null
+        && !supportsProjectOntologies(projectName)) {
+      var view = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper()
+          .convertValue(project, Project.class);
+      ((ProjectImpl) view).setOntologies(getOntologies(false).stream()
+          .filter(document -> projectName.equals(document.getProjectName())).toList());
+      return view;
+    }
+    return project;
   }
 
   /**
@@ -766,6 +781,11 @@ public class WorkspaceManager {
 
     try {
       var documentType = ProjectStorage.ResourceType.classify(document);
+      if (documentType == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(project.getUrn())) {
+        if (!Objects.equals(document.getUrn(), editedOntologyUrn(document.getSourceCode(), document.getUrn()))
+            || rejectedOntologyAlreadyExists(project.getUrn(), document.getUrn()))
+          return List.of(ResourceSet.empty(Notification.error("DUPLICATE_OR_MISMATCHED_ONTOLOGY_SOURCE: No new file was created")));
+      }
       var docUrl = fileProjectStorage.create(document, scope);
       if (docUrl != null) {
         return handleFileChange(
@@ -1293,6 +1313,7 @@ public class WorkspaceManager {
       _worldviewOntologies = new ArrayList<>();
       _ontologyOrder = new ArrayList<>();
       _ontologyMap = new HashMap<>();
+      rejectedOntologies = new HashMap<>();
 
       this.languageValidationScope = new WorldviewValidationScope();
 
@@ -1300,11 +1321,32 @@ public class WorkspaceManager {
       Map<String, Triple<Ontology, KimOntology, Boolean>> cache = new HashMap<>();
       Map<String, URL> urlCache = new HashMap<>();
       Map<String, Long> lastUpdates = new HashMap<>();
+      Map<String, String> ontologySources = new HashMap<>();
       for (var pd : projectDescriptors.values()) {
         var isWorldview = pd.manifest.getDefinedWorldview() != null && !pd.manifest.getDefinedWorldview().isBlank();
         if (pd.externalProject != null) {
           for (var ontology : pd.externalProject.getOntologies()) {
-            cache.put(ontology.getUrn(), Triple.of(null, ontology, isWorldview));
+            if (!isWorldview) {
+              retainRejectedOntology(validateOntologyProject(invalidOntology(ontology.getUrn(), pd.name,
+                  ontology.getSourceCode(), ontology.getLastUpdateTimestamp(), ontology.getNotifications())), null);
+              continue;
+            }
+            if (cache.containsKey(ontology.getUrn())) {
+              var previous = cache.get(ontology.getUrn());
+              var duplicate = duplicateOntology(ontology.getUrn(), ontologyProjects.get(ontology.getUrn()),
+                  ontologySources.get(ontology.getUrn()), lastUpdates.getOrDefault(ontology.getUrn(), 0L),
+                  previous.getSecond(), invalidOntology(ontology.getUrn(), pd.name, ontology.getSourceCode(),
+                      ontology.getLastUpdateTimestamp(), ontology.getNotifications()));
+              cache.put(ontology.getUrn(), Triple.of(null, duplicate, previous.getThird() || isWorldview));
+              continue;
+            }
+            var owned = isWorldview ? ontology : invalidOntology(ontology.getUrn(), pd.name,
+                ontology.getSourceCode(), ontology.getLastUpdateTimestamp(), ontology.getNotifications());
+            if (!isWorldview) validateOntologyProject(owned);
+            cache.put(ontology.getUrn(), Triple.of(null, owned, isWorldview));
+            ontologyProjects.put(ontology.getUrn(), pd.name);
+            ontologySources.put(ontology.getUrn(), ontology.getSourceCode());
+            lastUpdates.put(ontology.getUrn(), ontology.getLastUpdateTimestamp());
             // TODO add metadata to the ontology to signify it's remote, probably a URL
           }
         } else {
@@ -1329,6 +1371,20 @@ public class WorkspaceManager {
               } catch (Throwable ignored) {
                 // Use the file-derived URN below.
               }
+              if (!isWorldview) {
+                // Preserve bound parser diagnostics as well as the policy error (94da884b).
+                retainRejectedOntology(validateOntologyProject(
+                    invalidOntology(ontologyUrn, pd.name, source, timestamp, errors)), ontologyUrl);
+                continue;
+              }
+              if (cache.containsKey(ontologyUrn)) {
+                var previous = cache.get(ontologyUrn);
+                var duplicate = duplicateOntology(ontologyUrn, ontologyProjects.get(ontologyUrn),
+                    ontologySources.get(ontologyUrn), lastUpdates.getOrDefault(ontologyUrn, timestamp),
+                    previous.getSecond(), invalidOntology(ontologyUrn, pd.name, source, timestamp, errors));
+                cache.put(ontologyUrn, Triple.of(null, duplicate, previous.getThird() || isWorldview));
+                continue; // An ambiguous identity must never select the last file or locator.
+              }
               if (!errors.isEmpty()) {
                 scope.error(
                     "Ontology resource has errors: " + ontologyUrl,
@@ -1343,6 +1399,7 @@ public class WorkspaceManager {
               documentURLs.put(ontologyUrn, ontologyUrl);
               lastUpdates.put(ontologyUrn, timestamp);
               ontologyProjects.put(ontologyUrn, pd.name);
+              ontologySources.put(ontologyUrn, source);
             } catch (IOException e) {
               // log error and return failure
               scope.error(
@@ -1452,6 +1509,7 @@ public class WorkspaceManager {
           documentURLs.put(ontology.getUrn(), urlCache.get(ontology.getUrn()));
         }
 
+        ontology = validateOntologyProject(ontology);
         if (errors.get()) {
           scope.error(
               "Logical errors in ontology " + ontologyId + ": cannot continue",
@@ -1472,7 +1530,13 @@ public class WorkspaceManager {
       }
     }
 
-    return worldviewOnly ? _worldviewOntologies : _ontologyOrder;
+    if (worldviewOnly) return _worldviewOntologies;
+    var authoring = new ArrayList<KimOntology>(_ontologyOrder);
+    if (rejectedOntologies != null) rejectedOntologies.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey()).forEach(project -> project.getValue().entrySet().stream()
+            .sorted(Map.Entry.comparingByKey()).forEach(group ->
+                group.getValue().forEach(rejected -> authoring.add(rejected.document()))));
+    return authoring;
   }
 
   /**
@@ -2091,6 +2155,13 @@ public class WorkspaceManager {
         .noneMatch(pending -> pending.project().equals(project)
             && pending.url().toExternalForm().equals(change.getThird().toExternalForm()))).toList();
     if (changes.isEmpty()) return List.of();
+    var rejectedResults = new ArrayList<ResourceSet>();
+    if (!supportsProjectOntologies(project)) {
+      var rejectedChanges = changes.stream().filter(change -> change.getFirst() == ProjectStorage.ResourceType.ONTOLOGY).toList();
+      if (!rejectedChanges.isEmpty()) rejectedResults.addAll(handleRejectedOntologyChanges(project, rejectedChanges));
+      changes = changes.stream().filter(change -> change.getFirst() != ProjectStorage.ResourceType.ONTOLOGY).toList();
+      if (changes.isEmpty()) return rejectedResults;
+    }
 
     /*
     populate the resource set changes in order of workspace affected
@@ -2183,7 +2254,7 @@ public class WorkspaceManager {
 
           KlabDocument<?> oldAsset =
               switch (newAsset) {
-                case KimOntology ontology -> getOntology(ontology.getUrn());
+                case KimOntology ontology -> getOntology(project, ontology.getUrn());
                 case KimNamespace namespace -> getNamespace(namespace.getUrn());
                 case KActorsBehavior behavior -> getBehavior(behavior.getUrn());
                 case KimObservationStrategyDocument strategy ->
@@ -2441,6 +2512,7 @@ public class WorkspaceManager {
       ret.add(worldviewChange);
     }
     ret.addAll(result.values());
+    ret.addAll(rejectedResults);
     // Descriptors were collected in dependency order before reloading. Publish the final
     // validation snapshot, including an empty notification list when errors were corrected.
     for (var resourceSet : ret) {
@@ -2449,7 +2521,7 @@ public class WorkspaceManager {
           continue;
         }
         KlabDocument<?> document = switch (resource.getKnowledgeClass()) {
-          case ONTOLOGY -> getOntology(resource.getResourceUrn());
+          case ONTOLOGY -> getOntology(resource.getProjectUrn(), resource.getResourceUrn());
           case NAMESPACE -> getNamespace(resource.getResourceUrn());
           case OBSERVATION_STRATEGY_DOCUMENT -> getStrategyDocument(resource.getResourceUrn());
           case BEHAVIOR, COMPONENT, APPLICATION, SCRIPT, TESTCASE -> getBehavior(resource.getResourceUrn());
@@ -2498,7 +2570,45 @@ public class WorkspaceManager {
     }
   }
 
+  /** File persistence stays project-owned; rejected edits never enter global dependency updates. */
+  private List<ResourceSet> handleRejectedOntologyChanges(String project,
+      List<Triple<ProjectStorage.ResourceType, CRUDOperation, URL>> changes) {
+    getOntologies(false);
+    var results = new LinkedHashMap<String, ResourceSet>();
+    for (var change : changes) {
+      if (change.getSecond() == CRUDOperation.DELETE) {
+        var removed = removeRejectedOntologySource(project, change.getThird());
+        if (removed == null) continue;
+        var remaining = rejectedOntologySources(project, removed.document().getUrn());
+        var document = remaining.isEmpty() ? removed.document() : remaining.getFirst().document();
+        var descriptor = addToResultSet(document, Workspace.EXTERNAL_WORKSPACE_URN, results);
+        descriptor.setOperation(remaining.isEmpty() ? CRUDOperation.DELETE : CRUDOperation.UPDATE);
+        refreshValidationSnapshot(descriptor, document);
+      } else {
+        var previous = rejectedOntologies == null ? null : rejectedOntologies.getOrDefault(project, Map.of()).values().stream()
+            .flatMap(List::stream).filter(rejected -> rejected.source() != null
+                && rejected.source().toExternalForm().equals(change.getThird().toExternalForm())).findFirst().orElse(null);
+        KimOntology document;
+        if (previous == null) document = loadOntology(change.getThird(), project);
+        else try (var input = change.getThird().openStream()) {
+          document = readOntology(new String(input.readAllBytes(), StandardCharsets.UTF_8),
+              new File(change.getThird().getFile()).lastModified(), project, previous.document().getUrn());
+        } catch (IOException failure) { throw new KlabIOException(failure); }
+        if (document == null) continue;
+        retainRejectedOntology(document, change.getThird());
+        var descriptor = addToResultSet(document, Workspace.EXTERNAL_WORKSPACE_URN, results);
+        descriptor.setOperation(change.getSecond());
+        refreshValidationSnapshot(descriptor, document);
+      }
+    }
+    var projectDescriptor = projectDescriptors.get(project);
+    if (projectDescriptor != null && projectDescriptor.workspace != null) createProjectData(project, projectDescriptor.workspace);
+    return new ArrayList<>(results.values());
+  }
+
   private void replaceAndIndex(KimOntology ontology) {
+    if (!supportsProjectOntologies(ontology.getProjectName()))
+      throw new IllegalStateException("Rejected authoring ontology cannot enter the canonical index");
     // TODO index concept declarations for queries
     _ontologyMap.put(ontology.getUrn(), ontology);
     if (_ontologyOrder != null
@@ -2809,8 +2919,133 @@ public class WorkspaceManager {
   }
 
   public KimOntology getOntology(String urn) {
+    if (urn != null && urn.contains("/")) {
+      var coordinates = urn.split("/", -1);
+      if (coordinates.length < 2 || coordinates.length > 3) return null;
+      var project = coordinates[coordinates.length - 2];
+      if (coordinates.length == 3 && !Objects.equals(coordinates[0], getWorkspaceForProject(project))) return null;
+      return getOntology(project, coordinates[coordinates.length - 1]);
+    }
     getOntologies(false);
-    return updateStatus(_ontologyMap.get(urn));
+    var canonical = _ontologyMap.get(urn);
+    if (canonical != null) return updateStatus(canonical);
+    var candidates = rejectedOntologies == null ? List.<RejectedOntology>of()
+        : rejectedOntologies.values().stream().flatMap(project -> project.getOrDefault(urn, List.of()).stream()).toList();
+    return candidates.size() == 1 ? updateStatus(candidates.getFirst().document()) : null;
+  }
+
+  /** Project-qualified authoring lookup cannot resolve a different project's canonical ontology. */
+  public KimOntology getOntology(String project, String urn) {
+    getOntologies(false);
+    var canonical = _ontologyMap.get(urn);
+    if (project == null) return updateStatus(canonical);
+    if (canonical != null && Objects.equals(project, canonical.getProjectName())) return updateStatus(canonical);
+    var candidates = rejectedOntologySources(project, urn);
+    return candidates.size() == 1 ? updateStatus(candidates.getFirst().document()) : null;
+  }
+
+  private boolean supportsProjectOntologies(String project) {
+    var descriptor = projectDescriptors == null ? null : projectDescriptors.get(project);
+    return descriptor == null || descriptor.manifest == null
+        || org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy.definesWorldview(descriptor.manifest);
+  }
+
+  private RejectedOntology requireRejectedOntologySource(String project, String urn, FileProjectStorage storage) {
+    getOntologies(false);
+    var candidates = rejectedOntologySources(project, urn);
+    if (candidates.size() > 1)
+      throw new IllegalArgumentException("DUPLICATE_ONTOLOGY_URN: No unique physical source for project '" + project + "' ontology '" + urn + "'");
+    if (candidates.isEmpty() || candidates.getFirst().source() == null)
+      throw new IllegalArgumentException("MISSING_ONTOLOGY_SOURCE: No project-owned physical source for '" + project + "/" + urn + "'");
+    var selected = candidates.getFirst();
+    var current = storage.readExistingOntologySource(selected.source());
+    if (!Objects.equals(current, selected.document().getSourceCode()))
+      throw new IllegalArgumentException("ONTOLOGY_SOURCE_CHANGED: Physical source changed; reload the project before editing");
+    return selected;
+  }
+
+  private String editedOntologyUrn(String source, String fallback) {
+    if (source == null) throw new IllegalArgumentException("Ontology source is missing");
+    try {
+      var parsed = ontologyParser.parse(new StringReader(source), new ArrayList<Notification>());
+      if (parsed != null && parsed.getNamespace() != null && parsed.getNamespace().getName() != null
+          && !parsed.getNamespace().getName().isBlank()) return parsed.getNamespace().getName();
+    } catch (RuntimeException ignored) { /* Persist malformed source under its retained identity. */ }
+    return fallback;
+  }
+
+  private List<ResourceSet> updateRejectedOntologyDocument(String project, String urn, String content, FileProjectStorage storage) {
+    try {
+      var selected = requireRejectedOntologySource(project, urn, storage);
+      var updatedUrn = editedOntologyUrn(content, urn);
+      if (!urn.equals(updatedUrn) && !rejectedOntologySources(project, updatedUrn).isEmpty())
+        throw new IllegalArgumentException("DUPLICATE_ONTOLOGY_URN: Rename would collide with another retained source; no file changed");
+      storage.writeExistingOntologySource(selected.source(), content);
+      // A logical rename is a project delete/create event, without moving or choosing another file.
+      return handleRejectedOntologyChanges(project, urn.equals(updatedUrn)
+          ? List.of(Triple.of(ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.UPDATE, selected.source()))
+          : List.of(Triple.of(ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.DELETE, selected.source()),
+              Triple.of(ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.CREATE, selected.source())));
+    } catch (RuntimeException failure) { return List.of(ResourceSet.empty(Notification.error(failure.getMessage()))); }
+  }
+
+  private List<ResourceSet> deleteRejectedOntologyDocument(String project, String urn, FileProjectStorage storage) {
+    try {
+      var selected = requireRejectedOntologySource(project, urn, storage);
+      storage.deleteExistingOntologySource(selected.source());
+      return handleRejectedOntologyChanges(project,
+          List.of(Triple.of(ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.DELETE, selected.source())));
+    } catch (RuntimeException failure) { return List.of(ResourceSet.empty(Notification.error(failure.getMessage()))); }
+  }
+
+  private boolean rejectedOntologyAlreadyExists(String project, String urn) {
+    getOntologies(false); return !rejectedOntologySources(project, urn).isEmpty();
+  }
+
+  private List<RejectedOntology> rejectedOntologySources(String project, String urn) {
+    return rejectedOntologies == null ? List.of()
+        : rejectedOntologies.getOrDefault(project, Map.of()).getOrDefault(urn, List.of());
+  }
+
+  private void retainRejectedOntology(KimOntology document, URL source) {
+    if (rejectedOntologies == null) rejectedOntologies = new HashMap<>();
+    var project = rejectedOntologies.computeIfAbsent(document.getProjectName(), ignored -> new LinkedHashMap<>());
+    if (source != null) removeRejectedOntologySource(document.getProjectName(), source);
+    var group = project.computeIfAbsent(document.getUrn(), ignored -> new ArrayList<>());
+    group.add(new RejectedOntology(document, source));
+    refreshRejectedDuplicates(group);
+  }
+
+  private RejectedOntology removeRejectedOntologySource(String projectName, URL source) {
+    if (rejectedOntologies == null || source == null) return null;
+    var project = rejectedOntologies.get(projectName);
+    if (project == null) return null;
+    RejectedOntology removed = null;
+    for (var iterator = project.entrySet().iterator(); iterator.hasNext();) {
+      var group = iterator.next().getValue();
+      for (var entry = group.iterator(); entry.hasNext();) {
+        var candidate = entry.next();
+        if (candidate.source() != null && candidate.source().toExternalForm().equals(source.toExternalForm())) {
+          removed = candidate; entry.remove();
+        }
+      }
+      refreshRejectedDuplicates(group);
+      if (group.isEmpty()) iterator.remove();
+    }
+    return removed;
+  }
+
+  private void refreshRejectedDuplicates(List<RejectedOntology> group) {
+    for (var rejected : group) {
+      var document = rejected.document();
+      document.getNotifications().removeIf(n -> n.getMessage() != null && n.getMessage().startsWith("DUPLICATE_ONTOLOGY_URN:"));
+      if (group.size() > 1) {
+        var duplicate = invalidOntology(document.getUrn(), document.getProjectName(), document.getSourceCode(),
+            document.getLastUpdateTimestamp(), List.of(Notification.error("DUPLICATE_ONTOLOGY_URN: More than one source in project '"
+                + document.getProjectName() + "' declares ontology '" + document.getUrn() + "'. Give each source a unique URN.")));
+        document.getNotifications().addAll(duplicate.getNotifications());
+      }
+    }
   }
 
   public KimNamespace getNamespace(String urn) {
@@ -3269,7 +3504,7 @@ public class WorkspaceManager {
       }
     }
 
-    return ret;
+    return validateOntologyProject(ret);
   }
 
   private KActorsBehavior loadBehavior(URL url, String project) {
@@ -3307,7 +3542,35 @@ public class WorkspaceManager {
    * deliberately does not call the public lazy-loading accessors while a workspace is being loaded.
    */
   private <T extends KlabDocument<?>> T validateSemanticAsset(T asset) {
+    if (asset instanceof KimOntology ontology) validateOntologyProject(ontology);
     return syntaxOnly != null && syntaxOnly.get() ? asset : validateSemanticAsset(asset, this::resolveKimReference);
+  }
+
+  private KimOntology duplicateOntology(String urn, String project, String source, long timestamp,
+      KimOntology previous, KimOntology incoming) {
+    var duplicate = invalidOntology(urn, project, source, timestamp,
+        List.of(Notification.error("DUPLICATE_ONTOLOGY_URN: More than one source declares ontology '"
+            + urn + "'. Give each ontology a unique URN before validation.")));
+    // Keep source-bound inactive diagnostics (including their original spans and stacks).
+    // Rebinding the merged list to the first source would lose the other source's context.
+    if (previous != null) duplicate.getNotifications().addAll(previous.getNotifications());
+    if (incoming != null) duplicate.getNotifications().addAll(incoming.getNotifications());
+    return duplicate;
+  }
+
+  private KimOntology validateOntologyProject(KimOntology ontology) {
+    if (ontology == null || projectDescriptors == null) return ontology;
+    var project = projectDescriptors.get(ontology.getProjectName());
+    // Standalone syntax parsing has no authoritative project descriptor.
+    if (project == null || project.manifest == null
+        || org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy
+            .definesWorldview(project.manifest)) return ontology;
+    var diagnostic = org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy
+        .diagnostic(ontology);
+    if (ontology.getNotifications().stream().noneMatch(n -> diagnostic.getMessage().equals(n.getMessage())))
+      ontology.getNotifications().add(diagnostic);
+    if (ontology instanceof KlabDocumentImpl<?> document) document.setInactive(true);
+    return ontology;
   }
 
   static <T extends KlabDocument<?>> T validateSemanticAsset(
@@ -3695,7 +3958,7 @@ public class WorkspaceManager {
     we have workspaces and project descriptors; load ontologies and namespaces
      */
     for (var ontology : getOntologies(false)) {
-      replaceAndIndex(ontology);
+      if (supportsProjectOntologies(ontology.getProjectName())) replaceAndIndex(ontology);
     }
     for (var namespace : getNamespaces()) {
       replaceAndIndex(namespace);
@@ -4216,6 +4479,8 @@ public class WorkspaceManager {
     if (type != ProjectStorage.ResourceType.ONTOLOGY && type != ProjectStorage.ResourceType.MODEL_NAMESPACE)
       throw new KlabIllegalArgumentException("Only ontologies and namespaces support deferred validation");
     var urn = document.getUrn();
+    if (type == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(project))
+      return updateDocument(project, urn, type, document.getSourceCode(), false, requester);
     if (document.getSourceCode() == null || storage.locate(urn, type) == null)
       throw new KlabIllegalArgumentException("Deferred save requires an existing document and source");
     KlabDocument<?> parsed;
@@ -4230,7 +4495,7 @@ public class WorkspaceManager {
     var key = project + ":" + type + ":" + urn;
     var previous = deferredDocuments.get(key);
     var baseline = previous != null ? previous.baseline()
-        : type == ProjectStorage.ResourceType.ONTOLOGY ? getOntology(urn) : getNamespace(urn);
+        : type == ProjectStorage.ResourceType.ONTOLOGY ? getOntology(project, urn) : getNamespace(urn);
     var url = storage.update(type, urn, urn, document.getSourceCode(), false);
     deferredDocuments.put(key, new DeferredDocument(owner, project, descriptor.workspace, type, url, baseline, parsed));
     parsed.getMetadata().put(org.integratedmodelling.klab.api.services.ResourcesService.VALIDATION_DEFERRED_METADATA, true);
@@ -4266,7 +4531,10 @@ public class WorkspaceManager {
     for (var entry : pending) {
       var edit = entry.getValue();
       deferredDocuments.remove(entry.getKey());
-      if (edit.baseline() instanceof KimOntology ontology) _ontologyMap.put(ontology.getUrn(), ontology);
+      if (edit.baseline() instanceof KimOntology ontology) {
+        if (supportsProjectOntologies(edit.project())) _ontologyMap.put(ontology.getUrn(), ontology);
+        else retainRejectedOntology(validateOntologyProject(ontology), edit.url());
+      }
       else if (edit.baseline() instanceof KimNamespace namespace) _namespaceMap.put(namespace.getUrn(), namespace);
       changes.computeIfAbsent(edit.project(), ignored -> new ArrayList<>())
           .add(Triple.of(edit.type(), CRUDOperation.UPDATE, edit.url()));
@@ -4279,7 +4547,10 @@ public class WorkspaceManager {
       pending.forEach(entry -> {
         deferredDocuments.put(entry.getKey(), entry.getValue());
         var saved = entry.getValue().saved();
-        if (saved instanceof KimOntology ontology) _ontologyMap.put(ontology.getUrn(), ontology);
+        if (saved instanceof KimOntology ontology) {
+          if (supportsProjectOntologies(entry.getValue().project())) _ontologyMap.put(ontology.getUrn(), ontology);
+          else retainRejectedOntology(validateOntologyProject(ontology), entry.getValue().url());
+        }
         else if (saved instanceof KimNamespace namespace) _namespaceMap.put(namespace.getUrn(), namespace);
       });
       throw failure;
@@ -4313,7 +4584,10 @@ public class WorkspaceManager {
                   "Project " + projectName + " is not handled by this service. Update ignored.")));
     }
 
-    if (lockingScope instanceof UserScope requester && deferredDocuments != null
+    if (documentType == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(projectName))
+      return updateRejectedOntologyDocument(projectName, documentUrn, contents, (FileProjectStorage) pd.storage);
+    if (!(documentType == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(projectName))
+        && lockingScope instanceof UserScope requester && deferredDocuments != null
         && deferredDocuments.values().stream().anyMatch(edit -> edit.project().equals(projectName)
             && edit.owner().equals(lockingAuthorization))) {
       ret.addAll(validateDeferred(pd.workspace, requester));
@@ -4405,6 +4679,9 @@ public class WorkspaceManager {
               Notification.error(
                   "Project " + projectName + " is not handled by this service. Update ignored.")));
     }
+
+    if (resourceType == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(projectName))
+      return deleteRejectedOntologyDocument(projectName, documentUrn, fileProjectStorage);
 
     var dependents = dependents(documentUrn);
     if (!dependents.isEmpty()) {
@@ -4619,6 +4896,9 @@ public class WorkspaceManager {
     }
 
     try {
+      if (documentType == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(projectName)
+          && rejectedOntologyAlreadyExists(projectName, documentUrn))
+        return List.of(ResourceSet.empty(Notification.error("DUPLICATE_ONTOLOGY_URN: Existing retained source; no new file was created")));
       var document =
           fileProjectStorage.create(
               documentUrn,

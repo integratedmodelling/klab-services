@@ -44,7 +44,7 @@ class DeferredValidationTest {
     set(manager,"projectDescriptors",Map.of("project",descriptor));
     doReturn("workspace").when(manager).getWorkspaceForProject("project");
     var baseline=new KimOntologyImpl();baseline.setUrn("test");baseline.setProjectName("project");baseline.setSourceCode("baseline");
-    doReturn(baseline).when(manager).getOntology("test");
+    doReturn(baseline).when(manager).getOntology("project", "test");
     source=directory.resolve(ProjectStorage.getRelativeFilePath("test",ProjectStorage.ResourceType.ONTOLOGY,"/"));
     Files.createDirectories(source.getParent());Files.writeString(source,"baseline");
   }
