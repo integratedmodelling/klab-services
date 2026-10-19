@@ -11,6 +11,8 @@ target
 **/*.puml
 .mvn/wrapper/maven-wrapper.jar
 **/*.run.xml
+**/jte-classes
+**/extensions.idx
 .classpath
 .project
 .settings
