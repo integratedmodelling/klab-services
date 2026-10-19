@@ -246,6 +246,10 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
         }
         job = pending; pending = null;
       }
+      CandidateTrace.job(job.generation());
+      if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.JOB_START,job.generation(),status().inputGeneration(),-1,
+          CandidateTrace.enabled() ? CandidateTrace.digest(job.input().dependencyRevision()) : null,
+          null,CandidateTrace.Reason.NONE);
       Result<S> result = null;
       Throwable failure = null;
       try { result = builder.build(job.input(), () -> cancelled(job)); }
@@ -259,6 +263,8 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
         try { guardCurrent = guard.current(job.input()); }
         catch (Throwable e) { failure = e; }
       }
+      if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.GUARD,job.generation(),status().inputGeneration(),-1,
+          null,null,guardCurrent ? CandidateTrace.Reason.SUCCESS : CandidateTrace.Reason.NONE);
       // A failed builder owns cleanup of any private state it never returned.
       S discard = result == null ? null : result.state();
       S retire = null;
@@ -309,6 +315,15 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
           discard = null;
         }
       }
+      if (CandidateTrace.enabled()) {
+        var traced=status();
+        CandidateTrace.completed(job.generation(),traced,
+            job.generation()!=traced.inputGeneration() ? CandidateTrace.Reason.STALE_JOB
+                : failure instanceof CancellationException ? CandidateTrace.Reason.CANCELLED
+                : failure!=null ? CandidateTrace.Reason.FAILURE
+                : CandidateTrace.Reason.valueOf(traced.logicalStatus().name()));
+      }
+      CandidateTrace.clearJob();
       dispose(discard); dispose(retire);
     }
   }

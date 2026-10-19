@@ -487,7 +487,20 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         if (saved != null && Objects.equals(response.getSourceHash(), SemanticValidationRequest.sourceHash(saved.getSourceCode()))
             && worldview != null) {
           var complete = resources.retrieve(worldview.getUrn(), Worldview.class, userScope);
-          if (complete != null) loadKnowledge(complete, scope);
+          if (complete != null) {
+            if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+                org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.SAVED_SOURCE_REPAIR,
+                candidateRuntime.status().inputGeneration(), -1, -1, response.getSourceHash(), null,
+                org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER);
+            var admission = loadKnowledge(complete, scope);
+            if (Utils.Resources.hasErrors(admission)) {
+              response.getNotifications().addAll(admission.getNotifications());
+              response.setStatus(SemanticValidationResponse.Status.UNAVAILABLE);
+              response.setReason("Saved source could not be admitted to the service worldview");
+              response.addDocumentDiagnostic(request, Notification.Level.Warning);
+              return response;
+            }
+          }
         }
       }
       return candidateRuntime.validate(request, response);
@@ -980,6 +993,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             && !candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) return ret;
         serviceScope().info("Worldview discovered from " + resources.getUrl() + " in "
             + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - discoveryStarted) + " ms");
+        if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+            org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.DISCOVERY,
+            candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(), -1, -1,
+            org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()
+                ? org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.digest(resources.serviceId()) : null,
+            null, org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.SERVICE);
         var notifications = loadKnowledge(discovered, serviceScope());
         if (candidatePublication) {
           // A submitted candidate compiles asynchronously. Keep this source selected while
@@ -2150,17 +2169,42 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public synchronized ResourceSet loadKnowledge(Worldview worldview, Scope scope) {
+    if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+        org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.LOAD_REQUEST,
+        candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(), -1, -1,
+        null, null, scope instanceof UserScope
+            ? org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER
+            : org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.SERVICE);
+    if (candidateRuntime != null && !semanticOnly && scope instanceof UserScope) {
+      // User retrieval/validation stays authorized by the request. The one global runtime
+      // must use the same independently discovered sources and owner as startup polling.
+      // Reject a private, stale or unavailable request without invalidating global state.
+      try {
+        if (worldview == null) return ResourceSet.empty(Notification.error("Requested worldview is unavailable"));
+        var errors = BeanIngestionPreflight.errors(worldview);
+        if (!errors.isEmpty()) {
+          var rejected = ResourceSet.empty();
+          rejected.getNotifications().addAll(errors);
+          return rejected;
+        }
+        worldview = org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission.resolve(
+            worldview, serviceScope());
+        scope = serviceScope();
+      } catch (RuntimeException failure) {
+        return ResourceSet.empty(Notification.error("Service worldview admission unavailable: " + failure.getMessage()));
+      }
+    }
     org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt = null;
     if (candidateRuntime != null && !semanticOnly && worldview != null && !worldview.getOntologies().isEmpty()) {
       try { attempt = candidateRuntime.beginPreflight(worldview, scope); }
       catch (RuntimeException failure) {
-        candidateRuntime.invalidate();
+        candidateRuntime.invalidate(org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.PREFLIGHT_EXCEPTION);
         return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable"));
       }
       if (!attempt.retry()) return ResourceSet.empty();
       worldview = attempt.snapshot();
     } else if (candidateRuntime != null && !semanticOnly) {
-      candidateRuntime.invalidate();
+      candidateRuntime.invalidate(org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.EMPTY_INPUT);
     }
     List<Notification> notifications = new ArrayList<>();
     // Ingestion also runs before user scopes exist. Collect on the supplied channel and always
@@ -2374,14 +2418,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       mutable.setAuthorityBindings(preparedBindings);
       var completeStrategies = new ArrayList<>(mutable.getObservationStrategies());
       for (var prepared : strategies.values()) {
-        completeStrategies.removeIf(s -> s.getUrn().equals(prepared.document().getUrn()));
-        completeStrategies.add(prepared.document());
+        int position = -1;
+        for (int i = 0; i < completeStrategies.size(); i++) {
+          if (completeStrategies.get(i).getUrn().equals(prepared.document().getUrn())) {
+            position = i;
+            break;
+          }
+        }
+        if (position < 0) return rejectBeanUpdate(changes, affectedKnowledge,
+            List.of(Notification.error("Authoritative strategy dependency order is unavailable; retry the complete batch")));
+        completeStrategies.set(position, prepared.document());
       }
       mutable.setObservationStrategies(completeStrategies);
       var errors = BeanIngestionPreflight.errors(complete);
       if (!errors.isEmpty()) return rejectBeanUpdate(changes, affectedKnowledge, errors);
       // Use the same fingerprint/preflight gate as startup polling. Duplicate change events
       // must not cancel a pending candidate, reconfigure providers, or notify editors again.
+      if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.UPDATE_BATCH,
+          candidateRuntime.status().inputGeneration(), -1, -1, null, null,
+          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER);
       changes.getNotifications().addAll(loadKnowledge(complete, scope).getNotifications());
       return changes;
     }
@@ -2509,9 +2565,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       List<Notification> errors) {
     changes.getNotifications().addAll(errors);
     if (candidateRuntime != null && !semanticOnly) {
-      worldviewLoadDiagnostics = List.copyOf(errors);
-      candidateRuntime.invalidate();
-      candidateRuntime.rejectPreflight(errors);
+      // A failed user batch may be private or stale. Keep its diagnostics on the request;
+      // only independently discovered service beans may invalidate/reject global state.
+      try {
+        var discovered = org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission.discover(serviceScope());
+        if (candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) {
+          changes.getNotifications().addAll(loadKnowledge(discovered, serviceScope()).getNotifications());
+        }
+      } catch (RuntimeException unavailable) {
+        changes.getNotifications().add(Notification.warning(
+            "Service worldview refresh unavailable after rejected request: " + unavailable.getMessage()));
+      }
       return changes;
     }
     semanticValidationState.beginUpdate(knowledgeRevision(), affected);
@@ -3992,6 +4056,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public synchronized boolean shutdown() {
+    if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+        org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.INVALIDATED,
+        candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(), -1, -1,
+        null, null, org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.SHUTDOWN);
     if (candidateRuntime != null && !semanticOnly) candidateRuntime.close();
 
     //    serviceScope()

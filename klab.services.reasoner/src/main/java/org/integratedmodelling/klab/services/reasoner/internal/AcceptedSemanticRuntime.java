@@ -81,6 +81,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       if (closed || suppressSubmitted(key)
           || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))
         return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), false);
+      traceInput(owned, scope, key);
+      if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.PREFLIGHT_ALLOWED, coordinator.status().inputGeneration(),
+          -1, -1, key, submittedKey, Objects.equals(key, submittedKey)
+              ? CandidateTrace.Reason.SAME_KEY_RETRY : CandidateTrace.Reason.NEW_KEY);
       if (Objects.equals(key, submittedKey)) factory.invalidateBootstrap();
       coordinator.invalidate();
       return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), true);
@@ -93,6 +97,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       if (!current(attempt, scope)) return false;
       rejectionCount = Objects.equals(rejectedKey, attempt.key()) ? Math.min(4, rejectionCount + 1) : 1;
       rejectedKey = attempt.key();
+      if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.REJECTED, coordinator.status().inputGeneration(),
+          -1, -1, attempt.key(), null, CandidateTrace.Reason.FAILURE);
       retryAfter = retryClock.getAsLong() + Duration.ofSeconds(Math.min(60, 10L << (rejectionCount - 1))).toNanos();
       coordinator.rejectPreflight(failures.stream()
           .map(org.integratedmodelling.klab.api.services.runtime.Notification::getMessage).toList());
@@ -107,7 +113,11 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       if (!current(attempt, scope) || !attempt.key().equals(preflightKey(snapshot, scope))) return false;
       clearRejected(); submittedKey = attempt.key();
       submittedRetryAfter = retryClock.getAsLong() + Duration.ofSeconds(60).toNanos();
-      submittedSources = input.sourceHashes(); coordinator.submit(input); return true;
+      submittedSources = input.sourceHashes();
+      long generation = coordinator.submit(input);
+      if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.SUBMITTED, generation, generation, -1,
+          attempt.key(), CandidateTrace.digest(input.dependencyRevision()), CandidateTrace.Reason.NONE);
+      return true;
     }
   }
 
@@ -117,6 +127,25 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         && attempt.key().equals(preflightKey(attempt.snapshot(), scope));
   }
 
+  private void traceInput(Worldview snapshot, Scope scope, String key) {
+    if (!CandidateTrace.enabled()) return;
+    try {
+      long generation=coordinator.status().inputGeneration();
+      Object[] fields={new TreeMap<>(SemanticEnvironmentFactory.sources(snapshot)),
+          SemanticEnvironmentFactory.sourceOrder(snapshot), factory.dependencyRevision(),
+          SemanticEnvironmentFactory.CONFIGURATION_REVISION,
+          snapshot.getMetadata().get(org.integratedmodelling.klab.components.AuthorityComponentResolver.REVISION_METADATA),
+          snapshot.getMetadata().get(org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA),
+          snapshot.getAuthorityBindings().stream().sorted(Comparator.comparing(Worldview.AuthorityBinding::localId)).toList(),
+          org.integratedmodelling.klab.components.AuthorityComponentResolver.ownerRevision(scope)};
+      var events=List.of(CandidateTrace.Event.FIELD_SOURCES,CandidateTrace.Event.FIELD_ORDER,
+          CandidateTrace.Event.FIELD_DEPENDENCY,CandidateTrace.Event.FIELD_CONFIGURATION,
+          CandidateTrace.Event.FIELD_CATALOG,CandidateTrace.Event.FIELD_SELECTION,
+          CandidateTrace.Event.FIELD_BINDINGS,CandidateTrace.Event.FIELD_OWNER);
+      for(int i=0;i<fields.length;i++) CandidateTrace.emit(events.get(i),generation,-1,-1,
+          key,CandidateTrace.digest(fields[i]),CandidateTrace.Reason.NONE);
+    } catch(Throwable ignored) { /* Trace only; authoritative fingerprinting is unchanged. */ }
+  }
   private void clearRejected() { rejectedKey = null; rejectionCount = 0; retryAfter = 0; }
 
   private Worldview refreshAuthoritySelection(Worldview source, Scope scope) {
@@ -159,6 +188,11 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     catch (IllegalStateException unavailable) { return new Metadata(0, SemanticCapabilitiesSnapshot.initial(), List.of()); }
   }
   public boolean authorityBootstrapEnabled() { return factory.authorityBootstrapEnabled(); }
+  public void invalidate(CandidateTrace.Reason reason) {
+    if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.INVALIDATED, coordinator.status().inputGeneration(),
+        -1, -1, null, null, reason);
+    invalidate();
+  }
   public void invalidate() { synchronized (lifecycle) { if (!closed) { clearRejected(); submittedKey=null; factory.invalidateBootstrap(); coordinator.invalidate(); } } }
   public void rejectPreflight(List<org.integratedmodelling.klab.api.services.runtime.Notification> failures) {
     synchronized (lifecycle) {
