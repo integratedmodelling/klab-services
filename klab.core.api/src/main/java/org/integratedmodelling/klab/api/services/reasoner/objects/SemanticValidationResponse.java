@@ -11,6 +11,7 @@ public class SemanticValidationResponse implements Serializable {
   public enum Status { COMPLETE, SYNTAX_ERRORS, UNAVAILABLE, STALE_KNOWLEDGE, FAILED }
   private Status status = Status.UNAVAILABLE;
   private String documentUrn;
+  private String authoringSource;
   private String documentVersion;
   private String sourceHash;
   private long knowledgeRevision = -1;
@@ -20,6 +21,8 @@ public class SemanticValidationResponse implements Serializable {
   public static SemanticValidationResponse forRequest(SemanticValidationRequest request) {
     var ret = new SemanticValidationResponse();
     ret.documentUrn = request.document().getUrn();
+    if (org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(request.document()) != null)
+      ret.authoringSource = org.integratedmodelling.klab.api.services.resources.AuthoringSource.responseIdentity(request.document());
     ret.documentVersion = request.getDocumentVersion();
     ret.sourceHash = SemanticValidationRequest.sourceHash(request.document().getSourceCode());
     return ret;
@@ -61,12 +64,17 @@ public class SemanticValidationResponse implements Serializable {
 
   /** Check before replacing editor markers; a save or knowledge change may supersede this reply. */
   public boolean matches(SemanticValidationRequest current, long currentKnowledgeRevision) {
-    return Objects.equals(documentUrn, current.document().getUrn())
+    return (org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(current.document()) == null
+        ? authoringSource == null
+        : Objects.equals(authoringSource, org.integratedmodelling.klab.api.services.resources.AuthoringSource.responseIdentity(current.document())))
+        && Objects.equals(documentUrn, current.document().getUrn())
         && Objects.equals(documentVersion, current.getDocumentVersion())
         && Objects.equals(sourceHash, SemanticValidationRequest.sourceHash(current.document().getSourceCode()))
         && knowledgeRevision == currentKnowledgeRevision;
   }
 
+  public String getAuthoringSource() { return authoringSource; }
+  public void setAuthoringSource(String value) { authoringSource = value; }
   public Status getStatus() { return status; }
   public void setStatus(Status status) { this.status = status; }
   public String getDocumentUrn() { return documentUrn; }

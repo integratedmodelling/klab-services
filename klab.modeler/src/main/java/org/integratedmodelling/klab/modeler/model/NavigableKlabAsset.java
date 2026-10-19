@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.modeler.model;
 
 import java.io.Serial;
+import org.integratedmodelling.klab.api.services.resources.AuthoringSource;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -53,6 +54,51 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
   protected String path;
   private List<NavigableAsset> children;
   protected Metadata localMetadata = Metadata.create();
+  private record SourceKey(String service, String project, KnowledgeClass kind, String source) {}
+  // Client-local receipts survive queued presentation callbacks. They carry no source text.
+  private transient volatile Map<SourceKey, NavigableKlabDocument<?, ?>> acceptedSourceDeletions = new java.util.concurrent.ConcurrentHashMap<>();
+
+  private static SourceKey sourceKey(ResourceSet.Resource change) {
+    return new SourceKey(change.getServiceId(),change.getProjectUrn(),change.getKnowledgeClass(),AuthoringSource.id(change));
+  }
+
+  /** Return only a model-accepted deletion of this version, with no surviving/recreated source. */
+  public NavigableKlabDocument<?, ?> acceptedSourceDeletion(ResourceSet.Resource change) {
+    if (change.getOperation() != CRUDOperation.DELETE || AuthoringSource.id(change) == null
+        || !(change.getMetadata().get(AuthoringSource.VERSION) instanceof String version) || version.isBlank()
+        || findChangedAsset(change) != null || acceptedSourceDeletions == null) return null;
+    var receipt = acceptedSourceDeletions.get(sourceKey(change));
+    return receipt != null && Objects.equals(version,receipt.getMetadata().get(AuthoringSource.VERSION)) ? receipt : null;
+  }
+
+  /** Release a deletion receipt after its presentation has reconciled the physical source. */
+  public boolean acknowledgeSourceDeletion(ResourceSet.Resource change) {
+    var receipt = acceptedSourceDeletion(change);
+    if (receipt == null) return false;
+    boolean[] acknowledged = {false};
+    acceptedSourceDeletions.computeIfPresent(sourceKey(change), (key, current) -> {
+      // Navigable equality ignores the version. Remove only the exact receipt we checked,
+      // never a later accepted deletion installed while the presentation was acknowledging.
+      if (current == receipt) {
+        acknowledged[0] = true;
+        return null;
+      }
+      return current;
+    });
+    return acknowledged[0];
+  }
+
+  private static NavigableKlabDocument<?, ?> deletionReceipt(NavigableAsset removed) {
+    org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl<?> snapshot =
+        removed instanceof KimOntology ? new org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl()
+            : removed instanceof KimNamespace ? new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl() : null;
+    if (snapshot == null) return null;
+    var document = (KlabDocument<?>) removed;
+    snapshot.setUrn(document.getUrn());snapshot.setProjectName(document.getProjectName());
+    AuthoringSource.copy(document,snapshot);
+    return snapshot instanceof KimOntology ontology ? new NavigableKimOntology(ontology,null)
+        : new NavigableKimNamespace((KimNamespace)snapshot,null);
+  }
 
   public NavigableKlabAsset(String pathElement, NavigableKlabAsset<?> parent) {
     this.parent = parent;
@@ -63,7 +109,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
   public NavigableKlabAsset(T asset, NavigableKlabAsset<?> parent) {
     this.delegate = asset;
     this.parent = parent;
-    this.path = (parent == null ? "" : (parent.path + ":")) + asset.getUrn();
+    this.path = (parent == null ? "" : (parent.path + ":")) + AuthoringSource.pathElement(asset);
     this.children = createChildren();
   }
 
@@ -192,12 +238,12 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
   protected void removeChild(KlabAsset asset) {
     this.children =
-        children.stream().filter(child -> !child.getUrn().equals(asset.getUrn())).toList();
+        children.stream().filter(child -> !AuthoringSource.same(child, asset)).toList();
   }
 
   protected boolean is(KlabAsset asset) {
     return this.delegate.getClass().isAssignableFrom(asset.getClass())
-        && delegate.getUrn().equals(asset.getUrn());
+        && AuthoringSource.same(delegate, asset);
   }
 
   private boolean canContain(KlabAsset asset) {
@@ -299,7 +345,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         if (project != null) target = project;
         else if (this instanceof NavigableWorkspace || this instanceof NavigableProject) continue;
       }
-      target.applyChange(change, scope, ret);
+      var prior = AuthoringSource.id(change) == null ? null : target.findChangedAsset(change);
+      boolean accepted = target.applyChange(change, scope, ret);
+      if (accepted && AuthoringSource.id(change) != null) {
+        if (acceptedSourceDeletions == null) acceptedSourceDeletions = new java.util.concurrent.ConcurrentHashMap<>();
+        if (change.getOperation() == CRUDOperation.DELETE && prior != null) {
+          var receipt = deletionReceipt(prior);
+          if (receipt != null) acceptedSourceDeletions.put(sourceKey(change),receipt);
+        } else acceptedSourceDeletions.remove(sourceKey(change));
+      }
     }
     for (var change : changes.getProjects()) {
       applyProjectChange(change, scope, ret);
@@ -416,9 +470,16 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     switch (change.getOperation()) {
       case CREATE -> {
+        var resolved = resolveChangedDocument(change,service,scope);
+        if (resolved == null) return false;
+        if (AuthoringSource.id(change) != null && findChangedAsset(change) != null) {
+          boolean updated = updateChild(resolved);
+          if (updated) changedAssets.add(findChangedAsset(change));
+          return updated;
+        }
         var ret =
             addChild(
-                resolveChangedDocument(change, service, scope));
+                resolved);
         if (ret != null) {
           changedAssets.add(ret);
           ret.localMetadata()
@@ -427,13 +488,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         return ret != null;
       }
       case DELETE -> {
-        var asset = findAsset(change.getResourceUrn(), KlabAsset.class, change.getKnowledgeClass());
+        var asset = findChangedAsset(change);
+        if (asset != null && AuthoringSource.id(change) != null
+            && !Objects.equals(change.getMetadata().get(AuthoringSource.VERSION), asset.getMetadata().get(AuthoringSource.VERSION))) return false;
         if (asset instanceof NavigableKlabAsset<?> navigableKlabAsset) {
           var parent = navigableKlabAsset.parent;
           if (parent instanceof NavigableKlabAsset<?> parentAsset) {
             parentAsset.children =
                 parentAsset.children.stream()
-                    .filter(child -> !child.getUrn().equals(change.getResourceUrn()))
+                    .filter(child -> !AuthoringSource.matches(change, child))
                     .toList();
           }
           changedAssets.add(parent);
@@ -451,11 +514,12 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             updateChild(
                 resolved);
         var asset =
-            findAsset(change.getResourceUrn(), NavigableAsset.class, change.getKnowledgeClass());
+            findChangedAsset(change);
         var metadataChanges =
             asset != null
                 && asset instanceof NavigableKlabDocument document
-                && document.mergeMetadata(change.getMetadata(), java.util.List.of());
+                && document.mergeMetadata(change.getMetadata(), AuthoringSource.id(change) == null
+                    ? java.util.List.of() : change.getNotifications());
         if (physicalChanges || metadataChanges) {
           changedAssets.add(asset);
           asset
@@ -465,10 +529,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         return physicalChanges || metadataChanges;
       }
       case UPDATE_METADATA -> {
+        if (AuthoringSource.id(change) != null) {
+          var resolved = resolveChangedDocument(change, service, scope);
+          if (resolved == null) return false;
+          updateChild(resolved);
+        }
         var asset =
-            findAsset(
-                change.getResourceUrn(), NavigableKlabDocument.class, change.getKnowledgeClass());
-        var ret = asset.mergeMetadata(change.getMetadata(), change.getNotifications());
+            findChangedAsset(change);
+        if (!(asset instanceof NavigableKlabDocument<?, ?> document)) return false;
+        var ret = document.mergeMetadata(change.getMetadata(), change.getNotifications());
         if (ret) {
           changedAssets.add(asset);
           asset
@@ -482,9 +551,22 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     return false;
   }
 
+  private NavigableAsset findChangedAsset(ResourceSet.Resource change) {
+    var matches = new ArrayList<NavigableAsset>();
+    collectChangedAssets(this, change, matches);
+    return matches.size() == 1 ? matches.getFirst() : null;
+  }
+
+  private static void collectChangedAssets(NavigableAsset parent, ResourceSet.Resource change, List<NavigableAsset> matches) {
+    for (var child : parent.children()) {
+      if (AuthoringSource.matches(change, child)) matches.add(child);
+      collectChangedAssets(child, change, matches);
+    }
+  }
+
   private KlabAsset resolveChangedDocument(ResourceSet.Resource change, ResourcesService service, Scope scope) {
-    var urn = change.getResourceUrn();
-    if (change.getKnowledgeClass() == KnowledgeClass.ONTOLOGY && this instanceof NavigableProject project
+    var urn = AuthoringSource.selector(change);
+    if (AuthoringSource.id(change) == null && change.getKnowledgeClass() == KnowledgeClass.ONTOLOGY && this instanceof NavigableProject project
         && project.getManifest() != null
         && !org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy.definesWorldview(project.getManifest()))
       urn = project.getUrn() + "/" + urn;
@@ -499,6 +581,19 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
       return null;
     }
 
+    var source = AuthoringSource.decode(resourceUrn);
+    if (source != null) {
+      for (var child : children) {
+        if (child instanceof KlabDocument<?> document && assetClass.isInstance(child)
+            && Objects.equals(source.service(), document.getServiceId())
+            && Objects.equals(source.project(), document.getProjectName())
+            && Objects.equals(source.id(), AuthoringSource.id(document))
+            && java.util.Arrays.asList(assetType).contains(KlabAsset.classify(child))) return (T) child;
+        var found = child.findAsset(resourceUrn, assetClass, assetType);
+        if (found != null) return found;
+      }
+      return null;
+    }
     var match = EnumSet.noneOf(KnowledgeClass.class);
     match.addAll(Arrays.asList(assetType));
 

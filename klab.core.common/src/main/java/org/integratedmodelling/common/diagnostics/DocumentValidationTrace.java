@@ -103,7 +103,11 @@ public final class DocumentValidationTrace {
   }
 
   public static String version(KlabDocument<?> document) {
-    return SemanticValidationRequest.sourceHash(document.getSourceCode()) + ":" + document.getLastUpdateTimestamp();
+    var version = SemanticValidationRequest.sourceHash(document.getSourceCode()) + ":" + document.getLastUpdateTimestamp();
+    if (org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(document) != null)
+      version += ":" + document.getMetadata().get(org.integratedmodelling.klab.api.services.resources.AuthoringSource.VERSION)
+          + ":" + org.integratedmodelling.klab.api.services.resources.AuthoringSource.diagnosticVersion(document);
+    return version;
   }
   static String format(Event event, KlabDocument<?> document, String version, long expected,
       long revision, long epoch, Decision decision, Collection<Notification> notifications,
@@ -111,6 +115,8 @@ public final class DocumentValidationTrace {
     var sourceHash = SemanticValidationRequest.sourceHash(document.getSourceCode());
     var kind = KlabAsset.KnowledgeClass.classify(document.getClass()).name();
     var identity = document.getProjectName() + "\n" + kind + "\n" + document.getUrn() + "\n" + sourceHash;
+    if (org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(document) != null)
+      identity += "\n" + org.integratedmodelling.klab.api.services.resources.AuthoringSource.key(document);
     return "DOCUMENT_VALIDATION_TRACE v=1 boot=" + State.BOOT + " seq=" + State.SEQUENCE.incrementAndGet()
         + " at=" + Instant.now() + " event=" + event + " decision=" + decision
         + " project=" + token(document.getProjectName()) + " kind=" + kind + " urn=" + token(document.getUrn())

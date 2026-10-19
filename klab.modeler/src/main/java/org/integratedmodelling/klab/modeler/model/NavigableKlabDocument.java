@@ -258,6 +258,13 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
     boolean ret = !metadata.isEmpty();
 
     this.localMetadata.putAll(metadata);
+    if (metadata.get(org.integratedmodelling.klab.api.services.resources.AuthoringSource.ID) != null) {
+      // Source-aware authoring descriptors are complete diagnostic snapshots, not append events.
+      var replacement = new java.util.ArrayList<>(notifications);
+      this.getNotifications().clear();
+      this.getNotifications().addAll(replacement);
+      return true;
+    }
 
     for (var notification : notifications) {
       this.getNotifications().add(notification);

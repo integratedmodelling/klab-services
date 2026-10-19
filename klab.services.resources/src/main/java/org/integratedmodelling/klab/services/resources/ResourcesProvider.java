@@ -1610,6 +1610,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         // documents yet")));
         //        }
         var existingDocument = retrieve(document.getUrn(), knowledgeClass.getAssetClass(), scope);
+        if (org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(document) != null
+            && submissionMode == SubmissionMode.ADD)
+          return List.of(ResourceSet.empty(Notification.error("New document creation cannot select an existing authoring source")));
         if (existingDocument != null && submissionMode == SubmissionMode.ADD) {
           return List.of(
               ResourceSet.empty(
@@ -1617,7 +1620,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                       "ADD requested for an existing document " + document.getUrn())));
         }
         if (submissionMode == SubmissionMode.UPDATE
-            || (existingDocument != null && submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
+            || ((existingDocument != null || org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(document) != null)
+                && submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
 
           // UPDATE currently replaces the source in file storage. Version history is pending
           // storage support and is called out explicitly in docs/RESOURCES.md. Do not make UPDATE
@@ -1625,7 +1629,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           // indexes while its file remains the project's source of truth.
           return updateDocument(
               document.getProjectName(),
-              document.getUrn(),
+              org.integratedmodelling.klab.api.services.resources.AuthoringSource.selector(document),
               ProjectStorage.ResourceType.classify(document),
               document.getSourceCode(),
               submissionMode == SubmissionMode.CREATE_OR_UPDATE,

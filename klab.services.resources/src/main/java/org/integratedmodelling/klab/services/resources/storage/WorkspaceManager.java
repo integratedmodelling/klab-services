@@ -9,6 +9,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.*;
 import java.net.URL;
+import org.integratedmodelling.klab.api.services.resources.AuthoringSource;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -771,6 +772,8 @@ public class WorkspaceManager {
 
   public List<ResourceSet> createDocument(
       KlabDocument<?> document, Project project, UserScope scope) {
+    if (document.getMetadata().containsKey(AuthoringSource.ID))
+      return List.of(ResourceSet.empty(Notification.error("New document creation cannot select an existing authoring source")));
     var pd = projectDescriptors.get(project.getUrn());
     if (pd == null || !(pd.storage instanceof FileProjectStorage fileProjectStorage)) {
       return List.of(
@@ -2575,19 +2578,19 @@ public class WorkspaceManager {
       List<Triple<ProjectStorage.ResourceType, CRUDOperation, URL>> changes) {
     getOntologies(false);
     var results = new LinkedHashMap<String, ResourceSet>();
+    var affectedUrns = new LinkedHashSet<String>();
     for (var change : changes) {
+      var previous = rejectedOntologies.getOrDefault(project, Map.of()).values().stream().flatMap(List::stream)
+          .filter(record -> record.source() != null && record.source().toExternalForm().equals(change.getThird().toExternalForm()))
+          .findFirst().orElse(null);
+      if (previous != null) affectedUrns.add(previous.document().getUrn());
       if (change.getSecond() == CRUDOperation.DELETE) {
         var removed = removeRejectedOntologySource(project, change.getThird());
         if (removed == null) continue;
-        var remaining = rejectedOntologySources(project, removed.document().getUrn());
-        var document = remaining.isEmpty() ? removed.document() : remaining.getFirst().document();
-        var descriptor = addToResultSet(document, Workspace.EXTERNAL_WORKSPACE_URN, results);
-        descriptor.setOperation(remaining.isEmpty() ? CRUDOperation.DELETE : CRUDOperation.UPDATE);
-        refreshValidationSnapshot(descriptor, document);
+        var descriptor = addToResultSet(removed.document(), Workspace.EXTERNAL_WORKSPACE_URN, results);
+        descriptor.setOperation(CRUDOperation.DELETE);
+        refreshValidationSnapshot(descriptor, removed.document());
       } else {
-        var previous = rejectedOntologies == null ? null : rejectedOntologies.getOrDefault(project, Map.of()).values().stream()
-            .flatMap(List::stream).filter(rejected -> rejected.source() != null
-                && rejected.source().toExternalForm().equals(change.getThird().toExternalForm())).findFirst().orElse(null);
         KimOntology document;
         if (previous == null) document = loadOntology(change.getThird(), project);
         else try (var input = change.getThird().openStream()) {
@@ -2596,8 +2599,21 @@ public class WorkspaceManager {
         } catch (IOException failure) { throw new KlabIOException(failure); }
         if (document == null) continue;
         retainRejectedOntology(document, change.getThird());
+        affectedUrns.add(document.getUrn());
         var descriptor = addToResultSet(document, Workspace.EXTERNAL_WORKSPACE_URN, results);
         descriptor.setOperation(change.getSecond());
+        refreshValidationSnapshot(descriptor, document);
+      }
+    }
+    // Duplicate diagnostics may change on the other physical source too. Publish a full fresh
+    // snapshot for each affected survivor, addressed by source rather than a shared semantic URN.
+    for (var urn : affectedUrns) for (var record : rejectedOntologySources(project, urn)) {
+      var document = record.document();
+      boolean alreadyPublished = results.values().stream().flatMap(set -> set.getOntologies().stream())
+          .anyMatch(resource -> AuthoringSource.matches(resource, document));
+      if (!alreadyPublished) {
+        var descriptor = addToResultSet(document, Workspace.EXTERNAL_WORKSPACE_URN, results);
+        descriptor.setOperation(CRUDOperation.UPDATE);
         refreshValidationSnapshot(descriptor, document);
       }
     }
@@ -2786,6 +2802,10 @@ public class WorkspaceManager {
    */
   static void refreshValidationSnapshot(ResourceSet.Resource resource, KlabDocument<?> document) {
     resource.setResourceVersion(document.getVersion());
+    for (var key : List.of(AuthoringSource.ID, AuthoringSource.VERSION)) {
+      var value = document.getMetadata().get(key);
+      if (value != null) resource.getMetadata().put(key, value);
+    }
     resource.getNotifications().clear();
     resource.getNotifications().addAll(document.getNotifications());
     if (DocumentValidationTrace.enabled())
@@ -2823,6 +2843,10 @@ public class WorkspaceManager {
 
       resource = new ResourceSet.Resource();
       resource.setResourceUrn(asset.getUrn());
+      for (var key : List.of(AuthoringSource.ID, AuthoringSource.VERSION)) {
+        var value = asset.getMetadata().get(key);
+        if (value != null) resource.getMetadata().put(key, value);
+      }
       resource.setResourceVersion(asset.getVersion());
       resource.setServiceId(service.serviceId());
       resource.setKnowledgeClass(KlabAsset.classify(asset));
@@ -2836,7 +2860,10 @@ public class WorkspaceManager {
       /*
        * Must check because a previous change may already have added this dependency
        */
-      if (!Utils.Resources.contains(resourceSet, resource)) {
+      var identity = AuthoringSource.id(asset);
+      boolean contained = identity == null ? Utils.Resources.contains(resourceSet, resource)
+          : resourceSet.getOntologies().stream().anyMatch(existing -> AuthoringSource.matches(existing, asset));
+      if (!contained) {
         switch (resource.getKnowledgeClass()) {
           case RESOURCE -> {
             // TODO
@@ -2919,6 +2946,18 @@ public class WorkspaceManager {
   }
 
   public KimOntology getOntology(String urn) {
+    var selectedSource = AuthoringSource.decode(urn);
+    if (selectedSource != null) {
+      if (!Objects.equals(selectedSource.service(), service.serviceId())) return null;
+      getOntologies(false);
+      var candidates = rejectedOntologies.getOrDefault(selectedSource.project(), Map.of()).values().stream()
+          .flatMap(List::stream).filter(record -> Objects.equals(AuthoringSource.id(record.document()), selectedSource.id())).toList();
+      if (candidates.size() != 1) return null;
+      var document = candidates.getFirst().document();
+      if (!Objects.equals(document.getUrn(), selectedSource.urn())) return null;
+      return selectedSource.version().isEmpty() || Objects.equals(selectedSource.version(), document.getMetadata().get(AuthoringSource.VERSION))
+          ? updateStatus(document) : null;
+    }
     if (urn != null && urn.contains("/")) {
       var coordinates = urn.split("/", -1);
       if (coordinates.length < 2 || coordinates.length > 3) return null;
@@ -2950,16 +2989,36 @@ public class WorkspaceManager {
         || org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy.definesWorldview(descriptor.manifest);
   }
 
+  private String sourceVersion(URL source, String text) {
+    try {
+      var attributes = java.nio.file.Files.readAttributes(java.nio.file.Path.of(source.toURI()),
+          java.nio.file.attribute.BasicFileAttributes.class, java.nio.file.LinkOption.NOFOLLOW_LINKS);
+      return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.sourceHash(
+          text + "\0" + attributes.fileKey() + "\0" + attributes.creationTime() + "\0" + attributes.lastModifiedTime());
+    } catch (java.io.IOException | java.net.URISyntaxException failure) { throw new IllegalArgumentException("Cannot verify source version",failure); }
+  }
+
   private RejectedOntology requireRejectedOntologySource(String project, String urn, FileProjectStorage storage) {
     getOntologies(false);
-    var candidates = rejectedOntologySources(project, urn);
+    var selector = AuthoringSource.decode(urn);
+    if (selector != null && (!Objects.equals(selector.project(), project) || !Objects.equals(selector.service(), service.serviceId())))
+      throw new IllegalArgumentException("FOREIGN_ONTOLOGY_SOURCE: Source belongs to another project");
+    var candidates = selector == null ? rejectedOntologySources(project, urn)
+        : rejectedOntologies.getOrDefault(project, Map.of()).values().stream().flatMap(List::stream)
+            .filter(record -> Objects.equals(AuthoringSource.id(record.document()), selector.id())).toList();
     if (candidates.size() > 1)
       throw new IllegalArgumentException("DUPLICATE_ONTOLOGY_URN: No unique physical source for project '" + project + "' ontology '" + urn + "'");
     if (candidates.isEmpty() || candidates.getFirst().source() == null)
       throw new IllegalArgumentException("MISSING_ONTOLOGY_SOURCE: No project-owned physical source for '" + project + "/" + urn + "'");
     var selected = candidates.getFirst();
+    if (selector != null && !Objects.equals(selector.urn(), selected.document().getUrn()))
+      throw new IllegalArgumentException("ONTOLOGY_SOURCE_CHANGED: Source declaration changed; reload before editing");
+    if (selector != null && (selector.version().isBlank()
+        || !Objects.equals(selector.version(), selected.document().getMetadata().get(AuthoringSource.VERSION))))
+      throw new IllegalArgumentException("ONTOLOGY_SOURCE_CHANGED: Source version is stale; reload before editing");
     var current = storage.readExistingOntologySource(selected.source());
-    if (!Objects.equals(current, selected.document().getSourceCode()))
+    if (!Objects.equals(current, selected.document().getSourceCode())
+        || !Objects.equals(sourceVersion(selected.source(), current), selected.document().getMetadata().get(AuthoringSource.VERSION)))
       throw new IllegalArgumentException("ONTOLOGY_SOURCE_CHANGED: Physical source changed; reload the project before editing");
     return selected;
   }
@@ -2977,15 +3036,13 @@ public class WorkspaceManager {
   private List<ResourceSet> updateRejectedOntologyDocument(String project, String urn, String content, FileProjectStorage storage) {
     try {
       var selected = requireRejectedOntologySource(project, urn, storage);
-      var updatedUrn = editedOntologyUrn(content, urn);
-      if (!urn.equals(updatedUrn) && !rejectedOntologySources(project, updatedUrn).isEmpty())
+      var updatedUrn = editedOntologyUrn(content, selected.document().getUrn());
+      if (!selected.document().getUrn().equals(updatedUrn) && !rejectedOntologySources(project, updatedUrn).isEmpty())
         throw new IllegalArgumentException("DUPLICATE_ONTOLOGY_URN: Rename would collide with another retained source; no file changed");
       storage.writeExistingOntologySource(selected.source(), content);
-      // A logical rename is a project delete/create event, without moving or choosing another file.
-      return handleRejectedOntologyChanges(project, urn.equals(updatedUrn)
-          ? List.of(Triple.of(ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.UPDATE, selected.source()))
-          : List.of(Triple.of(ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.DELETE, selected.source()),
-              Triple.of(ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.CREATE, selected.source())));
+      // Source-aware logical renames update one stable physical document without moving its file.
+      return handleRejectedOntologyChanges(project,
+          List.of(Triple.of(ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.UPDATE, selected.source())));
     } catch (RuntimeException failure) { return List.of(ResourceSet.empty(Notification.error(failure.getMessage()))); }
   }
 
@@ -3008,6 +3065,20 @@ public class WorkspaceManager {
   }
 
   private void retainRejectedOntology(KimOntology document, URL source) {
+    if (source != null) {
+      var descriptor = projectDescriptors.get(document.getProjectName());
+      if (descriptor != null && descriptor.storage instanceof FileProjectStorage storage) {
+        try {
+          var root = storage.getRootFolder().toPath().toAbsolutePath().normalize();
+          var file = java.nio.file.Path.of(source.toURI()).toAbsolutePath().normalize();
+          if (file.startsWith(root.resolve("src"))) {
+            document.getMetadata().put(AuthoringSource.ID, root.relativize(file).toString().replace('\\','/'));
+            document.getMetadata().put(AuthoringSource.VERSION, sourceVersion(source, document.getSourceCode()));
+            ((org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl<?>) document).setServiceId(service.serviceId());
+          }
+        } catch (java.net.URISyntaxException failure) { throw new IllegalArgumentException("Invalid physical source",failure); }
+      }
+    }
     if (rejectedOntologies == null) rejectedOntologies = new HashMap<>();
     var project = rejectedOntologies.computeIfAbsent(document.getProjectName(), ignored -> new LinkedHashMap<>());
     if (source != null) removeRejectedOntologySource(document.getProjectName(), source);
@@ -4480,7 +4551,7 @@ public class WorkspaceManager {
       throw new KlabIllegalArgumentException("Only ontologies and namespaces support deferred validation");
     var urn = document.getUrn();
     if (type == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(project))
-      return updateDocument(project, urn, type, document.getSourceCode(), false, requester);
+      return updateDocument(project, AuthoringSource.selector(document), type, document.getSourceCode(), false, requester);
     if (document.getSourceCode() == null || storage.locate(urn, type) == null)
       throw new KlabIllegalArgumentException("Deferred save requires an existing document and source");
     KlabDocument<?> parsed;
@@ -4586,6 +4657,8 @@ public class WorkspaceManager {
 
     if (documentType == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(projectName))
       return updateRejectedOntologyDocument(projectName, documentUrn, contents, (FileProjectStorage) pd.storage);
+    if (AuthoringSource.decode(documentUrn) != null)
+      return List.of(ResourceSet.empty(Notification.error("Authoring source selector is not supported for this document")));
     if (!(documentType == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(projectName))
         && lockingScope instanceof UserScope requester && deferredDocuments != null
         && deferredDocuments.values().stream().anyMatch(edit -> edit.project().equals(projectName)
@@ -4683,6 +4756,8 @@ public class WorkspaceManager {
     if (resourceType == ProjectStorage.ResourceType.ONTOLOGY && !supportsProjectOntologies(projectName))
       return deleteRejectedOntologyDocument(projectName, documentUrn, fileProjectStorage);
 
+    if (AuthoringSource.decode(documentUrn) != null)
+      return List.of(ResourceSet.empty(Notification.error("Authoring source selector is not supported for this document")));
     var dependents = dependents(documentUrn);
     if (!dependents.isEmpty()) {
       return List.of(
