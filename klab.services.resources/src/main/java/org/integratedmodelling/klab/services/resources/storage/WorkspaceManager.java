@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
+import org.integratedmodelling.common.diagnostics.DocumentValidationTrace;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.Sets;
@@ -2677,6 +2678,10 @@ public class WorkspaceManager {
     resource.setResourceVersion(document.getVersion());
     resource.getNotifications().clear();
     resource.getNotifications().addAll(document.getNotifications());
+    if (DocumentValidationTrace.enabled())
+      DocumentValidationTrace.resources(
+          resource,
+          document);
   }
 
   /** Refresh catalog-owned values without replacing project membership or writing configuration. */

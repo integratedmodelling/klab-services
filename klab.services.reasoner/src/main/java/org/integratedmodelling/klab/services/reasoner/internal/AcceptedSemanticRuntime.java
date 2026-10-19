@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
+import org.integratedmodelling.common.diagnostics.DocumentValidationTrace;
 import java.lang.reflect.*;
 import java.time.Duration;
 import java.util.*;
@@ -233,6 +234,11 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         return response;
       }
     } catch (IllegalStateException unavailable) {
+      if (DocumentValidationTrace.enabled())
+        DocumentValidationTrace.exception(
+            request,
+            response.getKnowledgeRevision(),
+            unavailable);
       return unavailableValidation(request, response);
     }
   }

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.reasoner;
 
+import org.integratedmodelling.common.diagnostics.DocumentValidationTrace;
 import org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime;
 
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
@@ -416,6 +417,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public SemanticValidationResponse validateDocument(
       SemanticValidationRequest request, Scope scope) {
     var response = SemanticValidationResponse.forRequest(request);
+    if (DocumentValidationTrace.enabled())
+      DocumentValidationTrace.snapshot(
+          DocumentValidationTrace.Event.REASONER_RECEIVED,
+          request.document(),
+          request.getDocumentVersion(),
+          request.getKnowledgeRevision(),
+          -1,
+          DocumentValidationTrace.Decision.OBSERVE);
     try {
       return validateDocumentPreflight(request, scope, response);
     } catch (org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException e) {
@@ -428,6 +437,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       response.addDocumentDiagnostic(request, Notification.Level.Error);
     } finally {
       response.deduplicateNotifications();
+      if (DocumentValidationTrace.enabled())
+        DocumentValidationTrace.response(
+            DocumentValidationTrace.Event.REASONER_RETURN,
+            request,
+            response,
+            -1,
+            DocumentValidationTrace.Decision.OBSERVE);
     }
     return response;
   }
