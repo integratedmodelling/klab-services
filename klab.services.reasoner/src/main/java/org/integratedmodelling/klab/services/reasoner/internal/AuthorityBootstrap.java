@@ -106,14 +106,17 @@ public final class AuthorityBootstrap {
   /** Failed input is remembered too. Only changed input or explicit invalidation retries side effects. */
   synchronized CapturedAuthorityCatalog prepare(Worldview source, Scope owner, String expectedKey,
       CandidatePublicationCoordinator.Cancellation cancellation) throws Exception {
-    cancellation.checkpoint();
+    CandidateTrace.checkpoint(cancellation,expectedKey,epoch.get(),CandidateTrace.Reason.PREPARE_ENTRY);
     long startedEpoch=epoch.get();
+    CandidateTrace.stage(CandidateTrace.Event.BOOTSTRAP_ENTER,expectedKey,startedEpoch,CandidateTrace.Reason.NONE);
     if (!expectedKey.equals(key(source,owner))) throw new IllegalStateException("Authority bootstrap owner/input changed");
     var previous=outcomes.get(expectedKey);
     if (previous!=null && previous.epoch()!=startedEpoch) {
       outcomes.remove(expectedKey,previous); previous=null;
     }
     if (previous != null) {
+      CandidateTrace.stage(CandidateTrace.Event.CACHE_HIT,expectedKey,startedEpoch,
+          previous.failure()==null ? CandidateTrace.Reason.EXACT_SUCCESS : CandidateTrace.Reason.EXACT_FAILURE);
       requireEpoch(startedEpoch);
       if (previous.failure()!=null) throw new IllegalStateException(previous.failure());
       verify(source,owner,previous.plan(),expectedKey); requireEpoch(startedEpoch); return previous.catalog();
@@ -124,22 +127,35 @@ public final class AuthorityBootstrap {
       if (selectedRevision != null && !selectedRevision.equals(plan.revision()))
         throw new IllegalStateException("Authority selection changed after preflight");
       var providerInput = providerInput(source, owner);
+      if (CandidateTrace.enabled()) {
+        CandidateTrace.emit(CandidateTrace.Event.FIELD_PROVIDER_INPUT,CandidateTrace.job(),-1,startedEpoch,
+            expectedKey,providerInput,CandidateTrace.Reason.NONE);
+        CandidateTrace.emit(CandidateTrace.Event.FIELD_PLAN,CandidateTrace.job(),-1,startedEpoch,
+            expectedKey,CandidateTrace.digest(plan.revision()),CandidateTrace.Reason.NONE);
+      }
       for (var outcome : outcomes.values()) {
         if (outcome.epoch() == startedEpoch && outcome.failure() == null
             && providerInput.equals(outcome.providerInput()) && plan.revision().equals(outcome.plan().revision())
             && !outcome.catalog().hasExpiredResponses()) {
           verify(source, owner, plan, expectedKey); cancellation.checkpoint();
+          CandidateTrace.stage(CandidateTrace.Event.CACHE_REUSE,expectedKey,startedEpoch,CandidateTrace.Reason.PROVIDER_REUSE);
           remember(expectedKey, new Outcome(startedEpoch, outcome.catalog(), null, plan, providerInput));
           return outcome.catalog();
         }
       }
-      var catalog=producer.produce(source,owner,plan,cancellation); cancellation.checkpoint();
+      CandidateTrace.stage(CandidateTrace.Event.PRODUCER_START,expectedKey,startedEpoch,CandidateTrace.Reason.NONE);
+      var catalog=producer.produce(source,owner,plan,cancellation);
+      CandidateTrace.checkpoint(cancellation,expectedKey,startedEpoch,CandidateTrace.Reason.POST_PRODUCER);
       if (catalog==null || source.getAuthorityBindings().stream().anyMatch(b->!catalog.supports(b)))
         throw new IllegalStateException("Producer supplied no matching configured proof");
       verify(source,owner,plan,expectedKey); cancellation.checkpoint();
       remember(expectedKey,new Outcome(startedEpoch,catalog,null,plan,providerInput)); return catalog;
-    } catch (java.util.concurrent.CancellationException cancelled) { throw cancelled; }
+    } catch (java.util.concurrent.CancellationException cancelled) {
+      CandidateTrace.stage(CandidateTrace.Event.CHECKPOINT_CANCELLED,expectedKey,startedEpoch,CandidateTrace.Reason.CANCELLED);
+      throw cancelled;
+    }
     catch (Exception failure) {
+      CandidateTrace.stage(CandidateTrace.Event.BOOTSTRAP_FAILURE,expectedKey,startedEpoch,CandidateTrace.Reason.FAILURE);
       // Provider exceptions can contain private parameters, URLs, or headers.
       String message="AUTHORITY_BOOTSTRAP_FAILED: "+failure.getClass().getSimpleName();
       remember(expectedKey,new Outcome(startedEpoch,null,message,null,null));
@@ -166,7 +182,9 @@ public final class AuthorityBootstrap {
     while(outcomes.size()>4 && entries.hasNext()) outcomes.remove(entries.next());
   }
   // Called under the runtime lifecycle lock: never wait on provider network/configuration.
-  void invalidate() { epoch.incrementAndGet(); outcomes.clear(); }
+  void invalidate() { epoch.incrementAndGet(); outcomes.clear();
+    CandidateTrace.stage(CandidateTrace.Event.BOOTSTRAP_INVALIDATED,null,epoch.get(),CandidateTrace.Reason.EXPLICIT);
+  }
 
   static Plan resolve(Worldview source, Scope owner) { return resolve(source,owner,null); }
   static Plan resolve(Worldview source, Scope owner,BootstrapSourcePin pin) {
@@ -220,6 +238,7 @@ public final class AuthorityBootstrap {
       // Preserve UserScope HTTP authorization at the export boundary; the private compiler
       // scope carries source/identity only and must never stand in for the requesting owner.
       if (!actor.getComponentRegistry().loadComponents(plan.resources(),owner)) throw new IllegalStateException("Authorized component load failed");
+      CandidateTrace.stage(CandidateTrace.Event.COMPONENTS_LOADED,null,-1,CandidateTrace.Reason.NONE);
       for(var expected:plan.components()) {
         var installed=actor.getComponentRegistry().getComponent(expected.id(),expected.version());
         if(installed==null || !expected.version().equals(installed.version()) || !expected.fileHash().equals(installed.fileHash())
@@ -227,8 +246,13 @@ public final class AuthorityBootstrap {
             || !JSON.valueToTree(expected.usageRights()).equals(JSON.valueToTree(installed.usageRights())))
           throw new IllegalStateException("Installed provider differs from selected content or permissions");
       }
-      cancellation.checkpoint();var evidence=CapturedAuthorityCatalog.captureProviderEvidence(state);
-      var loaded=actor.loadKnowledge(source,scope);cancellation.checkpoint();
+      CandidateTrace.stage(CandidateTrace.Event.DESCRIPTORS_VERIFIED,null,-1,CandidateTrace.Reason.NONE);
+      CandidateTrace.checkpoint(cancellation,null,-1,CandidateTrace.Reason.POST_COMPONENTS);
+      var evidence=CapturedAuthorityCatalog.captureProviderEvidence(state);
+      CandidateTrace.stage(CandidateTrace.Event.BEFORE_PRIVATE_LOAD,null,-1,CandidateTrace.Reason.NONE);
+      var loaded=actor.loadKnowledge(source,scope);
+      CandidateTrace.stage(CandidateTrace.Event.AFTER_PRIVATE_LOAD,null,-1,CandidateTrace.Reason.NONE);
+      CandidateTrace.checkpoint(cancellation,null,-1,CandidateTrace.Reason.POST_PRIVATE_LOAD);
       var versions=actor.successfulAuthorityConfigurations();
       if(scope.hasErrors() || org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(loaded.getNotifications())
           || source.getAuthorityBindings().stream().anyMatch(b->!versions.containsKey(b.localId())))
@@ -262,8 +286,11 @@ public final class AuthorityBootstrap {
       var proof=Map.of("inputSha256",digest(sourceBytes),"authorityVersions",versions,"providerEvidence",evidence,
           "configuredSnapshots",snapshotHashes);
       Files.write(capture.resolve("proof.json"),JSON.writeValueAsBytes(proof));
-      var result=CapturedAuthorityCatalog.capture(state);cancellation.checkpoint();return result;
+      var result=CapturedAuthorityCatalog.capture(state);cancellation.checkpoint();
+      CandidateTrace.stage(CandidateTrace.Event.CAPTURE_COMPLETE,null,-1,CandidateTrace.Reason.SUCCESS);
+      return result;
     } finally {
+      CandidateTrace.stage(CandidateTrace.Event.PRODUCER_DISPOSE,null,-1,CandidateTrace.Reason.NONE);
       try { if(actor!=null) actor.disposeSemanticEnvironment(); }
       finally { SemanticEnvironment.removeAssets(job); }
     }
