@@ -260,7 +260,9 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
       if (failure == null && result != null && result.state() != null
           && result.isolationVerified() && result.logicalStatus() == LogicalStatus.VALID
           && !cancelled(job)) {
-        try { guardCurrent = guard.current(job.input()); }
+        try (var phase = CandidateTrace.phase(CandidateTrace.Phase.PUBLICATION_GUARD,job.input().dependencyRevision())) {
+          guardCurrent = guard.current(job.input());
+        }
         catch (Throwable e) { failure = e; }
       }
       if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.GUARD,job.generation(),status().inputGeneration(),-1,

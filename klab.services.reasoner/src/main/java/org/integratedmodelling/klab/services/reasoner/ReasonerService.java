@@ -67,6 +67,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
+import org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.integratedmodelling.klab.services.reasoner.internal.IngestionNotifications;
@@ -2222,32 +2223,34 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   private ResourceSet loadKnowledge(Worldview worldview, Scope scope, List<Notification> ret,
       org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt) {
-    // Freeze and validate authoritative semantic beans before initialization or any OWL write.
-    // Aggregate isEmpty flags may be stale; current structured diagnostics own this gate.
-    if (worldview == null || worldview.getOntologies().isEmpty())
-      return ResourceSet.empty(Notification.error("Authoritative worldview is unavailable or contains no ontologies"));
-    try {
-      worldview = BeanIngestionPreflight.snapshot(worldview);
-      var beanErrors = BeanIngestionPreflight.errors(worldview);
-      if (!beanErrors.isEmpty()) {
-        if (candidateRuntime != null && !semanticOnly
-            && !candidateRuntime.rejectPreflight(attempt, beanErrors, scope))
-          return ResourceSet.empty(Notification.info("Stale bean preflight discarded"));
-        worldviewLoadDiagnostics = List.copyOf(beanErrors);
-        var rejected = ResourceSet.empty();
-        rejected.getNotifications().addAll(beanErrors);
-        return rejected;
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.INPUT_PREFLIGHT,null)) {
+      // Freeze and validate authoritative semantic beans before initialization or any OWL write.
+      // Aggregate isEmpty flags may be stale; current structured diagnostics own this gate.
+      if (worldview == null || worldview.getOntologies().isEmpty())
+        return ResourceSet.empty(Notification.error("Authoritative worldview is unavailable or contains no ontologies"));
+      try {
+        worldview = BeanIngestionPreflight.snapshot(worldview);
+        var beanErrors = BeanIngestionPreflight.errors(worldview);
+        if (!beanErrors.isEmpty()) {
+          if (candidateRuntime != null && !semanticOnly
+              && !candidateRuntime.rejectPreflight(attempt, beanErrors, scope))
+            return ResourceSet.empty(Notification.info("Stale bean preflight discarded"));
+          worldviewLoadDiagnostics = List.copyOf(beanErrors);
+          var rejected = ResourceSet.empty();
+          rejected.getNotifications().addAll(beanErrors);
+          return rejected;
+        }
+      } catch (RuntimeException e) {
+        return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable: " + e.getMessage()));
       }
-    } catch (RuntimeException e) {
-      return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable: " + e.getMessage()));
-    }
-    if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(worldview, false)) {
-      List<Notification> failures = List.of(Notification.error("Authoritative worldview has no valid root ontology"));
-      if (candidateRuntime != null && !semanticOnly
-          && !candidateRuntime.rejectPreflight(attempt, failures, scope))
-        return ResourceSet.empty(Notification.info("Stale bean preflight discarded"));
-      worldviewLoadDiagnostics = failures;
-      return ResourceSet.empty(failures.getFirst());
+      if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(worldview, false)) {
+        List<Notification> failures = List.of(Notification.error("Authoritative worldview has no valid root ontology"));
+        if (candidateRuntime != null && !semanticOnly
+            && !candidateRuntime.rejectPreflight(attempt, failures, scope))
+          return ResourceSet.empty(Notification.info("Stale bean preflight discarded"));
+        worldviewLoadDiagnostics = failures;
+        return ResourceSet.empty(failures.getFirst());
+      }
     }
     if (candidateRuntime != null && !semanticOnly) {
       if (!candidateRuntime.submit(worldview, attempt, scope))
@@ -2283,18 +2286,22 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.observationReasoner = new ObservationReasoner(this);
 
     long ingestionStarted = System.nanoTime();
-    this.owl.initialize(worldview.getOntologies().getFirst());
-    serviceScope().info("Worldview OWL initialization completed in "
-        + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ingestionStarted) + " ms");
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.OWL_INITIALIZE,null)) {
+      this.owl.initialize(worldview.getOntologies().getFirst());
+      serviceScope().info("Worldview OWL initialization completed in "
+          + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ingestionStarted) + " ms");
+    }
     authorityBindings.clear();
     loadedOntologySources.clear();
     declarationDomains.clear();
     loadedOntologyDiagnostics.clear();
     compileStagedOntologies(worldview.getOntologies(),scope);
     long flushStarted = System.nanoTime();
-    this.owl.flushReasoner();
-    serviceScope().info("Worldview OWL flush completed in "
-        + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - flushStarted) + " ms");
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_FLUSH,null)) {
+      this.owl.flushReasoner();
+      serviceScope().info("Worldview OWL flush completed in "
+          + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - flushStarted) + " ms");
+    }
     for (var ontology : worldview.getOntologies()) {
       loadedOntologyDiagnostics.put(
           ontology.getUrn(),
@@ -2306,18 +2313,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
               .toList());
     }
     long strategiesStarted = System.nanoTime();
-    for (var strategyDocument : worldview.getObservationStrategies()) {
-      for (var strategy : strategyDocument.getStatements()) {
-        observationReasoner.registerStrategy(strategy);
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.STRATEGIES,null)) {
+      for (var strategyDocument : worldview.getObservationStrategies()) {
+        for (var strategy : strategyDocument.getStatements()) {
+          observationReasoner.registerStrategy(strategy);
+        }
       }
+      observationReasoner.initializeStrategies();
+      serviceScope().info("Worldview strategy initialization completed in "
+          + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - strategiesStarted) + " ms");
     }
-    observationReasoner.initializeStrategies();
-    serviceScope().info("Worldview strategy initialization completed in "
-        + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - strategiesStarted) + " ms");
 
     // assess consistent status and if consistent, set operational
     long consistencyStarted = System.nanoTime();
-    boolean logicallyConsistent = !this.owl.isOn() || this.owl.isConsistent();
+    boolean logicallyConsistent;
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_CONSISTENCY,null)) {
+      logicallyConsistent = !this.owl.isOn() || this.owl.isConsistent();
+    }
     serviceScope().info("Worldview consistency check completed in "
         + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - consistencyStarted) + " ms");
     this.consistent.set(!Utils.Notifications.hasErrors(ret) && logicallyConsistent);
@@ -3272,66 +3284,83 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   /** Only private compilation reaches this shared full/incremental staging primitive. */
   private void compileStagedOntologies(Map<KimOntology,Scope> scopes) {
-    var registry = new org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry(scopes.keySet());
-    if (!registry.errors().isEmpty()) throw new KlabValidationException(registry.errors().toString());
+    org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry registry;
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DECLARATION_REGISTRY,null)) {
+      registry = new org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry(scopes.keySet());
+      if (!registry.errors().isEmpty()) throw new KlabValidationException(registry.errors().toString());
+    }
     var metricsBeforeStaging=owl.compilationMetrics();
     try (var deferred = owl.stageDeclarations()) {
       // Typed names are actual source declarations, private to this candidate actor.
-      for (var entry : registry.ordered()) {
-        var statement=entry.statement(); var ontology=owl.requireOntology(entry.ontology().getUrn());
-        if (statement.getUpperConceptDefined()!=null) {
-          installAlias(statement,ontology,scopes.get(entry.ontology()));
-        } else if (!statement.isAlias()) {
-          ontology.add(Axiom.ClassAssertion(statement.getUrn(),new HashSet<>(statement.getType())));
-          ontology.define();
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.NAMED_DECLARATIONS,null)) {
+        for (var entry : registry.ordered()) {
+          var statement=entry.statement(); var ontology=owl.requireOntology(entry.ontology().getUrn());
+          if (statement.getUpperConceptDefined()!=null) {
+            installAlias(statement,ontology,scopes.get(entry.ontology()));
+          } else if (!statement.isAlias()) {
+            ontology.add(Axiom.ClassAssertion(statement.getUrn(),new HashSet<>(statement.getType())));
+            ontology.define();
+          }
         }
       }
       // Authority roots must exist before parent expressions can resolve authority identities.
-      for (var entry : registry.ordered()) if (entry.statement().getAuthorityRequired()!=null) {
-        var statement=entry.statement();var owner=owl.getConcept(entry.urn());
-        configureAuthorityBinding(new Authority.ConfigurationRequest(worldview.getUrn(),
-            statement.getAuthorityRequired(),owner.getUrn(),statement.getAuthorityParameters()),scopes.get(entry.ontology()));
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.AUTHORITY_CONFIGURATION,null)) {
+        for (var entry : registry.ordered()) if (entry.statement().getAuthorityRequired()!=null) {
+          var statement=entry.statement();var owner=owl.getConcept(entry.urn());
+          configureAuthorityBinding(new Authority.ConfigurationRequest(worldview.getUrn(),
+              statement.getAuthorityRequired(),owner.getUrn(),statement.getAuthorityParameters()),scopes.get(entry.ontology()));
+        }
       }
       stagingDeclarationStructure=true;
       try {
-        for (var entry : registry.ordered()) if (entry.statement().getUpperConceptDefined()==null) {
-          var ontology=owl.getOntology(entry.ontology().getUrn());var scope=scopes.get(entry.ontology());
-          if (entry.statement().isAlias()) installAlias(entry.statement(),ontology,scope);
-          else if (entry.enclosing()==null) build(entry.statement(),ontology,null,scope);
-          else buildInternal(entry.statement(),ontology,entry.enclosing(),scope);
+        try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DECLARATION_STRUCTURE,null)) {
+          for (var entry : registry.ordered()) if (entry.statement().getUpperConceptDefined()==null) {
+            var ontology=owl.getOntology(entry.ontology().getUrn());var scope=scopes.get(entry.ontology());
+            if (entry.statement().isAlias()) installAlias(entry.statement(),ontology,scope);
+            else if (entry.enclosing()==null) build(entry.statement(),ontology,null,scope);
+            else buildInternal(entry.statement(),ontology,entry.enclosing(),scope);
+          }
         }
       } finally { stagingDeclarationStructure=false; }
       // ABOUT in a preamble needs the complete named domain hierarchy, not just
       // typed signatures. Its endpoint and grounding contracts remain unchanged.
-      scopes.forEach((source,scope)->declarationDomains.put(source.getUrn(),
-          org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.validate(source,this::declareConcept)));
-      scopes.forEach((source,scope)->org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(
-          owl,source,declarationDomains.get(source.getUrn())));
-      var clauses=new ArrayList<org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry>();
-      for (var entry : registry.ordered()) if (!entry.statement().isAlias()
-          && entry.statement().getUpperConceptDefined()==null) {
-        var ontology=owl.getOntology(entry.ontology().getUrn());var owner=owl.getConcept(entry.urn());
-        var scope=scopes.get(entry.ontology());
-        java.util.function.Function<KimConcept,Concept> resolve=operand->declare(operand,ontology,scope);
-        try {
-          org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compileAuthored(
-              owl,ontology,owner,entry.statement(),resolve);
-          clauses.add(new org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry(
-              ontology,entry.ontology(),owner,entry.statement(),resolve,scope));
-          if (!entry.statement().getEmergenceTriggers().isEmpty())
-            registerEmergent(owner,entry.statement().getEmergenceTriggers().stream().map(resolve).toList());
-          if (org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValue(entry.statement()))
-            scope.warn("DESCRIPTION_VALUE_UNRESOLVED: typed value semantics remain unresolved",entry.statement());
-        } catch (RuntimeException error) { scope.error(error,entry.statement()); }
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOMAIN_BINDING,null)) {
+        scopes.forEach((source,scope)->declarationDomains.put(source.getUrn(),
+            org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.validate(source,this::declareConcept)));
+        scopes.forEach((source,scope)->org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(
+            owl,source,declarationDomains.get(source.getUrn())));
       }
-      declarationStagingMetrics=org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.reconcile(owl,clauses);
-      scopes.forEach((source,scope)->{
-        try { org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport.requireEffectiveGrounding(
-            owl,declarationDomains.get(source.getUrn())); }
-        catch (RuntimeException error) {scope.error(error,source);}
-        for(var statement:source.getStatements())tagConceptService(statement,source.getServiceId());
-        owl.registerWithReasoner(source);rememberOntologySource(source);
-      });
+      var clauses=new ArrayList<org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry>();
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.AUTHORED_CLAUSES,null)) {
+        for (var entry : registry.ordered()) if (!entry.statement().isAlias()
+            && entry.statement().getUpperConceptDefined()==null) {
+          var ontology=owl.getOntology(entry.ontology().getUrn());var owner=owl.getConcept(entry.urn());
+          var scope=scopes.get(entry.ontology());
+          java.util.function.Function<KimConcept,Concept> resolve=operand->declare(operand,ontology,scope);
+          try {
+            org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compileAuthored(
+                owl,ontology,owner,entry.statement(),resolve);
+            clauses.add(new org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry(
+                ontology,entry.ontology(),owner,entry.statement(),resolve,scope));
+            if (!entry.statement().getEmergenceTriggers().isEmpty())
+              registerEmergent(owner,entry.statement().getEmergenceTriggers().stream().map(resolve).toList());
+            if (org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValue(entry.statement()))
+              scope.warn("DESCRIPTION_VALUE_UNRESOLVED: typed value semantics remain unresolved",entry.statement());
+          } catch (RuntimeException error) { scope.error(error,entry.statement()); }
+        }
+      }
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DESCRIPTION_RECONCILE,null)) {
+        declarationStagingMetrics=org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.reconcile(owl,clauses);
+      }
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.ONTOLOGY_REGISTER,null)) {
+        scopes.forEach((source,scope)->{
+          try { org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport.requireEffectiveGrounding(
+              owl,declarationDomains.get(source.getUrn())); }
+          catch (RuntimeException error) {scope.error(error,source);}
+          for(var statement:source.getStatements())tagConceptService(statement,source.getServiceId());
+          owl.registerWithReasoner(source);rememberOntologySource(source);
+        });
+      }
       var measured=new LinkedHashMap<String,Long>(declarationStagingMetrics);
       var metricsAfterStaging=owl.compilationMetrics();
       for(var name:List.of("reasonerCreations","actualFlushes","satisfiabilityQueries","entailmentQueries"))

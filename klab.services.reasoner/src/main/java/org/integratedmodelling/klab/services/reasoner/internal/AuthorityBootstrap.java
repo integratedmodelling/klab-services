@@ -250,7 +250,10 @@ public final class AuthorityBootstrap {
       CandidateTrace.checkpoint(cancellation,null,-1,CandidateTrace.Reason.POST_COMPONENTS);
       var evidence=CapturedAuthorityCatalog.captureProviderEvidence(state);
       CandidateTrace.stage(CandidateTrace.Event.BEFORE_PRIVATE_LOAD,null,-1,CandidateTrace.Reason.NONE);
-      var loaded=actor.loadKnowledge(source,scope);
+      org.integratedmodelling.klab.api.services.resources.ResourceSet loaded;
+      try (var phase=CandidateTrace.phase(CandidateTrace.Phase.BOOTSTRAP_LOAD,null)) {
+        loaded=actor.loadKnowledge(source,scope);
+      }
       CandidateTrace.stage(CandidateTrace.Event.AFTER_PRIVATE_LOAD,null,-1,CandidateTrace.Reason.NONE);
       CandidateTrace.checkpoint(cancellation,null,-1,CandidateTrace.Reason.POST_PRIVATE_LOAD);
       var versions=actor.successfulAuthorityConfigurations();

@@ -264,20 +264,33 @@ public final class SemanticEnvironmentFactory
       CandidatePublicationCoordinator.Cancellation cancellation) throws Exception {
     var context = bootstrapInputs.get(input.dependencyRevision());
     if (context == null) return buildCaptured(input, cancellation);
-    var owned = BeanIngestionPreflight.snapshot(input.payload());
-    if (!input.sourceHashes().equals(sources(owned)) || !input.sourceOrder().equals(sourceOrder(owned))
-        || input.beanStatus() != CandidatePublicationCoordinator.BeanStatus.VALID
-        || !CONFIGURATION_REVISION.equals(input.configurationRevision())
-        || !input.dependencyRevision().equals(dependencyRevision() + ":" + context.key())
-        || !BeanIngestionPreflight.errors(owned).isEmpty() || !coreAliasErrors(owned).isEmpty())
-      throw new IllegalArgumentException("Bootstrap input does not match frozen validated manifest");
-    var catalog = bootstrap.prepare(owned, context.owner(), context.key(), cancellation);
-    var isolated = new SemanticEnvironmentFactory(assetRoot, core, documentLocators, expectedDocumentHashes, catalog);
-    var result = isolated.buildCaptured(isolated.capture(owned), cancellation);
+    Worldview owned;
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.INPUT_PREFLIGHT,input.dependencyRevision())) {
+      owned = BeanIngestionPreflight.snapshot(input.payload());
+      if (!input.sourceHashes().equals(sources(owned)) || !input.sourceOrder().equals(sourceOrder(owned))
+          || input.beanStatus() != CandidatePublicationCoordinator.BeanStatus.VALID
+          || !CONFIGURATION_REVISION.equals(input.configurationRevision())
+          || !input.dependencyRevision().equals(dependencyRevision() + ":" + context.key())
+          || !BeanIngestionPreflight.errors(owned).isEmpty() || !coreAliasErrors(owned).isEmpty())
+        throw new IllegalArgumentException("Bootstrap input does not match frozen validated manifest");
+    }
+    CapturedAuthorityCatalog catalog;
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.PROVIDER_PREPARE,context.key())) {
+      catalog = bootstrap.prepare(owned, context.owner(), context.key(), cancellation);
+    }
+    SemanticEnvironmentFactory isolated;
+    CandidatePublicationCoordinator.Input<Worldview> captured;
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.INPUT_CAPTURE,input.dependencyRevision())) {
+      isolated = new SemanticEnvironmentFactory(assetRoot, core, documentLocators, expectedDocumentHashes, catalog);
+      captured = isolated.capture(owned);
+    }
+    var result = isolated.buildCaptured(captured, cancellation);
     try {
       cancellation.checkpoint();
       // Re-resolve exact metadata after compilation too; no publication of stale rights/artifacts.
-      bootstrap.prepare(owned, context.owner(), context.key(), cancellation);
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.POSTCOMPILE_PROVIDER_VERIFY,context.key())) {
+        bootstrap.prepare(owned, context.owner(), context.key(), cancellation);
+      }
       return result;
     } catch (Throwable stale) {
       if (result.state() != null) result.state().close();
@@ -290,82 +303,97 @@ public final class SemanticEnvironmentFactory
     cancellation.checkpoint();
     if (input.beanStatus() != CandidatePublicationCoordinator.BeanStatus.VALID)
       throw new IllegalArgumentException("Private compiler requires passed bean preflight");
-    var snapshot = BeanIngestionPreflight.snapshot(input.payload());
-    if (!input.sourceHashes().equals(sources(snapshot))
-        || !input.sourceOrder().equals(sourceOrder(snapshot))
-        || !CONFIGURATION_REVISION.equals(input.configurationRevision())
-        || !input.dependencyRevision().equals(dependencyRevision))
-      throw new IllegalArgumentException("Candidate does not match its captured source/dependency/configuration manifest");
-    var beanErrors = new ArrayList<>(BeanIngestionPreflight.errors(snapshot));
-    beanErrors.addAll(coreAliasErrors(snapshot));
-    if (!beanErrors.isEmpty())
-      return new CandidatePublicationCoordinator.Result<>(null,
-          CandidatePublicationCoordinator.LogicalStatus.NOT_RUN, true,
-          beanErrors.stream().map(Notification::getMessage).toList());
+    Worldview snapshot;
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.INPUT_PREFLIGHT,input.dependencyRevision())) {
+      snapshot = BeanIngestionPreflight.snapshot(input.payload());
+      if (!input.sourceHashes().equals(sources(snapshot))
+          || !input.sourceOrder().equals(sourceOrder(snapshot))
+          || !CONFIGURATION_REVISION.equals(input.configurationRevision())
+          || !input.dependencyRevision().equals(dependencyRevision))
+        throw new IllegalArgumentException("Candidate does not match its captured source/dependency/configuration manifest");
+      var beanErrors = new ArrayList<>(BeanIngestionPreflight.errors(snapshot));
+      beanErrors.addAll(coreAliasErrors(snapshot));
+      if (!beanErrors.isEmpty())
+        return new CandidatePublicationCoordinator.Result<>(null,
+            CandidatePublicationCoordinator.LogicalStatus.NOT_RUN, true,
+            beanErrors.stream().map(Notification::getMessage).toList());
+    }
     var unsupported = new ArrayList<String>();
-    for (var ontology : snapshot.getOntologies()) {
-      for (var imported : ontology.getOwlImports()) {
-        var captured = coreIdentities.get(imported.getFirst());
-        var odoRelease = "odo".equals(imported.getFirst())
-            ? CoreOntologyCatalog.odoReleaseIdentity(imported.getSecond(), coreContentHashes.get("odo")) : null;
-        if (captured == null || (!captured.contains(imported.getSecond())
-            && !(odoRelease != null && captured.contains(odoRelease))
-            && !Objects.equals(documentLocators.get(imported.getFirst()), imported.getSecond()))) unsupported.add(
-            "CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import " + imported);
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.SOURCE_SUPPORT,input.dependencyRevision())) {
+      for (var ontology : snapshot.getOntologies()) {
+        for (var imported : ontology.getOwlImports()) {
+          var captured = coreIdentities.get(imported.getFirst());
+          var odoRelease = "odo".equals(imported.getFirst())
+              ? CoreOntologyCatalog.odoReleaseIdentity(imported.getSecond(), coreContentHashes.get("odo")) : null;
+          if (captured == null || (!captured.contains(imported.getSecond())
+              && !(odoRelease != null && captured.contains(odoRelease))
+              && !Objects.equals(documentLocators.get(imported.getFirst()), imported.getSecond()))) unsupported.add(
+              "CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import " + imported);
+        }
+        if (!ontology.getVocabularyImports().isEmpty()) unsupported.add(
+            "CANDIDATE_ISOLATION_UNSUPPORTED: vocabulary provider for " + ontology.getUrn());
+        var visitor = new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor(
+            new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor.LenientValidator(), null);
+        visitor.visit(ontology);
+        if (visitor.getStatements().stream().anyMatch(s ->
+            s instanceof org.integratedmodelling.klab.api.lang.kim.KimConceptStatement declaration
+                && declaration.getAuthorityRequired() != null
+                && snapshot.getAuthorityBindings().stream().noneMatch(binding ->
+                    binding.localId().equals(declaration.getAuthorityRequired()) && authorities.supports(binding)))) unsupported.add(
+            "CANDIDATE_ISOLATION_UNSUPPORTED: authority provider for " + ontology.getUrn());
       }
-      if (!ontology.getVocabularyImports().isEmpty()) unsupported.add(
-          "CANDIDATE_ISOLATION_UNSUPPORTED: vocabulary provider for " + ontology.getUrn());
-      var visitor = new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor(
-          new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor.LenientValidator(), null);
-      visitor.visit(ontology);
-      if (visitor.getStatements().stream().anyMatch(s ->
-          s instanceof org.integratedmodelling.klab.api.lang.kim.KimConceptStatement declaration
-              && declaration.getAuthorityRequired() != null
-              && snapshot.getAuthorityBindings().stream().noneMatch(binding ->
-                  binding.localId().equals(declaration.getAuthorityRequired()) && authorities.supports(binding)))) unsupported.add(
-          "CANDIDATE_ISOLATION_UNSUPPORTED: authority provider for " + ontology.getUrn());
+      for (var strategies : snapshot.getObservationStrategies()) {
+        var visitor = new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor(
+            new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor.LenientValidator() {
+              @Override public List<Notification> validatePlanNode(
+                  org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.Node node,
+                  org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Context context) {
+                if ((node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall call
+                    && !org.integratedmodelling.klab.services.reasoner.ObservationReasoner.SUPPORTED_FUNCTIONS.contains(call.getFunction()))
+                    || (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.ExternalMatcher matcher
+                        && matcher.getCall() == null))
+                  return List.of(Notification.warning(
+                      "CANDIDATE_ISOLATION_UNSUPPORTED: strategy function is not implemented by the captured runtime: "
+                          + (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall call
+                              ? call.getFunction() : "missing external matcher call")));
+                return List.of();
+              }
+            }, null);
+        visitor.visit(strategies);
+        unsupported.addAll(visitor.getNotifications().stream().map(Notification::getMessage).toList());
+      }
+      for (var binding : snapshot.getAuthorityBindings()) if (!authorities.supports(binding)) unsupported.add(
+          "CANDIDATE_ISOLATION_UNSUPPORTED: authority binding requires a matching owned provider snapshot: " + binding.localId());
+      if (!unsupported.isEmpty()) return new CandidatePublicationCoordinator.Result<>(null,
+          CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, true, unsupported);
     }
-    for (var strategies : snapshot.getObservationStrategies()) {
-      var visitor = new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor(
-          new org.integratedmodelling.klab.runtime.language.KimObservationStrategyDocumentVisitor.LenientValidator() {
-            @Override public List<Notification> validatePlanNode(
-                org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.Node node,
-                org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Context context) {
-              if ((node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall call
-                  && !org.integratedmodelling.klab.services.reasoner.ObservationReasoner.SUPPORTED_FUNCTIONS.contains(call.getFunction()))
-                  || (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.ExternalMatcher matcher
-                      && matcher.getCall() == null))
-                return List.of(Notification.warning(
-                    "CANDIDATE_ISOLATION_UNSUPPORTED: strategy function is not implemented by the captured runtime: "
-                        + (node instanceof org.integratedmodelling.klab.api.lang.kim.KimObservationPlan.StrategyCall call
-                            ? call.getFunction() : "missing external matcher call")));
-              return List.of();
-            }
-          }, null);
-      visitor.visit(strategies);
-      unsupported.addAll(visitor.getNotifications().stream().map(Notification::getMessage).toList());
-    }
-    for (var binding : snapshot.getAuthorityBindings()) if (!authorities.supports(binding)) unsupported.add(
-        "CANDIDATE_ISOLATION_UNSUPPORTED: authority binding requires a matching owned provider snapshot: " + binding.localId());
-    if (!unsupported.isEmpty()) return new CandidatePublicationCoordinator.Result<>(null,
-        CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, true, unsupported);
     Files.createDirectories(assetRoot);
     Path assets = Files.createTempDirectory(assetRoot, "semantic-");
     var knowledge = Files.createDirectories(assets.resolve("knowledge"));
     SemanticEnvironment environment = null;
     boolean transferred = false;
     try {
-      for (var entry : core.entrySet()) {
-        var file = knowledge.resolve(entry.getKey()).normalize();
-        if (!file.startsWith(knowledge)) throw new IllegalArgumentException("Core catalog escaped private assets");
-        Files.createDirectories(file.getParent()); Files.write(file, entry.getValue());
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.CORE_MATERIALIZATION,input.dependencyRevision())) {
+        for (var entry : core.entrySet()) {
+          var file = knowledge.resolve(entry.getKey()).normalize();
+          if (!file.startsWith(knowledge)) throw new IllegalArgumentException("Core catalog escaped private assets");
+          Files.createDirectories(file.getParent()); Files.write(file, entry.getValue());
+        }
       }
       cancellation.checkpoint();
       var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(snapshot).service());
-      authorities.materializeCodelists(assets);
-      var actor = new ReasonerService(scope, knowledge, assets, authorities);
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.CODELIST_MATERIALIZATION,input.dependencyRevision())) {
+        authorities.materializeCodelists(assets);
+      }
+      ReasonerService actor;
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.ACTOR_CREATE,input.dependencyRevision())) {
+        actor = new ReasonerService(scope, knowledge, assets, authorities);
+      }
       environment = new SemanticEnvironment(actor, assets);
-      var loaded = actor.loadKnowledge(snapshot, scope);
+      org.integratedmodelling.klab.api.services.resources.ResourceSet loaded;
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.ACCEPTED_ACTOR_LOAD,input.dependencyRevision())) {
+        loaded = actor.loadKnowledge(snapshot, scope);
+      }
       cancellation.checkpoint();
       var diagnostics = new ArrayList<Notification>(scope.getNotifications());
       diagnostics.addAll(loaded.getNotifications());
@@ -374,25 +402,37 @@ public final class SemanticEnvironmentFactory
       if (!Utils.Notifications.hasErrors(diagnostics)) {
         for (var ontology : snapshot.getOntologies()) {
           cancellation.checkpoint();
-          diagnostics.addAll(new DocumentSemanticValidator(actor).validate(ontology));
+          try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOCUMENT_VALIDATE,ontology.getUrn())) {
+            diagnostics.addAll(new DocumentSemanticValidator(actor).validate(ontology));
+          }
         }
         for (var strategies : snapshot.getObservationStrategies()) {
           cancellation.checkpoint();
-          diagnostics.addAll(new DocumentSemanticValidator(actor).validate(strategies));
+          try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOCUMENT_VALIDATE,strategies.getUrn())) {
+            diagnostics.addAll(new DocumentSemanticValidator(actor).validate(strategies));
+          }
         }
       }
       // Validators can materialize captured expressions. Include those final axioms in the check.
       if (actor.owl().hasReasoner()) {
-        actor.owl().flushReasoner();
-        if (!actor.owl().isConsistent()) diagnostics.add(Notification.error(
+        try (var phase = CandidateTrace.phase(CandidateTrace.Phase.FINAL_FLUSH,input.dependencyRevision())) {
+          actor.owl().flushReasoner();
+        }
+        boolean finalConsistent;
+        try (var phase = CandidateTrace.phase(CandidateTrace.Phase.FINAL_CONSISTENCY,input.dependencyRevision())) {
+          finalConsistent = actor.owl().isConsistent();
+        }
+        if (!finalConsistent) diagnostics.add(Notification.error(
             "Candidate OWL is inconsistent after semantic expression validation"));
         else {
           // Expressions may add axioms after a source declaration was checked. Classify the
           // final candidate once: global consistency alone does not reject impossible classes.
-          actor.owl().getUnsatisfiableClasses().entities().filter(c -> !c.isOWLNothing())
-              .sorted(java.util.Comparator.comparing(c -> c.getIRI().toString()))
-              .forEach(c -> diagnostics.add(Notification.error(
-                  "Candidate contains unsatisfiable named class: " + c.getIRI())));
+          try (var phase = CandidateTrace.phase(CandidateTrace.Phase.FINAL_CLASSIFY,input.dependencyRevision())) {
+            actor.owl().getUnsatisfiableClasses().entities().filter(c -> !c.isOWLNothing())
+                .sorted(java.util.Comparator.comparing(c -> c.getIRI().toString()))
+                .forEach(c -> diagnostics.add(Notification.error(
+                    "Candidate contains unsatisfiable named class: " + c.getIRI())));
+          }
         }
       }
       var messages = diagnostics.stream().map(Notification::getMessage).toList();

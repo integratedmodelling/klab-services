@@ -17,7 +17,15 @@ public final class CandidateTrace {
     JOB_START, JOB_END, GUARD, BOOTSTRAP_ENTER, CACHE_HIT, CACHE_REUSE, PRODUCER_START,
     COMPONENTS_LOADED, DESCRIPTORS_VERIFIED, BEFORE_PRIVATE_LOAD, AFTER_PRIVATE_LOAD,
     CAPTURE_COMPLETE, PRODUCER_DISPOSE, FIELD_PROVIDER_INPUT, FIELD_PLAN,
-    CHECKPOINT_CANCELLED, BOOTSTRAP_FAILURE, BOOTSTRAP_INVALIDATED
+    CHECKPOINT_CANCELLED, BOOTSTRAP_FAILURE, BOOTSTRAP_INVALIDATED, PHASE_START, PHASE_END, ENV_CREATED
+  }
+  public enum Phase {
+    INPUT_PREFLIGHT, INPUT_CAPTURE, SOURCE_SUPPORT, PROVIDER_PREPARE, POSTCOMPILE_PROVIDER_VERIFY,
+    CORE_MATERIALIZATION, CODELIST_MATERIALIZATION, ACTOR_CREATE, ACCEPTED_ACTOR_LOAD, BOOTSTRAP_LOAD,
+    OWL_INITIALIZE, DECLARATION_REGISTRY, NAMED_DECLARATIONS, AUTHORITY_CONFIGURATION,
+    DECLARATION_STRUCTURE, DOMAIN_BINDING, AUTHORED_CLAUSES, DESCRIPTION_RECONCILE, ONTOLOGY_REGISTER,
+    LOAD_FLUSH, STRATEGIES, LOAD_CONSISTENCY, DOCUMENT_VALIDATE, FINAL_FLUSH,
+    FINAL_CONSISTENCY, FINAL_CLASSIFY, PUBLICATION_GUARD, PRIVATE_DISPOSE, ASSET_REMOVE
   }
   public enum Reason {
     NONE, SERVICE, USER, SAME_KEY_RETRY, NEW_KEY, PREFLIGHT_EXCEPTION, EMPTY_INPUT,
@@ -38,6 +46,52 @@ public final class CandidateTrace {
   static void job(long generation) { if (enabled()) State.JOB.set(generation); }
   static void clearJob() { if (enabled()) State.JOB.remove(); }
   static long job() { if (!enabled()) return -1; var value=State.JOB.get(); return value==null ? -1 : value; }
+
+  /** Disabled calls allocate no span and do not touch the lazy trace state. */
+  public static PhaseSpan phase(Phase phase, String key) {
+    if (!enabled()) return null;
+    return phaseAt(phase, key, job());
+  }
+  static PhaseSpan phaseAt(Phase phase, String key, long generation) {
+    if (!enabled()) return null;
+    try { return new PhaseSpan(phase, key==null ? null : safeHash(key), generation); }
+    catch (Throwable ignored) { return null; }
+  }
+  /** End means the scope exited, including exceptional exit; JOB_END records the outcome. */
+  public static final class PhaseSpan implements AutoCloseable {
+    private final Phase phase;
+    private final String key;
+    private final long generation;
+    private final long started;
+    private boolean closed;
+    private PhaseSpan(Phase phase, String key, long generation) {
+      this.phase = phase; this.key = key; this.generation = generation;
+      this.started = System.nanoTime();
+      enqueue(formatPhase(Event.PHASE_START,phase,key,generation,0));
+    }
+    @Override public void close() {
+      if (closed) return;
+      closed = true;
+      try {
+        enqueue(formatPhase(Event.PHASE_END,phase,key,generation,System.nanoTime()-started));
+      } catch (Throwable ignored) { /* Diagnostics must not replace a compiler/cleanup failure. */ }
+    }
+  }
+  static String formatPhase(Event event,Phase phase,String key,long generation,long elapsedNanos) {
+    return format(event,generation,-1,-1,key,null,Reason.NONE) + " phase=" + phase.name()
+        + (event==Event.PHASE_END ? " elapsedNanos=" + Math.max(0,elapsedNanos) : "");
+  }
+  /** Observe cancellation once and preserve its identity; no success-path trace allocation. */
+  public static void checkpoint(CandidatePublicationCoordinator.Cancellation cancellation, Phase phase) {
+    try { cancellation.checkpoint(); }
+    catch (java.util.concurrent.CancellationException cancelled) {
+      if (enabled()) try {
+        enqueue(format(Event.CHECKPOINT_CANCELLED,job(),-1,-1,null,null,Reason.CANCELLED)
+            + " phase=" + phase.name());
+      } catch (Throwable ignored) { /* Keep the original cancellation. */ }
+      throw cancelled;
+    }
+  }
 
   /** Hash canonical data before it crosses the logging boundary; no raw values are logged. */
   public static String digest(Object value) {

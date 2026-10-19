@@ -741,6 +741,18 @@ class SemanticEnvironmentFactoryTest {
     try (var runtime = facade.candidateRuntime()) {
       facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
       var saved = world("saved", false);
+      // Global admission independently discovers service-visible beans; caller copies may mutate.
+      var service = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.ServiceScope.class);
+      var publicSaved = BeanIngestionPreflight.snapshot(saved);
+      var status = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.services.KlabService.ServiceStatus.class);
+      org.mockito.Mockito.when(status.isAvailable()).thenReturn(true);
+      org.mockito.Mockito.when(resources.status()).thenReturn(status);
+      org.mockito.Mockito.when(resources.getUrl()).thenReturn(java.net.URI.create("http://127.0.0.1:8092/resources").toURL());
+      org.mockito.Mockito.when(capabilities.isWorldviewProvider()).thenReturn(true);
+      org.mockito.Mockito.when(resources.capabilities(service)).thenReturn(capabilities);
+      org.mockito.Mockito.when(service.getServices(org.integratedmodelling.klab.api.services.ResourcesService.class)).thenReturn(List.of(resources));
+      org.mockito.Mockito.when(resources.list(Worldview.class,null)).thenReturn(List.of(publicSaved));
+      org.mockito.Mockito.doReturn(service).when(facade).serviceScope();
       org.mockito.Mockito.when(resources.retrieve("w", org.integratedmodelling.klab.api.lang.kim.KimOntology.class, user))
           .thenReturn(saved.getOntologies().getFirst());
       org.mockito.Mockito.when(resources.retrieve("w", Worldview.class, user)).thenReturn(saved);
@@ -755,8 +767,9 @@ class SemanticEnvironmentFactoryTest {
       org.mockito.Mockito.when(resources.retrieve("w", org.integratedmodelling.klab.api.lang.kim.KimOntology.class, user)).thenReturn(null);
       var rejected = facade.updateKnowledge(changes, user);
       assertTrue(org.integratedmodelling.klab.api.utils.Utils.Resources.hasErrors(rejected));
-      assertEquals(CandidatePublicationCoordinator.BeanStatus.INVALID, runtime.status().beanStatus());
-      assertEquals(CandidatePublicationCoordinator.LogicalStatus.NOT_RUN, runtime.status().logicalStatus());
+      // A private retrieval failure is not evidence against the unchanged service snapshot.
+      assertEquals(CandidatePublicationCoordinator.BeanStatus.VALID, runtime.status().beanStatus());
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, runtime.status().logicalStatus());
       assertEquals(2, runtime.status().acceptedGeneration());
       assertTrue(facade.satisfiable(facade.resolveConcept("w:Q1")));
     } finally { scope.close(); }
