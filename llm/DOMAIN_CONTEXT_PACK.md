@@ -85,7 +85,14 @@ Apply these commitments throughout the analysis:
    predicates, clauses, and operators over atomic concepts that bundle several dimensions. The
    ontology's value increases when each dimension is clear, discriminable, and independently
    reusable.
-10. **Use the keyword `abstract` according to k.LAB conventions.** In k.LAB, an abstract concept cannot be directly observed: only its concrete subclasses can. A concept's abstract status matter in resolution and propagates through observables: tagging a concrete observable with an abstract predicate makes it abstract. In a dependency, the abstract status of a predicate needs to be resolved to its contextually concrete states before the observation can take place, creating independently resolved concrete dependencies for each state.
+10. **Separate abstractness from category constraints.** An explicitly abstract concept cannot
+    be instantiated directly; a concrete specialization does not inherit that declaration flag.
+    Abstract identity roots used in `requires identity` are categories, not automatic causes of
+    dependent abstractness. They still require positive bearer evidence. Do not generalize this
+    exception to ordinary explicit abstract concepts or treat every abstract predicate identically:
+    classifiers and concrete identity fulfillment have separate contracts. Follow
+    [observable status](../docs/OBSERVABLES.md#71-declared-status) and
+    [identity requirements](../docs/IDENTITY_REQUIREMENTS.md).
 
 ## 3. The semantic coordinate system
 
@@ -278,6 +285,11 @@ Propose `process` when the scientific interest is the ongoing mechanism, flow, t
 state of change rather than a bounded episode. Record the event, context, or participants on which
 it depends. Use an event instead if start/end boundaries and identity as a whole are essential.
 
+For a process, `requires identity` constrains its effective bearer. Native process identities
+remain on the process; do not transfer them to the bearer or borrow its identity for an affected
+quality. A proved effect relation can preserve an affected quality's independent bearer, whose
+own obligations must still be met.
+
 ### 4.5 `relationship` and `bond`: binary dependent countables
 
 A relationship directionally connects a source substantial to a target substantial and has
@@ -303,6 +315,10 @@ active worldview represents symmetry; do not fabricate two directed concepts wit
 A quality inheres in or characterizes another observable. It cannot be observed without a bearer,
 reference, or other dependency. Always identify the candidate bearer types and what kind of value
 an observation would produce. The bearer does not need to be in the proposed structure; if not, though, it should be part of an upper-level, less specific ontology.
+
+Use the complete declared/inherited bearer, including description-derived bounds. For a quality,
+an inherited identity requirement targets that bearer, not the quality itself. A permitted
+application type supplies no identity evidence by itself; record how the bearer proves it.
 
 #### Contextual quality and extent
 
@@ -484,6 +500,11 @@ models may explain exact or subsumed predicates independently of abstractness. S
 is a general ranking criterion for all observable heads and clauses; configured higher-priority
 criteria, such as lexical scope, still apply. Predicate heads admit broader model heads; other
 observable heads retain the equality requirement.
+Model source admission and executable dependency eligibility precede distance ranking.
+Authoring templates may defer obligations, but executable admission must discharge them for
+the bound modeled observation and carry the accepted knowledge revision through ranking.
+Nonnegative distance, reflexivity, or a matching activity enum is not proof of eligibility.
+See [model dependency validation](../docs/MODEL_DEPENDENCY_VALIDATION.md).
 The general type dispatch checks class, presence, physical intensive/extensive
 quality, value, generic quality, relationship, configuration, process, countable,
 and nothing, in that order; it is not a complete abstractness or consistency
@@ -539,6 +560,15 @@ whole authority taxonomy into the worldview.
 When an identity must become an observation result, derive the enumerable quality with `type of`.
 The base identity remains a predicate; the derived class is the observable.
 
+For dependent qualities and processes, identity requirements constrain the effective bearer.
+Preserve OR within a boolean clause and AND across independent inherited clauses. Require full
+entailment: bearer evidence `(A or C)` does not prove `(A or B)` merely because A overlaps.
+An AND filler needs one suitable identity witness; do not merge unrelated existential witnesses.
+Abstract category roots may be satisfied by proved category evidence without instantiating an
+abstract identity object. Concrete identifying values and authority admission remain separate.
+Missing evidence is unresolved, not proof of incompatibility or permission to drop the requirement.
+See [the normative contract](../docs/IDENTITY_REQUIREMENTS.md).
+
 ### 5.3 `role`
 
 A role is an externally grounded, contingent characterization played in a specific context. A
@@ -562,9 +592,14 @@ retain it in evidence or Description analysis rather than promoting it to the wo
 
 ### 5.4 `realm`
 
-A realm restricts the broad physical/environmental location or stratum of an observable, such as
-terrestrial, atmospheric, marine, freshwater, subterranean, or soil-stratum. It is a contextual
-predicate, not a coordinate, extent, bounded region subject, or scientific discipline.
+A realm requires the bearer to be within that realm, spatially or conceptually. It is not a mere
+attribute-like qualification. On a dependent observable it constrains the effective bearer; on a
+substantial it constrains that substantial. It is not a coordinate, extent, bounded region subject,
+or disciplinary domain.
+
+Computation from, reference to, provenance in, or causal dependence upon a realm does not prove
+within-realm membership. Elevation computed from crustal measurements does not establish that
+its Region bearer is within the Crust. State the source relationship independently.
 
 State applicability and distinguish:
 
@@ -572,7 +607,10 @@ State applicability and distinguish:
 - `temperature of earth:Atmosphere`: a quality inhering in an atmosphere subject; and
 - an atmospheric spatial extent.
 
-These may be related but they are not automatically equivalent.
+These may be related but they are not automatically equivalent. Current predicate qualification,
+applicability and hierarchy checks do not establish complete runtime containment enforcement.
+Record that gap rather than claiming the normative contract is fully implemented. See
+[realm containment](../docs/ONTOLOGY_LANGUAGE.md#531-realm-containment-contract).
 
 ### 5.5 `domain`: organizing epistemic concept
 
@@ -690,6 +728,11 @@ infrastructure:Road linking geography:City to geography:City;
 Do not infer causation from correlation, adjacency from co-occurrence, containment from topical
 association, or inherency from a convenient dataset grouping. Cite the textual evidence and mark
 the relation as a modeling hypothesis when it is inferred.
+
+An effective bearer includes independent inherited bounds. A Region specializing Location can
+satisfy a Location applicability constraint; unknown membership must remain distinct from proved
+incompatibility. A broader local `of Location` cannot override a narrower inherited bearer.
+Keep a predicate's application target separate from the bearer of the quality it describes.
 
 ### 7.4 Taxonomic specialization and equivalence
 
@@ -821,6 +864,32 @@ Propose clauses only when evidence or a transparent modeling rationale supports 
 children only if children cannot overlap; use a sealed partition only when the children completely
 cover the parent. Treat completeness, exclusivity, and clause compatibility as claims requiring
 review.
+
+An `emerges from` declaration does not require a reverse `describes` relation.
+Terrain may emerge from Elevation without transferring Terrain's Crust bearer
+restriction to Elevation. Keep trigger, description target and bearer independent;
+record post-commit runtime emergence as unverified unless actual runtime evidence
+establishes it.
+
+For `requires identity`, apply the bearer and boolean proof rules in Section 5.2. `applies to`
+states permitted targets; it does not itself prove identity fulfillment. A `describes` target can
+contribute inherited bearer bounds, which must be retained rather than replaced by application
+targets. These implemented identity rules do not assert equal enforcement for every other
+`requires` dimension.
+
+#### Operational and pending validation boundaries
+
+Valid model namespaces remain discoverable while invalid/unavailable/stale namespaces are
+withheld. Retain source diagnostics, then revalidate corrected source before re-admission.
+Do not treat an invalid namespace as evidence that all unrelated model discovery must fail.
+This model-service behavior does not make proposal-review `IMPORT_CONTEXT` or `REASONER`
+checks automatically available; report the checks actually run.
+
+Resource-produced datatype compatibility, composed multi-URN/contextualizer paths and
+concept-valued value-operator binding are separate pending contracts. Do not claim bearer
+admission validates resource results or the complete computation. Record composition/order,
+intermediate I/O and conversion decisions as unresolved until specified; see
+[pending model contracts](../docs/SEMANTIC_MODELING.md#pending-model-validation-contracts-2026-10-20).
 
 ## 8. Extraction and articulation procedure
 
@@ -1751,8 +1820,8 @@ exponent syntax.
   semantics; it is not assigned an artificial source or target.
 - Every configuration states what it emerges from.
 - Agents are supported by actual agentive characteristics.
-- Roles are contingent; identities are classificatory; attributes are accidental; realms are
-  physical/contextual.
+- Roles are contingent; identities are classificatory; attributes are accidental; realms require
+  spatial or conceptual within-realm membership of the bearer, not mere qualification.
 - `type of` reifications remain separate from their identity taxonomies.
 - Representative observation requests have justified contextualization types, contextual
   requirements, and collective follow-ups; categorization, classification, characterization,
@@ -1783,6 +1852,9 @@ exponent syntax.
 - No proposal adds an explicit ODO-IM derivation solely to restate inheritance already established
   by the declaration keyword.
 - Parent and clause-target types are compatible.
+- Effective inherited bearers and complete boolean identity requirements have positive proof;
+  compatible subtype, unknown membership and provable incompatibility have separate examples.
+- Native process identity and affected-quality bearer obligations remain independently scoped.
 - `is`, `equals`, `inherits`, predicate composition, and `of` are not conflated.
 - No target concept or action in a domain proposal contains `is core`.
 - Every generalized-scope alias used by the proposal resolves to an `is core` declaration supplied
@@ -1809,6 +1881,10 @@ exponent syntax.
 - `syntax_status` accurately distinguishes not attempted, illustrative, parsed, adapted, and
   Reasoner-validated states.
 - Parser success is never reported as proof of semantic or runtime support.
+- Reports distinguish authoring templates from executable eligibility, record the accepted
+  knowledge revision and source-bound diagnostics, and name the exact consistency scope tested.
+- No report claims complete realm containment, resource-result typing, composed computation or
+  value-operator binding enforcement from the model-bearer checks alone.
 
 ### 11.7 Review readiness
 
@@ -1900,7 +1976,13 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 > Extract independent structural subjects and agents, bounded functional events, dependent
 > qualities and processes, binary structural and functional relationships/bonds, emergent
 > configurations, and the four refining predicate dimensions: identity, realm, attribute, and
-> role. For every candidate, assign perspective, dependence arity, bearer/participants/endpoints,
+> role.
+> Preserve inherited boolean bearer-identity obligations; distinguish abstract categories from
+> explicit abstractness and concrete identity fulfillment. A realm commits the bearer to being
+> within it spatially or conceptually, not merely computed from or associated with it. Prove
+> model dependency eligibility before distance; preserve valid namespaces alongside rejected ones.
+> State pending resource/computation/binding checks and the exact validation scope honestly.
+> For every candidate, assign perspective, dependence arity, bearer/participants/endpoints,
 > value kind, upper alignment, predicates, clauses, evidence, rationale, alternatives, and separate
 > confidence scores. Relate representative composed requests to the contextualization categories
 > in Section 4.8; distinguish instance creation, explanation, quality values, predicate attribution,

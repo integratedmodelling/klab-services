@@ -322,6 +322,13 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     for (long l : oids) {
       ModelReference model = retrieveModel(l, context);
       if (model != null && ModelVisibility.accepts(model, observable, resolutionConstraints)) {
+        long validatedRevision = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
+            model.getName(), model.getNamespaceId(), resourceService, context, observable);
+        if (validatedRevision < 0) continue;
+        if (scope.getService(Reasoner.class).semanticDistance(
+            model.getObservableConcept() == null
+                ? scope.getService(Reasoner.class).resolveConcept(model.getObservable())
+                : model.getObservableConcept(), observable, contextObservable, validatedRevision) < 0) continue;
         Coverage coverage =
             resourceService.info(
                 model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, context);
@@ -384,7 +391,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
 
   private String observableQuery(Observable observable, Concept context) {
 
-    Set<Long> ids = this.getCompatibleTypeIds(observable, context);
+    Set<Long> ids = this.getCandidateTypeIds(observable);
     if (ids == null || ids.isEmpty()) {
       return null;
     }
@@ -659,6 +666,12 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
 
   @Override
   public long store(Object o, Scope monitor) {
+
+    if (o instanceof ModelReference model)
+      org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(
+          model.getName(), model.getNamespaceId(), resourceService, monitor);
+    if (o instanceof KimModel model)
+      org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(model, monitor);
 
     initialize(monitor);
 

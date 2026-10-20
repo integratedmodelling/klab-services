@@ -84,6 +84,9 @@ public class PrioritizerImpl implements Prioritizer<Model> {
 
   public int semanticDistance(Model model) {
     return distances.computeIfAbsent(model, candidate -> {
+      long validatedRevision = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
+          candidate, scope, observable);
+      if (validatedRevision < 0) return Integer.MAX_VALUE;
       var outputs = candidate.getObservables();
       if (outputs == null) return Integer.MAX_VALUE;
       if (observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.CHANGE)
@@ -96,7 +99,7 @@ public class PrioritizerImpl implements Prioritizer<Model> {
       }
       return outputs.stream().filter(Objects::nonNull)
           .mapToInt(output -> scope.getService(Reasoner.class)
-              .semanticDistance(output, observable, contextObservable))
+              .semanticDistance(output, observable, contextObservable, validatedRevision))
           .filter(distance -> distance >= 0).min().orElse(Integer.MAX_VALUE);
     });
   }

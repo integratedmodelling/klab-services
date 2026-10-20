@@ -15,6 +15,7 @@ public class SemanticValidationResponse implements Serializable {
   private String documentVersion;
   private String sourceHash;
   private long knowledgeRevision = -1;
+  private boolean executableModels;
   private String reason;
   private List<Notification> notifications = new ArrayList<>();
 
@@ -24,6 +25,7 @@ public class SemanticValidationResponse implements Serializable {
     if (org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(request.document()) != null)
       ret.authoringSource = org.integratedmodelling.klab.api.services.resources.AuthoringSource.responseIdentity(request.document());
     ret.documentVersion = request.getDocumentVersion();
+    ret.executableModels = request.isExecutableModels();
     ret.sourceHash = SemanticValidationRequest.sourceHash(request.document().getSourceCode());
     return ret;
   }
@@ -70,9 +72,12 @@ public class SemanticValidationResponse implements Serializable {
         && Objects.equals(documentUrn, current.document().getUrn())
         && Objects.equals(documentVersion, current.getDocumentVersion())
         && Objects.equals(sourceHash, SemanticValidationRequest.sourceHash(current.document().getSourceCode()))
+        && executableModels == current.isExecutableModels()
         && knowledgeRevision == currentKnowledgeRevision;
   }
 
+  public boolean isExecutableModels() { return executableModels; }
+  public void setExecutableModels(boolean value) { executableModels = value; }
   public String getAuthoringSource() { return authoringSource; }
   public void setAuthoringSource(String value) { authoringSource = value; }
   public Status getStatus() { return status; }

@@ -17,6 +17,7 @@ public interface ModelCatalog extends AutoCloseable {
   long store(Object object, Scope scope);
   /** Infer before removing existing data. Document catalogs additionally publish atomically. */
   default void replaceNamespace(KimNamespace namespace, Scope scope) {
+    org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(namespace, scope);
     var descriptors = new java.util.ArrayList<ModelReference>();
     for (var statement : namespace.getStatements())
       if (statement instanceof KimModel model) descriptors.addAll(inferModels(model, scope));
@@ -37,6 +38,8 @@ public interface ModelCatalog extends AutoCloseable {
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
       List<ResolutionConstraint> constraints, ContextScope scope);
   int clearNamespace(String namespace, Channel monitor);
+  /** Withdraw indexed models only. Authoring documents remain owned by the workspace. */
+  default void withholdNamespace(String namespace, Channel monitor) { clearNamespace(namespace, monitor); }
   void remove(String namespace, Channel monitor);
   int removeIfOlder(KimNamespace namespace, Channel monitor);
   long getNamespaceTimestamp(KimNamespace namespace);

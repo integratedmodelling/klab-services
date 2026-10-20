@@ -283,6 +283,26 @@ biology:Eucalyptus biology:Tree;
 The active worldview determines whether such sequences are logically
 admissible. Parsing alone cannot establish that.
 
+### 2.1 Realms constrain the bearer by containment
+
+A `realm` requires the bearer to be **within that realm**, spatially or conceptually.
+It is not a mere attribute-like qualification. For a dependent observable, the
+commitment concerns its effective bearer; a substantial bears its own qualification.
+An `attribute` describes a characteristic, while a realm locates the bearer within
+a spatial or conceptual scope.
+
+For example, a Crust realm on a Region commits that Region to being within the
+Crust. Computing Elevation from crustal measurements, referring to the Crust, or
+using a dataset whose provenance concerns the Crust does not establish that the
+Elevation bearer is within it. Such a source or computational relationship must
+be represented independently of the bearer's realm.
+
+This is the normative authoring contract. Current realm representation supports
+semantic predicate qualification, applicability and hierarchy/compatibility checks;
+it does not by itself prove spatial or conceptual containment for every runtime
+bearer. Do not claim complete containment enforcement from an accepted expression.
+See [realm declarations](ONTOLOGY_LANGUAGE.md#531-realm-containment-contract).
+
 ## 3. Observable statements
 
 The base grammar can parse a stand-alone sequence of semicolon-terminated
@@ -518,7 +538,7 @@ quality UnspecifiedQuality is generic:Quality;
 
 This last parent supplies no specific measurable kind. The explicit `abstract`
 declaration flag is local and is separate from quality-type inheritance.
-Effective semantic abstractness can also depend on unresolved identity
+Effective resolution eligibility can also depend on unresolved identity
 requirements, including inherited requirements; see
 [Identity requirements](IDENTITY_REQUIREMENTS.md). See section 14 for the
 unsupported bare `ratio` declaration keyword.
@@ -681,6 +701,50 @@ preserve the status already established for the concept.
 Every concept in the core ontology is automatically abstract. This is an
 intentional convention; it does not make all descendants abstract. Core aliases
 resolve the canonical core concept.
+
+#### Identity requirements on dependents
+
+For a quality or process, `requires identity R` constrains its effective bearer.
+It does not add R to the quality or process itself. The bearer must supply
+declared or inherited identity evidence that entails R; absence of a contradiction
+is insufficient. An explicit `of` bearer must also respect every inherited bearer
+bound. The dependent's native identity traits remain attached to that dependent.
+
+An abstract required identity root denotes a category. Its abstractness alone
+does not make the dependent abstract. For example:
+
+```kwv
+abstract length Height
+    requires identity (imod:Areal or imod:Volumetric);
+```
+
+For a non-abstract specialization of Height whose bearer has Areal identity, the
+inherited requirement is satisfied. Height itself remains explicitly abstract.
+Adding Areal to the quality instead of its bearer does not satisfy this rule.
+The categorical proof does not manufacture a concrete identifying value, and
+authority identities still require captured admission.
+
+Boolean requirements retain their scope. Alternatives within one clause are OR;
+independently inherited clauses are AND. An identity known only as `(Areal or
+Lineal)` does not entail `(Areal or Volumetric)`, despite their overlap. One
+intersection filler requires a single identity witness satisfying the complete
+intersection, rather than separate witnesses for its operands.
+
+At strawman `35a0df73`, Region declares Areal and specializes Location. Location
+alone supplies no spatial identity evidence. Elevation also describes Terrain,
+whose qualified Region bearer contributes a stronger effective inherited bound.
+That complete bearer closure, rather than the directly authored Location alone,
+must be checked against Height's requirement. See
+[Identity requirements](IDENTITY_REQUIREMENTS.md) for the evidence contract,
+unresolved cases, and regression coverage.
+
+A Location applicability bound admits its proved specializations, including
+Region and the members of `each Region`. A proved disjoint bearer is incompatible;
+a bearer with no subtype proof is unresolved, not proved incompatible. For a
+predicate characterization, the subject being characterized is distinct from
+the bearer of a quality that the predicate describes or classifies. In particular,
+PhysicalEnvironment's description of EarthCover must not require Region to be a
+Configuration when PhysicalEnvironment applies to Location.
 
 ### 7.2 Status of composed expressions
 

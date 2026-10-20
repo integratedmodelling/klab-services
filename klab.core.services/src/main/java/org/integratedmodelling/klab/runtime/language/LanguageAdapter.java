@@ -201,6 +201,55 @@ public class LanguageAdapter {
     return adaptSemanticSequence(asTokens(semantics, namespace, projectName, documentClass));
   }
 
+  /** Preserve parenthesized logical heads in identity category requirements only. */
+  private KimConceptImpl adaptIdentityRequirement(
+      SemanticSyntax syntax, String namespace, String projectName) {
+    var tokens = new ArrayList<KimConceptImpl>();
+    for (var token : syntax) {
+      var adapted = adaptSemanticToken(
+          token, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY);
+      // Other modifiers retain their existing scope and adapter semantics.
+      if (token.getUnaryOperator() == null
+          && token.getRestrictions().stream().allMatch(restriction ->
+              restriction.getFirst() == SemanticSyntax.BinaryOperator.OR
+                  || restriction.getFirst() == SemanticSyntax.BinaryOperator.AND)
+          && !token.getRestrictions().isEmpty()) {
+        adapted.getOperands().clear();
+        adapted.setExpressionType(KimConcept.Expression.SINGLETON);
+        adapted.getType().removeAll(EnumSet.of(SemanticType.UNION, SemanticType.INTERSECTION));
+        if (token.getHeadExpression() != null) {
+          adapted.setObservable(adaptIdentityRequirement(
+              token.getHeadExpression(), namespace, projectName));
+        }
+        adapted.resetDefinition();
+        // The language parser appends outer logical clauses after a parenthesized
+        // head's clauses. Folding in that order retains (A or B) and C.
+        for (var restriction : token.getRestrictions()) {
+          var operands = new ArrayList<KimConceptImpl>();
+          for (var operand : restriction.getSecond()) {
+            operands.add(adaptIdentityRequirement(operand, namespace, projectName));
+          }
+          var wrapper = new KimConceptImpl();
+          wrapper.setNamespace(namespace);
+          wrapper.setProjectName(projectName);
+          wrapper.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
+          wrapper.setObservable(adapted);
+          wrapper.setType(new java.util.HashSet<>(adapted.getType()));
+          wrapper.getType().removeAll(EnumSet.of(SemanticType.UNION, SemanticType.INTERSECTION));
+          boolean union = restriction.getFirst() == SemanticSyntax.BinaryOperator.OR;
+          wrapper.setExpressionType(union
+              ? KimConcept.Expression.UNION : KimConcept.Expression.INTERSECTION);
+          wrapper.getType().add(union ? SemanticType.UNION : SemanticType.INTERSECTION);
+          wrapper.getOperands().add(adaptSemanticSequence(operands));
+          wrapper.finalizeDefinition();
+          adapted = wrapper;
+        }
+      }
+      tokens.add(adapted);
+    }
+    return adaptSemanticSequence(tokens);
+  }
+
   /** Fold sibling predicates onto their head; unary operands are grouped within each token. */
   private KimConceptImpl adaptSemanticSequence(List<KimConceptImpl> tokens) {
 
@@ -1924,7 +1973,10 @@ public class LanguageAdapter {
               case ATTRIBUTE -> ret.getRequiredAttributes();
               default -> throw new IllegalArgumentException("Unexpected requirement");
             };
-        requirement.targets().forEach(value -> targets.add(adapt.apply(value)));
+        requirement.targets().forEach(value -> targets.add(
+            requirement.type() == ConceptDeclarationSyntax.RequiresType.IDENTITY
+                ? adaptIdentityRequirement(value, namespace, projectName)
+                : adapt.apply(value)));
       }
     }
     for (var description : definition.getDescribes()) {

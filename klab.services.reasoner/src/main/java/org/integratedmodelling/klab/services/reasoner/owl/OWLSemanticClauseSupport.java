@@ -14,6 +14,8 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   private final OWL owl;
   static final Runnable NO_CHECKPOINT = () -> {};
   public static final IRI UNIVERSAL_BEARER = IRI.create("urn:klab:validation:universal-bearer");
+  /** Authored bearer bounds remain distinguishable from description-derived intersections. */
+  public static final IRI AUTHORED_BEARER = IRI.create("urn:klab:validation:authored-bearer");
 
   private record Bound(
       SemanticRole role, OWLClassExpression filler, boolean inherited, boolean applicability, String source,
@@ -435,6 +437,82 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     return bounds(owner).stream()
         .filter(b -> constrains(b, owner, role))
         .allMatch(b -> specializes(candidate, b.filler(), new HashSet<>()));
+  }
+
+  /**
+   * Source-clause membership is proved specialization, rather than possible overlap.
+   * A predicate applied to a substantial requests classification/characterization of that
+   * substantial; its described quality can have a separate bearer (e.g. a configuration).
+   */
+  public Compatibility clauseCompatibility(Concept owner, SemanticRole role, Concept operand) {
+    var candidate = owl.getOWLClass(operand.isCollective() ? operand.singular() : operand);
+    if (candidate == null) return Compatibility.UNRESOLVED;
+    synchronized (owl) {
+      var required = new LinkedHashSet<OWLClassExpression>();
+      if (role == SemanticRole.INHERENT && owner.is(SemanticType.PREDICATE)
+          && SemanticType.isEnumerableSubstantial(operand.getType())) {
+        var visited = new HashSet<OWLClass>();
+        var root = owl.getOWLClass(owner);
+        applicationBounds(root, visited, required);
+        if (owl.hasReasoner()) {
+          owl.flushReasoner();
+          var necessary = new LinkedHashSet<>(owl.getSuperClasses(root, false).getFlattened());
+          necessary.addAll(owl.getEquivalentClasses(root).getEntities());
+          for (var parent : necessary)
+            if (!parent.isOWLThing() && !parent.isOWLNothing()) applicationBounds(parent, visited, required);
+        }
+      } else {
+        bounds(owner).stream().filter(b -> constrains(b, owner, role))
+            .map(Bound::filler).forEach(required::add);
+      }
+      var conjunction = new LinkedHashSet<>(required);
+      conjunction.add(candidate);
+      if (bearerCompatibility(conjunction) == Compatibility.IMPOSSIBLE) return Compatibility.IMPOSSIBLE;
+      return required.stream().allMatch(bound -> specializes(candidate, bound, new HashSet<>()))
+          ? Compatibility.COMPATIBLE : Compatibility.UNRESOLVED;
+    }
+  }
+
+  public static void markAuthoredBearer(OWL owl, Concept owner, Concept bearer, Ontology ontology) {
+    var f = owl.manager.getOWLDataFactory();
+    owl.manager.addAxiom(ontology.getOWLOntology(), f.getOWLAnnotationAssertionAxiom(
+        f.getOWLAnnotationProperty(AUTHORED_BEARER), owl.getOWLClass(owner).getIRI(),
+        owl.getOWLClass(bearer).getIRI()));
+  }
+
+  private void applicationBounds(OWLClassExpression expression, Set<OWLClass> visited,
+      Set<OWLClassExpression> result) {
+    if (expression instanceof OWLClass named) {
+      if (!visited.add(named)) return;
+      for (var ontology : owl.manager.getOntologies()) {
+        for (var annotation : ontology.getAnnotationAssertionAxioms(named.getIRI()))
+          if (annotation.getProperty().getIRI().equals(AUTHORED_BEARER)
+              && annotation.getValue() instanceof IRI iri)
+            result.add(owl.manager.getOWLDataFactory().getOWLClass(iri));
+        for (var axiom : ontology.getSubClassAxiomsForSubClass(named))
+          if (!descriptionBearer(axiom)) applicationBounds(axiom.getSuperClass(), visited, result);
+        for (var axiom : ontology.getEquivalentClassesAxioms(named))
+          if (!descriptionBearer(axiom))
+            for (var equivalent : axiom.getClassExpressionsMinus(named))
+              applicationBounds(equivalent, visited, result);
+      }
+    } else if (expression instanceof OWLObjectIntersectionOf intersection) {
+      for (var operand : intersection.getOperands()) applicationBounds(operand, visited, result);
+    } else if (expression instanceof OWLQuantifiedRestriction<?> restriction
+        && restriction.getFiller() instanceof OWLClassExpression filler
+        && restriction.getProperty() instanceof OWLObjectPropertyExpression property) {
+      var properties = new HashSet<OWLObjectPropertyExpression>();
+      collectSuperProperties(property, properties);
+      if (matchesProperty(properties, NS.APPLIES_TO_PROPERTY)
+          || matchesProperty(properties, NS.IS_INHERENT_TO_PROPERTY)) result.add(filler);
+    }
+    // A superclass union does not establish either branch's individual bounds.
+  }
+
+  private static boolean descriptionBearer(OWLAxiom axiom) {
+    return axiom.annotations().anyMatch(a -> a.getProperty().getIRI().equals(DescriptionBearerSupport.PROVENANCE)
+        && a.getValue() instanceof OWLLiteral literal
+        && literal.getLiteral().equals("derived:description-bearer-intersection"));
   }
 
   private boolean specializes(

@@ -117,12 +117,8 @@ public final class WorldviewDeclarationSupport {
       inverseRestrictions
           .computeIfAbsent("odo:creates", key -> new ArrayList<>())
           .add(require(resolve, operand, SemanticType.OBSERVABLE));
-    add(
-        restrictions,
-        "odo:requiresIdentity",
-        statement.getRequiredIdentities(),
-        SemanticType.IDENTITY,
-        resolve);
+    var identityRequirements = statement.getRequiredIdentities().stream()
+        .map(syntax -> identityRequirement(owl, syntax, resolve)).toList();
     add(
         restrictions,
         "odo:requiresRealm",
@@ -215,12 +211,19 @@ public final class WorldviewDeclarationSupport {
         : DescriptionBearerSupport.prepare(owl, owner, authoredBearer,
             described, applicables, independentlyCheckedDescriptions);
     var propertyNames = new LinkedHashSet<>(restrictions.keySet());
+    if (!identityRequirements.isEmpty()) propertyNames.add("odo:requiresIdentity");
     propertyNames.addAll(inverseRestrictions.keySet());
     if (!applicables.isEmpty()) propertyNames.add("odo:appliesTo");
     for (var name : propertyNames)
       if (owl.getProperty(name) == null)
         throw new KlabValidationException("Missing ontology property " + name);
     // Commit only after every clause has passed validation and property preflight.
+    for (var requirement : identityRequirements) {
+      var f = owl.manager.getOWLDataFactory();
+      owl.manager.addAxiom(ontology.getOWLOntology(), f.getOWLSubClassOfAxiom(owl.getOWLClass(owner),
+          f.getOWLObjectSomeValuesFrom(owl.getProperty("odo:requiresIdentity")
+              .getOWLEntity().asOWLObjectProperty(), requirement)));
+    }
     for (var entry : restrictions.entrySet()) {
       var property = owl.getProperty(entry.getKey());
       if (property == null)
@@ -239,6 +242,8 @@ public final class WorldviewDeclarationSupport {
     }
     if (!applicables.isEmpty()) owl.setApplicableObservables(owner, applicables, ontology);
     owl.manager.addAxioms(ontology.getOWLOntology(), new LinkedHashSet<>(bearerAxioms));
+    if (authoredBearer != null)
+      OWLSemanticClauseSupport.markAuthoredBearer(owl, owner, authoredBearer, ontology);
     if (hasDeferredValue(statement)) {
       var factory = owl.manager.getOWLDataFactory();
       var source = owl.getOWLClass(owner).getIRI();
@@ -249,6 +254,38 @@ public final class WorldviewDeclarationSupport {
           factory.getOWLAnnotationProperty(VALUE_STATUS), source, factory.getOWLLiteral("UNRESOLVED")));
     }
     compileDeniability(owl, ontology, owner, statement);
+  }
+
+  /** Preserve source boolean scope, without equating arbitrary named identity categories. */
+  private static org.semanticweb.owlapi.model.OWLClassExpression identityRequirement(
+      OWL owl, KimConcept syntax, Function<KimConcept, Concept> resolve) {
+    if (syntax.getOperands().isEmpty()) {
+      if (syntax.getObservable() != null && syntax.getSemanticModifier() == null
+          && syntax.getTraits().isEmpty() && syntax.getRoles().isEmpty()
+          && syntax.getModifiers().isEmpty() && syntax.getAbout().isEmpty())
+        return identityRequirement(owl, syntax.getObservable(), resolve);
+      return owl.getOWLClass(require(resolve, syntax, SemanticType.IDENTITY));
+    }
+    // General generated union classes currently carry one-way subclass axioms.
+    // A requirement denotes the source boolean expression itself, not a demand
+    // for membership in that narrower implementation class.
+    if (!(syntax instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl implementation))
+      throw new KlabValidationException("Cannot preserve boolean identity requirement syntax");
+    var first = (org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl) implementation.removeComponents();
+    first.setOperands(new ArrayList<>());
+    first.setExpressionType(KimConcept.Expression.SINGLETON);
+    first.getType().remove(SemanticType.UNION);
+    first.getType().remove(SemanticType.INTERSECTION);
+    first.resetDefinition();
+    var operands = new LinkedHashSet<org.semanticweb.owlapi.model.OWLClassExpression>();
+    operands.add(identityRequirement(owl, first, resolve));
+    for (var operand : syntax.getOperands()) operands.add(identityRequirement(owl, operand, resolve));
+    var f = owl.manager.getOWLDataFactory();
+    return switch (syntax.getExpressionType()) {
+      case INTERSECTION -> f.getOWLObjectIntersectionOf(operands);
+      case UNION -> f.getOWLObjectUnionOf(operands);
+      default -> throw new KlabValidationException("Missing boolean identity requirement grouping");
+    };
   }
 
   /** Unsettled bearer contributions are durable evidence, not successful alignment. */

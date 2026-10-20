@@ -572,6 +572,7 @@ public class SemanticMatcher {
   public int assertedDistance(Semantics from, Semantics to) {
     Objects.requireNonNull(from, "from");
     Objects.requireNonNull(to, "to");
+    if (from.asConcept().isCollective() != to.asConcept().isCollective()) return -1;
     if (from.asConcept().getUrn().equals(to.asConcept().getUrn())) return 0;
     var delegated = operations.authorityDistance(to.asConcept(), from.asConcept());
     if (delegated.status() != org.integratedmodelling.klab.api.services.Authority.DistanceStatus.UNSUPPORTED)
@@ -584,6 +585,8 @@ public class SemanticMatcher {
 
   static int shortestAssertedDistance(
       Semantics from, Semantics to, Function<Semantics, Collection<Concept>> parentProvider) {
+    boolean collective = from.asConcept().isCollective();
+    if (collective != to.asConcept().isCollective()) return -1;
     if (from.equals(to)) {
       return 0;
     }
@@ -593,7 +596,10 @@ public class SemanticMatcher {
     queue.add(Pair.of(from.asConcept(), 0));
     while (!queue.isEmpty()) {
       Pair<Concept, Integer> current = queue.removeFirst();
-      for (Concept parent : parentProvider.apply(current.getFirst())) {
+      for (Concept canonicalParent : parentProvider.apply(current.getFirst())) {
+        // OWL parents are canonical singular classes. Preserve the query's mode
+        // through the hierarchy without admitting collective/singular substitution.
+        Concept parent = collective ? canonicalParent.collective() : canonicalParent.singular();
         if (parent.equals(to.asConcept())) {
           return current.getSecond() + 1;
         }

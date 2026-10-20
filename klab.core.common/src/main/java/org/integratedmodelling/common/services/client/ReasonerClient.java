@@ -271,6 +271,28 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public int semanticDistance(Semantics target, Semantics requested, Semantics context,
+      long expectedKnowledgeRevision) {
+    if (expectedKnowledgeRevision < 0) return -50;
+    // Admission is bound to this generation. Neither a cached score nor a freshly
+    // observed different generation may substitute for the caller's evidence.
+    int distance = validatedDistanceScore(
+        Lists.newArrayList(target.asConcept(), requested.asConcept(), context == null ? null : context.asConcept()),
+        "knowledgeRevision", Long.toString(expectedKnowledgeRevision));
+    if (distance < 0) return distance;
+    int representationDistance = observableDistance(target, requested, expectedKnowledgeRevision);
+    return representationDistance < 0 ? representationDistance : distance + representationDistance;
+  }
+
+  private int validatedDistanceScore(Object payload, Object... parameters) {
+    Integer score = client.postRequired(ServicesAPI.REASONER.VALIDATED_DISTANCE, payload, Integer.class, parameters);
+    if (score == null)
+      throw new org.integratedmodelling.common.utils.Utils.Http.Client.RequestFailure(
+          0, "Validated semantic distance returned no score", null);
+    return score;
+  }
+
+  @Override
   public Concept coreObservable(Semantics target) {
     return client.post(ServicesAPI.REASONER.CORE_OBSERVABLE, target.asConcept(), Concept.class);
   }
@@ -818,6 +840,10 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   private int observableDistance(Semantics target, Semantics other) {
+    return observableDistance(target, other, -1);
+  }
+
+  private int observableDistance(Semantics target, Semantics other, long expectedKnowledgeRevision) {
     if (!(target instanceof Observable targetObservable)
         || !(other instanceof Observable otherObservable)) {
       return 0;
@@ -829,7 +855,10 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       if (otherObserver == null) {
         return -50;
       }
-      int observerDistance = assertedDistance(otherObserver, targetObserver);
+      int observerDistance = expectedKnowledgeRevision < 0
+          ? assertedDistance(otherObserver, targetObserver)
+          : validatedDistanceScore(Lists.newArrayList(otherObserver, targetObserver),
+              "asserted", "true", "knowledgeRevision", Long.toString(expectedKnowledgeRevision));
       if (observerDistance < 0) {
         return -50;
       }

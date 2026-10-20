@@ -17,6 +17,23 @@ import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 
 class IdentityRequirementSupportTest {
+  @Test void dependentRequirementTargetsInheritedBearerCategoryRatherThanDependentIdentity() throws Exception {
+    try (var t = new Fixture()) {
+      t.owl.requireOntology("odo", "http://integratedmodelling.org").define(List.of(
+          Axiom.ObjectPropertyAssertion("isInherentTo"), Axiom.ObjectPropertyAssertion("appliesTo")));
+      t.declare("Height", SemanticType.QUALITY, SemanticType.OBSERVABLE);
+      t.concept("Height").setAbstract(true);
+      t.require("Height", t.f.getOWLObjectUnionOf(t.type("RootA"), t.type("RootB")));
+      t.declare("Elevation", SemanticType.QUALITY, SemanticType.OBSERVABLE);
+      t.sub("Elevation", "Height");
+      t.restriction("Elevation", "isInherentTo", t.type("SUBJECT"));
+      t.restriction("SUBJECT", "hasIdentity", t.type("RootA"));
+      t.ready();
+      assertFalse(t.project("Elevation").isAbstract(), "Abstract identity category on the bearer satisfies the bound");
+      assertTrue(t.project("Height").isAbstract(), "Authored abstractness survives");
+      assertFalse(t.concept("Elevation").isAbstract());
+    }
+  }
   static class Fixture implements AutoCloseable {
     final OWL owl = new OWL(mock(Scope.class));
     final Ontology ontology;
@@ -27,6 +44,9 @@ class IdentityRequirementSupportTest {
       ontology = owl.requireOntology("audit");
       for (var kind : List.of(SemanticType.SUBJECT, SemanticType.QUALITY, SemanticType.PROCESS))
         declare(kind.name(), kind, SemanticType.OBSERVABLE);
+      // Self-identification tests use substantial heads; dependent targeting has its own suite.
+      declare("SecondSubject", SemanticType.SUBJECT, SemanticType.OBSERVABLE);
+      declare("ThirdSubject", SemanticType.SUBJECT, SemanticType.OBSERVABLE);
       for (var name : List.of("RootA", "RootB", "A", "B", "Both", "Wrong"))
         declare(name, SemanticType.IDENTITY, SemanticType.PREDICATE);
       concept("RootA").setAbstract(true); concept("RootB").setAbstract(true);
@@ -61,11 +81,11 @@ class IdentityRequirementSupportTest {
     public void close() { if (dl != null) dl.dispose(); }
   }
 
-  @Test void requiredIdentityInducesAndDischargesStatusForSubstantialsQualitiesAndProcesses() throws Exception {
+  @Test void requiredIdentityInducesAndDischargesStatusForSubstantialHeads() throws Exception {
     try (var t = new Fixture()) {
-      for (var kind : List.of("SUBJECT", "QUALITY", "PROCESS")) t.require(kind, t.type("RootA"));
+      for (var kind : List.of("SUBJECT", "ThirdSubject", "SecondSubject")) t.require(kind, t.type("RootA"));
       t.ready();
-      for (var kind : List.of("SUBJECT", "QUALITY", "PROCESS")) {
+      for (var kind : List.of("SUBJECT", "ThirdSubject", "SecondSubject")) {
         assertTrue(t.project(kind).isAbstract(), kind);
         assertFalse(t.project(kind, "A").isAbstract(), kind);
         assertTrue(t.project(kind, "Wrong").isAbstract(), kind);
@@ -115,17 +135,17 @@ class IdentityRequirementSupportTest {
       t.declare("UnionIdentity", SemanticType.IDENTITY, SemanticType.PREDICATE);
       var union = t.f.getOWLObjectUnionOf(t.type("RootA"), t.type("RootB"));
       t.add(t.f.getOWLSubClassOfAxiom(t.type("UnionIdentity"), union));
-      t.require("PROCESS", union); t.ready();
+      t.require("SecondSubject", union); t.ready();
       assertTrue(t.owl.isSatisfiable(t.type("UnionIdentity")));
       assertTrue(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(t.type("UnionIdentity"), union)));
       assertFalse(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(t.type("UnionIdentity"), t.type("RootA"))));
       assertFalse(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(t.type("UnionIdentity"), t.type("RootB"))));
-      assertFalse(t.project("PROCESS", "UnionIdentity").isAbstract());
-      assertTrue(t.project("PROCESS", "Wrong").isAbstract());
+      assertFalse(t.project("SecondSubject", "UnionIdentity").isAbstract());
+      assertTrue(t.project("SecondSubject", "Wrong").isAbstract());
       var restricted = new IdentityRequirementSupport(t.owl, (root, identity) -> !root.equals(t.concept("RootA")));
-      assertTrue(restricted.project(t.concept("PROCESS"), t.syntax("PROCESS", "UnionIdentity")).isAbstract(),
+      assertTrue(restricted.project(t.concept("SecondSubject"), t.syntax("SecondSubject", "UnionIdentity")).isAbstract(),
           "An ambiguous union cannot bypass an ineligible authority branch");
-      assertFalse(restricted.project(t.concept("PROCESS"), t.syntax("PROCESS", "B")).isAbstract(),
+      assertFalse(restricted.project(t.concept("SecondSubject"), t.syntax("SecondSubject", "B")).isAbstract(),
           "A proved eligible branch remains sufficient");
     }
   }
@@ -162,12 +182,12 @@ class IdentityRequirementSupportTest {
   @Test void aCompositeFillerPreservesItsWitnessAndUnionSemantics() throws Exception {
     try (var t = new Fixture()) {
       t.require("SUBJECT", t.f.getOWLObjectUnionOf(t.type("RootA"), t.type("RootB")));
-      t.require("PROCESS", t.f.getOWLObjectIntersectionOf(t.type("RootA"), t.type("RootB")));
+      t.require("SecondSubject", t.f.getOWLObjectIntersectionOf(t.type("RootA"), t.type("RootB")));
       t.ready();
       assertFalse(t.project("SUBJECT", "A").isAbstract());
       assertFalse(t.project("SUBJECT", "B").isAbstract());
-      assertTrue(t.project("PROCESS", "A", "B").isAbstract(), "Separate identities do not fill one conjunction");
-      assertFalse(t.project("PROCESS", "Both").isAbstract());
+      assertTrue(t.project("SecondSubject", "A", "B").isAbstract(), "Separate identities do not fill one conjunction");
+      assertFalse(t.project("SecondSubject", "Both").isAbstract());
     }
   }
 
@@ -178,79 +198,79 @@ class IdentityRequirementSupportTest {
         t.concept(family).setAbstract(true); t.require(family, t.type("RootA"));
       }
       t.declare("Unresolved", SemanticType.ATTRIBUTE, SemanticType.PREDICATE);
-      t.concept("Unresolved").setAbstract(true); t.require("QUALITY", t.type("RootA")); t.ready();
+      t.concept("Unresolved").setAbstract(true); t.require("ThirdSubject", t.type("RootA")); t.ready();
       for (var family : List.of("ArtifactProduction", "ArtifactModification"))
         assertTrue(t.project(family, "A").isAbstract());
-      assertTrue(t.project("QUALITY", "A", "Unresolved").isAbstract());
-      assertFalse(t.project("QUALITY", "A").isAbstract());
+      assertTrue(t.project("ThirdSubject", "A", "Unresolved").isAbstract());
+      assertFalse(t.project("ThirdSubject", "A").isAbstract());
     }
   }
 
   @Test void concreteInheritedIdentityCountsButAnonymousAlternativesDoNot() throws Exception {
     try (var t = new Fixture()) {
       t.require("SUBJECT", t.type("RootA")); t.restriction("SUBJECT", "hasIdentity", t.type("A"));
-      t.require("PROCESS", t.type("RootA"));
-      t.restriction("PROCESS", "hasIdentity", t.f.getOWLObjectUnionOf(t.type("A"), t.type("Wrong")));
-      t.ready(); assertFalse(t.project("SUBJECT").isAbstract()); assertTrue(t.project("PROCESS").isAbstract());
+      t.require("SecondSubject", t.type("RootA"));
+      t.restriction("SecondSubject", "hasIdentity", t.f.getOWLObjectUnionOf(t.type("A"), t.type("Wrong")));
+      t.ready(); assertFalse(t.project("SUBJECT").isAbstract()); assertTrue(t.project("SecondSubject").isAbstract());
     }
   }
 
   @Test void inconsistentAndUnavailableHierarchyCannotSupplyVacuousProof() throws Exception {
     try (var t = new Fixture()) {
-      t.require("PROCESS", t.type("RootA")); t.add(t.f.getOWLSubClassOfAxiom(t.type("A"), t.f.getOWLNothing()));
-      assertTrue(t.project("PROCESS", "Both").isAbstract(), "No backend cannot prove compatibility");
-      t.ready(); assertTrue(t.project("PROCESS", "A").isAbstract());
+      t.require("SecondSubject", t.type("RootA")); t.add(t.f.getOWLSubClassOfAxiom(t.type("A"), t.f.getOWLNothing()));
+      assertTrue(t.project("SecondSubject", "Both").isAbstract(), "No backend cannot prove compatibility");
+      t.ready(); assertTrue(t.project("SecondSubject", "A").isAbstract());
     }
   }
 
   @Test void qualifiersStayWithTheirOwnHeadAndUnaryBoundariesRemainIntact() throws Exception {
     try (var t = new Fixture()) {
-      t.require("PROCESS", t.type("RootA")); t.require("SUBJECT", t.type("RootB")); t.ready();
-      var expression = t.syntax("PROCESS"); expression.setInherent(t.syntax("SUBJECT", "A"));
-      assertTrue(new IdentityRequirementSupport(t.owl).project(t.concept("PROCESS"), expression).isAbstract());
-      var wrapper = new KimConceptImpl(); wrapper.setObservable(t.syntax("PROCESS"));
+      t.require("SecondSubject", t.type("RootA")); t.require("SUBJECT", t.type("RootB")); t.ready();
+      var expression = t.syntax("SecondSubject"); expression.setInherent(t.syntax("SUBJECT", "A"));
+      assertTrue(new IdentityRequirementSupport(t.owl).project(t.concept("SecondSubject"), expression).isAbstract());
+      var wrapper = new KimConceptImpl(); wrapper.setObservable(t.syntax("SecondSubject"));
       wrapper.getTraits().add(t.leaf("A"));
-      assertFalse(new IdentityRequirementSupport(t.owl).project(t.concept("PROCESS"), wrapper).isAbstract());
+      assertFalse(new IdentityRequirementSupport(t.owl).project(t.concept("SecondSubject"), wrapper).isAbstract());
       wrapper.setSemanticModifier(UnarySemanticOperator.COUNT);
-      assertFalse(new IdentityRequirementSupport(t.owl).project(t.concept("PROCESS"), wrapper).isAbstract());
+      assertFalse(new IdentityRequirementSupport(t.owl).project(t.concept("SecondSubject"), wrapper).isAbstract());
     }
   }
 
   @Test void authorityIdentityRequiresAdmissionEvenWhenItsOwlHierarchyMatches() throws Exception {
     try (var t = new Fixture()) {
       t.concept("A").getType().add(SemanticType.AUTHORITY_IDENTITY);
-      t.require("PROCESS", t.type("RootA")); t.ready();
-      assertTrue(t.project("PROCESS", "A").isAbstract());
+      t.require("SecondSubject", t.type("RootA")); t.ready();
+      assertTrue(t.project("SecondSubject", "A").isAbstract());
       var trusted = new IdentityRequirementSupport(t.owl, (root, identity) -> identity == t.concept("A"));
-      assertFalse(trusted.project(t.concept("PROCESS"), t.syntax("PROCESS", "A")).isAbstract());
+      assertFalse(trusted.project(t.concept("SecondSubject"), t.syntax("SecondSubject", "A")).isAbstract());
       assertTrue(new IdentityRequirementSupport(t.owl, (root, identity) -> false)
-          .project(t.concept("PROCESS"), t.syntax("PROCESS", "A")).isAbstract());
+          .project(t.concept("SecondSubject"), t.syntax("SecondSubject", "A")).isAbstract());
     }
   }
 
   @Test void selectorsAndTransformedPredicatesAreNotConcreteIdentityEvidence() throws Exception {
     try (var t = new Fixture()) {
-      t.require("PROCESS", t.type("RootA")); t.ready();
-      var syntax = t.syntax("PROCESS", "A");
+      t.require("SecondSubject", t.type("RootA")); t.ready();
+      var syntax = t.syntax("SecondSubject", "A");
       syntax.getTraits().getFirst().getType().add(SemanticType.ANY);
-      assertTrue(new IdentityRequirementSupport(t.owl).project(t.concept("PROCESS"), syntax).isAbstract());
+      assertTrue(new IdentityRequirementSupport(t.owl).project(t.concept("SecondSubject"), syntax).isAbstract());
       syntax.getTraits().clear();
       var transformed = new KimConceptImpl(); transformed.setObservable(t.leaf("A"));
       transformed.setSemanticModifier(UnarySemanticOperator.TYPE); syntax.getTraits().add(transformed);
-      assertTrue(new IdentityRequirementSupport(t.owl).project(t.concept("PROCESS"), syntax).isAbstract());
+      assertTrue(new IdentityRequirementSupport(t.owl).project(t.concept("SecondSubject"), syntax).isAbstract());
     }
   }
 
   @Test void atomicServiceResolutionAndObservablePromotionRetainEffectiveStatusWithoutMutation() throws Exception {
     try (var t = new Fixture()) {
-      t.require("PROCESS", t.type("RootA")); t.ready();
+      t.require("SecondSubject", t.type("RootA")); t.ready();
       var service = mock(ReasonerService.class, CALLS_REAL_METHODS);
       var field = ReasonerService.class.getDeclaredField("owl"); field.setAccessible(true); field.set(service, t.owl);
-      assertTrue(service.resolveConceptInternal("audit:PROCESS").isAbstract());
-      var result = service.projectExpressionStatus(t.concept("PROCESS"), t.syntax("PROCESS", "A"));
+      assertTrue(service.resolveConceptInternal("audit:SecondSubject").isAbstract());
+      var result = service.projectExpressionStatus(t.concept("SecondSubject"), t.syntax("SecondSubject", "A"));
       assertFalse(ObservableImpl.promote(result, null).isAbstract());
-      assertNotSame(result, t.concept("PROCESS")); assertFalse(t.concept("PROCESS").isAbstract());
-      assertTrue(service.projectExpressionStatus(t.concept("PROCESS"), t.syntax("PROCESS")).isAbstract());
+      assertNotSame(result, t.concept("SecondSubject")); assertFalse(t.concept("SecondSubject").isAbstract());
+      assertTrue(service.projectExpressionStatus(t.concept("SecondSubject"), t.syntax("SecondSubject")).isAbstract());
     }
   }
 }

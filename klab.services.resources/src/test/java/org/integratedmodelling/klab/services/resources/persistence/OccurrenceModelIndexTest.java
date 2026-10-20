@@ -63,6 +63,13 @@ class OccurrenceModelIndexTest {
     var reasoner = mock(Reasoner.class);
     var resources = mock(ResourcesService.class);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    when(scope.getService(ResourcesService.class)).thenReturn(resources);
+    ModelAdmissionFixtures.valid(reasoner);
+    when(resources.declareObservable(anyString())).thenAnswer(invocation -> {
+      var parsed = mock(KimObservable.class);
+      when(parsed.getUrn()).thenReturn(invocation.getArgument(0));
+      return parsed;
+    });
     var process = observable("test:Erosion", SemanticType.PROCESS);
     var affected = observable("test:Elevation", SemanticType.QUALITY);
     var created = observable("test:Sediment", SemanticType.QUALITY);
@@ -95,9 +102,9 @@ class OccurrenceModelIndexTest {
     var executable = new ModelImpl();
     executable.getObservables().add(process);
     executable.getDependencies().addAll(List.of(affected, created, input));
-    when(reasoner.semanticDistance(process, changeX, null)).thenReturn(-1);
-    when(reasoner.semanticDistance(changeY, changeX, null)).thenReturn(-1);
-    when(reasoner.semanticDistance(changeX, changeX, null)).thenReturn(0);
+    when(reasoner.semanticDistance(process, changeX, null, 7)).thenReturn(-1);
+    when(reasoner.semanticDistance(changeY, changeX, null, 7)).thenReturn(-1);
+    when(reasoner.semanticDistance(changeX, changeX, null, 7)).thenReturn(0);
     assertEquals(0, new PrioritizerImpl(scope, null, Map.of(), changeX, null).semanticDistance(executable));
   }
 }

@@ -238,6 +238,7 @@ class ObservationPipelineTest {
       });
       for (var observable : List.of(owner, freshwater, elevation, slope)) {
         var model = mock(Model.class);
+        when(model.getUrn()).thenReturn("pipeline." + observable.getReferenceName());
         when(model.getObservables()).thenReturn(List.of(observable));
         when(model.getNamespace()).thenReturn(observable == freshwater ? "freshwater.example" : "private.example");
         when(model.getProjectName()).thenReturn(observable == freshwater ? "freshwater.project" : "example.project");
@@ -305,7 +306,11 @@ class ObservationPipelineTest {
             assertConstraint(s, ResolutionConstraint.Type.ResolutionProject, "example.project");
             if (o.is(SemanticType.QUALITY)) assertSame(owner.getSemantics(), context);
           }
-          return List.of(models.get(o.getUrn()));
+          var candidate = models.get(o.getUrn());
+          var resources = ModelAdmissionFixtures.prepare(s, reasoner);
+          ModelAdmissionFixtures.saved(resources, candidate, s);
+          return org.integratedmodelling.klab.runtime.language.ModelValidationGate.admits(candidate, s, o)
+              ? List.of(candidate) : List.of();
         }
         @Override QueryMatch query(Observable o, Scale scale, ContextScope s) {
           return new QueryMatch(null, null, scale, null, Coverage.create(scale, 0));
@@ -418,20 +423,31 @@ class ObservationPipelineTest {
     var requirements = new ResourceSet(); requirements.setEmpty(false);
     when(runtime.resolveContextualizables(any(), eq(scope))).thenReturn(requirements);
     var model = mock(Model.class);
+    when(model.getUrn()).thenReturn("pipeline.model");
     when(model.getCoverage()).thenReturn(geometry);
     when(model.getDependencies()).thenReturn(List.of());
-    when(model.getAnnotations()).thenReturn(List.of());
+    // The real primary now participates in occurrence admission. This bounded extent
+    // has no inherited grid cadence, so occurrence producers declare their own cadence.
+    when(model.getAnnotations()).thenReturn(kind == SemanticType.PROCESS || kind == SemanticType.EVENT
+        ? List.of(org.integratedmodelling.klab.api.lang.Annotation.of("time", "step",
+            org.integratedmodelling.common.lang.QuantityImpl.parse("1.millisecond"))) : List.of());
     var computation = new ContextualizableImpl();
     computation.setServiceCall(new ServiceCallImpl("test.compute"));
     when(model.getComputation()).thenReturn(List.of(computation));
     var endpointModel = mock(Model.class);
+    when(endpointModel.getUrn()).thenReturn("pipeline.endpoint");
     when(endpointModel.getCoverage()).thenReturn(geometry);
     when(endpointModel.getDependencies()).thenReturn(List.of());
     when(endpointModel.getAnnotations()).thenReturn(List.of());
     when(endpointModel.getComputation()).thenReturn(List.of(computation));
     var compiler = new ResolutionCompiler(mock(ResolverService.class)) {
       @Override public List<Model> queryModels(Observable o, Concept context, ContextScope s, Scale requestedScale) {
-        return modelAvailable ? List.of(o.getUrn().equals(observable.getUrn()) ? model : endpointModel) : List.of();
+        if (!modelAvailable) return List.of();
+        var candidate = o.getUrn().equals(observable.getUrn()) ? model : endpointModel;
+        when(candidate.getObservables()).thenReturn(List.of(o));
+        ModelAdmissionFixtures.prepare(s, reasoner);
+        return org.integratedmodelling.klab.runtime.language.ModelValidationGate.admits(candidate, s, o)
+            ? List.of(candidate) : List.of();
       }
       @Override QueryMatch query(Observable o, Scale requestedScale, ContextScope s) {
         if (o.getUrn().equals(observable.getUrn()) || !endpointsExist)
@@ -441,7 +457,7 @@ class ObservationPipelineTest {
       }
     };
     var graph = compiler.resolve(requested, scope);
-    assertEquals(!modelAvailable, graph.isEmpty());
+    assertEquals(!modelAvailable, graph.isEmpty(), kind + " pipeline model availability");
     if (!modelAvailable) return null;
     assertTrue(graph.getCoverage().isComplete());
     Dataflow dataflow = new DataflowCompiler(requested, graph, scope).compile();

@@ -106,6 +106,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   private final ResourceManager resourceManager;
   private final WorkflowManager workflowManager;
   private AtomicBoolean semanticSearchAvailable = new AtomicBoolean(false);
+  private NamespaceModelIndex namespaceModelIndex = new NamespaceModelIndex();
 
   /** Caches for concepts and observables. */
   private LoadingCache<String, KimConcept> concepts =
@@ -374,8 +375,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public synchronized boolean checkSemanticServices(Scope scope) {
-    // TODO this should be called repeatedly and should be able to make incremental changes
-    if (!this.semanticSearchAvailable.get()) {
       var iAmLocal = this.serviceScope().getIdentity() instanceof UserIdentity;
 
       /** Only local reasoners can index semantic content of a local resources service. */
@@ -390,17 +389,25 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
               .orElse(null);
 
       if (reasoner != null && reasoner.status().isOperational()) {
-        Logging.INSTANCE.info("Reasoner is available: indexing semantic assets");
-        if (indexKnowledge(scope)) {
-          this.semanticSearchAvailable.set(true);
+        try {
+          var capabilities = reasoner.capabilities(scope);
+          long revision = capabilities == null ? -1 : capabilities.getKnowledgeRevision();
+          this.semanticSearchAvailable.set(revision >= 0 && indexKnowledge(scope, revision));
+        } catch (RuntimeException unavailable) {
+          this.semanticSearchAvailable.set(false);
+          Logging.INSTANCE.warn("Reasoner knowledge revision is unavailable: " + unavailable.getMessage());
         }
         return this.semanticSearchAvailable.get();
       } else {
         Logging.INSTANCE.warn("reasoner is inoperative: cannot index semantic content");
         this.semanticSearchAvailable.set(false);
       }
-    }
     return this.semanticSearchAvailable.get();
+  }
+
+  /** Semantic-owned model diagnostics; source documents remain available for authoring. */
+  public synchronized Map<String, List<Notification>> getNamespaceModelDiagnostics() {
+    return namespaceModelIndex == null ? Map.of() : namespaceModelIndex.diagnostics();
   }
 
   /**
@@ -497,13 +504,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     }
   }
 
-  private boolean indexKnowledge(Scope scope) {
+  private boolean indexKnowledge(Scope scope, long revision) {
 
     // TODO index ontologies
     try {
-      for (var namespace : workspaceManager.getNamespaces()) {
-        kbox.replaceNamespace(namespace, scope);
-      }
+      if (namespaceModelIndex == null) namespaceModelIndex = new NamespaceModelIndex();
+      namespaceModelIndex.reconcile(workspaceManager.getNamespaces(), kbox, scope, revision, System.nanoTime());
     } catch (Throwable t) {
       Logging.INSTANCE.error("Error indexing semantic content", t);
       return false;

@@ -57,6 +57,13 @@ class LegacyModelKboxTest {
     when(service.serviceName()).thenReturn("kbox-test-" + UUID.randomUUID());
     when(service.serviceScope()).thenReturn(scope);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    ModelAdmissionFixtures.valid(reasoner);
+    var source = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+    source.setUrn("test'namespace");
+    var sourceModel = new org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl();
+    sourceModel.setUrn("test.o'hare"); source.getStatements().add(sourceModel);
+    when(service.retrieve(eq("test'namespace"), eq(org.integratedmodelling.klab.api.lang.kim.KimNamespace.class), isNull()))
+        .thenReturn(source);
     when(concept.getUrn()).thenReturn("test:Height");
     when(reasoner.coreObservable(concept)).thenReturn(concept);
     when(reasoner.resolveConcept("test:Height")).thenReturn(concept);
@@ -88,6 +95,14 @@ class LegacyModelKboxTest {
       assertEquals(0, box.count());
       box.store(namespace, scope);
       assertEquals(0, box.removeIfOlder(namespace, scope));
+      box.store(model, scope);
+      box.withholdNamespace(model.getNamespaceId(), scope);
+      assertEquals(0, box.count());
+      assertFalse(box.hasModel(model.getName()));
+      assertSame(source, service.retrieve(model.getNamespaceId(),
+          org.integratedmodelling.klab.api.lang.kim.KimNamespace.class, null));
+      box.store(model, scope);
+      assertTrue(box.hasModel(model.getName()));
     }
   }
 }

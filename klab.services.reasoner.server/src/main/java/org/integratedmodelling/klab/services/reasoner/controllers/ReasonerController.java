@@ -445,13 +445,29 @@ public class ReasonerController {
       @Parameter(description = "Array of concepts (2 or 3)") @RequestBody Concept[] concepts,
       @Parameter(description = "Whether to use asserted distance")
           @RequestParam(name = "asserted", defaultValue = "false")
-          boolean asserted) {
+          boolean asserted,
+      @RequestParam(name = "knowledgeRevision", defaultValue = "-1") long knowledgeRevision) {
     requireArguments(concepts, 2, 3, "Distance");
     return asserted
-        ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
-        : reasoner
-            .klabService()
-            .semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2]);
+        ? knowledgeRevision < 0
+            ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
+            : reasoner.klabService().assertedDistanceAtRevision(concepts[0], concepts[1], knowledgeRevision)
+        : knowledgeRevision < 0
+            ? reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2])
+            : reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2], knowledgeRevision);
+  }
+
+  @Operation(summary = "Compute distance against an admitted semantic generation")
+  @PostMapping(ServicesAPI.REASONER.VALIDATED_DISTANCE)
+  public int validatedDistance(
+      @RequestBody Concept[] concepts,
+      @RequestParam(name = "asserted", defaultValue = "false") boolean asserted,
+      @RequestParam(name = "knowledgeRevision") long knowledgeRevision) {
+    if (knowledgeRevision < 0)
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST,
+          "Validated distance requires a nonnegative knowledge revision");
+    return assertedDistance(concepts, asserted, knowledgeRevision);
   }
 
   @Operation(

@@ -130,7 +130,7 @@ class SemanticEnvironmentFactoryTest {
       // Caffeine loader computation after this fixture deliberately clears caches.
       actor.resolveConcept("w:ConcreteIdentity");
       assertTrue(actor.owl().isEntailed(f.getOWLSubClassOfAxiom(named.apply("InferredDerived"), named.apply("RequiredRule"))));
-      for (var head : List.of("w:Group", "w:InheritedGroup", "w:IdentifiedProcess", "w:InferredDerived")) {
+      for (var head : List.of("w:Group", "w:InheritedGroup", "w:InferredDerived")) {
         assertTrue(actor.resolveConcept(head).isAbstract(), head);
         var parsed = actor.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class).declareConcept(head);
         assertFalse(parsed.getType().isEmpty(), "Parsed atomic head has types: " + head);
@@ -138,6 +138,12 @@ class SemanticEnvironmentFactoryTest {
         assertFalse(actor.resolveConceptWithBuilder("w:ConcreteIdentity " + head, actor.serviceScope()).isAbstract(), head);
         assertTrue(actor.resolveConcept(head).isAbstract(), "Qualified resolution must not mutate " + head);
       }
+      assertTrue(actor.resolveConcept("w:ConcreteIdentity w:IdentifiedProcess").isAbstract(),
+          "A process-owned identity cannot discharge a bearer-directed requirement");
+      assertFalse(actor.resolveConcept("w:IdentifiedProcess of (w:ConcreteIdentity w:Group)").isAbstract(),
+          "Identity evidence on the actual bearer discharges the process requirement");
+      assertFalse(actor.resolveConceptWithBuilder("w:IdentifiedProcess of (w:ConcreteIdentity w:Group)",
+          actor.serviceScope()).isAbstract());
       assertTrue(actor.resolveConcept("w:ConcreteIdentity w:Process").isAbstract(), "Explicit abstract stays binding");
       assertTrue(actor.resolveConcept("w:ConcreteIdentity w:RequiredRule").isAbstract(), "Inferred children do not inherit this independent flag");
       assertTrue(actor.children(actor.resolveConcept("w:Group")).stream()

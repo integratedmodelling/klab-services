@@ -18,10 +18,16 @@ public class DocumentSemanticValidator
     implements KimNamespaceVisitor.Validator, KimOntologyVisitor.Validator,
         KimObservationStrategyDocumentVisitor.Validator {
   private final ReasonerService reasoner;
+  private final boolean executableModels;
   private final OWLSemanticClauseSupport clauses;
   private final KimWorldviewValidator sourceValidator = new KimWorldviewValidator();
 
   public DocumentSemanticValidator(ReasonerService reasoner) {
+    this(reasoner, false);
+  }
+
+  public DocumentSemanticValidator(ReasonerService reasoner, boolean executableModels) {
+    this.executableModels = executableModels;
     this.reasoner = reasoner;
     this.clauses = new OWLSemanticClauseSupport(reasoner.owl());
   }
@@ -45,12 +51,12 @@ public class DocumentSemanticValidator
   @Override
   public List<Notification> validateModel(
       KimModel model, KimObservableVisitor.Context context) {
+    var result = validateDependencies(model, context);
     if (model.getObservables().isEmpty()
         || model.getObservables().getFirst().getSemantics() == null
         || !model.getObservables().getFirst().getSemantics().is(SemanticType.PROCESS)) {
-      return List.of();
+      return result;
     }
-    var result = new ArrayList<Notification>();
     for (var contextualizable : model.getContextualization()) {
       var targetId = contextualizable.getTargetId();
       if (targetId == null || targetId.isBlank()) continue;
@@ -91,6 +97,147 @@ public class DocumentSemanticValidator
       }
     }
     return result;
+  }
+
+  /** Dependency admission is a type proof, independent of distance/ranking. */
+  private ArrayList<Notification> validateDependencies(
+      KimModel model, KimObservableVisitor.Context context) {
+    var result = new ArrayList<Notification>();
+    if (model.getObservables().isEmpty()) return result;
+    var primary = model.getObservables().getFirst();
+    if (executableModels) {
+      for (var output : model.getObservables().subList(1, model.getObservables().size())) {
+        try {
+          var semantics = output.getSemantics();
+          var resolved = semantics == null ? null : reasoner.declareConcept(semantics);
+          if (unboundSyntax(output)
+              || semantics != null && (semantics.isPattern() || resolved == null
+                  || resolved.is(SemanticType.NOTHING) || !reasoner.satisfiable(resolved)
+                  || resolved.isGeneric()))
+            result.add(error("MODEL_OUTPUT_UNRESOLVED: " + output.getUrn()
+                + " has unfulfilled identity, abstractness or generic obligations", output, context));
+        } catch (RuntimeException unavailable) {
+          result.add(error("MODEL_OUTPUT_UNRESOLVED: " + unavailable.getMessage(), output, context));
+        }
+      }
+    }
+    if (primary.getSemantics() == null) {
+      if (executableModels && unboundSyntax(primary))
+        result.add(error("MODEL_OUTPUT_UNRESOLVED: unbound generic or pattern primary", primary, context));
+      return result; // Nonsemantic learners retain their contract.
+    }
+    try {
+      var modeled = reasoner.declareConcept(primary.getSemantics());
+      if (modeled == null || modeled.is(SemanticType.NOTHING)) return result;
+      var template = !executableModels && (authoredTemplate(primary.getSemantics(), modeled)
+          || java.util.stream.Stream.concat(model.getObservables().stream(), model.getDependencies().stream())
+              .anyMatch(this::unboundSyntax));
+      if (!template && ((!modeled.is(SemanticType.PREDICATE) && modeled.isAbstract())
+          || modeled.isGeneric() || unboundSyntax(primary)))
+        result.add(error("MODEL_OUTPUT_UNRESOLVED: " + primary.getUrn()
+            + " has unfulfilled identity or generic obligations", primary, context));
+      Concept subject = SemanticType.isEnumerableSubstantial(modeled.getType())
+          ? modeled.singular() : modelBearer(primary.getSemantics(), modeled);
+      var requiredOccurrences = new ArrayList<>(model.getDependencies());
+      // Secondary outputs are dereified relative to the modeled observation too.
+      // Reuse its proof/projection rather than rejecting a context-bound quality
+      // merely because its detached declaration is incomplete.
+      if (executableModels)
+        requiredOccurrences.addAll(model.getObservables().subList(1, model.getObservables().size()));
+      for (var occurrence : requiredOccurrences) {
+        if (occurrence.getSemantics() == null) {
+          if (unboundSyntax(occurrence))
+            dependencyUnresolved(result, occurrence, context, template,
+                "generic or pattern dependency remains unbound");
+          continue;
+        }
+        var dependency = reasoner.declareConcept(occurrence.getSemantics());
+        if (dependency == null || dependency.is(SemanticType.NOTHING)) continue;
+        if (!reasoner.satisfiable(dependency)) {
+          result.add(error("MODEL_DEPENDENCY_INCOMPATIBLE: " + occurrence.getUrn()
+              + " is unsatisfiable", occurrence, context));
+          continue;
+        }
+        boolean needsBearer = SemanticType.isDependent(dependency.getType())
+            || dependency.is(SemanticType.PREDICATE);
+        var effective = dependency;
+        // An asserted/inherited effect relation explicitly permits a process/event
+        // to use an affected quality in its own bearer. It does not transfer
+        // the process's context or native identity to that quality.
+        boolean affectedQuality = dependency.is(SemanticType.QUALITY)
+            && (modeled.is(SemanticType.PROCESS) || modeled.is(SemanticType.EVENT))
+            && reasoner.affectedBy(dependency, modeled);
+        if (needsBearer && subject != null && !affectedQuality) {
+          var compatibility = clauses.clauseCompatibility(dependency, SemanticRole.INHERENT, subject);
+          if (compatibility != OWLSemanticClauseSupport.Compatibility.COMPATIBLE) {
+            if (compatibility == OWLSemanticClauseSupport.Compatibility.IMPOSSIBLE)
+              result.add(error("MODEL_DEPENDENCY_INCOMPATIBLE: " + occurrence.getUrn()
+                  + " has a provably incompatible bearer for modeled subject " + subject.getUrn(), occurrence, context));
+            else dependencyUnresolved(result, occurrence, context, template,
+                "modeled subject " + subject.getUrn() + " does not prove every required bearer bound");
+            continue;
+          }
+          // Detached expression-status projection: no identity or bearer assertion is added
+          // to the dependent, its native process identity, or the shared ontology.
+          var wrapper = new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
+          wrapper.setObservable(occurrence.getSemantics());
+          wrapper.setType(new java.util.HashSet<>(occurrence.getSemantics().getType()));
+          wrapper.setInherent(reasoner.serviceScope().getService(
+              org.integratedmodelling.klab.api.services.ResourcesService.class).declareConcept(subject.getUrn()));
+          wrapper.finalizeDefinition();
+          if (dependency instanceof org.integratedmodelling.common.knowledge.ConceptImpl implementation)
+            effective = new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(
+                reasoner.owl(), reasoner::identityEligible).project(implementation, wrapper);
+        } else if (needsBearer && !affectedQuality
+            && !clauses.bearerConstraints(dependency).isEmpty() && subject == null) {
+          dependencyUnresolved(result, occurrence, context, template, "the modeled subject has no established bearer type");
+          continue;
+        }
+        // A classifier's abstract predicate is a category to characterize, not an
+        // instruction to instantiate an abstract quality/subject.
+        if ((!effective.is(SemanticType.PREDICATE) && effective.isAbstract()) || effective.isGeneric()
+            || unboundSyntax(occurrence))
+          dependencyUnresolved(result, occurrence, context, template,
+              "identity, authored abstractness, or generic obligations remain unbound");
+      }
+    } catch (RuntimeException unavailable) {
+      result.add(error("MODEL_DEPENDENCY_UNRESOLVED: " + unavailable.getMessage(), model, context));
+    }
+    return result;
+  }
+
+  private boolean unboundSyntax(KimObservable observable) {
+    return ModelValidationGate.hasUnboundSyntax(observable);
+  }
+
+  private boolean authoredTemplate(KimConcept syntax, Concept modeled) {
+    if (syntax.isPattern() || modeled.isGeneric()) return true;
+    if (modeled.is(SemanticType.PREDICATE)) return false;
+    var head = syntax;
+    while (true) {
+      if (head.getSemanticModifier() != null) return false;
+      if (head.getObservable() == null) break;
+      head = head.getObservable();
+    }
+    var canonical = head.getName() == null ? null : reasoner.owl().getConcept(head.getName());
+    return canonical != null && canonical.isAbstract();
+  }
+
+  private Concept modelBearer(KimConcept syntax, Concept modeled) {
+    for (var current = syntax; current != null; current = current.getObservable()) {
+      if (current.getInherent() != null) return reasoner.declareConcept(current.getInherent()).singular();
+      if (current.getSemanticModifier() != null) break;
+    }
+    return modeled.is(SemanticType.PREDICATE) ? null : reasoner.inherent(modeled);
+  }
+
+  private void dependencyUnresolved(List<Notification> result, KimObservable occurrence,
+      KimObservableVisitor.Context context, boolean template, String reason) {
+    var message = (template ? "MODEL_DEPENDENCY_TEMPLATE: " : "MODEL_DEPENDENCY_UNRESOLVED: ")
+        + occurrence.getUrn() + ": " + reason;
+    result.add(template
+        ? Notification.warning(message, Notification.LexicalContext.of(occurrence, context.getDocument()))
+        : error(message, occurrence, context));
   }
 
   /** Resolve the OWL node used by worldview relationships, without observable-level decoration. */
@@ -175,18 +322,15 @@ public class DocumentSemanticValidator
                   "Unresolved clause operand: " + modifier.getSecond().getUrn(),
                   modifier.getSecond(),
                   context));
-        else if (syntax.getSemanticModifier() == null
-            && !clauses.accepts(head, modifier.getFirst(), operand))
-          result.add(
-              error(
-                  "Clause "
-                      + modifier.getFirst()
-                      + " operand "
-                      + operand.getUrn()
-                      + " is outside the inherited restrictions or applies to domain of "
-                      + head.getUrn(),
-                  modifier.getSecond(),
-                  context));
+        else if (syntax.getSemanticModifier() == null) {
+          var compatibility = clauses.clauseCompatibility(head, modifier.getFirst(), operand);
+          if (compatibility != OWLSemanticClauseSupport.Compatibility.COMPATIBLE)
+            result.add(error("Clause " + modifier.getFirst() + " operand " + operand.getUrn()
+                + (compatibility == OWLSemanticClauseSupport.Compatibility.IMPOSSIBLE
+                    ? " is provably incompatible with the inherited restrictions or applies to domain of "
+                    : " has unresolved membership in the inherited restrictions or applies to domain of ")
+                + head.getUrn(), modifier.getSecond(), context));
+        }
       }
       var predicates = new ArrayList<Concept>();
       predicates.addAll(reasoner.traits(head));

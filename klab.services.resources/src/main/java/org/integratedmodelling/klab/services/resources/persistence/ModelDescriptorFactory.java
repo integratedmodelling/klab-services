@@ -35,6 +35,7 @@ final class ModelDescriptorFactory {
     this.resourceService = resourceService;
   }
   public Collection<ModelReference> inferModels(KimModel model, Scope monitor) {
+    org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(model, monitor);
 
     List<ModelReference> ret = new ArrayList<>();
 

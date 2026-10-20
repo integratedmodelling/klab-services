@@ -215,6 +215,29 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       return lease.state().actor().semanticCapabilitiesSnapshot();
     } catch (IllegalStateException unavailable) { return SemanticCapabilitiesSnapshot.initial(); }
   }
+
+  /** Pin admission and ranking to one accepted actor; stale evidence never invokes its matcher. */
+  public int semanticDistanceAtRevision(Semantics target, Semantics requested, Semantics context,
+      long expectedKnowledgeRevision) {
+    if (expectedKnowledgeRevision < 0) return -50;
+    try (var lease = lease()) {
+      if (lease.generation() != expectedKnowledgeRevision) return -50;
+      synchronized (lease.state()) {
+        return lease.state().actor().semanticDistance(target, requested, context);
+      }
+    } catch (IllegalStateException unavailable) { return -50; }
+  }
+
+  /** Observer hierarchy comparison belongs to the same generation as its metric score. */
+  public int assertedDistanceAtRevision(Concept from, Concept to, long expectedKnowledgeRevision) {
+    if (expectedKnowledgeRevision < 0) return -1;
+    try (var lease = lease()) {
+      if (lease.generation() != expectedKnowledgeRevision) return -1;
+      synchronized (lease.state()) {
+        return lease.state().actor().assertedDistance(from, to);
+      }
+    } catch (IllegalStateException unavailable) { return -1; }
+  }
   public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse validate(
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request,
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
@@ -229,7 +252,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         return unavailableValidation(request, response);
       }
       synchronized (lease.state()) {
-        response.getNotifications().addAll(new DocumentSemanticValidator(lease.state().actor()).validate(request.document()));
+        response.getNotifications().addAll(new DocumentSemanticValidator(
+            lease.state().actor(), request.isExecutableModels()).validate(request.document()));
         response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
         return response;
       }

@@ -1798,6 +1798,11 @@ public class OWL {
     return id;
   }
 
+  /** Existing complete expression only; does not parse, resolve or materialize anything. */
+  synchronized OWLClass getMaterializedClass(String definition) {
+    return definition == null ? null : owlClasses.get(definition);
+  }
+
   synchronized OWLClass getOWLClass(Concept concept) {
     var owlClass = owlClasses.get(concept.getUrn());
     // Collectivity belongs to observation semantics, not OWL identity. Generated classes

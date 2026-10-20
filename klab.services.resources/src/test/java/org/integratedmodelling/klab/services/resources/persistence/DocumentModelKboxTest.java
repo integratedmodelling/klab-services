@@ -34,6 +34,101 @@ class DocumentModelKboxTest {
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(concept.getUrn()).thenReturn("test:Height of test:Tree");
     when(reasoner.resolveConcept(concept.getUrn())).thenReturn(concept);
+    when(reasoner.validateDocument(any(), any())).thenAnswer(invocation -> {
+      var response = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
+          .forRequest(invocation.getArgument(0));
+      response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
+      response.setKnowledgeRevision(7);
+      return response;
+    });
+    var source = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+    source.setUrn("ns");
+    var sourceModel = new org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl();
+    sourceModel.setUrn("ns.o'hare"); sourceModel.setNamespace("ns");
+    sourceModel.getObservables().add(mock(org.integratedmodelling.klab.api.lang.kim.KimObservable.class));
+    source.getStatements().add(sourceModel);
+    when(service.retrieve(eq("ns"), eq(KimNamespace.class), nullable(org.integratedmodelling.klab.api.scope.UserScope.class)))
+        .thenReturn(source);
+    when(service.declareObservable(nullable(String.class)))
+        .thenReturn(mock(org.integratedmodelling.klab.api.lang.kim.KimObservable.class));
+  }
+
+  @Test void rejectedNamespaceValidationPreservesPublishedGeneration() {
+    try (var box = new DocumentModelKbox(service, new NitriteKboxStore(null))) {
+      box.store(descriptor(), scope);
+      var namespace = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+      namespace.setUrn("ns");
+      doReturn(null).when(reasoner).validateDocument(any(), any());
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabValidationException.class,
+          () -> box.replaceNamespace(namespace, scope));
+      assertEquals(1, box.count());
+      assertTrue(namespace.getNotifications().isEmpty());
+      verify(reasoner, never()).semanticDistance(any(), any(), any());
+      verify(reasoner, never()).semanticDistance(any(), any(), any(), anyLong());
+    }
+  }
+
+  @Test void rejectedOrUnavailableCandidateSourcesNeverReachSemanticDistance() {
+    var request = mock(Observable.class);
+    var head = mock(Concept.class); when(head.getUrn()).thenReturn("test:Height");
+    when(reasoner.coreObservable(concept)).thenReturn(head);
+    when(reasoner.coreObservable(request)).thenReturn(head);
+    when(reasoner.resolving(head)).thenReturn(List.of(head));
+    var scale = mock(org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class);
+    try (var box = new DocumentModelKbox(service, new NitriteKboxStore(null))) {
+      box.store(descriptor(), scope);
+      for (var status : org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.values()) {
+        doAnswer(invocation -> {
+          var response = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
+              .forRequest(invocation.getArgument(0));
+          response.setStatus(status);
+          response.setKnowledgeRevision(7);
+          if (status == org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE)
+            response.getNotifications().add(org.integratedmodelling.klab.api.services.runtime.Notification.error("incompatible dependency"));
+          return response;
+        }).when(reasoner).validateDocument(any(), any());
+        assertTrue(box.queryModels(request, scale, null, List.of(), null).isEmpty());
+      }
+      verify(reasoner, never()).semanticDistance(any(), any(), any());
+      verify(reasoner, never()).semanticDistance(any(), any(), any(), anyLong());
+    }
+  }
+
+  @Test void sourceChangeDuringUnlockedValidationCannotPublishNewNamespaceGeneration() {
+    try (var box = new DocumentModelKbox(service, new NitriteKboxStore(null))) {
+      box.store(descriptor(), scope);
+      var namespace = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+      namespace.setUrn("ns");
+      doAnswer(invocation -> {
+        assertFalse(Thread.holdsLock(box), "Semantic callbacks must not hold catalog publication lock");
+        var response = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
+            .forRequest(invocation.getArgument(0));
+        response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
+        response.setKnowledgeRevision(7);
+        namespace.setLastUpdateTimestamp(200);
+        return response;
+      }).when(reasoner).validateDocument(any(), any());
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabStorageException.class,
+          () -> box.replaceNamespace(namespace, scope));
+      assertEquals(1, box.count());
+    }
+  }
+
+  @Test void withholdingPublishesVisibilityMarkerBeforeCleanupAndCorrectionRestoresModels() {
+    var documents = spy(new NitriteKboxStore(null));
+    try (var box = new DocumentModelKbox(service, documents)) {
+      box.store(descriptor(), scope);
+      doThrow(new IllegalStateException("cleanup unavailable")).when(documents).delete(startsWith("descriptor:"));
+      assertThrows(IllegalStateException.class, () -> box.withholdNamespace("ns", scope));
+      assertEquals(0, box.count()); assertFalse(box.hasModel("ns.o'hare"));
+      assertNull(box.retrieveModel("ns.o'hare", scope));
+      doCallRealMethod().when(documents).delete(anyString());
+      var namespace = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+      namespace.setUrn("ns");
+      box.replaceNamespace(namespace, scope);
+      box.store(descriptor(), scope);
+      assertTrue(box.hasModel("ns.o'hare"));
+    }
   }
   ModelReference descriptor() {
     var model = new ModelReference();
@@ -237,6 +332,7 @@ class DocumentModelKboxTest {
       box.store(second, scope);
       var scale = mock(org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class);
       var context = mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+      when(context.getService(Reasoner.class)).thenReturn(reasoner);
       var user = mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);
       when(context.getUser()).thenReturn(user);
       when(user.getUsername()).thenReturn("blocked");

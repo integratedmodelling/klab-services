@@ -85,6 +85,8 @@ public final class IdentityRequirementSupport {
       }
     }
     if (requirements.isEmpty()) return false;
+    if (SemanticType.isDependent(head.getType()))
+      return !bearerSatisfies(head, syntax, requirements);
     for (var inherited : inheritedIdentities) {
       // A named, concrete inherited identity is evidence. A union of possible fillers
       // or an anonymous existential does not supply a concrete named identity.
@@ -95,6 +97,177 @@ public final class IdentityRequirementSupport {
     }
     return requirements.stream().anyMatch(required -> identities.stream()
         .noneMatch(identity -> concrete(identity) && satisfies(identity, required)));
+  }
+
+  private boolean bearerSatisfies(Concept head, KimConcept syntax,
+      Set<OWLClassExpression> requirements) {
+    try {
+      if (!owl.hasReasoner()) return false;
+      var aligned = new LinkedHashSet<OWLClassExpression>();
+      var domains = new LinkedHashSet<OWLClassExpression>();
+      var universals = new ArrayList<OWLSemanticClauseSupport.BearerConstraint>();
+      var independent = new ArrayList<OWLSemanticClauseSupport.BearerConstraint>();
+      var support = new OWLSemanticClauseSupport(owl);
+      boolean alignedWitness = false;
+      for (var bound : support.bearerConstraints(head)) {
+        domains.add(bound.filler());
+        if (bound.applicability()) continue;
+        if (bound.semantic()) {
+          aligned.add(bound.filler());
+          alignedWitness |= needsWitness(bound.restriction());
+        } else if (bound.restriction() instanceof OWLObjectAllValuesFrom) {
+          universals.add(bound);
+        } else if (needsWitness(bound.restriction())) {
+          // Imported existentials may name DIFFERENT witnesses. They do not
+          // establish one bearer specializing the intersection of their fillers.
+          independent.add(bound);
+        }
+      }
+      var explicitBearers = new LinkedHashSet<OWLClassExpression>();
+      // Explicit inherency may be on a wrapper around the atomic observable.
+      var current = syntax;
+      while (current != null) {
+        if (current.getInherent() != null) {
+          var explicit = bearerExpression(current.getInherent());
+          if (explicit == null) return false;
+          explicitBearers.add(explicit);
+        }
+        current = current.getObservable();
+      }
+      if (!explicitBearers.isEmpty()) {
+        var explicit = intersection(explicitBearers);
+        if (domains.stream().anyMatch(bound -> !entailed(explicit, bound))) return false;
+        aligned.add(explicit);
+        alignedWitness = true;
+      }
+      var inherent = owl.manager.getOWLDataFactory().getOWLObjectProperty(
+          IRI.create("http://integratedmodelling.org/odo#isInherentTo"));
+      boolean checked = false;
+      if (alignedWitness || independent.isEmpty() && (!aligned.isEmpty() || !universals.isEmpty())) {
+        var candidate = new LinkedHashSet<>(aligned);
+        for (var universal : universals)
+          if (support.subPropertyOf(inherent, universal.property())) candidate.add(universal.filler());
+        if (candidate.isEmpty() || !satisfiesBearer(intersection(candidate), requirements)) return false;
+        checked = true;
+      }
+      for (var witness : independent) {
+        var candidate = new LinkedHashSet<>(aligned);
+        candidate.add(witness.filler());
+        for (var universal : universals)
+          if (support.subPropertyOf(witness.property(), universal.property())) candidate.add(universal.filler());
+        if (!satisfiesBearer(intersection(candidate), requirements)) return false;
+        checked = true;
+      }
+      return checked;
+    } catch (RuntimeException unavailable) { return false; }
+  }
+
+  private boolean needsWitness(OWLClassExpression restriction) {
+    return restriction instanceof OWLObjectSomeValuesFrom
+        || restriction instanceof OWLObjectMinCardinality minimum && minimum.getCardinality() > 0
+        || restriction instanceof OWLObjectExactCardinality exact && exact.getCardinality() > 0;
+  }
+
+  private OWLClassExpression intersection(Collection<OWLClassExpression> expressions) {
+    return expressions.size() == 1 ? expressions.iterator().next()
+        : owl.manager.getOWLDataFactory().getOWLObjectIntersectionOf(new HashSet<>(expressions));
+  }
+
+  private OWLClassExpression bearerExpression(KimConcept syntax) {
+    if (syntax.getSemanticModifier() != null || syntax.isPattern()
+        || syntax.is(SemanticType.ANY) || syntax.is(SemanticType.ALL) || syntax.is(SemanticType.NONE))
+      return null;
+    // Use the entire compiled expression, including boolean alternatives, roles,
+    // attributes and other restrictions. Never replace it with its atomic head.
+    var materialized = owl.getMaterializedClass(syntax.getUrn());
+    if (materialized != null) return materialized;
+    if (syntax.getUrn() != null) for (var ontology : owl.getOntologies(true)) {
+      var id = ontology.getIdForDefinition(syntax.getUrn());
+      if (id != null) return owl.getOWLClass(ontology.getConcept(id));
+    }
+    if (!syntax.getOperands().isEmpty() || !syntax.getRoles().isEmpty()
+        || !syntax.getModifiers().isEmpty() || !syntax.getValueOperators().isEmpty()) return null;
+    var resolved = syntax.getObservable() == null ? resolve(syntax) : null;
+    var base = syntax.getObservable() == null
+        ? resolved == null ? null : owl.getOWLClass(resolved)
+        : bearerExpression(syntax.getObservable());
+    if (base == null) return null;
+    var terms = new LinkedHashSet<OWLClassExpression>(); terms.add(base);
+    var f = owl.manager.getOWLDataFactory();
+    var identities = new LinkedHashSet<OWLClassExpression>();
+    for (var trait : syntax.getTraits()) {
+      // Only untransformed, asserted identity traits are bearer evidence.
+      var identity = trait.getSemanticModifier() == null && trait.getObservable() == null
+          && trait.getTraits().isEmpty() && trait.getOperands().isEmpty() ? resolve(trait) : null;
+      if (identity != null && identity.is(SemanticType.IDENTITY) && !trait.isPattern()
+          && !trait.is(SemanticType.ANY) && !trait.is(SemanticType.ALL) && !trait.is(SemanticType.NONE))
+        identities.add(owl.getOWLClass(identity));
+      else return null; // Unmaterialized complex evidence must remain unresolved.
+    }
+    if (!identities.isEmpty()) terms.add(f.getOWLObjectSomeValuesFrom(identityProperty(),
+        identities.size() == 1 ? identities.iterator().next() : f.getOWLObjectUnionOf(identities)));
+    return intersection(terms);
+  }
+
+  private OWLObjectProperty identityProperty() {
+    return owl.manager.getOWLDataFactory().getOWLObjectProperty(
+        IRI.create("http://integratedmodelling.org/odo#hasIdentity"));
+  }
+
+  private boolean entailed(OWLClassExpression child, OWLClassExpression parent) {
+    return owl.isEntailed(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(child, parent));
+  }
+
+  private boolean satisfiesBearer(OWLClassExpression bearer, Set<OWLClassExpression> requirements) {
+    // Prevent vacuous subclass proofs from inconsistent bearer intersections.
+    if (!owl.isSatisfiable(bearer)) return false;
+    var evidence = new LinkedHashSet<OWLClassExpression>();
+    var visited = new HashSet<OWLClass>();
+    collectIdentityEvidence(bearer, evidence, visited);
+    var necessary = new LinkedHashSet<>(owl.getSuperClasses(bearer, false).getFlattened());
+    necessary.addAll(owl.getEquivalentClasses(bearer).getEntities());
+    for (var parent : necessary) if (!parent.isOWLThing() && !parent.isOWLNothing())
+      collectIdentityEvidence(parent, evidence, visited);
+    var categories = new LinkedHashSet<Concept>();
+    for (var filler : evidence) for (var named : filler.getClassesInSignature()) {
+      var category = owl.getConceptFor(named);
+      if (category != null && category.is(SemanticType.IDENTITY)
+          && !category.is(SemanticType.NOTHING) && !category.is(SemanticType.ANY)) categories.add(category);
+    }
+    var f = owl.manager.getOWLDataFactory();
+    for (var required : requirements) {
+      var admittedCategories = categories.stream().filter(identity -> admitted(identity, required))
+          .map(owl::getOWLClass).collect(java.util.stream.Collectors.toSet());
+      if (admittedCategories.isEmpty()) return false;
+      var admitted = admittedCategories.size() == 1 ? admittedCategories.iterator().next()
+          : f.getOWLObjectUnionOf(admittedCategories);
+      // One witness must establish both the full requirement and admission. This
+      // preserves OR, AND, and authority checks without flattening witness scope.
+      var filler = f.getOWLObjectIntersectionOf(required, admitted);
+      if (!entailed(bearer, f.getOWLObjectSomeValuesFrom(identityProperty(), filler))) return false;
+    }
+    return true;
+  }
+
+  private void collectIdentityEvidence(OWLClassExpression expression,
+      Set<OWLClassExpression> evidence, Set<OWLClass> visited) {
+    if (expression instanceof OWLClass named) {
+      if (!visited.add(named)) return;
+      for (var ontology : owl.manager.getOntologies()) {
+        for (var axiom : ontology.getSubClassAxiomsForSubClass(named))
+          collectIdentityEvidence(axiom.getSuperClass(), evidence, visited);
+        for (var axiom : ontology.getEquivalentClassesAxioms(named))
+          for (var equivalent : axiom.getClassExpressionsMinus(named))
+            collectIdentityEvidence(equivalent, evidence, visited);
+      }
+    } else if (expression instanceof OWLNaryBooleanClassExpression logical) {
+      // These are candidate admission categories, not flattened proof. The final
+      // existential entailment must still hold for the COMPLETE bearer expression.
+      for (var branch : logical.getOperands()) collectIdentityEvidence(branch, evidence, visited);
+    } else if (expression instanceof OWLObjectSomeValuesFrom some
+        && (some.getProperty().equals(identityProperty())
+            || new OWLSemanticClauseSupport(owl).subPropertyOf(some.getProperty(), identityProperty())))
+      evidence.add(some.getFiller());
   }
 
   private Concept resolve(KimConcept syntax) {

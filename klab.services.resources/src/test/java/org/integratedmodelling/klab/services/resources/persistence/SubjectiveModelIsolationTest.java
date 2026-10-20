@@ -94,6 +94,7 @@ class SubjectiveModelIsolationTest {
       var scope = mock(UserScope.class);
       var reasoner = mock(Reasoner.class);
       when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+      ModelAdmissionFixtures.valid(reasoner);
       var namespace = new KimNamespaceImpl();
       namespace.setUrn("owner");
       when(service.retrieve("owner", KimNamespace.class, scope)).thenReturn(namespace);

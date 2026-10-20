@@ -293,6 +293,8 @@ public interface ServicesAPI {
     String SPLIT_OPERATORS = API_BASE + "/splitOperators";
 
     String DISTANCE = API_BASE + "/distance";
+    /** Revision-bound matching requires explicit server support; never falls back to DISTANCE. */
+    String VALIDATED_DISTANCE = DISTANCE + "/validated";
 
     String ROLES = API_BASE + "/roles";
 

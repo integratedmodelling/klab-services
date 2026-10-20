@@ -613,7 +613,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           .getNotifications()
           .addAll(
               new org.integratedmodelling.klab.services.reasoner.internal.DocumentSemanticValidator(
-                      this)
+                      this, request.isExecutableModels())
                   .validate(document));
       response.setStatus(SemanticValidationResponse.Status.COMPLETE);
     } catch (RuntimeException e) {
@@ -1541,12 +1541,55 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("semanticDistance", new Class<?>[] { Semantics.class, Semantics.class, Semantics.class }, new Object[] { target, other, context });
+  if (!eligibleDistanceRequest(other)) return -10000;
   int distance = semanticMatcher.semanticDistance(target, other, context);
     if (distance < 0) {
       return distance;
     }
     int observableDistance = observableDistance(target, other);
     return observableDistance < 0 ? observableDistance : distance + observableDistance;
+  }
+
+  /** Matching must use the same accepted generation that validated model dependencies. */
+  @Override
+  public int semanticDistance(Semantics target, Semantics other, Semantics context,
+      long expectedKnowledgeRevision) {
+    if (expectedKnowledgeRevision < 0) return -10000;
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.semanticDistanceAtRevision(target, other, context, expectedKnowledgeRevision);
+    synchronized (this) {
+      if (!knowledgeReady || expectedKnowledgeRevision != knowledgeRevision()) return -10000;
+      return semanticDistance(target, other, context);
+    }
+  }
+
+  /** Observer hierarchy comparisons obey the same validation receipt as model matching. */
+  public int assertedDistanceAtRevision(Concept target, Concept requested, long expectedKnowledgeRevision) {
+    if (expectedKnowledgeRevision < 0) return -10000;
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.assertedDistanceAtRevision(target, requested, expectedKnowledgeRevision);
+    synchronized (this) {
+      return knowledgeReady && expectedKnowledgeRevision == knowledgeRevision()
+          ? assertedDistance(target, requested) : -10000;
+    }
+  }
+
+  /** Category comparisons are structural; concrete observation requests need completed eligibility. */
+  private boolean eligibleDistanceRequest(Semantics request) {
+    if (request == null) return false;
+    try {
+      // HTTP distance payloads are Concept[], so recheck canonical status rather
+      // than trusting caller flags or requiring an Observable implementation.
+      var canonical = resolveConcept(request.asConcept().getUrn());
+      if (canonical == null || canonical.is(SemanticType.NOTHING) || !satisfiable(canonical)) return false;
+      if (canonical.isGeneric() || canonical.is(SemanticType.ANY)
+          || canonical.is(SemanticType.ALL) || canonical.is(SemanticType.NONE)) return false;
+      if (canonical.is(SemanticType.PREDICATE)) return true;
+      if (!SemanticType.isDependent(canonical.getType())
+          && !SemanticType.isEnumerableSubstantial(canonical.getType())) return true;
+      return !canonical.isAbstract() && !canonical.isGeneric()
+          && (!(request instanceof Observable observable) || observable.getGenericComponents().isEmpty());
+    } catch (RuntimeException unavailable) { return false; }
   }
 
   private int observableDistance(Semantics target, Semantics other) {
@@ -3481,6 +3524,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       declarationStagingMetrics=Map.copyOf(measured);
     } catch (RuntimeException error) { throw error; }
     catch (Exception error) { throw new KlabValidationException(error); }
+    // Compilation may resolve names before description-derived bearer closure is
+    // complete. Do not publish those provisional eligibility/subsumption views.
+    invalidateSemanticCaches();
   }
 
   private Concept buildInternal(

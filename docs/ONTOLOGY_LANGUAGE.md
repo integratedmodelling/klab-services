@@ -323,7 +323,7 @@ temperature AtmosphericTemperature
 | `attribute` | An accidental descriptive predicate; may be `deniable` or `rescaling` |
 | `identity` | A classificatory identity; may be `individual` |
 | `role` | A context-dependent role |
-| `realm` | A realm or broad contextual predicate |
+| `realm` | Requires the bearer to be within a spatial or conceptual realm |
 | `domain` | A worldview domain |
 
 ```kwv
@@ -340,6 +340,24 @@ role WaterSupplier
 
 `deniable attribute` records that negation can be represented meaningfully. The separate
 `deniable as` clause assigns an explicit negated alias.
+
+#### 5.3.1. Realm containment contract
+
+A realm requires the bearer to be within that realm, including when the realm is
+conceptual rather than spatial. It is not a mere qualification interchangeable
+with an `attribute`. On a dependent observable this concerns the effective bearer;
+on a substantial it concerns that substantial.
+
+Reference to a realm, provenance from it, or computation from observations in it
+does not establish within-realm membership. For example, deriving Elevation from
+crustal data does not justify a Crust realm on its Region bearer. Keep the scientific
+source relation separate from the bearer containment commitment.
+
+The language currently represents realms as semantic predicates with applicability
+and hierarchy constraints. This does not certify complete instance-level spatial
+or conceptual containment enforcement. Authors must state and justify the intended
+containment; validation reports must identify the evidence and the remaining gap.
+See [observable realm semantics](OBSERVABLES.md#21-realms-constrain-the-bearer-by-containment).
 
 ## 6. Concept references and observable expressions
 
@@ -489,6 +507,14 @@ the Region that Erosion affects. See [OCCURRENCE.md](OCCURRENCE.md).
 
 ### 7.7. `emerges from` and `implies`
 
+An emergence trigger does not require a reverse description relation. For example,
+Terrain may `emerge from` Elevation without Elevation `describing` Terrain. The
+trigger must not by itself transfer Terrain's realm/bearer restrictions into the
+triggering quality. This preserves the distinction between a configuration that
+may be recognized after observations become available and what each observation
+describes. The declaration alone does not establish implemented or successfully
+executed post-commit runtime emergence; that needs separate runtime evidence.
+
 Both clauses accept contextualized expressions:
 
 ```kwv
@@ -549,6 +575,23 @@ requires realm <concept-ref> [, ...]
 requires extent <concept-ref> [, ...]
 requires attribute <concept-ref> [, ...]
 ```
+
+For a dependent quality or process, `requires identity` targets the effective bearer.
+Preserve OR within a boolean clause and AND across independent inherited clauses.
+An abstract identity root is a category constraint: its abstractness alone does not
+make the dependent abstract, but the bearer's declared/inherited identities must
+prove the complete requirement. Possible overlap or a single qualifying subtype
+does not prove the general bearer qualifies. Explicit authored abstractness and
+concrete/authority identity fulfillment remain separate obligations. Native process
+identities are not reassigned to the bearer.
+
+For example, Height requiring `(Areal or Volumetric)` may have a nonabstract child
+whose Region bearer proves Areal. A Location bearer without either proof remains
+unresolved. A Region specializing Location satisfies a Location applicability bound;
+unknown membership and provably incompatible bearers must receive distinct diagnostics.
+These identity rules do not claim equivalent implementation for every other
+`requires` dimension. A realm requirement retains the containment contract above.
+See [identity requirements](IDENTITY_REQUIREMENTS.md) for boolean and witness rules.
 
 An authority requirement belongs to an identity concept, uses an uppercase local name, and
 requires a nonblank quoted provider `urn` in its configuration map:

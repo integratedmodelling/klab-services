@@ -13,6 +13,7 @@ public class SemanticValidationRequest implements Serializable {
   private KimOntology ontology;
   private String documentVersion;
   private long knowledgeRevision = -1;
+  private boolean executableModels;
 
   public static SemanticValidationRequest of(KlabDocument<?> document, String version) {
     var ret = new SemanticValidationRequest();
@@ -37,6 +38,10 @@ public class SemanticValidationRequest implements Serializable {
           .digest(source.getBytes(StandardCharsets.UTF_8)));
     } catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
   }
+
+  /** Executable admission requires every model obligation to be bound; authoring permits templates. */
+  public boolean isExecutableModels() { return executableModels; }
+  public void setExecutableModels(boolean executableModels) { this.executableModels = executableModels; }
 
   public KimNamespace getNamespace() { return namespace; }
   public void setNamespace(KimNamespace namespace) { this.namespace = namespace; }

@@ -813,6 +813,7 @@ public class ResolutionCompiler {
         models.getNotifications())) throw new KlabIllegalStateException("Model discovery failed");
     modelQueries++;
     matchedModels += ret.size();
+    ret.removeIf(model -> !org.integratedmodelling.klab.runtime.language.ModelValidationGate.admits(model, scope, observable));
     ret.removeIf(model -> prioritizer.semanticDistance(model) == Integer.MAX_VALUE);
     prioritizer.prepare(ret);
     ret.sort(prioritizer);

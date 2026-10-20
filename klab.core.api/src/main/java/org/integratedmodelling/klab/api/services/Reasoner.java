@@ -222,8 +222,9 @@ public interface Reasoner extends KlabService {
    * @param target candidate model semantics (may be broader than the request)
    * @param other requested semantics
    * @return zero if the concepts are equivalent; a positive integer if the concepts are
-   *     semantically distant but compatible; a negative integer if the concepts are semantically
-   *     incompatible
+   *     semantically distant but admitted; a negative integer if matching is not admitted,
+   *     including unresolved compatibility or request eligibility. A negative score alone does
+   *     not prove semantic disjointness.
    */
   int semanticDistance(Semantics target, Semantics other);
 
@@ -237,6 +238,16 @@ public interface Reasoner extends KlabService {
    * @return
    */
   int semanticDistance(Semantics target, Semantics other, Semantics context);
+
+  /**
+   * Rank against the exact semantic generation that admitted the model and request.
+   * A negative result also covers stale or unavailable admission evidence. Implementations
+   * without revision-aware matching fail closed instead of invoking the unversioned metric.
+   */
+  default int semanticDistance(Semantics target, Semantics requested, Semantics context,
+      long expectedKnowledgeRevision) {
+    return -50;
+  }
 
   /**
    * The core observable represented by the target, from the root namespace of the worldview.
