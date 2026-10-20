@@ -63,6 +63,27 @@ public class RejectedOntologyAuthoringTest {
  }
  public static Project retainedProject(Path folder,boolean external,boolean ordinaryFirst)throws Exception{return new Fixture(folder,external,ordinaryFirst,SOURCE).project();}
 
+ @Test void startupRetainsPhysicalSourcesBeforeProviderHasAssignedItsWorkspaceManager()throws Exception{
+  var fixture=new Fixture(directory,false,false,SOURCE);
+  var service=(ResourcesProvider)get(fixture.manager,"service");
+  // Reproduce the provider's constructor state: serviceId() delegates to an unassigned manager.
+  assertNull(service.getWorkspaceManager());
+  doCallRealMethod().when(service).serviceId();
+  assertThrows(NullPointerException.class,service::serviceId);
+  var configuration=(org.integratedmodelling.klab.services.configuration.ResourcesConfiguration)get(fixture.manager,"configuration");
+  configuration.setServiceId("startup-service");
+  set(fixture.manager,"_ontologyOrder",null);
+
+  assertDoesNotThrow(()->fixture.manager.getOntologies(false));
+  var document=fixture.manager.getOntology("demo","imod");
+  assertEquals("startup-service",document.getServiceId());
+  assertEquals("src/imod.kwv",document.getMetadata().get(org.integratedmodelling.klab.api.services.resources.AuthoringSource.ID));
+  assertNotNull(document.getMetadata().get(org.integratedmodelling.klab.api.services.resources.AuthoringSource.VERSION));
+  assertTrue(document.isInactive());
+  assertEquals(SOURCE,Files.readString(fixture.source));
+  verify(service, times(1)).serviceId(); // Only the explicit failure above; loading must not call back.
+ }
+
  @Test void localAndExternalCollisionRemainInProjectViewsInBothDiscoveryOrders()throws Exception{
   for(boolean external:List.of(false,true))for(boolean first:List.of(false,true)){
    var fixture=new Fixture(directory.resolve("case-"+external+"-"+first),external,first,SOURCE);var project=fixture.project();

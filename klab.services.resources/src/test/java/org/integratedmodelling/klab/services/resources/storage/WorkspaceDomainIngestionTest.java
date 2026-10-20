@@ -29,6 +29,9 @@ public class WorkspaceDomainIngestionTest {
     var manager=mock(WorkspaceManager.class,CALLS_REAL_METHODS);
     var service=mock(ResourcesProvider.class);when(service.serviceId()).thenReturn("fixture");
     set(manager,"service",service);set(manager,"scope",mock(Scope.class));
+    var configuration = new org.integratedmodelling.klab.services.configuration.ResourcesConfiguration();
+    configuration.setServiceId("fixture");
+    set(manager,"configuration",configuration);
     set(manager,"ontologyParser",new WorkspaceManager.OntologyParser());set(manager,"documentURLs",new HashMap<>());
     set(manager,"_ontologyMap",new HashMap<>());set(manager,"languageValidationScope",new WorldviewValidationScope());
     var storage=mock(ProjectStorage.class);var urls=new ArrayList<java.net.URL>();

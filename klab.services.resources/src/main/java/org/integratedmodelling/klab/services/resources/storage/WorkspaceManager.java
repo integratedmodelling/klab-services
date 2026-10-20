@@ -3074,7 +3074,8 @@ public class WorkspaceManager {
           if (file.startsWith(root.resolve("src"))) {
             document.getMetadata().put(AuthoringSource.ID, root.relativize(file).toString().replace('\\','/'));
             document.getMetadata().put(AuthoringSource.VERSION, sourceVersion(source, document.getSourceCode()));
-            ((org.integratedmodelling.klab.api.lang.kim.impl.KlabDocumentImpl<?>) document).setServiceId(service.serviceId());
+            // The provider has not assigned its WorkspaceManager while this constructor loads sources.
+            ((KlabDocumentImpl<?>) document).setServiceId(configuration.getServiceId());
           }
         } catch (java.net.URISyntaxException failure) { throw new IllegalArgumentException("Invalid physical source",failure); }
       }
