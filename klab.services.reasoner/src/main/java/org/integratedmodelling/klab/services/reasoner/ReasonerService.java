@@ -299,7 +299,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         if (worldview.getOntologies().stream().anyMatch(o -> o.getUrn().equals(namespace)))
           throw new KlabValidationException("Codelist namespace collides with an ontology: " + namespace);
     }
-    return authorityBindings.configure(request, provider);
+    try {
+      return authorityBindings.configure(request, provider);
+    } catch (RuntimeException failure) {
+      if (authorityBootstrapActor) org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.report(
+          org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.Phase.AUTHORITY_CONFIGURATION,
+          selected.componentUrn()+"@"+selected.componentVersion(),
+          org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.Reason.EXCEPTION,failure);
+      throw failure;
+    }
   }
   private org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog capturedAuthorities =
       org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.empty();

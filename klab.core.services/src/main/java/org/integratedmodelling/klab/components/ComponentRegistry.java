@@ -1811,9 +1811,13 @@ public class ComponentRegistry {
         Files.copy(
             resourcePath.toPath(), pluginDestination.toPath(), StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
-        Logging.INSTANCE.error(
+        if (ownedBootstrapRegistry) OwnedBootstrapDiagnostics.report(
+            OwnedBootstrapDiagnostics.Phase.COMPONENT_INSTALL,
+            Utils.Files.getFileBaseName(resourcePath), OwnedBootstrapDiagnostics.Reason.EXCEPTION, e);
+        else Logging.INSTANCE.error(
             "Unable to copy " + resourcePath.getAbsolutePath() + " to " + pluginDestination, e);
-        return Pair.of(null, ResourceSet.empty(Notification.error(e)));
+        return Pair.of(null, ResourceSet.empty(Notification.error(
+            ownedBootstrapRegistry ? "AUTHORITY_COMPONENT_INSTALL_FAILED" : e)));
       }
     } else if (!pluginDestination.exists()) {
       pluginDestination = resourcePath;
@@ -1858,8 +1862,12 @@ public class ComponentRegistry {
         Utils.Files.deleteQuietly(pluginDestination);
       }
     } catch (Throwable t) {
-      Logging.INSTANCE.error("Failed to install component " + pluginDestination, t);
-      ret = ResourceSet.empty(Notification.error(t));
+      if (ownedBootstrapRegistry) OwnedBootstrapDiagnostics.report(
+          OwnedBootstrapDiagnostics.Phase.COMPONENT_INSTALL,
+          Utils.Files.getFileBaseName(resourcePath), OwnedBootstrapDiagnostics.Reason.EXCEPTION, t);
+      else Logging.INSTANCE.error("Failed to install component " + pluginDestination, t);
+      ret = ResourceSet.empty(Notification.error(
+          ownedBootstrapRegistry ? "AUTHORITY_COMPONENT_INSTALL_FAILED" : t));
       Utils.Files.deleteQuietly(pluginDestination);
     }
 
@@ -3008,6 +3016,8 @@ public class ComponentRegistry {
   public synchronized boolean loadComponents(ResourceSet resourceSet, Scope scope) {
 
     if (pluginPath == null || componentManager == null) {
+      reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD, null,
+          OwnedBootstrapDiagnostics.Reason.REGISTRY_UNINITIALIZED, null);
       var diagnostic = Notification.error("Component registry has not been initialized");
       resourceSet.getNotifications().add(diagnostic);
       scope.error(diagnostic.getMessage());
@@ -3056,6 +3066,8 @@ public class ComponentRegistry {
                           + result.getResourceUrn()
                           + " from Resources service "
                           + result.getServiceId()));
+          reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD, result,
+              OwnedBootstrapDiagnostics.Reason.DEPENDENCY_REFRESH_REJECTED, null);
           return false;
         }
         continue;
@@ -3069,6 +3081,8 @@ public class ComponentRegistry {
               .orElse(null);
 
       if (service == null) {
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD, result,
+            OwnedBootstrapDiagnostics.Reason.SERVICE_UNAVAILABLE, null);
         resourceSet
             .getNotifications()
             .add(
@@ -3096,6 +3110,8 @@ public class ComponentRegistry {
         resourceSet
             .getNotifications()
             .add(Notification.error("Authority component source differs from explicit approval"));
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD, result,
+            OwnedBootstrapDiagnostics.Reason.SOURCE_MISMATCH, null);
         return false;
       }
       rememberSourceService(service);
@@ -3135,8 +3151,11 @@ public class ComponentRegistry {
         // give the OS time to react - found that often the file is truncated
         TimeUnit.SECONDS.sleep(2);
       } catch (Exception e) {
-        resourceSet.getNotifications().add(Notification.error(e));
-        scope.error(e);
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_EXPORT, result,
+            OwnedBootstrapDiagnostics.Reason.EXCEPTION, e);
+        Object visible = ownedBootstrapRegistry ? "AUTHORITY_COMPONENT_EXPORT_FAILED" : e;
+        resourceSet.getNotifications().add(Notification.error(visible));
+        scope.error(visible);
         return false;
       }
       // Bootstrap adds a descriptor-vetted content pin; verify before executing plugin code.
@@ -3145,6 +3164,8 @@ public class ComponentRegistry {
         resourceSet
             .getNotifications()
             .add(Notification.error("Authority artifact differs from selected descriptor"));
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_VERIFY, result,
+            OwnedBootstrapDiagnostics.Reason.MD5_MISMATCH, null);
         return false;
       }
       var approvedSha256 =
@@ -3156,9 +3177,13 @@ public class ComponentRegistry {
             resourceSet
                 .getNotifications()
                 .add(Notification.error("Authority artifact differs from approved SHA-256"));
+            reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_VERIFY, result,
+                OwnedBootstrapDiagnostics.Reason.SHA256_MISMATCH, null);
             return false;
           }
         } catch (IOException failure) {
+          reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_VERIFY, result,
+              OwnedBootstrapDiagnostics.Reason.EXCEPTION, failure);
           resourceSet
               .getNotifications()
               .add(Notification.error("Cannot verify approved authority artifact SHA-256"));
@@ -3174,6 +3199,8 @@ public class ComponentRegistry {
               result.getServiceId(),
               result.getTimestamp());
       if (installation == null || installation.getFirst() == null) {
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_INSTALL, result,
+            OwnedBootstrapDiagnostics.Reason.INSTALL_REJECTED, null);
         resourceSet
             .getNotifications()
             .add(Notification.error("Failed to install component " + result.getResourceUrn()));
@@ -3207,6 +3234,12 @@ public class ComponentRegistry {
     componentManager.startPlugins();
 
     return true;
+  }
+
+  private void reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase phase,
+      ResourceSet.Resource resource, OwnedBootstrapDiagnostics.Reason reason, Throwable original) {
+    if (ownedBootstrapRegistry) OwnedBootstrapDiagnostics.report(phase,
+        resource == null ? "-" : resource.getResourceUrn(), reason, original);
   }
 
   static boolean requiresDependencyRefresh(

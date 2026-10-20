@@ -19,6 +19,63 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.junit.jupiter.api.Test;
 
 class AuthorityComponentResolverTest {
+  private ComponentRegistry owned(ComponentRegistry registry) throws Exception {
+    var field=ComponentRegistry.class.getDeclaredField("ownedBootstrapRegistry");
+    field.setAccessible(true);field.set(registry,true);return registry;
+  }
+
+  @Test void ownedExportFailureReportsOriginalBeforeFalseAndSanitizesOwnerNotifications() throws Exception {
+    var remote=source("remote",component("selected",publicRights(),"1.0.0","2.0.0"));services(remote);
+    var schema=org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.create("jar",
+        org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.Type.STREAM,
+        KlabAsset.KnowledgeClass.COMPONENT,"fixture").mediaType("application/java-archive");
+    remote.capabilities(scope).getExportSchemata().put("jar",List.of(schema));
+    var resolution=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);
+    var registry=owned(initializedRegistry(component("installed",publicRights(),"1.0.0","3.0.0")));
+    when(scope.findService(eq(ResourcesService.class),any())).thenReturn(Optional.of(remote));
+    var original=new IllegalStateException("SECRET response",new java.io.IOException("SECRET token"));
+    when(remote.exportAsset(anyString(),any(),anyString(),any(),same(scope))).thenThrow(original);
+    try(var diagnostics=mockStatic(OwnedBootstrapDiagnostics.class)) {
+      assertFalse(registry.loadComponents(resolution.resources(),scope));
+      diagnostics.verify(()->OwnedBootstrapDiagnostics.report(
+          OwnedBootstrapDiagnostics.Phase.COMPONENT_EXPORT,"fixture.component@2.0.0",
+          OwnedBootstrapDiagnostics.Reason.EXCEPTION,original));
+    }
+    assertEquals("AUTHORITY_COMPONENT_EXPORT_FAILED",resolution.resources().getNotifications().getFirst().getMessage());
+    assertNull(resolution.resources().getNotifications().getFirst().getStackTrace());
+    verify(scope).error("AUTHORITY_COMPONENT_EXPORT_FAILED");verify(scope,never()).error(original);
+  }
+
+  @Test void ownedMissingServiceReportsFixedReasonBeforeFalse() throws Exception {
+    var remote=source("remote",component("selected",publicRights(),"1.0.0","2.0.0"));services(remote);
+    var resolution=AuthorityComponentResolver.resolve("fixture.authority@1.0.0",scope);
+    var registry=owned(initializedRegistry(component("installed",publicRights(),"1.0.0","3.0.0")));
+    when(scope.findService(eq(ResourcesService.class),any())).thenReturn(Optional.empty());
+    try(var diagnostics=mockStatic(OwnedBootstrapDiagnostics.class)) {
+      assertFalse(registry.loadComponents(resolution.resources(),scope));
+      diagnostics.verify(()->OwnedBootstrapDiagnostics.report(
+          OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD,"fixture.component@2.0.0",
+          OwnedBootstrapDiagnostics.Reason.SERVICE_UNAVAILABLE,null));
+    }
+  }
+
+  @Test void ownedInstallationReportsOriginalBeforeNotificationConversion() throws Exception {
+    var registry=owned(initializedRegistry(component("installed",publicRights(),"1.0.0","3.0.0")));
+    var jar=directory.resolve("fixture.component@2.0.0.jar");java.nio.file.Files.writeString(jar,"fixture");
+    var manager=ComponentRegistry.class.getDeclaredField("componentManager");manager.setAccessible(true);
+    var original=new IllegalStateException("SECRET plugin response",new java.io.IOException("SECRET cause"));
+    when(((org.pf4j.PluginManager)manager.get(registry)).loadPlugin(any())).thenThrow(original);
+    try(var diagnostics=mockStatic(OwnedBootstrapDiagnostics.class)) {
+      var result=registry.installComponent(jar.toFile(),null);
+      assertNull(result.getFirst());
+      assertEquals("AUTHORITY_COMPONENT_INSTALL_FAILED",result.getSecond().getNotifications().getFirst().getMessage());
+      assertNull(result.getSecond().getNotifications().getFirst().getStackTrace());
+      diagnostics.verify(()->OwnedBootstrapDiagnostics.report(
+          OwnedBootstrapDiagnostics.Phase.COMPONENT_INSTALL,"fixture.component@2.0.0",
+          OwnedBootstrapDiagnostics.Reason.EXCEPTION,original));
+    }
+  }
+
   @Test void credentialRotationDoesNotChangeAuthorizedArtifactSelection() throws Exception {
     var remote = source("remote", component("hash-a", publicRights(), "1.0.0")); services(remote);
     var before = AuthorityComponentResolver.resolve("fixture.authority", scope).revision();

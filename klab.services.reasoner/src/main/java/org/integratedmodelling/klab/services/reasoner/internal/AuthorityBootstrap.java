@@ -38,6 +38,7 @@ public final class AuthorityBootstrap {
   private final Resolver resolver;
   private final Producer producer;
   private final String policyRevision;
+  private final BootstrapFailureDiagnostics.Reporter failureReporter;
   String policyRevision() { return policyRevision; }
   private final Map<String, Outcome> outcomes = new java.util.concurrent.ConcurrentHashMap<>();
   private final java.util.concurrent.atomic.AtomicLong epoch = new java.util.concurrent.atomic.AtomicLong();
@@ -51,7 +52,12 @@ public final class AuthorityBootstrap {
   }
   AuthorityBootstrap(Resolver resolver, Producer producer) { this(resolver,producer,null); }
   private AuthorityBootstrap(Resolver resolver, Producer producer,String policyRevision) {
+    this(resolver,producer,policyRevision,BootstrapFailureDiagnostics::report);
+  }
+  AuthorityBootstrap(Resolver resolver, Producer producer,String policyRevision,
+      BootstrapFailureDiagnostics.Reporter failureReporter) {
     this.resolver=resolver; this.producer=producer; this.policyRevision=policyRevision;
+    this.failureReporter=Objects.requireNonNull(failureReporter);
   }
 
   /** Metadata-only poll: never download, configure, or run provider code here. */
@@ -133,11 +139,15 @@ public final class AuthorityBootstrap {
       if (previous.failure()!=null) throw previous.failure().exception();
       verify(source,owner,previous.plan(),expectedKey); requireEpoch(startedEpoch); return previous.catalog();
     }
+    var phase=BootstrapFailureDiagnostics.Phase.RESOLVE_PLAN;
+    String planHash="-";
     try {
       var plan=resolver.resolve(source,owner); cancellation.checkpoint();
+      planHash=CandidateTrace.digest(plan.revision());
       var selectedRevision = source.getMetadata().get(AuthorityComponentResolver.SELECTION_METADATA);
       if (selectedRevision != null && !selectedRevision.equals(plan.revision()))
         throw new IllegalStateException("Authority selection changed after preflight");
+      phase=BootstrapFailureDiagnostics.Phase.PROVIDER_INPUT;
       var providerInput = providerInput(source, owner);
       if (CandidateTrace.enabled()) {
         CandidateTrace.emit(CandidateTrace.Event.FIELD_PROVIDER_INPUT,CandidateTrace.job(),-1,startedEpoch,
@@ -149,6 +159,7 @@ public final class AuthorityBootstrap {
         if (outcome.epoch() == startedEpoch && outcome.failure() == null
             && providerInput.equals(outcome.providerInput()) && plan.revision().equals(outcome.plan().revision())
             && !outcome.catalog().hasExpiredResponses()) {
+          phase=BootstrapFailureDiagnostics.Phase.VERIFY_PROOF;
           verify(source, owner, plan, expectedKey); cancellation.checkpoint();
           CandidateTrace.stage(CandidateTrace.Event.CACHE_REUSE,expectedKey,startedEpoch,CandidateTrace.Reason.PROVIDER_REUSE);
           remember(expectedKey, new Outcome(startedEpoch, outcome.catalog(), null, plan, providerInput));
@@ -156,7 +167,9 @@ public final class AuthorityBootstrap {
         }
       }
       CandidateTrace.stage(CandidateTrace.Event.PRODUCER_START,expectedKey,startedEpoch,CandidateTrace.Reason.NONE);
+      phase=BootstrapFailureDiagnostics.Phase.PRODUCE;
       var catalog=producer.produce(source,owner,plan,cancellation);
+      phase=BootstrapFailureDiagnostics.Phase.VERIFY_PROOF;
       CandidateTrace.checkpoint(cancellation,expectedKey,startedEpoch,CandidateTrace.Reason.POST_PRODUCER);
       if (catalog==null || source.getAuthorityBindings().stream().anyMatch(b->!catalog.supports(b)))
         throw new IllegalStateException("Producer supplied no matching configured proof");
@@ -168,6 +181,14 @@ public final class AuthorityBootstrap {
     }
     catch (Exception failure) {
       CandidateTrace.stage(CandidateTrace.Event.BOOTSTRAP_FAILURE,expectedKey,startedEpoch,CandidateTrace.Reason.FAILURE);
+      try {
+        failureReporter.report(new BootstrapFailureDiagnostics.Context(phase,
+            CandidateTrace.digest(expectedKey),planHash,CandidateTrace.digest(source.getAuthorityBindings()),
+            source.getAuthorityBindings().stream().map(binding ->
+                org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.identifier(
+                    binding.componentUrn()+"@"+binding.componentVersion())).distinct().sorted().toList(),
+            source.getAuthorityBindings().size()),failure);
+      } catch (Throwable loggingUnavailable) { /* Logging must never replace the bootstrap failure. */ }
       // Provider exceptions can contain private parameters, URLs, or headers.
       var sanitized = new Failure("AUTHORITY_BOOTSTRAP_FAILED: "+failure.getClass().getSimpleName(),
           failure instanceof OwnedCleanupFailure || failure.getSuppressed().length > 0);
