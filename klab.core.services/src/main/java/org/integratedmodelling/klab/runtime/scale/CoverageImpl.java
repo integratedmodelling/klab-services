@@ -150,7 +150,9 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
       }
     }
     if (Double.isNaN(this.coverage)) {
-      this.coverage = 0;
+      // Dimensionless coverages have no entries to multiply. Preserve their explicit
+      // value: universal coverage is 1, while an empty coverage is 0.
+      this.coverage = original.coverage;
     }
     this.coverage = clampCoverage(this.coverage);
     assert (this.coverage >= 0 && this.coverage <= 1);

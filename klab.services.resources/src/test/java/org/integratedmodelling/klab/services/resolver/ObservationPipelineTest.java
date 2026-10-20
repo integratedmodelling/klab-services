@@ -156,15 +156,35 @@ class ObservationPipelineTest {
     }
   }
 
+  @Test void cotechinoRegionWithUnrestrictedModelsResolvesAllThreeDependencies() throws Exception {
+    var geometry = Geometry.create(
+        "T1(1){tstart=1388534400000,tend=1420070400000,ttype=GRID,tunit=YEAR,tscope=1}"
+            + "S2(237,258){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((33.796 -7.086&comma;35.946 -7.086&comma;35.946 -9.41&comma;33.796 -9.41&comma;33.796 -7.086))}");
+    new DependencyContextFixture(false, false, geometry).run();
+  }
+
+  @Test void abstractElevationBlocksTheExplanationBeforeModelDiscoveryAndReportsWhy() throws Exception {
+    var fixture = new DependencyContextFixture(false, false);
+    ((ConceptImpl) fixture.elevation.getSemantics()).setAbstract(true);
+    ((ObservableImpl) fixture.elevation).setAbstract(true);
+    var graph = fixture.resolve();
+    assertTrue(graph.isEmpty());
+    assertTrue(fixture.warnings.stream().anyMatch(message ->
+        message.contains("No observation strategy for dependency test:Elevation (abstract=true)")));
+    assertTrue(fixture.warnings.stream().anyMatch(message ->
+        message.contains("mandatory dependency test:Elevation")));
+  }
+
   /** Scope doubles derive immutable context/constraint snapshots, just as service scopes do. */
   private static class DependencyContextFixture {
-    final Geometry geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
+    final Geometry geometry;
     final Reasoner reasoner = mock(Reasoner.class);
     final RuntimeService runtime = mock(RuntimeService.class);
     final Parameters<String> data = Parameters.create();
     final java.util.concurrent.atomic.AtomicLong ids = new java.util.concurrent.atomic.AtomicLong(-10);
     final Map<String, Model> models = new HashMap<>();
     final List<String> selected = new ArrayList<>();
+    final List<String> warnings = new ArrayList<>();
     final Observable owner;
     final Observable freshwater = named(SemanticType.SUBJECT, true, "Freshwater");
     final Observable elevation = named(SemanticType.QUALITY, false, "Elevation");
@@ -174,6 +194,11 @@ class ObservationPipelineTest {
     final ContextScope initial;
 
     DependencyContextFixture(boolean collective, boolean nested) throws Exception {
+      this(collective, nested, Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}"));
+    }
+
+    DependencyContextFixture(boolean collective, boolean nested, Geometry geometry) throws Exception {
+      this.geometry = geometry;
       owner = named(SemanticType.SUBJECT, collective, "Region");
       requested = observation(owner, -2, geometry);
       outer = nested ? observation(named(SemanticType.SUBJECT, false, "Outer"), 25, geometry) : null;
@@ -196,8 +221,11 @@ class ObservationPipelineTest {
           assertConstraint(current, ResolutionConstraint.Type.ResolutionProject, "example.project");
         }
         var strategies = strategyReasoner.computeMatchingStrategies(target, current, true);
-        assertEquals(1, strategies.size(), target.getObservable().getUrn());
-        selected.add(strategies.getFirst().getUrn());
+        if (target.getObservable().isAbstract()) assertTrue(strategies.isEmpty());
+        else {
+          assertEquals(1, strategies.size(), target.getObservable().getUrn());
+          selected.add(strategies.getFirst().getUrn());
+        }
         return mapper.readValue(mapper.writerFor(listType).writeValueAsString(strategies), listType);
       });
       var requirements = new ResourceSet(); requirements.setEmpty(false);
@@ -213,7 +241,7 @@ class ObservationPipelineTest {
         when(model.getObservables()).thenReturn(List.of(observable));
         when(model.getNamespace()).thenReturn(observable == freshwater ? "freshwater.example" : "private.example");
         when(model.getProjectName()).thenReturn(observable == freshwater ? "freshwater.project" : "example.project");
-        when(model.getCoverage()).thenReturn(geometry);
+        when(model.getCoverage()).thenReturn(Coverage.universal());
         when(model.getAnnotations()).thenReturn(List.of());
         when(model.getDependencies()).thenReturn(observable == owner ? List.of(freshwater, elevation, slope) : List.of());
         var computation = new ContextualizableImpl();
@@ -239,6 +267,8 @@ class ObservationPipelineTest {
       when(result.getResolutionConstraints()).thenReturn(new ArrayList<>(constraints.values()));
       when(result.getService(Reasoner.class)).thenReturn(reasoner);
       when(result.getService(RuntimeService.class)).thenReturn(runtime);
+      doAnswer(i -> { warnings.add(Arrays.deepToString(i.getRawArguments())); return null; })
+          .when(result).warn(any(Object[].class));
       when(result.within(nullable(Observation.class))).thenAnswer(i -> scope(i.getArgument(0), constraints));
       when(result.withResolutionConstraints(any(ResolutionConstraint[].class))).thenAnswer(i -> {
         var merged = new EnumMap<ResolutionConstraint.Type, ResolutionConstraint>(ResolutionConstraint.Type.class);
@@ -264,7 +294,7 @@ class ObservationPipelineTest {
       assertEquals(List.of(expected), constraint.payload(String.class));
     }
 
-    void run() {
+    ResolutionGraph resolve() {
       var compiler = new ResolutionCompiler(mock(ResolverService.class)) {
         @Override public List<Model> queryModels(Observable o, Concept context, ContextScope s, Scale scale) {
           assertConstraint(s, ResolutionConstraint.Type.Scenarios, "baseline");
@@ -281,7 +311,11 @@ class ObservationPipelineTest {
           return new QueryMatch(null, null, scale, null, Coverage.create(scale, 0));
         }
       };
-      var graph = compiler.resolve(requested, initial);
+      return compiler.resolve(requested, initial);
+    }
+
+    void run() {
+      var graph = resolve();
       assertFalse(graph.isEmpty());
       assertTrue(graph.getCoverage().isComplete());
       assertEquals(2, Collections.frequency(selected, "dependent.direct"));

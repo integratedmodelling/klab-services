@@ -244,8 +244,12 @@ public class ResolutionCompiler {
     }
 
     List<ResolutionGraph> strategyGraphs = new ArrayList<>();
-    for (ObservationStrategy strategy :
-        scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
+    var strategies = scope.getService(Reasoner.class).computeObservationStrategies(observation, scope);
+    if (strategies.isEmpty() && suppliedQuery != null && !observation.getObservable().isOptional()) {
+      scope.warn("No observation strategy for dependency " + observation.getObservable().getUrn()
+          + " (abstract=" + observation.getObservable().isAbstract() + ")");
+    }
+    for (ObservationStrategy strategy : strategies) {
 
       var strategyResolution = resolve(strategy, scaleToResolve, ret, scope, observation);
       var cov = ret.checkCoverage(strategyResolution);
@@ -617,6 +621,8 @@ public class ResolutionCompiler {
         if (dependency.isOptional()) {
           continue;
         } else {
+          scope.warn("Model " + model.getUrn() + " rejected: mandatory dependency "
+              + dependency.getUrn() + " has no relevant resolution coverage");
           return ResolutionGraph.empty();
         }
       }
