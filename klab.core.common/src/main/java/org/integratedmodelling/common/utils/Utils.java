@@ -1652,9 +1652,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+            scope.error(Logging.safeFailure(e), "HTTP request failed",
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else if (!options.silent) {
+            Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
           }
         }
         return null;
@@ -1820,22 +1821,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           } else {
             var failure = "POST " + apiCall + " failed with HTTP "
                 + (response == null ? 0 : response.statusCode());
-            // Gateways commonly return HTML or no body at all. Extract structured details only
-            // when present; never run error pages through the normal JSON result parser.
-            if (reportFailure && response != null && response.body().length <= 16384) {
-              try {
-                var log = new ObjectMapper().readValue(response.body(), Map.class);
-                if (log.get("body") instanceof Map nested) log = nested;
-                var detail = log.get("detail");
-                if (detail == null) detail = log.get("message");
-                if (detail instanceof String text && !text.isBlank()) {
-                  failure += ": " + text.substring(0, Math.min(512, text.length()));
-                }
-              } catch (Exception ignored) { /* Not a structured error response. */ }
-            }
-            if (reportFailure) Logging.INSTANCE.error(failure);
             if (propagateFailure) {
               throw new KlabServiceAccessException(failure);
+            }
+            if (reportFailure && !options.silent) {
+              Logging.INSTANCE.error("HTTP POST failed (status "
+                  + (response == null ? 0 : response.statusCode()) + ")");
             }
           }
 
@@ -1846,10 +1837,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           if (propagateFailure) throw new KlabServiceAccessException(cancelled);
           return null;
         } catch (Throwable e) {
-          if (reportFailure && scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+          if (reportFailure) {
+            if (scope != null) {
+              scope.error(Logging.safeFailure(e), "HTTP POST failed",
+                  options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+            } else if (!options.silent) {
+              Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP POST failed");
+            }
           }
           if (propagateFailure) {
             if (e instanceof KlabServiceAccessException serviceFailure) throw serviceFailure;
@@ -1940,9 +1934,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+            scope.error(Logging.safeFailure(e), "HTTP request failed",
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else if (!options.silent) {
+            Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
           }
         }
 
@@ -2123,9 +2118,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             throw new RequestFailure(0, "Collection request failed", e);
           }
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+            scope.error(Logging.safeFailure(e), "HTTP request failed",
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else if (!options.silent) {
+            Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
           }
         }
 
@@ -2204,9 +2200,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             throw new RequestFailure(0, "PUT " + apiCall + " failed: " + e.getClass().getSimpleName(), e);
           }
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+            scope.error(Logging.safeFailure(e), "HTTP request failed",
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else if (!options.silent) {
+            Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
           }
         }
 
@@ -2379,6 +2376,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               parseHeaders(response);
               return parseResponse(response.body(), resultClass);
             }
+            throw new RequestFailure(response == null ? 0 : response.statusCode(),
+                "HTTP GET returned an unsuccessful status", null);
           } else {
             client.send(
                 requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
@@ -2386,10 +2385,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
 
         } catch (Throwable e) {
+          if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+          var failure = Logging.safeFailure(e);
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+            scope.error(failure, "HTTP GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"),
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else if (!options.silent) {
+            Logging.INSTANCE.error(failure, "HTTP GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"));
           }
         }
         return null;
@@ -2450,9 +2452,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+            scope.error(Logging.safeFailure(e), "HTTP request failed",
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else if (!options.silent) {
+            Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
           }
         }
         return null;
@@ -2505,6 +2508,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
           if (strict) throw new RequestFailure(response == null ? 0 : response.statusCode(),
               RequestFailure.collectionFailureDetail(response == null ? null : response.body()), null);
+          throw new RequestFailure(response == null ? 0 : response.statusCode(),
+              "HTTP collection GET returned an unsuccessful status", null);
         } catch (Throwable e) {
           if (strict) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
@@ -2512,9 +2517,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             throw new RequestFailure(0, "Collection request failed", e);
           }
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+            scope.error(Logging.safeFailure(e), "HTTP collection GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"), options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else {
-            //                        e.printStackTrace();
+            if (!options.silent) Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP collection GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"));
           }
         }
 
@@ -2607,9 +2612,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+            scope.error(Logging.safeFailure(e), "HTTP request failed",
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else if (!options.silent) {
+            Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
           }
         }
 
@@ -2655,9 +2661,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
-          } else {
-            //                        e.printStackTrace();
+            scope.error(Logging.safeFailure(e), "HTTP request failed",
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+          } else if (!options.silent) {
+            Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
           }
         }
 
@@ -2727,8 +2734,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         try {
           return Json.parseObject(body, resultClass);
         } catch (Throwable e) {
-          Logging.INSTANCE.error(
-              "PARSE ERROR OF " + resultClass.getSimpleName() + " FOR " + body, e);
           throw new KlabIOException(e);
         }
       }
@@ -2930,7 +2935,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       try {
         return (T) defaultMapper.readerFor(cls).readValue(text);
       } catch (Throwable e) {
-        Logging.INSTANCE.error(e, "Error parsing JSON as" + cls.getSimpleName() + ": " + text);
         throw new KlabIllegalArgumentException(e);
       }
     }

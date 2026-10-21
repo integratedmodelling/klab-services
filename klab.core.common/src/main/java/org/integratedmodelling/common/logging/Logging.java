@@ -93,7 +93,11 @@ public enum Logging {
 
   public void error(Object... o) {
 
-    Notification payload = Notification.create(o);
+    Object[] safe = o.clone();
+    for (int i = 0; i < safe.length; i++) {
+      if (safe[i] instanceof Throwable failure) safe[i] = safeFailure(failure);
+    }
+    Notification payload = Notification.create(safe);
 
     if (payload.getMode() == Notification.Mode.Silent) {
       return;
@@ -101,12 +105,41 @@ public enum Logging {
 
     if (Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.SEVERE.intValue()) {
       if (errorWriter != null) {
-        errorWriter.accept(systemIdentifier + payload.getMessage());
+        errorWriter.accept(systemIdentifier + payload.getMessage()
+            + (payload.getStackTrace() == null ? "" : "\n" + payload.getStackTrace()));
       }
       if (logger != null) {
-        logger.error(systemIdentifier + payload.getMessage());
+        logger.error(systemIdentifier + payload.getMessage()
+            + (payload.getStackTrace() == null ? "" : "\n" + payload.getStackTrace()));
       }
     }
+  }
+
+  /** Snapshot diagnostic types, frames and causes without retaining payload-bearing messages. */
+  public static Throwable safeFailure(Throwable failure) {
+    return failure instanceof SafeFailure ? failure : snapshot(failure, new java.util.IdentityHashMap<>(), 0);
+  }
+
+  private static final class SafeFailure extends RuntimeException {
+    SafeFailure(String type) { super(type + ": message redacted"); }
+  }
+
+  private static Throwable snapshot(Throwable failure,
+      java.util.IdentityHashMap<Throwable, Throwable> seen, int depth) {
+    if (failure == null || depth >= 16 || seen.size() >= 128) return null;
+    if (seen.containsKey(failure)) return null;
+    Throwable safe = new SafeFailure(failure.getClass().getName());
+    seen.put(failure, safe);
+    var frames = failure.getStackTrace();
+    safe.setStackTrace(java.util.Arrays.copyOf(frames, Math.min(frames.length, 128)));
+    var cause = snapshot(failure.getCause(), seen, depth + 1);
+    if (cause != null) safe.initCause(cause);
+    var suppressed = failure.getSuppressed();
+    for (int i = 0; i < Math.min(suppressed.length, 16); i++) {
+      var child = snapshot(suppressed[i], seen, depth + 1);
+      if (child != null) safe.addSuppressed(child);
+    }
+    return safe;
   }
 
   public void debug(Object... o) {

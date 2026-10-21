@@ -50,6 +50,8 @@ public class KlabErrorHandler {
 
   @ExceptionHandler(Throwable.class)
   public @ResponseBody ResponseEntity<ErrorResponse> handleDefaultException(Throwable ex) {
+    org.integratedmodelling.common.logging.Logging.INSTANCE.error(
+        ex, "Unhandled service request failure");
     ErrorResponse errorResponse =
         ErrorResponse.create(ex, HttpStatus.INTERNAL_SERVER_ERROR, Utils.Exceptions.stackTrace(ex));
     // Binary exports accept only their requested image/data format. Errors still need a JSON

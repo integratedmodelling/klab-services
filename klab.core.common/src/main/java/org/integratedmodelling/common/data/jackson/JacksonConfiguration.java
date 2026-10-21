@@ -184,7 +184,6 @@ public class JacksonConfiguration {
       try {
         return (T) deserialize(node, p, (Field) null);
       } catch (Exception e) {
-        e.printStackTrace();
         throw new KlabIOException(e);
       }
     }
