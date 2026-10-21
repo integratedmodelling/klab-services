@@ -2741,6 +2741,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return true;
     }
 
+    if (concept.asConcept().isCollective() != other.asConcept().isCollective()) return false;
+    // Admitted authority terms use the provider's directional contract, including UNKNOWN.
+    // Exported OWL parents never override a provider decision or supply a missing mapping.
+    var delegated = authorityIdentityResolver == null ? Authority.Subsumption.UNSUPPORTED
+        : authorityIdentityResolver.subsumption(other.asConcept(), concept.asConcept());
+    if (delegated != Authority.Subsumption.UNSUPPORTED)
+      return delegated == Authority.Subsumption.SUBSUMES;
     if (authorityIdentityResolver != null && other.asConcept().is(SemanticType.AUTHORITY_IDENTITY))
       authorityIdentityResolver.ensureHierarchy(concept.asConcept());
     var key = new SubsumptionKey(knowledgeRevision(), concept.asConcept(), other.asConcept());

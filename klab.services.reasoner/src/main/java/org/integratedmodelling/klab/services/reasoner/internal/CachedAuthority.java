@@ -85,6 +85,11 @@ public final class CachedAuthority implements Authority {
     }
   }
 
+  @Override public synchronized Subsumption subsumption(String id, String target, String candidate) {
+    check(id);
+    return source.subsumption(providerId, target, candidate);
+  }
+
   @Override public synchronized SemanticDistance semanticDistance(String id, String target, String candidate) {
     check(id);
     return source.semanticDistance(providerId, target, candidate);
@@ -267,6 +272,12 @@ public final class CachedAuthority implements Authority {
     }
     @Override public String configure(ConfigurationRequest request) { return CachedAuthority.this.configure(request); }
     @Override public void releaseConfiguration(String id) { CachedAuthority.this.releaseConfiguration(id); }
+    @Override public Subsumption subsumption(String id, String target, String candidate) {
+      synchronized (CachedAuthority.this) { check(id); return delegate.subsumption(providerId,target,candidate); }
+    }
+    @Override public SemanticDistance semanticDistance(String id, String target, String candidate) {
+      synchronized (CachedAuthority.this) { check(id); return delegate.semanticDistance(providerId,target,candidate); }
+    }
     @Override public Identity resolveIdentity(String id, String identity) {
       synchronized (CachedAuthority.this) { check(id); return resolve(delegate, path, identity, ResolutionMode.CONFIGURED); }
     }

@@ -36,6 +36,17 @@ public interface Authority {
     return SemanticDistance.unsupported();
   }
 
+  /** Strict directional proof, separate from policy-admitted semantic distance.
+   * UNKNOWN is absence of proof, INCOMPATIBLE is a provider-proven exclusion.
+   * Only UNSUPPORTED permits the host's existing asserted-hierarchy fallback. */
+  enum Subsumption { SUBSUMES, INCOMPATIBLE, UNKNOWN, UNSUPPORTED }
+
+  /** Does target strictly include or equal candidate within this admitted live bridge?
+   * Approximate/fuzzy acceptance is never sufficient. Default leaves existing providers unchanged. */
+  default Subsumption subsumption(String configurationId, String targetId, String candidateId) {
+    return Subsumption.UNSUPPORTED;
+  }
+
   enum HierarchyStatus { COMPLETE, DEFERRED }
   enum ResolutionMode { CONFIGURED, FULL_HIERARCHY }
 

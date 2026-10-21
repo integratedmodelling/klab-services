@@ -106,6 +106,7 @@ public final class AuthorityIdentityResolver {
   /** Only concepts admitted by this live resolver can select a configured provider. Metadata alone
    * never authorizes dispatch. Different bindings are deliberately not compared by one provider. */
   public synchronized Authority.SemanticDistance semanticDistance(Concept target, Concept candidate) {
+    if (target.isCollective() != candidate.isCollective()) return Authority.SemanticDistance.unknown("Different collective modes");
     var a = admittedReference(target); var b = admittedReference(candidate);
     if (a == null || b == null) return Authority.SemanticDistance.unsupported();
     var binding = bindings.get(a[0]);
@@ -118,17 +119,33 @@ public final class AuthorityIdentityResolver {
     }
   }
 
+  /** Strict proof has its own provider channel; fuzzy distance admission is not inheritance. */
+  public synchronized Authority.Subsumption subsumption(Concept target, Concept candidate) {
+    if (target.isCollective() != candidate.isCollective()) return Authority.Subsumption.UNKNOWN;
+    var a = admittedReference(target); var b = admittedReference(candidate);
+    if (a == null || b == null) return Authority.Subsumption.UNSUPPORTED;
+    if (!a[0].equals(b[0])) return Authority.Subsumption.UNKNOWN;
+    var binding = bindings.get(a[0]);
+    try {
+      var result = binding.provider().subsumption(binding.id(), a[1], b[1]);
+      return result == null ? Authority.Subsumption.UNKNOWN : result;
+    } catch (RuntimeException failure) { return Authority.Subsumption.UNKNOWN; }
+  }
+
   private String[] admittedReference(Concept concept) {
+    concept = concept.singular();
     var reference = references.get(concept.getUrn());
     if (reference == null) return null;
     var binding = bindings.get(reference[0]);
     var known = binding == null ? null : resolved.get(binding);
-    return known != null && known.values().stream().anyMatch(c -> c.getUrn().equals(concept.getUrn()))
+    var urn = concept.getUrn();
+    return known != null && known.values().stream().anyMatch(c -> c.getUrn().equals(urn))
         ? reference : null;
   }
 
   /** Explicit parent inspection or authority-to-authority subsumption may request enrichment. */
   public synchronized void ensureHierarchy(Concept concept) {
+    concept = concept.singular();
     var reference = references.get(concept.getUrn());
     if (reference != null) resolve(reference[0], reference[1], true);
   }

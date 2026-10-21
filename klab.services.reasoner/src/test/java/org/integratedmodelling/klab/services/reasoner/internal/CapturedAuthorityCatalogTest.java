@@ -19,6 +19,8 @@ class CapturedAuthorityCatalogTest {
     assertTrue(provider.getCapabilities().isSearchable());
     assertTrue(provider.getCapabilities().isSemanticDistanceSupported());
     assertEquals(Authority.DistanceStatus.UNKNOWN,provider.semanticDistance(id,"target","candidate").status());
+    assertEquals(Authority.Subsumption.UNSUPPORTED,provider.subsumption(id,"target","candidate"),
+        "Legacy provider with no strict hook must retain asserted-hierarchy fallback");
     assertThrows(UnsupportedOperationException.class, () -> provider.search("new-query", null, id));
     // The original installation can disappear after capture: accepted requests use owned bytes.
     Files.delete(fixture.data().resolve("components/plugins/klab.authority.taxa-1.0.0-SNAPSHOT-component.jar"));

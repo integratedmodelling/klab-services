@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 /** Runs the production compiler in private semantic state, without normal service construction. */
 public final class SemanticEnvironmentFactory
     implements CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> {
-  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v12-model-dependency-revision-admission-bearer-identity-boolean-source-application-membership-identity-closure-core-alignment-generic-quality-canonical-aliases-configured-authority-snapshots-temporal-derivatives-nested-rates-affine-scales-canonical-rate-identity-verified-aliases-mixed-operators-verified-immutable-odo";
+  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v12-model-dependency-revision-admission-bearer-identity-boolean-source-application-membership-identity-closure-core-alignment-generic-quality-canonical-aliases-configured-authority-snapshots-temporal-derivatives-nested-rates-affine-scales-canonical-rate-identity-verified-aliases-mixed-operators-verified-immutable-odo-authority-owned-subsumption";
   private final Path assetRoot;
   private final Map<String, byte[]> core;
   private final String dependencyRevision;

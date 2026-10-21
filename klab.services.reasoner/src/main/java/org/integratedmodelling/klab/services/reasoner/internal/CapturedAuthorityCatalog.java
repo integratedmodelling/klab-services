@@ -30,7 +30,7 @@ public final class CapturedAuthorityCatalog {
   private final Map<String, FrozenConfiguredSnapshot> configuredSnapshots;
   public record ProviderEvidence(String implementation, String componentSha256, String policySha256, String metadataSha256) {}
   private record Provider(ComponentDescriptor component, String className, String providerUrn, String implementation,
-      Authority.CachePolicy policy, Set<String> boundaries, byte[] capabilities, byte[] seeds, byte[] archive, boolean snapshotCapable) {}
+      Authority.CachePolicy policy, Set<String> boundaries, byte[] capabilities, byte[] seeds, byte[] archive, boolean snapshotCapable, boolean subsumptionSupported) {}
 
   @com.fasterxml.jackson.annotation.JsonIgnoreProperties("updateable")
   private abstract static class ComponentWireMixin {}
@@ -140,7 +140,8 @@ public final class CapturedAuthorityCatalog {
         var record = new Provider(mapper.convertValue(descriptor, ComponentDescriptor.class), className, instance.getUrn(),
             className + ":" + annotation.version() + ":" + digest(archive), instance.getCachePolicy(),
             Set.copyOf(instance.getSemanticBoundaries()), mapper.writeValueAsBytes(capabilities),
-            mapper.writeValueAsBytes(configuredCodelists ? Map.of() : instance.getCodelistDefinitions(null)), archive, snapshotCapable);
+            mapper.writeValueAsBytes(configuredCodelists ? Map.of() : instance.getCodelistDefinitions(null)), archive, snapshotCapable,
+            type.getMethod("subsumption", String.class, String.class, String.class).getDeclaringClass() != Authority.class);
         if (providers.put(instance.getUrn(), record) != null) throw unresolved("duplicate provider: " + instance.getUrn());
       } finally {
         try { if (instance != null) closeOwnedProvider(instance); }
@@ -462,10 +463,18 @@ public final class CapturedAuthorityCatalog {
       try { return JSON.treeToValue(owned, CachedAuthority.StoredIdentity.class); }
       catch (IOException failure) { throw new IllegalStateException(failure); }
     }
+    @Override public synchronized Subsumption subsumption(String id, String target, String candidate) {
+      check(id);
+      if (!provider.subsumptionSupported()) return Subsumption.UNSUPPORTED;
+      if (configuredSnapshots.containsKey(original.name()) || interactive.getAsBoolean())
+        return live().subsumption(bridge.liveId, target, candidate);
+      return Subsumption.UNKNOWN;
+    }
     @Override public synchronized SemanticDistance semanticDistance(String id, String target, String candidate) {
       check(id);
       if (!getCapabilities().isSemanticDistanceSupported()) return SemanticDistance.unsupported();
-      if (interactive.getAsBoolean()) return live().semanticDistance(bridge.liveId, target, candidate);
+      if (configuredSnapshots.containsKey(original.name()) || interactive.getAsBoolean())
+        return live().semanticDistance(bridge.liveId, target, candidate);
       // Candidate compilation must not instantiate a mutable live provider or invent uncaptured results.
       return SemanticDistance.unknown("Authority distance is not captured for candidate compilation");
     }

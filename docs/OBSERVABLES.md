@@ -1138,3 +1138,30 @@ models. Reuse resolution idempotency/reuse, verify bounded distinct work as well
 duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
 contracts, actual source support, proposed integration and open questions. No
 consequence runtime is implemented by this declaration/validation slice.
+
+
+### Authority-owned entry hierarchies
+
+An authority-derived identity retains its configured authority, catalogue revision, source edition
+and exact source-code string. Explicit source-entry class parents can support transitive reasoning
+without supplying a pattern classifier. Parents are provider assertions, never deductions from a code
+prefix, similar label, generic broader link or shared provider. Independent schemes remain distinct.
+
+Strict `Authority.subsumption(configuration, target, candidate)` asks whether the candidate is proved
+to be included in/equal to the target. It is separate from policy-admitted semantic distance: an
+approximate match can rank as compatible without becoming a subtype. `UNKNOWN` and `INCOMPATIBLE`
+prevent OWL fallback; only `UNSUPPORTED` preserves ordinary hierarchy behavior for providers that do
+not implement the strict channel. Collective modes must agree and use the admitted singular identity
+for provider dispatch. Eligibility/admission checks precede resolution ranking.
+
+LAND uses zero for the same admitted entry and its established value 1 for any proved strict
+refinement, including transitive ancestors; this is not a new path-length metric. Its entry-only
+schema accepts explicit multiple `classParents` within one pinned catalogue/edition, rejects unknown
+parents/self-links/cycles, and preserves those edges through frozen snapshot replay. Cached wrappers
+and frozen configured snapshots retain the same strict-proof versus distance distinction. Missing
+legacy response evidence does not authorize live network work during candidate compilation.
+
+The isolated `land:LandCover` binding and `type of land:LandCover of earth:Location` example use a
+locally illustrative CORINE-shaped catalogue; source codes/labels do not confer scientific authority
+on the demonstration parent edges. It supplies no ecosystem mapping, observation classifier,
+coverage guarantee or regulatory compliance claim.

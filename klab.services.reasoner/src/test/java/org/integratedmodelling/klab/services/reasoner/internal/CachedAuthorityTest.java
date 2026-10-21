@@ -36,6 +36,29 @@ class CachedAuthorityTest {
     assertThrows(IllegalArgumentException.class,()->wrapper.semanticDistance(id,"target","candidate"));
   }
 
+  @Test void strictSubsumptionForwardsUncachedThroughRootAndViewAndRejectsReleasedBridge() {
+    var source=org.mockito.Mockito.mock(Authority.class);
+    var view=org.mockito.Mockito.mock(Authority.class);
+    var request=request();
+    org.mockito.Mockito.when(source.getUrn()).thenReturn("test.authority");
+    org.mockito.Mockito.when(source.getCachePolicy()).thenReturn(new Authority.CachePolicy("v1",100,100,100));
+    org.mockito.Mockito.when(source.configure(request)).thenReturn("transient");
+    org.mockito.Mockito.when(source.subAuthority("CHILD")).thenReturn(view);
+    org.mockito.Mockito.when(source.subsumption("transient","target","candidate"))
+        .thenReturn(Authority.Subsumption.SUBSUMES).thenReturn(Authority.Subsumption.UNKNOWN);
+    org.mockito.Mockito.when(view.subsumption("transient","target","candidate"))
+        .thenReturn(Authority.Subsumption.INCOMPATIBLE);
+    var wrapper=new CachedAuthority(source,directory,Clock.systemUTC(),"implementation");
+    var id=wrapper.configure(request);
+    assertEquals(Authority.Subsumption.SUBSUMES,wrapper.subsumption(id,"target","candidate"));
+    assertEquals(Authority.Subsumption.UNKNOWN,wrapper.subsumption(id,"target","candidate"));
+    var child=wrapper.subAuthority("CHILD");
+    assertEquals(Authority.Subsumption.INCOMPATIBLE,child.subsumption(id,"target","candidate"));
+    wrapper.releaseConfiguration(id);
+    assertThrows(IllegalArgumentException.class,()->wrapper.subsumption(id,"target","candidate"));
+    assertThrows(IllegalArgumentException.class,()->child.subsumption(id,"target","candidate"));
+  }
+
   private Authority.ConfigurationRequest request(String worldview, String name, String root, int release) {
     return new Authority.ConfigurationRequest(worldview, name, root,
         Map.of("urn", "test.authority", "release", release));
