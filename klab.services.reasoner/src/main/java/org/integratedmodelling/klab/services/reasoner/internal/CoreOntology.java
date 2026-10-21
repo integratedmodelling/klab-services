@@ -216,6 +216,7 @@ public class CoreOntology {
     public static final String HAS_SUBJECTIVE_TRAIT_PROPERTY = "odo:hasSubjectiveTrait";
     public static final String IS_SUBJECTIVE = "odo:isSubjective";
     public static final String IS_INHERENT_TO_PROPERTY = "odo:isInherentTo";
+    public static final String OBSERVATIONALLY_CONTAINS_PROPERTY = "odo:observationallyContains";
     // TODO decide which ones go in klab and which in ODO
     public static final String DESCRIBES_OBSERVABLE_PROPERTY = "klab:describesObservable";
     public static final String DESCRIBES_QUALITY_PROPERTY = "odo:describesQuality";

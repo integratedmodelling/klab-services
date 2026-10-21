@@ -30,11 +30,12 @@ public enum Contextualization {
    */
   INSTANTIATION(true, "object", Artifact.Type.OBJECT, "instantiator"),
   /**
-   * The activity that contextualizes a detected configuration (aka EMERGENCE) that has been
-   * submitted to the DigitalTwin by the semantic engine detecting its existence. A Configuration
-   * built from detected qualities will be local to the Observation holding the qualities; one built
-   * from Relationships will be global to the DigitalTwin and may change as new observations are
-   * made under the same observer.
+   * The activity through which a configuration observation emerges. Models never instantiate
+   * configurations; a model resolves the observation after detection. Intended placement is under
+   * the dependents' bearer for dependent ingredients, or in root-level cohorts for substantial
+   * ingredients. Relationship emergence yields Networks, whose later resolution creates network
+   * models. The observation-commit consequence engine implementing this lifecycle is future work;
+   * this activity classification alone does not establish implemented detection or placement.
    *
    * <p>Example: <code>infrastructure:RoadNetwork</code>
    */

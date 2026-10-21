@@ -52,6 +52,20 @@ public class DocumentSemanticValidator
   public List<Notification> validateModel(
       KimModel model, KimObservableVisitor.Context context) {
     var result = validateDependencies(model, context);
+    for (var output : model.getObservables()) {
+      var semantics = output.getSemantics();
+      if (semantics == null || !semantics.isCollective()) continue;
+      try {
+        // Recheck effective aliases/derivations against the loaded worldview, not caller flags.
+        var effective = reasoner.declareConcept(semantics);
+        if (effective != null && effective.is(SemanticType.CONFIGURATION))
+          result.add(error("CONFIGURATION_INSTANTIATION: configurations emerge through DETECTION; "
+              + "model each Configuration is illegal; model Configuration resolves it after emergence",
+              output, context));
+      } catch (RuntimeException unavailable) {
+        result.add(error(unavailable, output, context));
+      }
+    }
     if (model.getObservables().isEmpty()
         || model.getObservables().getFirst().getSemantics() == null
         || !model.getObservables().getFirst().getSemantics().is(SemanticType.PROCESS)) {
@@ -323,6 +337,8 @@ public class DocumentSemanticValidator
                   modifier.getSecond(),
                   context));
         else if (syntax.getSemanticModifier() == null) {
+          // Configuration 'of' is emergence, not native/applicability bearer matching.
+          if (modifier.getFirst() == SemanticRole.INHERENT && head.is(SemanticType.CONFIGURATION)) continue;
           var compatibility = clauses.clauseCompatibility(head, modifier.getFirst(), operand);
           if (compatibility != OWLSemanticClauseSupport.Compatibility.COMPATIBLE)
             result.add(error("Clause " + modifier.getFirst() + " operand " + operand.getUrn()

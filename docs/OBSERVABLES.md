@@ -560,12 +560,12 @@ Expressions may chain binary modifiers:
 
 | Operator | Relationship expressed |
 |---|---|
-| `of [each] X` | inherency or attribution |
+| `of [each] X` | quality/process inherency; predicate applicability; configuration emergence |
 | `and X` / `or X` | intersection or union |
 | `causing [each] X` / `caused by [each] X` | causal direction |
 | `for [each] X` | goal or beneficiary |
 | `adjacent to [each] X` | adjacency |
-| `contained in [each] X` / `containing [each] X` | containment |
+| `contained in [each] X` / `containing [each] X` | existing observable-expression modifiers; distinct from worldview declaration clauses below |
 | `with [each] X` | compresence |
 | `during [each] X` | temporal co-occurrence |
 
@@ -870,11 +870,14 @@ ontology catchments in domain root version 1.0.0;
 thing Watershed;
 area DrainageArea;
 quality UpstreamArea
-  is catchments:DrainageArea within catchments:Watershed;
+  is catchments:DrainageArea of catchments:Watershed;
 ```
 
-`within` is not part of a stand-alone observable statement. It is accepted only
-where the host asks for a `ContextualizedExpression`.
+This example uses `of` for the native bearer; it does not mean a container of
+Watersheds. `within` is not part of a stand-alone observable statement. Hosts may
+admit it through `ContextualizedExpression`; worldview declaration shorthand is a
+separate supported use, described under observational containment below. Do not use
+that shorthand to supply a quality's native bearer.
 
 ## 11. Common query patterns
 
@@ -934,7 +937,8 @@ Check that:
 - `each` reflects the intended distributed observation;
 - units, currencies, ranges, and filters are compatible with the semantics;
 - optionality and local names serve only their host-level purpose;
-- `within` appears only where the host admits contextualized expressions;
+- `within` appears only in a supported host contextualized expression or worldview
+  containment specialization, and is not used as a quality's native bearer;
 - `{{ ... }}` is used whenever the host expects a semantic literal;
 - metadata does not substitute for semantic distinctions; and
 - both the parser and Reasoner validate the expression.
@@ -963,3 +967,174 @@ Language evolution must keep `Observable.xtext`, `KimConcept`,
 `KimObservable`, adapters and validators, Reasoner tests, and this guide in
 sync. Because `.kwv`, `.kim`, and `.kactor` inherit this grammar, regression
 fixtures should cover stand-alone expressions and every host embedding form.
+
+
+
+### Binary `of`: native inherency and applicability
+
+Interpret binary `of` by the effective head kind, including resolved aliases,
+boolean expressions and unary derivations. For a quality or process it identifies
+the native bearer: `Height of Tree` is Height borne by Tree, not by the container
+of trees. The Tree operand need not itself be dependent. `of each Tree` preserves
+that meaning and selects collective inherency. Independent subject/agent/event
+heads cannot take binary `of`: `Tree of Region` is invalid. Unary `count of Tree`
+or `presence of Tree` instead derives a quality and is not this binary operator.
+
+For predicates, `of` expresses applicability, synonymous at the
+language-contract level with `applies to`, rather than constitutive native
+dependence. Examples are `Physical of PhysicalSystem`
+and `Species of each Tree`. Existing OWL `odo:isInherentTo` restrictions are retained
+for this spelling to keep contextualization mechanics straightforward; this does
+not promise byte-identical axioms for an explicit declaration `applies to` clause.
+Interpretation must use the effective head kind, not the shared property alone.
+An applicable target's abstractness or identity obligations do not automatically
+become the predicate head's native-bearer obligations. Legitimate
+target restrictions, the head's own requirements and explicit abstractness still
+apply. Predicate `of Quality` selects TRANSFORMATION, `of each Subject` selects
+CLASSIFICATION and `of Subject` selects CHARACTERIZATION. Observational containment
+does not change these activities or supply their targets.
+
+For configurations, binary `of` means **emergence from the operand**, normalized
+to `odo:emergesFrom`. It never creates `odo:isInherentTo` or a native bearer. Thus
+`configuration Network is imod:Configuration of imod:Relationship` and the explicit
+`is imod:Configuration emerges from imod:Relationship` declaration share the same
+canonical declaration trigger list. Resolved aliases use their effective head kind.
+Nested expressions compile to the same emergence restriction; alternatives inside
+a boolean parent keep their branch scope and are not lifted as unconditional triggers.
+Unary derivations are interpreted by their resulting kind, not the original operand.
+
+Use `applies to` for a configuration's application target. For example:
+
+```kwv
+configuration StreamNetwork
+    is imod:Network
+    emerges from earth:StreamConnection
+    applies to earth:Region;
+```
+
+StreamConnection supplies emergence ingredients; Region supplies application scope.
+They are not interchangeable. A quality describing a named application specialization
+may use that explicit/inherited application domain as description-target scope;
+the configuration does not acquire a native bearer and its emergence ingredients
+do not contribute a bearer or acquire restrictions in reverse. Unknown application
+scope remains unresolved; no absent contract is invented.
+
+The private worldview migration names `TerrestrialSurfaceArrangement` as a
+SpatialArrangement applying to Terrestrial Region and `LocatedBathymetry` as
+Bathymetry applying to Location. Elevation describes the first, without acquiring
+Crust or Terrain as its target; BathymetricSlope describes the second. BathymetricDepth
+still describes Height of Location. Terrain keeps its Crust-qualified application
+target and its separate Elevation/Slope/Aspect emergence OR. These names make the
+formerly nested application expressions explicit; they introduce no emergence ingredients.
+
+The legacy ODO requirement that every Configuration have an `isInherentTo Countable`
+witness is removed. The `emergesFrom` range permits
+Countable, Quality and Process ingredients; process dependence does not become
+configuration inherency. Placement under a dependent ingredient's bearer, or in root
+cohorts for substantial ingredients, belongs to the intended detection lifecycle.
+Declaration normalization does not implement that runtime lifecycle. Configurations
+are detected, then resolved by models; `model each Configuration` stays illegal.
+
+Source clause order remains relevant where `is` can be consumed inside a concept
+expression. Place the parent declaration first, as in the explicit example above,
+to avoid an unintended `Region of StreamConnection is Network` expression.
+
+## Observational containment declarations
+
+**Containment here is an observational contract, not spatial enclosure or physical
+parthood.** It declares which collective observation can realize an authored
+container/type relationship. For example, `Region contains Stream` permits the
+declared Stream collective, whose successful result may have zero members; it does
+not assert that any Stream exists, lies inside a polygon, or covers the Region.
+An unresolved or failed Stream discovery is not a successful empty result.
+
+Worldview `A contains B` and `B contained into A` declare the same additive
+observational contract, normalized from container A to contained type B. This is
+independent of inherency (`of`), subclassing, physical parthood, spatial or temporal
+enclosure, realm containment, coverage, and generic query/computation context.
+It does not create B observations or change a quantity's native bearer, identity
+requirements or explicit abstractness. Multiple declarations add contracts; they do
+not intersect member types or close the list of everything A can contain.
+
+When realized by collective observation, successful zero-member output is legal.
+Unresolved or failed discovery is not a successfully empty collective. No separate
+`may contain` modality is needed. An empty Stream collective supplies no Stream
+instance or StreambedGradient value and proves no environmental-field coverage.
+
+Both surface clauses use one ODO property, `odo:observationallyContains`, with no
+inverse property. Export preserves each authored pair as the marked restriction
+`A subClassOf (observationallyContains min 0 B)`. The annotation
+`urn:klab:validation:observational-containment = "ADDITIVE_DECLARATION"` identifies
+the asserted contract. Minimum zero is deliberately tautological in OWL: its
+entailment is not evidence of a declared contract. k.LAB reads the marked asserted
+axiom structurally. Consumers must preserve its annotation when round-tripping.
+Existential restrictions would require members; universal restrictions would impose
+an unintended exhaustive bound. Neither is substituted for this declaration carrier.
+
+Worldview `Child is Parent within Container` and the nested child form
+`Child within Container` specialize the observational container: both normalize
+to `Container observationallyContains Child`, exactly like the corresponding
+`Child ... contained into Container` declaration. Structural inheritance from Parent
+is preserved; `within` does not set inherency. Parent declarations remain independent
+additive contracts, rather than becoming an exhaustive inherited type bound.
+The `within` on a runtime query or inside other expression languages is not changed
+by this worldview declaration shorthand. Legacy quality-within-subject and
+process-within-subject uses are not accepted as supported containment pairs; migrate
+native bearer declarations to explicit `of`, or define the intended contextual
+contract separately. They must not silently lose a bearer and become eligible.
+
+This first slice supports declaration parsing, canonical bean transport, endpoint
+validation and OWL preservation. Endpoint pairs are subject/agent to subject/agent,
+or event/process to event/process; other families require an explicit extension.
+Authored-contract lookup may traverse asserted named parent classes while retaining
+each original declaration and provenance. It does not turn arbitrary OWL entailments,
+undeclared types or a transitive chain into permissions or executable strategies.
+It does not implement contextual dependency admission, discovery, sampling,
+recursive domain resolution or typed composition. Existing executable model checks
+continue to apply. The future admission contract must allow independent Tier-0
+precomputed models for a legal contextual request without requiring a recursive
+route; recursive contextual strategies belong to Tier-1 or higher and must not run
+discovery/computation after Tier-0 has completely fulfilled the request.
+
+Deployment compatibility remains separate: adding this property changes the bundled
+ODO document bytes. A worldview pinned to an older immutable ODO release must not
+silently receive the modified bytes under the same locator/hash. Coordinate a
+compatible foundation release and worldview pin before activation. Offline fixture
+tests use an explicitly identified modified core; they are not proof that the old
+production pin accepts the new bundle.
+
+
+### Configuration detection and later resolution
+
+A configuration observation emerges through **DETECTION**; models never instantiate
+configurations. `model each Configuration` is illegal, including aliases and effective
+configuration heads. `model Configuration` remains a legitimate request to resolve
+an observation after emergence. It must not be described as creating that observation.
+`model Quality of each Bearer` qualifies the bearer collectively and is a distinct,
+legal form; unary-derived qualities are classified by their effective quality kind.
+
+The intended lifecycle places a configuration detected through (com)presence of
+dependents under those dependents' bearer. Detection from substantials places it
+in root-level cohorts, like substantials. Relationship emergence produces Network
+configurations; resolving an emerged Network then creates the scientific network
+model. Placement for dependent ingredients with different bearers is a future-stage
+question; do not invent automatic bearer coalescing or silently discard ingredients.
+
+**Implemented boundary:** source/loaded-world model validation rejects configuration
+instantiation. The API already maps configurations to DETECTION, the grammar carries
+`emerges from`, and the reasoner registers trigger declarations. These are not proof
+of functioning detection or placement: ReasonerService.emergentResolvables currently
+returns an empty map, and its observation catalog/matching runtime is incomplete.
+Detection, placement and network construction are not added by this declaration slice.
+
+### Future consequence engine: after observation commits
+
+The authoritative collaborator-facing design draft is
+[CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md). It specifies future consequences
+after observation/knowledge commits: configuration DETECTION, change processes for
+qualities in occurrent contexts, conferred roles, role implications and optional
+uncertainty resolution. Consequences can recursively cause consequences through
+models. Reuse resolution idempotency/reuse, verify bounded distinct work as well as
+duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
+contracts, actual source support, proposed integration and open questions. No
+consequence runtime is implemented by this declaration/validation slice.

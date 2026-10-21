@@ -88,6 +88,11 @@ public interface KimConcept extends KlabStatement {
    */
   Set<SemanticType> getType();
 
+  /** Lexical binary-of operand in an expression. Interpret using the effective head kind:
+   * quality/process native inherency, predicate applicability, configuration emergence.
+   * Singleton configuration declarations normalize it into statement emergence triggers.
+   * Use the Reasoner semantic accessor for native inherency rather than treating this raw
+   * syntax slot as an OWL isInherentTo assertion for every category. */
   KimConcept getInherent();
 
   KimConcept getGoal();

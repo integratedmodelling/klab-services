@@ -16,6 +16,25 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class DocumentSemanticValidatorTest {
+  @Test void modelEachUsesResolvedConfigurationKindAndDoesNotConfuseOperandCollectivity() {
+    var reasoner=mock(ReasonerService.class);when(reasoner.owl()).thenReturn(mock(OWL.class));
+    var syntax=new KimConceptImpl();syntax.setName("w:Alias");syntax.setCollective(true);
+    var effective=mock(Concept.class);when(effective.is(SemanticType.CONFIGURATION)).thenReturn(true);
+    when(reasoner.declareConcept(syntax)).thenReturn(effective);
+    var observable=new KimObservableImpl();observable.setSemantics(syntax);
+    var model=new KimModelImpl();model.getObservables().add(observable);
+    var namespace=new KimNamespaceImpl();namespace.setUrn("models");namespace.getStatements().add(model);
+    var diagnostics=new DocumentSemanticValidator(reasoner).validate(namespace);
+    assertTrue(diagnostics.stream().anyMatch(n->n.getMessage().contains("CONFIGURATION_INSTANTIATION")));
+    when(effective.is(SemanticType.CONFIGURATION)).thenReturn(false); // unary-derived quality head
+    assertTrue(new DocumentSemanticValidator(reasoner).validate(namespace).stream().noneMatch(n->
+        n.getMessage().contains("CONFIGURATION_INSTANTIATION")));
+    syntax.setCollective(false); // model Quality of each Bearer: only operand is collective
+    when(effective.is(SemanticType.CONFIGURATION)).thenReturn(true);
+    var bearer=new KimConceptImpl();bearer.setCollective(true);syntax.setInherent(bearer);
+    assertTrue(new DocumentSemanticValidator(reasoner).validate(namespace).stream().noneMatch(n->
+        n.getMessage().contains("CONFIGURATION_INSTANTIATION")));
+  }
   @Test void loadingKnowledgeReturnsBeforeTakingTheIngestionMonitor() throws Exception {
     var reasoner = mock(ReasonerService.class);
     when(reasoner.validateDocument(any(), any())).thenCallRealMethod();

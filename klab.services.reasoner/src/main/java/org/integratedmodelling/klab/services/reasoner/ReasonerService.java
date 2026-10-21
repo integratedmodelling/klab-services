@@ -1774,6 +1774,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   /** OWL restrictions retain the inherent class but cannot encode its k.LAB collective flag. */
   private Concept explicitInherent(Semantics semantics) {
+    // On a configuration, the lexical 'of' operand is an emergence ingredient.
+    if (semantics.is(SemanticType.CONFIGURATION)) return null;
     var definition = semantics.asConcept().getUrn();
     if (Urn.isAtomicConcept(definition)) return null;
     var syntax = serviceScope().getService(ResourcesService.class).declareConcept(definition);

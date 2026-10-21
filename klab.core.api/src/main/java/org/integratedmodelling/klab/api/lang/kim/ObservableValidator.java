@@ -136,6 +136,7 @@ public class ObservableValidator {
     }
 
     var notifications = new ArrayList<Notification>();
+    validateInherencyHead(concept, notifications);
     validateClauses(concept, notifications);
     validateUnaryOperator(concept, notifications);
     validateLogicalExpression(concept, notifications);
@@ -146,6 +147,35 @@ public class ObservableValidator {
 
   private static boolean isAny(KimConcept type, Set<SemanticType> types) {
     return types.stream().anyMatch(t -> type.is(t));
+  }
+
+  private void validateInherencyHead(KimConcept concept, List<Notification> notifications) {
+    if (concept.getInherent() == null) return; // Not the token 'of' in unary operators or other grammar.
+    var effective = effectiveHeadTypes(concept,
+        java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()));
+    if (!SemanticType.isDependent(effective) && SemanticType.isSubstantial(effective))
+      notifications.add(Notification.error(
+          "INHERENCY_HEAD_INDEPENDENT: 'of' cannot qualify an independent subject/agent/event; "
+              + "use a dependent quality or process head: " + concept.getUrn(), concept));
+      // Predicate 'of' is applicability with shared OWL contextualization encoding.
+      // Configuration 'of' is emergence. Neither category is silently promoted to
+      // native quality/process dependence here.
+  }
+
+  protected static Set<SemanticType> effectiveHeadTypes(KimConcept concept, Set<KimConcept> visited) {
+    if (concept == null || !visited.add(concept)) return Set.of();
+    var own = concept.getType() == null ? Set.<SemanticType>of() : concept.getType();
+    if (concept.getSemanticModifier() != null) {
+      var operand = concept.getObservable() == null ? own
+          : effectiveHeadTypes(concept.getObservable(), visited);
+      var transformed = concept.getSemanticModifier().apply(operand);
+      return transformed == null ? operand : transformed;
+    }
+    if (!java.util.Collections.disjoint(own, SemanticType.BASE_OBSERVABLE_TYPES)) return own;
+    var result = EnumSet.noneOf(SemanticType.class);
+    if (concept.getObservable() != null) result.addAll(effectiveHeadTypes(concept.getObservable(), visited));
+    for (var operand : safe(concept.getOperands())) result.addAll(effectiveHeadTypes(operand, visited));
+    return result.isEmpty() ? own : result;
   }
 
   private void validateClauses(KimConcept concept, List<Notification> notifications) {

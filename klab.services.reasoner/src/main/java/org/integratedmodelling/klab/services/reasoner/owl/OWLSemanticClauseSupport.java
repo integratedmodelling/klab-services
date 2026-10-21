@@ -63,6 +63,14 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
         .toList();
   }
 
+  /** Authored application domains of a configuration, never native-bearer or emergence evidence. */
+  List<BearerConstraint> configurationApplicationConstraints(Concept concept,Runnable checkpoint) {
+    if (!concept.is(SemanticType.CONFIGURATION)) return List.of();
+    return bounds(concept,checkpoint).stream().filter(b -> b.applicability() && b.semantic())
+        .map(b -> new BearerConstraint(b.filler(),b.source(),b.inherited(),b.property(),
+            b.restriction(),true,true)).toList();
+  }
+
   /** Called only by k.LAB semantic translation, never inferred from arbitrary imported existentials. */
   public static void markUniversalBearer(OWL owl, Concept owner, Property property,
       Concept filler, Ontology ontology) {

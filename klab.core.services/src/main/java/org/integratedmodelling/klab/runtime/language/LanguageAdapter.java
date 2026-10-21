@@ -1924,6 +1924,22 @@ public class LanguageAdapter {
     definition.getCreated().forEach(value -> ret.getObservablesCreated().add(adapt.apply(value)));
     definition.getAffectedBy().forEach(value -> ret.getAffectedBy().add(adapt.apply(value)));
     definition.getCreatedBy().forEach(value -> ret.getCreatedBy().add(adapt.apply(value)));
+    if (!definition.getObservationallyContained().isEmpty()
+        || !definition.getObservationalContainers().isEmpty()) {
+      var self = new KimConceptImpl();
+      self.setName(namespace + ":" + definition.getName());
+      self.setUrn(namespace + ":" + definition.getName());
+      self.setNamespace(namespace);
+      self.setProjectName(projectName);
+      self.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
+      self.setType(EnumSet.copyOf(ret.getType()));
+      definition.getObservationallyContained().forEach(value ->
+          ret.getObservationalContainments().add(
+              new KimConceptStatement.ObservationalContainment(self, adapt.apply(value))));
+      definition.getObservationalContainers().forEach(value ->
+          ret.getObservationalContainments().add(
+              new KimConceptStatement.ObservationalContainment(adapt.apply(value), self)));
+    }
     definition
         .getMetadata()
         .forEach(
@@ -1999,6 +2015,21 @@ public class LanguageAdapter {
     definition.getEmergesFrom().stream()
         .filter(value -> value.getContextualization() == null)
         .forEach(value -> ret.getEmergenceTriggers().add(adapt.apply(value)));
+    // Declaration shorthand shares the canonical trigger list with emerges from.
+    // Lift only this declaration's qualified head; nested referenced expressions retain scope.
+    var parentHead = ret.getDeclaredParent();
+    while (parentHead != null && parentHead.getSemanticModifier() == null
+        && parentHead.getOperands().isEmpty()
+        && parentHead.getObservable() != null && parentHead.getInherent() == null)
+      parentHead = parentHead.getObservable();
+    if (!ret.isAlias() && parentHead != null && parentHead.getSemanticModifier() == null
+        && parentHead.getOperands().isEmpty()
+        && parentHead.is(SemanticType.CONFIGURATION) && parentHead.getInherent() != null) {
+      ret.getEmergenceTriggers().add(parentHead.getInherent());
+      ((KimConceptImpl) parentHead).setInherent(null);
+      ((KimConceptImpl) parentHead).resetDefinition();
+      if (ret.getDeclaredParent() instanceof KimConceptImpl root) root.resetDefinition();
+    }
     definition.getImplies().stream()
         .filter(value -> value.getContextualization() == null)
         .forEach(value -> ret.getImpliedObservables().add(adapt.apply(value)));

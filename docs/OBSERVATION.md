@@ -1992,3 +1992,70 @@ explanation, and successful discovery with no characterization model, are explic
 
 [FlowChart metadata](FLOWCHARTS.md) exposes the accepted resolution graph and execution plan to
 clients while retaining their distinct meanings. Neither diagram is a graph-reproduction document.
+
+
+### Observational containment: declaration support versus contextual execution
+
+**Containment here is an observational contract, not spatial enclosure or physical
+parthood.** It declares which collective observation can realize an authored
+container/type relationship. For example, `Region contains Stream` permits the
+declared Stream collective, whose successful result may have zero members; it does
+not assert that any Stream exists, lies inside a polygon, or covers the Region.
+An unresolved or failed Stream discovery is not a successful empty result.
+
+The worldview clauses `A contains B` / `B contained into A` normalize to the same
+additive `odo:observationallyContains` declaration. See
+[Observational containment declarations](OBSERVABLES.md#observational-containment-declarations)
+for the empty-safe asserted OWL carrier and its application-level interpretation.
+Declaration support does not complete S7/S9 or authorize a cross-bearer dependency
+without a typed execution route. It does not change native bearers or member extents.
+
+A collective that successfully returns zero members realizes the observational
+contract; unresolved, failed or cancelled discovery does not. Verify existing
+collective lifecycle behavior before adding runtime machinery. A declaration alone
+does not mean that discovery has run or completed, and an error/empty observation
+sentinel must not be counted as successful empty membership.
+
+For later contextual execution, legal requests and choice of implementation remain
+separate. Precomputed Tier-0 models may fulfill a legal request independently.
+Recursive domain discovery/computation is Tier-1+ and must be deferred until Tier-0
+alternatives leave relevant support unfulfilled. Preserve accepted partial coverage
+and native computation extents; never turn missing/unrepresentable support into
+success. S7/S9 still require actual domain bindings, typed sampling/composition,
+gap/overlap policies, provenance, cycle protection and execution-side-effect tests.
+
+
+### Configuration detection and later resolution
+
+A configuration observation emerges through **DETECTION**; models never instantiate
+configurations. `model each Configuration` is illegal, including aliases and effective
+configuration heads. `model Configuration` remains a legitimate request to resolve
+an observation after emergence. It must not be described as creating that observation.
+`model Quality of each Bearer` qualifies the bearer collectively and is a distinct,
+legal form; unary-derived qualities are classified by their effective quality kind.
+
+The intended lifecycle places a configuration detected through (com)presence of
+dependents under those dependents' bearer. Detection from substantials places it
+in root-level cohorts, like substantials. Relationship emergence produces Network
+configurations; resolving an emerged Network then creates the scientific network
+model. Placement for dependent ingredients with different bearers is a future-stage
+question; do not invent automatic bearer coalescing or silently discard ingredients.
+
+**Implemented boundary:** source/loaded-world model validation rejects configuration
+instantiation. The API already maps configurations to DETECTION, the grammar carries
+`emerges from`, and the reasoner registers trigger declarations. These are not proof
+of functioning detection or placement: ReasonerService.emergentResolvables currently
+returns an empty map, and its observation catalog/matching runtime is incomplete.
+Detection, placement and network construction are not added by this declaration slice.
+
+### Future consequence engine: after observation commits
+
+The authoritative collaborator-facing design draft is
+[CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md). It specifies future consequences
+after observation/knowledge commits: configuration DETECTION, change processes for
+qualities in occurrent contexts, conferred roles, role implications and optional
+uncertainty resolution. Consequences can recursively cause consequences through
+models. Reuse resolution idempotency/reuse, verify bounded distinct work as well as
+duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
+contracts, actual source support, proposed integration and open questions. No
+consequence runtime is implemented by this declaration/validation slice.

@@ -67,6 +67,16 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
   public List<Notification> validateConceptStatement(
       KimConceptStatement statement, KimObservableVisitor.Context context) {
     var result = new ArrayList<Notification>();
+    if (statement.getDeclarationClauses().stream().anyMatch(clause -> clause.kind().equals("within"))
+        && (statement.getDeclaredInherent() != null
+            || statement.getObservationalContainments().stream().noneMatch(pair ->
+                pair.contained() != null && java.util.Objects.equals(
+                    pair.contained().getUrn(), context.getDocument().getUrn() + ":" + statement.getUrn())))) {
+      result.add(Notification.error(
+          "LEGACY_WITHIN_INHERENCY: reparse the worldview declaration with a compatible parser; "
+              + "within requires a canonical observational containment contract, not native inherency",
+          Notification.LexicalContext.of(statement, context.getDocument())));
+    }
     if (statement.getDescriptionValue() != null)
       result.add(
           Notification.warning(
@@ -82,9 +92,8 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
       for (var message : errors) result.add(Notification.error(message, lexical));
     }
     for (var clause : statement.getDeclarationClauses()) {
-      if (clause.kind().equals("within")
-          || ((clause.kind().equals("impliesClause") || clause.kind().equals("emergesFromClause"))
-              && clause.source().matches("(?s).*\\bwithin\\b.*")))
+      if ((clause.kind().equals("impliesClause") || clause.kind().equals("emergesFromClause"))
+              && clause.source().matches("(?s).*\\bwithin\\b.*"))
         result.add(
             Notification.warning(
                 "This declaration clause is retained but its scoped/denial semantics are not yet compiled: "
@@ -100,6 +109,7 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
           || !statement.getAppliesTo().isEmpty()
           || !statement.getQualitiesAffected().isEmpty()
           || !statement.getObservablesCreated().isEmpty()
+          || !statement.getObservationalContainments().isEmpty()
           || !statement.getSubjectsLinked().isEmpty()
           || !statement.getEmergenceTriggers().isEmpty()
           || !statement.getObservablesDescribed().isEmpty()

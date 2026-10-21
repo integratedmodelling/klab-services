@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
 
-/** Translation of declaration clauses whose OWL contract is an existential restriction. */
+/** Translation of declaration clauses, including marked additive observational contracts. */
 public final class WorldviewDeclarationSupport {
   static final org.semanticweb.owlapi.model.IRI VALUE_SOURCE =
       org.semanticweb.owlapi.model.IRI.create("urn:klab:validation:description-value-source");
@@ -119,6 +119,7 @@ public final class WorldviewDeclarationSupport {
           .add(require(resolve, operand, SemanticType.OBSERVABLE));
     var identityRequirements = statement.getRequiredIdentities().stream()
         .map(syntax -> identityRequirement(owl, syntax, resolve)).toList();
+    var containmentAxioms = ObservationalContainmentSupport.prepare(owl, owner, statement, resolve);
     add(
         restrictions,
         "odo:requiresRealm",
@@ -218,6 +219,7 @@ public final class WorldviewDeclarationSupport {
       if (owl.getProperty(name) == null)
         throw new KlabValidationException("Missing ontology property " + name);
     // Commit only after every clause has passed validation and property preflight.
+    owl.manager.addAxioms(ontology.getOWLOntology(), containmentAxioms);
     for (var requirement : identityRequirements) {
       var f = owl.manager.getOWLDataFactory();
       owl.manager.addAxiom(ontology.getOWLOntology(), f.getOWLSubClassOfAxiom(owl.getOWLClass(owner),

@@ -587,6 +587,17 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
 
         // validate with parent class first!
         var modifying = buildConcept(modifier.getSecond());
+        if (modifier.getFirst() == SemanticRole.INHERENT && parent.is(SemanticType.CONFIGURATION)) {
+          if (modifying == null || modifying.is(SemanticType.NOTHING))
+            throw new KlabValidationException("Unresolved configuration emergence ingredient");
+          if (!modifying.is(SemanticType.OBSERVABLE) && !modifying.is(SemanticType.CONFIGURATION)
+              && !modifying.is(SemanticType.EXTENT)
+              && java.util.Collections.disjoint(modifying.getType(),SemanticType.BASE_OBSERVABLE_TYPES))
+            throw new KlabValidationException("Configuration emergence requires an observable ingredient");
+          // Head-kind-dependent 'of' never creates native inherency for configurations.
+          reasoner.owl().restrictSome(ret, reasoner.owl().getProperty("odo:emergesFrom"), modifying, ontology);
+          continue;
+        }
         var inherited =
             switch (modifier.getFirst()) {
               case INHERENT -> reasoner.inherent(ret);

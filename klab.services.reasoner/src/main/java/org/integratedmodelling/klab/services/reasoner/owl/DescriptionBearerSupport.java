@@ -59,7 +59,7 @@ final class DescriptionBearerSupport {
           + " : INDEPENDENT_TARGET_" + targetStatus.name());
     }
     if (authoredBearer != null)
-      own.add(authored(f, inherent, owl.getOWLClass(authoredBearer), owner.getUrn() + " within", false));
+      own.add(authored(f, inherent, owl.getOWLClass(authoredBearer), owner.getUrn() + " declared native bearer", false));
     if (!applicables.isEmpty() && SemanticType.isDependent(owner.getType())) {
       var fillers = applicables.stream().map(owl::getOWLClass).collect(java.util.stream.Collectors.toSet());
       var applies = owl.getProperty("odo:appliesTo");
@@ -86,12 +86,20 @@ final class DescriptionBearerSupport {
       Set<OWLClassExpression> contribution = substantial
           ? Set.of(owl.getOWLClass(target))
           : completedBearers.getOrDefault(owl.getOWLClass(target),semantic);
+      var applications = owner.is(SemanticType.QUALITY)
+          ? support.configurationApplicationConstraints(target,checkpoint)
+          : List.<OWLSemanticClauseSupport.BearerConstraint>of();
+      if (!applications.isEmpty()) {
+        contribution = new LinkedHashSet<>(contribution);
+        for (var application : applications) contribution.add(application.filler());
+      }
       boolean unresolved = contribution.isEmpty();
       unresolvedTarget |= unresolved;
       targetStatuses.add(target.getUrn() + " " + target.getType() + " : "
           + (unresolved ? "UNRESOLVED: no established universal bearer contribution"
               : substantial ? "SUBSTANTIAL_TARGET_BEARER" : "UNIVERSAL_BEARER_CONTRIBUTION"));
       evidence.addAll(constraints);
+      evidence.addAll(applications);
       derived.addAll(contribution);
     }
     // Check inherited-only declarations as well as local descriptions and applicability.

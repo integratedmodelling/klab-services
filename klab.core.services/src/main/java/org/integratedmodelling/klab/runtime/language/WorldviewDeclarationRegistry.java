@@ -175,10 +175,27 @@ public final class WorldviewDeclarationRegistry {
     for(var operand:s.getEmergenceTriggers())require(entry,operand,"emerges from",WorldviewDeclarationRegistry::observable);
     for(var operand:s.getImpliedObservables())require(entry,operand,"implies",WorldviewDeclarationRegistry::observable);
     require(entry,s.getDeclaredInherent(),"inherent",WorldviewDeclarationRegistry::observable);
+    for (var declaration : s.getObservationalContainments()) {
+      if (declaration == null || declaration.container() == null || declaration.contained() == null) {
+        error("DECLARATION_CLAUSE_TARGET_MISSING: " + entry.urn() + " observational containment", entry);
+        continue;
+      }
+      var container = typeOf(declaration.container(), entry.ontology().getUrn());
+      var contained = typeOf(declaration.contained(), entry.ontology().getUrn());
+      int family = containmentFamily(container);
+      if (family == 0 || family != containmentFamily(contained))
+        error("DECLARATION_CLAUSE_TYPE_INVALID: " + entry.urn()
+            + " observational containment requires subject/agent or event/process pairs", entry);
+    }
     for(var applicable:s.getAppliesTo())require(entry,applicable.getTarget(),"applies to",WorldviewDeclarationRegistry::observable);
   }
 
-  /** Parent heads only: descriptions, inherency, ABOUT and other clause fillers are not ancestry. */
+  private static int containmentFamily(Set<SemanticType> types) {
+    if (types.contains(SemanticType.EVENT) || types.contains(SemanticType.PROCESS)) return 2;
+    return types.contains(SemanticType.SUBJECT) || types.contains(SemanticType.AGENT) ? 1 : 0;
+  }
+
+  /** Parent heads only: containment endpoints and clause fillers are not ancestry. */
   private static void structuralHeads(KimConcept expression,String namespace,Set<String> result) {
     if(expression==null)return;
     if(expression.getName()!=null)result.add(urn(namespace,expression.getName()));

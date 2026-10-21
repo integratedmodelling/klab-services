@@ -92,8 +92,11 @@ class WorldviewClauseAuditTest {
     assertEquals("EU", statements.get("Authorized").getAuthorityParameters().get("region"));
     assertEquals("Audit", adapted.getMetadata().get("label"));
     assertEquals("Entity", statements.get("Entity").getMetadata().get("label"));
-    assertNotNull(statements.get("Specialized").getDeclaredInherent());
-    assertNotNull(statements.get("Parent").getChildren().getFirst().getDeclaredInherent());
+    assertNull(statements.get("Specialized").getDeclaredInherent());
+    assertEquals("audit:Entity", statements.get("Specialized").getObservationalContainments()
+        .getFirst().container().getUrn());
+    assertNull(statements.get("Parent").getChildren().getFirst().getDeclaredInherent());
+    assertEquals(1, statements.get("Parent").getChildren().getFirst().getObservationalContainments().size());
     for (String name : List.of("Described", "BooleanDescription", "ConceptDescription", "Increasing",
         "Decreasing", "Marked", "Classified", "Discrete"))
       assertEquals(1, statements.get(name).getObservablesDescribed().size(), name);

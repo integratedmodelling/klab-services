@@ -94,8 +94,7 @@ process WaterFlow
 
 volume WaterVolume
     "A volume of water associated with a hydrological subject."
-    is imod:Volume
-    within earth:Region
+    is imod:Volume of earth:Region
 ;
 
 process Runoff
@@ -306,13 +305,11 @@ their support; intensive properties generally cannot be summed meaningfully.
 
 ```kwv
 volume RainfallVolume
-    is imod:Volume
-    within earth:Region
+    is imod:Volume of earth:Region
 ;
 
 temperature AtmosphericTemperature
-    is imod:Temperature
-    within earth:Location
+    is imod:Temperature of earth:Location
 ;
 ```
 
@@ -394,8 +391,8 @@ effects next, children last—to keep reviews intelligible.
 
 ```kwv
 is <concept-ref> [within <concept-ref>]
-is core <concept-ref> [within <concept-ref>]
-equals <concept-ref> [within <concept-ref>]
+is core <concept-ref>
+equals <concept-ref>
 ```
 
 `is` declares specialization. `equals` declares an alias or semantic equivalence. `is core`
@@ -407,8 +404,7 @@ process Runoff
 ;
 
 temperature AirTemperature
-    is imod:Temperature
-    within earth:Atmosphere
+    is imod:Temperature of earth:Atmosphere
 ;
 
 abstract process Process
@@ -506,6 +502,14 @@ still apply. For example, process intensity can describe Erosion itself while El
 the Region that Erosion affects. See [OCCURRENCE.md](OCCURRENCE.md).
 
 ### 7.7. `emerges from` and `implies`
+
+Configuration `of` is an English-like shorthand for `emerges from`, using the same
+canonical trigger list in singleton declarations and the same OWL emergence property
+in nested expressions. It does not denote native inherency or application scope.
+Use `applies to` to name the application target; predicates and quality/process
+`of` retain their distinct effective-head contracts in [OBSERVABLES](OBSERVABLES.md#binary-of-native-inherency-and-applicability).
+Boolean parent alternatives retain scope; no branch becomes an unconditional trigger.
+
 
 An emergence trigger does not require a reverse description relation. For example,
 Terrain may `emerge from` Elevation without Elevation `describing` Terrain. The
@@ -618,7 +622,7 @@ abstract identity PrecipitationType
 ;
 ```
 
-A simple child may include a `within` specialization and description. Use a parenthesized full
+A supported subject/agent or event/process child may include a `within` observational-containment specialization and description. This does not assign a native bearer. Use a parenthesized full
 definition when a child needs its own annotations or clauses:
 
 ```kwv
@@ -788,3 +792,35 @@ Therefore:
 When adding or completing a construct, update the grammar, syntax adapter, public API model,
 visitor/validator, Reasoner translation, and real-file tests together. A clause is not operational
 merely because the parser accepts it.
+
+
+### Additive observational containment
+
+**Containment here is an observational contract, not spatial enclosure or physical
+parthood.** It declares which collective observation can realize an authored
+container/type relationship. For example, `Region contains Stream` permits the
+declared Stream collective, whose successful result may have zero members; it does
+not assert that any Stream exists, lies inside a polygon, or covers the Region.
+An unresolved or failed Stream discovery is not a successful empty result.
+
+Declarations may use `contains <type>[, <type> ...]` or
+`contained into <type>[, <type> ...]`, including nested concept definitions.
+`thing Region contains earth:Stream;` and
+`thing Stream contained into earth:Region;` illustrate the two directions; they
+normalize to the same container-to-contained pair. These examples are alternatives,
+not instructions to redeclare existing concepts. Existing reference-order and
+namespace rules still apply.
+
+`Child is Parent within Container` and nested `Child within Container` are shorthand
+for the same container-to-child contract, while retaining structural inheritance.
+They no longer supply `declaredInherent`; explicit native bearers use `of`.
+The supported endpoint-family checks apply equally to the shorthand. In particular,
+legacy quality-within-subject or process-within-subject declarations require explicit
+migration rather than silent reinterpretation as an accepted containment relation.
+
+The single canonical property is `odo:observationallyContains`. The declaration is
+additive and has no individual-member existential obligation, exhaustive type bound,
+inherency, physical-part, geometry, coverage or generic transitivity consequence.
+See [the observable contract](OBSERVABLES.md#observational-containment-declarations)
+for supported endpoint families, successful empty collectives, OWL serialization,
+and the distinction between implemented declaration support and planned execution.

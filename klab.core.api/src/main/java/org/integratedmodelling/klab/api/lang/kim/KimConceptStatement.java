@@ -14,6 +14,12 @@ public interface KimConceptStatement extends KlabStatement {
 
   record DeclarationClause(String kind, String source, int offset, int length) {}
 
+  /** Canonical container-to-contained declaration, independent of authored clause direction.
+   * Does not establish observed membership, inherency or an executable contextual route. */
+  record ObservationalContainment(KimConcept container, KimConcept contained) {}
+
+  default List<ObservationalContainment> getObservationalContainments() { return List.of(); }
+
   default List<DeclarationClause> getDeclarationClauses() {
     return List.of();
   }

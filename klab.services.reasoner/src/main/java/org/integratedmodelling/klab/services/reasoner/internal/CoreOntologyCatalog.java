@@ -18,6 +18,11 @@ public final class CoreOntologyCatalog {
   private static final java.util.Set<String> VERIFIED_ODO_HASHES = java.util.Set.of(
       "d8771dc5456a48e0d1d64f7ba1c92f8e6a9f89ddddfd1fa6cabf1c93e363ea52",
       "6851a4a34aa66191687232e9c37c2dc12e8b779b73e1a10bdf5abd1dd31ab038");
+  // Locally prepared immutable 0.2.0 source; publication is a separate operation.
+  private static final String VERIFIED_ODO_020_RELEASE =
+      "https://raw.githubusercontent.com/integratedmodelling/odo-im/08e5a29abbbd32ca8c1b933fc157a1762ba3ee5c/releases/0.2.0/odo.owl";
+  private static final String VERIFIED_ODO_020_SHA256 =
+      "496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57";
   private CoreOntologyCatalog() {}
 
   /** Only the distribution's three root documents are protected; extensions remain local. */
@@ -48,6 +53,9 @@ public final class CoreOntologyCatalog {
   /** A release locator names captured bytes; neither master nor verified immutable URLs are fetched. */
   static String odoReleaseIdentity(String locator, String capturedSha256) {
     if (locator == null) return null;
+    if (VERIFIED_ODO_020_RELEASE.equals(locator))
+      return VERIFIED_ODO_020_SHA256.equals(capturedSha256)
+          ? "http://integratedmodelling.org/odo/0.2.0" : null;
     if (VERIFIED_ODO_RELEASE.equals(locator))
       return capturedSha256 != null && VERIFIED_ODO_HASHES.contains(capturedSha256)
           ? "http://integratedmodelling.org/odo/0.1.1" : null;

@@ -114,7 +114,18 @@ public final class WorldviewDescriptionStaging {
           var filler=owl.getOWLClass(target);
           seed(source,filler,origin(owl,entry,"describes",filler,definitions),bounds,origins);
         }
-        else outgoing.computeIfAbsent(owl.getOWLClass(target),k->new LinkedHashSet<>()).add(source);
+        else {
+          // A named application specialization scopes its describing quality without making
+          // the configuration dependent. Emergence ingredients are never bearer seeds.
+          var applications=entry.owner().is(SemanticType.QUALITY)
+              ? support.configurationApplicationConstraints(target,checkpoint)
+              : List.<OWLSemanticClauseSupport.BearerConstraint>of();
+          for(var application:applications) {
+            var filler=application.filler();
+            seed(source,filler,origin(owl,entry,"describes-application",filler,definitions),bounds,origins);
+          }
+          outgoing.computeIfAbsent(owl.getOWLClass(target),k->new LinkedHashSet<>()).add(source);
+        }
       }
     }
     var queue=new ArrayDeque<>(nodes.keySet());var queued=new HashSet<>(nodes.keySet());long visits=0;

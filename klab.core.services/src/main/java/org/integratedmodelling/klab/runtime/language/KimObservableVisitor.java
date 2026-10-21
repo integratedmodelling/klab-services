@@ -344,6 +344,12 @@ public class KimObservableVisitor {
         statement.getUpperConceptDefined(), KlabAsset.KnowledgeClass.CONCEPT, statement, context);
     visitConcept(statement.getDeclaredParent(), context);
     visitConcept(statement.getDeclaredInherent(), context);
+    for (var declaration : safe(statement.getObservationalContainments())) {
+      if (declaration != null) {
+        visitConcept(declaration.container(), context);
+        visitConcept(declaration.contained(), context);
+      }
+    }
     for (var concept : safe(statement.getQualitiesAffected())) visitConcept(concept, context);
     for (var concept : safe(statement.getObservablesCreated())) visitConcept(concept, context);
     for (var concept : safe(statement.getTraitsConferred())) visitConcept(concept, context);

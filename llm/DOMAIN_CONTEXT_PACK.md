@@ -16,6 +16,10 @@ The agent receives:
 4. a required target `tier` specifying the intended level of domain generality; and
 5. optionally, prior proposals and community feedback.
 
+For future runtime consequence design and collaborator feedback, consult
+[the consequence-engine design draft](../docs/CONSEQUENCE_ENGINE.md); do not treat its
+proposals as implemented behavior.
+
 The agent can consult the attached documentation and prior proposals to inform its analysis. It can browse the Web for additional information and inspiration. It can refer to the ODO-IM ontology in its OWL2 source format at https://raw.githubusercontent.com/integratedmodelling/odo-im/refs/heads/master/releases/0.1.0/odo.owl
 
 The agent must return a self-consistent, provenance-rich corpus that:
@@ -93,6 +97,120 @@ Apply these commitments throughout the analysis:
     classifiers and concrete identity fulfillment have separate contracts. Follow
     [observable status](../docs/OBSERVABLES.md#71-declared-status) and
     [identity requirements](../docs/IDENTITY_REQUIREMENTS.md).
+
+### 2.1. Observational containment: authoring contract and implementation boundary
+
+**Containment here is an observational contract, not spatial enclosure or physical
+parthood.** It declares which collective observation can realize an authored
+container/type relationship. For example, `Region contains Stream` permits the
+declared Stream collective, whose successful result may have zero members; it does
+not assert that any Stream exists, lies inside a polygon, or covers the Region.
+An unresolved or failed Stream discovery is not a successful empty result.
+
+- `A contains B` and `B contained into A` normalize to one container-to-contained
+  `odo:observationallyContains` contract; no inverse property or separate may-mode.
+- Worldview `Child is Parent within Container` and nested `Child within Container`
+  normalize to `Container observationallyContains Child`, preserving the structural
+  parent. This declaration shorthand does not set inherency or change runtime query
+  contexts. Unsupported dependent-family uses fail validation; native bearers use `of`.
+- Contracts are additive and non-exhaustive. They imply no B individual, exhaustive member-type list,
+  inherency, subclassing, physical part, geometric enclosure, coverage or transitivity.
+- A successful collective may be empty; failed/unresolved discovery is not success.
+  An empty member set creates no bearer or computed quality value.
+- The asserted OWL carrier is an annotated `A subClassOf (R min 0 B)`, with marker
+  `urn:klab:validation:observational-containment = "ADDITIVE_DECLARATION"`.
+  It is tautological in OWL. Read marked asserted declarations, never inferred
+  minimum-zero restrictions, to establish authored admissibility.
+- This slice adds source/transport/OWL declaration support for subject/agent pairs
+  and event/process pairs. Contextual admission and S7/S9 execution remain planned;
+  existing dependency checks are unchanged. Preserve native identities/bearers.
+- Future legal Tier-0 precomputed fulfillment must not require recursive discovery.
+  Recursive contextual resolution is Tier-1+ and runs only for outstanding support.
+  Do not claim StreambedGradient or live cotechino acceptance from declaration tests.
+- Adding the ODO property changes foundation bytes. Preserve immutable source pins;
+  coordinate a compatible core release/pin before production activation rather than
+  substituting modified bytes under the old locator. Fixture replay is not deployment.
+
+**Examples and negative cases.** `thing Region contains hydrology:Stream;` and
+`thing Stream contained into earth:Region;` describe the same directed pair when
+the names resolve to the same declarations. `thing Reach is hydrology:Stream
+within earth:Region;` declares Region-to-Reach while keeping Stream as its parent.
+Neither a Stream's geometry intersecting a Region nor a computational query running
+inside it supplies a missing authored contract. `length Height is physical:Length
+of biology:Tree;` uses a dependent quality head and native Tree bearer; it does not
+mean the container of trees. `thing Tree of earth:Region` is invalid: Tree is an
+independent head, even though Region is a valid subject operand. Unary `count of
+Tree` is a separate derivation producing a quality, not binary inherency on Tree.
+Predicate `of` is applicability, synonymous at the language level
+with `applies to`, while retaining shared OWL `odo:isInherentTo` restrictions for
+contextualization mechanics. It must not acquire quality/process native-bearer
+identity or abstractness obligations merely through that property. Preserve its
+legitimate target constraints and the head's own requirements. Predicate `of Quality`
+selects TRANSFORMATION, `of each Subject` CLASSIFICATION, and `of Subject`
+CHARACTERIZATION. Use the effective head kind to interpret the shared OWL relation.
+See [binary of](../docs/OBSERVABLES.md#binary-of-native-inherency-and-applicability).
+Configuration `of` is now agreed emergence shorthand: normalize its operand to
+`emergesFrom`, never native `isInherentTo`. Explicit `applies to` identifies the
+application target. Use effective resolved head kind, including aliases/derivations;
+do not lift one branch of a boolean expression as an unconditional trigger. Example:
+Network of StreamConnection emerges from connections, while it applies to Region.
+For nested application meaning, use a named configuration specialization with explicit
+`applies to`, not configuration `of`. Elevation describes TerrestrialSurfaceArrangement
+(Terrestrial Region, no Crust); BathymetricSlope describes LocatedBathymetry (Location).
+Depth retains native Height-of-Location. Terrain retains its narrower Crust-qualified
+application target and separate Elevation/Slope/Aspect emergence OR. A describing
+quality uses explicit application scope without making the configuration dependent
+or propagating restrictions backwards through emergence. ODO no longer asserts an
+unconditional native Countable bearer for all Configurations. The `emergesFrom` range permits
+Countable, Quality and Process ingredients; process dependence does not become
+configuration inherency. Runtime detection and
+placement remain future work, described in the consequence-engine design.
+
+### Configuration detection and later resolution
+
+A configuration observation emerges through **DETECTION**; models never instantiate
+configurations. `model each Configuration` is illegal, including aliases and effective
+configuration heads. `model Configuration` remains a legitimate request to resolve
+an observation after emergence. It must not be described as creating that observation.
+`model Quality of each Bearer` qualifies the bearer collectively and is a distinct,
+legal form; unary-derived qualities are classified by their effective quality kind.
+
+The intended lifecycle places a configuration detected through (com)presence of
+dependents under those dependents' bearer. Detection from substantials places it
+in root-level cohorts, like substantials. Relationship emergence produces Network
+configurations; resolving an emerged Network then creates the scientific network
+model. Placement for dependent ingredients with different bearers is a future-stage
+question; do not invent automatic bearer coalescing or silently discard ingredients.
+
+**Implemented boundary:** source/loaded-world model validation rejects configuration
+instantiation. The API already maps configurations to DETECTION, the grammar carries
+`emerges from`, and the reasoner registers trigger declarations. These are not proof
+of functioning detection or placement: ReasonerService.emergentResolvables currently
+returns an empty map, and its observation catalog/matching runtime is incomplete.
+Detection, placement and network construction are not added by this declaration slice.
+
+### Future consequence engine: after observation commits
+
+The authoritative collaborator-facing design draft is
+[CONSEQUENCE_ENGINE.md](../docs/CONSEQUENCE_ENGINE.md). It specifies future consequences
+after observation/knowledge commits: configuration DETECTION, change processes for
+qualities in occurrent contexts, conferred roles, role implications and optional
+uncertainty resolution. Consequences can recursively cause consequences through
+models. Reuse resolution idempotency/reuse, verify bounded distinct work as well as
+duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
+contracts, actual source support, proposed integration and open questions. No
+consequence runtime is implemented by this declaration/validation slice.
+
+**Agent output boundary.** Record illustrative containment syntax in `candidate_kwv`
+and its rationale in the existing definition/evidence fields. The closed 1.3
+`clauses` object has no typed containment field: do not invent one or silently store
+containment in `applies_to`. No new proposal-schema field or schema version is
+introduced by this prose clarification. Preserve the 1.3 proposal envelope and
+validate it against the bundled schema. This Markdown is the maintained agent-pack
+source, not generated model code. Reference documentation explains syntax and the
+annotated OWL boundary; neither the pack nor an exported min-zero entailment can
+authorize runtime admission. Do not emit recursive execution as if implemented.
+
 
 ## 3. The semantic coordinate system
 
@@ -707,11 +825,11 @@ Use semantic modifiers to expose dependency rather than embedding it in names:
 
 | Syntax | Meaning |
 | --- | --- |
-| `X of Y` | X inheres in or is attributed to Y |
+| `X of Y` | quality/process inherency; predicate applicability; configuration emergence |
 | `X caused by Y` / `X causing Y` | causal direction |
 | `X for Y` | goal, beneficiary, or intended context |
 | `X adjacent to Y` | adjacency |
-| `X contained in Y` / `X containing Y` | containment |
+| `X contained in Y` / `X containing Y` | existing observable-expression modifiers; distinct from worldview declaration clauses |
 | `X with Y` | compresence |
 | `X during Y` | temporal co-occurrence |
 | `R linking S to T` | relationship R with source S and target T |
@@ -1977,6 +2095,12 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 > qualities and processes, binary structural and functional relationships/bonds, emergent
 > configurations, and the four refining predicate dimensions: identity, realm, attribute, and
 > role.
+> Apply Section 2.1: containment is observational, not spatial enclosure or parthood.
+> Configurations emerge through DETECTION; models resolve them afterward, never instantiate
+> them. The observation-commit consequence engine and its placement/confer/change/uncertainty
+> work are planned runtime behavior, not completed detection.
+> Preserve canonical direction, additive asserted contracts and legal successful empty
+> collectives; do not invent runtime containment routes or confuse native `of` with `within`.
 > Preserve inherited boolean bearer-identity obligations; distinguish abstract categories from
 > explicit abstractness and concrete identity fulfillment. A realm commits the bearer to being
 > within it spatially or conceptually, not merely computed from or associated with it. Prove
