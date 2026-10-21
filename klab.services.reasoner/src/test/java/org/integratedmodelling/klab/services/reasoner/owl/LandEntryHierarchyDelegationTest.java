@@ -8,8 +8,6 @@ import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
-import org.integratedmodelling.klab.authority.land.LandAuthority;
-import org.integratedmodelling.klab.authority.land.PatternCatalog;
 import org.integratedmodelling.klab.services.reasoner.*;
 import org.integratedmodelling.klab.services.reasoner.internal.*;
 import org.junit.jupiter.api.Test;
@@ -17,6 +15,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.reasoner.structural.StructuralReasonerFactory;
 
 /** Real provider, binding, resolver, Reasoner dispatch and OWL class hierarchy; no live services. */
+@org.junit.jupiter.api.condition.EnabledIfSystemProperty(named="candidate.land.jar",matches=".+")
 class LandEntryHierarchyDelegationTest {
   static class TestOWL extends OWL {
     TestOWL() { super(mock(Scope.class)); manager=OWLManager.createOWLOntologyManager(); }
@@ -37,7 +36,8 @@ class LandEntryHierarchyDelegationTest {
     var f=ReasonerService.class.getDeclaredField(name);f.setAccessible(true);f.set(target,value);
   }
   static class Fixture implements AutoCloseable {
-    final LandAuthority provider=spy(new LandAuthority());
+    final java.net.URLClassLoader loader;
+    final Authority provider;
     final AuthorityBindings bindings=new AuthorityBindings();
     final TestOWL owl=new TestOWL();
     final AuthorityIdentityResolver resolver=new AuthorityIdentityResolver(owl,bindings);
@@ -45,19 +45,24 @@ class LandEntryHierarchyDelegationTest {
     final String bridge;
     Fixture()throws Exception { this(false); }
     Fixture(boolean synthetic)throws Exception {
+      loader=new java.net.URLClassLoader(new java.net.URL[]{Path.of(System.getProperty("candidate.land.jar")).toUri().toURL()},getClass().getClassLoader());
+      provider=spy((Authority)loader.loadClass("org.integratedmodelling.klab.authority.land.LandAuthority").getConstructor().newInstance());
       if(synthetic) {
-        var entries=new ArrayList<PatternCatalog.Entry>();
+        // Optional provider integration must not add a compile-time Services -> plugin dependency.
+        var yaml=new StringBuilder("schemaVersion: 4\nid: synthetic\ndomain: LULC\nversion: r1\nsource: https://example.org/synthetic\ntitle: Synthetic test\nsourceVersion: synthetic-1\ntentative: true\nacceptsProposals: false\nnotes: []\nentries:\n");
         for(var item:Map.of("Vegetation",List.<String>of(),"Forest",List.of("Vegetation"),
-            "Seasonal",List.<String>of(),"DeciduousForest",List.of("Forest","Seasonal"),"Water",List.<String>of()).entrySet())
-          entries.add(new PatternCatalog.Entry(item.getKey(),item.getKey(),null,item.getKey(),java.net.URI.create("https://example.org/synthetic"),
-              List.of("Synthetic conformance fixture"),null,PatternCatalog.EntryVerification.UNVERIFIED,
-              PatternCatalog.DefinitionReview.ABSENT,List.of(),item.getValue()));
-        provider.registerCatalog(new PatternCatalog("synthetic",PatternCatalog.Domain.LULC,"r1",java.net.URI.create("https://example.org/synthetic"),entries));
+            "Seasonal",List.<String>of(),"DeciduousForest",List.of("Forest","Seasonal"),"Water",List.<String>of()).entrySet()) {
+          yaml.append("  - code: \""+item.getKey()+"\"\n    alias: "+item.getKey()+"\n    label: "+item.getKey()+"\n    entryVerification: UNVERIFIED\n    definitionReview: ABSENT\n    notes: []\n    classParents: [");
+          yaml.append(item.getValue().stream().map(v->"\""+v+"\"").collect(java.util.stream.Collectors.joining(","))).append("]\n");
+        }
+        var catalog=loader.loadClass("org.integratedmodelling.klab.authority.land.PatternCatalogYaml")
+            .getMethod("load",java.io.InputStream.class).invoke(null,new java.io.ByteArrayInputStream(yaml.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        provider.getClass().getMethod("registerCatalog",catalog.getClass()).invoke(provider,catalog);
       }
       var catalog=synthetic?"synthetic":"corine_entry_hierarchy_example";
       owl.requireOntology("land").define(List.of(Axiom.ClassAssertion("LandCover",EnumSet.of(SemanticType.IDENTITY))));
       var request=new Authority.ConfigurationRequest("example","LAND","land:LandCover",Map.of(
-          "urn",LandAuthority.URN,"mode","ENTRY_ONLY","domain","LULC","catalogs",List.of(catalog),
+          "urn","klab.authority.land","mode","ENTRY_ONLY","domain","LULC","catalogs",List.of(catalog),
           "codelists",Map.of(catalog,"land.corine")));
       bridge=bindings.configure(request,provider);
       field(host,"owl",owl);field(host,"authorityIdentityResolver",resolver);
@@ -66,7 +71,7 @@ class LandEntryHierarchyDelegationTest {
     }
     Concept term(String name) { return resolver.resolve("land.corine",name); }
     String code(String name) { return bindings.alias("land.corine",name)[1]; }
-    @Override public void close() { provider.close(); }
+    @Override public void close() throws Exception { try { ((AutoCloseable)provider).close(); } finally { loader.close(); } }
   }
   @Test void providerOwnsDirectionalDistanceAndTransitiveHierarchyWithoutPatternDefinitions()throws Exception {
     try(var f=new Fixture()) {
@@ -131,7 +136,7 @@ class LandEntryHierarchyDelegationTest {
     try (var f = new Fixture()) {
       var leaf=f.term("BroadLeavedForest");
       f.bindings.configure(new Authority.ConfigurationRequest("example","OTHER","land:LandCover",Map.of(
-          "urn",LandAuthority.URN,"mode","ENTRY_ONLY","domain","LULC",
+          "urn","klab.authority.land","mode","ENTRY_ONLY","domain","LULC",
           "catalogs",List.of("corine_entry_hierarchy_example"),
           "codelists",Map.of("corine_entry_hierarchy_example","other.corine"))),f.provider);
       var other=f.resolver.resolve("other.corine","Forest");
