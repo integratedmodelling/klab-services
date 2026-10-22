@@ -1369,6 +1369,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 ? new ActuatorImpl()
                 : (ActuatorImpl)
                     Utils.Json.parseObject(node.get("operationPlan").asString(), Actuator.class);
+        if (!node.get(GraphModel.Fields.OPERATION_OBSERVABLE).isNull()) {
+          instance.setOperationObservable(scope.getService(Reasoner.class).resolveObservable(
+              node.get(GraphModel.Fields.OPERATION_OBSERVABLE).asString()));
+        }
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong(-1));
         instance.setName(node.get(GraphModel.Fields.NAME).asString(null));

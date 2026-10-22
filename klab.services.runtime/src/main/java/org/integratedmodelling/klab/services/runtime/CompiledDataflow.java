@@ -42,6 +42,9 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
 public class CompiledDataflow {
+  private static final String OBSERVER_CONTRIBUTIONS = "im:observer-contributions";
+  record ObserverContribution(String modelUrn, String observerUrn, String support, long revision) {}
+
 
   private final RuntimeService runtimeService;
   private final ServiceContextScope scope;
@@ -320,6 +323,7 @@ public class CompiledDataflow {
     requireExpandedDependencies(rootActuator);
     validateBoundContexts(rootActuator, scope);
     validateSupportedPlan(rootActuator);
+    validateObserverBindings(rootActuator);
     // Establish root identity before walking descendants. Transport copies of the root must
     // never be allocated as a second observation or scheduled instead of the submitted target.
     validateRootTarget(rootActuator);
@@ -353,12 +357,94 @@ public class CompiledDataflow {
     var declared=plan.getObservation();
     if(rootObservation==null || declared==null || rootObservation.getId()==Observation.UNASSIGNED_ID
         || rootObservation.getId()==Observation.QUERY_ID || rootObservation.getObservable()==null
-        || !Objects.equals(rootObservation.getObservable().getUrn(),declared.getObservable().getUrn())
+        || !(Objects.equals(rootObservation.getObservable().getUrn(),declared.getObservable().getUrn())
+            || verifiedObserverRefinement(plan))
         || rootObservation.getId()!=declared.getId() || plan.getId()!=declared.getId()
         || !Objects.equals(GeometryRepository.INSTANCE.sanitize(rootObservation.getGeometry()).encode(),
             GeometryRepository.INSTANCE.sanitize(declared.getGeometry()).encode())
         || rootObservation.getParentId()!=declared.getParentId())
       throw new IllegalArgumentException("Executable root must retain its bound target identity, meaning, native parent and support");
+  }
+
+  /** Accept only a uniform observer refinement evidenced by the selected producing outputs.
+   * This does not change the original operation/query or authorize arbitrary meaning changes. */
+  private boolean verifiedObserverRefinement(Actuator plan) {
+    return verifiedObserverRefinement(plan, rootObservation.getObservable());
+  }
+
+  private boolean verifiedObserverRefinement(Actuator plan, org.integratedmodelling.klab.api.knowledge.Observable original) {
+    var actual = plan.getObservation().getObservable();
+    if (plan.getActuatorType() != Actuator.Type.OBSERVE || original.getObserverSemantics() != null
+        || actual.getObserverSemantics() == null || plan.getOperationObservable() == null
+        || !Objects.equals(original.getUrn(), plan.getOperationObservable().getUrn())
+        || !(original.is(SemanticType.QUALITY) || original.is(SemanticType.PROCESS))
+        || !Objects.equals(original.asConcept().getUrn(), actual.asConcept().getUrn())
+        || !Objects.equals(original.getUnit(), actual.getUnit())
+        || !Objects.equals(original.getCurrency(), actual.getCurrency())
+        || !Objects.equals(original.getRange(), actual.getRange())
+        || original.getContextualization() != actual.getContextualization()
+        || !Objects.equals(actual.getUrn(), org.integratedmodelling.common.knowledge.ObservableImpl
+            .withObserverSemantics(original, actual.getObserverSemantics()).getUrn())
+        || !(plan.getData().get(OBSERVER_CONTRIBUTIONS) instanceof List<?> entries) || entries.isEmpty()
+        || !(plan.getData().get(Actuator.PRODUCING_MODELS_KEY) instanceof List<?> models)) return false;
+    var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    var selected = scope.getObserver();
+    if (reasoner == null || selected != null && selected.getObservable() == null) return false;
+    var requestedSupport = GeometryRepository.INSTANCE.scale(plan.getObservation().getGeometry(), scope);
+    var verifiedSupport = org.integratedmodelling.klab.api.services.resolver.Coverage.create(requestedSupport, 0);
+    var currentModels = new HashMap<String, Model>();
+    for (var entry : entries) {
+      if (!(entry instanceof String text)) return false;
+      var contribution = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text, ObserverContribution.class);
+      if (contribution.revision() < 0 || contribution.modelUrn() == null || contribution.modelUrn().isBlank()
+          || !models.contains(contribution.modelUrn())
+          || !Objects.equals(contribution.observerUrn(), actual.getObserverSemantics().getUrn())
+          || reasoner.semanticDistance(actual, original, null, contribution.revision()) < 0
+          || selected != null && reasoner.semanticDistance(actual.getObserverSemantics(), selected.getObservable().asConcept(),
+              null, contribution.revision()) < 0) return false;
+      var source = currentModels.computeIfAbsent(contribution.modelUrn(),
+          urn -> runtimeService.observerSourceModel(urn, scope));
+      if (source == null || source.getCoverage() == null
+          || org.integratedmodelling.klab.runtime.language.ModelValidationGate
+              .validatedPreparableRevision(source, scope, original) != contribution.revision()
+          || source.getObservables().stream().noneMatch(output ->
+              Objects.equals(output.asConcept().getUrn(), original.asConcept().getUrn())
+                  && output.getObserverSemantics() != null
+                  && Objects.equals(output.getObserverSemantics().getUrn(), contribution.observerUrn())
+                  && reasoner.semanticDistance(output, original, null, contribution.revision()) >= 0)) return false;
+      if (contribution.support() == null) return false;
+      var declaredSupport = GeometryRepository.INSTANCE.scale(Geometry.create(contribution.support()), scope);
+      var supported = GeometryRepository.INSTANCE.getMerged(requestedSupport,
+          GeometryRepository.INSTANCE.scale(source.getCoverage(), scope),
+          org.integratedmodelling.klab.api.lang.LogicalConnector.INTERSECTION,
+          org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class);
+      if (supported == null || supported.isEmpty()
+          || !Objects.equals(Geometry.forTransport(supported).encode(), Geometry.forTransport(declaredSupport).encode())) return false;
+      var contributionCoverage = org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(supported, requestedSupport);
+      if (contributionCoverage == null) return false;
+      verifiedSupport = contributionCoverage.isComplete()
+          ? org.integratedmodelling.klab.api.services.resolver.Coverage.create(requestedSupport, 1)
+          : verifiedSupport.merge(supported, org.integratedmodelling.klab.api.lang.LogicalConnector.UNION);
+    }
+    return verifiedSupport.isComplete();
+  }
+
+  private void validateObserverBindings(Actuator actuator) {
+    if (actuator.getData().get(OBSERVER_CONTRIBUTIONS) instanceof List<?> entries) {
+      var contributions = entries.stream().map(entry -> org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+          entry.toString(), ObserverContribution.class)).toList();
+      if (contributions.stream().anyMatch(c -> c.observerUrn() != null)
+          && contributions.stream().anyMatch(c -> c.modelUrn() != null)
+          && contributions.stream().anyMatch(c -> c.modelUrn() == null))
+        throw new UnsupportedOperationException("Observer-specific model/reference output composition requires an explicit value-fill operator");
+    }
+    if (actuator.getActuatorType() == Actuator.Type.OBSERVE && actuator.getOperationObservable() != null
+        && actuator.getObservation() != null
+        && !Objects.equals(actuator.getOperationObservable().getObserverSemantics(),
+            actuator.getObservation().getObservable().getObserverSemantics())
+        && !verifiedObserverRefinement(actuator, actuator.getOperationObservable()))
+      throw new IllegalArgumentException("Unverified nested result observer refinement");
+    for (var child : actuator.getChildren()) validateObserverBindings(child);
   }
 
   private static void requireExpandedDependencies(Actuator actuator) {
@@ -495,6 +581,7 @@ public class CompiledDataflow {
     copy.setType(source.getType());
     copy.setActuatorType(source.getActuatorType());
     copy.setObservation(Observation.forTransport(source.getObservation()));
+    copy.setOperationObservable(source.getOperationObservable());
     copy.getObservation().getMetadata().remove(Scheduler.PLAN_METADATA_KEY);
     copy.getObservation().getMetadata().remove(org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.OccurrenceRegistration.METADATA_KEY);
     copy.getObservation().getMetadata().remove(org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.DispatchProgress.KEY);
@@ -731,6 +818,12 @@ public class CompiledDataflow {
     if (rootActuator.getActuatorType() != Actuator.Type.UPDATE
         && rootObservation instanceof ObservationImpl target) {
       target.mergeAnnotations(rootActuator.getObservation());
+      if (!Objects.equals(target.getObservable().getUrn(), rootActuator.getObservation().getObservable().getUrn())) {
+        if (!verifiedObserverRefinement(rootActuator)) throw new IllegalArgumentException("Unverified result observer refinement");
+        target.setObservable(rootActuator.getObservation().getObservable());
+      }
+      if (rootActuator.getData().containsKey(OBSERVER_CONTRIBUTIONS))
+        target.getMetadata().put(OBSERVER_CONTRIBUTIONS, rootActuator.getData().get(OBSERVER_CONTRIBUTIONS));
       if(target.getContextualizationData()==null)
         target.setContextualizationData(new ObservationImpl.ContextualizationDataImpl());
       ((ActuatorImpl)rootActuator).setObservation(target);
@@ -851,8 +944,9 @@ public class CompiledDataflow {
           || !java.util.Objects.equals(actuator.getContextBinding().contextSupport(),
               Geometry.forTransport(actuator.getRequestedSupport()).encode())
           || actuator.getObservation() == null
-          || !java.util.Objects.equals(actuator.getOperationObservable().getUrn(),
+          || !(java.util.Objects.equals(actuator.getOperationObservable().getUrn(),
               actuator.getObservation().getObservable().getUrn())
+              || verifiedObserverRefinement(actuator, actuator.getOperationObservable()))
           || actuator.getObservation().getParentId() > 0
               && actuator.getObservation().getParentId() != actuator.getContextBinding().contextId())
         throw new IllegalStateException("Bound result requires the same native context and support");
@@ -1419,8 +1513,10 @@ public class CompiledDataflow {
 
       var contextualization = createContextualizationActivity(
           planChart, observation, contextScope.getActivity(), geometry);
-
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(contextualization,contextScope.getObserver());
       var executionScope = contextScope.executing(contextualization, observation);
+      if (contextScope.getObserver() != null) executionScope.getCurrentTransaction()
+          .link(contextualization,contextScope.getObserver(),GraphModel.Relationship.HAS_OBSERVER);
       var contextualizationScope = new ContextualizationScopeImpl(observation, event);
 
       Throwable failure = null;

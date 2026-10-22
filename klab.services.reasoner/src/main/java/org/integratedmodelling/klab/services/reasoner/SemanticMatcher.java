@@ -544,6 +544,11 @@ public class SemanticMatcher {
     return false;
   }
 
+  /** Same specialization/trait contract as other semantic clauses; observer classes are constraints. */
+  int observerClauseDistance(Concept candidate,Concept requested) {
+    return distance(candidate,requested,false);
+  }
+
   private int distance(Concept from, Concept to, boolean acceptAbsent) {
 
     int ret = 0;

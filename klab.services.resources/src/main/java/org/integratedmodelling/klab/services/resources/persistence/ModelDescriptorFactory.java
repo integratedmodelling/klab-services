@@ -94,11 +94,12 @@ final class ModelDescriptorFactory {
           Concept context = monitor.getService(Reasoner.class).inherent(type);
           if (context == null
               || !monitor.getService(Reasoner.class).is(context, mainObservable.getSemantics())) {
-            type = observable.builder(monitor).of(mainObservable.getSemantics()).buildConcept();
+            observable = observable.builder(monitor).of(mainObservable.getSemantics()).buildObservable();
+            type = observable.getSemantics();
           }
         }
         ModelReference m = ret.get(0).copy();
-        m.setObservable(type.getUrn());
+        m.setObservable(observable.getUrn());
         m.setObservableConcept(type);
         m.setObservationType(observable.getContextualization().name());
         m.setDereifyingAttribute(attr.getFormalName());

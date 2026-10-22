@@ -121,7 +121,29 @@ public class ObservableValidator {
 
   /** Validate attributes that belong to the observable rather than its semantics. */
   public List<Notification> validateObservable(KimObservable observable) {
+    if (observable != null && knownNonAgentObserver(observable.getObserverSemantics(),
+        java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>())))
+      return List.of(Notification.error(
+          "OBSERVER_AGENT_REQUIRED: 'observed as' must name Agent-class semantics",
+          observable.getObserverSemantics()));
     return List.of();
+  }
+
+  /** Reject proven wrong kinds; unknown source references remain the resolver's responsibility. */
+  private static boolean knownNonAgentObserver(KimConcept concept, Set<KimConcept> visited) {
+    if (concept == null || !visited.add(concept)) return false;
+    var effective = effectiveHeadTypes(concept,
+        java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()));
+    if (effective.contains(SemanticType.NOTHING)) return false;
+    if (!java.util.Collections.disjoint(effective, SemanticType.FUNDAMENTAL_TYPES)
+        && !effective.contains(SemanticType.AGENT)) return true;
+    // Every alternative must be agentic; overlap with one Agent branch is not enough.
+    if (concept.getSemanticModifier() == null) {
+      if (knownNonAgentObserver(concept.getObservable(), visited)) return true;
+      for (var operand : safe(concept.getOperands()))
+        if (knownNonAgentObserver(operand, visited)) return true;
+    }
+    return false;
   }
 
   /** Validate the rules local to one concept. The caller visits nested concepts. */

@@ -95,15 +95,19 @@ public class ReasonerController {
     throw new IllegalArgumentException("Semantic construction requires an authorized scope");
   }
 
+  private static Concept baseConcept(Semantics value) {
+    return value instanceof Concept concept?concept:value.asConcept();
+  }
+
   private static void requireArguments(
-      Concept[] arguments, int minimum, int maximum, String operation) {
+      Semantics[] arguments, int minimum, int maximum, String operation) {
     if (arguments == null || arguments.length < minimum || arguments.length > maximum) {
       String expected = minimum == maximum ? Integer.toString(minimum) : minimum + " to " + maximum;
       throw new IllegalArgumentException(
           operation + " requires " + expected + " concept argument(s)");
     }
     int i = 1;
-    for (Concept argument : arguments) {
+    for (Semantics argument : arguments) {
       if (argument == null && i < minimum) {
         throw new IllegalArgumentException(operation + " does not accept null concepts");
       }
@@ -261,7 +265,7 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.MATCHES)
   public boolean matches(
-      @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] concepts) {
+      @Parameter(description = "Array of two semantic expressions to check") @RequestBody Semantics[] concepts) {
     requireArguments(concepts, 2, 2, "Matching");
     return reasoner.klabService().match(concepts[0], concepts[1]);
   }
@@ -448,7 +452,7 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.DISTANCE)
   public int assertedDistance(
-      @Parameter(description = "Array of concepts (2 or 3)") @RequestBody Concept[] concepts,
+      @Parameter(description = "Array of concepts (2 or 3)") @RequestBody Semantics[] concepts,
       @Parameter(description = "Whether to use asserted distance")
           @RequestParam(name = "asserted", defaultValue = "false")
           boolean asserted,
@@ -457,7 +461,7 @@ public class ReasonerController {
     return asserted
         ? knowledgeRevision < 0
             ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
-            : reasoner.klabService().assertedDistanceAtRevision(concepts[0], concepts[1], knowledgeRevision)
+            : reasoner.klabService().assertedDistanceAtRevision(baseConcept(concepts[0]), baseConcept(concepts[1]), knowledgeRevision)
         : knowledgeRevision < 0
             ? reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2])
             : reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2], knowledgeRevision);
@@ -466,7 +470,7 @@ public class ReasonerController {
   @Operation(summary = "Compute distance against an admitted semantic generation")
   @PostMapping(ServicesAPI.REASONER.VALIDATED_DISTANCE)
   public int validatedDistance(
-      @RequestBody Concept[] concepts,
+      @RequestBody Semantics[] concepts,
       @RequestParam(name = "asserted", defaultValue = "false") boolean asserted,
       @RequestParam(name = "knowledgeRevision") long knowledgeRevision) {
     if (knowledgeRevision < 0)
@@ -977,7 +981,7 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.COMPATIBLE)
   public boolean compatible(
-      @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] args) {
+      @Parameter(description = "Array of two semantic expressions to check") @RequestBody Semantics[] args) {
     requireArguments(args, 2, 2, "Compatibility check");
     return reasoner.klabService().compatible(args[0], args[1]);
   }
@@ -993,7 +997,7 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.CONTEXTUALLY_COMPATIBLE)
   public boolean contextuallyCompatible(
-      @Parameter(description = "Array of three concepts to check") @RequestBody Concept[] args) {
+      @Parameter(description = "Array of three semantic expressions to check") @RequestBody Semantics[] args) {
     requireArguments(args, 3, 3, "Contextual compatibility check");
     return reasoner.klabService().contextuallyCompatible(args[0], args[1], args[2]);
   }

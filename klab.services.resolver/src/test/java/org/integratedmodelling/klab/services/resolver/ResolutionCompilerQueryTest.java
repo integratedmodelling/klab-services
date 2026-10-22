@@ -155,6 +155,8 @@ class ResolutionCompilerQueryTest {
     when(existing.getMetadata()).thenReturn(org.integratedmodelling.klab.api.data.Metadata.create());
     when(existing.getId()).thenReturn(42L);
 
+    when(existing.getGeometry()).thenReturn(requested);
+    when(existing.getObservable()).thenReturn(observable);
     var result = new ResolutionCompiler(mock(ResolverService.class)).query(observable, requested, scope);
 
     assertSame(existing, result.result());

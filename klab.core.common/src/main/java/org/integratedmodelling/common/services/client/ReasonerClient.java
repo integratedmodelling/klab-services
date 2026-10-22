@@ -44,7 +44,15 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   private record BinaryKey(long revision, Concept first, Concept second) {}
 
-  private record DistanceKey(long revision, Concept target, Concept other, Concept context) {}
+  private record DistanceKey(long revision, String target, String other, String context) {}
+
+  private static String semanticKey(Semantics value) {
+    if(value==null)return "<null>";
+    if(!(value instanceof Observable o))return "concept:"+value.getUrn();
+    return "observable:"+o.getUrn()+"|observer="+(o.getObserverSemantics()==null?"<absolute>":o.getObserverSemantics().getUrn())
+        +"|method="+o.getContextualization()+"|unit="+o.getUnit()+"|currency="+o.getCurrency()+"|range="+o.getRange()
+        +"|genericComponents="+o.getGenericComponents().stream().map(c->c.getUrn()).sorted().toList();
+  }
 
   /** Caches for concepts and observables. */
   private final Cache<String, Concept> concepts =
@@ -257,36 +265,18 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-    Concept contextConcept = context == null ? null : context.asConcept();
-    var key =
-        new DistanceKey(currentRevision(), target.asConcept(), other.asConcept(), contextConcept);
-    int distance =
-        semanticDistances.get(
-            key,
-            ignored ->
-                client.post(
-                    ServicesAPI.REASONER.DISTANCE,
-                    Lists.newArrayList(target.asConcept(), other.asConcept(), contextConcept),
-                    Integer.class));
-    if (distance < 0) {
-      return distance;
-    }
-    int observableDistance = observableDistance(target, other);
-    return observableDistance < 0 ? observableDistance : distance + observableDistance;
+    var key=new DistanceKey(currentRevision(),semanticKey(target),semanticKey(other),semanticKey(context));
+    return semanticDistances.get(key,ignored -> client.post(
+        ServicesAPI.REASONER.DISTANCE,Lists.newArrayList(target,other,context),Integer.class));
   }
 
   @Override
   public int semanticDistance(Semantics target, Semantics requested, Semantics context,
       long expectedKnowledgeRevision) {
-    if (expectedKnowledgeRevision < 0) return -50;
-    // Admission is bound to this generation. Neither a cached score nor a freshly
-    // observed different generation may substitute for the caller's evidence.
-    int distance = validatedDistanceScore(
-        Lists.newArrayList(target.asConcept(), requested.asConcept(), context == null ? null : context.asConcept()),
-        "knowledgeRevision", Long.toString(expectedKnowledgeRevision));
-    if (distance < 0) return distance;
-    int representationDistance = observableDistance(target, requested, expectedKnowledgeRevision);
-    return representationDistance < 0 ? representationDistance : distance + representationDistance;
+    if(expectedKnowledgeRevision<0)return -50;
+    // Preserve complete wrappers; server compatibility/representation checks use the same receipt.
+    return validatedDistanceScore(Lists.newArrayList(target,requested,context),
+        "knowledgeRevision",Long.toString(expectedKnowledgeRevision));
   }
 
   private int validatedDistanceScore(Object payload, Object... parameters) {
@@ -679,7 +669,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   public boolean match(Semantics candidate, Semantics pattern) {
     return client.post(
         ServicesAPI.REASONER.MATCHES,
-        List.of(candidate.asConcept(), pattern.asConcept()),
+        List.of(candidate, pattern),
         Boolean.class);
   }
 
@@ -842,53 +832,6 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   private long currentRevision() {
     Capabilities current = capabilities;
     return current == null ? 0L : current.getKnowledgeRevision();
-  }
-
-  private int observableDistance(Semantics target, Semantics other) {
-    return observableDistance(target, other, -1);
-  }
-
-  private int observableDistance(Semantics target, Semantics other, long expectedKnowledgeRevision) {
-    if (!(target instanceof Observable targetObservable)
-        || !(other instanceof Observable otherObservable)) {
-      return 0;
-    }
-    int distance = 0;
-    Concept targetObserver = targetObservable.getObserverSemantics();
-    Concept otherObserver = otherObservable.getObserverSemantics();
-    if (targetObserver != null) {
-      if (otherObserver == null) {
-        return -50;
-      }
-      int observerDistance = expectedKnowledgeRevision < 0
-          ? assertedDistance(otherObserver, targetObserver)
-          : validatedDistanceScore(Lists.newArrayList(otherObserver, targetObserver),
-              "asserted", "true", "knowledgeRevision", Long.toString(expectedKnowledgeRevision));
-      if (observerDistance < 0) {
-        return -50;
-      }
-      distance += observerDistance;
-    } else if (otherObserver != null) {
-      distance++;
-    }
-    if (targetObservable.getContextualization() != null
-        && (otherObservable.getContextualization() == null
-            || !otherObservable.is(targetObservable.getContextualization()))) {
-      return -50;
-    }
-    var targetMediator = targetObservable.mediator();
-    var otherMediator = otherObservable.mediator();
-    if (targetMediator != null) {
-      if (otherMediator == null || !targetMediator.isCompatible(otherMediator)) {
-        return -50;
-      }
-      if (!targetMediator.equals(otherMediator)) {
-        distance++;
-      }
-    } else if (otherMediator != null) {
-      distance++;
-    }
-    return distance;
   }
 
   @Override

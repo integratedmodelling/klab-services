@@ -1,5 +1,86 @@
 # k.LAB domain ontology articulation context pack
 
+## Observer perspectives: contract and implementation boundaries
+
+Use existing observable `observed as <observer Agent class>` semantics for observational distinctions
+in models. Do not invent a parallel valuation-specific ValuePerspective taxonomy. Basic valuation
+concepts and stakeholder roles remain separate, legitimate articulation questions.
+
+The agreed contract is implemented in staged source, matching and planning paths; observe the limits below:
+
+- Explicit `observed as X` versus `observed as Y` retains semantic identity; compatibility uses normal
+  clause specialization. Do not replace that rule with string equality or invent a subtype direction.
+- Missing clause means absolute/null perspective, interpreted in sessions through the context's
+  normally nonnull default observer (worldview/user groups/federations); null default is legal.
+  Never globally rewrite stored null into a user-specific class. Preserve explicitness/provenance.
+- Explicit query observer is mandatory: null/absolute candidates cannot satisfy it.
+- Session-only observer prioritizes compatible specific observations/models. Absolute candidates
+  remain eligible and provide fallback after specific resolution/dependency failure. Other semantic
+  incompatibilities are never waived by specificity. Apply the rule to reuse and model ranking.
+- A modeled Agent observation can supply the observer; multiple perspectives may coexist in one
+  knowledge graph. Identity, reuse and caches must retain observer/provenance, scope and relevant
+  revisions/access context. Do not conflate context defaults with explicit query meaning.
+- Observer URN in submission resolution constraints overrides the session/context observer;
+  otherwise use the session observer, which may be null. Selection is per submission and
+  does not mutate the session default. Any eligible Agent observation in the
+  knowledge graph may be selected. Preserve observation/URN, semantic Agent class and explicit
+  query-clause provenance separately. Constraint selection alone must not synthesize `observed as`
+  or turn session-style prioritization into mandatory observer compatibility.
+
+Positive: implicit query O under observer X prefers compatible `O observed as X`; if that resolution
+fails on dependencies, compatible absolute O may be tried. Negative: explicit `O observed as X`
+cannot fall back to absolute O, and unrelated Y is not eligible merely because it ranks well.
+O/X/Y are schematic meanings, not proposed ontology names or executable fixture declarations.
+
+Structured source/interface transport, canonical observer meaning, revision-bound full-wrapper matching,
+per-submission selection and model preference are implemented. Dependent quality/process reuse supports
+planning fallback and measured source support. Mixed specific-model/reference value composition
+is unfinished: reference inputs and coverage receipts do not fill output values, and unsupported
+mixed plans must not claim completion or uniform observer meaning. Existing Tier-0 success precedes Tier-1+ recursive discovery. These changes remain separate from
+the relationship-axis release until their own integration/rollout is approved.
+
+The catalog continuation resolves full stored observable wrappers only after source/revision
+admission, preserving perspective through both catalog backends and secondary-output specialization.
+Server observer URN/numeric constraints and contextualization headers use context-scoped Agent
+selection; a positive global ID is insufficient membership proof. Persisted ordinary actuators
+keep the original operation apart from the refined result.
+
+Autonomous replay recovers the actual Agent from recorded creation/activity provenance, not its
+semantic class. New submission, contextualization and simulation activities explicitly distinguish
+known-null from missing selection. Every relevant creator branch must agree; unknown, conflicting,
+corrupt, cyclic unresolved or inaccessible history rejects recovery with a resubmission diagnostic.
+Known-null clears the execution observer. Never infer missing history from a parent, the current
+session default or an observable's observer class. Explicit new submission/dependency scopes retain
+their own selection. Embedded tests cover committed submission, fresh graph/cache recovery and stored
+values; they do not establish a database-process restart or live-stack acceptance.
+`getPerspectives(observable)` enumerates all existing observation records visible at the scope's
+knowledge-graph insertion point whose canonical semantics are identical after removing only
+`observed as`. Preserve all other clauses; do not use arbitrary subclass compatibility. Include
+absolute/no-clause records under the same rule. Mediator equality uses existing portable definitions
+and distribution flags; do not convert units/currencies or infer synonym equivalence here.
+Retain multiple records/supports/occurrences by
+the same actual Agent: no grouping, ranking, selection, value composition or model resolution.
+Actual provenance Agent identity and semantic observed-as restrictions are different things.
+Never leak records from a different insertion point or knowledge graph. Qualities are the primary
+intended use; perspectives on substantials remain allowed but are not the intended use case.
+Positive: equal native meaning under X, Y and no observer clause returns all visible records,
+including two records by X's same actual Agent. Negative: another bearer or another insertion point
+does not qualify merely because its meaning is compatible. These are schematic examples, not new
+ontology declarations. Enumeration does not relax an explicit query observer's hard compatibility
+constraint during resolution. Wrapper tests alone do not establish live-stack acceptance.
+
+OWL export uses source-owned ontology annotation records, not universal base-class restrictions or
+session-observer assertions. Only trusted captured-source ingestion publishes those records after whole
+source validation; ordinary construction/editor/model validation does not claim namespace ownership or
+publish records. Model wrappers retain their observer meaning, but broader model-publication export
+integration is not supplied by this mechanism. Scope metadata is provenance, not access permission.
+
+Do not claim safe fallback after stateful execution or deferred executable classifier failure: that
+transactional retry is unfinished. Null-context ordering of specific candidates remains unspecified.
+Pending-graph tests with stubbed commit I/O are not durable/live acceptance. See
+[observer semantics](../docs/OBSERVABLES.md#observer-perspective-contract) and
+[resolution requirements](../docs/RESOLUTION.md#observer-aware-resolution-contract) for the exact scope.
+
 ## 1. Mission
 
 Use this pack to analyze authoritative literature for a domain of knowledge and propose a

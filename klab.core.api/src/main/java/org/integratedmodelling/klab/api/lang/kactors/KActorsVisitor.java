@@ -2280,6 +2280,7 @@ public class KActorsVisitor {
     }
     addNotifications(context.validator.validateObservable(observable, context));
     visitSemanticConcept(observable.getSemantics(), context);
+    visitSemanticConcept(observable.getObserverSemantics(), context);
     visitValues(observable.getValue(), context);
     visitValues(observable.getDefaultValue(), context);
     for (var operator : safe(observable.getValueOperators())) {

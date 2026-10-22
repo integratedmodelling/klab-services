@@ -201,6 +201,7 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
       }
       case KimObservable observable -> {
         if (observable.getSemantics() != null) ret.add(observable.getSemantics());
+        if (observable.getObserverSemantics() != null) ret.add(observable.getObserverSemantics());
       }
       case KimConcept concept -> {
         add(ret, concept.getObservable(), concept.getParent(), concept.getInherent(), concept.getGoal());

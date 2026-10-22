@@ -39,10 +39,16 @@ public class ResolutionCompiler {
       Observation reference,
       Scale requestedScale,
       Scale coveredScale,
-      Coverage coverage) {
+      Coverage coverage,
+      boolean deferredAbsolute) {
+
+    QueryMatch(Observation result, Observation reference, Scale requestedScale,
+        Scale coveredScale, Coverage coverage) {
+      this(result, reference, requestedScale, coveredScale, coverage, false);
+    }
 
     boolean hasCoverage() {
-      return result != null && !result.isEmpty() && !coverage.isEmpty();
+      return !deferredAbsolute && result != null && !result.isEmpty() && !coverage.isEmpty();
     }
   }
 
@@ -199,7 +205,7 @@ public class ResolutionCompiler {
     if (query.hasCoverage() && query.coverage().isComplete()) {
       ScheduleNegotiationSupport.checkReuse(query.reference(), parentGraph.scheduleRequest, scale.getTime(), scope);
       var ret = parentGraph.createChild(observation, scale);
-      ret.addReference(query.reference(), query.coverage());
+      ret.addReference(query.reference(), query.coverage(), query.coveredScale());
       return ret;
     }
 
@@ -235,7 +241,7 @@ public class ResolutionCompiler {
 
     ResolutionGraph ret = parentGraph.createChild(observation, scale);
     if (query.hasCoverage()) {
-      ret.addReference(query.reference(), query.coverage());
+      ret.addReference(query.reference(), query.coverage(), query.coveredScale());
     }
     scope =
         scope.withResolutionConstraints(
@@ -269,12 +275,21 @@ public class ResolutionCompiler {
         automaticClassifiersAllowed = !strictTierZeroOnly && inheritedBudget && ret.getResolvedCoverage()==0;
         for (ObservationStrategy strategy : strategies) {
           if(phase==0 && strategy.getRank()>0)continue;
-          var strategyResolution = resolve(strategy, scaleToResolve, ret, scope, observation);
+          var strategyResolution = resolve(strategy, scaleToResolve, ret, scope, observation,
+              query.deferredAbsolute() && phase == 0 ? query : null);
           var cov = ret.checkCoverage(strategyResolution);
           if (!cov.isRelevant()) continue;
           strategyGraphs.add(strategyResolution);
           ret.merge(strategyResolution);
           if (cov.isComplete()) return ret;
+        }
+        // A committed absolute answer remains legal for an implicit request. Prefer reusable
+        // knowledge to recursive discovery, after all Tier-0 observer-specific attempts fail.
+        if (phase == 0 && query.deferredAbsolute()) {
+          ScheduleNegotiationSupport.checkReuse(query.reference(), parentGraph.scheduleRequest, scale.getTime(), scope);
+          ret.addReference(query.reference(), query.coverage(), query.coveredScale());
+          if (ret.getCoverage().isComplete()) return ret;
+          scaleToResolve = missingScale(scale, query.coveredScale());
         }
       }
     } finally {
@@ -299,11 +314,15 @@ public class ResolutionCompiler {
       ResolutionGraph graph,
       ContextScope scope,
       Observation explainedObservation) {
+    return resolve(observationStrategy, scaleToCover, graph, scope, explainedObservation, null);
+  }
 
+  private ResolutionGraph resolve(ObservationStrategy observationStrategy, Scale scaleToCover,
+      ResolutionGraph graph, ContextScope scope, Observation explainedObservation, QueryMatch fallback) {
     var binding = observationStrategy.getContextBinding();
     if(strictTierZeroOnly && observationStrategy.getRank()>0)return ResolutionGraph.empty();
     if (scope.isInterrupted()) return ResolutionGraph.empty();
-    if (binding == null) return resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation);
+    if (binding == null) return resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation, fallback);
     if (observationStrategy.getRank() < 1 || observationStrategy.getOperations().size() != 1
         || observationStrategy.getOperations().getFirst().getType() != ObservationStrategy.Operation.Type.OBSERVE
         || explainedObservation == null
@@ -319,7 +338,7 @@ public class ResolutionCompiler {
       if (!java.util.Objects.equals(binding.contextSupport(), Geometry.forTransport(scaleToCover).encode())
           || explainedObservation.getParentId() > 0 && explainedObservation.getParentId() != binding.contextId())
         return ResolutionGraph.empty();
-      var result = resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation);
+      var result = resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation, fallback);
       binding.require(scope, observationStrategy.getOperations().getFirst().getObservable());
       return scope.isInterrupted() ? ResolutionGraph.empty() : result;
     } catch (IllegalStateException invalidBinding) {
@@ -331,7 +350,7 @@ public class ResolutionCompiler {
   }
 
   private ResolutionGraph resolveStrategyBody(ObservationStrategy observationStrategy,
-      Scale scaleToCover, ResolutionGraph graph, ContextScope scope, Observation explainedObservation) {
+      Scale scaleToCover, ResolutionGraph graph, ContextScope scope, Observation explainedObservation, QueryMatch fallback) {
     var ret = graph.createChild(observationStrategy, scaleToCover);
     Map<String, ResolutionGraph> produced = new LinkedHashMap<>();
     // Named ports may request the same collective (e.g. both ends of a connection).
@@ -374,6 +393,8 @@ public class ResolutionCompiler {
         }
         case OBSERVE -> {
           boolean acceptedModel = false;
+          boolean preferSpecific = fallback != null && java.util.Objects.equals(
+              operation.getObservable().asConcept().getUrn(), fallback.reference().getObservable().asConcept().getUrn());
           // Each producer accumulates its own output coverage, independently of prerequisites.
           var contextualizedScope =
               contextualizeScope(scope, operation.getObservable(), scaleToCover, graph);
@@ -393,6 +414,10 @@ public class ResolutionCompiler {
                   contextualizedScope.getFirst(),
                   contextualizedScope.getSecond())) {
 
+            if (preferSpecific && model.getObservables().stream().noneMatch(output ->
+                output.getObserverSemantics() != null
+                    && org.integratedmodelling.klab.runtime.ObserverResolution.preference(
+                        output, operation.getObservable(), contextualizedScope.getFirst()) == 0)) continue;
             // Select strategies and models in the requesting context. Only the model's
             // computation/dependencies enter the substantial it explains; otherwise a
             // root substantial would incorrectly be its own context during model lookup.
@@ -456,6 +481,9 @@ public class ResolutionCompiler {
             }
           }
 
+          // A REFERENCE is an input, not an output-value fill operator. Partial specific
+          // computation cannot be declared complete by unioning absolute reference coverage.
+          // Keep trying complete models; the outer phase can return the full absolute source.
           if (!acceptedModel || !ret.getCoverage().isComplete()) {
             return ResolutionGraph.empty();
           }
@@ -833,18 +861,17 @@ public class ResolutionCompiler {
       var probe = new Observation.NaiveBuilder(observable, scope);
       probe.geometry(requestedScale.as(Geometry.class));
       var existing = scope.getObservation(probe.make());
-      if (existing != null && !existing.isEmpty() && existing.getId() > 0)
-        org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(
-            existing, requestedScale.as(Geometry.class), scope);
-      return existing == null || existing.isEmpty() || existing.getId() <= 0
-          ? new QueryMatch(
-              existing, null, requestedScale, null, Coverage.create(requestedScale, 0.0))
-          : new QueryMatch(
-              existing,
-              existing,
-              requestedScale,
-              requestedScale,
-              Coverage.create(requestedScale, 1.0));
+      var coverage = org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(existing, requestedScale);
+      if (existing == null || existing.isEmpty() || existing.getId() <= 0 || coverage == null || coverage.isEmpty())
+        return new QueryMatch(existing, null, requestedScale, null, Coverage.create(requestedScale, 0));
+      var covered = existing.getGeometry() == requestedScale ? requestedScale
+          : GeometryRepository.INSTANCE.getMerged(requestedScale,
+              GeometryRepository.INSTANCE.scale(existing.getGeometry(), scope), LogicalConnector.INTERSECTION, Scale.class);
+      if (covered == null || covered.isEmpty())
+        return new QueryMatch(existing, null, requestedScale, null, Coverage.create(requestedScale, 0));
+      org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(existing, requestedScale, scope);
+      return new QueryMatch(existing, existing, requestedScale, covered, coverage,
+          org.integratedmodelling.klab.runtime.ObserverResolution.deferred(existing, observable, scope));
     }
 
     if (!(SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())

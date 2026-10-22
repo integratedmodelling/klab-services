@@ -19,6 +19,8 @@ import org.neo4j.harness.*;
 /** Embedded transport bridge only: all stored properties, links and restoration use production KG. */
 public final class NativeFamilyRecovery implements AutoCloseable {
   private final Neo4j database=Neo4jBuilders.newInProcessBuilder().withDisabledServer()
+      .withConfig(org.neo4j.configuration.GraphDatabaseSettings.transaction_timeout,java.time.Duration.ofSeconds(60))
+      .withConfig(org.neo4j.configuration.GraphDatabaseSettings.lock_acquisition_timeout,java.time.Duration.ofSeconds(60))
       .withConfig(org.neo4j.configuration.connectors.BoltConnector.enabled,false).build();
   private String contextId="family.native";
   private final AtomicLong sequence=new AtomicLong(10000);
@@ -55,8 +57,11 @@ public final class NativeFamilyRecovery implements AutoCloseable {
       List<org.neo4j.driver.Record> rows;try(var result=embedded.execute(call.getArgument(0),call.getArgument(1))){rows=records(result);}
       var result=mock(org.neo4j.driver.Result.class);when(result.list()).thenReturn(rows);when(result.hasNext()).thenReturn(!rows.isEmpty());if(!rows.isEmpty()){when(result.single()).thenReturn(rows.getFirst());when(result.next()).thenReturn(rows.getFirst());}return result;
     });
-    doAnswer(ignored->{embedded.commit();embedded.close();open.set(false);return null;}).when(tx).commit();
-    doAnswer(ignored->{embedded.rollback();embedded.close();open.set(false);return null;}).when(tx).rollback();return tx;
+    doAnswer(ignored->{if(open.getAndSet(false)){embedded.commit();embedded.close();}return null;}).when(tx).commit();
+    doAnswer(ignored->{if(open.getAndSet(false)){embedded.rollback();embedded.close();}return null;}).when(tx).rollback();
+    // Driver close rolls back an uncommitted transaction, including constructor failures.
+    doAnswer(ignored->{if(open.getAndSet(false)){embedded.rollback();embedded.close();}return null;}).when(tx).close();
+    return tx;
   }
   private final class Graph extends KnowledgeGraphNeo4j {
     Graph(){this.driver=NativeFamilyRecovery.this.driver;this.rootContextId=contextId;}
@@ -116,6 +121,7 @@ public final class NativeFamilyRecovery implements AutoCloseable {
     contextId=scope.getId();var graph=new Graph();graph.initialize(scope);return graph;
   }
   public ServiceContextScope coldScope(ContextScope original) throws Exception {return scope(new Graph(),original);}
+  public KnowledgeGraphNeo4j coldGraph() { return new Graph(); }
   public void execute(String cypher){database.defaultDatabaseService().executeTransactionally(cypher);}
   public void execute(String cypher,Map<String,Object> parameters){database.defaultDatabaseService().executeTransactionally(cypher,parameters);}
   public Storage.Shard standaloneShard(Storage.Shard shard,ContextScope original) {

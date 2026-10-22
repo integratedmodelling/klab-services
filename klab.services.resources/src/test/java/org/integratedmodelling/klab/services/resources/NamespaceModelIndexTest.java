@@ -29,6 +29,10 @@ class NamespaceModelIndexTest {
     when(resources.serviceScope()).thenReturn(scope); when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(concept.getUrn()).thenReturn("w:Value");
     when(reasoner.resolveConcept("w:Value")).thenReturn(concept);
+    var fullObservable = mock(Observable.class);
+    when(fullObservable.getUrn()).thenReturn("w:Value");
+    when(fullObservable.getSemantics()).thenReturn(concept);
+    when(reasoner.resolveObservable("w:Value")).thenReturn(fullObservable);
     when(reasoner.coreObservable(concept)).thenReturn(concept);
     when(reasoner.resolving(concept)).thenReturn(List.of(concept));
     when(resources.retrieve(anyString(), eq(KimNamespace.class), isNull()))

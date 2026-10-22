@@ -159,7 +159,8 @@ public class ActuatorImpl implements Actuator {
 
   public void setObservation(Observation observation) {
     this.observation = observation;
-    if (observation != null) {
+    if (observation != null && this.operationObservable == null) {
+      // Rebinding an execution target must not erase the original authored operation/query.
       this.operationObservable = observation.getObservable();
       this.contextualization = operationObservable == null ? null : operationObservable.getContextualization();
     }

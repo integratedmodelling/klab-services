@@ -18,6 +18,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     private static final long serialVersionUID = -727467882879783393L;
 
     private KimConcept semantics;
+    private KimConcept observerSemantics;
     private NumericRangeImpl range;
     private String unit;
     private String currency;
@@ -62,6 +63,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
         transform.enter(other, path);
         try {
         semantics = (KimConcept) KimConceptImpl.mapValue(other.semantics, KimConceptImpl.childPath(path, "semantics"), transform);
+        observerSemantics = (KimConcept) KimConceptImpl.mapValue(other.observerSemantics, KimConceptImpl.childPath(path, "observerSemantics"), transform);
         range = other.range == null ? null : new NumericRangeImpl(other.range);
         unit = other.unit;
         currency = other.currency;
@@ -95,6 +97,15 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     @Override
     public KimConcept getSemantics() {
         return this.semantics;
+    }
+
+    @Override
+    public KimConcept getObserverSemantics() {
+        return observerSemantics;
+    }
+
+    public void setObserverSemantics(KimConcept observerSemantics) {
+        this.observerSemantics = observerSemantics;
     }
 
     @Override
@@ -319,6 +330,10 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     @Override
     public <T> T format(CodeAppender<T> appender) {
         this.semantics.format(appender);
+        if (observerSemantics != null) {
+            appender.append("observed as", LexicalRole.KEYWORD);
+            observerSemantics.format(appender);
+        }
         // TODO unit, currency, range, given name, optional
         return appender.output();
     }

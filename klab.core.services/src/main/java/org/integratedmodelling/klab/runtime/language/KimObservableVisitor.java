@@ -184,6 +184,7 @@ public class KimObservableVisitor {
     observables.add(observable);
     addNotifications(validator.validateObservable(observable, context), context);
     visitConcept(observable.getSemantics(), child(context, observable.getSemantics()));
+    visitConcept(observable.getObserverSemantics(), child(context, observable.getObserverSemantics()));
     visitValue(observable.getValue(), context);
     visitValue(observable.getDefaultValue(), context);
     for (var operator : safe(observable.getValueOperators())) {

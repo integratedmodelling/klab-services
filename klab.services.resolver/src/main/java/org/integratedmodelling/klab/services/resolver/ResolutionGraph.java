@@ -336,9 +336,14 @@ public class ResolutionGraph {
 
   /** Add knowledge already present in the runtime as a reference contribution to this target. */
   public void addReference(Observation reference, Coverage coverage) {
+    addReference(reference, coverage, null);
+  }
+
+  public void addReference(Observation reference, Coverage coverage, org.integratedmodelling.klab.api.geometry.Geometry support) {
     this.graph.addVertex(this.target);
     this.graph.addVertex(reference.getObservable());
     var edge = new ResolutionEdge(coverage, null);
+    edge.referenceSupport = support;
     edge.scheduleRequest = scheduleRequest;
     edge.observationId = referenceKey(reference);
     this.observations.put(edge.observationId, reference);
@@ -404,6 +409,8 @@ public class ResolutionGraph {
     org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
 
     public Coverage coverage;
+    /** Actual reference contribution support; Coverage's envelope is not that support. */
+    public org.integratedmodelling.klab.api.geometry.Geometry referenceSupport;
     public String localName;
     public long observationId;
 

@@ -93,7 +93,8 @@ public class RuntimeService extends BaseService
   private final ConcurrentMap<SubmissionIdentity, CompletableFuture<Observation>>
       inFlightSubmissions = new ConcurrentHashMap<>();
 
-  private record SubmissionIdentity(String contextId, String cohortUrn, String observationUrn) {}
+  private record SubmissionIdentity(String contextId, String cohortUrn, String observationUrn,
+      long observerId, String observerMeaning, long observerSemanticRevision, String observableUrn) {}
 
   /**
    * We keep identification strategies for each concept encountered. The base one is implemented for
@@ -688,19 +689,15 @@ public class RuntimeService extends BaseService
      */
     var existing = queryForSubmission(submitted, scope);
     if (existing != null && !existing.isEmpty()) {
-      if (submitted.getObservable().is(SemanticType.QUALITY)) {
-        return CompletableFuture.completedFuture(existing);
-      }
       var requested =
           submitted.getGeometry() == null && scope.getContextObservation() != null
               ? scope.getContextObservation().getGeometry()
               : submitted.getGeometry();
       if (requested != null) {
-        var requestedScale = GeometryRepository.INSTANCE.scale(requested, scope);
-        var existingCoverage =
-            Coverage.create(requestedScale, 0.0)
-                .merge(existing.getGeometry(), LogicalConnector.UNION);
-        if (existingCoverage.isComplete()) {
+        var existingCoverage = org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(existing, requested);
+        if (existingCoverage != null && existingCoverage.isComplete()) {
+          if (submitted.getObservable().is(SemanticType.QUALITY) || submitted.getObservable().is(SemanticType.PROCESS))
+            org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(existing, requested, scope);
           return CompletableFuture.completedFuture(existing);
         }
       }
@@ -871,9 +868,14 @@ public class RuntimeService extends BaseService
               scope,
               serviceContextScope.getActivity(),
               observation + " submitted");
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(submission,scope.getObserver());
 
-      var submissionScope =
-          serviceContextScope.executing(submission, isRoot ? storedAgent : null, observation);
+      boolean dependentTarget = observation.getObservable().is(SemanticType.QUALITY)
+          || observation.getObservable().is(SemanticType.PROCESS);
+      // A dependent may resolve to existing knowledge after specific-model attempts. Do not
+      // stage a new target until that distinction is known (children share the atomic graph).
+      var submissionScope = serviceContextScope.executing(submission, isRoot ? storedAgent : null,
+          dependentTarget ? null : observation);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
@@ -890,6 +892,7 @@ public class RuntimeService extends BaseService
               : observation.getObservable();
       var cohort = getCohortFor(cohortSemantics, submissionScope, true);
 
+      Runnable stageNewObservation = () -> {
       var transaction = submissionScope.getCurrentTransaction();
       var collective = observation.getObservable().getSemantics().isCollective();
       if (cohort == null || collective || scope.getContextObservation() != null) {
@@ -921,6 +924,11 @@ public class RuntimeService extends BaseService
       submissionScope
           .getCurrentTransaction()
           .link(submission, observation, GraphModel.Relationship.CREATED);
+
+        if (dependentTarget && isRoot && transaction instanceof DigitalTwinImpl.TransactionImpl nativeTransaction)
+          nativeTransaction.setTarget(observation);
+      };
+      if (!dependentTarget) stageNewObservation.run();
 
       if (scope.getContextObservation() != null) {
         submissionScope
@@ -981,27 +989,46 @@ public class RuntimeService extends BaseService
                   observationImpl.setResolvedCoverage(dataflowImpl.getResolvedCoverage());
                 }
                 if (!dataflow.isEmpty()) {
-                  if (compile(observation, dataflow, resolutionScope)) {
+                  var reused = dependentTarget ? referenceResult(dataflow, observation, resolutionScope) : null;
+                  if (reused != null) {
+                    // A receipt, not CREATED: no new target or executor enters the shared graph.
+                    resolution.getMetadata().put("reusedObservationId", reused.getId());
+                    resolution.getMetadata().put("reusedObservationUrn", reused.getUrn());
+                    if (resolutionScope.commit() >= 0)
+                      return new SubmissionResolution(reused, true);
+                  } else {
+                    if (dependentTarget) stageNewObservation.run();
+                    if (compile(observation, dataflow, resolutionScope)) {
                     checkSubmissionCancellation(resolutionScope);
                     attachResolutionDiagnostics(dataflow, resolution);
                     if (resolutionScope.commit() >= 0) {
                       if (predefinedContextualization != null) {
                         publishContextualization(observation, resolutionScope);
                       }
-                      return observation;
+                      return new SubmissionResolution(observation, false);
                     }
+                  }
                   }
                 }
                 resolutionScope.fail();
-                return Observation.empty(
+                return new SubmissionResolution(Observation.empty(
                     Notification.error(
                         "Resolution of "
                             + observation.getObservable().getUrn()
-                            + " failed: empty dataflow"));
+                            + " failed: empty dataflow")), false);
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
-              o -> {
+              outcome -> {
+                var o = outcome.observation();
+                if (outcome.reused()) {
+                  checkSubmissionCancellation(submissionScope);
+                  classifierValidationChecks.forEach(Runnable::run);
+                  submission.getMetadata().put("reusedObservationId", o.getId());
+                  submission.getMetadata().put("reusedObservationUrn", o.getUrn());
+                  return submissionScope.commit() >= 0 ? o
+                      : Observation.empty(Notification.error("Reference submission commit failed"));
+                }
 
                 // FIXME this comes from the original submission while the executors and storage
                 //  have been registered with the observations in the actuators. These are only
@@ -1060,6 +1087,47 @@ public class RuntimeService extends BaseService
         "RuntimeService::observe() called with unexpected scope implementation");
   }
 
+  /** Resolve current source through the ordinary Resources construction/admission path.
+   * No components are installed or activated merely to verify a producing-output receipt. */
+  Model observerSourceModel(String urn, ServiceContextScope scope) {
+    var resources = scope.getService(ResourcesService.class);
+    if (resources == null) return null;
+    var source = resources.resolve(urn, KlabAsset.KnowledgeClass.MODEL, scope);
+    if (source == null || source.isEmpty()) return null;
+    return ingestResources(source, scope, Model.class, false).stream()
+        .filter(model -> Objects.equals(urn, model.getUrn())).findFirst().orElse(null);
+  }
+
+  private record SubmissionResolution(Observation observation, boolean reused) {}
+
+  /** Terminal reference answers bypass creation/storage/execution and retain the source ID. */
+  private Observation referenceResult(Dataflow dataflow, Observation requested, ContextScope scope) {
+    if (dataflow.getComputation().size() != 1 || !(dataflow instanceof DataflowImpl resolved)
+        || !Coverage.create(GeometryRepository.INSTANCE.scale(requested.getGeometry(), scope),
+            resolved.getResolvedCoverage()).isComplete()) return null;
+    var root = dataflow.getComputation().getFirst();
+    if (root.getActuatorType() != Actuator.Type.REFERENCE || root.getId() <= 0
+        || root.getObservation() == null || root.getObservation().getId() != root.getId()) return null;
+    var existing = scope.getDigitalTwin().getKnowledgeGraph().getAsset(root.getId(), scope, Observation.class);
+    if (existing == null || existing.isEmpty() || existing.getId() != root.getId()
+        || existing.getParentId() != requested.getParentId()
+        || !Objects.equals(existing.getObservable().asConcept().getUrn(), requested.getObservable().asConcept().getUrn())
+        || org.integratedmodelling.klab.runtime.ObserverResolution.preference(
+            existing.getObservable(), requested.getObservable(), scope) < 0)
+      throw new IllegalStateException("Reference answer is no longer compatible or accessible");
+    var actualCoverage = org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(existing, requested.getGeometry());
+    if (actualCoverage == null || !actualCoverage.isComplete())
+      throw new IllegalStateException("Reference answer does not cover the requested support");
+    var reasoner = scope.getService(Reasoner.class);
+    var capabilities = reasoner == null ? null : reasoner.capabilities(scope);
+    if (capabilities == null || reasoner.semanticDistance(existing.getObservable(), requested.getObservable(),
+        null, capabilities.getKnowledgeRevision()) < 0)
+      throw new IllegalStateException("Reference answer has no current compatible semantic receipt");
+    org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(
+        existing, requested.getGeometry(), scope);
+    return existing;
+  }
+
   private SubmissionIdentity submissionIdentity(Observation observation, ContextScope scope) {
     var observable = observation.getObservable();
     if (observable == null
@@ -1070,8 +1138,14 @@ public class RuntimeService extends BaseService
     }
     var cohortSemantics =
         scope.getService(Reasoner.class).baseSubstantialType(observable.getSemantics(), scope);
+    var selectedObserver = scope.getObserver();
+    var observerMeaning = selectedObserver == null || selectedObserver.getObservable() == null
+        ? null : selectedObserver.getObservable().getUrn();
+    long observerRevision = selectedObserver == null || scope.getDigitalTwin() == null
+        ? 0 : scope.getDigitalTwin().getKnowledgeGraph().getSemanticRevision();
     return new SubmissionIdentity(
-        scope.getId(), cohortSemantics.getUrn(), ObservationImpl.logicalUrn(observation.getUrn()));
+        scope.getId(), cohortSemantics.getUrn(), ObservationImpl.logicalUrn(observation.getUrn()),
+        selectedObserver == null ? 0L : selectedObserver.getId(), observerMeaning, observerRevision, observable.getUrn());
   }
 
   private static void checkSubmissionCancellation(ContextScope scope) {
@@ -1156,7 +1230,9 @@ public class RuntimeService extends BaseService
     }
     if (observable.is(SemanticType.QUALITY)) {
       var existing = scope.getContextObservation() == null ? null : scope.getObservation(submitted);
-      return existing != null && existing.getId() > 0 ? existing : null;
+      return existing != null && existing.getId() > 0
+          && !org.integratedmodelling.klab.runtime.ObserverResolution.deferred(existing, observable, scope)
+          ? existing : null;
     }
     if (!(SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())
         && observable.getSemantics().isCollective())) {

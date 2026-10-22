@@ -1230,6 +1230,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public Observable resolveObservableInternal(String definition) {
     if (candidateRuntime != null && !semanticOnly) return candidateRuntime.invoke("resolveObservableInternal", new Class<?>[]{String.class}, new Object[]{definition});
     Observable ret = null;
+    if(definition.contains(" observed as ")) {
+      var restored=org.integratedmodelling.klab.services.reasoner.owl.ObserverOntologySupport.restore(
+          definition,owl.getOntologies(true).stream().map(Ontology::getOWLOntology).toList(),
+          this::resolveObservableInternal,this::resolveConcept);
+      if(restored!=null)return restored;
+    }
     // FIXME the service should be passed
     KimObservable parsed =
         serviceScope().getService(ResourcesService.class).declareObservable(definition);
@@ -1562,12 +1568,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return candidateRuntime.invoke("semanticDistance", new Class<?>[] { Semantics.class, Semantics.class, Semantics.class }, new Object[] { target, other, context });
     if (owl != null) owl.requireAvailableClosure();
   if (!eligibleDistanceRequest(other)) return -10000;
+    int perspectiveDistance=observerDistance(target,other);
+    if(perspectiveDistance<0)return perspectiveDistance;
   int distance = semanticMatcher.semanticDistance(target, other, context);
     if (distance < 0) {
       return distance;
     }
     int observableDistance = observableDistance(target, other);
-    return observableDistance < 0 ? observableDistance : distance + observableDistance;
+    return observableDistance < 0 ? observableDistance : distance + perspectiveDistance + observableDistance;
   }
 
   /** Matching must use the same accepted generation that validated model dependencies. */
@@ -1600,8 +1608,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private boolean eligibleDistanceRequest(Semantics request) {
     if (request == null) return false;
     try {
-      // HTTP distance payloads are Concept[], so recheck canonical status rather
-      // than trusting caller flags or requiring an Observable implementation.
+      // Recheck canonical concept status; full Observable wrappers additionally retain
+      // observer clauses and unresolved generic components. Never trust caller type flags.
       var canonical = resolveConcept(request.asConcept().getUrn());
       if (canonical == null || canonical.is(SemanticType.NOTHING) || !satisfiable(canonical)) return false;
       if (canonical.isGeneric() || canonical.is(SemanticType.ANY)
@@ -1614,27 +1622,27 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     } catch (RuntimeException unavailable) { return false; }
   }
 
+  private int observerDistance(Semantics candidate,Semantics requested) {
+    Concept statedCandidate=candidate instanceof Observable o?o.getObserverSemantics():null;
+    Concept statedQuery=requested instanceof Observable o?o.getObserverSemantics():null;
+    Concept candidateObserver=canonicalObserver(statedCandidate),queryObserver=canonicalObserver(statedQuery);
+    if(statedCandidate!=null&&candidateObserver==null || statedQuery!=null&&queryObserver==null)return -50;
+    if(statedQuery==null)return 0; // Context-selected perspective is a ranking preference elsewhere.
+    if(candidateObserver==null)return -50; // Explicit query cannot fall back to absolute semantics.
+    return semanticMatcher.observerClauseDistance(candidateObserver,queryObserver);
+  }
+  private Concept canonicalObserver(Concept stated) {
+    if(stated==null)return null;
+    var canonical=resolveConcept(stated.getUrn());
+    return canonical!=null&&canonical.is(SemanticType.AGENT)&&!canonical.is(SemanticType.NOTHING)?canonical:null;
+  }
+
   private int observableDistance(Semantics target, Semantics other) {
     if (!(target instanceof Observable targetObservable)
         || !(other instanceof Observable otherObservable)) {
       return 0;
     }
     int distance = 0;
-    Concept targetObserver = targetObservable.getObserverSemantics();
-    Concept otherObserver = otherObservable.getObserverSemantics();
-    if (targetObserver != null) {
-      if (otherObserver == null) {
-        return -50;
-      }
-      int observerDistance = semanticMatcher.assertedDistance(otherObserver, targetObserver);
-      if (observerDistance < 0) {
-        return -50;
-      }
-      distance += observerDistance;
-    } else if (otherObserver != null) {
-      distance++;
-    }
-
     if (targetObservable.getContextualization() != null) {
       if (otherObservable.getContextualization() == null
           || !otherObservable.is(targetObservable.getContextualization())) {
@@ -2968,6 +2976,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return candidateRuntime.invoke("compatible", new Class<?>[] { Semantics.class, Semantics.class, int.class }, new Object[] { o1, o2, flags });
     if (owl != null) owl.requireAvailableClosure();
 
+    if (observerDistance(o1,o2)<0) return false;
     if (o1 == o2 || o1.equals(o2)) {
       return true;
     }
@@ -3180,7 +3189,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("match", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { candidate, pattern });
     if (owl != null) owl.requireAvailableClosure();
-  return syntacticMatcher.match(candidate, pattern);
+  return observerDistance(candidate,pattern)>=0 && syntacticMatcher.match(candidate, pattern);
   }
 
   @Override
@@ -4166,6 +4175,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       observable.setReferenceName(concept.getFormalName());
       observable.setArtifactType(Artifact.Type.forSemantics(nsmain.getType()));
       observable.setAnnotations(AnnotationCollector.merge(concept.getAnnotations()));
+      if(concept.getObserverSemantics()!=null) {
+        var observer=declare(concept.getObserverSemantics(),declarationOntology,monitor);
+        if(observer==null||!observer.is(SemanticType.AGENT))throw new KlabValidationException("OBSERVER_AGENT_REQUIRED: observed as requires a resolved Agent class");
+        observable.setObserverSemantics(observer);
+        observable.setUrn(observable.getUrn()+" observed as "+observer.getUrn());
+        observable.setReferenceName(observable.getReferenceName()+"_observed_as_"+observer.getReferenceName());
+      }
       return observable;
     }
 
@@ -4177,6 +4193,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     Concept observable = main;
 
     Observable.Builder builder = SemanticsBuilder.create(observable, this, monitor);
+
+    if(concept.getObserverSemantics()!=null) {
+      var observer=declare(concept.getObserverSemantics(),declarationOntology,monitor);
+      if(observer==null||!observer.is(SemanticType.AGENT))
+        throw new KlabValidationException("OBSERVER_AGENT_REQUIRED: observed as requires a resolved Agent class");
+      builder.withObserverSemantics(observer);
+    }
 
     // ret.setUrl(concept.getURI());
     // builder.withUrl(concept.getURI());
@@ -4243,6 +4266,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     result.setSemantics(semantics);
     return result;
   }
+
 
   //  public void registerConcept(Concept thing) {
   //    this.concepts.put(thing.getUrn(), thing);

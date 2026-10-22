@@ -179,9 +179,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         && currentTransaction == null) {
       long revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
       if (revision != observerRevision) {
-        var current =
-            digitalTwin.getKnowledgeGraph().getAsset(observer.getId(), this, Observation.class);
-        if (current != null) observer = current;
+        var current = selectedObserver(GraphModel.Fields.ID, observer.getId());
+        if (current == null || current.getObservable() == null
+            || !current.getObservable().is(SemanticType.AGENT))
+          throw new IllegalStateException("Selected observer is no longer an accessible Agent");
+        observer = current;
         observerRevision = revision;
       }
     }
@@ -199,7 +201,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
-    return List.of();
+    return org.integratedmodelling.common.runtime.ObservationPerspectives.find(this, observable);
   }
 
   /**
@@ -273,14 +275,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation getObserverOf(Observation observation) {
-    var ret =
-        digitalTwin
-            .getKnowledgeGraph()
-            .query(Observation.class, this)
-            .target(observation)
-            .along(GraphModel.Relationship.HAS_OBSERVER)
-            .run(this);
-    return ret.isEmpty() ? null : ret.getFirst();
+    return org.integratedmodelling.common.runtime.ObserverProvenance.recover(this,observation).observer();
   }
 
   //  @Override
@@ -299,11 +294,24 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.observer = observer;
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
+    ret.resolutionConstraints.remove(ResolutionConstraint.Type.ObserverUrn);
     if (observer != null)
       ret.resolutionConstraints.put(
           ResolutionConstraint.Type.Observer,
           ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
     return ret;
+  }
+
+  /** Select only an observation visible through this knowledge graph's owning context. */
+  private Observation selectedObserver(String field, Object value) {
+    if (digitalTwin == null)
+      throw new IllegalArgumentException("Observer selection requires a knowledge graph");
+    var matches = digitalTwin.getKnowledgeGraph().query(Observation.class, this)
+        .where(field, KnowledgeGraph.Query.Operator.EQUALS, value).run(this);
+    if (matches.size() != 1) return null;
+    var selected = matches.getFirst();
+    return selected.getId() > 0 && selected.getObservable() != null
+        && selected.getObservable().is(SemanticType.AGENT) ? selected : null;
   }
 
   public ServiceContextScope withIdentity(Identity identity) {
@@ -741,17 +749,30 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (resolutionConstraints == null) {
       ret.resolutionConstraints.clear();
     } else {
+      // A named per-submission selection wins over an inherited numeric default,
+      // regardless of transport/list ordering. It remains a scope choice, not a query clause.
+      var namedObservers = java.util.Arrays.stream(resolutionConstraints)
+          .filter(java.util.Objects::nonNull)
+          .filter(c -> c.getType() == ResolutionConstraint.Type.ObserverUrn && !c.empty())
+          .flatMap(c -> c.payload(String.class).stream()).distinct().toList();
+      if (namedObservers.size() > 1 || namedObservers.stream().anyMatch(String::isBlank))
+        throw new IllegalArgumentException("A submission must select one nonblank observer URN");
       for (var constraint : resolutionConstraints) {
         if (constraint == null || constraint.empty()) {
           continue;
         }
         if (constraint.getType() == ResolutionConstraint.Type.UnresolvedContextObservation) {
           ret.contextObservation = constraint.payload(Observation.class).getFirst();
+        } else if (constraint.getType() == ResolutionConstraint.Type.ObserverUrn) {
+          if (ret.getDigitalTwin() == null)
+            throw new IllegalArgumentException("Observer selection requires a knowledge graph");
+          var selected = ret.selectedObserver(GraphModel.Fields.URN, namedObservers.getFirst());
+          if (selected == null) throw new IllegalArgumentException("Unknown observer");
+          ret = ret.withObserver(selected);
         } else if (constraint.getType() == ResolutionConstraint.Type.Observer) {
-          var selected =
-              ret.getDigitalTwin()
-                  .getKnowledgeGraph()
-                  .getAsset(constraint.payload(Long.class).getFirst(), ret, Observation.class);
+          if (!namedObservers.isEmpty()) continue;
+          var selected = ret.selectedObserver(GraphModel.Fields.ID,
+              constraint.payload(Long.class).getFirst());
           if (selected == null) throw new IllegalArgumentException("Unknown observer");
           ret = ret.withObserver(selected);
         } else if (constraint.getType().incremental
@@ -935,6 +956,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             ? observation.getMetadata().getList(Metadata.IM_QUERY_SOURCE_IDS, Long.class)
             : List.<Long>of();
 
+    var visibleMatches = new java.util.ArrayList<Observation>();
+    // A base Concept match alone does not identify an observed-as wrapper.
     // look first in the currentTransaction graph if there is a transaction
     if (currentTransaction != null) {
       for (var obs :
@@ -957,7 +980,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                             .getSemantics()
                             .getUrn()
                             .equals(o.getObservable().getSemantics().getUrn()))))) {
-          return o;
+          visibleMatches.add(o);
         }
       }
     }
@@ -992,8 +1015,32 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
               observation.getObservable().asConcept().getUrn());
     }
 
-    var ret = query.run(this);
-    return ret.isEmpty() ? null : ret.getFirst();
+    visibleMatches.addAll(query.run(this));
+    if (!SemanticType.isDependent(observation.getObservable().getSemantics().getType()))
+      return visibleMatches.isEmpty() ? null : visibleMatches.getFirst();
+    Observation complete=null,partial=null;
+    int completePreference=Integer.MAX_VALUE,partialPreference=Integer.MAX_VALUE;
+    double partialCoverage=-1;
+    for(var candidate:visibleMatches) {
+      int preference=org.integratedmodelling.klab.runtime.ObserverResolution.preference(
+          candidate.getObservable(),observation.getObservable(),this);
+      if(preference<0)continue;
+      var requestedGeometry=observation.getGeometry();
+      if(requestedGeometry==null && contextObservation!=null)requestedGeometry=contextObservation.getGeometry();
+      // An ID-zero query may intentionally ask for the known value without a support constraint.
+      // Its source extent is the answer's domain, never proof of covering an explicit request.
+      if(requestedGeometry==null && observation.getId()==Observation.QUERY_ID)requestedGeometry=candidate.getGeometry();
+      var coverage=org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(candidate,requestedGeometry);
+      if(coverage==null || coverage.getCoverage()<=0)continue;
+      if(coverage.isComplete()) {
+        if(preference<completePreference) {complete=candidate;completePreference=preference;}
+      } else if(preference<partialPreference || preference==partialPreference && coverage.getCoverage()>partialCoverage) {
+        partial=candidate;partialPreference=preference;partialCoverage=coverage.getCoverage();
+      }
+    }
+    // One-result lookup cannot compose multiple existing perspectives. A partial specific cannot
+    // hide a complete fallback; if none is complete the caller receives measured partial support.
+    return complete!=null?complete:partial;
   }
 
   private boolean isSameInstance(Observation observation, Observation o) {
@@ -1026,7 +1073,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    */
   public ServiceContextScope of(Observation observation) {
 
-    var observer = getObserverOf(observation);
+    var observer = org.integratedmodelling.common.runtime.ObserverProvenance
+        .recover(this,observation).requireKnown();
     Observation contextObs = null;
     if (observation.getObservable().is(SemanticType.QUALITY)
         || (observation.getObservable().is(SemanticType.COUNTABLE)
@@ -1035,14 +1083,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       contextObs = parent instanceof Observation ? (Observation) parent : null;
     }
 
-    if (observer != null || contextObs != null) {
-      var ret = new ServiceContextScope(this);
-      ret.contextObservation = contextObs;
-      ret.observer = observer;
-      return ret;
-    }
-
-    return this;
+    var ret = withObserver(observer); // Deliberately null must also clear the current default.
+    ret.contextObservation = contextObs;
+    return ret;
   }
 
   @Override

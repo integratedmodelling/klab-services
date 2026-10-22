@@ -205,6 +205,9 @@ public interface Metadata extends Parameters<String> {
    */
   String IM_OBSERVER_TAG = "im:observer-tag";
 
+  /** Recorded activity perspective: zero is deliberately null; positive is its existing Agent ID. */
+  String IM_OBSERVER_SELECTION_ID = "im:observer-selection-id";
+
   String IM_THEMATIC_AREA = "im:thematic-area";
 
   String IM_GEOGRAPHIC_AREA = "im:geographic-area";

@@ -126,6 +126,10 @@ public class SubmissionNativeFixture extends SubmissionOntologyFixture {
     }
 
   public KimConceptImpl named(String name){return leaf(name);}
+  public KimObservableImpl observerVocabulary() {
+    declare("Observer",SemanticType.AGENT,SemanticType.COUNTABLE,SemanticType.OBSERVABLE);
+    var syntax = new KimObservableImpl();syntax.setSemantics(register(leaf("Observer")));return syntax;
+  }
   public void cropVocabulary() {
     for(var name:List.of("HarvestCashValue","TotalCashValue")) {
       declare(name,SemanticType.QUALITY,SemanticType.MONETARY_VALUE,SemanticType.QUANTIFIABLE,SemanticType.OBSERVABLE);

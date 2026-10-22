@@ -279,12 +279,16 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     var geometry =
         org.integratedmodelling.klab.services.runtime.TemporalGeometry.localize(
             observation.getGeometry(), event);
-    var scope =
-        rootScope.executingFresh(
-            org.integratedmodelling.klab.api.provenance.Activity.of(
-                org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION),
-            observation);
+    ServiceContextScope attempt = null;
     try {
+      var original = rootScope.of(observation);
+      var activity = org.integratedmodelling.klab.api.provenance.Activity.of(
+          org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION);
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(activity,original.getObserver());
+      var scope = original.executingFresh(activity,observation);
+      attempt = scope;
+      if (original.getObserver() != null) scope.getCurrentTransaction()
+          .link(activity,original.getObserver(),GraphModel.Relationship.HAS_OBSERVER);
       var bearer = registration == null ? observation.getParentId() : registration.bearerId();
       if (registration == null && observation.getMetadata().get(Scheduler.PLAN_METADATA_KEY) instanceof String encoded) {
         var plan = Utils.Json.parseObject(encoded, org.integratedmodelling.klab.api.services.runtime.Actuator.class);
@@ -325,11 +329,12 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
                             && link.source() instanceof Observation input
                             && (writes.changed(input) || input.getId() == observation.getId()));
         if (!triggered) continue;
-        var executor = restoreExecutor(consequence, scope);
+        var consequenceScope = scope.of(consequence);
+        var executor = restoreExecutor(consequence, consequenceScope);
         var support =
             org.integratedmodelling.klab.services.runtime.TemporalGeometry.localize(
                 consequence.getGeometry(), event);
-        if (executor == null || !execute(executor, consequence, support, event, scope))
+        if (executor == null || !execute(executor, consequence, support, event, consequenceScope))
           throw new IllegalStateException(
               "Causal contextualization failed for " + consequence.getUrn());
       }
@@ -434,7 +439,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         throw new IllegalStateException("Temporal transaction did not commit");
       return true;
     } catch (Throwable failure) {
-      scope.fail(failure);
+      if (attempt != null) attempt.fail(failure);
       rootScope.error(failure);
       return false;
     }

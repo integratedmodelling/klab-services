@@ -1,5 +1,112 @@
 # Observation resolution in k.LAB
 
+## Observer-aware resolution contract
+
+**Agreed target behavior, not fully implemented.** Observer semantics are defined in
+[Observable expressions](OBSERVABLES.md#observer-perspective-contract). An explicit `observed as X`
+query and a query with only a session/context observer are different requests even when their
+effective observer class is the same.
+
+Select the effective observer by precedence: an observer URN in the submission resolution
+constraints overrides the session/context observer; otherwise use the session observer, including
+null. The override applies only to that submission and does not mutate the session default.
+The selected observation may be any eligible Agent in the knowledge graph, not only the
+session observer created with the context. Preserve the selected observation/URN separately from
+its semantic Agent class and from whether the query explicitly contains `observed as`. A selection
+constraint alone does not introduce that clause, so it does not turn prioritization into a hard
+observer compatibility requirement. Validation, access and graph-membership checks remain required.
+
+| Query | Eligibility with respect to observer | Selection/fallback |
+|---|---|---|
+| Explicit `observed as X` | Require compatible explicit observer semantics under normal clause specialization. Absolute/null candidates are ineligible. | Compare only eligible candidates; no absolute fallback, even if specific dependencies fail. |
+| No explicit observer clause; context observer X | Compatible observer-specific and absolute/null candidates remain eligible. Other incompatibilities still reject a candidate. | Prefer compatible candidates specific to current observer X; if their resolution fails, including unresolved dependencies, try absolute candidates. Mere catalog availability does not suppress a usable fallback. |
+| No explicit observer clause; null context default | Absolute/null candidates remain observer-eligible; do not manufacture an observer class. | Detailed ordering of specific candidates without a current observer is not settled here. |
+
+Compatibility/admission precedes semantic distance and prioritization. Specificity is a preference
+among compatible candidates, never permission to ignore a query clause. Preserve this ordering for
+both **observation reuse** and **model discovery/ranking**: reusing an absolute observation must not
+prematurely suppress an available compatible specific resolution, while a failing specific model
+must not block allowed absolute fallback. Existing coverage and partial-fulfillment semantics still
+apply; this contract does not turn observer selection into a new coverage guarantee.
+
+A modeled Agent observation can supply the observer, and multiple perspectives can coexist in one
+knowledge graph. Store explicit observer meaning separately from session interpretation of null.
+Identity/reuse and positive/negative resolution caches must account for query explicitness, relevant
+observer semantics and scoped observer identity, applicable semantic/knowledge/model revisions and
+access context. A default-observer change must not reuse an incompatible prior ranking or failure;
+the same applies to a submission constraint selecting a different observer observation, even when
+its Agent class equals that of another observer. Do not equate instance identity with class identity.
+Observer selection also must not relabel globally stored absolute observations. Verify these requirements against
+existing identity, scope and revision mechanisms rather than invent a second cache system.
+
+Positive example: an implicit query with context observer X prefers a compatible X-specific model;
+if its dependencies cannot resolve, a compatible absolute model can be tried. Negative examples:
+an explicit `observed as X` query cannot use that absolute model; an unrelated observer Y is not made
+eligible by a better numeric score. Names X/Y are schematic, not worldview declarations.
+
+The implementation preserves full observable wrappers through the revision-bound HTTP distance
+route, checks explicit observer compatibility before scoring, and partitions eligible model choices
+by the implicit observer preference within each existing strategy phase. A successful Tier-0 answer
+still precedes expensive Tier-1+ recursive discovery. A committed absolute quality/process result
+is deferred while compatible specific planning is attempted; planning dependency failure can fall
+back to that result without executing an otherwise unnecessary absolute model or recursive route.
+Specific models may satisfy coverage through the existing model-planning path. If they cannot
+complete the request, a complete eligible absolute source remains a terminal fallback. The observer
+path does not join a partial specific model to an absolute reference and falsely claim filled values:
+a reference input or provenance receipt is not an output value-copy operator.
+The current one-result lookup chooses a complete eligible occurrence before an incomplete one:
+a narrow specific occurrence cannot hide a complete absolute fallback. With no complete match,
+its measured partial support is retained for planning. This lookup does not yet compose several
+already committed perspectives into one new dependent aggregate; that requires an explicit
+value-composition path, not multiple reference roots mislabeled as a computed result.
+Mixed observer-specific model/reference output composition is likewise unfinished and rejected
+without such an operator. Its future implementation must define native support, overlap precedence,
+value mediation and contribution provenance. Existing temporal complement limitations also remain;
+no exact residual interval is inferred when exclusion cannot represent it.
+
+The original operation/query remains implicit when a verified producing output refines the result's
+observer meaning. Rebinding execution targets does not overwrite that operation. Terminal reference
+reuse preserves the committed source's identity and metadata, skips computation/storage creation,
+and records source ID/URN in activity provenance rather than staging the source as a newly committed
+observation. Submission coalescing retains the selected observer ID and full observable identity.
+
+Both model catalog backends use the full stored observable wrapper, not the indexed base Concept,
+for revision-bound compatibility after source admission. Named secondary output descriptors preserve
+the observer clause through required inherency specialization. Server observer selection from
+submission constraints and contextualization headers uses owning-context queries before attaching
+request transactions. Ordinary actuator storage preserves the original operation observable for
+cold reconstruction independently of the resolved result.
+
+Submission, contextualization and autonomous simulation activities record the selected Agent ID
+and its provenance edge, or explicit known-null. Autonomous scheduler replay recovers the actual
+Agent through creation/activity provenance before execution, inside its failure boundary; it never
+substitutes the semantic observer class. Each creator branch must independently establish the same
+selection. Unknown legacy records, conflicting branches, cycles without an authoritative selection,
+corrupt markers and inaccessible Agents reject recovery with an actionable resubmission diagnostic.
+Known-null is valid and clears the recovered execution observer. Today's default and a parent's
+selection must not fill missing historical evidence. Explicit dependency execution keeps its supplied
+request scope.
+
+Perspective enumeration is separate from resolution eligibility and preference.
+`getPerspectives(observable)` returns all existing observation records visible at the querying
+scope's knowledge-graph insertion point with the same canonical semantics after removing only
+the `observed as` restriction. It does not apply arbitrary subtype compatibility, selected-observer
+ranking, best-support selection, aggregation or model resolution. Preserve every other semantic
+clause, including portable mediator definitions and distribution flags. Enumeration performs no
+unit/currency conversion. Absolute/no-clause observations use the same equality rule. Multiple records by one actual
+Agent, including different supports or occurrences, must all remain in the result; actual Agent
+identity must not be substituted for the semantic observer restriction. Scope visibility remains
+mandatory. Qualities are the intended primary use; substantial perspectives remain legal for now.
+None of this weakens the explicit observer compatibility constraint on a new resolution request.
+
+The fallback guarantee here covers ordinary dependency resolution during planning. Deferred
+executable classifier prerequisites run after model selection and may affect a shared transaction;
+a failure there is not yet a safe alternative-model retry. No rollback/retry policy after stateful
+execution is implied. Tests of pending transaction graphs and stubbed commit I/O do not demonstrate
+durable storage or live-stack acceptance. Null-context ordering of observer-specific candidates also
+remains unspecified. These boundaries must remain visible when extending classifier or recursive
+execution, rather than silently broadening observer fallback.
+
 This document describes the observation-resolution path implemented by `ResolverService`, starting
 at `ResolverService.resolve(Observation, ContextScope)`. It records the current behavior, the
 contracts at the resolver/runtime boundary, the state that survives between calls, and known gaps.

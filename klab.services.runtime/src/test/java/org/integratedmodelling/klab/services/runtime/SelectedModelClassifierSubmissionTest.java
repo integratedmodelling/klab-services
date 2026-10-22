@@ -421,6 +421,48 @@ class SelectedModelClassifierSubmissionTest {
       } finally {storage.close();}
     }
   }
+  @Test @org.junit.jupiter.api.Timeout(120)
+  void actualSubmissionCommitsSelectedAgentAndColdRecoveryRetainsItsIdentity()throws Exception {
+    var path=java.nio.file.Files.createTempDirectory("klab-observer-commit-");
+    try(var f=new Fixture(true);var backend=new org.integratedmodelling.klab.services.runtime.neo4j.NativeFamilyRecovery()) {
+      f.scope.setId("observer-native-root");
+      var parent=(KimModel)f.sources.values().stream().filter(ns->ns.getSourceCode().equals("parent")).findFirst().orElseThrow().getStatements().getFirst();
+      parent.getDependencies().clear();parent.getContextualization().clear();parent.getContextualization().add(f.expression("11"));
+      var observerSyntax=f.semantic.observerVocabulary();f.remember(observerSyntax);
+      var observer=new ObservationImpl();observer.setObservable(f.reasoner.declareObservable(observerSyntax));observer.setGeometry(f.geometry);
+      var graph=backend.initializeRoot(f.scope);
+      when(f.twin.getKnowledgeGraph()).thenReturn(graph);field(f.twin,DigitalTwinImpl.class,"knowledgeGraph",graph);
+      var storage=diskStorage(f.scope,path,"live");when(f.twin.getStorageManager()).thenReturn(storage);
+      try {
+        f.cohort.setId(-1);f.region.setId(-1);
+        try(var tx=graph.createTransaction(f.scope)) {
+          tx.store(f.cohort);tx.store(f.region);tx.store(observer);
+          tx.link(RuntimeAsset.CONTEXT_ASSET,f.cohort,GraphModel.Relationship.HAS_CHILD);
+          tx.link(f.cohort,f.region,GraphModel.Relationship.HAS_MEMBER);
+          tx.link(RuntimeAsset.CONTEXT_ASSET,observer,GraphModel.Relationship.HAS_CHILD);
+        }
+        var selected=f.scope.withResolutionConstraints(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+            org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ObserverUrn,observer.getUrn()));
+        var request=new ObservationImpl();request.setObservable(f.reasoner.declareObservable(f.output));request.setGeometry(f.geometry);
+        var result=f.runtime.submit(request,selected).get(60,TimeUnit.SECONDS);
+        assertFalse(result.isEmpty(),result.getNotifications()+" "+f.failures());assertTrue(result.getId()>0);
+        assertNull(result.getObservable().getObserverSemantics(),"Selected Agent must not synthesize a query/output clause");
+        storage.close();var cold=backend.coldGraph();when(f.twin.getKnowledgeGraph()).thenReturn(cold);
+        field(f.twin,DigitalTwinImpl.class,"knowledgeGraph",cold);
+        var coldStorage=diskStorage(f.scope,path,"cold");when(f.twin.getStorageManager()).thenReturn(coldStorage);
+        try {
+          var restored=cold.getAsset(result.getId(),f.scope,Observation.class);assertNotSame(result,restored);
+          var recovered=org.integratedmodelling.common.runtime.ObserverProvenance.recover(f.scope,restored);
+          assertTrue(recovered.known());assertEquals(observer.getId(),recovered.observer().getId());
+          assertEquals(observer.getUrn(),recovered.observer().getUrn());
+          assertEquals(observer.getId(),f.scope.of(restored).getObserver().getId());assertNull(f.scope.getObserver());
+          try(var read=StorageReads.open(restored,f.scope,null,Data.FillCurve.D1_LINEAR,Storage.DoubleScanner.class)) {
+            assertEquals(11,read.scanners().getFirst().get());
+          }
+        } finally {coldStorage.close();}
+      } finally {storage.close();}
+    }
+  }
   @Test void ordinarySelectedModelClassifiesThenExecutesSingletonInputAndParent()throws Exception {
     try(var f=new Fixture()){
       var target=f.reasoner.declareObservable(f.output);

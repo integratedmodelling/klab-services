@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 /** Runs the production compiler in private semantic state, without normal service construction. */
 public final class SemanticEnvironmentFactory
     implements CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> {
-  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v12-model-dependency-revision-admission-bearer-identity-boolean-source-application-membership-identity-closure-core-alignment-generic-quality-canonical-aliases-configured-authority-snapshots-temporal-derivatives-nested-rates-affine-scales-canonical-rate-identity-verified-aliases-mixed-operators-verified-immutable-odo-authority-owned-subsumption";
+  public static final String CONFIGURATION_REVISION = "semantic-staged-declarations-v12-model-dependency-revision-admission-bearer-identity-boolean-source-application-membership-identity-closure-core-alignment-generic-quality-canonical-aliases-configured-authority-snapshots-temporal-derivatives-nested-rates-affine-scales-canonical-rate-identity-verified-aliases-mixed-operators-verified-immutable-odo-authority-owned-subsumption-observer-contract-v1";
   private final Path assetRoot;
   private final Map<String, byte[]> core;
   private final String dependencyRevision;
@@ -410,22 +410,28 @@ public final class SemanticEnvironmentFactory
       diagnostics.addAll(loaded.getNotifications());
       if (scope.hasErrors() && !Utils.Notifications.hasErrors(diagnostics))
         diagnostics.add(Notification.error("Candidate compilation emitted errors without source-bound transport"));
+      var validatedSources=new ArrayList<DocumentSemanticValidator>();
       if (!Utils.Notifications.hasErrors(diagnostics)) {
         for (var ontology : snapshot.getOntologies()) {
           cancellation.checkpoint();
           try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOCUMENT_VALIDATE,ontology.getUrn())) {
-            diagnostics.addAll(new DocumentSemanticValidator(actor).validate(ontology));
+            var validator=new DocumentSemanticValidator(actor);
+            diagnostics.addAll(validator.validate(ontology));validatedSources.add(validator);
           }
           cancellation.checkpoint();
         }
         for (var strategies : snapshot.getObservationStrategies()) {
           cancellation.checkpoint();
           try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOCUMENT_VALIDATE,strategies.getUrn())) {
-            diagnostics.addAll(new DocumentSemanticValidator(actor).validate(strategies));
+            var validator=new DocumentSemanticValidator(actor);
+            diagnostics.addAll(validator.validate(strategies));validatedSources.add(validator);
           }
           cancellation.checkpoint();
         }
       }
+      // Only this private candidate's authoritative captured sources publish export metadata.
+      // A rejected candidate is discarded; ordinary declaration/editor validation never writes it.
+      if(!Utils.Notifications.hasErrors(diagnostics))for(var validator:validatedSources)validator.exportObserverDeclarations();
       // Validators can materialize captured expressions. Include those final axioms in the check.
       if (actor.owl().hasReasoner()) {
         CandidateTrace.checkpoint(cancellation,CandidateTrace.Phase.FINAL_FLUSH);
