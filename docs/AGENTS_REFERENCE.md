@@ -49,13 +49,17 @@ metadata are injected by Java. The implemented verbs are:
 | `get(tag)`, `set(tag, value)` | Read/update canonical server-side widget values; set does not emit input |
 | `show(tag)`, `hide(tag)`, `enable(tag)`, `disable(tag)` | Update visibility or interaction state |
 | `close(tag)`, `remove(tag)` | Hide a retained surface, or remove its tree and emitter bindings |
+| `clear(tag)` | Remove children/bindings while retaining the target container |
+| `mount(target, instance, action, arguments)` | Build a named `@panel`/`@window` action in a tagged container; arguments is a list; instance tags isolate each mount |
 | `style(tag, properties)` | Apply validated portable layout/style metadata |
 
 Use call metadata such as `ui.input(#NAME :value "initial") #name`,
 `ui.select("Choice" :options ("a", "b")) #choice`, or group metadata after `)`.
 Tags are resolved in their mount namespace. Input values remain server-side across renderer
 rebuilds. See [Application UI](UI.md) for the layout/annotation proposal, localized constants,
-named CSS, authenticated launch and current implementation limits.
+named CSS, authenticated launch and current implementation limits. Its
+[implemented parameter table](UI.md#implemented-verb-parameters) documents every verb's positional
+arguments, supported metadata and defaults, including input bounds, appearance and read-only state.
 
 ## core.document and document subclasses
 

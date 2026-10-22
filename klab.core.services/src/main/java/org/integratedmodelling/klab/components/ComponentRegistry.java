@@ -209,6 +209,72 @@ public class ComponentRegistry {
     return this.cache;
   }
 
+  private final Map<String, Integer> uiToolkitUsers = new HashMap<>();
+
+  private synchronized void requireIdleUiToolkit(String id, Version version) {
+    // PF4J loads one plugin per ID, even if registry history has several version descriptors.
+    if (uiToolkitUsers.entrySet().stream()
+        .anyMatch(entry -> entry.getKey().startsWith(id + "@") && entry.getValue() > 0))
+      throw new IllegalStateException("Component is retained by running UI applications: " + id);
+  }
+
+  /** Resolve trusted installed contributions and pin the exact component version until release. */
+  public synchronized org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease
+      acquireUiToolkit(String id) {
+    var descriptors =
+        new LinkedHashMap<
+            String, org.integratedmodelling.klab.api.view.application.UiToolkitDescriptor>();
+    var owners = new HashMap<String, String>();
+    var urls = new HashMap<String, String>();
+    descriptors.put(
+        "quasar", org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease.QUASAR);
+    if (componentManager != null) {
+      for (var wrapper : componentManager.getPlugins()) {
+        if (!(wrapper.getPlugin() instanceof KlabComponent component)
+            || wrapper.getPluginState() != PluginState.STARTED
+            || getExactComponent(component.getName(), component.getVersion()) == null) continue;
+        for (var descriptor : component.uiToolkits()) {
+          if (descriptors.putIfAbsent(descriptor.id(), descriptor) != null)
+            throw new IllegalArgumentException("Duplicate UI toolkit " + descriptor.id());
+          if (!descriptor.platforms().contains("web")) continue;
+          if (descriptor.rendererModule() == null)
+            throw new IllegalArgumentException(
+                "Component UI toolkit requires a web renderer module: " + descriptor.id());
+          var path = component.webUiModules().get(descriptor.rendererModule());
+          if (path == null)
+            throw new IllegalArgumentException(
+                "Undeclared UI toolkit module " + descriptor.rendererModule());
+          path = normalizeWebUiModulePath(path);
+          if (path == null) throw new IllegalArgumentException("Invalid UI toolkit module path");
+          owners.put(descriptor.id(), component.getName() + "@" + component.getVersion());
+          urls.put(
+              descriptor.id(),
+              "public/ui/components/"
+                  + encodePathSegment(component.getName())
+                  + "/"
+                  + encodePathSegment(component.getVersion().toString())
+                  + "/"
+                  + encodeResourcePath(path));
+        }
+      }
+    }
+    var descriptor = descriptors.get(id);
+    if (descriptor == null) throw new IllegalArgumentException("Unknown UI toolkit " + id);
+    if (!descriptor.platforms().contains("web"))
+      throw new IllegalArgumentException("UI toolkit does not support web: " + id);
+    var owner = owners.get(id);
+    if (owner != null) uiToolkitUsers.merge(owner, 1, Integer::sum);
+    return new org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease(
+        descriptor,
+        urls.get(id),
+        () -> {
+          synchronized (ComponentRegistry.this) {
+            if (owner != null)
+              uiToolkitUsers.computeIfPresent(owner, (key, count) -> count == 1 ? null : count - 1);
+          }
+        });
+  }
+
   /**
    * Add contributions from installed k.LAB components to the service dashboard configuration.
    * Component IDs are traversed deterministically so their declared order remains stable.
@@ -1546,11 +1612,12 @@ public class ComponentRegistry {
    * for administrative removal but would make a failed hot replacement unavailable to the current
    * resolution.
    */
-  private boolean unloadDependencyComponentForReplacement(
+  private synchronized boolean unloadDependencyComponentForReplacement(
       Extensions.ComponentDescriptor dependency) {
     if (componentManager == null || componentManager.getPlugin(dependency.id()) == null) {
       return false;
     }
+    requireIdleUiToolkit(dependency.id(), dependency.version());
     if (!componentManager.deletePlugin(dependency.id())) {
       return false;
     }
@@ -1785,7 +1852,7 @@ public class ComponentRegistry {
         0L);
   }
 
-  private Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
+  private synchronized Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
       File resourcePath,
       String mavenCoordinates,
       Extensions.ComponentImportType importType,
@@ -1802,6 +1869,18 @@ public class ComponentRegistry {
     // TODO allow same path with different versions and replacing same version
     var pluginDestination =
         new File(pluginPath, Utils.Files.getFileBaseName(resourcePath) + ".jar");
+    if (!uiToolkitUsers.isEmpty()) {
+      // Check before copying or loading: a failed late registration must never overwrite/delete
+      // an archive whose renderer is retained by a live (possibly disconnected) application.
+      var incoming = new ManifestPluginDescriptorFinder().find(resourcePath.toPath());
+      requireIdleUiToolkit(incoming.getPluginId(), Version.create(incoming.getVersion()));
+      for (var loaded : componentManager.getPlugins()) {
+        if (loaded.getPluginPath() != null && loaded.getPluginPath().toAbsolutePath().normalize()
+            .equals(pluginDestination.toPath().toAbsolutePath().normalize())) {
+          requireIdleUiToolkit(loaded.getPluginId(), Version.ANY_VERSION);
+        }
+      }
+    }
 
     // check if we're installing from a different location
     if (!isInPluginDirectory(resourcePath)) {
@@ -2008,7 +2087,7 @@ public class ComponentRegistry {
     return registerComponent(component, mavenCoordinates, pluginFile, null, null, 0L);
   }
 
-  private Extensions.ComponentDescriptor registerComponent(
+  private synchronized Extensions.ComponentDescriptor registerComponent(
       KlabComponent component,
       String mavenCoordinates,
       File pluginFile,
@@ -2054,6 +2133,7 @@ public class ComponentRegistry {
       sourceServiceId =
           existingDescriptor == null ? service.serviceId() : existingDescriptor.sourceServiceId();
     }
+    requireIdleUiToolkit(componentName, componentVersion);
     removeComponentRegistration(componentName, componentVersion);
 
     scanPackage(
@@ -2952,6 +3032,7 @@ public class ComponentRegistry {
           Notification.error("Built-in component " + component.id() + " cannot be removed"));
     }
     var details = Map.of("trigger", "ADMINISTRATOR_SETTING", "decision", "EXPLICIT_REMOVAL");
+    requireIdleUiToolkit(component.id(), component.version());
     if (componentManager != null
         && componentManager.getPlugin(component.id()) != null
         && !componentManager.deletePlugin(component.id())) {
@@ -2990,6 +3071,7 @@ public class ComponentRegistry {
       String urn, Version version, String eventMessage, Map<String, String> eventDetails) {
     var component = getComponent(urn, version);
     if (component == null) return false;
+    requireIdleUiToolkit(component.id(), component.version());
     var ret = false;
     if (componentManager != null && componentManager.getPlugin(component.id()) != null) {
       ret = componentManager.deletePlugin(component.id());

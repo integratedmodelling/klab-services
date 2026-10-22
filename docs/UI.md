@@ -9,7 +9,7 @@ for `klab-ide`.
 
 ## Status and boundaries
 
-Stages 0–3 have an initial executable implementation. The portable contract below is broader than
+Stages 0–4 have an initial executable implementation. The portable contract below is broader than
 the first renderer; implemented subsets and remaining work are stated explicitly.
 
 | Surface | Status |
@@ -23,7 +23,9 @@ the first renderer; implemented subsets and remaining work are stated explicitly
 | Published URN launch, project READ, retained state and dedicated WebSocket bus | Implemented on the runtime service |
 | Quasar renderer, direct routes, light/dark themes and named CSS | Implemented initial subset |
 | Localized constants and UTF-8 properties bundles | Implemented with generic preamble properties |
-| JavaFX, Flutter, advanced layouts and component toolkit discovery | Later stages |
+| Named-action component instances, nested imports, tagged insertion/removal | Implemented with isolated namespaces and staged construction |
+| Installed component toolkit discovery, configuration and version leases | Implemented for browser renderer modules |
+| JavaFX, Flutter and advanced layouts | Later stages |
 | Restart recovery and durable application checkpoints | Proposed, distinct from reconnecting to a live server |
 
 The design uses current language/runtime contracts and current service web integration. Legacy UI
@@ -122,8 +124,9 @@ extensions must be namespaced in the normalized tree and declared by a capabilit
 Unsupported required features fail before mounting; an explicitly optional feature may degrade
 with a visible diagnostic. Initially, row/column, direction, wrapping, grow/shrink/basis/order,
 alignment, sizes, spacing, overflow, fill flags, visibility, disabled state and classes are supported.
-Grid, stack, tabs, split, responsive overrides, advanced style tokens and complete unknown-key
-diagnostics belong to stage 4. Raw CSS/JavaScript properties are rejected. Hidden, invisible and
+Unknown keys now fail explicitly, and supported flex values are validated. Grid, stack, tabs,
+split, responsive overrides and advanced style tokens remain unsupported capabilities for later
+instrumentation. Raw CSS/JavaScript properties are rejected. Hidden, invisible and
 disabled ancestors block input.
 
 ## Localization
@@ -224,18 +227,24 @@ Common named parameters: `id` (defaults to action name), `title`, `initial`, `vi
 `closeonoutside`. Animations use portable `none`, `fade`, `slide`, `scale` tokens with durations in
 milliseconds; respect reduced-motion preferences. Unsupported optional animations fall back to none.
 
+That list describes the wider proposed contract. Current annotations accept `id`, localized `title`,
+`initial`, `hidden` (use it instead of proposed `visible`), portable flex/sizing/class properties,
+`dismissible`, `closeonescape`, `closeonoutside`, and dialog `animation`/`duration` (0–10000 ms).
+Other proposed surface options raise explicit metadata errors. `@panel` and `@window` also describe
+the reusable named actions accepted by `ui.mount`; `mount` supplies their instance identity.
+
 Startup order is init, initial shell actions in declaration order, then main. Initial shell actions
 must have no required arguments. Ordinary behaviors do not automatically create an application
 shell: their `@window` is mounted only when an authorized host requests the agent interface.
 Only one surface annotation per action is allowed initially. Header/footer IDs are unique per shell;
 multiple drawers are allowed with distinct IDs.
 
-Calling a surface action selects its mount and executes its body. Default `singleton=true` reuses
-the surface, replacing its contents atomically and disposing previous widget emitters. The default
-`retain=true` keeps surface state while hidden; closing with retain=false destroys the mount.
-Repeated surfaces (`singleton=false`) receive distinct instance IDs and tags. Reopening a retained
-surface through a visibility command does not rerun its action. Recursive/reentrant mount creation
-must use invocation-local mount context and avoid overwriting a concurrent action's tree.
+Calling a surface action selects its mount and executes its body. Current ordinary action calls
+replace their singleton surface and dispose previous widget emitters. Visibility commands retain
+state and do not rerun actions. For repeated instances, use `ui.mount`; for destruction use
+`ui.remove`. `singleton=false` and `retain=false` are rejected with instructions to use these explicit
+verbs. Atomic ordinary singleton replacement and these optional shorthand annotations remain
+proposals; dynamic `mount` construction already commits its subtree atomically.
 
 Imported k.Actors components and libraries contribute interfaces by executing their actions within
 the caller's mount. Component instances own nested tag namespaces; libraries use a distinct
@@ -244,8 +253,87 @@ retain their owning agent and permissions when embedded in another application's
 
 ## `core.ui` agent and widget verbs
 
-Applications will import `core.ui as ui`. This is a proposed Java actor extension, registered by the
-current component actor mechanism. Widget verbs declare `EMITTER` semantics and register a server
+### Implemented verb parameters
+
+Import `core.ui as ui`. Scope and metadata are injected; only the arguments below appear in source.
+Call metadata goes **inside the parentheses after positional arguments**, or after the call/match
+block. For example `ui.input(#NAME :value "Ada" :maxlength 80 :placeholder "Full name" +dense) #name`.
+Lists use parentheses: `ui.select("Region" :options ("EU", "AF", "AS") :value "EU") #region`.
+Tags and option IDs remain untranslated. Each emitter fires a map with `event` and `value`.
+
+| Verb and positional arguments | Implemented metadata and defaults | Result/input |
+| --- | --- | --- |
+| `text(text)` | `label` can override positional text; shared layout/help/classes below | Plain escaped text; no input |
+| `progress(value)` | Fraction in [0,1]; `+indeterminate`, `color`, `label` for accessibility | No input; `set` changes progress |
+| `button(label)` | `icon`, `color="primary"`, `size` (`xs/sm/md/lg/xl`), `+dense`, `+flat`, `+outlined`, `+round`, `+loading`, `+readonly` | `{event:"click", value:null}`; loading/read-only blocks server input |
+| `checkbox(label)` | `value=false`, `color`, `+dense`, `+readonly` | `{event:"change", value:boolean}` |
+| `input(label)` | `value=""`, `type="text"` (`text/email/password/tel/url/search/textarea`), `placeholder`, `hint`, `error`, `maxlength=16384` (1–16384), `debounce=300` ms (0–2000), `+required`, `+readonly`, `+dense`, `outlined=true`, `color` | `{event:"change", value:string}`; length/required/read-only checked on server. Input type is presentation, not email/URL domain validation |
+| `number(label)` | `value=0`, finite `min/max`, positive `step`, `debounce=300`, `placeholder`, `hint`, `error`, `+readonly`, `+dense`, `outlined=true`, `color` | `{event:"change", value:number}`; finite/range checked on server. Step is the browser increment, not a rounding rule |
+| `select(label)` | Required `options`: distinct strings (up to 10000); `value=""`, `hint`, `error`, `+required`, `+readonly`, `+dense`, `outlined=true`, `color` | `{event:"change", value:string}`; server requires a declared option ID |
+| `get(tag)` | None | Current authoritative `value`; text uses `label`, so `get` on text returns null |
+| `set(tag, value)` | None | Sets value (or text label), validates primitive value/range; does not fire user input |
+| `show(tag)`, `hide(tag)` | None | Set hidden state, retaining contents and values |
+| `enable(tag)`, `disable(tag)` | None | Enable/disable node and descendants |
+| `close(tag)` | None | Hide the tagged surface; contents retained |
+| `remove(tag)` | None | Remove tagged subtree, tag aliases, action lifetime and widget bindings |
+| `clear(tag)` | None | Remove a container's children and their bindings; retain the target container |
+| `style(tag, properties)` | Map of the supported portable metadata below, e.g. `{class:"summary", hidden:false}` | Validate then merge metadata; no arbitrary CSS text or event-handler attributes |
+| `mount(target, instance, action, arguments)` | Four positional arguments; `arguments` is a list, including `()` for no arguments | Mount named `@panel`/`@window` action; see composition below |
+
+Every primitive accepts portable row/column flex sizing, spacing, visibility, disabled state,
+`class`, `tooltip`, `testid`, `role`, `tabindex`, accessible `label` and `description`. Configuration
+has meaning only for the widget types listed above; for example `placeholder` configures input,
+not text. Color tokens are `primary`, `secondary`, `accent`, `positive`, `negative`, `info`, `warning`,
+`dark`; CSS classes supply further styling. Boolean flags also accept `:key true/false`. `error` is
+an authored error message; client validation does not execute arbitrary expressions. Required
+fields may start empty; user changes must satisfy the server contract. Author domain validation
+in action reactions. Plain text never evaluates HTML. Unknown metadata and invalid portable values
+raise explicit errors; advanced proposed layouts below remain unsupported in this renderer.
+
+### Tagged containers and dynamic action components
+
+`#tag` following a group exposes its generated container to controls and `mount`. The renderer
+includes `data-ui-tag` with the namespace-qualified tag for inspection; the server alone resolves
+targets. Components can only target containers/surfaces, never an input or button.
+
+```kactors
+action main:
+    (ui.text("Accounts")) :layout "column" :gap "12px" #accounts
+    ui.mount("accounts", "alice", "account", ("Alice", "alice@example.org"))
+    ui.mount("accounts", "bob", "account", ("Bob", "bob@example.org"))
+
+@panel
+action account(name, address):
+    ui.input(name :value address :type "email" :maxlength 160) #email
+    ui.button("Remove"):
+        event -> ui.remove("surface")
+```
+
+The instance tag must be a lowercase identifier with optional digits, `_` or `-`. It is unique in
+the caller's namespace. The example exposes `main/alice`, `main/alice/email`, `main/bob/email` and
+each component's local `surface` alias. Relative tags resolve in the calling component namespace;
+absolute tags start with `/`, such as `/main/alice/email`. `ui.remove("alice")` in main removes only
+Alice; `ui.clear("accounts")` removes all children but keeps `accounts` available for later mounts.
+Remove before reusing the same instance tag; duplicate live tags fail explicitly.
+
+Actions may come from an imported k.Actors behavior/library: use `"cards.account"`, where `cards`
+is the import alias. Its annotations and argument count are checked before construction, using
+the existing trusted compiled import. Nested mounts inherit the component action owner, allowing
+its local named actions to compose further components. No closure syntax or client-selected actor
+method invocation is introduced. Socket events still address only server-created widget IDs.
+
+Construction is staged: the subtree becomes visible after its action completes successfully.
+Failure discards its nodes and bindings; it does not roll back domain side effects performed by
+the action, or edits to other mounts. Imported delegate domain state follows its existing lifetime;
+mount instances isolate UI tags and values and do not create a separate agent per instance.
+Removing a target during asynchronous construction cancels its UI lifetime and prevents
+late callbacks from recreating nodes. Successful instances retain their state through reconnect.
+Ordinary annotated action invocation retains its singleton replacement semantics; explicit `mount`
+provides multiple independent instances. External live agents and their ownership/delegation bridge
+remain separate from importing reusable UI action code.
+
+The wider families below are proposals beyond the implemented parameter table above. The `core.ui`
+Java actor is registered by the current component mechanism. Widget verbs declare `EMITTER` semantics and register a server
 continuation; they do not synchronously return a widget value. A tagged call binds a widget for
 later control through `ui` commands. Passive presentation verbs are functions without emitted input.
 
@@ -388,7 +476,7 @@ service capabilities. The directory `META-INF/klab/apps/<local-name>/` contains 
 `application.properties` with a required `project=<project-URN>` binding, and optional `ui/` bundle
 and stylesheet files. Resources parses the packaged source after project READ succeeds. Classpath
 presence cannot bypass READ. Installed-component manifests, collision checks, explicit source
-digests and Resources-catalog publication remain stage 4. Both published URNs and classpath aliases
+digests and Resources-catalog publication remain follow-up work. Both published URNs and classpath aliases
 use the same project permission check.
 
 Launch through a runtime service; other service shells can link to its application URL. The
@@ -430,21 +518,46 @@ detached lease (default 1800). Full snapshots replace deltas for this first impl
 
 ## Toolkit installation and configuration
 
-`UiToolkit` is a small current Java SPI: stable ID, supported node types and an instance renderer
-with ordered snapshot delivery and input callback. `ApplicationUiSession` accepts a selected
-implementation explicitly today. The initial SPI does not discover components or export projects.
+`UiToolkit` remains the Java rendering SPI for in-process adapters. Installed browser toolkits
+contribute `UiToolkitDescriptor` objects through `KlabComponent.uiToolkits()` and declare their ESM
+renderer in `webUiModules()`. Set the per-service Spring property `klab.ui.toolkit` (default `quasar`)
+to select a toolkit for **new** applications. Existing instances keep their selection across
+disconnect/reconnect. Application/client-controlled overrides are not enabled.
 
-Next, add a toolkit contribution hook to `KlabComponent` and lookup in `ComponentRegistry`, using
-the existing trusted component classloader and web-module allowlist. Register immutable descriptors
-with protocol range, platforms, widgets, layouts, input schemas, renderer module ID, export support
-and defaults. Reject duplicate IDs and incompatible versions; choose a toolkit through per-service
-configuration (proposed `klab.ui.toolkit=quasar`) with optional authorized application overrides.
-Keep the host's Vue/Quasar runtime shared through the current `@klab/webui` contract. Do not bundle
-conflicting host libraries in component archives. Retain the selected component version while its
-application instances exist, or explicitly terminate/migrate them before unload.
+```java
+@Override
+public List<UiToolkitDescriptor> uiToolkits() {
+  return List.of(new UiToolkitDescriptor("my-toolkit", 1, Set.of("web"),
+      Set.of("container", "text", "button", "input"), Set.of("row", "column"), "my-ui-renderer"));
+}
 
-Quasar will mount a recursive renderer in the existing shell, translating canonical nodes to
-approved components. JavaFX consumes the same tree/events through an adapter provided outside
+@Override
+public Map<String, String> webUiModules() {
+  return Map.of("my-ui-renderer", "renderer.js");
+}
+```
+
+The prebuilt `META-INF/klab/webui/renderer.js` default-exports a Vue component receiving `snapshot`,
+`disabled` and the existing dashboard `context`. It emits `input` with `{nodeId,name,value}`;
+the host adds protocol revision/sequence, authentication and transport. Import shared Vue APIs
+from `@klab/webui` (or externalized `vue`), using the existing host import map. The renderer owns
+its scaffolding, accessibility and toolkit dependencies; `disabled` must block offline input.
+On unmount, release listeners/timers. The browser regression exercises actual dynamic ESM loading.
+
+Only registered, STARTED components contribute. Unknown/duplicate toolkit IDs, incompatible protocol
+versions, undeclared modules and unsupported nodes/layouts fail explicitly. Core input schemas and
+the server state owner remain authoritative across toolkit choices. The first descriptor supports
+live protocol version 1 with canonical primitive types and row/column layouts; custom native widget
+schemas and source exporters remain separate future contracts. Descriptors are immutable snapshots.
+An application lease retains the contributing component version while disconnected too. Unload,
+remove and hot replacement refuse while any such lease exists; stopping/expiring the last instance
+releases it. Rebuild/restart the host once to obtain this extension hook; subsequent renderer
+components install through the component mechanism without rebuilding the host.
+Publish changed renderer assets under a new component version: browser module URLs and imports
+are versioned, and same-version renderer cache invalidation is not implemented yet.
+
+Quasar mounts the built-in recursive renderer in the existing shell. JavaFX consumes the same
+tree/events through an adapter provided outside
 the service API, so `klab-ide` can attach a test view without adding JavaFX dependencies to services.
 Flutter can implement the live protocol and optionally a separate build/export contribution;
 generated Flutter projects require toolchain/version configuration and their own validation stage.
@@ -457,7 +570,7 @@ generated Flutter projects require toolchain/version configuration and their own
 | 1 — executable vertical slice (initial subset implemented) | Core `ui` actor and invocation-local immutable group/action mount cursors; emitter bindings | A real parsed `.kactor` creates nested text/button/input nodes; click executes a handler and updates text; cursors survive asynchronous callbacks |
 | 2 — stateful launch and transport (initial subset implemented) | Runtime/Resources authorize published URNs and host-classpath aliases; registry owns session/lease; dedicated bus binds identity and instance | Ownership, READ, launch retry, event validation, ticket replay/origin checks, field retention and socket replacement are tested |
 | 3 — Quasar first usable application (initial subset implemented) | `/apps/` entry, basic widgets, shell surfaces/dialogs, flex, localized text and named CSS | Browser fixture covers authentication gate, field/button workflow, CSS, narrow viewport, reconnect and page rebuild; real socket test covers transport serialization and state replay |
-| 4 — reusable components and toolkit installation | Registry contribution/configuration, full layout validation, annotations, nested imported component mounts and capability negotiation | Installed toolkit selected without rebuilding host; duplicate/unsupported features fail predictably; two component instances isolate tags; unload lifecycle tested |
+| 4 — reusable components and toolkit installation (implemented initial contract) | Component descriptors/configuration/version leases; validated flex/widget metadata; tagged named-action mounts including nested imports | Installed browser module loads without rebuilding host; duplicate/unsupported features fail explicitly; independent component instances and binding disposal tested; component unload blocked until leases close |
 | 5 — JavaFX workflow harness | Adapter and IDE integration in `klab-ide`; shared headless conformance fixtures | Same workflow fixture produces equivalent server transitions from Quasar and JavaFX; unsupported widgets produce explicit diagnostics; view thread and detach disposal tested |
 | 6 — full instrumentation and durable state | Advanced widgets/scientific views, responsive/theme/a11y coverage, state checkpoint/restore/migration, telemetry and load testing | Published capability matrix; restart recovery proves no duplicate startup effects; bounded queues and lease cleanup verified under load |
 | 7 — Flutter feasibility and export | Live renderer and optional component-provided project exporter | Generated project builds with a pinned SDK; mobile client authenticates, resumes state and exercises shared event conformance fixtures |
@@ -504,9 +617,12 @@ a real embedded server. A deployed Runtime + Resources + hub sign-in smoke test 
 live-stack check. No live service is restarted by these tests.
 
 The initial `core.ui` catalog is text, progress, button, checkbox, input, number, select, get, set,
-show, hide, enable, disable, close, remove and style. Surface actions support header/footer/drawer,
+show, hide, enable, disable, close, remove, clear, style and mount. Surface actions support header/footer/drawer,
 panel/window, dialog/modal and the other named surface containers above within application scopes.
 Initial header/footer/drawer actions run before main, after construction/init. Invoking an annotated
 action currently replaces its mount and emitter bindings; showing a retained mount does not rerun
-it. Repeated nonsingleton mounts, transactional rollback of partially built surfaces, complete
-annotation option validation, animation mappings and UI-hosted ordinary behaviors remain stage 4.
+it. Repeated instances use `ui.mount` and explicit removal. Dialog animations map `none/fade/slide/scale`
+and `duration` to Quasar transitions; other surface animations are not implemented. Advanced layout
+families, complete surface annotation options, ordinary singleton replacement rollback, native
+widget schemas, application publication digests and hosting external live agent interfaces remain
+follow-up instrumentation. Dynamic component construction rolls back only its UI subtree.

@@ -25,6 +25,14 @@ import org.springframework.web.server.ResponseStatusException;
 /** Published code only. Both normal URNs and service classpath aliases require project READ. */
 @Component
 public final class ServiceUiApplicationLauncher implements UiApplicationLauncher {
+  @org.springframework.beans.factory.annotation.Value("${klab.ui.toolkit:quasar}")
+  private String toolkit = "quasar";
+
+  @Override
+  public org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease selectToolkit() {
+    return instance.klabService().getComponentRegistry().acquireUiToolkit(toolkit);
+  }
+
   private final ServiceNetworkedInstance<?> instance;
   private final java.util.function.BiFunction<
           org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification

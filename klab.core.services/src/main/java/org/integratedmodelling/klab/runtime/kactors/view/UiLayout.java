@@ -57,6 +57,48 @@ public final class UiLayout {
                   "space-around",
                   "space-evenly")));
 
+  private static final Set<String> OPTIONS =
+      Set.of(
+          "id",
+          "initial",
+          "title",
+          "label",
+          "description",
+          "tooltip",
+          "icon",
+          "testid",
+          "role",
+          "tabindex",
+          "dismissible",
+          "closeonescape",
+          "closeonoutside",
+          "class",
+          "value",
+          "options",
+          "min",
+          "max",
+          "step",
+          "type",
+          "maxlength",
+          "debounce",
+          "placeholder",
+          "hint",
+          "error",
+          "dense",
+          "readonly",
+          "required",
+          "outlined",
+          "flat",
+          "round",
+          "loading",
+          "indeterminate",
+          "color",
+          "size",
+          "animation",
+          "duration",
+          "singleton",
+          "retain");
+
   public static Map<String, Object> normalize(Map<?, ?> metadata) {
     var result = new LinkedHashMap<String, Object>();
     metadata.forEach(
@@ -66,9 +108,43 @@ public final class UiLayout {
               raw.toString().startsWith("+")
                   ? true
                   : raw.toString().startsWith("!") ? false : input;
-          if (key.equals("tag")) return;
+          if (key.equals("tag") || key.equals("#name")) return;
+          if (!FLAGS.contains(key)
+              && !LENGTHS.contains(key)
+              && !ENUMS.contains(key)
+              && !OPTIONS.contains(key)
+              && !Set.of("padding", "margin", "grow", "shrink", "order").contains(key))
+            throw invalid(key);
+          if (Set.of(
+                      "initial",
+                      "dismissible",
+                      "closeonescape",
+                      "closeonoutside",
+                      "singleton",
+                      "retain")
+                  .contains(key)
+              && !(value instanceof Boolean)) throw invalid(key);
+          if (Set.of("singleton", "retain").contains(key) && Boolean.FALSE.equals(value))
+            throw new IllegalArgumentException(
+                "Use ui.mount/remove for repeated or disposable surfaces: " + key);
+          if (key.equals("animation") && !Set.of("none", "fade", "slide", "scale").contains(value))
+            throw invalid(key);
+          if (key.equals("duration")
+              && (!(value instanceof Number n)
+                  || n.doubleValue() < 0
+                  || n.doubleValue() > 10000
+                  || n.doubleValue() != Math.rint(n.doubleValue()))) throw invalid(key);
+          if (key.equals("tabindex")
+              && (!(value instanceof Number n)
+                  || n.intValue() != n.doubleValue()
+                  || n.intValue() < -1)) throw invalid(key);
           if (FLAGS.contains(key) && !(value instanceof Boolean)) throw invalid(key);
           if (LENGTHS.contains(key) && !length(value)) throw invalid(key);
+          if (LENGTHS.contains(key) && Objects.equals(value, "none") && !key.startsWith("max"))
+            throw invalid(key);
+          if (LENGTHS.contains(key)
+              && Objects.equals(value, "auto")
+              && !Set.of("width", "height", "basis").contains(key)) throw invalid(key);
           if (Set.of("padding", "margin").contains(key)) {
             if (!(value instanceof Number && length(value))) {
               if (!(value instanceof String s)
@@ -77,8 +153,11 @@ public final class UiLayout {
                       .anyMatch(
                           v ->
                               !length(
-                                  key.equals("margin") && v.startsWith("-") ? v.substring(1) : v)))
-                throw invalid(key);
+                                      key.equals("margin") && v.startsWith("-")
+                                          ? v.substring(1)
+                                          : v)
+                                  || v.equals("none")
+                                  || v.equals("auto") && !key.equals("margin"))) throw invalid(key);
             }
           }
           if (ENUMS.contains(key)
@@ -106,7 +185,8 @@ public final class UiLayout {
         || value instanceof String s
             && (s.equals("auto")
                 || s.equals("none")
-                || s.matches("[0-9]+(?:\\.[0-9]+)?(?:px|%|rem|vw|vh)?"));
+                || s.equals("0")
+                || s.matches("[0-9]+(?:\\.[0-9]+)?(?:px|%|rem|vw|vh)"));
   }
 
   private static IllegalArgumentException invalid(String key) {

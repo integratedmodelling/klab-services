@@ -1,0 +1,27 @@
+web app examples.ui.components
+    "Reusable components in tagged containers"
+    version 1.0
+    with properties {stylesheets: ("light")}
+    using core.ui as ui
+
+action main:
+    (ui.text("Accounts")) :layout "column" :gap "12px" #accounts
+    self.resetaccounts
+    ui.button("Reset accounts"):
+        event -> self.resetaccounts
+    ui.button("Clear accounts"):
+        event -> ui.clear("accounts")
+
+action resetaccounts:
+    ui.clear("accounts")
+    ui.mount("accounts", "alice", "account", ("Alice", "alice@example.org"))
+    ui.mount("accounts", "bob", "account", ("Bob", "bob@example.org"))
+
+@panel
+action account(name, address):
+    ui.input(name :value address :type "email" :maxlength 160 :hint "Contact email") #email
+    ui.text(address) #status
+    ui.button("Apply"):
+        event -> ui.set("status", ui.get("email"))
+    ui.button("Remove"):
+        event -> ui.remove("surface")

@@ -79,6 +79,10 @@ class ApplicationUiWebSocketTest {
   @Test
   void authenticatesFirstFrameAndReplaysRetainedStateOverRealWebSocket() throws Exception {
     var launcher = mock(UiApplicationLauncher.class);
+    when(launcher.selectToolkit())
+        .thenAnswer(
+            invocation ->
+                org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease.quasar());
     var authentication = mock(ServiceAuthorizationManager.class);
     var user = mock(EngineAuthorization.class);
     when(user.isAuthenticated()).thenReturn(true);

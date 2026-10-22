@@ -16,4 +16,12 @@ in `stylesheets` to use the dark base palette. With no locale restriction, an un
 falls back to `messages.properties`. Edit `ui/styles/workflow.css` to customize variables and
 classes. The fixture itself is parsed, compiled and exercised by `ApplicationUiRuntimeTest`.
 
+For dynamic composition, copy [components.kactor](components.kactor) to
+`apps/examples/ui/components.kactor` in a project and open `/apps/examples.ui.components` under the
+runtime service context. No companion assets are required. Alice and Bob have independent fields;
+Apply updates their local status, Remove disposes just that panel, and Reset accounts clears and
+rebuilds the two instances in the tagged group. Clear accounts preserves the group for subsequent
+inserts. Refresh to rebuild the renderer
+from the retained server tree.
+
 See [UI.md](../../UI.md) for the full contract, build/test commands, authorization and current limits.

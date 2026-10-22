@@ -1427,7 +1427,57 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
         return explicitBindings.get(urn);
       }
     }
-    return new ImportedBehaviorBinding(urn, alias, factory);
+    var binding = new ImportedBehaviorBinding(urn, alias, factory);
+    uiBehaviorImports.put(alias, binding);
+    return binding;
+  }
+
+  private final Map<String, Object> uiBehaviorImports =
+      new java.util.concurrent.ConcurrentHashMap<>();
+
+  /** Authored named-action composition only; never invoked by a client-selected socket method. */
+  public final void mountUi(
+      AgentScope caller,
+      String targetTag,
+      String instance,
+      String reference,
+      java.util.List<?> arguments) {
+    if (caller.ui() == null) throw new IllegalStateException("UI mount requires an application");
+    String action = reference;
+    RuntimeAgentBase owner = this;
+    int separator = reference.indexOf('.');
+    if (separator >= 0) {
+      var imported = uiBehaviorImports.get(reference.substring(0, separator));
+      if (imported instanceof ImportedBehaviorBinding binding) owner = binding.staticTarget();
+      else if (imported instanceof RuntimeAgentBase runtime) owner = runtime;
+      else throw new IllegalArgumentException("Unknown UI behavior import " + reference);
+      action = reference.substring(separator + 1);
+    }
+    var target = owner.generatedActionTarget(action);
+    if (target == null) throw new IllegalArgumentException("Unknown UI action " + reference);
+    if (target.actionParameterCount(action) != arguments.size())
+      throw new IllegalArgumentException("Wrong UI action argument count: " + reference);
+    var cursor =
+        caller
+            .ui()
+            .model()
+            .mount(caller.ui(), targetTag, instance, action, target.actionAnnotations(action));
+    var executionOwner = (RuntimeAgentBase) caller.getAgent();
+    // A mounted interface outlives the transient action/supplier that requested it.
+    var scope =
+        ((AgentScope) executionOwner.rootScope())
+            .uiMount(cursor, target, executionOwner.nextId.incrementAndGet());
+    caller.ui().model().bindMount(cursor, scope);
+    boolean success = false;
+    try {
+      if (scope.isDone()) return;
+      var result = target.invokeSelfSupplier(action, scope, arguments.toArray());
+      scope.disposeWith(() -> result.cancel(true));
+      result.join();
+      success = true;
+    } finally {
+      caller.ui().model().completeMount(cursor, success);
+    }
   }
 
   @FunctionalInterface
@@ -2121,6 +2171,7 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     try {
       Method method = findMethod(target.getClass(), "action_" + action, false);
       AgentScope actionScope = scope.forAction(action);
+      if (scope.ui() != null) actionScope = actionScope.uiMount(scope.ui(), target);
       return method.invoke(target, actionScope, splitSuppliedArguments(arguments).values());
     } catch (InvocationTargetException e) {
       throw actorFailure(e.getTargetException());
@@ -2211,11 +2262,8 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     if (actor instanceof RuntimeAgentBase runtimeAgent) {
       try {
         Method method = findMethod(runtimeAgent.getClass(), "action_" + verb, false);
-        return invokeDynamically(
-            method,
-            runtimeAgent,
-            scope,
-            splitSuppliedArguments(arguments).values());
+        return new DynamicInvocation(
+            dynamicMethodType(method), runtimeAgent.invokeGeneratedAction(verb, scope, arguments));
       } catch (ReflectiveOperationException e) {
         throw actorFailure(e);
       }
@@ -2710,6 +2758,16 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       boolean success,
       Throwable exception) {}
 
+  /** Argument count is generated too, so imported delegates need no retained source bean. */
+  protected int actionParameterCount(String actionName) {
+    if (behavior == null || behavior.getStatements() == null) return -1;
+    return behavior.getStatements().stream()
+        .filter(action -> action.getUrn().equals(actionName))
+        .mapToInt(action -> action.getArguments().size())
+        .findFirst()
+        .orElse(-1);
+  }
+
   /** Return the immutable semantic annotations declared on a generated action. */
   protected List<Annotation> actionAnnotations(String actionName) {
     if (behavior == null || behavior.getStatements() == null || actionName == null) {
@@ -2785,10 +2843,14 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
       AgentScope parentScope,
       BiConsumer<Event, AgentScope> eventConsumer,
       EventType... triggerEvents) {
-    var scope = parentScope.withId(nextId.incrementAndGet());
+    // Imported UI actions execute in the application's scope. IDs and listeners must use the
+    // same event owner as AgentScope.doFire/doReturn, including across behavior delegates.
+    var eventOwner = (RuntimeAgentBase) parentScope.getAgent();
+    var scope = parentScope.withId(eventOwner.nextId.incrementAndGet());
     var acceptedTypes = acceptedEventTypes(triggerEvents);
     Disposable subscription =
-        this.eventBus
+        eventOwner
+            .eventBus
             .asFlux()
             .filter(event -> event.actionId() == scope.actionId())
             .takeUntil(event -> event.type() == EventType.TERMINATION)

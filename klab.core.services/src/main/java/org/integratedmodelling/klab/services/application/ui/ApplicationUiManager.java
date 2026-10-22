@@ -10,7 +10,6 @@ import java.util.function.Consumer;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.view.application.*;
 import org.integratedmodelling.klab.runtime.kactors.ApplicationBase;
-import org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +25,9 @@ public final class ApplicationUiManager implements AutoCloseable {
       String id,
       String urn,
       org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiSession.ResumeState state,
-      Map<String, String> stylesheets) {}
+      Map<String, String> stylesheets,
+      UiToolkitDescriptor toolkit,
+      String rendererUrl) {}
 
   public record Ticket(String ticket, long expiresAt) {}
 
@@ -37,15 +38,21 @@ public final class ApplicationUiManager implements AutoCloseable {
     final String id, owner;
     final UiApplicationLauncher.Published published;
     final ApplicationBase agent;
+    final org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease toolkit;
     Instant detached;
     Connection connection;
 
     Instance(
-        String id, String owner, UiApplicationLauncher.Published published, ApplicationBase agent) {
+        String id,
+        String owner,
+        UiApplicationLauncher.Published published,
+        ApplicationBase agent,
+        org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease toolkit) {
       this.id = id;
       this.owner = owner;
       this.published = published;
       this.agent = agent;
+      this.toolkit = toolkit;
       detached = Instant.now();
     }
   }
@@ -101,10 +108,27 @@ public final class ApplicationUiManager implements AutoCloseable {
       throw new ResponseStatusException(TOO_MANY_REQUESTS, "Application instance limit reached");
     var published = launcher.resolve(request.urn(), request.locale(), user);
     launcher.authorize(published, user);
-    var agent = launcher.start(published, user);
+    var toolkit = Objects.requireNonNull(launcher.selectToolkit(), "Missing UI toolkit");
+    ApplicationBase agent;
+    try {
+      agent = launcher.start(published, user);
+      try {
+        agent.ui().capabilities(toolkit.descriptor());
+      } catch (RuntimeException failure) {
+        stopAgent(agent);
+        throw failure;
+      }
+    } catch (RuntimeException | Error failure) {
+      toolkit.close();
+      throw failure;
+    }
     var instance =
         new Instance(
-            UUID.randomUUID().toString(), user.getFullyQualifiedUsername(), published, agent);
+            UUID.randomUUID().toString(),
+            user.getFullyQualifiedUsername(),
+            published,
+            agent,
+            toolkit);
     instances.put(instance.id, instance);
     creations.put(key, instance.id);
     return state(instance);
@@ -120,7 +144,9 @@ public final class ApplicationUiManager implements AutoCloseable {
         instance.id,
         instance.published.urn(),
         instance.agent.ui().session().resumeState(),
-        instance.published.stylesheets());
+        instance.published.stylesheets(),
+        instance.toolkit.descriptor(),
+        instance.toolkit.moduleUrl());
   }
 
   public synchronized Ticket ticket(
@@ -165,15 +191,23 @@ public final class ApplicationUiManager implements AutoCloseable {
   }
 
   private void terminate(Instance instance) {
-    if (instance.connection != null) instance.connection.close();
+    try {
+      if (instance.connection != null) instance.connection.close();
+      stopAgent(instance.agent);
+    } finally {
+      instance.toolkit.close();
+      instances.remove(instance.id);
+      creations.values().removeIf(instance.id::equals);
+      tickets.values().removeIf(grant -> grant.id().equals(instance.id));
+    }
+  }
+
+  private static void stopAgent(ApplicationBase agent) {
     var managed =
         org.integratedmodelling.klab.runtime.kactors.compiler.runtime.AgentRegistry.INSTANCE
-            .getAgent(instance.agent.getUrn());
+            .getAgent(agent.getUrn());
     if (managed != null) managed.stop();
-    else instance.agent.stop();
-    instances.remove(instance.id);
-    creations.values().removeIf(instance.id::equals);
-    tickets.values().removeIf(grant -> grant.id().equals(instance.id));
+    else agent.stop();
   }
 
   private Instance owned(String id, EngineAuthorization user) {
@@ -264,11 +298,11 @@ public final class ApplicationUiManager implements AutoCloseable {
     private UiToolkit toolkit() {
       return new UiToolkit() {
         public String id() {
-          return "quasar";
+          return instance.toolkit.descriptor().id();
         }
 
         public Set<String> supportedTypes() {
-          return ApplicationUiModel.TYPES;
+          return instance.toolkit.descriptor().types();
         }
 
         public View open(Consumer<UiEvent> receiver) {

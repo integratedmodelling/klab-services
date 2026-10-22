@@ -66,7 +66,8 @@ public class ApplicationUiRuntimeTest {
         };
     var notifications = new ArrayList<Notification>();
     var behavior = LanguageAdapter.INSTANCE.adaptBehavior(syntax, "test-project", notifications, 1);
-    assertEquals(KActorsBehavior.Platform.WEB, behavior.getPlatform());
+    if (source.stripLeading().startsWith("web app"))
+      assertEquals(KActorsBehavior.Platform.WEB, behavior.getPlatform());
     assertTrue(
         notifications.stream()
             .noneMatch(n -> n.getLevel().severity >= Notification.Level.Error.severity),
@@ -360,6 +361,368 @@ public class ApplicationUiRuntimeTest {
     try {
       await(app, node -> node.type().equals("button"));
       assertFalse(app.rootScope().isDone());
+    } finally {
+      app.stop();
+    }
+  }
+
+  @Test
+  void parsedNamedActionsMountTwiceInTaggedGroupWithIndependentStateAndRemoval() throws Exception {
+    var app =
+        start(
+            parse(
+                """
+        web app tests.ui.components
+            "Dynamic component fixture"
+            version 1.0
+            using core.ui as ui
+        action main:
+            (ui.text("Components")) #slots
+            ui.mount("slots", "left", "card", ("Left", 1))
+            ui.mount("slots", "right", "card", ("Right", 2))
+            ui.mount("slots", "blank", "blank", ())
+            ui.remove("blank")
+        @panel
+        action card(title, ordinal):
+            ui.input(title :maxlength 20 :placeholder "Enter a name" +dense) #field
+            ui.text(title) #status
+            ui.button("Apply"):
+                event -> ui.set("status", ui.get("field"))
+        @panel
+        action blank:
+            ui.text("Temporary")
+        """));
+    try {
+      var right = await(app, n -> "main/right/field".equals(n.properties().get("tag")));
+      var left =
+          find(
+              app.ui().session().snapshot().root(),
+              n -> "main/left/field".equals(n.properties().get("tag")));
+      assertNotNull(left);
+      var tree = app.ui().session().snapshot().root();
+      var slots = find(tree, n -> "main/slots".equals(n.properties().get("tag")));
+      assertEquals(3, slots.children().size());
+      assertTrue(
+          slots.children().stream()
+              .filter(n -> n.type().equals("panel"))
+              .allMatch(n -> n.children().size() == 3));
+      app.ui().control(app.ui().root(), "set", "/main/left/field", "Left state");
+      app.ui().control(app.ui().root(), "set", "/main/right/field", "Right state");
+      app.ui().session().attach(new TestToolkit());
+      // Both untagged buttons have isolated invocation scopes; select the left subtree's button.
+      var leftPanel =
+          find(
+              app.ui().session().snapshot().root(),
+              n -> "main/left".equals(n.properties().get("tag")));
+      var click = find(leftPanel, n -> n.type().equals("button"));
+      assertTrue(
+          app.ui()
+              .session()
+              .dispatch(
+                  new UiEvent(
+                      1, app.ui().session().snapshot().revision(), click.id(), "click", null)));
+      await(app, n -> "Left state".equals(n.properties().get("label")));
+      app.ui().control(app.ui().root(), "remove", "left", null);
+      assertNull(find(app.ui().session().snapshot().root(), n -> n.id().equals(left.id())));
+      assertEquals(
+          "Right state", app.ui().control(app.ui().root(), "get", "/main/right/field", null));
+      assertFalse(app.rootScope().isDone());
+      app.ui().control(app.ui().root(), "clear", "slots", null);
+      assertTrue(
+          find(app.ui().session().snapshot().root(), n -> n.id().equals(slots.id()))
+              .children()
+              .isEmpty());
+      assertFalse(
+          app.ui()
+              .validInput(
+                  new UiEvent(
+                      2, app.ui().session().snapshot().revision(), right.id(), "change", "Late")));
+    } finally {
+      app.stop();
+    }
+  }
+
+  @Test
+  void failedComponentConstructionRollsBackAndDisposesBindingsWithoutPublishingIt() {
+    try (var model = new ApplicationUiModel()) {
+      model.presentation(new UiPresentation("es", "light", List.of(), Map.of("TITLE", "Tarjeta")));
+      model.group(model.root(), "target", Map.of());
+      var component =
+          model.mount(
+              model.root(),
+              "target",
+              "one",
+              "card",
+              List.of(org.integratedmodelling.klab.api.lang.Annotation.of("panel")));
+      var emitter = mock(RuntimeAgent.Scope.class);
+      model.widget(component, "input", "field", Map.of(), "Name", emitter);
+      assertNull(find(model.session().snapshot().root(), n -> n.id().equals(component.mount())));
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> model.widget(component, "input", "bad", Map.of("maxlength", -1), "Bad", null));
+      model.completeMount(component, false);
+      verify(emitter).done();
+      var retry =
+          model.mount(
+              model.root(),
+              "target",
+              "one",
+              "card",
+              List.of(
+                  org.integratedmodelling.klab.api.lang.Annotation.of("panel", "title", "#TITLE")));
+      model.widget(retry, "text", "label", Map.of(), "Committed", null);
+      model.completeMount(retry, true);
+      assertEquals(
+          "Tarjeta",
+          find(model.session().snapshot().root(), n -> n.id().equals(retry.mount()))
+              .properties()
+              .get("title"));
+      assertNotNull(
+          find(
+              model.session().snapshot().root(),
+              n -> "Committed".equals(n.properties().get("label"))));
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              model.mount(
+                  model.root(),
+                  "target",
+                  "one",
+                  "card",
+                  List.of(org.integratedmodelling.klab.api.lang.Annotation.of("panel"))));
+    }
+  }
+
+  @Test
+  void importedBehaviorContributesNamedAndNestedComponentActions() throws Exception {
+    var cards =
+        parse(
+            """
+        behavior tests.ui.cards
+            "Reusable UI actions"
+            version 1.0
+            using core.ui as ui
+        @panel
+        static action card(title, ordinal):
+            (ui.text(title)) #body
+            ui.mount("body", "nested", "detail", ())
+            ui.text(title) #status
+            ui.button("Update imported"):
+                event -> ui.set("status", "Changed from imported action")
+        @panel
+        action detail:
+            ui.text("Nested imported action") #label
+        """);
+    var base = environment();
+    var resolver =
+        new AgentCompiler.Resolver() {
+          public KActorsBehavior resolveBehavior(String urn, UserScope user) {
+            return urn.equals(cards.getUrn()) ? cards : null;
+          }
+
+          public AgentCompiler.ResolvedActor resolveActor(String urn, UserScope user) {
+            return base.resolver().resolveActor(urn, user);
+          }
+        };
+    var app =
+        start(
+            parse(
+                """
+        web app tests.ui.imports
+            "Imported UI fixture"
+            version 1.0
+            using core.ui as ui, tests.ui.cards as cards
+        action main:
+            (ui.text("Imported")) #target
+            ui.mount("target", "one", "cards.card", ("First", 1))
+            ui.mount("target", "two", "cards.card", ("Second", 2))
+        """),
+            AgentCompiler.runtimeEnvironment(resolver, null));
+    try {
+      await(app, n -> "main/two/nested/label".equals(n.properties().get("tag")));
+      assertNotNull(
+          find(
+              app.ui().session().snapshot().root(),
+              n -> "main/one/nested/label".equals(n.properties().get("tag"))));
+      app.ui().session().attach(new TestToolkit());
+      var panel =
+          find(
+              app.ui().session().snapshot().root(),
+              n -> "main/one".equals(n.properties().get("tag")));
+      var button = find(panel, n -> n.type().equals("button"));
+      assertTrue(
+          app.ui()
+              .session()
+              .dispatch(
+                  new UiEvent(
+                      1, app.ui().session().snapshot().revision(), button.id(), "click", null)));
+      await(app, n -> "Changed from imported action".equals(n.properties().get("label")));
+      app.ui().control(app.ui().root(), "remove", "one", null);
+      assertNotNull(
+          find(
+              app.ui().session().snapshot().root(),
+              n -> "main/two/nested/label".equals(n.properties().get("tag"))));
+      assertFalse(app.rootScope().isDone());
+    } finally {
+      app.stop();
+    }
+  }
+
+  @Test
+  void widgetConfigurationAndCapabilitiesAreValidatedBeforeMutation() {
+    try (var model = new ApplicationUiModel()) {
+      var root = model.root();
+      String input =
+          (String)
+              model.widget(
+                  root,
+                  "input",
+                  "name",
+                  Map.of("maxlength", 3, "required", true),
+                  "Name",
+                  mock(RuntimeAgent.Scope.class));
+      assertFalse(model.validInput(new UiEvent(1, 1, input, "change", "long")));
+      assertFalse(model.validInput(new UiEvent(1, 1, input, "change", "")));
+      assertTrue(model.validInput(new UiEvent(1, 1, input, "change", "Ada")));
+      model.control(
+          root, "set", "name", ""); // Application resets may leave a required field empty.
+      model.control(root, "style", "name", Map.of("readonly", true));
+      assertFalse(model.validInput(new UiEvent(1, 1, input, "change", "Ada")));
+      assertThrows(
+          IllegalArgumentException.class, () -> model.control(root, "set", "name", "long"));
+      assertThrows(
+          IllegalArgumentException.class, () -> model.group(root, "bad", Map.of("typo", true)));
+      assertThrows(
+          IllegalArgumentException.class, () -> model.group(root, "bad", Map.of("layout", "grid")));
+      assertThrows(
+          IllegalArgumentException.class, () -> model.group(root, "bad", Map.of("gap", "auto")));
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              model.capabilities(
+                  new UiToolkitDescriptor(
+                      "limited",
+                      1,
+                      Set.of("web"),
+                      Set.of("container"),
+                      Set.of("column"),
+                      "limited")));
+      model.capabilities(
+          new UiToolkitDescriptor(
+              "limited",
+              1,
+              Set.of("web"),
+              Set.of("container", "input"),
+              Set.of("column"),
+              "limited"));
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> model.widget(root, "button", "bad", Map.of(), "Unsupported", null));
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> model.control(root, "style", "name", Map.of("layout", "row")));
+    }
+  }
+
+  @Test
+  void documentedComponentExampleSupportsRepeatedRebuildAndSelfRemoval() throws Exception {
+    var example = java.nio.file.Path.of("docs/examples/ui/components.kactor");
+    if (!java.nio.file.Files.exists(example))
+      example = java.nio.file.Path.of("..", "docs/examples/ui/components.kactor");
+    var app = start(parse(java.nio.file.Files.readString(example)));
+    try {
+      await(app, n -> "main/bob/email".equals(n.properties().get("tag")));
+      app.ui().session().attach(new TestToolkit());
+      long sequence = 0;
+      var oldPanel =
+          find(
+              app.ui().session().snapshot().root(),
+              n -> "main/alice".equals(n.properties().get("tag")));
+      var remove =
+          find(
+              oldPanel,
+              n -> n.type().equals("button") && "Remove".equals(n.properties().get("label")));
+      assertTrue(
+          app.ui()
+              .session()
+              .dispatch(
+                  new UiEvent(
+                      ++sequence,
+                      app.ui().session().snapshot().revision(),
+                      remove.id(),
+                      "click",
+                      null)));
+      app.ui().afterInput().get(5, java.util.concurrent.TimeUnit.SECONDS);
+      long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+      while (find(app.ui().session().snapshot().root(), n -> n.id().equals(oldPanel.id())) != null
+          && System.nanoTime() < deadline) Thread.sleep(10);
+      assertNull(find(app.ui().session().snapshot().root(), n -> n.id().equals(oldPanel.id())));
+      for (int iteration = 0; iteration < 2; iteration++) {
+        var previousField =
+            find(
+                app.ui().session().snapshot().root(),
+                n -> "main/alice/email".equals(n.properties().get("tag")));
+        String previousId = previousField == null ? "" : previousField.id();
+        var reset =
+            find(
+                app.ui().session().snapshot().root(),
+                n ->
+                    n.type().equals("button")
+                        && "Reset accounts".equals(n.properties().get("label")));
+        assertTrue(
+            app.ui()
+                .session()
+                .dispatch(
+                    new UiEvent(
+                        ++sequence,
+                        app.ui().session().snapshot().revision(),
+                        reset.id(),
+                        "click",
+                        null)));
+        await(
+            app,
+            n ->
+                "main/alice/email".equals(n.properties().get("tag")) && !n.id().equals(previousId));
+        assertFalse(app.rootScope().isDone());
+      }
+      assertEquals(
+          "alice@example.org", app.ui().control(app.ui().root(), "get", "/main/alice/email", null));
+    } finally {
+      app.stop();
+    }
+  }
+
+  @Test
+  void failingNamedActionDiscardsItsSubtreeWithoutStoppingTheApplication() throws Exception {
+    var app =
+        start(
+            parse(
+                fixture().getSourceCode()
+                    + """
+
+        @panel
+        action broken(name):
+            ui.input(name) #temporary
+            fail "Deliberate UI construction failure"
+        """));
+    try {
+      await(app, n -> n.type().equals("button"));
+      var before = app.ui().session().snapshot();
+      assertThrows(
+          RuntimeException.class,
+          () ->
+              app.mountUi(
+                  (org.integratedmodelling.klab.runtime.kactors.AgentScope) app.rootScope(),
+                  "workspace",
+                  "broken",
+                  "broken",
+                  List.of("Temporary")));
+      assertEquals(before, app.ui().session().snapshot());
+      assertFalse(app.rootScope().isDone());
+      assertNull(
+          find(
+              app.ui().session().snapshot().root(),
+              n -> "Temporary".equals(n.properties().get("label"))));
     } finally {
       app.stop();
     }

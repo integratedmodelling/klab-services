@@ -35,12 +35,18 @@ class ApplicationUiManagerTest {
   @Test
   void isolatesUsersAndMakesLaunchRetriesIdempotent() {
     var launcher = mock(UiApplicationLauncher.class);
+    var releases = new AtomicInteger();
+    when(launcher.selectToolkit())
+        .thenAnswer(
+            invocation ->
+                new UiToolkitLease(UiToolkitLease.QUASAR, null, releases::incrementAndGet));
     var authentication = mock(ServiceAuthorizationManager.class);
     var alice = user("alice");
     var bob = user("bob");
     try (var model = new ApplicationUiModel();
         var manager = manager(launcher, authentication, model)) {
       var first = manager.launch(request("one", null), alice);
+      assertEquals("quasar", first.toolkit().id());
       assertEquals(first.id(), manager.launch(request("one", null), alice).id());
       assertEquals(first.id(), manager.launch(request("two", first.id()), alice).id());
       verify(launcher, times(1)).start(any(), same(alice));
@@ -62,12 +68,18 @@ class ApplicationUiManagerTest {
           () ->
               manager.launch(
                   new ApplicationUiManager.Request("another.app", "es", "one", null), alice));
+      assertEquals(0, releases.get()); // Detached applications retain their toolkit lease.
     }
+    assertEquals(1, releases.get());
   }
 
   @Test
   void ticketsAreOriginBoundSingleUseAndOldConnectionsCannotDeliverInput() throws Exception {
     var launcher = mock(UiApplicationLauncher.class);
+    when(launcher.selectToolkit())
+        .thenAnswer(
+            invocation ->
+                org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease.quasar());
     var authentication = mock(ServiceAuthorizationManager.class);
     var alice = user("alice");
     when(authentication.validateToken(eq("webui_alice"), anyMap())).thenReturn(alice);
@@ -128,6 +140,10 @@ class ApplicationUiManagerTest {
   @Test
   void expiredCredentialsAndRevokedProjectReadCannotResumeOrAttach() {
     var launcher = mock(UiApplicationLauncher.class);
+    when(launcher.selectToolkit())
+        .thenAnswer(
+            invocation ->
+                org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease.quasar());
     var authentication = mock(ServiceAuthorizationManager.class);
     var alice = user("alice");
     when(authentication.validateToken(anyString(), anyMap())).thenReturn(alice);
@@ -151,6 +167,10 @@ class ApplicationUiManagerTest {
   @Test
   void opaqueCredentialRevocationCannotFallBackToAStillValidUpstreamToken() {
     var launcher = mock(UiApplicationLauncher.class);
+    when(launcher.selectToolkit())
+        .thenAnswer(
+            invocation ->
+                org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease.quasar());
     var authentication = mock(ServiceAuthorizationManager.class);
     var alice = user("alice");
     when(authentication.validateToken(eq("webui_alice"), anyMap())).thenReturn(alice);

@@ -2057,6 +2057,7 @@ public class AgentCompiler {
       classBuilder.addMethod(compileParallelTestExecution());
     }
     classBuilder.addMethod(compileActionAnnotations(sourceBehavior));
+    classBuilder.addMethod(compileActionParameterCount(sourceBehavior));
     classBuilder.addMethod(compileMessageHandlers(sourceBehavior));
     classBuilder.addMethod(compileMain());
     classBuilder.addMethod(compileExecutionMode());
@@ -2423,6 +2424,21 @@ public class AgentCompiler {
     }
     method.addStatement("return super.actionAnnotations(actionName)");
     return method.build();
+  }
+
+  private MethodSpec compileActionParameterCount(KActorsBehavior sourceBehavior) {
+    var method =
+        MethodSpec.methodBuilder("actionParameterCount")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PROTECTED)
+            .returns(int.class)
+            .addParameter(String.class, "actionName");
+    for (var action : sourceBehavior.getStatements()) {
+      method.beginControlFlow("if ($S.equals(actionName))", action.getUrn());
+      method.addStatement("return $L", action.getArguments().size());
+      method.endControlFlow();
+    }
+    return method.addStatement("return super.actionParameterCount(actionName)").build();
   }
 
   private CodeBlock compiledAnnotation(Annotation annotation) {

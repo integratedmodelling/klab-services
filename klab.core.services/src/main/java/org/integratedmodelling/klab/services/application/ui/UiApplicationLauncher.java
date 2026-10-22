@@ -21,4 +21,8 @@ public interface UiApplicationLauncher {
   void authorize(Published application, EngineAuthorization user);
 
   ApplicationBase start(Published application, EngineAuthorization user);
+
+  default org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease selectToolkit() {
+    return org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease.quasar();
+  }
 }

@@ -9,6 +9,7 @@
   --ui-danger: #b3261e;
   --q-primary: var(--ui-primary);
   --q-secondary: var(--ui-accent);
+  --q-accent: var(--ui-accent);
   --q-negative: var(--ui-danger);
   color: var(--ui-text);
   background: var(--ui-background);

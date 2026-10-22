@@ -167,6 +167,25 @@ public class CoreActorLibrary {
     public static void style(RuntimeAgent.Scope scope, String tag, Map<String, Object> properties) {
       control(scope, "style", tag, properties);
     }
+
+    @Verb(
+        name = "mount",
+        description = "Mount a named @panel or @window action in a tagged container")
+    public static void mount(
+        RuntimeAgent.Scope scope,
+        String target,
+        String instance,
+        String action,
+        List<?> arguments) {
+      if (!(scope instanceof AgentScope agent))
+        throw new IllegalStateException("UI scope required");
+      agent.uiOwner().mountUi(agent, target, instance, action, arguments);
+    }
+
+    @Verb(name = "clear", description = "Remove a tagged container's children and their bindings")
+    public static void clear(RuntimeAgent.Scope scope, String tag) {
+      control(scope, "clear", tag, null);
+    }
   }
 
   /** Stable coordinates only: no service, credentials or document bean is checkpointed. */

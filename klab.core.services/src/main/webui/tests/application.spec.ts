@@ -8,7 +8,7 @@ test("authentication, workflow input, CSS, reconnect and page rebuild retain ser
     {id: "header", type: "header", properties: {title: "Mi aplicación"}, events: [], children: []},
     {id: "body", type: "container", properties: {layout: "column", gap: "12px", class: "workflow"}, events: [], children: [
       {id: "status", type: "text", properties: {label: "Preparado"}, events: [], children: []},
-      {id: "name", type: "input", properties: {label: "Nombre", value: ""}, events: ["change"], children: []},
+      {id: "name", type: "input", properties: {label: "Nombre", value: "", maxlength: 80, placeholder: "Full name", dense: true}, events: ["change"], children: []},
       {id: "run", type: "button", properties: {label: "Ejecutar"}, events: ["click"], children: []},
       {id: "include", type: "checkbox", properties: {label: "Include data", value: false}, events: ["change"], children: []},
       {id: "choice", type: "select", properties: {label: "Choice", value: "alpha", options: ["alpha", "beta"]}, events: ["change"], children: []},
@@ -66,6 +66,8 @@ test("authentication, workflow input, CSS, reconnect and page rebuild retain ser
   await page.locator("#fixture-login").evaluate((button: HTMLButtonElement) => button.click());
   await expect(page.getByRole("heading", {name: "Mi aplicación"})).toBeVisible();
   await expect(page.getByRole("button", {name: "Ejecutar", exact: true})).toBeEnabled();
+  await expect(page.getByLabel("Nombre", {exact: true})).toHaveAttribute("maxlength", "80");
+  await expect(page.getByLabel("Nombre", {exact: true})).toHaveAttribute("placeholder", "Full name");
   await page.getByLabel("Nombre", {exact: true}).fill("Alice");
   await expect.poll(() => sequence).toBe(1);
   await page.getByRole("button", {name: "Ejecutar", exact: true}).click();
@@ -110,9 +112,44 @@ test("authentication, workflow input, CSS, reconnect and page rebuild retain ser
   await page.setViewportSize({width: 1280, height: 900});
   await expect(page.locator(".application-ui").first()).toHaveAttribute("data-theme", "light");
   await page.screenshot({path: "../../../../target/ui-scaffolding-validation/application-light-desktop.png", fullPage: true});
+  root.children[1].children.push({id: "dynamic", type: "panel", properties: {tag: "main/one"}, events: [], children: [
+    {id: "dynamic-field", type: "input", properties: {tag: "main/one/field", label: "Dynamic field", value: "Retained", readonly: true}, events: ["change"], children: []},
+  ]});
+  snapshot.revision++;
+  socket.send(JSON.stringify({type: "snapshot", value: snapshot}));
+  await expect(page.locator('[data-ui-tag="main/one/field"] input')).toHaveValue("Retained");
+  await expect(page.getByLabel("Dynamic field")).toHaveAttribute("readonly", "");
+  root.children[1].children.pop(); snapshot.revision++;
+  socket.send(JSON.stringify({type: "snapshot", value: snapshot}));
+  await expect(page.getByLabel("Dynamic field")).toHaveCount(0);
   await page.locator("#fixture-logout").click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByText("Hello Alice", {exact: true})).toHaveCount(0);
+});
+
+test("installed toolkit module receives canonical snapshots and emits through the standard bus", async ({page}) => {
+  let input: any;
+  const snapshot: UiSnapshot = {protocolVersion: 1, revision: 1, root: {id: "root", type: "container", properties: {label: "Installed toolkit"}, events: [], children: []}};
+  await page.route("**/runtime/api/v1/ui/instances", route => route.fulfill({json: {id: "custom", urn: "examples.workflow", state: {snapshot, lastAcceptedSequence: 0}, stylesheets: {},
+    toolkit: {id: "custom", protocolVersion: 1, types: ["container"], layouts: ["column"]}, rendererUrl: "public/ui/components/custom/1.0.0/renderer.js"}}));
+  await page.route("**/runtime/api/v1/ui/instances/custom/ticket", route => route.fulfill({json: {ticket: "custom-ticket"}}));
+  await page.route("**/runtime/public/ui/components/custom/1.0.0/renderer.js", route => route.fulfill({contentType: "text/javascript", body: `
+    import {h} from '/src/plugin-api.ts';
+    export default {props: ['snapshot', 'disabled', 'context'], emits: ['input'], setup(props, {emit}) {
+      return () => h('button', {disabled: props.disabled, onClick: () => emit('input', {nodeId:'root', name:'click', value:null})}, props.snapshot.root.properties.label);
+    }};` }));
+  await page.routeWebSocket("**/runtime/ui-bus", ws => ws.onMessage(data => {
+    const frame = JSON.parse(String(data));
+    if (frame.ticket) { ws.send(JSON.stringify({type: "snapshot", value: snapshot})); ws.send(JSON.stringify({type: "ready", value: {lastAcceptedSequence: 0}})); }
+    else { input = frame.value; }
+  }));
+  await page.goto("/tests/application.html");
+  await page.locator("#fixture-login").evaluate((button: HTMLButtonElement) => button.click());
+  await page.getByRole("button", {name: "Installed toolkit", exact: true}).click();
+  await expect.poll(() => input?.nodeId).toBe("root");
+  expect(input.sequence).toBe(1);
+  expect(input.revision).toBe(1);
+  expect(input.name).toBe("click");
 });
 
 test("real shell preserves the service base on a direct application route and gates launch", async ({page}) => {

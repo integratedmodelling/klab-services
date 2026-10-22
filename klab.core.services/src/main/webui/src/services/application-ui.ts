@@ -9,7 +9,8 @@ export interface UiNode {
 }
 export interface UiSnapshot { protocolVersion: number; revision: number; root: UiNode }
 export interface ResumeState { snapshot: UiSnapshot | null; lastAcceptedSequence: number }
-export interface InstanceState { id: string; urn: string; state: ResumeState; stylesheets: Record<string, string> }
+export interface InstanceState { id: string; urn: string; state: ResumeState; stylesheets: Record<string, string>;
+  toolkit?: {id: string; protocolVersion: number; types: string[]; layouts: string[]}; rendererUrl?: string }
 export interface WidgetInput { nodeId: string; name: string; value: unknown }
 
 /** One live attachment. Disconnected input is deliberately never replayed. */

@@ -55,7 +55,8 @@ class ComponentRegistryActorVerbTest {
             "style")) {
       assertTrue(names.contains("regression.ui." + name), names.toString());
     }
-    assertEquals(16, names.size());
+    assertTrue(names.containsAll(List.of("regression.ui.mount", "regression.ui.clear")));
+    assertEquals(18, names.size());
   }
 
   @Test void documentSubclassesExposeInheritedVerbsAndConformToTheDocumentAncestor() throws Exception {

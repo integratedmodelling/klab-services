@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, ref, watch} from "vue";
+import {computed, onBeforeUnmount, ref, shallowRef, watch, type Component} from "vue";
 import type {DashboardContext} from "../types";
 import AuthenticationDialog from "./AuthenticationDialog.vue";
 import ApplicationNode from "./ApplicationNode.vue";
 import {ApplicationConnection, type InstanceState, type UiSnapshot, type WidgetInput} from "../services/application-ui";
 import "../styles/application-ui.css";
+import {resolveExtension} from "../services/extensions";
 
 const props = defineProps<{urn: string; context: DashboardContext}>();
 const snapshot = ref<UiSnapshot | null>(null);
@@ -13,6 +14,7 @@ const connected = ref(false);
 const launching = ref(false);
 const rendererEpoch = ref(0);
 const instance = ref<InstanceState | null>(null);
+const toolkitRenderer = shallowRef<Component>();
 let connection: ApplicationConnection | undefined;
 let generation = 0;
 let previousKey: string | undefined;
@@ -35,6 +37,7 @@ function writeHint(name: string, value?: unknown): void {
 function clean(): void {
   connection?.close(); connection = undefined;
   connected.value = false;
+  toolkitRenderer.value = undefined;
   styleElements.forEach(element => element.remove()); styleElements = [];
 }
 async function start(fresh = false): Promise<void> {
@@ -50,6 +53,13 @@ async function start(fresh = false): Promise<void> {
         idempotencyKey: creationKey, resume: hint?.id})});
     if (current !== generation) return;
     instance.value = result;
+    if (result.toolkit && result.toolkit.protocolVersion !== 1) throw new Error("Unsupported toolkit protocol");
+    if (result.toolkit && result.toolkit.id !== "quasar") {
+      if (!result.rendererUrl) throw new Error("Toolkit has no browser renderer");
+      // The URL is generated from a trusted installed component's module allowlist by the server.
+      toolkitRenderer.value = resolveExtension("application-toolkit", {...props.context.config,
+        modules: {"application-toolkit": result.rendererUrl}});
+    }
     snapshot.value = result.state.snapshot;
     writeHint(hintKey, {key: creationKey, id: result.id});
     for (const css of Object.values(result.stylesheets)) {
@@ -91,7 +101,9 @@ onBeforeUnmount(() => { generation++; clean(); });
       <q-btn v-if="instance" flat no-caps label="Stop" @click="stop" />
     </div>
     <q-banner v-if="error" role="status" class="application-status">{{ error }}</q-banner>
-    <section v-if="snapshot && context.auth.authenticated" :key="rendererEpoch" class="application-ui application-scaffold" :data-theme="theme"
+    <component v-if="snapshot && context.auth.authenticated && toolkitRenderer" :is="toolkitRenderer" :key="rendererEpoch"
+      :snapshot="snapshot" :disabled="!connected" :context="context" @input="input" />
+    <section v-else-if="snapshot && context.auth.authenticated" :key="rendererEpoch" class="application-ui application-scaffold" :data-theme="theme"
       :lang="snapshot.root.properties.locale" :aria-busy="!connected">
       <header v-if="regions.header.length" class="application-header"><ApplicationNode v-for="node in regions.header" :key="node.id" :node="node" :disabled="!connected" :theme="theme" @input="input" /></header>
       <aside v-if="regions.drawer.some(n => !n.properties.hidden)" class="application-drawer"><ApplicationNode v-for="node in regions.drawer" :key="node.id" :node="node" :disabled="!connected" :theme="theme" @input="input" /></aside>

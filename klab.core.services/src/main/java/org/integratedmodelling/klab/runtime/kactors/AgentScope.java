@@ -27,23 +27,28 @@ import reactor.core.publisher.Sinks;
 public abstract class AgentScope extends ParametersImpl<String> implements RuntimeAgent.Scope {
 
   private final RuntimeAgentBase actor;
+  private final AgentScope parent;
   private final long actionId;
   private String currentAction;
   private UiExecution ui;
+  private RuntimeAgentBase uiOwner;
   private final CopyOnWriteArrayList<AgentScope> children = new CopyOnWriteArrayList<>();
   private final CopyOnWriteArrayList<Disposable> disposables = new CopyOnWriteArrayList<>();
   private final AtomicBoolean done = new AtomicBoolean(false);
 
   public AgentScope(RuntimeAgentBase actor) {
     this.actor = actor;
+    this.parent = null;
     this.actionId = 0;
   }
 
   public AgentScope(AgentScope parent, long actionId) {
     this.actor = parent.actor;
+    this.parent = parent;
     this.actionId = actionId;
     this.currentAction = parent.currentAction;
     this.ui = parent.ui;
+    this.uiOwner = parent.uiOwner;
     parent.children.add(this);
   }
 
@@ -54,6 +59,21 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
 
   public final UiExecution ui() {
     return ui;
+  }
+
+  public final RuntimeAgentBase uiOwner() {
+    return uiOwner == null ? actor : uiOwner;
+  }
+
+  public final AgentScope uiMount(UiExecution cursor, RuntimeAgentBase owner) {
+    return uiMount(cursor, owner, actionId);
+  }
+
+  public final AgentScope uiMount(UiExecution cursor, RuntimeAgentBase owner, long id) {
+    var child = withId(id);
+    child.ui = cursor;
+    child.uiOwner = owner;
+    return child;
   }
 
   protected final void ui(UiExecution ui) {
@@ -197,6 +217,7 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
         disposable.dispose();
       }
       disposables.clear();
+      if (parent != null) parent.children.remove(this);
     }
     synchronized (this) {
       notifyAll();
