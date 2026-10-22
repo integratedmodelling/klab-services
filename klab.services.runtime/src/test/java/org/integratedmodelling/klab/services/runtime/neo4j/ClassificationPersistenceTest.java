@@ -65,6 +65,106 @@ class ClassificationPersistenceTest {
     assertEquals("before", row.get("before")); assertEquals("after", row.get("after"));
     assertEquals("Preserved", row.get("name")); assertEquals(77L, row.get("parent"));
   }
+  void cohort() {
+    rows("MATCH (a:Context {id:'a'}),(n:Observation {id:41}) CREATE (a)-[:HAS_CHILD]->(c:Cohort {id:10, observable:'test:Region'}), (c)-[:HAS_MEMBER]->(n)",Map.of());
+  }
+  @Test void foreignMembershipWriteAndCaughtForeignValidationRollBackPriorWrites() throws Exception {
+    cohort();var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    var cohort=new org.integratedmodelling.common.knowledge.CohortImpl();cohort.setId(10);
+    try(var tx=new Fixture("b").createTransaction(mock(ContextScope.class))) {
+      tx.updateSemantics(observation(42,"tentative"),"before");
+      assertThrows(RuntimeException.class,()->tx.link(cohort,observation(42,"before"),GraphModel.Relationship.HAS_MEMBER));
+    }
+    assertEquals("before",observable(42));
+    try(var tx=new Fixture("b").createTransaction(mock(ContextScope.class))) {
+      tx.updateSemantics(observation(42,"tentative"),"before");
+      assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));
+    }
+    assertEquals("before",observable(42));
+    try(var tx=new Fixture("a").createTransaction(mock(ContextScope.class))) {
+      tx.updateSemantics(observation(42,"tentative"),"before");
+      assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(null));
+    }
+    assertEquals("before",observable(42));
+  }
+  @Test void globallyOrderedReadAndWriteUnionAllowsCompetingContextsToSettle() throws Exception {
+    var first=new Fixture("a").createTransaction(mock(ContextScope.class));
+    first.lockClassificationInputs(List.of(42L,41L));
+    var started=new CountDownLatch(1);
+    try(var executor=Executors.newSingleThreadExecutor()) {
+      var second=executor.submit(()->{
+        try(var tx=new Fixture("b").createTransaction(mock(ContextScope.class))) {
+          started.countDown();tx.lockClassificationInputs(List.of(41L,42L));
+          tx.updateSemantics(observation(42,"second"),"before");
+        }
+        return true;
+      });
+      assertTrue(started.await(10,TimeUnit.SECONDS));first.updateSemantics(observation(41,"first"),"before");first.close();
+      assertTrue(second.get(10,TimeUnit.SECONDS));
+      assertEquals("first",observable(41));assertEquals("second",observable(42));
+    }
+  }
+  @Test void capturedNativePayloadMaterializesWithoutFetchingNewerPropertiesAndInvalidatesOnChange() throws Exception {
+    cohort();var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    var metadata=GraphModel.Fields.METADATA;
+    rows("MATCH (n:Observation {id:41}) SET n.urn='urn:test:41',n.childrenCount=0,n.parentId=77,n.eventTimestamps=[],n."+metadata+"=$metadata CREATE (n)-[:HAS_GEOMETRY]->(:Geometry {definition:'*'})",Map.of("metadata","{\"origin\":\"captured\"}"));
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    assertThrows(UnsupportedOperationException.class,()->read.members().getFirst().properties().put("name","mutated"));
+    rows("MATCH (n:Observation {id:41}) SET n.name='Changed',n."+metadata+"=$metadata",Map.of("metadata","{\"origin\":\"newer\"}"));
+    var scope=mock(ContextScope.class);var reasoner=mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+    var runtime=mock(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+    when(scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class)).thenReturn(runtime);
+    var meaning=observation(41,"before").getObservable();when(reasoner.resolveObservable("before")).thenReturn(meaning);
+    var restored=graph.materializeClassificationMember(read.members().getFirst(),scope);
+    assertEquals(41,restored.getId());assertEquals("Preserved",restored.getName());assertEquals("captured",restored.getMetadata().get("origin"));
+    assertEquals("urn:test:41",restored.getUrn());assertEquals(77,restored.getParentId());assertEquals("*",restored.getGeometry().encode());
+    try(var tx=graph.createTransaction(scope)){assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));}
+  }
+  @Test void cohortMeaningChangeInvalidatesTheNativeReadSet() throws Exception {
+    cohort();var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    assertEquals("test:Region",read.cohortObservable());
+    rows("MATCH (c:Cohort {id:10}) SET c.observable='test:Other'",Map.of());
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));}
+  }
+  @Test void memberGeometryChangesInvalidateTheNativeReadSet() throws Exception {
+    cohort();var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    rows("MATCH (n:Observation {id:41}) CREATE (n)-[:HAS_GEOMETRY]->(:Geometry {definition:'*'})",Map.of());
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));}
+  }
+  @Test void rawCohortCaptureAndSameTransactionReadValidationProtectReusedInputs() throws Exception {
+    cohort();var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    assertEquals(List.of(41L),read.members().stream().map(KnowledgeGraph.ClassificationMemberSnapshot::id).toList());
+    assertEquals("before",read.members().getFirst().observable());
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){tx.validateClassificationMembers(read);}
+    try(var tx=new Fixture("b").createTransaction(mock(ContextScope.class))){tx.updateSemantics(observation(41,"changed"),"before");}
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));}
+  }
+  @Test void rawCohortCaptureRejectsAddedMembersAndForeignContexts() throws Exception {
+    cohort();var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    rows("MATCH (c:Cohort {id:10, observable:'test:Region'}),(n:Observation {id:42}) CREATE (c)-[:HAS_MEMBER]->(n)",Map.of());
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));}
+    try(var tx=new Fixture("b").createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.captureClassificationMembers(10));}
+  }
+  @Test void emptyCapturedCohortIsAReadSetNotProducerCompletion() throws Exception {
+    rows("MATCH (a:Context {id:'a'}) CREATE (a)-[:HAS_CHILD]->(:Cohort {id:10, observable:'test:Region'})",Map.of());
+    try(var tx=new Fixture("a").createTransaction(mock(ContextScope.class))){assertTrue(tx.captureClassificationMembers(10).members().isEmpty());}
+  }
+  @Test void membershipWritesDoNotAdvanceSemanticGenerationAndCannotCertifyAClosure() throws Exception {
+    cohort();var graph=new Fixture("a");long before=graph.getSemanticRevision();
+    var cohort=new org.integratedmodelling.common.knowledge.CohortImpl();cohort.setId(10);
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){
+      tx.link(cohort,observation(42,"before"),GraphModel.Relationship.HAS_MEMBER);
+    }
+    assertEquals(1L,rows("MATCH (:Cohort {id:10})-[r:HAS_MEMBER]->(:Observation {id:42}) RETURN count(r) AS n",Map.of()).getFirst().get("n"));
+    assertEquals(before,graph.getSemanticRevision(),"This generation is not a membership snapshot/version");
+  }
+
   @Test void laterConflictRollsBackEarlierSemanticsAndAudit() throws Exception {
     var graph = new Fixture("a"); var member = observation(41, "after");
     var activity = Activity.of(Activity.Type.CLASSIFICATION); activity.setId(91);

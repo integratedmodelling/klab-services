@@ -363,6 +363,72 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
+    public ClassificationReadSet captureClassificationMembers(long cohortId) {
+      if (closed) throw new KlabStorageException("Closed classification capture transaction");
+      try {
+        var anchors = transaction.run(
+            "MATCH (:Context {id:$context})-[:HAS_CHILD]->(c:Cohort {id:$cohort}) SET c.id=c.id RETURN c.id AS id, c.observable AS observable",
+            Map.of("context",rootContextId,"cohort",cohortId)).list();
+        if (anchors.size()!=1) throw new KlabStorageException("Missing or foreign classification cohort");
+        // Context lock freezes this cohort's membership. Shared members also require their own
+        // locks, in the same ascending order as root semantic updates, before reading baselines.
+        var ids = transaction.run(
+            "MATCH (:Cohort {id:$cohort})-[:HAS_MEMBER]->(n:Observation) RETURN DISTINCT n.id AS id ORDER BY id",
+            Map.of("cohort",cohortId)).list();
+        var members = new ArrayList<ClassificationMemberSnapshot>();
+        for (var id : ids) {
+          long memberId=id.get("id").asLong();
+          var rows=transaction.run(
+              "MATCH (n:Observation {id:$id}) SET n.id=n.id WITH n "
+                  + "OPTIONAL MATCH (n)-[:HAS_GEOMETRY]->(g:Geometry) "
+                  + "OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(p:Geometry) "
+                  + "RETURN n.observable AS observable, g.definition AS geometry, properties(n) AS properties, "
+                  + "p.definition AS perceived, coalesce(n.semanticRevision,0) AS revision",
+              Map.of("id",memberId)).list();
+          if(rows.size()!=1) throw new KlabStorageException("Ambiguous classification member support");
+          var row=rows.getFirst();
+          members.add(new ClassificationMemberSnapshot(memberId,row.get("observable").asString(),
+              row.get("geometry").asString(null),row.get("revision").asLong(),row.get("properties").asMap(),row.get("perceived").asString(null)));
+        }
+        return new ClassificationReadSet(rootContextId,cohortId,anchors.getFirst().get("observable").asString(null),members);
+      } catch(RuntimeException failure) {
+        closed=true; throw storageFailure("capturing classification input",failure);
+      }
+    }
+
+    @Override
+    public void lockClassificationInputs(Collection<Long> ids) {
+      if(closed) throw new KlabStorageException("Closed classification input lock transaction");
+      try {
+        for(long id: new java.util.TreeSet<>(ids)) {
+          if(id<=0) throw new IllegalArgumentException("Only persisted inputs have native locks");
+          if(transaction.run("MATCH (n:Observation {id:$id}) SET n.id=n.id RETURN n.id AS id",Map.of("id",id)).list().size()!=1)
+            throw new KlabStorageException("Missing classification input "+id);
+        }
+      } catch(RuntimeException failure) { closed=true;throw storageFailure("locking classification inputs",failure); }
+    }
+
+    @Override
+    public void validateClassificationMembers(ClassificationReadSet expected) {
+      try {
+      Objects.requireNonNull(expected,"Missing classification snapshot");
+      if(!Objects.equals(rootContextId,expected.contextId())) {
+        closed=true; throw new KlabStorageException("Classification snapshot belongs to another context");
+      }
+      // Never acquire a newly added member lock after the caller has locked its global union.
+      var ids=transaction.run("MATCH (:Cohort {id:$cohort})-[:HAS_MEMBER]->(n:Observation) RETURN DISTINCT n.id AS id ORDER BY id",Map.of("cohort",expected.cohortId())).list()
+          .stream().map(row->row.get("id").asLong()).toList();
+      if(!ids.equals(expected.members().stream().map(ClassificationMemberSnapshot::id).toList())) {
+        closed=true;throw new KlabStorageException("Classification membership changed");
+      }
+      if(!expected.equals(captureClassificationMembers(expected.cohortId()))) {
+        closed=true;
+        throw new KlabStorageException("Classification membership or input changed");
+      }
+      } catch(RuntimeException failure) { closed=true;throw storageFailure("validating classification inputs",failure); }
+    }
+
+    @Override
     public void store(RuntimeAsset asset, Object... additionalProperties) {
       if (closed) {
         throw new KlabStorageException(
@@ -602,6 +668,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               source.getId(),
               destination.getId(),
               relationship);
+        }
+        if(relationship==GraphModel.Relationship.HAS_MEMBER) {
+          var owner=transaction.run("MATCH (:Context {id:$context})-[:HAS_CHILD]->(c:Cohort {id:$cohort}) SET c.id=c.id RETURN c.id AS id",
+              Map.of("context",rootContextId,"cohort",source.getId())).list();
+          if(owner.size()!=1) throw new KlabStorageException("Membership writes require the owning context cohort");
         }
         KnowledgeGraphNeo4j.this.link(
             transaction, source, destination, relationship, userScope, additionalProperties);
@@ -1188,68 +1259,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       } else if (Observation.class.isAssignableFrom(cls)) {
 
-        var instance = new ObservationImpl();
-        var reasoner = scope.getService(Reasoner.class);
-
-        instance.setName(node.get(GraphModel.Fields.NAME).asString());
-        instance.setObservable(
-            reasoner.resolveObservable(node.get(GraphModel.Fields.OBSERVABLE).asString()));
-        instance.setUrn(node.get(GraphModel.Fields.URN).asString());
-        instance.setId(node.get(GraphModel.Fields.ID).asLong());
-        instance.setChildrenCount(node.get(GraphModel.Fields.CHILDREN_COUNT).asInt());
-        instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong());
-        instance.setEventTimestamps(
-            node.get(GraphModel.Fields.EVENT_TIMESTAMPS).asList(value -> value.asLong()));
-        instance.setSubstantialQuality(node.get(GraphModel.Fields.SUBSTANTIAL).asBoolean(false));
-        restoreObservationMetadata(node, instance);
-        restoreObservationAnnotations(node, instance);
-        if (!node.get(GraphModel.Fields.HISTOGRAMS).isNull()) {
-          instance.setHistograms(
-              Utils.Data.deserializeHistogramMap(
-                  node.get(GraphModel.Fields.HISTOGRAMS).asString()));
-        } else if (!node.get(GraphModel.Fields.HISTOGRAM).isNull()) {
-          // Legacy observations stored one aggregate histogram. Its temporal distribution cannot
-          // be recovered, so retain it under the initialization timestamp until the observation is
-          // contextualized again and a true slice map replaces it.
-          instance.setHistograms(
-              Map.of(
-                  0L,
-                  Utils.Json.parseObject(
-                      node.get(GraphModel.Fields.HISTOGRAM).asString(), HistogramImpl.class)));
-        }
-        //        var instanceUrn = node.get(GraphModel.Fields.URN).asString();
-        //        if (instanceUrn != null) {
-        //          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
-        //        }
-        var cData = new ObservationImpl.ContextualizationDataImpl();
-        var service = scope.getService(RuntimeService.class);
-        cData.setServiceUrl(service.getUrl());
-        cData.setServiceId(serviceId);
-        cData.setAdapterId(
-            node.get(GraphModel.Fields.ADAPTER_ID).isNull()
-                ? null
-                : node.get(GraphModel.Fields.ADAPTER_ID).asString());
-        if (!node.get(GraphModel.Fields.ADAPTER_PARAMETERS).isNull()) {
-          var params =
-              Utils.Json.parseObject(
-                  node.get(GraphModel.Fields.ADAPTER_PARAMETERS).asString(), Parameters.class);
-          cData.getParameters().putAll(params);
-        }
-
-        // sharding strategy, if any.
-        if (!node.get(GraphModel.Fields.FILL_CURVE).isNull()) {
-          var shardingStrategy = new Data.ShardingStrategy();
-          shardingStrategy.setDataType(
-              Storage.Type.valueOf(node.get(GraphModel.Fields.DATA_TYPE).asString()));
-          shardingStrategy.setCurve(
-              Data.FillCurve.valueOf(node.get(GraphModel.Fields.FILL_CURVE).asString()));
-          shardingStrategy.setSuggestedSplits(node.get(GraphModel.Fields.SUGGESTED_SPLITS).asInt());
-          shardingStrategy.setMaxBufferSize(node.get(GraphModel.Fields.MAX_BUFFER_SIZE).asLong());
-          shardingStrategy.setMinSplitSize(node.get(GraphModel.Fields.MIN_SPLIT_SIZE).asLong());
-          cData.setNativeShardingStrategy(shardingStrategy);
-        }
-
-        instance.setContextualizationData(cData);
+        var instance = restoreObservationProperties(node,scope);
 
         var gResult =
             query(
@@ -1511,11 +1521,86 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @SuppressWarnings("unchecked")
+  private ObservationImpl restoreObservationProperties(Value node, Scope scope) {
+        var instance = new ObservationImpl();
+        var reasoner = scope.getService(Reasoner.class);
+
+        instance.setName(node.get(GraphModel.Fields.NAME).asString());
+        instance.setObservable(
+            reasoner.resolveObservable(node.get(GraphModel.Fields.OBSERVABLE).asString()));
+        instance.setUrn(node.get(GraphModel.Fields.URN).asString());
+        instance.setId(node.get(GraphModel.Fields.ID).asLong());
+        instance.setChildrenCount(node.get(GraphModel.Fields.CHILDREN_COUNT).asInt());
+        instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong());
+        instance.setEventTimestamps(
+            node.get(GraphModel.Fields.EVENT_TIMESTAMPS).asList(value -> value.asLong()));
+        instance.setSubstantialQuality(node.get(GraphModel.Fields.SUBSTANTIAL).asBoolean(false));
+        restoreObservationMetadata(node, instance);
+        restoreObservationAnnotations(node, instance);
+        if (!node.get(GraphModel.Fields.HISTOGRAMS).isNull()) {
+          instance.setHistograms(
+              Utils.Data.deserializeHistogramMap(
+                  node.get(GraphModel.Fields.HISTOGRAMS).asString()));
+        } else if (!node.get(GraphModel.Fields.HISTOGRAM).isNull()) {
+          // Legacy observations stored one aggregate histogram. Its temporal distribution cannot
+          // be recovered, so retain it under the initialization timestamp until the observation is
+          // contextualized again and a true slice map replaces it.
+          instance.setHistograms(
+              Map.of(
+                  0L,
+                  Utils.Json.parseObject(
+                      node.get(GraphModel.Fields.HISTOGRAM).asString(), HistogramImpl.class)));
+        }
+        //        var instanceUrn = node.get(GraphModel.Fields.URN).asString();
+        //        if (instanceUrn != null) {
+        //          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
+        //        }
+        var cData = new ObservationImpl.ContextualizationDataImpl();
+        var service = scope.getService(RuntimeService.class);
+        cData.setServiceUrl(service.getUrl());
+        cData.setServiceId(serviceId);
+        cData.setAdapterId(
+            node.get(GraphModel.Fields.ADAPTER_ID).isNull()
+                ? null
+                : node.get(GraphModel.Fields.ADAPTER_ID).asString());
+        if (!node.get(GraphModel.Fields.ADAPTER_PARAMETERS).isNull()) {
+          var params =
+              Utils.Json.parseObject(
+                  node.get(GraphModel.Fields.ADAPTER_PARAMETERS).asString(), Parameters.class);
+          cData.getParameters().putAll(params);
+        }
+
+        // sharding strategy, if any.
+        if (!node.get(GraphModel.Fields.FILL_CURVE).isNull()) {
+          var shardingStrategy = new Data.ShardingStrategy();
+          shardingStrategy.setDataType(
+              Storage.Type.valueOf(node.get(GraphModel.Fields.DATA_TYPE).asString()));
+          shardingStrategy.setCurve(
+              Data.FillCurve.valueOf(node.get(GraphModel.Fields.FILL_CURVE).asString()));
+          shardingStrategy.setSuggestedSplits(node.get(GraphModel.Fields.SUGGESTED_SPLITS).asInt());
+          shardingStrategy.setMaxBufferSize(node.get(GraphModel.Fields.MAX_BUFFER_SIZE).asLong());
+          shardingStrategy.setMinSplitSize(node.get(GraphModel.Fields.MIN_SPLIT_SIZE).asLong());
+          cData.setNativeShardingStrategy(shardingStrategy);
+        }
+
+        instance.setContextualizationData(cData);
+
+    return instance;
+  }
+
+  @Override
+  public Observation materializeClassificationMember(ClassificationMemberSnapshot snapshot, ContextScope scope) {
+    if(snapshot.properties().isEmpty()) throw new KlabStorageException("Missing full captured observation properties");
+    var instance=restoreObservationProperties(org.neo4j.driver.Values.value(snapshot.properties()),scope);
+    instance.setGeometry(Geometry.create(snapshot.geometry()));
+    if(snapshot.perceivedGeometry()!=null) instance.setPerceivedGeometry(Geometry.create(snapshot.perceivedGeometry()));
+    return instance;
+  }
+
   private void restoreObservationMetadata(Value node, ObservationImpl observation) {
     restoreMetadata(node, observation.getMetadata());
     // Compatibility with observations stored before metadata received its own serialized field.
-    node.asNode()
-        .asMap()
+    node.asMap()
         .forEach(
             (key, value) -> {
               if (!OBSERVATION_PROPERTIES.contains(key)) {

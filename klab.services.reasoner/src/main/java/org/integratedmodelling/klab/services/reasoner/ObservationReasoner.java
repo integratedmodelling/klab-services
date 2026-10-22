@@ -256,6 +256,8 @@ public class ObservationReasoner {
     String last = null;
     boolean yielded = false;
     if (strategy.getPlan() == null) throw new IllegalArgumentException("Missing plan");
+    if (strategy.getPlan().getSteps().stream().anyMatch(s -> s instanceof ContextPlan))
+      return lowerSingularContext(strategy, result, variables, scope);
     for (var step : strategy.getPlan().getSteps()) {
       if (yielded) throw new IllegalArgumentException("Steps after terminal result");
       if (step instanceof GraphProducer producer) {
@@ -366,6 +368,68 @@ public class ObservationReasoner {
               Map.of("source", operations.get(0).getId(), "target", operations.get(1).getId())))
         throw new IllegalArgumentException("Connection requires resolve endpoints then observe with source and target inputs");
     }
+    return result;
+  }
+
+  /** First scoped capability: reference the actual current context, one native result, no mapping. */
+  private ObservationStrategy lowerSingularContext(KimObservationStrategy strategy,
+      ObservationStrategyImpl result, Map<String, Object> variables, ContextScope scope) {
+    var steps = strategy.getPlan().getSteps();
+    if (strategy.getRank() < 1 || steps.size() != 3
+        || !(steps.get(0) instanceof GraphReference reference)
+        || reference.getObservation() == null
+        || !"context".equals(name(reference.getObservation().getSpelling()))
+        || reference.getName() == null
+        || !(steps.get(1) instanceof ContextPlan block)
+        || block.getContextGraph() == null
+        || !reference.getName().equals(block.getContextGraph().getName())
+        || block.getVariable() == null || block.getVariable().isBlank()
+        || Set.of("this", "context").contains(name(block.getVariable()))
+        || block.getName() == null || block.getName().isBlank()
+        || reference.getName().isBlank() || reference.getName().equals(block.getName())
+        || !(steps.get(2) instanceof PlanYield outerYield)
+        || !block.getName().equals(outerYield.getGraph().getName()))
+      throw new UnsupportedOperationException("Expected Tier-1 reference current context, one block and yield");
+    var body = block.getBody() == null ? List.<PlanStep>of() : block.getBody().getSteps();
+    if (body.size() != 2 || !(body.getFirst() instanceof GraphProducer producer)
+        || producer.getMode() != ProducerMode.OBSERVE
+        || producer.getContext() == null
+        || !name(block.getVariable()).equals(name(producer.getContext().getSpelling()))
+        || producer.getFallback() != null || !producer.getInputs().isEmpty()
+        || producer.getName() == null || !(body.getLast() instanceof PlanYield innerYield)
+        || !producer.getName().equals(innerYield.getGraph().getName()))
+      throw new UnsupportedOperationException("Expected one explicitly bound native child and yield");
+    var context = scope.getContextObservation();
+    var requested = (Observable) variables.get("this");
+    var child = target(producer.getTarget(), variables, scope);
+    if (!SingularContextBinding.eligible(context) || !child.is(SemanticType.QUALITY)
+        || child.getContextualization() != Contextualization.QUANTIFICATION
+        || requested.getContextualization() != child.getContextualization()
+        || !Objects.equals(requested.getUrn(), child.getUrn()))
+      throw new UnsupportedOperationException("Binding requires a committed singular context and identical native quality result");
+    // Only the production OWL clause proof can authorize this route. No containment shortcut.
+    if (!(reasoner instanceof ReasonerService service))
+      throw new UnsupportedOperationException("Native context proof is unavailable");
+    long revision = service.knowledgeRevision();
+    var clauses = new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(service.owl());
+    if (clauses.bearerConstraints(child.asConcept()).isEmpty()
+        || clauses.clauseCompatibility(child.asConcept(), SemanticRole.INHERENT,
+            context.getObservable().asConcept()) !=
+              org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport.Compatibility.COMPATIBLE)
+      throw new IllegalArgumentException("Child has no proven compatible native bearer");
+    var capabilities = service.capabilities(scope);
+    if (capabilities == null || capabilities.getServiceId() == null || revision < 0
+        || capabilities.getKnowledgeRevision() != revision)
+      throw new IllegalArgumentException("Native proof semantic revision changed or is unavailable");
+    var binding = new SingularContextBinding(context.getId(), context.getUrn(),
+        context.getObservable().getUrn(), Geometry.forTransport(context.getGeometry()).encode(),
+        child.getUrn(), capabilities.getServiceId(), revision);
+    var operation = new ObservationStrategyImpl.OperationImpl();
+    operation.setType(ObservationStrategy.Operation.Type.valueOf(producer.getMode().name()));
+    operation.setObservable(child);
+    operation.setId(block.getName());
+    result.getOperations().add(operation);
+    result.setContextBinding(binding);
     return result;
   }
 

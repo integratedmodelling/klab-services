@@ -193,7 +193,7 @@ public class ResolverService extends BaseService implements Resolver {
     // error-free resolution must not undo instantiation, even if discovery did not run or
     // candidate models contributed insufficient coverage. Characterization has a stricter
     // no-model contract; neither case suppresses reported errors or exceptional completion.
-    return (acknowledge || (characterize && noModel))
+    return (acknowledge || ((characterize || observable.isOptional()) && noModel))
         && !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(notifications)
         ? Dataflow.noModel(notifications) : Dataflow.empty(notifications);
   }

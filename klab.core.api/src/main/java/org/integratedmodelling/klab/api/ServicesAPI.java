@@ -260,6 +260,7 @@ public interface ServicesAPI {
      * @produces {@link Observable}
      */
     String RESOLVE_OBSERVABLE = API_BASE + "/resolve/observable";
+    String DECLARE_OBSERVABLE = API_BASE + "/declare/observable";
 
     String SEMANTIC_SEARCH = API_BASE + "/semanticSearch";
     String VALIDATE_DOCUMENT = API_BASE + "/validate/document";

@@ -170,6 +170,11 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     return Map.copyOf(result);
   }
 
+  @Override
+  public Observable declareObservable(org.integratedmodelling.klab.api.lang.kim.KimObservable syntax) {
+    return client.postRequired(ServicesAPI.REASONER.DECLARE_OBSERVABLE, syntax, Observable.class);
+  }
+
   public Observable resolveObservableInternal(String definition) {
     return client.postRequired(
         ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);

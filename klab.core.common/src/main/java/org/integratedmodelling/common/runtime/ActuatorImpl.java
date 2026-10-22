@@ -75,6 +75,9 @@ public class ActuatorImpl implements Actuator {
   public void setComputationConstraints(java.util.Map<Integer, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>> value) {
     computationConstraints = value == null ? new java.util.HashMap<>() : value;
   }
+  private org.integratedmodelling.klab.api.knowledge.SingularContextBinding contextBinding;
+  public org.integratedmodelling.klab.api.knowledge.SingularContextBinding getContextBinding() { return contextBinding; }
+  public void setContextBinding(org.integratedmodelling.klab.api.knowledge.SingularContextBinding value) { contextBinding = value; }
   private String strategyUrn;
   private List<Actuator> children = new ArrayList<>();
   private List<ServiceCall> computation = new ArrayList<>();

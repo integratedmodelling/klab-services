@@ -48,6 +48,7 @@ public class ResolutionCompiler {
   private Graph<RuntimeAsset, DefaultEdge> resolutionCache =
       new DefaultDirectedGraph<>(DefaultEdge.class);
   private final ResolverService resolver;
+  private final java.util.Set<String> activeContextBindings = new java.util.HashSet<>();
   private int modelQueries;
   private int matchedModels;
 
@@ -71,6 +72,7 @@ public class ResolutionCompiler {
    * @return
    */
   public ResolutionGraph resolve(Observation observation, ContextScope scope) {
+    if (scope.isInterrupted()) return ResolutionGraph.empty();
     var contextGraph = ResolverService.getResolutionGraph(scope);
     if (contextGraph == null) {
       throw new KlabIllegalStateException(
@@ -287,6 +289,37 @@ public class ResolutionCompiler {
       ContextScope scope,
       Observation explainedObservation) {
 
+    var binding = observationStrategy.getContextBinding();
+    if (scope.isInterrupted()) return ResolutionGraph.empty();
+    if (binding == null) return resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation);
+    if (observationStrategy.getRank() < 1 || observationStrategy.getOperations().size() != 1
+        || observationStrategy.getOperations().getFirst().getType() != ObservationStrategy.Operation.Type.OBSERVE
+        || explainedObservation == null
+        || !java.util.Objects.equals(binding.childObservable(), explainedObservation.getObservable().getUrn()))
+      return ResolutionGraph.empty();
+    String key = binding.contextId() + "|" + binding.childObservable() + "|" + observationStrategy.getUrn();
+    if (activeContextBindings.size() >= 32 || !activeContextBindings.add(key)) {
+      scope.warn("Recursive singular binding made no progress: " + key);
+      return ResolutionGraph.empty();
+    }
+    try {
+      binding.require(scope, observationStrategy.getOperations().getFirst().getObservable());
+      if (!java.util.Objects.equals(binding.contextSupport(), Geometry.forTransport(scaleToCover).encode())
+          || explainedObservation.getParentId() > 0 && explainedObservation.getParentId() != binding.contextId())
+        return ResolutionGraph.empty();
+      var result = resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation);
+      binding.require(scope, observationStrategy.getOperations().getFirst().getObservable());
+      return scope.isInterrupted() ? ResolutionGraph.empty() : result;
+    } catch (IllegalStateException invalidBinding) {
+      scope.warn(invalidBinding.getMessage());
+      return ResolutionGraph.empty();
+    } finally {
+      activeContextBindings.remove(key);
+    }
+  }
+
+  private ResolutionGraph resolveStrategyBody(ObservationStrategy observationStrategy,
+      Scale scaleToCover, ResolutionGraph graph, ContextScope scope, Observation explainedObservation) {
     var ret = graph.createChild(observationStrategy, scaleToCover);
     Map<String, ResolutionGraph> produced = new LinkedHashMap<>();
     // Named ports may request the same collective (e.g. both ends of a connection).
@@ -296,6 +329,7 @@ public class ResolutionCompiler {
         observationStrategy.getOperations().stream().allMatch(o -> o.getId() != null);
 
     for (var operation : observationStrategy.getOperations()) {
+      if (scope.isInterrupted()) return ResolutionGraph.empty();
 
       switch (operation.getType()) {
         case RESOLVE -> {

@@ -2855,6 +2855,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("declareConcept", new Class<?>[] { KimConcept.class }, new Object[] { conceptDeclaration });
   requireInitializedKnowledge();
+    // Syntax substitution invalidates cached definitions. Normalize a detached tree before
+    // canonical lookup; never finalize the caller's frozen preparation payload in place.
+    if (conceptDeclaration.getUrn() == null && conceptDeclaration instanceof KimConceptImpl syntax)
+      conceptDeclaration = syntax.mapSyntax(node -> node.finalizeDefinition());
     return declare(
         conceptDeclaration,
         this.owl.requireOntology(conceptDeclaration.getNamespace()),
@@ -2865,6 +2869,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("declareObservable", new Class<?>[] { KimObservable.class }, new Object[] { observableDeclaration });
   requireInitializedKnowledge();
+    if (observableDeclaration.getSemantics() != null
+        && observableDeclaration.getSemantics().getUrn() == null
+        && observableDeclaration instanceof KimObservableImpl syntax)
+      observableDeclaration = new KimObservableImpl(syntax, (path, node) -> node.finalizeDefinition());
     return declare(
         observableDeclaration,
         this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),

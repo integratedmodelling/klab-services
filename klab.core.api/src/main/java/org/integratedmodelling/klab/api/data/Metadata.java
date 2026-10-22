@@ -215,6 +215,9 @@ public interface Metadata extends Parameters<String> {
   /** Portable per-member classification audit records; durable details also live on CLASSIFIED edges. */
   String IM_ATTRIBUTIONS = "im:attributions";
 
+  /** Invocation-scoped member results, including reused current-view knowledge; not a closure certificate. */
+  String IM_CLASSIFICATION_MEMBER_RESULTS = "im:classification-member-results";
+
   String IM_RESOLUTION_GRAPH = "im:resolution-graph";
 
   /** Contextualization plan as a FlowChart, including the active actuator, before execution. */

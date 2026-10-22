@@ -157,6 +157,7 @@ public class DataflowCompiler {
         actuator.setResolvedGeometry(Geometry.forTransport(observation.getGeometry()));
         actuator.setRequestedSupport(Geometry.forTransport(observation.getGeometry()));
         actuator.setStrategyUrn(observationStrategy.getUrn());
+        actuator.setContextBinding(observationStrategy.getContextBinding());
         compileStrategy(actuator, observation, childCoverage, observationStrategy);
         ret.add(actuator);
       } else if (child instanceof Observable) {

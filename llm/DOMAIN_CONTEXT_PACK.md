@@ -2143,3 +2143,58 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 > `classpath:/schemas/llm/domain-context-proposal.schema.json` before semantic review. Treat any
 > proposed k.LAB syntax as unverified until it has passed the corresponding parser, adaptation, and
 > Reasoner checks.
+
+
+## Bounded singular binding capability - 2026-10-21
+
+The isolated S7a candidate implements one explicit current-context reference and one
+native quality OBSERVE child, with typed identity/revision transport and lazy Tier-1
+admission. It requires the identical result obligation and full native context support.
+Same-obligation RESOLVE, other context/result bindings, member iteration, discovery and
+composition remain unavailable. See [the capability contract](../docs/SINGULAR_CONTEXT_BINDING.md).
+
+
+## Prepared predicate-dependency expansion boundary - 2026-10-21
+
+The isolated P0 candidate freezes source/declaration/occurrence identities once and applies
+keyed completed outcomes, including nonblocking CompletionStage composition. This preserves
+positional Cartesian choices across asynchronous completion without supplying classifier
+completion certificates, member snapshots or production Resolver wiring. Generated syntax
+still requires redeclaration and eligibility validation before distance/execution. See
+[the precise boundary and remaining integration seam](../docs/PREDICATE_DEPENDENCY_EXPANSION.md).
+
+
+## Runtime classifier member results boundary - 2026-10-21
+
+The isolated P1 foundation wires immutable fresh/reused/optional-absence member invocation
+facts through production Runtime classification Activity evidence and persistence. It does
+not certify complete membership, a graph snapshot, or an expansion closure. The graph semantic
+cache generation does not advance on member-link writes; Runtime still lacks a snapshot-bound
+prerequisite completion API and Resolver continuation. See
+[the implemented path and precise missing contracts](../docs/CLASSIFIER_MEMBER_RESULTS.md).
+
+
+## Request-local classifier continuation candidate - 2026-10-21
+
+The sixth isolated slice adds an explicit Runtime prerequisite hop over one successful live
+producer and its complete owning cohort-plus-attempt overlay. It captures full native member
+inputs, complete fresh/reused outcomes and source/attempt identity; applies keyed Cartesian
+expansion; redeclares and checks canonical eligibility; then calls ordinary Resolver planning.
+Native and local input guards are checked on root commit, including all-reused classifications.
+The normal selected-parent-model loop and generic dependency execution/input fanout are still
+unwired. This is not full recursive classification, persistent reuse or outer composition.
+Earlier P0/P1 absence-of-wiring statements describe those preserved stages; see
+[the sixth capability and precise test seams](../docs/CLASSIFIER_DEPENDENCY_CONTINUATION.md).
+
+
+## Typed classifier redeclaration diagnostic/repair - seventh work in progress
+
+Actual public Reasoner declaration now normalizes invalidated root-null mapped syntax on a detached
+copy, fixing the null canonical lookup exposed by real classifier-expansion redeclaration. Normal
+native validation and eligibility remain unchanged. Generated compound qualification does not yet
+supply an automatic compound-parent subtype link; inspect builder construction rather than using
+semantic distance or global equivalence to bypass that proof. Clause fillers do not propagate
+abstract status to their head. See [the diagnostic boundary](../docs/CLASSIFIER_DEPENDENCY_CONTINUATION.md).
+The requested automatic singleton and crop/multi-result execution routes remain unimplemented.
+The owner selected independent dependency observations consumed from the graph by one final
+contextualizer, with explicit valuation inputs; do not introduce implicit aggregation or retyping.

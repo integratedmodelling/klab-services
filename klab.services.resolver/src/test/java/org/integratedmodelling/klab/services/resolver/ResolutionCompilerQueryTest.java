@@ -97,6 +97,8 @@ class ResolutionCompilerQueryTest {
     verify(compiler,never()).query(domains,scale,scope);
     verify(scope,never()).observation(any());
     verify(recursive,never()).getOperations();
+    verify(recursive,never()).getContextBinding();
+    verify(scope,never()).getObservation(org.mockito.ArgumentMatchers.anyLong());
   }
 
   @Test

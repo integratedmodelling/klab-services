@@ -1177,6 +1177,15 @@ public class RuntimeService extends BaseService
   }
 
   /** Enumerate the completed member binding, including transaction-local instantiations. */
+  /** Bounded explicit prerequisite entry point; does not admit or bind generic parent-model fanout. */
+  public java.util.concurrent.CompletionStage<ClassifierDependencyContinuation.Outcome> resolveClassifiedDependencies(
+      org.integratedmodelling.klab.api.lang.kim.DependencyExpansion.Prepared prepared,
+      Map<org.integratedmodelling.klab.api.lang.kim.DependencyExpansion.RequestIdentity, ClassifierDependencyContinuation.Prerequisite> prerequisites,
+      Geometry support, org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event event,
+      ServiceContextScope scope) {
+    return ClassifierDependencyContinuation.resolve(this,prepared,prerequisites,support,event,scope);
+  }
+
   List<Observation> classificationMembers(Observation producer, Geometry requested, ServiceContextScope scope) {
     var cohort = getCohortFor(producer.getObservable().getSemantics().singular(), scope, false);
     if (cohort == null) throw new IllegalStateException("Completed producer has no cohort");

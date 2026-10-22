@@ -26,6 +26,9 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
 class MemberClassifierExecutorTest {
+  @org.junit.jupiter.api.BeforeAll static void configureScaleFactory() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+  }
   public static class Classifier {
     Concept result;
     int failAt;
@@ -213,7 +216,9 @@ class MemberClassifierExecutorTest {
     String source = System.getProperty("classifier.generator.source");
     Assumptions.assumeTrue(source != null, "Set classifier.generator.source to test the actual generator checkout");
     var compiler = ToolProvider.getSystemJavaCompiler(); assertNotNull(compiler);
-    assertEquals(0, compiler.run(null, null, null, "-classpath", System.getProperty("surefire.test.class.path", System.getProperty("java.class.path")),
+    Path sourceRoot=Path.of(source).toAbsolutePath().getParent();
+    for (int i=0;i<4;i++) sourceRoot=sourceRoot.getParent();
+    assertEquals(0, compiler.run(null, null, null, "-sourcepath", sourceRoot.toString(), "-classpath", System.getProperty("surefire.test.class.path", System.getProperty("java.class.path")),
         "-d", temp.toString(), source));
     try (var loader = new URLClassLoader(new java.net.URL[]{temp.toUri().toURL()}, getClass().getClassLoader())) {
       var method = loader.loadClass("org.integratedmodelling.generators.library.RandomContextualizers")
@@ -228,6 +233,7 @@ class MemberClassifierExecutorTest {
       f.optionalDependency();
       assertTrue(f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope)).isEmpty());
       when(f.predicate.isAbstract()).thenReturn(false);
+      when(f.reasoner.closure(f.predicate)).thenReturn(Set.of(f.predicate));
       assertSame(f.predicate, f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope))
           .getFirst().predicate());
     }

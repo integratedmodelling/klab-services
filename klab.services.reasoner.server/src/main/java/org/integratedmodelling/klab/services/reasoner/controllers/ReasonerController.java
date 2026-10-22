@@ -214,6 +214,12 @@ public class ReasonerController {
         @ApiResponse(responseCode = "200", description = "Observable resolved successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid observable definition")
       })
+  @PostMapping(ServicesAPI.REASONER.DECLARE_OBSERVABLE)
+  public @ResponseBody Observable declareObservable(
+      @RequestBody org.integratedmodelling.klab.api.lang.kim.KimObservable syntax) {
+    return reasoner.klabService().declareObservable(syntax);
+  }
+
   @PostMapping(ServicesAPI.REASONER.RESOLVE_OBSERVABLE)
   public @ResponseBody Observable resolveObservable(
       @Parameter(description = "Observable definition") @RequestBody String definition) {

@@ -144,3 +144,13 @@ Four additional boundary files supplement the previous seven-file manifest:
 
 The eleven-file manifest and hashes are recorded in ../implementation-file-manifest.txt and ../implementation-file-sha256.json. The old seven-file manifests/hashes are historical checkpoints. The full reactor's eight previously proven baseline core-service failures were not rerun for this follow-up; the relevant geometry repository tests and runtime aggregate were rerun. No completion adapter, pending/UNKNOWN architecture, retry policy, deferred resolution, deployment or commits were added.
 Local commit authorization supersedes the earlier no-commit checkpoint statements: the independently reviewed eleven Java files and this handoff note are now approved for a local commit on the isolated branch. Logs and generated artifacts stay outside the commit. No push, publication, merge, completion adapter or UNKNOWN wiring is authorized or included. The 64-test focused and 238-test runtime evidence above is preserved.
+
+
+## P1 member-result increment (isolated candidate, 2026-10-21)
+
+The previous description of delta-only executor output is superseded for this candidate by
+executeDetailed: complete per-supplied-member invocation facts now include reused attributions
+and optional absence and are persisted with the classification Activity. The warning against
+turning deltas/booleans into closures still applies. This does not supply authoritative membership,
+snapshot-bound completion, UNKNOWN continuation, or Resolver integration. See
+[the exact current boundary](../docs/CLASSIFIER_MEMBER_RESULTS.md).

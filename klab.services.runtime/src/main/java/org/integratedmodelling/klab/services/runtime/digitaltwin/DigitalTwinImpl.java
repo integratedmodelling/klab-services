@@ -333,6 +333,53 @@ public class DigitalTwinImpl implements DigitalTwin {
       return proxy;
     }
 
+    /** Canonicalize the same detached getter graph exposed to classifier code, including payloads. */
+    static String fingerprint(Observation observation) {
+      return fingerprintValue(of(observation),new IdentityHashMap<>());
+    }
+    private static String fingerprintValue(Object value,IdentityHashMap<Object,Integer> seen) {
+      if(value==null) return "null";
+      if(value instanceof String || value instanceof Number || value instanceof Boolean
+          || value instanceof Character || value instanceof Enum<?> || value instanceof Class<?>
+          || value instanceof java.net.URI || value instanceof java.net.URL || value instanceof UUID
+          || value instanceof java.time.temporal.TemporalAccessor || value instanceof java.time.Duration
+          || value instanceof java.time.Period) return value.getClass().getName()+":"+value.toString().length()+":"+value;
+      if(seen.containsKey(value)) return "ref:"+seen.get(value);
+      seen.put(value,seen.size());
+      if(value instanceof Geometry geometry) return "geometry:"+geometry.encode()+":"+fingerprintValue(geometry.getMetadata(),seen);
+      if(value instanceof Date date) return "date:"+date.getTime();
+      if(value instanceof Data.ShardingStrategy strategy) return "sharding:"+org.integratedmodelling.common.utils.Utils.Json.asString(strategy);
+      if(value instanceof org.integratedmodelling.klab.api.knowledge.Urn urn)
+        return "urn:"+urn+":"+fingerprintValue(urn.getParameters(),seen);
+      if(value instanceof Map<?,?> map) {
+        var entries=new TreeMap<String,Object>();
+        map.forEach((key,item)->entries.put(fingerprintValue(key,new IdentityHashMap<>()),item));
+        var result=new StringBuilder("map{");entries.forEach((key,item)->result.append(key).append('=').append(fingerprintValue(item,seen)).append(';'));
+        result.append('}');
+        if(value instanceof org.integratedmodelling.klab.api.collections.Parameters<?> parameters)
+          result.append("unnamed:").append(fingerprintValue(parameters.getUnnamedKeys(),seen));
+        if(value instanceof org.integratedmodelling.klab.api.collections.impl.ParametersImpl<?> parameters)
+          result.append("templates:").append(fingerprintValue(parameters.getTemplateVariables(),seen));
+        return result.toString();
+      }
+      if(value instanceof Collection<?> items) {
+        var result=new StringBuilder("collection[");for(var item:items)result.append(fingerprintValue(item,seen)).append(';');return result.append(']').toString();
+      }
+      if(value.getClass().isArray()) {
+        var result=new StringBuilder("array[");for(int i=0;i<java.lang.reflect.Array.getLength(value);i++)result.append(fingerprintValue(java.lang.reflect.Array.get(value,i),seen)).append(';');return result.append(']').toString();
+      }
+      if(java.lang.reflect.Proxy.isProxyClass(value.getClass())
+          && java.lang.reflect.Proxy.getInvocationHandler(value) instanceof ObservationReadView view) {
+        var fields=new TreeMap<String,Object>();view.values.forEach((method,item)->{
+          // A durable observation's transport wrapper has a fresh transient identity on each read.
+          if(!(view.source instanceof Observation o && o.getId()>0 && method.getName().equals("getTransientId")))
+            fields.put(method.toGenericString(),item);
+        });
+        return "bean:"+fingerprintValue(fields,seen);
+      }
+      throw new UnsupportedOperationException("No classification input fingerprint for "+value.getClass());
+    }
+
     private static boolean readable(String name) {
       return name.startsWith("get") || name.startsWith("is") || name.startsWith("has")
           || Set.of("name", "identity", "semantics", "geometry", "metadata", "empty",
@@ -420,6 +467,90 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
     private Map<Concept, Scale> cohortGeometries = new HashMap<>();
     private List<Runnable> beforeCommitActions = new ArrayList<>();
+    private List<KnowledgeGraph.ClassificationReadSet> classificationReadGuards = new ArrayList<>();
+    private List<Runnable> classificationLocalGuards = new ArrayList<>();
+    private long[] classificationMutationStamp = new long[]{0};
+    public long classificationMutationStamp() { synchronized(graph) { requireOpen(); return classificationMutationStamp[0]; } }
+
+
+    public void guardClassificationOverlay(Cohort cohort, Observation producer, List<Observation> persisted, List<String> expected) {
+      synchronized(graph) {
+        requireOpen();var frozen=List.copyOf(expected);
+        classificationLocalGuards.add(()->{
+          if(!classificationOverlay(cohort,producer,persisted).state().equals(frozen))
+            throw new IllegalStateException("Classification local input or producer evidence changed");
+        });
+      }
+    }
+
+
+    public record ClassificationOverlay(List<Observation> members, List<String> state, List<String> rawState) {
+      public ClassificationOverlay { members=List.copyOf(members);state=List.copyOf(state);rawState=List.copyOf(rawState); }
+    }
+
+    /** Fast local-only capture. Never invoke services or await work while holding this monitor. */
+    public ClassificationOverlay classificationOverlay(Cohort cohort, Observation producer) {
+      return classificationOverlay(cohort,producer,List.of());
+    }
+    public ClassificationOverlay classificationOverlay(Cohort cohort, Observation producer, List<Observation> persisted) {
+      synchronized(graph) {
+        if(rootAttempt().attemptState==AttemptState.FAILED || rootAttempt().attemptState==AttemptState.COMMITTED)
+          throw new IllegalStateException("Classification attempt is no longer live");
+        var members=new ArrayList<Observation>();var state=new ArrayList<String>();var rawState=new ArrayList<String>();
+        var originals=new LinkedHashMap<String,Observation>();
+        for(var baseline:persisted) {
+          var member=(Observation)checkPresentAsset(baseline);
+          originals.put("id:"+member.getId(),member);
+        }
+        var actualCohort=checkPresentAsset(cohort);
+        if(graph.containsVertex(actualCohort)) for(var edge:graph.outgoingEdgesOf(actualCohort))
+          if(edge.relationship==GraphModel.Relationship.HAS_MEMBER && graph.getEdgeTarget(edge) instanceof Observation member)
+            originals.put(member.getId()>0?"id:"+member.getId():"transient:"+member.getTransientId(),member);
+        for(var member:originals.values()) {
+          var view=readObservation(member);members.add(view);
+          rawState.add("payload:"+ObservationReadView.fingerprint(member));
+          state.add("payload:"+ObservationReadView.fingerprint(member)+":"+ObservationReadView.fingerprint(view));
+          rawState.add((member.getId()>0?"id:"+member.getId():"transient:"+member.getTransientId())+":"+member.getObservable().getUrn()+":"+member.getGeometry().encode());
+          state.add((member.getId()>0?"id:"+member.getId():"transient:"+member.getTransientId())+":"+member.getObservable().getUrn()+":"+view.getObservable().getUrn()+":"+member.getGeometry().encode());
+        }
+        state.add("producerPayload:"+ObservationReadView.fingerprint(producer));
+        rawState.add("producerPayload:"+ObservationReadView.fingerprint(producer));
+        state.add("producerIdentity:"+producer.getTransientId()+":"+producer.getId()+":"+producer.getObservable().getUrn()+":"+producer.getGeometry().encode());
+        for(var link:incoming(producer)) if(link.source() instanceof Activity a
+            && link.type()==GraphModel.Relationship.forContextualization(producer.getObservable().getContextualization())) {
+          var witness="producer:"+a.getTransientId()+":"+a.getType()+":"+a.getOutcome()+":"+a.getMetadata().get(Metadata.IM_EXECUTION_GEOMETRY);
+          state.add(witness);rawState.add(witness);
+        }
+        for(var link:incoming(producer)) if(link.type()==GraphModel.Relationship.HAS_CHILD) {
+          var witness="producerContext:"+link.source().getId();state.add(witness);rawState.add(witness);
+        }
+        for(var link:outgoing(producer)) if(link.type()==GraphModel.Relationship.CONTRIBUTED_TO) {
+          var witness="producerCohort:"+link.target().getId();state.add(witness);rawState.add(witness);
+        }
+        rawState.add("producerIdentity:"+producer.getTransientId()+":"+producer.getId()+":"+producer.getObservable().getUrn()+":"+producer.getGeometry().encode());
+        Collections.sort(state);Collections.sort(rawState);
+        return new ClassificationOverlay(members,state,rawState);
+      }
+    }
+
+    /** Accept only the expected projected snapshot, then atomically record this hop's own effects. */
+    public ClassificationOverlay stageClassificationSnapshot(
+        List<MemberClassifierExecutor.PendingAttribution> pending, ContextScope execution,
+        Cohort cohort, Observation producer, List<Observation> persisted, List<String> expected) {
+      synchronized(graph) {
+        requireOpen();
+        if(!classificationOverlay(cohort,producer,persisted).state().equals(expected))
+          throw new IllegalStateException("Classification projected input changed");
+        stageAttributions(pending,execution);
+        return classificationOverlay(cohort,producer,persisted);
+      }
+    }
+
+    /** Guards run on the exact native root-commit transaction, before any root writes. */
+    public void guardClassificationReadSet(KnowledgeGraph.ClassificationReadSet readSet) {
+      synchronized(graph) { requireOpen(); classificationReadGuards.add(readSet); }
+    }
+
     private List<Runnable> afterCommitActions = new ArrayList<>();
     private List<Runnable> rollbackActions = new ArrayList<>();
     private List<org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal> schedulerJournal =
@@ -679,6 +810,9 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.cohortGeometries = parent.cohortGeometries;
       this.contextualizers = parent.contextualizers;
       this.beforeCommitActions = parent.beforeCommitActions;
+      this.classificationReadGuards = parent.classificationReadGuards;
+      this.classificationLocalGuards = parent.classificationLocalGuards;
+      this.classificationMutationStamp = parent.classificationMutationStamp;
       this.afterCommitActions = parent.afterCommitActions;
       this.rollbackActions = parent.rollbackActions;
       this.schedulerJournal = parent.schedulerJournal;
@@ -803,6 +937,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     public void add(RuntimeAsset asset) {
       synchronized (graph) {
         requireOpen();
+        classificationMutationStamp[0]++;
         asset = checkPresentAsset(asset);
         graph.addVertex(asset);
         added.add(asset);
@@ -817,6 +952,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         Object... data) {
       synchronized (graph) {
         requireOpen();
+        classificationMutationStamp[0]++;
         var source = checkPresentAsset(sourceOrig);
         var destination = checkPresentAsset(destinationOrig);
 
@@ -845,6 +981,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     public void update(RuntimeAsset asset) {
       synchronized (graph) {
         requireOpen();
+        classificationMutationStamp[0]++;
         modified.add(checkPresentAsset(asset));
       }
     }
@@ -855,6 +992,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       synchronized (graph) {
         try {
           stageValidatedAttributions(pending, executionScope);
+          classificationMutationStamp[0]++;
         } catch (RuntimeException failure) {
           fail(failure);
           throw failure;
@@ -1023,6 +1161,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         var root = rootAttempt();
         if (root.attemptState == AttemptState.FAILED) return -1;
         requireOpen();
+        classificationMutationStamp[0]++;
         if (parent != null) return commitOpen();
         attemptState = AttemptState.COMMITTING;
         try {
@@ -1083,6 +1222,9 @@ public class DigitalTwinImpl implements DigitalTwin {
                       .map(entry -> Utils.Json.asString(entry.committed(commitId)))
                       .toList());
         }
+        // Local input validation precedes our own lifecycle metadata mutations. Root commit owns
+        // the graph monitor throughout this check, native validation, durable close and publication.
+        for(var guard:List.copyOf(classificationLocalGuards)) guard.run();
         prepareObservationsForStorage(commitId);
         var activeObserver = scope.getObserver();
         var kgTransaction = knowledgeGraph.createTransaction(scope);
@@ -1090,6 +1232,13 @@ public class DigitalTwinImpl implements DigitalTwin {
         var linked = new ArrayList<Triple<Long, Long, String>>();
         try (kgTransaction) {
           try {
+            if(!classificationReadGuards.isEmpty()) {
+              var lockIds=new TreeSet<Long>();
+              for(var read:classificationReadGuards) for(var member:read.members()) lockIds.add(member.id());
+              for(var asset:modified) if(asset instanceof Observation observation && observation.getId()>0) lockIds.add(observation.getId());
+              kgTransaction.lockClassificationInputs(lockIds);
+              for(var read:List.copyOf(classificationReadGuards)) kgTransaction.validateClassificationMembers(read);
+            }
             registerCohortUpdates();
 
             synchronized (graph) {
@@ -1132,7 +1281,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                 } else kgTransaction.update(asset);
               }
 
-              for (var edge : graph.edgeSet()) {
+              for (var edge : graph.edgeSet().stream().sorted(Comparator.comparingInt(edge -> edge.relationship==GraphModel.Relationship.HAS_CHILD?0:1)).toList()) {
                 var source = staged(graph.getEdgeSource(edge));
                 var target = staged(graph.getEdgeTarget(edge));
                 //              if (trivial

@@ -212,8 +212,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           var metadata = sanitizeMetadata(activity.getMetadata());
           ret.putAll(metadata);
           var auditMetadata = new HashMap<String, Object>(metadata);
-          for (var key : java.util.List.of(Metadata.IM_ATTRIBUTIONS, Metadata.IM_RESOLUTION_GRAPH, Metadata.IM_DATAFLOW_GRAPH)) {
-            if (activity.getMetadata().get(key) != null) auditMetadata.put(key, activity.getMetadata().get(key));
+          for (var key : java.util.List.of(Metadata.IM_ATTRIBUTIONS, Metadata.IM_RESOLUTION_GRAPH, Metadata.IM_DATAFLOW_GRAPH, Metadata.IM_CLASSIFICATION_MEMBER_RESULTS)) {
+            var value = activity.getMetadata().get(key);
+            // Metadata wraps nested maps as Parameters; persist invocation evidence as plain
+            // JSON entries, rather than serializing Parameters implementation fields.
+            if (Metadata.IM_CLASSIFICATION_MEMBER_RESULTS.equals(key) && value instanceof Map<?, ?> map)
+              value = new java.util.LinkedHashMap<>(map);
+            if (value != null) auditMetadata.put(key, value);
           }
           ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(auditMetadata));
           ret.put(GraphModel.Fields.PARENT_ID, activity.getParentId());

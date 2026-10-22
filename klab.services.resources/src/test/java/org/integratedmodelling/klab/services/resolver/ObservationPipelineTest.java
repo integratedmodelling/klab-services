@@ -480,4 +480,14 @@ class ObservationPipelineTest {
     }
     return dataflow;
   }
+  @Test void optionalQualityAbsenceIsDistinctFromRequiredAbsenceAndPlanningFailure() {
+    var quality=(ObservableImpl)observable(SemanticType.QUALITY,false);quality.setDescriptionType(Contextualization.QUANTIFICATION);quality.setOptional(true);
+    assertEquals(Dataflow.ResolutionOutcome.NO_MODEL,ResolverService.unresolvedOutcome(quality,true,List.of()).getResolutionOutcome());
+    quality.setOptional(false);
+    assertEquals(Dataflow.ResolutionOutcome.FAILED,ResolverService.unresolvedOutcome(quality,true,List.of()).getResolutionOutcome());
+    quality.setOptional(true);
+    assertEquals(Dataflow.ResolutionOutcome.FAILED,ResolverService.unresolvedOutcome(quality,false,List.of()).getResolutionOutcome());
+    assertEquals(Dataflow.ResolutionOutcome.FAILED,ResolverService.unresolvedOutcome(quality,true,List.of(org.integratedmodelling.klab.api.services.runtime.Notification.error("admission failed"))).getResolutionOutcome());
+  }
+
 }

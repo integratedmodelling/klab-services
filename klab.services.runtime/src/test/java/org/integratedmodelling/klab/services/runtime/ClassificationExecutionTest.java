@@ -22,6 +22,11 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.junit.jupiter.api.Test;
 
 class ClassificationExecutionTest {
+  @org.junit.jupiter.api.BeforeAll
+  static void configureScaleFactory() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+  }
+
   @Test
   void scopeCacheReloadsAfterAnotherContextCommitsSemantics() throws Exception {
     var scope = mock(ServiceContextScope.class);
@@ -59,7 +64,24 @@ class ClassificationExecutionTest {
   }
 
   private void classificationLifecycle(boolean failCharacterization) throws Exception {
+    classificationLifecycle(failCharacterization,false);
+  }
+  @Test void actualRuntimePreservesReusedMemberResultsWithoutNewEffects() throws Exception {
+    classificationLifecycle(false,true);
+  }
+  @Test void generationDriftDuringCharacterizationCannotPublishResultEvidence() throws Exception {
+    classificationLifecycle(false,false,true);
+  }
+  private void classificationLifecycle(boolean failCharacterization,boolean reuse) throws Exception {
+    classificationLifecycle(failCharacterization,reuse,false);
+  }
+  private void classificationLifecycle(boolean failCharacterization,boolean reuse,boolean generationDrift) throws Exception {
     var f = new MemberClassifierExecutorTest.Fixture();
+    var revision=new java.util.concurrent.atomic.AtomicLong(3);
+    if(generationDrift){
+      var caps=mock(Reasoner.Capabilities.class);when(caps.getServiceId()).thenReturn("reasoner");
+      when(caps.getKnowledgeRevision()).thenAnswer(i->revision.get());when(f.reasoner.capabilities(any())).thenReturn(caps);
+    }
     var scope = mock(ServiceContextScope.class);
     var runtime = mock(RuntimeService.class);
     var twin = mock(DigitalTwinImpl.class);
@@ -93,6 +115,7 @@ class ClassificationExecutionTest {
     implementation.mainClassInstance = f.classifier;
     when(registry.getFunctionDescriptor(any(ServiceCall.class), any(org.integratedmodelling.klab.api.scope.Scope.class))).thenReturn(List.of(descriptor));
     when(registry.implementation(descriptor)).thenReturn(implementation);
+    if (reuse) when(f.reasoner.directTraits(any(Observable.class))).thenReturn(List.of(f.result));
     var parent = new ObservationImpl();
     parent.setId(-10);
     parent.setGeometry(Geometry.UNIVERSAL);
@@ -117,6 +140,7 @@ class ClassificationExecutionTest {
     f.actuator.getChildren().add(reference);
     root.getChildren().add(f.actuator);
     when(runtime.classificationMembers(eq(producer), any(), any())).thenReturn(List.of(f.member));
+    var executionFailure = new java.util.concurrent.atomic.AtomicReference<Throwable>();
     var rootTransaction =
         twin
         .new TransactionImpl(
@@ -136,6 +160,7 @@ class ClassificationExecutionTest {
               when(executing.commit()).thenAnswer(ignored -> tx.commit());
               doAnswer(
                       failure -> {
+                        executionFailure.set(failure.getArgument(0));
                         tx.fail(failure.getArgument(0));
                         return null;
                       })
@@ -152,8 +177,9 @@ class ClassificationExecutionTest {
     verify(store, never()).resolveWith(isNull(), any());
     // Execute the compiled parent directly: its empty computation must not skip its UPDATE child.
     var executor = plan.new ExecutorImpl(root);
-    if (failCharacterization) {
-      doThrow(new IllegalStateException("Characterization failed"))
+    if(generationDrift) doAnswer(i->{revision.incrementAndGet();return null;}).when(runtime).characterizePending(anyList(),any(ServiceContextScope.class));
+    if (failCharacterization || generationDrift) {
+      if(failCharacterization) doThrow(new IllegalStateException("Characterization failed"))
           .when(runtime)
           .characterizePending(anyList(), any(ServiceContextScope.class));
       assertFalse(executor.run(Geometry.UNIVERSAL, f.event, scope));
@@ -161,9 +187,23 @@ class ClassificationExecutionTest {
       assertFalse(
           rootTransaction.assets().stream()
               .anyMatch(asset -> asset instanceof Observation o && o.getObservable() == after));
+      assertTrue(rootTransaction.assets().stream().filter(Activity.class::isInstance).map(Activity.class::cast)
+          .noneMatch(a->a.getMetadata().containsKey(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS)));
       return;
     }
-    assertTrue(executor.run(Geometry.UNIVERSAL, f.event, scope));
+    assertTrue(executor.run(Geometry.UNIVERSAL, f.event, scope), ()->String.valueOf(executionFailure.get()));
+    var classification=rootTransaction.assets().stream().filter(Activity.class::isInstance).map(Activity.class::cast)
+        .filter(a->a.getType()==Activity.Type.CLASSIFICATION).findFirst().orElseThrow();
+    var evidence=(Map<?,?>)classification.getMetadata().get(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS);
+    assertNotNull(evidence);assertEquals(rootTransaction.getId(),evidence.get("rootAttempt"));
+    var memberResults=(List<?>)evidence.get("memberResults");assertEquals(1,memberResults.size());
+    var memberResult=(Map<?,?>)memberResults.getFirst();
+    assertEquals(reuse?"EXISTING":"CLASSIFIER",memberResult.get("origin"));assertEquals(List.of("test:Concrete"),memberResult.get("concretePredicates"));
+    if(reuse){
+      assertEquals(0,f.classifier.calls.get());verify(runtime).characterizePending(eq(List.of()),any());
+      assertFalse(rootTransaction.assets().stream().anyMatch(asset->asset instanceof Observation o&&o.getObservable()==after));
+      return;
+    }
     verify(runtime)
         .characterizePending(
             argThat(pending -> pending.size() == 1 && pending.getFirst().member().getId() == 42),

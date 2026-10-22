@@ -88,6 +88,9 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
    */
   List<Operation> getOperations();
 
+  /** Explicit native singular binding; null for ordinary flat plans. */
+  default SingularContextBinding getContextBinding() { return null; }
+
   /**
    * The compiled Markdown/AsciiDoc documentation relative to the observable being resolved by this
    * strategy, ready for inclusion in documentation and provenance. This is obtained in each

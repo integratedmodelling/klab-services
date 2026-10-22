@@ -2067,3 +2067,22 @@ models. Reuse resolution idempotency/reuse, verify bounded distinct work as well
 duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
 contracts, actual source support, proposed integration and open questions. No
 consequence runtime is implemented by this declaration/validation slice.
+
+
+## Bounded singular binding capability - 2026-10-21
+
+The isolated S7a candidate implements one explicit current-context reference and one
+native quality OBSERVE child, with typed identity/revision transport and lazy Tier-1
+admission. It requires the identical result obligation and full native context support.
+Same-obligation RESOLVE, other context/result bindings, member iteration, discovery and
+composition remain unavailable. See [the capability contract](SINGULAR_CONTEXT_BINDING.md).
+
+
+## Prepared predicate-dependency expansion boundary - 2026-10-21
+
+The isolated P0 candidate freezes source/declaration/occurrence identities once and applies
+keyed completed outcomes, including nonblocking CompletionStage composition. This preserves
+positional Cartesian choices across asynchronous completion without supplying classifier
+completion certificates, member snapshots or production Resolver wiring. Generated syntax
+still requires redeclaration and eligibility validation before distance/execution. See
+[the precise boundary and remaining integration seam](PREDICATE_DEPENDENCY_EXPANSION.md).

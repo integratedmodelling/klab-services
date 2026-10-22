@@ -85,6 +85,41 @@ class ClassificationTransactionTest {
   ActivityImpl activity;
   DigitalTwinImpl.TransactionImpl child;
 
+  @Test void nativeReadGuardRunsOnRootCommitTransactionBeforeAnyWrites() {
+    var receipt=new KnowledgeGraph.ClassificationReadSet("context",10,List.of());
+    child.guardClassificationReadSet(receipt);
+    assertEquals(900,root.commit());
+    var order=inOrder(storage);order.verify(storage).validateClassificationMembers(receipt);order.verify(storage,atLeastOnce()).store(any());
+    verify(kg,times(1)).createTransaction(scope);
+  }
+  @Test void staleReusedReadGuardAbortsRootBeforeAssetWrites() {
+    var receipt=new KnowledgeGraph.ClassificationReadSet("context",10,List.of());
+    root.guardClassificationReadSet(receipt);
+    doThrow(new IllegalStateException("stale reused input")).when(storage).validateClassificationMembers(receipt);
+    assertEquals(-1,root.commit());verify(storage,never()).store(any());assertTrue(root.isFailed());
+  }
+  @Test void newCohortOwnershipLinkPrecedesMembershipRegardlessOfJournalInsertionOrder() {
+    var cohort=new org.integratedmodelling.common.knowledge.CohortImpl();cohort.setId(-8);
+    cohort.setObservable(pending(41,false).member().getObservable());
+    var member=pending(-2,false).member();root.link(cohort,member,GraphModel.Relationship.HAS_MEMBER);
+    root.link(RuntimeAsset.CONTEXT_ASSET,cohort,GraphModel.Relationship.HAS_CHILD);
+    var next=new java.util.concurrent.atomic.AtomicLong(2000);
+    doAnswer(i->{var asset=i.getArgument(0);if(asset instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl o)o.setId(next.incrementAndGet());
+      if(asset instanceof org.integratedmodelling.common.knowledge.CohortImpl c)c.setId(next.incrementAndGet());
+      if(asset instanceof ActivityImpl a)a.setId(next.incrementAndGet());return null;}).when(storage).store(any());
+    assertTrue(root.commit()>0);
+    var links=mockingDetails(storage).getInvocations().stream().filter(call->call.getMethod().getName().equals("link")).toList();
+    int owner=-1,membership=-1;
+    for(int n=0;n<links.size();n++){var args=links.get(n).getArguments();if(args[0]==RuntimeAsset.CONTEXT_ASSET&&args[1]==cohort)owner=n;if(args[0]==cohort&&args[1]==member)membership=n;}
+    assertTrue(owner>=0&&membership>owner);
+  }
+  @Test void rootLocksGlobalUnionAcrossReadSetsAndSemanticWritesBeforeValidation() {
+    root.guardClassificationReadSet(new KnowledgeGraph.ClassificationReadSet("context",10,List.of(new KnowledgeGraph.ClassificationMemberSnapshot(100,"before","*",0))));
+    root.guardClassificationReadSet(new KnowledgeGraph.ClassificationReadSet("context",11,List.of(new KnowledgeGraph.ClassificationMemberSnapshot(41,"before","*",0))));
+    child.stageAttributions(List.of(pending(42,false)),scope);
+    assertTrue(root.commit()>0);
+    verify(storage).lockClassificationInputs(new java.util.TreeSet<>(List.of(41L,42L,100L)));
+  }
   @BeforeEach
   void setup() throws Exception {
     twin = mock(DigitalTwinImpl.class);

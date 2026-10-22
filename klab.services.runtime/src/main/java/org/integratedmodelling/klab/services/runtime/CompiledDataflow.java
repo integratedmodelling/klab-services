@@ -317,6 +317,7 @@ public class CompiledDataflow {
    */
   public boolean compile(Actuator rootActuator) {
 
+    validateBoundContexts(rootActuator, scope);
     validateSupportedPlan(rootActuator);
     // build the observations as required
     requireObservations(rootActuator);
@@ -779,7 +780,28 @@ public class CompiledDataflow {
    *
    * @param transaction
    */
+  private void validateBoundContexts(Actuator actuator, ContextScope requested) {
+    if (actuator.getContextBinding() != null) {
+      actuator.getContextBinding().require(requested, actuator.getOperationObservable());
+      if (actuator.getRequestedSupport() == null
+          || !java.util.Objects.equals(actuator.getContextBinding().contextSupport(),
+              Geometry.forTransport(actuator.getRequestedSupport()).encode())
+          || actuator.getObservation() == null
+          || !java.util.Objects.equals(actuator.getOperationObservable().getUrn(),
+              actuator.getObservation().getObservable().getUrn())
+          || actuator.getObservation().getParentId() > 0
+              && actuator.getObservation().getParentId() != actuator.getContextBinding().contextId())
+        throw new IllegalStateException("Bound result requires the same native context and support");
+    }
+    for (var child : actuator.getChildren()) validateBoundContexts(child, requested);
+  }
+
   public boolean store(DigitalTwinImpl.TransactionImpl transaction) {
+    // Validate the complete bound subtree before staging any observations or ownership links.
+    for (var actuator : operations.keySet()) {
+      if (actuator.getContextBinding() != null)
+        validateBoundContexts(actuator, scope);
+    }
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
 
@@ -1276,6 +1298,16 @@ public class CompiledDataflow {
     public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
       var contextScope = (ServiceContextScope) scope;
+      if (scope.isInterrupted()) return false;
+      if (actuator.getContextBinding() != null) {
+        try {
+          validateBoundContexts(actuator, scope);
+          if (geometry == null || !java.util.Objects.equals(actuator.getContextBinding().contextSupport(),
+              Geometry.forTransport(geometry).encode()))
+            throw new IllegalStateException("Bound child invocation requires the full native support");
+        }
+        catch (IllegalStateException invalidBinding) { scope.error(invalidBinding.getMessage()); return false; }
+      }
       if (actuator.getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION) {
         contextScope = (ServiceContextScope) executionScope(contextScope);
         if (event.getType() == Scheduler.Event.Type.INITIALIZATION) {
@@ -1331,6 +1363,11 @@ public class CompiledDataflow {
         contextualizationScope.bindOutcomes(firstOutcome, executorConstraints.getOrDefault(executor, List.of()));
       }
 
+      if (actuator.getContextBinding() != null
+          && (scope.isInterrupted() || executionScope.isInterrupted())) {
+        ret = false;
+        failure = new java.util.concurrent.CancellationException("Bound child was cancelled");
+      }
       if (ret) {
         try {
           executionScope
@@ -1463,10 +1500,24 @@ public class CompiledDataflow {
           }
         }
         var support = actuator.getRequestedSupport() == null ? geometry : actuator.getRequestedSupport();
-        var pending = classifier.forAttempt(executionScope).execute(completed, support, event, executionScope);
+        var attemptClassifier = classifier.forAttempt(executionScope);
+        var detailed = attemptClassifier.executeDetailed(completed, support, event, executionScope);
+        var pending = detailed.pendingAttributions();
         ((DigitalTwinImpl.TransactionImpl) executionScope.getCurrentTransaction())
             .stageAttributions(pending, executionScope);
         runtimeService.characterizePending(pending, executionScope);
+        attemptClassifier.verifyGeneration(executionScope);
+        if (executionScope.isInterrupted() || executionScope.getCurrentTransaction().isFailed())
+          throw new java.util.concurrent.CancellationException("Classification stage was cancelled or failed");
+        var evidence = new LinkedHashMap<String, Object>();
+        evidence.put("version", 1);
+        evidence.put("rootAttempt", root.getId());
+        evidence.put("context", executionScope.getId());
+        evidence.put("reasonerId", detailed.reasonerId());
+        evidence.put("knowledgeRevision", detailed.knowledgeRevision());
+        evidence.put("memberResults", detailed.members().stream().map(
+            org.integratedmodelling.klab.api.services.runtime.objects.ClassificationMemberResult::metadata).toList());
+        activity.getMetadata().put(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS, evidence);
         if (executionScope.commit() < 0) throw new IllegalStateException("Classification stage failed");
         updateResults.put(key, true);
         return true;

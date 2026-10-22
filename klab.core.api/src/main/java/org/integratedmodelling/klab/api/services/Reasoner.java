@@ -113,6 +113,12 @@ public interface Reasoner extends KlabService {
    */
   Observable resolveObservable(String definition);
 
+  /** Redeclare a complete generated syntax tree, preserving units, provenance and optionality. */
+  default Observable declareObservable(org.integratedmodelling.klab.api.lang.kim.KimObservable syntax) {
+    throw new UnsupportedOperationException("Typed observable declaration is unavailable");
+  }
+
+
   /**
    * True if the candidate resolves the first observable, i.e. a candidate's description (model) can
    * make an observation of it.

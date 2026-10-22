@@ -221,6 +221,8 @@ public interface Actuator extends Serializable, RuntimeAsset {
    */
   String getStrategyUrn();
 
+  default org.integratedmodelling.klab.api.knowledge.SingularContextBinding getContextBinding() { return null; }
+
   /**
    * The actuator's geometry is a merge of the native coverage of all models downstream of the
    * actuator. Dealing with different coverages within a model is the responsibility of the runtime.
