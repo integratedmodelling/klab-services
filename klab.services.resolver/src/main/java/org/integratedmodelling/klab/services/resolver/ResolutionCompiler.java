@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -49,6 +50,12 @@ public class ResolutionCompiler {
       new DefaultDirectedGraph<>(DefaultEdge.class);
   private final ResolverService resolver;
   private final java.util.Set<String> activeContextBindings = new java.util.HashSet<>();
+  private final java.util.Set<String> activeClassifierDependencies = new java.util.HashSet<>();
+  private boolean automaticClassifiersAllowed = true;
+  private boolean strictTierZeroOnly;
+  private static final class ClassifierPhaseDeferred extends RuntimeException {
+    ClassifierPhaseDeferred() { super(null,null,false,false); }
+  }
   private int modelQueries;
   private int matchedModels;
 
@@ -230,8 +237,6 @@ public class ResolutionCompiler {
     if (query.hasCoverage()) {
       ret.addReference(query.reference(), query.coverage());
     }
-    boolean complete = false;
-
     scope =
         scope.withResolutionConstraints(
             ResolutionConstraint.of(
@@ -252,23 +257,29 @@ public class ResolutionCompiler {
       scope.warn("No observation strategy for dependency " + observation.getObservable().getUrn()
           + " (abstract=" + observation.getObservable().isAbstract() + ")");
     }
-    for (ObservationStrategy strategy : strategies) {
-
-      var strategyResolution = resolve(strategy, scaleToResolve, ret, scope, observation);
-      var cov = ret.checkCoverage(strategyResolution);
-      if (!cov.isRelevant()) {
-        continue;
+    boolean inheritedBudget = automaticClassifiersAllowed;
+    boolean inheritedStrictTier = strictTierZeroOnly;
+    try {
+      // Exhaust all precomputed rank-0 alternatives before any automatic classifier plan or
+      // rank-1 native binding can be launched. A nested target cannot expand its ancestor's budget.
+      for(int phase=0;phase<(inheritedStrictTier?1:2);phase++) {
+        strictTierZeroOnly = phase==0 || inheritedStrictTier;
+        // This singleton capability needs whole native support; it does not compose a deferred
+        // parent with already accepted partial precomputed parent results.
+        automaticClassifiersAllowed = !strictTierZeroOnly && inheritedBudget && ret.getResolvedCoverage()==0;
+        for (ObservationStrategy strategy : strategies) {
+          if(phase==0 && strategy.getRank()>0)continue;
+          var strategyResolution = resolve(strategy, scaleToResolve, ret, scope, observation);
+          var cov = ret.checkCoverage(strategyResolution);
+          if (!cov.isRelevant()) continue;
+          strategyGraphs.add(strategyResolution);
+          ret.merge(strategyResolution);
+          if (cov.isComplete()) return ret;
+        }
       }
-      strategyGraphs.add(strategyResolution);
-      ret.merge(strategyResolution);
-      if (cov.isComplete()) {
-        complete = true;
-        break;
-      }
-    }
-
-    if (complete) {
-      return ret;
+    } finally {
+      automaticClassifiersAllowed = inheritedBudget;
+      strictTierZeroOnly = inheritedStrictTier;
     }
 
     return ResolutionGraph.empty();
@@ -290,6 +301,7 @@ public class ResolutionCompiler {
       Observation explainedObservation) {
 
     var binding = observationStrategy.getContextBinding();
+    if(strictTierZeroOnly && observationStrategy.getRank()>0)return ResolutionGraph.empty();
     if (scope.isInterrupted()) return ResolutionGraph.empty();
     if (binding == null) return resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation);
     if (observationStrategy.getRank() < 1 || observationStrategy.getOperations().size() != 1
@@ -616,6 +628,8 @@ public class ResolutionCompiler {
 
       ResolutionGraph dependencyResolution;
       try {
+        if (planClassifiedDependency(model, dependency, inputs.indexOf(dependency), scaleToCover, ret, scope))
+          continue;
         var dependencyScope = scope;
         var primary = model.getObservables().getFirst();
         if (dependency.is(SemanticType.QUALITY)
@@ -643,6 +657,8 @@ public class ResolutionCompiler {
                     && dependency.getContextualization().modifiesExistingObservations()
                 ? resolveOperation(dependency, scaleToCover, dependencyGraph, dependencyScope, dependency)
                 : resolve(dependency, scaleToCover, dependencyGraph, dependencyScope);
+      } catch (ClassifierPhaseDeferred deferred) {
+        return ResolutionGraph.empty();
       } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException rejected) {
         scheduleRejected(model, ret.scheduleRequest, rejected, scope);
         return ResolutionGraph.empty();
@@ -669,6 +685,75 @@ public class ResolutionCompiler {
     }
 
     return ret;
+  }
+
+  /** Freeze and plan classifier work; this method performs no Runtime mutation or execution. */
+  private boolean planClassifiedDependency(Model model, Observable dependency, int index,
+      Scale scale, ResolutionGraph graph, ContextScope scope) {
+    var resources=scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    if(resources==null)return false;
+    String namespace=model.getNamespace();long version=-1;String fingerprint=null;
+    org.integratedmodelling.klab.api.lang.kim.KimObservable parsed;
+    if(namespace!=null && !namespace.isBlank()) {
+      var saved=resources.retrieve(namespace,org.integratedmodelling.klab.api.lang.kim.KimNamespace.class,scope);
+      if(saved==null)throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Missing selected model source");
+      var authored=saved.getStatements().stream().filter(statement->statement instanceof org.integratedmodelling.klab.api.lang.kim.KimModel
+          && Objects.equals(statement.getUrn(),model.getUrn())).map(org.integratedmodelling.klab.api.lang.kim.KimModel.class::cast).findFirst().orElseThrow();
+      if(index>=authored.getDependencies().size())return false;
+      parsed=authored.getDependencies().get(index);
+      if(!Objects.equals(parsed.getUrn(),dependency.getUrn()) || parsed.isOptional()!=dependency.isOptional())
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Selected dependency differs from saved authored occurrence");
+      version=saved.getLastUpdateTimestamp();fingerprint=org.integratedmodelling.common.utils.Utils.Json.asString(saved);
+    } else parsed=resources.declareObservable(dependency.getUrn());
+    if(!(parsed instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl implementation))return false;
+    var source=new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl(implementation);
+    var prepared=org.integratedmodelling.klab.api.lang.kim.DependencyExpansion.prepare(source,resources::declareConcept);
+    if(prepared.requests().isEmpty())return false;
+    if(!automaticClassifiersAllowed || graph.hasPartialOutputAncestor())throw new ClassifierPhaseDeferred();
+    if(namespace==null || namespace.isBlank())throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Classifier dependency continuation requires exact saved model source");
+    if(scope.getContextObservation()==null || scope.getContextObservation().getId()<=0
+        || scope.getContextObservation().getObservable().getSemantics().isCollective())
+      throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Classifier dependency requires an already observed singular native context");
+    var reasoner=scope.getService(Reasoner.class);
+    var caps=reasoner.capabilities(scope);
+    if(!(caps instanceof Reasoner.Capabilities commitment) || commitment.getKnowledgeRevision()<0)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Classifier dependency requires an accepted semantic commitment");
+    var operations=new LinkedHashMap<List<String>,OperationTarget>();
+    var plans=new ArrayList<ResolutionGraph>();
+    String recursionKey=model.getUrn()+"/"+index+"/"+scope.getContextObservation().getId()+"/"+scale.encode();
+    if(activeClassifierDependencies.size()>=64 || !activeClassifierDependencies.add(recursionKey))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Recursive classifier producer dependency: "+recursionKey);
+    try {
+    for(var request:prepared.requests()) {
+      var path=request.identity().path();
+      boolean directAttribute=dependency.is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY) && path.size()==3 && path.get(0).equals("semantics") && path.get(1).equals("traits")
+          && request.declaration().is(org.integratedmodelling.klab.api.knowledge.SemanticType.ATTRIBUTE);
+      boolean bearerAttribute=path.size()==4 && path.get(0).equals("semantics") && path.get(1).equals("inherent")
+          && (path.get(2).equals("traits") || path.get(2).equals("roles"));
+      if(!directAttribute && !bearerAttribute)
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Unsupported classifier dependency occurrence "+path);
+      var bearer=request.originalObservable().getSemantics().getInherent();
+      if(bearer==null || bearer.getName()==null || bearer.getObservable()!=null)
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Classifier dependency requires a named native bearer");
+      var member=resources.declareConcept(bearer.getName());
+      if(!(member instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl memberSyntax))
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Missing native member syntax");
+      var collective=memberSyntax.mapSyntax(node->{});collective.setCollective(true);collective.finalizeDefinition();
+      var predicate=(org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl)request.declaration();
+      var directive=predicate.mapSyntax(node->{});directive.setInherent(collective);directive.finalizeDefinition();
+      var syntax=new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();syntax.setSemantics(directive);
+      var declared=reasoner.declareObservable(syntax);
+      var plan=resolveOperation(declared,scale,graph,scope,dependency);
+      if(plan.isEmpty() || !(plan.target() instanceof OperationTarget target))
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Required concretizing classifier has no plan");
+      operations.put(path,target);plans.add(plan);
+    }
+    for(var plan:plans)graph.merge(plan);
+    graph.classifierDependencies.computeIfAbsent(model,ignored->new ArrayList<>()).add(new DeferredDependency(
+        source,index,dependency.getStatedName(),namespace,version,fingerprint,commitment.getKnowledgeRevision(),
+        commitment.getServiceId(),Map.copyOf(operations)));
+    return true;
+    } finally { activeClassifierDependencies.remove(recursionKey); }
   }
 
   private void scheduleRejected(Model model,
@@ -848,7 +933,7 @@ public class ResolutionCompiler {
         models.getNotifications())) throw new KlabIllegalStateException("Model discovery failed");
     modelQueries++;
     matchedModels += ret.size();
-    ret.removeIf(model -> !org.integratedmodelling.klab.runtime.language.ModelValidationGate.admits(model, scope, observable));
+    ret.removeIf(model -> !org.integratedmodelling.klab.runtime.language.ModelValidationGate.admitsPreparable(model, scope, observable));
     ret.removeIf(model -> prioritizer.semanticDistance(model) == Integer.MAX_VALUE);
     prioritizer.prepare(ret);
     ret.sort(prioritizer);

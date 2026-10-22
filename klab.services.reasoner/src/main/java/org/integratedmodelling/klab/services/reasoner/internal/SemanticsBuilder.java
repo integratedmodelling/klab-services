@@ -356,7 +356,7 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
 
   @Override
   public Observable.Builder withCurrency(String currency) {
-    return this;
+    return withCurrency(currency==null ? null : new org.integratedmodelling.klab.api.data.mediation.impl.CurrencyImpl(currency));
   }
 
   @Override

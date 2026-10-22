@@ -61,6 +61,17 @@ public interface ContextScope extends SessionScope {
    */
   DigitalTwin.Transaction getCurrentTransaction();
 
+  /** Completed expansion inventories for the current target; empty closure differs from optional absence. */
+  default java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> getDependencyFamilies(Observation modeledObservation) {
+    throw new UnsupportedOperationException("Dependency family views require an execution context");
+  }
+
+  /** Transaction-aware prerequisite inputs, in concrete branch order, for one exact family. */
+  default java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input> getDependencyInputs(Observation modeledObservation, String familyId) {
+    throw new UnsupportedOperationException("Dependency family views require an execution context");
+  }
+
+
   /**
    * Return the observer for this context. This should normally not be null even if the context is
    * not focused on an observation except at context initialization; the system should provide a

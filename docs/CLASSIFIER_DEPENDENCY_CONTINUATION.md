@@ -124,3 +124,19 @@ Native eligibility can use those links; no source model or runtime context is re
 operators, changed clauses, identity/role substitution and arbitrary data compatibility remain
 outside the rule. See [construction, authority and cache boundaries](MONOTONE_ATTRIBUTE_REFINEMENT.md).
 This is still a prerequisite rather than automatic parent-model execution or crop aggregation.
+
+
+## Ordinary selected-model continuation candidate
+
+The subsequent [bounded singleton submission increment](CLASSIFIER_DEPENDENCY_SUBMISSION.md)
+wires the saved selected-model obligation into Runtime.submit and actual producer/classifier/
+concrete dependency execution. It supersedes the earlier unimplemented-singleton status only
+within that explicit boundary; graph-family crop valuation and general fanout remain subsequent.
+
+
+## Ordinary selected-model continuation candidate
+
+The subsequent [bounded singleton submission increment](CLASSIFIER_DEPENDENCY_SUBMISSION.md)
+wires the saved selected-model obligation into Runtime.submit and actual producer/classifier/
+concrete dependency execution. It supersedes the earlier unimplemented-singleton status only
+within that explicit boundary; graph-family crop valuation and general fanout remain subsequent.

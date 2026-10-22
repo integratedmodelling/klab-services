@@ -2195,7 +2195,8 @@ native validation and eligibility remain unchanged. Generated compound qualifica
 supply an automatic compound-parent subtype link; inspect builder construction rather than using
 semantic distance or global equivalence to bypass that proof. Clause fillers do not propagate
 abstract status to their head. See [the diagnostic boundary](../docs/CLASSIFIER_DEPENDENCY_CONTINUATION.md).
-The requested automatic singleton and crop/multi-result execution routes remain unimplemented.
+At this historical diagnostic stage automatic submission was absent. The later selected-model
+singleton section below supersedes that status; crop/multi-result execution remains unimplemented.
 The owner selected independent dependency observations consumed from the graph by one final
 contextualizer, with explicit valuation inputs; do not introduce implicit aggregation or retyping.
 
@@ -2212,3 +2213,95 @@ missing compound link only within [the exact approved rule and limits](../docs/M
 Do not generalize it to negation, transformed expressions, changed/removed clauses, identity/role
 replacement, selectors or relationship positions. No global equivalence, automatic classifier,
 Runtime.submit dependency continuation or numerical crop valuation is implied.
+
+
+## Selected-model singleton submission candidate — 2026-10-21
+
+The isolated submission candidate enters through ordinary Runtime.submit: exact saved dependency,
+typed deferred classifier obligation, genuine producer completion, coherent classification
+snapshot, typed concrete redeclaration/native eligibility, concrete Resolver plan and one
+numerical parent execution. Its acceptance fixture computes 7; precomputed Tier-0 computes 11
+without classifier discovery. See the [boundary and fixture disclosures](../docs/CLASSIFIER_DEPENDENCY_SUBMISSION.md).
+The capability is INIT, one abstract occurrence on the explicit native inherent bearer, the sole
+observed current-context member and at most one concrete scalar dependency. Unsupported
+cardinalities fail before parent execution. Resolution exhausts precomputed rank-0 alternatives
+before planning automatic classifiers, including nested dependencies and operation strategies.
+Accepted partial output cannot be silently composed with a deferred parent. The multi-crop graph children/cash-value case, direct
+abstract quality-head admission, persistent reuse and composition remain subsequent work. Only
+exact framework-owned child-count deltas may be projected through frozen input guards; other
+member/source/result/attempt checks remain. No implicit aggregation or bearer retyping.
+
+
+## Direct-quality classifier dependency families — 2026-10-21 candidate
+
+The next isolated increment follows ordinary Runtime.submit through classifier-preparable source
+admission, actual member-producer/classifier dispatch, fresh or reused complete outcomes, concrete
+quality dependency resolution and one graph-reading contextualizer. Native context is preserved;
+classifier members do not become the generated qualities' bearers. Strict execution stays strict,
+and conditional request/receipt mode is revision- and occurrence-bound in accepted and legacy
+Reasoner paths. Outputs, incompatible bearers and unsupported predicate positions remain rejected.
+
+One dependency/one abstract occurrence can produce multiple independent branch bindings. Family
+inventories distinguish successful empty closure from optional generated NO_MODEL. Required
+classifier prerequisites, Tier-0 precedence and request-local root-commit guards remain. Distinct
+incoming AFFECTS prerequisite bindings survive reference/execution deduplication. A contextualizer
+uses its injected modeled Observation with getDependencyFamilies(output) and getDependencyInputs;
+getTargetObservation remains a relationship endpoint. Actual source and requested storage mediation
+are validated separately; no source retyping or native-parent changes are implied.
+
+The isolated monetary fixture classifies Wheat/Maize observed members, resolves explicit USD@2020
+child valuations 3*5 and 2*11, and performs one authored graph sum37; changed membership Maize gives22.
+Prices are test assumptions, not discovered market data or verified dimensional/FX mediation.
+No generic implicit aggregation, coverage, persistent invalidation or shared binding policy is
+introduced. Ordinary multi-occurrence products and broader native-domain inference remain future.
+See [the exact route and disclosures](../docs/CLASSIFIER_DEPENDENCY_FAMILIES.md) and external evidence
+receipts for current Maven/review status. Earlier unimplemented-status notes are historical.
+
+
+## Multiple direct ATTRIBUTE factors and cold family recovery - eleventh isolated increment
+
+Automatic INIT continuation now admits multiple independent direct ATTRIBUTE occurrences in one
+quality dependency, with one explicit native domain. It freezes producer keys before work and
+shares only equivalent unowned leaf discovery queries in this live attempt. Actual producer and
+child identities remain independent of syntax substitution; no zip/correlation/shared-binding
+syntax or persistent reuse is inferred. Each factor must succeed; required classifier and mandatory
+characterization failures prevent publication. Characterization NO_MODEL is an explicit terminal
+lookup, not a skipped prerequisite.
+
+The distinct Crop/Season fixture observes two outcomes per family and executes four independent
+monetary children and one graph-reading parent with authored sum10. Native family tests feed the
+submission results through real production Neo4j storage/commit, then cold graph restoration and
+incoming family access. The original submission still has explicit native database test adapters;
+this does not verify its full native root commit or numeric-storage restart. The native bridge only
+supplies ID allocation and embedded/driver transport. Prior singleton/family snapshots are frozen.
+One deferred dependency, INIT and direct quality ATTRIBUTE positions remain the automatic boundary;
+other multi-occurrence domains, shared binding, persistent invalidation and composition stay future.
+See [the exact contract and evidence disclosures](../docs/CLASSIFIER_CARTESIAN_RECOVERY.md).
+
+The producer comparison also retains ordered exact model URN contributions (including empty
+models); missing/malformed provenance cannot authorize provisional-ID coalescing. The live attempt
+ownership check runs independently of leaf shape. Only known typed semantic Set fields are sorted;
+authored parameter/metadata/value arrays stay ordered even with type-like field names or tags.
+
+Unnamed model contributions retain an empty provenance marker so mixed named/ad-hoc actuators
+cannot appear certified. Automatic multiple-factor work requires every frozen producer plan to
+prove the same unowned leaf source before any discovery; unsupported/different/incomplete sources
+fail explicitly. Ordinary ad-hoc execution and preserved single-occurrence routes remain available.
+
+### Native root and numeric recovery verification
+
+The subsequent bounded native-root increment installs production KnowledgeGraphNeo4j transactions
+and real StorageManagerImpl before ordinary Runtime.submit. A temporal three-member native cohort
+explicitly includes the current Region; two classifiers produce independent2x2 concrete qualities,
+four children1,2,3,4 and one authored graph-reading parent10. Fresh graph/storage managers cold-load
+the same committed IDs, prerequisite bindings and numeric bytes, with no post-submission copy or
+re-persistence. Catalogue/parser/component transport, ID allocation and embedded-driver value
+conversion remain fixture seams; no full service restart or spatial-index verification is claimed.
+
+Fresh attribution replacements now receive exact owned child-counter increments and rollback.
+Existing attributed native observations atomically add that exact delta during semantic update,
+without rewriting unrelated payload. Guards still reject foreign counters/metadata. Both graph
+writer paths persist single-shard geometry required by reconstruction; no parent-support inference
+or historical migration is added. Native cold Region counts match actual child edges. See
+[the native-root boundary and persistence repairs](../docs/CLASSIFIER_NATIVE_ROOT_RECOVERY.md)
+and the external final verification/review receipts. All earlier snapshots remain preserved.

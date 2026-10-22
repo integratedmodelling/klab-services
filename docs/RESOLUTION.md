@@ -1504,3 +1504,8 @@ positional Cartesian choices across asynchronous completion without supplying cl
 completion certificates, member snapshots or production Resolver wiring. Generated syntax
 still requires redeclaration and eligibility validation before distance/execution. See
 [the precise boundary and remaining integration seam](PREDICATE_DEPENDENCY_EXPANSION.md).
+
+
+The subsequent isolated [independent product and native recovery increment](CLASSIFIER_CARTESIAN_RECOVERY.md)
+extends the preserved single-occurrence family milestone. Its exact admission, producer identity,
+characterization, embedded persistence and verification boundaries are documented separately.

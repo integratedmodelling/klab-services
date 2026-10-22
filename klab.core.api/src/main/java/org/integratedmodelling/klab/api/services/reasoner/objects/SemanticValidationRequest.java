@@ -14,6 +14,7 @@ public class SemanticValidationRequest implements Serializable {
   private String documentVersion;
   private long knowledgeRevision = -1;
   private boolean executableModels;
+  private boolean classifierPreparableDependencies;
 
   public static SemanticValidationRequest of(KlabDocument<?> document, String version) {
     var ret = new SemanticValidationRequest();
@@ -42,6 +43,10 @@ public class SemanticValidationRequest implements Serializable {
   /** Executable admission requires every model obligation to be bound; authoring permits templates. */
   public boolean isExecutableModels() { return executableModels; }
   public void setExecutableModels(boolean executableModels) { this.executableModels = executableModels; }
+
+  /** Resolution admission only: concrete outputs with explicitly proved pending classifiers. */
+  public boolean isClassifierPreparableDependencies() { return classifierPreparableDependencies; }
+  public void setClassifierPreparableDependencies(boolean value) { classifierPreparableDependencies = value; }
 
   public KimNamespace getNamespace() { return namespace; }
   public void setNamespace(KimNamespace namespace) { this.namespace = namespace; }

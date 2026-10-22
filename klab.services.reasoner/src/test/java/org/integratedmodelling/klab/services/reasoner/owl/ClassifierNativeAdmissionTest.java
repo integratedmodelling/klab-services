@@ -185,4 +185,51 @@ class ClassifierNativeAdmissionTest {
     }
   }
 
+  @Test void acceptedRuntimeSeparatesStrictAndClassifierPreparableReceipts() throws Exception {
+    try(var t=new Fixture()) {
+      t.declare("Deferred",SemanticType.ATTRIBUTE,SemanticType.PREDICATE);
+      t.concept("Deferred").setAbstract(true);t.concept("Deferred").getType().add(SemanticType.ABSTRACT);
+      t.concept("Deferred").getMetadata().put(org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS.BASE_DECLARATION,"true");
+      t.concept("Deferred").getMetadata().put(org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS.TRAIT_RESTRICTING_PROPERTY,"odo:hasAttribute");
+      t.owl.setApplicableObservables(t.concept("Deferred"),List.of(t.concept("Region"),t.concept("Input")),t.ontology);t.register(t.leaf("Deferred"));
+      field(t.owl,OWL.class,"reasonerActive",true);
+      field(t.reasoner,ReasonerService.class,"authorityBindings",new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings());
+      var input=t.leaf("Input");input.getTraits().add(t.leaf("Deferred"));input.setInherent(t.leaf("Region"));t.register(input);
+      var dependency=new KimObservableImpl();dependency.setSemantics(input);dependency.setUrn(input.getUrn());
+      var residualExpected=t.reasoner.declareObservable(t.request("Input",t.register(t.leaf("Region")))).getUrn();
+      var output=t.request("Result",t.register(t.leaf("Region")));output.setUrn(output.getSemantics().getUrn());
+      var model=new KimModelImpl();model.setUrn("models.parent");model.setNamespace("models");model.getObservables().add(output);model.getDependencies().add(dependency);
+      var namespace=new KimNamespaceImpl();namespace.setUrn("models");namespace.setSourceCode("saved pending dependency fixture");namespace.getStatements().add(model);
+      var factory=mock(org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.class);
+      var state=mock(org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironment.class);
+      when(factory.dependencyRevision()).thenReturn("fixture");
+      when(factory.capture(any())).thenAnswer(invocation->{Worldview world=invocation.getArgument(0);
+        return new org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.Input<>(
+            org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.sources(world),
+            org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.sourceOrder(world),"fixture",
+            org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.CONFIGURATION_REVISION,world,
+            org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.BeanStatus.VALID,List.of());});
+      when(factory.build(any(),any())).thenReturn(new org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.Result<>(state,
+          org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.LogicalStatus.VALID,true,List.of()));
+      when(state.actor()).thenReturn(t.reasoner);
+      var ontology=new KimOntologyImpl();ontology.setUrn("w");ontology.setProjectName("fixture");ontology.setSourceCode("ontology w in domain root;");
+      var world=new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();world.setUrn("w");world.setWorldviewId("w");world.setEmpty(false);world.setOntologies(new ArrayList<>(List.of(ontology)));
+      try(var runtime=new org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime(factory)) {
+        runtime.submit(world);assertTrue(runtime.awaitIdle(java.time.Duration.ofSeconds(5)));long generation=runtime.status().acceptedGeneration();assertTrue(generation>0);
+        field(t.reasoner,ReasonerService.class,"knowledgeRevision",new java.util.concurrent.atomic.AtomicLong(generation));
+        var request=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(namespace,"1");request.setExecutableModels(true);request.setKnowledgeRevision(generation);
+        var strict=runtime.validate(request,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(request));assertFalse(strict.valid());
+        request.setClassifierPreparableDependencies(true);
+        var prepared=runtime.validate(request,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(request));
+        assertTrue(prepared.valid(),prepared.getReason()+" "+prepared.getNotifications());assertEquals(generation,prepared.getKnowledgeRevision());assertTrue(prepared.isClassifierPreparableDependencies());
+        assertEquals(1,prepared.getPendingClassifierDependencies().size());var pending=prepared.getPendingClassifierDependencies().getFirst();assertEquals("models.parent",pending.modelUrn());assertEquals(0,pending.dependencyIndex());assertEquals(List.of(List.of("semantics","traits","0")),pending.occurrences());
+        assertEquals(residualExpected,pending.residualObservable());assertNotNull(pending.residualObservable());assertEquals(input.getUrn(),dependency.getSemantics().getUrn());
+        assertFalse(strict.matches(request,generation));request.setClassifierPreparableDependencies(false);assertFalse(prepared.matches(request,generation));
+        request.setKnowledgeRevision(generation+1);clearInvocations(t.reasoner);
+        var stale=runtime.validate(request,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(request));
+        assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.STALE_KNOWLEDGE,stale.getStatus());verifyNoInteractions(t.reasoner);
+      }
+    }
+  }
+
 }

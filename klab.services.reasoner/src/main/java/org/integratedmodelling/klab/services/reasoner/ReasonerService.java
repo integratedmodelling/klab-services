@@ -617,12 +617,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         response.setReason("Semantic validation requires a completed knowledge update");
         return response;
       }
-      response
-          .getNotifications()
-          .addAll(
-              new org.integratedmodelling.klab.services.reasoner.internal.DocumentSemanticValidator(
-                      this, request.isExecutableModels())
-                  .validate(document));
+      var validator=new org.integratedmodelling.klab.services.reasoner.internal.DocumentSemanticValidator(
+          this,request.isExecutableModels(),request.isClassifierPreparableDependencies());
+      response.getNotifications().addAll(validator.validate(document));
+      response.getPendingClassifierDependencies().addAll(validator.getPendingClassifierDependencies());
       response.setStatus(SemanticValidationResponse.Status.COMPLETE);
     } catch (RuntimeException e) {
       response.setStatus(SemanticValidationResponse.Status.FAILED);

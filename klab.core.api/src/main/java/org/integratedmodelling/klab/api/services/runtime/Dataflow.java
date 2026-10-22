@@ -109,7 +109,7 @@ public interface Dataflow extends Serializable, RuntimeAsset {
   List<Notification> getNotifications();
 
   /** Resolution absence is distinct from compilation, transport or execution failure. */
-  enum ResolutionOutcome { RESOLVED, NO_MODEL, FAILED }
+  enum ResolutionOutcome { RESOLVED, DEFERRED, NO_MODEL, FAILED }
 
   default ResolutionOutcome getResolutionOutcome() {
     return isEmpty() ? ResolutionOutcome.FAILED : ResolutionOutcome.RESOLVED;

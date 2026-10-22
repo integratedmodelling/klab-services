@@ -360,6 +360,14 @@ public interface KnowledgeGraph {
       throw new UnsupportedOperationException("Atomic semantic updates are not supported");
     }
 
+    /** Semantic update plus exactly this root attempt's nonnegative HAS_CHILD increments.
+     * The increment must be atomic with semantic comparison and must not replace other payload.
+     * Graphs without this bookkeeping support must fail instead of discarding a nonzero delta. */
+    default void updateSemantics(Observation observation,String expectedObservable,int ownedChildDelta) {
+      if(ownedChildDelta!=0)throw new UnsupportedOperationException("Atomic semantic child bookkeeping is not supported");
+      updateSemantics(observation,expectedObservable);
+    }
+
 
     /**
      * Link the two passed assets.

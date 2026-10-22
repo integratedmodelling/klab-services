@@ -953,6 +953,9 @@ public class RuntimeService extends BaseService
           .getMetadata()
           .put("constraints", Utils.Json.asString(resolutionScope.getResolutionConstraints()));
 
+      // Remote generation/source checks run outside native transaction commit locks. Local
+      // exact member/result read-set guards remain on that commit transaction.
+      var classifierValidationChecks=new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
       return (predefinedContextualization != null
               ? createPredefinedDataflow(predefinedContextualization, observation, scope)
               : resolver
@@ -965,10 +968,12 @@ public class RuntimeService extends BaseService
                 ret.getNotifications().add(Notification.error(t.getMessage(), t));
                 return ret;
               })
+          .thenCompose(dataflow -> SelectedModelClassifierContinuation.resume(this,dataflow,resolutionScope,classifierValidationChecks))
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
                 checkSubmissionCancellation(resolutionScope);
+                classifierValidationChecks.forEach(Runnable::run);
                 resolution.getMetadata().put("resolutionOutcome", dataflow.getResolutionOutcome().name());
                 observation.getNotifications().addAll(dataflow.getNotifications());
                 if (observation instanceof ObservationImpl observationImpl
@@ -1018,6 +1023,7 @@ public class RuntimeService extends BaseService
 
                   // TODO add more info about the contextualization to the action's metadata
                   checkSubmissionCancellation(submissionScope);
+                  classifierValidationChecks.forEach(Runnable::run);
                   submission.setName("SUB OK");
                   var commitId = submissionScope.commit();
                   if (commitId < 0) {
@@ -1047,9 +1053,7 @@ public class RuntimeService extends BaseService
           .exceptionally(
               t -> {
                 submissionScope.fail(t);
-                var ret = Observation.empty();
-                ret.getNotifications().add(Notification.error(t.getMessage(), t));
-                return ret;
+                return Observation.empty(Notification.error(t.getMessage(), t));
               });
     }
     throw new KlabInternalErrorException(
@@ -2146,6 +2150,35 @@ public class RuntimeService extends BaseService
       if (!compiled.executeRoot(member.getGeometry(), event, scope))
         throw new IllegalStateException("Characterization execution failed");
     }
+  }
+
+  Observation executeClassifierProducer(Actuator plan, Geometry support, ServiceContextScope parent) {
+    checkSubmissionCancellation(parent);
+    if(plan.getActuatorType()==Actuator.Type.REFERENCE)
+      throw new UnsupportedOperationException("Persistent producer reuse needs a completion certificate");
+    if(plan.getExecutionRole()!=Actuator.ExecutionRole.INITIALIZATION || plan.getObservation()==null)
+      throw new UnsupportedOperationException("Classifier member producer must be an INIT observation");
+    var producer=register(plan.getObservation(),parent);
+    ((org.integratedmodelling.common.runtime.ActuatorImpl)plan).setObservation(producer);
+    ((org.integratedmodelling.common.runtime.ActuatorImpl)plan).setId(producer.getId());
+    var activity=Activity.of(Activity.Type.RESOLUTION,parent.getActivity(),"Classifier member producer plan");
+    var execution=parent.executing(activity,null,producer);
+    var tx=execution.getCurrentTransaction();
+    var cohort=getCohortFor(producer.getObservable().getSemantics().singular(),execution,true);
+    if(cohort==null || !producer.getObservable().getSemantics().isCollective())
+      throw new IllegalArgumentException("Classifier requires a collective native producer");
+    tx.link(parent.getContextObservation(),producer,GraphModel.Relationship.HAS_CHILD);
+    tx.link(producer,cohort,GraphModel.Relationship.CONTRIBUTED_TO);
+    tx.checkCohortGeometry(cohort,producer.getGeometry());
+    var dataflow=new org.integratedmodelling.common.runtime.DataflowImpl();dataflow.setCoverage(support);
+    dataflow.getComputation().add(plan);
+    if(!compile(producer,dataflow,execution) || execution.commit()<0)
+      throw new IllegalStateException("Classifier producer compilation failed");
+    parent.getCurrentTransaction().registerExecutors();
+    if(!parent.getDigitalTwin().getScheduler().executeDependency(producer,support,Scheduler.Event.initialization(),parent))
+      throw new IllegalStateException("Classifier member producer execution failed");
+    checkSubmissionCancellation(parent);
+    return producer;
   }
 
   private boolean compile(

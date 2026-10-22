@@ -707,4 +707,84 @@ class ClassificationTransactionTest {
     assertThrows(IllegalStateException.class, () -> child.stageAttributions(List.of(value), scope));
     assertSame(value.originalObservable(), value.member().getObservable());
   }
+  private void guardMemberCounts(List<Observation> members) {
+    var producer=pending(59,false).member();
+    when(producer.getObservable().getContextualization()).thenReturn(Contextualization.INSTANTIATION);
+    var cohort=new org.integratedmodelling.common.knowledge.CohortImpl();cohort.setId(10);cohort.setObservable(producer.getObservable());
+    root.add(producer);members.forEach(root::add);
+    root.guardClassificationOverlay(cohort,producer,members,root.classificationOverlay(cohort,producer,members).state());
+  }
+  private Observation attributionCountChain() {
+    var first=pending(41,false);composed(first);child.stageAttributions(List.of(first),scope);
+    child.link(first.member(),pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    child.stageAttributions(List.of(independent(first,"test:Other")),scope);guardMemberCounts(List.of(first.member()));
+    child.link(first.member(),pending(44,false).member(),GraphModel.Relationship.HAS_CHILD);
+    assertEquals(2,root.readObservation(first.member()).getChildrenCount());return first.member();
+  }
+  @Test void successiveAttributionCopiesRetainOwnedCountsInNativeUpdate() {
+    var member=attributionCountChain();assertTrue(root.commit()>0);assertEquals(2,member.getChildrenCount());
+    verify(storage).updateSemantics(argThat(o->o.getId()==41&&o.getChildrenCount()==2),any(),eq(2));
+  }
+  @Test void cancelledAttributionCountChainRestoresTheOriginal() {
+    var member=attributionCountChain();child.fail(new java.util.concurrent.CancellationException());
+    assertEquals(0,member.getChildrenCount());assertEquals(-1,root.commit());verifyNoInteractions(storage);
+  }
+  @Test void freshAttributionKeepsOwnedChildCountsInTheGuardedAndStoredReplacement() {
+    var value=pending(41,false);var member=value.member();child.stageAttributions(List.of(value),scope);guardMemberCounts(List.of(member));
+    child.link(member,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    child.link(member,pending(44,false).member(),GraphModel.Relationship.HAS_CHILD);
+    assertEquals(2,member.getChildrenCount());assertEquals(2,root.readObservation(member).getChildrenCount());
+    assertTrue(root.commit()>0);
+    verify(storage).updateSemantics(argThat(o->o.getId()==41&&o.getChildrenCount()==2),any(),eq(2));
+  }
+  @Test void freshAttributionDoesNotHideForeignCountMutationAfterOwnedLinks() {
+    var value=pending(41,false);var member=value.member();child.stageAttributions(List.of(value),scope);guardMemberCounts(List.of(member));
+    child.link(member,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    ((ObservationImpl)member).setChildrenCount(member.getChildrenCount()+4);
+    assertEquals(-1,root.commit());assertEquals(4,member.getChildrenCount());verify(storage,never()).store(any());
+  }
+  @Test void freshAttributionStillRejectsForeignMetadataAfterOwnedLinks() {
+    var value=pending(41,false);var member=value.member();child.stageAttributions(List.of(value),scope);guardMemberCounts(List.of(member));
+    child.link(member,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);member.getMetadata().put("foreign-input",9);
+    assertEquals(-1,root.commit());assertEquals(0,member.getChildrenCount());verify(storage,never()).store(any());
+  }
+  @Test void ownChildBookkeepingAfterCaptureIsProjectedAcrossChildTransactions() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.link(member,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    assertEquals(1,member.getChildrenCount());assertTrue(root.commit()>0);
+  }
+  @Test void foreignCountMutationCannotUseTheOwnChildAllowance() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.link(member,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    member.setChildrenCount(member.getChildrenCount()+4);
+    assertEquals(-1,root.commit());verify(storage,never()).store(any());
+    assertEquals(4,member.getChildrenCount(),"Rollback subtracts only this attempt's one increment");
+  }
+  @Test void foreignMetadataMutationStillFailsAfterOwnChildInsertion() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.link(member,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    member.getMetadata().put("scientific-input",3);
+    assertEquals(-1,root.commit());verify(storage,never()).store(any());assertEquals(0,member.getChildrenCount());
+  }
+  @Test void countAllowanceCannotMoveBetweenMembers() {
+    var first=(ObservationImpl)pending(41,false).member();var second=(ObservationImpl)pending(42,false).member();
+    guardMemberCounts(List.of(first,second));
+    child.link(second,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    first.setChildrenCount(1);
+    assertEquals(-1,root.commit());assertEquals(1,first.getChildrenCount());assertEquals(0,second.getChildrenCount());
+  }
+  @Test void cancelledAttemptUndoesOnlyItsChildBookkeeping() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.link(member,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    child.fail(new java.util.concurrent.CancellationException());
+    assertEquals(0,member.getChildrenCount());assertEquals(-1,root.commit());verifyNoInteractions(storage);
+  }
+
+  @Test void absoluteForeignCountResetStillRejectsAndRollbackCannotMakeCountNegative() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.link(member,pending(43,false).member(),GraphModel.Relationship.HAS_CHILD);
+    member.setChildrenCount(0);
+    assertEquals(-1,root.commit());assertEquals(0,member.getChildrenCount());verify(storage,never()).store(any());
+  }
+
 }

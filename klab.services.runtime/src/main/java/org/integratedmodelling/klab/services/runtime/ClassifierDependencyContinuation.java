@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 public final class ClassifierDependencyContinuation {
   private ClassifierDependencyContinuation() {}
   public record Prerequisite(Actuator operation, Observation producer) {}
-  public record ResolvedDependency(Observable observable, Dataflow dataflow) {}
+  public record ResolvedDependency(Observable observable, Observation observation, Dataflow dataflow) {}
   public record Outcome(DependencyExpansion.Status status, List<ResolvedDependency> dependencies, String diagnostic) {
     public Outcome { dependencies=List.copyOf(dependencies); }
   }
@@ -45,12 +45,19 @@ public final class ClassifierDependencyContinuation {
         && !c.isPattern() && c.getPatternVariables().isEmpty()
         && (predicateSlots || c.getTraits().isEmpty() && c.getRoles().isEmpty());
   }
-  private static void requireOccurrence(DependencyExpansion.Request request, Prerequisite prerequisite, ServiceContextScope scope) {
+  enum BindingMode { PLAIN_NATIVE_DOMAIN, CURRENT_MEMBER, DIRECT_QUALITY_DOMAIN }
+
+  private static void requireOccurrence(DependencyExpansion.Request request, Prerequisite prerequisite, ServiceContextScope scope, BindingMode mode) {
+    boolean bindCurrentMember=mode!=BindingMode.PLAIN_NATIVE_DOMAIN;
     var path=request.identity().path();
     // First capability: independent traits/roles on one explicitly named native inherent bearer.
     // Endpoint-, nested- and head-predicate attribution require their own typed binding proof.
-    if(path.size()!=4 || !path.get(0).equals("semantics") || !path.get(1).equals("inherent")
-        || !(path.get(2).equals("traits") || path.get(2).equals("roles")))
+    boolean directAttribute=mode==BindingMode.DIRECT_QUALITY_DOMAIN && path.size()==3 && path.get(0).equals("semantics")
+        && path.get(1).equals("traits") && request.declaration().is(SemanticType.ATTRIBUTE)
+        && namedLeaf(request.predicate(),false);
+    boolean bearerAttribute=path.size()==4 && path.get(0).equals("semantics") && path.get(1).equals("inherent")
+        && (path.get(2).equals("traits") || path.get(2).equals("roles"));
+    if(!directAttribute && !bearerAttribute)
       throw new IllegalArgumentException("Unsupported occurrence binding path "+path);
     var bearer=request.originalObservable().getSemantics().getInherent();
     if(!namedLeaf(bearer,true))
@@ -63,12 +70,14 @@ public final class ClassifierDependencyContinuation {
     }
     var reasoner=scope.getService(Reasoner.class);
     var producerBase=reasoner.baseSubstantialType(prerequisite.producer().getObservable(),scope);
+    if(producerBase!=null)producerBase=producerBase.singular();
     var context=scope.getContextObservation();
     var contextBase=context==null?null:reasoner.baseSubstantialType(context.getObservable(),scope);
     if(producerBase==null || contextBase==null || !bearer.getName().equals(producerBase.getUrn())
         || !bearer.getName().equals(contextBase.getUrn())
         || !bearer.getName().equals(prerequisite.producer().getObservable().getSemantics().singular().getUrn())
-        || !bearer.getName().equals(context.getObservable().getSemantics().getUrn()))
+        || !bindCurrentMember && !bearer.getName().equals(context.getObservable().getSemantics().getUrn())
+        || bindCurrentMember && !reasoner.is(context.getObservable().getSemantics(),producerBase))
       throw new IllegalArgumentException("Occurrence producer and native context do not match the named bearer");
     for(var child:prerequisite.operation().getChildren()) {
       if(child.getActuatorType()!=Actuator.Type.REFERENCE || child.getObservation()==null
@@ -77,15 +86,18 @@ public final class ClassifierDependencyContinuation {
     }
     var original=prerequisite.operation().getModelDependency();
     var declaredSource=reasoner.declareObservable(request.originalObservable());
+    if(mode==BindingMode.DIRECT_QUALITY_DOMAIN && (declaredSource==null || !declaredSource.is(SemanticType.QUALITY)))
+      throw new IllegalArgumentException("A direct classifier family requires a native quality dependency");
     if(original==null || declaredSource==null || !Objects.equals(original.getUrn(),declaredSource.getUrn())
         || original.isOptional()!=request.originalObservable().isOptional()
         || declaredSource.isOptional()!=request.originalObservable().isOptional()
-        || !Objects.equals(original.getUnit(),declaredSource.getUnit())
-        || !Objects.equals(original.getCurrency(),declaredSource.getCurrency()))
+        || !org.integratedmodelling.klab.api.data.StorageScan.semantics(original).equals(
+            org.integratedmodelling.klab.api.data.StorageScan.semantics(declaredSource)))
       throw new IllegalArgumentException("Classifier prerequisite does not preserve the original dependency contract");
     var nativeDirective=reasoner.inherent(prerequisite.operation().getOperationObservable());
     var nativeBase=nativeDirective==null?null:reasoner.baseSubstantialType(nativeDirective,scope);
-    if(nativeBase==null || !bearer.getName().equals(nativeBase.getUrn()) || !bearer.getName().equals(nativeDirective.getUrn()))
+    if(nativeBase!=null)nativeBase=nativeBase.singular();
+    if(nativeBase==null || !bearer.getName().equals(nativeBase.getUrn()) || !bearer.getName().equals(nativeDirective.singular().getUrn()))
       throw new IllegalArgumentException("Classifier directive has another bearer");
   }
   private record Capture(UUID identity, Cohort cohort, Observation producer, KnowledgeGraph.ClassificationReadSet persisted,
@@ -96,6 +108,21 @@ public final class ClassifierDependencyContinuation {
     if(!(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl tx) || tx.isFailed())
       throw new IllegalStateException("Classification continuation requires a live parent attempt");
     return tx;
+  }
+  private static com.fasterxml.jackson.databind.JsonNode planSnapshot(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,Actuator plan) {
+    var tree=mapper.valueToTree(plan);
+    removeDerivedLabels(tree);
+    return tree;
+  }
+  private static void removeDerivedLabels(com.fasterxml.jackson.databind.JsonNode node) {
+    // displayLabel/getMetadata populate this presentation cache lazily. It is not source
+    // semantics, occurrence identity, execution support, or a result/attempt certificate.
+    if(node instanceof com.fasterxml.jackson.databind.node.ObjectNode object
+        && object.path("@CLASS").asText().equals("org.integratedmodelling.klab.api.collections.impl.MetadataImpl")
+        && object.get("delegate") instanceof com.fasterxml.jackson.databind.node.ObjectNode metadata)
+      metadata.remove(Metadata.SUGGESTED_NAME);
+    if(node.isContainerNode())node.elements().forEachRemaining(ClassifierDependencyContinuation::removeDerivedLabels);
   }
   private static String support(Geometry geometry) {
     return GeometryRepository.INSTANCE.sanitize(Objects.requireNonNull(geometry)).encode();
@@ -172,6 +199,19 @@ public final class ClassifierDependencyContinuation {
   static CompletionStage<Outcome> resolve(RuntimeService runtime, DependencyExpansion.Prepared prepared,
       Map<DependencyExpansion.RequestIdentity,Prerequisite> supplied, Geometry requested, Scheduler.Event event,
       ServiceContextScope scope) {
+    return resolve(runtime,prepared,supplied,requested,event,scope,false);
+  }
+
+  static CompletionStage<Outcome> resolve(RuntimeService runtime, DependencyExpansion.Prepared prepared,
+      Map<DependencyExpansion.RequestIdentity,Prerequisite> supplied, Geometry requested, Scheduler.Event event,
+      ServiceContextScope scope, boolean bindCurrentMember) {
+    return resolve(runtime,prepared,supplied,requested,event,scope,bindCurrentMember?BindingMode.CURRENT_MEMBER:BindingMode.PLAIN_NATIVE_DOMAIN);
+  }
+
+  static CompletionStage<Outcome> resolve(RuntimeService runtime, DependencyExpansion.Prepared prepared,
+      Map<DependencyExpansion.RequestIdentity,Prerequisite> supplied, Geometry requested, Scheduler.Event event,
+      ServiceContextScope scope, BindingMode mode) {
+    boolean bindCurrentMember=mode!=BindingMode.PLAIN_NATIVE_DOMAIN;
     var pending=new LinkedHashMap<DependencyExpansion.RequestIdentity,DependencyExpansion.Classification>();
     var captures=new ArrayList<Capture>();
     var sourceChecks=new ArrayList<Runnable>();
@@ -193,15 +233,19 @@ public final class ClassifierDependencyContinuation {
       var plans=new LinkedHashMap<DependencyExpansion.RequestIdentity,Actuator>();
       for(var request:requests) {
         var prerequisite=Objects.requireNonNull(supplied.get(request.identity()));
-        requireOccurrence(request,prerequisite,scope);
+        requireOccurrence(request,prerequisite,scope,mode);
         var encoded=mapper.writeValueAsString(prerequisite.operation());
+        var sourcePlan=planSnapshot(mapper,prerequisite.operation());
         sourceChecks.add(()->{
-          try { if(!encoded.equals(mapper.writeValueAsString(prerequisite.operation()))) throw new IllegalStateException("Classifier source plan changed"); }
-          catch(java.io.IOException e) { throw new IllegalStateException(e); }
+          if(!sourcePlan.equals(planSnapshot(mapper,prerequisite.operation())))
+            throw new IllegalStateException("Classifier source plan changed");
         });
         plans.put(request.identity(),mapper.readValue(encoded,Actuator.class));
         var captured=capture(runtime,prerequisite.producer(),requested,scope);
         if(captured==null) return CompletableFuture.completedFuture(new Outcome(DependencyExpansion.Status.UNKNOWN,List.of(),"Producer completion is unresolved or unsupported"));
+        if(mode==BindingMode.CURRENT_MEMBER && (captured.members().size()!=1
+            || captured.members().getFirst().getId()!=scope.getContextObservation().getId()))
+          throw new IllegalArgumentException("Singleton submission requires the actual current context as its only classified member");
         captures.add(captured);
       }
       for(var captured:captures) {
@@ -254,7 +298,7 @@ public final class ClassifierDependencyContinuation {
       var concrete=new ArrayList<Observable>();
       for(var branch:syntax) {
         var declared=reasoner.declareObservable(branch);
-        var canonical=declared==null?null:reasoner.resolveConcept(declared.getUrn());
+        var canonical=declared==null?null:reasoner.resolveConcept(declared.getSemantics().getUrn());
         if(canonical==null || canonical.isAbstract() || canonical.isGeneric() || canonical.is(SemanticType.NOTHING) || canonical.is(SemanticType.ANY)
             || !reasoner.satisfiable(canonical) || declared==null || declared.isAbstract() || !declared.getGenericComponents().isEmpty()
             || declared.is(SemanticType.NOTHING) || !reasoner.satisfiable(declared))
@@ -282,17 +326,29 @@ public final class ClassifierDependencyContinuation {
       for(var dependency:concrete) {
         if(completion.isCancelled()) return completion;
         transaction(scope);semanticCheck.run();sourceChecks.forEach(Runnable::run);
+        var dependencyScope=scope;
+        if(bindCurrentMember) {
+          var nativeContext=parent.readObservation(scope.getContextObservation());
+          // Transaction read views expose defensive concept proxies. Canonicalize their exact
+          // frozen meaning at this accepted revision before an authoritative subtype query.
+          var nativeMeaning=reasoner.resolveConcept(nativeContext.getObservable().getSemantics().getUrn());
+          var nativeBearer=reasoner.inherent(dependency);
+          if(nativeMeaning==null || nativeMeaning.is(SemanticType.NOTHING) || nativeBearer==null || !reasoner.is(nativeMeaning,nativeBearer))
+            throw new IllegalArgumentException("Concrete dependency has no proof in the original native context");
+          dependencyScope=(ServiceContextScope)scope.within(nativeContext);
+        }
+        final ServiceContextScope nativeScope=dependencyScope;
         var observation=new ObservationImpl();observation.setObservable(dependency);observation.setGeometry(requested);
         if(scope.getContextObservation()!=null) observation.setParentId(scope.getContextObservation().getId());
-        var registered=runtime.register(observation,scope);
+        var registered=runtime.register(observation,nativeScope);
         if(registered.getId()==Observation.UNASSIGNED_ID || registered.getId()==Observation.QUERY_ID)
           throw new IllegalStateException("Concrete dependency has no unique runtime identity");
-        resolutions.add(scope.getService(Resolver.class).resolve(registered,scope).thenApply(dataflow->{
+        resolutions.add(nativeScope.getService(Resolver.class).resolve(registered,nativeScope).thenApply(dataflow->{
           transaction(scope);semanticCheck.run();sourceChecks.forEach(Runnable::run);
           if(dataflow==null || dataflow.getResolutionOutcome()==Dataflow.ResolutionOutcome.FAILED
               || dataflow.getResolutionOutcome()==Dataflow.ResolutionOutcome.NO_MODEL && !dependency.isOptional())
             throw new IllegalStateException("Concrete dependency resolution failed");
-          return new ResolvedDependency(dependency,dataflow);
+          return new ResolvedDependency(dependency,registered,dataflow);
         }).whenComplete((value,failure)->{
           Throwable cause=failure;while(cause instanceof CompletionException && cause.getCause()!=null) cause=cause.getCause();
           if(cause instanceof CancellationException) completion.cancel(false);

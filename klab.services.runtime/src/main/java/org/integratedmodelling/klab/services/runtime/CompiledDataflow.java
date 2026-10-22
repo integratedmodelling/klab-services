@@ -317,9 +317,13 @@ public class CompiledDataflow {
    */
   public boolean compile(Actuator rootActuator) {
 
+    requireExpandedDependencies(rootActuator);
     validateBoundContexts(rootActuator, scope);
     validateSupportedPlan(rootActuator);
-    // build the observations as required
+    // Establish root identity before walking descendants. Transport copies of the root must
+    // never be allocated as a second observation or scheduled instead of the submitted target.
+    validateRootTarget(rootActuator);
+    this.rootActuator = rootActuator;
     requireObservations(rootActuator);
 
     // harmonize the sharding strategies according to runtime configuration, native strategy and
@@ -342,6 +346,25 @@ public class CompiledDataflow {
       operations.put(pair.getFirst(), operation);
     }
     return true;
+  }
+
+  private void validateRootTarget(Actuator plan) {
+    if(plan.getActuatorType()==Actuator.Type.UPDATE)return;
+    var declared=plan.getObservation();
+    if(rootObservation==null || declared==null || rootObservation.getId()==Observation.UNASSIGNED_ID
+        || rootObservation.getId()==Observation.QUERY_ID || rootObservation.getObservable()==null
+        || !Objects.equals(rootObservation.getObservable().getUrn(),declared.getObservable().getUrn())
+        || rootObservation.getId()!=declared.getId() || plan.getId()!=declared.getId()
+        || !Objects.equals(GeometryRepository.INSTANCE.sanitize(rootObservation.getGeometry()).encode(),
+            GeometryRepository.INSTANCE.sanitize(declared.getGeometry()).encode())
+        || rootObservation.getParentId()!=declared.getParentId())
+      throw new IllegalArgumentException("Executable root must retain its bound target identity, meaning, native parent and support");
+  }
+
+  private static void requireExpandedDependencies(Actuator actuator) {
+    if(!actuator.getClassifierDependencies().isEmpty())
+      throw new IllegalStateException("Selected model classifier obligations must complete before eager compilation");
+    for(var child:actuator.getChildren())requireExpandedDependencies(child);
   }
 
   /** Prepare the typed classifier without allocating an observation. */
@@ -708,6 +731,10 @@ public class CompiledDataflow {
     if (rootActuator.getActuatorType() != Actuator.Type.UPDATE
         && rootObservation instanceof ObservationImpl target) {
       target.mergeAnnotations(rootActuator.getObservation());
+      if(target.getContextualizationData()==null)
+        target.setContextualizationData(new ObservationImpl.ContextualizationDataImpl());
+      ((ActuatorImpl)rootActuator).setObservation(target);
+      ((ActuatorImpl)rootActuator).setId(target.getId());
     }
     if (rootActuator.getActuatorType() != Actuator.Type.UPDATE)
       actuatorObservations.put(rootActuator, rootObservation);
@@ -725,6 +752,33 @@ public class CompiledDataflow {
       actuatorObservations.put(actuator, observations.get(actuator.getId()));
     }
     for (var child : actuator.getChildren()) bindLocalReferences(child, observations);
+  }
+
+  private void linkDependencyFamilies(Actuator parent,DigitalTwinImpl.TransactionImpl transaction,java.util.Set<String> emitted) {
+    for(int rank=0;rank<parent.getChildren().size();rank++) {
+      var child=parent.getChildren().get(rank);var binding=child.getDependencyFamilyBinding();
+      if(binding!=null) {
+        if(!emitted.add(binding.branchId()))throw new IllegalStateException("Duplicate family branch binding");
+        var family=parent.getDependencyFamilies().stream().filter(f->f.id().equals(binding.familyId())).findFirst()
+            .orElseThrow(()->new IllegalStateException("Orphan classifier dependency binding"));
+        var branch=family.branches().stream().filter(b->b.id().equals(binding.branchId())).findFirst()
+            .orElseThrow(()->new IllegalStateException("Unknown classifier dependency branch"));
+        if(branch.outcome()!=org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Outcome.RESOLVED)
+          throw new IllegalStateException("An absent branch cannot have a dependency edge");
+        var target=actuatorObservations.get(parent);var source=actuatorObservations.get(child);
+        if(source==null && child.getActuatorType()==Actuator.Type.REFERENCE)source=child.getObservation();
+        if(source!=null && source.getId()==Observation.QUERY_ID)source=org.integratedmodelling.klab.runtime.storage.StorageReads.source(source,scope);
+        if(source==null || target==null || source.getId()==Observation.UNASSIGNED_ID || target.getId()==Observation.UNASSIGNED_ID)
+          throw new IllegalStateException("A family branch has no bound source or target");
+        transaction.link(source,target,GraphModel.Relationship.AFFECTS,"rank",rank,
+            ProcessPlan.EDGE_ROLE,ProcessPlan.PREREQUISITE,"readState","CURRENT",
+            org.integratedmodelling.klab.api.data.StorageScan.Binding.PROPERTY,
+            org.integratedmodelling.klab.utilities.Utils.Json.asString(storageBinding(child,source,rank)),
+            org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding.PROPERTY,
+            org.integratedmodelling.klab.utilities.Utils.Json.asString(binding));
+      }
+      linkDependencyFamilies(child,transaction,emitted);
+    }
   }
 
   private org.integratedmodelling.klab.api.data.StorageScan.Binding storageBinding(Actuator input, Observation source, int rank) {
@@ -758,6 +812,16 @@ public class CompiledDataflow {
       var transaction = scope.getCurrentTransaction();
       if (transaction != null) {
         transaction.add(ret);
+        var supplied=ret;
+        ret=transaction.assets().stream().filter(Observation.class::isInstance).map(Observation.class::cast)
+            .filter(candidate->candidate.getId()==supplied.getId()).findFirst().orElse(supplied);
+        if(!Objects.equals(ret.getObservable().getUrn(),supplied.getObservable().getUrn())
+            || ret.getParentId()!=supplied.getParentId()
+            || !Objects.equals(GeometryRepository.INSTANCE.sanitize(ret.getGeometry()).encode(),
+                GeometryRepository.INSTANCE.sanitize(supplied.getGeometry()).encode()))
+          throw new IllegalArgumentException("Dependency identity has another native meaning or support");
+        ((ObservationImpl)ret).mergeAnnotations(supplied);
+        ((ActuatorImpl)actuator).setObservation(ret);
       }
       var contextualizationData =
           (ObservationImpl.ContextualizationDataImpl) ret.getContextualizationData();
@@ -804,6 +868,9 @@ public class CompiledDataflow {
     }
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
+    for(var entry:actuatorObservations.entrySet())if(!entry.getKey().getDependencyFamilies().isEmpty())
+      entry.getValue().getMetadata().put(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY,
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(entry.getKey().getDependencyFamilies()));
 
     /*
     The links to be made depend on the reciprocal nature of the root and its dependents
@@ -1006,6 +1073,7 @@ public class CompiledDataflow {
       if (source != null && source.getId() == Observation.QUERY_ID && source.getObservable().is(SemanticType.QUALITY))
         source = org.integratedmodelling.klab.runtime.storage.StorageReads.source(source, scope);
       if (source != null && target != null && source.getId() != Observation.QUERY_ID && target.getId() != Observation.QUERY_ID
+          && aSource.getDependencyFamilyBinding()==null
           && aTarget.getExecutionRole() != Actuator.ExecutionRole.PROCESS
           && aTarget.getExecutionRole() != Actuator.ExecutionRole.EVENT) {
         var processBindings = processPlan(aTarget);
@@ -1020,6 +1088,10 @@ public class CompiledDataflow {
       }
       transaction.link(aTarget, aSource, GraphModel.Relationship.HAS_CHILD);
     }
+
+    if(rootActuator!=null)linkDependencyFamilies(rootActuator,transaction,new java.util.HashSet<>());
+    else if(actuatorObservations.keySet().stream().anyMatch(actuator->actuator.getDependencyFamilyBinding()!=null || !actuator.getDependencyFamilies().isEmpty()))
+      throw new IllegalStateException("Classifier families require an execution root");
 
     for (var actuator : actuatorObservations.keySet()) {
       var plan = processPlan(actuator);

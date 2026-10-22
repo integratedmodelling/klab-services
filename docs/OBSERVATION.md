@@ -2086,3 +2086,21 @@ positional Cartesian choices across asynchronous completion without supplying cl
 completion certificates, member snapshots or production Resolver wiring. Generated syntax
 still requires redeclaration and eligibility validation before distance/execution. See
 [the precise boundary and remaining integration seam](PREDICATE_DEPENDENCY_EXPANSION.md).
+
+
+## Selected-model classifier execution - 2026-10-21 isolated increment
+
+The bounded ordinary-submission route now plans and executes a classifier prerequisite for one
+deferred abstract ATTRIBUTE occurrence, then resolves its concrete closure as independent child
+dependency observations of one modeled output. The final contextualizer reads exact prerequisite
+bindings from the graph and supplies any aggregation itself. Successful precomputed Tier-0
+alternatives precede this automatic Tier-1 work. See
+[dependency families](CLASSIFIER_DEPENDENCY_FAMILIES.md) for conditional admission, live-attempt
+guards, the dynamic crop cash-value fixture, test adapters and remaining multi-occurrence limits.
+This advances the earlier prepared-expansion boundary without claiming general recursive sampling
+or typed outer-context composition.
+
+
+The subsequent isolated [independent product and native recovery increment](CLASSIFIER_CARTESIAN_RECOVERY.md)
+extends the preserved single-occurrence family milestone. Its exact admission, producer identity,
+characterization, embedded persistence and verification boundaries are documented separately.

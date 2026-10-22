@@ -335,7 +335,16 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     /** Canonicalize the same detached getter graph exposed to classifier code, including payloads. */
     static String fingerprint(Observation observation) {
-      return fingerprintValue(of(observation),new IdentityHashMap<>());
+      return fingerprint(observation,0);
+    }
+    static String fingerprint(Observation observation,int ownChildDelta) {
+      var snapshot=of(observation);
+      if(ownChildDelta!=0) {
+        var handler=(ObservationReadView)java.lang.reflect.Proxy.getInvocationHandler(snapshot);
+        handler.values.replaceAll((method,value)->method.getName().equals("getChildrenCount")
+            ? ((Integer)value)-ownChildDelta : value);
+      }
+      return fingerprintValue(snapshot,new IdentityHashMap<>());
     }
     private static String fingerprintValue(Object value,IdentityHashMap<Object,Integer> seen) {
       if(value==null) return "null";
@@ -470,14 +479,18 @@ public class DigitalTwinImpl implements DigitalTwin {
     private List<KnowledgeGraph.ClassificationReadSet> classificationReadGuards = new ArrayList<>();
     private List<Runnable> classificationLocalGuards = new ArrayList<>();
     private long[] classificationMutationStamp = new long[]{0};
+    // Only increments performed by this root's link() bookkeeping may be projected through a
+    // frozen classification read. Arbitrary setters and all other payload changes still fail.
+    private Map<Observation,Integer> classificationChildDeltas = new IdentityHashMap<>();
     public long classificationMutationStamp() { synchronized(graph) { requireOpen(); return classificationMutationStamp[0]; } }
 
 
     public void guardClassificationOverlay(Cohort cohort, Observation producer, List<Observation> persisted, List<String> expected) {
       synchronized(graph) {
         requireOpen();var frozen=List.copyOf(expected);
+        var baseline=new IdentityHashMap<>(classificationChildDeltas);
         classificationLocalGuards.add(()->{
-          if(!classificationOverlay(cohort,producer,persisted).state().equals(frozen))
+          if(!classificationOverlay(cohort,producer,persisted,baseline).state().equals(frozen))
             throw new IllegalStateException("Classification local input or producer evidence changed");
         });
       }
@@ -493,6 +506,10 @@ public class DigitalTwinImpl implements DigitalTwin {
       return classificationOverlay(cohort,producer,List.of());
     }
     public ClassificationOverlay classificationOverlay(Cohort cohort, Observation producer, List<Observation> persisted) {
+      return classificationOverlay(cohort,producer,persisted,null);
+    }
+    private ClassificationOverlay classificationOverlay(Cohort cohort, Observation producer, List<Observation> persisted,
+        Map<Observation,Integer> childBaseline) {
       synchronized(graph) {
         if(rootAttempt().attemptState==AttemptState.FAILED || rootAttempt().attemptState==AttemptState.COMMITTED)
           throw new IllegalStateException("Classification attempt is no longer live");
@@ -508,13 +525,15 @@ public class DigitalTwinImpl implements DigitalTwin {
             originals.put(member.getId()>0?"id:"+member.getId():"transient:"+member.getTransientId(),member);
         for(var member:originals.values()) {
           var view=readObservation(member);members.add(view);
-          rawState.add("payload:"+ObservationReadView.fingerprint(member));
-          state.add("payload:"+ObservationReadView.fingerprint(member)+":"+ObservationReadView.fingerprint(view));
+          int delta=childBaseline==null?0:classificationChildDeltas.getOrDefault(member,0)-childBaseline.getOrDefault(member,0);
+          rawState.add("payload:"+ObservationReadView.fingerprint(member,delta));
+          state.add("payload:"+ObservationReadView.fingerprint(member,delta)+":"+ObservationReadView.fingerprint(view,delta));
           rawState.add((member.getId()>0?"id:"+member.getId():"transient:"+member.getTransientId())+":"+member.getObservable().getUrn()+":"+member.getGeometry().encode());
           state.add((member.getId()>0?"id:"+member.getId():"transient:"+member.getTransientId())+":"+member.getObservable().getUrn()+":"+view.getObservable().getUrn()+":"+member.getGeometry().encode());
         }
-        state.add("producerPayload:"+ObservationReadView.fingerprint(producer));
-        rawState.add("producerPayload:"+ObservationReadView.fingerprint(producer));
+        int producerDelta=childBaseline==null?0:classificationChildDeltas.getOrDefault(producer,0)-childBaseline.getOrDefault(producer,0);
+        state.add("producerPayload:"+ObservationReadView.fingerprint(producer,producerDelta));
+        rawState.add("producerPayload:"+ObservationReadView.fingerprint(producer,producerDelta));
         state.add("producerIdentity:"+producer.getTransientId()+":"+producer.getId()+":"+producer.getObservable().getUrn()+":"+producer.getGeometry().encode());
         for(var link:incoming(producer)) if(link.source() instanceof Activity a
             && link.type()==GraphModel.Relationship.forContextualization(producer.getObservable().getContextualization())) {
@@ -813,6 +832,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.classificationReadGuards = parent.classificationReadGuards;
       this.classificationLocalGuards = parent.classificationLocalGuards;
       this.classificationMutationStamp = parent.classificationMutationStamp;
+      this.classificationChildDeltas = parent.classificationChildDeltas;
       this.afterCommitActions = parent.afterCommitActions;
       this.rollbackActions = parent.rollbackActions;
       this.schedulerJournal = parent.schedulerJournal;
@@ -964,7 +984,16 @@ public class DigitalTwinImpl implements DigitalTwin {
         if (source instanceof ObservationImpl sourceObs
             && destination instanceof ObservationImpl targetObs
             && relationship == GraphModel.Relationship.HAS_CHILD) {
-          sourceObs.setChildrenCount(sourceObs.getChildrenCount() + 1);
+          int previousCount=sourceObs.getChildrenCount();
+          sourceObs.setChildrenCount(previousCount + 1);
+          classificationChildDeltas.merge(sourceObs,1,Integer::sum);
+          rollbackActions.add(()->sourceObs.setChildrenCount(Math.max(0,sourceObs.getChildrenCount()-1)));
+          // Attribution copies own primitive counters. Keep this exact link increment visible in
+          // the staged object as well, so projection and native storage use the same owned delta.
+          if(staged(sourceObs) instanceof ObservationImpl replacement && replacement!=sourceObs) {
+            replacement.setChildrenCount(replacement.getChildrenCount()+1);
+            rollbackActions.add(()->replacement.setChildrenCount(Math.max(0,replacement.getChildrenCount()-1)));
+          }
           update(sourceObs);
           targetObs.setParentTransientId(sourceObs.getTransientId());
         } else if (source instanceof CohortImpl sourceCohort
@@ -1276,8 +1305,11 @@ public class DigitalTwinImpl implements DigitalTwin {
                 if (asset == activity && !schedulerJournal.isEmpty()) continue;
                 var attribution = attributions.get(asset);
                 if (attribution != null) {
-                  if (attribution.original().getId() > 0)
-                    kgTransaction.updateSemantics(attribution.replacement(), attribution.before());
+                  if (attribution.original().getId() > 0) {
+                    int ownedChildren=classificationChildDeltas.getOrDefault(attribution.original(),0);
+                    if(ownedChildren==0)kgTransaction.updateSemantics(attribution.replacement(),attribution.before());
+                    else kgTransaction.updateSemantics(attribution.replacement(),attribution.before(),ownedChildren);
+                  }
                 } else kgTransaction.update(asset);
               }
 

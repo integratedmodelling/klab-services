@@ -533,6 +533,84 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return sourceObservation;
   }
 
+  private Observation canonicalDependencyTarget(Observation requested) {
+    if(requested==null || requested.getId()==Observation.UNASSIGNED_ID || requested.getId()==Observation.QUERY_ID)
+      throw new IllegalArgumentException("A bound modeled observation is required");
+    var transaction=getCurrentTransaction();Observation canonical;
+    if(transaction!=null) {
+      var matches=transaction.assets().stream().filter(Observation.class::isInstance).map(Observation.class::cast)
+          .filter(observation->observation.getId()==requested.getId()).toList();
+      if(matches.size()!=1)throw new IllegalStateException("Modeled target is not uniquely owned by the live attempt");
+      canonical=matches.getFirst();
+    } else canonical=getObservation(requested.getId());
+    if(canonical==null || !java.util.Objects.equals(canonical.getObservable().getUrn(),requested.getObservable().getUrn())
+        || canonical.getParentId()!=requested.getParentId()
+        || !org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(canonical.getGeometry()).encode().equals(
+            org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(requested.getGeometry()).encode())
+        || !java.util.Objects.equals(canonical.getMetadata().get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY),
+            requested.getMetadata().get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY)))
+      throw new IllegalStateException("Modeled target binding changed");
+    return canonical;
+  }
+
+  private static boolean sameDependencyMeaning(org.integratedmodelling.klab.api.data.StorageScan.Semantics left,
+      org.integratedmodelling.klab.api.data.StorageScan.Semantics right) {
+    return left.meaning().equals(right.meaning()) && left.unit().equals(right.unit()) && left.currency().equals(right.currency())
+        && left.range().equals(right.range()) && left.contextualDimensions().equals(right.contextualDimensions());
+  }
+
+  @Override
+  public java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> getDependencyFamilies(Observation modeledObservation) {
+    var target=canonicalDependencyTarget(modeledObservation);
+    var encoded=target.getMetadata().get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY);
+    if(encoded==null)return java.util.List.of();
+    return java.util.List.of(Utils.Json.parseObject(encoded.toString(),org.integratedmodelling.klab.api.services.runtime.DependencyFamily[].class));
+  }
+
+  @Override
+  public java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input> getDependencyInputs(Observation modeledObservation, String familyId) {
+    var family=getDependencyFamilies(modeledObservation).stream().filter(f->f.id().equals(familyId)).findFirst()
+        .orElseThrow(()->new IllegalArgumentException("Unknown dependency family"));
+    var target=canonicalDependencyTarget(modeledObservation);var transaction=getCurrentTransaction();
+    if(isInterrupted())throw new java.util.concurrent.CancellationException("Dependency input access cancelled");
+    java.util.Collection<KnowledgeGraph.Link> links;
+    if(transaction!=null) {
+      if(transaction.isFailed())throw new IllegalStateException("Dependency input attempt failed");
+      var root=transaction;while(root.getParent()!=null)root=root.getParent();
+      if(!root.getId().equals(family.rootAttempt()))throw new IllegalStateException("Dependency family belongs to another attempt");
+      links=transaction.incoming(target);
+    } else links=getDigitalTwin().getKnowledgeGraph().getLinks(target,GraphModel.Relationship.Direction.INCOMING,this,GraphModel.Relationship.AFFECTS);
+    var inputs=new java.util.HashMap<String,org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input>();
+    for(var link:links) {
+      if(link.type()!=GraphModel.Relationship.AFFECTS || !(link.source() instanceof Observation source)
+          || !(link.target() instanceof Observation destination) || destination.getId()!=target.getId())continue;
+      var encoded=link.properties().get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding.PROPERTY);
+      if(encoded==null || encoded.toString().isBlank())continue;
+      var binding=Utils.Json.parseObject(encoded.toString(),org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding.class);
+      if(!binding.familyId().equals(family.id()))continue;
+      var branch=family.branches().stream().filter(b->b.id().equals(binding.branchId())).findFirst()
+          .orElseThrow(()->new IllegalStateException("Unknown concrete dependency branch"));
+      if(!binding.rootAttempt().equals(family.rootAttempt()) || !binding.observable().equals(branch.observable())
+          || branch.outcome()!=org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Outcome.RESOLVED)
+        throw new IllegalStateException("Concrete dependency binding changed");
+      var mediation=link.properties().get(org.integratedmodelling.klab.api.data.StorageScan.Binding.PROPERTY);
+      if(mediation==null)throw new IllegalStateException("Concrete dependency has no storage binding");
+      var storageBinding=Utils.Json.parseObject(mediation.toString(),org.integratedmodelling.klab.api.data.StorageScan.Binding.class);
+      if(!storageBinding.source().equals(org.integratedmodelling.klab.api.data.StorageScan.semantics(source.getObservable()))
+          || !sameDependencyMeaning(storageBinding.target(),branch.requested())
+          || !"PREREQUISITE".equalsIgnoreCase(java.util.Objects.toString(link.properties().get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE),""))
+          || !"CURRENT".equals(link.properties().get("readState")))
+        throw new IllegalStateException("Concrete dependency mediation or prerequisite role changed");
+      var input=new org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input(family,branch,source,storageBinding);
+      if(inputs.putIfAbsent(branch.id(),input)!=null)throw new IllegalStateException("Duplicate concrete dependency binding");
+    }
+    var result=new java.util.ArrayList<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input>();
+    for(var branch:family.branches())if(branch.outcome()==org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Outcome.RESOLVED) {
+      var input=inputs.get(branch.id());if(input==null)throw new IllegalStateException("Missing resolved dependency edge");result.add(input);
+    }
+    return java.util.List.copyOf(result);
+  }
+
   @Override
   public Observation getTargetObservation() {
     return targetObservation;

@@ -51,6 +51,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ResolutionGraph {
 
   private Resolvable target;
+  Resolvable target() { return target; }
+  final Map<Model, List<DeferredDependency>> classifierDependencies = new HashMap<>();
   org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
   org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request scheduleRequest;
   org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation scheduleNegotiation;
@@ -107,6 +109,14 @@ public class ResolutionGraph {
 
   public List<Notification> getNotifications() {
     return notifications;
+  }
+
+  /** Models begin with full dependency coverage; only accepted output graphs count here. */
+  boolean hasPartialOutputAncestor() {
+    for(var current=this;current!=null;current=current.parent)
+      if(!(current.target instanceof Model) && current.targetCoverage!=null
+          && current.targetCoverage.getCoverage()>0 && !current.targetCoverage.isComplete())return true;
+    return false;
   }
 
   public double getResolvedCoverage() {
@@ -227,6 +237,7 @@ public class ResolutionGraph {
    */
   public boolean merge(ResolutionGraph childGraph, String localName) {
 
+    classifierDependencies.putAll(childGraph.classifierDependencies);
     Graphs.addAllVertices(this.graph, childGraph.graph.vertexSet());
     Graphs.addAllEdges(this.graph, childGraph.graph, childGraph.graph.edgeSet());
 

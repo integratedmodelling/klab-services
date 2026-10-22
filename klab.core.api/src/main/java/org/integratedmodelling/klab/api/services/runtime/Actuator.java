@@ -62,6 +62,11 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
  */
 public interface Actuator extends Serializable, RuntimeAsset {
 
+  /** Ordered model contributions, including empty models; blank marks unknown identity. Not a reuse lease. */
+  String PRODUCING_MODELS_KEY = "im:producing-models";
+
+  default List<ClassifierDependencyPlan> getClassifierDependencies() { return List.of(); }
+
   enum ExecutionRole { INITIALIZATION, PROCESS, EVENT_INSTANTIATOR, EVENT }
 
   default ExecutionRole getExecutionRole() { return ExecutionRole.INITIALIZATION; }
@@ -220,6 +225,9 @@ public interface Actuator extends Serializable, RuntimeAsset {
    * @return
    */
   String getStrategyUrn();
+
+  default DependencyFamily.Binding getDependencyFamilyBinding() { return null; }
+  default java.util.List<DependencyFamily> getDependencyFamilies() { return java.util.List.of(); }
 
   default org.integratedmodelling.klab.api.knowledge.SingularContextBinding getContextBinding() { return null; }
 

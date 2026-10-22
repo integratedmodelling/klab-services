@@ -17,6 +17,17 @@ import java.util.List;
 
 public class ActuatorImpl implements Actuator {
 
+  private org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding dependencyFamilyBinding;
+  private java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> dependencyFamilies=new java.util.ArrayList<>();
+  public org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding getDependencyFamilyBinding() { return dependencyFamilyBinding; }
+  public void setDependencyFamilyBinding(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding value) { dependencyFamilyBinding=value; }
+  public java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> getDependencyFamilies() { return dependencyFamilies; }
+  public void setDependencyFamilies(java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> value) { dependencyFamilies=value; }
+
+  private List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> classifierDependencies = new ArrayList<>();
+  public List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> getClassifierDependencies() { return classifierDependencies; }
+  public void setClassifierDependencies(List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> plans) { classifierDependencies = plans == null ? new ArrayList<>() : plans; }
+
   private ExecutionRole executionRole = ExecutionRole.INITIALIZATION;
   private java.util.Map<Integer, org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule>
       occurrenceSchedules = new java.util.HashMap<>();

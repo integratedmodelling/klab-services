@@ -19,6 +19,10 @@ public class DocumentSemanticValidator
         KimObservationStrategyDocumentVisitor.Validator {
   private final ReasonerService reasoner;
   private final boolean executableModels;
+  private final boolean classifierPreparableDependencies;
+  private final java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingClassifierDependency> pendingClassifierDependencies=new java.util.ArrayList<>();
+  public java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingClassifierDependency> getPendingClassifierDependencies() { return java.util.List.copyOf(pendingClassifierDependencies); }
+
   private final OWLSemanticClauseSupport clauses;
   private final KimWorldviewValidator sourceValidator = new KimWorldviewValidator();
 
@@ -27,6 +31,11 @@ public class DocumentSemanticValidator
   }
 
   public DocumentSemanticValidator(ReasonerService reasoner, boolean executableModels) {
+    this(reasoner, executableModels, false);
+  }
+
+  public DocumentSemanticValidator(ReasonerService reasoner, boolean executableModels, boolean classifierPreparableDependencies) {
+    this.classifierPreparableDependencies = classifierPreparableDependencies;
     this.executableModels = executableModels;
     this.reasoner = reasoner;
     this.clauses = new OWLSemanticClauseSupport(reasoner.owl());
@@ -158,7 +167,22 @@ public class DocumentSemanticValidator
       // merely because its detached declaration is incomplete.
       if (executableModels)
         requiredOccurrences.addAll(model.getObservables().subList(1, model.getObservables().size()));
-      for (var occurrence : requiredOccurrences) {
+      int occurrenceIndex=-1;
+      for (var originalOccurrence : requiredOccurrences) {
+        occurrenceIndex++;
+        var occurrence = originalOccurrence;
+        // Outputs are always strict. Pending classifier evidence applies only to authored inputs.
+        if ((!executableModels || classifierPreparableDependencies) && occurrenceIndex<model.getDependencies().size()) {
+          var residual = classifierResidual(originalOccurrence);
+          if (residual != null) {
+            var prepared=DependencyExpansion.prepare((org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl)originalOccurrence,
+                reasoner.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class)::declareConcept);
+            pendingClassifierDependencies.add(new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingClassifierDependency(
+                model.getUrn(),occurrenceIndex,originalOccurrence.getUrn(),reasoner.declareObservable(residual).getUrn(),
+                prepared.requests().stream().map(request->request.identity().path()).toList()));
+            occurrence = residual;
+          }
+        }
         if (occurrence.getSemantics() == null) {
           if (unboundSyntax(occurrence))
             dependencyUnresolved(result, occurrence, context, template,
@@ -218,6 +242,50 @@ public class DocumentSemanticValidator
       result.add(error("MODEL_DEPENDENCY_UNRESOLVED: " + unavailable.getMessage(), model, context));
     }
     return result;
+  }
+
+  /** Detached proof skeleton; the original source still receives applicability/disjointness checks. */
+  private KimObservable classifierResidual(KimObservable source) {
+    if (!(source instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl syntax)
+        || unboundSyntax(source)) return null;
+    try {
+      var explicitBearer=source.getSemantics().getInherent();
+      if(explicitBearer==null || explicitBearer.getName()==null || explicitBearer.getObservable()!=null
+          || explicitBearer.isNegated() || explicitBearer.isCollective() || explicitBearer.getSemanticModifier()!=null)return null;
+      var resources=reasoner.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class);
+      var prepared=DependencyExpansion.prepare(syntax,resources::declareConcept);
+      if(prepared.requests().isEmpty())return null;
+      var removals=new java.util.HashMap<java.util.List<String>,java.util.Set<Integer>>();
+      for(var request:prepared.requests()) {
+        var path=request.identity().path();var declaration=request.declaration();var predicate=request.predicate();
+        if(!declaration.is(SemanticType.ATTRIBUTE) || !declaration.is(SemanticType.ABSTRACT)
+            || !plainPredicateSlot(predicate))return null;
+        boolean direct=path.size()==3 && path.get(0).equals("semantics") && path.get(1).equals("traits");
+        boolean bearer=path.size()==4 && path.get(0).equals("semantics") && path.get(1).equals("inherent") && path.get(2).equals("traits");
+        if(!direct && !bearer)return null;
+        if(direct) { var canonical=reasoner.declareConcept(source.getSemantics());if(canonical==null || !canonical.is(SemanticType.QUALITY))return null; }
+        var owner=direct?source.getSemantics():source.getSemantics().getInherent();
+        if(owner==null || owner.isNegated() || owner.getSemanticModifier()!=null || owner.getObservable()!=null
+            || owner.getRelationshipSource()!=null || owner.getRelationshipTarget()!=null)return null;
+        removals.computeIfAbsent(path.subList(0,path.size()-2),ignored->new java.util.HashSet<>()).add(Integer.parseInt(path.getLast()));
+      }
+      var residual=new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl(syntax,(path,node)->{
+        var indexes=removals.get(path);if(indexes==null)return;
+        for(int i=node.getTraits().size()-1;i>=0;i--)if(indexes.contains(i))node.getTraits().remove(i);
+      });
+      return residual;
+    } catch(RuntimeException unavailable) { return null; }
+  }
+
+  private static boolean plainPredicateSlot(KimConcept c) {
+    return c!=null && c.getName()!=null && c.getObservable()==null && c.getAbout().isEmpty()
+        && c.getInherent()==null && c.getGoal()==null && c.getCausant()==null && c.getCaused()==null
+        && c.getCompresent()==null && c.getComparisonConcept()==null && c.getAuthorityTerm()==null
+        && c.getAuthority()==null && c.getSemanticModifier()==null && c.getRelationshipSource()==null
+        && c.getRelationshipTarget()==null && !c.isNegated() && !c.isCollective()
+        && c.getOperands().isEmpty() && c.getModifiers().isEmpty() && c.getCooccurrent()==null
+        && c.getAdjacent()==null && c.getParent()==null && c.getValueOperators().isEmpty()
+        && !c.isPattern() && c.getPatternVariables().isEmpty() && c.getTraits().isEmpty() && c.getRoles().isEmpty();
   }
 
   private boolean unboundSyntax(KimObservable observable) {

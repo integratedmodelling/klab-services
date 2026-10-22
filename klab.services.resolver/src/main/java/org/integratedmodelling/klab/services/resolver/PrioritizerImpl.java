@@ -84,7 +84,7 @@ public class PrioritizerImpl implements Prioritizer<Model> {
 
   public int semanticDistance(Model model) {
     return distances.computeIfAbsent(model, candidate -> {
-      long validatedRevision = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
+      long validatedRevision = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableRevision(
           candidate, scope, observable);
       if (validatedRevision < 0) return Integer.MAX_VALUE;
       var outputs = candidate.getObservables();

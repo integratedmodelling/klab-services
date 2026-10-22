@@ -101,6 +101,7 @@ public class DataflowCompiler {
                   null));
     }
 
+    if(ret.getComputation().stream().anyMatch(this::hasClassifierDependencies))ret.setResolutionOutcome(Dataflow.ResolutionOutcome.DEFERRED);
     ret.getNotifications().addAll(resolutionGraph.getNotifications());
     ret.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_RESOLUTION_GRAPH,
         new ResolutionFlowChartAdapter().adapt(resolutionGraph));
@@ -263,6 +264,16 @@ public class DataflowCompiler {
       Model model,
       String localName) {
 
+    var priorModels=observationActuator.getData().get(Actuator.PRODUCING_MODELS_KEY);
+    var contributions=new ArrayList<String>();
+    if(priorModels!=null) {
+      if(!(priorModels instanceof List<?> entries) || entries.stream().anyMatch(entry->!(entry instanceof String)))
+        throw new KlabIllegalStateException("Malformed producing-model provenance");
+      entries.forEach(entry->contributions.add((String)entry));
+    }
+    // Unknown/ad-hoc models may execute normally, but their contribution prevents source coalescing.
+    contributions.add(Objects.toString(model.getUrn(),""));
+    observationActuator.getData().put(Actuator.PRODUCING_MODELS_KEY,List.copyOf(contributions));
     var occurrenceSchedule = compileOccurrenceSchedule(observationActuator, model);
     if ((observationActuator.getExecutionRole() == Actuator.ExecutionRole.PROCESS
         || observationActuator.getExecutionRole() == Actuator.ExecutionRole.EVENT)
@@ -288,9 +299,9 @@ public class DataflowCompiler {
       var coverage = edge.coverage;
 
       if (child instanceof OperationTarget operation) {
-        observationActuator
-            .getChildren()
-            .addAll(compileOperation(operation, coverage, edge.localName));
+        boolean deferred=resolutionGraph.classifierDependencies.getOrDefault(model,List.of()).stream()
+            .anyMatch(plan->plan.operations().containsValue(operation));
+        if(!deferred)observationActuator.getChildren().addAll(compileOperation(operation, coverage, edge.localName));
       } else if (child instanceof Observation dependentObservation) {
         observationActuator
             .getChildren()
@@ -306,9 +317,24 @@ public class DataflowCompiler {
       }
     }
 
+    for(var deferred:resolutionGraph.classifierDependencies.getOrDefault(model,List.of())) {
+      var occurrences=new ArrayList<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan.Occurrence>();
+      for(var entry:deferred.operations().entrySet()) {
+        var lowered=compileOperation(entry.getValue(),observationActuator.getCoverage(),null);
+        if(lowered.size()!=1)throw new KlabValidationException("Exactly one classifier strategy is required per occurrence");
+        occurrences.add(new org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan.Occurrence(entry.getKey(),lowered.getFirst()));
+      }
+      var context=scope.getContextObservation();
+      observationActuator.getClassifierDependencies().add(new org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan(
+          model.getUrn(),deferred.namespace(),deferred.sourceVersion(),deferred.sourceFingerprint(),deferred.index(),deferred.name(),deferred.source(),
+          context.getId(),context.getObservable().getUrn(),org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(observationActuator.getCoverage()).encode(),
+          deferred.reasonerId(),deferred.semanticRevision(),occurrences));
+    }
     for (var contextualizer : model.getComputation()) {
 
       Map<String, Object> overriddenParameters = new HashMap<>();
+      for(var deferred:resolutionGraph.classifierDependencies.getOrDefault(model,List.of()))
+        if(deferred.name()!=null)overriddenParameters.put(deferred.name(),Identifier.create(deferred.name()));
       // Named prerequisite ports are bound to child actuator names, not to producer graph IDs.
       for (var edge : resolutionGraph.graph().outgoingEdgesOf(model)) {
         if (edge.localName != null
@@ -416,6 +442,10 @@ public class DataflowCompiler {
     var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
     return reasoner != null && reasoner.resolves(observable, model.getObservables().getFirst(),
         scope.getContextObservation() == null ? null : scope.getContextObservation().getObservable());
+  }
+
+  private boolean hasClassifierDependencies(Actuator actuator) {
+    return !actuator.getClassifierDependencies().isEmpty() || actuator.getChildren().stream().anyMatch(this::hasClassifierDependencies);
   }
 
   private List<Actuator> compileOperation(

@@ -16,6 +16,15 @@ public class SemanticValidationResponse implements Serializable {
   private String sourceHash;
   private long knowledgeRevision = -1;
   private boolean executableModels;
+  private boolean classifierPreparableDependencies;
+  public record PendingClassifierDependency(String modelUrn, int dependencyIndex, String originalObservable,
+      String residualObservable, java.util.List<java.util.List<String>> occurrences) implements Serializable {
+    public PendingClassifierDependency { occurrences=occurrences.stream().map(java.util.List::copyOf).toList(); }
+  }
+  private List<PendingClassifierDependency> pendingClassifierDependencies=new ArrayList<>();
+  public List<PendingClassifierDependency> getPendingClassifierDependencies() { return pendingClassifierDependencies; }
+  public void setPendingClassifierDependencies(List<PendingClassifierDependency> value) { pendingClassifierDependencies=value; }
+
   private String reason;
   private List<Notification> notifications = new ArrayList<>();
 
@@ -26,6 +35,7 @@ public class SemanticValidationResponse implements Serializable {
       ret.authoringSource = org.integratedmodelling.klab.api.services.resources.AuthoringSource.responseIdentity(request.document());
     ret.documentVersion = request.getDocumentVersion();
     ret.executableModels = request.isExecutableModels();
+    ret.classifierPreparableDependencies = request.isClassifierPreparableDependencies();
     ret.sourceHash = SemanticValidationRequest.sourceHash(request.document().getSourceCode());
     return ret;
   }
@@ -73,8 +83,12 @@ public class SemanticValidationResponse implements Serializable {
         && Objects.equals(documentVersion, current.getDocumentVersion())
         && Objects.equals(sourceHash, SemanticValidationRequest.sourceHash(current.document().getSourceCode()))
         && executableModels == current.isExecutableModels()
+        && classifierPreparableDependencies == current.isClassifierPreparableDependencies()
         && knowledgeRevision == currentKnowledgeRevision;
   }
+
+  public boolean isClassifierPreparableDependencies() { return classifierPreparableDependencies; }
+  public void setClassifierPreparableDependencies(boolean value) { classifierPreparableDependencies = value; }
 
   public boolean isExecutableModels() { return executableModels; }
   public void setExecutableModels(boolean value) { executableModels = value; }

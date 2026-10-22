@@ -612,8 +612,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public void updateSemantics(Observation observation, String expectedObservable) {
+      updateSemantics(observation,expectedObservable,0);
+    }
+
+    @Override
+    public void updateSemantics(Observation observation,String expectedObservable,int ownedChildDelta) {
       if (closed) throw new KlabStorageException("Closed semantic-update transaction");
       try {
+        if(ownedChildDelta<0)throw new IllegalArgumentException("Negative owned child delta");
         // The write acquires the observation lock before reading the baseline. This also
         // serializes classifications of shared observations from different context roots.
         var row =
@@ -638,8 +644,9 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         transaction
             .run(
                 "MATCH (n:Observation {id: $id}) SET n += $semantics, "
-                    + "n.semanticRevision = n.semanticRevision + 1",
-                Map.of("id", observation.getId(), "semantics", semantics))
+                    + "n.semanticRevision = n.semanticRevision + 1"
+                    + (ownedChildDelta==0?"":", n.childrenCount = coalesce(n.childrenCount,0) + $ownedChildDelta"),
+                Map.of("id", observation.getId(), "semantics", semantics,"ownedChildDelta",ownedChildDelta))
             .consume();
         semanticUpdates.add(observation.getId());
       } catch (RuntimeException failure) {
@@ -1935,7 +1942,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             case Observation observation -> observation.getGeometry();
             case Actuator actuator -> actuator.getCoverage();
             // only store geometries for shards that are partial
-            case Storage.Shard shard -> shard.getShardCount() > 1 ? shard.getGeometry() : null;
+            case Storage.Shard shard -> shard.getGeometry();
             default -> null;
           };
 
@@ -2023,7 +2030,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             case Observation observation -> observation.getGeometry();
             case Actuator actuator -> actuator.getCoverage();
             // only store geometries for shards that are partial
-            case Storage.Shard shard -> shard.getShardCount() > 1 ? shard.getGeometry() : null;
+            case Storage.Shard shard -> shard.getGeometry();
             default -> null;
           };
 

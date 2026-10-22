@@ -51,6 +51,10 @@ public final class ModelValidationGate {
   }
 
   private static long require(KimNamespace namespace, Scope scope, long expectedRevision, boolean executable) {
+    return require(namespace,scope,expectedRevision,executable,false);
+  }
+
+  private static long require(KimNamespace namespace, Scope scope, long expectedRevision, boolean executable, boolean preparable) {
     if (namespace == null || scope == null) throw new KlabValidationException("Model source validation is unavailable");
     var reasoner = scope.getService(Reasoner.class);
     if (reasoner == null) throw new KlabValidationException("Model source validation requires a reasoner");
@@ -58,6 +62,7 @@ public final class ModelValidationGate {
         Long.toString(namespace.getLastUpdateTimestamp()));
     request.setKnowledgeRevision(expectedRevision);
     request.setExecutableModels(executable);
+    request.setClassifierPreparableDependencies(preparable);
     var response = reasoner.validateDocument(request, scope);
     boolean receiptMatches = response != null && response.getKnowledgeRevision() >= 0
         && response.matches(request, response.getKnowledgeRevision())
@@ -76,10 +81,14 @@ public final class ModelValidationGate {
   }
 
   private static long require(KimModel model, Scope scope, long expectedRevision, boolean executable) {
+    return require(model,scope,expectedRevision,executable,false);
+  }
+
+  private static long require(KimModel model, Scope scope, long expectedRevision, boolean executable, boolean preparable) {
     var namespace = new KimNamespaceImpl();
     namespace.setUrn(model.getNamespace() == null ? "model.validation" : model.getNamespace());
     namespace.getStatements().add(model);
-    return require(namespace, scope, expectedRevision, executable);
+    return require(namespace, scope, expectedRevision, executable, preparable);
   }
 
   public static boolean admits(String name, String namespace, ResourcesService resources, Scope scope) {
@@ -149,6 +158,19 @@ public final class ModelValidationGate {
   }
 
   public static long validatedRevision(Model model, Scope scope, Observable requested) {
+    return validatedRevision(model,scope,requested,false);
+  }
+
+  /** Conditional resolution admission; every pending classifier must subsequently produce a plan. */
+  public static boolean admitsPreparable(Model model, Scope scope, Observable requested) {
+    return validatedPreparableRevision(model,scope,requested)>=0;
+  }
+
+  public static long validatedPreparableRevision(Model model, Scope scope, Observable requested) {
+    return validatedRevision(model,scope,requested,true);
+  }
+
+  private static long validatedRevision(Model model, Scope scope, Observable requested, boolean preparable) {
     try {
       var resources = scope.getService(ResourcesService.class);
       long revision = -1;
@@ -183,7 +205,7 @@ public final class ModelValidationGate {
       }
       syntax.getContextualization().addAll(model.getComputation());
       if (syntax.getObservables().isEmpty() || !executionBound(syntax.getObservables().getFirst(), scope)) return -1;
-      long boundRevision = require(syntax, scope, revision, true);
+      long boundRevision = require(syntax, scope, revision, true, preparable);
       return saved == null || unchanged(saved, timestamp, sourceCode) ? boundRevision : -1;
     } catch (RuntimeException unavailable) { return -1; }
   }

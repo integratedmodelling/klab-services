@@ -217,4 +217,18 @@ class ResolutionCompilerQueryTest {
     assertTrue(result.coverage().isEmpty());
     verify(scope, never()).observation(any());
   }
+  @Test void loweringRetainsOrderedModelIdentityEvenWithoutComputations() {
+    var scope=mock(ContextScope.class);var graph=ResolutionGraph.create(scope);var actuator=new org.integratedmodelling.common.runtime.ActuatorImpl();
+    var observable=mock(Observable.class);var first=mock(org.integratedmodelling.klab.api.knowledge.Model.class);var second=mock(org.integratedmodelling.klab.api.knowledge.Model.class);
+    when(first.getUrn()).thenReturn("same.namespace.producerA");when(second.getUrn()).thenReturn("same.namespace.producerB");
+    for(var model:java.util.List.of(first,second)){when(model.getObservables()).thenReturn(java.util.List.of(observable));when(model.getComputation()).thenReturn(java.util.List.of());graph.graph().addVertex(model);}
+    var compiler=new DataflowCompiler(null,graph,scope);
+    for(var model:java.util.List.of(first,first,second))compiler.compileModel(actuator,null,Geometry.create("*"),mock(org.integratedmodelling.klab.api.knowledge.ObservationStrategy.class),model,null);
+    org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of("same.namespace.producerA","same.namespace.producerA","same.namespace.producerB"),actuator.getData().get(org.integratedmodelling.klab.api.services.runtime.Actuator.PRODUCING_MODELS_KEY));assertTrue(actuator.getComputation().isEmpty());
+    var unnamed=mock(org.integratedmodelling.klab.api.knowledge.Model.class);when(unnamed.getObservables()).thenReturn(java.util.List.of(observable));when(unnamed.getComputation()).thenReturn(java.util.List.of());graph.graph().addVertex(unnamed);
+    compiler.compileModel(actuator,null,Geometry.create("*"),mock(org.integratedmodelling.klab.api.knowledge.ObservationStrategy.class),unnamed,null);
+    org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of("same.namespace.producerA","same.namespace.producerA","same.namespace.producerB",""),actuator.getData().get(org.integratedmodelling.klab.api.services.runtime.Actuator.PRODUCING_MODELS_KEY));
+
+  }
+
 }

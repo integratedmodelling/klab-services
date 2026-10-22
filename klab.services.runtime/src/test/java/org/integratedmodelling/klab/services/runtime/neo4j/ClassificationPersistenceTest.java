@@ -49,6 +49,24 @@ class ClassificationPersistenceTest {
   String observable(long id) {
     return (String) rows("MATCH (n:Observation {id:$id}) RETURN n.observable AS value", Map.of("id", id)).getFirst().get("value");
   }
+  @Test void semanticChildBookkeepingAddsOnlyTheOwnedDeltaWithoutReplacingOtherPayload()throws Exception {
+    rows("MATCH (n:Observation {id:41}) SET n.childrenCount=7,n.foreignPayload='retained'",Map.of());
+    var member=observation(41,"after");member.setChildrenCount(999);
+    try(var tx=new Fixture("a").createTransaction(mock(ContextScope.class))){tx.updateSemantics(member,"before",3);}
+    var actual=rows("MATCH (n:Observation {id:41}) RETURN n.childrenCount AS count,n.name AS name,n.parentId AS parent,n.foreignPayload AS payload",Map.of()).getFirst();
+    assertEquals(10L,actual.get("count"));assertEquals("Preserved",actual.get("name"));assertEquals(77L,actual.get("parent"));assertEquals("retained",actual.get("payload"));
+  }
+  @Test void semanticChildBookkeepingRollsBackOnStaleTargetAndCancellation()throws Exception {
+    rows("MATCH (n:Observation {id:41}) SET n.childrenCount=7",Map.of());
+    try(var tx=new Fixture("a").createTransaction(mock(ContextScope.class))){tx.updateSemantics(observation(41,"tentative"),"before",3);tx.fail(new IllegalStateException("cancelled"));}
+    assertEquals("before",observable(41));assertEquals(7L,rows("MATCH (n:Observation {id:41}) RETURN n.childrenCount AS n",Map.of()).getFirst().get("n"));
+    try(var tx=new Fixture("a").createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.updateSemantics(observation(41,"stale"),"wrong",3));}
+    assertEquals(7L,rows("MATCH (n:Observation {id:41}) RETURN n.childrenCount AS n",Map.of()).getFirst().get("n"));
+  }
+  @Test void negativeSemanticChildDeltaCannotWrite()throws Exception {
+    try(var tx=new Fixture("a").createTransaction(mock(ContextScope.class))){assertThrows(IllegalArgumentException.class,()->tx.updateSemantics(observation(41,"invalid"),"before",-1));}
+    assertEquals("before",observable(41));
+  }
   @Test void semanticIndexesAndClassifiedAuditCommitTogetherWithoutChangingOtherProperties() throws Exception {
     var graph = new Fixture("a"); var member = observation(41, "after");
     var activity = Activity.of(Activity.Type.CLASSIFICATION); activity.setId(91);
