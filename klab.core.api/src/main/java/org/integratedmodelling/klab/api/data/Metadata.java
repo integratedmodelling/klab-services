@@ -248,6 +248,9 @@ public interface Metadata extends Parameters<String> {
   /** Encoded geometry requested in an observation query. */
   String IM_QUERY_GEOMETRY = "im:query-geometry";
 
+  /** Encoded support of one contextualization invocation, carried by its execution Activity. */
+  String IM_EXECUTION_GEOMETRY = "im:execution-geometry";
+
   /** IDs of the observations whose geometries contributed to an observation query result. */
   String IM_QUERY_SOURCE_IDS = "im:query-source-ids";
 

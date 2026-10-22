@@ -106,7 +106,8 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
   String getNamespace();
 
   /**
-   * Rank is only used for informational purposes.
+   * Lower ranks are attempted first. Rank zero is the direct model tier; contextual
+   * recursive routes belong to rank one or higher and run only for outstanding support.
    *
    * @return
    */

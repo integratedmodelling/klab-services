@@ -2012,12 +2012,20 @@ without a typed execution route. It does not change native bearers or member ext
 
 A collective that successfully returns zero members realizes the observational
 contract; unresolved, failed or cancelled discovery does not. Verify existing
-collective lifecycle behavior before adding runtime machinery. A declaration alone
+collective lifecycle behavior before adding runtime machinery. The current query
+foundation requires successful typed execution and invocation support, rejects failed
+attempt reuse, and returns one proven fragment rather than an unsafe union. See
+[Collective query completion](COLLECTIVE_COMPLETION.md) for its limits. A declaration alone
 does not mean that discovery has run or completed, and an error/empty observation
 sentinel must not be counted as successful empty membership.
 
-For later contextual execution, legal requests and choice of implementation remain
-separate. Precomputed Tier-0 models may fulfill a legal request independently.
+Contextual request permission is now checked before strategy selection for qualities
+and processes. It uses native bearer compatibility or authored containment with
+asserted container inheritance and a single named native bearer witness. See the
+[admission boundary](OBSERVABLES.md#observational-containment-declarations).
+This does not admit unbridged computational dependencies or lower unsupported context/member
+plans. Legal requests and choice of implementation remain separate. Precomputed
+Tier-0 models may fulfill a legal request independently, without a discovery receipt.
 Recursive domain discovery/computation is Tier-1+ and must be deferred until Tier-0
 alternatives leave relevant support unfulfilled. Preserve accepted partial coverage
 and native computation extents; never turn missing/unrepresentable support into

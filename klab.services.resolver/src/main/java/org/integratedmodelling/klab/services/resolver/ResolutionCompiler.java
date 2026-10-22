@@ -244,7 +244,8 @@ public class ResolutionCompiler {
     }
 
     List<ResolutionGraph> strategyGraphs = new ArrayList<>();
-    var strategies = scope.getService(Reasoner.class).computeObservationStrategies(observation, scope);
+    var strategies = scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)
+        .stream().sorted(java.util.Comparator.comparingInt(ObservationStrategy::getRank)).toList();
     if (strategies.isEmpty() && suppliedQuery != null && !observation.getObservable().isOptional()) {
       scope.warn("No observation strategy for dependency " + observation.getObservable().getUrn()
           + " (abstract=" + observation.getObservable().isAbstract() + ")");

@@ -1089,12 +1089,25 @@ or event/process to event/process; other families require an explicit extension.
 Authored-contract lookup may traverse asserted named parent classes while retaining
 each original declaration and provenance. It does not turn arbitrary OWL entailments,
 undeclared types or a transitive chain into permissions or executable strategies.
-It does not implement contextual dependency admission, discovery, sampling,
-recursive domain resolution or typed composition. Existing executable model checks
-continue to apply. The future admission contract must allow independent Tier-0
-precomputed models for a legal contextual request without requiring a recursive
-route; recursive contextual strategies belong to Tier-1 or higher and must not run
-discovery/computation after Tier-0 has completely fulfilled the request.
+Contextual request admission now checks quality/process native bearer bounds at the
+Reasoner's strategy entry point. A directly compatible context remains legal. Otherwise,
+one named native bearer must prove every required bearer bound and equal or specialize
+an authored contained endpoint; the container may inherit the declaration through
+asserted named parents. Thus Region-to-Stream admits a Reach-native quantity when Reach
+specializes Stream, while Region-to-Reach does not admit every Stream quantity.
+Separate declared member types cannot jointly invent a common bearer identity.
+Anonymous bearer expressions without a single named witness remain unsupported for
+this contextual route. Other activity families retain their existing checks.
+
+This permission performs no discovery and demands no recursive binding or completed
+collective. Independent precomputed Tier-0 models keep their native semantics and
+remain subject to existing model/identity/semantic-distance checks. Computational
+dependencies still need their own compatible bearer proof: containment alone cannot
+bridge a Region field into a Stream computation. No new executable mapping registry,
+sampling, recursive domain resolution or typed composition is implemented here.
+The Resolver orders observation alternatives by ascending rank and stops when coverage
+is complete. Recursive contextual strategies belong to Tier-1 or higher and must not
+run discovery/computation after Tier-0 has completely fulfilled the request.
 
 Deployment compatibility remains separate: adding this property changes the bundled
 ODO document bytes. A worldview pinned to an older immutable ODO release must not

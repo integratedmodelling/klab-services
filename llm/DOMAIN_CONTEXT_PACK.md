@@ -117,14 +117,27 @@ An unresolved or failed Stream discovery is not a successful empty result.
   inherency, subclassing, physical part, geometric enclosure, coverage or transitivity.
 - A successful collective may be empty; failed/unresolved discovery is not success.
   An empty member set creates no bearer or computed quality value.
+  Collective catalog queries require correctly typed successful execution Activities
+  and their recorded invocation support; registration links, IDs and commit metadata
+  are insufficient. Failed attempt trees cannot reuse earlier child success. Queries
+  conservatively return one proven fragment: exact multi-support composition and
+  discovery-policy/revision/observer reuse keys remain future work. Legacy evidence
+  without invocation support is unproven; direct getMembers calls are not certified
+  by this query guard. See [collective completion](../docs/COLLECTIVE_COMPLETION.md).
 - The asserted OWL carrier is an annotated `A subClassOf (R min 0 B)`, with marker
   `urn:klab:validation:observational-containment = "ADDITIVE_DECLARATION"`.
   It is tautological in OWL. Read marked asserted declarations, never inferred
   minimum-zero restrictions, to establish authored admissibility.
-- This slice adds source/transport/OWL declaration support for subject/agent pairs
-  and event/process pairs. Contextual admission and S7/S9 execution remain planned;
-  existing dependency checks are unchanged. Preserve native identities/bearers.
-- Future legal Tier-0 precomputed fulfillment must not require recursive discovery.
+- Source/transport/OWL declarations support subject/agent pairs and event/process pairs.
+  Quality/process contextual request admission reads authored contracts at strategy selection:
+  one named native bearer must satisfy all bearer bounds and specialize the declared member;
+  containers inherit through asserted named parents. A narrow member contract cannot authorize
+  a broader native bearer. No transitive containment or generic min-zero entailment is used.
+  S7/S9 execution remains planned; computational dependency checks are unchanged.
+  Preserve native identities/bearers. Anonymous bearer expressions without a named witness
+  do not acquire a contextual route from this increment.
+- Legal Tier-0 precomputed fulfillment requires no recursive discovery or collective receipt.
+  Resolver observation alternatives are sorted by ascending rank and stop at complete coverage.
   Recursive contextual resolution is Tier-1+ and runs only for outstanding support.
   Do not claim StreambedGradient or live cotechino acceptance from declaration tests.
 - Adding the ODO property changes foundation bytes. Preserve immutable source pins;

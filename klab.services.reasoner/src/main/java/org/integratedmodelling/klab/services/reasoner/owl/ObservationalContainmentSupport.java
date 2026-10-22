@@ -31,8 +31,7 @@ public final class ObservationalContainmentSupport {
         throw new KlabValidationException("Observational containment requires both endpoints");
       var container = resolve.apply(declaration.container());
       var contained = resolve.apply(declaration.contained());
-      int family = family(container);
-      if (family == 0 || family != family(contained))
+      if (!supportedPair(container, contained))
         throw new KlabValidationException("Observational containment requires resolved subject/agent "
             + "endpoints or resolved event/process endpoints in the same family");
       if (!owner.getUrn().equals(container.getUrn()) && !owner.getUrn().equals(contained.getUrn()))
@@ -85,6 +84,12 @@ public final class ObservationalContainmentSupport {
     owl.manager.ontologies().forEach(ontology -> declarations(owl, ontology).stream()
         .filter(axiom -> owners.contains(axiom.getSubClass().asOWLClass())).forEach(result::add));
     return Set.copyOf(result);
+  }
+
+  /** The declaration endpoint matrix also applies when reading marked imported carriers. */
+  public static boolean supportedPair(Concept container, Concept contained) {
+    int family = family(container);
+    return family != 0 && family == family(contained);
   }
 
   private static int family(Concept concept) {

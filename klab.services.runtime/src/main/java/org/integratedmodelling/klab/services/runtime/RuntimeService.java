@@ -1218,7 +1218,10 @@ public class RuntimeService extends BaseService
         && scale.getExtents().stream().noneMatch(Extent::isEmpty);
   }
 
-  private Observation queryCollective(Observation query, ServiceContextScope scope) {
+  Observation queryCollective(Observation query, ServiceContextScope scope) {
+
+    if (scope.getCurrentTransaction() != null && scope.getCurrentTransaction().isFailed())
+      return Observation.empty(Notification.error("Cannot query completed discovery from a failed attempt"));
 
     var cohort = getCohortFor(query.getObservable().getSemantics().singular(), scope, false);
     if (cohort == null) {
@@ -1234,38 +1237,37 @@ public class RuntimeService extends BaseService
                   + query.getObservable().getUrn()));
     }
 
-    Geometry contributedGeometry = null;
-    var contributorIds = new ArrayList<Long>();
+    // A single Geometry cannot represent every union of discovery supports. Time union
+    // can fill gaps and independent dimension unions can invent space-time combinations.
+    // Return one proven fragment until exact multi-support composition is available.
+    var requestedGeometry = sanitizeQueryGeometry(query.getGeometry());
+    CollectiveContribution selected = null;
+    Geometry actualGeometry = null;
+    double collectiveCoverage = -1;
     for (var contributor : contributors) {
-      if (contributor.getGeometry() != null && !contributor.getGeometry().isEmpty()) {
-        contributedGeometry = union(contributedGeometry, contributor.getGeometry());
-        contributorIds.add(contributor.getId());
+      if (requestedGeometry != null && !sameSupportDimensions(requestedGeometry, contributor.support())) continue;
+      var fragment = requestedGeometry == null ? contributor.support()
+          : intersection(requestedGeometry, contributor.support());
+      if (!hasMemberSupport(fragment)) continue;
+      double supported = requestedGeometry == null ? 1 : coverage(requestedGeometry, fragment);
+      if (supported > collectiveCoverage) {
+        selected = contributor;
+        actualGeometry = fragment;
+        collectiveCoverage = supported;
       }
     }
-    if (contributedGeometry == null || contributedGeometry.isEmpty()) {
-      return Observation.empty(
-          Notification.info(
-              "Collective observations for "
-                  + query.getObservable().getUrn()
-                  + " have no geometry"));
-    }
-
-    var requestedGeometry =
-        sanitizeQueryGeometry(
-            query.getGeometry() == null ? contributedGeometry : query.getGeometry());
-    var actualGeometry = intersection(requestedGeometry, contributedGeometry);
-    if (actualGeometry == null || actualGeometry.isEmpty() || actualGeometry.size() == 0) {
+    if (selected == null) {
       return Observation.empty(
           Notification.info(
               "No collective observation covers the requested geometry for "
                   + query.getObservable().getUrn()));
     }
 
-    var collectiveCoverage = coverage(requestedGeometry, actualGeometry);
+    if (requestedGeometry == null) requestedGeometry = actualGeometry;
     var result = queryResult(query, actualGeometry, requestedGeometry, collectiveCoverage);
-    result.setChildrenCount(contributors.stream().mapToInt(Observation::getChildrenCount).sum());
+    result.setChildrenCount(selected.observation().getChildrenCount());
     result.getMetadata().put(Metadata.IM_QUERY_COHORT_ID, cohort.getId());
-    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, contributorIds);
+    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, List.of(selected.observation().getId()));
     if (collectiveCoverage < 1.0 - 1.0e-9) {
       result
           .getNotifications()
@@ -1278,7 +1280,9 @@ public class RuntimeService extends BaseService
     return result;
   }
 
-  private List<Observation> findCollectiveContributors(
+  private record CollectiveContribution(Observation observation, Geometry support) {}
+
+  private List<CollectiveContribution> findCollectiveContributors(
       Observation query, Cohort cohort, ServiceContextScope scope) {
 
     var ret = new LinkedHashMap<String, Observation>();
@@ -1305,7 +1309,56 @@ public class RuntimeService extends BaseService
           .run(scope)
           .forEach(o -> ret.put(querySourceKey(o), o));
     }
-    return new ArrayList<>(ret.values());
+    return ret.values().stream().flatMap(producer -> completedCollectiveGeometries(producer, scope).stream()
+            .map(support -> new CollectiveContribution(producer, support)))
+        .filter(contribution -> hasMemberSupport(contribution.support())).toList();
+  }
+
+  /** Existing execution provenance is completion evidence; a contribution link alone is not. */
+  static boolean completedCollective(Observation producer, ServiceContextScope scope) {
+    return !completedCollectiveGeometries(producer, scope).isEmpty();
+  }
+
+  private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope) {
+    var contextualization = producer.getObservable().getContextualization();
+    if (contextualization != Contextualization.INSTANTIATION
+        && contextualization != Contextualization.CONNECTION) return List.of();
+    var effect = GraphModel.Relationship.forContextualization(contextualization);
+    var type = Activity.Type.forContextualization(contextualization);
+    var activities = new ArrayList<Activity>();
+    for (var transaction = scope.getCurrentTransaction(); transaction != null;
+        transaction = transaction.getParent()) {
+      if (transaction.isFailed()) return List.of();
+      transaction.incoming(producer).stream().filter(link -> link.type() == effect)
+          .map(KnowledgeGraph.Link::source).filter(Activity.class::isInstance)
+          .map(Activity.class::cast).forEach(activities::add);
+    }
+    // Positive IDs/commit metadata can already have been assigned before a failed durable close.
+    // Read the successful typed activity from the committed graph, never from those fields alone.
+    if (producer.getId() > 0) scope.getDigitalTwin().getKnowledgeGraph()
+        .query(Activity.class, scope).target(producer).along(effect).run(scope).stream()
+        .filter(activity -> activity.getId() > 0).forEach(activities::add);
+    var support = new ArrayList<Geometry>();
+    for (var activity : activities) {
+      if (activity.getType() != type || activity.getOutcome() != Activity.Outcome.SUCCESS) continue;
+      var encoded = activity.getMetadata().get(Metadata.IM_EXECUTION_GEOMETRY);
+      if (!(encoded instanceof String text) || text.isBlank()) continue;
+      try {
+        var invocation = Geometry.create(text);
+        if (!sameSupportDimensions(producer.getGeometry(), invocation)) continue;
+        var contribution = intersection(producer.getGeometry(), invocation);
+        if (hasMemberSupport(contribution)) support.add(contribution);
+      } catch (IllegalArgumentException | KlabIllegalArgumentException invalidSupport) {
+        // Legacy or malformed provenance does not establish discovery support.
+      }
+    }
+    return support;
+  }
+
+  private static boolean sameSupportDimensions(Geometry first, Geometry second) {
+    if (first == null || second == null) return false;
+    return first.getDimensions().stream().map(Geometry.Dimension::getType).collect(java.util.stream.Collectors.toSet())
+        .equals(second.getDimensions().stream().map(Geometry.Dimension::getType).collect(java.util.stream.Collectors.toSet()));
   }
 
   private String querySourceKey(Observation observation) {

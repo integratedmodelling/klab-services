@@ -1036,6 +1036,13 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
+    @Override
+    public boolean isFailed() {
+      synchronized (graph) {
+        return rootAttempt().attemptState == AttemptState.FAILED || !failures.isEmpty();
+      }
+    }
+
     private long commitOpen() {
       if (!failures.isEmpty()) {
         rollbackSchedulerState();

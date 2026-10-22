@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
@@ -151,10 +152,19 @@ public class CompiledDataflow {
 
   static Activity createContextualizationActivity(
       org.integratedmodelling.klab.api.documentation.FlowChart plan, Observation observation, Activity parent) {
+    return createContextualizationActivity(plan, observation, parent, observation.getGeometry());
+  }
+
+  static Activity createContextualizationActivity(
+      org.integratedmodelling.klab.api.documentation.FlowChart plan, Observation observation,
+      Activity parent, Geometry executionGeometry) {
     var activity = Activity.of(
         Activity.Type.forContextualization(observation.getObservable().getContextualization()),
         observation, parent, "Contextualization of " + observation.getObservable());
     activity.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_DATAFLOW_GRAPH, plan);
+    if (executionGeometry != null)
+      activity.getMetadata().put(Metadata.IM_EXECUTION_GEOMETRY,
+          GeometryRepository.INSTANCE.sanitize(executionGeometry).encode());
     return activity;
   }
 
@@ -1304,7 +1314,7 @@ public class CompiledDataflow {
       }
 
       var contextualization = createContextualizationActivity(
-          planChart, observation, contextScope.getActivity());
+          planChart, observation, contextScope.getActivity(), geometry);
 
       var executionScope = contextScope.executing(contextualization, observation);
       var contextualizationScope = new ContextualizationScopeImpl(observation, event);

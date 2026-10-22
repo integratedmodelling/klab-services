@@ -4293,6 +4293,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       Observation observation, ContextScope scope) {
       if (candidateRuntime != null && !semanticOnly)
           return candidateRuntime.invoke("computeObservationStrategies", new Class<?>[] { Observation.class, ContextScope.class }, new Object[] { observation, scope });
+      var context = scope.getContextObservation();
+      if (!org.integratedmodelling.klab.services.reasoner.owl.ContextualRequestAdmission.admits(
+          owl(), observation.getObservable().getSemantics(),
+          context == null ? null : context.getObservable().getSemantics())) {
+        scope.warn("CONTEXTUAL_REQUEST_INCOMPATIBLE: no native bearer or authored containment proof for "
+            + observation.getObservable().getUrn());
+        return List.of();
+      }
       return observationReasoner.computeMatchingStrategies(observation, scope, true);
   }
 

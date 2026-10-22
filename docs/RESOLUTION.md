@@ -383,6 +383,23 @@ corresponding computation.
 
 ## 7. Model resolution and ranking
 
+Collective catalog queries now require successful typed execution provenance and the
+recorded invocation support. Registration/compilation links and registered extents alone
+are insufficient. Failed attempt trees cannot reuse earlier local child success. The
+query returns one proven support fragment; exact composition across separate invocation
+supports remains future work. See [Collective query completion](COLLECTIVE_COMPLETION.md)
+for the implemented boundary, legacy behavior and verification limits.
+
+Contextual request legality is checked by `ReasonerService.computeObservationStrategies`
+before matching strategies. Quality/process requests may use a directly compatible
+context or an authored observational-containment contract; this does not alter native
+bearers, semantic distance or model dependency proofs. See
+[observational containment](OBSERVABLES.md#observational-containment-declarations).
+Observation alternatives are sorted by ascending strategy rank at the Resolver boundary,
+then tried only until complete coverage. A successful Tier-0 precomputed alternative
+therefore performs no later recursive domain discovery. Context/member runtime bindings,
+sampling and composition remain future work; containment supplies no coverage proof.
+
 ### 7.1 Ingesting model documents
 
 `ResolverService.loadModel(...)` adapts `KimModel` into `ModelImpl`:

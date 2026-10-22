@@ -401,6 +401,17 @@ public interface DigitalTwin extends RuntimeAsset {
     Transaction getParent();
 
     /**
+     * Whether this attempt tree has failed. Completed child work is not reusable after
+     * any sibling or root failure. Implementations with an attempt state should expose it here.
+     */
+    default boolean isFailed() {
+      var activity = getActivity();
+      return activity != null && (activity.getOutcome() == Activity.Outcome.FAILURE
+          || activity.getOutcome() == Activity.Outcome.INTERNAL_FAILURE)
+          || getParent() != null && getParent().isFailed();
+    }
+
+    /**
      * Signal compilation failure. Return a transaction that will throw the same exception at
      * commit() with as much tracking info as practical.
      *
