@@ -424,6 +424,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public List<Observation> getRelationshipParticipants(Observation relationship) {
     if (!relationship.getObservable().is(SemanticType.RELATIONSHIP)
         || relationship.getObservable().getSemantics().isCollective()) return List.of();
+    org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(relationship.getObservable().getSemantics().getType())
+        .requireComplete(relationship.getObservable().getSemantics().getUrn());
     return relationship.getObservable().is(SemanticType.BIDIRECTIONAL)
         ? participantLinks(relationship, true, GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT)
         : participantLinks(

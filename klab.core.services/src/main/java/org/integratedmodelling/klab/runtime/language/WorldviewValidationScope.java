@@ -250,6 +250,7 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
       // Preserve the source relationship family only after validating one declarable type.
       // Conflicting families are malformed source evidence, not an arbitrary choice.
       if (mainType == SemanticType.RELATIONSHIP) {
+        if (type.contains(SemanticType.BIDIRECTIONAL) && type.contains(SemanticType.UNIDIRECTIONAL)) return SemanticSyntax.Type.NOTHING;
         if (type.contains(SemanticType.STRUCTURAL) && type.contains(SemanticType.FUNCTIONAL))
           return SemanticSyntax.Type.NOTHING;
         if (type.contains(SemanticType.STRUCTURAL)) return SemanticSyntax.Type.STRUCTURAL_RELATIONSHIP;
@@ -302,7 +303,7 @@ public class WorldviewValidationScope extends BasicObservableValidationScope
       case SUBJECT -> SemanticSyntax.Type.SUBJECT;
       case AGENT -> SemanticSyntax.Type.AGENT;
       case EVENT -> SemanticSyntax.Type.EVENT;
-      case RELATIONSHIP -> SemanticSyntax.Type.FUNCTIONAL_RELATIONSHIP;
+      case RELATIONSHIP -> SemanticSyntax.Type.RELATIONSHIP;
       case PROCESS -> SemanticSyntax.Type.PROCESS;
       case CONFIGURATION -> SemanticSyntax.Type.CONFIGURATION;
       case ATTRIBUTE -> SemanticSyntax.Type.ATTRIBUTE;

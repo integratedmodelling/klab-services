@@ -64,6 +64,64 @@ public final class WorldviewDeclarationRegistry {
     if(ordered.size()!=declarations.size())
       dependencies.forEach((name,parents)->{if(!parents.isEmpty())
         error("DECLARATION_ANCESTRY_CYCLE: unresolved parent/alias ancestry at "+name+" -> "+parents,declarations.get(name));});
+    resolveRelationshipAxes();
+  }
+
+  private void resolveRelationshipAxes() {
+    for(var entry:ordered) {
+      var s=entry.statement();
+      if(!s.getType().contains(SemanticType.RELATIONSHIP))continue;
+      try {
+        // Effective flags on transported parents are never the authored choices of this source.
+        org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(s.getType());
+        var parent=RelationshipDeclarationSupport.inherited(s.getDeclaredParent(),x->namedType(x,entry.ontology().getUrn()));
+        if(entry.enclosing()!=null && !s.isAlias() && s.getUpperConceptDefined()==null)parent=parent.merge(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(entry.enclosing().getType()));
+        var names=new LinkedHashSet<String>();structuralHeads(s.getDeclaredParent(),entry.ontology().getUrn(),names);
+        // Partial namespace validation defers external ancestry to the complete worldview registry.
+        boolean complete=names.stream().allMatch(name->declarations.containsKey(name)||coreTypes.containsKey(name));
+        var axes=RelationshipDeclarationSupport.resolve(s,parent,complete);
+        if(!relationshipAxesAdmit(entry,axes))
+          throw new IllegalArgumentException("RELATIONSHIP_AXIS_CONFLICT: no compatible inherited boolean branch");
+        axes.apply(s.getType());
+      } catch(IllegalArgumentException failure) { error(failure.getMessage()+" at "+entry.urn()+" parent="+(s.getDeclaredParent()==null?"<none>":s.getDeclaredParent().getUrn()),entry); }
+    }
+  }
+
+  private boolean relationshipAxesAdmit(Declaration entry,org.integratedmodelling.klab.api.knowledge.RelationshipAxes requested) {
+    for(var nature:List.of(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.STRUCTURAL,org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.FUNCTIONAL))
+      for(var orientation:List.of(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.DIRECTED,org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.BOND)) {
+        var candidate=new org.integratedmodelling.klab.api.knowledge.RelationshipAxes(nature,orientation);
+        try { requested.merge(candidate); if(axisDeclarationAdmits(entry,candidate,new HashSet<>()))return true; }
+        catch(IllegalArgumentException conflict) { /* Try the other finite axis combination. */ }
+      }
+    return false;
+  }
+  private boolean axisDeclarationAdmits(Declaration entry,org.integratedmodelling.klab.api.knowledge.RelationshipAxes candidate,Set<String> visiting) {
+    if(!visiting.add(entry.urn()))return false;
+    try {
+      RelationshipDeclarationSupport.authored(entry.statement()).merge(candidate);
+      if(!axisExpressionAdmits(entry.statement().getDeclaredParent(),entry.ontology().getUrn(),candidate,visiting))return false;
+      if(entry.enclosing()!=null&&!entry.statement().isAlias()&&entry.statement().getUpperConceptDefined()==null) {
+        var parent=get(urn(entry.ontology().getUrn(),entry.enclosing().getUrn()));
+        if(parent!=null&&!axisDeclarationAdmits(parent,candidate,visiting))return false;
+      }
+      return true;
+    } catch(IllegalArgumentException conflict) { return false; }
+    finally { visiting.remove(entry.urn()); }
+  }
+  private boolean axisExpressionAdmits(KimConcept expression,String namespace,org.integratedmodelling.klab.api.knowledge.RelationshipAxes candidate,Set<String> visiting) {
+    if(expression==null)return true;
+    var terms=new ArrayList<Boolean>();
+    if(expression.getName()!=null) {
+      var target=get(urn(namespace,expression.getName()));
+      terms.add(target==null?axisFlagsAdmit(namedType(expression,namespace),candidate):axisDeclarationAdmits(target,candidate,visiting));
+    } else if(expression.getObservable()!=null)terms.add(axisExpressionAdmits(expression.getObservable(),namespace,candidate,visiting));
+    for(var operand:expression.getOperands())terms.add(axisExpressionAdmits(operand,namespace,candidate,visiting));
+    return terms.isEmpty()|| (expression.getExpressionType()==KimConcept.Expression.UNION?terms.stream().anyMatch(Boolean::booleanValue):terms.stream().allMatch(Boolean::booleanValue));
+  }
+  private boolean axisFlagsAdmit(Set<SemanticType> flags,org.integratedmodelling.klab.api.knowledge.RelationshipAxes candidate) {
+    try {org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(flags).merge(candidate);return true;}
+    catch(IllegalArgumentException conflict){return false;}
   }
 
   public List<Notification> errors(){return List.copyOf(errors);}

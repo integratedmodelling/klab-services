@@ -222,7 +222,7 @@ class ObservationalContainmentSourceTest {
   }
 
   @Test void applicabilityClauseOrderCannotHideAnIndependentHeadInherency() throws Exception {
-    var declarations="thing Region; relationship Connection; configuration Network; ";
+    var declarations="thing Region; structural directed relationship Connection; configuration Network; ";
     var ambiguous=parse("ambiguous",declarations+"configuration Structure "
         +"applies to imod:Region is imod:Network of imod:Connection;");
     assertTrue(ambiguous.getNotifications().stream().anyMatch(n->n.getMessage().contains("INHERENCY_HEAD_INDEPENDENT")));

@@ -1348,6 +1348,7 @@ public class LanguageAdapter {
                   SemanticType.QUALITY,
                   SemanticType.AREA);
           case ATTRIBUTE -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
+          case RELATIONSHIP -> EnumSet.of(SemanticType.OBSERVABLE,SemanticType.COUNTABLE,SemanticType.RELATIONSHIP);
           case BOND ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
@@ -1859,6 +1860,9 @@ public class LanguageAdapter {
     if(definition.isCoreDeclaration() && definition.getDeclaredParent()!=null)
       declaredType=CoreAliasTypeSupport.syntaxType(definition.getDeclaredParent().encode(),declaredType);
     ret.setType(adaptSemanticType(declaredType));
+    ret.setDeclaredRelationshipNature(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.valueOf(definition.getDeclaredRelationshipNature().name()));
+    ret.setDeclaredRelationshipOrientation(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.valueOf(definition.getDeclaredRelationshipOrientation().name()));
+    if(ret.getType().contains(SemanticType.RELATIONSHIP)) RelationshipDeclarationSupport.authored(ret).apply(ret.getType());
     ret.setGenericQuality(definition.isGenericQuality());
     ret.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
     for (var annotation : definition.getAnnotations()) {

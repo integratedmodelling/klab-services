@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 public class NavigableKimConceptStatement extends NavigableKlabStatement<KimConceptStatement> implements KimConceptStatement {
+    @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature getDeclaredRelationshipNature() { return delegate.getDeclaredRelationshipNature(); }
+    @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation getDeclaredRelationshipOrientation() { return delegate.getDeclaredRelationshipOrientation(); }
     @Override
     public boolean isGenericQuality() {
         return delegate.isGenericQuality();

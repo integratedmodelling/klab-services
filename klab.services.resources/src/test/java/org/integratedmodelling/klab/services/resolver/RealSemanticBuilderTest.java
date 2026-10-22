@@ -51,7 +51,7 @@ class RealSemanticBuilderTest {
     var resources = mock(ResourcesService.class);
     var reasoner = mock(ReasonerService.class);
     when(reasoner.serviceScope()).thenReturn(scope);
-    when(reasoner.owl()).thenReturn(mock(OWL.class));
+    doReturn(lookupOnlyOwl()).when(reasoner).owl();
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     var child = concept("test:P2", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
@@ -311,7 +311,7 @@ class RealSemanticBuilderTest {
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(reasoner.buildObservable(any(), eq(scope))).thenCallRealMethod();
-    when(reasoner.owl()).thenReturn(mock(OWL.class));
+    doReturn(lookupOnlyOwl()).when(reasoner).owl();
     var predicate = concept("data:Normalized", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
     var quality = concept("geography:Elevation", SemanticType.QUALITY, SemanticType.LENGTH);
     var pSyntax = syntax(predicate.getUrn(), SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
@@ -336,5 +336,11 @@ class RealSemanticBuilderTest {
             .without(List.of(predicate))
             .buildObservable();
     assertEquals(quality.getUrn(), result.getUrn());
+  }
+  private static OWL lookupOnlyOwl() {
+    var owl=mock(OWL.class);
+    // Existing host collaboration must be present even when only builder dispatch is under test.
+    when(owl.monotoneRefinements()).thenReturn(mock(org.integratedmodelling.klab.services.reasoner.owl.MonotoneRefinementSupport.class));
+    return owl;
   }
 }

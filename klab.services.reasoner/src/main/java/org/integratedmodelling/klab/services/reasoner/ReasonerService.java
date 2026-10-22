@@ -3409,6 +3409,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (parent == null) {
         monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
       } else {
+        if(parent.is(SemanticType.RELATIONSHIP)) {
+          var inherited=org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(parent.getType());
+          var own=org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.authored(concept);
+          inherited.merge(own); // Opposite choices fail before canonical type mutation.
+          if(own.nature()!=org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED && own.nature()!=inherited.nature()
+              || own.orientation()!=org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED && own.orientation()!=inherited.orientation())
+            throw new KlabValidationException("RELATIONSHIP_ALIAS_AXIS_CONFLICT: core alias cannot specialize the canonical target");
+        }
         var canonicalTypes=org.integratedmodelling.klab.runtime.language.CoreAliasTypeSupport.types(parent.getUrn(),parent.getType());
         var declarationTypes=org.integratedmodelling.klab.runtime.language.CoreAliasTypeSupport.types(parent.getUrn(),concept.getType());
         parent.getType().clear();parent.getType().addAll(canonicalTypes);parent.getType().addAll(declarationTypes);
@@ -3418,6 +3426,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     if (parent != null) {
+      if(parent.is(SemanticType.RELATIONSHIP) && concept.getUpperConceptDefined()==null)
+        org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.resolve(concept,
+            org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(parent.getType()),false);
       var annotated = new ConceptImpl((ConceptImpl) parent);
       annotated.setAnnotations(
           AnnotationCollector.merge(parent.getAnnotations(), concept.getAnnotations()));
@@ -3611,6 +3622,29 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
     }
 
+    if(declarationType.contains(SemanticType.RELATIONSHIP)) {
+      var parents=org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.inherited(
+          concept.getDeclaredParent(),x->{var c=declare(x,ontology,monitor);return c==null?Set.of():c.getType();});
+      var axisAncestry=new ArrayList<Concept>();
+      if(kimObject!=null) {
+        var enclosing=ontology.getConcept(kimObject.getUrn());
+        if(enclosing!=null) {
+          parents=parents.merge(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(enclosing.getType()));
+          axisAncestry.add(enclosing);
+        }
+      }
+      var axes=org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.resolve(concept,parents,true);
+      if(concept.getDeclaredParent()!=null) {
+        var parentConcept=declare(concept.getDeclaredParent(),ontology,monitor);
+        if(parentConcept!=null)axisAncestry.add(parentConcept);
+      }
+      if(!owl.permitsRelationshipAxes(axisAncestry,axes))
+        throw new IllegalArgumentException("RELATIONSHIP_AXIS_CONFLICT: no shared compatible inherited boolean branch");
+      axes.apply(declarationType);
+      var predeclared=ontology.getConcept(mainId);
+      if(predeclared!=null)axes.apply(predeclared.getType());
+    }
+
     ontology.add(
         Axiom.ClassAssertion(
             mainId,
@@ -3660,6 +3694,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ontology.define();
     main = ontology.getConcept(mainId);
     main.getMetadata().putAll(concept.getMetadata());
+    org.integratedmodelling.klab.services.reasoner.owl.RelationshipOntologySupport.compile(owl,ontology,main,concept);
     ((ConceptImpl) main).setAnnotations(AnnotationCollector.merge(concept.getAnnotations()));
 
     org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compileDeniability(

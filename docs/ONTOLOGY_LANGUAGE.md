@@ -243,6 +243,39 @@ the active language and service implementation.
 Types are observational commitments, not cosmetic labels. They influence what an observation is,
 how it can be contextualized, and which semantic operators apply.
 
+## Relationship nature and orientation
+
+A relationship has two independent semantic axes. Its nature is `structural` or
+`functional`; its orientation is `directed relationship` (ordered source and target)
+or `bond` (unordered participants). Plain `relationship` does not select either axis.
+Functional does not mean an OWL functional property, and a bond does not assert
+transitivity or create a general symmetric property axiom.
+
+An abstract declaration may leave either axis unspecified. A descendant inherits
+settled choices and may fill an unspecified choice; repeating the same choice is
+legal, contradicting an inherited choice is an error even on an abstract descendant.
+A concrete effective relationship must have both axes determined. Omission never
+defaults to directed or bond. Independent intersection parents combine constraints;
+union parents supply only choices shared by every alternative. An alias cannot
+refine its canonical target by adding a previously unspecified choice.
+
+```kim
+abstract relationship Connection;
+abstract functional relationship Interaction is Connection;
+functional directed relationship FeedingConnection is Interaction;
+structural bond Association is Connection;
+```
+
+These are schematic declarations illustrating the axes, not production ecology
+terms. `structural relationship Incomplete;` is invalid because its concrete
+orientation is unspecified. A bond descendant of a directed relationship is invalid.
+Raw authored choices remain distinct from inherited effective choices through API
+and workspace transport. Exported OWL class annotations preserve both; known nature
+also uses the existing ODO structural/functional relationship class. No ODO release
+or core pin change is required by these annotations. Runtime connection operations
+reject unknown or conflicting effective axes; swapping bond participants preserves
+identity, whereas swapping directed endpoints changes their ordered meaning.
+
 ### 5.1. Substantials and occurrents
 
 | Declaration | Meaning |
@@ -252,7 +285,7 @@ how it can be contextualized, and which semantic operators apply.
 | `agent` | An agentive substantial; may be `deliberative`, `interactive`, or `reactive` |
 | `process` | An open-ended dynamic occurrence |
 | `event` | A bounded occurrence with temporal identity |
-| `relationship` | A directed relationship; normally `functional` or `structural` |
+| `relationship` | Neutral orientation; abstract roots may leave axes unspecified. Concrete effective axes must resolve. |
 | `bond` | A bond-like connection; normally `functional` or `structural` |
 
 ```kwv
@@ -264,7 +297,7 @@ process Infiltration;
 
 event Flood;
 
-functional relationship DrainsTo
+functional directed relationship DrainsTo
     links earth:Region to earth:WaterBody
 ;
 ```
@@ -450,7 +483,7 @@ is especially important for attributes, roles, realms, and configurations.
 ### 7.5. `links ... to ...`
 
 ```kwv
-functional relationship DrainsTo
+functional directed relationship DrainsTo
     links earth:Region to earth:WaterBody
 ;
 ```

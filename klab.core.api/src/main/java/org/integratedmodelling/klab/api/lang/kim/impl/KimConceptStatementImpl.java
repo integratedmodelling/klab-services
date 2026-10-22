@@ -12,6 +12,12 @@ import java.util.List;
 import java.util.Set;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
+  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature declaredRelationshipNature = org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED;
+  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation declaredRelationshipOrientation = org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED;
+  @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature getDeclaredRelationshipNature() { return declaredRelationshipNature; }
+  public void setDeclaredRelationshipNature(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature value) { declaredRelationshipNature = java.util.Objects.requireNonNull(value); }
+  @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation getDeclaredRelationshipOrientation() { return declaredRelationshipOrientation; }
+  public void setDeclaredRelationshipOrientation(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation value) { declaredRelationshipOrientation = java.util.Objects.requireNonNull(value); }
   private boolean genericQuality;
   private String deniedAlias;
 

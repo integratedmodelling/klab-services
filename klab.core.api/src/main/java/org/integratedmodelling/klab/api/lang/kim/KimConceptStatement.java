@@ -7,6 +7,12 @@ import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 
 public interface KimConceptStatement extends KlabStatement {
+  default org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature getDeclaredRelationshipNature() {
+    return org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED;
+  }
+  default org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation getDeclaredRelationshipOrientation() {
+    return org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED;
+  }
   /** Whether the declaration inherits its fundamental type from its is expression. */
   default boolean isGenericQuality() {
     return false;

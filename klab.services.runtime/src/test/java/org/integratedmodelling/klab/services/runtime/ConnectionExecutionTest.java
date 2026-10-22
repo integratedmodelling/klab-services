@@ -110,6 +110,8 @@ class ConnectionExecutionTest {
     concept.setUrn("test:" + type + (bond ? "Bond" : ""));
     concept.setName(type.name()); concept.setReferenceName(type.name().toLowerCase());
     var types = EnumSet.of(type, SemanticType.COUNTABLE);
+    if(type==SemanticType.RELATIONSHIP)types.addAll(EnumSet.of(SemanticType.FUNCTIONAL,
+        bond?SemanticType.BIDIRECTIONAL:SemanticType.UNIDIRECTIONAL));
     if (bond) types.add(SemanticType.BIDIRECTIONAL);
     concept.setType(types); concept.setCollective(collective);
     var observable = new ObservableImpl(); observable.setSemantics(concept);
@@ -231,6 +233,31 @@ class ConnectionExecutionTest {
     when(scope.getObservation(target.getId())).thenReturn(target);
     when(scope.getService(Reasoner.class)).thenReturn(mock(Reasoner.class));
     return scope;
+  }
+
+  @Test void unresolvedAndConflictingRelationshipAxesFailBeforeParticipantOrGraphAccess() {
+    for(var unknown:List.of(SemanticType.FUNCTIONAL,SemanticType.UNIDIRECTIONAL)) {
+      var relationship=observation(-90,SemanticType.RELATIONSHIP,false,false);
+      relationship.getObservable().getSemantics().getType().remove(unknown);
+      var context=mock(ContextScope.class);
+      assertThrows(IllegalArgumentException.class,()->ConnectionSupport.participants(relationship,context));
+      assertThrows(IllegalArgumentException.class,()->ConnectionSupport.link(relationship,context));
+      assertThrows(IllegalArgumentException.class,()->ConnectionSupport.checkIdentity(relationship,relationship,context));
+      verifyNoInteractions(context);
+    }
+    var conflict=observation(-91,SemanticType.RELATIONSHIP,false,false);
+    conflict.getObservable().getSemantics().getType().add(SemanticType.BIDIRECTIONAL);
+    assertThrows(IllegalArgumentException.class,()->ConnectionSupport.participants(conflict,mock(ContextScope.class)));
+  }
+
+  @Test void bondPermutationPreservesParticipantIdentityButDirectedPermutationDoesNot() {
+    var a=observation(101,SemanticType.AGENT,false,false);var b=observation(102,SemanticType.SUBJECT,false,false);
+    var context=scope(a,b);var existing=observation(103,SemanticType.RELATIONSHIP,false,true);
+    var bond=observation(104,SemanticType.RELATIONSHIP,false,true);bond.setParticipants(List.of(b,a));
+    when(context.getRelationshipParticipants(existing)).thenReturn(List.of(a,b));
+    assertDoesNotThrow(()->ConnectionSupport.checkIdentity(existing,bond,context));
+    var directed=observation(105,SemanticType.RELATIONSHIP,false,false);directed.setParticipants(List.of(b,a));
+    assertThrows(IllegalArgumentException.class,()->ConnectionSupport.checkIdentity(existing,directed,context));
   }
 
   @Test void scopeQueriesReturnRelationshipObservationsAndBothBondDirections() throws Exception {

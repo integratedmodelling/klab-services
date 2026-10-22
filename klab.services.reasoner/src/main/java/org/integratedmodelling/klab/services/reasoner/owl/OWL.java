@@ -555,6 +555,8 @@ public class OWL {
     ret.setName(id);
     ret.setNamespace(ontologyName);
     ret.getType().addAll(type);
+    var relationshipAxes=RelationshipOntologySupport.read(owlClass,manager.ontologies().toList());
+    if(relationshipAxes!=null)relationshipAxes.apply(ret.getType());
     registerConcept(ret);
     return ret;
   }
@@ -1418,11 +1420,55 @@ public class OWL {
     return ret;
   }
 
+  /** Check correlated choices in authored boolean ancestry, not just its common flags. */
+  public boolean permitsRelationshipAxes(Concept concept, org.integratedmodelling.klab.api.knowledge.RelationshipAxes requested) {
+    return permitsRelationshipAxes(List.of(concept),requested);
+  }
+  public boolean permitsRelationshipAxes(Collection<Concept> constraints, org.integratedmodelling.klab.api.knowledge.RelationshipAxes requested) {
+    for(var nature:List.of(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.STRUCTURAL,org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.FUNCTIONAL))
+      for(var orientation:List.of(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.DIRECTED,org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.BOND)) {
+        var candidate=new org.integratedmodelling.klab.api.knowledge.RelationshipAxes(nature,orientation);
+        try { requested.merge(candidate); if(constraints.stream().allMatch(c->permitsAxesExpression(getOWLClass(c),candidate,new HashSet<>())))return true; }
+        catch(IllegalArgumentException conflict) { /* No realization with this axis pair. */ }
+      }
+    return false;
+  }
+  private boolean permitsAxesExpression(OWLClassExpression expression,org.integratedmodelling.klab.api.knowledge.RelationshipAxes candidate,Set<OWLClass> visiting) {
+    if(expression instanceof OWLObjectUnionOf union)
+      return union.operands().anyMatch(o->permitsAxesExpression(o,candidate,visiting));
+    if(expression instanceof OWLObjectIntersectionOf intersection)
+      return intersection.operands().allMatch(o->permitsAxesExpression(o,candidate,visiting));
+    if(!(expression instanceof OWLClass cls)||cls.isOWLThing())return true;
+    if(cls.isOWLNothing())return false;
+    if(!visiting.add(cls))return true;
+    try {
+      var concept=getExistingOrCreate(cls);
+      org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(concept.getType()).merge(candidate);
+      return EntitySearcher.getSuperClasses(cls,manager.ontologies()).allMatch(o->permitsAxesExpression(o,candidate,visiting));
+    } catch(IllegalArgumentException conflict) { return false; }
+    finally {visiting.remove(cls);}
+  }
+
+  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes relationshipExpressionAxes(
+      Collection<Concept> concepts, boolean union) {
+    if (concepts.stream().noneMatch(c -> c.is(SemanticType.RELATIONSHIP))) return null;
+    if (concepts.stream().anyMatch(c -> !c.is(SemanticType.RELATIONSHIP)))
+      throw new IllegalArgumentException("RELATIONSHIP_AXIS_CONFLICT: mixed relationship expression");
+    org.integratedmodelling.klab.api.knowledge.RelationshipAxes result = null;
+    for (var concept : concepts) {
+      var next = org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(concept.getType());
+      result = result == null ? next : union ? result.common(next) : result.merge(next);
+    }
+    return result;
+  }
+
   public Concept getIntersection(
       Collection<Concept> concepts, Ontology destination, Collection<SemanticType> stype) {
 
     EnumSet<SemanticType> type = EnumSet.copyOf(stype);
     type.add(SemanticType.INTERSECTION);
+    var axes = relationshipExpressionAxes(concepts, false);
+    if (axes != null) axes.apply(type);
 
     List<String> ids = new ArrayList<>();
     Set<OWLClassExpression> classes = new HashSet<>();
@@ -1439,6 +1485,10 @@ public class OWL {
 
     Concept ret = ((Ontology) destination).getConcept(id.toString());
     if (ret != null) {
+      if (axes != null) {
+        axes.apply(ret.getType());
+        RelationshipOntologySupport.compileEffective(this,destination,ret);
+      }
       return ret;
     }
 
@@ -1448,6 +1498,7 @@ public class OWL {
     manager.addAxiom(
         ((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
 
+    if (axes != null) RelationshipOntologySupport.compileEffective(this,destination,ret);
     setDisplayLabel(ret, concepts.stream().map(Concept::displayLabel).sorted()
         .collect(java.util.stream.Collectors.joining(" and ")));
     return ret;
@@ -1458,6 +1509,8 @@ public class OWL {
 
     EnumSet<SemanticType> type = EnumSet.copyOf(stype);
     type.add(SemanticType.UNION);
+    var axes = relationshipExpressionAxes(concepts, true);
+    if (axes != null) axes.apply(type);
 
     List<String> ids = new ArrayList<>();
     Set<OWLClassExpression> classes = new HashSet<>();
@@ -1474,6 +1527,10 @@ public class OWL {
 
     Concept ret = ((Ontology) destination).getConcept(id.toString());
     if (ret != null) {
+      if (axes != null) {
+        axes.apply(ret.getType());
+        RelationshipOntologySupport.compileEffective(this,destination,ret);
+      }
       return ret;
     }
 
@@ -1483,6 +1540,7 @@ public class OWL {
     manager.addAxiom(
         ((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
 
+    if (axes != null) RelationshipOntologySupport.compileEffective(this,destination,ret);
     setDisplayLabel(ret, concepts.stream().map(Concept::displayLabel).sorted()
         .collect(java.util.stream.Collectors.joining(" or ")));
     return ret;

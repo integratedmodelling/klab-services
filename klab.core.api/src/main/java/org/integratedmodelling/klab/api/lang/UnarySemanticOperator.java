@@ -489,6 +489,8 @@ public enum UnarySemanticOperator {
             SemanticType.COUNTABLE,
             SemanticType.OBSERVABLE);
       case "relationship":
+        return EnumSet.of(SemanticType.RELATIONSHIP,SemanticType.COUNTABLE,SemanticType.OBSERVABLE);
+      case "directed relationship":
         return EnumSet.of(
             SemanticType.RELATIONSHIP,
             SemanticType.UNIDIRECTIONAL,

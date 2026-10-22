@@ -15,6 +15,8 @@ public final class SemanticBuilderOwlFixture {
 
   public static OWL create() throws Exception {
     var owl = mock(OWL.class);
+    // Builder dispatch tests do not exercise the host monotone-closure service.
+    when(owl.monotoneRefinements()).thenReturn(mock(MonotoneRefinementSupport.class));
     owl.manager = OWLManager.createOWLOntologyManager();
     var factory = owl.manager.getOWLDataFactory();
     var ontology = mock(Ontology.class);
