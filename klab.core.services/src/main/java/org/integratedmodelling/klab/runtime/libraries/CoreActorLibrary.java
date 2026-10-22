@@ -56,6 +56,119 @@ import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 @Library(name = "core")
 public class CoreActorLibrary {
 
+  @Actor(name = "ui", description = "Toolkit-neutral application user interface")
+  public static class Ui {
+    private static org.integratedmodelling.klab.runtime.kactors.view.UiExecution cursor(
+        RuntimeAgent.Scope scope) {
+      if (scope instanceof AgentScope agent && agent.ui() != null) return agent.ui();
+      throw new IllegalStateException("UI verbs require an application UI scope");
+    }
+
+    private static Object widget(
+        String type, RuntimeAgent.Scope scope, Metadata metadata, Object label, boolean emitter) {
+      var cursor = cursor(scope);
+      return cursor
+          .model()
+          .widget(
+              cursor, type, (String) metadata.get("tag"), metadata, label, emitter ? scope : null);
+    }
+
+    @Verb(name = "text", description = "Present plain text")
+    public static void text(RuntimeAgent.Scope scope, Metadata metadata, Object text) {
+      widget("text", scope, metadata, text, false);
+    }
+
+    @Verb(name = "progress", description = "Present completion progress")
+    public static void progress(RuntimeAgent.Scope scope, Metadata metadata, Number value) {
+      widget("progress", scope, metadata, value, false);
+    }
+
+    @Verb(name = "button", executionType = Verb.Type.EMITTER, description = "Emit button clicks")
+    public static void button(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("button", scope, metadata, label, true);
+    }
+
+    @Verb(
+        name = "checkbox",
+        executionType = Verb.Type.EMITTER,
+        description = "Emit boolean changes")
+    public static void checkbox(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("checkbox", scope, metadata, label, true);
+    }
+
+    @Verb(
+        name = "input",
+        executionType = Verb.Type.EMITTER,
+        description = "Emit committed text changes")
+    public static void input(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("input", scope, metadata, label, true);
+    }
+
+    @Verb(name = "number", executionType = Verb.Type.EMITTER, description = "Emit numeric changes")
+    public static void number(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("number", scope, metadata, label, true);
+    }
+
+    @Verb(
+        name = "select",
+        executionType = Verb.Type.EMITTER,
+        description = "Emit selected option IDs")
+    public static void select(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("select", scope, metadata, label, true);
+    }
+
+    private static Object control(
+        RuntimeAgent.Scope scope, String command, String tag, Object value) {
+      var cursor = cursor(scope);
+      return cursor.model().control(cursor, command, tag, value);
+    }
+
+    @Verb(name = "get", description = "Read the server-side widget value")
+    public static Object get(RuntimeAgent.Scope scope, String tag) {
+      return control(scope, "get", tag, null);
+    }
+
+    @Verb(name = "set", description = "Set a widget value without firing user input")
+    public static void set(RuntimeAgent.Scope scope, String tag, Object value) {
+      control(scope, "set", tag, value);
+    }
+
+    @Verb(name = "show", description = "Show a tagged UI element")
+    public static void show(RuntimeAgent.Scope scope, String tag) {
+      control(scope, "show", tag, null);
+    }
+
+    @Verb(name = "hide", description = "Hide a tagged UI element")
+    public static void hide(RuntimeAgent.Scope scope, String tag) {
+      control(scope, "hide", tag, null);
+    }
+
+    @Verb(name = "enable", description = "Enable a tagged UI element")
+    public static void enable(RuntimeAgent.Scope scope, String tag) {
+      control(scope, "enable", tag, null);
+    }
+
+    @Verb(name = "disable", description = "Disable a tagged UI element")
+    public static void disable(RuntimeAgent.Scope scope, String tag) {
+      control(scope, "disable", tag, null);
+    }
+
+    @Verb(name = "close", description = "Close a tagged surface")
+    public static void close(RuntimeAgent.Scope scope, String tag) {
+      control(scope, "close", tag, null);
+    }
+
+    @Verb(name = "remove", description = "Remove a tagged element and its emitters")
+    public static void remove(RuntimeAgent.Scope scope, String tag) {
+      control(scope, "remove", tag, null);
+    }
+
+    @Verb(name = "style", description = "Apply portable style properties")
+    public static void style(RuntimeAgent.Scope scope, String tag, Map<String, Object> properties) {
+      control(scope, "style", tag, properties);
+    }
+  }
+
   /** Stable coordinates only: no service, credentials or document bean is checkpointed. */
   public interface ProjectReference {
     Map<String, Object> checkpointReference();

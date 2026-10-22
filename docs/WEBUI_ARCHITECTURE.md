@@ -22,6 +22,7 @@ The browser loads `index.html` through `KlabWebUiController`. The shell then req
 | --- | --- | --- |
 | `/` | Public | Vue single-page application |
 | `/ui/<component-name>` | Public shell | Direct entry point for a compiled full-page component |
+| `/apps/<application-URN>` | Public shell, authenticated execution | Direct entry for a published k.Actors application on a runtime service |
 | `/public/ui/config` | Public | Header, logo, authentication settings, links, and panel manifest |
 | `/public/status` | Public, identity-aware when a token is present | Lightweight operational telemetry |
 | `/public/capabilities` | Public, identity-aware when a token is present | Service identity, transports, components, and permissions |
@@ -76,6 +77,13 @@ authentication state, shared API client, and `refresh()` callback. The TypeScrip
 The authorization requirement on a panel or page controls its presentation only. Server endpoints
 remain the authority for access control. A component must never treat the manifest or a decoded
 browser token as authorization.
+
+k.Actors applications use the same shell authentication and HTTP client, with a separate
+`/api/v1/ui/instances` lifecycle API and `/ui-bus` WebSocket interaction channel. Project READ and
+instance ownership are checked server-side. A single-use ticket authenticates the first socket
+frame; the public handshake does not expose application data. The server retains widget state and
+the running agent when a browser detaches. See [Application UI](UI.md) for locale bundles, named CSS,
+the implemented widget subset, reconnect behavior and implementation stages.
 
 ## Keycloak integration
 

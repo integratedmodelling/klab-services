@@ -2850,6 +2850,14 @@ public class AgentCompiler {
       boolean awaitCompletion) {
     String frame = nextName("frame");
     code.addStatement("var $L = childFrame($L)", frame, context.frame());
+    String groupScope = nextName("groupScope");
+    code.addStatement(
+        "var $L = $L.uiGroup($S, $L)",
+        groupScope,
+        context.scope(),
+        group.getTag(),
+        uiMetadata(group.getMetadata(), null, context));
+    context = context.withScope(groupScope);
     if (awaitCompletion) {
       var completions = new ArrayList<String>();
       emitStatements(
@@ -3289,6 +3297,11 @@ public class AgentCompiler {
           "runSupplier($L, callScope -> $L);\n",
           listener,
           invoke(verb, type, "callScope", context));
+    } else if (isUiVerb(verb)) {
+      code.add(
+          "registerUiEmitter($L, callScope -> $L);\n",
+          listener,
+          invoke(verb, type, "callScope", context));
     } else {
       code.add(
           "runEmitter($L, callScope -> $L);\n", listener, invoke(verb, type, "callScope", context));
@@ -3393,7 +3406,7 @@ public class AgentCompiler {
         && callInfo.javaMethod() != null
         && java.lang.reflect.Modifier.isPublic(
             callInfo.javaMethod().getDeclaringClass().getModifiers())) {
-      return invokeJavaObjectMethod(verb, callInfo.javaMethod(), context);
+      return invokeJavaObjectMethod(verb, callInfo.javaMethod(), context.withScope(scopeName));
     }
     CodeBlock arguments = arguments(verb, context);
     boolean self = verb.getRecipient() == null || "self".equals(verb.getRecipient());
@@ -3509,6 +3522,13 @@ public class AgentCompiler {
             adaptedJavaArgument(argumentValue(supplied.get(source++), context), parameter));
       }
     }
+    if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
+      return CodeBlock.of(
+          "$T.$L($L)",
+          method.getDeclaringClass(),
+          method.getName(),
+          CodeBlock.join(compiledArguments, ", "));
+    }
     return CodeBlock.of(
         "(($T) $L).$L($L)",
         method.getDeclaringClass(),
@@ -3549,10 +3569,11 @@ public class AgentCompiler {
   }
 
   private boolean hasVerbMetadata(KActorsStatement.Verb verb) {
-    return verb != null
-        && verb.getArguments() != null
-        && verb.getArguments().getMetadataKeys() != null
-        && !verb.getArguments().getMetadataKeys().isEmpty();
+    return (isUiVerb(verb) && (verb.getTag() != null || !verb.getMetadata().isEmpty()))
+        || verb != null
+            && verb.getArguments() != null
+            && verb.getArguments().getMetadataKeys() != null
+            && !verb.getArguments().getMetadataKeys().isEmpty();
   }
 
   private CodeBlock verbMetadata(KActorsStatement.Verb verb, CompilationContext context) {
@@ -3582,6 +3603,39 @@ public class AgentCompiler {
         entries.add(CodeBlock.of("$S", normalizedKey));
         entries.add(compiledValue);
       }
+    }
+    if (isUiVerb(verb)) {
+      var metadata = uiMetadata(verb.getMetadata(), verb.getTag(), context);
+      return CodeBlock.of(
+          "mergeUiMetadata($T.create($L), $L)",
+          Metadata.class,
+          CodeBlock.join(entries, ", "),
+          metadata);
+    }
+    return CodeBlock.of("$T.create($L)", Metadata.class, CodeBlock.join(entries, ", "));
+  }
+
+  private boolean isUiVerb(KActorsStatement.Verb verb) {
+    if (verb == null) return false;
+    var imported = imports.get(verb.getRecipient());
+    return imported != null && "core.ui".equals(imported.behaviorUrn());
+  }
+
+  private CodeBlock uiMetadata(Metadata metadata, String tag, CompilationContext context) {
+    var entries = new ArrayList<CodeBlock>();
+    if (metadata != null)
+      metadata.forEach(
+          (raw, item) -> {
+            String key = raw.replaceFirst("^[:+!]", "");
+            entries.add(CodeBlock.of("$S", key));
+            entries.add(
+                raw.startsWith("+")
+                    ? CodeBlock.of("true")
+                    : raw.startsWith("!") ? CodeBlock.of("false") : argumentValue(item, context));
+          });
+    if (tag != null) {
+      entries.add(CodeBlock.of("$S", "tag"));
+      entries.add(CodeBlock.of("$S", tag));
     }
     return CodeBlock.of("$T.create($L)", Metadata.class, CodeBlock.join(entries, ", "));
   }
@@ -3645,6 +3699,7 @@ public class AgentCompiler {
               context.frame());
       case IDENTIFIER ->
           CodeBlock.of("resolveIdentifier($S, $L)", String.valueOf(raw), context.frame());
+      case LOCALIZED_KEY -> CodeBlock.of("$L.localize($S)", context.scope(), String.valueOf(raw));
       case TERNARY_EXPRESSION -> ternary(raw, context);
       case CONSTANT -> CodeBlock.of("$T.create($S)", Constant.class, String.valueOf(raw));
       case NUMBER, INTEGER, DOUBLE, BOOLEAN, STRING -> literal(raw, value.getType());
@@ -3995,6 +4050,18 @@ public class AgentCompiler {
           terminatesAgentOnReturn,
           scope,
           newFrame,
+          result,
+          completionCollectors);
+    }
+
+    CompilationContext withScope(String newScope) {
+      return new CompilationContext(
+          actionType,
+          reactive,
+          synchronous,
+          terminatesAgentOnReturn,
+          newScope,
+          frame,
           result,
           completionCollectors);
     }

@@ -8,7 +8,8 @@
     "typecheck": "vue-tsc --noEmit",
     "build": "vue-tsc --noEmit && vite build",
     "test:flowchart": "playwright test",
-    "test:auth": "playwright test --config playwright.auth.config.ts"
+    "test:auth": "playwright test --config playwright.auth.config.ts",
+    "test:application": "playwright test --config playwright.application.config.ts"
   },
   "dependencies": {
     "@quasar/extras": "2.0.4",

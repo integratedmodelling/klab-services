@@ -2060,7 +2060,15 @@ public class LanguageAdapter {
         syntax.getVersion() == null
             ? Version.CURRENT_VERSION
             : Version.create(syntax.getVersion()));
-    ret.setPlatform(KActorsBehavior.Platform.ANY);
+    // BehaviorSyntax currently omits the already-parsed platform qualifier. Preserve it from
+    // the declaration header until that syntax API exposes it directly.
+    String header = syntax.encode().replaceAll("(?s)/\\*.*?\\*/|//[^\\r\\n]*", " ");
+    var platform =
+        Pattern.compile("^\\s*(?:public\\s+)?(web|desktop|mobile)\\s+app\\b").matcher(header);
+    ret.setPlatform(
+        platform.find()
+            ? KActorsBehavior.Platform.valueOf(platform.group(1).toUpperCase(Locale.ROOT))
+            : KActorsBehavior.Platform.ANY);
     ret.setDescription(syntax.getDocstring());
     ret.getProperties()
         .putAll(

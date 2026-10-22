@@ -69,6 +69,13 @@ public class KlabWebUiController {
     return instance.webUiConfiguration();
   }
 
+  @GetMapping(
+      value = {"/apps/{urn}", "/apps/{urn}/"},
+      produces = MediaType.TEXT_HTML_VALUE)
+  public ResponseEntity<String> application(HttpServletRequest request) {
+    return dashboardResponse(request);
+  }
+
   /** Serve a prebuilt ESM file explicitly declared by an installed k.LAB component. */
   @ResponseBody
   @GetMapping("/public/ui/components/{componentId}/{version}/{*resourcePath}")

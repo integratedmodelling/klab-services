@@ -1,0 +1,51 @@
+.application-ui {
+  --ui-background: #f7f9fc;
+  --ui-surface: #ffffff;
+  --ui-text: #17283b;
+  --ui-muted: #53667b;
+  --ui-border: #cad5e2;
+  --ui-primary: #2459a8;
+  --ui-accent: #00796b;
+  --ui-danger: #b3261e;
+  --q-primary: var(--ui-primary);
+  --q-secondary: var(--ui-accent);
+  --q-negative: var(--ui-danger);
+  color: var(--ui-text);
+  background: var(--ui-background);
+  color-scheme: light;
+}
+.application-ui[data-theme="dark"] {
+  --ui-background: #141c28;
+  --ui-surface: #202d3e;
+  --ui-text: #e5edf7;
+  --ui-muted: #afc1d7;
+  --ui-border: #43556e;
+  --ui-primary: #83b4ff;
+  --ui-accent: #6ed6c4;
+  --ui-danger: #ffb4ab;
+  color-scheme: dark;
+}
+.application-ui .q-field__native, .application-ui .q-field__label, .application-ui .q-checkbox__label,
+.application-ui .q-select__dropdown-icon, .application-ui .q-field__marginal { color: var(--ui-text); }
+.application-ui .q-field--outlined .q-field__control:before { border-color: var(--ui-border); }
+.application-ui .bg-primary { color: var(--ui-background) !important; }
+.application-scaffold { display: grid; grid-template: "header header" auto "drawer main" 1fr "footer footer" auto / auto 1fr; min-height: 65vh; border: 1px solid var(--ui-border); border-radius: 12px; overflow: hidden; }
+.application-header { grid-area: header; border-bottom: 1px solid var(--ui-border); }
+.application-drawer { grid-area: drawer; width: 240px; border-right: 1px solid var(--ui-border); }
+.application-main { grid-area: main; min-width: 0; padding: 20px; }
+.application-footer { grid-area: footer; border-top: 1px solid var(--ui-border); }
+.application-header, .application-footer, .application-drawer { padding: 16px; background: var(--ui-surface); }
+.application-node { min-width: 0; min-height: 0; }
+.application-node h2 { margin: 0 0 8px; font-size: 1.25rem; line-height: 1.4; font-weight: 600; }
+.application-node:focus-visible, .application-ui button:focus-visible { outline: 3px solid var(--ui-accent); outline-offset: 3px; }
+.application-dialog { min-width: min(400px, 90vw); }
+.actor-application { max-width: 1500px; margin: auto; padding: 24px; }
+.application-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.application-controls > span { overflow-wrap: anywhere; }
+.application-status { margin-bottom: 16px; }
+@media (max-width: 600px) {
+  .actor-application { padding: 10px; }
+  .application-scaffold { grid-template: "header" auto "drawer" auto "main" 1fr "footer" auto / minmax(0, 1fr); }
+  .application-drawer { width: auto; border-right: 0; border-bottom: 1px solid var(--ui-border); }
+}
+@media (prefers-reduced-motion: reduce) { .application-ui *, .application-ui *::before, .application-ui *::after { transition: none !important; animation: none !important; } }

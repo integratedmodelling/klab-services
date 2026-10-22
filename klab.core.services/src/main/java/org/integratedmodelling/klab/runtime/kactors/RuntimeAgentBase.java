@@ -569,6 +569,10 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     return sessionScope;
   }
 
+  protected final KActorsBehavior sourceBehavior() {
+    return behavior;
+  }
+
   protected final ContextScope contextScope() {
     return contextScope;
   }
@@ -2909,6 +2913,18 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     } catch (Throwable t) {
       return ExitValue.failure(t);
     }
+  }
+
+  /** UI emitter registration is synchronous so tree order follows source order. */
+  protected void registerUiEmitter(AgentScope scope, Consumer<AgentScope> registration) {
+    if (!scope.isDone()) registration.accept(scope);
+  }
+
+  protected Metadata mergeUiMetadata(Metadata inline, Metadata trailing) {
+    var result = Metadata.create();
+    result.putAll(inline);
+    result.putAll(trailing);
+    return result;
   }
 
   public void handleNotification(Notification... notifications) {

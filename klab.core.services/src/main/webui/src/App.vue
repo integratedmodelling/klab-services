@@ -5,6 +5,7 @@ import ExtensionPanel from "./components/ExtensionPanel.vue";
 import FullPageExtension from "./components/FullPageExtension.vue";
 import LoginControl from "./components/LoginControl.vue";
 import StatusGrid from "./components/StatusGrid.vue";
+import ActorApplication from "./components/ActorApplication.vue";
 import { authState, initializeAuthentication } from "./services/auth";
 import { serviceApi } from "./services/api";
 import type { DashboardConfiguration, DashboardContext, FullPageComponent } from "./types";
@@ -18,6 +19,13 @@ const error = ref("");
 let refreshTimer: number | undefined;
 let refreshGeneration = 0;
 const pageName = ref(pageNameFromLocation());
+const applicationUrn = ref(applicationFromLocation());
+
+function applicationFromLocation(): string | null {
+  const base = new URL(document.baseURI).pathname;
+  const match = /^apps\/([^/]+)\/?$/.exec(window.location.pathname.slice(base.length));
+  return match ? decodeURIComponent(match[1]) : null;
+}
 
 const context = reactive({
   api: serviceApi,
@@ -67,11 +75,13 @@ function pageNameFromLocation(): string | null {
 
 function updateRoute(): void {
   pageName.value = pageNameFromLocation();
+  applicationUrn.value = applicationFromLocation();
 }
 
 function navigate(relativePath: string, nextPageName: string | null): void {
   window.history.pushState({}, "", new URL(relativePath, document.baseURI));
   pageName.value = nextPageName;
+  applicationUrn.value = applicationFromLocation();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -172,8 +182,9 @@ watch(() => authState.authenticated, () => {
 
     <q-page-container>
       <q-page class="dashboard-page">
+        <ActorApplication v-if="applicationUrn && config" :urn="applicationUrn" :context="context" />
         <FullPageExtension
-          v-if="selectedPage"
+          v-else-if="selectedPage"
           :page="selectedPage"
           :context="context"
         />

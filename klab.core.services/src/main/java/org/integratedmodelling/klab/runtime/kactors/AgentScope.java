@@ -1,15 +1,19 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
 import java.io.PrintStream;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.runtime.kactors.view.UiExecution;
 import reactor.core.Disposable;
 import reactor.core.publisher.Sinks;
 
@@ -25,6 +29,7 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
   private final RuntimeAgentBase actor;
   private final long actionId;
   private String currentAction;
+  private UiExecution ui;
   private final CopyOnWriteArrayList<AgentScope> children = new CopyOnWriteArrayList<>();
   private final CopyOnWriteArrayList<Disposable> disposables = new CopyOnWriteArrayList<>();
   private final AtomicBoolean done = new AtomicBoolean(false);
@@ -38,12 +43,38 @@ public abstract class AgentScope extends ParametersImpl<String> implements Runti
     this.actor = parent.actor;
     this.actionId = actionId;
     this.currentAction = parent.currentAction;
+    this.ui = parent.ui;
     parent.children.add(this);
   }
 
   @Override
   public RuntimeAgent getAgent() {
     return actor;
+  }
+
+  public final UiExecution ui() {
+    return ui;
+  }
+
+  protected final void ui(UiExecution ui) {
+    this.ui = ui;
+  }
+
+  /** A derived mount cursor, never a thread-local stack: reactive handlers retain their group. */
+  public AgentScope uiGroup(String tag, Metadata metadata) {
+    if (ui == null) return this;
+    var child = withId(actionId);
+    child.ui = ui.group(tag, metadata);
+    return child;
+  }
+
+  public String localize(String key) {
+    return ui == null ? key : ui.model().localize(key);
+  }
+
+  @Override
+  public void beforeAction(String name, List<Annotation> annotations) {
+    if (ui != null) ui = ui.action(name, annotations);
   }
 
   /**

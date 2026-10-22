@@ -27,6 +27,37 @@ import org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary;
 import org.junit.jupiter.api.Test;
 
 class ComponentRegistryActorVerbTest {
+  @Test
+  void uiCatalogExposesEveryVerbThroughProductionDiscovery() throws Exception {
+    var registry = mock(ComponentRegistry.class, CALLS_REAL_METHODS);
+    var descriptor = discover(registry, CoreActorLibrary.Ui.class);
+    var names =
+        descriptor.verbs.stream()
+            .map(verb -> verb.serviceInfo.getName())
+            .collect(java.util.stream.Collectors.toSet());
+    for (String name :
+        List.of(
+            "text",
+            "button",
+            "checkbox",
+            "input",
+            "number",
+            "select",
+            "progress",
+            "get",
+            "set",
+            "show",
+            "hide",
+            "enable",
+            "disable",
+            "close",
+            "remove",
+            "style")) {
+      assertTrue(names.contains("regression.ui." + name), names.toString());
+    }
+    assertEquals(16, names.size());
+  }
+
   @Test void documentSubclassesExposeInheritedVerbsAndConformToTheDocumentAncestor() throws Exception {
     var registry = mock(ComponentRegistry.class, CALLS_REAL_METHODS);
     var instances = ComponentRegistry.class.getDeclaredField("globalInstances"); instances.setAccessible(true);

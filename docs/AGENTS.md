@@ -891,9 +891,11 @@ action main:
     ) :layout "vertical" #main_panel
 ```
 
-Exact UI verbs and metadata are supplied by installed components. The group/tag/event pattern is
-part of k.Actors; widget verbs and styling keys are extension APIs and must be checked against the
-active UI component documentation.
+The initial `core.ui` agent implements basic text, controls and progress plus tagged state updates.
+The `runtime.submit` and `ui.show(result)` example above remains illustrative: the implemented
+`ui.show` accepts a tag, not an arbitrary observation. See [Application UI](UI.md) for the executable
+subset, localization, stylesheets, runtime launch, reconnect and subsequent stages. Native k.LAB
+cards and system views have a [separate component contract](UI_KLAB_COMPONENTS.md).
 
 ### 10.3. Components
 

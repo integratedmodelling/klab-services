@@ -28,11 +28,34 @@ fire repeatedly until their call scope ends. Capturing a supplier with `<-` wait
 | [core.log](#corelog) | Scope-aware logging | Static functions |
 | [core.strings](#corestrings) | String operations | Static functions |
 | [core.timer](#coretimer) | Wall-clock scheduling | Static suppliers and emitters |
+| [core.ui](#coreui) | Toolkit-neutral application widgets and tagged state | Static functions and widget emitters in application scopes |
 | [core.url](#coreurl) | URL inspection, HTTP requests and downloads | Static functions/suppliers and bound URL instances |
 
 Actors supplied by other components have their own catalogs; an illustrative import in a language
 example does not establish that the actor is shipped in this library. Static and instance verbs
 have distinct names because the compiler's actor catalog indexes each verb by name.
+
+## core.ui
+
+`using core.ui as ui` exposes toolkit-neutral interface verbs in application scopes. Scope and
+metadata are injected by Java. The implemented verbs are:
+
+| Verbs | Contract |
+| --- | --- |
+| `text(value)`, `progress(number)` | Passive presentation functions |
+| `button(label)` | Emits `{event: "click", value: empty}` |
+| `checkbox(label)` | Emits `{event: "change", value: boolean}` |
+| `input(label)`, `number(label)`, `select(label)` | Emit committed/debounced changes with a typed value |
+| `get(tag)`, `set(tag, value)` | Read/update canonical server-side widget values; set does not emit input |
+| `show(tag)`, `hide(tag)`, `enable(tag)`, `disable(tag)` | Update visibility or interaction state |
+| `close(tag)`, `remove(tag)` | Hide a retained surface, or remove its tree and emitter bindings |
+| `style(tag, properties)` | Apply validated portable layout/style metadata |
+
+Use call metadata such as `ui.input(#NAME :value "initial") #name`,
+`ui.select("Choice" :options ("a", "b")) #choice`, or group metadata after `)`.
+Tags are resolved in their mount namespace. Input values remain server-side across renderer
+rebuilds. See [Application UI](UI.md) for the layout/annotation proposal, localized constants,
+named CSS, authenticated launch and current implementation limits.
 
 ## core.document and document subclasses
 
