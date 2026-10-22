@@ -739,6 +739,7 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
       reasoner.owl().setConceptUrn(ret, definition);
     }
     ret.setDescriptionType(Contextualization.forSemantics(kimConcept));
+    reasoner.owl().monotoneRefinements().register(ret, kimConcept, reasoner);
 
     return ret;
   }

@@ -94,6 +94,21 @@ public class OWL {
   private boolean reasonerActive;
   private boolean reasonerSynchronizing = false;
   private int declarationStagingDepth;
+  private final MonotoneRefinementSupport monotoneRefinements = new MonotoneRefinementSupport(this);
+
+  public MonotoneRefinementSupport monotoneRefinements() { return monotoneRefinements; }
+
+  private volatile boolean derivedClosureUnavailable;
+
+  /** A failed retraction retires this semantic actor; recovery requires a fresh accepted actor. */
+  public void quarantineDerivedClosure() { derivedClosureUnavailable = true; }
+
+  public void requireAvailableClosure() {
+    if (derivedClosureUnavailable)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException(
+          "Semantic closure unavailable after failed derived-proof retraction; reload knowledge");
+  }
+
   private long reasonerCreations, flushRequests, actualFlushes, satisfiabilityQueries, entailmentQueries;
 
   /** Private compilation suppresses partial-graph DL queries until the complete candidate exists. */
@@ -374,6 +389,7 @@ public class OWL {
   }
 
   public synchronized void reset() {
+    monotoneRefinements.reset(true);
     if (reasoner != null) {
       reasoner.dispose();
       reasoner = null;
@@ -1804,6 +1820,7 @@ public class OWL {
   }
 
   synchronized OWLClass getOWLClass(Concept concept) {
+    requireAvailableClosure();
     var owlClass = owlClasses.get(concept.getUrn());
     // Collectivity belongs to observation semantics, not OWL identity. Generated classes
     // may be registered with either form, depending on which expression was resolved first.
@@ -3055,6 +3072,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDataPropertyDomains(arg0, arg1);
   }
 
@@ -3063,6 +3081,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDataPropertyValues(arg0, arg1);
   }
 
@@ -3071,6 +3090,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDifferentIndividuals(arg0);
   }
 
@@ -3079,6 +3099,7 @@ public class OWL {
           TimeOutException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    requireAvailableClosure();
     return reasoner.getDisjointClasses(arg0);
   }
 
@@ -3087,6 +3108,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDisjointDataProperties(arg0);
   }
 
@@ -3096,6 +3118,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDisjointObjectProperties(arg0);
   }
 
@@ -3105,6 +3128,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getEquivalentClasses(arg0);
   }
 
@@ -3113,6 +3137,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getEquivalentDataProperties(arg0);
   }
 
@@ -3122,6 +3147,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getEquivalentObjectProperties(arg0);
   }
 
@@ -3131,6 +3157,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getInstances(arg0, arg1);
   }
 
@@ -3140,6 +3167,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getInverseObjectProperties(arg0);
   }
 
@@ -3148,6 +3176,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getObjectPropertyDomains(arg0, arg1);
   }
 
@@ -3156,6 +3185,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getObjectPropertyRanges(arg0, arg1);
   }
 
@@ -3165,14 +3195,17 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getObjectPropertyValues(arg0, arg1);
   }
 
   public synchronized String getReasonerName() {
+    requireAvailableClosure();
     return reasoner.getReasonerName();
   }
 
   public synchronized Version getReasonerVersion() {
+    requireAvailableClosure();
     return reasoner.getReasonerVersion();
   }
 
@@ -3181,6 +3214,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSameIndividuals(arg0);
   }
 
@@ -3190,6 +3224,7 @@ public class OWL {
           FreshEntitiesException,
           InconsistentOntologyException,
           ClassExpressionNotInProfileException {
+    requireAvailableClosure();
     return reasoner.getSubClasses(arg0, arg1);
   }
 
@@ -3198,6 +3233,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSubDataProperties(arg0, arg1);
   }
 
@@ -3207,6 +3243,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSubObjectProperties(arg0, arg1);
   }
 
@@ -3226,6 +3263,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSuperClasses(arg0, arg1);
   }
 
@@ -3234,6 +3272,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSuperDataProperties(arg0, arg1);
   }
 
@@ -3243,10 +3282,12 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSuperObjectProperties(arg0, arg1);
   }
 
   public synchronized long getTimeOut() {
+    requireAvailableClosure();
     return reasoner.getTimeOut();
   }
 
@@ -3255,11 +3296,13 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getTypes(arg0, arg1);
   }
 
   public synchronized Node<OWLClass> getUnsatisfiableClasses()
       throws ReasonerInterruptedException, TimeOutException, InconsistentOntologyException {
+    requireAvailableClosure();
     return reasoner.getUnsatisfiableClasses();
   }
 
@@ -3268,6 +3311,7 @@ public class OWL {
   }
 
   public synchronized boolean isConsistent() throws ReasonerInterruptedException, TimeOutException {
+    requireAvailableClosure();
     return reasoner.isConsistent();
   }
 
@@ -3279,6 +3323,7 @@ public class OWL {
           FreshEntitiesException,
           InconsistentOntologyException {
     entailmentQueries++;
+    requireAvailableClosure();
     return reasoner.isEntailed(arg0);
   }
 
@@ -3290,14 +3335,17 @@ public class OWL {
           FreshEntitiesException,
           InconsistentOntologyException {
     entailmentQueries++;
+    requireAvailableClosure();
     return reasoner.isEntailed(arg0);
   }
 
   public synchronized boolean isEntailmentCheckingSupported(AxiomType<?> arg0) {
+    requireAvailableClosure();
     return reasoner.isEntailmentCheckingSupported(arg0);
   }
 
   public synchronized boolean isPrecomputed(InferenceType arg0) {
+    requireAvailableClosure();
     return reasoner.isPrecomputed(arg0);
   }
 
@@ -3308,6 +3356,7 @@ public class OWL {
           FreshEntitiesException,
           InconsistentOntologyException {
     satisfiabilityQueries++;
+    requireAvailableClosure();
     return reasoner.isSatisfiable(arg0);
   }
 

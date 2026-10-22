@@ -112,3 +112,15 @@ this verified diagnostic/repair boundary. The planned crop fixture uses explicit
 of currency per harvest mass and changed crop membership; neither physical harvest quantities nor
 the Cartesian product are automatically monetary values or sums. Test vocabulary is not a worldview
 addition. No singleton numerical or multi-result runtime acceptance is claimed here.
+
+
+## Approved monotone attribute refinement prerequisite
+
+The later isolated refinement slice supersedes the earlier diagnostic's missing positive compound
+link for the bounded language rule now approved in OBSERVABLES section 7.3. Ordinary construction,
+incremental building and classifier typed redeclaration share provenance-annotated directed links
+for proved attribute replacements in otherwise identical expressions, in either build order.
+Native eligibility can use those links; no source model or runtime context is retyped. Other
+operators, changed clauses, identity/role substitution and arbitrary data compatibility remain
+outside the rule. See [construction, authority and cache boundaries](MONOTONE_ATTRIBUTE_REFINEMENT.md).
+This is still a prerequisite rather than automatic parent-model execution or crop aggregation.

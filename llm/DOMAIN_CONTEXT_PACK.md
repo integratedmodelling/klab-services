@@ -2198,3 +2198,17 @@ abstract status to their head. See [the diagnostic boundary](../docs/CLASSIFIER_
 The requested automatic singleton and crop/multi-result execution routes remain unimplemented.
 The owner selected independent dependency observations consumed from the graph by one final
 contextualizer, with explicit valuation inputs; do not introduce implicit aggregation or retyping.
+
+
+## Approved monotone attribute-refinement prerequisite - 2026-10-21
+
+The owner approved order-independent directed subtyping for proved subtype replacements of direct
+attributes in otherwise unchanged positive expressions. The isolated refinement candidate implements
+this in complete ordinary/builder/typed construction with private derived OWL links, authoritative
+proof, satisfiability checks, rollback and derived-query cache invalidation. Accepted worldview
+revision does not advance for these derived links. Authority/source changes retract owned proofs;
+authority recovery requires another declaration/refresh. This supersedes the earlier diagnostic's
+missing compound link only within [the exact approved rule and limits](../docs/MONOTONE_ATTRIBUTE_REFINEMENT.md).
+Do not generalize it to negation, transformed expressions, changed/removed clauses, identity/role
+replacement, selectors or relationship positions. No global equivalence, automatic classifier,
+Runtime.submit dependency continuation or numerical crop valuation is implied.

@@ -694,24 +694,36 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return true;
   }
 
+  /** Derived closure changes invalidate queries without changing the accepted knowledge revision. */
+  public void derivedRefinementsChanged() {
+    if (semanticExpressions != null) semanticExpressions.invalidateAll();
+    if (concepts != null) concepts.invalidateAll();
+    if (observables != null) observables.invalidateAll();
+    if (subsumption != null) subsumption.invalidateAll();
+    if (semanticMatcher != null) semanticMatcher.resetCaches();
+    if (syntacticMatcher != null) syntacticMatcher.resetCaches();
+  }
+
   private void invalidateSemanticCaches() {
-    knowledgeRevision.incrementAndGet();
-    semanticExpressions.invalidateAll();
-    concepts.invalidateAll();
-    observables.invalidateAll();
-    conceptSyntax.clear();
-    subsumption.invalidateAll();
-    if (semanticMatcher != null) {
-      semanticMatcher.resetCaches();
-    }
-    if (syntacticMatcher != null) {
-      syntacticMatcher.resetCaches();
+    try { if (owl != null) owl.monotoneRefinements().reset(true); }
+    finally {
+      knowledgeRevision.incrementAndGet();derivedRefinementsChanged();conceptSyntax.clear();
     }
   }
 
   private void authorityKnowledgeChanged() {
-    invalidateSemanticCaches();
-    semanticValidationState.enriched(knowledgeRevision());
+    boolean retracted=false;
+    try {
+      if (owl != null) owl.monotoneRefinements().reset(false);
+      retracted=true;
+    } finally {
+      knowledgeRevision.incrementAndGet();derivedRefinementsChanged();conceptSyntax.clear();
+      if(retracted) semanticValidationState.enriched(knowledgeRevision());
+      else {
+        knowledgeReady=false;
+        semanticValidationState.settle(knowledgeRevision(),false);
+      }
+    }
   }
 
   private Concept nothingConcept(String urn) {
@@ -1542,6 +1554,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public int semanticDistance(Semantics target, Semantics other) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("semanticDistance", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { target, other });
+    if (owl != null) owl.requireAvailableClosure();
   return semanticDistance(target, other, null);
   }
 
@@ -1549,6 +1562,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("semanticDistance", new Class<?>[] { Semantics.class, Semantics.class, Semantics.class }, new Object[] { target, other, context });
+    if (owl != null) owl.requireAvailableClosure();
   if (!eligibleDistanceRequest(other)) return -10000;
   int distance = semanticMatcher.semanticDistance(target, other, context);
     if (distance < 0) {
@@ -1565,6 +1579,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (expectedKnowledgeRevision < 0) return -10000;
     if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.semanticDistanceAtRevision(target, other, context, expectedKnowledgeRevision);
+    if (owl != null) owl.requireAvailableClosure();
     synchronized (this) {
       if (!knowledgeReady || expectedKnowledgeRevision != knowledgeRevision()) return -10000;
       return semanticDistance(target, other, context);
@@ -1576,6 +1591,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (expectedKnowledgeRevision < 0) return -10000;
     if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.assertedDistanceAtRevision(target, requested, expectedKnowledgeRevision);
+    if (owl != null) owl.requireAvailableClosure();
     synchronized (this) {
       return knowledgeReady && expectedKnowledgeRevision == knowledgeRevision()
           ? assertedDistance(target, requested) : -10000;
@@ -1713,6 +1729,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public int assertedDistance(Semantics from, Semantics to) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("assertedDistance", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { from, to });
+    if (owl != null) owl.requireAvailableClosure();
   return semanticMatcher.assertedDistance(from, to);
   }
 
@@ -2450,6 +2467,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     boolean logicallyConsistent;
     compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_CONSISTENCY);
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_CONSISTENCY,null)) {
+      this.owl.monotoneRefinements().refresh(this);
       logicallyConsistent = !this.owl.isOn() || this.owl.isConsistent();
     }
     compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_CONSISTENCY);
@@ -2734,6 +2752,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("is", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { concept, other });
 
+    if (owl != null) owl.requireAvailableClosure();
     Objects.requireNonNull(concept, "concept");
     Objects.requireNonNull(other, "other");
 
@@ -2846,6 +2865,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private void requireInitializedKnowledge() {
+    owl.requireAvailableClosure();
     if (!owl.isInitialized())
       throw new org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException(
           "Reasoner knowledge is unavailable: correct worldview errors and wait for initialization");
@@ -2940,6 +2960,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public boolean compatible(Semantics o1, Semantics o2) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("compatible", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { o1, o2 });
+    if (owl != null) owl.requireAvailableClosure();
   return compatible(o1, o2, 0);
   }
 
@@ -2947,6 +2968,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public boolean compatible(Semantics o1, Semantics o2, int flags) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("compatible", new Class<?>[] { Semantics.class, Semantics.class, int.class }, new Object[] { o1, o2, flags });
+    if (owl != null) owl.requireAvailableClosure();
 
     if (o1 == o2 || o1.equals(o2)) {
       return true;
@@ -3159,6 +3181,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public boolean match(Semantics candidate, Semantics pattern) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("match", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { candidate, pattern });
+    if (owl != null) owl.requireAvailableClosure();
   return syntacticMatcher.match(candidate, pattern);
   }
 
@@ -3166,6 +3189,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches) {
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("match", new Class<?>[] { Semantics.class, Semantics.class, Map.class }, new Object[] { candidate, pattern, matches });
+    if (owl != null) owl.requireAvailableClosure();
   if (matches == null) {
       throw new KlabIllegalArgumentException("The generic match result map cannot be null");
     }
@@ -3901,6 +3925,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     var existing = owl.getConcept(concept.getUrn());
     if (existing != null) {
+      owl.monotoneRefinements().register(existing, concept, this);
       return ((ConceptImpl) existing).withSelectors(concept.getType());
     }
 

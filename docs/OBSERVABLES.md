@@ -779,6 +779,37 @@ observables remain valid strategy matches. That proposal has not changed the gra
 selectors, logical observables, and semantic literals retain their meanings. Pattern-level
 boolean tests must be distinguished from `and`/`or` in the observable itself.
 
+### 7.3 Directed refinement of positive attribute expressions
+
+An otherwise unchanged positive attribute-qualified expression specializes the original when
+its direct attributes are replaced by authoritatively proved subtypes. For example, if `Concrete`
+specializes `Category`, `Concrete Region` specializes `Category Region`. This relationship holds
+when the expressions are built independently and in either construction order. It is a directed
+construction rule, not a sufficient OWL definition or a general equivalence rule.
+
+The initial implementation compares named, untransformed expression heads, with the same number
+of direct named attribute occurrences and a one-to-one subtype proof for every replacement. All
+remaining semantic structure must be identical. An unchanged native clause may remain; changing
+or removing that clause does not acquire a subtype link. Each nested bearer is constructed and
+checked independently: this rule does not lift a change inside a clause into a new rule about the
+whole outer expression. Adding/removing attributes, identities, realms or roles is outside this
+replacement rule. Negation, semantic transformations, value operators, logical operands, query
+selectors, patterns and relationship positions are excluded from this initial capability.
+
+Authority-governed subtype checks use the authoritative directional contract; generic OWL ancestry
+cannot override denial or UNKNOWN. The completed expressions must be satisfiable. The Reasoner
+records a provenance-annotated subclass axiom in its private derived ontology, preserving source
+ontology declarations and native inherency. It retracts helper-owned links when authority/source
+knowledge changes; retained authority profiles are re-proved on a subsequent declaration or explicit
+refresh. It does not schedule retries or promise immediate recovery for a direct query on old objects.
+Exported derived links describe their captured semantic generation, not a portable authority approval
+for a different environment. There is no persistent reuse/invalidation policy added here.
+
+This rule does not change declared or expression abstractness, identity requirements, subjectivity,
+units, contextual legality, coverage or computational compatibility. Existing native and executable
+eligibility checks still run. It performs no discovery or classification. In particular it does not
+make a physical quantity a monetary value or supply an aggregation operation.
+
 ## 8. Semantic literals in host languages
 
 Where a host grammar expects a value, wrap observable semantics in double

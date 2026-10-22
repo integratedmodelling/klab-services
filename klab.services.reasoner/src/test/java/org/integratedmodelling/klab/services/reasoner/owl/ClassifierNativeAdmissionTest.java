@@ -79,14 +79,14 @@ class ClassifierNativeAdmissionTest {
   @Test void nativeSubtypeProofIsSeparateFromAbstractStatusOfClauseFillers()throws Exception{
     try(var t=new Fixture()){
       var response=t.validate(t.request("Result",t.bearer("Concrete")),t.request("Input",t.bearer("Category")));
-      assertFalse(response.valid(),"An unproved native subtype remains unresolved: "+response.getNotifications());
+      assertTrue(response.valid(),"Approved monotone refinement supplies the native subtype: "+response.getNotifications());
       var unsupported=t.validate(t.request("Result",t.bearer("Concrete")),t.request("Input",t.bearer("Category")));
-      assertFalse(unsupported.valid(),"Language qualification is not yet a native subtype certificate");
-      // Test-only authored native subtype axiom. This does not claim a general generated-expression
-      // implication rule, and it is not a computational cross-bearer bridge.
+      assertTrue(unsupported.valid(),"Approved positive attribute refinement supplies the native subtype");
+      // The approved construction rule supplies this native subtype proof. It does not
+      // introduce a computational cross-bearer bridge or change abstract-status propagation.
       var concrete=t.reasoner.declareConcept(t.bearer("Concrete"));
       var category=t.reasoner.declareConcept(t.bearer("Category"));
-      t.add(t.f.getOWLSubClassOfAxiom(t.owl.getOWLClass(concrete),t.owl.getOWLClass(category)));
+      assertTrue(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(t.owl.getOWLClass(concrete),t.owl.getOWLClass(category))));
       assertTrue(t.validate(t.request("Result",t.bearer("Concrete")),t.request("Input",t.bearer("Category"))).valid(),"An already established concrete native bearer discharges the detached obligation");
       var proved=t.validate(t.request("Result",t.bearer("Concrete")),t.request("Input",t.bearer("Category")));
       assertTrue(proved.valid(),proved.getReason()+" "+proved.getNotifications());
@@ -114,7 +114,7 @@ class ClassifierNativeAdmissionTest {
     }
   }
 
-  @Test void generatedQualificationRestrictionsAreNecessaryAndDoNotEstablishExpressionSubsumption()throws Exception{
+  @Test void generatedQualificationIncludesApprovedDirectedRefinement()throws Exception{
     try(var t=new Fixture()){
       var candidate=t.reasoner.declareConcept(t.bearer("Concrete"));
       var required=t.reasoner.declareConcept(t.bearer("Category"));
@@ -125,7 +125,7 @@ class ClassifierNativeAdmissionTest {
       var child=t.owl.getOWLClass(candidate);var parent=t.owl.getOWLClass(required);
       assertTrue(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(t.type("Concrete"),t.type("Category"))));
       assertTrue(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(child,t.type("Region"))));
-      assertFalse(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(child,parent)),"Necessary restrictions alone are insufficient");
+      assertTrue(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(child,parent)),"A directed construction axiom now supplements the necessary restrictions");
       System.out.println("NATIVE_PROOF_EXPRESSIONS: "+candidate.getUrn()+" -> "+required.getUrn());
       t.owl.manager.ontologies().flatMap(o->o.axioms()).filter(a->a instanceof org.semanticweb.owlapi.model.OWLSubClassOfAxiom)
           .filter(a->a.signature().anyMatch(e->e.equals(child)||e.equals(parent)))
@@ -133,7 +133,7 @@ class ClassifierNativeAdmissionTest {
     }
   }
 
-  @Test void incrementalBuilderAndOrdinarySyntaxConstructionShareTheSameMissingCompoundParentLink()throws Exception{
+  @Test void incrementalAndOrdinaryConstructionShareTheApprovedCompoundParentLink()throws Exception{
     try(var t=new Fixture()){
       var original=t.reasoner.declareConcept(t.bearer("Category"));
       var rebuilt=org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder.create(original,t.reasoner,t.scope)
@@ -143,7 +143,7 @@ class ClassifierNativeAdmissionTest {
       assertEquals(t.owl.getOWLClass(ordinary),t.owl.getOWLClass(rebuilt));
       for(var ontology:t.owl.getOntologies(true))if(ontology!=t.ontology)t.owl.registerWithReasoner(ontology);
       t.dl.flush();
-      assertFalse(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(t.owl.getOWLClass(rebuilt),t.owl.getOWLClass(original))));
+      assertTrue(t.owl.isEntailed(t.f.getOWLSubClassOfAxiom(t.owl.getOWLClass(rebuilt),t.owl.getOWLClass(original))));
     }
   }
   @Test void classifierGeneratedTypedRedeclarationUsesTheOrdinaryConceptBuilder()throws Exception{
