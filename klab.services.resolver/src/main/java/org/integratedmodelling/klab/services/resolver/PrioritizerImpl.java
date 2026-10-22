@@ -24,6 +24,8 @@ public class PrioritizerImpl implements Prioritizer<Model> {
   private final Scale scale;
   private final Observable observable;
   private final Concept contextObservable;
+  private final Concept effectiveObserver;
+  private final Map<Model,Integer> observerPreferences = new HashMap<>();
   private final Map<Criterion, Integer> defaults;
   private final List<Criterion> order;
   private final Map<Model, Integer> distances = new HashMap<>();
@@ -38,6 +40,9 @@ public class PrioritizerImpl implements Prioritizer<Model> {
     this.scale = scale;
     this.observable = Objects.requireNonNull(observable);
     this.contextObservable = contextObservable;
+    var selectedObserver=scope.getObserver();
+    this.effectiveObserver=selectedObserver==null||selectedObserver.getObservable()==null
+        ? null : selectedObserver.getObservable().asConcept();
     this.defaults = parse(Objects.requireNonNull(criteria));
     String namespace = null, project = null;
     for (var constraint : scope.getResolutionConstraints()) {
@@ -97,14 +102,42 @@ public class PrioritizerImpl implements Prioritizer<Model> {
         outputs.addAll(org.integratedmodelling.klab.runtime.language.OccurrentSemantics.changes(
             outputs.getFirst(), qualities, scope));
       }
-      return outputs.stream().filter(Objects::nonNull)
-          .mapToInt(output -> scope.getService(Reasoner.class)
-              .semanticDistance(output, observable, contextObservable, validatedRevision))
-          .filter(distance -> distance >= 0).min().orElse(Integer.MAX_VALUE);
+      int bestDistance=Integer.MAX_VALUE,bestPreference=Integer.MAX_VALUE;
+      var reasoner=scope.getService(Reasoner.class);
+      for(var output:outputs) {
+        if(output==null)continue;
+        int distance=reasoner.semanticDistance(output,observable,contextObservable,validatedRevision);
+        if(distance<0)continue;
+        int preference=0;
+        if(observable.getObserverSemantics()==null&&effectiveObserver!=null) {
+          if(output.getObserverSemantics()==null)preference=1;
+          else {
+            // Compare Agent meanings under the same admission receipt. This is an implicit
+            // preference/compatibility test, never an authored observed-as query clause.
+            if(!output.getObserverSemantics().is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)
+                || !effectiveObserver.is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)
+                || reasoner.semanticDistance(output.getObserverSemantics(),effectiveObserver,null,validatedRevision)<0)
+              continue;
+          }
+        }
+        if(preference<bestPreference) {bestPreference=preference;bestDistance=distance;}
+        else if(preference==bestPreference)bestDistance=Math.min(bestDistance,distance);
+      }
+      observerPreferences.put(candidate,bestPreference);
+      return bestDistance;
     });
   }
 
+  /** Observer preference is a semantic partition, independent of configurable numeric weights. */
+  int observerPreference(Model model) {
+    if(observable.getObserverSemantics()!=null||effectiveObserver==null)return 0;
+    semanticDistance(model);
+    return observerPreferences.getOrDefault(model,Integer.MAX_VALUE);
+  }
+
   @Override public int compare(Model first, Model second) {
+    int perspective=Integer.compare(observerPreference(first),observerPreference(second));
+    if(perspective!=0)return perspective;
     var left = computeCriteria(first); var right = computeCriteria(second);
     for (var criterion : order) {
       int comparison = Double.compare(left.get(criterion), right.get(criterion));

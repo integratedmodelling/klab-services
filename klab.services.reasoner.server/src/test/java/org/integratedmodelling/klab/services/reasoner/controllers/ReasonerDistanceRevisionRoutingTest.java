@@ -30,7 +30,7 @@ class ReasonerDistanceRevisionRoutingTest {
     verify(service).semanticDistance(a, b, null);
     verify(service).assertedDistance(a, b);
     verify(service).assertedDistanceAtRevision(a, b, 42);
-    var parameter = ReasonerController.class.getMethod("assertedDistance", Concept[].class, boolean.class, long.class)
+    var parameter = ReasonerController.class.getMethod("assertedDistance", org.integratedmodelling.klab.api.knowledge.Semantics[].class, boolean.class, long.class)
         .getParameters()[2].getAnnotation(RequestParam.class);
     assertEquals("knowledgeRevision", parameter.name()); assertEquals("-1", parameter.defaultValue());
   }
@@ -47,9 +47,28 @@ class ReasonerDistanceRevisionRoutingTest {
     assertEquals(2, controller.validatedDistance(new Concept[] {a, b}, true, 42));
     assertThrows(org.springframework.web.server.ResponseStatusException.class,
         () -> controller.validatedDistance(new Concept[] {a, b}, false, -1));
-    var method = ReasonerController.class.getMethod("validatedDistance", Concept[].class, boolean.class, long.class);
+    var method = ReasonerController.class.getMethod("validatedDistance", org.integratedmodelling.klab.api.knowledge.Semantics[].class, boolean.class, long.class);
     assertArrayEquals(new String[] {ServicesAPI.REASONER.VALIDATED_DISTANCE}, method.getAnnotation(PostMapping.class).value());
     assertTrue(method.getParameters()[2].getAnnotation(RequestParam.class).required());
     verify(service, never()).semanticDistance(a, b, null);
+  }
+  @Test void productionMapperAndControllerKeepExplicitObserverWrappers()throws Exception {
+    var service=mock(ReasonerService.class);var server=mock(ReasonerServer.class);when(server.klabService()).thenReturn(service);
+    var controller=new ReasonerController();var field=ReasonerController.class.getDeclaredField("reasoner");field.setAccessible(true);field.set(controller,server);
+    var base=new org.integratedmodelling.common.knowledge.ConceptImpl();base.setUrn("w:Value");
+    var observer=new org.integratedmodelling.common.knowledge.ConceptImpl();observer.setUrn("w:Observer");
+    var value=new org.integratedmodelling.common.knowledge.ObservableImpl();value.setSemantics(base);value.setObserverSemantics(observer);value.setUrn("w:Value observed as w:Observer");
+    var mapper=org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+    var payload=mapper.readValue(mapper.writeValueAsBytes(new org.integratedmodelling.klab.api.knowledge.Semantics[]{value,value,null}),org.integratedmodelling.klab.api.knowledge.Semantics[].class);
+    when(service.semanticDistance(payload[0],payload[1],null,42)).thenReturn(3);
+    assertEquals(3,controller.validatedDistance(payload,false,42));verify(service).semanticDistance(payload[0],payload[1],null,42);
+    when(service.compatible(payload[0],payload[1])).thenReturn(true);
+    when(service.match(payload[0],payload[1])).thenReturn(true);
+    assertTrue(controller.compatible(new org.integratedmodelling.klab.api.knowledge.Semantics[]{payload[0],payload[1]}));
+    assertTrue(controller.matches(new org.integratedmodelling.klab.api.knowledge.Semantics[]{payload[0],payload[1]}));
+    verify(service).compatible(payload[0],payload[1]);verify(service).match(payload[0],payload[1]);
+    assertInstanceOf(org.integratedmodelling.klab.api.knowledge.Observable.class,payload[1]);
+    assertEquals("w:Observer",((org.integratedmodelling.klab.api.knowledge.Observable)payload[1]).getObserverSemantics().getUrn());
+    assertThrows(Exception.class,()->mapper.readValue("{\"@CLASS\":\"java.util.HashMap\"}",org.integratedmodelling.klab.api.knowledge.Semantics.class));
   }
 }

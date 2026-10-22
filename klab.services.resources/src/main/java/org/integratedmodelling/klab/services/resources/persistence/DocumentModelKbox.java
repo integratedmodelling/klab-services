@@ -233,7 +233,12 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
             model.getName(), model.getNamespaceId(), resourceService,
             scope == null ? resourceService.serviceScope() : scope, observable);
         if (validatedRevision < 0) continue;
-        if (reasoner().semanticDistance(model.getObservableConcept(), observable, context, validatedRevision) < 0) continue;
+        // The indexed Concept omits observable-level clauses such as an explicit observer.
+        // Reconstruct the complete authored wrapper only after current source validation succeeds.
+        var candidate = reasoner().resolveObservable(model.getObservable());
+        if (candidate == null || candidate.getSemantics() == null
+            || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
+        if (reasoner().semanticDistance(candidate, observable, context, validatedRevision) < 0) continue;
         Coverage coverage = resourceService.info(model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, scope);
         if (coverage == null || coverage.checkConstraints(scale)) result.add(model);
       }

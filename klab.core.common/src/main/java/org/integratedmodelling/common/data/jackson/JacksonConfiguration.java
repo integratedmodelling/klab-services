@@ -182,6 +182,11 @@ public class JacksonConfiguration {
     public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       JsonNode node = p.getCodec().readTree(p);
       try {
+        if(interfaceClass==Semantics.class && node.isObject()) {
+          var concrete=getObjectClass(node);
+          if(concrete==null || !Semantics.class.isAssignableFrom(concrete))
+            throw new IllegalArgumentException("Semantic transport requires a registered semantic implementation");
+        }
         return (T) deserialize(node, p, (Field) null);
       } catch (Exception e) {
         throw new KlabIOException(e);
@@ -466,6 +471,7 @@ public class JacksonConfiguration {
           Worldview.class,
           Workspace.class,
           Concept.class,
+          Semantics.class,
           Observable.class,
           Resource.class,
           KimOntology.class,

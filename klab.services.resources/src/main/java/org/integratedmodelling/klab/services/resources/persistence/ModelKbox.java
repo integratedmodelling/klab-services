@@ -325,10 +325,13 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
         long validatedRevision = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
             model.getName(), model.getNamespaceId(), resourceService, context, observable);
         if (validatedRevision < 0) continue;
+        // Keep observable-level semantics (including observed-as) out of the coarse Concept index.
+        // The full wrapper is authoritative for matching, after source/revision validation.
+        var candidate = scope.getService(Reasoner.class).resolveObservable(model.getObservable());
+        if (candidate == null || candidate.getSemantics() == null
+            || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
         if (scope.getService(Reasoner.class).semanticDistance(
-            model.getObservableConcept() == null
-                ? scope.getService(Reasoner.class).resolveConcept(model.getObservable())
-                : model.getObservableConcept(), observable, contextObservable, validatedRevision) < 0) continue;
+            candidate, observable, contextObservable, validatedRevision) < 0) continue;
         Coverage coverage =
             resourceService.info(
                 model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, context);

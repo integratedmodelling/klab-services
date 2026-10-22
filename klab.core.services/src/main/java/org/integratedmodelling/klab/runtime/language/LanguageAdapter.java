@@ -88,6 +88,10 @@ public class LanguageAdapter {
     ret.setUnit(observableSyntax.getUnit());
     ret.setCurrency(observableSyntax.getCurrency());
     ret.setOptional(observableSyntax.isOptional());
+    if (observableSyntax.getObserverSemantics() != null) {
+      ret.setObserverSemantics(adaptSemantics(
+          observableSyntax.getObserverSemantics(), namespace, projectName, documentClass));
+    }
     if (observableSyntax.getRange() != null && observableSyntax.getRange().size() == 2) {
       ret.setRange(
           new NumericRangeImpl(

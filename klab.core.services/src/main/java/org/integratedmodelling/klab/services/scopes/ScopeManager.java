@@ -369,19 +369,19 @@ public class ScopeManager {
     }
 
     if (contextualization.observerId() != Observation.UNASSIGNED_ID) {
-      var observer =
-          ret.getDigitalTwin()
-              .getKnowledgeGraph()
-              .getAsset(contextualization.observerId(), ret, Observation.class);
-      if (observer == null) {
+      try {
+        ret = ret.withResolutionConstraints(
+            org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+                org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.Observer,
+                contextualization.observerId()));
+      } catch (IllegalArgumentException e) {
         throw new KlabResourceAccessException(
-            "Subject with ID "
+            "Observer with ID "
                 + contextualization.observerId()
-                + " not found in "
+                + " is not an accessible Agent in "
                 + "context "
                 + ret.getName());
       }
-      ret = ret.withObserver(observer);
     }
 
     if (ret instanceof ServiceContextScope serviceContextScope) {

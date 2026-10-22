@@ -156,6 +156,8 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
         case ActuatorImpl actuator -> {
           ret.put(GraphModel.Fields.ACTUATOR_SCHEMA_VERSION, 1);
+          ret.put(GraphModel.Fields.OPERATION_OBSERVABLE, actuator.getOperationObservable() == null
+              ? null : actuator.getOperationObservable().getUrn());
           ret.put(GraphModel.Fields.EXECUTION_ROLE, actuator.getExecutionRole().name());
           ret.put(GraphModel.Fields.OCCURRENCE_SCHEDULES_JSON, actuator.getOccurrenceSchedules().entrySet().stream()
               .sorted(Map.Entry.comparingByKey())

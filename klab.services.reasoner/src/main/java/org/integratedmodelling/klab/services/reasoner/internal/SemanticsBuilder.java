@@ -134,6 +134,8 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     if (syntax instanceof KimConceptImpl kimConcept) {
       // Isolate mutable builder state from Resources caches and other builders.
       ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
+      if(observable.getObserverSemantics()!=null)
+        ret.observerSyntax=(KimConceptImpl)ret.conceptSyntax(observable.getObserverSemantics().getUrn());
       ret.unit = observable.getUnit();
       ret.currency = observable.getCurrency();
       ret.statedName = observable.getStatedName();
@@ -379,7 +381,7 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
 
   @Override
   public Observable.Builder withObserverSemantics(Concept observerSemantics) {
-    this.observerSyntax =
+    this.observerSyntax = observerSemantics==null ? null :
         (KimConceptImpl) conceptSyntax(observerSemantics.getUrn());
     return this;
   }
@@ -849,6 +851,16 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
 
     var ret = ObservableImpl.promote(obs, reasoner.serviceScope());
 
+    if(observerSyntax!=null) {
+      // Delegate complete Agent expressions, including boolean operands, to canonical construction.
+      var observer=reasoner.declareConcept(observerSyntax);
+      if(observer==null || !observer.is(SemanticType.AGENT))
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("OBSERVER_AGENT_REQUIRED: observed as requires a resolved Agent class");
+      ret.setObserverSemantics(observer);
+      ret.setUrn(ret.getUrn()+" observed as "+observer.getUrn());
+      ret.setReferenceName(ret.getReferenceName()+"_observed_as_"+observer.getReferenceName());
+    }
+
     if (currency != null) {
       ret.setCurrency(currency);
       ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
@@ -857,9 +869,6 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
       ret.setUrn(ret.getUrn() + " in " + ret.getUnit());
     }
 
-    if (observerSyntax != null) {
-      ret.setObserverSemantics(buildConcept(observerSyntax));
-    }
 
     ret.setStatedName(this.statedName);
     ret.setOptional(this.optional);

@@ -17,6 +17,9 @@ import org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSuppo
 public class DocumentSemanticValidator
     implements KimNamespaceVisitor.Validator, KimOntologyVisitor.Validator,
         KimObservationStrategyDocumentVisitor.Validator {
+  private record ObserverDeclaration(Observable observable,org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl source) {}
+  private final List<ObserverDeclaration> observerDeclarations=new ArrayList<>();
+  private boolean sourceValid;
   private final ReasonerService reasoner;
   private final boolean executableModels;
   private final boolean classifierPreparableDependencies;
@@ -42,6 +45,24 @@ public class DocumentSemanticValidator
   }
 
   public List<Notification> validate(KlabDocument<?> document) {
+    observerDeclarations.clear();sourceValid=false;
+    var diagnostics=validateSource(document);
+    sourceValid=!org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(diagnostics);
+    return diagnostics;
+  }
+
+  /** Explicit export step for trusted source ingestion only, after the complete source is valid.
+   * Generic construction and editor validation never publish source records into accepted OWL. */
+  public void exportObserverDeclarations() {
+    if(!sourceValid)throw new IllegalStateException("Observer metadata requires a completely validated source");
+    synchronized(reasoner.owl()) {
+      for(var declaration:observerDeclarations)org.integratedmodelling.klab.services.reasoner.owl.ObserverOntologySupport.compile(
+          reasoner.owl(),reasoner.owl().requireOntology(declaration.source().getNamespace()),
+          declaration.observable(),declaration.source());
+    }
+  }
+
+  private List<Notification> validateSource(KlabDocument<?> document) {
     if (document instanceof KimObservationStrategyDocument strategies) {
       var visitor = new KimObservationStrategyDocumentVisitor(this, null);
       visitor.visit(strategies);
@@ -55,6 +76,25 @@ public class DocumentSemanticValidator
     var visitor = new KimOntologyVisitor(this, null);
     visitor.visit((KimOntology) document);
     return visitor.getNotifications();
+  }
+
+  @Override
+  public List<Notification> validateObservable(KimObservable observable,KimObservableVisitor.Context context) {
+    if(observable.getObserverSemantics()==null)return List.of();
+    try {
+      var source=new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl(
+          (org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl)observable);
+      // The observable bean's default PUBLIC is not the effective lexical model scope.
+      for(var node:context.getPath())if(node instanceof KimModel model)source.setScope(model.getScope());
+      var resolved=reasoner.declareObservable(source);
+      if(context.getDocument()!=null && source.getNamespace()!=null && !source.getNamespace().isBlank()) {
+        if(!source.getNamespace().equals(context.getDocument().getUrn()))
+          throw new IllegalArgumentException("OBSERVER_SOURCE_OWNER: observable namespace differs from its lexical document");
+        source.setProjectName(context.getDocument().getProjectName());
+        observerDeclarations.add(new ObserverDeclaration(resolved,source));
+      }
+      return List.of();
+    } catch(RuntimeException invalid) {return List.of(error(invalid,observable,context));}
   }
 
   @Override

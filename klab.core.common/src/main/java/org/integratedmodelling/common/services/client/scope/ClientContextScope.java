@@ -106,7 +106,14 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public Observation getObserver() {
-    return currentSnapshot(this.observer);
+    if (observer != null && digitalTwin != null
+        && digitalTwin.getTransitionHistory().modifies(observer.getId())) {
+      var refreshed=digitalTwin.getKnowledgeGraph().getAsset(observer.getId(),this,Observation.class);
+      if(refreshed==null||refreshed.getObservable()==null||!refreshed.getObservable().is(SemanticType.AGENT))
+        throw new IllegalStateException("Selected observer is no longer an accessible Agent");
+      return refreshed;
+    }
+    return this.observer;
   }
 
   @Override
@@ -124,9 +131,13 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public ContextScope withObserver(Observation observer) {
+    if (observer != null && (observer.getId() <= 0 || observer.getObservable() == null
+        || !observer.getObservable().is(SemanticType.AGENT)))
+      throw new IllegalArgumentException("An observer must be a persisted agent");
     var ret = childContext(this);
     ret.observer = observer;
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
+    ret.resolutionConstraints.remove(ResolutionConstraint.Type.ObserverUrn);
     if (observer != null) ret.resolutionConstraints.put(ResolutionConstraint.Type.Observer,
         ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
     return ret;
@@ -303,19 +314,12 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
-    return List.of();
+    return org.integratedmodelling.common.runtime.ObservationPerspectives.find(this, observable);
   }
 
   @Override
   public Observation getObserverOf(Observation observation) {
-    var ret =
-        digitalTwin
-            .getKnowledgeGraph()
-            .query(Observation.class, this)
-            .target(observation)
-            .along(GraphModel.Relationship.HAS_OBSERVER)
-            .run(this);
-    return ret.isEmpty() ? null : ret.getFirst();
+    return org.integratedmodelling.common.runtime.ObserverProvenance.recover(this,observation).observer();
   }
 
   //  @Override
@@ -349,13 +353,27 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     if (resolutionConstraints == null) {
       ret.resolutionConstraints.clear();
     } else {
+      var namedObservers = java.util.Arrays.stream(resolutionConstraints)
+          .filter(java.util.Objects::nonNull)
+          .filter(c -> c.getType() == ResolutionConstraint.Type.ObserverUrn && !c.empty())
+          .flatMap(c -> c.payload(String.class).stream()).distinct().toList();
+      if (namedObservers.size() > 1 || namedObservers.stream().anyMatch(String::isBlank))
+        throw new IllegalArgumentException("A submission must select one nonblank observer URN");
       for (var constraint : resolutionConstraints) {
         if (constraint == null || constraint.empty()) {
           continue;
         }
         if (constraint.getType() == ResolutionConstraint.Type.UnresolvedContextObservation) {
           ret.contextObservation = constraint.payload(Observation.class).getFirst();
+        } else if (constraint.getType() == ResolutionConstraint.Type.ObserverUrn) {
+          if (ret.getDigitalTwin() == null)
+            throw new IllegalArgumentException("Observer selection requires a knowledge graph");
+          var selected = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
+              namedObservers.getFirst(), ret, Observation.class);
+          if (selected == null) throw new IllegalArgumentException("Unknown observer");
+          ret = (ClientContextScope) ret.withObserver(selected);
         } else if (constraint.getType() == ResolutionConstraint.Type.Observer) {
+          if (!namedObservers.isEmpty()) continue;
           var selected = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
               constraint.payload(Long.class).getFirst(), ret, Observation.class);
           if (selected == null) throw new IllegalArgumentException("Unknown observer");

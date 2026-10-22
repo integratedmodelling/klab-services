@@ -852,22 +852,14 @@ public class DigitalTwinImpl implements DigitalTwin {
             } else if (datum instanceof Observation observation) {
               // only link contextualization to the contextualized observation
               if (activity.getType().isContextualization()) {
-                var obs =
-                    graph.vertexSet().stream()
-                        .filter(
-                            a -> a instanceof Observation oo && oo.getId() == observation.getId())
-                        .findFirst()
-                        .orElse(observation);
-                try {
-                  this.graph.addEdge(
-                      activity,
-                      obs,
-                      new RelationshipEdge(
-                          GraphModel.Relationship.forContextualization(
-                              activity.getType().getContextualization())));
-                } catch (Exception e) {
-                  Logging.INSTANCE.error(e, obs);
-                }
+                // A persisted target need not already occur in this attempt's local graph.
+                // link canonicalizes existing IDs and registers endpoints without marking the
+                // target as newly added or creating another observation.
+                link(
+                    activity,
+                    observation,
+                    GraphModel.Relationship.forContextualization(
+                        activity.getType().getContextualization()));
               }
             } // TODO see if we need anything else
           }
@@ -1590,11 +1582,22 @@ public class DigitalTwinImpl implements DigitalTwin {
     public Transaction getChild(Activity activity, ContextScope scope, Object... runtimeAssets) {
       synchronized (graph) {
         requireOpen();
-        var ret = new TransactionImpl(this, activity, runtimeAssets);
-        if (scope instanceof ServiceContextScope serviceContextScope) {
-          serviceContextScope.registerTransaction(ret);
+        try {
+          var ret = new TransactionImpl(this, activity, runtimeAssets);
+          if (scope instanceof ServiceContextScope serviceContextScope) {
+            serviceContextScope.registerTransaction(ret);
+          }
+          return ret;
+        } catch (RuntimeException | Error failure) {
+          // Construction can already have contributed vertices/edges to the shared graph.
+          // Such an attempt must not commit a partial provenance record.
+          try {
+            fail(failure);
+          } catch (RuntimeException | Error cleanupFailure) {
+            if (cleanupFailure != failure) failure.addSuppressed(cleanupFailure);
+          }
+          throw failure;
         }
-        return ret;
       }
     }
 

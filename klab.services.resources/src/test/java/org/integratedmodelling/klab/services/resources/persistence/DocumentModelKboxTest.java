@@ -34,6 +34,9 @@ class DocumentModelKboxTest {
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(concept.getUrn()).thenReturn("test:Height of test:Tree");
     when(reasoner.resolveConcept(concept.getUrn())).thenReturn(concept);
+    var fullObservable = mock(Observable.class);
+    when(fullObservable.getSemantics()).thenReturn(concept);
+    when(reasoner.resolveObservable(concept.getUrn())).thenReturn(fullObservable);
     when(reasoner.validateDocument(any(), any())).thenAnswer(invocation -> {
       var response = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
           .forRequest(invocation.getArgument(0));

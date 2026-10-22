@@ -59,6 +59,10 @@ public interface ResolutionConstraint extends Serializable {
     Geometry(Geometry.class, false),
     /** Persistent ID of the active observer in this twin. */
     Observer(Long.class, false),
+    /** Public submission selection by an existing Agent observation's canonical graph URN.
+     * Resolved to Observer's scoped persistent ID without changing authored observable semantics.
+     */
+    ObserverUrn(String.class, false),
     /** Effective lexical namespace, replacing the inherited namespace. It also selects the
      * namespace ranking overrides for all candidates. Instantiated members inherit their
      * producing model's namespace when Runtime submits them for individual resolution.
