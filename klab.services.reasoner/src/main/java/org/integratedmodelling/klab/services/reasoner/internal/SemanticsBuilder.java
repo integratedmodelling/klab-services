@@ -353,7 +353,10 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
 
   @Override
   public Observable.Builder withUnit(String unit) {
-    return this;
+    if (unit == null) return withUnit((Unit) null);
+    if (unit.isBlank()) throw new KlabValidationException("Invalid empty unit definition");
+    return withUnit(org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE
+        .getService(org.integratedmodelling.klab.api.services.UnitService.class).getUnit(unit.trim()));
   }
 
   @Override
