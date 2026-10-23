@@ -59,6 +59,67 @@ public class ResolutionCompiler {
   private final java.util.Set<String> activeClassifierDependencies = new java.util.HashSet<>();
   private boolean automaticClassifiersAllowed = true;
   private boolean strictTierZeroOnly;
+  /** Identity keys prevent mutable Model equality from moving cached grants between instances. */
+  private record ModelIdentity(Model model) {
+    @Override public boolean equals(Object other) {return other instanceof ModelIdentity key && key.model==model;}
+    @Override public int hashCode() {return System.identityHashCode(model);}
+  }
+  private final Map<ModelIdentity,org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt> modelAdmissions = new java.util.concurrent.ConcurrentHashMap<>();
+  org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt admissionReceipt(Model model) {
+    return modelAdmissions.get(new ModelIdentity(model));
+  }
+  /** Prerequisites are private to this compiler and exact invocation, never catalog grants. */
+  private record PreparationKey(Model model,ContextScope scope,String witness) {
+    @Override public boolean equals(Object other) {return other instanceof PreparationKey key
+        && key.model==model && key.scope==scope && key.witness.equals(witness);}
+    @Override public int hashCode() {return 31*(31*System.identityHashCode(model)+System.identityHashCode(scope))+witness.hashCode();}
+  }
+  private record PreparedCandidate(
+      org.integratedmodelling.klab.runtime.language.ModelValidationGate.PreparationReceipt receipt,
+      ResourceSet requirements) {}
+  private final java.util.concurrent.ConcurrentMap<PreparationKey,PreparedCandidate> preparedCandidates = new java.util.concurrent.ConcurrentHashMap<>();
+
+  private static String observationWitness(Observation observation) {
+    if (observation==null)return "null";
+    return observation.getId()+"|"+observation.getUrn()+"|"
+        +(observation.getObservable()==null?null:observation.getObservable().getUrn())+"|"
+        +(observation.getGeometry()==null?null:observation.getGeometry().encode());
+  }
+  private static String preparationScopeWitness(ContextScope scope) {
+    return observationWitness(scope.getContextObservation())+"#"+observationWitness(scope.getObserver())+"#"
+        +org.integratedmodelling.klab.utilities.Utils.Json.asString(scope.getResolutionConstraints());
+  }
+  private PreparedCandidate preparedCandidate(Model model,ContextScope scope) {
+    return preparedCandidates.get(new PreparationKey(model,scope,preparationScopeWitness(scope)));
+  }
+  private boolean hasPreparedModel(Model model) {
+    return preparedCandidates.keySet().stream().anyMatch(key->key.model()==model);
+  }
+  /** Source proof precedes authorized prerequisite preparation; full installed admission follows it. */
+  boolean prepareCandidate(Model model,Observable requested,ContextScope scope) {
+    var key=new PreparationKey(model,scope,preparationScopeWitness(scope));
+    // Per-key atomic preparation; unrelated contexts/models never share an invocation lock.
+    var prepared=preparedCandidates.computeIfAbsent(key,ignored-> {
+      var receipt=org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedSourcePreparation(model,scope,requested);
+      if(receipt==null)return null;
+      var lexical=scope.withResolutionConstraints(
+          ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionNamespace,model.getNamespace()),
+          ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject,model.getProjectName()));
+      var runtime=lexical==null?null:lexical.getService(RuntimeService.class);
+      if(runtime==null)return null;
+      ResourceSet requirements;
+      try { requirements=runtime.resolveContextualizables(model.getComputation(),lexical); }
+      catch(RuntimeException failure) {scope.warn("Contextualizer prerequisites unavailable for "+model.getUrn()+": "+failure.getMessage());return null;}
+      if(requirements==null || requirements.isEmpty()
+          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(requirements.getNotifications())
+          || !key.witness().equals(preparationScopeWitness(scope))
+          || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(receipt,model,scope))return null;
+      return new PreparedCandidate(receipt,requirements);
+    });
+    return prepared!=null && key.witness().equals(preparationScopeWitness(scope))
+        && org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(prepared.receipt(),model,scope);
+  }
+  private org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding activeCollectiveReduction;
   private static final class ClassifierPhaseDeferred extends RuntimeException {
     ClassifierPhaseDeferred() { super(null,null,false,false); }
   }
@@ -322,6 +383,8 @@ public class ResolutionCompiler {
     var binding = observationStrategy.getContextBinding();
     if(strictTierZeroOnly && observationStrategy.getRank()>0)return ResolutionGraph.empty();
     if (scope.isInterrupted()) return ResolutionGraph.empty();
+    if (observationStrategy.getCollectiveReduction() != null)
+      return resolveCollectiveReduction(observationStrategy, scaleToCover, graph, scope, explainedObservation);
     if (binding == null) return resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation, fallback);
     if (observationStrategy.getRank() < 1 || observationStrategy.getOperations().size() != 1
         || observationStrategy.getOperations().getFirst().getType() != ObservationStrategy.Operation.Type.OBSERVE
@@ -347,6 +410,39 @@ public class ResolutionCompiler {
     } finally {
       activeContextBindings.remove(key);
     }
+  }
+
+  private ResolutionGraph resolveCollectiveReduction(ObservationStrategy strategy, Scale scale,
+      ResolutionGraph graph, ContextScope scope, Observation request) {
+    var binding = strategy.getCollectiveReduction();
+    if (strategy.getRank() < 1 || strategy.getContextBinding() != null || request == null
+        || strategy.getOperations().size() != 1
+        || strategy.getOperations().getFirst().getType() != ObservationStrategy.Operation.Type.RESOLVE
+        || !java.util.Objects.equals(binding.operand(), strategy.getOperations().getFirst().getObservable().getUrn()))
+      return ResolutionGraph.empty();
+    String key = "reduce|" + binding.context().contextId() + "|" + binding.context().childObservable();
+    if (activeContextBindings.size() >= 32 || !activeContextBindings.add(key)) return ResolutionGraph.empty();
+    var previousReduction = activeCollectiveReduction;
+    try {
+      binding.require(scope, request.getObservable(), scale);
+      activeCollectiveReduction = binding;
+      var result = graph.createChild(strategy, scale);
+      var members = resolve(strategy.getOperations().getFirst().getObservable(), scale, result.withScheduleRequest(null), scope);
+      if (members.isEmpty() || !members.getCoverage().isComplete()) return ResolutionGraph.empty();
+      var operand = strategy.getOperations().getFirst().getObservable();
+      if (members.graph().vertexSet().stream().filter(Model.class::isInstance).map(Model.class::cast)
+          .flatMap(model -> model.getObservables().stream()).anyMatch(output -> output.getObserverSemantics() != null
+              && java.util.Objects.equals(output.asConcept().getUrn(), operand.asConcept().getUrn()))) {
+        scope.warn("Collective reduction does not yet support observer-specific substantial discovery outputs");
+        return ResolutionGraph.empty();
+      }
+      binding.require(scope, request.getObservable(), scale);
+      result.merge(members, "members");
+      return result;
+    } catch (IllegalStateException failure) {
+      scope.warn(failure.getMessage());
+      return ResolutionGraph.empty();
+    } finally { activeCollectiveReduction = previousReduction; activeContextBindings.remove(key); }
   }
 
   private ResolutionGraph resolveStrategyBody(ObservationStrategy observationStrategy,
@@ -432,7 +528,7 @@ public class ResolutionCompiler {
               modelScope = modelScope.within(explainedObservation);
             }
             var modelResolution = resolve(model, contextualizedScope.getSecond(), ret, modelScope,
-                explainedObservation);
+                explainedObservation, contextualizedScope.getFirst(), operation.getObservable());
             if (modelResolution.isEmpty()) continue;
             if (operation.getTransformationTarget() != null) {
               // Until composed contextualizer pipelines expose their graph ports, accept only
@@ -581,13 +677,22 @@ public class ResolutionCompiler {
    */
   private ResolutionGraph resolve(
       Model model, Scale scaleToCover, ResolutionGraph graph, ContextScope scope) {
-    return resolve(model, scaleToCover, graph, scope, null);
+    return resolve(model, scaleToCover, graph, scope, null, scope,
+        model.getObservables().isEmpty()?null:model.getObservables().getFirst());
   }
 
   private ResolutionGraph resolve(
       Model model, Scale scaleToCover, ResolutionGraph graph, ContextScope scope,
-      Observation occurrentObservation) {
+      Observation occurrentObservation, ContextScope selectionScope, Observable selectedRequest) {
 
+    var admitted=admissionReceipt(model);
+    if (model.getNamespace()!=null && !model.getNamespace().isBlank()) {
+      if (admitted==null || !java.util.Objects.equals(admitted.executableHash(),org.integratedmodelling.klab.runtime.language.ModelValidationGate.executableHash(model))
+          || admitted.knowledgeRevision()!=graph.semanticRevision() || !java.util.Objects.equals(admitted.reasonerId(),graph.semanticReasonerId())) {
+        scope.warn("Named model lacks its original stable source admission: "+model.getUrn());return ResolutionGraph.empty();
+      }
+      graph.admitModel(model,admitted);
+    }
     var ret = graph.createChild(model, scaleToCover);
     org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
     try {
@@ -598,6 +703,35 @@ public class ResolutionCompiler {
     }
     ret.processPlan = processPlan;
 
+    // Model lookup is performed in the requesting scope. For a root substantial,
+    // only computation/dependencies enter the explained observation; preserve that
+    // explicit internal transition without treating arbitrary contexts as equivalent.
+    var originalScope=selectionScope;
+    var prepared=preparedCandidate(model,originalScope);
+    if(prepared==null && hasPreparedModel(model)) {
+      scope.warn("Context changed after model prerequisite preparation: "+model.getUrn());
+      return ResolutionGraph.empty();
+    }
+    if(prepared!=null && (!org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(prepared.receipt(),model,originalScope)
+        || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.sameSnapshot(prepared.receipt(),admitted))) {
+      scope.warn("Model changed after contextualizer prerequisite preparation: "+model.getUrn());
+      return ResolutionGraph.empty();
+    }
+
+
+    if(prepared!=null && (scope!=selectionScope
+        || !preparationScopeWitness(scope).equals(preparationScopeWitness(selectionScope)))) {
+      // The existing root-substantial path deliberately enters the explained subject.
+      // Resource prerequisites may depend on this scope: prepare there independently,
+      // never transfer the requesting context's ResourceSet or contextual eligibility.
+      var selectionPreparation=prepared;
+      if(!prepareCandidate(model,selectedRequest,scope))return ResolutionGraph.empty();
+      prepared=preparedCandidate(model,scope);
+      var computationAdmission=org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableAdmission(model,scope,selectedRequest);
+      if(prepared==null || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.sameSnapshot(selectionPreparation.receipt(),computationAdmission)
+          || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.sameSnapshot(prepared.receipt(),computationAdmission))return ResolutionGraph.empty();
+    }
+
     scope =
         scope.withResolutionConstraints(
             ResolutionConstraint.of(
@@ -607,7 +741,8 @@ public class ResolutionCompiler {
 
     // check that all contextualizers are supported
     var runtime = scope.getService(RuntimeService.class);
-    ResourceSet requirements = runtime.resolveContextualizables(model.getComputation(), scope);
+    ResourceSet requirements = prepared==null
+        ? runtime.resolveContextualizables(model.getComputation(), scope) : prepared.requirements();
 
     if (requirements == null) {
       scope.error(
@@ -646,7 +781,9 @@ public class ResolutionCompiler {
           inputs.add(binding.observable());
       }
     }
-    for (var dependency : inputs) {
+    for (int dependencyIndex=0;dependencyIndex<inputs.size();dependencyIndex++) {
+      final int sourceDependencyIndex=dependencyIndex;
+      var dependency=inputs.get(dependencyIndex);
       var binding =
           processPlan == null ? null : processPlan.binding(ProcessModelBindings.name(dependency));
       // An epiphenomenon is a transition output, never an observation/INIT prerequisite.
@@ -656,7 +793,15 @@ public class ResolutionCompiler {
 
       ResolutionGraph dependencyResolution;
       try {
-        if (planClassifiedDependency(model, dependency, inputs.indexOf(dependency), scaleToCover, ret, scope))
+        var pendingMember=ret.admission(model)==null?null:ret.admission(model).pendingMemberQualities().stream()
+            .filter(p->p.dependencyIndex()==sourceDependencyIndex).findFirst().orElse(null);
+        if(pendingMember!=null) {
+          // Expected result kind is a complete native collection, not an ordinary Observation.
+          // No direct-view Tier-0 provider exists yet; Tier-1 discovery reuses native per-member Tier-0 normally.
+          if(!planMemberQualityInput(model,dependency,sourceDependencyIndex,ret,scope))return ResolutionGraph.empty();
+          continue;
+        }
+        if (planClassifiedDependency(model, dependency, sourceDependencyIndex, scaleToCover, ret, scope))
           continue;
         var dependencyScope = scope;
         var primary = model.getObservables().getFirst();
@@ -713,6 +858,42 @@ public class ResolutionCompiler {
     }
 
     return ret;
+  }
+
+  private boolean planMemberQualityInput(Model model,Observable dependency,int index,ResolutionGraph graph,ContextScope scope) {
+    var receipt=graph.admission(model);
+    if(receipt==null || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(receipt,model,scope))return false;
+    var pending=receipt.pendingMemberQualities().stream().filter(p->p.dependencyIndex()==index).findFirst().orElse(null);
+    if(pending==null || !Objects.equals(pending.quality(),dependency.getUrn())
+        || !Objects.equals(pending.port(),dependency.getStatedName()) || model.getComputation().size()!=1
+        || model.getComputation().getFirst().getServiceCall()==null)return false;
+    var resources=scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var saved=resources==null?null:resources.retrieve(model.getNamespace(),org.integratedmodelling.klab.api.lang.kim.KimNamespace.class,scope);
+    var source=saved==null?null:saved.getStatements().stream().filter(s->s instanceof org.integratedmodelling.klab.api.lang.kim.KimModel
+        && model.getUrn().equals(s.getUrn())).map(org.integratedmodelling.klab.api.lang.kim.KimModel.class::cast).findFirst().orElse(null);
+    if(source==null || index>=source.getDependencies().size())return false;
+    var occurrence=source.getDependencies().get(index);
+    if(org.integratedmodelling.klab.runtime.language.ModelValidationGate.explicitAtomicInherent(occurrence)==null
+        || !Objects.equals(occurrence.getUrn(),pending.sourceObservable()) || !Objects.equals(occurrence.getFormalName(),pending.port()))return false;
+    var runtime=scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    if(runtime==null || !runtime.supportsMemberQualityInput(model.getComputation().getFirst().getServiceCall(),pending.port(),scope))return false;
+    var context=scope.getContextObservation();var reasoner=scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    if(!org.integratedmodelling.klab.api.knowledge.SingularContextBinding.eligible(context))return false;
+    graph.requireSemanticSnapshot(scope);
+    var nativeBearer=reasoner.resolveConcept(pending.nativeBearer());
+    var members=nativeBearer==null?null:reasoner.resolveObservable(nativeBearer.collective().getUrn());
+    if(members==null || members.isAbstract() || !members.getSemantics().isCollective())return false;
+    var container=new org.integratedmodelling.klab.api.knowledge.SingularContextBinding(context.getId(),context.getUrn(),
+        context.getObservable().getUrn(),Geometry.forTransport(context.getGeometry()).encode(),pending.quality(),
+        graph.semanticReasonerId(),graph.semanticRevision());
+    var request=new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest(container,members.getUrn(),
+        pending.quality(),null,scope.getResolutionConstraints()==null?List.of():List.copyOf(scope.getResolutionConstraints()));
+    var plan=new org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan(model.getUrn(),model.getNamespace(),
+        receipt.sourceVersion(),receipt.sourceHash(),index,pending.port(),pending.sourceObservable(),request);
+    var prior=graph.memberQualityInputs.computeIfAbsent(model,ignored->new java.util.LinkedHashMap<>()).putIfAbsent(pending.port(),plan);
+    if(prior!=null && !prior.equals(plan))return false;
+    graph.requireSemanticSnapshot(scope);
+    return org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(receipt,model,scope);
   }
 
   /** Freeze and plan classifier work; this method performs no Runtime mutation or execution. */
@@ -879,13 +1060,11 @@ public class ResolutionCompiler {
       return new QueryMatch(null, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
     }
 
-    var result =
-        scope
-            .observation(observable)
-            .geometry(requestedScale.as(Geometry.class))
-            .query()
-            .submit()
-            .join();
+    var query = scope.observation(observable).geometry(requestedScale.as(Geometry.class)).query();
+    if (activeCollectiveReduction != null && java.util.Objects.equals(activeCollectiveReduction.operand(), observable.getUrn()))
+      query.metadata(org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY,
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(activeCollectiveReduction));
+    var result = query.submit().join();
     if (result == null || result.isEmpty() || result.getGeometry() == null) {
       return new QueryMatch(
           result, null, requestedScale, null, Coverage.create(requestedScale, 0.0));
@@ -948,7 +1127,9 @@ public class ResolutionCompiler {
                     "contextObservable",
                     contextObservable,
                     "resolutionConstraints",
-                    scope.getResolutionConstraints()),
+                    scope.getResolutionConstraints(),
+                    org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode.PARAMETER,
+                    org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode.PREPARABLE.name()),
                 KlabAsset.KnowledgeClass.MODEL,
                 ResourceSet.class,
                 scope)
@@ -960,8 +1141,20 @@ public class ResolutionCompiler {
         models.getNotifications())) throw new KlabIllegalStateException("Model discovery failed");
     modelQueries++;
     matchedModels += ret.size();
-    ret.removeIf(model -> !org.integratedmodelling.klab.runtime.language.ModelValidationGate.admitsPreparable(model, scope, observable));
-    ret.removeIf(model -> prioritizer.semanticDistance(model) == Integer.MAX_VALUE);
+    // Catalog PREPARABLE results have no executable/ranking grant. Preserve the original
+    // source snapshot while the existing Runtime path prepares components/resources under
+    // its normal load policy, then require installed admission BEFORE semantic distance.
+    ret.removeIf(model -> !prepareCandidate(model,observable,scope));
+    ret.removeIf(model -> {
+      var prepared=preparedCandidate(model,scope);
+      if(prepared==null || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(prepared.receipt(),model,scope))return true;
+      if(prioritizer.semanticDistance(model)==Integer.MAX_VALUE)return true;
+      return !org.integratedmodelling.klab.runtime.language.ModelValidationGate.sameSnapshot(prepared.receipt(),prioritizer.admission(model));
+    });
+    for (var model : ret) {
+      var receipt=prioritizer.admission(model);
+      if (receipt!=null) modelAdmissions.put(new ModelIdentity(model),receipt);
+    }
     prioritizer.prepare(ret);
     ret.sort(prioritizer);
     return ret;

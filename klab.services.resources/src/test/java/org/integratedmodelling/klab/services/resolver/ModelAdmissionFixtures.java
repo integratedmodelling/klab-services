@@ -11,6 +11,12 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValida
 /** Admission prerequisites for tests whose subject is pipeline/ranking, not semantic validation. */
 final class ModelAdmissionFixtures {
   static ResourcesService prepare(ContextScope scope, Reasoner reasoner) {
+    var capabilities=reasoner.capabilities(scope);
+    if (capabilities==null) {
+      capabilities=mock(Reasoner.Capabilities.class);when(capabilities.getKnowledgeRevision()).thenReturn(7L);
+      when(reasoner.capabilities(scope)).thenReturn(capabilities);
+    }
+    if (capabilities.getServiceId()==null) when(capabilities.getServiceId()).thenReturn("fixture-reasoner");
     var resources = scope.getService(ResourcesService.class);
     if (resources == null) {
       resources = mock(ResourcesService.class);
@@ -26,7 +32,7 @@ final class ModelAdmissionFixtures {
   }
 
   static void saved(ResourcesService resources, Model model, ContextScope scope) {
-    var namespace = new KimNamespaceImpl(); namespace.setUrn(model.getNamespace());
+    var namespace = new KimNamespaceImpl(); namespace.setUrn(model.getNamespace());namespace.setSourceCode("source fixture");
     var source = new KimModelImpl(); source.setUrn(model.getUrn());
     namespace.getStatements().add(source);
     when(resources.retrieve(model.getNamespace(), KimNamespace.class, scope)).thenReturn(namespace);

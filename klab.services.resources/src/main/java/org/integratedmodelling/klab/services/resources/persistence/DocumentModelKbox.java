@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.resources.persistence;
 
+import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
+
 import java.util.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
@@ -201,8 +203,14 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
   @Override public Collection<ModelReference> query(Observable observable,
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
       List<ResolutionConstraint> constraints, ContextScope scope) {
+    return query(observable, geometry, context, constraints, scope, ModelDiscoveryMode.EXECUTABLE);
+  }
+  @Override public Collection<ModelReference> query(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
+      List<ResolutionConstraint> constraints, ContextScope scope, ModelDiscoveryMode mode) {
+    java.util.Objects.requireNonNull(mode, "model discovery mode");
     try {
-      return queryModels(observable, geometry, context, constraints, scope).stream()
+      return queryModels(observable, geometry, context, constraints, scope, mode).stream()
           .filter(m -> ModelVisibility.authorized(m, scope)).toList();
     } catch (RuntimeException failure) {
       var error = new KlabStorageException("Model discovery failed for " + observable.getUrn());
@@ -213,6 +221,12 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
   @Override public List<ModelReference> queryModels(Observable observable,
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
       List<ResolutionConstraint> constraints, ContextScope scope) {
+    return queryModels(observable, geometry, context, constraints, scope, ModelDiscoveryMode.EXECUTABLE);
+  }
+  @Override public List<ModelReference> queryModels(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
+      List<ResolutionConstraint> constraints, ContextScope scope, ModelDiscoveryMode mode) {
+    java.util.Objects.requireNonNull(mode, "model discovery mode");
     List<ModelReference> result = new ArrayList<>();
     ModelVisibility.requireReady(resourceService, scope);
     if (geometry == null || geometry.isEmpty()) return result;
@@ -229,16 +243,20 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
         if (!types.contains(storedTypes.get(i).longValue())) continue;
         var model = ModelReferenceCodec.decode(payloads.get(i), reasoner());
         if (!ModelVisibility.accepts(model, observable, constraints) || !matchesSpace(model, scale)) continue;
-        long validatedRevision = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
-            model.getName(), model.getNamespaceId(), resourceService,
-            scope == null ? resourceService.serviceScope() : scope, observable);
+        var validationScope = scope == null ? resourceService.serviceScope() : scope;
+        long validatedRevision = mode == ModelDiscoveryMode.PREPARABLE
+            ? org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableCatalogRevision(
+                model.getName(), model.getNamespaceId(), resourceService, validationScope, observable)
+            : org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
+                model.getName(), model.getNamespaceId(), resourceService, validationScope, observable);
         if (validatedRevision < 0) continue;
         // The indexed Concept omits observable-level clauses such as an explicit observer.
         // Reconstruct the complete authored wrapper only after current source validation succeeds.
         var candidate = reasoner().resolveObservable(model.getObservable());
         if (candidate == null || candidate.getSemantics() == null
             || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
-        if (reasoner().semanticDistance(candidate, observable, context, validatedRevision) < 0) continue;
+        if (mode == ModelDiscoveryMode.EXECUTABLE
+            && reasoner().semanticDistance(candidate, observable, context, validatedRevision) < 0) continue;
         Coverage coverage = resourceService.info(model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, scope);
         if (coverage == null || coverage.checkConstraints(scale)) result.add(model);
       }

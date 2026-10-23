@@ -23,6 +23,15 @@ public record SingularContextBinding(long contextId, String contextUrn, String c
 
   /** Fail closed before any lookup, link or execution against a different context/revision. */
   public Observation require(ContextScope scope, Observable target) {
+    if (target == null || !target.is(SemanticType.QUALITY)
+        || target.getContextualization() != Contextualization.QUANTIFICATION
+        || !Objects.equals(childObservable, target.getUrn()))
+      throw new IllegalStateException("Incompatible singular child observable");
+    return requireContext(scope);
+  }
+
+  /** Verify only the stable context/revision witness; callers must prove their own result semantics. */
+  public Observation requireContext(ContextScope scope) {
     if (scope == null || scope.isInterrupted()) throw new IllegalStateException("Interrupted context binding");
     if (scope.getCurrentTransaction() != null && scope.getCurrentTransaction().isFailed())
       throw new IllegalStateException("Failed singular binding attempt");
@@ -30,10 +39,7 @@ public record SingularContextBinding(long contextId, String contextUrn, String c
     if (!eligible(current) || current.getId() != contextId
         || !Objects.equals(contextUrn, current.getUrn())
         || !Objects.equals(contextObservable, current.getObservable().getUrn())
-        || !Objects.equals(contextSupport, Geometry.forTransport(current.getGeometry()).encode())
-        || target == null || !target.is(SemanticType.QUALITY)
-        || target.getContextualization() != Contextualization.QUANTIFICATION
-        || !Objects.equals(childObservable, target.getUrn()))
+        || !Objects.equals(contextSupport, Geometry.forTransport(current.getGeometry()).encode()))
       throw new IllegalStateException("Stale or incompatible singular context binding");
     var actual = scope.getObservation(contextId);
     if (!eligible(actual) || actual.getId() != contextId

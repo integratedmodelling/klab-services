@@ -54,6 +54,10 @@ class SingularBindingResolutionTest {
     when(model.getCoverage()).thenReturn(scale);when(model.getObservables()).thenReturn(List.of(target));
     var computation=mock(org.integratedmodelling.klab.api.lang.Contextualizable.class);when(model.getComputation()).thenReturn(List.of(computation));
     doReturn(List.of(model)).when(compiler).queryModels(target,context.getObservable().asConcept(),scope,scale);
+    doAnswer(call->new org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt(
+        model.getUrn(),model.getNamespace(),"fixture-version","fixture-source",
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.executableHash(model),"reasoner",3L))
+        .when(compiler).admissionReceipt(model);
     var runtime=mock(RuntimeService.class);when(scope.getService(RuntimeService.class)).thenReturn(runtime);
     when(runtime.resolveContextualizables(model.getComputation(),scope)).thenReturn(new ResourceSet());
   }

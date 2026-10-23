@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.Serializable;
 import java.net.URL;
+import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
+
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -1774,7 +1776,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   query.get("geometry", Geometry.class),
                   query.get("contextObservable", Concept.class),
                   query.getList("resolutionConstraints", ResolutionConstraint.class),
-                  contextScope));
+                  contextScope, ModelDiscoveryMode.fromParameter(query.get(ModelDiscoveryMode.PARAMETER))));
     }
 
     var unsupported =
@@ -2088,14 +2090,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints,
       ContextScope scope) {
+    return resolveModels(observable, geometry, contextObservable, resolutionConstraints, scope, ModelDiscoveryMode.EXECUTABLE);
+  }
 
+  public ResourceSet resolveModels(Observable observable, Geometry geometry, Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints, ContextScope scope, ModelDiscoveryMode mode) {
+    Objects.requireNonNull(mode, "model discovery mode");
     if (!checkSemanticServices(scope)) {
       return ResourceSet.empty(Notification.error("Semantic search is not available: model indexing or reasoner availability failed"));
     }
 
     ResourceSet results = new ResourceSet();
     for (ModelReference model :
-        this.kbox.query(observable, geometry, contextObservable, resolutionConstraints, scope)) {
+        this.kbox.query(observable, geometry, contextObservable, resolutionConstraints, scope, mode)) {
       results
           .getResults()
           .add(

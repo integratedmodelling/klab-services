@@ -1215,6 +1215,16 @@ public class RuntimeService extends BaseService
     }
     var semantics = query.getObservable().getSemantics();
     if (SemanticType.isEnumerableSubstantial(semantics.getType()) && semantics.isCollective()) {
+      var encoded = query.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY);
+      if (encoded != null) {
+        var reduction = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(encoded.toString(),
+            org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.class);
+        var target = scope.getService(Reasoner.class).resolveObservable(reduction.context().childObservable());
+        reduction.require(scope, target, query.getGeometry());
+        if (!java.util.Objects.equals(reduction.operand(), query.getObservable().getUrn()))
+          throw new IllegalStateException("Collective query operand differs from reduction binding");
+        return queryCollective(query, serviceScope, reduction);
+      }
       return queryCollective(query, serviceScope);
     }
 
@@ -1254,6 +1264,61 @@ public class RuntimeService extends BaseService
     return classificationMembers(collective, collective.getGeometry(), serviceScope).stream()
         .filter(member -> member.getObservable().getSemantics().equals(semantics)
             || reasoner.is(member.getObservable(), semantics)).toList();
+  }
+
+  @Override
+  public CompletableFuture<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberQualities(org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+          ContextScope scope) {
+    var task=new MemberQualityTask<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>();
+    try {
+      MemberQualityResolution.preflight(request,scope);
+      if (!(scope instanceof ServiceContextScope serviceScope))
+        throw new IllegalArgumentException("Member qualities require an authorized runtime context");
+      var reasoner=scope.getService(Reasoner.class);
+      var members=reasoner.resolveObservable(request.members());
+      if (members==null || !members.getSemantics().isCollective())
+        throw new IllegalArgumentException("Member discovery requires collective semantics");
+      var discoveryBuilder=new Observation.NaiveBuilder(members,scope);
+      discoveryBuilder.geometry(scope.getContextObservation().getGeometry());
+      var discovery=discoveryBuilder.make();
+      // Independent discovery may execute at the cohort root. The invocation and its witness
+      // remain the caller's container, rather than being replaced by that execution scope.
+      var effective=scope;
+      // Ordinary submit retains discovery-model precedence and actual execution provenance.
+      var discoveryTask=submit(discovery,effective);task.active(discoveryTask);
+      discoveryTask.whenComplete((resolved,error)->{
+        if(task.isDone())return;
+        if(error!=null) { task.completeExceptionally(error);return; }
+        try {
+        task.requireActive();
+        if (resolved==null || resolved.isEmpty())
+          throw new IllegalStateException("Member discovery failed");
+        MemberQualityResolution.resolve(this,request,effective,(observable,view)->{
+          var queryBuilder=new Observation.NaiveBuilder(observable,effective);
+          queryBuilder.geometry(effective.getContextObservation().getGeometry());queryBuilder.query();
+          var query=queryBuilder.make();
+          return queryCollective(query,(ServiceContextScope)effective,null,view);
+        },task);
+        } catch(Exception failure) {task.completeExceptionally(failure);}
+      });
+    } catch(Exception failure) {task.completeExceptionally(failure);}
+    return task;
+  }
+
+  @Override public boolean supportsMemberQualityInput(ServiceCall call,String port,ContextScope scope) {
+    if(scope==null || scope.isInterrupted() || scope.getContextObservation()==null)return false;
+    return MemberQualityConsumerSupport.supports(getComponentRegistry(),call,port);
+  }
+
+  @Override public org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
+      inspectMemberQualityInputs(ServiceCall call,Scope scope) {
+    if(scope==null || scope.isInterrupted() || call==null)
+      return org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.unavailable();
+    // Core functors use their existing fixed Observation/scalar IR and have no collection-input ABI.
+    if(org.integratedmodelling.klab.api.services.RuntimeService.CoreFunctor.classify(call)!=null)
+      return org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.known(java.util.Set.of());
+    return MemberQualityConsumerSupport.inspect(getComponentRegistry(),call);
   }
 
   /** Enumerate the completed member binding, including transaction-local instantiations. */
@@ -1308,6 +1373,17 @@ public class RuntimeService extends BaseService
   }
 
   Observation queryCollective(Observation query, ServiceContextScope scope) {
+    return queryCollective(query, scope, null);
+  }
+
+  Observation queryCollective(Observation query, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction) {
+    return queryCollective(query,scope,reduction,null);
+  }
+
+  Observation queryCollective(Observation query, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
 
     if (scope.getCurrentTransaction() != null && scope.getCurrentTransaction().isFailed())
       return Observation.empty(Notification.error("Cannot query completed discovery from a failed attempt"));
@@ -1318,7 +1394,7 @@ public class RuntimeService extends BaseService
           Notification.info("No cohort exists for " + query.getObservable().getUrn()));
     }
 
-    var contributors = findCollectiveContributors(query, cohort, scope);
+    var contributors = findCollectiveContributors(query, cohort, scope, reduction,memberView);
     if (contributors.isEmpty()) {
       return Observation.empty(
           Notification.info(
@@ -1372,7 +1448,9 @@ public class RuntimeService extends BaseService
   private record CollectiveContribution(Observation observation, Geometry support) {}
 
   private List<CollectiveContribution> findCollectiveContributors(
-      Observation query, Cohort cohort, ServiceContextScope scope) {
+      Observation query, Cohort cohort, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
 
     var ret = new LinkedHashMap<String, Observation>();
     var observableUrn = query.getObservable().getUrn();
@@ -1398,7 +1476,7 @@ public class RuntimeService extends BaseService
           .run(scope)
           .forEach(o -> ret.put(querySourceKey(o), o));
     }
-    return ret.values().stream().flatMap(producer -> completedCollectiveGeometries(producer, scope).stream()
+    return ret.values().stream().flatMap(producer -> completedCollectiveGeometries(producer, scope, reduction,memberView).stream()
             .map(support -> new CollectiveContribution(producer, support)))
         .filter(contribution -> hasMemberSupport(contribution.support())).toList();
   }
@@ -1409,6 +1487,17 @@ public class RuntimeService extends BaseService
   }
 
   private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope) {
+    return completedCollectiveGeometries(producer, scope, null);
+  }
+
+  private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction) {
+    return completedCollectiveGeometries(producer,scope,reduction,null);
+  }
+
+  private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
     var contextualization = producer.getObservable().getContextualization();
     if (contextualization != Contextualization.INSTANTIATION
         && contextualization != Contextualization.CONNECTION) return List.of();
@@ -1430,6 +1519,17 @@ public class RuntimeService extends BaseService
     var support = new ArrayList<Geometry>();
     for (var activity : activities) {
       if (activity.getType() != type || activity.getOutcome() != Activity.Outcome.SUCCESS) continue;
+      if (reduction != null && !reductionActivityMatches(activity, reduction)) continue;
+      if (memberView != null) {
+        MemberQualityResolution.requireScope(memberView,scope);
+        var witness=memberView.getRequest().container();
+        var revision=activity.getMetadata().get(COLLECTIVE_REVISION);
+        var selected=activity.getMetadata().get(Metadata.IM_OBSERVER_SELECTION_ID);
+        if (!(revision instanceof Number n) || n.longValue()!=witness.knowledgeRevision()
+            || !Objects.equals(activity.getMetadata().get(COLLECTIVE_REASONER),witness.reasonerId())
+            || !(selected instanceof Number id)
+            || id.longValue()!=(memberView.getObserverId()==null?0:memberView.getObserverId())) continue;
+      }
       var encoded = activity.getMetadata().get(Metadata.IM_EXECUTION_GEOMETRY);
       if (!(encoded instanceof String text) || text.isBlank()) continue;
       try {
@@ -1442,6 +1542,35 @@ public class RuntimeService extends BaseService
       }
     }
     return support;
+  }
+
+  static final String COLLECTIVE_REASONER = "collectiveReasonerId";
+  static final String COLLECTIVE_REVISION = "collectiveKnowledgeRevision";
+
+  static void recordCollectiveSemanticRevision(Activity activity, ServiceContextScope scope) {
+    var reasoner = scope.getService(Reasoner.class);
+    var capabilities = reasoner == null ? null : reasoner.capabilities(scope);
+    if (capabilities instanceof Reasoner.Capabilities semantic && semantic.getKnowledgeRevision() >= 0) {
+      activity.getMetadata().put(COLLECTIVE_REASONER, semantic.getServiceId());
+      activity.getMetadata().put(COLLECTIVE_REVISION, semantic.getKnowledgeRevision());
+    }
+  }
+
+  private static boolean reductionActivityMatches(Activity activity,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction) {
+    var revision = activity.getMetadata().get(COLLECTIVE_REVISION);
+    var observer = activity.getMetadata().get(Metadata.IM_OBSERVER_SELECTION_ID);
+    return revision instanceof Number n && n.longValue() == reduction.context().knowledgeRevision()
+        && java.util.Objects.equals(activity.getMetadata().get(COLLECTIVE_REASONER), reduction.context().reasonerId())
+        && observer instanceof Number id && id.longValue() == (reduction.observerId() == null ? 0 : reduction.observerId());
+  }
+
+  void requireReductionMemberObserver(Observation member, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction) {
+    var operand = scope.getService(Reasoner.class).resolveObservable(reduction.operand());
+    var requested = org.integratedmodelling.common.knowledge.ObservableImpl.promote(operand.asConcept().singular(), scope);
+    if (org.integratedmodelling.klab.runtime.ObserverResolution.preference(member.getObservable(), requested, scope) < 0)
+      throw new IllegalStateException("Collective member perspective is not eligible; a whole-support reduction cannot be certified");
   }
 
   private static boolean sameSupportDimensions(Geometry first, Geometry second) {

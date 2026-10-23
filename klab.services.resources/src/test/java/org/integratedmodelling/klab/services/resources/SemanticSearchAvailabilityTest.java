@@ -77,6 +77,8 @@ class SemanticSearchAvailabilityTest {
     when(workspace.getNamespaces()).thenThrow(new IllegalStateException("index failure"));
     doCallRealMethod().when(provider).checkSemanticServices(scope);
     doCallRealMethod().when(provider).resolveModels(null, null, null, List.of(), scope);
+    doCallRealMethod().when(provider).resolveModels(null, null, null, List.of(), scope,
+        org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode.EXECUTABLE);
 
     var result = provider.resolveModels(null, null, null, List.of(), scope);
     assertFalse(available.get());

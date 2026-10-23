@@ -426,6 +426,9 @@ public interface ServicesAPI {
      * org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.
      */
     String SUBMIT_OBSERVATION = API_BASE + "/submit";
+    String MEMBER_QUALITIES = API_BASE + "/memberQualities";
+    String MEMBER_QUALITY_CONSUMER = API_BASE + "/memberQualities/consumer";
+    String MEMBER_QUALITY_INPUTS = API_BASE + "/memberQualities/consumer/inputs";
     String UPDATE_OBSERVER_GEOMETRY = API_BASE + "/observer/geometry";
     String GET_OBSERVER_GEOMETRY = API_BASE + "/observer/{id}/geometry";
 

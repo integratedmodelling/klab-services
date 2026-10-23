@@ -26,6 +26,8 @@ public class PrioritizerImpl implements Prioritizer<Model> {
   private final Concept contextObservable;
   private final Concept effectiveObserver;
   private final Map<Model,Integer> observerPreferences = new HashMap<>();
+  private final Map<Model,org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt> admissions = new java.util.IdentityHashMap<>();
+  org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt admission(Model model) { return admissions.get(model); }
   private final Map<Criterion, Integer> defaults;
   private final List<Criterion> order;
   private final Map<Model, Integer> distances = new HashMap<>();
@@ -89,9 +91,10 @@ public class PrioritizerImpl implements Prioritizer<Model> {
 
   public int semanticDistance(Model model) {
     return distances.computeIfAbsent(model, candidate -> {
-      long validatedRevision = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableRevision(
-          candidate, scope, observable);
-      if (validatedRevision < 0) return Integer.MAX_VALUE;
+      var receipt = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableAdmission(candidate,scope,observable);
+      if (receipt == null) return Integer.MAX_VALUE;
+      admissions.put(candidate,receipt);
+      long validatedRevision=receipt.knowledgeRevision();
       var outputs = candidate.getObservables();
       if (outputs == null) return Integer.MAX_VALUE;
       if (observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.CHANGE)

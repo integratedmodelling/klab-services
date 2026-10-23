@@ -586,6 +586,8 @@ public class JacksonConfiguration {
           Model.class,
           ServiceCall.class,
           Observation.class,
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection.class,
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection.Entry.class,
           Histogram.class,
           Histogram.Bin.class,
           NumericRange.class,

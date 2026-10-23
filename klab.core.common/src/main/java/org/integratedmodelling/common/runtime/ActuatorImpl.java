@@ -25,6 +25,11 @@ public class ActuatorImpl implements Actuator {
   public void setDependencyFamilies(java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> value) { dependencyFamilies=value; }
 
   private List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> classifierDependencies = new ArrayList<>();
+  private java.util.Map<String,org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan> memberQualityInputs=new java.util.LinkedHashMap<>();
+  public java.util.Map<String,org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan> getMemberQualityInputs() { return memberQualityInputs; }
+  public void setMemberQualityInputs(java.util.Map<String,org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan> value) {
+    memberQualityInputs=value==null?new java.util.LinkedHashMap<>():new java.util.LinkedHashMap<>(value);
+  }
   public List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> getClassifierDependencies() { return classifierDependencies; }
   public void setClassifierDependencies(List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> plans) { classifierDependencies = plans == null ? new ArrayList<>() : plans; }
 

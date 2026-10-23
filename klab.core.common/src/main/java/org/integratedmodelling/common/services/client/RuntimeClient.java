@@ -113,6 +113,32 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
+  public CompletableFuture<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberQualities(org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+          ContextScope scope) {
+    request.validate();
+    var transported=new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest(
+        request.container(),request.members(),request.quality(),
+        Objects.requireNonNull(Provenance.getAgent(scope)).getName(),
+        scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
+    return client.withScope(scope).postAsync(ServicesAPI.RUNTIME.MEMBER_QUALITIES, transported,
+        org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection.class);
+  }
+
+  @Override public boolean supportsMemberQualityInput(org.integratedmodelling.klab.api.lang.ServiceCall call,
+      String port,ContextScope scope) {
+    return Boolean.TRUE.equals(client.withScope(scope).post(ServicesAPI.RUNTIME.MEMBER_QUALITY_CONSUMER,
+        new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerRequest(call,port),Boolean.class));
+  }
+
+  @Override public org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
+      inspectMemberQualityInputs(org.integratedmodelling.klab.api.lang.ServiceCall call,Scope scope) {
+    var result=client.withScope(scope).post(ServicesAPI.RUNTIME.MEMBER_QUALITY_INPUTS,call,
+        org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.class);
+    return result==null ? org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.unavailable() : result;
+  }
+
+  @Override
   public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
       long observerId, ContextScope scope) {
     return client.withScope(scope).get(ServicesAPI.RUNTIME.GET_OBSERVER_GEOMETRY,

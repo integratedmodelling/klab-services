@@ -14,7 +14,14 @@ public class SemanticValidationRequest implements Serializable {
   private String documentVersion;
   private long knowledgeRevision = -1;
   private boolean executableModels;
+  private String executionContext;
   private boolean classifierPreparableDependencies;
+
+  private java.util.List<SemanticValidationResponse.PendingMemberQualityDependency> preparableMemberQualityDependencies=java.util.List.of();
+  public java.util.List<SemanticValidationResponse.PendingMemberQualityDependency> getPreparableMemberQualityDependencies() { return preparableMemberQualityDependencies; }
+  public void setPreparableMemberQualityDependencies(java.util.List<SemanticValidationResponse.PendingMemberQualityDependency> value) {
+    preparableMemberQualityDependencies=value==null?java.util.List.of():java.util.List.copyOf(value);
+  }
 
   public static SemanticValidationRequest of(KlabDocument<?> document, String version) {
     var ret = new SemanticValidationRequest();
@@ -39,6 +46,10 @@ public class SemanticValidationRequest implements Serializable {
           .digest(source.getBytes(StandardCharsets.UTF_8)));
     } catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
   }
+
+  /** Actual observed context semantics supplied by executable admission, never an authored assertion. */
+  public String getExecutionContext() { return executionContext; }
+  public void setExecutionContext(String value) { executionContext = value; }
 
   /** Executable admission requires every model obligation to be bound; authoring permits templates. */
   public boolean isExecutableModels() { return executableModels; }

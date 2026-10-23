@@ -46,11 +46,13 @@ class ObserverCompiledDataflowTest {
       when(scope.getObserver()).thenReturn(observation(20, agent));
       when(scope.getDigitalTwin()).thenReturn(mock(DigitalTwin.class));
       when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+      var capabilities=mock(Reasoner.Capabilities.class);when(reasoner.capabilities(scope)).thenReturn(capabilities);
+      when(capabilities.getServiceId()).thenReturn("reasoner");when(capabilities.getKnowledgeRevision()).thenReturn(7L);
       when(reasoner.semanticDistance(any(), any(), isNull(), eq(7L))).thenReturn(0);
       var resources = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
       when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class)).thenReturn(resources);
       when(resources.declareObservable(nullable(String.class))).thenAnswer(call -> new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl());
-      var namespace = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl(); namespace.setUrn("test");
+      var namespace = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl(); namespace.setUrn("test");namespace.setSourceCode("source fixture");
       var declaration = new org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl(); declaration.setUrn("test:model");
       namespace.getStatements().add(declaration);
       when(resources.retrieve("test", org.integratedmodelling.klab.api.lang.kim.KimNamespace.class, scope)).thenReturn(namespace);
@@ -70,6 +72,11 @@ class ObserverCompiledDataflowTest {
       ((ObservationImpl) plan.getObservation()).setObservable(result);
       when(source.getObservables()).thenReturn(List.of(result));
       plan.getData().put(Actuator.PRODUCING_MODELS_KEY, List.of("test:model"));
+      plan.getData().put("modelAdmissionRevision",7L);plan.getData().put("modelAdmissionReasonerId","reasoner");
+      var admitted=org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableAdmission(source,scope,requested);
+      assertNotNull(admitted);
+      plan.getData().put(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS,
+          List.of(org.integratedmodelling.klab.utilities.Utils.Json.asString(admitted)));
       plan.getData().put("im:observer-contributions", List.of(org.integratedmodelling.klab.utilities.Utils.Json.asString(
           new CompiledDataflow.ObserverContribution("test:model", observer.getUrn(), "1", 7))));
     }

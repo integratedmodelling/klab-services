@@ -30,7 +30,7 @@ class ObserverOutputProvenanceTest {
   private void compileOutput(boolean nullDefault) {
     var scope = mock(ContextScope.class); when(scope.getId()).thenReturn("test");
     var reasoner = mock(Reasoner.class); when(scope.getService(Reasoner.class)).thenReturn(reasoner);
-    var receipt = mock(Reasoner.Capabilities.class); when(receipt.getKnowledgeRevision()).thenReturn(7L);
+    var receipt = mock(Reasoner.Capabilities.class); when(receipt.getKnowledgeRevision()).thenReturn(7L);when(receipt.getServiceId()).thenReturn("fixture-reasoner");
     when(reasoner.capabilities(scope)).thenReturn(receipt);
     when(reasoner.semanticDistance(any(), any(), isNull(), eq(7L))).thenReturn(0);
     var quality = observable("test:Quality", SemanticType.QUALITY); quality.setUrn("test:Quality in m");
@@ -46,6 +46,7 @@ class ObserverOutputProvenanceTest {
     var resources = ModelAdmissionFixtures.prepare(scope, reasoner); ModelAdmissionFixtures.saved(resources, model, scope);
     var strategy = mock(ObservationStrategy.class);
     var graph = ResolutionGraph.create(scope).createChild(request, support);
+    graph.admitModel(model,org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableAdmission(model,scope,quality));
     var strategyGraph = graph.createChild(strategy, support);
     strategyGraph.merge(strategyGraph.createChild(model, support)); graph.merge(strategyGraph);
     var flow = new DataflowCompiler(request, graph, scope).compile();

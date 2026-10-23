@@ -16,6 +16,7 @@ public class SemanticValidationResponse implements Serializable {
   private String sourceHash;
   private long knowledgeRevision = -1;
   private boolean executableModels;
+  private String executionContext;
   private boolean classifierPreparableDependencies;
   public record PendingClassifierDependency(String modelUrn, int dependencyIndex, String originalObservable,
       String residualObservable, java.util.List<java.util.List<String>> occurrences) implements Serializable {
@@ -24,6 +25,34 @@ public class SemanticValidationResponse implements Serializable {
   private List<PendingClassifierDependency> pendingClassifierDependencies=new ArrayList<>();
   public List<PendingClassifierDependency> getPendingClassifierDependencies() { return pendingClassifierDependencies; }
   public void setPendingClassifierDependencies(List<PendingClassifierDependency> value) { pendingClassifierDependencies=value; }
+
+  /** Authored source obligations only. Executable admission recomputes these against actual context. */
+  public record ConditionalModelContext(String modelUrn, List<String> requiredContextAlternatives) implements Serializable {
+    public ConditionalModelContext { requiredContextAlternatives=List.copyOf(requiredContextAlternatives); }
+  }
+  private List<ConditionalModelContext> conditionalModelContexts=new ArrayList<>();
+  public List<ConditionalModelContext> getConditionalModelContexts() { return conditionalModelContexts; }
+  public void setConditionalModelContexts(List<ConditionalModelContext> value) { conditionalModelContexts=value; }
+
+  /** Pending conjunction, not an admission receipt: actual context must specialize the container
+   * AND prove every referenced dependency's complete bearer clauses at execution revision. */
+  public record PendingModelContext(String modelUrn, String containerUrn,
+      List<String> dependentSemanticUrns) implements Serializable {
+    public PendingModelContext { dependentSemanticUrns=List.copyOf(dependentSemanticUrns); }
+  }
+  private List<PendingModelContext> pendingModelContexts=new ArrayList<>();
+  public List<PendingModelContext> getPendingModelContexts() { return pendingModelContexts; }
+  public void setPendingModelContexts(List<PendingModelContext> value) { pendingModelContexts=value; }
+
+  /** Saved-source obligation only: no observed container, no completed collection, no runtime admission. */
+  public record PendingMemberQualityDependency(String modelUrn,int dependencyIndex,String sourceObservable,
+      String port,String nativeBearer,String quality) implements Serializable {}
+  private List<PendingMemberQualityDependency> pendingMemberQualityDependencies=new ArrayList<>();
+  private List<PendingMemberQualityDependency> preparableMemberQualityDependencies=List.of();
+  public List<PendingMemberQualityDependency> getPendingMemberQualityDependencies() { return pendingMemberQualityDependencies; }
+  public void setPendingMemberQualityDependencies(List<PendingMemberQualityDependency> value) { pendingMemberQualityDependencies=value==null?new ArrayList<>():new ArrayList<>(value); }
+  public List<PendingMemberQualityDependency> getPreparableMemberQualityDependencies() { return preparableMemberQualityDependencies; }
+  public void setPreparableMemberQualityDependencies(List<PendingMemberQualityDependency> value) { preparableMemberQualityDependencies=value==null?List.of():List.copyOf(value); }
 
   private String reason;
   private List<Notification> notifications = new ArrayList<>();
@@ -35,7 +64,9 @@ public class SemanticValidationResponse implements Serializable {
       ret.authoringSource = org.integratedmodelling.klab.api.services.resources.AuthoringSource.responseIdentity(request.document());
     ret.documentVersion = request.getDocumentVersion();
     ret.executableModels = request.isExecutableModels();
+    ret.executionContext = request.getExecutionContext();
     ret.classifierPreparableDependencies = request.isClassifierPreparableDependencies();
+    ret.preparableMemberQualityDependencies = List.copyOf(request.getPreparableMemberQualityDependencies());
     ret.sourceHash = SemanticValidationRequest.sourceHash(request.document().getSourceCode());
     return ret;
   }
@@ -82,13 +113,18 @@ public class SemanticValidationResponse implements Serializable {
         && Objects.equals(documentUrn, current.document().getUrn())
         && Objects.equals(documentVersion, current.getDocumentVersion())
         && Objects.equals(sourceHash, SemanticValidationRequest.sourceHash(current.document().getSourceCode()))
+        && Objects.equals(executionContext, current.getExecutionContext())
         && executableModels == current.isExecutableModels()
         && classifierPreparableDependencies == current.isClassifierPreparableDependencies()
+        && Objects.equals(preparableMemberQualityDependencies,current.getPreparableMemberQualityDependencies())
         && knowledgeRevision == currentKnowledgeRevision;
   }
 
   public boolean isClassifierPreparableDependencies() { return classifierPreparableDependencies; }
   public void setClassifierPreparableDependencies(boolean value) { classifierPreparableDependencies = value; }
+
+  public String getExecutionContext() { return executionContext; }
+  public void setExecutionContext(String value) { executionContext = value; }
 
   public boolean isExecutableModels() { return executableModels; }
   public void setExecutableModels(boolean value) { executableModels = value; }

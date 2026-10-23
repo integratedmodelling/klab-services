@@ -22,9 +22,19 @@ public class DocumentSemanticValidator
   private boolean sourceValid;
   private final ReasonerService reasoner;
   private final boolean executableModels;
+  private final String executionContext;
+  private final List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingModelContext> pendingModelContexts=new ArrayList<>();
+  public List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingModelContext> getPendingModelContexts() { return List.copyOf(pendingModelContexts); }
+  private final java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.ConditionalModelContext> conditionalModelContexts=new ArrayList<>();
+  public java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.ConditionalModelContext> getConditionalModelContexts() { return List.copyOf(conditionalModelContexts); }
+
   private final boolean classifierPreparableDependencies;
   private final java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingClassifierDependency> pendingClassifierDependencies=new java.util.ArrayList<>();
   public java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingClassifierDependency> getPendingClassifierDependencies() { return java.util.List.copyOf(pendingClassifierDependencies); }
+
+  private final java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> preparableMemberQualityDependencies;
+  private final java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> pendingMemberQualityDependencies=new ArrayList<>();
+  public java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> getPendingMemberQualityDependencies() {return List.copyOf(pendingMemberQualityDependencies);}
 
   private final OWLSemanticClauseSupport clauses;
   private final KimWorldviewValidator sourceValidator = new KimWorldviewValidator();
@@ -38,6 +48,18 @@ public class DocumentSemanticValidator
   }
 
   public DocumentSemanticValidator(ReasonerService reasoner, boolean executableModels, boolean classifierPreparableDependencies) {
+    this(reasoner, executableModels, classifierPreparableDependencies, null);
+  }
+
+  public DocumentSemanticValidator(ReasonerService reasoner, boolean executableModels,
+      boolean classifierPreparableDependencies, String executionContext) {
+    this(reasoner,executableModels,classifierPreparableDependencies,executionContext,List.of());
+  }
+  public DocumentSemanticValidator(ReasonerService reasoner,boolean executableModels,
+      boolean classifierPreparableDependencies,String executionContext,
+      List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> memberDependencies) {
+    this.preparableMemberQualityDependencies=List.copyOf(memberDependencies);
+    this.executionContext = executionContext;
     this.classifierPreparableDependencies = classifierPreparableDependencies;
     this.executableModels = executableModels;
     this.reasoner = reasoner;
@@ -45,7 +67,7 @@ public class DocumentSemanticValidator
   }
 
   public List<Notification> validate(KlabDocument<?> document) {
-    observerDeclarations.clear();sourceValid=false;
+    observerDeclarations.clear();conditionalModelContexts.clear();pendingModelContexts.clear();sourceValid=false;
     var diagnostics=validateSource(document);
     sourceValid=!org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(diagnostics);
     return diagnostics;
@@ -207,9 +229,29 @@ public class DocumentSemanticValidator
       // merely because its detached declaration is incomplete.
       if (executableModels)
         requiredOccurrences.addAll(model.getObservables().subList(1, model.getObservables().size()));
+      // A source can describe a context-parametric model. Its context must jointly prove every
+      // occurrence, and executable admission binds the obligation to the actual observed context.
+      boolean pendingSourceContext=false;
+      var nativeSubject=subject;
+      var ordinaryContextOccurrences=new ArrayList<KimObservable>();
+      for(int i=0;i<requiredOccurrences.size();i++) {
+        var candidate=requiredOccurrences.get(i);
+        var declared=candidate.getSemantics()==null?null:reasoner.declareConcept(candidate.getSemantics());
+        if(i<model.getDependencies().size() && declared!=null && pendingMemberQuality(model,candidate,declared,i)!=null)continue;
+        ordinaryContextOccurrences.add(candidate);
+      }
+      if (nativeSubject != null && ordinaryContextOccurrences.stream().anyMatch(o -> o.getSemantics()!=null
+          && clauses.clauseCompatibility(reasoner.declareConcept(o.getSemantics()), SemanticRole.INHERENT, nativeSubject)
+              != OWLSemanticClauseSupport.Compatibility.COMPATIBLE)) {
+        int priorPending=pendingModelContexts.size();
+        var contextual = conditionalSubject(model, modeled, ordinaryContextOccurrences);
+        if (contextual != null) subject=contextual;
+        pendingSourceContext=!executableModels && pendingModelContexts.size()>priorPending;
+      }
       int occurrenceIndex=-1;
       for (var originalOccurrence : requiredOccurrences) {
         occurrenceIndex++;
+        final int sourceOccurrenceIndex=occurrenceIndex;
         var occurrence = originalOccurrence;
         // Outputs are always strict. Pending classifier evidence applies only to authored inputs.
         if ((!executableModels || classifierPreparableDependencies) && occurrenceIndex<model.getDependencies().size()) {
@@ -245,15 +287,28 @@ public class DocumentSemanticValidator
         boolean affectedQuality = dependency.is(SemanticType.QUALITY)
             && (modeled.is(SemanticType.PROCESS) || modeled.is(SemanticType.EVENT))
             && reasoner.affectedBy(dependency, modeled);
-        if (needsBearer && subject != null && !affectedQuality) {
+        if (needsBearer && subject != null && !affectedQuality && !pendingSourceContext) {
           var compatibility = clauses.clauseCompatibility(dependency, SemanticRole.INHERENT, subject);
           if (compatibility != OWLSemanticClauseSupport.Compatibility.COMPATIBLE) {
+            var memberPending=occurrenceIndex<model.getDependencies().size()
+                ? pendingMemberQuality(model,originalOccurrence,dependency,occurrenceIndex) : null;
+            if(memberPending!=null) {
+              pendingMemberQualityDependencies.add(memberPending);
+              // Validate the native quality under its native bearer, never under the regional consumer.
+              var wrapper=new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
+              wrapper.setObservable(occurrence.getSemantics());wrapper.setType(new java.util.HashSet<>(occurrence.getSemantics().getType()));
+              wrapper.setInherent(reasoner.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class).declareConcept(memberPending.nativeBearer()));
+              wrapper.finalizeDefinition();
+              if(dependency instanceof org.integratedmodelling.common.knowledge.ConceptImpl implementation)
+                effective=new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(reasoner.owl(),reasoner::identityEligible).project(implementation,wrapper);
+            } else {
             if (compatibility == OWLSemanticClauseSupport.Compatibility.IMPOSSIBLE)
               result.add(error("MODEL_DEPENDENCY_INCOMPATIBLE: " + occurrence.getUrn()
                   + " has a provably incompatible bearer for modeled subject " + subject.getUrn(), occurrence, context));
             else dependencyUnresolved(result, occurrence, context, template,
                 "modeled subject " + subject.getUrn() + " does not prove every required bearer bound");
             continue;
+            }
           }
           // Detached expression-status projection: no identity or bearer assertion is added
           // to the dependent, its native process identity, or the shared ontology.
@@ -263,10 +318,11 @@ public class DocumentSemanticValidator
           wrapper.setInherent(reasoner.serviceScope().getService(
               org.integratedmodelling.klab.api.services.ResourcesService.class).declareConcept(subject.getUrn()));
           wrapper.finalizeDefinition();
-          if (dependency instanceof org.integratedmodelling.common.knowledge.ConceptImpl implementation)
+          if (!pendingMemberQualityDependencies.stream().anyMatch(p->p.modelUrn().equals(model.getUrn()) && p.dependencyIndex()==sourceOccurrenceIndex)
+              && dependency instanceof org.integratedmodelling.common.knowledge.ConceptImpl implementation)
             effective = new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(
                 reasoner.owl(), reasoner::identityEligible).project(implementation, wrapper);
-        } else if (needsBearer && !affectedQuality
+        } else if (needsBearer && !affectedQuality && !pendingSourceContext
             && !clauses.bearerConstraints(dependency).isEmpty() && subject == null) {
           dependencyUnresolved(result, occurrence, context, template, "the modeled subject has no established bearer type");
           continue;
@@ -282,6 +338,73 @@ public class DocumentSemanticValidator
       result.add(error("MODEL_DEPENDENCY_UNRESOLVED: " + unavailable.getMessage(), model, context));
     }
     return result;
+  }
+
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency
+      pendingMemberQuality(KimModel model,KimObservable source,Concept quality,int index) {
+    if(!quality.is(SemanticType.QUALITY) || quality.isAbstract() || quality.isGeneric() || unboundSyntax(source)
+        || source.getUnit()!=null && !source.getUnit().isBlank() || source.getCurrency()!=null || source.getRange()!=null
+        || source.getFormalName()==null || source.getFormalName().isBlank()
+        || model.getDependencies().stream().filter(o->source.getFormalName().equals(o.getFormalName())).count()!=1) return null;
+    var ratio=reasoner.owl().getConcept(org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS.CORE_RATIO);
+    if(ratio==null || !reasoner.is(quality,ratio)
+        || !org.integratedmodelling.klab.services.reasoner.owl.ConditionalModelContextSupport.explicitlyUnitless(reasoner.owl(),quality))return null;
+    var complete=reasoner.declareObservable(source);
+    if(complete==null || complete.getUrn()==null || complete.getObserverSemantics()!=null
+        || complete.getUnit()!=null || complete.getCurrency()!=null || complete.getRange()!=null
+        || complete.getContextualization()!=org.integratedmodelling.klab.api.knowledge.Contextualization.QUANTIFICATION)return null;
+    String canonicalQuality=complete.getUrn();
+    if(executableModels) {
+      return preparableMemberQualityDependencies.stream().filter(p->p.modelUrn().equals(model.getUrn())
+          && p.dependencyIndex()==index && p.port().equals(source.getFormalName()) && p.quality().equals(canonicalQuality))
+          .filter(p->{var bearer=reasoner.resolveConcept(p.nativeBearer());return bearer!=null
+              && clauses.clauseCompatibility(quality,SemanticRole.INHERENT,bearer)==OWLSemanticClauseSupport.Compatibility.COMPATIBLE;})
+          .findFirst().orElse(null);
+    }
+    var explicit=ModelValidationGate.explicitAtomicInherent(source);
+    if(explicit==null)return null;
+    var bearer=reasoner.declareConcept(explicit);
+    if(bearer==null || bearer.isAbstract() || bearer.isGeneric()
+        || !(bearer.is(SemanticType.SUBJECT)||bearer.is(SemanticType.AGENT))
+        || clauses.clauseCompatibility(quality,SemanticRole.INHERENT,bearer)!=OWLSemanticClauseSupport.Compatibility.COMPATIBLE)return null;
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency(
+        model.getUrn(),index,source.getUrn(),source.getFormalName(),bearer.getUrn(),canonicalQuality);
+  }
+
+  private Concept conditionalSubject(KimModel model, Concept output, List<KimObservable> occurrences) {
+    // First bounded route: semantic Ratio specialization, canonical unity and no output unit. Missing
+    // metadata never means unitless; unitful conditional routes await semantic unit validation.
+    var ratio=reasoner.owl().getConcept(org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS.CORE_RATIO);
+    if (ratio==null || !reasoner.is(output,ratio) || model.getObservables().size()!=1
+        || model.getObservables().stream().anyMatch(o -> o.getUnit()!=null && !o.getUnit().isBlank())
+        || !org.integratedmodelling.klab.services.reasoner.owl.ConditionalModelContextSupport.explicitlyUnitless(reasoner.owl(),output))
+      return null;
+    var inputs=new ArrayList<Concept>();
+    for(var occurrence:occurrences) {
+      if(occurrence.getSemantics()==null)continue;
+      var input=reasoner.declareConcept(occurrence.getSemantics());
+      if(input==null || input.is(SemanticType.NOTHING) || !reasoner.satisfiable(input))return null;
+      inputs.add(input);
+    }
+    if(executableModels) {
+      if(executionContext==null || executionContext.isBlank())return null;
+      var actual=reasoner.resolveConcept(executionContext);
+      return actual!=null && reasoner.satisfiable(actual)
+          && org.integratedmodelling.klab.services.reasoner.owl.ConditionalModelContextSupport.admits(reasoner.owl(),output,inputs,actual)
+          ? actual : null;
+    }
+    var contexts=org.integratedmodelling.klab.services.reasoner.owl.ConditionalModelContextSupport.contexts(reasoner.owl(),output,inputs);
+    if(contexts.isEmpty()) {
+      for(var container:org.integratedmodelling.klab.services.reasoner.owl.ConditionalModelContextSupport.possibleContainers(reasoner.owl(),output,inputs))
+        pendingModelContexts.add(new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingModelContext(
+            model.getUrn(),container.getUrn(),inputs.stream().map(Concept::getUrn).toList()));
+      return null; // No invented projection: explicit abstract/generic/identity errors still apply.
+    }
+    conditionalModelContexts.add(new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.ConditionalModelContext(
+        model.getUrn(),contexts.stream().map(Concept::getUrn).toList()));
+    // Every listed alternative proves the complete conjunction. Choosing one for detached
+    // expression-status projection asserts nothing about the output/native bearer ontology.
+    return contexts.getFirst();
   }
 
   /** Detached proof skeleton; the original source still receives applicability/disjointness checks. */

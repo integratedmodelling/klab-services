@@ -67,6 +67,24 @@ public class ObservationReasoner {
                 + e.getMessage());
       }
     }
+    if (isResolution) {
+      CollectiveReductionBinding binding = null;
+      try { binding = CollectiveReductionBinding.capture(observation, scope, reasoner); }
+      catch (IllegalStateException stale) { scope.warn("Collective reduction unavailable: " + stale.getMessage()); }
+      if (binding != null) {
+        var strategy = new ObservationStrategyImpl();
+        strategy.setUrn("klab:collective-" + binding.mode().name().toLowerCase(java.util.Locale.ROOT));
+        strategy.setNamespace("klab");
+        strategy.setRank(1);
+        strategy.setCollectiveReduction(binding);
+        var operation = new ObservationStrategyImpl.OperationImpl();
+        operation.setType(ObservationStrategy.Operation.Type.RESOLVE);
+        operation.setId("members");
+        operation.setObservable(reasoner.resolveObservable(binding.operand()));
+        strategy.getOperations().add(operation);
+        result.add(strategy);
+      }
+    }
     return result;
   }
 

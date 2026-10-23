@@ -618,9 +618,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return response;
       }
       var validator=new org.integratedmodelling.klab.services.reasoner.internal.DocumentSemanticValidator(
-          this,request.isExecutableModels(),request.isClassifierPreparableDependencies());
+          this,request.isExecutableModels(),request.isClassifierPreparableDependencies(), request.getExecutionContext(),request.getPreparableMemberQualityDependencies());
       response.getNotifications().addAll(validator.validate(document));
       response.getPendingClassifierDependencies().addAll(validator.getPendingClassifierDependencies());
+      response.getPendingMemberQualityDependencies().addAll(validator.getPendingMemberQualityDependencies());
+      response.getConditionalModelContexts().addAll(validator.getConditionalModelContexts());
+      response.getPendingModelContexts().addAll(validator.getPendingModelContexts());
       response.setStatus(SemanticValidationResponse.Status.COMPLETE);
     } catch (RuntimeException e) {
       response.setStatus(SemanticValidationResponse.Status.FAILED);

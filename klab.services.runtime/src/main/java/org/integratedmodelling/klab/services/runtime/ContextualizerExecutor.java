@@ -77,6 +77,16 @@ public class ContextualizerExecutor extends AbstractExecutor
       ContextScope scope,
       RuntimeService.ContextualizationScope contextualizationScope) {
 
+    if(!memberQualityInputs().isEmpty()) {
+      var actual=componentRegistry.implementation(callInfo.serviceInfo());
+      for(var entry:memberQualityInputs().entrySet()) {
+        if(actual==null || !MemberQualityConsumerSupport.supports(actual.method,entry.getKey())
+            || !MemberQualityConsumerSupport.supports(componentRegistry,call,entry.getKey()))
+          throw new IllegalStateException("Installed collection consumer changed before invocation");
+        MemberQualityResolution.requireForConsumption(entry.getValue(),scope);
+      }
+    }
+
     var geometry =
         scanners.get(Dataflow.SELF_ID) == null
             ? observation.getGeometry()

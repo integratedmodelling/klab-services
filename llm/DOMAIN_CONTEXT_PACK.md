@@ -1,5 +1,52 @@
 # k.LAB domain ontology articulation context pack
 
+## Native collection candidate: preserve result kind
+
+Under validation, not published: a named explicit native-quality `of` dependency may be
+prepared for an installed contextualizer accepting that exact named `@KlabFunction.Input`
+as `MemberQualityCollection`. Preserve invocation container, native member, result support,
+selected observer and source/revision provenance separately. Source preparation is not runtime
+admission. Complete successful empty discovery is an empty collection; failed/partial/unknown
+is not. No-data does not mean zero or absence.
+
+Positive: an explicitly selected mapper consumes Stream-native results keyed by actual Streams
+and computes its own regional output. Negative: one Stream quality or a regional field cannot
+be coerced into a complete-member view, `of Stream` does not make Region the bearer, and an
+untyped function argument does not establish capability. An explicit test maximum is not a
+default redistribution policy. The source-to-compiled-parent gate remains pending.
+
+The bounded candidate supports explicitly unitless Ratio/QUANTIFICATION dependencies without
+declared unit/currency/range or explicit observer clause. It does not complete Height mediation,
+original StreambedGradient Elevation/Slope sampling, generic MemberPlan compilation or automatic
+regional mapping. Ordinary compatible Tier-0 model precedence is retained; direct-view Tier-0
+model outputs have no ABI in this slice. Existing MemberPlan syntax is exposed only through a
+restricted explicit typed API route. Region stays Areal; 2.5D is representation terminology.
+
+## Informative proposal review metadata
+
+Use one existing-syntax annotation for review instrumentation; the owner accepted this
+informative convention. It is separate from logical meaning, validation and runtime admission:
+
+```kwv
+@review(schema="klab.review/1", proposal="demo-sample-001", revision="r1",
+  maturity="experimental", controversy="unassessed",
+  technical_validation="not_recorded", community_acceptance="not_recorded",
+  review_priority="foundational", review_record="reviews/demo-r1.yaml")
+thing Sample;
+```
+
+Sample is a syntax example, not proposed vocabulary. The review record should bind the source
+revision/import hashes, rationale, evidence and recorded decisions. Maturity, controversy,
+technical validation, community acceptance and editorial priority are independent. Community
+acceptance is not owner software permission, a passing test or inclusion in strawman. New
+proposals must not self-assign acceptance. No voting rule or lifecycle transition is implied.
+`klab.review/1` identifies the informative convention; it is not an enforced schema registration.
+
+Current parser/whole-workspace transport retains these fields but does not enforce their values.
+Read the direct authored declaration for the exact revision: inherited annotations cannot grant
+acceptance to descendants. Arbitrary annotation persistence through OWL export is not established.
+`review_priority` is valid syntax; reserved `priority` is not an interchangeable field name.
+
 ## Observer perspectives: contract and implementation boundaries
 
 Use existing observable `observed as <observer Agent class>` semantics for observational distinctions
@@ -214,13 +261,29 @@ An unresolved or failed Stream discovery is not a successful empty result.
   one named native bearer must satisfy all bearer bounds and specialize the declared member;
   containers inherit through asserted named parents. A narrow member contract cannot authorize
   a broader native bearer. No transitive containment or generic min-zero entailment is used.
-  S7/S9 execution remains planned; computational dependency checks are unchanged.
+  General S7/S9 execution remains planned. The isolated bounded increment records conditional
+  source obligations and checks the actual context before model matching/execution; source
+  validity is not unconditional executable admission. See
+  [conditional model contexts](../docs/CONDITIONAL_MODEL_CONTEXT.md).
   Preserve native identities/bearers. Anonymous bearer expressions without a named witness
   do not acquire a contextual route from this increment.
 - Legal Tier-0 precomputed fulfillment requires no recursive discovery or collective receipt.
   Resolver observation alternatives are sorted by ascending rank and stop at complete coverage.
   Recursive contextual resolution is Tier-1+ and runs only for outstanding support.
   Do not claim StreambedGradient or live cotechino acceptance from declaration tests.
+- The isolated [count/presence reducer](../docs/TIER1_COLLECTIVE_REDUCTIONS.md) supports
+  initialization on explicitly nondistributed whole-support scalars after certified successful
+  collective discovery. No Tree/Region containment axiom is needed for this unary route.
+  Enumerate visible members; never use producer childrenCount as the requested count. Empty
+  success permits zero/false; failed, unknown, stale or partial discovery does not. Preserve
+  context, actual selected observer, semantic revision and source/model admission provenance.
+  Explicit observed-as derivation and observer-specific substantial discovery are not supported
+  by this reducer; direct paths retain their existing observer rules. Do not claim general
+  native-quality member execution or redistribution from this bounded route.
+- Region intentionally retains Areal identity. Elevation over 2D support can serve an analysis
+  with 3D scope; 2.5D is representation terminology, not a new worldview concept. Whole-support
+  reductions are not per-cell distributions. A conditional unitless-ratio route needs semantic
+  Ratio ancestry AND explicit canonical unity, not the unit library's ratio/angle compatibility.
 - Adding the ODO property changes foundation bytes. Preserve immutable source pins;
   coordinate a compatible core release/pin before production activation rather than
   substituting modified bytes under the old locator. Fixture replay is not deployment.

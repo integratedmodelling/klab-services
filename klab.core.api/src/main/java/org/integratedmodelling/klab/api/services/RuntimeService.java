@@ -195,6 +195,30 @@ public interface RuntimeService extends KlabService {
    */
   CompletableFuture<Observation> submit(Observation observation, ContextScope scope);
 
+  /** Resolve native qualities per actual member, returning a typed view rather than a container field. */
+  default CompletableFuture<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberQualities(org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+          ContextScope scope) {
+    return CompletableFuture.failedFuture(new UnsupportedOperationException("Native member-quality views are unavailable"));
+  }
+
+  /** Pure installed-implementation capability, not permission to reinterpret an ordinary dependency. */
+  default boolean supportsMemberQualityInput(org.integratedmodelling.klab.api.lang.ServiceCall call,
+      String port,ContextScope scope) { return false; }
+
+  /** Pure installed-method inspection; unavailable must never be treated as an empty contract. */
+  default org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
+      inspectMemberQualityInputs(org.integratedmodelling.klab.api.lang.ServiceCall call,Scope scope) {
+    return org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.unavailable();
+  }
+
+  /** Execute the restricted existing MemberPlan form through the typed collection result path. */
+  default CompletableFuture<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberPlan(org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy strategy,ContextScope scope) {
+    try { return resolveMemberQualities(org.integratedmodelling.klab.api.services.runtime.MemberQualityPlan.lower(strategy,scope),scope); }
+    catch(RuntimeException failure) { return CompletableFuture.failedFuture(failure); }
+  }
+
   /** Audit an agent in this twin, returning its snapshot and separate WGS84 spatial geometries. */
   default org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
       long observerId, ContextScope scope) {

@@ -1197,6 +1197,10 @@ to avoid an unintended `Region of StreamConnection is Network` expression.
 
 ## Observational containment declarations
 
+The bounded [Tier-0 acceptance fixture](CONTAINMENT_ACCEPTANCE.md) exercises
+precomputed StreambedGradient selection in a Region while retaining Stream as its
+native bearer, and describes the still-unimplemented recursive mapping boundary.
+
 **Containment here is an observational contract, not spatial enclosure or physical
 parthood.** It declares which collective observation can realize an authored
 container/type relationship. For example, `Region contains Stream` permits the
@@ -1334,3 +1338,41 @@ The isolated `land:LandCover` binding and `type of land:LandCover of earth:Locat
 locally illustrative CORINE-shaped catalogue; source codes/labels do not confer scientific authority
 on the demonstration parent edges. It supplies no ecosystem mapping, observation classifier,
 coverage guarantee or regulatory compliance claim.
+
+### Contextual fulfillment without changing native meaning
+
+See [conditional model contexts](CONDITIONAL_MODEL_CONTEXT.md) and
+[bounded collective reductions](TIER1_COLLECTIVE_REDUCTIONS.md) for the isolated contextual
+admission/execution increment. A Region may support a Stream-native request through an authored
+containment contract while the observable remains Stream-native. Every dependency's complete
+bearer constraint must still be proved by the actual context; generic Region does not acquire
+terrestrial evidence merely because a terrestrial specialization exists.
+
+`count of S` and `presence of S` may have a Tier-1 route through successful collective discovery
+under explicit whole-support scalar conditions. This does not require an ontology assertion
+that S is contained in the queried Region. It does require geometry-bound completion and visible
+members. S is schematic here, not a new worldview declaration. Empty success differs from
+unknown/no-data. General `Height of Tree` redistribution is not implemented by this reducer.
+
+Region retains Areal semantics for 2D/GIS support. Elevation on that support can contribute to
+an analysis with 3D scope; the conventional term 2.5D describes representation, not a new
+worldview identity, realm or subject. A whole-support scalar result is distinct from a surface
+distribution. StreambedGradient remains a unitless ratio; angular output is not justified by
+dimensional-library compatibility, and its original formula still requires separate review.
+
+### Native collection dependency candidate
+
+An isolated increment under validation distinguishes the invocation container, native bearer
+and native result support. A named explicit `Gradient of Stream` dependency can request a
+typed collection while a regional model's output has its own semantics. Its selected installed
+contextualizer must accept that exact named port as `MemberQualityCollection`. The view retains
+actual member/result identities and native parents; it is neither a new Observation/group nor
+a Region-wide field. Native inherency inferred from the ontology is not a substitute for the
+explicit authored dependency.
+
+The bounded source subset requires a concrete Ratio with explicit canonical unitless metadata,
+QUANTIFICATION and no declared unit, currency, range or explicit observer clause. Missing unit
+metadata is unknown, not unitless. Source acceptance records only a pending obligation; it does
+not prove members exist or make the model executable without a supported typed consumer.
+Generic Height/MEASURE mediation, regional input sampling and direct-view model outputs remain
+separate work. The complete candidate execution gate has not yet passed.

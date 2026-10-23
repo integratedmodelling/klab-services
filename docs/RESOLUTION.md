@@ -1,5 +1,51 @@
 # Observation resolution in k.LAB
 
+## Bounded contextual admission and collective reduction
+
+Observational containment permits a contextual request; it does not discover members or
+reassign a quality's native bearer. A model with cross-bearer dependencies must prove its
+complete required-context obligation against the actual observed context before ranking and
+again before execution. A pending source-validation obligation is not an executable receipt.
+See [conditional model contexts](CONDITIONAL_MODEL_CONTEXT.md).
+
+The isolated [Tier-1 collective reduction increment](TIER1_COLLECTIVE_REDUCTIONS.md) adds
+whole-support count/presence after successful collective discovery. A successful Tier-0 model
+wins first. Only explicitly nondistributed scalar support and initialization are supported;
+this does not broadcast a regional count into cells. Successful empty discovery permits zero
+or false; unknown, failed, stale or partially covered discovery does not. Membership is
+enumerated from the visible cohort, rather than copied from a producer's `childrenCount`.
+
+The request's context, selected observer and semantic revision remain bound through planning
+and execution. Explicit observer-clause derivation and observer-specific substantial discovery
+are outside this new reducer's bounded support; existing direct model paths retain their rules.
+General per-member native-quality resolution, geometry-aware redistribution and mixed partial
+composition remain later stages. These isolated changes require their own integration and
+live acceptance; passing tests do not establish deployed behavior.
+
+### Typed native collection inputs under validation
+
+The next isolated candidate prepares a native member-quality collection before allocating
+its consuming model's output storage. It requires an exact named authored `of` dependency,
+an immutable source admission receipt and an installed method accepting the exact named
+`@KlabFunction.Input` as `MemberQualityCollection`. Inferred native inherency, an untyped
+parameter or a matching function name alone cannot authorize this route. Source preparation
+records an unbound obligation; only actual invocation context and revision can bind it.
+
+Catalogue eligibility, ranking and runtime retain the source occurrence, index, alias,
+original spelling and receipt. Recheck the saved source and selected installed method before
+discovery, then the visible native identities, observer, revision, full support and completion
+before consuming results. An implicit observer request may retain a compatible observer-specific
+result or an absolute fallback under the existing observer contract; actual Agent identity
+remains distinct from its semantic class. Explicit observer-clause dependencies are outside
+this bounded collection route.
+
+Successful compatible ordinary Tier-0 models retain precedence. This candidate has no direct-view
+model-output ABI: an ordinary Observation, field or single quality does not satisfy a
+complete-member collection port. That port uses complete discovery followed by ordinary
+native per-member resolution/reuse. A selected contextualizer must define any regional result;
+there is no implicit averaging, rasterization, sampling, gap or overlap policy. The full
+source-to-compiled-parent execution gate remains pending; this section is not a release receipt.
+
 ## Observer-aware resolution contract
 
 **Agreed target behavior, not fully implemented.** Observer semantics are defined in

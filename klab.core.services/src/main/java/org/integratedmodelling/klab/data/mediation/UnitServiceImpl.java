@@ -99,6 +99,14 @@ public class UnitServiceImpl implements UnitService {
       return null;
     }
 
+    // SI's unit one is an explicit unitless definition, distinct from missing metadata.
+    // The generic leading-scale parser otherwise consumes the entire "1" token and
+    // attempts to parse an empty physical unit. Do not infer semantic quantity kind
+    // from dimensional compatibility: angles remain dimensionless in this library.
+    if ("1".equals(string.trim())) {
+      return new UnitImpl("1").withData(new FunctionalUnit(tech.units.indriya.AbstractUnit.ONE));
+    }
+
     Pair<Double, String> pd = Utils.Strings.splitNumberFromString(string);
     javax.measure.Unit<?> peer = units.get(pd.getSecond());
     if (peer == null) {

@@ -361,4 +361,37 @@ class DocumentModelKboxTest {
       assertEquals(2, box.query(request, scale, null, List.of(), context).size());
     }
   }
+
+  @Test void conditionalContextIsBoundBeforeCatalogDistanceAndCannotUseServiceScope() {
+    var request=mock(Observable.class);var head=mock(Concept.class);
+    when(head.getUrn()).thenReturn("test:Height");
+    when(reasoner.coreObservable(concept)).thenReturn(head);when(reasoner.coreObservable(request)).thenReturn(head);
+    when(reasoner.resolving(head)).thenReturn(List.of(head));
+    var contextual=mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+    when(contextual.getService(Reasoner.class)).thenReturn(reasoner);
+    var context=mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+    var contextObservable=mock(Observable.class);var contextType=mock(Concept.class);
+    when(context.getObservable()).thenReturn(contextObservable);when(contextObservable.getSemantics()).thenReturn(contextType);
+    when(contextual.getContextObservation()).thenReturn(context);
+    var scale=mock(org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class);
+    try(var box=new DocumentModelKbox(service,new NitriteKboxStore(null))) {
+      box.store(descriptor(),scope);
+      doAnswer(invocation -> {
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest validation=invocation.getArgument(0);
+        var response=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(validation);
+        response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
+        response.setKnowledgeRevision(7);
+        if(validation.isExecutableModels() && !"earth:TerrestrialRegion".equals(validation.getExecutionContext()))
+          response.getNotifications().add(org.integratedmodelling.klab.api.services.runtime.Notification.error("required actual context not proved"));
+        return response;
+      }).when(reasoner).validateDocument(any(),any());
+      assertTrue(box.queryModels(request,scale,null,List.of(),null).isEmpty());
+      when(contextType.getUrn()).thenReturn("earth:Region");
+      assertTrue(box.queryModels(request,scale,contextType,List.of(),contextual).isEmpty());
+      verify(reasoner,never()).semanticDistance(any(),any(),any(),anyLong());
+      when(contextType.getUrn()).thenReturn("earth:TerrestrialRegion");
+      assertEquals(1,box.queryModels(request,scale,contextType,List.of(),contextual).size());
+      verify(reasoner,times(1)).semanticDistance(any(),same(request),same(contextType),eq(7L));
+    }
+  }
 }

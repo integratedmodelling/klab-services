@@ -25,7 +25,7 @@ class ModelValidationGateTest {
   ModelValidationGateTest() {
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
-    namespace.setUrn("ns"); model.setUrn("ns.model"); model.setNamespace("ns");
+    namespace.setUrn("ns");namespace.setSourceCode("source fixture"); model.setUrn("ns.model"); model.setNamespace("ns");
     namespace.getStatements().add(model);
     when(resources.retrieve("ns", KimNamespace.class, scope)).thenReturn(namespace);
   }
@@ -40,6 +40,75 @@ class ModelValidationGateTest {
     }).when(reasoner).validateDocument(any(), same(scope));
   }
 
+  @Test void explicitAtomicBearerAllowsOnlyTransparentParserWrappers() {
+    var source=new KimObservableImpl();var quality=new KimConceptImpl();quality.setName("w:Quality");source.setSemantics(quality);
+    var leaf=new KimConceptImpl();leaf.setName("w:Member");var wrapper=new KimConceptImpl();wrapper.setObservable(leaf);quality.setInherent(wrapper);
+    assertSame(leaf,ModelValidationGate.explicitAtomicInherent(source));
+    var outer=new KimConceptImpl();outer.setObservable(wrapper);quality.setInherent(outer);
+    assertSame(leaf,ModelValidationGate.explicitAtomicInherent(source));
+    wrapper.setSemanticModifier(org.integratedmodelling.klab.api.lang.UnarySemanticOperator.COUNT);
+    assertNull(ModelValidationGate.explicitAtomicInherent(source));wrapper.setSemanticModifier(null);
+    wrapper.getTraits().add(leaf);assertNull(ModelValidationGate.explicitAtomicInherent(source));wrapper.getTraits().clear();
+    wrapper.setNegated(true);assertNull(ModelValidationGate.explicitAtomicInherent(source));wrapper.setNegated(false);
+    wrapper.setExpressionType(KimConcept.Expression.UNION);wrapper.getOperands().add(leaf);
+    assertNull(ModelValidationGate.explicitAtomicInherent(source));wrapper.setExpressionType(KimConcept.Expression.SINGLETON);wrapper.getOperands().clear();
+    wrapper.setObservable(outer);assertNull(ModelValidationGate.explicitAtomicInherent(source),"Cyclic AST cannot be treated as transparent");
+    quality.setInherent(null);assertNull(ModelValidationGate.explicitAtomicInherent(source),"Inherited native bearer is not authored of evidence");
+  }
+  @Test void catalogPendingNativeInputRequiresSavedExplicitOccurrenceAndInstalledTypedConsumer() {
+    var context=mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+    var runtime=mock(RuntimeService.class);
+    when(context.getService(Reasoner.class)).thenReturn(reasoner);
+    when(context.getService(ResourcesService.class)).thenReturn(resources);
+    when(context.getService(RuntimeService.class)).thenReturn(runtime);
+    when(context.withResolutionConstraints(any(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint[].class))).thenReturn(context);
+    when(resources.retrieve("ns",KimNamespace.class,context)).thenReturn(namespace);
+    var primary=new KimObservableImpl();primary.setUrn("w:Output");model.getObservables().add(primary);
+    var dependency=new KimObservableImpl();var syntax=new KimConceptImpl();syntax.setName("w:Ratio");
+    var member=new KimConceptImpl();member.setName("w:Member");syntax.setInherent(member);dependency.setSemantics(syntax);
+    dependency.setUrn("w:Ratio of w:Member");dependency.setFormalName("nativeInput");model.getDependencies().add(dependency);
+    var consumer=new org.integratedmodelling.common.lang.ContextualizableImpl();
+    consumer.setServiceCall(new org.integratedmodelling.common.lang.ServiceCallImpl("fixture.collection"));model.getContextualization().add(consumer);
+    var pending=new SemanticValidationResponse.PendingMemberQualityDependency(model.getUrn(),0,dependency.getUrn(),"nativeInput","w:Member",dependency.getUrn());
+    when(reasoner.validateDocument(any(),same(context))).thenAnswer(invocation->{
+      var request=invocation.getArgument(0,SemanticValidationRequest.class);
+      var response=SemanticValidationResponse.forRequest(request);response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(7);
+      response.getPendingMemberQualityDependencies().add(pending);return response;
+    });
+    when(runtime.supportsMemberQualityInput(any(),eq("nativeInput"),same(context))).thenReturn(true);
+    doAnswer(invocation->new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection(true,
+        runtime.supportsMemberQualityInput(invocation.getArgument(0),"nativeInput",context)?java.util.Set.of("nativeInput"):java.util.Set.of()))
+        .when(runtime).inspectMemberQualityInputs(any(),any());
+    var requested=mock(Observable.class);when(requested.getUrn()).thenReturn("w:Output");
+    assertEquals(7,ModelValidationGate.validatedPreparableCatalogRevision(model.getUrn(),"ns",resources,context,requested));
+    verifyNoInteractions(runtime);
+    assertEquals(7,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested));
+    var captured=ArgumentCaptor.forClass(SemanticValidationRequest.class);
+    verify(reasoner,times(4)).validateDocument(captured.capture(),same(context));
+    assertEquals(List.of(pending),captured.getAllValues().getLast().getPreparableMemberQualityDependencies());
+    when(runtime.supportsMemberQualityInput(any(),eq("nativeInput"),same(context))).thenReturn(false);
+    assertEquals(-1,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested));
+    when(runtime.supportsMemberQualityInput(any(),eq("nativeInput"),same(context))).thenReturn(true);
+    syntax.setInherent(null);
+    assertEquals(-1,ModelValidationGate.validatedPreparableCatalogRevision(model.getUrn(),"ns",resources,context,requested),"Pure discovery does not waive exact authored-of proof");
+    assertEquals(-1,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested));
+    syntax.setInherent(member);var ordinary=new KimObservableImpl();ordinary.setUrn("w:Other");ordinary.setFormalName("nativeInput");model.getDependencies().add(ordinary);
+    assertEquals(-1,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested),"Typed alias cannot also name an ordinary input");
+    model.getDependencies().remove(ordinary);syntax.setInherent(null);
+    doAnswer(invocation->{var request=invocation.getArgument(0,SemanticValidationRequest.class);
+      var response=SemanticValidationResponse.forRequest(request);response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(7);return response;
+    }).when(reasoner).validateDocument(any(),same(context));
+    assertEquals(-1,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested),"Installed collection parameter requires saved collection result-kind proof even for compatible input");
+    when(runtime.supportsMemberQualityInput(any(),eq("nativeInput"),same(context))).thenReturn(false);
+    assertEquals(7,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested),"Ordinary input parameter stays eligible");
+    model.getDependencies().clear();when(runtime.supportsMemberQualityInput(any(),eq("nativeInput"),same(context))).thenReturn(true);
+    assertEquals(-1,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested),"Catalog matching needs every installed typed port even without authored aliases");
+    when(runtime.supportsMemberQualityInput(any(),eq("nativeInput"),same(context))).thenReturn(false);
+    assertEquals(7,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested),"Known empty ordinary method is unaffected");
+    doReturn(new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection(false,java.util.Set.of()))
+        .when(runtime).inspectMemberQualityInputs(any(),any());
+    assertEquals(-1,ModelValidationGate.validatedRevision(model.getUrn(),"ns",resources,context,requested),"Unavailable catalog inspection fails closed");    verify(reasoner,never()).semanticDistance(any(),any(),any());
+  }
   @Test void unavailableStaleAndInvalidSourcesFailClosedWithoutMatching() {
     for (var status : SemanticValidationResponse.Status.values()) {
       status(status, status == SemanticValidationResponse.Status.COMPLETE);
@@ -207,5 +276,49 @@ class ModelValidationGateTest {
     assertEquals(7, ModelValidationGate.require(namespace, scope));
     assertEquals(-1, ModelValidationGate.validatedRevision("ns.model", "ns", resources, scope,
         mock(Observable.class)));
+  }
+
+  @Test void actualContextIsBoundOnlyForExecutableValidationAndCannotBeReplayed() {
+    var contextual=mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+    when(contextual.getService(Reasoner.class)).thenReturn(reasoner);
+    when(resources.retrieve("ns",KimNamespace.class,contextual)).thenReturn(namespace);
+    var context=mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+    var observable=mock(Observable.class);
+    var semantics=mock(org.integratedmodelling.klab.api.knowledge.Concept.class);
+    when(semantics.getUrn()).thenReturn("earth:TerrestrialRegion");
+    when(observable.getSemantics()).thenReturn(semantics);when(context.getObservable()).thenReturn(observable);
+    when(contextual.getContextObservation()).thenReturn(context);
+    model.getObservables().add(mock(KimObservable.class));
+    var requests=new java.util.ArrayList<SemanticValidationRequest>();
+    doAnswer(invocation -> {
+      SemanticValidationRequest request=invocation.getArgument(0);requests.add(request);
+      var response=SemanticValidationResponse.forRequest(request);
+      response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(7);return response;
+    }).when(reasoner).validateDocument(any(),same(contextual));
+    assertEquals(7,ModelValidationGate.validatedRevision("ns.model","ns",resources,contextual,mock(Observable.class)));
+    assertNull(requests.getFirst().getExecutionContext());
+    assertEquals("earth:TerrestrialRegion",requests.getLast().getExecutionContext());
+    doAnswer(invocation -> {
+      SemanticValidationRequest request=invocation.getArgument(0);
+      var response=SemanticValidationResponse.forRequest(request);
+      response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(7);
+      if(request.isExecutableModels())response.setExecutionContext("earth:Region");return response;
+    }).when(reasoner).validateDocument(any(),same(contextual));
+    assertEquals(-1,ModelValidationGate.validatedRevision("ns.model","ns",resources,contextual,mock(Observable.class)));
+    verify(reasoner,never()).semanticDistance(any(),any(),any(),anyLong());
+  }
+
+  @Test void pendingSourceObligationCannotMasqueradeAsAnExecutableReceipt() {
+    model.getObservables().add(mock(KimObservable.class));
+    doAnswer(invocation -> {
+      SemanticValidationRequest request=invocation.getArgument(0);
+      var response=SemanticValidationResponse.forRequest(request);
+      response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(7);
+      response.getPendingModelContexts().add(new SemanticValidationResponse.PendingModelContext(
+          "ns.model","earth:Region",List.of("geography:Elevation")));
+      return response;
+    }).when(reasoner).validateDocument(any(),same(scope));
+    assertEquals(7,ModelValidationGate.require(namespace,scope));
+    assertEquals(-1,ModelValidationGate.validatedRevision("ns.model","ns",resources,scope,mock(Observable.class)));
   }
 }

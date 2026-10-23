@@ -252,9 +252,12 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         return unavailableValidation(request, response);
       }
       synchronized (lease.state()) {
-        var validator=new DocumentSemanticValidator(lease.state().actor(),request.isExecutableModels(),request.isClassifierPreparableDependencies());
+        var validator=new DocumentSemanticValidator(lease.state().actor(),request.isExecutableModels(),request.isClassifierPreparableDependencies(), request.getExecutionContext(), request.getPreparableMemberQualityDependencies());
         response.getNotifications().addAll(validator.validate(request.document()));
         response.getPendingClassifierDependencies().addAll(validator.getPendingClassifierDependencies());
+        response.getConditionalModelContexts().addAll(validator.getConditionalModelContexts());
+        response.getPendingModelContexts().addAll(validator.getPendingModelContexts());
+        response.getPendingMemberQualityDependencies().addAll(validator.getPendingMemberQualityDependencies());
         response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
         return response;
       }

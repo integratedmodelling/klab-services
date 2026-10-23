@@ -53,6 +53,14 @@ public class ResolutionGraph {
   private Resolvable target;
   Resolvable target() { return target; }
   final Map<Model, List<DeferredDependency>> classifierDependencies = new HashMap<>();
+  final Map<Model,java.util.Map<String,org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan>> memberQualityInputs=new IdentityHashMap<>();
+  private final Map<Model,org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt> modelAdmissions = new IdentityHashMap<>();
+  void admitModel(Model model,org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt receipt) {
+    rootGraph().modelAdmissions.put(model,Objects.requireNonNull(receipt));
+  }
+  org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt admission(Model model) {
+    return rootGraph().modelAdmissions.get(model);
+  }
   org.integratedmodelling.klab.api.digitaltwin.ProcessPlan processPlan;
   org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request scheduleRequest;
   org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation scheduleNegotiation;
@@ -61,6 +69,7 @@ public class ResolutionGraph {
   ResolutionGraph withScheduleRequest(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request request) {
     var result = new ResolutionGraph(rootScope);
     result.parent = this;
+    result.semanticReasonerId = semanticReasonerId; result.semanticRevision = semanticRevision;
     result.target = target;
     result.targetCoverage = targetCoverage;
     result.observations = observations;
@@ -71,6 +80,21 @@ public class ResolutionGraph {
   }
   private Coverage targetCoverage;
   private ContextScope rootScope;
+  private String semanticReasonerId;
+  private long semanticRevision = -1;
+
+  String semanticReasonerId() { return semanticReasonerId; }
+  long semanticRevision() { return semanticRevision; }
+
+  void requireSemanticSnapshot(ContextScope scope) {
+    var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    var cap = reasoner == null ? null : reasoner.capabilities(scope);
+    if (semanticRevision < 0 || semanticReasonerId == null
+        || !(cap instanceof org.integratedmodelling.klab.api.services.Reasoner.Capabilities semantic)
+        || semanticRevision != semantic.getKnowledgeRevision()
+        || !Objects.equals(semanticReasonerId, semantic.getServiceId()))
+      throw new KlabIllegalStateException("Resolution semantic snapshot is unavailable or changed; replan the request");
+  }
   // Two ports may reference the same observation (e.g. both relationship endpoints).
   private DirectedMultigraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
       new DirectedMultigraph<>(ResolutionEdge.class);
@@ -98,6 +122,11 @@ public class ResolutionGraph {
 
   private ResolutionGraph(ContextScope rootScope) {
     this.rootScope = rootScope;
+    var reasoner = rootScope == null ? null : rootScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    var cap = reasoner == null ? null : reasoner.capabilities(rootScope);
+    if (cap instanceof org.integratedmodelling.klab.api.services.Reasoner.Capabilities semantic) {
+      semanticReasonerId = semantic.getServiceId(); semanticRevision = semantic.getKnowledgeRevision();
+    }
     this.observations = new ConcurrentHashMap<>();
     this.localResources = new CopyOnWriteArrayList<>();
     this.serviceInfos = new ConcurrentHashMap<>();
@@ -154,6 +183,7 @@ public class ResolutionGraph {
     }
 
     this.rootScope = parent.rootScope;
+    this.semanticReasonerId = parent.semanticReasonerId; this.semanticRevision = parent.semanticRevision;
   }
 
   private ResolutionGraph(
@@ -173,6 +203,7 @@ public class ResolutionGraph {
     this.targetCoverage =
         Coverage.create(GeometryRepository.INSTANCE.scale(resolvedObservation.getGeometry()), 1.0);
     this.rootScope = parent.rootScope;
+    this.semanticReasonerId = parent.semanticReasonerId; this.semanticRevision = parent.semanticRevision;
     this.resolvedKey = referenceKey(resolvedObservation);
     this.observations.put(this.resolvedKey, resolvedObservation);
     //    this.resolutionCatalog.putAll(parent.resolutionCatalog);
@@ -238,6 +269,7 @@ public class ResolutionGraph {
   public boolean merge(ResolutionGraph childGraph, String localName) {
 
     classifierDependencies.putAll(childGraph.classifierDependencies);
+    memberQualityInputs.putAll(childGraph.memberQualityInputs);
     Graphs.addAllVertices(this.graph, childGraph.graph.vertexSet());
     Graphs.addAllEdges(this.graph, childGraph.graph, childGraph.graph.edgeSet());
 

@@ -66,6 +66,50 @@ public class RuntimeServerController {
 
   @Autowired private RuntimeServer runtimeService;
 
+  @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITY_CONSUMER)
+  public boolean memberQualityConsumer(
+      @RequestBody org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerRequest request,
+      Principal principal) {
+    if(!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope=authorization.getScope(ContextScope.class);
+    if(scope==null)throw new IllegalArgumentException("Consumer inspection requires an authorized context");
+    request.validate();
+    return runtimeService.klabService().supportsMemberQualityInput(request.call(),request.port(),scope);
+  }
+
+  @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITY_INPUTS)
+  public org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
+      memberQualityInputs(@RequestBody org.integratedmodelling.klab.api.lang.ServiceCall call,Principal principal) {
+    if(!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope=authorization.getScope(Scope.class);
+    if(scope==null)throw new IllegalArgumentException("Consumer inspection requires an authorized scope");
+    if(call==null || call.getUrn()==null || call.getUrn().isBlank())
+      throw new IllegalArgumentException("Consumer inspection requires a named function");
+    return runtimeService.klabService().inspectMemberQualityInputs(call,scope);
+  }
+
+  @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITIES)
+  @Operation(summary = "Resolve a native quality for each member without creating a container field")
+  public long memberQualities(
+      @RequestBody org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+      Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope=authorization.getScope(ContextScope.class);
+    if (!(scope instanceof ServiceContextScope serviceScope))
+      throw new IllegalArgumentException("Member qualities require an authorized context");
+    request.validate();
+    if (request.agentName()==null || request.agentName().isBlank())
+      throw new IllegalArgumentException("Member qualities require a provenance agent");
+    var agent=serviceScope.getDigitalTwin().getKnowledgeGraph().requireAgent(request.agentName());
+    var selected=serviceScope.withResolutionConstraints(request.resolutionConstraints().toArray(new ResolutionConstraint[0]))
+        .withResolutionConstraints(ResolutionConstraint.of(ResolutionConstraint.Type.Provenance,agent));
+    var future=runtimeService.klabService().resolveMemberQualities(request,selected);
+    return serviceScope.getJobManager().submit(future,"Native member qualities",()->future.cancel(true));
+  }
+
   @Operation(summary = "Read one observation cell", description = "Exact text from a planned read view; null denotes missing data")
   @PostMapping(value = ServicesAPI.RUNTIME.READ_VALUE, produces = "text/plain")
   public @ResponseBody String readValue(

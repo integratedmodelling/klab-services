@@ -52,6 +52,7 @@ class ObserverDeferredResolutionTest {
       when(scope.getService(Reasoner.class)).thenReturn(reasoner);
       when(scope.getService(RuntimeService.class)).thenReturn(runtime);
       var receipt = mock(Reasoner.Capabilities.class); when(receipt.getKnowledgeRevision()).thenReturn(7L);
+      when(receipt.getServiceId()).thenReturn("fixture-reasoner");
       when(reasoner.capabilities(scope)).thenReturn(receipt);
       when(reasoner.semanticDistance(any(), any(), isNull(), eq(7L))).thenReturn(0);
       var state = org.integratedmodelling.klab.api.collections.Parameters.<String>create();
@@ -69,7 +70,8 @@ class ObserverDeferredResolutionTest {
       if (specific) { output.setObserverSemantics(observer.asConcept()); output.setUrn(requested.getUrn()+" observed as "+observer.getUrn()); }
       var model = mock(Model.class); when(model.getUrn()).thenReturn("test:"+name); when(model.getNamespace()).thenReturn("test");
       when(model.getCoverage()).thenReturn(support); when(model.getObservables()).thenReturn(List.of(output));
-      var computation = mock(org.integratedmodelling.klab.api.lang.Contextualizable.class);
+      var computation = new org.integratedmodelling.common.lang.ContextualizableImpl();
+      computation.setLiteral(1.0);
       when(model.getComputation()).thenReturn(List.of(computation));
       when(runtime.resolveContextualizables(model.getComputation(), scope)).thenReturn(new ResourceSet());
       return model;
@@ -77,6 +79,14 @@ class ObserverDeferredResolutionTest {
     void models(Model... models) {
       var context = scope.getContextObservation().getObservable().asConcept();
       doReturn(List.of(models)).when(compiler).queryModels(requested, context, scope, scale);
+      for (var model : models) {
+        // This fixture controls catalog admission; it still supplies the immutable witness
+        // required by production planning instead of relying on a missing-proof default.
+        doReturn(new org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt(
+            model.getUrn(), model.getNamespace(), "fixture-version", "fixture-source",
+            org.integratedmodelling.klab.runtime.language.ModelValidationGate.executableHash(model),
+            "fixture-reasoner", 7L)).when(compiler).admissionReceipt(model);
+      }
     }
   }
 

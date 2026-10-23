@@ -1,5 +1,35 @@
 # Observation strategies: language guide and accepted baseline
 
+The isolated [whole-support count/presence increment](TIER1_COLLECTIVE_REDUCTIONS.md) is a
+bounded executable subset, not completion of general S7/S9 context bridges. It discovers a
+collective only after unsuccessful Tier-0 alternatives, proves successful full-support
+completion, enumerates visible members and writes a scalar count/boolean. Explicit
+nondistributed support, initialization, observer/revision binding and failure distinctions
+are required. See [conditional source model obligations](CONDITIONAL_MODEL_CONTEXT.md) for
+separate cross-bearer model admission. General quality redistribution still needs typed
+native-member result composition; containment declarations alone do not provide it.
+
+## Native member-quality collection candidate
+
+The next isolated increment is under validation, not deployed. It keeps three bindings
+separate: invocation container, actual native member and each quality's support. A Region
+may request a collection of Stream-native results without becoming their bearer. The view
+is keyed by actual member identity; it is not a new Observation, group, scalar or regional
+field. Successful complete discovery with no members produces an empty collection. Failed,
+partial, stale or unknown discovery does not; no-data does not imply zero or absence.
+
+Existing MemberPlan syntax has a restricted explicit typed `resolveMemberPlan` API path:
+one collective resolve, one native-quality resolve within each member and yields. This is
+not general MemberPlan execution in the existing single-Observation strategy compiler.
+Ordinary native submissions can reuse existing observations and models. Cancellation stops
+new scheduling and cancels the active child cooperatively, without rollback of committed work.
+
+A regional model must select a contextualizer that explicitly consumes the native collection
+and defines any regional mapping. The test maximum is an example selected by a test model,
+not an automatic reduction or redistribution policy. Regional Elevation/Slope sampling for
+the original StreambedGradient model, generic Height mediation and arbitrary strategy bodies
+remain outside this bounded candidate.
+
 ## Relationship nature and orientation
 
 A relationship has two independent semantic axes. Its nature is `structural` or

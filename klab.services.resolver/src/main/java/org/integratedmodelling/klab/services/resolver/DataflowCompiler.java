@@ -160,6 +160,12 @@ public class DataflowCompiler {
         actuator.setCoverage(childCoverage == null ? null : Geometry.forTransport(childCoverage));
         actuator.setResolvedGeometry(Geometry.forTransport(observation.getGeometry()));
         actuator.setRequestedSupport(Geometry.forTransport(observation.getGeometry()));
+        if (observationStrategy.getCollectiveReduction() != null) {
+          var wholeSupport = Geometry.create(observationStrategy.getCollectiveReduction().support());
+          ((org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl)actuator.getObservation()).setGeometry(wholeSupport);
+          actuator.setRequestedSupport(wholeSupport);
+          actuator.setResolvedGeometry(wholeSupport);
+        }
         actuator.setStrategyUrn(observationStrategy.getUrn());
         actuator.setContextBinding(observationStrategy.getContextBinding());
         compileStrategy(actuator, observation, childCoverage, observationStrategy);
@@ -206,6 +212,9 @@ public class DataflowCompiler {
       Geometry scale,
       ObservationStrategy observationStrategy) {
 
+    if (observationStrategy.getCollectiveReduction() != null)
+      observationActuator.getData().put(org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY,
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(observationStrategy.getCollectiveReduction()));
     for (var edge : resolutionGraph.graph().outgoingEdgesOf(observationStrategy)) {
 
       var child = resolutionGraph.graph().getEdgeTarget(edge);
@@ -251,7 +260,7 @@ public class DataflowCompiler {
         var source = resolutionGraph.getResolved(edge.observationId);
         var referenceSupport = edge.referenceSupport == null ? coverage : edge.referenceSupport;
         observationActuator.getChildren().add(compileReference(source, referenceSupport, edge.localName, edge.scheduleRequest));
-        addObserverContribution(observationActuator, new ObserverContribution(null,
+        if (observationStrategy.getCollectiveReduction() == null) addObserverContribution(observationActuator, new ObserverContribution(null,
             source.getObservable().getObserverSemantics() == null ? null : source.getObservable().getObserverSemantics().getUrn(),
             referenceSupport == null ? null : referenceSupport.encode(), -1));
       }
@@ -285,8 +294,35 @@ public class DataflowCompiler {
       entries.forEach(entry->contributions.add((String)entry));
     }
     // Unknown/ad-hoc models may execute normally, but their contribution prevents source coalescing.
-    contributions.add(Objects.toString(model.getUrn(),""));
+    boolean sourced=model.getNamespace()!=null && !model.getNamespace().isBlank();
+    contributions.add(sourced?Objects.toString(model.getUrn(),""):"");
     observationActuator.getData().put(Actuator.PRODUCING_MODELS_KEY,List.copyOf(contributions));
+    if (sourced) {
+      resolutionGraph.requireSemanticSnapshot(scope);
+      var receipt=resolutionGraph.admission(model);
+      if (receipt==null || !Objects.equals(receipt.executableHash(),org.integratedmodelling.klab.runtime.language.ModelValidationGate.executableHash(model))
+          || receipt.knowledgeRevision()!=resolutionGraph.semanticRevision()
+          || !Objects.equals(receipt.reasonerId(),resolutionGraph.semanticReasonerId()))
+        throw new KlabIllegalStateException("Missing or changed original model admission receipt");
+      var receipts=new ArrayList<String>();
+      var previousAdmissions=observationActuator.getData().get(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS);
+      if (previousAdmissions instanceof List<?> values) for (var value:values) {
+        if (!(value instanceof String text)) throw new KlabIllegalStateException("Malformed model admission receipts");
+        var prior=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text,org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt.class);
+        if (Objects.equals(prior.modelUrn(),receipt.modelUrn()) && !prior.equals(receipt))
+          throw new KlabIllegalStateException("Competing source admissions for one model");
+        receipts.add(text);
+      }
+      var encodedReceipt=org.integratedmodelling.klab.utilities.Utils.Json.asString(receipt);
+      if (!receipts.contains(encodedReceipt)) receipts.add(encodedReceipt);
+      observationActuator.getData().put(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS,List.copyOf(receipts));
+      long revision = receipt.knowledgeRevision();
+      var previous = observationActuator.getData().putIfAbsent("modelAdmissionRevision", revision);
+      var previousService = observationActuator.getData().putIfAbsent("modelAdmissionReasonerId", resolutionGraph.semanticReasonerId());
+      if (previous instanceof Number value && value.longValue() != revision
+          || previousService != null && !Objects.equals(previousService, resolutionGraph.semanticReasonerId()))
+        throw new KlabIllegalStateException("Mixed model admission snapshots");
+    }
     if (observation != null && (scope.getObserver() != null || observation.getObservable().getObserverSemantics() != null
         || model.getObservables().stream().anyMatch(candidate -> candidate.getObserverSemantics() != null))
         && (observation.getObservable().is(SemanticType.QUALITY)
@@ -310,6 +346,10 @@ public class DataflowCompiler {
                 GeometryRepository.INSTANCE.scale(model.getCoverage()), org.integratedmodelling.klab.api.lang.LogicalConnector.INTERSECTION,
                 org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class).encode(), revision));
       }
+    }
+    for(var entry:resolutionGraph.memberQualityInputs.getOrDefault(model,java.util.Map.of()).entrySet()) {
+      var prior=observationActuator.getMemberQualityInputs().putIfAbsent(entry.getKey(),entry.getValue());
+      if(prior!=null && !prior.equals(entry.getValue()))throw new KlabIllegalStateException("Competing native collection input ports");
     }
     var occurrenceSchedule = compileOccurrenceSchedule(observationActuator, model);
     if ((observationActuator.getExecutionRole() == Actuator.ExecutionRole.PROCESS
@@ -370,6 +410,8 @@ public class DataflowCompiler {
     for (var contextualizer : model.getComputation()) {
 
       Map<String, Object> overriddenParameters = new HashMap<>();
+      for(var port:resolutionGraph.memberQualityInputs.getOrDefault(model,java.util.Map.of()).keySet())
+        overriddenParameters.put(port,Identifier.create(port));
       for(var deferred:resolutionGraph.classifierDependencies.getOrDefault(model,List.of()))
         if(deferred.name()!=null)overriddenParameters.put(deferred.name(),Identifier.create(deferred.name()));
       // Named prerequisite ports are bound to child actuator names, not to producer graph IDs.

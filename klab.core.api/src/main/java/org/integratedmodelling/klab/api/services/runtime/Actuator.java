@@ -66,6 +66,8 @@ public interface Actuator extends Serializable, RuntimeAsset {
   String PRODUCING_MODELS_KEY = "im:producing-models";
 
   default List<ClassifierDependencyPlan> getClassifierDependencies() { return List.of(); }
+  /** Separate typed ports: never coerced to scalar Observation dependencies. */
+  default java.util.Map<String,MemberQualityInputPlan> getMemberQualityInputs() { return java.util.Map.of(); }
 
   enum ExecutionRole { INITIALIZATION, PROCESS, EVENT_INSTANTIATOR, EVENT }
 

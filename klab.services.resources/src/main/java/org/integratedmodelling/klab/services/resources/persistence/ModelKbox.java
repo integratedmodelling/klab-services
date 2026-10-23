@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.services.resources.persistence;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
+
 import java.util.*;
 import org.h2gis.utilities.SpatialResultSet;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
@@ -240,7 +242,13 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints,
       ContextScope scope) {
+    return query(observable, geometry, contextObservable, resolutionConstraints, scope, ModelDiscoveryMode.EXECUTABLE);
+  }
 
+  @Override public Collection<ModelReference> query(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints, ContextScope scope, ModelDiscoveryMode mode) {
+    java.util.Objects.requireNonNull(mode, "model discovery mode");
     initialize(scope);
 
     List<ModelReference> local = new ArrayList<>();
@@ -250,7 +258,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     if (database.hasTable("model")) {
       try {
         for (ModelReference md :
-            queryModels(observable, geometry, contextObservable, resolutionConstraints, scope)) {
+            queryModels(observable, geometry, contextObservable, resolutionConstraints, scope, mode)) {
           if (ModelVisibility.authorized(md, scope)) {
             local.add(md);
           }
@@ -279,7 +287,13 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints,
       ContextScope context) {
+    return queryModels(observable, geometry, contextObservable, resolutionConstraints, context, ModelDiscoveryMode.EXECUTABLE);
+  }
 
+  @Override public List<ModelReference> queryModels(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints, ContextScope context, ModelDiscoveryMode mode) {
+    java.util.Objects.requireNonNull(mode, "model discovery mode");
     List<ModelReference> ret = new ArrayList<>();
     ModelVisibility.requireReady(resourceService, context);
 
@@ -322,15 +336,18 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     for (long l : oids) {
       ModelReference model = retrieveModel(l, context);
       if (model != null && ModelVisibility.accepts(model, observable, resolutionConstraints)) {
-        long validatedRevision = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
-            model.getName(), model.getNamespaceId(), resourceService, context, observable);
+        long validatedRevision = mode == ModelDiscoveryMode.PREPARABLE
+            ? org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableCatalogRevision(
+                model.getName(), model.getNamespaceId(), resourceService, context, observable)
+            : org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
+                model.getName(), model.getNamespaceId(), resourceService, context, observable);
         if (validatedRevision < 0) continue;
         // Keep observable-level semantics (including observed-as) out of the coarse Concept index.
         // The full wrapper is authoritative for matching, after source/revision validation.
         var candidate = scope.getService(Reasoner.class).resolveObservable(model.getObservable());
         if (candidate == null || candidate.getSemantics() == null
             || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
-        if (scope.getService(Reasoner.class).semanticDistance(
+        if (mode == ModelDiscoveryMode.EXECUTABLE && scope.getService(Reasoner.class).semanticDistance(
             candidate, observable, contextObservable, validatedRevision) < 0) continue;
         Coverage coverage =
             resourceService.info(
