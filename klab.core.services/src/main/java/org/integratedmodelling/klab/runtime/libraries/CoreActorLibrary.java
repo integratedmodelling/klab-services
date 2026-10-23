@@ -64,207 +64,206 @@ public class CoreActorLibrary {
       throw new IllegalStateException("UI verbs require an application UI scope");
     }
 
-    private static Object widget(
+    private static Widget widget(
         String type, RuntimeAgent.Scope scope, Metadata metadata, Object label, boolean emitter) {
       var cursor = cursor(scope);
-      return cursor
-          .model()
-          .widget(
-              cursor, type, (String) metadata.get("tag"), metadata, label, emitter ? scope : null);
+      Object id = cursor.model().widget(
+          cursor, type, (String) metadata.get("tag"), metadata, label, emitter ? scope : null);
+      return new Widget(cursor.model(), id == null ? null : id.toString());
     }
 
-    @Verb(name = "text", description = "Present plain text")
-    public static void text(RuntimeAgent.Scope scope, Metadata metadata, Object text) {
-      widget("text", scope, metadata, text, false);
+    @Verb(name = "text", producesAgent = "core.widget", description = "Present plain text")
+    public static Widget text(RuntimeAgent.Scope scope, Metadata metadata, Object text) {
+      return widget("text", scope, metadata, text, false);
     }
 
-    @Verb(name = "progress", description = "Present completion progress")
-    public static void progress(RuntimeAgent.Scope scope, Metadata metadata, Number value) {
-      widget("progress", scope, metadata, value, false);
+    @Verb(name = "progress", producesAgent = "core.widget", description = "Present completion progress")
+    public static Widget progress(RuntimeAgent.Scope scope, Metadata metadata, Number value) {
+      return widget("progress", scope, metadata, value, false);
     }
 
-    @Verb(name = "button", executionType = Verb.Type.EMITTER, description = "Emit button clicks")
-    public static void button(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("button", scope, metadata, label, true);
+    @Verb(name = "button", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Emit button clicks")
+    public static Widget button(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("button", scope, metadata, label, true);
     }
 
     @Verb(
         name = "checkbox",
-        executionType = Verb.Type.EMITTER,
+        executionType = Verb.Type.EMITTER, returnsHandle = "core.widget",
         description = "Emit boolean changes")
-    public static void checkbox(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("checkbox", scope, metadata, label, true);
+    public static Widget checkbox(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("checkbox", scope, metadata, label, true);
     }
 
     @Verb(
         name = "input",
-        executionType = Verb.Type.EMITTER,
+        executionType = Verb.Type.EMITTER, returnsHandle = "core.widget",
         description = "Emit committed text changes")
-    public static void input(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("input", scope, metadata, label, true);
+    public static Widget input(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("input", scope, metadata, label, true);
     }
 
-    @Verb(name = "number", executionType = Verb.Type.EMITTER, description = "Emit numeric changes")
-    public static void number(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("number", scope, metadata, label, true);
+    @Verb(name = "number", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Emit numeric changes")
+    public static Widget number(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("number", scope, metadata, label, true);
     }
 
     @Verb(
         name = "select",
-        executionType = Verb.Type.EMITTER,
+        executionType = Verb.Type.EMITTER, returnsHandle = "core.widget",
         description = "Emit selected option IDs")
-    public static void select(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("select", scope, metadata, label, true);
+    public static Widget select(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("select", scope, metadata, label, true);
     }
 
-    @Verb(name = "markdown", description = "Present markdown widget")
-    public static void markdown(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("markdown", scope, metadata, label, false);
+    @Verb(name = "markdown", producesAgent = "core.widget", description = "Present markdown widget")
+    public static Widget markdown(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("markdown", scope, metadata, label, false);
     }
 
-    @Verb(name = "image", description = "Present image widget")
-    public static void image(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("image", scope, metadata, label, false);
+    @Verb(name = "image", producesAgent = "core.widget", description = "Present image widget")
+    public static Widget image(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("image", scope, metadata, label, false);
     }
 
-    @Verb(name = "icon", description = "Present icon widget")
-    public static void icon(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("icon", scope, metadata, label, false);
+    @Verb(name = "icon", producesAgent = "core.widget", description = "Present icon widget")
+    public static Widget icon(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("icon", scope, metadata, label, false);
     }
 
-    @Verb(name = "separator", description = "Present separator widget")
-    public static void separator(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("separator", scope, metadata, label, false);
+    @Verb(name = "separator", producesAgent = "core.widget", description = "Present separator widget")
+    public static Widget separator(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("separator", scope, metadata, label, false);
     }
 
-    @Verb(name = "badge", description = "Present badge widget")
-    public static void badge(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("badge", scope, metadata, label, false);
+    @Verb(name = "badge", producesAgent = "core.widget", description = "Present badge widget")
+    public static Widget badge(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("badge", scope, metadata, label, false);
     }
 
-    @Verb(name = "spinner", description = "Present spinner widget")
-    public static void spinner(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("spinner", scope, metadata, label, false);
+    @Verb(name = "spinner", producesAgent = "core.widget", description = "Present spinner widget")
+    public static Widget spinner(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("spinner", scope, metadata, label, false);
     }
 
-    @Verb(name = "iconbutton", executionType = Verb.Type.EMITTER, description = "Present iconbutton widget")
-    public static void iconbutton(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("iconbutton", scope, metadata, label, true);
+    @Verb(name = "iconbutton", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present iconbutton widget")
+    public static Widget iconbutton(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("iconbutton", scope, metadata, label, true);
     }
 
-    @Verb(name = "link", executionType = Verb.Type.EMITTER, description = "Present link widget")
-    public static void link(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("link", scope, metadata, label, true);
+    @Verb(name = "link", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present link widget")
+    public static Widget link(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("link", scope, metadata, label, true);
     }
 
-    @Verb(name = "switch", executionType = Verb.Type.EMITTER, description = "Present switch widget")
-    public static void toggle(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("switch", scope, metadata, label, true);
+    @Verb(name = "switch", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present switch widget")
+    public static Widget toggle(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("switch", scope, metadata, label, true);
     }
 
-    @Verb(name = "radio", executionType = Verb.Type.EMITTER, description = "Present radio widget")
-    public static void radio(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("radio", scope, metadata, label, true);
+    @Verb(name = "radio", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present radio widget")
+    public static Widget radio(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("radio", scope, metadata, label, true);
     }
 
-    @Verb(name = "multiselect", executionType = Verb.Type.EMITTER, description = "Present multiselect widget")
-    public static void multiselect(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("multiselect", scope, metadata, label, true);
+    @Verb(name = "multiselect", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present multiselect widget")
+    public static Widget multiselect(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("multiselect", scope, metadata, label, true);
     }
 
-    @Verb(name = "textarea", executionType = Verb.Type.EMITTER, description = "Present textarea widget")
-    public static void textarea(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("textarea", scope, metadata, label, true);
+    @Verb(name = "textarea", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present textarea widget")
+    public static Widget textarea(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("textarea", scope, metadata, label, true);
     }
 
-    @Verb(name = "slider", executionType = Verb.Type.EMITTER, description = "Present slider widget")
-    public static void slider(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("slider", scope, metadata, label, true);
+    @Verb(name = "slider", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present slider widget")
+    public static Widget slider(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("slider", scope, metadata, label, true);
     }
 
-    @Verb(name = "range", executionType = Verb.Type.EMITTER, description = "Present range widget")
-    public static void range(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("range", scope, metadata, label, true);
+    @Verb(name = "range", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present range widget")
+    public static Widget range(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("range", scope, metadata, label, true);
     }
 
-    @Verb(name = "date", executionType = Verb.Type.EMITTER, description = "Present date widget")
-    public static void date(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("date", scope, metadata, label, true);
+    @Verb(name = "date", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present date widget")
+    public static Widget date(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("date", scope, metadata, label, true);
     }
 
-    @Verb(name = "time", executionType = Verb.Type.EMITTER, description = "Present time widget")
-    public static void time(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("time", scope, metadata, label, true);
+    @Verb(name = "time", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present time widget")
+    public static Widget time(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("time", scope, metadata, label, true);
     }
 
-    @Verb(name = "color", executionType = Verb.Type.EMITTER, description = "Present color widget")
-    public static void color(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("color", scope, metadata, label, true);
+    @Verb(name = "color", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present color widget")
+    public static Widget color(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("color", scope, metadata, label, true);
     }
 
-    @Verb(name = "submit", executionType = Verb.Type.EMITTER, description = "Present submit widget")
-    public static void submit(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("submit", scope, metadata, label, true);
+    @Verb(name = "submit", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present submit widget")
+    public static Widget submit(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("submit", scope, metadata, label, true);
     }
 
-    @Verb(name = "reset", executionType = Verb.Type.EMITTER, description = "Present reset widget")
-    public static void reset(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("reset", scope, metadata, label, true);
+    @Verb(name = "reset", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present reset widget")
+    public static Widget reset(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("reset", scope, metadata, label, true);
     }
 
-    @Verb(name = "list", executionType = Verb.Type.EMITTER, description = "Present list widget")
-    public static void list(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("list", scope, metadata, label, true);
+    @Verb(name = "list", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present list widget")
+    public static Widget list(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("list", scope, metadata, label, true);
     }
 
-    @Verb(name = "table", executionType = Verb.Type.EMITTER, description = "Present table widget")
-    public static void table(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("table", scope, metadata, label, true);
+    @Verb(name = "table", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present table widget")
+    public static Widget table(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("table", scope, metadata, label, true);
     }
 
-    @Verb(name = "tree", executionType = Verb.Type.EMITTER, description = "Present tree widget")
-    public static void tree(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("tree", scope, metadata, label, true);
+    @Verb(name = "tree", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present tree widget")
+    public static Widget tree(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("tree", scope, metadata, label, true);
     }
 
-    @Verb(name = "tabs", executionType = Verb.Type.EMITTER, description = "Present tabs widget")
-    public static void tabs(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("tabs", scope, metadata, label, true);
+    @Verb(name = "tabs", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present tabs widget")
+    public static Widget tabs(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("tabs", scope, metadata, label, true);
     }
 
-    @Verb(name = "stepper", executionType = Verb.Type.EMITTER, description = "Present stepper widget")
-    public static void stepper(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("stepper", scope, metadata, label, true);
+    @Verb(name = "stepper", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present stepper widget")
+    public static Widget stepper(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("stepper", scope, metadata, label, true);
     }
 
-    @Verb(name = "pagination", executionType = Verb.Type.EMITTER, description = "Present pagination widget")
-    public static void pagination(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("pagination", scope, metadata, label, true);
+    @Verb(name = "pagination", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present pagination widget")
+    public static Widget pagination(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("pagination", scope, metadata, label, true);
     }
 
-    @Verb(name = "breadcrumbs", executionType = Verb.Type.EMITTER, description = "Present breadcrumbs widget")
-    public static void breadcrumbs(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("breadcrumbs", scope, metadata, label, true);
+    @Verb(name = "breadcrumbs", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present breadcrumbs widget")
+    public static Widget breadcrumbs(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("breadcrumbs", scope, metadata, label, true);
     }
 
-    @Verb(name = "upload", executionType = Verb.Type.EMITTER, description = "Present upload widget")
-    public static void upload(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("upload", scope, metadata, label, true);
+    @Verb(name = "upload", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present upload widget")
+    public static Widget upload(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("upload", scope, metadata, label, true);
     }
 
-    @Verb(name = "download", executionType = Verb.Type.EMITTER, description = "Present download widget")
-    public static void download(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("download", scope, metadata, label, true);
+    @Verb(name = "download", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present download widget")
+    public static Widget download(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("download", scope, metadata, label, true);
     }
 
-    @Verb(name = "audio", executionType = Verb.Type.EMITTER, description = "Present audio widget")
-    public static void audio(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("audio", scope, metadata, label, true);
+    @Verb(name = "audio", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present audio widget")
+    public static Widget audio(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("audio", scope, metadata, label, true);
     }
 
-    @Verb(name = "video", executionType = Verb.Type.EMITTER, description = "Present video widget")
-    public static void video(RuntimeAgent.Scope scope, Metadata metadata, String label) {
-      widget("video", scope, metadata, label, true);
+    @Verb(name = "video", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present video widget")
+    public static Widget video(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      return widget("video", scope, metadata, label, true);
     }
 
     @Verb(name = "file", description = "Create an instance-owned bounded file handle")
@@ -276,6 +275,13 @@ public class CoreActorLibrary {
     @Verb(name = "readfile", description = "Read an instance-owned file handle as bytes")
     public static Object readfile(RuntimeAgent.Scope scope, String handle) {
       return cursor(scope).model().file(handle).bytes().clone();
+    }
+
+    @Verb(name = "widget", producesAgent = "core.widget", description = "Get a handle to a tagged widget or container")
+    public static Widget reference(RuntimeAgent.Scope scope, String tag) {
+      var cursor = cursor(scope);
+      Object id = cursor.model().control(cursor, "reference", tag, null);
+      return new Widget(cursor.model(), id == null ? null : id.toString());
     }
 
     private static Object control(
@@ -347,6 +353,164 @@ public class CoreActorLibrary {
     public static void clear(RuntimeAgent.Scope scope, String tag) {
       control(scope, "clear", tag, null);
     }
+  }
+
+  /**
+   * A server-local reference to one widget's emitter, not an emitter itself. Subscriptions observe
+   * the existing widget; neither copying this handle nor invoking a control creates another node.
+   * The opaque identity cannot be rebound to a successor that happens to reuse the original tag.
+   */
+  @Actor(name = "widget", description = "Addressable application UI widget")
+  public static final class Widget {
+    private final org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model;
+    private final String id;
+
+    private Widget(org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model, String id) {
+      this.model = model;
+      this.id = id;
+    }
+
+    private Object control(String command, Object value) {
+      return model.controlNode(id, command, value);
+    }
+
+    @Verb(name = "events", executionType = Verb.Type.EMITTER, description = "Subscribe to the widget's typed input events")
+    public void events(RuntimeAgent.Scope scope) { model.subscribe(id, scope); }
+
+    @Verb(name = "get", description = "Read the canonical widget value")
+    public Object get() { return control("get", null); }
+
+    @Verb(name = "set", description = "Set the value without emitting input")
+    public void set(Object value) { control("set", value); }
+
+    @Verb(name = "gettext", description = "Read the displayed text or label")
+    public Object gettext() { return control("gettext", null); }
+
+    @Verb(name = "settext", description = "Set the displayed text or label")
+    public void settext(String text) { control("text", text); }
+
+    @Verb(name = "enabled", description = "Set enabled state")
+    public void enabled(boolean enabled) { control(enabled ? "enable" : "disable", null); }
+
+    @Verb(name = "visible", description = "Set visibility")
+    public void visible(boolean visible) { control(visible ? "show" : "hide", null); }
+
+    @Verb(name = "show", description = "Show the widget")
+    public void show() { control("show", null); }
+
+    @Verb(name = "hide", description = "Hide the widget")
+    public void hide() { control("hide", null); }
+
+    @Verb(name = "enable", description = "Enable interaction")
+    public void enable() { control("enable", null); }
+
+    @Verb(name = "disable", description = "Disable interaction")
+    public void disable() { control("disable", null); }
+
+    @Verb(name = "close", description = "Close a surface")
+    public void close() { control("close", null); }
+
+    @Verb(name = "remove", description = "Remove the widget and dispose its emitters")
+    public void remove() { control("remove", null); }
+
+    @Verb(name = "clear", description = "Clear container children")
+    public void clear() { control("clear", null); }
+
+    @Verb(name = "style", description = "Update validated layout and widget options")
+    public void style(Map<String, Object> properties) { control("style", properties); }
+
+    @Verb(name = "readonly", description = "Set read-only state")
+    public void readonly(boolean readonly) { style(Map.of("readonly", readonly)); }
+
+    @Verb(name = "loading", description = "Set loading state")
+    public void loading(boolean loading) { style(Map.of("loading", loading)); }
+
+    @Verb(name = "options", description = "Replace stable choice or navigation options")
+    public void options(List<?> options) {
+      if (!Set.of("select", "radio", "multiselect", "tabs", "stepper", "breadcrumbs").contains(control("type", null)))
+        throw new IllegalArgumentException("Options require a choice or navigation widget");
+      style(Map.of("options", options));
+    }
+
+    @Verb(name = "items", description = "Replace collection items")
+    public void items(List<?> items) {
+      if (!Set.of("list", "table", "tree").contains(control("type", null)))
+        throw new IllegalArgumentException("Items require a collection widget");
+      style(Map.of("items", items));
+    }
+
+    @Verb(name = "file", producesAgent = "core.ui_file", description = "Reference the currently selected uploaded/downloadable file")
+    public UiFile file() {
+      var handle = (Map<?, ?>) control("file", null);
+      return new UiFile(model, handle.get("id").toString());
+    }
+
+    @Verb(name = "source", description = "Set a downloader's source from a widget, UI file reference or handle map")
+    public void source(Object source) {
+      Object handle;
+      if (source instanceof Widget widget) {
+        if (widget.model != model) throw new IllegalArgumentException("File source belongs to another application");
+        handle = widget.control("file", null);
+      } else if (source instanceof UiFile file) {
+        if (file.model != model) throw new IllegalArgumentException("File source belongs to another application");
+        handle = file.metadata();
+      } else if (source instanceof Map<?, ?>) handle = source;
+      else throw new IllegalArgumentException("File source must be an upload/download widget, UI file reference or opaque handle map");
+      control("source", handle);
+    }
+
+    @Verb(name = "content", producesAgent = "core.ui_file", description = "Generate UTF-8 download content and return its file reference")
+    public UiFile content(String name, String text, String mediaType) {
+      var handle = model.downloadContent(id, name, text, mediaType);
+      return new UiFile(model, handle.get("id").toString());
+    }
+
+    @Verb(name = "exists", description = "Whether the original widget is still alive")
+    public boolean exists() { return Boolean.TRUE.equals(control("exists", null)); }
+  }
+
+  /** An opaque application-owned file capability, separate from core.file filesystem agents. */
+  @Actor(name = "ui_file", description = "Bounded in-memory application file")
+  public static final class UiFile {
+    private final org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model;
+    private final String id;
+
+    private UiFile(org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model, String id) {
+      this.model = model;
+      this.id = id;
+    }
+
+    @Verb(name = "metadata", description = "Get the opaque JSON handle metadata")
+    public Map<String, Object> metadata() { return model.fileMetadata(id); }
+
+    @Verb(name = "name", description = "Get the original filename")
+    public String name() { return metadata().get("name").toString(); }
+
+    @Verb(name = "type", description = "Get the claimed MIME type")
+    public String type() { return metadata().get("mediaType").toString(); }
+
+    @Verb(name = "size", description = "Get file size in bytes")
+    public long size() { return ((Number) metadata().get("size")).longValue(); }
+
+    @Verb(name = "bytes", description = "Read a defensive byte-array copy on the server")
+    public byte[] bytes() {
+      metadata();
+      try { return model.file(id).bytes(); }
+      catch (IllegalArgumentException expired) { throw new IllegalStateException("UI file handle is no longer valid", expired); }
+    }
+
+    @Verb(name = "text", description = "Read validated UTF-8 text on the server")
+    public String text() {
+      try {
+        return java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+            .decode(java.nio.ByteBuffer.wrap(bytes())).toString();
+      } catch (java.nio.charset.CharacterCodingException invalid) {
+        throw new IllegalArgumentException("UI file is not valid UTF-8 text", invalid);
+      }
+    }
+
+    @Verb(name = "exists", description = "Whether these file bytes are still retained")
+    public boolean exists() { return model.fileExists(id); }
   }
 
   /** Stable coordinates only: no service, credentials or document bean is checkpointed. */

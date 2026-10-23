@@ -93,6 +93,11 @@ public class KActorsVisitor {
       return null;
     }
 
+    /** Behavior of an emitter's immediate construction handle; independent of emitted values. */
+    default String classifyActionHandleBehavior(KActorsStatement.Verb verb, KActorsContext context) {
+      return null;
+    }
+
     /** Whether the visitor should warn when a call remains dynamically typed. */
     default boolean warnAboutUnknownActionCall(KActorsStatement.Verb verb, KActorsContext context) {
       return false;
@@ -1275,8 +1280,15 @@ public class KActorsVisitor {
   protected void visitVerb(KActorsStatement.Verb statement, KActorsContext context) {
     pendingCalls.add(new PendingCall(statement, context, isValuePosition(context)));
     visitValues(statement.getArguments(), context);
+    var matchContext = context;
+    var assignment = context.getUpstreamStatement(KActorsStatement.Assignment.class);
+    if (assignment != null && assignment.getFunction() == statement
+        && context.validator.classifyActionHandleBehavior(statement, context) != null) {
+      // A construction handle is bound before input can fire, so its own reactions may address it.
+      matchContext = context.withLocalVariables(List.of(variableFor(assignment)));
+    }
     for (var matchAction : safe(statement.getActions())) {
-      visitNested(matchAction, context, List.of(), false);
+      visitNested(matchAction, matchContext, List.of(), false);
     }
   }
 
@@ -1520,15 +1532,18 @@ public class KActorsVisitor {
           && executionType != Verb.Type.FUNCTION
           // Value-position calls are awaited before execution continues. They do not make
           // their enclosing action reactive or require it to return an asynchronous result.
-          && !pending.valueRequired()
+          && (!pending.valueRequired()
+              || pending.context().validator.classifyActionHandleBehavior(statement, pending.context()) != null)
           && pending.context().action != null) {
         actionAccumulators.get(pending.context().action).calledActionTypes.add(executionType);
       }
       if (executionType == Verb.Type.FUNCTION && !safe(statement.getActions()).isEmpty()) {
         error("Function calls cannot declare match actions", statement);
       }
-      if (executionType == Verb.Type.EMITTER && pending.valueRequired()) {
-        error("Emitter calls cannot be used where a value is required", statement);
+      if (executionType == Verb.Type.EMITTER && pending.valueRequired()
+          && pending.context().validator.classifyActionHandleBehavior(statement, pending.context()) == null) {
+        error("Emitter calls cannot be used where a value is required; subscribe to their events. "
+            + "Only emitters declaring an immediate construction handle can be assigned", statement);
       }
       if (isImported(recipient)
           && !Objects.equals("new", statement.getMessage())
@@ -1915,7 +1930,9 @@ public class KActorsVisitor {
           javaClassForValue(assignment.getValue()));
     }
     var function = assignment.getFunction();
-    var resultBehaviorUrn = function == null ? null : producedAgentUrn(function, context);
+    var resultBehaviorUrn = function == null || context == null ? null
+        : normalized(context.validator.classifyActionHandleBehavior(function, context));
+    if (resultBehaviorUrn == null && function != null) resultBehaviorUrn = producedAgentUrn(function, context);
     if (resultBehaviorUrn == null && function != null && "new".equals(function.getMessage())) {
       resultBehaviorUrn = normalizeRecipient(function.getRecipient());
     }

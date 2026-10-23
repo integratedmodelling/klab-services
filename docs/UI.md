@@ -9,7 +9,7 @@ for `klab-ide`.
 
 ## Status and boundaries
 
-Stages 0–4 and the extended widget stage 4a have an executable implementation. The portable contract below is broader than
+Stages 0–4 and the widget extensions in stages 4a–4b have an executable implementation. The portable contract below is broader than
 the first renderer; implemented subsets and remaining work are stated explicitly.
 
 | Surface | Status |
@@ -23,6 +23,7 @@ the first renderer; implemented subsets and remaining work are stated explicitly
 | Published URN launch, project READ, retained state and dedicated WebSocket bus | Implemented on the runtime service |
 | Quasar renderer, direct routes, light/dark themes and named CSS | Implemented, including extended widget catalog below |
 | Forms, collections, navigation, safe content, file handles and media | Implemented initial portable contracts; Quasar target |
+| Widget references, subscriptions and fluent file/collection messages | Implemented `core.widget` / `core.ui_file` handles with explicit lifetime errors |
 | Localized constants and UTF-8 properties bundles | Implemented with generic preamble properties |
 | Named-action component instances, nested imports, tagged insertion/removal | Implemented with isolated namespaces and staged construction |
 | Installed component toolkit discovery, configuration and version leases | Implemented for browser renderer modules |
@@ -291,6 +292,156 @@ fields may start empty; user changes must satisfy the server contract. Author do
 in action reactions. Plain text never evaluates HTML. Unknown metadata and invalid portable values
 raise explicit errors; advanced proposed layouts below remain unsupported in this renderer.
 
+### Post-construction widget messages
+
+Every widget factory returns a server-local `core.widget` handle. This includes passive content
+such as `text` and `image`. Interactive factories retain their emitter semantics: assignment
+captures the newly constructed widget immediately, while input events arrive later through a
+subscription. The widget itself owns the emitter. The stored variable is only a handle to that
+emitter; it is not an emitter in its own right. Creating or copying a handle starts no second widget or stream.
+The handle exposes the actor messages below; it is not a browser component, a widget value, or an
+event payload. `events()` subscribes to the referenced widget rather than creating another emitter.
+
+```kactors
+btn <- ui.button("Click me")
+btn.events():
+    event -> (
+        btn.settext("I'm disabled now")
+        btn.enabled(false)
+    )
+```
+
+The current grammar does **not** accept a reaction after the right-hand side of an assignment
+(`btn <- ui.button(...): ...`). Separate creation from `btn.events()` and use an explicit match such as `event ->`, as above.
+Call names are lowercase in the current grammar, hence `settext`, rather than `setText`. Continue importing
+`using core.ui as ui`; widget handles need no additional import or direct constructor.
+
+Existing tag-directed operations remain supported:
+
+```kactors
+ui.button("Run") #run
+btn <- ui.widget("run")
+btn.settext("Ready to run")
+btn.style({outlined: true, dense: true})
+```
+
+`ui.widget(tag)` can also address a tagged container or annotated surface, using the same local,
+component and absolute tag namespaces as `ui.set` and `ui.style`. It resolves the tag **once** and
+captures that original node. A saved handle cannot accidentally address a new widget that later
+reuses the tag. Unknown tags raise the existing `Unknown UI tag` error.
+
+| Message | Behavior |
+| --- | --- |
+| `get()` / `set(value)` | Read/write the canonical value, with the same type, range and selection checks as `ui.get`/`ui.set` |
+| `gettext()` / `settext(text)` | Read/write displayed text or label. For inputs, changes the label; use `set` to edit their value. For text, Markdown and badges, changes the displayed content |
+| `enabled(boolean)` / `enable()` / `disable()` | Set the widget's own enabled state; a disabled ancestor still blocks interaction |
+| `visible(boolean)` / `show()` / `hide()` | Set the widget's own visibility; a hidden ancestor still hides it |
+| `readonly(boolean)` / `loading(boolean)` | Set validated read-only/loading flags; programmatic changes do not emit input |
+| `options(ids)` / `items(rows)` | Replace choice/navigation options or collection data using the same validation as `style`; preserve the selected ID or clear it with `set` first |
+| `file()` | Get a `core.ui_file` reference for the current upload/download file; errors when no file is available |
+| `source(widgetOrFile)` | Set a downloader's source from an uploader/downloader reference, a `core.ui_file` reference, or a legacy opaque-handle map |
+| `content(name, text, mediaType)` | Generate a UTF-8 file, bind it to this downloader, and return its `core.ui_file` reference |
+| `style(properties)` | Update validated appearance, layout and widget options, e.g. `{label: "Run", disabled: true}` |
+| `close()` | Hide the widget/surface, retaining its state |
+| `remove()` | Destroy the original node, descendants and event bindings |
+| `clear()` | Remove a container's children while retaining the container; rejects leaf widgets |
+| `exists()` | Test whether this original widget is still live; returns false after disposal |
+| `events()` | Subscribe to an interactive widget's ordinary `{event, value}` payloads. Multiple subscribers are independent; this does not replace reactions on the original factory call. Passive widgets and layout/surface handles reject this subscription |
+
+Control messages update the authoritative server tree without firing synthetic input. They are
+reflected by Quasar and retained through detach/reconnect. Pass a handle to ordinary k.Actors
+actions when needed; reacquire a tagged widget with `ui.widget` from other actions. Handles remain
+inside the running server application and must not be placed in JSON widget properties, sent to
+the browser, or treated as durable restart checkpoints.
+
+A handle's lifetime ends when its node is removed, its component/mount is replaced or cleared,
+its construction emitter completes, or its application stops. Emitter completion disposes the
+widget and its subscriptions. Returning the immediate construction handle does **not** complete
+that emitter. This is an explicit constructor contract; ordinary emitters still cannot be assigned.
+The compiler explains that their events must be subscribed to instead.
+
+Calling a message on an expired handle raises `Widget handle is no longer valid`, with a reason
+such as `widget was removed or its mount was replaced`, `widget emitter has completed`, or
+`application has stopped`. `exists()` is the exception: it returns false so expected disposal can
+be handled explicitly:
+
+```kactors
+if btn.exists() (
+    btn.settext("Ready")
+    btn.enabled(true)
+)
+```
+
+The check and subsequent messages are separate operations; concurrent removal can still cause a
+later message to fail. Invalid `set` values, unsupported `style` options and attempts to `clear` a
+leaf widget remain validation errors, not silent no-ops. Existing delayed tag-directed commands
+from disposed mount scopes continue to be discarded.
+
+For Java widget extensions, `@Verb(executionType=EMITTER, returnsHandle="core.widget")` declares
+an immediate construction handle separately from emitted event values. Component discovery
+requires a non-void emitter method. `producesAgent` continues to describe ordinary returned or
+emitted agents; it does not imply this construction-handle lifetime contract. The factory must
+return promptly and keep its emitter scope alive until the widget is disposed.
+
+### Fluent file and collection references
+
+Widget messages avoid decoding transport maps in ordinary application code. The file bytes remain
+bounded, instance-owned HTTP transfers; a `core.ui_file` reference is a server-side capability to
+those bytes, not a filesystem path or another emitter.
+
+```kactors
+upload <- ui.upload("Upload CSV" :accept ".csv,text/csv" :maxbytes 1048576)
+download <- ui.download("Download uploaded file")
+upload.events():
+    event -> (
+        download.source(upload)
+        file <- upload.file()
+        status.settext(file.text())
+    )
+report <- ui.download("Generated report")
+generated <- report.content("report.csv", "id,value\nsample,42\n", "text/csv")
+report.source(generated)
+```
+
+Here `status` is a previously captured text widget, such as `status <- ui.text("Ready")`.
+`source(upload)` takes that uploader's currently committed file; call it in each upload reaction
+to refresh the downloader after another selection. It does not create a continuous binding.
+`source(upload.file())` is equivalent, and `source(event.value)` remains available through an
+expression such as `download.source([event.value])` for compatibility with the wire payload.
+`content` is a synchronous construction function; its result can be saved or ignored.
+
+| `core.ui_file` message | Contract |
+| --- | --- |
+| `name()` / `type()` / `size()` | Filename, claimed MIME type, and byte count |
+| `text()` | Decode UTF-8 on the server; malformed UTF-8 raises an explicit validation error |
+| `bytes()` | Return a defensive byte-array copy to server-side code |
+| `metadata()` | Return the legacy JSON handle map `{id, name, mediaType, size}` when needed by existing `ui.set` code |
+| `exists()` | Whether the original bytes remain in this application; false after file release or application stop |
+
+Removing an uploader releases its uploaded bytes and invalidates references to those bytes,
+including copies held by downloaders. Generated files remain instance-owned until stop/expiry.
+Other file messages raise `UI file handle is no longer valid` after release. Cross-application
+sources are rejected, and `source("C:/...")` or a server path is never accepted. The existing
+4 MiB per-file, 16-file and 16 MiB per-instance bounds apply equally to `content` and HTTP uploads.
+No browser protocol changes or new filesystem privileges are introduced.
+
+The same style of direct messages applies to other widget families:
+
+```kactors
+choice <- ui.select("Region" :options ("eu", "af") :value "eu")
+choice.options(("eu", "as"))
+choice.set("as")
+choice.readonly(true)
+accounts <- ui.list("Accounts" :items ({id: "a", label: "Alice"}, {id: "b", label: "Bob"}))
+accounts.items(({id: "a", label: "Ada"}, {id: "b", label: "Bob"}))
+```
+
+`options` is supported on choice/navigation widgets; `items` on lists/tables/trees. Wrong widget
+types raise descriptive errors. These operations preserve schema checks and never simulate user
+selection. See the complete [widget-handle application](examples/ui/widget-handles.kactor), parsed
+and executed by `UiWidgetHandleTest`, for button reactions, file forwarding, generated reports,
+choice updates and collection updates together.
+
 ### Tagged containers and dynamic action components
 
 `#tag` following a group exposes its generated container to controls and `mount`. The renderer
@@ -335,8 +486,9 @@ remain separate from importing reusable UI action code.
 
 The families below are implemented for Quasar, except the explicitly future visualization row. The `core.ui`
 Java actor is registered by the current component mechanism. Widget verbs declare `EMITTER` semantics and register a server
-continuation; they do not synchronously return a widget value. A tagged call binds a widget for
-later control through `ui` commands. Passive presentation verbs are functions without emitted input.
+continuation. They may synchronously return a `core.widget` construction handle when assigned;
+this is distinct from the canonical widget value and from later event payloads. A tagged call also
+binds a widget for later control through `ui` commands. Passive presentation verbs are functions without emitted input.
 
 | Family | Verbs or options (implemented unless marked future) | Inputs emitted to match actions |
 | --- | --- | --- |
@@ -702,6 +854,7 @@ generated Flutter projects require toolchain/version configuration and their own
 | 3 — Quasar first usable application (initial subset implemented) | `/apps/` entry, basic widgets, shell surfaces/dialogs, flex, localized text and named CSS | Browser fixture covers authentication gate, field/button workflow, CSS, narrow viewport, reconnect and page rebuild; real socket test covers transport serialization and state replay |
 | 4 — reusable components and toolkit installation (implemented initial contract) | Component descriptors/configuration/version leases; validated flex/widget metadata; tagged named-action mounts including nested imports | Installed browser module loads without rebuilding host; duplicate/unsupported features fail explicitly; independent component instances and binding disposal tested; component unload blocked until leases close |
 | 4a — extended portable widget catalog (implemented) | All non-future families above; form/field options, authoritative values, bounded HTTP file handles and Quasar controls | Parsed example and headless form/schema/file tests; browser catalog, transfers and existing reconnect workflow |
+| 4b — addressable widgets and fluent operations (implemented) | Construction references separate from widget emitters; event subscriptions, checked disposal and bounded UI file references | Parsed button/file workflows, independent subscriber lifetimes, stale-reference errors, defensive byte copies and cross-instance rejection |
 | 5 — JavaFX workflow harness | Adapter and IDE integration in `klab-ide`; shared headless conformance fixtures | Same workflow fixture produces equivalent server transitions from Quasar and JavaFX; unsupported widgets produce explicit diagnostics; view thread and detach disposal tested |
 | 6 — full instrumentation and durable state | Advanced widgets/scientific views, responsive/theme/a11y coverage, state checkpoint/restore/migration, telemetry and load testing | Published capability matrix; restart recovery proves no duplicate startup effects; bounded queues and lease cleanup verified under load |
 | 7 — Flutter feasibility and export | Live renderer and optional component-provided project exporter | Generated project builds with a pinned SDK; mobile client authenticates, resumes state and exercises shared event conformance fixtures |
@@ -738,7 +891,7 @@ adds retention leases. Neither layer provides disk persistence yet.
 Focused regression test command (PowerShell):
 
 ```powershell
-mvn -pl klab.core.services -am "-Dtest=UiWidgetCatalogTest,ApplicationUiControllerTest,ApplicationUiSessionTest,ApplicationUiRuntimeTest,ApplicationUiManagerTest,ServiceUiApplicationLauncherTest,ApplicationUiWebSocketTest,ComponentRegistryActorVerbTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+mvn -pl klab.core.services -am "-Dtest=UiWidgetHandleTest,UiWidgetCatalogTest,ApplicationUiControllerTest,ApplicationUiSessionTest,ApplicationUiRuntimeTest,ApplicationUiManagerTest,ServiceUiApplicationLauncherTest,ApplicationUiWebSocketTest,ComponentRegistryActorVerbTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
 ```
 
 Run `npm run typecheck`, `npm run build` and `npm run test:application` in
@@ -748,7 +901,8 @@ a real embedded server. A deployed Runtime + Resources + hub sign-in smoke test 
 live-stack check. No live service is restarted by these tests.
 
 The `core.ui` catalog includes the primitive and extended widget tables above, get, set,
-show, hide, enable, disable, close, remove, clear, style, mount, file and readfile. Forms and fields
+show, hide, enable, disable, close, remove, clear, style, mount, widget, file and readfile.
+Factories and `widget(tag)` return `core.widget` message handles as documented above. Forms and fields
 use options on existing groups/widgets. Only map/chart remain future-only widget verbs. Surface actions support header/footer/drawer,
 panel/window, dialog/modal and the other named surface containers above within application scopes.
 Initial header/footer/drawer actions run before main, after construction/init. Invoking an annotated

@@ -324,6 +324,11 @@ public class AgentCompiler {
       }
 
       @Override
+      public String classifyActionHandleBehavior(KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+        return constructionHandleBehavior(resolveCall(verb, context, DEFAULT_RESOLVER, scope));
+      }
+
+      @Override
       public Class<?> classifyActionResultJavaClass(
           KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
         var resolved = resolveCall(verb, context, DEFAULT_RESOLVER, scope);
@@ -432,6 +437,11 @@ public class AgentCompiler {
               // Import and call validation report resolution failures with lexical context.
               return null;
             }
+          }
+
+          @Override
+          public String classifyActionHandleBehavior(KActorsStatement.Verb verb, KActorsVisitor.KActorsContext context) {
+            return constructionHandleBehavior(resolveCall(verb, context, resolver, scope));
           }
 
           @Override
@@ -1259,11 +1269,21 @@ public class AgentCompiler {
             Notification.LexicalContext.of(verb, context.getBehavior())));
   }
 
+  private static String constructionHandleBehavior(ResolvedCall call) {
+    if (call == null || call.executionType() != Verb.Type.EMITTER || call.javaMethod() == null) return null;
+    var annotation = call.javaMethod().getAnnotation(Verb.class);
+    return annotation == null || annotation.returnsHandle().isBlank()
+        || call.javaMethod().getReturnType() == void.class ? null : annotation.returnsHandle().trim();
+  }
+
   private static Class<?> declaredJavaReturnType(Method method) {
     if (method == null) {
       return null;
     }
     var verb = method.getAnnotation(Verb.class);
+    if (verb != null && !verb.returnsHandle().isBlank()) {
+      return verb.fires() == Void.class ? null : boxed(verb.fires());
+    }
     if (verb != null && verb.returns() != Void.class) {
       return boxed(verb.returns());
     }
@@ -2806,6 +2826,11 @@ public class AgentCompiler {
 
   private void emitAssignment(
       KActorsStatement.Assignment assignment, CodeBlock.Builder code, CompilationContext context) {
+    var constructor = assignment.getFunction();
+    if (constructor != null && emitterReturnsHandle(constructor)) {
+      emitVerb(constructor, code, context, false, assignment);
+      return;
+    }
     CodeBlock value =
         adaptedValue(
             valueSource(
@@ -3197,6 +3222,29 @@ public class AgentCompiler {
       CodeBlock.Builder code,
       CompilationContext context,
       boolean awaitCompletion) {
+    emitVerb(verb, code, context, awaitCompletion, null);
+  }
+
+  private boolean emitterReturnsHandle(KActorsStatement.Verb verb) {
+    var call = calls.get(verb);
+    if (call == null || call.executionType() != Verb.Type.EMITTER) return false;
+    if (call.javaMethod() != null) {
+      var annotation = call.javaMethod().getAnnotation(Verb.class);
+      if (annotation != null && !annotation.returnsHandle().isBlank()) return true;
+    }
+    var imported = imports.get(verb.getRecipient());
+    var recipient = call.knownVariables().get(verb.getRecipient());
+    String behaviorUrn = imported != null ? imported.behaviorUrn() : recipient == null ? null : recipient.agentUrn();
+    if (behaviorUrn == null) return false;
+    var actor = resolveActor(resolver, behaviorUrn, scope);
+    var implementation = actor == null ? null : actor.verbs().get(verb.getMessage());
+    var annotation = implementation == null || implementation.method == null ? null : implementation.method.getAnnotation(Verb.class);
+    return annotation != null && !annotation.returnsHandle().isBlank();
+  }
+
+  private void emitVerb(
+      KActorsStatement.Verb verb, CodeBlock.Builder code, CompilationContext context,
+      boolean awaitCompletion, KActorsStatement.Assignment handleAssignment) {
     var info = calls.get(verb);
     Verb.Type type = info == null ? null : info.executionType();
     if (context.synchronous() && (type == null || type == Verb.Type.SUPPLIER)) {
@@ -3313,7 +3361,14 @@ public class AgentCompiler {
           "runSupplier($L, callScope -> $L);\n",
           listener,
           invoke(verb, type, "callScope", context));
-    } else if (isUiVerb(verb)) {
+    } else if (handleAssignment != null) {
+      String registrationScope = nextName("constructionScope");
+      code.add("var $L = $L;\n", registrationScope, listener);
+      CodeBlock result = invoke(verb, type, registrationScope, context);
+      if (handleAssignment.getAssignmentScope() == KActorsStatement.Assignment.Scope.ACTOR)
+        code.addStatement("setActorState($S, $L)", handleAssignment.getVariable(), result);
+      else code.addStatement("$L.put($S, $L)", context.frame(), handleAssignment.getVariable(), result);
+    } else if (isUiVerb(verb) || isWidgetEventSubscription(verb)) {
       code.add(
           "registerUiEmitter($L, callScope -> $L);\n",
           listener,
@@ -3430,7 +3485,9 @@ public class AgentCompiler {
         switch (type) {
           case FUNCTION -> self ? "invokeSelfFunction" : "invokeFunction";
           case SUPPLIER -> self ? "invokeSelfSupplier" : "invokeSupplier";
-          case EMITTER -> self ? "invokeSelfEmitter" : "invokeEmitter";
+          case EMITTER -> emitterReturnsHandle(verb)
+              ? (self ? "invokeSelfFunction" : "invokeFunction")
+              : (self ? "invokeSelfEmitter" : "invokeEmitter");
         };
     if (self) {
       return CodeBlock.of("$L($S, $L, $L)", operation, verb.getMessage(), scopeName, arguments);
@@ -3629,6 +3686,12 @@ public class AgentCompiler {
           metadata);
     }
     return CodeBlock.of("$T.create($L)", Metadata.class, CodeBlock.join(entries, ", "));
+  }
+
+  private boolean isWidgetEventSubscription(KActorsStatement.Verb verb) {
+    var call = calls.get(verb);
+    var recipient = call == null ? null : call.knownVariables().get(verb.getRecipient());
+    return "events".equals(verb.getMessage()) && recipient != null && "core.widget".equals(recipient.agentUrn());
   }
 
   private boolean isUiVerb(KActorsStatement.Verb verb) {

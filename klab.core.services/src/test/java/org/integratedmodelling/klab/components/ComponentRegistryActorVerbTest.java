@@ -61,7 +61,21 @@ class ComponentRegistryActorVerbTest {
         "tabs", "stepper", "pagination", "breadcrumbs", "markdown", "image", "icon", "separator",
         "badge", "spinner", "upload", "download", "audio", "video", "file", "readfile"))
       assertTrue(names.contains("regression.ui." + name), names.toString());
-    assertEquals(50, names.size());
+    assertTrue(names.contains("regression.ui.widget"));
+    assertEquals(51, names.size());
+  }
+
+  @Test
+  void widgetConstructionHandlesAreDistinctFromTheirEmittedPayloads() throws Exception {
+    var registry = mock(ComponentRegistry.class, CALLS_REAL_METHODS);
+    var ui = discover(registry, CoreActorLibrary.Ui.class);
+    var button = ui.verbs.stream().filter(v -> v.serviceInfo.getName().endsWith(".button")).findFirst().orElseThrow();
+    assertEquals("core.widget", button.handleBehaviorUrn);
+    assertNull(button.behaviorUrn);
+    var widget = discover(registry, CoreActorLibrary.Widget.class);
+    var names = widget.verbs.stream().map(v -> v.serviceInfo.getName()).collect(java.util.stream.Collectors.toSet());
+    assertTrue(names.containsAll(List.of("regression.widget.events", "regression.widget.settext",
+        "regression.widget.enabled", "regression.widget.exists")), names.toString());
   }
 
   @Test void documentSubclassesExposeInheritedVerbsAndConformToTheDocumentAncestor() throws Exception {

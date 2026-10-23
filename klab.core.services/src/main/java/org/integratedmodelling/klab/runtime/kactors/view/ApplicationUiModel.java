@@ -82,6 +82,7 @@ public final class ApplicationUiModel implements AutoCloseable {
   private final Map<String, Node> nodes = new LinkedHashMap<>();
   private final Map<String, String> tags = new HashMap<>();
   private final Map<String, RuntimeAgent.Scope> emitters = new HashMap<>();
+  private final Map<String, List<RuntimeAgent.Scope>> subscribers = new HashMap<>();
   private final ThreadPoolExecutor events =
       new ThreadPoolExecutor(
           1,
@@ -320,6 +321,8 @@ public final class ApplicationUiModel implements AutoCloseable {
     if (emitter != null) {
       node.events = UiWidgetMetadata.events(type);
       emitters.put(node.id, emitter);
+      if (emitter instanceof org.integratedmodelling.klab.runtime.kactors.AgentScope registration)
+        registration.disposeWith(() -> disposeWidget(node.id));
     }
     publish();
     return node.id;
@@ -330,14 +333,50 @@ public final class ApplicationUiModel implements AutoCloseable {
     if (closed || !nodes.containsKey(cursor.mount())) return null;
     var id = tags.get(tag.startsWith("/") ? tag.substring(1) : cursor.namespace() + "/" + tag);
     if (id == null) throw new IllegalArgumentException("Unknown UI tag " + tag);
+    return controlNode(id, command, value);
+  }
+
+  /** Address one original node. A disposed handle never resolves a reused tag. */
+  public synchronized Object controlNode(String id, String command, Object value) {
     var node = nodes.get(id);
+    var emitter = emitters.get(id);
+    String invalid = closed ? "application has stopped"
+        : node == null ? "widget was removed or its mount was replaced"
+        : emitter != null && emitter.isDone() ? "widget emitter has completed" : null;
+    if (invalid != null) {
+      if (command.equals("exists")) return false;
+      throw new IllegalStateException("Widget handle is no longer valid: " + invalid);
+    }
     switch (command) {
+      case "reference" -> { return node.id; }
+      case "type" -> { return node.type; }
+      case "file" -> {
+        if (!Set.of("upload", "download").contains(node.type))
+          throw new IllegalArgumentException("Only upload/download widgets contain files");
+        Object handle = node.properties.get("value");
+        if (!fileValue(handle)) throw new IllegalStateException("Widget has no available file");
+        return handle;
+      }
+      case "source" -> {
+        if (!node.type.equals("download")) throw new IllegalArgumentException("File source requires a download widget");
+        if (!fileValue(value)) throw new IllegalStateException("UI file handle is no longer valid in this application");
+        node.properties.put("value", UiNode.immutableValue(value));
+      }
+      case "exists" -> { return true; }
+      case "gettext" -> {
+        return node.properties.get(Set.of("markdown", "badge").contains(node.type)
+            && node.properties.containsKey("value") ? "value" : "label");
+      }
+      case "text" -> {
+        if (!(value instanceof String)) throw new IllegalArgumentException("Widget text must be a string");
+        node.properties.put(Set.of("markdown", "badge").contains(node.type) ? "value" : "label", value);
+      }
       case "get" -> {
         return node.properties.get("value");
       }
       case "set" -> {
         if (!UiWidgetMetadata.configuredValue(node.type, node.properties, value))
-          throw new IllegalArgumentException("Invalid UI value for " + tag);
+          throw new IllegalArgumentException("Invalid UI value for " + id);
         node.properties.put(
             node.type.equals("text") ? "label" : "value", UiNode.immutableValue(value));
       }
@@ -381,6 +420,8 @@ public final class ApplicationUiModel implements AutoCloseable {
   public synchronized boolean validInput(UiEvent event) {
     var node = nodes.get(event.nodeId());
     if (closed || node == null || !node.events.contains(event.name())) return false;
+    var registration = emitters.get(node.id);
+    if (registration != null && registration.isDone()) return false;
     if (!interactive(root, node.id)) return false;
     // Modal interaction is enforced on the server as well as by the renderer.
     var modal =
@@ -504,6 +545,27 @@ public final class ApplicationUiModel implements AutoCloseable {
     return file.handle();
   }
 
+  public synchronized Map<String, Object> fileMetadata(String id) {
+    var file = files.get(id);
+    if (closed || file == null)
+      throw new IllegalStateException("UI file handle is no longer valid: file was released or application has stopped");
+    return file.handle();
+  }
+
+  public synchronized boolean fileExists(String id) {
+    return !closed && files.containsKey(id);
+  }
+
+  /** Generate and bind a download atomically, retaining the existing file limits. */
+  public synchronized Map<String, Object> downloadContent(String id, String name, String text, String mediaType) {
+    controlNode(id, "reference", null);
+    if (!nodes.get(id).type.equals("download"))
+      throw new IllegalArgumentException("Generated content requires a download widget");
+    var handle = createFile(null, name, mediaType, text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    controlNode(id, "source", handle);
+    return handle;
+  }
+
   public synchronized StoredFile file(String id) {
     var file = files.get(id);
     if (closed || file == null) throw new IllegalArgumentException("Unknown application file");
@@ -513,6 +575,25 @@ public final class ApplicationUiModel implements AutoCloseable {
   private boolean fileValue(Object value) {
     return value instanceof Map<?, ?> handle && files.containsKey(handle.get("id"))
         && files.get(handle.get("id")).handle().equals(value);
+  }
+
+  /** Add an independent event subscription without replacing the construction emitter. */
+  public synchronized void subscribe(String id, RuntimeAgent.Scope scope) {
+    controlNode(id, "reference", null); // Check the handle's lifetime first.
+    if (nodes.get(id).events.isEmpty() || !emitters.containsKey(id))
+      throw new IllegalArgumentException("This widget does not emit input events");
+    if (scope.isDone()) throw new IllegalStateException("Widget event subscription has already completed");
+    subscribers.computeIfAbsent(id, ignored -> new ArrayList<>()).add(scope);
+    if (scope instanceof org.integratedmodelling.klab.runtime.kactors.AgentScope registration)
+      registration.disposeWith(() -> unsubscribe(id, scope));
+  }
+
+  private synchronized void unsubscribe(String id, RuntimeAgent.Scope scope) {
+    var listeners = subscribers.get(id);
+    if (listeners != null) {
+      listeners.remove(scope);
+      if (listeners.isEmpty()) subscribers.remove(id);
+    }
   }
 
   private void enqueue(UiEvent event) {
@@ -553,9 +634,13 @@ public final class ApplicationUiModel implements AutoCloseable {
     var payload = new LinkedHashMap<String, Object>();
     payload.put("event", event.name());
     payload.put("value", accepted);
+    var listeners = new ArrayList<RuntimeAgent.Scope>();
+    listeners.add(emitter);
+    listeners.addAll(subscribers.getOrDefault(node.id, List.of()));
     reactions.execute(
         () -> {
-          if (!emitter.isDone()) emitter.doFire(Collections.unmodifiableMap(payload));
+          for (var listener : listeners)
+            if (!listener.isDone()) listener.doFire(Collections.unmodifiableMap(payload));
         });
   }
 
@@ -599,6 +684,15 @@ public final class ApplicationUiModel implements AutoCloseable {
     return node.id.equals(id) || node.children.stream().anyMatch(child -> visible(child, id));
   }
 
+  private synchronized void disposeWidget(String id) {
+    if (closed) return;
+    var node = nodes.get(id);
+    if (node != null) {
+      remove(node);
+      publish();
+    }
+  }
+
   private void remove(Node node) {
     for (var child : List.copyOf(node.children)) remove(child);
     nodes.values().forEach(parent -> parent.children.remove(node));
@@ -607,6 +701,8 @@ public final class ApplicationUiModel implements AutoCloseable {
     tags.values().removeIf(node.id::equals);
     var emitter = emitters.remove(node.id);
     if (emitter != null) emitter.done();
+    for (var listener : List.copyOf(subscribers.getOrDefault(node.id, List.of()))) listener.done();
+    subscribers.remove(node.id);
     if (node.lifetime != null) node.lifetime.done();
   }
 
@@ -631,6 +727,9 @@ public final class ApplicationUiModel implements AutoCloseable {
         .forEach(RuntimeAgent.Scope::done);
     files.clear();
     emitters.clear();
+    for (var listeners : List.copyOf(subscribers.values()))
+      for (var listener : List.copyOf(listeners)) listener.done();
+    subscribers.clear();
     nodes.clear();
     tags.clear();
     session.close();

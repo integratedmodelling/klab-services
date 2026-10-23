@@ -52,6 +52,7 @@ metadata are injected by Java. The implemented verbs are:
 | `clear(tag)` | Remove children/bindings while retaining the target container |
 | `mount(target, instance, action, arguments)` | Build a named `@panel`/`@window` action in a tagged container; arguments is a list; instance tags isolate each mount |
 | `style(tag, properties)` | Apply validated portable layout/style metadata |
+| `widget(tag)` | Capture a `core.widget` message handle for the original tagged node |
 
 Use call metadata such as `ui.input(#NAME :value "initial") #name`,
 `ui.select("Choice" :options ("a", "b")) #choice`, or group metadata after `)`.
@@ -60,6 +61,16 @@ rebuilds. See [Application UI](UI.md) for the layout/annotation proposal, locali
 named CSS, authenticated launch and current implementation limits. Its
 [implemented parameter table](UI.md#implemented-verb-parameters) documents every verb's positional
 arguments, supported metadata and defaults, including input bounds, appearance and read-only state.
+
+Widget factories can be assigned to `core.widget` handles. Use `btn <- ui.button("Run")`, then
+`btn.events(): event -> btn.enabled(false)` to subscribe, and messages such as `settext`, `set`,
+`style`, `show` and `remove` for programmatic updates. `exists()` checks lifetime; other messages
+on expired handles raise explicit errors. See [post-construction widget messages](UI.md#post-construction-widget-messages)
+for the complete API and the parser's two-step creation/subscription syntax. File widgets also
+support `download.source(upload)`, `upload.file()` and `download.content(name, text, mediaType)`.
+The `core.ui_file` references expose `name`, `type`, `size`, `text`, `bytes`, `metadata` and `exists`;
+they preserve instance ownership and the bounded in-memory file store. Choice and collection
+handles provide `options` and `items` messages.
 
 ## core.document and document subclasses
 

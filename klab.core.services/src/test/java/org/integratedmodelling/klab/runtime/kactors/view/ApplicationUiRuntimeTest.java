@@ -85,15 +85,12 @@ public class ApplicationUiRuntimeTest {
           ComponentRegistry.class.getDeclaredMethod(
               "createActorDescriptor", Actor.class, String.class, Class.class);
       discover.setAccessible(true);
-      var descriptor =
-          (Extensions.ActorDescriptor)
-              discover.invoke(
-                  registry,
-                  CoreActorLibrary.Ui.class.getAnnotation(Actor.class),
-                  "core.",
-                  CoreActorLibrary.Ui.class);
       doReturn(List.of()).when(registry).getActorDescriptors(anyString(), isNull());
-      doReturn(List.of(descriptor)).when(registry).getActorDescriptors("core.ui", null);
+      for (var actorClass : List.of(CoreActorLibrary.Ui.class, CoreActorLibrary.Widget.class, CoreActorLibrary.UiFile.class)) {
+        var descriptor = (Extensions.ActorDescriptor) discover.invoke(
+            registry, actorClass.getAnnotation(Actor.class), "core.", actorClass);
+        doReturn(List.of(descriptor)).when(registry).getActorDescriptors(descriptor.urn, null);
+      }
       return AgentCompiler.runtimeEnvironment(AgentCompiler.componentResolver(registry), null);
     } catch (ReflectiveOperationException error) {
       throw new AssertionError(error);

@@ -2625,6 +2625,11 @@ public class ComponentRegistry {
       if (verb != null && !verb.producesAgent().isBlank()) {
         ret.behaviorUrn = verb.producesAgent().trim();
       }
+      if (verb != null && !verb.returnsHandle().isBlank()) {
+        if (verb.executionType() != Verb.Type.EMITTER || method.getReturnType() == void.class)
+          throw new IllegalArgumentException("Construction handles require a non-void emitter: " + method);
+        ret.handleBehaviorUrn = verb.returnsHandle().trim();
+      }
       if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers())) {
         // A static factory/adapter needs no constructible instance of its bound actor class.
         ret.staticMethod = true;

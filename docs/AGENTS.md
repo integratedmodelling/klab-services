@@ -996,6 +996,10 @@ typing used for k.Actors `@return`. The imported alias remains the valid recipie
 verb. The produced value acquires the declared behavior type only when `producesAgent` is present;
 otherwise calls on that value remain dynamically resolved.
 
+For immediate widget-construction handles, `@Verb(executionType=EMITTER, returnsHandle="core.widget")`
+allows assignment of the synchronous handle while keeping fired input payloads separate. Ordinary
+emitters remain invalid in value positions. See [widget handle lifetimes and messages](UI.md#post-construction-widget-messages).
+
 Directly compatible arguments are matched positionally, with runtime-scope injection, primitive
 numeric coercion, enum conversion, and Java varargs packing. If that match fails, the compiler
 environment may negotiate the target Java parameter types against the supplied values and return
