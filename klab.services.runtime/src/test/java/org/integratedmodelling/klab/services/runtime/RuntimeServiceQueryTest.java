@@ -89,6 +89,7 @@ class RuntimeServiceQueryTest {
     source.setId(42);
     source.setGeometry(requested);
     source.getMetadata().put("source", true);
+    source.getMetadata().put(Metadata.IM_COMMIT, "must not escape as a new commit");
 
     var result = RuntimeService.queryResult(source, actual, requested, 0.5);
 
@@ -96,6 +97,7 @@ class RuntimeServiceQueryTest {
     assertEquals(42, source.getId());
     assertNotEquals(source.getGeometry().encode(), result.getGeometry().encode());
     assertEquals(true, result.getMetadata().get("source"));
+    assertFalse(result.getMetadata().containsKey(Metadata.IM_COMMIT));
     assertEquals(0.5, result.getMetadata().get(Metadata.IM_QUERY_COVERAGE, Double.class));
   }
 
@@ -106,6 +108,10 @@ class RuntimeServiceQueryTest {
     cd.setNativeShardingStrategy(org.integratedmodelling.klab.api.data.Data.ShardingStrategy.trivial(org.integratedmodelling.klab.api.data.Storage.Type.LONG));
     source.setContextualizationData(cd);
     var query = new ObservationImpl();query.setId(0);
+    source.mergeAnnotations(List.of(org.integratedmodelling.klab.api.lang.Annotation.of(
+        "colormap", "palette", "gray")), ObservationImpl.DEFINITION_ANNOTATIONS);
+    query.mergeAnnotations(List.of(org.integratedmodelling.klab.api.lang.Annotation.of(
+        "colormap", "palette", "terrain")), ObservationImpl.DEFINITION_ANNOTATIONS);
     var first = RuntimeService.qualityQueryResult(source,query,source.getGeometry());
     var second = RuntimeService.qualityQueryResult(source,query,source.getGeometry());
     first.getContextualizationData().getNativeShardingStrategy().setSuggestedSplits(7);
@@ -113,6 +119,12 @@ class RuntimeServiceQueryTest {
     assertEquals(1,second.getContextualizationData().getNativeShardingStrategy().getSuggestedSplits());
     assertEquals(List.of(42L),first.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS));
     assertEquals(0,first.getId());assertEquals(42,source.getId());
+    assertEquals("terrain", first.getAnnotations().getFirst().get("palette"));
+    assertEquals("gray", source.getAnnotations().getFirst().get("palette"));
+    var transported = Observation.forTransport(first);
+    assertEquals(List.of(42L), transported.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS));
+    assertEquals("terrain", transported.getAnnotations().iterator().next().get("palette"));
+    assertEquals(0, transported.getId());
   }
 
   @Test

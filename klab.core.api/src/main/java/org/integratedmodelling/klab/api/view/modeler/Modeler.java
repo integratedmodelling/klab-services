@@ -47,6 +47,10 @@ public interface Modeler extends UIController {
    * User action that obtains or find an asset from a URN and tells the modeler to observe it,
    * whatever that means. The asset should be classified and only valid contexts should be handled.
    * The UI may alert for illegitimate use of this action.
+   * Classified k.IM definitions preserve their annotations: {@code define observation} requests
+   * resolution, {@code define observer} also selects the observer constraint, and {@code define
+   * query} submits an unresolved observation with {@link Observation#QUERY_ID} for graph querying.
+   * See {@code docs/MODELER.md} for the submission contract and supported assets.
    *
    * @param asset a k.LAB asset of any type. May create a context, add to an existing one, or cause
    *     nothing or an error.

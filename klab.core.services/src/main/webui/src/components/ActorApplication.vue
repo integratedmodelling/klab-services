@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, ref, shallowRef, watch, type Component} from "vue";
+import {computed, provide, onBeforeUnmount, ref, shallowRef, watch, type Component} from "vue";
 import type {DashboardContext} from "../types";
 import AuthenticationDialog from "./AuthenticationDialog.vue";
 import ApplicationNode from "./ApplicationNode.vue";
+import {applicationFilesKey} from "../services/application-widgets";
 import {ApplicationConnection, type InstanceState, type UiSnapshot, type WidgetInput} from "../services/application-ui";
 import "../styles/application-ui.css";
 import {resolveExtension} from "../services/extensions";
@@ -26,6 +27,30 @@ const regions = computed(() => ({header: nodes.value.filter(n => n.type === "hea
   main: nodes.value.filter(n => !["header", "footer", "drawer"].includes(n.type))}));
 const authPage = computed(() => ({name: "application", title: props.urn, description: "Open this k.Actors application.",
   component: "application", order: 0, requiresAuthentication: true}));
+
+provide(applicationFilesKey, {
+  async upload(nodeId, file) {
+    if (!instance.value || !connected.value) throw new Error("Application is disconnected");
+    const current = generation;
+    const id = instance.value.id;
+    const handle = await props.context.api.request(`api/v1/ui/instances/${id}/files/${encodeURIComponent(nodeId)}?name=${encodeURIComponent(file.name)}&mediaType=${encodeURIComponent(file.type || 'application/octet-stream')}`,
+      {method: "POST", headers: {"Content-Type": "application/octet-stream"}, body: file});
+    if (current !== generation || id !== instance.value?.id || !connected.value) throw new Error("Application attachment changed");
+    return handle;
+  },
+  async download(handle) {
+    if (!instance.value || !connected.value) throw new Error("Application is disconnected");
+    const current = generation;
+    const id = instance.value.id;
+    const file = await props.context.api.request<{name: string; mediaType: string; content: string}>(
+      `api/v1/ui/instances/${id}/files/${encodeURIComponent(handle)}`);
+    if (current !== generation || id !== instance.value?.id || !connected.value) throw new Error("Application attachment changed");
+    const bytes = Uint8Array.from(atob(file.content), c => c.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes], {type: 'application/octet-stream'}));
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = file.name;
+    anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+});
 
 function key(): string { return `klab.ui:${document.baseURI}:${props.context.auth.username}:${props.urn}`; }
 function readHint(name: string): {key?: string; id?: string} | null {

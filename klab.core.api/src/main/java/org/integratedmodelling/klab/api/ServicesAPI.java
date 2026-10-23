@@ -147,6 +147,11 @@ public interface ServicesAPI {
    */
   String EXPORT = "/export/{class}/{urn}";
 
+  /** POST an observation view and export parameters without reducing it to a catalog URN. */
+  String EXPORT_OBSERVATION = "/export/observation";
+
+  String OBSERVATION_MEMBERS = "/observation/members";
+
   /** General administration endpoints common to all services */
   interface ADMIN {
 

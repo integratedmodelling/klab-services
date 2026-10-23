@@ -226,7 +226,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             ResolutionConstraint.of(ResolutionConstraint.Type.UsingModel, model.getUrn()));
         builder = new Observation.NaiveBuilder(model, currentContext);
       } else if (statement instanceof KimSymbolDefinition definition) {
-        if ("observation".equals(definition.getDefineClass())) {
+        if ("observation".equals(definition.getDefineClass())
+            || "query".equals(definition.getDefineClass())) {
           resolvables.add(statement);
           builder = new Observation.NaiveBuilder(definition, currentContext);
         } else if ("observer".equals(definition.getDefineClass())) {
@@ -308,9 +309,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
               currentContext.getService(RuntimeService.class),
               obs);
           if (obs.isEmpty()) {
-            currentContext.error("Observation " + observation + " was not resolved due to errors");
+            if (observation.getId() == Observation.QUERY_ID) {
+              currentContext.info("Query returned no observations");
+            } else {
+              currentContext.error("Observation " + observation + " was not resolved due to errors");
+            }
           } else {
-            currentContext.info("Observation of " + obs + " resolved successfully");
+            currentContext.info(observation.getId() == Observation.QUERY_ID
+                ? "Query completed successfully" : "Observation of " + obs + " resolved successfully");
           }
         });
     return submission;

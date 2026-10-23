@@ -189,6 +189,28 @@ class ApplicationUiManagerTest {
     }
   }
 
+  @Test
+  void fileTransfersRequireOwnershipAndProjectReadAndStopDisposesFiles() {
+    var launcher = mock(UiApplicationLauncher.class);
+    when(launcher.selectToolkit()).thenAnswer(invocation -> UiToolkitLease.quasar());
+    var alice = user("alice");
+    var bob = user("bob");
+    try (var model = new ApplicationUiModel();
+        var manager = manager(launcher, mock(ServiceAuthorizationManager.class), model)) {
+      String upload = (String) model.widget(model.root(), "upload", "file", Map.of("maxbytes", 10), "File", mock(RuntimeAgent.Scope.class));
+      var state = manager.launch(request("files", null), alice);
+      var handle = manager.upload(state.id(), upload, "data.txt", "text/plain", new byte[] {65}, alice);
+      assertEquals("QQ==", manager.file(state.id(), handle.get("id").toString(), alice).get("content"));
+      assertThrows(ResponseStatusException.class, () -> manager.file(state.id(), handle.get("id").toString(), bob));
+      assertThrows(ResponseStatusException.class, () -> manager.upload(state.id(), upload, "data.txt", "text/plain", new byte[1], bob));
+      doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN)).when(launcher).authorize(any(), same(alice));
+      assertThrows(ResponseStatusException.class, () -> manager.file(state.id(), handle.get("id").toString(), alice));
+      doNothing().when(launcher).authorize(any(), same(alice));
+      manager.stop(state.id(), alice);
+      assertThrows(ResponseStatusException.class, () -> manager.file(state.id(), handle.get("id").toString(), alice));
+    }
+  }
+
   private ApplicationUiManager manager(
       UiApplicationLauncher launcher,
       ServiceAuthorizationManager authentication,

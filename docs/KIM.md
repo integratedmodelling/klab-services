@@ -504,6 +504,11 @@ Definition names and permitted bodies depend on their definition class in the
 active grammar. Definitions are namespace symbols, so imports and visibility
 govern their reuse.
 
+The Modeler recognizes classified `define observation`, `define observer`,
+`define query`, and `define grid` statements. Their map conversion, annotations,
+submission IDs, and query/export behavior are documented in
+[Modeler](MODELER.md#classified-define-statements).
+
 ## 10. Scenarios and worldview-bound namespaces
 
 A scenario is a selectable layer of strategies:

@@ -234,11 +234,15 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
 
   private void defineFromSymbol(KimSymbolDefinition symbol) {
 
-    // must be an "observation" class
+    // Classified observation definitions share conversion and annotation handling.
     if (("observation".equals(symbol.getDefineClass())
-            || "observer".equals(symbol.getDefineClass()))
+            || "observer".equals(symbol.getDefineClass())
+            || "query".equals(symbol.getDefineClass()))
         && symbol.getValue() instanceof Map<?, ?> definition) {
 
+      if ("query".equals(symbol.getDefineClass())) {
+        query();
+      }
       if ("observer".equals(symbol.getDefineClass())) {
         // tell the clients that this has been defined as an observer
         metadata.put(Metadata.IM_OBSERVER_TAG, true);

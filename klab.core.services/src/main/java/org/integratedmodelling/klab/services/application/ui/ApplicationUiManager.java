@@ -149,6 +149,27 @@ public final class ApplicationUiManager implements AutoCloseable {
         instance.toolkit.moduleUrl());
   }
 
+  public synchronized Map<String, Object> upload(String id, String nodeId, String name,
+      String mediaType, byte[] bytes, EngineAuthorization user) {
+    var instance = owned(id, user);
+    try {
+      return instance.agent.ui().createFile(nodeId, name, mediaType, bytes);
+    } catch (IllegalArgumentException error) {
+      throw new ResponseStatusException(BAD_REQUEST, error.getMessage());
+    }
+  }
+
+  public synchronized Map<String, Object> file(String id, String handle, EngineAuthorization user) {
+    var instance = owned(id, user);
+    try {
+      var file = instance.agent.ui().file(handle);
+      return Map.of("name", file.name(), "mediaType", file.mediaType(),
+          "content", Base64.getEncoder().encodeToString(file.bytes()));
+    } catch (IllegalArgumentException error) {
+      throw new ResponseStatusException(NOT_FOUND);
+    }
+  }
+
   public synchronized Ticket ticket(
       String id, String origin, EngineAuthorization user, String credential) {
     owned(id, user);
