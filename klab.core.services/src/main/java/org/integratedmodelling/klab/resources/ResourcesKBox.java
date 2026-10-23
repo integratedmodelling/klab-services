@@ -15,6 +15,7 @@ import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.common.mapper.JacksonMapper;
 import org.dizitart.no2.common.module.NitriteModule;
 import org.dizitart.no2.index.IndexType;
+import org.dizitart.no2.index.IndexOptions;
 import org.dizitart.no2.repository.EntityDecorator;
 import org.dizitart.no2.repository.EntityId;
 import org.dizitart.no2.repository.EntityIndex;
@@ -100,6 +101,7 @@ public class ResourcesKBox implements WorkflowStore {
 
     this.resourceMetadata = db.getRepository(new ResourceMetadataDecorator());
     this.resources = db.getRepository(new ResourceDecorator());
+    ensureLegacyIdentityIndex(this.resources);
     this.workflows = db.getRepository(new WorkflowDecorator());
     this.flows = db.getRepository(new FlowDecorator());
     this.workflowAttachments = db.getRepository(new WorkflowAttachmentDecorator());
@@ -141,6 +143,25 @@ public class ResourcesKBox implements WorkflowStore {
     Version requested =
         version == null || Version.ANY_VERSION.equals(version) ? split.getSecond() : version;
     return selectVersion(resources.getById(resourceUrn), requested);
+  }
+
+  static void ensureLegacyIdentityIndex(ObjectRepository<ResourceImpl> resources) {
+    // MetadataImpl persists its dynamic entries under delegate; decorators require static fields.
+    var collection = resources.getDocumentCollection();
+    var field = "metadata.delegate." + Metadata.IM_ORIGINAL_URN;
+    if (!collection.hasIndex(field)) {
+      collection.createIndex(IndexOptions.indexOptions(IndexType.NON_UNIQUE), field);
+    }
+  }
+
+  /** Match an existing resource by its current URN or its preserved legacy source URN. */
+  public Resource getResourceByOriginalUrn(String originalUrn) {
+    var current = resources.getById(Version.splitVersion(originalUrn).getFirst());
+    if (current != null) return current;
+    for (var resource : resources.find(where("metadata.delegate." + Metadata.IM_ORIGINAL_URN).eq(originalUrn))) {
+      return resource;
+    }
+    return null;
   }
 
   static Resource selectVersion(Resource current, Version requested) {

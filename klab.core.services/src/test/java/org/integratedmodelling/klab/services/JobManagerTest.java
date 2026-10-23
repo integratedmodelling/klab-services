@@ -20,6 +20,17 @@ class JobManagerTest {
   }
 
   @Test
+  void completedNullResultIsTerminalInsteadOfPollingForever() {
+    var manager = new JobManager();
+    var task = new CompletableFuture<Object>();
+    var id = manager.submit(task, "legacy importer");
+    task.complete(null);
+    assertEquals(Scope.Status.ABORTED, manager.status(id).getStatus());
+    assertTrue(manager.status(id).getStackTrace().contains("without returning a result"));
+    assertEquals(Scope.Status.ABORTED, manager.status(id).getStatus());
+  }
+
+  @Test
   void cancellationTargetsSubmittedTaskAndRemainsVisibleAsInterrupted() {
     var manager = new JobManager();
     var submittedTask = new CompletableFuture<String>();

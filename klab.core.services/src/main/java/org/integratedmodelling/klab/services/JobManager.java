@@ -88,6 +88,9 @@ public class JobManager {
       } else if (result.getSecond() != null) {
         ret.setStatus(Scope.Status.ABORTED);
         ret.setStackTrace(Utils.Exceptions.stackTrace(result.getSecond()));
+      } else {
+        ret.setStatus(Scope.Status.ABORTED);
+        ret.setStackTrace("Job completed without returning a result");
       }
       return ret;
     }

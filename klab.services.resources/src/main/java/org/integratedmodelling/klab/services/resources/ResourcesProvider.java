@@ -2720,6 +2720,29 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return ingestResource(resource, SubmissionMode.CREATE_OR_UPDATE, scope);
   }
 
+  /**
+   * Legacy imports are idempotent by source URN, including resources whose URN was rewritten
+   * during their first import. Serialize lookup and ingestion so concurrent imports cannot both
+   * create a copy. Ordinary resource edits and submissions retain their existing update behavior.
+   */
+  public synchronized ResourceSet ingestLegacyResource(Resource resource, UserScope scope) {
+    var existing = getResourcesKbox().getResourceByOriginalUrn(resource.getUrn());
+    if (existing != null) {
+      var result = new ResourceSet();
+      var descriptor = new ResourceSet.Resource(
+          serviceId(), existing.getUrn(), existing.getLocalProjectName(), existing.getVersion(),
+          KlabAsset.KnowledgeClass.RESOURCE, existing.getTimestamp(), false);
+      descriptor.setOperation(CRUDOperation.READ);
+      descriptor.setLocal(isLocal());
+      result.getResources().add(descriptor);
+      result.getNotifications().add(Notification.info(
+          "Skipped legacy import: resource " + resource.getUrn()
+              + " is already present as " + existing.getUrn()));
+      return result;
+    }
+    return ingestResource(resource, scope);
+  }
+
   private ResourceSet ingestResource(
       Resource resource, SubmissionMode submissionMode, UserScope scope) {
 
