@@ -645,7 +645,9 @@ public abstract class BaseService implements KlabService {
 
   @Override
   public boolean shutdown() {
-    _scopeManager.shutdown();
+    if (_scopeManager != null) {
+      _scopeManager.shutdown();
+    }
     return true;
   }
 

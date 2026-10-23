@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 @ComponentScan(
     basePackages = {
       "org.integratedmodelling.klab.services.application.security",
+      "org.integratedmodelling.klab.services.application.ui",
       "org.integratedmodelling.klab.services.messaging",
       "org.integratedmodelling.klab.services.application.controllers",
       "org.integratedmodelling.klab.services.resolver.server.controllers"

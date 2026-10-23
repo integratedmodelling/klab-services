@@ -79,6 +79,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @ComponentScan(
     basePackages = {
       "org.integratedmodelling.klab.services.application.security",
+      "org.integratedmodelling.klab.services.application.ui",
       "org.integratedmodelling.klab.services.messaging",
       "org.integratedmodelling.klab.services.application.controllers"
     })
