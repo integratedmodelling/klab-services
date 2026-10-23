@@ -182,6 +182,18 @@ public abstract class BaseServiceClient implements KlabService {
     return settings;
   }
 
+  /** Retrieve a bounded page of vetted diagnostics using this service's administration identity. */
+  public org.integratedmodelling.klab.api.services.logging.LogPage queryLogs(
+      org.integratedmodelling.klab.api.services.logging.LogQuery query) {
+    return client.withScope(userScope).postWithStatus(ServicesAPI.ADMIN.LOGS_QUERY, query,
+        org.integratedmodelling.klab.api.services.logging.LogPage.class);
+  }
+
+  public org.integratedmodelling.klab.api.services.logging.LogCapabilities logCapabilities() {
+    return client.withScope(userScope).get(ServicesAPI.ADMIN.LOGS_CAPABILITIES,
+        org.integratedmodelling.klab.api.services.logging.LogCapabilities.class);
+  }
+
   /** Read the settings exposed by this service's administration API. */
   public Map<String, Object> readSettings() {
     return client.withScope(userScope).get(ServicesAPI.ADMIN.SETTINGS, Map.class);

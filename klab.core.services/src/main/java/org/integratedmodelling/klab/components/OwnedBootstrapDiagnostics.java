@@ -18,8 +18,22 @@ public final class OwnedBootstrapDiagnostics {
     try {
       LoggerFactory.getLogger(OwnedBootstrapDiagnostics.class).error(
           "AUTHORITY_BOOTSTRAP_COMPONENT_FAILURE phase=" + phase + " component=" + identifier(component)
-              + " reason=" + reason, snapshot(original));
+              + " reason=" + reason
+              + (httpStatus(original) == null ? "" : " httpStatus=" + httpStatus(original)), snapshot(original));
     } catch (Throwable loggingUnavailable) { /* Preserve the original failure and cleanup. */ }
+  }
+
+  /** Preserve only a numeric transport status, never provider response bodies or request data. */
+  static Integer httpStatus(Throwable original) {
+    var seen = new IdentityHashMap<Throwable, Boolean>();
+    for (Throwable current = original; current != null && seen.size() < 16; current = current.getCause()) {
+      if (seen.put(current, true) != null) break;
+      if (current instanceof org.integratedmodelling.common.utils.Utils.Http.Client.RequestFailure failure) {
+        int status = failure.getStatus();
+        return status >= 100 && status <= 599 ? status : null;
+      }
+    }
+    return null;
   }
 
   /** Preserve original types, locations, causes and suppressed cleanup, without retaining secrets. */

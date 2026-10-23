@@ -1754,6 +1754,35 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return post(false, false, apiRequest, payload, resultClass, parameters);
       }
 
+      /** Status-preserving, payload-free failures for bounded diagnostic APIs. */
+      public <T> T postWithStatus(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+        return post(true, false, true, apiRequest, payload, resultClass, parameters);
+      }
+
+      private static HttpResponse.BodySubscriber<byte[]> diagnosticBody() {
+        var delegate=HttpResponse.BodySubscribers.ofByteArray();
+        return new HttpResponse.BodySubscriber<>() {
+          private java.util.concurrent.Flow.Subscription subscription;
+          private long received;
+          private boolean done;
+          public java.util.concurrent.CompletionStage<byte[]> getBody() {return delegate.getBody();}
+          public void onSubscribe(java.util.concurrent.Flow.Subscription subscription) {
+            this.subscription=subscription;delegate.onSubscribe(subscription);
+          }
+          public void onNext(java.util.List<java.nio.ByteBuffer> buffers) {
+            if(done)return;
+            long count=buffers.stream().mapToLong(java.nio.ByteBuffer::remaining).sum();
+            if(received+count>1024*1024) {
+              done=true;subscription.cancel();
+              delegate.onError(new java.io.IOException("Diagnostic response exceeds byte limit"));
+            } else {received+=count;delegate.onNext(buffers);}
+          }
+          public void onError(Throwable failure) {if(!done){done=true;delegate.onError(failure);}}
+          public void onComplete() {if(!done){done=true;delegate.onComplete();}}
+        };
+      }
+
       private <T> T post(
           boolean propagateFailure,
           boolean reportFailure,
@@ -1761,6 +1790,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           Object payload,
           Class<T> resultClass,
           Object... parameters) {
+        return post(propagateFailure,reportFailure,false,apiRequest,payload,resultClass,parameters);
+      }
+
+      private <T> T post(
+          boolean propagateFailure, boolean reportFailure, boolean typedStatus,
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 
         var options = new Options();
         var params = makeKeyMap(options, parameters);
@@ -1812,13 +1847,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var request =
               requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
 
-          var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+          var response = client.send(request, typedStatus
+              ? info -> diagnosticBody() : HttpResponse.BodyHandlers.ofByteArray());
 
-          if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
+          if (response != null && (typedStatus
+              ? response.statusCode() >= 200 && response.statusCode() < 300
+              : HttpStatus.valueOf(response.statusCode()).is2xxSuccessful())) {
             parseHeaders(response);
             return resultClass == byte[].class ? resultClass.cast(response.body())
                 : parseResponse(new String(response.body(), java.nio.charset.StandardCharsets.UTF_8), resultClass);
           } else {
+            if (typedStatus) throw new RequestFailure(response == null ? 0 : response.statusCode(),
+                "Diagnostic request failed", null);
             var failure = "POST " + apiCall + " failed with HTTP "
                 + (response == null ? 0 : response.statusCode());
             if (propagateFailure) {
@@ -1834,9 +1874,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           // An obsolete search is deliberately interrupted by its caller. Preserve the
           // cancellation signal without publishing a service-error notification.
           Thread.currentThread().interrupt();
+          if (typedStatus) throw new RequestFailure(0,"Diagnostic request interrupted",Logging.safeFailure(cancelled));
           if (propagateFailure) throw new KlabServiceAccessException(cancelled);
           return null;
         } catch (Throwable e) {
+          if (typedStatus) {
+            if(e instanceof RequestFailure failure) throw failure;
+            throw new RequestFailure(0,"Diagnostic transport or decoding failed",Logging.safeFailure(e));
+          }
           if (reportFailure) {
             if (scope != null) {
               scope.error(Logging.safeFailure(e), "HTTP POST failed",

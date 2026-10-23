@@ -155,6 +155,8 @@ public interface ServicesAPI {
   /** General administration endpoints common to all services */
   interface ADMIN {
 
+    String LOGS_QUERY = "/admin/logs/query";
+    String LOGS_CAPABILITIES = "/admin/logs/capabilities";
     String SHUTDOWN = "/shutdown";
     String CHECK_CREDENTIALS = "/checkCredentials";
     String CREDENTIALS = "/credentials";
