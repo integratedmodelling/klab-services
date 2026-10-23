@@ -270,12 +270,27 @@ public class Indexer {
     public Query buildQuery(String currentTerm, Analyzer analyzer) {
         if (currentTerm == null || currentTerm.isBlank())
             return new org.apache.lucene.search.MatchAllDocsQuery();
-        // User input is plain type-ahead text, never Lucene query syntax.
+        // A qualified query restricts name completion to one ontology. User input remains
+        // plain type-ahead text, never Lucene query syntax.
+        String text = currentTerm.strip().toLowerCase(java.util.Locale.ROOT);
         var query = new org.apache.lucene.search.BooleanQuery.Builder();
-        for (String word : currentTerm.toLowerCase(java.util.Locale.ROOT).split("[^\\p{L}\\p{N}_]+")) {
+        int separator = text.indexOf(':');
+        if (separator >= 0) {
+            String namespace = text.substring(0, separator);
+            query.add(new TermQuery(new Term("namespace", namespace)),
+                    org.apache.lucene.search.BooleanClause.Occur.FILTER);
+            text = text.substring(separator + 1);
+            if (text.isBlank()) query.add(new org.apache.lucene.search.MatchAllDocsQuery(),
+                    org.apache.lucene.search.BooleanClause.Occur.MUST);
+        }
+        for (String word : text.split("[^\\p{L}\\p{N}_]+")) {
             if (!word.isBlank()) query.add(new org.apache.lucene.search.PrefixQuery(new Term("name", word)),
                     org.apache.lucene.search.BooleanClause.Occur.MUST);
         }
+        // Keep an exact name ahead of longer prefixes, even with a small result limit.
+        if (!text.isBlank()) query.add(new org.apache.lucene.search.BoostQuery(
+                new TermQuery(new Term("name", text)), 10f),
+                org.apache.lucene.search.BooleanClause.Occur.SHOULD);
         return query.build();
     }
 
