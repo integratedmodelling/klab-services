@@ -169,3 +169,113 @@ test("real shell preserves the service base on a direct application route and ga
   expect(await page.evaluate(() => new URL(document.baseURI).pathname)).toBe("/runtime/");
   expect(launches).toBe(0);
 });
+
+
+test("extended widgets, form commands, safe content and HTTP file handles", async ({page}) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  const node = (id: string, type: string, properties: Record<string, any>, events: string[] = ["change"]): UiNode =>
+    ({id, type, properties: {tag: `main/${id}`, ...properties}, events, children: []});
+  const children = [
+    node("name", "input", {label: "Form name", value: "Ada", field: "name", debounce: 0}),
+    node("save", "submit", {label: "Save form"}, ["submit"]),
+    node("reset", "reset", {label: "Reset form"}, ["reset"]),
+    node("switch", "switch", {label: "Enabled", value: false}),
+    node("radio", "radio", {label: "Region", options: ["eu", "af"], value: "eu"}),
+    node("multi", "multiselect", {label: "Regions", options: ["eu", "af"], value: ["eu"]}),
+    node("textarea", "textarea", {label: "Notes", value: "", debounce: 0}),
+    node("date", "date", {label: "Day", value: "2024-02-29", debounce: 0}),
+    node("time", "time", {label: "Hour", value: "12:30", debounce: 0}),
+    node("color", "color", {label: "Tint", value: "#112233"}),
+    node("slider", "slider", {label: "Level", value: 5, min: 0, max: 10}),
+    node("range", "range", {label: "Interval", value: {min: 2, max: 8}, min: 0, max: 10}),
+    node("list", "list", {label: "Accounts", items: [{id: "a", label: "Alice"}, {id: "b", label: "Bob"}], value: "a"}, ["select", "activate"]),
+    node("table", "table", {label: "Measurements", items: [{id: "a", label: "Alpha"}, {id: "b", label: "Beta"}], columns: ["label"], pagesize: 1}, ["select", "activate", "sort", "page"]),
+    node("tree", "tree", {label: "Hierarchy", items: [{id: "parent", label: "Parent", children: [{id: "child", label: "Child"}]}], expanded: ["parent"]}, ["select", "activate", "expand"]),
+    node("tabs", "tabs", {label: "Sections", options: ["overview", "details"], value: "overview"}),
+    node("steps", "stepper", {label: "Steps", options: ["prepare", "finish"], value: "prepare"}),
+    node("pages", "pagination", {label: "Pages", min: 1, max: 3, value: 1}),
+    node("crumbs", "breadcrumbs", {label: "Path", options: ["home", "accounts"], value: "home"}),
+    node("markdown", "markdown", {label: '**Safe** <img src=x onerror="alert(1)"> [bad](javascript:alert(1)) [space]( javascript:alert(1))'}, []),
+    node("image", "image", {src: "https://example.org/image.png", alt: "Example"}, []),
+    node("icon", "icon", {label: "Ready", icon: "check"}, []),
+    node("separator", "separator", {}, []), node("badge", "badge", {label: "New"}, []),
+    node("spinner", "spinner", {label: "Working"}, []),
+    node("upload", "upload", {label: "Upload CSV", accept: ".csv", maxbytes: 1024}),
+    node("download", "download", {label: "Download CSV"}, ["click"]),
+    node("audio", "audio", {label: "Audio", src: "https://example.org/audio.mp3"}, ["play", "pause", "ended"]),
+    node("video", "video", {label: "Video", src: "https://example.org/video.mp4"}, ["play", "pause", "ended"]),
+    node("iconbutton", "iconbutton", {label: "Refresh data", icon: "refresh"}, ["click"]),
+    node("link", "link", {label: "Help", href: "javascript:alert(1)"}, ["click"]),
+  ];
+  const snapshot: UiSnapshot = {protocolVersion: 1, revision: 1, root: node("root", "container", {layout: "column"}, [])};
+  snapshot.root.children = children;
+  let sequence = 0;
+  const inputs: any[] = [];
+  const handle = {id: "opaque-handle", name: "data.csv", mediaType: "text/csv", size: 4};
+  let uploads = 0, downloads = 0;
+  await page.route("https://example.org/**", route => route.abort());
+  await page.route("**/api/v1/ui/instances", route => route.fulfill({json: {id: "catalog", urn: "examples.workflow", state: {snapshot, lastAcceptedSequence: sequence}, stylesheets: {}}}));
+  await page.route("**/catalog/ticket", route => route.fulfill({json: {ticket: "catalog-ticket"}}));
+  await page.route("**/catalog/files/upload?**", async route => {
+    uploads++; expect(route.request().postDataBuffer()?.toString()).toBe("a,b\n");
+    await route.fulfill({json: handle});
+  });
+  await page.route("**/catalog/files/opaque-handle", async route => {
+    downloads++; await route.fulfill({json: {name: "data.csv", mediaType: "text/csv", content: Buffer.from("a,b\n").toString("base64")}});
+  });
+  await page.routeWebSocket("**/runtime/ui-bus", ws => ws.onMessage(data => {
+    const frame = JSON.parse(String(data));
+    if (frame.ticket) {
+      ws.send(JSON.stringify({type: "snapshot", value: snapshot}));
+      ws.send(JSON.stringify({type: "ready", value: {lastAcceptedSequence: sequence}}));
+    } else if (frame.type === "input") {
+      const event = frame.value; inputs.push(event); sequence++;
+      const target = children.find(child => child.id === event.nodeId)!;
+      if (["change", "select"].includes(event.name)) target.properties.value = event.value;
+      if (target.id === "upload") children.find(child => child.id === "download")!.properties.value = event.value;
+      if (target.id === "reset") children[0].properties.value = "Ada";
+      if (event.name === "sort") Object.assign(target.properties, {sort: event.value.column, descending: event.value.descending});
+      if (event.name === "page") target.properties.page = event.value;
+      snapshot.revision++;
+      ws.send(JSON.stringify({type: "snapshot", value: snapshot})); ws.send(JSON.stringify({type: "ack", value: sequence}));
+    }
+  }));
+  await page.goto("/tests/application.html");
+  await page.locator("#fixture-login").evaluate((button: HTMLButtonElement) => button.click());
+  await expect(page.getByRole("button", {name: "Save form"})).toBeEnabled();
+  await page.getByRole("switch", {name: "Enabled"}).click();
+  await expect.poll(() => inputs.at(-1)?.value).toBe(true);
+  await page.getByRole("radio", {name: "af", exact: true}).click();
+  await expect.poll(() => inputs.at(-1)?.value).toBe("af");
+  await page.getByLabel("Notes", {exact: true}).fill("A note");
+  await expect.poll(() => inputs.at(-1)?.value).toBe("A note");
+  await page.getByLabel("Form name", {exact: true}).fill("Grace");
+  await expect.poll(() => children[0].properties.value).toBe("Grace");
+  await page.getByRole("button", {name: "Save form"}).click();
+  await expect.poll(() => inputs.at(-1)?.name).toBe("submit");
+  expect(inputs.at(-1).value).toBeNull();
+  await page.getByRole("button", {name: "Reset form"}).click();
+  await expect(page.getByLabel("Form name", {exact: true})).toHaveValue("Ada");
+  await page.getByText("Bob", {exact: true}).click();
+  await expect.poll(() => inputs.at(-1)?.value).toBe("b");
+  await page.getByRole("tab", {name: "details", exact: true}).click();
+  await expect.poll(() => inputs.at(-1)?.value).toBe("details");
+  await page.getByText("Child", {exact: true}).click();
+  await expect.poll(() => inputs.at(-1)?.value).toBe("child");
+  await page.getByRole("columnheader").filter({hasText: "label"}).click();
+  await expect.poll(() => inputs.at(-1)?.name).toBe("sort");
+  expect(inputs.at(-1).value.column).toBe("label");
+  await expect(page.locator('[data-ui-tag="main/markdown"] strong')).toHaveText("Safe");
+  await expect(page.locator('[data-ui-tag="main/markdown"] img')).toHaveCount(0);
+  await expect(page.locator('[data-ui-tag="main/markdown"] a')).toHaveCount(0);
+  await expect(page.getByRole("button", {name: "Help", exact: true})).not.toHaveAttribute("href");
+  await page.getByLabel("Upload CSV").setInputFiles({name: "data.csv", mimeType: "text/csv", buffer: Buffer.from("a,b\n")});
+  await expect.poll(() => uploads).toBe(1);
+  await expect.poll(() => inputs.at(-1)?.value?.id).toBe("opaque-handle");
+  const downloaded = page.waitForEvent("download");
+  await page.getByRole("button", {name: "Download CSV"}).click();
+  expect((await downloaded).suggestedFilename()).toBe("data.csv");
+  expect(downloads).toBe(1);
+  expect(errors).toEqual([]);
+});

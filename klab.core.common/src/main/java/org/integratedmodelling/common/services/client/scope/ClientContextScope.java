@@ -268,6 +268,11 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   @Override
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset) {
 
+    if (asset instanceof Observation view && view.getId() == Observation.QUERY_ID
+        && view.getObservable() != null && view.getObservable().getSemantics().isCollective()) {
+      return new java.util.ArrayList<>(getService(RuntimeService.class).getMembers(view, this));
+    }
+
     return digitalTwin.getKnowledgeGraph().getChildAssets(asset);
   }
 

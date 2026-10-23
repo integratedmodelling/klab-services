@@ -1,5 +1,7 @@
 package org.integratedmodelling.common.services.client;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -17,6 +19,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -39,6 +42,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.api.services.runtime.objects.ObservationExportRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
@@ -54,6 +58,30 @@ public class RuntimeClient extends BaseServiceClient
       Settings settings,
       BiConsumer<KlabService.ServiceStatus, Boolean>... statusListeners) {
     super(monitor, userScope, settings, statusListeners);
+  }
+
+  @Override
+  public InputStream exportObservation(
+      Observation observation, String mediaType,
+      Parameters<String> parameters,
+      ContextScope scope) {
+    if (observation == null || observation.isEmpty()
+        || observation.getId() < Observation.QUERY_ID)
+      throw new IllegalArgumentException("An existing observation or query result is required");
+    if (observation.getId() > 0)
+      return RuntimeService.super.exportObservation(observation, mediaType, parameters, scope);
+    var request = new ObservationExportRequest();
+    request.setObservation(Observation.forTransport(observation));
+    request.setParameters(parameters);
+    byte[] bytes = client.withScope(scope).accepting(List.of(mediaType))
+        .postRequired(ServicesAPI.EXPORT_OBSERVATION, request, byte[].class);
+    return new ByteArrayInputStream(bytes);
+  }
+
+  @Override
+  public List<Observation> getMembers(Observation collective, ContextScope scope) {
+    return client.withScope(scope).postCollectionOrThrow(ServicesAPI.OBSERVATION_MEMBERS,
+        Observation.forTransport(collective), Observation.class);
   }
 
   @Override
@@ -81,7 +109,8 @@ public class RuntimeClient extends BaseServiceClient
 
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(Observation.forTransport(observation));
-    resolutionRequest.setAgentName(Objects.requireNonNull(Provenance.getAgent(scope)).getName());
+    if (observation.getId() != Observation.QUERY_ID)
+      resolutionRequest.setAgentName(Objects.requireNonNull(Provenance.getAgent(scope)).getName());
     resolutionRequest.setResolutionConstraints(
         scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
     var submission =

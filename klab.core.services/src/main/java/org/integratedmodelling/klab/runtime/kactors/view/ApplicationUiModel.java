@@ -21,6 +21,36 @@ public final class ApplicationUiModel implements AutoCloseable {
           "select",
           "number",
           "progress",
+          "markdown",
+          "image",
+          "icon",
+          "separator",
+          "badge",
+          "spinner",
+          "iconbutton",
+          "link",
+          "switch",
+          "radio",
+          "multiselect",
+          "textarea",
+          "slider",
+          "range",
+          "date",
+          "time",
+          "color",
+          "submit",
+          "reset",
+          "list",
+          "table",
+          "tree",
+          "tabs",
+          "stepper",
+          "pagination",
+          "breadcrumbs",
+          "upload",
+          "download",
+          "audio",
+          "video",
           "header",
           "footer",
           "drawer",
@@ -81,9 +111,10 @@ public final class ApplicationUiModel implements AutoCloseable {
 
   private static final class Node {
     final String id, type;
-    String action;
+    String action, namespace;
     boolean component, pending;
     RuntimeAgent.Scope lifetime;
+    Object initialValue;
     final Map<String, Object> properties = new LinkedHashMap<>();
     final List<Node> children = new ArrayList<>();
     Set<String> events = Set.of();
@@ -134,6 +165,10 @@ public final class ApplicationUiModel implements AutoCloseable {
       UiExecution parent, String tag, Map<String, Object> metadata) {
     if (closed || !nodes.containsKey(parent.mount())) return parent;
     var options = new LinkedHashMap<>(UiLayout.normalize(metadata));
+    UiWidgetMetadata.validate("container", options);
+    if (Boolean.TRUE.equals(options.get("form")) && nodes.values().stream().anyMatch(n ->
+        Boolean.TRUE.equals(n.properties.get("form")) && contains(n, parent.mount())))
+      throw new IllegalArgumentException("Forms cannot be nested");
     options.putIfAbsent("layout", "column");
     var node = add(parent, "container", tag, options);
     publish();
@@ -271,20 +306,19 @@ public final class ApplicationUiModel implements AutoCloseable {
       return null;
     }
     var normalized = UiLayout.normalize(options);
+    if (!type.equals("progress")) normalized.putIfAbsent("label", Objects.toString(value, ""));
+    if (type.equals("progress")) normalized.put("value", value);
+    if (Set.of("slider", "range").contains(type)) {
+      normalized.putIfAbsent("min", 0); normalized.putIfAbsent("max", 100); normalized.putIfAbsent("step", 1);
+    }
+    if (type.equals("pagination")) normalized.putIfAbsent("min", 1);
+    Object initial = UiWidgetMetadata.defaultValue(type, normalized);
+    if (initial != null) normalized.putIfAbsent("value", initial);
     UiWidgetMetadata.validate(type, normalized);
-    if (type.equals("progress") && !UiWidgetMetadata.value(type, normalized, value))
-      throw new IllegalArgumentException("Progress must be in [0,1]");
     var node = add(cursor, type, tag, normalized);
-    if (Set.of("text", "button", "checkbox", "input", "number", "select").contains(type)) {
-      node.properties.putIfAbsent("label", value == null ? "" : value);
-    }
-    if (Set.of("checkbox", "input", "number", "select").contains(type)) {
-      node.properties.putIfAbsent(
-          "value", type.equals("checkbox") ? false : type.equals("number") ? 0 : "");
-    }
-    if (type.equals("progress")) node.properties.put("value", value);
+    node.initialValue = node.properties.get("value");
     if (emitter != null) {
-      node.events = Set.of(type.equals("button") ? "click" : "change");
+      node.events = UiWidgetMetadata.events(type);
       emitters.put(node.id, emitter);
     }
     publish();
@@ -347,6 +381,7 @@ public final class ApplicationUiModel implements AutoCloseable {
   public synchronized boolean validInput(UiEvent event) {
     var node = nodes.get(event.nodeId());
     if (closed || node == null || !node.events.contains(event.name())) return false;
+    if (!interactive(root, node.id)) return false;
     // Modal interaction is enforced on the server as well as by the renderer.
     var modal =
         nodes.values().stream()
@@ -362,16 +397,122 @@ public final class ApplicationUiModel implements AutoCloseable {
           event.name().equals("close")
               && value == null
               && !Boolean.FALSE.equals(node.properties.get("dismissible"));
-      case "button" -> value == null;
-      case "checkbox", "number", "input" ->
-          UiWidgetMetadata.value(node.type, node.properties, value);
-      case "select" ->
-          value instanceof String s
-              && node.properties.get("options") instanceof List<?> list
-              && list.contains(s)
-              && UiWidgetMetadata.value(node.type, node.properties, value);
-      default -> false;
+      default -> {
+        if (node.type.equals("submit")) {
+          var form = form(node);
+          yield value == null && form != null && interactive(root, form.id) && formValues(form, true) != null;
+        }
+        if (node.type.equals("reset")) {
+          var form = form(node);
+          yield value == null && form != null && interactive(root, form.id);
+        }
+        if (node.type.equals("upload")) yield value instanceof Map<?, ?> handle
+            && files.containsKey(handle.get("id"))
+            && Objects.equals(files.get(handle.get("id")).nodeId(), node.id)
+            && files.get(handle.get("id")).handle().equals(value);
+        if (node.type.equals("download")) yield value == null && fileValue(node.properties.get("value"));
+        if (event.name().equals("change") && node.properties.containsKey("field") && form(node) != null)
+          yield UiWidgetMetadata.configuredValue(node.type, node.properties, value);
+        yield UiWidgetMetadata.eventValue(node.type, node.properties, event.name(), value);
+      }
     };
+  }
+
+  private boolean interactive(Node node, String id) {
+    if (node.pending || Boolean.TRUE.equals(node.properties.get("hidden"))
+        || Boolean.TRUE.equals(node.properties.get("invisible"))
+        || Boolean.TRUE.equals(node.properties.get("disabled"))) return false;
+    return node.id.equals(id) || node.children.stream().anyMatch(child -> interactive(child, id));
+  }
+
+  private Node form(Node node) {
+    Object target = node.properties.get("form");
+    if (target instanceof String tag) {
+      String namespace = node.namespace;
+      var candidate = nodes.get(tags.get(tag.startsWith("/") ? tag.substring(1) : namespace + "/" + tag));
+      return candidate != null && Boolean.TRUE.equals(candidate.properties.get("form")) ? candidate : null;
+    }
+    return nodes.values().stream().filter(n -> n != node && Boolean.TRUE.equals(n.properties.get("form"))
+        && contains(n, node.id)).reduce((first, last) -> last).orElse(null);
+  }
+
+  private Map<String, Object> formValues(Node form, boolean validate) {
+    var values = new LinkedHashMap<String, Object>();
+    for (var child : nodes.values()) {
+      if (!contains(form, child.id) || !interactive(root, child.id)) continue;
+      if (child.properties.get("field") instanceof String field) {
+        Object value = child.properties.get("value");
+        boolean validFile =
+            !child.type.equals("upload")
+                || (value != null
+                    ? fileValue(value)
+                    : !Boolean.TRUE.equals(child.properties.get("required")));
+        if (values.containsKey(field)
+            || validate && (!validFile || !UiWidgetMetadata.value(child.type, child.properties, value)))
+          return null;
+        values.put(field, value);
+      }
+    }
+    return Collections.unmodifiableMap(values);
+  }
+
+  private void resetForm(Node form) {
+    for (var child : nodes.values())
+      if (contains(form, child.id) && child.properties.containsKey("field"))
+        child.properties.put("value", child.initialValue);
+  }
+
+  public record StoredFile(String nodeId, String id, String name, String mediaType, byte[] bytes) {
+    public Map<String, Object> handle() {
+      return Map.of("id", id, "name", name, "mediaType", mediaType, "size", bytes.length);
+    }
+  }
+  private final Map<String, StoredFile> files = new LinkedHashMap<>();
+
+  /** Store bounded bytes in this instance; nodeId is null for actor-generated files. */
+  public synchronized Map<String, Object> createFile(
+      String nodeId, String name, String mediaType, byte[] bytes) {
+    if (closed) throw new IllegalStateException("Application stopped");
+    var node = nodeId == null ? null : nodes.get(nodeId);
+    if (nodeId != null
+        && (node == null
+            || !node.type.equals("upload")
+            || !interactive(root, nodeId)
+            || Boolean.TRUE.equals(node.properties.get("readonly"))
+            || Boolean.TRUE.equals(node.properties.get("loading"))))
+      throw new IllegalArgumentException("Upload unavailable");
+    int limit =
+        node == null ? 4194304 : ((Number) node.properties.getOrDefault("maxbytes", 4194304)).intValue();
+    if (bytes.length > limit
+        || files.size() >= 16
+        || files.values().stream().mapToLong(f -> f.bytes().length).sum() + bytes.length > 16777216)
+      throw new IllegalArgumentException("Application file limit exceeded");
+    if (name == null
+        || name.chars().anyMatch(c -> c < 32 || c == 127)
+        || !name.matches("[^/\\\\\r\n]{1,160}")
+        || mediaType == null
+        || !mediaType.matches("[a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+"))
+      throw new IllegalArgumentException("Invalid file metadata");
+    if (node != null && !UiWidgetMetadata.accepts(Objects.toString(node.properties.get("accept"), ""), name, mediaType))
+      throw new IllegalArgumentException("File type is not accepted");
+    if (node != null && nodes.values().stream().anyMatch(candidate -> candidate.type.equals("modal")
+        && visible(root, candidate.id) && !contains(candidate, node.id)))
+      throw new IllegalArgumentException("Upload blocked by modal");
+    String id = UUID.randomUUID().toString();
+    var file = new StoredFile(nodeId, id, name, mediaType, bytes.clone());
+    files.put(id, file);
+    return file.handle();
+  }
+
+  public synchronized StoredFile file(String id) {
+    var file = files.get(id);
+    if (closed || file == null) throw new IllegalArgumentException("Unknown application file");
+    return new StoredFile(file.nodeId(), file.id(), file.name(), file.mediaType(), file.bytes().clone());
+  }
+
+  private boolean fileValue(Object value) {
+    return value instanceof Map<?, ?> handle && files.containsKey(handle.get("id"))
+        && files.get(handle.get("id")).handle().equals(value);
   }
 
   private void enqueue(UiEvent event) {
@@ -395,11 +536,23 @@ public final class ApplicationUiModel implements AutoCloseable {
     }
     var emitter = emitters.get(node.id);
     if (emitter == null || emitter.isDone()) return;
-    if (!node.type.equals("button")) node.properties.put("value", event.value());
+    Object accepted = event.value();
+    if (node.type.equals("submit")) accepted = formValues(form(node), true);
+    else if (node.type.equals("reset")) {
+      resetForm(form(node));
+      accepted = formValues(form(node), false);
+    } else if (Set.of("change", "select").contains(event.name()))
+      node.properties.put("value", UiNode.immutableValue(accepted));
+    else if (event.name().equals("expand")) node.properties.put("expanded", accepted);
+    else if (event.name().equals("page")) node.properties.put("page", accepted);
+    else if (event.name().equals("sort") && accepted instanceof Map<?, ?> sort) {
+      node.properties.put("sort", sort.get("column"));
+      node.properties.put("descending", sort.get("descending"));
+    }
     publish();
     var payload = new LinkedHashMap<String, Object>();
     payload.put("event", event.name());
-    payload.put("value", event.value());
+    payload.put("value", accepted);
     reactions.execute(
         () -> {
           if (!emitter.isDone()) emitter.doFire(Collections.unmodifiableMap(payload));
@@ -418,6 +571,7 @@ public final class ApplicationUiModel implements AutoCloseable {
     if (key != null && tags.containsKey(key))
       throw new IllegalArgumentException("Duplicate UI tag " + tag);
     var node = new Node("n" + ids.incrementAndGet(), type);
+    node.namespace = parent.namespace();
     node.properties.putAll(normalized);
     if (key != null) node.properties.put("tag", key);
     boolean row = "row".equals(mount.properties.get("layout"));
@@ -449,6 +603,7 @@ public final class ApplicationUiModel implements AutoCloseable {
     for (var child : List.copyOf(node.children)) remove(child);
     nodes.values().forEach(parent -> parent.children.remove(node));
     nodes.remove(node.id);
+    files.values().removeIf(file -> Objects.equals(file.nodeId(), node.id));
     tags.values().removeIf(node.id::equals);
     var emitter = emitters.remove(node.id);
     if (emitter != null) emitter.done();
@@ -474,6 +629,7 @@ public final class ApplicationUiModel implements AutoCloseable {
         .map(n -> n.lifetime)
         .filter(Objects::nonNull)
         .forEach(RuntimeAgent.Scope::done);
+    files.clear();
     emitters.clear();
     nodes.clear();
     tags.clear();

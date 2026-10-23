@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
@@ -545,7 +547,15 @@ public class RuntimeService extends BaseService
     }
 
     if (submitted.getId() == Observation.QUERY_ID) {
-      return CompletableFuture.completedFuture(recordExistingPerception(query(submitted, effectiveScope), effectiveScope, false));
+      var result = query(submitted, effectiveScope);
+      if (result.isEmpty()) {
+        // No match is a completed query, not an unassigned failed resolution. Detach even the
+        // shared empty sentinel before changing its ID.
+        var empty = (ObservationImpl) Observation.forTransport(result);
+        empty.setId(Observation.QUERY_ID);
+        return CompletableFuture.completedFuture(empty);
+      }
+      return CompletableFuture.completedFuture(result);
     }
 
     var submissionScope = submissionScope(submitted, scope);
@@ -1230,7 +1240,7 @@ public class RuntimeService extends BaseService
 
     return Observation.empty(
         Notification.error(
-            "Observation queries are only supported for collective subjects, agents, events, and relationships"));
+            "Observation queries are only supported for qualities and collective subjects, agents, events, and relationships"));
   }
 
   private Observation queryForSubmission(Observation submitted, ContextScope scope) {
@@ -1645,6 +1655,9 @@ public class RuntimeService extends BaseService
     if (source.getId() <= 0) throw new IllegalArgumentException("Quality query source must be committed");
     var result = queryResult(source, geometry, geometry, 1.0);
     result.setObservable(query.getObservable());
+    result.mergeAnnotations(query);
+    // Source histograms describe native values and support, not a mediated consumer view.
+    result.setHistograms(Map.of());
     result.getMetadata().remove(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE);
     if (query.getMetadata().containsKey(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE))
       result.getMetadata().put(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE,
@@ -1663,6 +1676,41 @@ public class RuntimeService extends BaseService
     return result;
   }
 
+  @Override
+  public InputStream exportObservation(
+      Observation observation, String mediaType,
+      Parameters<String> parameters,
+      ContextScope scope) {
+    if (observation == null || observation.isEmpty()
+        || observation.getId() < Observation.QUERY_ID)
+      throw new IllegalArgumentException("An existing observation or query result is required");
+    if (observation.getId() > 0)
+      return exportAsset(observation.getUrn(), KlabAsset.KnowledgeClass.OBSERVATION,
+          mediaType, parameters, scope);
+    // Revalidate through the read-only query path. Never trust a client-supplied storage owner,
+    // contextualization parameters or source IDs, and never resolve missing coverage.
+    var view = query(observation, scope);
+    if (view.isEmpty()) throw new IllegalArgumentException("The query view is no longer available");
+    // An open card must not silently switch to a different source after focus or graph changes.
+    if (!querySourceIds(observation).equals(querySourceIds(view)))
+      throw new IllegalArgumentException("Query sources changed; submit the query again");
+    return exportResolvedAsset(view, view.getUrn(), KlabAsset.KnowledgeClass.OBSERVATION,
+        mediaType, parameters, scope);
+  }
+
+  private static Set<Long> querySourceIds(Observation observation) {
+    Object value = observation.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS);
+    if (!(value instanceof Collection<?> ids) || ids.isEmpty())
+      throw new IllegalArgumentException("A query view requires durable source IDs");
+    var result = new HashSet<Long>();
+    for (Object id : ids) {
+      if (!(id instanceof Number number) || number.longValue() <= 0)
+        throw new IllegalArgumentException("Invalid query source ID");
+      result.add(number.longValue());
+    }
+    return result;
+  }
+
   static ObservationImpl queryResult(
       Observation source, Geometry actualGeometry, Geometry requestedGeometry, double coverage) {
     var result = new ObservationImpl();
@@ -1674,6 +1722,7 @@ public class RuntimeService extends BaseService
     result.setGeometry(actualGeometry);
     result.setValue(source.getValue());
     result.setMetadata(Metadata.create(source.getMetadata()));
+    result.getMetadata().remove(Metadata.IM_COMMIT);
     result.setHistograms(source.getHistograms());
     result.setEventTimestamps(new ArrayList<>(source.getEventTimestamps()));
     result.setContextualizationData(source.getContextualizationData());

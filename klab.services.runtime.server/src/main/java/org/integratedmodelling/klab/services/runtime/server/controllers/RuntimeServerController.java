@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -40,6 +41,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.api.services.runtime.objects.ObservationExportRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRequest;
 import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
@@ -53,6 +55,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -185,14 +188,13 @@ public class RuntimeServerController {
                       .getResolutionConstraints()
                       .toArray(new ResolutionConstraint[0]));
       if (contextScope instanceof ServiceContextScope serviceContextScope) {
-        var agent =
-            serviceContextScope
-                .getDigitalTwin()
-                .getKnowledgeGraph()
-                .requireAgent(resolutionRequest.getAgentName());
-        var scope =
-            serviceContextScope.withResolutionConstraints(
-                ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
+        var scope = serviceContextScope;
+        if (resolutionRequest.getObservation().getId() != Observation.QUERY_ID) {
+          var agent = serviceContextScope.getDigitalTwin().getKnowledgeGraph()
+              .requireAgent(resolutionRequest.getAgentName());
+          scope = serviceContextScope.withResolutionConstraints(
+              ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
+        }
         var submission =
             runtimeService
                 .klabService()
@@ -207,6 +209,34 @@ public class RuntimeServerController {
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  @PostMapping(ServicesAPI.EXPORT_OBSERVATION)
+  public void exportObservation(
+      @RequestBody ObservationExportRequest request,
+      @RequestHeader(HttpHeaders.ACCEPT) String mediaType,
+      HttpServletResponse response, Principal principal) throws IOException {
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new KlabAuthorizationException(
+          "Observation export requires a context scope");
+    var scope = authorization.getScope(ContextScope.class);
+    try (var stream = runtimeService.klabService().exportObservation(
+        request.getObservation(), mediaType, request.getParameters(), scope)) {
+      if (stream == null) throw new IllegalArgumentException("Exporter returned no data");
+      response.setContentType(mediaType);
+      stream.transferTo(response.getOutputStream());
+    }
+  }
+
+  @PostMapping(ServicesAPI.OBSERVATION_MEMBERS)
+  public List<Observation> observationMembers(
+      @RequestBody Observation observation, Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new KlabAuthorizationException(
+          "Member enumeration requires a context scope");
+    return runtimeService.klabService()
+        .getMembers(observation, authorization.getScope(ContextScope.class)).stream()
+        .map(Observation::forTransport).toList();
   }
 
   /**

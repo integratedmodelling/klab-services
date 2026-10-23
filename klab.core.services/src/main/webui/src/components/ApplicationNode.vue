@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ExtendedWidget from "./ExtendedWidget.vue";
+import {extendedTypes} from "../services/application-widgets";
 import {computed, onBeforeUnmount, ref, watch} from "vue";
 import {layoutStyle, type UiNode, type WidgetInput} from "../services/application-ui";
 const props = defineProps<{node: UiNode; disabled?: boolean; theme?: string}>();
@@ -34,7 +36,7 @@ function input(name: string, value: unknown): void {
       </q-card>
     </q-dialog>
     <div v-else :data-node-id="node.id" :data-ui-tag="p.tag" :data-testid="p.testid" :class="['application-node', p.class]"
-      :style="layoutStyle(p)" :role="p.role" :tabindex="p.tabindex" :aria-description="p.description" :aria-label="p.role ? p.label : undefined" :aria-disabled="blocked || undefined">
+      :style="layoutStyle(p)" :role="p.role || (p.form === true ? 'form' : undefined)" :tabindex="p.tabindex" :aria-description="p.description" :aria-label="p.role ? p.label : undefined" :aria-disabled="blocked || undefined">
       <span v-if="node.type === 'text'">{{ p.label }}</span>
       <q-btn v-else-if="node.type === 'button'" no-caps :label="String(p.label ?? '')" :disable="blocked || p.readonly"
         :color="p.color || 'primary'" :icon="p.icon" :dense="p.dense" :flat="p.flat" :outline="p.outlined" :round="p.round" :loading="p.loading" :size="p.size"
@@ -50,6 +52,7 @@ function input(name: string, value: unknown): void {
         :label="p.label" :disable="blocked" :readonly="p.readonly" :dark="theme === 'dark'" :outlined="p.outlined !== false" :dense="p.dense" :color="p.color"
         :hint="p.hint" :error="Boolean(p.error)" :error-message="p.error" @update:model-value="input('change', $event)" />
       <q-linear-progress v-else-if="node.type === 'progress'" :value="Number(p.value)" :indeterminate="p.indeterminate" :color="p.color" :aria-label="p.label || 'Progress'" />
+      <ExtendedWidget v-else-if="extendedTypes.has(node.type)" :node="node" :disabled="blocked" :theme="theme" @input="emit('input', $event)" />
       <template v-else>
         <h2 v-if="p.title">{{ p.title }}</h2>
         <ApplicationNode v-for="child in node.children" :key="child.id" :node="child" :disabled="blocked" :theme="theme" @input="emit('input', $event)" />

@@ -45,6 +45,24 @@ public class ApplicationUiController {
     return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
   }
 
+  @PostMapping(value = "/{id}/files/{nodeId}", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  public ResponseEntity<?> upload(@PathVariable String id, @PathVariable String nodeId,
+      @RequestParam String name, @RequestParam(defaultValue = "application/octet-stream") String mediaType,
+      Principal principal, HttpServletRequest request) throws java.io.IOException {
+    // Bound the stream before allocating a body; instance and node validation remain server-owned.
+    var owner = user(principal);
+    manager.state(id, owner);
+    byte[] bytes = request.getInputStream().readNBytes(4194305);
+    if (bytes.length > 4194304) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE);
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+        .body(manager.upload(id, nodeId, name, mediaType, bytes, owner));
+  }
+
+  @GetMapping("/{id}/files/{handle}")
+  public ResponseEntity<?> file(@PathVariable String id, @PathVariable String handle, Principal principal) {
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(manager.file(id, handle, user(principal)));
+  }
+
   @PostMapping("/{id}/ticket")
   public ResponseEntity<?> ticket(
       @PathVariable String id, Principal principal, HttpServletRequest request) {

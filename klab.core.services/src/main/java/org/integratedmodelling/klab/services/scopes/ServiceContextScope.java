@@ -384,6 +384,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset observation) {
 
+    if (observation instanceof Observation view && view.getId() == Observation.QUERY_ID
+        && view.getObservable() != null && view.getObservable().getSemantics().isCollective()) {
+      return new ArrayList<>(getService(RuntimeService.class).getMembers(view, this));
+    }
+
     // FIXME reimplement using KG get() and links()
     var ret = new ArrayList<RuntimeAsset>();
 

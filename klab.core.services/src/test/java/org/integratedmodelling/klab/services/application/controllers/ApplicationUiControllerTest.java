@@ -11,6 +11,21 @@ import org.springframework.web.server.ResponseStatusException;
 
 class ApplicationUiControllerTest {
   @Test
+  void uploadBoundsTheHttpStreamBeforePassingBytesToTheInstance() throws Exception {
+    var manager = mock(ApplicationUiManager.class);
+    var user = mock(EngineAuthorization.class);
+    var controller = new ApplicationUiController(manager);
+    var request = new org.springframework.mock.web.MockHttpServletRequest();
+    request.setContent(new byte[4194305]);
+    assertEquals(413, assertThrows(ResponseStatusException.class,
+        () -> controller.upload("id", "node", "file.csv", "text/csv", user, request)).getStatusCode().value());
+    verify(manager, never()).upload(anyString(), anyString(), anyString(), anyString(), any(), any());
+    request.setContent(new byte[] {1, 2});
+    controller.upload("id", "node", "file.csv", "text/csv", user, request);
+    verify(manager).upload(eq("id"), eq("node"), eq("file.csv"), eq("text/csv"), org.mockito.AdditionalMatchers.aryEq(new byte[] {1, 2}), same(user));
+  }
+
+  @Test
   void ticketBindsPresentedServiceCredentialRatherThanPrincipalUpstreamToken() {
     var manager = mock(ApplicationUiManager.class);
     var user = mock(EngineAuthorization.class);

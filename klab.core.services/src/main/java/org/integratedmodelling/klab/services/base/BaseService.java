@@ -845,13 +845,22 @@ public abstract class BaseService implements KlabService {
       Parameters<String> parameters,
       Scope scope) {
 
+    return exportResolvedAsset(resolveUrn(urn, knowledgeClass, scope), urn, knowledgeClass,
+        mediaType, parameters, scope);
+  }
+
+  /** Export a validated asset, including a detached runtime query view. */
+  protected InputStream exportResolvedAsset(
+      RuntimeAsset asset, String urn, KlabAsset.KnowledgeClass knowledgeClass,
+      String mediaType, Parameters<String> parameters, Scope scope) {
+    if (asset == null) throw new IllegalArgumentException("No asset is available for export");
     // First retrieve the asset, then if the metadata contain an adapter and the adapter is local,
     // use that to prioritize before warning.
     Geometry geometry = null;
-    var asset = resolveUrn(urn, knowledgeClass, scope);
     if (asset instanceof Observation observation) {
       geometry = observation.getGeometry().dimensionsOnly();
-      var adapterId = observation.getContextualizationData().getAdapterId();
+      var adapterId = observation.getContextualizationData() == null ? null
+          : observation.getContextualizationData().getAdapterId();
       if (adapterId != null) {
         var adapter = getComponentRegistry().getAdapter(adapterId, Version.ANY_VERSION, scope);
         if (adapter != null) {

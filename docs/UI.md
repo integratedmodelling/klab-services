@@ -9,7 +9,7 @@ for `klab-ide`.
 
 ## Status and boundaries
 
-Stages 0–4 have an initial executable implementation. The portable contract below is broader than
+Stages 0–4 and the extended widget stage 4a have an executable implementation. The portable contract below is broader than
 the first renderer; implemented subsets and remaining work are stated explicitly.
 
 | Surface | Status |
@@ -21,7 +21,8 @@ the first renderer; implemented subsets and remaining work are stated explicitly
 | In-process presentation, input filtering, renderer detach/reattach and snapshot replay | Implemented `ApplicationUiSession` with headless regression tests |
 | Row/column flex, action mounts, basic `core.ui` verbs and actor emitters | Implemented with invocation-local mount cursors |
 | Published URN launch, project READ, retained state and dedicated WebSocket bus | Implemented on the runtime service |
-| Quasar renderer, direct routes, light/dark themes and named CSS | Implemented initial subset |
+| Quasar renderer, direct routes, light/dark themes and named CSS | Implemented, including extended widget catalog below |
+| Forms, collections, navigation, safe content, file handles and media | Implemented initial portable contracts; Quasar target |
 | Localized constants and UTF-8 properties bundles | Implemented with generic preamble properties |
 | Named-action component instances, nested imports, tagged insertion/removal | Implemented with isolated namespaces and staged construction |
 | Installed component toolkit discovery, configuration and version leases | Implemented for browser renderer modules |
@@ -31,7 +32,7 @@ the first renderer; implemented subsets and remaining work are stated explicitly
 The design uses current language/runtime contracts and current service web integration. Legacy UI
 implementations and their metadata catalogs are not specifications for this work. No grammar
 extensions are required by the initial implementation. Examples using the implemented subset are
-executable; wider widget and layout catalogs remain proposals. The existing WebsocketsBus remains
+executable; advanced layout capabilities and the future map/chart family remain proposals. The existing WebsocketsBus remains
 separate from the new same-origin application bus.
 
 Related references: [k.Actors](AGENTS.md), [service web architecture](WEBUI_ARCHITECTURE.md),
@@ -268,7 +269,7 @@ Tags and option IDs remain untranslated. Each emitter fires a map with `event` a
 | `button(label)` | `icon`, `color="primary"`, `size` (`xs/sm/md/lg/xl`), `+dense`, `+flat`, `+outlined`, `+round`, `+loading`, `+readonly` | `{event:"click", value:null}`; loading/read-only blocks server input |
 | `checkbox(label)` | `value=false`, `color`, `+dense`, `+readonly` | `{event:"change", value:boolean}` |
 | `input(label)` | `value=""`, `type="text"` (`text/email/password/tel/url/search/textarea`), `placeholder`, `hint`, `error`, `maxlength=16384` (1–16384), `debounce=300` ms (0–2000), `+required`, `+readonly`, `+dense`, `outlined=true`, `color` | `{event:"change", value:string}`; length/required/read-only checked on server. Input type is presentation, not email/URL domain validation |
-| `number(label)` | `value=0`, finite `min/max`, positive `step`, `debounce=300`, `placeholder`, `hint`, `error`, `+readonly`, `+dense`, `outlined=true`, `color` | `{event:"change", value:number}`; finite/range checked on server. Step is the browser increment, not a rounding rule |
+| `number(label)` | `value=0` (or `min` when given), finite `min/max`, positive `step`, `debounce=300`, `placeholder`, `hint`, `error`, `+readonly`, `+dense`, `outlined=true`, `color` | `{event:"change", value:number}`; finite/range checked on server. Step is the browser increment, not a rounding rule |
 | `select(label)` | Required `options`: distinct strings (up to 10000); `value=""`, `hint`, `error`, `+required`, `+readonly`, `+dense`, `outlined=true`, `color` | `{event:"change", value:string}`; server requires a declared option ID |
 | `get(tag)` | None | Current authoritative `value`; text uses `label`, so `get` on text returns null |
 | `set(tag, value)` | None | Sets value (or text label), validates primitive value/range; does not fire user input |
@@ -332,30 +333,159 @@ Ordinary annotated action invocation retains its singleton replacement semantics
 provides multiple independent instances. External live agents and their ownership/delegation bridge
 remain separate from importing reusable UI action code.
 
-The wider families below are proposals beyond the implemented parameter table above. The `core.ui`
+The families below are implemented for Quasar, except the explicitly future visualization row. The `core.ui`
 Java actor is registered by the current component mechanism. Widget verbs declare `EMITTER` semantics and register a server
 continuation; they do not synchronously return a widget value. A tagged call binds a widget for
 later control through `ui` commands. Passive presentation verbs are functions without emitted input.
 
-| Family | Proposed verbs | Inputs emitted to match actions |
+| Family | Verbs or options (implemented unless marked future) | Inputs emitted to match actions |
 | --- | --- | --- |
-| Basic actions | `button`, `iconbutton`, `link` | `click`: modifiers and optional navigation intent |
+| Basic actions | `button`, `iconbutton`, `link` | `click`: null; optional authored `href` on links |
 | Boolean/choice | `checkbox`, `switch`, `radio`, `select`, `multiselect` | `change`: boolean or selected stable option ID(s) |
-| Text/numeric input | `input`, `textarea`, `number`, `slider`, `range`, `date`, `time`, `color` | Validated `change`/`commit`; optional debounced `input` |
-| Forms | `form`, `field`, `submit`, `reset` | `submit`: validated field-value map; `reset` |
+| Text/numeric input | `input`, `textarea`, `number`, `slider`, `range`, `date`, `time`, `color` | Validated `change`; text inputs debounced, sliders emit on release |
+| Forms | Group `+form`, widget `:field`, `submit`, `reset` | `submit`: validated field-value map; `reset` |
 | Collections | `list`, `table`, `tree` | `select`, `activate`, `sort`, `page`, `expand`; stable item IDs |
 | Navigation | `tabs`, `stepper`, `pagination`, `breadcrumbs` | `change`: stable destination/step/page ID |
 | Content | `text`, `markdown`, `image`, `icon`, `separator`, `badge`, `progress`, `spinner` | Passive; sanitize markdown and restrict image sources |
 | Media/files | `upload`, `download`, `audio`, `video` | Bounded file handles and playback events; no arbitrary server paths |
 | Generic visualizations (future) | `map`, `chart` | Selection/filter events through explicit visualization capabilities |
 
-Widget options use keyed arguments and call metadata, not toolkit constructors. The first subset
-is text, button, checkbox, input, select, number and progress. JavaFX may implement only that subset
+Widget options use keyed arguments and call metadata, not toolkit constructors. The primitive
+subset is text, button, checkbox, input, select, number and progress; the following extended
+contracts add every non-future family above. JavaFX may implement only that subset
 plus basic row/column layout and dialogs, reporting all other required types as unsupported.
 Toolkits may contribute advanced namespaced widgets with schemas and event contracts.
 Native ObservationCard, GeometryCard, SemanticComposer, provenance and system views belong to the
 separate [k.LAB component contract](UI_KLAB_COMPONENTS.md). Simplified `ui.observation` and
 `ui.provenance` verbs are not specified by this initial contract.
+
+### Extended widget options (Quasar)
+
+Every new widget verb takes one positional string: its accessible label. For `markdown`, `badge`
+and `icon`, that string is also the initial content/name. `separator("")` needs no visible label.
+Existing shared layout, visibility, disabled, class and help options continue to apply. Interactive
+widgets support `readonly`; it blocks server input as well as client editing. Option strings are
+stable IDs and currently also their displayed labels. `ui.set` updates canonical `value` without
+emitting input; `ui.style` can update validated configuration such as `items`, `options` or `src`.
+
+| Verbs/options | Configuration and defaults | Emitted `{event, value}` |
+| --- | --- | --- |
+| `iconbutton`, `link` | Button options; `iconbutton` displays `icon` with accessible label; `link` is flat and optionally accepts `href` | `click`, null; authored navigation opens a separate tab |
+| `switch` | Checkbox options, `value=false` | `change`, boolean |
+| `radio`, `multiselect` | Required `options`: distinct strings, at most 10000. Radio value defaults to empty string; multiselect to empty list. `required`, `dense`, `color`; multiselect also `hint`, `error`, `outlined` | `change`, one ID or a distinct list of IDs; server rejects undeclared selections |
+| `textarea` | Same options as `input`; multiline presentation | `change`, string |
+| `slider`, `range` | `min=0`, `max=100`, positive `step=1`; slider defaults to min; range to `{min: min, max: max}` | `change` on release, number or `{min, max}`; finite bounds and ordered endpoints checked on server |
+| `date`, `time`, `color` | `value=""`, `required`; date uses `YYYY-MM-DD`, time `HH:mm` (24-hour), color `#RRGGBB`. Date/time accept input help/debounce options | `change`, string; calendar dates, time and color format checked on server |
+| Group `+form`, widget `:field "name"` | A tagged group owns descendant fields. Field names are ASCII identifiers, at most 80 characters. Forms cannot nest. Disabled/hidden fields are excluded | No group emitter; `submit`/`reset` provide form events |
+| `submit`, `reset` | Button options; nearest ancestor form by default. `:form "profile"` or `:form "/main/profile"` addresses a tagged form explicitly | Client sends null. Server emits `submit` with validated canonical field map, or `reset` with restored authored-default map. Duplicate fields or invalid required values reject submission; required fields may be cleared while editing a form |
+| `list`, `table`, `tree` | Required `items`: list of maps with unique nonempty string `id` and string `label`; other cell values may be included. Tree maps optionally contain `children`. At most 10000 IDs, nesting at most 32. `value=""` is selected ID | `select`, ID; `activate`, ID (double click or Enter on a list/tree item or selected table row) |
+| `table` | Required `columns`: distinct cell property names (1–100); `pagesize=10` (1–1000), `page=1`, optional `sort` column and `descending=false`. Quasar sorts/pages the authored rows locally | Also `sort`, `{column, descending}` and `page`, integer; column/page validated and retained on server |
+| `tree` | `expanded`: list of node IDs, default empty | Also `expand`, complete expanded-ID list; selection and expansion retained |
+| `tabs`, `stepper`, `breadcrumbs` | Required distinct string `options`, `value=""`; set an initial option for a selected tab/step. These are navigation controls; reactions show/hide or mount associated content | `change`, destination ID |
+| `pagination` | Required integer `max` (1–10000), `min=1`, `value=min` | `change`, integer page within bounds |
+| `markdown` | Positional text, later `value` through `set`; safe subset: headings, emphasis, inline code, bullets and links. Raw HTML is escaped | Passive |
+| `image` | Required `src`; `alt` defaults to label | Passive |
+| `icon`, `separator`, `badge`, `spinner` | `icon` uses `icon` or positional name; badge uses label or later value; `color`, supported `size` where applicable | Passive; spinner exposes status label |
+| `upload` | `accept` comma-separated MIME types, MIME wildcards or extensions; `maxbytes=4194304` (1–4194304); `hint`, `outlined`. Single-file picker | `change`, `{id, name, mediaType, size}` after successful HTTP transfer; bound to originating widget and instance |
+| `download` | `value` is a handle from upload or `ui.file`; disabled until populated. Button options | `click`, null after the authorized download starts |
+| `audio`, `video` | Required `src`; `controls=true`, `loop=false`, `muted=false`. No autoplay. Native browser playback controls inside the Quasar renderer | `play`, `pause`, `ended`, with current time in seconds |
+
+`src`, `href` and Markdown links accept HTTPS URLs or relative URLs. Protocol-relative URLs,
+credentials, control characters, JavaScript, data and local-file URLs are rejected. Media and images
+are browser-fetched resources: protected service resources requiring bearer headers need an
+application-specific delivery mechanism. The server does not fetch these URLs. Markdown is a
+restricted dialect, not full CommonMark. Raw HTML and executable extensions are never evaluated.
+
+Files use authenticated HTTP, with no file bytes in the UI snapshot or WebSocket input.
+`POST /api/v1/ui/instances/{id}/files/{nodeId}?name=...&mediaType=...` accepts a raw
+`application/octet-stream` body. The owner and project READ are checked, then the live upload widget's
+visibility, read-only state, type filter and size limit. `GET .../{id}/files/{handle}` returns JSON
+`{name, mediaType, content}` with base64 content; the built-in renderer creates a temporary download
+Blob. Responses use `no-store`. Downloads use attachment semantics even for HTML or SVG content.
+A handle grants no cross-instance access and names never resolve to server paths.
+
+Each instance retains at most 16 files and 16 MiB total; each file is at most 4 MiB. Files remain
+available through reconnect and are released on application stop/expiry; uploaded files are also
+released when their originating widget is removed. The initial store is memory-only. `accept`
+checks the claimed MIME type and filename, not file contents: reactions must validate domain data.
+`ui.file(name, text, mediaType)` creates a UTF-8 text file and returns its opaque handle map;
+`ui.readfile(id)` returns a defensive byte-array copy to server-side actor code. Neither reads an
+arbitrary path. Use an explicit new application instance after exhausting this initial bounded store.
+
+### Worked examples
+
+The complete [extended-widget application](examples/ui/widgets.kactor) combines these examples and
+is parsed and executed by `UiWidgetCatalogTest`. The media URLs there are illustrative resources;
+replace them with published HTTPS media. See the existing [launch setup](examples/ui/README.md).
+
+#### A form with validation and reset
+
+```kactors
+(
+    ui.input("Name" :field "name" :value "Ada" +required :debounce 0) #name
+    ui.multiselect("Regions" :field "regions" :options ("eu", "af", "as")) #regions
+    ui.range("Interval" :field "interval" :min 0 :max 100 :value {min: 10, max: 80}) #interval
+    ui.submit("Save"):
+        event -> ui.set("summary", [event.value.toString()])
+    ui.reset("Reset")
+) +form :layout "column" :gap "12px" #profile
+```
+
+Create `ui.text("Ready") #summary` before this group. A valid Save reaction receives, for example,
+`{event: "submit", value: {name: "Ada", regions: ["eu"], interval: {min: 10, max: 80}}}`.
+The client cannot supply that map; the server builds it from retained field values. Reset restores
+`Ada`, an empty regions list and the authored range, without emitting individual field changes.
+Use `ui.submit("Save profile" :form "profile")` outside the group to submit the same form.
+`debounce=0` is useful when every keystroke should be committed before an immediate submission.
+Business validation belongs in the submit reaction; use authored `error` messages for feedback.
+
+#### Upload, inspect and offer a download
+
+```kactors
+ui.upload("Upload CSV" :accept ".csv,text/csv" :maxbytes 1048576):
+    event -> ui.set("copy", [event.value])
+ui.download("Download uploaded file") #copy
+ui.download("Download generated report") #report
+ui.set("report", ui.file("report.csv", "id,value\nsample,42\n", "text/csv"))
+```
+
+The upload reaction receives a handle map, for example
+`{event: "change", value: {id: "opaque-id", name: "data.csv", mediaType: "text/csv", size: 512}}`.
+`ui.set("copy", [event.value])` makes the authorized uploaded bytes downloadable. Server-side
+processing can call `ui.readfile([event.value.id])` to inspect the bytes before accepting them.
+The generated report follows the same access checks and lifetime as an uploaded file. Neither the
+browser nor k.Actors source supplies a server filesystem path.
+
+#### Stable IDs, tables and trees
+
+```kactors
+ui.table("Measurements" :columns ("label", "amount") :pagesize 5
+    :items ({id: "a", label: "Alpha", amount: 10}, {id: "b", label: "Beta", amount: 20})) #measurements
+ui.tree("Hierarchy"
+    :items ({id: "root", label: "Root", children: ({id: "leaf", label: "Leaf"})})
+    :expanded ("root")) #hierarchy
+```
+
+Selecting Alpha emits `{event: "select", value: "a"}`. Sorting emits, for example,
+`{event: "sort", value: {column: "amount", descending: false}}`; opening a tree branch emits the
+complete expanded-ID list. Replace a collection through
+`ui.style("measurements", {items: (...), value: "a"})`, keeping a valid selected ID, sort and page.
+Display labels may change independently of identity. The initial table loads authored rows in one
+snapshot; the protocol's 256 KiB snapshot limit still applies. Remote/virtualized datasets remain a later extension.
+
+#### Navigation and media
+
+```kactors
+ui.tabs("Sections" :options ("overview", "details") :value "overview"):
+    event -> ui.set("summary", [event.value])
+ui.stepper("Workflow" :options ("prepare", "review", "finish") :value "prepare") #steps
+ui.pagination("Page" :max 20 :value 1) #page
+ui.audio("Recording" :src "https://example.org/recording.mp3") #recording
+```
+
+Tabs and steps emit stable IDs; pagination emits an integer. Mount or show the corresponding
+content in the reaction. Playback emits `{event: "pause", value: 12.5}` for a pause at 12.5 seconds;
+playback position is transient and is not automatically sought/replayed on reconnect.
 
 Each emitted value has `{event, value}` plus optional widget-specific data. Match handlers can
 inspect these fields through ordinary k.Actors value access. Transport sequence/revision fields
@@ -547,7 +677,7 @@ On unmount, release listeners/timers. The browser regression exercises actual dy
 Only registered, STARTED components contribute. Unknown/duplicate toolkit IDs, incompatible protocol
 versions, undeclared modules and unsupported nodes/layouts fail explicitly. Core input schemas and
 the server state owner remain authoritative across toolkit choices. The first descriptor supports
-live protocol version 1 with canonical primitive types and row/column layouts; custom native widget
+live protocol version 1 with the primitive and extended types above and row/column layouts; custom native widget
 schemas and source exporters remain separate future contracts. Descriptors are immutable snapshots.
 An application lease retains the contributing component version while disconnected too. Unload,
 remove and hot replacement refuse while any such lease exists; stopping/expiring the last instance
@@ -571,6 +701,7 @@ generated Flutter projects require toolchain/version configuration and their own
 | 2 — stateful launch and transport (initial subset implemented) | Runtime/Resources authorize published URNs and host-classpath aliases; registry owns session/lease; dedicated bus binds identity and instance | Ownership, READ, launch retry, event validation, ticket replay/origin checks, field retention and socket replacement are tested |
 | 3 — Quasar first usable application (initial subset implemented) | `/apps/` entry, basic widgets, shell surfaces/dialogs, flex, localized text and named CSS | Browser fixture covers authentication gate, field/button workflow, CSS, narrow viewport, reconnect and page rebuild; real socket test covers transport serialization and state replay |
 | 4 — reusable components and toolkit installation (implemented initial contract) | Component descriptors/configuration/version leases; validated flex/widget metadata; tagged named-action mounts including nested imports | Installed browser module loads without rebuilding host; duplicate/unsupported features fail explicitly; independent component instances and binding disposal tested; component unload blocked until leases close |
+| 4a — extended portable widget catalog (implemented) | All non-future families above; form/field options, authoritative values, bounded HTTP file handles and Quasar controls | Parsed example and headless form/schema/file tests; browser catalog, transfers and existing reconnect workflow |
 | 5 — JavaFX workflow harness | Adapter and IDE integration in `klab-ide`; shared headless conformance fixtures | Same workflow fixture produces equivalent server transitions from Quasar and JavaFX; unsupported widgets produce explicit diagnostics; view thread and detach disposal tested |
 | 6 — full instrumentation and durable state | Advanced widgets/scientific views, responsive/theme/a11y coverage, state checkpoint/restore/migration, telemetry and load testing | Published capability matrix; restart recovery proves no duplicate startup effects; bounded queues and lease cleanup verified under load |
 | 7 — Flutter feasibility and export | Live renderer and optional component-provided project exporter | Generated project builds with a pinned SDK; mobile client authenticates, resumes state and exercises shared event conformance fixtures |
@@ -607,7 +738,7 @@ adds retention leases. Neither layer provides disk persistence yet.
 Focused regression test command (PowerShell):
 
 ```powershell
-mvn -pl klab.core.services -am "-Dtest=ApplicationUiControllerTest,ApplicationUiSessionTest,ApplicationUiRuntimeTest,ApplicationUiManagerTest,ServiceUiApplicationLauncherTest,ApplicationUiWebSocketTest,ComponentRegistryActorVerbTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+mvn -pl klab.core.services -am "-Dtest=UiWidgetCatalogTest,ApplicationUiControllerTest,ApplicationUiSessionTest,ApplicationUiRuntimeTest,ApplicationUiManagerTest,ServiceUiApplicationLauncherTest,ApplicationUiWebSocketTest,ComponentRegistryActorVerbTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
 ```
 
 Run `npm run typecheck`, `npm run build` and `npm run test:application` in
@@ -616,13 +747,14 @@ The browser fixture uses controlled authentication/transport responses; the Java
 a real embedded server. A deployed Runtime + Resources + hub sign-in smoke test remains a separate
 live-stack check. No live service is restarted by these tests.
 
-The initial `core.ui` catalog is text, progress, button, checkbox, input, number, select, get, set,
-show, hide, enable, disable, close, remove, clear, style and mount. Surface actions support header/footer/drawer,
+The `core.ui` catalog includes the primitive and extended widget tables above, get, set,
+show, hide, enable, disable, close, remove, clear, style, mount, file and readfile. Forms and fields
+use options on existing groups/widgets. Only map/chart remain future-only widget verbs. Surface actions support header/footer/drawer,
 panel/window, dialog/modal and the other named surface containers above within application scopes.
 Initial header/footer/drawer actions run before main, after construction/init. Invoking an annotated
 action currently replaces its mount and emitter bindings; showing a retained mount does not rerun
 it. Repeated instances use `ui.mount` and explicit removal. Dialog animations map `none/fade/slide/scale`
 and `duration` to Quasar transitions; other surface animations are not implemented. Advanced layout
-families, complete surface annotation options, ordinary singleton replacement rollback, native
+families, full Markdown, remote collections, durable/streamed file stores, complete surface annotation options, ordinary singleton replacement rollback, native
 widget schemas, application publication digests and hosting external live agent interfaces remain
 follow-up instrumentation. Dynamic component construction rolls back only its UI subtree.

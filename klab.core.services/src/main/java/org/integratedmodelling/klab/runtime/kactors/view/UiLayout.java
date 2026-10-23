@@ -97,7 +97,9 @@ public final class UiLayout {
           "animation",
           "duration",
           "singleton",
-          "retain");
+          "retain",
+          "form", "field", "items", "columns", "pagesize", "page", "sort", "descending",
+          "expanded", "src", "href", "alt", "accept", "maxbytes", "controls", "loop", "muted");
 
   public static Map<String, Object> normalize(Map<?, ?> metadata) {
     var result = new LinkedHashMap<String, Object>();

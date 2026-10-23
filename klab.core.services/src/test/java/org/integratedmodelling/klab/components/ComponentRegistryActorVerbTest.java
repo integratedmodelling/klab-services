@@ -56,7 +56,12 @@ class ComponentRegistryActorVerbTest {
       assertTrue(names.contains("regression.ui." + name), names.toString());
     }
     assertTrue(names.containsAll(List.of("regression.ui.mount", "regression.ui.clear")));
-    assertEquals(18, names.size());
+    for (String name : List.of("iconbutton", "link", "switch", "radio", "multiselect", "textarea",
+        "slider", "range", "date", "time", "color", "submit", "reset", "list", "table", "tree",
+        "tabs", "stepper", "pagination", "breadcrumbs", "markdown", "image", "icon", "separator",
+        "badge", "spinner", "upload", "download", "audio", "video", "file", "readfile"))
+      assertTrue(names.contains("regression.ui." + name), names.toString());
+    assertEquals(50, names.size());
   }
 
   @Test void documentSubclassesExposeInheritedVerbsAndConformToTheDocumentAncestor() throws Exception {

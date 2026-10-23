@@ -117,6 +117,167 @@ public class CoreActorLibrary {
       widget("select", scope, metadata, label, true);
     }
 
+    @Verb(name = "markdown", description = "Present markdown widget")
+    public static void markdown(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("markdown", scope, metadata, label, false);
+    }
+
+    @Verb(name = "image", description = "Present image widget")
+    public static void image(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("image", scope, metadata, label, false);
+    }
+
+    @Verb(name = "icon", description = "Present icon widget")
+    public static void icon(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("icon", scope, metadata, label, false);
+    }
+
+    @Verb(name = "separator", description = "Present separator widget")
+    public static void separator(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("separator", scope, metadata, label, false);
+    }
+
+    @Verb(name = "badge", description = "Present badge widget")
+    public static void badge(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("badge", scope, metadata, label, false);
+    }
+
+    @Verb(name = "spinner", description = "Present spinner widget")
+    public static void spinner(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("spinner", scope, metadata, label, false);
+    }
+
+    @Verb(name = "iconbutton", executionType = Verb.Type.EMITTER, description = "Present iconbutton widget")
+    public static void iconbutton(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("iconbutton", scope, metadata, label, true);
+    }
+
+    @Verb(name = "link", executionType = Verb.Type.EMITTER, description = "Present link widget")
+    public static void link(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("link", scope, metadata, label, true);
+    }
+
+    @Verb(name = "switch", executionType = Verb.Type.EMITTER, description = "Present switch widget")
+    public static void toggle(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("switch", scope, metadata, label, true);
+    }
+
+    @Verb(name = "radio", executionType = Verb.Type.EMITTER, description = "Present radio widget")
+    public static void radio(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("radio", scope, metadata, label, true);
+    }
+
+    @Verb(name = "multiselect", executionType = Verb.Type.EMITTER, description = "Present multiselect widget")
+    public static void multiselect(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("multiselect", scope, metadata, label, true);
+    }
+
+    @Verb(name = "textarea", executionType = Verb.Type.EMITTER, description = "Present textarea widget")
+    public static void textarea(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("textarea", scope, metadata, label, true);
+    }
+
+    @Verb(name = "slider", executionType = Verb.Type.EMITTER, description = "Present slider widget")
+    public static void slider(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("slider", scope, metadata, label, true);
+    }
+
+    @Verb(name = "range", executionType = Verb.Type.EMITTER, description = "Present range widget")
+    public static void range(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("range", scope, metadata, label, true);
+    }
+
+    @Verb(name = "date", executionType = Verb.Type.EMITTER, description = "Present date widget")
+    public static void date(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("date", scope, metadata, label, true);
+    }
+
+    @Verb(name = "time", executionType = Verb.Type.EMITTER, description = "Present time widget")
+    public static void time(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("time", scope, metadata, label, true);
+    }
+
+    @Verb(name = "color", executionType = Verb.Type.EMITTER, description = "Present color widget")
+    public static void color(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("color", scope, metadata, label, true);
+    }
+
+    @Verb(name = "submit", executionType = Verb.Type.EMITTER, description = "Present submit widget")
+    public static void submit(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("submit", scope, metadata, label, true);
+    }
+
+    @Verb(name = "reset", executionType = Verb.Type.EMITTER, description = "Present reset widget")
+    public static void reset(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("reset", scope, metadata, label, true);
+    }
+
+    @Verb(name = "list", executionType = Verb.Type.EMITTER, description = "Present list widget")
+    public static void list(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("list", scope, metadata, label, true);
+    }
+
+    @Verb(name = "table", executionType = Verb.Type.EMITTER, description = "Present table widget")
+    public static void table(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("table", scope, metadata, label, true);
+    }
+
+    @Verb(name = "tree", executionType = Verb.Type.EMITTER, description = "Present tree widget")
+    public static void tree(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("tree", scope, metadata, label, true);
+    }
+
+    @Verb(name = "tabs", executionType = Verb.Type.EMITTER, description = "Present tabs widget")
+    public static void tabs(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("tabs", scope, metadata, label, true);
+    }
+
+    @Verb(name = "stepper", executionType = Verb.Type.EMITTER, description = "Present stepper widget")
+    public static void stepper(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("stepper", scope, metadata, label, true);
+    }
+
+    @Verb(name = "pagination", executionType = Verb.Type.EMITTER, description = "Present pagination widget")
+    public static void pagination(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("pagination", scope, metadata, label, true);
+    }
+
+    @Verb(name = "breadcrumbs", executionType = Verb.Type.EMITTER, description = "Present breadcrumbs widget")
+    public static void breadcrumbs(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("breadcrumbs", scope, metadata, label, true);
+    }
+
+    @Verb(name = "upload", executionType = Verb.Type.EMITTER, description = "Present upload widget")
+    public static void upload(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("upload", scope, metadata, label, true);
+    }
+
+    @Verb(name = "download", executionType = Verb.Type.EMITTER, description = "Present download widget")
+    public static void download(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("download", scope, metadata, label, true);
+    }
+
+    @Verb(name = "audio", executionType = Verb.Type.EMITTER, description = "Present audio widget")
+    public static void audio(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("audio", scope, metadata, label, true);
+    }
+
+    @Verb(name = "video", executionType = Verb.Type.EMITTER, description = "Present video widget")
+    public static void video(RuntimeAgent.Scope scope, Metadata metadata, String label) {
+      widget("video", scope, metadata, label, true);
+    }
+
+    @Verb(name = "file", description = "Create an instance-owned bounded file handle")
+    public static Object file(RuntimeAgent.Scope scope, String name, String content, String mediaType) {
+      return cursor(scope).model().createFile(null, name, mediaType,
+          content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    @Verb(name = "readfile", description = "Read an instance-owned file handle as bytes")
+    public static Object readfile(RuntimeAgent.Scope scope, String handle) {
+      return cursor(scope).model().file(handle).bytes().clone();
+    }
+
     private static Object control(
         RuntimeAgent.Scope scope, String command, String tag, Object value) {
       var cursor = cursor(scope);
