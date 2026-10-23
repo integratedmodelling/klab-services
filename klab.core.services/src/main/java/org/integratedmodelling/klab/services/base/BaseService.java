@@ -853,7 +853,10 @@ public abstract class BaseService implements KlabService {
   protected InputStream exportResolvedAsset(
       RuntimeAsset asset, String urn, KlabAsset.KnowledgeClass knowledgeClass,
       String mediaType, Parameters<String> parameters, Scope scope) {
-    if (asset == null) throw new IllegalArgumentException("No asset is available for export");
+    // URI-based exporters resolve through their own registries, without a RuntimeAsset.
+    // Observation exports (including detached query views) require a resolved asset.
+    if (asset == null && knowledgeClass == KlabAsset.KnowledgeClass.OBSERVATION)
+      throw new IllegalArgumentException("No asset is available for export");
     // First retrieve the asset, then if the metadata contain an adapter and the adapter is local,
     // use that to prioritize before warning.
     Geometry geometry = null;
