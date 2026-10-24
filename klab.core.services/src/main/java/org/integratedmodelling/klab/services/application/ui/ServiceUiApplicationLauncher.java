@@ -149,6 +149,19 @@ public final class ServiceUiApplicationLauncher implements UiApplicationLauncher
       if (behavior == null) throw new ResponseStatusException(NOT_FOUND);
       requireRead(resources, behavior.getProjectName(), scope);
       String project = behavior.getProjectName();
+      // A project can contain an old behavior and an application with the same URN.
+      // The global behavior index cannot identify the application document in that case.
+      if (behavior.getBehaviorType() != KActorsBehavior.Type.APP) {
+        var owner = resources.retrieve(project,
+            org.integratedmodelling.klab.api.knowledge.organization.Project.class, scope);
+        if (owner == null) throw new ResponseStatusException(NOT_FOUND, "Application project unavailable");
+        var applications = owner.getApps().stream()
+            .filter(candidate -> urn.equals(candidate.getUrn())
+                && candidate.getBehaviorType() == KActorsBehavior.Type.APP).toList();
+        if (applications.size() != 1)
+          throw new ResponseStatusException(BAD_REQUEST, "A unique project application is required");
+        behavior = applications.getFirst();
+      }
       assets =
           path -> {
             var material =

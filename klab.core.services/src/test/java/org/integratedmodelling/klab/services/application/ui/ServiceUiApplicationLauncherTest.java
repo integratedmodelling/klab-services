@@ -21,6 +21,42 @@ import org.springframework.web.server.ResponseStatusException;
 
 class ServiceUiApplicationLauncherTest {
   @Test
+  void sameUrnBehaviorCannotShadowTheSavedProjectApplication() throws Exception {
+    var instance = mock(ServiceNetworkedInstance.class);
+    var service = mock(BaseService.class);
+    when(instance.klabService()).thenReturn(service);
+    when(service.serviceId()).thenReturn("runtime-service");
+    var resources = mock(ResourcesService.class);
+    var scope = mock(UserScope.class);
+    var user = mock(EngineAuthorization.class);
+    when(user.getScope()).thenReturn(scope);
+    when(scope.getService(ResourcesService.class)).thenReturn(resources);
+    when(resources.serviceId()).thenReturn("resources-service");
+    var original = new org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl();
+    original.setUrn("staging.vxii.demoapp"); original.setProjectName("klab.staging.vxii");
+    original.setBehaviorType(KActorsBehavior.Type.BEHAVIOR);
+    original.setSourceCode("behavior staging.vxii.demoapp");
+    when(resources.retrieve(original.getUrn(), KActorsBehavior.class, scope)).thenReturn(original);
+    var project = new org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl();
+    project.setUrn("klab.staging.vxii"); project.setBehaviors(List.of(original));
+    when(resources.retrieve(project.getUrn(), org.integratedmodelling.klab.api.knowledge.organization.Project.class, scope)).thenReturn(project);
+    var rights = new ResourceInfo(); rights.setPermissions(Set.of(CRUDOperation.READ));
+    when(resources.info(project.getUrn(), KnowledgeClass.PROJECT, ResourceInfo.class, scope)).thenReturn(rights);
+    var launcher = new ServiceUiApplicationLauncher(instance);
+    for (String label : List.of("First saved application", "Second saved application")) {
+      var app = ApplicationUiRuntimeTest.parse("web app staging.vxii.demoapp \"Demo\" version 1.0 using core.ui as ui action main: ui.text(\"" + label + "\")");
+      ((org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl)app).setProjectName(project.getUrn());
+      project.setApps(List.of(app));
+      var published = launcher.resolve(original.getUrn(), "en", user);
+      assertEquals(KActorsBehavior.Type.APP, published.behavior().getBehaviorType());
+      assertEquals(app.getSourceCode(), published.behavior().getSourceCode());
+      assertEquals(project.getUrn(), published.project());
+    }
+    project.setApps(List.of());
+    assertThrows(ResponseStatusException.class, () -> launcher.resolve(original.getUrn(), "en", user));
+  }
+
+  @Test
   void browserScopesReceiveCallerBoundClientsFromTrustedHostTopology() throws Exception {
     var instance = mock(ServiceNetworkedInstance.class);
     var host =
