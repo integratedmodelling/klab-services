@@ -581,7 +581,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         .start(
             () -> {
               try {
-                var ret = resources.manageRepository(projectId, operation, arguments);
+                var ret = resources.manageRepository(projectId, operation, currentUser(), null, arguments);
                 handleResultSets(ret);
               } catch (Exception e) {
                 handleResultSets(List.of(ResourceSet.empty(

@@ -94,6 +94,18 @@ body. The scoped `ResourcesService.manageRepository` overload passes the real re
 and optional ID. Project import through `ResourcesProvider.importProject(..., scope, credentialId)`
 uses that ID for cloning and stores only the ID in local `.git/config` as `klab.credentialId` for
 subsequent operations. No token or password is embedded in a repository URL or configuration.
+The `project.git.import` transport schema accepts the same optional `credentialId`; its `url`
+contains only the repository coordinates and optional `#branch`. The IDE's **Use Git credential
+set...** project action supplies an ID for the next repository operation. A resolved service-vault
+set is also remembered when automatically selected or first linked after cloning. Every subsequent
+operation rechecks its usage grants and destination, even when the ID was remembered.
+
+Local resources services also consult installed Git credential helpers (`git credential fill`)
+when no vault set is linked or matched. This lookup disables interactive prompts and leaves helper
+secrets in the external credential store. Explicit or remembered vault IDs take precedence; an
+unavailable, unauthorized or ambiguous vault selection does not fall back to another identity.
+Commit and publish operations require usable local Git credentials or an authorized service-vault
+set; the Git host still enforces actual repository write access when pushing.
 For component code, `Utils.Git.withCredentials(service, callerScope, id, operation)` binds those
 values for one synchronous operation and restores the previous binding in `finally`.
 

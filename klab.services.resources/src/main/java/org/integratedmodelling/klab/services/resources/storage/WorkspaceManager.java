@@ -2001,7 +2001,7 @@ public class WorkspaceManager {
 
   /**
    * Import a project from a URL into the given workspace and return the associated storage. Project
-   * configuration must not exist already, if so it is removed and rebuilt. All project implications
+   * configuration and storage must not exist already. All project implications
    * in the workspace are resolved downstream.
    *
    * @param projectUrl
@@ -2010,17 +2010,10 @@ public class WorkspaceManager {
    */
   public ProjectStorage importProject(String projectUrl, String workspaceName) {
 
-    String projectName = Utils.URLs.getURLBaseName(projectUrl);
+    String projectName = Utils.Git.isRemoteGitURL(projectUrl)
+        ? Utils.Git.repositoryName(projectUrl) : Utils.URLs.getURLBaseName(projectUrl);
     var configuration = this.configuration.getProjectConfiguration().get(projectName);
-    if (configuration != null) {
-      scope.warn(
-          "Configuration of imported project "
-              + projectName
-              + " exists already: "
-              + "import "
-              + "will "
-              + "rewrite it");
-    }
+    if (configuration != null) throw new IllegalStateException("Project already exists: " + projectName);
 
     ProjectStorage ret = null;
 
@@ -2031,22 +2024,11 @@ public class WorkspaceManager {
         File workspace = BaseService.getConfigurationSubdirectory(startupOptions, "workspaces");
         File projectHome = new File(workspace + File.separator + projectName);
 
-        if (projectHome.isDirectory()) {
-          scope.warn(
-              "Deleting and reimporting " + projectName + " from Git repository " + projectUrl);
-        }
+        if (projectHome.exists()) throw new IllegalStateException("Project already exists: " + projectName);
 
-        try {
-          projectName = Utils.Git.clone(projectUrl, workspace, true, scope);
-          if (projectHome.exists()) {
-            ret = new FileProjectStorage(projectHome, projectName, this::handleFileChange);
-          }
-
-        } catch (Throwable t) {
-          // just make the return value null
-          if (projectHome.exists()) {
-            Utils.Files.deleteQuietly(projectHome);
-          }
+        projectName = Utils.Git.clone(projectUrl, workspace, false, scope);
+        if (projectHome.exists()) {
+          ret = new FileProjectStorage(projectHome, projectName, this::handleFileChange);
         }
 
       } else if (projectUrl.startsWith("http")) {
@@ -2068,7 +2050,13 @@ public class WorkspaceManager {
           ret = new FileProjectStorage(file, projectName, this::handleFileChange);
         } else if (Utils.Files.JAVA_ARCHIVE_EXTENSIONS.contains(
             Utils.Files.getFileExtension(file))) {
-          // TODO ret = read from archive
+          projectName = org.integratedmodelling.klab.resources.ProjectArchiveIO.projectName(file.toPath());
+          if (this.configuration.getProjectConfiguration().containsKey(projectName))
+            throw new IllegalStateException("Project already exists: " + projectName);
+          var directory = org.integratedmodelling.klab.resources.ProjectArchiveIO.importProject(
+              file.toPath(), BaseService.getConfigurationSubdirectory(startupOptions, "workspaces").toPath());
+          projectName = directory.getFileName().toString();
+          ret = new FileProjectStorage(directory.toFile(), projectName, this::handleFileChange);
         }
       }
     } catch (Throwable t) {
@@ -2081,7 +2069,8 @@ public class WorkspaceManager {
     if (ret != null) {
 
       configuration = new ResourcesConfiguration.ProjectConfiguration();
-      configuration.setSourceUrl(projectUrl);
+      configuration.setSourceUrl(ret instanceof FileProjectStorage fps && !Utils.Git.isRemoteGitURL(projectUrl)
+          ? fps.getRootFolder().toURI().toString() : projectUrl);
       configuration.setWorkspaceName(workspaceName);
       configuration.setSyncIntervalMinutes(DEFAULT_GIT_SYNC_INTERVAL_MINUTES);
       configuration.setStorageType(ret.getType());
@@ -4294,6 +4283,15 @@ public class WorkspaceManager {
     } catch (Exception e) {
       return ResourceSet.empty(Notification.error("Cannot save project settings: " + e.getMessage()));
     }
+  }
+
+  public java.io.InputStream exportProjectArchive(String project) throws java.io.IOException {
+    return org.integratedmodelling.klab.resources.ProjectArchiveIO.exportProject(
+        materialStorage(project, null, false).getRootFolder().toPath(), project);
+  }
+
+  public FileProjectStorage repositoryStorage(String project) {
+    return materialStorage(project, null, false);
   }
 
   private FileProjectStorage materialStorage(String project, UserScope user, boolean mutation) {

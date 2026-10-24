@@ -1747,7 +1747,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     }
 
     private record CredentialContext(org.integratedmodelling.common.authentication.CredentialVault vault,
-                                     Scope caller, String id) {}
+                                     Scope caller, String id, boolean nativeGit) {}
     private static final ThreadLocal<CredentialContext> credentialContext = new ThreadLocal<>();
 
     /** Bind the owning service and requesting principal for one synchronous repository operation. */
@@ -1755,7 +1755,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         Scope caller, String id, java.util.function.Supplier<T> operation) {
       if (caller == null) throw new SecurityException("A repository operation requires a caller");
       var previous = credentialContext.get();
-      credentialContext.set(new CredentialContext(service.credentialVault(), caller, id));
+      credentialContext.set(new CredentialContext(service.credentialVault(), caller, id, service.isLocal()));
       try { return operation.get(); }
       finally { if (previous == null) credentialContext.remove(); else credentialContext.set(previous); }
     }
@@ -1778,7 +1778,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       return org.integratedmodelling.common.authentication.Authentication.INSTANCE.getCredentials(endpoint, scope);
     }
 
-    private static CredentialsProvider getCredentialsProvider(
+    static CredentialsProvider getCredentialsProvider(
         org.eclipse.jgit.api.Git git, Scope scope) {
 
       CredentialsProvider ret = null;
@@ -1800,7 +1800,36 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         throw new RuntimeException(e);
       }
 
-      return getCredentialsProvider(credentials);
+      var provider = getCredentialsProvider(credentials);
+      if (credentials != null && credentials.getId() != null) {
+        try {
+          git.getRepository().getConfig().setString("klab", null, "credentialId", credentials.getId());
+          git.getRepository().getConfig().save();
+        } catch (IOException error) { throw new KlabIOException(error); }
+      }
+      if (provider == null && credentialContext.get() != null && credentialContext.get().nativeGit()) {
+        var origin = git.getRepository().getConfig().getString("remote", "origin", "url");
+        if (origin != null) provider = getCredentialsProvider(NativeGitCredentials.resolve(origin, git.getRepository().getWorkTree()));
+      }
+      return provider;
+    }
+
+    /** Check local publication eligibility before committing or contacting the origin. */
+    public static void requireWriteCredentials(File directory, Scope caller) {
+      try (var repository = openRepository(directory); var git = new org.eclipse.jgit.api.Git(repository)) {
+        if (getCredentialsProvider(git, caller) == null)
+          throw new SecurityException("Publishing or committing requires an authorized Git credential set or installed Git credentials");
+      } catch (IOException error) { throw new KlabIOException(error); }
+    }
+
+    public static String repositoryName(String coordinates) {
+      String path;
+      try {
+        path = new org.eclipse.jgit.transport.URIish(coordinates.split("#", 2)[0]).getPath();
+      } catch (java.net.URISyntaxException error) { throw new IllegalArgumentException("Invalid Git repository URL", error); }
+      if (path == null || path.endsWith("/")) throw new IllegalArgumentException("Invalid Git repository URL");
+      var name = path.substring(path.lastIndexOf('/') + 1);
+      return name.endsWith(".git") ? name.substring(0, name.length() - 4) : name;
     }
 
     private static final class EndpointCredentialsProvider extends UsernamePasswordCredentialsProvider {
@@ -2539,7 +2568,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     public static String clone(
         String gitUrl, File directory, boolean removeIfExisting, Scope scope) {
 
-      String dirname = URLs.getURLBaseName(gitUrl);
+      String dirname = repositoryName(gitUrl);
 
       String[] pdefs = gitUrl.split("#");
       String branch;
@@ -2550,9 +2579,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
       String url = pdefs[0];
 
-      CredentialsProvider credentialsProvider =
-          getCredentialsProvider(
-              resolveCredentials(url, scope, null));
+      var credentials = resolveCredentials(url, scope, null);
+      if (credentials == null && credentialContext.get() != null && credentialContext.get().nativeGit())
+        credentials = NativeGitCredentials.resolve(url, directory);
+      CredentialsProvider credentialsProvider = getCredentialsProvider(credentials);
 
       Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
 
@@ -2578,9 +2608,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
               .setDirectory(pdir)
               .call()) {
 
-        var context = credentialContext.get();
-        if (context != null && context.id() != null && !context.id().isBlank()) {
-          result.getRepository().getConfig().setString("klab", null, "credentialId", context.id());
+        if (credentials != null && credentials.getId() != null) {
+          result.getRepository().getConfig().setString("klab", null, "credentialId", credentials.getId());
           result.getRepository().getConfig().save();
         }
         Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());

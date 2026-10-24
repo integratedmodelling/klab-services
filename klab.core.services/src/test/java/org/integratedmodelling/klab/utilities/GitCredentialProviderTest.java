@@ -7,6 +7,41 @@ import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCre
 import org.junit.jupiter.api.Test;
 
 class GitCredentialProviderTest {
+  @Test void remembersAutomaticAndExplicitVaultSelectionButRechecksCallerGrants(
+      @org.junit.jupiter.api.io.TempDir java.nio.file.Path root) throws Exception {
+    var caller = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.Scope.class);
+    var other = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.Scope.class);
+    var service = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.base.BaseService.class);
+    var vault = new org.integratedmodelling.common.authentication.CredentialVault(
+        root.resolve("vault"), root.resolve("vault/key"), user -> user == caller);
+    org.mockito.Mockito.when(service.credentialVault()).thenReturn(vault);
+    var credential = new ExternalAuthenticationCredentials(); credential.setName("First");
+    credential.setScheme("basic"); credential.setParameters(Map.of("username", "first", "password", "token"));
+    var first = vault.save("https://example.invalid/org", credential, caller).key();
+    try (var git = org.eclipse.jgit.api.Git.init().setDirectory(root.resolve("repo").toFile()).call()) {
+      var config = git.getRepository().getConfig();
+      config.setString("remote", "origin", "url", "https://example.invalid/org/repo.git"); config.save();
+      assertNotNull(Utils.Git.withCredentials(service, caller, null,
+          () -> Utils.Git.getCredentialsProvider(git, caller)));
+      assertEquals(first, config.getString("klab", null, "credentialId"));
+      credential.setId(null); credential.setName("Second");
+      var second = vault.save("https://example.invalid/org", credential, caller).key();
+      assertNotNull(Utils.Git.withCredentials(service, caller, null,
+          () -> Utils.Git.getCredentialsProvider(git, caller)));
+      assertEquals(first, config.getString("klab", null, "credentialId"));
+      assertNotNull(Utils.Git.withCredentials(service, caller, second,
+          () -> Utils.Git.getCredentialsProvider(git, caller)));
+      assertEquals(second, config.getString("klab", null, "credentialId"));
+      assertThrows(SecurityException.class, () -> Utils.Git.withCredentials(service, other, null,
+          () -> Utils.Git.getCredentialsProvider(git, other)));
+      assertFalse(java.nio.file.Files.readString(root.resolve("repo/.git/config")).contains("token"));
+    }
+  }
+
+  @Test void preservesDottedRepositoryNamesAndBranchCoordinates() {
+    assertEquals("im.examples", Utils.Git.repositoryName("https://example.org/im.examples.git#feature/work"));
+    assertEquals("im.examples", Utils.Git.repositoryName("https://example.org/im.examples"));
+  }
   @Test void refusesCrossHostPushUrlsRedirectsAndProtocolDowngrades() throws Exception {
     var credentials = new ExternalAuthenticationCredentials();
     credentials.setEndpoint("https://github.com/org");

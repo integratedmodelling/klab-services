@@ -921,6 +921,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   public synchronized List<ResourceSet> importProject(String workspaceName, String projectUrl,
       boolean overwriteIfExisting, UserScope scope, String credentialId) {
+    if (scope == null || !isAllowed(CRUDOperation.CREATE, scope) && !isAllowed(CRUDOperation.ADMINISTER, scope))
+      throw new KlabResourceAccessException("Importing projects requires CREATE");
+    // Import is intentionally non-destructive, including requests from older clients.
+    if (workspaceManager.getProject(Utils.Git.isRemoteGitURL(projectUrl)
+        ? Utils.Git.repositoryName(projectUrl) : Utils.URLs.getURLBaseName(projectUrl)) != null)
+      throw new IllegalStateException("Project is already present locally");
     var storage = Utils.Git.withCredentials(this, scope, credentialId,
         () -> workspaceManager.importProject(projectUrl, workspaceName));
     if (storage == null) {
@@ -2035,9 +2041,18 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                         project.getManifest().getVersion(),
                         KnowledgeClass.PROJECT,
                         timestamp,
-                        false)));
+                        isLocal())));
 
     return ret;
+  }
+
+  public java.io.InputStream exportProjectArchive(String project, UserScope scope) {
+    requireProjectOperation(project, CRUDOperation.READ, scope);
+    try {
+      return workspaceManager.exportProjectArchive(project);
+    } catch (java.io.IOException error) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(error);
+    }
   }
 
   public ResourceSet resolveModel(String modelName, Scope scope) {
@@ -2057,8 +2072,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (!(scope instanceof org.integratedmodelling.klab.api.scope.ServiceSideScope local)
         || !local.isAuthorized(CRUDOperation.ADMINISTER))
       throw new SecurityException("Repository administration requires an administrator");
-    return Utils.Git.withCredentials(this, scope, credentialId,
-        () -> workspaceManager.manageRepository(projectName, operation, arguments));
+    return Utils.Git.withCredentials(this, scope, credentialId, () -> {
+      if (operation == RepositoryState.Operation.SAVE_CHANGES
+          || operation == RepositoryState.Operation.PUBLISH_CHANGES
+          || operation == RepositoryState.Operation.SYNC_AND_PUBLISH
+          || operation == RepositoryState.Operation.COMMIT_AND_SWITCH)
+        Utils.Git.requireWriteCredentials(workspaceManager.repositoryStorage(projectName).getRootFolder(), scope);
+      return workspaceManager.manageRepository(projectName, operation, arguments);
+    });
   }
 
 
