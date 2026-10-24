@@ -279,3 +279,73 @@ test("extended widgets, form commands, safe content and HTTP file handles", asyn
   expect(downloads).toBe(1);
   expect(errors).toEqual([]);
 });
+
+
+test("packaged IDE renderer uses the shared Quasar catalog and bounded file bridge", async ({page}) => {
+  const {readFileSync} = await import("node:fs");
+  const {fileURLToPath} = await import("node:url");
+  const bundle = (name: string) => readFileSync(fileURLToPath(new URL(`../../../../target/generated-resources/webui/META-INF/klab/ui-embedded/${name}`, import.meta.url)), "utf8");
+  const errors: string[] = []; page.on("pageerror", error => errors.push(String(error)));
+  const child = (id: string, type: string, properties: Record<string, any>, events = ["change"]): UiNode => ({id, type, properties, events, children: []});
+  const root: UiNode = child("root", "container", {theme: "dark"}, []);
+  root.children = [child("toggle", "switch", {label: "Enabled", value: false}),
+    child("slider", "slider", {label: "Level", value: 5, min: 0, max: 10}),
+    child("range", "range", {label: "Interval", value: {min: 1, max: 8}, min: 0, max: 10}),
+    child("tabs", "tabs", {label: "Sections", options: ["one", "two"], value: "one"}),
+    child("form", "submit", {label: "Save form"}, ["submit"]),
+    child("upload", "upload", {label: "Upload CSV", accept: ".csv", maxbytes: 1024}),
+    child("download", "download", {label: "Download CSV"}, ["click"]),
+    child("markdown", "markdown", {label: "**Shared renderer**"}, []),
+    child("draft", "input", {label: "Retained value", value: "Server value", debounce: 2000})];
+  const snapshot: UiSnapshot = {protocolVersion: 1, revision: 1, root};
+  const handle = {id: "opaque-file", name: "data.csv", mediaType: "text/csv", size: 4};
+  const inputs: any[] = [], transfers: any[] = [];
+  await page.exposeFunction("fixtureInput", async (raw: string) => {
+    const event = JSON.parse(raw).value; inputs.push(event);
+    const target = root.children.find(n => n.id === event.nodeId)!;
+    if (event.name === "change") target.properties.value = event.value;
+    if (target.id === "upload") root.children.find(n => n.id === "download")!.properties.value = event.value;
+    snapshot.revision++;
+    await page.evaluate(({snapshot, sequence}) => {
+      window.receive({type: "snapshot", value: snapshot}); window.receive({type: "ack", value: sequence});
+    }, {snapshot, sequence: event.sequence});
+  });
+  await page.exposeFunction("fixtureFile", async (id: string, raw: string) => {
+    const request = JSON.parse(raw); transfers.push(request);
+    if (request.operation === "upload") {
+      expect(request.nodeId).toBe("upload"); expect(Buffer.from(request.content, "base64").toString()).toBe("a,b\n");
+    }
+    await page.evaluate(({id, value}) => window.applicationUiFileReply(id, JSON.stringify({value})), {id,
+      value: request.operation === "upload" ? handle : {name: "data.csv", mediaType: "text/csv", content: Buffer.from("a,b\n").toString("base64")}});
+  });
+  await page.addInitScript(() => {
+    window.ide = {input: raw => { void (window as any).fixtureInput(raw); },
+      file: (id, raw) => { void (window as any).fixtureFile(id, raw); }};
+  });
+  await page.route("**/embedded-fixture", route => route.fulfill({contentType: "text/html", body:
+    `<html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data: https:; media-src https: blob:; connect-src 'none'"><style>${bundle("renderer.css")}</style></head><body><div id="status"></div><main id="app"></main><script>${bundle("renderer.js").replaceAll("</script", "<\\/script")}</script></body></html>`}));
+  await page.goto("/embedded-fixture");
+  await page.evaluate(snapshot => {
+    window.receive({type: "instance", value: {id: "same-instance", state: {snapshot}, stylesheets: {}}});
+    window.receive({type: "ready", value: {lastAcceptedSequence: 0}});
+  }, snapshot);
+  await expect(page.locator("strong")).toHaveText("Shared renderer");
+  await page.getByRole("switch", {name: "Enabled"}).click();
+  await expect.poll(() => inputs.at(-1)?.value).toBe(true);
+  await page.getByRole("slider", {name: "Level", exact: true}).press("ArrowRight");
+  await expect.poll(() => inputs.at(-1)?.value).toBe(6);
+  await page.getByRole("tab", {name: "two", exact: true}).click();
+  await expect.poll(() => inputs.at(-1)?.value).toBe("two");
+  await page.getByRole("button", {name: "Save form"}).click();
+  await expect.poll(() => inputs.at(-1)?.name).toBe("submit");
+  await page.getByLabel("Upload CSV").setInputFiles({name: "data.csv", mimeType: "text/csv", buffer: Buffer.from("a,b\n")});
+  await expect.poll(() => inputs.at(-1)?.value?.id).toBe("opaque-file");
+  const saved = page.waitForEvent("download"); await page.getByRole("button", {name: "Download CSV"}).click();
+  expect((await saved).suggestedFilename()).toBe("data.csv");
+  expect(transfers.map(t => t.operation)).toEqual(["upload", "download"]);
+  await page.getByLabel("Retained value", {exact: true}).fill("Uncommitted draft");
+  await page.evaluate(() => window.receive({type: "disconnected", value: {}}));
+  await expect(page.getByRole("switch", {name: "Enabled"})).toBeDisabled();
+  await expect(page.getByLabel("Retained value", {exact: true})).toHaveValue("Server value");
+  expect(errors).toEqual([]);
+});

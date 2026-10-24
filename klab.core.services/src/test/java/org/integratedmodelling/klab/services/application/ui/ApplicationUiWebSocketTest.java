@@ -78,6 +78,14 @@ class ApplicationUiWebSocketTest {
 
   @Test
   void authenticatesFirstFrameAndReplaysRetainedStateOverRealWebSocket() throws Exception {
+    roundTrip(false);
+  }
+
+  @Test void localIdeCredentialsAttachHeartbeatAndReconnectOverRealWebSocket() throws Exception {
+    roundTrip(true);
+  }
+
+  private void roundTrip(boolean local) throws Exception {
     var launcher = mock(UiApplicationLauncher.class);
     when(launcher.selectToolkit())
         .thenAnswer(
@@ -90,7 +98,11 @@ class ApplicationUiWebSocketTest {
     when(user.getFullyQualifiedUsername()).thenReturn("user://hub/alice");
     when(user.getExpiration()).thenReturn(java.time.Instant.now().plusSeconds(300));
     when(user.getToken()).thenReturn("upstream-hub-jwt");
-    when(authentication.validateToken(eq("webui_fixture_credential"), anyMap())).thenReturn(user);
+    when(user.isLocal()).thenReturn(local);
+    String credential = local ? "local-ide-credential" : "webui_fixture_credential";
+    Map<String,String> headers = local
+        ? Map.of(org.integratedmodelling.klab.api.ServicesAPI.SERVER_KEY_HEADER, "local-test-key") : Map.of();
+    when(authentication.validateToken(eq(credential), eq(headers))).thenReturn(user);
     try (var model = new ApplicationUiModel();
         var manager = new ApplicationUiManager(launcher, authentication, 1800);
         var context = new AnnotationConfigServletWebServerApplicationContext()) {
@@ -109,7 +121,7 @@ class ApplicationUiWebSocketTest {
       String origin = "http://localhost:" + context.getWebServer().getPort();
       var instance =
           manager.launch(new ApplicationUiManager.Request("test.app", "en", "test", null), user);
-      var ticket = manager.ticket(instance.id(), origin, user, "webui_fixture_credential");
+      var ticket = manager.ticket(instance.id(), origin, user, credential, headers);
       var listener = new Listener();
       try (var client = HttpClient.newHttpClient()) {
         assertThrows(
@@ -135,6 +147,8 @@ class ApplicationUiWebSocketTest {
         var snapshot = mapper.readTree(listener.message());
         assertEquals("snapshot", snapshot.path("type").asText());
         assertEquals("ready", mapper.readTree(listener.message()).path("type").asText());
+        socket.sendText("{\"type\":\"ping\"}", true).join();
+        assertEquals("pong", mapper.readTree(listener.message()).path("type").asText());
         var input = snapshot.path("value").path("root").path("children").get(0);
         socket
             .sendText(
@@ -169,7 +183,7 @@ class ApplicationUiWebSocketTest {
                 .asText());
         assertEquals("ack", mapper.readTree(listener.message()).path("type").asText());
         socket.sendClose(WebSocket.NORMAL_CLOSURE, "rebuild").join();
-        var nextTicket = manager.ticket(instance.id(), origin, user, "webui_fixture_credential");
+        var nextTicket = manager.ticket(instance.id(), origin, user, credential, headers);
         var nextListener = new Listener();
         var rebuilt =
             client

@@ -556,6 +556,23 @@
                 </resources>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.4.2</version>
+                        <executions>
+                            <execution>
+                                <id>application-ui-renderer</id>
+                                <phase>package</phase>
+                                <goals><goal>jar</goal></goals>
+                                <configuration>
+                                    <classifier>application-ui</classifier>
+                                    <classesDirectory>${project.build.directory}/generated-resources/webui</classesDirectory>
+                                    <includes><include>META-INF/klab/ui-embedded/**</include></includes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>com.github.eirslett</groupId>
                         <artifactId>frontend-maven-plugin</artifactId>
                         <version>1.15.1</version>

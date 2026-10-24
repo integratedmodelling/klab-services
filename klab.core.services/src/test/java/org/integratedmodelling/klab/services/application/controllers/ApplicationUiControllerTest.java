@@ -10,6 +10,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
 class ApplicationUiControllerTest {
+  @Test void localHeadersAreRetainedOnlyForVerifiedLoopbackRequests() {
+    var manager = mock(ApplicationUiManager.class); var user = mock(EngineAuthorization.class);
+    when(user.isLocal()).thenReturn(true);
+    var request = new org.springframework.mock.web.MockHttpServletRequest();
+    request.setScheme("http"); request.setServerName("localhost"); request.setServerPort(8094);
+    request.setRequestURI("/runtime/api/v1/ui/instances/id/ticket");
+    request.setRemoteAddr("127.0.0.1"); request.addHeader("Authorization", "local-token");
+    request.addHeader(org.integratedmodelling.klab.api.ServicesAPI.SERVER_KEY_HEADER, "local-test-key");
+    var controller = new ApplicationUiController(manager); controller.ticket("id", user, request);
+    verify(manager).ticket("id", "http://localhost:8094", user, "local-token",
+        java.util.Map.of(org.integratedmodelling.klab.api.ServicesAPI.SERVER_KEY_HEADER, "local-test-key"));
+    request.setRemoteAddr("192.0.2.1"); controller.ticket("id", user, request);
+    verify(manager).ticket("id", "http://localhost:8094", user, "local-token", java.util.Map.of());
+  }
+
   @Test
   void uploadBoundsTheHttpStreamBeforePassingBytesToTheInstance() throws Exception {
     var manager = mock(ApplicationUiManager.class);
@@ -36,7 +51,7 @@ class ApplicationUiControllerTest {
     when(request.getHeader("Origin")).thenReturn("https://runtime.test");
     when(request.getHeader("Authorization")).thenReturn("Bearer webui_presented");
     new ApplicationUiController(manager).ticket("id", user, request);
-    verify(manager).ticket("id", "https://runtime.test", user, "webui_presented");
+    verify(manager).ticket("id", "https://runtime.test", user, "webui_presented", java.util.Map.of());
     when(request.getHeader("Origin")).thenReturn("https://attacker.test");
     assertThrows(
         ResponseStatusException.class,

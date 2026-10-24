@@ -18,6 +18,53 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 class ApplicationUiManagerTest {
+  @Test void localTicketsPreserveVerifiedHeadersAcrossAttachHeartbeatAndReconnect() throws Exception {
+    var launcher = mock(UiApplicationLauncher.class);
+    when(launcher.selectToolkit()).thenAnswer(call -> UiToolkitLease.quasar());
+    var authentication = mock(ServiceAuthorizationManager.class);
+    var alice = user("alice"); when(alice.isLocal()).thenReturn(true);
+    var expected = Map.of(org.integratedmodelling.klab.api.ServicesAPI.SERVER_KEY_HEADER, "local-test-key",
+        org.integratedmodelling.klab.api.ServicesAPI.USERNAME_HEADER, "alice",
+        org.integratedmodelling.klab.api.ServicesAPI.FEDERATION_HEADER, "test-federation");
+    when(authentication.validateToken(eq("local-test-token"), eq(expected))).thenReturn(alice);
+    try (var model = new ApplicationUiModel(); var manager = manager(launcher, authentication, model)) {
+      var scope = mock(RuntimeAgent.Scope.class);
+      model.widget(model.root(), "input", "name", Map.of(), "Name", scope);
+      var state = manager.launch(request("local", null), alice);
+      var headers = new HashMap<>(expected); headers.put("Cookie", "must-not-be-retained");
+      var ticket = manager.ticket(state.id(), "http://localhost:8094", alice, "local-test-token", headers);
+      headers.clear(); // The grant must own its verified context, rather than retaining this map.
+      var frames = new ArrayList<Map<String,Object>>();
+      var first = manager.attach(ticket.ticket(), "http://localhost:8094", frames::add, () -> {});
+      assertEquals("ready", frames.getLast().get("type")); first.ping();
+      var node = model.session().snapshot().root().children().getFirst();
+      first.event(new UiEvent(1, model.session().snapshot().revision(), node.id(), "change", "Retained"));
+      model.afterInput().get(5, TimeUnit.SECONDS);
+      var next = manager.ticket(state.id(), "http://localhost:8094", alice, "local-test-token", expected);
+      var reconnected = manager.attach(next.ticket(), "http://localhost:8094", frame -> {}, () -> {});
+      assertEquals("Retained", model.session().snapshot().root().children().getFirst().properties().get("value"));
+      reconnected.ping();
+      when(authentication.validateToken(eq("local-test-token"), eq(expected))).thenReturn(null);
+      assertEquals(401, assertThrows(ResponseStatusException.class, reconnected::ping).getStatusCode().value());
+      var revoked = manager.ticket(state.id(), "http://localhost:8094", alice, "local-test-token", expected);
+      assertThrows(ResponseStatusException.class, () -> manager.attach(revoked.ticket(), "http://localhost:8094", frame -> {}, () -> {}));
+    }
+  }
+
+  @Test void nonlocalBrowserPrincipalsNeverAcquireLocalHeaderPrivilege() {
+    var launcher = mock(UiApplicationLauncher.class);
+    when(launcher.selectToolkit()).thenAnswer(call -> UiToolkitLease.quasar());
+    var authentication = mock(ServiceAuthorizationManager.class); var alice = user("alice");
+    when(authentication.validateToken("webui_alice", Map.of())).thenReturn(alice);
+    try (var model = new ApplicationUiModel(); var manager = manager(launcher, authentication, model)) {
+      var state = manager.launch(request("browser", null), alice);
+      var ticket = manager.ticket(state.id(), "https://runtime.test", alice, "webui_alice",
+          Map.of(org.integratedmodelling.klab.api.ServicesAPI.SERVER_KEY_HEADER, "untrusted-header"));
+      manager.attach(ticket.ticket(), "https://runtime.test", frame -> {}, () -> {});
+      verify(authentication).validateToken("webui_alice", Map.of());
+    }
+  }
+
   private EngineAuthorization user(String name) {
     var user = mock(EngineAuthorization.class);
     when(user.isAuthenticated()).thenReturn(true);

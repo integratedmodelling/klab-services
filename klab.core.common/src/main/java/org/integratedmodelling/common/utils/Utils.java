@@ -1247,6 +1247,30 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private String forcedContentHeader = null;
       private int timeoutSeconds = 300;
       private static final String AUTHENTICATION_HEADER = "Authentication";
+      private final GetFailureReports getFailureReports;
+
+      private record GetRequest(String url, String authorization, Map<String, String> headers,
+                                String accept, Class<?> resultClass) {}
+      private record GetFailure(Class<?> type, int status, Class<?> cause) {
+        static GetFailure of(Throwable failure) {
+          return new GetFailure(failure.getClass(),
+              failure instanceof RequestFailure response ? response.getStatus() : 0,
+              failure.getCause() == null ? null : failure.getCause().getClass());
+        }
+      }
+
+      /** One report per unchanged failure episode, shared by the client's scoped copies. */
+      private static final class GetFailureReports {
+        private final Map<GetRequest, GetFailure> failures = new LinkedHashMap<>(16, 0.75f, true);
+        synchronized boolean shouldReport(GetRequest request, Throwable failure) {
+          var signature = GetFailure.of(failure);
+          var previous = failures.put(request, signature);
+          // Dynamic requests must not grow retained outage/credential state without bound.
+          if (failures.size() > 256) failures.remove(failures.keySet().iterator().next());
+          return !signature.equals(previous);
+        }
+        synchronized void recovered(GetRequest request) { failures.remove(request); }
+      }
 
       public void setAuthorization(String token) {
         this.authorization = token;
@@ -1349,9 +1373,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         // TODO
       }
 
-      private Client() {}
+      private Client() { this.getFailureReports = new GetFailureReports(); }
 
       private Client(Client other) {
+        this.getFailureReports = other.getFailureReports;
         this.client = other.client;
         this.uri = other.uri;
         this.scope = other.scope;
@@ -2394,8 +2419,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         var params = makeKeyMap(options, parameters);
         var apiCall = substituteTemplateParameters(apiRequest, params);
         responseHeaders.clear();
+        GetRequest requestIdentity = null;
 
         try {
+          var requestUrl = uri + apiCall + encodeParameters(params);
+          requestIdentity = new GetRequest(requestUrl, authorization,
+              java.util.Collections.unmodifiableMap(new HashMap<>(headers)), forcedAcceptHeader, resultClass);
           var requestBuilder = HttpRequest.newBuilder().GET();
           if (authorization != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
@@ -2412,25 +2441,34 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             var response =
                 client.send(
                     requestBuilder
-                        .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                        .uri(URI.create(requestUrl))
                         .timeout(Duration.ofSeconds(timeoutSeconds))
                         .build(),
                     HttpResponse.BodyHandlers.ofString());
 
             if (response != null && HttpStatus.valueOf(response.statusCode()).is2xxSuccessful()) {
               parseHeaders(response);
-              return parseResponse(response.body(), resultClass);
+              var result = parseResponse(response.body(), resultClass);
+              getFailureReports.recovered(requestIdentity);
+              return result;
             }
             throw new RequestFailure(response == null ? 0 : response.statusCode(),
                 "HTTP GET returned an unsuccessful status", null);
           } else {
-            client.send(
-                requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(),
+            var response = client.send(
+                requestBuilder.uri(URI.create(requestUrl))
+                    .timeout(Duration.ofSeconds(timeoutSeconds)).build(),
                 HttpResponse.BodyHandlers.discarding());
+            if (response.statusCode() < 200 || response.statusCode() >= 300)
+              throw new RequestFailure(response.statusCode(), "HTTP GET returned an unsuccessful status", null);
+            getFailureReports.recovered(requestIdentity);
           }
 
         } catch (Throwable e) {
           if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+          // Silent requests must not consume the first normal report. Failures still return
+          // null and every polling call still reaches the service; only repeat reporting changes.
+          if (!options.silent && requestIdentity != null && !getFailureReports.shouldReport(requestIdentity, e)) return null;
           var failure = Logging.safeFailure(e);
           if (scope != null) {
             scope.error(failure, "HTTP GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"),

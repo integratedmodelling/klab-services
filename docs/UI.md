@@ -27,7 +27,8 @@ the first renderer; implemented subsets and remaining work are stated explicitly
 | Localized constants and UTF-8 properties bundles | Implemented with generic preamble properties |
 | Named-action component instances, nested imports, tagged insertion/removal | Implemented with isolated namespaces and staged construction |
 | Installed component toolkit discovery, configuration and version leases | Implemented for browser renderer modules |
-| JavaFX, Flutter and advanced layouts | Later stages |
+| IDE WebView and external-browser renderer | Implemented shared Quasar catalog and bounded Java file bridge |
+| Native JavaFX adapter, Flutter and advanced layouts | Later stages |
 | Restart recovery and durable application checkpoints | Proposed, distinct from reconnecting to a live server |
 
 The design uses current language/runtime contracts and current service web integration. Legacy UI
@@ -504,8 +505,9 @@ binds a widget for later control through `ui` commands. Passive presentation ver
 
 Widget options use keyed arguments and call metadata, not toolkit constructors. The primitive
 subset is text, button, checkbox, input, select, number and progress; the following extended
-contracts add every non-future family above. JavaFX may implement only that subset
-plus basic row/column layout and dialogs, reporting all other required types as unsupported.
+contracts add every non-future family above. The IDE's JavaFX WebView and external-browser runner
+now load this same Quasar catalog through the shared embedded bundle. A separately implemented
+native JavaFX adapter may still choose the primitive subset and report unsupported capabilities.
 Toolkits may contribute advanced namespaced widgets with schemas and event contracts.
 Native ObservationCard, GeometryCard, SemanticComposer, provenance and system views belong to the
 separate [k.LAB component contract](UI_KLAB_COMPONENTS.md). Simplified `ui.observation` and
@@ -855,7 +857,7 @@ generated Flutter projects require toolchain/version configuration and their own
 | 4 — reusable components and toolkit installation (implemented initial contract) | Component descriptors/configuration/version leases; validated flex/widget metadata; tagged named-action mounts including nested imports | Installed browser module loads without rebuilding host; duplicate/unsupported features fail explicitly; independent component instances and binding disposal tested; component unload blocked until leases close |
 | 4a — extended portable widget catalog (implemented) | All non-future families above; form/field options, authoritative values, bounded HTTP file handles and Quasar controls | Parsed example and headless form/schema/file tests; browser catalog, transfers and existing reconnect workflow |
 | 4b — addressable widgets and fluent operations (implemented) | Construction references separate from widget emitters; event subscriptions, checked disposal and bounded UI file references | Parsed button/file workflows, independent subscriber lifetimes, stale-reference errors, defensive byte copies and cross-instance rejection |
-| 5 — JavaFX workflow harness | Adapter and IDE integration in `klab-ide`; shared headless conformance fixtures | Same workflow fixture produces equivalent server transitions from Quasar and JavaFX; unsupported widgets produce explicit diagnostics; view thread and detach disposal tested |
+| 5 — JavaFX workflow harness (shared web renderer implemented; native adapter optional) | IDE WebView/external-browser bridge uses the same Quasar nodes and asset-only renderer JAR; native adapter remains separate | JavaFX WebView test renders extended controls and emits typed input; packaged browser fixture covers files and disconnected controls; native adapter conformance remains separate |
 | 6 — full instrumentation and durable state | Advanced widgets/scientific views, responsive/theme/a11y coverage, state checkpoint/restore/migration, telemetry and load testing | Published capability matrix; restart recovery proves no duplicate startup effects; bounded queues and lease cleanup verified under load |
 | 7 — Flutter feasibility and export | Live renderer and optional component-provided project exporter | Generated project builds with a pinned SDK; mobile client authenticates, resumes state and exercises shared event conformance fixtures |
 
@@ -871,6 +873,43 @@ shared browser assets together before starting the service:
 ```powershell
 mvn -pl klab.services.runtime.server -am -Pwebui "-DskipTests" package
 ```
+
+### IDE renderer packaging and rebuilds
+
+No per-widget compiler flags enable the extended catalog. The old IDE `application-ui.html`
+contained a separate primitive-only renderer; its warning `Widget "..." requires the runtime web
+interface` meant that renderer had reached its fallback, including when opened in an external
+browser through the IDE. Rebuilding the runtime browser dashboard alone could not update it.
+
+The IDE now uses the same Quasar `ApplicationScaffold`, `ApplicationNode` and `ExtendedWidget`
+components as the runtime shell. `npm run build` creates both the normal shell and a self-contained
+production script/CSS bundle. Maven `-Pwebui` packages the latter as the asset-only
+`org.integratedmodelling:klab.core.services:jar:application-ui` classifier, under
+`META-INF/klab/ui-embedded/`. The IDE depends only on this classifier at runtime, with service
+implementation dependencies excluded. The assets are also unpacked into the IDE's own JAR for
+modular JavaFX launches. It uses neither a CDN nor browser ES modules.
+
+After updating both checkouts, build/install the assets and rebuild the IDE (from `klab-services`):
+
+```powershell
+mvn -pl klab.core.services -am -Pwebui "-DskipTests" install
+mvn -f ../klab-ide/pom.xml "-DskipTests" package
+```
+
+Restart the IDE, then Stop and Run the application to load the rebuilt renderer. A Java-only
+build leaves browser assets unchanged. If the shared bundle is missing, the IDE now reports
+`Missing packaged Quasar renderer` with the build instruction, instead of rendering per-widget
+warning placeholders. No additional flags are needed for individual widget families.
+
+Both IDE destinations retain the existing Java-owned runtime session and credentials. Uploads
+and downloads are bounded and forwarded from Java to the same authorized runtime file endpoints;
+files do not travel over the widget WebSocket. The WebView uses a native Save dialog; an external
+browser uses its normal download flow. Custom installed toolkit modules still require their
+runtime web interface. Media codec support remains a property of the selected browser engine.
+
+Acceptance checks include `ApplicationRendererFxTest` in `klab-ide` (actual JavaFX WebView rendering
+and typed input), authenticated/bounded bridge tests, and the packaged-bundle browser fixture in
+`application.spec.ts`, including upload/download and disconnected input blocking.
 
 The example uses the real-source regression fixture with companion translations and CSS. It does
 not create a project or change a running service automatically.

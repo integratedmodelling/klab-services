@@ -73,8 +73,23 @@ public class ApplicationUiController {
     String credential = request.getHeader("Authorization");
     if (credential != null && credential.regionMatches(true, 0, "Bearer ", 0, 7))
       credential = credential.substring(7).trim();
+    var owner = user(principal);
+    var headers = new java.util.HashMap<String, String>();
+    if (owner.isLocal() && loopback(request.getRemoteAddr())) {
+      for (String header : java.util.List.of(org.integratedmodelling.klab.api.ServicesAPI.SERVER_KEY_HEADER,
+          org.integratedmodelling.klab.api.ServicesAPI.USERNAME_HEADER,
+          org.integratedmodelling.klab.api.ServicesAPI.FEDERATION_HEADER)) {
+        String value = request.getHeader(header);
+        if (value != null && !value.isBlank()) headers.put(header, value);
+      }
+    }
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
-        .body(manager.ticket(id, origin, user(principal), credential));
+        .body(manager.ticket(id, origin, owner, credential, headers));
+  }
+  private static boolean loopback(String address) {
+    if (address == null) return false;
+    try { return java.net.InetAddress.getByName(address).isLoopbackAddress(); }
+    catch (java.net.UnknownHostException invalid) { return false; }
   }
 }

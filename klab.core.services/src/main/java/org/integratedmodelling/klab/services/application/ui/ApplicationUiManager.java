@@ -32,7 +32,7 @@ public final class ApplicationUiManager implements AutoCloseable {
   public record Ticket(String ticket, long expiresAt) {}
 
   private record Grant(
-      String id, String origin, EngineAuthorization user, String credential, Instant expires) {}
+      String id, String origin, EngineAuthorization user, String credential, Map<String, String> authenticationHeaders, Instant expires) {}
 
   private static final class Instance {
     final String id, owner;
@@ -172,13 +172,29 @@ public final class ApplicationUiManager implements AutoCloseable {
 
   public synchronized Ticket ticket(
       String id, String origin, EngineAuthorization user, String credential) {
+    return ticket(id, origin, user, credential, Map.of());
+  }
+
+  public synchronized Ticket ticket(String id, String origin, EngineAuthorization user,
+      String credential, Map<String, String> requestHeaders) {
     owned(id, user);
+    // Preserve only assertions already verified on this local HTTP request. Browser credentials
+    // continue to be revalidated without local privilege; no headers are sent to the renderer.
+    var authenticationHeaders = new HashMap<String, String>();
+    if (user.isLocal()) {
+      for (String header : List.of(org.integratedmodelling.klab.api.ServicesAPI.SERVER_KEY_HEADER,
+          org.integratedmodelling.klab.api.ServicesAPI.USERNAME_HEADER,
+          org.integratedmodelling.klab.api.ServicesAPI.FEDERATION_HEADER)) {
+        String value = requestHeaders.get(header);
+        if (value != null && !value.isBlank()) authenticationHeaders.put(header, value);
+      }
+    }
     if (credential == null || credential.isBlank()) throw new ResponseStatusException(UNAUTHORIZED);
     tickets.values().removeIf(grant -> !grant.expires().isAfter(Instant.now()));
     if (tickets.size() >= 1024) throw new ResponseStatusException(TOO_MANY_REQUESTS);
     String token = UUID.randomUUID() + "-" + UUID.randomUUID();
     Instant expiry = Instant.now().plusSeconds(30);
-    tickets.put(token, new Grant(id, origin, user, credential, expiry));
+    tickets.put(token, new Grant(id, origin, user, credential, Map.copyOf(authenticationHeaders), expiry));
     return new Ticket(token, expiry.toEpochMilli());
   }
 
@@ -188,10 +204,10 @@ public final class ApplicationUiManager implements AutoCloseable {
     if (grant == null
         || !grant.expires().isAfter(Instant.now())
         || !Objects.equals(origin, grant.origin())) throw new ResponseStatusException(UNAUTHORIZED);
-    var user = refresh(grant.credential(), grant.user());
+    var user = refresh(grant.credential(), grant.user(), grant.authenticationHeaders());
     var instance = owned(grant.id(), user);
     if (instance.connection != null) instance.connection.close();
-    var connection = new Connection(instance, user, grant.credential(), output, disconnect);
+    var connection = new Connection(instance, user, grant.credential(), grant.authenticationHeaders(), output, disconnect);
     instance.connection = connection;
     instance.detached = null;
     try {
@@ -254,10 +270,10 @@ public final class ApplicationUiManager implements AutoCloseable {
       throw new ResponseStatusException(UNAUTHORIZED);
   }
 
-  private EngineAuthorization refresh(String credential, EngineAuthorization user) {
+  private EngineAuthorization refresh(String credential, EngineAuthorization user, Map<String, String> authenticationHeaders) {
     // Browser principals carry the upstream hub JWT; only the presented service credential
     // preserves the opaque browser session's expiration, revocation and isolation semantics.
-    var refreshed = authentication.validateToken(credential, Map.of());
+    var refreshed = authentication.validateToken(credential, authenticationHeaders);
     validate(refreshed);
     if (!user.getFullyQualifiedUsername().equals(refreshed.getFullyQualifiedUsername()))
       throw new ResponseStatusException(UNAUTHORIZED);
@@ -296,6 +312,7 @@ public final class ApplicationUiManager implements AutoCloseable {
     private final Instance instance;
     private EngineAuthorization user;
     private final String credential;
+    private final Map<String, String> authenticationHeaders;
     private final Consumer<Map<String, Object>> output;
     private final Runnable disconnect;
     private Consumer<UiEvent> input;
@@ -307,11 +324,13 @@ public final class ApplicationUiManager implements AutoCloseable {
         Instance instance,
         EngineAuthorization user,
         String credential,
+        Map<String, String> authenticationHeaders,
         Consumer<Map<String, Object>> output,
         Runnable disconnect) {
       this.instance = instance;
       this.user = user;
       this.credential = credential;
+      this.authenticationHeaders = authenticationHeaders;
       this.output = output;
       this.disconnect = disconnect;
     }
@@ -387,7 +406,7 @@ public final class ApplicationUiManager implements AutoCloseable {
 
     private void check() {
       checkActive();
-      user = refresh(credential, user);
+      user = refresh(credential, user, authenticationHeaders);
       launcher.authorize(instance.published, user);
     }
 

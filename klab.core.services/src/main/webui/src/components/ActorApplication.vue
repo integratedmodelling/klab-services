@@ -2,7 +2,7 @@
 import {computed, provide, onBeforeUnmount, ref, shallowRef, watch, type Component} from "vue";
 import type {DashboardContext} from "../types";
 import AuthenticationDialog from "./AuthenticationDialog.vue";
-import ApplicationNode from "./ApplicationNode.vue";
+import ApplicationScaffold from "./ApplicationScaffold.vue";
 import {applicationFilesKey} from "../services/application-widgets";
 import {ApplicationConnection, type InstanceState, type UiSnapshot, type WidgetInput} from "../services/application-ui";
 import "../styles/application-ui.css";
@@ -20,11 +20,6 @@ let connection: ApplicationConnection | undefined;
 let generation = 0;
 let previousKey: string | undefined;
 let styleElements: HTMLStyleElement[] = [];
-const theme = computed(() => snapshot.value?.root.properties.theme || "light");
-const nodes = computed(() => snapshot.value?.root.children || []);
-const regions = computed(() => ({header: nodes.value.filter(n => n.type === "header"),
-  footer: nodes.value.filter(n => n.type === "footer"), drawer: nodes.value.filter(n => n.type === "drawer"),
-  main: nodes.value.filter(n => !["header", "footer", "drawer"].includes(n.type))}));
 const authPage = computed(() => ({name: "application", title: props.urn, description: "Open this k.Actors application.",
   component: "application", order: 0, requiresAuthentication: true}));
 
@@ -128,13 +123,8 @@ onBeforeUnmount(() => { generation++; clean(); });
     <q-banner v-if="error" role="status" class="application-status">{{ error }}</q-banner>
     <component v-if="snapshot && context.auth.authenticated && toolkitRenderer" :is="toolkitRenderer" :key="rendererEpoch"
       :snapshot="snapshot" :disabled="!connected" :context="context" @input="input" />
-    <section v-else-if="snapshot && context.auth.authenticated" :key="rendererEpoch" class="application-ui application-scaffold" :data-theme="theme"
-      :lang="snapshot.root.properties.locale" :aria-busy="!connected">
-      <header v-if="regions.header.length" class="application-header"><ApplicationNode v-for="node in regions.header" :key="node.id" :node="node" :disabled="!connected" :theme="theme" @input="input" /></header>
-      <aside v-if="regions.drawer.some(n => !n.properties.hidden)" class="application-drawer"><ApplicationNode v-for="node in regions.drawer" :key="node.id" :node="node" :disabled="!connected" :theme="theme" @input="input" /></aside>
-      <section class="application-main"><ApplicationNode v-for="node in regions.main" :key="node.id" :node="node" :disabled="!connected" :theme="theme" @input="input" /></section>
-      <footer v-if="regions.footer.length" class="application-footer"><ApplicationNode v-for="node in regions.footer" :key="node.id" :node="node" :disabled="!connected" :theme="theme" @input="input" /></footer>
-    </section>
+    <ApplicationScaffold v-else-if="snapshot && context.auth.authenticated" :key="rendererEpoch"
+      :snapshot="snapshot" :disabled="!connected" @input="input" />
     <AuthenticationDialog :visible="context.auth.ready && !context.auth.authenticated" :auth="context.auth" :page="authPage" />
   </main>
 </template>
