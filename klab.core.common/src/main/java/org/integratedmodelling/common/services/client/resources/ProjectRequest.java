@@ -13,6 +13,10 @@ import java.util.List;
 public class ProjectRequest {
 
 
+    private String credentialId;
+    public String getCredentialId() { return credentialId; }
+    public void setCredentialId(String credentialId) { this.credentialId = credentialId; }
+
     private RepositoryState.Operation operation;
     private String workspaceName;
     private String projectName;

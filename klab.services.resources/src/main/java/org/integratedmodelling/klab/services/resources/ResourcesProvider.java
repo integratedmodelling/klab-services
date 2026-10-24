@@ -916,7 +916,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public synchronized List<ResourceSet> importProject(
       String workspaceName, String projectUrl, boolean overwriteIfExisting, UserScope scope) {
 
-    var storage = workspaceManager.importProject(projectUrl, workspaceName);
+    return importProject(workspaceName, projectUrl, overwriteIfExisting, scope, null);
+  }
+
+  public synchronized List<ResourceSet> importProject(String workspaceName, String projectUrl,
+      boolean overwriteIfExisting, UserScope scope, String credentialId) {
+    var storage = Utils.Git.withCredentials(this, scope, credentialId,
+        () -> workspaceManager.importProject(projectUrl, workspaceName));
     if (storage == null) {
       return List.of(
           Utils.Resources.createEmpty(
@@ -1205,7 +1211,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
     if (org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class.isAssignableFrom(assetClass)) {
       var material = org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.coordinates(urn);
-      requireMaterialRead(material.getProjectName(), scope);
+      if (material.isDirectory()) requireMaterialWrite(material.getProjectName(), SubmissionMode.ADD, scope);
+      else requireMaterialRead(material.getProjectName(), scope);
       return assetClass.cast(workspaceManager.readMaterial(material));
     }
     if (org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class.isAssignableFrom(assetClass)) {
@@ -1296,6 +1303,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     switch (knowledgeClass) {
       case ADDITIONAL_MATERIAL:
         var material = org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.coordinates(urn);
+        if (material.isDirectory()) requireMaterialWrite(material.getProjectName(), SubmissionMode.ADD, scope);
         requireProjectOperation(material.getProjectName(), CRUDOperation.DELETE, scope);
         return workspaceManager.deleteMaterial(material, scope);
       case PROJECT:
@@ -1511,7 +1519,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     }
     switch (asset) {
       case org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material:
-        requireProjectOperation(material.getProjectName(), CRUDOperation.UPDATE_METADATA, scope);
+        requireMaterialWrite(material.getProjectName(), submissionMode, scope);
         return workspaceManager.writeMaterial(material, submissionMode, scope);
       case Workflow workflow:
         return List.of(
@@ -2043,6 +2051,17 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return workspaceManager.manageRepository(projectName, operation, arguments);
   }
 
+  @Override
+  public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
+      UserScope scope, String credentialId, String... arguments) {
+    if (!(scope instanceof org.integratedmodelling.klab.api.scope.ServiceSideScope local)
+        || !local.isAuthorized(CRUDOperation.ADMINISTER))
+      throw new SecurityException("Repository administration requires an administrator");
+    return Utils.Git.withCredentials(this, scope, credentialId,
+        () -> workspaceManager.manageRepository(projectName, operation, arguments));
+  }
+
+
   public ResourceInfo registerResource(
       String urn,
       KnowledgeClass knowledgeClass,
@@ -2383,8 +2402,23 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   private void requireMaterialRead(String project, UserScope user) {
     if (!canProjectOperation(project, CRUDOperation.READ, user)
-        && !canProjectOperation(project, CRUDOperation.UPDATE_METADATA, user))
+        && !canManageMaterial(project, user))
       throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("No material access to project " + project);
+  }
+
+  private boolean canManageMaterial(String project, UserScope user) {
+    return canProjectOperation(project, CRUDOperation.CREATE, user)
+        || canProjectOperation(project, CRUDOperation.UPDATE, user)
+        || canProjectOperation(project, CRUDOperation.UPDATE_METADATA, user);
+  }
+
+  /** Includes metadata contributors supported by the original material CRUD contract. */
+  public void requireMaterialWrite(String project, SubmissionMode mode, UserScope user) {
+    boolean allowed = mode == SubmissionMode.ADD ? canManageMaterial(project, user)
+        : canProjectOperation(project, CRUDOperation.UPDATE, user)
+            || canProjectOperation(project, CRUDOperation.UPDATE_METADATA, user);
+    if (!allowed) throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+        "Project " + project + " requires material write access");
   }
 
   static boolean allowsProjectEdit(ResourceInfo info, UserScope scope, boolean update, boolean administer) {

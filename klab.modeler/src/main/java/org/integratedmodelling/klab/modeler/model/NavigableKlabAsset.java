@@ -178,6 +178,16 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
       return null;
     }
 
+    // CREATE may arrive both from a submission and the local file watcher. A newly
+    // created folder can also already contain the document from the project snapshot.
+    // Reuse that node so later updates still have a unique document to reconcile.
+    for (var child : parent.children) {
+      if (child instanceof NavigableKlabAsset<?> existing && existing.is(asset)) {
+        if (existing != asset) existing.update(asset);
+        return existing;
+      }
+    }
+
     NavigableAsset ret = null;
     if (asset instanceof NavigableKlabAsset<?> navigableKlabAsset) {
       ret = navigableKlabAsset;
@@ -515,6 +525,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
                 resolved);
         var asset =
             findChangedAsset(change);
+        // An unresolved or ambiguous change must never add null to changedAssets.
+        if (asset == null) return false;
         var metadataChanges =
             asset != null
                 && asset instanceof NavigableKlabDocument document

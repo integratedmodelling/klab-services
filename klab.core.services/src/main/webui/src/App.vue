@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import CredentialsPanel from "./components/CredentialsPanel.vue";
 import CapabilitiesPanel from "./components/CapabilitiesPanel.vue";
 import ExtensionPanel from "./components/ExtensionPanel.vue";
 import FullPageExtension from "./components/FullPageExtension.vue";
@@ -42,6 +43,8 @@ const advisories = computed(() =>
 const selectedPage = computed<FullPageComponent | undefined>(() =>
   config.value?.pages.find((page) => page.name === pageName.value),
 );
+const canAdminister = computed(() => authState.authenticated && Array.isArray(capabilities.value?.permissions)
+  && capabilities.value.permissions.includes("ADMINISTER"));
 const isFullPageRoute = computed(() => pageName.value !== null);
 
 onMounted(async () => {
@@ -176,13 +179,15 @@ watch(() => authState.authenticated, () => {
             </q-item>
           </q-list>
         </q-btn-dropdown>
+        <q-btn v-if="canAdminister" flat label="Credentials" @click="navigate('ui/credentials', 'credentials')" />
         <LoginControl :auth="authState" />
       </q-toolbar>
     </q-header>
 
     <q-page-container>
       <q-page class="dashboard-page">
-        <ActorApplication v-if="applicationUrn && config" :urn="applicationUrn" :context="context" />
+        <CredentialsPanel v-if="pageName === 'credentials' && canAdminister" :key="authState.username" />
+        <ActorApplication v-else-if="applicationUrn && config" :urn="applicationUrn" :context="context" />
         <FullPageExtension
           v-else-if="selectedPage"
           :page="selectedPage"

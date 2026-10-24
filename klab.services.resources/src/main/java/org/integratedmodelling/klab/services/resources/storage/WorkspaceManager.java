@@ -4309,21 +4309,24 @@ public class WorkspaceManager {
   public synchronized org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial readMaterial(
       org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material) {
     try {
-      var bytes = org.integratedmodelling.klab.resources.ProjectMaterialIO.read(
-          materialStorage(material.getProjectName(), null, false), material.getPath());
-      if (bytes == null) return null;
-      material.setContent(bytes); material.setServiceId(service.serviceId()); return material;
+      var result = org.integratedmodelling.klab.resources.ProjectMaterialIO.retrieve(
+          materialStorage(material.getProjectName(), null, false), material);
+      if (result != null) result.setServiceId(service.serviceId());
+      return result;
     } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
   }
 
   public synchronized List<ResourceSet> writeMaterial(
       org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material,
       org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode mode, UserScope user) {
-    service.requireProjectOperation(material.getProjectName(), CRUDOperation.UPDATE_METADATA, user);
+    service.requireMaterialWrite(material.getProjectName(), mode, user);
     var storage = materialStorage(material.getProjectName(), user, true);
     try {
-      boolean existed = org.integratedmodelling.klab.resources.ProjectMaterialIO.read(storage, material.getPath()) != null;
-      org.integratedmodelling.klab.resources.ProjectMaterialIO.write(storage, material.getPath(), material.getContent(), mode);
+      boolean existed = org.integratedmodelling.klab.resources.ProjectMaterialIO.exists(storage, material.getPath());
+      if (material.isDirectory())
+        org.integratedmodelling.klab.resources.ProjectMaterialIO.createDirectory(storage, material, mode);
+      else
+        org.integratedmodelling.klab.resources.ProjectMaterialIO.write(storage, material.getPath(), material.getContent(), mode);
       return materialChange(material, existed ? CRUDOperation.UPDATE : CRUDOperation.CREATE, storage);
     } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
   }
@@ -4333,7 +4336,10 @@ public class WorkspaceManager {
     service.requireProjectOperation(material.getProjectName(), CRUDOperation.DELETE, user);
     var storage = materialStorage(material.getProjectName(), user, true);
     try {
-      if (!org.integratedmodelling.klab.resources.ProjectMaterialIO.delete(storage, material.getPath())) return List.of();
+      boolean deleted = material.isDirectory()
+          ? org.integratedmodelling.klab.resources.ProjectMaterialIO.deleteDirectory(storage, material.getPath())
+          : org.integratedmodelling.klab.resources.ProjectMaterialIO.delete(storage, material.getPath());
+      if (!deleted) return List.of();
       return materialChange(material, CRUDOperation.DELETE, storage);
     } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
   }

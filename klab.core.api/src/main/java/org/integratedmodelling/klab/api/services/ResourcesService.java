@@ -394,6 +394,13 @@ public interface ResourcesService extends KlabService {
   List<ResourceSet> manageRepository(
       String projectName, RepositoryState.Operation operation, String... arguments);
 
+  /** Execute using the caller's credential grants and an optional explicit credential set ID. */
+  default List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
+      UserScope scope, String credentialId, String... arguments) {
+    throw new UnsupportedOperationException("Scoped repository operations are unavailable");
+  }
+
+
   /**
    * Publish an observation from the passed context scope into a persistent resource. The resource
    * will be published at tier 0 with rights restricted to the published.

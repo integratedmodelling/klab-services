@@ -712,8 +712,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         // If search API doesn't work, try the direct repository approach
 
       } catch (Exception e) {
-        Thread.currentThread().interrupt();
-        throw new KlabIOException("Request was interrupted", e);
+        throw new KlabIOException("Failed to retrieve snapshot metadata", e);
       }
     }
 
@@ -735,7 +734,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       HttpResponse<String> response = null;
       try {
         response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-      } catch (Exception e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new KlabIOException("Snapshot metadata request was interrupted", e);
+      } catch (IOException e) {
         throw new KlabIOException(e);
       }
 
@@ -787,7 +789,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       HttpResponse<String> response = null;
       try {
         response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-      } catch (Exception e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new KlabIOException("Snapshot metadata request was interrupted", e);
+      } catch (IOException e) {
         throw new KlabIOException(e);
       }
 
@@ -915,8 +920,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             artifactVersion =
                 snapshotVersion.replace("-SNAPSHOT", "-" + timestamp + "-" + buildNumber);
           }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
+          return null;
+        } catch (Exception e) {
           return null;
         }
       } else {
@@ -1739,6 +1746,38 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       return ret;
     }
 
+    private record CredentialContext(org.integratedmodelling.common.authentication.CredentialVault vault,
+                                     Scope caller, String id) {}
+    private static final ThreadLocal<CredentialContext> credentialContext = new ThreadLocal<>();
+
+    /** Bind the owning service and requesting principal for one synchronous repository operation. */
+    public static <T> T withCredentials(org.integratedmodelling.klab.services.base.BaseService service,
+        Scope caller, String id, java.util.function.Supplier<T> operation) {
+      if (caller == null) throw new SecurityException("A repository operation requires a caller");
+      var previous = credentialContext.get();
+      credentialContext.set(new CredentialContext(service.credentialVault(), caller, id));
+      try { return operation.get(); }
+      finally { if (previous == null) credentialContext.remove(); else credentialContext.set(previous); }
+    }
+
+    private static ExternalAuthenticationCredentials resolveCredentials(String endpoint, Scope scope, String storedId) {
+      var context = credentialContext.get();
+      if (context != null) return context.vault().resolve(
+          context.id() == null || context.id().isBlank() ? storedId : context.id(), endpoint, context.caller());
+      if (scope == null) throw new SecurityException("A repository operation requires a caller");
+      for (var service : scope.getServices(org.integratedmodelling.klab.api.services.KlabService.class)) {
+        if (service instanceof org.integratedmodelling.klab.services.base.BaseService local
+            && (local.serviceScope() == scope || scope instanceof org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl reactive
+                && local.serviceId().equals(reactive.getHostServiceId()))) {
+          return local.credentialVault().resolve(storedId, endpoint, scope);
+        }
+      }
+      if (scope instanceof org.integratedmodelling.klab.api.scope.ServiceSideScope
+          || scope instanceof org.integratedmodelling.klab.api.scope.ServiceScope)
+        throw new SecurityException("The owning service credential vault is unavailable");
+      return org.integratedmodelling.common.authentication.Authentication.INSTANCE.getCredentials(endpoint, scope);
+    }
+
     private static CredentialsProvider getCredentialsProvider(
         org.eclipse.jgit.api.Git git, Scope scope) {
 
@@ -1749,8 +1788,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           if ("origin".equals(remoteConfig.getName()) && !remoteConfig.getURIs().isEmpty()) {
             for (var uri : remoteConfig.getURIs()) {
               credentials =
-                  org.integratedmodelling.common.authentication.Authentication.INSTANCE
-                      .getCredentials(uri.toString(), scope);
+                  resolveCredentials(uri.toString(), scope,
+                      git.getRepository().getConfig().getString("klab", null, "credentialId"));
               if (credentials != null) {
                 break;
               }
@@ -1764,6 +1803,44 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       return getCredentialsProvider(credentials);
     }
 
+    private static final class EndpointCredentialsProvider extends UsernamePasswordCredentialsProvider {
+      private final String endpoint;
+      EndpointCredentialsProvider(ExternalAuthenticationCredentials credentials) {
+        super(credentials.getParameters().get("username"), credentials.getParameters().get("password"));
+        endpoint = credentials.getEndpoint();
+      }
+      @Override
+      public boolean get(org.eclipse.jgit.transport.URIish uri, org.eclipse.jgit.transport.CredentialItem... items) {
+        if (!org.integratedmodelling.common.authentication.CredentialVault.matchesEndpoint(endpoint, uri.toString()))
+          throw new SecurityException("Credential destination does not match its endpoint");
+        return super.get(uri, items);
+      }
+    }
+
+    private static void secureTransport(org.eclipse.jgit.transport.Transport transport, CredentialsProvider provider) {
+      if (!(provider instanceof EndpointCredentialsProvider bound)) return;
+      if (!(transport instanceof org.eclipse.jgit.transport.TransportHttp http))
+        throw new SecurityException("HTTP credentials require an HTTP transport");
+      var delegate = http.getHttpConnectionFactory();
+      // Check every connection, including redirects after authentication has already been cached.
+      http.setHttpConnectionFactory(new org.eclipse.jgit.transport.http.HttpConnectionFactory() {
+        private void check(java.net.URL url) throws java.io.IOException {
+          try {
+            var uri = url.toURI();
+            if (uri.getUserInfo() != null || !org.integratedmodelling.common.authentication.CredentialVault.matchesEndpoint(
+                bound.endpoint, new java.net.URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null).toString()))
+              throw new java.io.IOException("Credential transport destination is outside its configured endpoint");
+          } catch (java.net.URISyntaxException e) { throw new java.io.IOException("Invalid credential transport destination"); }
+        }
+        public org.eclipse.jgit.transport.http.HttpConnection create(java.net.URL url) throws java.io.IOException {
+          check(url); return delegate.create(url);
+        }
+        public org.eclipse.jgit.transport.http.HttpConnection create(java.net.URL url, java.net.Proxy proxy) throws java.io.IOException {
+          check(url); return delegate.create(url, proxy);
+        }
+      });
+    }
+
     public static CredentialsProvider getCredentialsProvider(
         ExternalAuthenticationCredentials credentials) {
 
@@ -1772,41 +1849,11 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         ret =
             switch (credentials.getScheme()) {
               case ExternalAuthenticationCredentials.BASIC ->
-                  new UsernamePasswordCredentialsProvider(
-                      credentials.getCredentials().get(0), credentials.getCredentials().get(1));
-              case ExternalAuthenticationCredentials.KEY -> null;
-              default -> null;
+                  new EndpointCredentialsProvider(credentials);
+              case "bearer" -> throw new IllegalArgumentException("Git requires a basic/token schema with username and password fields");
+              case "ssh" -> throw new IllegalArgumentException("Stored SSH keys require an SSH transport adapter; use HTTPS tokens for Git");
+              default -> throw new IllegalArgumentException("Credential schema has no Git authentication adapter");
             };
-
-        // check if we need to add a transport mechanism instead
-        if (ret == null && ExternalAuthenticationCredentials.SSH.equals(credentials.getScheme())) {
-
-          //                    SshSessionFactory sshSessionFactory = new
-          //                    JschConfigSessionFactory() {
-          //                        @Override
-          //                        protected void configure(Host host, Session session) {
-          //                            // do nothing
-          //                        }
-          //
-          //                        @Override
-          //                        protected JSch createDefaultJSch(FS fs) throws
-          //                        JSchException {
-          //                            JSch defaultJSch = super.createDefaultJSch(fs);
-          //                            defaultJSch.addIdentity("c:/path/to/my/private_key");
-          //
-          //                            // if key is protected with passphrase
-          //                            // defaultJSch.addIdentity("c:/path/to/my/private_key",
-          //                            "my_passphrase");
-          //
-          //                            return defaultJSch;
-          //                        }
-          //                    };
-          //
-          //                    command.setTransportConfigCallback(transport -> {
-          //                        SshTransport sshTransport = (SshTransport) transport;
-          //                        sshTransport.setSshSessionFactory(sshSessionFactory);
-          //                    });
-        }
       }
       return ret;
     }
@@ -1886,11 +1933,13 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     private static FetchResult fetchOrigin(
         org.eclipse.jgit.api.Git git, Scope scope, Modifications ret) throws GitAPIException {
 
+      var provider = getCredentialsProvider(git, scope);
       FetchCommand fetchCommand =
           git.fetch()
               .setRemote("origin")
               .setRemoveDeletedRefs(true)
-              .setCredentialsProvider(getCredentialsProvider(git, scope));
+              .setCredentialsProvider(provider)
+              .setTransportConfigCallback(transport -> secureTransport(transport, provider));
       FetchResult result = fetchCommand.call();
       if (result != null && result.getMessages() != null && !result.getMessages().isBlank()) {
         ret.getNotifications().add(Notification.info(result.getMessages()));
@@ -2030,7 +2079,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       PushCommand pushCommand = git.push().setRemote("origin");
       pushCommand.add("refs/heads/" + normalizeBranchName(branch));
-      pushCommand.setCredentialsProvider(getCredentialsProvider(git, scope));
+      var provider = getCredentialsProvider(git, scope);
+      pushCommand.setCredentialsProvider(provider);
+      pushCommand.setTransportConfigCallback(transport -> secureTransport(transport, provider));
       Iterable<PushResult> pushResults = pushCommand.call();
       boolean reported = false;
       for (PushResult pushResult : pushResults) {
@@ -2490,6 +2541,21 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       String dirname = URLs.getURLBaseName(gitUrl);
 
+      String[] pdefs = gitUrl.split("#");
+      String branch;
+      if (pdefs.length < 2) {
+        branch = MAIN_BRANCH;
+      } else {
+        branch = pdefs[1];
+      }
+      String url = pdefs[0];
+
+      CredentialsProvider credentialsProvider =
+          getCredentialsProvider(
+              resolveCredentials(url, scope, null));
+
+      Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
+
       File pdir = new File(directory + File.separator + dirname);
       if (pdir.exists()) {
         if (removeIfExisting) {
@@ -2503,30 +2569,20 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         }
       }
 
-      String[] pdefs = gitUrl.split("#");
-      String branch;
-      if (pdefs.length < 2) {
-        branch = MAIN_BRANCH;
-      } else {
-        branch = branchExists(pdefs[0], pdefs[1]) ? pdefs[1] : MAIN_BRANCH;
-      }
-      String url = pdefs[0];
-
-      Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
-
-      CredentialsProvider credentialsProvider =
-          getCredentialsProvider(
-              org.integratedmodelling.common.authentication.Authentication.INSTANCE.getCredentials(
-                  url, scope));
-
       try (org.eclipse.jgit.api.Git result =
           org.eclipse.jgit.api.Git.cloneRepository()
               .setURI(url)
               .setCredentialsProvider(credentialsProvider)
+              .setTransportConfigCallback(transport -> secureTransport(transport, credentialsProvider))
               .setBranch(branch)
               .setDirectory(pdir)
               .call()) {
 
+        var context = credentialContext.get();
+        if (context != null && context.id() != null && !context.id().isBlank()) {
+          result.getRepository().getConfig().setString("klab", null, "credentialId", context.id());
+          result.getRepository().getConfig().save();
+        }
         Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());
 
         if (!branch.equals(MAIN_BRANCH)) {

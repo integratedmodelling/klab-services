@@ -460,6 +460,19 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
+  public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
+      UserScope scope, String credentialId, String... arguments) {
+    var request = new ProjectRequest();
+    request.setOperation(operation);
+    request.setCredentialId(credentialId);
+    request.setParameters(arguments == null ? java.util.List.of() : java.util.Arrays.asList(arguments));
+    var result = client.withScope(scope).postCollectionOrThrow(ServicesAPI.RESOURCES.MANAGE_PROJECT,
+        request, ResourceSet.class, "urn", projectName);
+    invalidateCaches();
+    return result;
+  }
+
+  @Override
   public CompletableFuture<Resource> publishObservation(
       Observation observation, ContextScope scope) {
     return null;

@@ -721,13 +721,38 @@ public abstract class BaseService implements KlabService {
 
   @Override
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
-    return Authentication.INSTANCE.getCredentialInfo(scope);
+    return credentialVault().list(scope);
   }
 
   @Override
   public ExternalAuthenticationCredentials.CredentialInfo addCredentials(
       String host, ExternalAuthenticationCredentials credentials, Scope scope) {
-    return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
+    return credentialVault().save(host, credentials, scope);
+  }
+
+  private org.integratedmodelling.common.authentication.CredentialVault credentialVault;
+
+  public synchronized org.integratedmodelling.common.authentication.CredentialVault credentialVault() {
+    if (credentialVault == null) {
+      var directory = getConfigurationDirectory(startupOptions).toPath();
+      var configuredKey = System.getProperty("klab.credentials.keyFile");
+      var key = configuredKey == null ? directory.resolve("credentials.key") : java.nio.file.Path.of(configuredKey);
+      credentialVault = new org.integratedmodelling.common.authentication.CredentialVault(directory, key,
+          scope -> scope != null && (scope == serviceScope() ||
+              scope instanceof org.integratedmodelling.klab.services.scopes.ServiceUserScope user
+                  && user.isAuthorized(org.integratedmodelling.klab.api.authentication.CRUDOperation.ADMINISTER)));
+    }
+    return credentialVault;
+  }
+
+  @Override
+  public java.util.List<org.integratedmodelling.klab.api.authentication.CredentialSchema> getCredentialSchemas(Scope scope) {
+    return credentialVault().schemas(scope);
+  }
+
+  @Override
+  public boolean removeCredentials(String id, Scope scope) {
+    return credentialVault().delete(id, scope);
   }
 
   protected abstract org.integratedmodelling.klab.services.configuration.ServiceConfiguration

@@ -160,6 +160,7 @@ public interface ServicesAPI {
     String SHUTDOWN = "/shutdown";
     String CHECK_CREDENTIALS = "/checkCredentials";
     String CREDENTIALS = "/credentials";
+    String CREDENTIAL_SCHEMAS = "/credentials/schemata";
     String SETTINGS = "/settings";
     String SET = "/set/{setting}";
     /** Submit component maintenance jobs; bodies contain component and optional version. */

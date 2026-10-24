@@ -646,6 +646,15 @@ public class JacksonConfiguration {
                 node.path("projectName").asText(null), node.path("path").asText(null),
                 node.hasNonNull("content") ? node.get("content").binaryValue() : null);
             material.setServiceId(node.path("serviceId").asText(null));
+            material.setDirectory(node.path("directory").asBoolean(false));
+            material.setSize(node.path("size").asLong(0));
+            if (node.hasNonNull("entries")) {
+              if (!node.get("entries").isArray() || node.get("entries").size() > 10000)
+                throw new IOException("Invalid material directory listing");
+              for (var entry : node.get("entries"))
+                material.getEntries().add(parser.getCodec().treeToValue(entry,
+                    org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class));
+            }
             if (node.hasNonNull("metadata")) {
               var metadata = node.get("metadata");
               material.setMetadata(metadata.has(CLASS_FIELD)

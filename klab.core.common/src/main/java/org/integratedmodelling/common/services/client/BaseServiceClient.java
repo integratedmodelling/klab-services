@@ -381,7 +381,7 @@ public abstract class BaseServiceClient implements KlabService {
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
     return client
         .withScope(scope)
-        .getCollection(
+        .getCollectionOrThrow(
             ServicesAPI.ADMIN.CREDENTIALS, ExternalAuthenticationCredentials.CredentialInfo.class);
   }
 
@@ -393,10 +393,22 @@ public abstract class BaseServiceClient implements KlabService {
     request.setCredentials(credentials);
     return client
         .withScope(scope)
-        .post(
+        .postWithStatus(
             ServicesAPI.ADMIN.CREDENTIALS,
             request,
             ExternalAuthenticationCredentials.CredentialInfo.class);
+  }
+
+  @Override
+  public java.util.List<org.integratedmodelling.klab.api.authentication.CredentialSchema> getCredentialSchemas(Scope scope) {
+    return client.withScope(scope).getCollectionOrThrow(ServicesAPI.ADMIN.CREDENTIAL_SCHEMAS,
+        org.integratedmodelling.klab.api.authentication.CredentialSchema.class);
+  }
+
+  @Override
+  public boolean removeCredentials(String id, Scope scope) {
+    return client.withScope(scope).deleteCollectionOrThrow(ServicesAPI.ADMIN.CREDENTIALS, Boolean.class, "id", id)
+        .stream().anyMatch(Boolean.TRUE::equals);
   }
 
   @Override

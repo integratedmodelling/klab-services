@@ -54,7 +54,7 @@ public class Credentials {
       if (resources) {
         var rs = KlabCLI.INSTANCE.engine().getOwner().getService(ResourcesService.class);
         if (rs != null) {
-          for (var info : rs.getCredentialInfo(rs.serviceScope())) {
+          for (var info : rs.getCredentialInfo(KlabCLI.INSTANCE.user())) {
             commandSpec.commandLine().getOut().println(info);
           }
         }
@@ -87,12 +87,12 @@ public class Credentials {
       out.println("Currently accepted schemata:");
       out.println(
           CommandLine.Help.Ansi.AUTO.string(
-              "[-s basic] -h <hostname[:port]> <username> " + "<password>"));
+              "[-s basic] -h <absolute-endpoint-URL> <username> " + "<password>"));
       out.println(
           CommandLine.Help.Ansi.AUTO.string(
-              "-s oidc -h <hostname[:port]> <grant_type> "
-                  + "<client_id> <client_secrets> <provider_id>"));
-      out.println(CommandLine.Help.Ansi.AUTO.string("-s key -h <hostname[:port]> <key>"));
+              "-s oidc -h <absolute-endpoint-URL> <grant_type> "
+                  + "<client_id> <client_secret> <token_endpoint>"));
+      out.println(CommandLine.Help.Ansi.AUTO.string("-s key -h <absolute-endpoint-URL> <key>"));
     }
   }
 
@@ -100,36 +100,31 @@ public class Credentials {
       name = "remove",
       mixinStandardHelpOptions = true,
       version = Version.CURRENT,
-      description = {"Delete credentials for a scheme/host pair", ""},
+      description = {"Delete a credential set by ID", ""},
       subcommands = {})
   public static class Delete implements Runnable {
 
-    @CommandLine.Option(
-        names = {"-s", "--scheme"},
-        defaultValue = "basic",
-        description = {"The authentication scheme: one of basic (default), oidc, s3 or key"},
-        required = false)
-    private String scheme;
+    @CommandLine.Spec CommandLine.Model.CommandSpec commandSpec;
+
+    @CommandLine.Option(names = "--id", required = true, description = "Credential set ID")
+    private String id;
 
     @CommandLine.Option(
         names = {"-r", "--resources"},
-        defaultValue = "false",
-        description = {"Handle credentials in the resources service"},
-        required = false)
-    private boolean resources = false;
-
-    // TODO other services
-
-    @CommandLine.Option(
-        names = {"-h", "--host"},
-        description = {"The host URL that the credentials refer to"},
-        required = true)
-    private String host;
+        description = "Use the resources service")
+    private boolean resources;
 
     @Override
     public void run() {
-      // TODO Auto-generated method stub
-      System.out.println("Hola");
+      boolean removed;
+      if (resources) {
+        var service = KlabCLI.INSTANCE.engine().getOwner().getService(ResourcesService.class);
+        removed = service != null && service.removeCredentials(id, KlabCLI.INSTANCE.user());
+      } else removed = Authentication.INSTANCE.removeCredentials(id, KlabCLI.INSTANCE.user());
+      commandSpec
+          .commandLine()
+          .getOut()
+          .println(removed ? "Credential set deleted" : "Credential set not found");
     }
   }
 
@@ -140,6 +135,11 @@ public class Credentials {
       description = {"Add a new set of credentials for a host and protocol.", ""},
       subcommands = {})
   public static class Set implements Runnable {
+    @CommandLine.Option(names = "--name", required = true, description = "Credential set name")
+    private String name;
+
+    @CommandLine.Option(names = "--id", description = "Existing set ID to update; omit to create")
+    private String id;
 
     @CommandLine.Option(
         names = {"-s", "--scheme"},
@@ -180,7 +180,7 @@ public class Credentials {
       if (params == null) {
         throw new KlabIllegalArgumentException("unrecognized authorization scheme");
       }
-      if (arguments.size() != params.length) {
+      if (arguments == null || arguments.size() != params.length) {
         throw new KlabValidationException(
             "expecting " + params.length + " arguments for scheme " + scheme);
       }
@@ -190,7 +190,8 @@ public class Credentials {
       ExternalAuthenticationCredentials credentials = new ExternalAuthenticationCredentials();
 
       credentials.setScheme(scheme);
-      credentials.setId(Utils.Names.shortUUID());
+      credentials.setName(name);
+      credentials.setId(id);
       credentials.setPrivileges(
           Authentication.INSTANCE.getDefaultPrivileges(KlabCLI.INSTANCE.user()));
 
@@ -201,7 +202,7 @@ public class Credentials {
       if (resources) {
         var rs = KlabCLI.INSTANCE.engine().getOwner().getService(ResourcesService.class);
         if (rs != null) {
-          if (rs.addCredentials(host, credentials, rs.serviceScope()) == null) {
+          if (rs.addCredentials(host, credentials, KlabCLI.INSTANCE.user()) == null) {
             commandSpec.commandLine().getErr().println("Failed to add external credentials");
           }
         }
