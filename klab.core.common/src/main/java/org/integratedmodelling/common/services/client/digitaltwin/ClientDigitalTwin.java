@@ -110,8 +110,14 @@ public class ClientDigitalTwin implements DigitalTwin {
   public synchronized void ingest(Message event) {
     if(recovery.isShutdown()) return;
 
-    // only the finished submission events are relevant for now.
     switch (event.getMessageType()) {
+      case ConsequenceCommitted -> knowledgeGraph.ingestConsequence(
+          event.getPayload(org.integratedmodelling.klab.api.digitaltwin.Consequence.Commit.class));
+      case ConsequenceDecision -> {
+        var decision = event.getPayload(org.integratedmodelling.klab.api.digitaltwin.Consequence.Decision.class);
+        if (!Objects.equals(contextId, decision.cause().contextId()))
+          throw new IllegalArgumentException("Consequence belongs to another digital twin");
+      }
       case ContextClosed, DigitalTwinDeleted -> dispose();
       case ActivityFinished -> {
         var activity=event.getPayload(Activity.class);

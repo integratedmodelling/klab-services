@@ -1879,6 +1879,9 @@ public class LanguageAdapter {
     if (definition.isDeniable() || ret.deniable()) {
       ret.getType().add(SemanticType.DENIABLE);
     }
+    if (definition.isRescaling()) {
+      ret.getType().add(SemanticType.RESCALING);
+    }
     if (definition.isAbstract()) {
       ret.getType().add(SemanticType.ABSTRACT);
     }

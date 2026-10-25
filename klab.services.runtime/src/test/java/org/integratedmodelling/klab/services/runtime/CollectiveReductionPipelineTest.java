@@ -77,7 +77,6 @@ class CollectiveReductionPipelineTest {
    var resources=f.scope.getService(ResourcesService.class);
    when(resources.retrieve(eq("test"),eq(org.integratedmodelling.klab.api.lang.kim.KimNamespace.class),any())).thenReturn(planned.namespace());
    when(x.reasoner.validateDocument(any(),any())).thenAnswer(call->{var r=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(call.getArgument(0));r.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);r.setKnowledgeRevision(3);return r;});
-   doReturn(planned.model()).when(f.runtime).observerSourceModel(eq(planned.model().getUrn()),any());
    var plan=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(org.integratedmodelling.klab.utilities.Utils.Json.asString(planned.actuator()),Actuator.class);
    doReturn(0).when(f.runtime).matchImplementation(any(),any(),any(),any(),any());
    doReturn(output.getContextualizationData().getNativeShardingStrategy()).when(f.runtime).getDefaultShardingStrategy(any(),any());

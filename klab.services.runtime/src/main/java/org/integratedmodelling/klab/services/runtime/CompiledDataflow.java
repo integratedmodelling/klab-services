@@ -398,35 +398,32 @@ public class CompiledDataflow {
             .withObserverSemantics(original, actual.getObserverSemantics()).getUrn())
         || !(plan.getData().get(OBSERVER_CONTRIBUTIONS) instanceof List<?> entries) || entries.isEmpty()
         || !(plan.getData().get(Actuator.PRODUCING_MODELS_KEY) instanceof List<?> models)) return false;
-    var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
     var selected = scope.getObserver();
-    if (reasoner == null || selected != null && selected.getObservable() == null) return false;
+    if (selected != null && selected.getObservable() == null) return false;
     var requestedSupport = GeometryRepository.INSTANCE.scale(plan.getObservation().getGeometry(), scope);
     var verifiedSupport = org.integratedmodelling.klab.api.services.resolver.Coverage.create(requestedSupport, 0);
-    var currentModels = new HashMap<String, Model>();
+    var currentModels = new HashMap<String,org.integratedmodelling.klab.runtime.language.ModelValidationGate.ProducerSnapshot>();
     for (var entry : entries) {
       if (!(entry instanceof String text)) return false;
       var contribution = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text, ObserverContribution.class);
       if (contribution.revision() < 0 || contribution.modelUrn() == null || contribution.modelUrn().isBlank()
           || !models.contains(contribution.modelUrn())
           || !Objects.equals(contribution.observerUrn(), actual.getObserverSemantics().getUrn())
-          || reasoner.semanticDistance(actual, original, null, contribution.revision()) < 0
-          || selected != null && reasoner.semanticDistance(actual.getObserverSemantics(), selected.getObservable().asConcept(),
-              null, contribution.revision()) < 0) return false;
+          || !(plan.getData().get("modelAdmissionRevision") instanceof Number revision)
+          || revision.longValue() != contribution.revision()) return false;
       var source = currentModels.computeIfAbsent(contribution.modelUrn(),
-          urn -> runtimeService.observerSourceModel(urn, scope));
-      if (source == null || source.getCoverage() == null
-          || org.integratedmodelling.klab.runtime.language.ModelValidationGate
-              .validatedPreparableRevision(source, scope, original) != contribution.revision()
-          || source.getObservables().stream().noneMatch(output ->
-              Objects.equals(output.asConcept().getUrn(), original.asConcept().getUrn())
-                  && output.getObserverSemantics() != null
-                  && Objects.equals(output.getObserverSemantics().getUrn(), contribution.observerUrn())
-                  && reasoner.semanticDistance(output, original, null, contribution.revision()) >= 0)) return false;
+          urn -> producingSnapshot(plan, urn));
+      if (source == null) return false;
+      var content = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(source.content(), Map.class);
+      if (!(content.get("coverage") instanceof String coverage)
+          || !(content.get("observables") instanceof List<?> outputs)
+          || outputs.stream().noneMatch(output -> output instanceof Map<?,?> fields
+              && Objects.equals(fields.get("semantics"), original.asConcept().getUrn())
+              && Objects.equals(fields.get("observer"), contribution.observerUrn()))) return false;
       if (contribution.support() == null) return false;
       var declaredSupport = GeometryRepository.INSTANCE.scale(Geometry.create(contribution.support()), scope);
       var supported = GeometryRepository.INSTANCE.getMerged(requestedSupport,
-          GeometryRepository.INSTANCE.scale(source.getCoverage(), scope),
+          GeometryRepository.INSTANCE.scale(Geometry.create(coverage), scope),
           org.integratedmodelling.klab.api.lang.LogicalConnector.INTERSECTION,
           org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class);
       if (supported == null || supported.isEmpty()
@@ -438,6 +435,37 @@ public class CompiledDataflow {
           : verifiedSupport.merge(supported, org.integratedmodelling.klab.api.lang.LogicalConnector.UNION);
     }
     return verifiedSupport.isComplete();
+  }
+
+  /** A plan carries its admitted executable content, independent of later Resources edits. */
+  private org.integratedmodelling.klab.runtime.language.ModelValidationGate.ProducerSnapshot
+      producingSnapshot(Actuator actuator, String urn) {
+    var encoded = actuator.getData().get(
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_SNAPSHOTS);
+    if (!(encoded instanceof List<?> snapshots)) return null;
+    org.integratedmodelling.klab.runtime.language.ModelValidationGate.ProducerSnapshot selected = null;
+    for (var entry : snapshots) {
+      if (!(entry instanceof String text)) throw new IllegalStateException("Malformed producing-model snapshot");
+      var model = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text,
+          org.integratedmodelling.klab.runtime.language.ModelValidationGate.ProducerSnapshot.class);
+      if (Objects.equals(urn, model.modelUrn())) {
+        if (selected != null) throw new IllegalStateException("Duplicate producing-model snapshot: " + urn);
+        selected = model;
+      }
+    }
+    if (selected == null) return null;
+    var receipts = actuator.getData().get(
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS);
+    if (!(receipts instanceof List<?> values)) return null;
+    for (var value : values) {
+      if (!(value instanceof String text)) return null;
+      var receipt = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text,
+          org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt.class);
+      if (Objects.equals(urn, receipt.modelUrn())
+          && Objects.equals(receipt.executableHash(), selected.executableHash()))
+        return selected;
+    }
+    return null;
   }
 
   private void validateObserverBindings(Actuator actuator) {
@@ -949,8 +977,13 @@ public class CompiledDataflow {
    *
    * @param transaction
    */
-  /** Recheck every named producer against saved source and this invocation's actual context. */
+  /** Check the resolver's frozen admissions locally; execution never reopens mutable source. */
   void validateProducingModels(Actuator actuator, ContextScope requested) {
+    validateProducingModel(actuator, requested);
+    for (var child : actuator.getChildren()) validateProducingModels(child, requested);
+  }
+
+  private void validateProducingModel(Actuator actuator, ContextScope requested) {
     var coveredMemberPorts=new HashSet<String>();
     var invocationScope = requested;
     if (actuator.getObservation() != null && actuator.getObservation().getObservable().is(SemanticType.QUALITY)
@@ -967,14 +1000,11 @@ public class CompiledDataflow {
         String urn = (String)entry;
         if (urn.isBlank()) continue; // Truly ad-hoc producers have no saved source contract.
         var revision = actuator.getData().get("modelAdmissionRevision");
-        var reasoner = invocationScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-        var cap = reasoner == null ? null : reasoner.capabilities(invocationScope);
         if (!(revision instanceof Number captured) || captured.longValue() < 0
-            || !(cap instanceof org.integratedmodelling.klab.api.services.Reasoner.Capabilities semantic)
-            || captured.longValue() != semantic.getKnowledgeRevision()
-            || !Objects.equals(actuator.getData().get("modelAdmissionReasonerId"), semantic.getServiceId()))
-          throw new IllegalStateException("Producing-model semantic admission revision is missing or changed");
-        if (!(invocationScope instanceof ServiceContextScope serviceScope))
+            || !(actuator.getData().get("modelAdmissionReasonerId") instanceof String reasonerId)
+            || reasonerId.isBlank())
+          throw new IllegalStateException("Producing-model semantic admission snapshot is missing");
+        if (!(invocationScope instanceof ServiceContextScope))
           throw new IllegalStateException("Model execution requires a service context");
         var receiptData=actuator.getData().get(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS);
         if (!(receiptData instanceof List<?> values)) throw new IllegalStateException("Missing original model source admission; replan the request");
@@ -987,23 +1017,17 @@ public class CompiledDataflow {
             admission=candidate;
           }
         }
-        var source = runtimeService.observerSourceModel(urn, serviceScope);
-        if (admission==null || !admission.sourceBacked() || source==null
+        if (admission==null || !admission.sourceBacked()
             || admission.knowledgeRevision()!=captured.longValue()
-            || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(admission,source,invocationScope))
-          throw new IllegalStateException("Producing model/source changed since planning; replan: "+urn);
+            || !Objects.equals(admission.reasonerId(), reasonerId)
+            || admission.sourceVersion()==null || admission.sourceHash()==null || admission.sourceHash().isBlank()
+            || admission.executableHash()==null || admission.executableHash().isBlank())
+          throw new IllegalStateException("Missing or inconsistent producing-model admission snapshot: "+urn);
+        var frozen = producingSnapshot(actuator, urn);
+        if (frozen == null || !Objects.equals(admission.namespace(), frozen.namespace())
+            || !Objects.equals(admission.executableHash(), frozen.executableHash()))
+          throw new IllegalStateException("Producing-model snapshot differs from its admission: " + urn);
         requireMemberInputPlans(actuator,admission,invocationScope,coveredMemberPorts);
-        var currentAdmission=org.integratedmodelling.klab.runtime.language.ModelValidationGate
-            .validatedPreparableAdmission(source, invocationScope, actuator.getOperationObservable());
-        if (!admission.equals(currentAdmission)
-            || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(admission,source,invocationScope))
-          throw new IllegalStateException("Producing model is no longer valid in the invocation context: " + urn);
-        var latestReasoner = invocationScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-        var latest = latestReasoner == null ? null : latestReasoner.capabilities(invocationScope);
-        if (!(latest instanceof org.integratedmodelling.klab.api.services.Reasoner.Capabilities current)
-            || captured.longValue() != current.getKnowledgeRevision()
-            || !Objects.equals(actuator.getData().get("modelAdmissionReasonerId"), current.getServiceId()))
-          throw new IllegalStateException("Producing-model semantic snapshot changed during admission");
       }
     }
     if(!coveredMemberPorts.equals(actuator.getMemberQualityInputs().keySet()))
@@ -1013,7 +1037,6 @@ public class CompiledDataflow {
       requiredMemberPorts.addAll(MemberQualityConsumerSupport.requiredPorts(componentRegistry,call));
     if(!requiredMemberPorts.equals(actuator.getMemberQualityInputs().keySet()))
       throw new IllegalStateException("Installed typed consumer requires exact source-backed member-quality inputs");
-    for (var child : actuator.getChildren()) validateProducingModels(child, requested);
   }
 
   private void requireMemberInputPlans(Actuator actuator,
@@ -1044,7 +1067,6 @@ public class CompiledDataflow {
 
   private Map<String,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
       resolveMemberInputs(Actuator actuator,ServiceContextScope invocationScope) {
-    validateProducingModels(actuator,invocationScope);
     var results=new LinkedHashMap<String,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>();
     for(var entry:actuator.getMemberQualityInputs().entrySet()) {
       var task=runtimeService.resolveMemberQualities(entry.getValue().request(),invocationScope);
@@ -1062,7 +1084,7 @@ public class CompiledDataflow {
       }
       MemberQualityResolution.requireForConsumption(results.get(entry.getKey()),invocationScope);
     }
-    validateProducingModels(actuator,invocationScope);
+    validateProducingModel(actuator,invocationScope);
     return Map.copyOf(results);
   }
 
@@ -1616,7 +1638,7 @@ public class CompiledDataflow {
 
       var contextScope = (ServiceContextScope) scope;
       if (scope.isInterrupted()) return false;
-      try { validateProducingModels(actuator, scope); }
+      try { validateProducingModel(actuator, scope); }
       catch (IllegalStateException invalid) { scope.error(invalid.getMessage()); return false; }
       if (collectiveReduction(actuator) != null) {
         try {

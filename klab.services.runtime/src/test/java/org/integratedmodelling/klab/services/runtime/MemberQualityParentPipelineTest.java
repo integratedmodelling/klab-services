@@ -84,7 +84,6 @@ class MemberQualityParentPipelineTest {
    assertTrue(sequence.isEmpty());
    when(registry.getFunctionDescriptor(any(org.integratedmodelling.klab.api.lang.ServiceCall.class))).thenReturn(List.of(descriptor));
    var planned=MemberQualityParentPlanningFixture.plan(output,query.getObservable(),quality,scope,reasoner);
-   doReturn(planned.model()).when(runtime).observerSourceModel(eq(planned.model().getUrn()),any());
    var fixtures=List.of(first,second);var members=List.of(one,two);var values=List.of(.2,.4);
    when(runtime.getMembers(query,scope)).thenReturn(List.of(one,two));
    for(int i=0;i<2;i++) {

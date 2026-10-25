@@ -37,7 +37,8 @@ class FederatedIdentityTransportTest {
     server.createContext("/", exchange -> {
       var headers = new HashMap<String, String>();
       for (var key : new String[]{"Authorization", ServicesAPI.USERNAME_HEADER,
-          ServicesAPI.FEDERATION_HEADER, ServicesAPI.SCOPE_HEADER, ServicesAPI.TRANSACTION_ID_HEADER}) {
+          ServicesAPI.FEDERATION_HEADER, ServicesAPI.SCOPE_HEADER, ServicesAPI.TRANSACTION_ID_HEADER,
+          ServicesAPI.CONSEQUENCE_HEADER}) {
         headers.put(key, exchange.getRequestHeaders().getFirst(key));
       }
       received.set(headers);
@@ -51,16 +52,24 @@ class FederatedIdentityTransportTest {
       var alice = scope("alice", "alice-credential");
       var bob = scope("bob", "bob-credential");
       when(alice.getTransactionId()).thenReturn("alice-transaction");
+      var cause = new org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause(1,
+          alice.getId(), 1, 2, 0, null, null, "decision",
+          org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CHANGE_PROCESS);
+      when(alice.getConsequenceCause()).thenReturn(cause);
       var scoped = http.withScope(alice);
       assertEquals("ok", scoped.get("/probe", String.class));
       assertEquals("alice-credential", received.get().get("Authorization"));
       assertEquals("alice", received.get().get(ServicesAPI.USERNAME_HEADER));
       assertEquals("alice-transaction", received.get().get(ServicesAPI.TRANSACTION_ID_HEADER));
+      assertEquals(cause, Utils.Json.parseObject(new String(java.util.Base64.getDecoder().decode(
+          received.get().get(ServicesAPI.CONSEQUENCE_HEADER)), java.nio.charset.StandardCharsets.UTF_8),
+          org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause.class));
       assertEquals("ok", scoped.withScope(bob).get("/probe", String.class));
       assertEquals("bob-credential", received.get().get("Authorization"));
       assertEquals("bob", received.get().get(ServicesAPI.USERNAME_HEADER));
       assertEquals("test.federation", received.get().get(ServicesAPI.FEDERATION_HEADER));
       assertNull(received.get().get(ServicesAPI.TRANSACTION_ID_HEADER));
+      assertNull(received.get().get(ServicesAPI.CONSEQUENCE_HEADER));
       var anonymous = scope("anonymous", ServicesAPI.ANONYMOUS_TOKEN);
       when(anonymous.getUser().isAnonymous()).thenReturn(true);
       assertEquals("ok", scoped.withScope(anonymous).get("/probe", String.class));

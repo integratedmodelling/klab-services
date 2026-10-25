@@ -26,6 +26,7 @@ public class PrioritizerImpl implements Prioritizer<Model> {
   private final Concept contextObservable;
   private final Concept effectiveObserver;
   private final Map<Model,Integer> observerPreferences = new HashMap<>();
+  private final Map<Model,Integer> jointChangePreferences = new IdentityHashMap<>();
   private final Map<Model,org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt> admissions = new java.util.IdentityHashMap<>();
   org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt admission(Model model) { return admissions.get(model); }
   private final Map<Criterion, Integer> defaults;
@@ -141,6 +142,8 @@ public class PrioritizerImpl implements Prioritizer<Model> {
   @Override public int compare(Model first, Model second) {
     int perspective=Integer.compare(observerPreference(first),observerPreference(second));
     if(perspective!=0)return perspective;
+    int joint = Integer.compare(jointChangePreference(second), jointChangePreference(first));
+    if (joint != 0) return joint;
     var left = computeCriteria(first); var right = computeCriteria(second);
     for (var criterion : order) {
       int comparison = Double.compare(left.get(criterion), right.get(criterion));
@@ -148,6 +151,46 @@ public class PrioritizerImpl implements Prioritizer<Model> {
     }
     // No identity-hash or arrival-time tie breaker: stable asset identities survive service boundaries.
     return Comparator.nullsLast(String::compareTo).compare(first.getUrn(), second.getUrn());
+  }
+
+  /** This partition is inside model selection; strategy tiers are still chosen by the compiler. */
+  int jointChangePreference(Model model) {
+    if (!observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.CHANGE)
+        || contextObservable == null) return 0;
+    var requested = ResolutionConstraint.getPayload(scope, ResolutionConstraint.Type.ChangeQualities,
+        Observable.class);
+    if (requested.size() < 2) return 0;
+    // Never rank semantic claims from an unadmitted model.
+    if (semanticDistance(model) == Integer.MAX_VALUE) return 0;
+    return jointChangePreferences.computeIfAbsent(model, candidate -> jointChangeCoverage(
+        candidate, requested, contextObservable, scope.getService(Reasoner.class),
+        admissions.get(candidate).knowledgeRevision()));
+  }
+
+  static int jointChangeCoverage(Model model, List<Observable> requested, Concept bearer,
+      Reasoner reasoner, long revision) {
+    if (model.getObservables().isEmpty()) return 0;
+    var process = model.getObservables().getFirst();
+    if (!process.is(org.integratedmodelling.klab.api.knowledge.SemanticType.PROCESS)) return 0;
+    var inherent = reasoner.inherent(process);
+    // Exact/equivalent bearer specificity is stronger than merely being applicable to a superclass.
+    if (inherent == null || reasoner.semanticDistance(inherent, bearer, null, revision) != 0
+        || reasoner.semanticDistance(bearer, inherent, null, revision) != 0) return 0;
+    var declared = new ArrayList<>(model.getObservables().subList(1, model.getObservables().size()));
+    declared.addAll(model.getDependencies());
+    var covered = new HashSet<String>();
+    for (var quality : requested) {
+      if (!quality.is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY)) continue;
+      for (var output : declared) {
+        if (output.is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY)
+            && (reasoner.affectedBy(output, process) || reasoner.createdBy(output, process))
+            && reasoner.semanticDistance(output, quality, bearer, revision) >= 0) {
+          covered.add(quality.getUrn());
+          break;
+        }
+      }
+    }
+    return covered.size() > 1 ? covered.size() : 0;
   }
 
   @Override public Map<Criterion, Double> computeCriteria(Model model) {

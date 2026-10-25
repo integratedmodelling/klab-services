@@ -193,7 +193,9 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       // keep scenarios and any other config by deriving a new context with ctx = null
       submissionContext = (ClientContextScope) submissionContext.within(null);
     }
-    return runtime.submit(observation, submissionContext);
+    return runtime.submit(observation,
+        org.integratedmodelling.common.runtime.ObserverSubmissionPolicy.apply(
+            submissionContext, getEngine() == null ? null : getEngine().getSettings()));
   }
 
   @Override

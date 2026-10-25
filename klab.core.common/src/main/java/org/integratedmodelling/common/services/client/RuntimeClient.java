@@ -101,11 +101,16 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
+  public CompletableFuture<Observation> submit(Observation observation, ContextScope requestedScope) {
 
     if (observation.getId() > 0) {
       return CompletableFuture.completedFuture(observation);
     }
+
+    var scope = org.integratedmodelling.common.runtime.ObserverSubmissionPolicy.apply(
+        requestedScope,
+        requestedScope instanceof ClientContextScope clientScope && clientScope.getEngine() != null
+            ? clientScope.getEngine().getSettings() : null);
 
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(Observation.forTransport(observation));

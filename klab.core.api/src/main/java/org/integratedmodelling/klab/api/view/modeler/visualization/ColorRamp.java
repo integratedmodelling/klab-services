@@ -92,7 +92,8 @@ public final class ColorRamp {
               "palette", "colors", "stops", "values", "min", "max", "center", "reverse", "nodata",
               "unknown", "value");
       for (var key : annotation.keySet()) {
-        if (key.startsWith("#") || annotation.getUnnamedKeys().contains(key)) continue;
+        // Contributor precedence is resolved before rendering; its flag survives transport.
+        if (key.equals("override") || key.startsWith("#") || annotation.getUnnamedKeys().contains(key)) continue;
         if (!allowed.contains(key)) throw invalid("Unknown parameter: " + key);
         options.put(key, annotation.get(key));
       }

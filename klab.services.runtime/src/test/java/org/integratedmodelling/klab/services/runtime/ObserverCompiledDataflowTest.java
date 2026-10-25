@@ -63,7 +63,6 @@ class ObserverCompiledDataflowTest {
       });
       when(source.getUrn()).thenReturn("test:model"); when(source.getNamespace()).thenReturn("test");
       when(source.getCoverage()).thenReturn(Geometry.create("1"));
-      when(runtime.observerSourceModel("test:model", scope)).thenReturn(source);
       plan.setObservation(Observation.forTransport(root)); plan.setId(-2); plan.setName("process");
       plan.setOperationObservable(requested); plan.setActuatorType(Actuator.Type.OBSERVE);
     }
@@ -77,6 +76,9 @@ class ObserverCompiledDataflowTest {
       assertNotNull(admitted);
       plan.getData().put(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS,
           List.of(org.integratedmodelling.klab.utilities.Utils.Json.asString(admitted)));
+      plan.getData().put(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_SNAPSHOTS,
+          List.of(org.integratedmodelling.klab.utilities.Utils.Json.asString(
+              org.integratedmodelling.klab.runtime.language.ModelValidationGate.snapshot(source))));
       plan.getData().put("im:observer-contributions", List.of(org.integratedmodelling.klab.utilities.Utils.Json.asString(
           new CompiledDataflow.ObserverContribution("test:model", observer.getUrn(), "1", 7))));
     }
@@ -93,7 +95,7 @@ class ObserverCompiledDataflowTest {
   }
   @Test void changedRevisionOrMissingProducingEvidenceCannotRefineRootMeaning() {
     var f = new Fixture(); f.refine();
-    when(f.reasoner.semanticDistance(any(), any(), isNull(), eq(7L))).thenReturn(-1);
+    f.plan.getData().put("modelAdmissionRevision",8L);
     assertThrows(IllegalArgumentException.class, () -> f.compiler().compile(f.plan));
     assertNull(f.root.getObservable().getObserverSemantics());
     var noReceipt = new Fixture(); noReceipt.refine(); noReceipt.plan.getData().remove(Actuator.PRODUCING_MODELS_KEY);
@@ -134,25 +136,31 @@ class ObserverCompiledDataflowTest {
     f.plan.setObservation(Observation.forTransport(f.root));
     assertSame(f.requested, f.plan.getOperationObservable());
   }
-  @Test void nestedUnboundRefinementRequiresCurrentEvidenceBeforeAnyAllocation() {
+  @Test void nestedUnboundRefinementRequiresFrozenEvidenceBeforeAnyAllocation() {
     var parent = new Fixture(); var child = new Fixture(); child.refine();
     ((ObservationImpl) child.plan.getObservation()).setId(-3); child.plan.setId(-3);
     parent.plan.getChildren().add(child.plan);
-    when(parent.reasoner.semanticDistance(any(), any(), isNull(), eq(7L))).thenReturn(-1);
+    child.plan.getData().put("modelAdmissionRevision",8L);
     assertThrows(IllegalArgumentException.class, () -> parent.compiler().compile(parent.plan));
     assertNull(parent.root.getObservable().getObserverSemantics());
     assertEquals(-3, child.plan.getId());
   }
   @Test void selfAssertedModelOrObserverAndMalformedPartialSupportCannotAuthorizeRefinement() {
     var absent = new Fixture(); absent.refine();
-    when(absent.runtime.observerSourceModel("test:model", absent.scope)).thenReturn(null);
+    absent.plan.getData().remove(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_SNAPSHOTS);
     assertThrows(IllegalArgumentException.class, () -> absent.compiler().compile(absent.plan));
     var wrong = new Fixture(); wrong.refine();
     when(wrong.source.getObservables()).thenReturn(List.of(ObservableImpl.withObserverSemantics(
         wrong.requested, concept("test:UnrelatedObserver", SemanticType.AGENT))));
+    wrong.plan.getData().put(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_SNAPSHOTS,
+        List.of(org.integratedmodelling.klab.utilities.Utils.Json.asString(
+            org.integratedmodelling.klab.runtime.language.ModelValidationGate.snapshot(wrong.source))));
     assertThrows(IllegalArgumentException.class, () -> wrong.compiler().compile(wrong.plan));
     var partial = new Fixture(); partial.refine();
     when(partial.source.getCoverage()).thenReturn(Geometry.create("T0(1){tstart=0,tend=5,ttype=PHYSICAL}"));
+    partial.plan.getData().put(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_SNAPSHOTS,
+        List.of(org.integratedmodelling.klab.utilities.Utils.Json.asString(
+            org.integratedmodelling.klab.runtime.language.ModelValidationGate.snapshot(partial.source))));
     ((ObservationImpl) partial.plan.getObservation()).setGeometry(Geometry.create("T0(1){tstart=0,tend=10,ttype=PHYSICAL}"));
     partial.root.setGeometry(partial.plan.getObservation().getGeometry());
     assertThrows(IllegalArgumentException.class, () -> partial.compiler().compile(partial.plan));

@@ -87,13 +87,9 @@ public class ResolutionGraph {
   long semanticRevision() { return semanticRevision; }
 
   void requireSemanticSnapshot(ContextScope scope) {
-    var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-    var cap = reasoner == null ? null : reasoner.capabilities(scope);
-    if (semanticRevision < 0 || semanticReasonerId == null
-        || !(cap instanceof org.integratedmodelling.klab.api.services.Reasoner.Capabilities semantic)
-        || semanticRevision != semantic.getKnowledgeRevision()
-        || !Objects.equals(semanticReasonerId, semantic.getServiceId()))
-      throw new KlabIllegalStateException("Resolution semantic snapshot is unavailable or changed; replan the request");
+    // A later source publication cannot invalidate the already admitted transaction snapshot.
+    if (semanticRevision < 0 || semanticReasonerId == null || semanticReasonerId.isBlank())
+      throw new KlabIllegalStateException("Resolution semantic snapshot is unavailable");
   }
   // Two ports may reference the same observation (e.g. both relationship endpoints).
   private DirectedMultigraph<Resolvable, ResolutionGraph.ResolutionEdge> graph =
@@ -122,10 +118,9 @@ public class ResolutionGraph {
 
   private ResolutionGraph(ContextScope rootScope) {
     this.rootScope = rootScope;
-    var reasoner = rootScope == null ? null : rootScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-    var cap = reasoner == null ? null : reasoner.capabilities(rootScope);
-    if (cap instanceof org.integratedmodelling.klab.api.services.Reasoner.Capabilities semantic) {
-      semanticReasonerId = semantic.getServiceId(); semanticRevision = semantic.getKnowledgeRevision();
+    var semantic = org.integratedmodelling.klab.runtime.language.ModelValidationGate.semanticSnapshot(rootScope);
+    if (semantic != null) {
+      semanticReasonerId = semantic.serviceId(); semanticRevision = semantic.revision();
     }
     this.observations = new ConcurrentHashMap<>();
     this.localResources = new CopyOnWriteArrayList<>();

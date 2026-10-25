@@ -376,7 +376,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return true;
   }
 
-  public synchronized boolean checkSemanticServices(Scope scope) {
+  @Override
+  public void runAdditionalTimedTasks() {
+    // Resources may become operational before the Reasoner; prepare its catalog once that changes.
+    var scope=serviceScope();
+    if (scope.getServices(Reasoner.class).stream().anyMatch(reasoner -> reasoner.status().isOperational()))
+      checkSemanticServices(scope);
+  }
+
+  public boolean checkSemanticServices(Scope scope) {
       var iAmLocal = this.serviceScope().getIdentity() instanceof UserIdentity;
 
       /** Only local reasoners can index semantic content of a local resources service. */
@@ -510,8 +518,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     // TODO index ontologies
     try {
-      if (namespaceModelIndex == null) namespaceModelIndex = new NamespaceModelIndex();
-      namespaceModelIndex.reconcile(workspaceManager.getNamespaces(), kbox, scope, revision, System.nanoTime());
+      NamespaceModelIndex index;
+      synchronized (this) {
+        if (namespaceModelIndex == null) namespaceModelIndex = new NamespaceModelIndex();
+        index=namespaceModelIndex;
+      }
+      // Catalog publication serializes on its own index, never the provider's HTTP-facing monitor.
+      index.reconcile(workspaceManager.getNamespaces(), kbox, scope, revision, System.nanoTime());
     } catch (Throwable t) {
       Logging.INSTANCE.error("Error indexing semantic content", t);
       return false;
@@ -1256,6 +1269,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       asset.setServiceId(serviceId());
     if (result instanceof KlabDocumentImpl<?> document && document.getServiceId() == null)
       document.setServiceId(serviceId());
+    if (result instanceof KimNamespace namespace)
+      return assetClass.cast((namespaceModelIndex == null ? new NamespaceModelIndex() : namespaceModelIndex)
+          .forTransport(namespace));
     return result;
   }
 

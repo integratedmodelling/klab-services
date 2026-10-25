@@ -8,11 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
-import org.integratedmodelling.common.knowledge.ModelImpl;
-import org.integratedmodelling.common.knowledge.ConceptImpl;
-import org.integratedmodelling.common.knowledge.ObservableImpl;
-import org.integratedmodelling.klab.api.lang.AnnotationCollector;
-import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
@@ -35,7 +30,6 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -204,63 +198,7 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   private Model loadModel(KimModel statement, KimNamespace namespace, Scope scope) {
-
-    var reasoner = scope.getService(Reasoner.class);
-
-    ModelImpl model = new ModelImpl();
-    var resolutionInfo = new ModelImpl.ResolutionInfoImpl();
-
-    resolutionInfo.setScope(statement.getScope());
-    resolutionInfo.setInScenario(namespace.isScenario());
-    resolutionInfo.setResolutionCriteria(namespace.getResolutionCriteria() == null
-        ? java.util.Map.of() : new java.util.HashMap<>(namespace.getResolutionCriteria()));
-    // TODO coverage!
-
-    model.getAnnotations().addAll(AnnotationCollector.merge(statement.getAnnotations()));
-    for (KimObservable observable : statement.getObservables()) {
-      model.getObservables().add(annotatedObservable(observable, reasoner));
-    }
-    for (KimObservable observable : statement.getDependencies()) {
-      model.getDependencies().add(annotatedObservable(observable, reasoner));
-    }
-
-    model.setResolutionInfo(resolutionInfo);
-
-    // TODO learners, geometry covered etc.
-    model.setUrn(statement.getUrn());
-    model.setMetadata(
-        statement.getMetadata()); // FIXME add processed metadata with the existing symbol table
-    model.setNamespace(statement.getNamespace());
-    model.setProjectName(statement.getProjectName());
-
-    // TODO any literal value must be added first
-    // TODO use static builders for Contextualizable instead of polymorphic constructors
-
-    if (!statement.getResourceUrns().isEmpty()) {
-      model.getComputation().add(new ContextualizableImpl(statement.getResourceUrns()));
-    }
-
-    model.getComputation().addAll(statement.getContextualization());
-
-    // FIXME use coverage from NS or model if any
-    model.setCoverage(Coverage.universal());
-
-    return model;
-  }
-
-  private org.integratedmodelling.klab.api.knowledge.Observable annotatedObservable(
-      KimObservable syntax, Reasoner reasoner) {
-    var resolved = reasoner.resolveObservable(syntax.getUrn());
-    if (resolved == null) return null;
-    var result = new ObservableImpl((ObservableImpl) resolved);
-    var semantics = new ConceptImpl((ConceptImpl) resolved.getSemantics());
-    semantics.setAnnotations(AnnotationCollector.merge(
-        semantics.getAnnotations(), AnnotationCollector.collect(
-            syntax.getSemantics(), reasoner::resolveConcept)));
-    result.setSemantics(semantics);
-    result.setAnnotations(AnnotationCollector.merge(
-        resolved.getAnnotations(), syntax.getAnnotations()));
-    return result;
+    return org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(statement, namespace, scope);
   }
 
   @Override

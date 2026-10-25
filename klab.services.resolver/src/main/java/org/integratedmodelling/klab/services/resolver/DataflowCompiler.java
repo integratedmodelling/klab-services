@@ -316,6 +316,19 @@ public class DataflowCompiler {
       var encodedReceipt=org.integratedmodelling.klab.utilities.Utils.Json.asString(receipt);
       if (!receipts.contains(encodedReceipt)) receipts.add(encodedReceipt);
       observationActuator.getData().put(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS,List.copyOf(receipts));
+      var snapshots = new ArrayList<String>();
+      var previousSnapshots = observationActuator.getData().get(
+          org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_SNAPSHOTS);
+      if (previousSnapshots instanceof List<?> values) for (var value : values) {
+        if (!(value instanceof String text)) throw new KlabIllegalStateException("Malformed model snapshots");
+        snapshots.add(text);
+      }
+      var snapshot = org.integratedmodelling.klab.utilities.Utils.Json.asString(
+          org.integratedmodelling.klab.runtime.language.ModelValidationGate.snapshot(model));
+      if (!snapshots.contains(snapshot)) snapshots.add(snapshot);
+      observationActuator.getData().put(
+          org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_SNAPSHOTS,
+          List.copyOf(snapshots));
       long revision = receipt.knowledgeRevision();
       var previous = observationActuator.getData().putIfAbsent("modelAdmissionRevision", revision);
       var previousService = observationActuator.getData().putIfAbsent("modelAdmissionReasonerId", resolutionGraph.semanticReasonerId());

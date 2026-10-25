@@ -443,6 +443,11 @@ public interface ContextScope extends SessionScope {
    */
   String getTransactionId();
 
+  /** Background decision responsible for this request, or null for ordinary user work. */
+  default org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause getConsequenceCause() {
+    return null;
+  }
+
   /**
    * Obtain the properly formatted scope token for the {@link
    * org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} to use in a request. The root

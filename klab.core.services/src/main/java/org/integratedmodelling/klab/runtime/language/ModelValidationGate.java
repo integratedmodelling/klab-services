@@ -17,6 +17,79 @@ public final class ModelValidationGate {
   private ModelValidationGate() {}
 
   public static final String PRODUCER_ADMISSIONS = "im:model-admissions";
+  public static final String PRODUCER_SNAPSHOTS = "im:model-snapshots";
+
+  public record NamespaceAdmission(String reasonerId, String response, java.util.Map<String,String> modelHashes)
+      implements java.io.Serializable {
+    public NamespaceAdmission { modelHashes=java.util.Map.copyOf(modelHashes); }
+  }
+
+  /** Canonical executable projection, excluding routing, mutable caches and diagnostics. */
+  public record ProducerSnapshot(String modelUrn, String namespace, String content)
+      implements java.io.Serializable {
+    public String executableHash() { return SemanticValidationRequest.sourceHash(content); }
+  }
+
+  public static ProducerSnapshot snapshot(Model model) {
+    return new ProducerSnapshot(model.getUrn(), model.getNamespace(), executableContent(model));
+  }
+
+  private static final ThreadLocal<ValidationSession> SESSION = new ThreadLocal<>();
+  private record SourceKey(ResourcesService resources, Object caller, String namespace) {}
+  private record ValidationKey(Reasoner reasoner, Object caller, String requestHash) {}
+  private record SemanticKey(Reasoner reasoner, Object caller) {}
+  public record SemanticSnapshot(String serviceId, long revision) {}
+
+  /** Frozen source and semantic admissions belong to one resolution attempt, never a later request. */
+  public static final class ValidationSession implements AutoCloseable {
+    private final ValidationSession previous = SESSION.get();
+    private final java.util.Map<SourceKey, KimNamespace> sources = new java.util.HashMap<>();
+    private final java.util.Map<ValidationKey, String> validations = new java.util.HashMap<>();
+    private final java.util.Map<SemanticKey, SemanticSnapshot> semantics = new java.util.HashMap<>();
+    private KimNamespace publicationNamespace;
+    private Object publicationCaller;
+    private ValidationSession() { SESSION.set(this); }
+    @Override public void close() {
+      if (previous == null) SESSION.remove(); else SESSION.set(previous);
+    }
+  }
+
+  public static ValidationSession openSession() { return new ValidationSession(); }
+
+  /** Catalog replacement and its descriptor stores consume the same admitted namespace. */
+  public static ValidationSession openPublicationSession(KimNamespace namespace, Scope scope) {
+    var session=new ValidationSession();
+    session.publicationNamespace=namespace;
+    session.publicationCaller=caller(scope);
+    return session;
+  }
+
+  /** Publication checks the live generation again before exposing a newly built catalog. */
+  public static SemanticSnapshot currentSemanticSnapshot(Scope scope) {
+    var reasoner=scope.getService(Reasoner.class);
+    var capabilities=reasoner==null?null:reasoner.capabilities(scope);
+    return capabilities==null?null:new SemanticSnapshot(capabilities.getServiceId(),capabilities.getKnowledgeRevision());
+  }
+
+  public static SemanticSnapshot semanticSnapshot(Scope scope) {
+    return scope == null ? null : semanticSnapshot(scope.getService(Reasoner.class), scope);
+  }
+
+  private static Object caller(Scope scope) {
+    return scope instanceof UserScope user && user.getUser() != null ? user.getUser() : scope;
+  }
+
+  private static SemanticSnapshot semanticSnapshot(Reasoner reasoner, Scope scope) {
+    if (reasoner == null) return null;
+    var session = SESSION.get();
+    var key = new SemanticKey(reasoner, caller(scope));
+    if (session != null && session.semantics.containsKey(key)) return session.semantics.get(key);
+    var capabilities = reasoner.capabilities(scope);
+    if (capabilities == null) return null;
+    var snapshot = new SemanticSnapshot(capabilities.getServiceId(), capabilities.getKnowledgeRevision());
+    if (session != null) session.semantics.put(key, snapshot);
+    return snapshot;
+  }
 
   /** Immutable proof of the exact source and executable candidate admitted before matching. */
   public record AdmissionReceipt(String modelUrn, String namespace, String sourceVersion,
@@ -75,10 +148,14 @@ public final class ModelValidationGate {
   }
 
   private static String digest(Object value) {
+    return SemanticValidationRequest.sourceHash(canonicalJson(value));
+  }
+
+  private static String canonicalJson(Object value) {
     try {
       var mapper=org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
-      return SemanticValidationRequest.sourceHash(canonical(mapper.readTree(
-          org.integratedmodelling.klab.utilities.Utils.Json.asString(value))).toString());
+      return canonical(mapper.readTree(
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(value))).toString();
     } catch (java.io.IOException failure) { throw new IllegalStateException("Cannot fingerprint admission source",failure); }
   }
 
@@ -99,6 +176,10 @@ public final class ModelValidationGate {
   /** Stable executable projection: meaning, ports, geometry, computation and authored annotations.
    * It deliberately excludes service routing, logs, caches and prioritizer diagnostic metadata. */
   public static String executableHash(Model model) {
+    return SemanticValidationRequest.sourceHash(executableContent(model));
+  }
+
+  private static String executableContent(Model model) {
     var data=new java.util.LinkedHashMap<String,Object>();
     data.put("urn",model.getUrn());data.put("namespace",model.getNamespace());data.put("project",model.getProjectName());
     data.put("type",model.getType());data.put("contextualization",model.getDescriptionType());
@@ -106,19 +187,19 @@ public final class ModelValidationGate {
     data.put("dependencies",model.getDependencies().stream().map(ModelValidationGate::observableContent).toList());
     data.put("computation",model.getComputation());data.put("annotations",model.getAnnotations());
     data.put("coverage",model.getCoverage()==null?null:org.integratedmodelling.klab.api.geometry.Geometry.forTransport(model.getCoverage()).encode());
-    return digest(data);
+    return canonicalJson(data);
   }
 
-  /** Check unchanged saved source and executable content without performing a second validation. */
+  /** Check the frozen source and executable snapshot, or current source outside a resolution session. */
   public static boolean matches(AdmissionReceipt receipt, Model model, Scope scope) {
     try {
       if (receipt==null || model==null || !java.util.Objects.equals(receipt.modelUrn(),model.getUrn())
           || !java.util.Objects.equals(receipt.namespace(),model.getNamespace())
           || !java.util.Objects.equals(receipt.executableHash(),executableHash(model))) return false;
-      var reasoner=scope.getService(Reasoner.class);var cap=reasoner==null?null:reasoner.capabilities(scope);
-      if (!(cap instanceof Reasoner.Capabilities semantic) || receipt.knowledgeRevision()<0
-          || !java.util.Objects.equals(receipt.reasonerId(),semantic.getServiceId())
-          || receipt.reasonerId()==null || receipt.knowledgeRevision()!=semantic.getKnowledgeRevision()) return false;
+      var semantic=semanticSnapshot(scope.getService(Reasoner.class),scope);
+      if (semantic==null || receipt.knowledgeRevision()<0
+          || !java.util.Objects.equals(receipt.reasonerId(),semantic.serviceId())
+          || receipt.reasonerId()==null || receipt.knowledgeRevision()!=semantic.revision()) return false;
       if (!receipt.sourceBacked()) return receipt.sourceHash()==null && receipt.sourceVersion()==null;
       var saved=source(model.getUrn(),model.getNamespace(),scope.getService(ResourcesService.class),scope);
       return saved!=null && java.util.Objects.equals(receipt.sourceVersion(),Long.toString(saved.getLastUpdateTimestamp()))
@@ -167,6 +248,52 @@ public final class ModelValidationGate {
     return require(namespace, scope, expectedRevision, false);
   }
 
+  /** Publication validates the source once; callers may retain the exact successful response. */
+  public static org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
+      sourceAdmission(KimNamespace namespace, Scope scope, long expectedRevision) {
+    return requireReceipt(namespace,scope,expectedRevision,false,false,java.util.List.of());
+  }
+
+  private static NamespaceAdmission publishedAdmission(KimNamespace namespace, SemanticSnapshot semantic) {
+    if (semantic == null || namespace.isInactive()
+        || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(namespace.getNotifications())
+        || Boolean.TRUE.equals(namespace.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))) return null;
+    var encoded=namespace.getMetadata().get(ResourcesService.NAMESPACE_ADMISSION_METADATA);
+    if (!(encoded instanceof String text)) return null;
+    try {
+      var admission=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text,NamespaceAdmission.class);
+      var response=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(admission.response(),
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
+      var request=SemanticValidationRequest.of(namespace,Long.toString(namespace.getLastUpdateTimestamp()));
+      return java.util.Objects.equals(admission.reasonerId(),semantic.serviceId())
+          && response.valid() && response.matches(request,semantic.revision()) ? admission : null;
+    } catch (RuntimeException malformed) { return null; }
+  }
+
+  private static boolean concretePublishedModel(Model model,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
+    var urn=model.getUrn();
+    return !model.getObservables().isEmpty()
+        && model.getObservables().stream().allMatch(o -> !o.isGeneric() && o.getGenericComponents().isEmpty()
+            && (!o.isAbstract() || o.is(SemanticType.PREDICATE)))
+        && model.getDependencies().stream().allMatch(o -> !o.isGeneric() && o.getGenericComponents().isEmpty())
+        && unconditionalPublication(response,urn);
+  }
+
+  private static boolean unconditionalPublication(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response,String urn) {
+    return response.getPendingModelContexts().stream().noneMatch(p -> urn.equals(p.modelUrn()))
+        && response.getConditionalModelContexts().stream().noneMatch(p -> urn.equals(p.modelUrn()))
+        && response.getPendingClassifierDependencies().stream().noneMatch(p -> urn.equals(p.modelUrn()))
+        && response.getPendingMemberQualityDependencies().stream().noneMatch(p -> urn.equals(p.modelUrn()));
+  }
+
+  /** Only context-independent, concrete models are eligible for publication admission reuse. */
+  public static String publicationHash(Model model,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
+    return concretePublishedModel(model,response) ? executableHash(model) : null;
+  }
+
   private static long require(KimNamespace namespace, Scope scope, long expectedRevision, boolean executable) {
     return require(namespace,scope,expectedRevision,executable,false);
   }
@@ -181,6 +308,11 @@ public final class ModelValidationGate {
     if (namespace == null || scope == null) throw new KlabValidationException("Model source validation is unavailable");
     var reasoner = scope.getService(Reasoner.class);
     if (reasoner == null) throw new KlabValidationException("Model source validation requires a reasoner");
+    var session = SESSION.get();
+    if (session != null && expectedRevision < 0) {
+      var semantic=semanticSnapshot(reasoner,scope);
+      if(semantic!=null)expectedRevision=semantic.revision();
+    }
     var request = SemanticValidationRequest.of(namespace,
         Long.toString(namespace.getLastUpdateTimestamp()));
     request.setKnowledgeRevision(expectedRevision);
@@ -188,7 +320,12 @@ public final class ModelValidationGate {
     if (executable) request.setExecutionContext(executionContext(scope));
     request.setClassifierPreparableDependencies(preparable);
     request.setPreparableMemberQualityDependencies(preparable?memberDependencies:java.util.List.of());
-    var response = reasoner.validateDocument(request, scope);
+    var key = session != null && expectedRevision >= 0
+        ? new ValidationKey(reasoner, caller(scope), digest(request)) : null;
+    var cached = key == null ? null : session.validations.get(key);
+    var response = cached == null ? reasoner.validateDocument(request, scope)
+        : org.integratedmodelling.klab.utilities.Utils.Json.parseObject(cached,
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
     boolean receiptMatches = response != null && response.getKnowledgeRevision() >= 0
         && response.matches(request, response.getKnowledgeRevision())
         && (!executable || java.util.Objects.equals(request.getExecutionContext(), executionContext(scope))
@@ -198,6 +335,10 @@ public final class ModelValidationGate {
         && (expectedRevision < 0 || response.getKnowledgeRevision() == expectedRevision);
     if (response == null || !response.valid() || !receiptMatches)
       throw new AdmissionFailure(namespace.getUrn(), response, !receiptMatches);
+    if (key != null && cached == null) {
+      if (session.validations.size() >= 256) session.validations.clear();
+      session.validations.put(key, org.integratedmodelling.klab.utilities.Utils.Json.asString(response));
+    }
     return response;
   }
 
@@ -253,11 +394,23 @@ public final class ModelValidationGate {
       Scope scope, Observable requested, boolean inspectInstalled) {
     try {
       var source = source(name, namespace, resources, scope);
-      if (source == null || !inspectInstalled && (source.getSourceCode() == null || source.getSourceCode().isBlank())) return -1;
+      if (source == null || source.isInactive()
+          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(source.getNotifications())
+          || Boolean.TRUE.equals(source.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))
+          || !inspectInstalled && (source.getSourceCode() == null || source.getSourceCode().isBlank())) return -1;
       long timestamp = source.getLastUpdateTimestamp();
       String sourceCode = source.getSourceCode();
-      var sourceReceipt = requireReceipt(source,scope,-1,false,false,java.util.List.of());
+      var semantic=semanticSnapshot(scope);
+      var published=publishedAdmission(source,semantic);
+      var sourceReceipt = published==null ? requireReceipt(source,scope,-1,false,false,java.util.List.of())
+          : org.integratedmodelling.klab.utilities.Utils.Json.parseObject(published.response(),
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
       long revision = sourceReceipt.getKnowledgeRevision();
+      if (published!=null && published.modelHashes().containsKey(name) && unconditionalPublication(sourceReceipt,name)) {
+        var model=(KimModel)source.getStatements().stream()
+            .filter(statement -> statement instanceof KimModel && name.equals(statement.getUrn())).findFirst().orElseThrow();
+        return memberSourceConsumersProved(model,scope,java.util.List.of(),inspectInstalled) ? revision : -1;
+      }
       if (requested != null) {
         var model = (KimModel) source.getStatements().stream()
             .filter(statement -> statement instanceof KimModel && name.equals(statement.getUrn()))
@@ -295,8 +448,21 @@ public final class ModelValidationGate {
 
   private static KimNamespace source(String name, String namespace, ResourcesService resources, Scope scope) {
     if (resources == null || namespace == null) return null;
-    var source = resources.retrieve(namespace, KimNamespace.class,
-        scope instanceof UserScope user ? user : null);
+    var session = SESSION.get();
+    var key = new SourceKey(resources, caller(scope), namespace);
+    var publication=session==null?null:session.publicationNamespace;
+    var source = publication!=null && java.util.Objects.equals(namespace,publication.getUrn())
+            && java.util.Objects.equals(caller(scope),session.publicationCaller)
+        ? publication : session == null ? null : session.sources.get(key);
+    if (source == null) {
+      source = resources.retrieve(namespace, KimNamespace.class,
+          scope instanceof UserScope user ? user : null);
+      if (source != null && session != null) {
+        source = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+            org.integratedmodelling.klab.utilities.Utils.Json.asString(source), KimNamespace.class);
+        session.sources.put(key, source);
+      }
+    }
     return source != null && source.getStatements().stream()
         .anyMatch(statement -> statement instanceof KimModel && name.equals(statement.getUrn()))
         ? source : null;
@@ -416,27 +582,38 @@ public final class ModelValidationGate {
     try {
       var frozenHash=executableHash(model);
       var reasoner=scope.getService(Reasoner.class);
-      var initial=reasoner==null?null:reasoner.capabilities(scope);
-      String reasonerId=initial instanceof Reasoner.Capabilities semantic?semantic.getServiceId():null;
-      long expected=initial instanceof Reasoner.Capabilities semantic?semantic.getKnowledgeRevision():-1;
+      var initial=semanticSnapshot(reasoner,scope);
+      String reasonerId=initial==null?null:initial.serviceId();
+      long expected=initial==null?-1:initial.revision();
       var resources = scope.getService(ResourcesService.class);
       long revision = -1;
       KimNamespace saved = null;
       long timestamp = 0;
       String sourceCode = null;
       String namespaceHash = null;
+      NamespaceAdmission published = null;
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse sourceReceipt = null;
       java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> pendingMembers=java.util.List.of();
       if (model.getNamespace() != null && !model.getNamespace().isBlank()) {
         saved = source(model.getUrn(), model.getNamespace(), resources, scope);
-        if (saved == null || saved.getSourceCode()==null || saved.getSourceCode().isBlank()) return null;
+        if (saved == null || saved.isInactive() || saved.getSourceCode()==null || saved.getSourceCode().isBlank()
+            || Boolean.TRUE.equals(saved.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))
+            || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(saved.getNotifications())) return null;
         timestamp = saved.getLastUpdateTimestamp(); sourceCode = saved.getSourceCode();
         namespaceHash=digest(saved);
-        var sourceReceipt=requireReceipt(saved,scope,expected,false,false,java.util.List.of());
+        published=publishedAdmission(saved,initial);
+        sourceReceipt=published==null ? sourceAdmission(saved,scope,expected)
+            : org.integratedmodelling.klab.utilities.Utils.Json.parseObject(published.response(),
+                org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
         revision=sourceReceipt.getKnowledgeRevision();
         pendingMembers=sourceReceipt.getPendingMemberQualityDependencies().stream().filter(p->model.getUrn().equals(p.modelUrn())).toList();
         if(!preparable && !pendingMembers.isEmpty())return null;
       }
       if (resources == null || !memberConsumersProved(model,scope,pendingMembers,inspectInstalled)) return null;
+      if (published != null && java.util.Objects.equals(frozenHash,published.modelHashes().get(model.getUrn()))
+          && concretePublishedModel(model,sourceReceipt))
+        return new AdmissionReceipt(model.getUrn(),model.getNamespace(),Long.toString(timestamp),namespaceHash,
+            frozenHash,reasonerId,revision,pendingMembers);
       var syntax = new KimModelImpl();
       syntax.setUrn(model.getUrn());
       for (var output : model.getObservables()) {
@@ -464,9 +641,9 @@ public final class ModelValidationGate {
       long boundRevision=executableReceipt.getKnowledgeRevision();
       if (!java.util.Objects.equals(frozenHash,executableHash(model))
           || saved!=null && (!unchanged(saved,timestamp,sourceCode) || !java.util.Objects.equals(namespaceHash,digest(saved)))) return null;
-      var latest=reasoner==null?null:reasoner.capabilities(scope);
-      if (initial instanceof Reasoner.Capabilities && (!(latest instanceof Reasoner.Capabilities semantic)
-          || !java.util.Objects.equals(reasonerId,semantic.getServiceId()) || expected!=semantic.getKnowledgeRevision()
+      var latest=semanticSnapshot(reasoner,scope);
+      if (initial != null && (latest == null
+          || !java.util.Objects.equals(reasonerId,latest.serviceId()) || expected!=latest.revision()
           || boundRevision!=expected)) return null;
       return new AdmissionReceipt(model.getUrn(),model.getNamespace(),saved==null?null:Long.toString(timestamp),
           namespaceHash,frozenHash,reasonerId,boundRevision,pendingMembers);

@@ -42,6 +42,144 @@ class ModelAdmissionReceiptTest {
         runtime.supportsMemberQualityInput(invocation.getArgument(0),port,scope)?Set.of(port):Set.of()))
         .when(runtime).inspectMemberQualityInputs(any(),any());
   }
+
+  @Test void namespacePublicationAndAllDescriptorStoresShareOneSourceValidation() {
+    try(var publication=ModelValidationGate.openPublicationSession(namespace,scope)) {
+      assertNotNull(ModelValidationGate.sourceAdmission(namespace,scope,3));
+      ModelValidationGate.require(namespace,scope);
+      for(int i=0;i<20;i++)ModelValidationGate.require(model.getUrn(),model.getNamespace(),resources,scope);
+      verify(reasoner,times(1)).validateDocument(any(),eq(scope));
+      verify(resources,never()).retrieve(anyString(),eq(KimNamespace.class),any());
+      namespace.setSourceCode("changed during publication");
+      ModelValidationGate.require(namespace,scope);
+      verify(reasoner,times(2)).validateDocument(any(),eq(scope));
+    }
+    ModelValidationGate.require(namespace,scope);
+    verify(reasoner,times(3)).validateDocument(any(),eq(scope));
+  }
+
+  private void publish() {
+    var response=ModelValidationGate.sourceAdmission(namespace,scope,3);
+    namespace.getMetadata().put(ResourcesService.NAMESPACE_ADMISSION_METADATA,
+        org.integratedmodelling.klab.utilities.Utils.Json.asString(new ModelValidationGate.NamespaceAdmission(
+            "reasoner",org.integratedmodelling.klab.utilities.Utils.Json.asString(response),
+            Map.of(model.getUrn(),ModelValidationGate.executableHash(model)))));
+    clearInvocations(reasoner,resources);
+  }
+
+  @Test void unchangedPublishedModelNeedsNoSubmissionDocumentValidationOrReparsing() {
+    publish();
+    var receipt=ModelValidationGate.validatedPreparableAdmission(model,scope,null);
+    assertNotNull(receipt);
+    assertTrue(receipt.sourceBacked());assertEquals(3,receipt.knowledgeRevision());
+    verify(reasoner,never()).validateDocument(any(),any());
+    verify(resources,never()).declareObservable(anyString());
+  }
+
+  @Test void catalogDiscoveryReusesPublicationWithoutSemanticDocumentValidation() {
+    publish();
+    assertEquals(3,ModelValidationGate.validatedPreparableCatalogRevision(
+        model.getUrn(),model.getNamespace(),resources,scope,model.getObservables().getFirst()));
+    assertEquals(3,ModelValidationGate.validatedRevision(
+        model.getUrn(),model.getNamespace(),resources,scope,model.getObservables().getFirst()));
+    verify(reasoner,never()).validateDocument(any(),any());
+    verify(resources,never()).declareObservable(anyString());
+  }
+
+  @Test void modifiedExecutableRetainsPublicationSourceProofButNeedsExecutableAdmission() {
+    publish();
+    var changed=new ContextualizableImpl();changed.setLiteral(2.0);model.setComputation(List.of(changed));
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(1)).validateDocument(argThat(request -> request.isExecutableModels()),eq(scope));
+  }
+
+  @Test void conceptBuiltAdHocModelStillNeedsAdmission() {
+    publish();model.setNamespace(null);
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(1)).validateDocument(argThat(request -> request.isExecutableModels()),eq(scope));
+  }
+
+  @Test void staleOrMalformedNamespacePublicationCannotBypassAdmission() {
+    publish();namespace.setLastUpdateTimestamp(18);
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(2)).validateDocument(any(),eq(scope));
+    namespace.getMetadata().put(ResourcesService.NAMESPACE_ADMISSION_METADATA,"malformed");
+    clearInvocations(reasoner);
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(2)).validateDocument(any(),eq(scope));
+  }
+
+  @Test void contextDependentPublishedModelStillChecksActualInvocationContext() {
+    var response=ModelValidationGate.sourceAdmission(namespace,scope,3);
+    response.getConditionalModelContexts().add(new SemanticValidationResponse.ConditionalModelContext(
+        model.getUrn(),List.of("test:Region")));
+    namespace.getMetadata().put(ResourcesService.NAMESPACE_ADMISSION_METADATA,
+        org.integratedmodelling.klab.utilities.Utils.Json.asString(new ModelValidationGate.NamespaceAdmission(
+            "reasoner",org.integratedmodelling.klab.utilities.Utils.Json.asString(response),
+            Map.of(model.getUrn(),ModelValidationGate.executableHash(model)))));
+    clearInvocations(reasoner);
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(1)).validateDocument(argThat(request -> request.isExecutableModels()),eq(scope));
+    assertEquals(-1,ModelValidationGate.validatedPreparableCatalogRevision(
+        model.getUrn(),model.getNamespace(),resources,scope,model.getObservables().getFirst()),
+        "A publication with pending context cannot authorize catalog admission by its model-name entry alone");
+  }
+
+  @Test void changedSemanticGenerationDoesNotReusePublicationAdmission() {
+    publish();when(cap.getKnowledgeRevision()).thenReturn(4L);
+    assertNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(1)).validateDocument(any(),eq(scope));
+  }
+
+  @Test void inactiveOrDeferredNamespaceIsNotAnAdmittedSubmission() {
+    publish();namespace.setInactive(true);
+    assertNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    namespace.setInactive(false);namespace.getMetadata().put(ResourcesService.VALIDATION_DEFERRED_METADATA,true);
+    assertNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,never()).validateDocument(any(),any());
+  }
+
+  @Test void oneResolutionValidatesEachExactSourceAndExecutableSnapshotOnlyOnce() {
+    try (var session = ModelValidationGate.openSession()) {
+      var admitted = ModelValidationGate.validatedPreparableAdmission(model,scope,null);
+      assertNotNull(admitted);
+      for (int i=0;i<10;i++)
+        assertEquals(admitted,ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+      verify(reasoner,times(2)).validateDocument(any(),eq(scope));
+      verify(reasoner,times(1)).capabilities(scope);
+      verify(resources,times(1)).retrieve("test",KimNamespace.class,scope);
+    }
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(4)).validateDocument(any(),eq(scope));
+  }
+
+  @Test void sourceEditsAndNewSemanticGenerationsCannotRewriteAnInFlightSnapshot() {
+    ModelValidationGate.AdmissionReceipt admitted;
+    try (var session = ModelValidationGate.openSession()) {
+      admitted=ModelValidationGate.validatedPreparableAdmission(model,scope,null);
+      assertNotNull(admitted);
+      namespace.setSourceCode("new source while transaction is running");
+      namespace.setLastUpdateTimestamp(18);
+      when(cap.getKnowledgeRevision()).thenReturn(4L);
+      assertTrue(ModelValidationGate.matches(admitted,model,scope));
+      assertEquals(admitted,ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+      verify(reasoner,times(2)).validateDocument(any(),eq(scope));
+    }
+    assertFalse(ModelValidationGate.matches(admitted,model,scope));
+  }
+
+  @Test void executableMutationsStillNeedTheirOwnAdmissionWithinAResolution() {
+    try (var session = ModelValidationGate.openSession()) {
+      var admitted=ModelValidationGate.validatedPreparableAdmission(model,scope,null);
+      assertNotNull(admitted);
+      var changed=new ContextualizableImpl();changed.setLiteral(2.0);
+      model.setComputation(List.of(changed));
+      assertFalse(ModelValidationGate.matches(admitted,model,scope));
+      assertNotEquals(admitted,ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+      // Saved namespace is unchanged; only the new executable needs validation.
+      verify(reasoner,times(3)).validateDocument(any(),eq(scope));
+    }
+  }
   @Test void sourcePreparationIsNotInstalledAdmissionAndRejectsPreparationDrift() {
     var call=new ContextualizableImpl();call.setServiceCall(new org.integratedmodelling.common.lang.ServiceCallImpl("fixture.uninstalled"));
     model.setComputation(List.of(call));

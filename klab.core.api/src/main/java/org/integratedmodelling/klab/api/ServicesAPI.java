@@ -53,6 +53,9 @@ public interface ServicesAPI {
   String SERVICE_ID_HEADER = "klab-service";
 
   String TRANSACTION_ID_HEADER = "klab-transaction";
+
+  /** Base64-encoded UTF-8 consequence cause, scoped to this request's authorized context. */
+  String CONSEQUENCE_HEADER = "klab-consequence";
   String CONTEXT_OBSERVATION_ID_HEADER = "klab-context-observation";
   String SOURCE_OBSERVATION_ID_HEADER = "klab-source-observation";
   String TARGET_OBSERVATION_ID_HEADER = "klab-target-observation";

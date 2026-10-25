@@ -118,6 +118,11 @@ public interface KnowledgeGraph {
     Set<Long> getModifiedAssets();
 
     String getOwner();
+
+    /** Non-null for background commits caused by a consequence decision; never implies UI focus. */
+    default org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause getConsequenceCause() {
+      return null;
+    }
   }
 
   /**

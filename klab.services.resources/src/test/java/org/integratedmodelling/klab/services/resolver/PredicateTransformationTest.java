@@ -68,13 +68,25 @@ class PredicateTransformationTest {
     exercise(true, true, 1, false, false);
   }
 
+  @Test void unobservedBaseAndTransformerWithUniversalCoverage() throws Exception {
+    exercise(true, true, 1, false, false, true);
+  }
+
   private void exercise(boolean transformerAvailable, boolean hasContext, int ports, boolean reversed) throws Exception {
     exercise(transformerAvailable, hasContext, ports, reversed, true);
   }
 
   private void exercise(boolean transformerAvailable, boolean hasContext, int ports, boolean reversed,
       boolean baseExists) throws Exception {
-    var geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
+    exercise(transformerAvailable, hasContext, ports, reversed, baseExists, false);
+  }
+
+  private void exercise(boolean transformerAvailable, boolean hasContext, int ports, boolean reversed,
+      boolean baseExists, boolean universalCoverage) throws Exception {
+    var geometry = Geometry.create(universalCoverage
+        ? "T1(1){tstart=1704067200000,tend=1735689600000,ttype=GRID,tunit=YEAR,tscope=1}"
+            + "S2(1117,547){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((21.910616123751442 38.79364335500986&comma;21.26838806193504 38.79364335500986&comma;21.26838806193504 39.03962334822924&comma;21.910616123751442 39.03962334822924&comma;21.910616123751442 38.79364335500986))}"
+        : "T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
     var requested = observable("data:Normalized geography:Elevation", SemanticType.QUALITY, Contextualization.MEASURE);
     var raw = observable("geography:Elevation", SemanticType.QUALITY, Contextualization.MEASURE);
     var predicate = observable("data:Normalized", SemanticType.PREDICATE, Contextualization.VOID).asConcept();
@@ -141,11 +153,11 @@ class PredicateTransformationTest {
     service.setKnowledgeClass(org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION);
     requirements.getResults().add(service);
     when(runtime.resolveContextualizables(any(), eq(scope))).thenReturn(requirements);
-    var model = mock(Model.class); when(model.getCoverage()).thenReturn(geometry);
+    var model = mock(Model.class); when(model.getCoverage()).thenReturn(universalCoverage ? Coverage.universal() : geometry);
     when(model.getDependencies()).thenReturn(List.of()); when(model.getAnnotations()).thenReturn(List.of());
     var computation = new ContextualizableImpl(); computation.setServiceCall(new ServiceCallImpl("test.normalize"));
     when(model.getComputation()).thenReturn(List.of(computation));
-    var rawModel = mock(Model.class); when(rawModel.getCoverage()).thenReturn(geometry);
+    var rawModel = mock(Model.class); when(rawModel.getCoverage()).thenReturn(universalCoverage ? Coverage.universal() : geometry);
     when(rawModel.getDependencies()).thenReturn(List.of()); when(rawModel.getAnnotations()).thenReturn(List.of());
     var rawComputation = new ContextualizableImpl(); rawComputation.setServiceCall(new ServiceCallImpl("test.elevation"));
     when(rawModel.getComputation()).thenReturn(List.of(rawComputation));

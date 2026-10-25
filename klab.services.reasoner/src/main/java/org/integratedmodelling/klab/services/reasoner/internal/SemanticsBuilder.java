@@ -830,11 +830,28 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     if (concept == null) return null;
     var result = new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(
         reasoner.owl(), reasoner::identityEligible).project((ConceptImpl) concept, syntax);
+    if (result.is(SemanticType.QUALITY) && hasRescalingTrait(result)) {
+      result = new ConceptImpl(result);
+      result.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_IS_RESCALED, true);
+      result.getMetadata().remove("odo:unit");
+    }
     if (projectedSubjective || subjective(defaultValue) || subjective(value)) {
       result.getType().add(SemanticType.SUBJECTIVE);
     }
     result.setAnnotations(AnnotationCollector.collect(syntax, reasoner::resolveConcept));
     return result;
+  }
+
+  private boolean hasRescalingTrait(Concept concept) {
+    var pending = new ArrayDeque<Concept>(reasoner.traits(concept));
+    var visited = new HashSet<String>();
+    while (!pending.isEmpty()) {
+      var predicate = pending.removeFirst();
+      if (!visited.add(predicate.getUrn())) continue;
+      if (predicate.is(SemanticType.RESCALING)) return true;
+      pending.addAll(reasoner.parents(predicate));
+    }
+    return false;
   }
 
   @Override
@@ -864,10 +881,12 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
       ret.setReferenceName(ret.getReferenceName()+"_observed_as_"+observer.getReferenceName());
     }
 
-    if (currency != null) {
+    boolean rescaled = Boolean.TRUE.equals(obs.getMetadata().get(
+        org.integratedmodelling.klab.api.data.Metadata.IM_IS_RESCALED));
+    if (!rescaled && currency != null) {
       ret.setCurrency(currency);
       ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
-    } else if (unit != null) {
+    } else if (!rescaled && unit != null) {
       ret.setUnit(unit);
       ret.setUrn(ret.getUrn() + " in " + ret.getUnit());
     }

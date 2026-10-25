@@ -18,6 +18,21 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 public final class DefaultObserverPreparation {
   private DefaultObserverPreparation() {}
 
+  /** Automatic preparation belongs to an unobserved user root submission, never a query or child. */
+  public static boolean shouldPrepare(Observation submitted, ContextScope scope) {
+    return submitted.getId() == Observation.UNASSIGNED_ID
+        && scope.getTransactionId() == null && scope.getConsequenceCause() == null
+        && scope.getContextObservation() == null
+        && scope.getSourceObservation() == null && scope.getTargetObservation() == null
+        && !Boolean.TRUE.equals(scope.getConstraint(
+            org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.DoNotCreateDefaultObserver,
+            Boolean.class))
+        && !Boolean.TRUE.equals(submitted.getMetadata().get(DefaultObserver.AUTOMATIC))
+        && !Boolean.TRUE.equals(submitted.getMetadata().get(
+            org.integratedmodelling.klab.api.data.Metadata.IM_OBSERVER_TAG))
+        && scope.getObserver() == null;
+  }
+
   /**
    * Query the twin by the authenticated user's stable identity, submitting a missing agent through
    * normal resolution. The caller supplies the agent's geometry and a user-specific root context. A

@@ -117,12 +117,12 @@ public class CollectiveReductionPlanningTest {
   }
   public static org.integratedmodelling.klab.api.services.runtime.Actuator compiledNamedPlan() {return admittedNamedPlan().plan();}
 
-  @Test void semanticRevisionOrReasonerChangeAfterResolutionRequiresReplanning() {
+  @Test void semanticRevisionOrReasonerChangeAfterResolutionRetainsThePlannedSnapshot() {
     var graph=compiler.resolve(request,scope);assertFalse(graph.isEmpty());
     when(capabilities.getKnowledgeRevision()).thenReturn(4L);
-    assertThrows(RuntimeException.class,()->new DataflowCompiler(request,graph,scope).compile());
+    assertDoesNotThrow(()->new DataflowCompiler(request,graph,scope).compile());
     when(capabilities.getKnowledgeRevision()).thenReturn(3L);when(capabilities.getServiceId()).thenReturn("replacement");
-    assertThrows(RuntimeException.class,()->new DataflowCompiler(request,graph,scope).compile());
+    assertDoesNotThrow(()->new DataflowCompiler(request,graph,scope).compile());
   }
   @Test void strategyTransportRetainsTypedProofAndWrongOperatorCannotForgeIt(){
     var result=strategies.computeMatchingStrategies(request,scope,true);assertEquals(1,result.size());

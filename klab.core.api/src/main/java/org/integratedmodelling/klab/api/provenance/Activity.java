@@ -74,6 +74,8 @@ public interface Activity extends Provenance.Node {
   enum Type {
     CONTEXT_INITIALIZATION,
     SUBMISSION,
+    /** An optional submission enacted by the consequence engine and attributed to k.LAB. */
+    CONSEQUENCE_SUBMISSION,
     INITIALIZATION,
     RESOLUTION,
     INSTANTIATION(Contextualization.INSTANTIATION),
@@ -98,6 +100,8 @@ public interface Activity extends Provenance.Node {
     }
 
     public boolean isContextualization() { return contextualization != null; }
+
+    public boolean isSubmission() { return this == SUBMISSION || this == CONSEQUENCE_SUBMISSION; }
 
     /** Null for orchestration activities such as submission and resolution. */
     public Contextualization getContextualization() {

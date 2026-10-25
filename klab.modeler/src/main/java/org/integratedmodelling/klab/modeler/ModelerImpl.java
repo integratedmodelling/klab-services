@@ -181,6 +181,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     List<Object> resolvables = new ArrayList<>();
     List<ResolutionConstraint> constraints = new ArrayList<>();
+    if (engine() != null && Boolean.TRUE.equals(
+        engine().getSettings().get(Setting.DO_NOT_CREATE_A_DEFAULT_OBSERVER, Boolean.class))) {
+      constraints.add(ResolutionConstraint.of(
+          ResolutionConstraint.Type.DoNotCreateDefaultObserver, true));
+    }
 
     /** Assets are observed by URN unless they're models or observation definitions */
     if (asset instanceof NavigableKlabStatement<?> navigableAsset) {

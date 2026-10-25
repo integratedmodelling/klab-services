@@ -453,7 +453,7 @@ public class RuntimeService extends BaseService
               this, serviceContextScope, scopeId, userScope, getMainKnowledgeGraph()));
       getScopeManager().registerScope(serviceContextScope);
 
-      return prepareObserverConnection(serviceContextScope, userScope).getConfiguration();
+      return observerConnection(serviceContextScope, userScope).getConfiguration();
     }
     throw new KlabIllegalArgumentException("unexpected scope class");
   }
@@ -518,6 +518,25 @@ public class RuntimeService extends BaseService
    */
   @Override
   public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
+    return submitWithObserver(submitted, observerSubmissionScope(submitted, scope));
+  }
+
+  /** Only user root submissions can trigger automatic preparation, after their constraints arrive. */
+  private ContextScope observerSubmissionScope(Observation submitted, ContextScope scope) {
+    if (!(scope instanceof ServiceContextScope context)
+        || !org.integratedmodelling.klab.runtime.DefaultObserverPreparation.shouldPrepare(submitted, context))
+      return scope;
+    return prepareObserverConnection(context, context);
+  }
+
+  private CompletableFuture<Observation> submitWithObserver(Observation submitted, ContextScope scope) {
+
+    if (scope instanceof ServiceContextScope context && context.getConsequenceCause() != null
+        && context.getTransactionId() == null && submitted.getId() <= 0
+        && submitted instanceof ObservationImpl mutable && submitted.getObservable() != null
+        && !submitted.getObservable().isOptional()) {
+      mutable.setObservable(submitted.getObservable().builder(scope).optional(true).buildObservable());
+    }
 
     // Keep the stable catalog identity while naming a new default observer after its user.
     if (submitted instanceof ObservationImpl mutable
@@ -863,7 +882,9 @@ public class RuntimeService extends BaseService
       var agent =
           serviceContextScope.getConstraint(ResolutionConstraint.Type.Provenance, Agent.class);
       var storedAgent =
-          agent == null
+          serviceContextScope.getConsequenceCause() != null
+              ? scope.getDigitalTwin().getKnowledgeGraph().klab()
+              : agent == null
               ? null
               : serviceContextScope
                   .getDigitalTwin()
@@ -872,7 +893,8 @@ public class RuntimeService extends BaseService
 
       var submission =
           Activity.of(
-              Activity.Type.SUBMISSION,
+              serviceContextScope.getConsequenceCause() == null
+                  ? Activity.Type.SUBMISSION : Activity.Type.CONSEQUENCE_SUBMISSION,
               this,
               observation,
               scope,
@@ -1073,12 +1095,14 @@ public class RuntimeService extends BaseService
                   }
                   if (commitId > 0) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
-                    // The service owns synchronization: every connected client, not only the
-                    // submitting UI, must learn about the committed graph update.
-                    submissionScope.send(
-                        Message.MessageClass.DigitalTwin,
-                        Message.MessageType.ObservationSubmissionFinished,
-                        o);
+                    // Consequences use their dedicated commit message. Reporting them as user
+                    // submission completions would make existing clients steal focus/reset trees.
+                    if (submissionScope.getConsequenceCause() == null) {
+                      submissionScope.send(
+                          Message.MessageClass.DigitalTwin,
+                          Message.MessageType.ObservationSubmissionFinished,
+                          o);
+                    }
                   }
                 } else {
                   submission.setName("SUB FAIL");
@@ -1095,17 +1119,6 @@ public class RuntimeService extends BaseService
     }
     throw new KlabInternalErrorException(
         "RuntimeService::observe() called with unexpected scope implementation");
-  }
-
-  /** Resolve current source through the ordinary Resources construction/admission path.
-   * No components are installed or activated merely to verify a producing-output receipt. */
-  Model observerSourceModel(String urn, ServiceContextScope scope) {
-    var resources = scope.getService(ResourcesService.class);
-    if (resources == null) return null;
-    var source = resources.resolve(urn, KlabAsset.KnowledgeClass.MODEL, scope);
-    if (source == null || source.isEmpty()) return null;
-    return ingestResources(source, scope, Model.class, false).stream()
-        .filter(model -> Objects.equals(urn, model.getUrn())).findFirst().orElse(null);
   }
 
   private record SubmissionResolution(Observation observation, boolean reused) {}
@@ -3071,7 +3084,13 @@ public class RuntimeService extends BaseService
       scope = reconstructContext(configuration, userScope);
     }
     return scope instanceof ServiceContextScope serviceScope && userScope instanceof ServiceUserScope requester
-        ? prepareObserverConnection(serviceScope.forRequest(requester), userScope) : scope;
+        ? observerConnection(serviceScope.forRequest(requester), userScope) : scope;
+  }
+
+  private ServiceContextScope observerConnection(ServiceContextScope shared, UserScope userScope) {
+    // Opening a twin cannot honor per-submission opt-outs. Defer preparation until root submit.
+    return shared.within(null).withObserver(null).withIdentity(userScope.getUser())
+        .forObserverConnection(null);
   }
 
   private ServiceContextScope prepareObserverConnection(ServiceContextScope shared, UserScope userScope) {

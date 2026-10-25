@@ -41,6 +41,26 @@ final class ContextActorSupport {
     throw new IllegalArgumentException(option + " requires an Observation");
   }
 
+  static ContextScope submissionScope(ContextScope context, Metadata options) {
+    var selected = focus(context, options);
+    if (!options.containsKey("observer")) return selected;
+    var value = options.get("observer");
+    if (Boolean.FALSE.equals(value)) {
+      return selected.withResolutionConstraints(
+          org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+              org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.DoNotCreateDefaultObserver,
+              true));
+    }
+    var observer = observation(value, "observer");
+    if (observer.getId() <= 0 || observer.getObservable() == null
+        || !observer.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT))
+      throw new IllegalArgumentException("observer requires a persisted Agent observation");
+    return selected.withResolutionConstraints(
+        org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+            org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.Observer,
+            observer.getId()));
+  }
+
   static Object query(ContextScope base, Object... arguments) {
     var options = metadata(arguments);
     Set<String> allowed = Set.of("type", "id", "urn", "semantics", "within", "source", "target",

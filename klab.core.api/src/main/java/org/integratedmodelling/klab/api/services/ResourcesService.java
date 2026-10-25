@@ -173,6 +173,8 @@ public interface ResourcesService extends KlabService {
 
   /** True on a saved document whose dependency/semantic validation has been deferred. */
   String VALIDATION_DEFERRED_METADATA = "klab.validation.deferred";
+  /** Resources-owned publication receipt, attached to detached saved namespace responses only. */
+  String NAMESPACE_ADMISSION_METADATA = "klab.validation.namespaceAdmission";
 
   /** Metadata key used to nominate an editor when a non-editor publishes a resource. */
   String INTENDED_EDITOR_METADATA = "klab.publication.intendedEditor";

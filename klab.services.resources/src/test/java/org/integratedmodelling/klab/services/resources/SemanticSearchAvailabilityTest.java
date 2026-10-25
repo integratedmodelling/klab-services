@@ -14,6 +14,20 @@ import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.junit.jupiter.api.Test;
 
 class SemanticSearchAvailabilityTest {
+  @Test void catalogPreparationRetriesInBackgroundWhenTheReasonerBecomesAvailable() {
+    var provider=mock(ResourcesProvider.class);
+    var scope=mock(ServiceScope.class);
+    var reasoner=mock(Reasoner.class,RETURNS_DEEP_STUBS);
+    when(provider.serviceScope()).thenReturn(scope);
+    when(scope.getServices(Reasoner.class)).thenReturn(List.of(reasoner));
+    doCallRealMethod().when(provider).runAdditionalTimedTasks();
+    provider.runAdditionalTimedTasks();
+    verify(provider,never()).checkSemanticServices(scope);
+    when(reasoner.status().isOperational()).thenReturn(true);
+    provider.runAdditionalTimedTasks();
+    verify(provider).checkSemanticServices(scope);
+  }
+
   @Test void rejectedNamespaceDoesNotDisableValidNamespacesAndCorrectionRecovers() throws Exception {
     var provider = mock(ResourcesProvider.class);
     var scope = mock(ContextScope.class);

@@ -17,3 +17,6 @@ target
 .project
 .settings
 /support/klab.support.graphdb/var/
+
+# Local review outputs; existing tracked historical evidence remains versioned.
+/review-evidence/

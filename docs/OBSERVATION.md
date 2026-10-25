@@ -705,8 +705,10 @@ bindings. Event publication and duration history begin at START, independently o
 
 Model discovery also indexes `change in X` for a process's declared affected/created quality outputs
 and dependencies. Semantic-distance filtering considers these inferred outputs as well as explicit
-outputs. This does not choose between one joint process and several independent processes; that
-collinearity policy is pending.
+outputs. Automatic consequence requests now supply the observed quality group so model ranking
+prefers admitted joint processes inherent specifically to that bearer. This preference remains
+inside strategy precedence and is not a global collinearity optimizer; see the
+[consequence engine](CONSEQUENCE_ENGINE.md#automatic-change-resolution).
 
 The current loops fall short of the intended partial-contribution contract. The observation loop
 collects relevant strategy graphs but calls `strategyResolution.checkCoverage(strategyResolution)`

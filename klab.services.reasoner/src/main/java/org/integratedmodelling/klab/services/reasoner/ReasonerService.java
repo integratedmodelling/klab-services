@@ -1655,14 +1655,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     var targetMediator = targetObservable.mediator();
     var otherMediator = otherObservable.mediator();
-    if (targetMediator != null) {
-      if (otherMediator == null || !targetMediator.isCompatible(otherMediator)) {
+    // An omitted request mediator places no restriction on a model's native value scale.
+    // In particular, recursive quality requests may omit units supplied by their models.
+    if (targetMediator != null && otherMediator != null) {
+      if (!targetMediator.isCompatible(otherMediator)) {
         return -50;
       }
       if (!targetMediator.equals(otherMediator)) {
         distance++;
       }
-    } else if (otherMediator != null) {
+    } else if (targetMediator == null && otherMediator != null) {
       distance++;
     }
     return distance;

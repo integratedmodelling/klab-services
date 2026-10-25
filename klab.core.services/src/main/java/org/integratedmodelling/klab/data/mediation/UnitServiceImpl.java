@@ -54,6 +54,8 @@ public class UnitServiceImpl implements UnitService {
 
   @Override
   public Unit getDefaultUnitFor(Concept concept) {
+    if (Boolean.TRUE.equals(concept.getMetadata().get(
+        org.integratedmodelling.klab.api.data.Metadata.IM_IS_RESCALED))) return null;
     // Direct annotations only; operator construction materializes an unambiguous inherited unit.
     Object definition = concept.getMetadata().get("odo:unit");
     if (definition == null) return null;

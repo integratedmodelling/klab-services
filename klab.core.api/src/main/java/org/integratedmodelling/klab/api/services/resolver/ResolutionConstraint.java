@@ -63,6 +63,8 @@ public interface ResolutionConstraint extends Serializable {
      * Resolved to Observer's scoped persistent ID without changing authored observable semantics.
      */
     ObserverUrn(String.class, false),
+    /** Suppress automatic default observer preparation for a root submission; explicit selections remain valid. */
+    DoNotCreateDefaultObserver(Boolean.class, false),
     /** Effective lexical namespace, replacing the inherited namespace. It also selects the
      * namespace ranking overrides for all candidates. Instantiated members inherit their
      * producing model's namespace when Runtime submits them for individual resolution.
@@ -78,6 +80,9 @@ public interface ResolutionConstraint extends Serializable {
     ConcretePredicates(Concept.class, true),
     /** The dataflow needs the passed additional observables produced by an adapter. */
     AdditionalObservables(Observable.class, false),
+    /** Observed qualities sharing the current bearer, used to prefer joint process models when
+     * resolving change. Does not override strategy tiers, admission, observer or coverage checks. */
+    ChangeQualities(Observable.class, false),
     Whitelist(String.class, false),
     Blacklist(String.class, false),
     Parameters(Parameters.class, true),

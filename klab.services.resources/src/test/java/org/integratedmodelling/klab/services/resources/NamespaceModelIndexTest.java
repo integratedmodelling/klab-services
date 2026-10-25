@@ -51,7 +51,8 @@ class NamespaceModelIndexTest {
   KimNamespaceImpl source(String urn) {
     var source = new KimNamespaceImpl(); source.setUrn(urn); source.setSourceCode(urn + " source");
     var model = new KimModelImpl(); model.setUrn(urn + ".model"); model.setNamespace(urn);
-    model.getObservables().add(mock(KimObservable.class)); source.getStatements().add(model);
+    var observable=new KimObservableImpl();observable.setUrn("w:Value");
+    model.getObservables().add(observable); source.getStatements().add(model);
     sources.put(urn, source); return source;
   }
 
@@ -65,6 +66,43 @@ class NamespaceModelIndexTest {
       doReturn(List.of(descriptor)).when(catalog).inferModels((KimModel) source.getStatements().getFirst(), scope);
     }
     return catalog;
+  }
+
+  @Test void successfulPublicationReceiptIsDetachedExactAndCannotBeAuthored() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var source=source("published");
+    var syntax=new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();syntax.setUrn("w:Value");
+    var model=(KimModel)source.getStatements().getFirst();model.getObservables().clear();model.getObservables().add(syntax);
+    var semantics=new org.integratedmodelling.common.knowledge.ConceptImpl();semantics.setUrn("w:Value");
+    semantics.setType(java.util.EnumSet.of(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY));
+    var observable=new org.integratedmodelling.common.knowledge.ObservableImpl();observable.setUrn("w:Value");observable.setSemantics(semantics);
+    when(reasoner.resolveObservable("w:Value")).thenReturn(observable);
+    var capabilities=mock(Reasoner.Capabilities.class);when(reasoner.capabilities(scope)).thenReturn(capabilities);
+    when(capabilities.getKnowledgeRevision()).thenReturn(7L);when(capabilities.getServiceId()).thenReturn("reasoner");
+    assertDoesNotThrow(() -> org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(model,source,scope));
+    var index=new NamespaceModelIndex(5);
+    try(var catalog=catalog()) {
+      index.reconcile(List.of(source),catalog,scope,7,0);
+      var portable=index.forTransport(source);
+      var key=org.integratedmodelling.klab.api.services.ResourcesService.NAMESPACE_ADMISSION_METADATA;
+      assertNotSame(source,portable);assertFalse(source.getMetadata().containsKey(key));
+      assertInstanceOf(String.class,portable.getMetadata().get(key));
+      var admission=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+          portable.getMetadata().get(key,String.class),org.integratedmodelling.klab.runtime.language.ModelValidationGate.NamespaceAdmission.class);
+      assertEquals("reasoner",admission.reasonerId());assertTrue(admission.modelHashes().containsKey(model.getUrn()));
+      verify(reasoner,times(1)).validateDocument(any(),any());
+      when(scope.getService(ResourcesService.class)).thenReturn(resources);
+      doReturn(portable).when(resources).retrieve(eq(source.getUrn()),eq(KimNamespace.class),isNull());
+      var executable=org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(model,source,scope);
+      clearInvocations(reasoner);
+      assertNotNull(org.integratedmodelling.klab.runtime.language.ModelValidationGate
+          .validatedPreparableAdmission(executable,scope,null));
+      verify(reasoner,never()).validateDocument(any(),any());
+      source.setSourceCode("source changed after publication");source.getMetadata().put(key,"authored fake receipt");
+      assertFalse(index.forTransport(source).getMetadata().containsKey(key));
+      invalid.add(source.getUrn());index.reconcile(List.of(source),catalog,scope,7,10);
+      assertFalse(index.forTransport(source).getMetadata().containsKey(key));
+    }
   }
 
   @Test void mixedNamespacesAreIsolatedWithdrawnAndReadmittedWithoutLosingSourcesOrDiagnostics() {
@@ -106,7 +144,7 @@ class NamespaceModelIndexTest {
       assertEquals(2, catalog.count());
       statuses.put("pending", SemanticValidationResponse.Status.UNAVAILABLE);
       index.reconcile(new ArrayList<>(sources.values()), catalog, scope, 8, 1);
-      assertTrue(catalog.hasModel("good.model")); assertFalse(catalog.hasModel("pending.model"));
+      assertTrue(catalog.hasModel("good.model"),()->index.diagnostics().toString()); assertFalse(catalog.hasModel("pending.model"));
       statuses.clear();
       index.reconcile(new ArrayList<>(sources.values()), catalog, scope, 8, 2);
       assertFalse(catalog.hasModel("pending.model"));

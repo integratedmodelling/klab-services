@@ -92,6 +92,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private long observationCacheRevision;
   private DigitalTwin.Transaction currentTransaction;
   private java.util.function.BooleanSupplier requestCancelled = () -> false;
+  private org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause consequenceCause;
+  private java.util.concurrent.atomic.AtomicReference<String> consequenceFailure =
+      new java.util.concurrent.atomic.AtomicReference<>();
+  private volatile boolean consequenceErrors;
+  private java.util.concurrent.atomic.AtomicReference<String> consequenceWarning =
+      new java.util.concurrent.atomic.AtomicReference<>();
 
   public ServiceContextScope(ServiceContextScope parent) {
     super(parent);
@@ -114,7 +120,70 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.provisionalObservations = parent.provisionalObservations;
     this.remoteTransactionId = parent.remoteTransactionId;
     this.requestCancelled = parent.requestCancelled;
+    this.consequenceCause = parent.consequenceCause;
+    this.consequenceFailure = parent.consequenceFailure;
+    this.consequenceErrors = parent.consequenceErrors;
+    this.consequenceWarning = parent.consequenceWarning;
     copyMessagingSetup(parent);
+  }
+
+  /** A background consequence keeps connection semantics, but owns a fresh transaction/cancellation. */
+  public ServiceContextScope forConsequence(
+      org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause cause) {
+    if (cause != null && !Objects.equals(getId(), cause.contextId()))
+      throw new IllegalArgumentException("Consequence belongs to another digital twin");
+    var ret = new ServiceContextScope(this);
+    ret.currentTransaction = null;
+    ret.remoteTransactionId = null;
+    ret.requestCancelled = () -> false;
+    ret.consequenceCause = cause;
+    ret.consequenceFailure = new java.util.concurrent.atomic.AtomicReference<>();
+    ret.consequenceErrors = false;
+    ret.consequenceWarning = new java.util.concurrent.atomic.AtomicReference<>();
+    return ret;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause getConsequenceCause() {
+    return consequenceCause;
+  }
+
+  /** Failure details are reported once by the engine's decision notification, not as scope errors. */
+  public String getConsequenceFailure() { return consequenceFailure.get(); }
+  public String getConsequenceWarning() { return consequenceWarning.get(); }
+
+  @Override
+  public void warn(Object... details) {
+    if (consequenceCause == null) { super.warn(details); return; }
+    consequenceWarning.compareAndSet(null, Notification.warning(details).getMessage());
+  }
+
+  @Override
+  public void error(Object... details) {
+    if (consequenceCause == null) { super.error(details); return; }
+    consequenceErrors = true;
+    consequenceFailure.compareAndSet(null, Notification.error(details).getMessage());
+  }
+
+  @Override
+  public boolean hasErrors() {
+    return consequenceCause == null ? super.hasErrors() : consequenceErrors;
+  }
+
+  @Override
+  public Message send(Object... arguments) {
+    if (consequenceCause != null) {
+      var message = Message.create(this, arguments);
+      if (message.getQueue() == Message.Queue.Errors) {
+        error(message.getPayload(Notification.class));
+        return message;
+      }
+      if (message.getQueue() == Message.Queue.Warnings) {
+        warn(message.getPayload(Notification.class));
+        return message;
+      }
+    }
+    return super.send(arguments);
   }
 
   /** Derive a request-local cancellation signal, inherited by its execution scopes only. */
@@ -306,8 +375,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private Observation selectedObserver(String field, Object value) {
     if (digitalTwin == null)
       throw new IllegalArgumentException("Observer selection requires a knowledge graph");
-    var matches = digitalTwin.getKnowledgeGraph().query(Observation.class, this)
-        .where(field, KnowledgeGraph.Query.Operator.EQUALS, value).run(this);
+    // Selecting or refreshing an observer must not depend on that observer. Remote graph
+    // queries encode their scope through getObserver(), which would re-enter this lookup.
+    // Keep the caller's identity and context focus, but remove the observer selection.
+    var lookupScope = withObserver(null);
+    var matches = digitalTwin.getKnowledgeGraph().query(Observation.class, lookupScope)
+        .where(field, KnowledgeGraph.Query.Operator.EQUALS, value).run(lookupScope);
     if (matches.size() != 1) return null;
     var selected = matches.getFirst();
     return selected.getId() > 0 && selected.getObservable() != null
@@ -1117,8 +1190,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation.Builder observation(Observable observable) {
-
-    return new ObservationBuilderImpl(observable, this) {
+    // Only the root consequence request is optional. Required model dependencies must retain
+    // their normal failure semantics inside the transaction.
+    var requested = consequenceCause != null && getTransactionId() == null && observable != null
+            && !observable.isOptional()
+        ? observable.builder(this).optional(true).buildObservable() : observable;
+    return new ObservationBuilderImpl(requested, this) {
       @Override
       public CompletableFuture<Observation> submit() {
         var observation = build();

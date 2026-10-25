@@ -353,6 +353,15 @@ public class ScopeManager {
 
     ServiceContextScope ret = rootScope;
 
+    var encodedCause = requestHeaders.get(ServicesAPI.CONSEQUENCE_HEADER);
+    if (encodedCause != null) {
+      var cause = Utils.Json.parseObject(new String(java.util.Base64.getDecoder().decode(encodedCause),
+          java.nio.charset.StandardCharsets.UTF_8), org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause.class);
+      // Authentication and context access have already been checked. This header grants no access;
+      // validate the context and isolate diagnostics before resolving the propagated focus/transaction.
+      ret = rootScope.forConsequence(cause);
+    }
+
     if (contextualization.observationPath() != null) {
       for (var observationId : contextualization.observationPath()) {
         var observation = ret.getObservation(observationId);

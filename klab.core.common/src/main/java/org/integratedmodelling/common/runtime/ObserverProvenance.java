@@ -70,7 +70,7 @@ public final class ObserverProvenance {
         if (ids.size() > 1) throw invalid("Ambiguous recorded observer selection");
         if (!ids.isEmpty()) return new Selection(true,ids.values().iterator().next());
       // A legacy submission may have deliberately selected null: parent provenance cannot decide it.
-        if (activity.getType() == Activity.Type.SUBMISSION) return new Selection(false,null);
+        if (activity.getType() != null && activity.getType().isSubmission()) return new Selection(false,null);
         var choices = new ArrayList<Selection>();
         for (var parent : graph.query(Activity.class,scope).target(activity)
             .along(GraphModel.Relationship.TRIGGERED).run(scope))

@@ -101,7 +101,11 @@ public class ResolutionCompiler {
     // Per-key atomic preparation; unrelated contexts/models never share an invocation lock.
     var prepared=preparedCandidates.computeIfAbsent(key,ignored-> {
       var receipt=org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedSourcePreparation(model,scope,requested);
-      if(receipt==null)return null;
+      if(receipt==null) {
+        scope.warn("Model " + model.getUrn() + " rejected before prerequisite preparation for "
+            + requested.getUrn() + ": no stable source admission");
+        return null;
+      }
       var lexical=scope.withResolutionConstraints(
           ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionNamespace,model.getNamespace()),
           ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject,model.getProjectName()));
@@ -110,9 +114,14 @@ public class ResolutionCompiler {
       ResourceSet requirements;
       try { requirements=runtime.resolveContextualizables(model.getComputation(),lexical); }
       catch(RuntimeException failure) {scope.warn("Contextualizer prerequisites unavailable for "+model.getUrn()+": "+failure.getMessage());return null;}
-      if(requirements==null || requirements.isEmpty()
-          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(requirements.getNotifications())
-          || !key.witness().equals(preparationScopeWitness(scope))
+      if (requirements == null || requirements.isEmpty()
+          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(requirements.getNotifications())) {
+        scope.warn("Model " + model.getUrn() + " rejected during prerequisite preparation for "
+            + requested.getUrn() + ": "
+            + (requirements == null ? "no Runtime response" : requirements.getNotifications()));
+        return null;
+      }
+      if(!key.witness().equals(preparationScopeWitness(scope))
           || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(receipt,model,scope))return null;
       return new PreparedCandidate(receipt,requirements);
     });
@@ -146,6 +155,12 @@ public class ResolutionCompiler {
    * @return
    */
   public ResolutionGraph resolve(Observation observation, ContextScope scope) {
+    try (var validation = org.integratedmodelling.klab.runtime.language.ModelValidationGate.openSession()) {
+      return resolveAttempt(observation, scope);
+    }
+  }
+
+  private ResolutionGraph resolveAttempt(Observation observation, ContextScope scope) {
     if (scope.isInterrupted()) return ResolutionGraph.empty();
     var contextGraph = ResolverService.getResolutionGraph(scope);
     if (contextGraph == null) {
@@ -1148,7 +1163,12 @@ public class ResolutionCompiler {
     ret.removeIf(model -> {
       var prepared=preparedCandidate(model,scope);
       if(prepared==null || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(prepared.receipt(),model,scope))return true;
-      if(prioritizer.semanticDistance(model)==Integer.MAX_VALUE)return true;
+      if(prioritizer.semanticDistance(model)==Integer.MAX_VALUE) {
+        scope.warn("Model " + model.getUrn() + " rejected during admission/ranking for "
+            + observable.getUrn() + " (coverage="
+            + (model.getCoverage() == null ? "null" : model.getCoverage().encode()) + ")");
+        return true;
+      }
       return !org.integratedmodelling.klab.runtime.language.ModelValidationGate.sameSnapshot(prepared.receipt(),prioritizer.admission(model));
     });
     for (var model : ret) {

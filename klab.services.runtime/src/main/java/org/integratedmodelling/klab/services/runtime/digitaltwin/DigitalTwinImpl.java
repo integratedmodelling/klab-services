@@ -55,6 +55,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   private final StorageManager storageManager;
   private final ContextScope rootScope;
   private final Scheduler scheduler;
+  private final ConsequenceEngine consequenceEngine;
   private final Configuration configuration;
   private long transientId = Klab.getNextId();
   private long parentTransientId = -1000;
@@ -779,6 +780,22 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       synchronized (graph) {
         this.graph.addVertex(activity);
+        if (scope.getConsequenceCause() != null) {
+          instrumentConsequenceActivity();
+          var trigger = knowledgeGraph.getAsset(scope.getConsequenceCause().triggeringActivityId(),
+              scope, Activity.class);
+          if (trigger == null || trigger.getId() <= 0)
+            throw new IllegalStateException("Consequence triggering activity is unavailable");
+          this.graph.addVertex(trigger);
+          this.graph.addEdge(trigger, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
+          // Available on ActivityStarted, before persistence assigns this activity's own identity.
+          if (activity instanceof ActivityImpl mutable) {
+            mutable.setTriggeringActivityUrn(trigger.getUrn());
+            mutable.setParentId(trigger.getId());
+            mutable.setParentTransientId(trigger.getTransientId());
+          }
+          activityLinked = true;
+        }
 
         if (data != null) {
           for (Object datum : data) {
@@ -787,10 +804,12 @@ public class DigitalTwinImpl implements DigitalTwin {
                 || datum == RuntimeAsset.DATAFLOW_ASSET) {
               this.graph.addVertex((RuntimeAsset) datum);
             } else if (datum instanceof Agent agent) {
+              if (scope.getConsequenceCause() != null) continue;
               this.graph.addVertex(agent);
               this.graph.addEdge(
                   activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
             } else if (datum instanceof Activity activity1) {
+              if (scope.getConsequenceCause() != null) continue;
               this.graph.addVertex(activity1);
               this.graph.addEdge(
                   activity1, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
@@ -839,6 +858,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       synchronized (graph) {
         this.graph.addVertex(activity);
+        instrumentConsequenceActivity();
         this.graph.addEdge(
             parent.activity, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
 
@@ -846,6 +866,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         if (data != null) {
           for (Object datum : data) {
             if (datum instanceof Agent agent) {
+              if (scope.getConsequenceCause() != null) continue;
               this.graph.addVertex(agent);
               this.graph.addEdge(
                   activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
@@ -865,6 +886,21 @@ public class DigitalTwinImpl implements DigitalTwin {
           }
         }
       }
+    }
+
+    /** Preserve execution phase types while identifying engine submissions and their actual actor. */
+    private void instrumentConsequenceActivity() {
+      var cause = scope.getConsequenceCause();
+      if (cause == null) return;
+      activity.getMetadata().put(org.integratedmodelling.klab.api.digitaltwin.Consequence.METADATA_KEY,
+          Utils.Json.asString(cause));
+      if (activity instanceof ActivityImpl mutable && activity.getType() == Activity.Type.SUBMISSION)
+        mutable.setType(Activity.Type.CONSEQUENCE_SUBMISSION);
+      var agent = knowledgeGraph.klab();
+      if (agent == null || agent.getId() <= 0)
+        throw new IllegalStateException("Consequence provenance requires the persisted k.LAB agent");
+      graph.addVertex(agent);
+      graph.addEdge(activity, agent, new RelationshipEdge(GraphModel.Relationship.BY_AGENT));
     }
 
     public void setTarget(Observation observation) {
@@ -1226,6 +1262,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       //      }
 
       var ret = Transaction.INTERMEDIATE_COMMIT_ID;
+      KnowledgeGraph.Commit committedChanges = null;
+      long committedObserverId = 0;
 
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
@@ -1348,6 +1386,7 @@ public class DigitalTwinImpl implements DigitalTwin {
               }
               if (!schedulerJournal.isEmpty()) {
                 var snapshot = createCommit(commitId,scope.getUser().getUsername(),stored,modified,linked);
+                snapshot.setConsequenceCause(scope.getConsequenceCause());
                 var encodedDeltas = activity.getMetadata().get(
                     org.integratedmodelling.klab.api.digitaltwin.TemporalStateDelta.METADATA_KEY);
                 var deltas = new ArrayList<org.integratedmodelling.klab.api.digitaltwin.TemporalStateDelta>();
@@ -1382,7 +1421,10 @@ public class DigitalTwinImpl implements DigitalTwin {
         publishAttributions();
         var commit =
             createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
+        commit.setConsequenceCause(scope.getConsequenceCause());
         commitCache.put(commit.getId(), commit);
+        committedChanges = commit;
+        committedObserverId = activeObserver == null ? 0 : activeObserver.getId();
 
         for (var action : List.copyOf(afterCommitActions)) {
           // The graph is committed; failed activation is recovered from durable metadata.
@@ -1410,6 +1452,15 @@ public class DigitalTwinImpl implements DigitalTwin {
       ((ActivityImpl) activity).setEnd(System.currentTimeMillis());
 
       scope.unregisterTransaction(this);
+
+      if (committedChanges != null && getConsequenceEngine() != null) {
+        try {
+          getConsequenceEngine().committed(committedChanges, scope, activity.getId(), committedObserverId);
+        } catch (RuntimeException failure) {
+          // A scheduling failure must never turn a durable commit into a failed submission.
+          scope.warn("Cannot enqueue consequences for commit " + ret, failure);
+        }
+      }
 
       return ret;
     }
@@ -1443,7 +1494,8 @@ public class DigitalTwinImpl implements DigitalTwin {
           var metadata = observation.getMetadata();
           metadata.put(Metadata.IM_COMMIT_ID, commitId);
           metadata.putIfAbsent(Metadata.IM_CONTEXT_ID, scope.getId());
-          metadata.putIfAbsent(Metadata.IM_CREATION_AGENT, scope.getUser().getUsername());
+          metadata.putIfAbsent(Metadata.IM_CREATION_AGENT, scope.getConsequenceCause() == null
+              ? scope.getUser().getUsername() : knowledgeGraph.klab().getName());
           if (creator != null) {
             metadata.putIfAbsent(
                 Metadata.IM_CREATION_ACTIVITY_TYPE,
@@ -1466,7 +1518,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           .filter(Activity.class::isInstance)
           .map(Activity.class::cast)
           .sorted(
-              Comparator.comparing(candidate -> candidate.getType() != Activity.Type.SUBMISSION))
+              Comparator.comparing(candidate -> candidate.getType() == null || !candidate.getType().isSubmission()))
           .findFirst()
           .orElse(null);
     }
@@ -1791,6 +1843,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
     this.storageManager = new StorageManagerImpl(service, scope);
     this.scheduler = new SchedulerImpl(scope, this);
+    this.consequenceEngine = new ConsequenceEngine(scope, scopeId);
+  }
+
+  public ConsequenceEngine getConsequenceEngine() {
+    return consequenceEngine;
   }
 
   @Override
@@ -1840,6 +1897,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   @Override
   public void dispose() {
     ((SchedulerImpl) scheduler).close();
+    consequenceEngine.close();
     this.knowledgeGraph.deleteContext();
     this.storageManager.clear();
   }
@@ -1847,6 +1905,7 @@ public class DigitalTwinImpl implements DigitalTwin {
   /** Release process-local resources without deleting a persistent context or its data files. */
   public void shutdown() {
     ((SchedulerImpl) scheduler).close();
+    consequenceEngine.close();
     ((StorageManagerImpl) storageManager).close();
   }
 }

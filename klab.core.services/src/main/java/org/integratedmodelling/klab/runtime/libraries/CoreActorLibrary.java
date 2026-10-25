@@ -2361,11 +2361,12 @@ public class CoreActorLibrary {
         returns = Observation.class,
         description =
             """
-            Submit an observation to the digital twin""")
+            Submit an observation to the digital twin. Use :observer observation to select a persisted
+            Agent, or !observer to inhibit automatic default observer creation in root submissions.""")
     public CompletableFuture<Observation> submit(AgentScope scope, Object... arguments) {
 
       var metadata = ContextActorSupport.metadata(arguments);
-      var selectedContext = ContextActorSupport.focus(requireContext(), metadata);
+      var selectedContext = ContextActorSupport.submissionScope(requireContext(), metadata);
       var runtimeService = selectedContext.getService(RuntimeService.class);
 
       var provenanceAgent =

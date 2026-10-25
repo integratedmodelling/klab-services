@@ -110,6 +110,21 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     if (observer != null && observer.getId() > 0) assetCache.put(observer.getId(), observer);
   }
 
+  /** Apply consequence changes using the same deduplication as ordinary submission notifications. */
+  public synchronized boolean ingestConsequence(
+      org.integratedmodelling.klab.api.digitaltwin.Consequence.Commit consequence) {
+    if (!Objects.equals(scope.getId(), consequence.cause().contextId()))
+      throw new IllegalArgumentException("Consequence belongs to another digital twin");
+    var commit = consequence.commit();
+    synchronized (graph) {
+      if (appliedCommits.containsKey(commit.getId())) return false;
+      applyCommit(commit, new HashSet<>());
+      appliedCommits.put(commit.getId(), commit);
+      commitQueue.add(commit);
+      return true;
+    }
+  }
+
   /** Apply a durable transition without a cache-only commit lookup or stale observation snapshot. */
   public synchronized boolean ingestTransition(org.integratedmodelling.klab.api.digitaltwin.TransitionCommit transition) {
     if (!Objects.equals(scope.getId(),transition.contextId()))
