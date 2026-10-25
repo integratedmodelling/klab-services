@@ -280,7 +280,10 @@ public interface RuntimeService extends KlabService {
   /**
    * Enumerate a completed collective input within its observed support, including uncommitted
    * members for local runtime calls. Detached query views use their covered support and are never
-   * treated as a graph node with ID 0. Remote calls return portable member observations.
+   * treated as a graph node with ID 0. Local results may be in-process
+   * {@link org.integratedmodelling.klab.api.data.LocalView} instances; use
+   * {@link Observation#forTransport(Observation)} before serializing them. Remote calls return
+   * portable member observations.
    */
   default List<Observation> getMembers(Observation collective, ContextScope scope) {
     throw new UnsupportedOperationException("Collective member enumeration is unavailable");

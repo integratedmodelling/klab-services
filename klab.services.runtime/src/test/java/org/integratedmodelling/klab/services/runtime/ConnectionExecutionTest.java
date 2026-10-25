@@ -20,6 +20,109 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.junit.jupiter.api.Test;
 
 class ConnectionExecutionTest {
+  @Test void transactionViewsRejectJsonButExplicitTransportSnapshotsRoundTrip() throws Exception {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var point = observation(11, SemanticType.SUBJECT, false, false);
+    var shape = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+        "EPSG:4326 POINT (1 2)");
+    var twin = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class);
+    var transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION),
+        mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class),
+        org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
+    var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+    for (var geometry : List.of(org.integratedmodelling.klab.api.geometry.Geometry.create(shape.encode()),
+        org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.create(shape))) {
+      point.setGeometry(geometry);
+      var read = transaction.readObservation(point);
+      var space = org.integratedmodelling.klab.api.knowledge.observation.scale.Scale
+          .create(read.getGeometry()).getSpace();
+      for (var view : List.of(read, read.getGeometry(), space, space.getGeometricShape())) {
+        assertInstanceOf(org.integratedmodelling.klab.api.data.LocalView.class, view);
+        var failure = assertThrows(com.fasterxml.jackson.databind.JsonMappingException.class,
+            () -> mapper.writeValueAsString(Map.of("endpoint", view)));
+        assertTrue(org.integratedmodelling.common.data.jackson.JacksonConfiguration
+            .isLocalViewSerializationFailure(failure));
+      }
+      var portable = Observation.forTransport(read);
+      assertFalse(portable.getGeometry() instanceof org.integratedmodelling.klab.api.data.LocalView);
+      var json = mapper.writeValueAsString(portable);
+      assertFalse(json.contains("$Proxy"));
+      var restored = mapper.readValue(json, Observation.class);
+      assertEquals(point.getId(), restored.getId());
+      assertEquals(point.getObservable().getUrn(), restored.getObservable().getUrn());
+      assertEquals(geometry.encode(), restored.getGeometry().encode());
+    }
+    transaction.fail(new java.util.concurrent.CancellationException());
+  }
+
+  @Test void privateEndpointPointCanBePromotedThroughTheSpatialApi() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var point = observation(11, SemanticType.SUBJECT, false, false);
+    var original = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+        "EPSG:4326 POINT (1 2)");
+    point.setGeometry(org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.create(original));
+    var twin = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class);
+    var transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION),
+        mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class),
+        org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
+    var read = transaction.readObservation(point);
+    var space = org.integratedmodelling.klab.api.knowledge.observation.scale.Scale
+        .create(read.getGeometry()).getSpace();
+    assertFalse(space instanceof org.integratedmodelling.klab.runtime.scale.space.ShapeImpl);
+    assertFalse(space.isEmpty());
+    var shape = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl
+        .promote(space.getGeometricShape()).transform(original.getProjection());
+    assertTrue(original.getJTSGeometry().equalsExact(shape.getJTSGeometry()));
+    assertEquals(original.getProjection(), shape.getProjection());
+    transaction.fail(new java.util.concurrent.CancellationException());
+  }
+
+  @Test void endpointReadSemanticsRetainEqualityAndCanBeSentForSubsumption() throws Exception {
+    var producer = observation(10, SemanticType.SUBJECT, true, false);
+    var point = observation(11, SemanticType.SUBJECT, false, false);
+    var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var twin = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class);
+    var transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
+        org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
+    var read = transaction.readObservation(point);
+    assertEquals(point.getObservable().getSemantics(), read.getObservable().getSemantics());
+    assertEquals(read.getObservable().getSemantics(), point.getObservable().getSemantics());
+    assertNotSame(point.getObservable(), read.getObservable());
+    assertNotSame(point.getObservable().getSemantics(), read.getObservable().getSemantics());
+    read.getObservable().getSemantics().getMetadata().put("private", "read");
+    read.getObservable().getSemantics().getType().clear();
+    assertFalse(point.getObservable().getSemantics().getMetadata().containsKey("private"));
+    assertFalse(point.getObservable().getSemantics().getType().isEmpty());
+
+    var runtime = mock(RuntimeService.class, CALLS_REAL_METHODS);
+    doReturn(List.of(transaction.readObservation(point))).when(runtime)
+        .classificationMembers(eq(producer), any(), eq(scope));
+    var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+    assertEquals(1, runtime.getMembers(producer, scope).size());
+    verifyNoInteractions(reasoner);
+
+    ((ConceptImpl) point.getObservable().getSemantics()).setUrn("test:SpecialSubject");
+    doReturn(List.of(transaction.readObservation(point))).when(runtime)
+        .classificationMembers(eq(producer), any(), eq(scope));
+    when(reasoner.is(any(), any())).thenAnswer(invocation -> {
+      var candidate = (org.integratedmodelling.klab.api.knowledge.Semantics) invocation.getArgument(0);
+      var parent = (org.integratedmodelling.klab.api.knowledge.Semantics) invocation.getArgument(1);
+      var json = org.integratedmodelling.common.utils.Utils.Json.asString(
+          List.of(candidate.asConcept(), parent.asConcept()));
+      assertFalse(json.contains("$Proxy"));
+      var restored = org.integratedmodelling.common.utils.Utils.Json.parseObject(json,
+          org.integratedmodelling.klab.api.knowledge.Concept[].class);
+      assertEquals("test:SpecialSubject", restored[0].getUrn());
+      assertEquals("test:SUBJECT", restored[1].getUrn());
+      return true;
+    });
+    assertEquals(1, runtime.getMembers(producer, scope).size());
+    var observableJson = org.integratedmodelling.common.utils.Utils.Json.asString(
+        transaction.readObservation(point).getObservable());
+    assertFalse(observableJson.contains("$Proxy"));
+    transaction.fail(new java.util.concurrent.CancellationException());
+  }
   @Test void connectionSeesPointMembersInParentTransaction() {
     org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
     var producer = observation(10, SemanticType.SUBJECT, true, false);

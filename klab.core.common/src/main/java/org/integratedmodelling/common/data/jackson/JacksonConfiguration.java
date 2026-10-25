@@ -69,6 +69,60 @@ public class JacksonConfiguration {
 
   public static final String CLASS_FIELD = "@CLASS";
 
+  /** A distinct diagnostic type, retained even in logs that redact exception messages. */
+  public static class LocalViewSerializationException extends JsonMappingException {
+    LocalViewSerializationException(JsonGenerator generator, Object value) {
+      super(generator, "Cannot serialize an in-process view or dynamic proxy implementing "
+          + Arrays.stream(value.getClass().getInterfaces()).map(Class::getName).sorted().toList()
+          + ". Create an explicit transport representation before crossing a service boundary"
+          + " (Observation.forTransport or Geometry.forTransport for observation/geometry views).");
+    }
+  }
+
+  public static boolean isLocalViewSerializationFailure(Throwable failure) {
+    var seen = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
+    for (; failure != null && seen.add(failure); failure = failure.getCause()) {
+      if (failure instanceof LocalViewSerializationException) return true;
+    }
+    return false;
+  }
+
+  private static void requireTransportValue(Object value, JsonGenerator generator)
+      throws LocalViewSerializationException {
+    if (value instanceof org.integratedmodelling.klab.api.data.LocalView
+        || java.lang.reflect.Proxy.isProxyClass(value.getClass()))
+      throw new LocalViewSerializationException(generator, value);
+  }
+
+  /** Keep the guard when a caller explicitly selects a plain API-interface bean serializer. */
+  private static class InterfaceBoundarySerializer
+      extends com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer {
+    InterfaceBoundarySerializer(JavaType type, JsonSerializer<?> delegate) {
+      super(new com.fasterxml.jackson.databind.util.StdConverter<Object, Object>() {
+        @Override public Object convert(Object value) { return value; }
+      }, type, delegate);
+    }
+
+    @Override protected com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer withDelegate(
+        com.fasterxml.jackson.databind.util.Converter<Object, ?> converter,
+        JavaType type, JsonSerializer<?> delegate) {
+      return new InterfaceBoundarySerializer(type, delegate);
+    }
+
+    @Override public void serialize(Object value, JsonGenerator generator, SerializerProvider provider)
+        throws IOException {
+      requireTransportValue(value, generator);
+      super.serialize(value, generator, provider);
+    }
+
+    @Override public void serializeWithType(Object value, JsonGenerator generator,
+        SerializerProvider provider, com.fasterxml.jackson.databind.jsontype.TypeSerializer typeSerializer)
+        throws IOException {
+      requireTransportValue(value, generator);
+      super.serializeWithType(value, generator, provider, typeSerializer);
+    }
+  }
+
   private static Class<?> workflowImplementation(Class<?> type) {
     if (type == Workflow.class) return WorkflowImpl.class;
     if (type == Workflow.AttachmentRule.class) return WorkflowImpl.AttachmentRuleImpl.class;
@@ -114,6 +168,7 @@ public class JacksonConfiguration {
     @Override
     public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
+      requireTransportValue(value, gen);
       if (value instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl binding
           && binding.storageSource() != null) {
         // Snapshot the current durable identity, never the copied temporary fields or live source link.
@@ -450,6 +505,14 @@ public class JacksonConfiguration {
     mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
 
     SimpleModule module = new SimpleModule();
+    module.setSerializerModifier(new com.fasterxml.jackson.databind.ser.BeanSerializerModifier() {
+      @Override public JsonSerializer<?> modifySerializer(SerializationConfig config,
+          BeanDescription bean, JsonSerializer<?> serializer) {
+        return bean.getBeanClass().isInterface()
+            && serializer instanceof com.fasterxml.jackson.databind.ser.std.BeanSerializerBase
+            ? new InterfaceBoundarySerializer(bean.getType(), serializer) : serializer;
+      }
+    });
     for (var cls :
         new Class<?>[] {
           Group.class,
@@ -634,6 +697,15 @@ public class JacksonConfiguration {
       module.addSerializer(cls, new PolymorphicSerializer<>());
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
     }
+
+    // Also reject local views of interfaces that do not use our reflective serializer.
+    module.addSerializer(org.integratedmodelling.klab.api.data.LocalView.class,
+        new JsonSerializer<org.integratedmodelling.klab.api.data.LocalView>() {
+          @Override public void serialize(org.integratedmodelling.klab.api.data.LocalView value,
+              JsonGenerator generator, SerializerProvider serializers) throws IOException {
+            throw new LocalViewSerializationException(generator, value);
+          }
+        });
 
     // Material is a concrete binary transport contract. Never instantiate a class supplied by
     // its discriminator, and run canonical-path validation for both tagged and plain JSON.

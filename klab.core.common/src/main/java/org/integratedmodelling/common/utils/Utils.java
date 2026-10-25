@@ -1777,7 +1777,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return post(true, true, apiRequest, payload, resultClass, parameters);
       }
 
-      /** Best-effort delivery: failed responses return null without logging or notifying scopes. */
+      /**
+       * Best-effort delivery: failed responses return null without logging or notifying scopes.
+       * Local-view payload violations are programming errors and always propagate.
+       */
       public <T> T postQuietly(
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
         return post(false, false, apiRequest, payload, resultClass, parameters);
@@ -1919,7 +1922,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP POST failed");
             }
           }
-          if (propagateFailure) {
+          // A local view in a wire payload is a programming error, even for best-effort calls.
+          // Do not turn the useful boundary diagnostic into a null response for the caller.
+          if (propagateFailure || JacksonConfiguration.isLocalViewSerializationFailure(e)) {
             if (e instanceof KlabServiceAccessException serviceFailure) throw serviceFailure;
             throw new KlabServiceAccessException(e);
           }
@@ -2007,6 +2012,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
 
         } catch (Throwable e) {
+          if (JacksonConfiguration.isLocalViewSerializationFailure(e))
+            throw new KlabServiceAccessException(e);
           if (scope != null) {
             scope.error(Logging.safeFailure(e), "HTTP request failed",
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
@@ -2186,6 +2193,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               RequestFailure.collectionFailureDetail(response==null ? null : response.body()), null);
 
         } catch (Throwable e) {
+          if (JacksonConfiguration.isLocalViewSerializationFailure(e))
+            throw new KlabServiceAccessException(e);
           if (strict) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if (e instanceof RequestFailure failure) throw failure;
@@ -2268,6 +2277,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               "PUT " + apiCall + " failed (HTTP " + (response == null ? "no response" : response.statusCode()) + ")", null);
 
         } catch (Throwable e) {
+          if (JacksonConfiguration.isLocalViewSerializationFailure(e))
+            throw new KlabServiceAccessException(e);
           if (strict) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if (e instanceof RequestFailure failure) throw failure;
@@ -3110,7 +3121,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       try {
         return defaultMapper.writeValueAsString(object);
       } catch (JsonProcessingException e) {
-        throw new IllegalArgumentException("serialization failed: " + e.getMessage());
+        throw new IllegalArgumentException("serialization failed: " + e.getMessage(), e);
       }
     }
 

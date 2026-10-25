@@ -199,6 +199,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
     static Object wrap(org.integratedmodelling.klab.api.knowledge.observation.scale.Extent<?> source) {
       var contracts = new LinkedHashSet<Class<?>>();
+      contracts.add(org.integratedmodelling.klab.api.data.LocalView.class);
       for (Class<?> type = source.getClass(); type != null; type = type.getSuperclass())
         for (var contract : type.getInterfaces())
           if (contract.getName().startsWith("org.integratedmodelling.klab.api.")) contracts.add(contract);
@@ -255,6 +256,23 @@ public class DigitalTwinImpl implements DigitalTwin {
           || value instanceof UUID || value instanceof java.time.temporal.TemporalAccessor
           || value instanceof java.time.Duration || value instanceof java.time.Period) return value;
       if (copies.containsKey(value)) return copies.get(value);
+      // Semantic values cross service boundaries (e.g. connection endpoint subsumption).
+      // Keep their concrete transport shape and URN equality while detaching every payload.
+      // A JDK proxy is neither equal to its ConceptImpl nor serializable by the wire mapper.
+      if (value instanceof org.integratedmodelling.common.knowledge.ConceptImpl
+          || value instanceof org.integratedmodelling.common.knowledge.ObservableImpl) {
+        try {
+          var result = value.getClass().getDeclaredConstructor().newInstance();
+          copies.put(value, result);
+          for (var field : semanticFields(value.getClass())) {
+            field.setAccessible(true);
+            field.set(result, copy(field.get(value), copies));
+          }
+          return result;
+        } catch (ReflectiveOperationException error) {
+          throw new IllegalStateException("Cannot snapshot semantic value", error);
+        }
+      }
       if (value instanceof Geometry geometry
           && !(value instanceof org.integratedmodelling.klab.api.knowledge.observation.scale.Extent<?>)
           && !(value instanceof org.integratedmodelling.klab.api.services.resolver.Coverage)) {
@@ -315,6 +333,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
       if (interfaces.isEmpty())
         throw new UnsupportedOperationException("No safe observation read projection for " + value.getClass().getName());
+      interfaces.add(org.integratedmodelling.klab.api.data.LocalView.class);
       var handler = new ObservationReadView(value, copies);
       var proxy = java.lang.reflect.Proxy.newProxyInstance(DigitalTwinImpl.class.getClassLoader(),
           interfaces.toArray(Class<?>[]::new), handler);
@@ -347,6 +366,17 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
       return fingerprintValue(snapshot,new IdentityHashMap<>());
     }
+
+    private static List<java.lang.reflect.Field> semanticFields(Class<?> type) {
+      var fields = new ArrayList<java.lang.reflect.Field>();
+      for (; type != null; type = type.getSuperclass()) {
+        for (var field : type.getDeclaredFields()) {
+          if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())
+              && !java.lang.reflect.Modifier.isTransient(field.getModifiers())) fields.add(field);
+        }
+      }
+      return fields;
+    }
     private static String fingerprintValue(Object value,IdentityHashMap<Object,Integer> seen) {
       if(value==null) return "null";
       if(value instanceof String || value instanceof Number || value instanceof Boolean
@@ -377,6 +407,17 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
       if(value.getClass().isArray()) {
         var result=new StringBuilder("array[");for(int i=0;i<java.lang.reflect.Array.getLength(value);i++)result.append(fingerprintValue(java.lang.reflect.Array.get(value,i),seen)).append(';');return result.append(']').toString();
+      }
+      if (value instanceof org.integratedmodelling.common.knowledge.ConceptImpl
+          || value instanceof org.integratedmodelling.common.knowledge.ObservableImpl) {
+        var fields = new TreeMap<String, Object>();
+        try {
+          for (var field : semanticFields(value.getClass())) {
+            field.setAccessible(true);
+            fields.put(field.getName(), field.get(value));
+          }
+        } catch (IllegalAccessException error) { throw new IllegalStateException(error); }
+        return "semantics:" + fingerprintValue(fields, seen);
       }
       if(java.lang.reflect.Proxy.isProxyClass(value.getClass())
           && java.lang.reflect.Proxy.getInvocationHandler(value) instanceof ObservationReadView view) {

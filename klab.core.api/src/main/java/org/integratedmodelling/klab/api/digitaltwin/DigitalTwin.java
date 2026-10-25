@@ -283,6 +283,9 @@ public interface DigitalTwin extends RuntimeAsset {
      * Implementations must isolate mutable observation state and must not expose a writable
      * alias of the committed observation or staged write set. Unsupported implementations fail
      * explicitly instead of returning the supplied mutable object.
+     * Returned values may be in-process {@link org.integratedmodelling.klab.api.data.LocalView}
+     * instances. Use {@link Observation#forTransport(Observation)} before serializing a read;
+     * the view itself is deliberately rejected at JSON boundaries.
      */
     default Observation readObservation(Observation observation) {
       throw new UnsupportedOperationException("Detached transaction reads are unavailable");

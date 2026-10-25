@@ -193,11 +193,17 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     var key = new BinaryKey(currentRevision(), conceptImpl.asConcept(), other.asConcept());
     return subsumption.get(
         key,
-        ignored ->
-            client.post(
-                ServicesAPI.REASONER.SUBSUMES,
-                List.of(conceptImpl.asConcept(), other.asConcept()),
-                Boolean.class));
+        ignored -> {
+          Boolean result = client.postRequired(
+              ServicesAPI.REASONER.SUBSUMES,
+              List.of(conceptImpl.asConcept(), other.asConcept()),
+              Boolean.class);
+          if (result == null) {
+            throw new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
+                "Subsumption check returned an empty response");
+          }
+          return result;
+        });
   }
 
   @Override
