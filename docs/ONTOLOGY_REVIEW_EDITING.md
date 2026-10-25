@@ -189,7 +189,7 @@ the qualification and independence policy remains [OR-02](#or-02).
 Use the [context-pack 1.3 document schema][schema] and its [worked structure][context], including
 `proposal_schema`, `context_pack_version`, stable proposal ID, fresh `revision_id`, typed assets,
 evidence, imported context, open questions and ordered action records. Do not submit research
-`dossier.json` as a proposal. The [dossier mapping](../DOSSIER_MAPPING.md) explains which research
+`dossier.json` as a proposal. The [dossier mapping](workflows/DOSSIER_MAPPING.md) explains which research
 fields can populate the typed projection and which need interpretation. Keep titles, detailed source
 status, full ancestry arguments and narrative in the proposal/supporting files when no native field
 exists.
@@ -240,7 +240,7 @@ It checks the four roles
 PROPOSAL, ONTOLOGY, DOSSIER and SOURCE_QUESTIONS, saved-byte hashes and schema. Read its JSON results:
 exit zero can mean structurally sound but **acceptance BLOCKED**. It neither starts a service nor
 authorizes acceptance. `PILOT_MANIFEST` and `ROOT_CONTEXT` are local report labels, not service check
-enum values. See the [pilot description](../VALIDATION_INCREMENT.md#four-artifact-local-pilot).
+enum values. See the [pilot description](workflows/VALIDATION_INCREMENT.md#four-artifact-local-pilot).
 
 ## Start and submit using the native IDE
 
@@ -574,9 +574,9 @@ bridge, content/target actor, authorization and IDE action sources inspected for
 mechanisms; [WORKFLOW_EXTENSION.md](WORKFLOW_EXTENSION.md) records remaining generic contracts.
 
 The merged source governs behavior when older narrative notes disagree. The concise technical starting
-point is the [proposal-review contract](../PROPOSAL_REVIEW_CONTRACT.md), read with the
-[schema increment][increment], historical [backend result](../BACKEND_RESULT.md) and
-[validation increment](../VALIDATION_INCREMENT.md).
+point is the [proposal-review contract](workflows/PROPOSAL_REVIEW_CONTRACT.md), read with the
+[schema increment][increment], historical [backend result](workflows/BACKEND_RESULT.md) and
+[validation increment](workflows/VALIDATION_INCREMENT.md).
 
 - [Workflow definition][workflow], [WorkflowManager][manager] and [ProposalReviewProtocol][protocol]: roles, transitions, aliases, ownership and gates.
 - [Flow types][flow], [ProposalReview types][types], [shared candidate inspector][binding] and [controller][controller]: transport and immutable bindings.
@@ -596,7 +596,7 @@ point is the [proposal-review contract](../PROPOSAL_REVIEW_CONTRACT.md), read wi
 [controller]: ../klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/WorkflowController.java
 [validator]: ../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/workflow/IsolatedProposalCandidateValidator.java
 [schema-provider]: ../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/workflow/ProposalSchemaValidator.java
-[increment]: ../SCHEMA_VALIDATION_INCREMENT.md
+[increment]: workflows/SCHEMA_VALIDATION_INCREMENT.md
 [pilot]: ../tools/review/validate_package.py
 [ide-shell]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/WorkflowEditor.java
 [ide-stage]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/ProposalStageEditor.java

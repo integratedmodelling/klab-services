@@ -18,13 +18,13 @@ Application-side limits (before validation/hashing/persistence, after HTTP deser
 
 ## Four-artifact local pilot
 
-`tools/review/validate_package.py` uses the real **jsonschema Draft202012Validator**, with the repository's unchanged context-pack 1.3 schema and strict single-document YAML. It checks exactly four role-distinct artifacts: PROPOSAL, ONTOLOGY, DOSSIER and SOURCE_QUESTIONS. Each manifest entry freezes saved-byte SHA-256 plus the same proposal ID/revision; the proposal's internal identity must match. Paths must remain in the package. Explicit assetMapping connects the narrow proposal asset to a stable research concept; broader dossier entries are not silently included as proposed/approved assets. Import revision IDs must match the proposal manifest; missing authoritative imported hashes are BLOCKED and mismatching supplied current snapshots FAIL.
+`../../tools/review/validate_package.py` uses the real **jsonschema Draft202012Validator**, with the repository's unchanged context-pack 1.3 schema and strict single-document YAML. It checks exactly four role-distinct artifacts: PROPOSAL, ONTOLOGY, DOSSIER and SOURCE_QUESTIONS. Each manifest entry freezes saved-byte SHA-256 plus the same proposal ID/revision; the proposal's internal identity must match. Paths must remain in the package. Explicit assetMapping connects the narrow proposal asset to a stable research concept; broader dossier entries are not silently included as proposed/approved assets. Import revision IDs must match the proposal manifest; missing authoritative imported hashes are BLOCKED and mismatching supplied current snapshots FAIL.
 
 The role set is a **version-1 pilot package contract**, not a silently imposed production standard. The preserved research JSON and Markdown have no native proposal revision field: their relationship to this revision is the manifest's exact saved-byte binding. A package checksum is not scientific approval or proof of correspondence between every research idea and the narrow candidate.
 
-Real fixtures are under `klab.services.resources/src/test/resources/review/hydrology`. Copied byte-for-byte from task-4's `imod-strawman/experiments/strawman-2026` working tree (base HEAD `98c68ba58b206c077add6fbdeb2c6d6e06fe3782`): review/surface-catchment-r1.yaml, candidate/src/hydrology.kwv, bootstrap/hydrology/dossier.json, QUESTIONS_SOURCE_FIRST.md and backend-dossier.sample.json. The research files were local working changes, so HEAD is provenance context, not a claim that every fixture is committed there. Exact copied hashes are in manifest.json. Explicit mapping: proposal `concept-surface-catchment` → research `hydrology-SurfaceCatchment`. The larger dossier contains unresolved candidates; it does not replace the minimal proposal or prove its scientific correctness.
+Real fixtures are under `../../klab.services.resources/src/test/resources/review/hydrology`. Copied byte-for-byte from task-4's `imod-strawman/experiments/strawman-2026` working tree (base HEAD `98c68ba58b206c077add6fbdeb2c6d6e06fe3782`): review/surface-catchment-r1.yaml, candidate/src/hydrology.kwv, bootstrap/hydrology/dossier.json, QUESTIONS_SOURCE_FIRST.md and backend-dossier.sample.json. The research files were local working changes, so HEAD is provenance context, not a claim that every fixture is committed there. Exact copied hashes are in manifest.json. Explicit mapping: proposal `concept-surface-catchment` → research `hydrology-SurfaceCatchment`. The larger dossier contains unresolved candidates; it does not replace the minimal proposal or prove its scientific correctness.
 
-`review-evidence/hydrology-package-validation.json` records real schema/manifest PASS and import/scientific/root/Reasoner blockers, including schema hash and library version. The program always reports acceptance BLOCKED; even forged scientific/root flags cannot manufacture a human decision.
+`../../review-evidence/hydrology-package-validation.json` records real schema/manifest PASS and import/scientific/root/Reasoner blockers, including schema hash and library version. The program always reports acceptance BLOCKED; even forged scientific/root flags cannot manufacture a human decision.
 
 ## Why schema and Reasoner are not wired into production yet
 
@@ -40,7 +40,7 @@ Unbound attachment removal now persists descriptor removal before attempting pay
 
 ## Reproduction
 
-Java: `./run-review-tests.ps1` (offline reactor; test home inside task-7).
+Java: `../../run-review-tests.ps1` (offline reactor; test home inside task-7).
 
 Offline package checks require Python's existing jsonschema and PyYAML packages. In this workspace they were read from task-4/.python-deps through a process-local PYTHONPATH; no packages were installed and no shared cache was changed:
 
@@ -69,4 +69,4 @@ Offline seven-module reactor: **BUILD SUCCESS**, exit 0.
 
 Offline Python package suite: **14 passed**, zero failures/errors. Together: **71 passing tests**. The five isolated-validator tests use the actual parser/adapter and real hydrology bytes/DTO projection; no passing mock validates the real fixture.
 
-Four independent defects have regression coverage in ProposalReviewProtocolTest (24 tests total). All six Java suite reports and the actual hydrology diagnostic output are under `review-evidence/increment/`; Python results are in `review-evidence/package-tests.txt`. Full final reactor log: `C:\Users\Ferd\Documents\Codex\2026-10-03\task-7\backend-validation-final.log`. `git diff --check` passed. Original checkout changes remain untouched.
+Four independent defects have regression coverage in ProposalReviewProtocolTest (24 tests total). All six Java suite reports and the actual hydrology diagnostic output are under `../../review-evidence/increment`; Python results are in `review-evidence/package-tests.txt`. Full final reactor log: `C:\Users\Ferd\Documents\Codex\2026-10-03\task-7\backend-validation-final.log`. `git diff --check` passed. Original checkout changes remain untouched.

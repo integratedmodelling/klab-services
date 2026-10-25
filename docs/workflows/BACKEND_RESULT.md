@@ -8,11 +8,11 @@ Versioned typed proposal-review stage/command records and bootstrap dossier proj
 
 The default validator is intentionally unavailable and blocks production acceptance. The acceptance success test injects an explicitly synthetic validator; no real ontology has been validated, applied or published by this task.
 
-API handoff: [PROPOSAL_REVIEW_CONTRACT.md](PROPOSAL_REVIEW_CONTRACT.md). Research mapping: [DOSSIER_MAPPING.md](DOSSIER_MAPPING.md). Historical characterization: [review-evidence/WorkflowDemoAssessmentTest.java.txt](review-evidence/WorkflowDemoAssessmentTest.java.txt).
+API handoff: [PROPOSAL_REVIEW_CONTRACT.md](PROPOSAL_REVIEW_CONTRACT.md). Research mapping: [DOSSIER_MAPPING.md](DOSSIER_MAPPING.md). Historical characterization: [review-evidence/WorkflowDemoAssessmentTest.java.txt](../../review-evidence/WorkflowDemoAssessmentTest.java.txt).
 
 ## Verification
 
-Final offline reactor results are appended below after completion. Reproduce with `./run-review-tests.ps1` in a normal authorized shell. The restricted Java sandbox initially caused missing-package compilation errors; the same normal offline reactor used by the earlier assessment builds successfully. No install, deploy, network dependency resolution, or shared Maven cache edits were performed.
+Final offline reactor results are appended below after completion. Reproduce with `../../run-review-tests.ps1` in a normal authorized shell. The restricted Java sandbox initially caused missing-package compilation errors; the same normal offline reactor used by the earlier assessment builds successfully. No install, deploy, network dependency resolution, or shared Maven cache edits were performed.
 
 The baseline reproduced 14 tests with 3 stale expectation failures. Fixes update the bundled workflow count and optional asset-review candidate expectation, and explicitly require a fixture attachment in the atomic-initialization test. The original defect-characterization source remains unchanged as historical evidence; the new protocol tests assert desired safety behavior.
 
@@ -41,4 +41,4 @@ Offline seven-module reactor: **BUILD SUCCESS**, exit 0.
 
 The 16 protocol tests cover the full submit → request changes → revised proposal → stale candidate rejection → exact candidate acceptance path, default-validator blocking, missing ontology, changed imports, tampered payloads, forged actions, omitted/stale expectedRevision, evidence/CRUD bypass, public reader authorization, failed aggregate persistence, invalid/duplicate-key YAML, dossier references/coverage diagnostics, private reviewer downloads, fabricated terminal descriptors and incorrect revision ancestry. Validation success in protocol tests is synthetic and is explicitly not evidence of actual ontology/parser/Reasoner validity.
 
-Surefire text reports are copied under `review-evidence/`. Full final log: `C:\Users\Ferd\Documents\Codex\2026-10-03\task-7\backend-final-tests.log`. `git diff --check` passes. No full HTTP/server suite was run.
+Surefire text reports are copied under `../../review-evidence`. Full final log: `C:\Users\Ferd\Documents\Codex\2026-10-03\task-7\backend-final-tests.log`. `git diff --check` passes. No full HTTP/server suite was run.

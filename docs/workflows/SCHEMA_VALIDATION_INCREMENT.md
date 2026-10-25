@@ -18,7 +18,7 @@ The selected seven-module offline reactor runs the protocol, authorization, sche
 
 The lifecycle test uses the real schema provider and explicitly synthetic non-schema providers: invalid submission -> blocked acceptance without persistence -> request changes -> corrected superseding revision -> stale candidate rejected -> exact revised candidate accepted with terminal artifacts. It proves the schema/protocol boundary, not scientific validity. The default real hydrology integration separately proves DOCUMENT_SCHEMA PASS while final acceptance stays blocked. A bundled workflow 1.1 regression asserts that all three bootstrap-comments declarations and final-comments use `application/vnd.klab.comments+json`, matching the established uploads and the review/final-stage convention at the inspected base. Persisted workflow 1.0 definitions remain pinned and may retain the historical editing-stage `proposal+yaml` mismatch; this change does not migrate them or introduce `comments+yaml` support.
 
-Final offline reactor: **BUILD SUCCESS; 69 Java tests, zero failures/errors/skips**. Counts: shared ProposalDocument 2; WorkflowSchema 6; authorization 9; protocol 24; isolated candidate validator 5; NetworkNT schema validator 11; Worldview validation 12. Offline Python package suite: **14 passed**, zero failures/errors. Total: **83 passing tests**. Suite reports, hydrology check output and resolved dependency evidence are in `review-evidence/schema-increment/`. Full local reactor log: `C:/Users/Ferd/Documents/Codex/2026-10-03/task-7/backend-final-tests.log`. `git diff --check` passed.
+Final offline reactor: **BUILD SUCCESS; 69 Java tests, zero failures/errors/skips**. Counts: shared ProposalDocument 2; WorkflowSchema 6; authorization 9; protocol 24; isolated candidate validator 5; NetworkNT schema validator 11; Worldview validation 12. Offline Python package suite: **14 passed**, zero failures/errors. Total: **83 passing tests**. Suite reports, hydrology check output and resolved dependency evidence are in `../../review-evidence/schema-increment`. Full local reactor log: `C:/Users/Ferd/Documents/Codex/2026-10-03/task-7/backend-final-tests.log`. `git diff --check` passed.
 
 Dependencies were resolved into a task-local writable Maven repository with Maven 3.9.6's chained read-only tail pointing at the existing cache. No shared Maven cache writes were needed. Reproduce after resolving dependencies with:
 
@@ -26,7 +26,7 @@ Dependencies were resolved into a task-local writable Maven repository with Mave
 ./run-review-tests.ps1 -LocalRepository '<task-local-repository>' -ReadOnlyRepository '<existing-cache>'
 ```
 
-Both repository arguments are optional for ordinary developer environments. The script runs offline and uses a task-local test home. `review-evidence/schema-increment/dependency-tree.txt` records the effective versions.
+Both repository arguments are optional for ordinary developer environments. The script runs offline and uses a task-local test home. `../../review-evidence/schema-increment/dependency-tree.txt` records the effective versions.
 
 ## Decisions and work still needed for completion
 
