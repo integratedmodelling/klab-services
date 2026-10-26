@@ -61,6 +61,11 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
  * @author ferdinando.villa
  */
 public interface Actuator extends Serializable, RuntimeAsset {
+  /** Intrinsic, execution-checked satisfaction; an empty classifier model is not this operation. */
+  String CLASSIFICATION_CHECK_ONLY = "klab.classification.check-only";
+  /** Read-only native cohort query, refreshed after its classification dependency completes. */
+  String COMPLETE_COHORT_REFERENCE = "klab.classification.cohort-reference";
+  String COMPLETE_COHORT_OPERATION = "klab.classification.cohort-operation";
 
   /** Ordered model contributions, including empty models; blank marks unknown identity. Not a reuse lease. */
   String PRODUCING_MODELS_KEY = "im:producing-models";

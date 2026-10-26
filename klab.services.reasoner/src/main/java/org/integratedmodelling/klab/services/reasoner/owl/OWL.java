@@ -3084,9 +3084,9 @@ public class OWL {
   }
 
   /**
-   * Synonym of getSubclasses, in Concepts; defaults to asserted children if reasoner is off. Will
-   * not return owl:Thing (which should never appear anyway) or owl:Nothing, which is a child of
-   * everything.
+   * Reflexive inferred closure in Concepts. Includes satisfiable self and strict inferred
+   * subclass nodes; defaults to self plus asserted children if the reasoner is off.
+   * Excludes the bottom equivalence node and an unsatisfiable target.
    *
    * @param main
    * @return the semantic closure of the concept
@@ -3095,6 +3095,8 @@ public class OWL {
 
     if (reasoner != null) {
       Set<Concept> ret = new HashSet<>();
+      // Semantic closure is reflexive; getSubClasses supplies only strict descendants.
+      if (!main.is(SemanticType.NOTHING) && isSatisfiable(main)) ret.add(main);
       for (var node : getSubClasses(getOWLClass(main.asConcept()), false).getNodes()) {
         // Every unsatisfiable named class is equivalent to owl:Nothing and is
         // returned beneath every class. Exclude the whole node before flattening.
@@ -3112,7 +3114,9 @@ public class OWL {
       return ret;
     }
     var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-    return reas.allChildren(main);
+    var ret=new HashSet<>(reas.allChildren(main));
+    if (!main.is(SemanticType.NOTHING)) ret.add(main);
+    return ret;
   }
 
   /*

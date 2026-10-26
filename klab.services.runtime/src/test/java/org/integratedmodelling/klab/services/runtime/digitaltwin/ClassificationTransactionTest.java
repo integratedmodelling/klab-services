@@ -787,4 +787,52 @@ class ClassificationTransactionTest {
     assertEquals(-1,root.commit());assertEquals(0,member.getChildrenCount());verify(storage,never()).store(any());
   }
 
-}
+  private static final String REGISTERED=org.integratedmodelling.klab.api.digitaltwin.Scheduler.REGISTRATION_METADATA_KEY;
+  @Test void capturedConsumerMemberAllowsOnlyItsOwnedSchedulerInitialization() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.appendSchedulerInitializationTimestamps(member,List.of(0L,1L));child.markSchedulerRegistered(member);
+    assertTrue(root.commit()>0);assertEquals(List.of(0L,1L),member.getEventTimestamps());assertEquals(true,member.getMetadata().get(REGISTERED));
+  }
+  @Test void ownedSchedulerWritesAreScopedToEachGuardCursorAndSharedAcrossChildren() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.appendSchedulerInitializationTimestamps(member,List.of(0L));child.markSchedulerRegistered(member);
+    guardMemberCounts(List.of(member));
+    child.appendSchedulerInitializationTimestamps(member,List.of(1L));child.markSchedulerRegistered(member);
+    assertTrue(root.commit()>0);assertEquals(List.of(0L,1L),member.getEventTimestamps());
+  }
+  @Test void foreignRegistrationBeforeOwnedWriteIsNotAbsorbed() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    member.getMetadata().put(REGISTERED,false);child.markSchedulerRegistered(member);
+    assertEquals(-1,root.commit());verify(storage,never()).store(any());
+  }
+  @Test void foreignRegistrationAfterOwnedWriteStillFails() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.markSchedulerRegistered(member);member.getMetadata().put(REGISTERED,false);
+    assertEquals(-1,root.commit());verify(storage,never()).store(any());
+  }
+  @Test void foreignTimestampPrefixBeforeOwnedAppendStillFails() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    member.setEventTimestamps(new ArrayList<>(List.of(99L)));child.appendSchedulerInitializationTimestamps(member,List.of(0L));
+    assertEquals(-1,root.commit());verify(storage,never()).store(any());
+  }
+  @Test void foreignTimestampSuffixAfterOwnedAppendStillFails() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.appendSchedulerInitializationTimestamps(member,List.of(0L));member.getEventTimestamps().add(99L);
+    assertEquals(-1,root.commit());verify(storage,never()).store(any());
+  }
+  @Test void ownedSchedulerWritesDoNotMaskUnrelatedMetadata() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.appendSchedulerInitializationTimestamps(member,List.of(0L));child.markSchedulerRegistered(member);
+    member.getMetadata().put("foreign",true);assertEquals(-1,root.commit());verify(storage,never()).store(any());
+  }
+  @Test void schedulerOwnershipCannotMoveBetweenMembers() {
+    var first=(ObservationImpl)pending(41,false).member();var second=(ObservationImpl)pending(42,false).member();guardMemberCounts(List.of(first,second));
+    child.markSchedulerRegistered(first);second.getMetadata().put(REGISTERED,true);
+    assertEquals(-1,root.commit());verify(storage,never()).store(any());
+  }
+  @Test void cancelledOwnedSchedulerInitializationRestoresOriginalState() {
+    var member=(ObservationImpl)pending(41,false).member();guardMemberCounts(List.of(member));
+    child.appendSchedulerInitializationTimestamps(member,List.of(0L));child.markSchedulerRegistered(member);
+    child.fail(new java.util.concurrent.CancellationException());assertEquals(List.of(),member.getEventTimestamps());
+    assertFalse(member.getMetadata().containsKey(REGISTERED));assertEquals(-1,root.commit());verifyNoInteractions(storage);
+  }}

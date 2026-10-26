@@ -561,6 +561,8 @@ public class DataflowCompiler {
       actuator.setRequestedSupport(Geometry.forTransport(support));
       actuator.setStrategyUrn(strategy.getUrn());
       compileStrategy(actuator, null, edge.coverage, strategy);
+      if (resolutionGraph.classificationChecks.contains(strategy))
+        actuator.getData().put(Actuator.CLASSIFICATION_CHECK_ONLY, true);
       var binding = new ActuatorImpl.TargetBindingImpl();
       if (actuator.getContextualization()
           == org.integratedmodelling.klab.api.knowledge.Contextualization.CLASSIFICATION) {
@@ -628,6 +630,11 @@ public class DataflowCompiler {
     ret.setName(localName == null ? observation.getObservable().getName() : localName);
     ret.setCoverage(Geometry.forTransport(coverage));
     ret.setActuatorType(Actuator.Type.REFERENCE);
+    if (Boolean.TRUE.equals(observation.getMetadata().get(Actuator.COMPLETE_COHORT_REFERENCE)))
+      {
+      ret.getData().put(Actuator.COMPLETE_COHORT_REFERENCE,true);
+      ret.getData().put(Actuator.COMPLETE_COHORT_OPERATION,observation.getMetadata().get(Actuator.COMPLETE_COHORT_OPERATION));
+    }
     return ret;
   }
 

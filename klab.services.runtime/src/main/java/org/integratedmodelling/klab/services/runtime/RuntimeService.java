@@ -1354,6 +1354,70 @@ public class RuntimeService extends BaseService
     return ClassifierDependencyContinuation.resolve(this,prepared,prerequisites,support,event,scope);
   }
 
+  /** Satisfaction requires affirmative discovery and a read set stable through root commit. */
+  List<Observation> classificationMembersForCheck(Observation producer, Geometry requested, ServiceContextScope scope) {
+    if (!(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction))
+      throw new IllegalStateException("Classification satisfaction requires a live local attempt");
+    // Reuse the read-only query's completion/provenance rules, including completed empty cohorts.
+    var request = new Observation.NaiveBuilder(producer.getObservable(), scope).geometry(requested).query().build();
+    var cohort = getCohortFor(producer.getObservable().getSemantics().singular(), scope, false);
+    if (cohort == null) throw new IllegalStateException("Completed producer has no cohort");
+    // Bracket completion proof and member capture with actual contributor snapshots.
+    var sources=new LinkedHashMap<Long,Observation>();
+    var sourceStates=new LinkedHashMap<Long,DigitalTwinImpl.TransactionImpl.ClassificationOverlay>();
+    for(var contribution:findCollectiveContributors(request,cohort,scope,null,null)) {
+      var source=contribution.observation();sources.put(source.getId(),source);
+      sourceStates.put(source.getId(),transaction.classificationOverlay(cohort,source));
+    }
+    var completed = query(request, scope);
+    if (completed == null || completed.isEmpty() || completed.getGeometry() == null
+        || coverage(requested, completed.getGeometry()) < 1.0 - 1.0e-9)
+      throw new IllegalStateException("Classification member discovery is incomplete or unknown");
+    // Internal collective views bind a semantic domain and support, not one durable storage owner.
+    // A completed cover may add contributors (including provisional IDs) to a fragment query.
+    // The captured cohort and transaction overlay below guard the actual member read set.
+    long stamp = transaction.classificationMutationStamp();
+    var before = transaction.classificationOverlay(cohort, producer);
+    var persisted = new ArrayList<Observation>();
+    if (cohort.getId() > 0) {
+      var graph = scope.getDigitalTwin().getKnowledgeGraph();
+      KnowledgeGraph.ClassificationReadSet read;
+      try (var nativeTransaction = graph.createTransaction(scope)) {
+        read = nativeTransaction.captureClassificationMembers(cohort.getId());
+      } catch (java.io.IOException failure) { throw new IllegalStateException("Cannot capture classification inputs", failure); }
+      if (!Objects.equals(read.cohortObservable(), cohort.getObservable().getUrn()))
+        throw new IllegalStateException("Classification cohort meaning changed");
+      for (var snapshot : read.members()) {
+        var member = graph.materializeClassificationMember(snapshot, scope);
+        if (member == null || member.getId() != snapshot.id()
+            || !Objects.equals(member.getObservable().getUrn(), snapshot.observable())
+            || snapshot.geometry() == null
+            || !Objects.equals(GeometryRepository.INSTANCE.sanitize(member.getGeometry()).encode(),
+                GeometryRepository.INSTANCE.sanitize(Geometry.create(snapshot.geometry())).encode()))
+          throw new IllegalStateException("Captured classification member is unavailable or changed");
+        persisted.add(member);
+      }
+      transaction.guardClassificationReadSet(read);
+    }
+    if (stamp != transaction.classificationMutationStamp()
+        || !before.state().equals(transaction.classificationOverlay(cohort, producer).state()))
+      throw new IllegalStateException("Classification inputs changed while captured");
+    var overlay = transaction.classificationOverlay(cohort, producer, persisted);
+    transaction.guardClassificationOverlay(cohort, producer, persisted, overlay.state());
+    // A composed view is not an execution witness: certify the contributors used by its proof.
+    var sourceIds=completed.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS);
+    if(!(sourceIds instanceof List<?> ids) || ids.isEmpty())
+      throw new IllegalStateException("Completed cohort has no producer witnesses");
+    for(var id:ids) {
+      var source=sources.get(id);var captured=sourceStates.get(id);
+      if(source==null || captured==null
+          || !captured.state().equals(transaction.classificationOverlay(cohort,source).state()))
+        throw new IllegalStateException("Classification completion evidence changed while captured");
+      transaction.guardClassificationOverlay(cohort,source,List.of(),captured.state());
+    }
+    return overlay.members().stream().filter(member -> hasMemberSupport(intersection(member.getGeometry(), requested))).toList();
+  }
+
   List<Observation> classificationMembers(Observation producer, Geometry requested, ServiceContextScope scope) {
     var cohort = getCohortFor(producer.getObservable().getSemantics().singular(), scope, false);
     if (cohort == null) throw new IllegalStateException("Completed producer has no cohort");
@@ -1376,6 +1440,11 @@ public class RuntimeService extends BaseService
       }
     }
     var support = intersection(producer.getGeometry(), requested);
+    if (coverage(requested, support) < 1.0 - 1.0e-9) {
+      var request = new Observation.NaiveBuilder(producer.getObservable(), scope).geometry(requested).query().build();
+      var complete = completedCohortReference(request, scope);
+      support = complete.getGeometry();
+    }
     if (!hasMemberSupport(support)) throw new IllegalStateException("Missing member support");
     var ret = new ArrayList<Observation>();
     for (var candidate : members.values()) {
@@ -1451,11 +1520,17 @@ public class RuntimeService extends BaseService
                   + query.getObservable().getUrn()));
     }
 
+    List<CollectiveContribution> composition = requestedGeometry != null && collectiveCoverage < 1.0 - 1.0e-9
+        ? completeContributions(requestedGeometry, contributors) : List.of();
+    if (!composition.isEmpty()) { actualGeometry = requestedGeometry; collectiveCoverage = 1.0; }
     if (requestedGeometry == null) requestedGeometry = actualGeometry;
     var result = queryResult(query, actualGeometry, requestedGeometry, collectiveCoverage);
     result.setChildrenCount(selected.observation().getChildrenCount());
     result.getMetadata().put(Metadata.IM_QUERY_COHORT_ID, cohort.getId());
-    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, List.of(selected.observation().getId()));
+    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, composition.isEmpty()
+        ? List.of(selected.observation().getId())
+        : composition.stream().map(c -> c.observation().getId()).distinct().toList());
+    if (!composition.isEmpty()) result.setChildrenCount(classificationMembers(result, requestedGeometry, scope).size());
     if (collectiveCoverage < 1.0 - 1.0e-9) {
       result
           .getNotifications()
@@ -1468,7 +1543,58 @@ public class RuntimeService extends BaseService
     return result;
   }
 
+  /** Native completion query only: never invokes resolution, allocation or contextualization. */
+  Observation completedCohortReference(Observation request, ServiceContextScope scope) {
+    var result = queryCollective(request, scope);
+    if (result == null || result.isEmpty() || result.getGeometry() == null
+        || coverage(request.getGeometry(), result.getGeometry()) < 1.0 - 1.0e-9)
+      throw new IllegalStateException("Native cohort discovery is not complete over the requested support");
+    return result;
+  }
+
   private record CollectiveContribution(Observation observation, Geometry support) {}
+
+  /** Prove a full slab cover; never turn diagonal space/time fragments into their Cartesian hull. */
+  private static List<CollectiveContribution> completeContributions(Geometry requested, List<CollectiveContribution> supplied) {
+    var target = GeometryRepository.INSTANCE.scale(requested);
+    for (var axis : List.of(Geometry.Dimension.Type.SPACE, Geometry.Dimension.Type.TIME)) {
+      if (target.extent(axis) == null) continue;
+      var eligible = supplied.stream().filter(c -> sameSupportDimensions(requested,c.support()))
+          .map(c -> new CollectiveContribution(c.observation(),intersection(requested,c.support())))
+          .filter(c -> hasMemberSupport(c.support()))
+          .filter(c -> coverage(target.without(axis),GeometryRepository.INSTANCE.scale(c.support()).without(axis)) >= 1.0 - 1.0e-9)
+          .toList();
+      if (eligible.isEmpty()) continue;
+      if (axis == Geometry.Dimension.Type.SPACE && target.getSpace() != null && target.getSpace().getGeometricShape() != null) {
+        var remaining = target.getSpace().getGeometricShape();
+        try {
+          for (var contribution : eligible) {
+            var space = GeometryRepository.INSTANCE.scale(contribution.support()).getSpace();
+            if (space == null || space.getGeometricShape() == null) continue;
+            remaining = remaining.difference(space.getGeometricShape());
+            if (remaining.isEmpty()) return eligible;
+          }
+        } catch (RuntimeException unsupported) { /* No proof: retain a single supported fragment. */ }
+      } else if (axis == Geometry.Dimension.Type.TIME && target.getTime() != null
+          && target.getTime().getStart() != null && target.getTime().getEnd() != null) {
+        long start=target.getTime().getStart().getMilliseconds(), end=target.getTime().getEnd().getMilliseconds();
+        var intervals=new ArrayList<long[]>();
+        for(var contribution:eligible) {
+          var time=GeometryRepository.INSTANCE.scale(contribution.support()).getTime();
+          if(time!=null && time.getStart()!=null && time.getEnd()!=null)
+            intervals.add(new long[]{time.getStart().getMilliseconds(),time.getEnd().getMilliseconds()});
+        }
+        intervals.sort(java.util.Comparator.comparingLong(interval -> interval[0]));
+        long cursor=start;
+        for(var interval:intervals) {
+          if(interval[0]>cursor)break;
+          cursor=Math.max(cursor,interval[1]);if(end>start && cursor>=end)return eligible;
+        }
+      }
+    }
+    return List.of();
+  }
+
 
   private List<CollectiveContribution> findCollectiveContributors(
       Observation query, Cohort cohort, ServiceContextScope scope,

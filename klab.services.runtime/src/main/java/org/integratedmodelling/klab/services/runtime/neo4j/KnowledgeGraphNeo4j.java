@@ -1602,7 +1602,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   @Override
   public Observation materializeClassificationMember(ClassificationMemberSnapshot snapshot, ContextScope scope) {
     if(snapshot.properties().isEmpty()) throw new KlabStorageException("Missing full captured observation properties");
-    var instance=restoreObservationProperties(org.neo4j.driver.Values.value(snapshot.properties()),scope);
+    var instance=restoreObservationProperties(org.neo4j.driver.Values.value(snapshot.nativeProperties()),scope);
     instance.setGeometry(Geometry.create(snapshot.geometry()));
     if(snapshot.perceivedGeometry()!=null) instance.setPerceivedGeometry(Geometry.create(snapshot.perceivedGeometry()));
     return instance;

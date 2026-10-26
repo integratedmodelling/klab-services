@@ -58,6 +58,8 @@ public final class MemberClassifierExecutor {
    */
   public static MemberClassifierExecutor compile(
       Actuator actuator, ComponentRegistry registry, ContextScope scope) {
+    if (Boolean.TRUE.equals(actuator.getData().get(Actuator.CLASSIFICATION_CHECK_ONLY)))
+      return new MemberClassifierExecutor(actuator, null, null, scope);
     if (actuator.getComputation().size() != 1)
       throw new IllegalArgumentException(
           "Classification requires one local Concept-returning contextualizer");
@@ -108,10 +110,11 @@ public final class MemberClassifierExecutor {
         || actuator.getObservation() != null
         || actuator.getOperationObservable().getContextualization()
             != Contextualization.CLASSIFICATION
-        || actuator.getComputation().size() != 1
-        || !supports(method))
+        || (Boolean.TRUE.equals(actuator.getData().get(Actuator.CLASSIFICATION_CHECK_ONLY))
+            ? !actuator.getComputation().isEmpty() || method != null || receiver != null
+            : actuator.getComputation().size() != 1 || !supports(method)))
       throw new IllegalArgumentException("Invalid classification plan or contextualizer signature");
-    if (!Modifier.isStatic(method.getModifiers())
+    if (method != null && !Modifier.isStatic(method.getModifiers())
         && !method.getDeclaringClass().isInstance(receiver))
       throw new IllegalArgumentException("Classifier has no local receiver");
     if (actuator.getTargetBindings().size() != 1
@@ -121,7 +124,7 @@ public final class MemberClassifierExecutor {
     this.actuator = actuator;
     this.method = method;
     this.receiver = receiver;
-    this.call = actuator.getComputation().getFirst();
+    this.call = method == null ? null : actuator.getComputation().getFirst();
     this.reasoner = Objects.requireNonNull(scope.getService(Reasoner.class));
     this.preparedGeneration = generation(scope);
     this.predicate =
@@ -219,6 +222,8 @@ public final class MemberClassifierExecutor {
     if (!classified.isEmpty()) return new InvocationResult(
         memberResult(member, classified.values(), ClassificationMemberResult.Origin.EXISTING, support, event), null);
 
+    if (method == null)
+      throw new IllegalArgumentException("Unclassified member requires a classifier model: " + member.getUrn());
     var memberScope = Objects.requireNonNull(scope.within(member), "Missing member context");
     var arguments = new ArrayList<Object>();
     for (var type : method.getParameterTypes()) {

@@ -224,6 +224,9 @@ public class DigitalTwinImpl implements DigitalTwin {
       catch (java.lang.reflect.InvocationTargetException failure) { throw failure.getCause(); }
     }
   }
+  /** Exact transaction-owned initialization bookkeeping, projected only on the mutated object. */
+  private record SchedulerWrite(Observation target,boolean registration,boolean present,Object before,Object after) {}
+
   /** Read-only domain interfaces with detached mutable payloads; no serialization of parents. */
   private static final class ObservationReadView implements java.lang.reflect.InvocationHandler {
     private final Object source;
@@ -358,7 +361,31 @@ public class DigitalTwinImpl implements DigitalTwin {
       return fingerprint(observation,0);
     }
     static String fingerprint(Observation observation,int ownChildDelta) {
+      return fingerprint(observation,ownChildDelta,List.of());
+    }
+    static String fingerprint(Observation observation,int ownChildDelta,List<SchedulerWrite> writes) {
       var snapshot=of(observation);
+      var snapshotHandler=(ObservationReadView)java.lang.reflect.Proxy.getInvocationHandler(snapshot);
+      for(int i=writes.size()-1;i>=0;i--) {
+        var write=writes.get(i);
+        if(write.target()!=source(observation))continue;
+        if(write.registration()) {
+          var seen=Collections.newSetFromMap(new IdentityHashMap<Object,Boolean>());
+          for(var entry:snapshotHandler.values.entrySet())if(entry.getKey().getName().equals("getMetadata")&&seen.add(entry.getValue())) {
+            var metadata=(Map<String,Object>)entry.getValue();
+            var key=org.integratedmodelling.klab.api.digitaltwin.Scheduler.REGISTRATION_METADATA_KEY;
+            if(!metadata.containsKey(key)||!Objects.equals(metadata.get(key),write.after()))
+              throw new IllegalStateException("Scheduler registration changed outside its owned write");
+            if(write.present())metadata.put(key,copy(write.before(),new IdentityHashMap<>()));else metadata.remove(key);
+          }
+        } else {
+          for(var entry:snapshotHandler.values.entrySet())if(entry.getKey().getName().equals("getEventTimestamps")) {
+            if(!Objects.equals(entry.getValue(),write.after()))
+              throw new IllegalStateException("Scheduler initialization timestamps changed outside their owned write");
+            entry.setValue(copy(write.before(),new IdentityHashMap<>()));
+          }
+        }
+      }
       if(ownChildDelta!=0) {
         var handler=(ObservationReadView)java.lang.reflect.Proxy.getInvocationHandler(snapshot);
         handler.values.replaceAll((method,value)->method.getName().equals("getChildrenCount")
@@ -524,6 +551,41 @@ public class DigitalTwinImpl implements DigitalTwin {
     // Only increments performed by this root's link() bookkeeping may be projected through a
     // frozen classification read. Arbitrary setters and all other payload changes still fail.
     private Map<Observation,Integer> classificationChildDeltas = new IdentityHashMap<>();
+    private List<SchedulerWrite> classificationSchedulerWrites = new ArrayList<>();
+
+    /** Record the scheduler's exact initialization marker before exposing it. */
+    public void markSchedulerRegistered(Observation observation) {
+      synchronized(graph) {
+        requireOpen();
+        var target=(Observation)checkPresentAsset(ObservationReadView.source(observation));
+        var metadata=target.getMetadata();
+        var key=org.integratedmodelling.klab.api.digitaltwin.Scheduler.REGISTRATION_METADATA_KEY;
+        classificationSchedulerWrites.add(new SchedulerWrite(target,true,metadata.containsKey(key),
+            ObservationReadView.copy(metadata.get(key),new IdentityHashMap<>()),Boolean.TRUE));
+        metadata.put(key,true);
+        var write=classificationSchedulerWrites.getLast();
+        afterRollback(()->{
+          if(Boolean.TRUE.equals(metadata.get(key))) {
+            if(write.present())metadata.put(key,ObservationReadView.copy(write.before(),new IdentityHashMap<>()));else metadata.remove(key);
+          }
+        });
+      }
+    }
+
+    /** Only INIT appends use this ledger; all other timestamp mutations remain visible. */
+    public void appendSchedulerInitializationTimestamps(Observation observation,List<Long> additions) {
+      synchronized(graph) {
+        requireOpen();
+        var target=(Observation)checkPresentAsset(ObservationReadView.source(observation));
+        if(!(target instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl mutable))
+          throw new IllegalArgumentException("Scheduler initialization requires a mutable registered observation");
+        var before=List.copyOf(target.getEventTimestamps());var after=new ArrayList<>(before);after.addAll(additions);
+        classificationSchedulerWrites.add(new SchedulerWrite(target,false,true,before,List.copyOf(after)));
+        var frozenAfter=List.copyOf(after);
+        mutable.setEventTimestamps(after);
+        afterRollback(()->{if(Objects.equals(mutable.getEventTimestamps(),frozenAfter))mutable.setEventTimestamps(new ArrayList<>(before));});
+      }
+    }
     public long classificationMutationStamp() { synchronized(graph) { requireOpen(); return classificationMutationStamp[0]; } }
 
 
@@ -531,9 +593,21 @@ public class DigitalTwinImpl implements DigitalTwin {
       synchronized(graph) {
         requireOpen();var frozen=List.copyOf(expected);
         var baseline=new IdentityHashMap<>(classificationChildDeltas);
+        int schedulerCursor=classificationSchedulerWrites.size();
         classificationLocalGuards.add(()->{
-          if(!classificationOverlay(cohort,producer,persisted,baseline).state().equals(frozen))
-            throw new IllegalStateException("Classification local input or producer evidence changed");
+          var current=classificationOverlay(cohort,producer,persisted,baseline,classificationSchedulerWrites.subList(schedulerCursor,classificationSchedulerWrites.size())).state();
+          if(!current.equals(frozen)) {
+            String detail="entry count";
+            for(int i=0;i<Math.min(frozen.size(),current.size());i++) if(!frozen.get(i).equals(current.get(i))) {
+              var previous=frozen.get(i);var next=current.get(i);int offset=0;
+              while(offset<Math.min(previous.length(),next.length())&&previous.charAt(offset)==next.charAt(offset))offset++;
+              var category=previous.substring(0,previous.indexOf(':'));
+              var methods=java.util.regex.Pattern.compile("[A-Za-z][A-Za-z0-9_]*\\(\\)").matcher(previous.substring(0,offset));
+              String field="";while(methods.find())field=methods.group();
+              detail=category+(field.isEmpty()?"":":"+field);break;
+            }
+            throw new IllegalStateException("Classification local input or producer evidence changed ("+detail+")");
+          }
         });
       }
     }
@@ -552,6 +626,10 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
     private ClassificationOverlay classificationOverlay(Cohort cohort, Observation producer, List<Observation> persisted,
         Map<Observation,Integer> childBaseline) {
+      return classificationOverlay(cohort,producer,persisted,childBaseline,List.of());
+    }
+    private ClassificationOverlay classificationOverlay(Cohort cohort,Observation producer,List<Observation> persisted,
+        Map<Observation,Integer> childBaseline,List<SchedulerWrite> writes) {
       synchronized(graph) {
         if(rootAttempt().attemptState==AttemptState.FAILED || rootAttempt().attemptState==AttemptState.COMMITTED)
           throw new IllegalStateException("Classification attempt is no longer live");
@@ -568,14 +646,14 @@ public class DigitalTwinImpl implements DigitalTwin {
         for(var member:originals.values()) {
           var view=readObservation(member);members.add(view);
           int delta=childBaseline==null?0:classificationChildDeltas.getOrDefault(member,0)-childBaseline.getOrDefault(member,0);
-          rawState.add("payload:"+ObservationReadView.fingerprint(member,delta));
-          state.add("payload:"+ObservationReadView.fingerprint(member,delta)+":"+ObservationReadView.fingerprint(view,delta));
+          rawState.add("payload:"+ObservationReadView.fingerprint(member,delta,writes));
+          state.add("payload:"+ObservationReadView.fingerprint(member,delta,writes)+":"+ObservationReadView.fingerprint(view,delta,writes));
           rawState.add((member.getId()>0?"id:"+member.getId():"transient:"+member.getTransientId())+":"+member.getObservable().getUrn()+":"+member.getGeometry().encode());
           state.add((member.getId()>0?"id:"+member.getId():"transient:"+member.getTransientId())+":"+member.getObservable().getUrn()+":"+view.getObservable().getUrn()+":"+member.getGeometry().encode());
         }
         int producerDelta=childBaseline==null?0:classificationChildDeltas.getOrDefault(producer,0)-childBaseline.getOrDefault(producer,0);
-        state.add("producerPayload:"+ObservationReadView.fingerprint(producer,producerDelta));
-        rawState.add("producerPayload:"+ObservationReadView.fingerprint(producer,producerDelta));
+        state.add("producerPayload:"+ObservationReadView.fingerprint(producer,producerDelta,writes));
+        rawState.add("producerPayload:"+ObservationReadView.fingerprint(producer,producerDelta,writes));
         state.add("producerIdentity:"+producer.getTransientId()+":"+producer.getId()+":"+producer.getObservable().getUrn()+":"+producer.getGeometry().encode());
         for(var link:incoming(producer)) if(link.source() instanceof Activity a
             && link.type()==GraphModel.Relationship.forContextualization(producer.getObservable().getContextualization())) {
@@ -893,6 +971,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.classificationLocalGuards = parent.classificationLocalGuards;
       this.classificationMutationStamp = parent.classificationMutationStamp;
       this.classificationChildDeltas = parent.classificationChildDeltas;
+      this.classificationSchedulerWrites = parent.classificationSchedulerWrites;
       this.afterCommitActions = parent.afterCommitActions;
       this.rollbackActions = parent.rollbackActions;
       this.schedulerJournal = parent.schedulerJournal;

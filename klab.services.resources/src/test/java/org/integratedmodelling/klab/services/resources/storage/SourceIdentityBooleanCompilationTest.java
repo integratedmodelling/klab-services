@@ -113,6 +113,17 @@ class SourceIdentityBooleanCompilationTest {
         assertFalse(actor.resolveConcept("imod:" + name).isAbstract(), name + " must satisfy the complete source requirement");
       for (var name : List.of("AndSeparate", "InheritedMissing", "NestedSeparate", "NestedMissing", "NamedMissing", "RequiredParent"))
         assertTrue(actor.resolveConcept("imod:" + name).isAbstract(), name + " must retain its unresolved/explicit obligation");
+      for(var name:List.of("NamedMissing","NamedPass")) {
+        var raw=actor.owl().getOntology("imod").getConcept(name);
+        assertFalse(raw.isAbstract(),"The authored declaration is concrete");
+        var self=actor.closure(raw).stream().filter(c->c.getUrn().equals(raw.getUrn())).findFirst().orElseThrow();
+        assertEquals(actor.resolveConcept("imod:"+name).isAbstract(),self.isAbstract(),"Service closure self must project identity obligations");
+        var mapper=org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+        var transported=mapper.readValue(mapper.writeValueAsString(self),org.integratedmodelling.klab.api.knowledge.Concept.class);
+        assertEquals(self.isAbstract(),transported.isAbstract());
+        assertEquals(self.getType(),transported.getType());
+        assertFalse(raw.isAbstract(),"Closure/transport must not mutate canonical declaration flags");
+      }
 
       // An imported-style necessary union bound is not an equivalence. Only the explicit
       // source boolean syntax is expanded by requirement translation, never this named category.

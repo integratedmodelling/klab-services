@@ -1393,7 +1393,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   /** Public semantic traversals expose effective eligibility, not raw declaration flags. */
   private Concept effectiveConcept(Concept concept) {
-    if (concept == null || !concept.is(SemanticType.OBSERVABLE)) return concept;
+    if (concept == null || !(concept.is(SemanticType.OBSERVABLE)
+        || concept.is(SemanticType.PREDICATE))) return concept;
     if (!Urn.isAtomicConcept(concept.getUrn())) {
       // Preserve the separately supplied identity witnesses in qualified expressions;
       // the OWL hasIdentity union alone cannot reconstruct their authored scope.
@@ -1402,6 +1403,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         if (syntax != null) return projectExpressionStatus((ConceptImpl) concept, syntax);
       } catch (RuntimeException unavailable) {
         // Without captured syntax, use conservative evidence from the semantic graph.
+      }
+      if (concept.is(SemanticType.PREDICATE)) {
+        // Raw derived OWL classes do not retain authored head abstractness. Never
+        // advertise an unprojectable predicate as an admissible concrete result.
+        var unavailable = new ConceptImpl((ConceptImpl) concept);
+        unavailable.setAbstract(true);
+        return unavailable;
       }
     }
     return identityRequirements().project((ConceptImpl) concept);

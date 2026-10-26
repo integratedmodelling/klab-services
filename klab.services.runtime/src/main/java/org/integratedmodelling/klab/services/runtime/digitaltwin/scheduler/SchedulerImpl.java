@@ -128,10 +128,12 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       if (initialized) {
         if (EventSupport.individual(observation)) stageIndividual(observation, serviceContextScope);
         var previous = observation.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY);
-        observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
+        if(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl local)
+          local.markSchedulerRegistered(observation);
+        else observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
         var transaction = scope.getCurrentTransaction();
         transaction.update(observation);
-        transaction.afterRollback(
+        if(!(transaction instanceof DigitalTwinImpl.TransactionImpl)) transaction.afterRollback(
             () -> restoreMetadata(observation, Scheduler.REGISTRATION_METADATA_KEY, previous));
         transaction.afterCommit(
             () -> {
@@ -752,10 +754,13 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     if (observation instanceof ObservationImpl concrete && scope.getCurrentTransaction() != null) {
       var previousTimestamps = new ArrayList<>(observation.getEventTimestamps());
       var previousHistograms = observation.getHistograms();
+      boolean ledgerOwnsTimestamps=event.getType()==Event.Type.INITIALIZATION
+          && scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl;
       scope
           .getCurrentTransaction()
           .afterRollback(() -> {
-            concrete.setEventTimestamps(previousTimestamps);
+            if(!ledgerOwnsTimestamps)
+              concrete.setEventTimestamps(previousTimestamps);
             concrete.setHistograms(previousHistograms);
           });
     }
@@ -949,7 +954,10 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       } else {
         timestamps.add(event.getTime().getEnd().getMilliseconds());
       }
-      observation1.setEventTimestamps(timestamps);
+      if(event.getType()==Event.Type.INITIALIZATION && transaction instanceof DigitalTwinImpl.TransactionImpl local)
+        local.appendSchedulerInitializationTimestamps(observation,
+            timestamps.subList(observation.getEventTimestamps().size(),timestamps.size()));
+      else observation1.setEventTimestamps(timestamps);
       transaction.update(observation);
     }
   }

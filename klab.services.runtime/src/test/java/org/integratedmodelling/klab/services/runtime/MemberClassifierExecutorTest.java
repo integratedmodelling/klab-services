@@ -84,6 +84,20 @@ class MemberClassifierExecutorTest {
     }
     void optionalDependency() { var dependency = new ObservableImpl(); dependency.setOptional(true); actuator.setModelDependency(dependency); }
   }
+  @Test void explicitSatisfactionCheckRequiresExistingKnowledgeAndNoImplementation() throws Exception {
+    var f=new Fixture(); f.actuator.getComputation().clear();
+    assertThrows(IllegalArgumentException.class, () -> MemberClassifierExecutor.compile(f.actuator, null, f.scope));
+    f.actuator.getData().put(Actuator.CLASSIFICATION_CHECK_ONLY,true);
+    var executor=MemberClassifierExecutor.compile(f.actuator,null,f.scope);
+    assertThrows(IllegalStateException.class, () -> f.run(executor));
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(f.result));
+    var result=MemberClassifierExecutor.compile(f.actuator,null,f.scope).executeDetailed(
+        Map.of("cohort",List.of(f.member)),Geometry.UNIVERSAL,f.event,f.scope);
+    assertTrue(result.pendingAttributions().isEmpty());assertEquals(0,f.classifier.calls.get());
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.objects.ClassificationMemberResult.Origin.EXISTING,result.members().getFirst().origin());
+    f.actuator.getComputation().add(new ServiceCallImpl("malformed"));
+    assertThrows(IllegalArgumentException.class,()->MemberClassifierExecutor.compile(f.actuator,null,f.scope));
+  }
   @Test void typedInvocationReturnsPendingAttributionWithoutMutation() throws Exception {
     var f = new Fixture(); var before = f.member.getObservable();
     var pending = f.run(f.executor()).getFirst();

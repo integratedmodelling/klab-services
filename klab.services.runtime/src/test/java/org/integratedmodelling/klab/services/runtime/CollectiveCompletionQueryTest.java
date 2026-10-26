@@ -23,6 +23,21 @@ import org.junit.jupiter.api.*;
 
 /** Real query and attempt lifecycle, with an atomic in-memory persistence boundary. */
 class CollectiveCompletionQueryTest {
+  @Test void nativeBinarySnapshotIsImmutableValueEqualAndMaterializesAsBinary() {
+    byte[] bytes={0,1,-1};
+    var captured=new KnowledgeGraph.ClassificationMemberSnapshot(1,"test:Stream","*",1,Map.of("wkb",bytes),null);
+    var same=new KnowledgeGraph.ClassificationMemberSnapshot(1,"test:Stream","*",1,Map.of("wkb",new byte[]{0,1,-1}),null);
+    assertEquals(same,captured);
+    bytes[0]=8;
+    assertEquals(same,captured,"Mutable native storage values must not change a read set");
+    var restored=org.neo4j.driver.Values.value(captured.nativeProperties()).get("wkb").asByteArray();
+    assertArrayEquals(new byte[]{0,1,-1},restored);
+    restored[1]=9;
+    assertEquals(same,captured);
+    assertArrayEquals(new byte[]{0,1,-1},(byte[])captured.nativeProperties().get("wkb"));
+    var changed=new KnowledgeGraph.ClassificationMemberSnapshot(1,"test:Stream","*",1,Map.of("wkb",bytes),null);
+    assertNotEquals(captured,changed,"A fresh changed native value must invalidate the read set");
+  }
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
   ServiceContextScope scope;
   RuntimeService runtime;
@@ -104,6 +119,50 @@ class CollectiveCompletionQueryTest {
   }
   void complete() { assertEquals(DigitalTwin.Transaction.INTERMEDIATE_COMMIT_ID,execution(Activity.Type.INSTANTIATION).commit()); }
 
+  @Test void satisfactionCheckRejectsUnknownAndAcceptsOnlyCompletedEmptyMembership() {
+    assertThrows(IllegalStateException.class,()->runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope));
+    complete();
+    assertTrue(runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope).isEmpty());
+    assertTrue(root.commit()>0);
+  }
+  @Test void satisfactionCheckCapturesPersistedMembershipOnRootCommitTransaction() {
+    cohort.setId(10); complete();
+    var read=new KnowledgeGraph.ClassificationReadSet(scope.getId(),10,cohort.getObservable().getUrn(),List.of());
+    when(storage.captureClassificationMembers(10)).thenReturn(read);
+    assertTrue(runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope).isEmpty());
+    assertTrue(root.commit()>0); verify(storage).validateClassificationMembers(read);
+  }
+  @Test void satisfactionCaptureRejectsContributorGeometryChangeDuringNativeRead() {
+    cohort.setId(10);complete();
+    var read=new KnowledgeGraph.ClassificationReadSet(scope.getId(),10,cohort.getObservable().getUrn(),List.of());
+    when(storage.captureClassificationMembers(10)).thenAnswer(call->{producer.setGeometry(period(0,5));return read;});
+    assertThrows(IllegalStateException.class,()->runtime.classificationMembersForCheck(query,query.getGeometry(),scope));
+    verify(storage,never()).store(any());
+  }
+  @Test void stalePersistedSatisfactionReadAbortsBeforeRootWrites() {
+    cohort.setId(10);complete();
+    var read=new KnowledgeGraph.ClassificationReadSet(scope.getId(),10,cohort.getObservable().getUrn(),List.of());
+    when(storage.captureClassificationMembers(10)).thenReturn(read);
+    assertTrue(runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope).isEmpty());
+    doThrow(new IllegalStateException("stale membership")).when(storage).validateClassificationMembers(read);
+    assertEquals(-1,root.commit());assertTrue(durable.isEmpty());verify(storage,never()).store(any());
+  }
+  @Test void satisfactionCheckGuardsMembershipThroughRootCommit() {
+    complete();
+    assertTrue(runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope).isEmpty());
+    var member=new ObservationImpl();member.setId(-30);member.setObservable(producer.getObservable());member.setGeometry(producer.getGeometry());
+    root.link(cohort,member,GraphModel.Relationship.HAS_MEMBER);
+    assertEquals(-1,root.commit()); assertTrue(durable.isEmpty());
+  }
+  @Test void satisfactionCheckGuardsExistingMemberMeaningAndIdentity() {
+    var member=new ObservationImpl();member.setId(-30);member.setObservable(producer.getObservable());member.setGeometry(producer.getGeometry());
+    root.link(cohort,member,GraphModel.Relationship.HAS_MEMBER);complete();
+    var original=member.getObservable();
+    var members=runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope);
+    assertEquals(1,members.size());assertEquals(member.getId(),members.getFirst().getId());assertSame(original,member.getObservable());
+    member.getMetadata().put("foreign",true);
+    assertEquals(-1,root.commit());assertTrue(durable.isEmpty());
+  }
   @Test void registeredContributorGeometryAndCommitMetadataAreNotCompletion() {
     producer.getMetadata().put(Metadata.IM_COMMIT_ID,900L);
     assertTrue(runtime.queryCollective(query,scope).isEmpty());
@@ -186,6 +245,37 @@ class CollectiveCompletionQueryTest {
     assertFalse(result.isEmpty()); assertEquals(0.2,result.getMetadata().get(Metadata.IM_QUERY_COVERAGE,Number.class).doubleValue(),1e-9);
     assertEquals(0,result.getChildrenCount());
   }
+  @Test void adjacentSuccessfulPeriodsCompleteOneRequestedSupportWithoutNewWork() {
+    execution(Activity.Type.INSTANTIATION,producer,period(0,5)).commit();
+    execution(Activity.Type.INSTANTIATION,producer,period(5,10)).commit();
+    var before=root.assets().size();var result=runtime.queryCollective(query,scope);
+    assertEquals(1.0,result.getMetadata().get(Metadata.IM_QUERY_COVERAGE,Number.class).doubleValue(),1e-9);
+    assertEquals(List.of(producer.getId()),result.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS));
+    assertEquals(before,root.assets().size());verify(storage,never()).store(any());
+  }
+  @Test void complementarySpatialProducersExposeBothExistingAndNewMembers() {
+    var whole=spaceTime(0,10,0,2);var left=spaceTime(0,10,0,1);var right=spaceTime(0,10,1,2);
+    producer.setGeometry(left);query.setGeometry(whole);cohort.setGeometry(whole);
+    var other=new ObservationImpl();other.setId(-11);other.setObservable(producer.getObservable());other.setGeometry(right);
+    root.link(other,cohort,GraphModel.Relationship.CONTRIBUTED_TO);
+    var first=new ObservationImpl();first.setId(41);first.setObservable(producer.getObservable());first.setGeometry(left);
+    var second=new ObservationImpl();second.setId(-30);second.setObservable(producer.getObservable());second.setGeometry(right);
+    root.link(cohort,first,GraphModel.Relationship.HAS_MEMBER);root.link(cohort,second,GraphModel.Relationship.HAS_MEMBER);
+    execution(Activity.Type.INSTANTIATION,producer,left).commit();
+    var fragment=runtime.queryCollective(query,scope);
+    assertEquals(List.of(-10L),fragment.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS));
+    assertThrows(IllegalStateException.class,()->runtime.classificationMembers(producer,whole,scope));
+    execution(Activity.Type.INSTANTIATION,other,right).commit();
+    var result=runtime.completedCohortReference(query,scope);
+    assertEquals(Set.of(-10L,-11L),new HashSet<>((List<Long>)result.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS)));
+    assertEquals(2,result.getChildrenCount());
+    assertEquals(Set.of(41L,-30L),runtime.classificationMembersForCheck(fragment,whole,scope).stream()
+        .map(Observation::getId).collect(java.util.stream.Collectors.toSet()));
+    assertEquals(Set.of(41L,-30L),runtime.classificationMembers(producer,whole,scope).stream().map(Observation::getId).collect(java.util.stream.Collectors.toSet()));
+    assertEquals(41,first.getId());assertEquals(-30,second.getId());verify(storage,never()).store(any());
+    other.setGeometry(left); // Invalidate a real contributor rather than the detached query view.
+    assertEquals(-1,root.commit());assertTrue(durable.isEmpty());
+  }
   @Test void disjointPeriodsForOneProducerDoNotFabricateTheirTemporalHull() {
     execution(Activity.Type.INSTANTIATION,producer,period(0,2)).commit();
     execution(Activity.Type.INSTANTIATION,producer,period(8,10)).commit();
@@ -226,7 +316,8 @@ class CollectiveCompletionQueryTest {
     return Geometry.create("T0(1){tstart="+start+",tend="+end+",ttype=PHYSICAL}");
   }
   Geometry spaceTime(long start,long end,int west,int east) {
-    return Geometry.create(period(start,end).encode()+"S2(1,1){proj=EPSG:4326,shape=EPSG:4326 POLYGON (("
-        +west+" 0&comma;"+west+" 1&comma;"+east+" 1&comma;"+east+" 0&comma;"+west+" 0))}");
+    var shape=org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create("EPSG:4326 POLYGON (("
+        +west+" 0,"+west+" 1,"+east+" 1,"+east+" 0,"+west+" 0))");
+    return Geometry.create(period(start,end).encode()+"S2(1,1){proj=EPSG:4326,shape="+shape.asWKB()+"}");
   }
 }

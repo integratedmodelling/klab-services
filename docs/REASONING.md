@@ -157,7 +157,7 @@ For source-bound explanations, use [document validation](#semantic-document-vali
 | `parent(target)` | yes | yes | Returns one direct parent or `null`. The current implementation does not enforce the interface's single-parent precondition. |
 | `allChildren(target)` | yes | yes | Returns all asserted descendants without including the target; cycle-safe. |
 | `allParents(target)` | yes | yes | Returns the transitive asserted ancestor set; cycle-safe. |
-| `closure(target)` | yes | yes | Returns inferred descendants from the OWL reasoner. |
+| `closure(target)` | yes | yes | Returns satisfiable self plus inferred descendants; excludes the OWL bottom equivalence node. Unlike closure, `allChildren` remains strict. |
 | `assertedDistance(from, to)` | yes | yes | Returns shortest asserted parent distance or `-1`. |
 | `satisfiable(semantics)` | yes | yes | Asks the DL reasoner whether the concept is satisfiable. |
 | `domain(semantics)` | yes | yes | Breadth-first search for the nearest ancestor carrying `SemanticType.DOMAIN`. |

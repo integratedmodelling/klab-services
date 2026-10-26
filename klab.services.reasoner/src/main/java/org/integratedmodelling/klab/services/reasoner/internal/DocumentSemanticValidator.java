@@ -254,8 +254,14 @@ public class DocumentSemanticValidator
         final int sourceOccurrenceIndex=occurrenceIndex;
         var occurrence = originalOccurrence;
         // Outputs are always strict. Pending classifier evidence applies only to authored inputs.
-        if ((!executableModels || classifierPreparableDependencies) && occurrenceIndex<model.getDependencies().size()) {
-          var residual = classifierResidual(originalOccurrence);
+        var declarations=reasoner.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class);
+        var collective=occurrenceIndex<model.getDependencies().size() && declarations!=null
+            ? CollectiveClassification.prepare(originalOccurrence,declarations::declareConcept) : null;
+        if (occurrenceIndex<model.getDependencies().size()
+            && (collective!=null || !executableModels || classifierPreparableDependencies)) {
+          // Selected collective predicates are executable classification operations,
+          // including concrete ANY. Quality-family expansion keeps its prior gate.
+          var residual = collective!=null ? collective.members() : classifierResidual(originalOccurrence);
           if (residual != null) {
             var prepared=DependencyExpansion.prepare((org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl)originalOccurrence,
                 reasoner.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class)::declareConcept);
@@ -409,9 +415,14 @@ public class DocumentSemanticValidator
 
   /** Detached proof skeleton; the original source still receives applicability/disjointness checks. */
   private KimObservable classifierResidual(KimObservable source) {
-    if (!(source instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl syntax)
-        || unboundSyntax(source)) return null;
+    if (!(source instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl syntax)) return null;
     try {
+      var declarations = reasoner.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class);
+      if (declarations != null) {
+        var collective = CollectiveClassification.prepare(source, declarations::declareConcept);
+        if (collective != null && !unboundSyntax(collective.members())) return collective.members();
+      }
+      if (unboundSyntax(source)) return null;
       var explicitBearer=source.getSemantics().getInherent();
       if(explicitBearer==null || explicitBearer.getName()==null || explicitBearer.getObservable()!=null
           || explicitBearer.isNegated() || explicitBearer.isCollective() || explicitBearer.getSemanticModifier()!=null)return null;

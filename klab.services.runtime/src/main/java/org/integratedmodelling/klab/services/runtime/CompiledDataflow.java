@@ -1703,6 +1703,39 @@ public class CompiledDataflow {
             && !operations.get(child).run(geometry, event, contextScope)) return false;
       }
 
+      for (var child : actuator.getChildren()) {
+        if (child.getActuatorType() == Actuator.Type.REFERENCE
+            && Boolean.TRUE.equals(child.getData().get(Actuator.COMPLETE_COHORT_REFERENCE))) {
+          try {
+            var view = runtimeService.completedCohortReference(child.getObservation(),contextScope);
+            var operationUrn = child.getData().get(Actuator.COMPLETE_COHORT_OPERATION);
+            var matching = actuator.getChildren().stream().filter(a -> a.getActuatorType() == Actuator.Type.UPDATE
+                && a.getContextualization() == Contextualization.CLASSIFICATION
+                && a.getOperationObservable() != null
+                && Objects.equals(operationUrn,a.getOperationObservable().getUrn())).toList();
+            if (matching.size() != 1) throw new IllegalStateException("Completed cohort requires its classification prerequisite");
+            // Certify the refreshed set, including members arriving after the classifier's snapshot.
+            // This check cannot invoke a generator and its read guards survive until root commit.
+            var prerequisite = matching.getFirst();
+            var nativeDomain=contextScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class).directInherent(prerequisite.getOperationObservable());
+            if(nativeDomain==null || !Objects.equals(nativeDomain.getUrn(),view.getObservable().getSemantics().getUrn()))
+              throw new IllegalStateException("Completed cohort does not match classification member domain");
+            var check = new ActuatorImpl();
+            check.setActuatorType(Actuator.Type.UPDATE); check.setEffect(Actuator.Effect.SEMANTIC_UPDATE);
+            check.setContextualization(Contextualization.CLASSIFICATION);
+            check.setOperationObservable(prerequisite.getOperationObservable());
+            check.setTargetBindings(prerequisite.getTargetBindings());
+            check.getData().put(Actuator.CLASSIFICATION_CHECK_ONLY,true);
+            var members = runtimeService.classificationMembersForCheck(view,view.getGeometry(),contextScope);
+            var completed = new HashMap<String,List<Observation>>();
+            for (var source : check.getTargetBindings().getFirst().getSources()) completed.put(source,members);
+            MemberClassifierExecutor.compile(check,null,contextScope)
+                .executeDetailed(completed,view.getGeometry(),event,contextScope);
+            localReferences.put(child.getName(),view);
+          } catch (IllegalStateException incomplete) { contextScope.error(incomplete); return false; }
+        }
+      }
+
       if (observation.getObservable().is(SemanticType.QUALITY)) {
         if (event.getType() != Scheduler.Event.Type.INITIALIZATION && (contextScope.getCurrentTransaction()==null || contextScope.getCurrentTransaction().getTemporalWrites()==null))
           throw new UnsupportedOperationException("Temporal quality execution requires a transaction-owned write set");
@@ -1864,7 +1897,9 @@ public class CompiledDataflow {
                 && !digitalTwin.getScheduler().executeDependency(producer, producer.getGeometry(), event, executionScope))
               throw new IllegalStateException("Member producer failed");
             if (actuator.getTargetBindings().stream().anyMatch(b -> b.getSources().contains(child.getName())))
-              completed.put(child.getName(), runtimeService.classificationMembers(producer, geometry, executionScope));
+              completed.put(child.getName(), Boolean.TRUE.equals(actuator.getData().get(Actuator.CLASSIFICATION_CHECK_ONLY))
+                  ? runtimeService.classificationMembersForCheck(producer, geometry, executionScope)
+                  : runtimeService.classificationMembers(producer, geometry, executionScope));
           }
         }
         var support = actuator.getRequestedSupport() == null ? geometry : actuator.getRequestedSupport();

@@ -11,6 +11,19 @@ import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
 import org.junit.jupiter.api.Test;
 
 class PreparedDependencyExpansionTest {
+  @Test void concreteAnySelfOutcomeProducesOneConsumedNonrecursiveBranch() {
+    var root=concept("test:Head",SemanticType.QUALITY);
+    var selected=predicate("test:Concrete");selected.getType().add(SemanticType.ANY);root.getTraits().add(selected);
+    var source=new KimObservableImpl();source.setSemantics(root);
+    var plan=DependencyExpansion.prepare(source,PreparedDependencyExpansionTest::declaration);
+    assertEquals(1,plan.requests().size());
+    var results=plan.apply(Map.of(plan.requests().getFirst().identity(),success("test:Concrete","test:Concrete")));
+    assertEquals(1,results.size());
+    var resolved=results.getFirst().getSemantics().getTraits().getFirst();
+    assertEquals("test:Concrete",resolved.getName());assertFalse(resolved.is(SemanticType.ANY));
+    assertFalse(resolved.is(SemanticType.ABSTRACT));
+    assertTrue(DependencyExpansion.prepare(results.getFirst(),PreparedDependencyExpansionTest::declaration).requests().isEmpty());
+  }
   private static KimConceptImpl concept(String name, SemanticType... flags) {
     var c=new KimConceptImpl();c.setName(name);c.setType(EnumSet.copyOf(List.of(flags)));return c;
   }

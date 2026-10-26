@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ResolutionGraph {
 
+  final Set<ObservationStrategy> classificationChecks = Collections.newSetFromMap(new IdentityHashMap<>());
   private Resolvable target;
   Resolvable target() { return target; }
   final Map<Model, List<DeferredDependency>> classifierDependencies = new HashMap<>();
@@ -263,6 +264,7 @@ public class ResolutionGraph {
    */
   public boolean merge(ResolutionGraph childGraph, String localName) {
 
+    classificationChecks.addAll(childGraph.classificationChecks);
     classifierDependencies.putAll(childGraph.classifierDependencies);
     memberQualityInputs.putAll(childGraph.memberQualityInputs);
     Graphs.addAllVertices(this.graph, childGraph.graph.vertexSet());

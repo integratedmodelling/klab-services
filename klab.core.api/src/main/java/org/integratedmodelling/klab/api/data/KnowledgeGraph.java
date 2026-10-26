@@ -291,6 +291,16 @@ public interface KnowledgeGraph {
     public ClassificationMemberSnapshot(long id,String observable,String geometry,long revision) {
       this(id,observable,geometry,revision,java.util.Map.of(),null);
     }
+    /** Fresh native values for materialization; mutation cannot alter the captured read set. */
+    public java.util.Map<String,Object> nativeProperties() {
+      var result=new java.util.LinkedHashMap<String,Object>();
+      properties.forEach((key,value)->result.put(key,restoreClassificationValue(value)));
+      return result;
+    }
+  }
+  /** Neo4j binary properties need value equality without retaining a mutable byte array. */
+  record ClassificationBinaryValue(String base64) implements java.io.Serializable {
+    public ClassificationBinaryValue { java.util.Objects.requireNonNull(base64); }
   }
   private static java.util.Map<String,Object> freezeClassificationProperties(java.util.Map<String,Object> values) {
     var result=new java.util.LinkedHashMap<String,Object>();
@@ -299,8 +309,15 @@ public interface KnowledgeGraph {
   }
   private static Object freezeClassificationValue(Object value) {
     if(value==null || value instanceof String || value instanceof Number || value instanceof Boolean) return value;
+    if(value instanceof ClassificationBinaryValue) return value;
+    if(value instanceof byte[] bytes) return new ClassificationBinaryValue(java.util.Base64.getEncoder().encodeToString(bytes));
     if(value instanceof java.util.List<?> list) return list.stream().map(KnowledgeGraph::freezeClassificationValue).toList();
     throw new IllegalArgumentException("Unsupported native observation property "+value.getClass());
+  }
+  private static Object restoreClassificationValue(Object value) {
+    if(value instanceof ClassificationBinaryValue binary) return java.util.Base64.getDecoder().decode(binary.base64());
+    if(value instanceof java.util.List<?> list) return list.stream().map(KnowledgeGraph::restoreClassificationValue).toList();
+    return value;
   }
 
   record ClassificationReadSet(String contextId, long cohortId, String cohortObservable, java.util.List<ClassificationMemberSnapshot> members)
