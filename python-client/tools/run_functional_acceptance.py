@@ -34,7 +34,8 @@ CONNECTED_SUITES = {"connected-semantic-readiness", "connected-unit-contract", "
 
 
 def command(suites, report=None):
-    arguments = [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
+    # Long tracebacks include function arguments, including credentials during bootstrap.
+    arguments = [sys.executable, "-m", "pytest", "--tb=short", "-o", "addopts=", "-o", "junit_family=xunit1",
                  "-m", "functional", "-s", *[SUITES[name] for name in suites]]
     if report is not None:
         arguments.append("--junitxml=" + str(report))

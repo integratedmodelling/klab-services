@@ -4,6 +4,11 @@ from pathlib import Path
 
 import pytest
 
+
+def test_functional_runner_uses_short_tracebacks_to_omit_credential_arguments():
+    from run_functional_acceptance import command
+    assert "--tb=short" in command(["connected-semantic-readiness"])
+
 from run_functional_acceptance import SUITES, command
 
 
