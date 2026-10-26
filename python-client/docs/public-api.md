@@ -66,6 +66,10 @@ Semantic exploration: `SemanticExplorer`, `SemanticResult`, `KnowledgeState`,
 `AuthorityCandidate`, `AuthoritySearch`, `StaleKnowledgeError`. See
 [semantic exploration and its acceptance boundary](semantic-explorer.md).
 
+Model/resource inspection: `ResourceInspector`, `AssetInspection`,
+`InspectionOrigin`, `AdvertisedObservable`, `ResourceReference`,
+`ResourceResolution`. See [bounded advertisements and routing limits](resource-inspector.md).
+
 `DeploymentProfile`, `ConnectionIdentity`, `ServiceReference`, `CatalogEntry`,
 `ServiceCatalog`, `CredentialGrant`, `CredentialProvider`, `IssuedTokenProvider`,
 `HubCertificateProvider`, `SelectionPolicy`, `Connection` and `connect` are public.
