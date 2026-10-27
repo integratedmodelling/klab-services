@@ -795,7 +795,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       if (response.statusCode() == 429) {
         throw new KlabIOException("Maven Central Search API rate limit exceeded (HTTP 429)");
       }
-
       if (response.statusCode() != 200) {
         Logging.INSTANCE.warn("Maven Central search returned status {}: {}", response.statusCode(), response.body());
         return Optional.empty();
