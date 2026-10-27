@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.LocalFileHeader;
@@ -65,6 +67,7 @@ import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ResourcesConfiguration;
+import org.jetbrains.annotations.NotNull;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
@@ -627,6 +630,20 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private static final Duration SNAPSHOT_CACHE_TTL = Duration.ofMinutes(Long.getLong("maven.snapshot.cache.minutes", 20L));
+
+    private static final Duration SNAPSHOT_NOT_FOUND_TTL = Duration.ofMinutes(2);
+
+    private static final Duration SNAPSHOT_ERROR_RETRY_TTL = Duration.ofMinutes(1);
+
+    private static final ConcurrentHashMap<String, SnapshotCacheEntry> SNAPSHOT_CACHE = new ConcurrentHashMap<>();
+
+    private record SnapshotCacheEntry(SnapshotInfo snapshotInfo, long expiresAtNanos) {
+      boolean isValid(long now) {
+        return now - expiresAtNanos < 0;
+      }
+    }
+
     /** Maven coordinates holder class */
     public static class MavenCoordinates {
       private final String groupId;
@@ -699,19 +716,58 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * @return SnapshotInfo containing the last modified date and version information
      * @throws IOException if there's an error communicating with Maven Central
      */
-    public static SnapshotInfo getLatestSnapshotDate(MavenCoordinates coordinates) {
+    public static SnapshotInfo getLatestSnapshotDate(@NotNull MavenCoordinates coordinates) {
       if (!coordinates.getVersion().endsWith("-SNAPSHOT")) {
         throw new KlabIllegalArgumentException("Version must be a SNAPSHOT version");
       }
 
+      String key = coordinates.toString();
+      long now = System.nanoTime();
+      // Return the cached result if it is still valid.
+      SnapshotCacheEntry cached = SNAPSHOT_CACHE.get(key);
+      if (cached != null && cached.isValid(now)) {
+        return getCachedSnapshotInfo(cached);
+      }
+      // Refresh the cache only once for each Maven artifact.
+      SnapshotCacheEntry entry = SNAPSHOT_CACHE.compute(key, (k, previous) -> {
+        long refreshTime = System.nanoTime();
+        // Another thread may have refreshed the cache.
+        if (previous != null && previous.isValid(refreshTime)) {
+          return previous;
+        }
+        try {
+          SnapshotInfo info = fetchLatestSnapshotDate(coordinates);
+          Duration ttl = info.isFound() ? SNAPSHOT_CACHE_TTL : SNAPSHOT_NOT_FOUND_TTL;
+          return new SnapshotCacheEntry(info, System.nanoTime() + ttl.toNanos());
+        } catch (RuntimeException e) {
+          Logging.INSTANCE.warn("Unable to refresh Maven snapshot " + k, e);
+          // Reuse the last known result if available.
+          SnapshotInfo lastKnown = previous != null ? previous.snapshotInfo() : null;
+          // Retry later instead of hammering Maven Central.
+          return new SnapshotCacheEntry(lastKnown, System.nanoTime() + SNAPSHOT_ERROR_RETRY_TTL.toNanos());
+        }
+      });
+      return getCachedSnapshotInfo(entry);
+    }
+
+    private static SnapshotInfo getCachedSnapshotInfo(SnapshotCacheEntry entry) {
+      if (entry.snapshotInfo() == null) {
+        throw new KlabIOException("Maven snapshot metadata is temporarily unavailable");
+      }
+      return entry.snapshotInfo();
+    }
+
+    /**
+     * Performs the actual remote snapshot lookup.
+     * <p>
+     * This method is called only when the cache requires a refresh.
+     */
+    private static SnapshotInfo fetchLatestSnapshotDate(MavenCoordinates coordinates) {
       try {
-        // First, try to get snapshot info from Maven Central search API
         Optional<SnapshotInfo> searchResult = getSnapshotInfoFromSearch(coordinates);
         return searchResult.orElseGet(() -> getSnapshotInfoFromRepository(coordinates));
-
-        // If search API doesn't work, try the direct repository approach
-
       } catch (Exception e) {
+        // Preserve the thread's interrupted status.
         throw new KlabIOException("Failed to retrieve snapshot metadata", e);
       }
     }
@@ -719,17 +775,12 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     /** Attempts to get snapshot information using Maven Central's search API */
     private static Optional<SnapshotInfo> getSnapshotInfoFromSearch(MavenCoordinates coordinates) {
 
-      String query =
-          String.format(
-              "q=g:%s+AND+a:%s+AND+v:%s&core=gav&rows=1&wt=json",
-              coordinates.getGroupId(), coordinates.getArtifactId(), coordinates.getVersion());
-
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(MAVEN_CENTRAL_SEARCH_API + "?" + query))
-              .timeout(Duration.ofSeconds(60))
-              .GET()
-              .build();
+      String query = String.format("q=g:%s+AND+a:%s+AND+v:%s&core=gav&rows=1&wt=json", coordinates.getGroupId(), coordinates.getArtifactId(), coordinates.getVersion());
+      HttpRequest request = HttpRequest.newBuilder()
+          .uri(URI.create(MAVEN_CENTRAL_SEARCH_API + "?" + query))
+          .timeout(Duration.ofSeconds(60))
+          .GET()
+          .build();
 
       HttpResponse<String> response = null;
       try {
@@ -741,9 +792,12 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         throw new KlabIOException(e);
       }
 
+      if (response.statusCode() == 429) {
+        throw new KlabIOException("Maven Central Search API rate limit exceeded (HTTP 429)");
+      }
+
       if (response.statusCode() != 200) {
-        Logging.INSTANCE.warn(
-            "Maven Central search returned status {}: {}", response.statusCode(), response.body());
+        Logging.INSTANCE.warn("Maven Central search returned status {}: {}", response.statusCode(), response.body());
         return Optional.empty();
       }
 
