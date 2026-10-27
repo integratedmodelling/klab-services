@@ -146,6 +146,9 @@ public final class WorldviewDescriptionStaging {
     var completed=new LinkedHashMap<OWLClass,Set<OWLClassExpression>>();
     bounds.forEach((name,values)->{checkpoint.run();completed.put(name,Set.copyOf(values));});
     var prepared=new LinkedHashMap<Ontology,Set<OWLAxiom>>();
+    // One private preparation phase, ending before any prepared axioms are applied.
+    // A resolve callback may still add declarations: the index invalidates on manager changes.
+    try (var hierarchy=new AssertedHierarchyIndex(owl)) {
     for(var entry:entries) try {
       checkpoint.run();
       var described=new ArrayList<Concept>();var independent=new ArrayList<Concept>();
@@ -158,7 +161,7 @@ public final class WorldviewDescriptionStaging {
       }
       var authored=entry.statement().getDeclaredInherent()==null?null:entry.resolve().apply(entry.statement().getDeclaredInherent());
       var applies=entry.statement().getAppliesTo().stream().map(a->{checkpoint.run();return entry.resolve().apply(a.getTarget());}).toList();
-      var axioms=DescriptionBearerSupport.prepare(owl,entry.owner(),authored,described,applies,independent,completed,checkpoint);
+      var axioms=DescriptionBearerSupport.prepare(owl,entry.owner(),authored,described,applies,independent,completed,checkpoint,hierarchy);
       checkpoint.run();
       var references=new LinkedHashSet<String>();
       origins.getOrDefault(owl.getOWLClass(entry.owner()),Map.of()).values().forEach(references::addAll);
@@ -177,6 +180,7 @@ public final class WorldviewDescriptionStaging {
       }
     } catch(java.util.concurrent.CancellationException cancelled) {throw cancelled;}
       catch(RuntimeException error) {entry.scope().error(error,entry.statement());}
+    }
     prepared.forEach((ontology,axioms)->{
       checkpoint.run();
       owl.manager.addAxioms(ontology.getOWLOntology(),axioms);

@@ -12,6 +12,7 @@ import org.semanticweb.owlapi.search.EntitySearcher;
 /** Preserves complete OWL fillers: a union is one bound, multiple restrictions are conjunctive. */
 public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   private final OWL owl;
+  private final AssertedHierarchyIndex hierarchy;
   static final Runnable NO_CHECKPOINT = () -> {};
   public static final IRI UNIVERSAL_BEARER = IRI.create("urn:klab:validation:universal-bearer");
   /** Authored bearer bounds remain distinguishable from description-derived intersections. */
@@ -41,8 +42,13 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
           Map.entry(SemanticRole.RELATIONSHIP_TARGET, NS.IMPLIES_DESTINATION_PROPERTY));
 
   public OWLSemanticClauseSupport(OWL owl) {
+    this(owl, null);
+  }
+
+  OWLSemanticClauseSupport(OWL owl, AssertedHierarchyIndex hierarchy) {
     super(owl.reasoner());
     this.owl = owl;
+    this.hierarchy = hierarchy;
   }
 
   /** Complete bearer constraints; unions stay intact and independent bounds are conjunctive. */
@@ -161,7 +167,7 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   public enum Compatibility { COMPATIBLE, IMPOSSIBLE, UNRESOLVED }
 
   // Reuse only DL answers within one pinned, buffering reasoner computation.
-  // Asserted traversal remains uncached and false entailment never means incompatible.
+  // Asserted indexing has its own private phase; false entailment never means incompatible.
   private final ThreadLocal<Map<OWLAxiom, Boolean>> compatibilityEntailments = new ThreadLocal<>();
 
   public Compatibility bearerCompatibility(Collection<OWLClassExpression> constraints) {
@@ -280,6 +286,15 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
 
   private boolean disjoint(Set<OWLClassExpression> constraints,Runnable checkpoint) {
     checkpoint.run();
+    if (hierarchy != null && hierarchy.usable(owl)) {
+      for (var axiom : hierarchy.disjoint(checkpoint)) {
+        checkpoint.run();
+        long matched = axiom.stream().filter(bound -> constraints.stream()
+            .anyMatch(c -> specializes(c, bound, new HashSet<>(),checkpoint))).count();
+        if (matched > 1) return true;
+      }
+      return false;
+    }
     for (var ontology : owl.manager.getOntologies())
       for (var axiom : ontology.getAxioms(AxiomType.DISJOINT_CLASSES)) {
         checkpoint.run();
@@ -531,6 +546,22 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   private boolean specializes(
       OWLClassExpression candidate, OWLClassExpression bound, Set<OWLClassExpression> visited,Runnable checkpoint) {
     checkpoint.run();
+    // Recursive answers depend on the visited set. Only complete, empty-visited
+    // searches may read/write this memo (including complete negative answers).
+    boolean root = visited.isEmpty() && hierarchy != null && hierarchy.usable(owl);
+    if (!root) return specializesUncached(candidate,bound,visited,checkpoint);
+    var known = hierarchy.root(candidate,bound,checkpoint);
+    if (known != null) return known;
+    long revision = hierarchy.revision();
+    boolean answer = specializesUncached(candidate,bound,visited,checkpoint);
+    checkpoint.run();
+    hierarchy.remember(candidate,bound,answer,revision);
+    return answer;
+  }
+
+  private boolean specializesUncached(
+      OWLClassExpression candidate, OWLClassExpression bound, Set<OWLClassExpression> visited,Runnable checkpoint) {
+    checkpoint.run();
     if (candidate.equals(bound) || bound.isOWLThing()) return true;
     if (owl.hasReasoner()
         && entails(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(candidate, bound)))
@@ -546,6 +577,9 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
           .operands()
           .allMatch(value -> specializes(candidate, value, new HashSet<>(visited),checkpoint));
     if (!visited.add(candidate)) return false;
+    if (candidate instanceof OWLClass named && hierarchy != null && hierarchy.usable(owl))
+      return hierarchy.parents(named,checkpoint).stream()
+          .anyMatch(value -> specializes(value, bound, new HashSet<>(visited),checkpoint));
     if (candidate instanceof OWLClass named)
       return java.util.stream.Stream.concat(
               EntitySearcher.getSuperClasses(named, owl.manager.ontologies()),

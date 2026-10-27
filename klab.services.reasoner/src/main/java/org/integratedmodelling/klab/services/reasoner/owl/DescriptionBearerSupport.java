@@ -35,8 +35,18 @@ final class DescriptionBearerSupport {
       Collection<Concept> described, Collection<Concept> applicables,
       Collection<Concept> independentlyCheckedDescriptions,
       Map<OWLClass,Set<OWLClassExpression>> completedBearers,Runnable checkpoint) {
+    return prepare(owl,owner,authoredBearer,described,applicables,independentlyCheckedDescriptions,
+        completedBearers,checkpoint,null);
+  }
+
+  static List<OWLAxiom> prepare(OWL owl, Concept owner, Concept authoredBearer,
+      Collection<Concept> described, Collection<Concept> applicables,
+      Collection<Concept> independentlyCheckedDescriptions,
+      Map<OWLClass,Set<OWLClassExpression>> completedBearers,Runnable checkpoint,
+      AssertedHierarchyIndex hierarchy) {
     checkpoint.run();
-    var support = new OWLSemanticClauseSupport(owl);
+    // Bounds/provenance caches remain entry-local, as before this optimization.
+    var support = new OWLSemanticClauseSupport(owl,hierarchy);
     var own = new ArrayList<>(support.bearerConstraints(owner,checkpoint));
     var f = owl.manager.getOWLDataFactory();
     var property = owl.getProperty("odo:isInherentTo");
