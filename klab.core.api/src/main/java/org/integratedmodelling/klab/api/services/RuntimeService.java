@@ -41,6 +41,24 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
  */
 public interface RuntimeService extends KlabService {
 
+  /** Native test harness capability. Deliberately absent from clients and HTTP endpoints. */
+  interface Testing {
+    CompletableFuture<OperationReceipt> applyForTesting(
+        org.integratedmodelling.klab.api.knowledge.Observable directive,
+        org.integratedmodelling.klab.api.geometry.Geometry support,
+        ContextScope scope, RuntimeAgent.Scope caller);
+  }
+
+  /** A committed semantic operation, never an observation or a detached observation view. */
+  record OperationReceipt(String contextId, long commitId, long activityId, String directive)
+      implements java.io.Serializable {
+    public OperationReceipt {
+      if (contextId == null || contextId.isBlank() || directive == null || directive.isBlank()
+          || commitId <= 0 || activityId <= 0)
+        throw new IllegalArgumentException("A semantic operation receipt requires a committed activity");
+    }
+  }
+
   /**
    * Export an observation, retaining detached query geometry, observable and annotations. Query
    * views have no catalog identity: implementations must validate them in the supplied context.

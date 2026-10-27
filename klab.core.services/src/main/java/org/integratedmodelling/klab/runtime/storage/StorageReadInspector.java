@@ -13,9 +13,11 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 public final class StorageReadInspector {
   private StorageReadInspector() {}
 
-  /** User supplies an independent expected affine mapping; sampled views must agree with it. */
+  /** All sampled finite pairs must match the supplied affine mapping, with at least one comparison. */
   public static boolean unitCheck(
       ContextScope scope, Observation observation, String unit, double factor, double offset) {
+    if (!Double.isFinite(factor) || !Double.isFinite(offset))
+      throw new IllegalArgumentException("Expected unit conversion factor and offset must be finite");
     if (!(observation.getObservable()
         instanceof org.integratedmodelling.common.knowledge.ObservableImpl original))
       throw new IllegalArgumentException("Unsupported observable implementation");
@@ -24,6 +26,7 @@ public final class StorageReadInspector {
         new org.integratedmodelling.klab.data.mediation.UnitServiceImpl().getUnit(unit));
     var view = StorageReads.binding(observation, requested);
     check(scope, view, Data.FillCurve.D2_YX, 3, 8);
+    int compared = 0;
     try (var nativeRead =
             StorageReads.open(
                 observation, scope, null, Data.FillCurve.D2_YX, Storage.DoubleScanner.class);
@@ -47,11 +50,15 @@ public final class StorageReadInspector {
           throw new IllegalStateException("Mediation changed missingness");
         if (!from.isValid()) continue;
         double expected = from.peek() * factor + offset;
-        if (Math.abs(to.peek() - expected) > Math.max(1e-10, Math.abs(expected) * 1e-12))
+        double actual = to.peek();
+        if (!Double.isFinite(expected) || !Double.isFinite(actual))
+          throw new IllegalStateException("Non-finite unit conversion at " + index);
+        if (Math.abs(actual - expected) > Math.max(1e-10, Math.abs(expected) * 1e-12))
           throw new IllegalStateException("Incorrect unit conversion at " + index);
+        compared++;
       }
     }
-    return true;
+    return compared > 0;
   }
 
   public static boolean check(

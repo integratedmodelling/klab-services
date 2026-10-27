@@ -82,7 +82,15 @@ import org.ojalgo.concurrent.Parallelism;
 
 public class RuntimeService extends BaseService
     implements org.integratedmodelling.klab.api.services.RuntimeService,
-        org.integratedmodelling.klab.api.services.RuntimeService.Admin {
+        org.integratedmodelling.klab.api.services.RuntimeService.Admin,
+        org.integratedmodelling.klab.api.services.RuntimeService.Testing {
+
+  @Override
+  public CompletableFuture<org.integratedmodelling.klab.api.services.RuntimeService.OperationReceipt>
+      applyForTesting(org.integratedmodelling.klab.api.knowledge.Observable directive,
+          Geometry support, ContextScope scope, org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope caller) {
+    return TestingSemanticOperation.apply(this, directive, support, scope, caller);
+  }
 
   private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
   private RuntimeConfiguration configuration;

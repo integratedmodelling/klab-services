@@ -76,6 +76,9 @@ public interface ResolutionConstraint extends Serializable {
      * knowledge graph yet
      */
     UnresolvedContextObservation(Observation.class, false),
+    /** Paired request-local endpoint snapshots when a between scope is not yet in the remote graph. */
+    UnresolvedSourceObservation(Observation.class, false),
+    UnresolvedTargetObservation(Observation.class, false),
     UsingModel(String.class, false),
     ConcretePredicates(Concept.class, true),
     /** The dataflow needs the passed additional observables produced by an adapter. */
@@ -146,6 +149,71 @@ public interface ResolutionConstraint extends Serializable {
 
   static ResolutionConstraint of(Type type, Object... data) {
     return new ResolutionConstraintImpl(type, data);
+  }
+
+  static boolean isRelationshipSnapshot(Type type) {
+    return type == Type.UnresolvedSourceObservation || type == Type.UnresolvedTargetObservation;
+  }
+
+  record RelationshipScope(Observation source, Observation target) {}
+
+  /** Restore a paired planning scope, never registering observations or changing native assets. */
+  static RelationshipScope unresolvedRelationshipScope(ContextScope scope, ResolutionConstraint... constraints) {
+    Observation source = null, target = null;
+    boolean sourceSeen = false, targetSeen = false;
+    if (constraints == null) return null;
+    for (var constraint : constraints) {
+      if (constraint == null || !isRelationshipSnapshot(constraint.getType())) continue;
+      if (constraint.empty() || constraint.size() != 1)
+        throw new IllegalArgumentException("A relationship scope snapshot requires one endpoint per side");
+      if (constraint.getType() == Type.UnresolvedSourceObservation) {
+        if (sourceSeen) throw new IllegalArgumentException("Duplicate relationship source snapshot");
+        sourceSeen = true; source = constraint.payload(Observation.class).getFirst();
+      } else {
+        if (targetSeen) throw new IllegalArgumentException("Duplicate relationship target snapshot");
+        targetSeen = true; target = constraint.payload(Observation.class).getFirst();
+      }
+    }
+    if (!sourceSeen && !targetSeen) return null;
+    if (!sourceSeen || !targetSeen || source == null || target == null || source.getId() == target.getId())
+      throw new IllegalArgumentException("A relationship scope requires paired, distinct endpoints");
+    return new RelationshipScope(relationshipEndpoint(scope, source, scope.getSourceObservation()),
+        relationshipEndpoint(scope, target, scope.getTargetObservation()));
+  }
+
+  private static Observation relationshipEndpoint(ContextScope scope, Observation snapshot, Observation selected) {
+    long id = snapshot.getId();
+    if (id == Observation.UNASSIGNED_ID || id == Observation.QUERY_ID)
+      throw new IllegalArgumentException("Relationship scope endpoints need assigned instance IDs");
+    if (selected != null && selected.getId() != id)
+      throw new IllegalArgumentException("Relationship scope snapshot contradicts the selected endpoint");
+    Observation endpoint = null;
+    // An assigned positive ID can still be owned by an uncommitted parent transaction. Prefer
+    // native transaction state, then the committed graph; request snapshots never override either.
+    for (var transaction = scope.getCurrentTransaction(); transaction != null && endpoint == null;
+        transaction = transaction.getParent()) {
+      for (var asset : transaction.assets()) {
+        if (asset instanceof Observation observation && observation.getId() == id) {
+          endpoint = transaction.readObservation(observation); break;
+        }
+      }
+    }
+    if (endpoint == null && id > 0) {
+      if (scope.getDigitalTwin() == null)
+        throw new IllegalArgumentException("Positive endpoint IDs require a graph lookup");
+      endpoint = scope.getDigitalTwin().getKnowledgeGraph().getAsset(id, scope, Observation.class);
+    }
+    if (endpoint == null) endpoint = snapshot;
+    if (endpoint.getId() != id || endpoint.isEmpty() || endpoint.getObservable() == null
+        || endpoint.getObservable().getSemantics() == null
+        || endpoint.getObservable().getSemantics().isCollective()
+        || endpoint.getObservable().getSemantics().is(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT)
+        || endpoint.getObservable().isGeneric()
+        || !org.integratedmodelling.klab.api.knowledge.SemanticType.isEnumerableSubstantial(
+            endpoint.getObservable().getSemantics().getType())
+        || endpoint.getGeometry() == null || endpoint.getGeometry().isEmpty() || endpoint.getGeometry().size() <= 0)
+      throw new IllegalArgumentException("Relationship scope endpoints must be individual substantial snapshots with geometry");
+    return endpoint;
   }
 
   static boolean has(ContextScope scope, ResolutionConstraint.Type constraintType) {

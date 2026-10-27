@@ -955,7 +955,7 @@ public class ResolutionCompiler {
     if (savedSource) {
       var canonical=reasoner.declareObservable(source);
       if (canonical==null || canonical.getSemantics()==null || canonical.is(SemanticType.NOTHING)
-          || !Objects.equals(canonical.getUrn(),dependency.getUrn()) || source.isOptional()!=dependency.isOptional())
+          || !org.integratedmodelling.klab.runtime.language.DependencyContract.matches(canonical,dependency) || source.isOptional()!=dependency.isOptional())
         throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Collective dependency differs from saved authored occurrence");
     }
     return prepared;
@@ -1029,7 +1029,8 @@ public class ResolutionCompiler {
           && Objects.equals(statement.getUrn(),model.getUrn())).map(org.integratedmodelling.klab.api.lang.kim.KimModel.class::cast).findFirst().orElseThrow();
       if(index>=authored.getDependencies().size())return false;
       parsed=authored.getDependencies().get(index);
-      if(!Objects.equals(parsed.getUrn(),dependency.getUrn()) || parsed.isOptional()!=dependency.isOptional())
+      if(!org.integratedmodelling.klab.runtime.language.DependencyContract.matches(
+          scope.getService(Reasoner.class).declareObservable(parsed),dependency) || parsed.isOptional()!=dependency.isOptional())
         throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("Selected dependency differs from saved authored occurrence");
       version=saved.getLastUpdateTimestamp();fingerprint=org.integratedmodelling.common.utils.Utils.Json.asString(saved);
     } else parsed=resources.declareObservable(dependency.getUrn());

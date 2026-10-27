@@ -87,6 +87,15 @@ class ChangeProcessHandlerTest {
     }
   }
 
+  @Test void cancelledConsequenceDoesNotStartGraphReadOrSubmission() {
+    var f = new Fixture();
+    when(f.scope.isInterrupted()).thenReturn(true);
+    assertThrows(InterruptedException.class,
+        () -> new ChangeProcessHandler().evaluate(null, f.commit, f.scope));
+    verify(f.graph, never()).query(eq(Observation.class), any());
+    verify(f.first, never()).submit();
+    verify(f.second, never()).submit();
+  }
   @Test void physicalTimeAloneDoesNotResolveChangeButGridTimeDoes() throws Exception {
     var f = new Fixture();
     assertEquals(Consequence.Outcome.NO_ACTION, f.evaluate().outcome());
@@ -148,3 +157,4 @@ class ChangeProcessHandlerTest {
     assertEquals(Consequence.Outcome.FAILED, f.evaluate().outcome());
   }
 }
+

@@ -1135,7 +1135,13 @@ public class CompiledDataflow {
     /*
     The links to be made depend on the reciprocal nature of the root and its dependents
      */
-    var rootRole = Observation.classifyRole(rootObservation);
+    boolean operationRoot = rootActuator != null && rootActuator.getActuatorType() == Actuator.Type.UPDATE
+        && rootObservation == null;
+    // Characterization can explicitly anchor an UPDATE to its real existing member. Preserve
+    // that lifecycle; only an observation-free operation obtains ownership from the within scope.
+    var ownershipObservation = operationRoot ? scope.getContextObservation() : rootObservation;
+    if (ownershipObservation == null) throw new IllegalStateException("An UPDATE plan requires a real ownership context");
+    var rootRole = Observation.classifyRole(ownershipObservation);
     var qualityBearers = processQualityBearers();
 
     /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
@@ -1164,7 +1170,7 @@ public class CompiledDataflow {
                         scope.getContextObservation(),
                         dependent,
                         GraphModel.Relationship.HAS_CHILD);
-                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS,
+                    transaction.link(dependent, ownershipObservation, GraphModel.Relationship.AFFECTS,
                         ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE);
                   }
                   case COLLECTIVE_SUBSTANTIAL -> {
@@ -1228,8 +1234,8 @@ public class CompiledDataflow {
                     }
 
                     // AFFECTS and HAS_CHILD
-                    transaction.link(rootObservation, dependent, GraphModel.Relationship.HAS_CHILD);
-                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS,
+                    transaction.link(ownershipObservation, dependent, GraphModel.Relationship.HAS_CHILD);
+                    transaction.link(dependent, ownershipObservation, GraphModel.Relationship.AFFECTS,
                         ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE);
                   }
                   default ->
@@ -1318,7 +1324,8 @@ public class CompiledDataflow {
 
     transaction.link(transaction.getActivity(), rootActuator, GraphModel.Relationship.HAS_PLAN);
     transaction.link(knowledgeGraph.dataflow(), rootActuator, GraphModel.Relationship.HAS_CHILD);
-    transaction.link(transaction.getActivity(), rootObservation, GraphModel.Relationship.RESOLVED);
+    // Effect-only UPDATE roots have plans and real members, but no resolved result observation.
+    if (!operationRoot) transaction.link(transaction.getActivity(), ownershipObservation, GraphModel.Relationship.RESOLVED);
 
     /* Record and link actuators */
     for (var edge : dependencyGraph.edgeSet()) {
@@ -1670,7 +1677,8 @@ public class CompiledDataflow {
             if (input != null && !digitalTwin.getScheduler().executeDependency(
                 input, input.getGeometry(), event, contextScope)) return false;
           }
-          return true;
+          return actuator.getExecutionRole() != Actuator.ExecutionRole.PROCESS
+              || recordProcessExistence(contextScope);
         }
         var bindings = processPlan(actuator);
         if (bindings == null && actuator.getComputation().stream().anyMatch(call ->
@@ -1794,6 +1802,26 @@ public class CompiledDataflow {
       return ret;
     }
 
+    /** Provenance only: no process computation, INIT value, or CREATED quality is produced. */
+    private boolean recordProcessExistence(ServiceContextScope contextScope) {
+      var activity = Activity.of(Activity.Type.INITIALIZATION, observation,
+          "Record existence of process " + observation.getObservable());
+      var observer = contextScope.getObserver();
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(activity, observer);
+      var provenance = contextScope.executing(activity, observation);
+      var transaction = provenance.getCurrentTransaction();
+      transaction.link(activity, observation, GraphModel.Relationship.CREATED);
+      if (observer != null) transaction.link(activity, observer, GraphModel.Relationship.HAS_OBSERVER);
+      try {
+        if (provenance.commit() < 0)
+          throw new KlabInternalErrorException("Could not record process existence");
+        return true;
+      } catch (Throwable failure) {
+        provenance.fail(failure);
+        observation.getNotifications().add(Notification.error(failure.getMessage(), failure));
+        return false;
+      }
+    }
     private boolean runProcessAssignments(Scheduler.Event event, ServiceContextScope executionScope, ProcessPlan plan) {
       var transaction = executionScope.getCurrentTransaction();
       var writes = transaction.getTemporalWrites();

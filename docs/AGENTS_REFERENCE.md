@@ -243,7 +243,7 @@ persistence contract is in [Digital twins](DIGITALTWINS.md#the-corecontext-kacto
 | `storage(observation)` | Instance function → Storage | Retrieve existing observation storage; backend failures propagate. |
 | `members(cohort :limit n :offset n)` | Instance function → List | Snapshot of direct `HAS_MEMBER` observations; only limit and offset metadata are accepted. |
 | `query(arguments...)` | Instance function → asset or List | Query by ID, URN, knowledge class, or observation semantics. Supports `:within`, `:source`, `:target`, `:along`, `:limit`, `:offset`, `:depth`, and `+all`. |
-| `submit(arguments...)` | Instance supplier → Observation | Build and submit an observation in this twin, with calling-agent provenance. Accepts observable/concept semantics, identity URN, geometry, definition map, focus metadata, and `:namespace`/`:project` resolution constraints. |
+| `submit(arguments...)` | Instance supplier → Observation | Build and submit an observation in this twin, with calling-agent provenance. Accepts observable/concept semantics, identity URN, geometry, definition map, focus metadata, and `:namespace`/`:project` resolution constraints. Scope options are validated and applied before semantic lookup. `!observer` suppresses automatic default-observer creation; it preserves an already selected observer. |
 | `close()` | Instance function, no result | Close the underlying context according to its persistence policy; affects all proxies. |
 
 ```kactors
@@ -403,6 +403,16 @@ assertion by themselves; use `assert inspector.<check>(...)` in a testcase. See
 | `scancheck(context, observation, curve, splits, samples)` | Boolean. Compare bounded samples across partitioned, export and indexed text reads. Splits: 1..256; samples per partition: 1..64; use a supported `Data.FillCurve` constant. |
 | `unitcheck(context, observation, unit, factor, offset)` | Boolean. Compare a lazy unit view with an independent expected multiplier and offset across storage read routes. |
 | `celltext(context, observation, curve, offset)` | String. Export-view cell at a zero-based traversal offset, preserving exact longs and missingness. |
+| `schedulecheck(context, process, step, unit, start, end, count)` | Boolean. Require one model schedule, registered PROCESS role, exact ISO-8601 bounds and exactly `count` successful, unique durable temporal commits following the calendar cadence. |
+| `relativecheck(context, process, quality, count, delta, tolerance)` | Boolean. Compare every covered cell at transition n with its own INIT value plus n × delta; require unchanged coverage and missingness, at least one finite value, and the exact transition count. Absolute tolerance has a floor of four double ULPs. |
+| `processprovenance(context, process)` | Boolean. Require one existence-only INITIALIZATION activity and the same recorded actual observer as the root, including HAS_OBSERVER links. Reject computational INIT evidence and committed INIT shards for process-created qualities. Does not trace executor dispatch. |
+| `apply(context, directive, support, options...)` | Native testcase-only CLASSIFICATION supplier → OperationReceipt. Requires an actual TestCaseScope before semantic lookup; derives validated focus/namespace/project/observer options and invokes RuntimeService.Testing with calling-agent provenance. Returns a committed receipt, never an observation. No HTTP/client operation endpoint. |
+| `membersnapshot(context, producer)` | Immutable snapshot. Capture native cohort and member IDs, meanings, geometries, attribution links and existing classification activity IDs. Requires nonempty committed members. |
+| `classificationcheck(context, before, family)` | Boolean. Require a non-vacuous classification of existing member IDs, unchanged geometry, concrete family predicates and matching committed attribution from one fresh successful audit activity. |
+| `classificationnoop(context, before, family)` | Boolean. Require unchanged captured state and attribution plus one fresh successful classification audit whose complete member results have origin EXISTING. |
+| `relationshipscheck(context, producer, relationship)` | Boolean. Verify native relationship members, semantic endpoint roles, typed directed/bond participant links and exact point-connecting line support in either geometric order. Shape serialization may reverse a line; graph links carry direction. Reject duplicate ordered pairs and self-links. |
+| `gridcheck(context, observation, expectedGeometry)` | Boolean. Check a bounded rectangular grid against independent native cell/value and physical-coordinate oracles. |
+| `observercheck(context, observation, observer)` | Boolean. Verify canonical committed identity, the actual observer selection and successful creation provenance. The observer must be a concrete singular Agent with successful submission and resolution evidence. This does not assert computational initialization or an INSTANTIATION activity. |
 
 `context` in membership, relationship, and storage verbs is a context actor or `ContextScope`.
 Viability accepts observations, activities, dataflows, actuators, contexts/twins/knowledge graphs,

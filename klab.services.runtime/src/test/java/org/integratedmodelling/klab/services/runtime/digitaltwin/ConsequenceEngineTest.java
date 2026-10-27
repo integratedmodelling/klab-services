@@ -58,7 +58,9 @@ class ConsequenceEngineTest {
         org.integratedmodelling.klab.api.provenance.Agent.create(org.integratedmodelling.klab.api.provenance.Agent.KLAB_AGENT_NAME);
     final java.util.Map<Long, Activity> activities = new java.util.HashMap<>();
 
-    Fixture() throws Exception {
+    Fixture() throws Exception { this(5000, 5000); }
+
+    Fixture(long gracefulCloseMillis, long forcedCloseMillis) throws Exception {
       var user = mock(UserIdentity.class);
       when(user.getUsername()).thenReturn("tester");
       when(user.getId()).thenReturn("tester");
@@ -67,7 +69,7 @@ class ConsequenceEngineTest {
           DigitalTwin.Configuration.builder().id("context").name("Twin").build(), user);
       scope.setId("context");
       scope.onMessage((channel, event) -> events.add(event), Message.Queue.Events);
-      engine = new ConsequenceEngine(scope, "context");
+      engine = new ConsequenceEngine(scope, "context", gracefulCloseMillis, forcedCloseMillis);
       when(twin.getConsequenceEngine()).thenReturn(engine);
       field(twin, DigitalTwinImpl.class, "knowledgeGraph", graph);
       field(twin, DigitalTwinImpl.class, "commitCache", CacheBuilder.newBuilder().build());
@@ -289,7 +291,7 @@ class ConsequenceEngineTest {
   }
 
   @Test void shutdownInterruptsActiveHandlerAndRejectsFurtherWork() throws Exception {
-    try (var f = new Fixture()) {
+    try (var f = new Fixture(20, 1000)) {
       var entered = new CountDownLatch(1);
       var stopped = new CountDownLatch(1);
       f.engine.register(Consequence.Kind.CONFIGURATION_DETECTION, (cause, changes, scope) -> {
@@ -309,6 +311,101 @@ class ConsequenceEngineTest {
     }
   }
 
+  @Test void closeDrainsActiveOperationWithoutInterruptingAndSuppressesQueuedWorkAndDecisions() throws Exception {
+    try (var f = new Fixture(1000, 1000)) {
+      var entered = new CountDownLatch(1);
+      var cancellationSeen = new CountDownLatch(1);
+      var releaseOperation = new CountDownLatch(1);
+      var interrupted = new java.util.concurrent.atomic.AtomicBoolean();
+      var calls = new java.util.concurrent.atomic.AtomicInteger();
+      var closeFailure = new AtomicReference<Throwable>();
+      f.engine.register(Consequence.Kind.CONFIGURATION_DETECTION, (cause, changes, scope) -> {
+        calls.incrementAndGet();
+        entered.countDown();
+        try {
+          while (!scope.isInterrupted()) Thread.sleep(1);
+          cancellationSeen.countDown();
+          releaseOperation.await(); // an already-running read/atomic operation may finish safely
+        } catch (InterruptedException failure) { interrupted.set(true); throw failure; }
+        return new ConsequenceEngine.Result(Consequence.Outcome.NO_ACTION, "Drained", List.of());
+      });
+      f.engine.register(Consequence.Kind.CHANGE_PROCESS, (cause, changes, scope) -> {
+        calls.incrementAndGet();
+        return new ConsequenceEngine.Result(Consequence.Outcome.NO_ACTION, "Must not run", List.of());
+      });
+      f.engine.committed(commit(1), f.scope, 100, 0);
+      assertTrue(entered.await(5, TimeUnit.SECONDS));
+      f.engine.committed(commit(2), f.scope, 101, 0);
+      var closer = new Thread(() -> { try { f.engine.close(); } catch (Throwable t) { closeFailure.set(t); } });
+      closer.start();
+      try {
+        assertTrue(cancellationSeen.await(5, TimeUnit.SECONDS));
+        assertTrue(closer.isAlive(), "Close must wait for the active operation");
+      } finally { releaseOperation.countDown(); }
+      closer.join(5000);
+      assertFalse(closer.isAlive());
+      assertNull(closeFailure.get());
+      assertFalse(interrupted.get(), "Healthy active operations must drain without driver interruption");
+      assertEquals(1, calls.get(), "Queued work and subsequent handlers must not start");
+      assertTrue(f.events.isEmpty(), "Closing work must not publish a decision");
+    }
+  }
+
+  @Test void closeRefusesToFinishWhenHandlerIgnoresCancellationAndInterruption() throws Exception {
+    var f = new Fixture(20, 30);
+    var entered = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    var interruptionSeen = new CountDownLatch(1);
+    f.engine.register(Consequence.Kind.CONFIGURATION_DETECTION, (cause, changes, scope) -> {
+      entered.countDown();
+      boolean done = false;
+      while (!done) {
+        try { release.await(); done = true; }
+        catch (InterruptedException ignored) { interruptionSeen.countDown(); }
+      }
+      return new ConsequenceEngine.Result(Consequence.Outcome.NO_ACTION, "Released", List.of());
+    });
+    try {
+      f.engine.committed(commit(1), f.scope, 100, 0);
+      assertTrue(entered.await(5, TimeUnit.SECONDS));
+      var failure = assertThrows(IllegalStateException.class, f.engine::close);
+      assertTrue(failure.getMessage().contains("Consequence handler did not stop"));
+      assertEquals(0, interruptionSeen.getCount(), "Bounded fallback must interrupt uncooperative work");
+      assertTrue(f.events.isEmpty());
+      verifyNoInteractions(f.storage);
+    } finally { release.countDown(); f.close(); }
+  }
+  @Test void interruptedSubmissionRetainsWorkerUntilNaturalCompletionInsteadOfCancellingWrapper() throws Exception {
+    var f = new Fixture(20, 100);
+    var entered = new CountDownLatch(1);
+    var drained = new CountDownLatch(1);
+    var submission = spy(new java.util.concurrent.CompletableFuture<
+        org.integratedmodelling.klab.api.knowledge.observation.Observation>());
+    var interrupted = new java.util.concurrent.atomic.AtomicBoolean();
+    f.engine.register(Consequence.Kind.CONFIGURATION_DETECTION, (cause, changes, scope) -> {
+      entered.countDown();
+      ChangeProcessHandler.awaitSubmissionDrain(submission);
+      interrupted.set(Thread.currentThread().isInterrupted());
+      drained.countDown();
+      return new ConsequenceEngine.Result(Consequence.Outcome.NO_ACTION, "Drained", List.of());
+    });
+    try {
+      f.engine.committed(commit(1), f.scope, 100, 0);
+      assertTrue(entered.await(5, TimeUnit.SECONDS));
+      assertThrows(IllegalStateException.class, f.engine::close,
+          "A pending native submission must prevent disposal even after worker interruption");
+      assertEquals(1, drained.getCount());
+      assertFalse(submission.isDone());
+      verify(submission, never()).cancel(anyBoolean());
+      verifyNoInteractions(f.storage);
+      assertTrue(f.events.isEmpty());
+    } finally {
+      submission.complete(org.integratedmodelling.klab.api.knowledge.observation.Observation.empty());
+      assertTrue(drained.await(5, TimeUnit.SECONDS));
+      f.close();
+    }
+    assertTrue(interrupted.get(), "Drain restores the worker interruption after work settles");
+  }
   @Test void derivedConsequenceScopeDropsTransactionAndCancellationButKeepsCauseOnCopies() throws Exception {
     try (var f = new Fixture()) {
       var original = f.scope.withCancellation(() -> true);
@@ -407,3 +504,5 @@ class ConsequenceEngineTest {
     }
   }
 }
+
+

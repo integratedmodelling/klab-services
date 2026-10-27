@@ -762,18 +762,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       Observation observation, ContextScope scope) {
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(Observation.forTransport(observation));
-    resolutionRequest
-        .getResolutionConstraints()
-        .addAll(
-            scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
-    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
-      resolutionRequest
-          .getResolutionConstraints()
-          .add(
-              ResolutionConstraint.of(
-                  ResolutionConstraint.Type.UnresolvedContextObservation,
-                  Observation.forTransport(scope.getContextObservation())));
-    }
+    resolutionRequest.setResolutionConstraints(ResolverClient.scopeForTransport(scope));
     return client
         .withScope(scope)
         .postCollection(
@@ -787,15 +776,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       Observable observable, ContextScope scope) {
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservable(observable);
-    resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());
-    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
-      resolutionRequest
-          .getResolutionConstraints()
-          .add(
-              ResolutionConstraint.of(
-                  ResolutionConstraint.Type.UnresolvedContextObservation,
-                  scope.getContextObservation()));
-    }
+    resolutionRequest.setResolutionConstraints(ResolverClient.scopeForTransport(scope));
     return client
         .withScope(scope)
         .post(

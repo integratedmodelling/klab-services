@@ -27,10 +27,12 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
       Consequence.Cause cause, KnowledgeGraph.Commit changes, ServiceContextScope scope) throws Exception {
     if (changes.getAddedObservations().isEmpty() && changes.getModifiedAssets().isEmpty())
       return result(Consequence.Outcome.NO_ACTION, "No observations changed", List.of());
+    checkCancelled(scope);
     var graph = scope.getDigitalTwin().getKnowledgeGraph();
     // Revisit old qualities when the first occurrence arrives, and new qualities thereafter.
     var observations = graph.query(Observation.class, scope).run(scope).stream()
         .filter(o -> o.getId() > 0 && !o.isEmpty() && o.getObservable() != null).toList();
+    checkCancelled(scope);
     if (observations.stream().noneMatch(ChangeProcessHandler::occurrent))
       return result(Consequence.Outcome.NO_ACTION, "The context has no observed occurrence", List.of());
 
@@ -38,6 +40,7 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
     var bearers = new LinkedHashMap<Long, Observation>();
     int deferred = 0;
     for (var quality : observations.stream().sorted(Comparator.comparingLong(Observation::getId)).toList()) {
+      checkCancelled(scope);
       if (!quality.getObservable().is(SemanticType.QUALITY)
           || quality.getObservable().isAbstract() || quality.getResolvedCoverage() <= 0) continue;
       if (!(scope.getParentOf(quality) instanceof Observation bearer) || bearer.getId() <= 0) {
@@ -55,7 +58,7 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
           ResolutionConstraint.Type.ChangeQualities,
           entry.getValue().stream().map(Observation::getObservable).toArray()));
       for (var quality : entry.getValue()) {
-        if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+        checkCancelled(scope);
         var support = grid(bearer.getGeometry()) ? bearer.getGeometry() : quality.getGeometry();
         if (support == null || support.isEmpty()) { deferred++; continue; }
         var requestScope = targetScope.withResolutionConstraints(
@@ -71,17 +74,16 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
         var coverage = existing == null ? null : ObserverReuseSupport.coverage(existing, support);
         if (coverage != null && coverage.isComplete()
             && !ObserverResolution.deferred(existing, change, requestScope)) continue;
+        checkCancelled(scope);
         var task = requestScope.observation(change).geometry(support).submit();
         try {
-          var resolved = task.get();
+          var resolved = awaitSubmissionDrain(task);
+          checkCancelled(scope);
           if (resolved == null || resolved.isEmpty() || resolved.getId() <= 0) {
             if (resolved != null && org.integratedmodelling.klab.api.utils.Utils.Notifications
                 .hasErrors(resolved.getNotifications())) failures++;
             else deferred++;
           } else submitted.add(quality.getId());
-        } catch (InterruptedException interrupted) {
-          task.cancel(true);
-          throw interrupted;
         } catch (ExecutionException failure) {
           failures++;
         }
@@ -92,6 +94,37 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
             : submitted.isEmpty() ? Consequence.Outcome.NO_ACTION : Consequence.Outcome.APPLIED,
         "Change resolution: " + submitted.size() + " qualities resolved, " + deferred
             + " deferred, " + failures + " failed", submitted);
+  }
+
+  /**
+   * An uncancelled local submission settles only after its commit/fail continuation has drained.
+   * Cancelling its exposed CompletableFuture merely signals cancellation; it does not join native
+   * work. Keep owning this operation through interruption, letting the scope token cancel it.
+   */
+  static Observation awaitSubmissionDrain(java.util.concurrent.CompletableFuture<Observation> task)
+      throws ExecutionException {
+    boolean interrupted = false;
+    try {
+      for (;;) {
+        try { return task.get(); }
+        catch (InterruptedException cancellation) { interrupted = true; }
+        catch (java.util.concurrent.CancellationException noDrainReceipt) {
+          // A third party cancelled the wrapper, destroying our completion receipt. There is no
+          // safe quiescence inference: retain ownership so close refuses graph/storage disposal.
+          var unknownDrain = new java.util.concurrent.CountDownLatch(1);
+          for (;;) {
+            try { unknownDrain.await(); }
+            catch (InterruptedException cancellation) { interrupted = true; }
+          }
+        }
+      }
+    } finally {
+      if (interrupted) Thread.currentThread().interrupt();
+    }
+  }
+  private static void checkCancelled(ServiceContextScope scope) throws InterruptedException {
+    if (scope.isInterrupted() || Thread.currentThread().isInterrupted())
+      throw new InterruptedException("Consequence evaluation cancelled");
   }
 
   private static ConsequenceEngine.Result result(Consequence.Outcome outcome, String text, List<Long> ids) {
@@ -145,3 +178,5 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
         && reasoner.semanticDistance(provided, requested, null, capabilities.getKnowledgeRevision()) >= 0;
   }
 }
+
+

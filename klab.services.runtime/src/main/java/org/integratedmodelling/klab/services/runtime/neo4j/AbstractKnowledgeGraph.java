@@ -110,6 +110,7 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put(GraphModel.Fields.ID, observation.getId());
           ret.put(GraphModel.Fields.PARENT_ID, observation.getParentId());
           ret.put(GraphModel.Fields.EVENT_TIMESTAMPS, observation.getEventTimestamps());
+          ret.put(GraphModel.Fields.RESOLVED_COVERAGE, observation.getResolvedCoverage());
           if (!observation.getHistograms().isEmpty()) {
             ret.put(
                 GraphModel.Fields.HISTOGRAMS,

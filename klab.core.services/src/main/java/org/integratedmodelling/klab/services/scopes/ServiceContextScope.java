@@ -708,6 +708,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public ServiceContextScope within(Observation contextObservation) {
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.contextObservation = contextObservation;
+    // A new non-null within focus replaces relationship endpoints. Null only clears ambient
+    // context (used while planning independent substantials) and preserves a paired scope.
+    if (contextObservation != null) {
+      ret.sourceObservation = null;
+      ret.targetObservation = null;
+      ret.resolutionConstraints.remove(ResolutionConstraint.Type.UnresolvedSourceObservation);
+      ret.resolutionConstraints.remove(ResolutionConstraint.Type.UnresolvedTargetObservation);
+    }
     ret.splits = -1;
     return ret;
   }
@@ -862,6 +870,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           ret.resolutionConstraints.put(constraint.getType(), constraint);
         }
       }
+    }
+    var endpoints = ResolutionConstraint.unresolvedRelationshipScope(ret, resolutionConstraints);
+    if (endpoints != null) {
+      ret.sourceObservation = endpoints.source();
+      ret.targetObservation = endpoints.target();
     }
     return ret;
   }

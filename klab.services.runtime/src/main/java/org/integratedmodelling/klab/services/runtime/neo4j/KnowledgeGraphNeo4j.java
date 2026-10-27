@@ -1546,6 +1546,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setEventTimestamps(
             node.get(GraphModel.Fields.EVENT_TIMESTAMPS).asList(value -> value.asLong()));
         instance.setSubstantialQuality(node.get(GraphModel.Fields.SUBSTANTIAL).asBoolean(false));
+        // Older records contain no resolution receipt. Missing evidence remains unknown (zero).
+        instance.setResolvedCoverage(node.get(GraphModel.Fields.RESOLVED_COVERAGE).asDouble(0));
         restoreObservationMetadata(node, instance);
         restoreObservationAnnotations(node, instance);
         if (!node.get(GraphModel.Fields.HISTOGRAMS).isNull()) {

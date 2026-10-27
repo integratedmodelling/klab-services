@@ -2376,7 +2376,13 @@ public class CoreActorLibrary {
               .requireAgent(scope.getAgent().getName());
 
       var builder = Observation.builder(selectedContext);
-      var definition = Utils.Collections.findElement(arguments, Map.class, metadata);
+      // Options are never definition data, including multiple Metadata arguments merged above.
+      Map<?, ?> definition = null;
+      if (arguments != null) for (var argument : arguments)
+        if (argument instanceof Map<?, ?> map && !(argument instanceof Metadata)) {
+          definition = map;
+          break;
+        }
       var observable = Utils.Collections.findElement(arguments, KimObservable.class);
       var concept = Utils.Collections.findElement(arguments, KimConcept.class);
       var urn = Utils.Collections.findElement(arguments, Urn.class);
@@ -2387,11 +2393,7 @@ public class CoreActorLibrary {
       Observable semantics = Utils.Collections.findElement(arguments, Observable.class);
       if (semanticDef != null) {
         semantics =
-            scope
-                .getAgent()
-                .getCreationScope()
-                .getService(Reasoner.class)
-                .resolveObservable(semanticDef);
+            selectedContext.getService(Reasoner.class).resolveObservable(semanticDef);
       }
 
       // definition MUST remain last
@@ -2407,24 +2409,12 @@ public class CoreActorLibrary {
           selectedContext.withResolutionConstraints(
               ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, provenanceAgent));
 
-      if (metadata.get("namespace") instanceof String namespace) {
-        submissionScope =
-            submissionScope.withResolutionConstraints(
-                ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionNamespace, namespace));
-      }
-
-      if (metadata.get("project") instanceof String project) {
-        submissionScope =
-            submissionScope.withResolutionConstraints(
-                ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject, project));
-      }
-
       return runtimeService.submit(target, submissionScope);
     }
   }
 
-  /** Snapshot assertion functions; see docs/TESTING.md for policies and capture boundaries. */
-  @Actor(name = "inspector", description = "Read-only asset and graph assertion factory")
+  /** Assertions and explicitly gated native testcase operations; see docs/TESTING.md. */
+  @Actor(name = "inspector", description = "Asset assertions and bounded native testcase operations")
   public static class Inspector {
 
     @Verb(
@@ -2762,6 +2752,137 @@ public class CoreActorLibrary {
             long offset) {
       return org.integratedmodelling.klab.runtime.storage.StorageReads.text(
           observation, contextScope(context), null, curve, offset);
+    }
+
+    @Verb(name = "schedulecheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Check one model cadence, exact UTC bounds and durable temporal commit count.")
+    public static boolean schedulecheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "process", description = "Committed process") Observation process,
+        @Verb.Argument(name = "step", description = "Cadence multiplier") double step,
+        @Verb.Argument(name = "unit", description = "Calendar or regular time unit")
+            org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution.Type unit,
+        @Verb.Argument(name = "start", description = "Expected ISO-8601 start") String start,
+        @Verb.Argument(name = "end", description = "Expected ISO-8601 end") String end,
+        @Verb.Argument(name = "count", description = "Exact committed transition count") int count) {
+      return org.integratedmodelling.klab.runtime.storage.TemporalInspector.scheduleCheck(
+          contextScope(context), process, step, unit, start, end, count);
+    }
+
+    @Verb(name = "relativecheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Check all covered numeric cells against INIT+n*delta, preserving missingness.")
+    public static boolean relativecheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "process", description = "Committed process") Observation process,
+        @Verb.Argument(name = "quality", description = "Affected numeric quality") Observation quality,
+        @Verb.Argument(name = "count", description = "Exact transition count") int count,
+        @Verb.Argument(name = "delta", description = "Expected change per transition") double delta,
+        @Verb.Argument(name = "tolerance", description = "Absolute tolerance; minimum four double ULPs")
+            double tolerance) {
+      return org.integratedmodelling.klab.runtime.storage.TemporalInspector.relativeCheck(
+          contextScope(context), process, quality, count, delta, tolerance);
+    }
+
+    @Verb(name = "processprovenance", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Check existence-only process provenance, actual observer and no INIT storage for creates qualities.")
+    public static boolean processprovenance(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "process", description = "Committed process") Observation process) {
+      return org.integratedmodelling.klab.runtime.storage.TemporalInspector.provenanceCheck(
+          contextScope(context), process);
+    }
+
+    @Verb(name = "apply", executionType = Verb.Type.SUPPLIER,
+        returns = RuntimeService.OperationReceipt.class,
+        description = "Apply an UPDATE directive through the native test-only runtime capability; returns a committed receipt, never an observation.")
+    public static CompletableFuture<RuntimeService.OperationReceipt> apply(RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "directive", description = "Observable or semantic directive literal") Object directive,
+        @Verb.Argument(name = "support", description = "Explicit operation geometry") Geometry support,
+        @Verb.Argument(name = "options", description = "Submission scope options") Object... options) {
+      // Gate before context conversion, options, semantic lookup or native service access.
+      if (!(caller instanceof TestCaseBase.TestCaseScope))
+        throw new IllegalArgumentException("inspector.apply requires an actual testcase execution scope");
+      if (options != null) for (var option : options)
+        if (!(option instanceof Metadata)) throw new IllegalArgumentException("apply options require metadata");
+      var selected = ContextActorSupport.submissionScope(contextScope(context),
+          ContextActorSupport.metadata(options));
+      if (!(selected.getService(RuntimeService.class) instanceof RuntimeService.Testing testing))
+        throw new IllegalArgumentException("inspector.apply requires a native test runtime capability");
+      Observable observable;
+      if (directive instanceof Observable value) observable = value;
+      else {
+        String definition = directive instanceof KimObservable value ? value.getUrn()
+            : directive instanceof KimConcept value ? value.getUrn() : null;
+        if (definition == null || definition.isBlank())
+          throw new IllegalArgumentException("apply requires an observable or semantic directive literal");
+        observable = selected.getService(Reasoner.class).resolveObservable(definition);
+      }
+      if (observable == null) throw new IllegalArgumentException("Cannot resolve operation directive");
+      if (support == null || support.isEmpty())
+        throw new IllegalArgumentException("apply requires explicit nonempty support geometry");
+      var provenance = selected.getDigitalTwin().getKnowledgeGraph().requireAgent(caller.getAgent().getName());
+      var operationScope = selected.withResolutionConstraints(
+          ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, provenance));
+      return testing.applyForTesting(observable, support, operationScope, caller);
+    }
+
+    @Verb(name = "observercheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Check a known actual observer selection, persisted concrete Agent identity and successful observer submission/resolution provenance.")
+    public static boolean observercheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "observation", description = "Committed observation whose observer is checked") Observation observation,
+        @Verb.Argument(name = "observer", description = "Expected concrete Agent, or null for recorded no-observer selection") Observation observer) {
+      return ObservationInspector.observerCheck(contextScope(context), observation, observer);
+    }
+
+    @Verb(name = "membersnapshot", executionType = Verb.Type.FUNCTION,
+        returns = ObservationInspector.MemberSnapshot.class,
+        description = "Capture committed native cohort member identities, semantics, geometry and attribution.")
+    public static ObservationInspector.MemberSnapshot membersnapshot(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "producer", description = "Instantiated collection producer") Observation producer) {
+      return ObservationInspector.snapshot(contextScope(context), producer);
+    }
+
+    @Verb(name = "classificationcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Verify in-place concrete classification, unchanged member identity/geometry and committed attribution.")
+    public static boolean classificationcheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "before", description = "Member snapshot captured before classification")
+            ObservationInspector.MemberSnapshot before,
+        @Verb.Argument(name = "family", description = "Expected predicate family definition") String family) {
+      return ObservationInspector.classificationCheck(contextScope(context), before, family);
+    }
+
+    @Verb(name = "classificationnoop", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Verify successful existing-member classification with unchanged identities, semantics and attribution.")
+    public static boolean classificationnoop(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "before", description = "Snapshot of already classified members")
+            ObservationInspector.MemberSnapshot before,
+        @Verb.Argument(name = "family", description = "Expected predicate family definition") String family) {
+      return ObservationInspector.classificationNoop(contextScope(context), before, family);
+    }
+
+    @Verb(name = "relationshipscheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Verify directed relationship members, semantic endpoints, ordered participant links and geometry.")
+    public static boolean relationshipscheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "producer", description = "Relationship collection producer") Observation producer,
+        @Verb.Argument(name = "relationship", description = "Expected relationship definition") String relationship) {
+      return ObservationInspector.relationshipsCheck(contextScope(context), producer, relationship);
+    }
+
+    @Verb(name = "gridcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Check a bounded rectangular grid against independent native cell/value and physical-coordinate oracles.")
+    public static boolean gridcheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "observation", description = "Committed numeric grid quality") Observation observation,
+        @Verb.Argument(name = "expectedGeometry", description = "Explicit regular S2 bbox, dimensions and CRS")
+            String expectedGeometry) {
+      return org.integratedmodelling.klab.runtime.storage.GridInspector.check(
+          contextScope(context), observation, expectedGeometry);
     }
 
     private static boolean sameAsset(RuntimeAsset left, RuntimeAsset right) {

@@ -50,7 +50,9 @@ public final class ConsequenceEngine implements AutoCloseable {
   private final Map<Consequence.Kind, Handler> handlers = new EnumMap<>(Consequence.Kind.class);
   private final java.util.Set<Long> pending = new java.util.HashSet<>();
   private final Cache<Long, Boolean> completed = CacheBuilder.newBuilder().maximumSize(1024).build();
-  private boolean closed;
+  private volatile boolean closed;
+  private final long gracefulCloseMillis;
+  private final long forcedCloseMillis;
   private long sequence;
 
   private record Work(int priority, long sequence, Runnable action) implements Runnable, Comparable<Work> {
@@ -62,6 +64,15 @@ public final class ConsequenceEngine implements AutoCloseable {
   }
 
   public ConsequenceEngine(ServiceContextScope rootScope, String contextId) {
+    this(rootScope, contextId, 5000, 5000);
+  }
+
+  ConsequenceEngine(ServiceContextScope rootScope, String contextId,
+      long gracefulCloseMillis, long forcedCloseMillis) {
+    if (gracefulCloseMillis <= 0 || forcedCloseMillis <= 0)
+      throw new IllegalArgumentException("Close deadlines must be positive");
+    this.gracefulCloseMillis = gracefulCloseMillis;
+    this.forcedCloseMillis = forcedCloseMillis;
     this.rootScope = Objects.requireNonNull(rootScope);
     this.contextId = Objects.requireNonNull(contextId);
     handlers.put(Consequence.Kind.CONFIGURATION_DETECTION, new ConfigurationDiscoveryHandler());
@@ -102,7 +113,7 @@ public final class ConsequenceEngine implements AutoCloseable {
             new Consequence.Commit(origin, CommitImpl.copyOf(snapshot)));
         for (var kind : Consequence.Kind.values()) {
           if (kind == Consequence.Kind.UNCERTAINTY) continue;
-          if (Thread.currentThread().isInterrupted()) break;
+          if (closed || Thread.currentThread().isInterrupted()) break;
           evaluate(kind, selected.get(kind), snapshot, evaluationScope, activityId, observerId, fingerprint, origin);
         }
       } finally {
@@ -129,7 +140,13 @@ public final class ConsequenceEngine implements AutoCloseable {
       Consequence.Cause origin) {
     var cause = new Consequence.Cause(1, contextId, snapshot.getId(), activityId, observerId,
         fingerprint, origin == null ? null : origin.decisionId(), UUID.randomUUID().toString(), kind);
-    var handlerScope = evaluationScope.forConsequence(cause);
+    final ServiceContextScope handlerScope;
+    synchronized (this) {
+      if (closed) return;
+      // Admission is linearized with close. An admitted handler remains owned until it drains.
+      // forConsequence resets request cancellation; attach our lifetime afterwards.
+      handlerScope = evaluationScope.forConsequence(cause).withCancellation(() -> closed);
+    }
     Result result;
     try {
       result = handler == null
@@ -155,7 +172,8 @@ public final class ConsequenceEngine implements AutoCloseable {
         new Consequence.Decision(cause, result.outcome(), result.explanation(), result.observationIds()));
   }
 
-  private void publish(Message.MessageType type, Object payload) {
+  private synchronized void publish(Message.MessageType type, Object payload) {
+    if (closed) return;
     try {
       rootScope.send(Message.MessageClass.DigitalTwin, type, payload);
     } catch (RuntimeException failure) {
@@ -168,11 +186,17 @@ public final class ConsequenceEngine implements AutoCloseable {
   public void close() {
     synchronized (this) {
       closed = true;
-      worker.shutdownNow();
+      // Let an in-flight atomic operation/read finish before interrupting its driver.
+      // In particular, interrupting synchronous Bolt I/O can strand its pending future.
+      ((ThreadPoolExecutor) worker).getQueue().clear();
+      worker.shutdown();
     }
     try {
-      if (!worker.awaitTermination(5, TimeUnit.SECONDS))
-        throw new IllegalStateException("Consequence handler did not stop for " + contextId);
+      if (!worker.awaitTermination(gracefulCloseMillis, TimeUnit.MILLISECONDS)) {
+        worker.shutdownNow();
+        if (!worker.awaitTermination(forcedCloseMillis, TimeUnit.MILLISECONDS))
+          throw new IllegalStateException("Consequence handler did not stop for " + contextId);
+      }
     } catch (InterruptedException interrupted) {
       Thread.currentThread().interrupt();
       throw new IllegalStateException("Interrupted while closing consequence engine", interrupted);
@@ -183,3 +207,5 @@ public final class ConsequenceEngine implements AutoCloseable {
     }
   }
 }
+
+

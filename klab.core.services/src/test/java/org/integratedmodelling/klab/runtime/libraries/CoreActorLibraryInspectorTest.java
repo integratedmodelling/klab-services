@@ -234,7 +234,14 @@ class CoreActorLibraryInspectorTest {
       var verb = method.getAnnotation(Verb.class);
       assertNotNull(verb, method.getName());
       assertTrue(names.add(verb.name()));
-      assertEquals(Verb.Type.FUNCTION, verb.executionType());
+      if (verb.name().equals("apply")) {
+        assertEquals(Verb.Type.SUPPLIER, verb.executionType());
+        assertEquals(java.util.concurrent.CompletableFuture.class, method.getReturnType());
+        assertEquals(org.integratedmodelling.klab.api.services.RuntimeService.OperationReceipt.class,
+            verb.returns());
+      } else {
+        assertEquals(Verb.Type.FUNCTION, verb.executionType());
+      }
       for (int i = 1; i < method.getParameterCount(); i++)
         assertNotNull(method.getParameters()[i].getAnnotation(Verb.Argument.class));
     }

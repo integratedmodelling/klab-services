@@ -136,11 +136,21 @@ public class DataflowCompiler {
                   : observation.getObservable().getName())
               : localName);
       ret.setCoverage(Geometry.forTransport(coverage));
+      ret.setResolvedCoverage(observation.getResolvedCoverage());
       ret.setActuatorType(Actuator.Type.REFERENCE);
       return List.of(ret);
     }
 
     catalog.add(observation.getId());
+
+    // Each observation (including computed children) needs its own resolution receipt.
+    // Union accepted contributions spatially; overlapping strategies must not add fractions.
+    Coverage resolved = Coverage.create(GeometryRepository.INSTANCE.scale(observation.getGeometry()), 0.0);
+    for (var edge : resolutionGraph.graph().outgoingEdgesOf(observation)) {
+      if (edge.coverage != null) resolved = resolved.merge(
+          edge.coverage, org.integratedmodelling.klab.api.lang.LogicalConnector.UNION);
+    }
+    double resolvedFraction = resolved.getCoverage();
 
     var ret = new ArrayList<Actuator>();
     var references = new ArrayList<Actuator>();
@@ -152,6 +162,8 @@ public class DataflowCompiler {
       if (child instanceof ObservationStrategy observationStrategy) {
         var actuator = new ActuatorImpl();
         actuator.setObservation(Observation.forTransport(observation));
+        ((ObservationImpl) actuator.getObservation()).setResolvedCoverage(resolvedFraction);
+        actuator.setResolvedCoverage(childCoverage == null ? 0.0 : childCoverage.getCoverage());
         actuator.setOperationObservable(observation.getObservable());
         actuator.setContextualization(observation.getObservable().getContextualization());
         actuator.setName(localName == null ? observation.getObservable().getName() : localName);
@@ -629,6 +641,7 @@ public class DataflowCompiler {
     ret.setId(observation.getId());
     ret.setName(localName == null ? observation.getObservable().getName() : localName);
     ret.setCoverage(Geometry.forTransport(coverage));
+    ret.setResolvedCoverage(observation.getResolvedCoverage());
     ret.setActuatorType(Actuator.Type.REFERENCE);
     if (Boolean.TRUE.equals(observation.getMetadata().get(Actuator.COMPLETE_COHORT_REFERENCE)))
       {

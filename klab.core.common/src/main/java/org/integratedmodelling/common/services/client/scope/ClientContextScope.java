@@ -153,6 +153,14 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   public ContextScope within(Observation contextObservation) {
     var ret = childContext(this);
     ret.contextObservation = contextObservation;
+    // A new non-null within focus replaces relationship endpoints. Null only clears ambient
+    // context (used while planning independent substantials) and preserves a paired scope.
+    if (contextObservation != null) {
+      ret.sourceObservation = null;
+      ret.targetObservation = null;
+      ret.resolutionConstraints.remove(ResolutionConstraint.Type.UnresolvedSourceObservation);
+      ret.resolutionConstraints.remove(ResolutionConstraint.Type.UnresolvedTargetObservation);
+    }
     return ret;
   }
 
@@ -396,6 +404,11 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       }
     }
 
+    var endpoints = ResolutionConstraint.unresolvedRelationshipScope(ret, resolutionConstraints);
+    if (endpoints != null) {
+      ret.sourceObservation = endpoints.source();
+      ret.targetObservation = endpoints.target();
+    }
     return ret;
   }
 

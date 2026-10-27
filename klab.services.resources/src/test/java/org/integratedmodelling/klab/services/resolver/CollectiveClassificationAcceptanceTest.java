@@ -29,6 +29,8 @@ class CollectiveClassificationAcceptanceTest {
     realm Leaf is imod:Realm;
     thing Region;
     thing Container;
+    abstract length Length is core odo:Length;
+    length Elevation is imod:Length;
     """));
   var ontology=manager.getOntologies(false).iterator().next();
   assertTrue(ontology.getNotifications().stream().noneMatch(n->n.getLevel()==Notification.Level.Error),ontology.getNotifications().toString());
@@ -41,7 +43,29 @@ class CollectiveClassificationAcceptanceTest {
   var compiled=factory.build(captured,()->false);assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID,compiled.logicalStatus(),compiled.diagnostics().toString());
   try(var state=compiled.state()) {
    var actor=state.actor();var resources=actor.serviceScope().getService(ResourcesService.class);
-   assertNull(CollectiveClassification.prepare(resources.declareObservable("each imod:Terrestrial imod:Region"),resources::declareConcept));
+   assertNull(CollectiveClassification.prepare(resources.declareObservable("each imod:Terrestrial imod:Region"),resources::declareConcept));   // Ordinary named quality must reach normal resolution despite its lexical alias.
+   var ordinarySource=resources.declareObservable("imod:Elevation in m named elevation");
+   var ordinarySyntax=new KimModelImpl();ordinarySyntax.setUrn("fixture.erosion");ordinarySyntax.getDependencies().add(ordinarySource);
+   var ordinarySaved=new KimNamespaceImpl();ordinarySaved.setUrn("fixture");ordinarySaved.getStatements().add(ordinarySyntax);
+   var ordinaryModel=mock(Model.class);when(ordinaryModel.getNamespace()).thenReturn("fixture");when(ordinaryModel.getUrn()).thenReturn("fixture.erosion");
+   var ordinaryScope=mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+   var ordinaryResources=mock(ResourcesService.class);
+   when(ordinaryScope.getService(ResourcesService.class)).thenReturn(ordinaryResources);
+   when(ordinaryScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(actor);
+   when(ordinaryResources.retrieve("fixture",KimNamespace.class,ordinaryScope)).thenReturn(ordinarySaved);
+   when(ordinaryResources.declareConcept(anyString())).thenAnswer(i->resources.declareConcept(i.getArgument(0,String.class)));
+   var ordinaryQuality=actor.declareObservable(ordinarySource);
+   var compiler=new ResolutionCompiler(mock(ResolverService.class));
+   var ordinaryPlanner=ResolutionCompiler.class.getDeclaredMethod("planClassifiedDependency",Model.class,org.integratedmodelling.klab.api.knowledge.Observable.class,int.class,org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class,ResolutionGraph.class,org.integratedmodelling.klab.api.scope.ContextScope.class);
+   ordinaryPlanner.setAccessible(true);
+   assertNotEquals(ordinarySource.getUrn(),ordinaryQuality.getUrn());
+   assertEquals(false,ordinaryPlanner.invoke(compiler,ordinaryModel,ordinaryQuality,0,null,null,ordinaryScope));
+   var renamed=new org.integratedmodelling.common.knowledge.ObservableImpl((org.integratedmodelling.common.knowledge.ObservableImpl)ordinaryQuality);
+   renamed.setStatedName("height");renamed.setUrn(ordinaryQuality.getUrn()+" named height");
+   assertEquals(false,ordinaryPlanner.invoke(compiler,ordinaryModel,renamed,0,null,null,ordinaryScope));
+   renamed.setUnit(new org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl("mm"));
+   var badUnit=assertThrows(java.lang.reflect.InvocationTargetException.class,()->ordinaryPlanner.invoke(compiler,ordinaryModel,renamed,0,null,null,ordinaryScope));
+   assertInstanceOf(org.integratedmodelling.klab.api.exceptions.KlabValidationException.class,badUnit.getCause());
    for(var predicate:List.of("imod:PhysicalEnvironment","any imod:Terrestrial")) {
     for (boolean qualified : List.of(false,true)) {
     var source=resources.declareObservable(qualified ? "each "+predicate+" imod:Region" : predicate+" of each imod:Region");assertNotNull(source);
@@ -74,7 +98,12 @@ class CollectiveClassificationAcceptanceTest {
     when(sourceResources.declareConcept(anyString())).thenAnswer(i->resources.declareConcept(i.getArgument(0,String.class)));
     var canonical=actor.declareObservable(source);
     var sourceUrn=source.getUrn();
-    assertNotNull(ResolutionCompiler.prepareCollectiveDependencySource(selected,canonical,0,sourceResources,actor,scope));
+    assertNotNull(ResolutionCompiler.prepareCollectiveDependencySource(selected,canonical,0,sourceResources,actor,scope));    var renamedClassifier=new org.integratedmodelling.common.knowledge.ObservableImpl((org.integratedmodelling.common.knowledge.ObservableImpl)canonical);
+    renamedClassifier.setStatedName("localMembers");renamedClassifier.setUrn(canonical.getUrn()+" named localMembers");
+    assertNotNull(ResolutionCompiler.prepareCollectiveDependencySource(selected,renamedClassifier,0,sourceResources,actor,scope));
+    renamedClassifier.setGeneric(!canonical.isGeneric());
+    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabValidationException.class,
+        ()->ResolutionCompiler.prepareCollectiveDependencySource(selected,renamedClassifier,0,sourceResources,actor,scope));
     assertEquals(sourceUrn,source.getUrn(),"Saved selectors must stay authoritative and unchanged");
     assertThrows(org.integratedmodelling.klab.api.exceptions.KlabValidationException.class,
         ()->ResolutionCompiler.prepareCollectiveDependencySource(selected,actor.resolveObservable("imod:Aquatic of each imod:Region"),0,sourceResources,actor,scope));
@@ -125,3 +154,5 @@ class CollectiveClassificationAcceptanceTest {
   }
  }
 }
+
+

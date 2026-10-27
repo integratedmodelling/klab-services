@@ -389,7 +389,7 @@ class ClassifierDependencyContinuationTest {
       assertEquals(DependencyExpansion.Status.FAILED,f.run().toCompletableFuture().join().status());assertEquals(0,f.classifier.calls.get());
     }
     try(var f=new Fixture(false,0)){
-      ((ObservableImpl)f.prerequisites.values().iterator().next().operation().getModelDependency()).setUrn("different source");
+      ((ObservableImpl)f.prerequisites.values().iterator().next().operation().getModelDependency()).setSemantics(concept("test:DifferentSource",SemanticType.QUALITY));
       assertEquals(DependencyExpansion.Status.FAILED,f.run().toCompletableFuture().join().status());assertEquals(0,f.classifier.calls.get());
     }
   }
@@ -404,4 +404,18 @@ class ClassifierDependencyContinuationTest {
     }
   }
 
-}
+  @Test void classifierContinuationIgnoresModelLocalAliasesButRetainsUnits() throws Exception {
+    try(var f=new Fixture(false,0)) {
+      var original=(ObservableImpl)f.prerequisites.values().iterator().next().operation().getModelDependency();
+      original.setStatedName("localQuality");original.setUrn(original.getUrn()+" named localQuality");
+      var result=f.run().toCompletableFuture().join();
+      assertEquals(DependencyExpansion.Status.SUCCESS,result.status(),result.diagnostic());
+    }
+    try(var f=new Fixture(false,0)) {
+      var original=(ObservableImpl)f.prerequisites.values().iterator().next().operation().getModelDependency();
+      original.setUnit(new org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl("m"));
+      assertEquals(DependencyExpansion.Status.FAILED,f.run().toCompletableFuture().join().status());
+      assertEquals(0,f.classifier.calls.get());
+    }
+  }}
+

@@ -43,6 +43,18 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
       Runnable release,
       SpatialCoverage.Support sourceSupport,
       SpatialCoverage.Support targetSupport) {
+    this(plan, shards, readers, mapping, release, sourceSupport, targetSupport, null);
+  }
+
+  LocalScanSession(
+      StorageScan.Plan<T> plan,
+      List<Storage.Shard> shards,
+      List<IndexedStorageReader> readers,
+      ScanMapping mapping,
+      Runnable release,
+      SpatialCoverage.Support sourceSupport,
+      SpatialCoverage.Support targetSupport,
+      String inheritedProjection) {
     var coveredReaders = new ArrayList<IndexedStorageReader>(readers.size());
     for (int i = 0; i < readers.size(); i++) {
       var reader = readers.get(i);
@@ -73,7 +85,8 @@ final class LocalScanSession<T extends Storage.Scanner> implements StorageScan.S
       spatialProjection =
           targetSupport != null
               ? targetSupport.projection
-              : space == null ? null : Objects.toString(space.getParameters().get("proj"), null);
+              : space == null ? inheritedProjection
+                  : Objects.toString(space.getParameters().get("proj"), inheritedProjection);
     }
     this.kernel = ValueMediation.kernel(description.conversion());
     var cursors = new ArrayList<T>();

@@ -445,6 +445,13 @@ public class StorageImpl implements Storage {
     return getNativeScanner(shard, immutable, false);
   }
 
+  /** Shard descriptors may inherit the owner's CRS. Resolve no spatial objects until requested. */
+  private String observationProjection() {
+    var geometry = observation == null ? null : observation.getGeometry();
+    var space = geometry == null ? null : geometry.dimension(Geometry.Dimension.Type.SPACE);
+    return space == null ? null : Objects.toString(space.getParameters().get("proj"), null);
+  }
+
   private Storage.Scanner getNativeScanner(Shard shard, boolean readOnly, boolean resetForWrite) {
 
     synchronized (scanLock) {
@@ -481,6 +488,7 @@ public class StorageImpl implements Storage {
                 new LocalBooleanScanner((ShardImpl) shard, st.data, st.histogram, readOnly);
             case KEYED -> new LocalKeyScanner((ShardImpl) shard, st.data, readOnly);
           };
+      ((BaseScanner) scanner).inheritedProjection = observationProjection();
       var support = coverageSupport();
       return support == null
           ? scanner
@@ -836,7 +844,8 @@ public class StorageImpl implements Storage {
             nativePlan.mapping(),
             this::releaseScan,
             nativePlan.sourceSupport(),
-            nativePlan.targetSupport());
+            nativePlan.targetSupport(),
+            observationProjection());
       } catch (RuntimeException | Error failure) {
         for (var reader : readers) {
           try {
@@ -1315,6 +1324,7 @@ public class StorageImpl implements Storage {
     protected final boolean readOnly;
     protected long index = 0L;
     private SpatialCoverage spatial;
+    private String inheritedProjection;
 
     public BaseScanner(
         ShardImpl shard,
@@ -1373,7 +1383,7 @@ public class StorageImpl implements Storage {
       if (spatial == null)
         spatial =
             new SpatialCoverage(
-                shard.getGeometry().encode(), null, shard.getShardingStrategy().getCurve(), null);
+                shard.getGeometry().encode(), inheritedProjection, shard.getShardingStrategy().getCurve(), null);
       return spatial;
     }
 

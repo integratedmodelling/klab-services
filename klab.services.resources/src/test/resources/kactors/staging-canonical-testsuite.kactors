@@ -1,0 +1,198 @@
+// TODO a test case named <projectname>.testsuite is the default test case for a project
+testcase klab.staging.vxii.testsuite
+    "Exercises the self-contained observations in the klab.staging.vxii project"
+    version 1.0
+    using 
+        core.console as console,
+        core.context as context,
+		core.inspector as inspector
+    
+action init:
+	def ruaha {
+        namespace: "test.tanzania"
+		name: "ruaha" 
+	    semantics: {{ earth:Terrestrial earth:Region }}
+	    space: {
+		    shape: "EPSG:4326 POLYGON((33.796 -7.086, 35.946 -7.086, 35.946 -9.41, 33.796 -9.41, 33.796 -7.086))"
+		    grid: 1.km
+	    }
+	    time: {
+		    year: 2014
+		    step: 1.day
+	    }
+    }
+
+    def observer_definition {
+        namespace: "staging.observers"
+        name: "explicit"
+        semantics: {{agency:Volitional society:HumanIndividual}}
+        space: {shape: "EPSG:3857 POLYGON ((200000 6000000,200000 6000400,200500 6000400,200500 6000000,200000 6000000))", grid: "100 m"}
+    }
+
+@test(name="Substantial identity preservation", 
+	description="Check that substantial identity is preserved upon resubmission and redefinitions are disallowed")
+action check_substantial_identity:
+    ctx <- context.new 
+    mainobs <- ctx.submit(ruaha !observer)
+	assert [mainobs != null]
+		:success "The main observation was created correctly"
+		:fail "The main observation was not created"
+	mid <- mainobs.id
+	resubmitted <- ctx.submit(ruaha !observer)
+	assert [resubmitted != null]
+		:success "The second submission of the same definition returned an observation"
+		:fail "The second submission of the same definition failed"
+	rid <- resubmitted.id
+	assert [mid == rid]
+		:fail "A resubmitted substantial observation was re-created instead of returned"
+		:success "The resubmitted observation URN is correctly used to key existing observations"
+
+@test(name="Direct quality observation", 
+	description="Test successive submission of a raw subject and a quality in its context")
+action resolve_quality:
+
+    ctx <- context.new 
+    mainobs <- ctx.submit(ruaha !observer)
+	elevation <- 
+		ctx.submit({{geography:Elevation in m}} 
+            :within mainobs 
+            :namespace "staging.vxii.basic"
+            :project "klab.staging.vxii")
+	assert 
+		inspector.viable(elevation !nodata) 
+			:success "Generated elevation data are complete and correct"
+			:fail    "No-data values appear in the observation, indicating resolution or computation problems"
+
+@test(name="Implicit quality resolution", 
+	description="Test raw subject submission in a namespace that explains by observing two additional qualities")
+action ns_resolution:
+
+    ctx <- context.new
+    mainobs <- ctx.submit(ruaha !observer
+		:namespace "staging.vxii.basic"
+        :project "klab.staging.vxii")
+
+    assert inspector.viable(mainobs)
+    initial_elevation <- ctx.query({{geography:Elevation in m}} :within mainobs)
+    initial_slope <- ctx.query({{geography:Slope in degree_angle}} :within mainobs)
+    assert inspector.present(initial_elevation)
+    assert inspector.present(initial_slope)
+    elevation <- ctx.submit({{geography:Elevation in m}} :within mainobs
+        :namespace "staging.vxii.basic" :project "klab.staging.vxii")
+    slope <- ctx.submit({{geography:Slope in degree_angle}} :within mainobs
+        :namespace "staging.vxii.basic" :project "klab.staging.vxii")
+    assert inspector.viable(elevation !nodata)
+    assert inspector.viable(slope !nodata)
+    assert [initial_elevation.id == elevation.id]
+    assert [initial_slope.id == slope.id]
+
+@test(name="Elevation storage traversal and partition mediation")
+action storage_views:
+    ctx <- context.new
+    region <- ctx.submit({urn: "staging.storage:rectangle",
+        // Elevation requires a terrestrial bearer; grid geometry remains the storage oracle.
+        semantics: {{earth:Terrestrial earth:Region}},
+        space: {shape: "EPSG:3857 POLYGON ((200000 6000000,200000 6000400,200500 6000400,200500 6000000,200000 6000000))", grid: "100 m"} } !observer)
+    assert inspector.viable(region)
+    elevation <- ctx.submit({{geography:Elevation in m}} :within region
+        :namespace "staging.vxii.basic" :project "klab.staging.vxii")
+    assert inspector.viable(elevation !nodata)
+    assert inspector.gridcheck(ctx, elevation,
+        "S2(5,4){proj=EPSG:3857,bbox=[200000 200500 6000000 6000400]}")
+    assert inspector.contains(ctx, elevation)
+    assert inspector.scancheck(ctx, elevation, "D2_XY", 1, 8)
+    assert inspector.scancheck(ctx, elevation, "D2_YX", 3, 8)
+    assert inspector.scancheck(ctx, elevation, "D2_XInvY", 7, 8)
+    console.println(inspector.celltext(ctx, elevation, "D2_YX", 0))
+    assert inspector.unitcheck(ctx, elevation, "mm", 1000, 0)
+
+// Canonical temporal fixture: keep staging.vxii.test.process.basic unchanged.
+// Terrain is random; assertions compare each cell with its own initial value.
+@test(name="Monthly process simulation", description="Canonical Erosion schedule, temporal values and observer provenance")
+action monthly_process:
+    ctx <- context.new
+    region <- ctx.submit(ruaha
+        :namespace "staging.vxii.test.process.basic"
+        :project "klab.staging.vxii")
+    assert inspector.viable(region)
+    process <- ctx.query({{earth:Erosion}} :within region)
+    elevation <- ctx.query({{geography:Elevation in m}} :within region)
+    simulation <- ctx.focus(:within region)
+    assert inspector.present(process)
+    assert inspector.present(elevation)
+    assert inspector.schedulecheck(simulation, process, 1, "MONTH",
+        "2014-01-01T00:00:00Z", "2015-01-01T00:00:00Z", 12)
+    // 1e-8 m is far below terrain precision; inspector also allows four double ULPs.
+    assert inspector.relativecheck(simulation, process, elevation, 12, -10, 0.00000001)
+    assert inspector.processprovenance(simulation, process)
+
+@test(name="Directed stream relationship invariants", description="Check generated connection identities, endpoint semantics and participant geometry")
+action stream_relationships:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer
+        :namespace "staging.vxii.test.relationships"
+        :project "klab.staging.vxii")
+    assert inspector.viable(region)
+    // Collective dependency producers affect the root; their members live in a native cohort.
+    connections <- ctx.query({{each earth:StreamConnection}} :target region :along "AFFECTS")
+    assert inspector.present(connections)
+    network <- ctx.focus(:within region)
+    assert inspector.relationshipscheck(network, connections, "earth:StreamConnection")
+
+@test(name="Classification preserves member identities", description="Classify existing Regions, then verify a successful already-classified no-op")
+action classify_existing_regions:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    assert inspector.viable(region)
+    support <- region.geometry
+    regions <- ctx.submit({{each earth:Region}}, support :within region
+        :namespace "staging.vxii.test.classification"
+        :project "klab.staging.vxii")
+    classification <- ctx.focus(:within region)
+    before <- inspector.membersnapshot(classification, regions)
+    classified <- inspector.apply(classification, {{earth:PhysicalEnvironment of each earth:Region}}, support
+        :namespace "staging.vxii.test.classification"
+        :project "klab.staging.vxii")
+    classification_commit <- classified.commit_id
+    assert [classification_commit > 0]
+    assert inspector.classificationcheck(classification, before, "earth:PhysicalEnvironment")
+    after <- inspector.membersnapshot(classification, regions)
+    repeated <- inspector.apply(classification, {{earth:PhysicalEnvironment of each earth:Region}}, support
+        :namespace "staging.vxii.test.classification"
+        :project "klab.staging.vxii")
+    repeated_commit <- repeated.commit_id
+    assert [repeated_commit > 0]
+    assert inspector.classificationnoop(classification, after, "earth:PhysicalEnvironment")
+
+@test(name="Concrete any includes self", description="A concrete leaf category remains a valid classification result")
+action classify_concrete_self:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    assert inspector.viable(region)
+    support <- region.geometry
+    regions <- ctx.submit({{each earth:Region}}, support :within region
+        :namespace "staging.vxii.test.classification"
+        :project "klab.staging.vxii")
+    classification <- ctx.focus(:within region)
+    before <- inspector.membersnapshot(classification, regions)
+    classified <- inspector.apply(classification, {{any earth:Terrestrial of each earth:Region}}, support
+        :namespace "staging.vxii.test.classification"
+        :project "klab.staging.vxii")
+    classification_commit <- classified.commit_id
+    assert [classification_commit > 0]
+    assert inspector.classificationcheck(classification, before, "earth:Terrestrial")
+
+// Explicit observers are concrete Agents. Their normal submission/resolution creates identity;
+// this case does not require an INSTANTIATION activity or computational initialization.
+@test(name="Observer instantiation and resolution", description="Create and reuse a concrete Agent, then verify actual observer selection and provenance")
+action observer_instantiation:
+    ctx <- context.new
+    observer <- ctx.submit(observer_definition !observer)
+    assert inspector.viable(observer)
+    region <- ctx.submit(ruaha :observer observer)
+    assert inspector.viable(region)
+    assert inspector.observercheck(ctx, region, observer)
+    reused <- ctx.submit(observer_definition !observer)
+    assert inspector.viable(reused)
+    assert [observer.id == reused.id]
+    assert inspector.observercheck(ctx, region, reused)

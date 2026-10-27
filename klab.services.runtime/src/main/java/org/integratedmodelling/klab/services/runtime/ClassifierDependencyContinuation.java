@@ -88,11 +88,9 @@ public final class ClassifierDependencyContinuation {
     var declaredSource=reasoner.declareObservable(request.originalObservable());
     if(mode==BindingMode.DIRECT_QUALITY_DOMAIN && (declaredSource==null || !declaredSource.is(SemanticType.QUALITY)))
       throw new IllegalArgumentException("A direct classifier family requires a native quality dependency");
-    if(original==null || declaredSource==null || !Objects.equals(original.getUrn(),declaredSource.getUrn())
+    if(original==null || declaredSource==null || !org.integratedmodelling.klab.runtime.language.DependencyContract.matches(declaredSource,original)
         || original.isOptional()!=request.originalObservable().isOptional()
-        || declaredSource.isOptional()!=request.originalObservable().isOptional()
-        || !org.integratedmodelling.klab.api.data.StorageScan.semantics(original).equals(
-            org.integratedmodelling.klab.api.data.StorageScan.semantics(declaredSource)))
+        || declaredSource.isOptional()!=request.originalObservable().isOptional())
       throw new IllegalArgumentException("Classifier prerequisite does not preserve the original dependency contract");
     var nativeDirective=reasoner.inherent(prerequisite.operation().getOperationObservable());
     var nativeBase=nativeDirective==null?null:reasoner.baseSubstantialType(nativeDirective,scope);

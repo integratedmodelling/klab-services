@@ -85,6 +85,7 @@ class TemporalProcessIntegrationTest {
       var cd=new ObservationImpl.ContextualizationDataImpl(); cd.setNativeShardingStrategy(layout); quality.setContextualizationData(cd);
       field(twin,"knowledgeGraph",graph); field(twin,"commitCache",CacheBuilder.newBuilder().build());
       when(twin.getKnowledgeGraph()).thenReturn(graph); when(twin.getStorageManager()).thenReturn(manager);
+      when(twin.getScheduler()).thenAnswer(call -> scheduler);
       var user=mock(UserIdentity.class); when(user.getUsername()).thenReturn("tester");
       configureScope(root,user);
       for(var observation:observations.values())recordInitialSelection(observation);
@@ -104,6 +105,7 @@ class TemporalProcessIntegrationTest {
       });
       when(graph.query(any(KnowledgeGraph.Query.class),eq(Observation.class),any())).thenAnswer(call -> {
         var query=(org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<?>)call.getArgument(0);
+        if (query.getSource()==null && query.getTarget()==null) return List.copyOf(observations.values());
         return query.getSource()!=null && query.getRelationship()==GraphModel.Relationship.HAS_OBSERVER
             ? activityObservers.getOrDefault(query.getSource().getId(),List.of()):List.of();
       });
@@ -238,6 +240,7 @@ class TemporalProcessIntegrationTest {
       link(input,output,ProcessPlan.PREREQUISITE);return output;
     }
     void configureScope(ServiceContextScope scope,UserIdentity user) {
+      when(scope.getConsequenceCause()).thenReturn(null); // Diagnostic fixture: no consequence submission is active.
       when(scope.getObserver()).thenAnswer(call -> observer);
       when(scope.getId()).thenReturn("context");when(scope.getUser()).thenReturn(user);when(scope.getContextObservation()).thenReturn(bearer);
       when(scope.within(bearer)).thenReturn(scope);
@@ -572,4 +575,77 @@ class TemporalProcessIntegrationTest {
       assertEquals(2, f.data.get(id).size());
     }
   }
-}
+  @Test void processExistenceProvenanceRecoversActualObserverAndRollsBackWithRegistration() throws Exception {
+    for (boolean selected : List.of(false,true)) for (boolean fail : List.of(false,true)) {
+      try (var f=new Fixture("elevation - 10")) {
+        var observer=selected?observation("selectedObserver",SemanticType.AGENT,500):null;
+        if(observer!=null)f.selectInitialObserver(observer);
+        f.quality.setEventTimestamps(new ArrayList<>(List.of(0L)));
+        f.creators.remove(f.process.getId());
+        var registration=Utils.Json.parseObject(f.process.getMetadata().remove(OccurrenceRegistration.METADATA_KEY).toString(),OccurrenceRegistration.class);
+        var plan=Utils.Json.parseObject(registration.plan(),Actuator.class);
+        f.scheduler.close();when(f.graph.getScheduledObservations(f.root)).thenReturn(List.of());
+        f.scheduler=new SchedulerImpl(f.root,f.twin);
+        var submission=Activity.of(Activity.Type.SUBMISSION);
+        org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(submission,observer);
+        var scope=f.root.executingFresh(submission,f.bearer);
+        if(observer!=null)scope.getCurrentTransaction().link(submission,observer,GraphModel.Relationship.HAS_OBSERVER);
+        var executor=new CompiledDataflow(f.runtime,f.process,scope).restoreOccurrenceExecutor(plan);
+        scope.getCurrentTransaction().resolveWith(f.process,executor);
+        assertTrue(f.scheduler.submit(f.process,scope),()->f.failureDescription());
+        assertFalse(org.integratedmodelling.common.runtime.ObserverProvenance.recover(f.root,f.process).known());
+        assertTrue(f.journals.isEmpty());assertArrayEquals(new double[]{100,200,350},f.values(START));
+        f.failCommit=fail;
+        if(fail) {
+          assertTrue(scope.commit()<0);
+          assertFalse(f.creators.containsKey(f.process.getId()));
+          assertFalse(f.process.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY));
+          assertTrue(f.journals.isEmpty());assertEquals(1,f.data.get(101L).size());
+        } else {
+          assertTrue(scope.commit()>0,()->f.failureDescription());
+          var selection=org.integratedmodelling.common.runtime.ObserverProvenance.recover(f.root,f.process);
+          assertTrue(selection.known());assertEquals(observer==null?0:observer.getId(),selection.observer()==null?0:selection.observer().getId());
+          var initialization=f.creators.get(f.process.getId()).stream().filter(a->a.getType()==Activity.Type.INITIALIZATION).toList();
+          assertEquals(1,initialization.size());assertFalse(initialization.getFirst().getType().isContextualization());
+          assertEquals(12,f.journals.size(),()->f.failureDescription());
+          assertArrayEquals(new double[]{-20,80,230},f.values(END));
+          assertArrayEquals(new double[]{100,200,350},f.values(START));
+          assertTrue(TemporalInspector.scheduleCheck(f.root,f.process,1,Time.Resolution.Type.MONTH,
+              "2014-01-01T00:00:00Z","2015-01-01T00:00:00Z",12));
+          assertFalse(TemporalInspector.scheduleCheck(f.root,f.process,1,Time.Resolution.Type.DAY,
+              "2014-01-01T00:00:00Z","2015-01-01T00:00:00Z",12));
+          assertFalse(TemporalInspector.scheduleCheck(f.root,f.process,1,Time.Resolution.Type.MONTH,
+              "2014-01-01T00:00:00Z","2015-01-01T00:00:00Z",11));
+          assertTrue(TemporalInspector.relativeCheck(f.root,f.process,f.quality,12,-10,1e-8));
+          assertFalse(TemporalInspector.relativeCheck(f.root,f.process,f.quality,12,-9,1e-8));
+          assertTrue(TemporalInspector.provenanceCheck(f.root,f.process));
+        }
+      }
+    }
+  }
+
+  @Test void processExistenceProvenanceDoesNotInitializeCreatesQualities() throws Exception {
+    try(var f=new Fixture("elevation")) {
+      f.createPrecipitation();f.quality.setEventTimestamps(new ArrayList<>(List.of(0L)));f.creators.remove(f.process.getId());
+      var registration=Utils.Json.parseObject(f.process.getMetadata().remove(OccurrenceRegistration.METADATA_KEY).toString(),OccurrenceRegistration.class);
+      var plan=Utils.Json.parseObject(registration.plan(),Actuator.class);
+      assertEquals(1,plan.getChildren().size());assertEquals("elevation",plan.getChildren().getFirst().getName());
+      f.scheduler.close();when(f.graph.getScheduledObservations(f.root)).thenReturn(List.of());f.scheduler=new SchedulerImpl(f.root,f.twin);
+      var submission=Activity.of(Activity.Type.SUBMISSION);org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(submission,null);
+      var scope=f.root.executingFresh(submission,f.bearer);
+      scope.getCurrentTransaction().resolveWith(f.process,new CompiledDataflow(f.runtime,f.process,scope).restoreOccurrenceExecutor(plan));
+      assertTrue(f.scheduler.submit(f.process,scope),()->f.failureDescription());
+      assertEquals(3,f.observations.size());assertFalse(f.process.getMetadata().containsKey("klab.process.created.precipitation"));
+      assertTrue(f.journals.isEmpty());assertEquals(1,f.files());
+      assertTrue(scope.commit()>0,()->f.failureDescription());
+      long createdId=((Number)f.process.getMetadata().get("klab.process.created.precipitation")).longValue();
+      var created=f.observations.get(createdId);assertNotNull(created);
+      assertEquals(date("2014-02-01"),created.getEventTimestamps().getFirst());
+      assertFalse(created.getEventTimestamps().contains(0L));assertEquals(12,f.data.get(createdId).size());
+      assertTrue(f.creators.getOrDefault(createdId,List.of()).stream().noneMatch(a->a.getType()==Activity.Type.INITIALIZATION));
+      assertEquals(12,f.journals.size());assertTrue(f.scheduler.advanceTo(date("2015-02-01")));assertEquals(12,f.journals.size());
+      assertTrue(TemporalInspector.provenanceCheck(f.root,f.process));
+      assertEquals(12,f.data.get(createdId).size(),"Inspector must not allocate INIT storage");
+    }
+  }}
+
