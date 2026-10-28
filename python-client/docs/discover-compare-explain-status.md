@@ -7,6 +7,10 @@ offline evidence from missing live acceptance.
 
 ## Verified checkpoint
 
+Each feature now has its own draft PR: F1 #101, F2 #99, F3 #98, F4 #100,
+and delivery #102. See `discover-compare-explain-pr-stack.md` for branch/base
+relationships and contribution-guide assessments. No PR is merged.
+
 - Python 3.12.7 and installed-wheel Python 3.11, Windows: 1,392 unit/integration tests pass on each; existing new-module and
   changed-code coverage gates pass; established Ruff fatal-error checks pass.
 - Wheel and sdist builds pass. A separate Python 3.12 core-only wheel environment
