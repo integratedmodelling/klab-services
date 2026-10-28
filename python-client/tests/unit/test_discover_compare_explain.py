@@ -185,7 +185,7 @@ def test_shared_workflow_processes_real_exports_without_claiming_final_acceptanc
         path = tmp_path / "reference-export.tif"
         path.write_bytes(memory.read())
     monkeypatch.setattr(flow, "export_for_analysis", lambda observation, output, **kwargs:
-        NS(export=NS(path=path), sha256="b" * 64))
+        NS(export=NS(path=path, bytes_written=path.stat().st_size), sha256="b" * 64))
     # Use the real analysis adapter on a local independent raster; only transport
     # and service objects are replaced here, not the scientific validation path.
     real_open = flow.open_raster
@@ -205,7 +205,7 @@ def test_processor_rejects_analysis_changes_and_wrong_observation_units(tmp_path
         path = tmp_path / "field.tif"
         path.write_bytes(memory.read())
     monkeypatch.setattr(flow, "export_for_analysis", lambda *args, **kwargs:
-        NS(export=NS(path=path), sha256="b" * 64))
+        NS(export=NS(path=path, bytes_written=path.stat().st_size), sha256="b" * 64))
     analysis = flow.open_raster(path)
     data = analysis.dataset
     if fault == "precision":

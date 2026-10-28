@@ -17,6 +17,7 @@ local = ["cryptography>=44,<47", "psutil>=5.9,<8"]
 throughput = ["rasterio>=1.4,<2"]
 analysis = ["numpy>=1.26,<3", "rasterio>=1.4,<2", "xarray>=2024.1,<2027"]
 demo = ["Pillow>=10,<13", "imageio-ffmpeg>=0.6,<1"]
+notebook = ["nbformat>=5,<6", "nbclient>=0.10,<1", "nbconvert>=7,<8", "ipykernel>=6,<8", "matplotlib>=3.8,<4"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -7,8 +7,12 @@ offline evidence from missing live acceptance.
 
 ## Verified checkpoint
 
-- Python 3.12.7, Windows: 1,287 unit/integration tests pass; existing new-module and
+- Python 3.12.7 and installed-wheel Python 3.11, Windows: 1,392 unit/integration tests pass on each; existing new-module and
   changed-code coverage gates pass; established Ruff fatal-error checks pass.
+- Wheel and sdist builds pass. A separate Python 3.12 core-only wheel environment
+  imports all four features with no NumPy/Rasterio/xarray/Jupyter/Matplotlib present.
+  Local Python 3.13 and Linux matrix execution remain unavailable/not run; CI retains
+  its 3.11/3.12/3.13 Linux matrix and now includes delivery coverage/notebook checks.
 - No Java, component or worldview source changes were made for this milestone.
 - Earlier read-only IDE diagnostics found four local services responding. Resources
   had no workspaces/adopted worldview; Reasoner had accepted generation 0 and was
@@ -51,9 +55,9 @@ The numbered items below retain the outstanding deployment/delivery prerequisite
    alone is insufficient. Recheck Resources' advertised worldview/workspaces and a
    positive accepted Reasoner generation with operational semantic readiness.
 3. **Compatible unchanged stack:** obtain exact service build identities and the
-   existing component archive required by the scientific fixture. Earlier hosted
-   connection setup failed at Resources transport; repair the endpoint/network or
-   select an explicitly authorized working deployment. HTTP health and login alone
+   existing component archive required by the scientific fixture. The earlier hosted
+   transport failure no longer reproduces, but build/component attestation remains
+   absent. HTTP health and login alone
    do not establish scientific readiness.
 4. **Scientific matrix:** specify one independently verifiable executable fixture,
    two genuinely supported scientific variations and two grid resolutions. Supply
@@ -85,7 +89,14 @@ initial diagnostic script used nonexistent `AssetInspection.project` and failed
 while printing; corrected `project_name` inspection passed. No SDK defect or
 computation result is inferred from that diagnostic-script error.
 
-Named integrated scientific acceptance wrappers, executed notebook,
-validated sequential/parallel throughput, fail-closed deliverable builder,
-installed-wheel/core-only/interpreter checks and final integration review remain
-unfinished. Restoring the IDE does not complete those tasks or establish acceptance.
+Named functional suites, an isolated restoration worker/launcher, notebook 08 source
+and exact-interpreter executor, throughput wrapper and fail-closed delivery builder
+are implemented. See `discover-compare-explain-delivery.md`. Local tests actually
+execute smoke notebooks and export HTML; they do not compute scientific results.
+The acceptance adapter deliberately records `deployment_verified=false` until actual
+running Java/component/worldview provenance is independently established; the builder
+refuses PR-ready output in that state. There is no verification-override CLI switch.
+
+Remaining: real fixture/deployment attestation, actual scientific/permissions/
+notebook acceptance, measured throughput, unavailable platform/interpreter checks,
+and a final accepted evidence package. Restoring the IDE alone does not meet these gates.

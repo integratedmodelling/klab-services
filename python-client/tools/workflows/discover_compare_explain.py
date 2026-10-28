@@ -166,10 +166,16 @@ def validate_recorded_evidence(observation, evidence, expected_node_ids):
 def inspect_result(observation, oracle, path, expected_node_ids):
     """Native export, full oracle check, analysis and recorded evidence for one result."""
     import rasterio
+    stages = {}
+    started = time.perf_counter()
     require(observation.units == oracle.units, "Computed observation units differ from reference")
     artifact = export_for_analysis(observation, path, max_bytes=64 * 1024 * 1024)
+    stages["native_export"] = time.perf_counter() - started
+    started = time.perf_counter()
     with rasterio.open(artifact.export.path) as dataset:
         raster = validate_raster(dataset, oracle)
+    stages["raster_validation"] = time.perf_counter() - started
+    started = time.perf_counter()
     analysis = open_raster(artifact)
     require(str(analysis.dataset.value.dtype) == oracle.dtype, "Analysis changed precision")
     for index, expected in enumerate(oracle.values):
@@ -184,8 +190,12 @@ def inspect_result(observation, oracle, path, expected_node_ids):
         y = oracle.transform[5] + (row + .5) * oracle.transform[4]
         require(float(analysis.dataset.x.values[column]) == x and float(analysis.dataset.y.values[row]) == y,
                 "Analysis changed cell centers")
+    stages["analysis_validation"] = time.perf_counter() - started
+    started = time.perf_counter()
     evidence = validate_recorded_evidence(observation, fetch_execution_evidence(observation), expected_node_ids)
-    return {"raster": raster, "evidence": evidence, "artifact_sha256": artifact.sha256}
+    stages["recorded_evidence"] = time.perf_counter() - started
+    return {"raster": raster, "evidence": evidence, "artifact_sha256": artifact.sha256,
+            "exported_bytes": artifact.export.bytes_written, "stages_seconds": stages}
 
 
 def run_matrix(connection_factory, cases, directory, *, model_urn, expected_node_ids, workers=1, timeout=120):
