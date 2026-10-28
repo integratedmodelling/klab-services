@@ -19,6 +19,25 @@ offline evidence from missing live acceptance.
 
 ## Resolve in this order
 
+### Hosted retest — 28 October 2026
+
+The authenticated read-only prerequisite suites now pass: **3 passed in 8.16s**,
+exit 0. Command from `python-client`, using the isolated Python 3.12.7 environment:
+
+```powershell
+python tools/run_functional_acceptance.py --suite connected-semantic-readiness --suite connected-unit-contract --profile examples/hosted-deployment.json --certificate C:/Users/lumsd/.klab/klab.cert --report C:/Users/lumsd/AppData/Local/Temp/opencode/discover-hosted-retest-20261028.xml
+```
+
+This establishes authenticated hosted connectivity, positive accepted Reasoner
+generation, and preservation of requested `m` and `mm` units in both raw responses
+and SDK checks. The earlier hosted connection and missing-unit blockers were not
+reproduced; no Java root cause or deployed build identity is inferred.
+No computation/session/context was created; persisted execution evidence,
+scientific values, four-cell experiments and permission acceptance remain untested.
+Separate direct public probes still found local Resources empty and local Reasoner
+at generation 0/non-operational; hosted readiness does not repair the local stack.
+The numbered items below retain the outstanding deployment/delivery prerequisites.
+
 1. **IDE form/catalog:** reopen the workspace form after opening the local Resources
    dashboard. If still disabled, save work and try a normal IDE relaunch (check any
    prompt about stopping local services). If reproducible, collect installed IDE
@@ -48,7 +67,25 @@ offline evidence from missing live acceptance.
 
 ## Remaining implementation, not deployment blockers
 
-Shared integrated scientific workflow/acceptance wrappers, executed notebook,
+The shared workflow now has a first tested implementation in
+`tools/workflows/discover_compare_explain.py`: typed four-cell matrix checks,
+independent full raster/analysis validation, successful recorded-activity checks,
+native runner integration, batch manifests and original-handle restoration helper.
+The full offline suite passes 1,322 tests; the new helper has 100% line/branch
+coverage and existing coverage/lint gates pass. This is not live scientific
+acceptance. See `discover-compare-explain-workflow.md` for boundaries.
+
+Additional authenticated read-only hosted probes on 28 October succeeded with F1
+observable resolution for m/mm and F2 retrieval of
+`staging.vxii.basic.elevation-quantifier` in `klab.staging.vxii` (one advertised
+observable). This does not establish executable-model selection or scientific
+correctness. UN.M49 authority search for Austria returned OK with two distinct
+canonical identifiers; no candidate was implicitly selected or resolved. The
+initial diagnostic script used nonexistent `AssetInspection.project` and failed
+while printing; corrected `project_name` inspection passed. No SDK defect or
+computation result is inferred from that diagnostic-script error.
+
+Named integrated scientific acceptance wrappers, executed notebook,
 validated sequential/parallel throughput, fail-closed deliverable builder,
 installed-wheel/core-only/interpreter checks and final integration review remain
 unfinished. Restoring the IDE does not complete those tasks or establish acceptance.
