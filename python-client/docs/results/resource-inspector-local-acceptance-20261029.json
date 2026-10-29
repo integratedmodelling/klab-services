@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-29",
+  "candidate_sha": "789fe711a4dd632f318bec485c63cdfbf3a97b8e",
+  "installed_source_sha256": "b1191f9a3efbc930b16e7042c779ff5f0ab364448b860baf3e36806bc9fb2ba0",
+  "passed": false,
+  "authorization": {
+    "scope": "end-to-end local preparation, diagnosis, bounded execution, Python fixes if demonstrated, restoration, assessment and publication",
+    "maximum_attempts": 3,
+    "maximum_observation_jobs_per_attempt": 2,
+    "grid_cells": 20,
+    "excluded": "hosted modifications, other users' objects, credential disclosure/access bypass, destructive loss of existing work, Java/scientific/component/ontology/worldview source changes, merges and throughput batches"
+  },
+  "harness": "One-off local native owner harness using existing Client/ResourceInspector/typed observation APIs and origin/path-bound server-key request hook; not the shipped Hub-certificate pilot CLI",
+  "model_urn": "staging.vxii.basic.elevation-quantifier",
+  "model_meaning": "Existing published synthetic terrain generator model, not independent measured elevation or an accuracy benchmark",
+  "assets": [
+    {"project": "imod", "commit": "1328000fff63a1951465b1f7b130c0af15264c95", "source_unchanged": true},
+    {"project": "klab.staging.vxii", "commit": "1fe0a13746cd6a4ad6965f5787574d04c60f9f93", "source_unchanged": true},
+    {"artifact": "klab.component.generators-1.0-20261025.163521-10-component.kar", "sha256": "e2190a05eb478f4e8859faeddf5d25935bf53de0aaf12f135652e6e23c37aa03", "repository_sha1_verified": true},
+    {"artifact": "klab.component.geospatial-1.0-20261025.094856-223-component.kar", "sha256": "c5192eec7fe1d47a5b4a4750c334ea3ff88520afe8d096e04c8640c3cfb289c6", "repository_sha1_verified": true},
+    {"artifact": "neo4j-spatial-server-plugin-2025.10.0-with-dependencies.jar", "sha256": "83c9d31deebcc5a951f11832ffbc58692a2795a461baba480efe74cafbeeff6b", "github_release_digest_verified": true}
+  ],
+  "setup": {
+    "starting_configuration_and_catalog_paths_backed_up": 16,
+    "native_project_and_maven_property_imports": "HTTP 500; no project import from those requests. Captured servlet reflection IllegalStateException/IllegalArgumentException; exact cause unestablished",
+    "knowledge_loading": "Supported FILE project configuration referencing clean pinned clones, temporary workspace and public privileges matching public source manifests; no source edits",
+    "component_installation": "Successful native component.kar.import uploads on local Resources and Runtime",
+    "runtime_remote_loading_setting": true,
+    "reasoner_before_final_attempt": "operational, accepted generation 1; valid bean/logical status",
+    "terrain_before_final_attempt": "advertised by Resources and Runtime",
+    "spatial_procedures_before_plugin": 0,
+    "spatial_procedures_after_plugin": 48,
+    "spatial_layers_read_only_query_after_plugin": "passed",
+    "service_distribution_before_testing": "202610161554",
+    "four_service_distribution_for_final_attempt": "202610271533",
+    "graphdb_distribution": "202610161554, Neo4j 2025.10.1, temporary published spatial plugin",
+    "source_build_attestation": "Unverified: service JAR hashes captured locally, but no embedded commit identities found; published build labels are not source attestations"
+  },
+  "attempts": [
+    {
+      "attempt": 1, "stage": "create_owned_context", "passed": false,
+      "error_type": "SubmissionOutcomeUnknown", "observation_jobs_submitted": 0,
+      "failure": "HTTP 500: spatial.layers procedure not registered",
+      "session_id": "d12f9446e9ea495097f4b845969a791a", "session_release": "confirmed",
+      "context_creation_outcome": "unknown at failure; later context listing contained no test context"
+    },
+    {
+      "attempt": 2, "stage": "local_preflight", "passed": false,
+      "error_type": "TransportError", "observation_jobs_submitted": 0,
+      "failure": "Runtime/Resolver failed startup: inherited older-distribution classpath omitted current Gson filename; corrected to own published distribution JARs before attempt 3",
+      "owned_objects_created": false
+    },
+    {
+      "attempt": 3, "stage": "observe_elevation", "passed": false,
+      "error_type": "JobFailedError", "observation_jobs_submitted": 2,
+      "session_id": "f1a0ee86004d445f85fb8a76b89ed104",
+      "context_id": "f1a0ee86004d445f85fb8a76b89ed104.v8tv2vhjc",
+      "runtime_id": "100bf613-81b4-4347-8194-aec59a615959",
+      "region_job": {"id": 3, "outcome": "completed; verify_grid passed", "focus_observation_id": 13},
+      "elevation_job": {"id": 4, "scope_suffix": ".13", "failure": "Resolution of geography:Elevation in m failed: empty dataflow; Submission failed", "diagnostic_status": "FINISHED", "stack_trace_available": false},
+      "numerical_data_verified": false, "recorded_model_association_verified": false,
+      "context_release": "confirmed", "session_release": "confirmed"
+    }
+  ],
+  "read_only_diagnosis": {
+    "exact_elevation_observable": "Reasoner returned HTTP 200 and geography:Elevation in m, no error notifications",
+    "resources_logs": "Repeated failed HTTP POSTs during semantic indexing",
+    "reasoner_logs": "Repeated IllegalArgumentException at CapturedSemanticExpressionParser.observable:61 during Resources indexing calls",
+    "resolver_logs": "Elevation resolution outcome FAILED",
+    "causality_limit": "Indexing/parser failures are a lead, not proof of the empty-dataflow root cause. No fourth computation or source workaround attempted"
+  },
+  "restoration": {
+    "owned_releases_confirmed": true,
+    "remaining_test_contexts_before_restoration": 0,
+    "remaining_spatial_layers_before_restoration": 0,
+    "starting_configuration_and_catalog_paths_matching_original_bytes": 16,
+    "test_components_removed_from_resources_and_runtime": true,
+    "test_spatial_plugin_removed_from_active_directory": true,
+    "original_distribution_relaunched": "202610161554",
+    "native_pid_records": "updated to verified listening process IDs and OS creation timestamps after relaunch",
+    "all_four_public_capabilities_respond": true,
+    "restored_baseline": "Resources has no adopted worldview, Reasoner not operational, all four advertise internal component only",
+    "whole_database_rollback": false,
+    "retained": "Pinned test clones/downloads, inactive plugin archive, backups, sanitized captured logs, and service index/cache data; no claim of complete artifact erasure"
+  },
+  "offline_validation": {"command": "python -m pytest tests/unit tests/integration -q --tb=short", "python": "3.12.7", "passed": 1246, "warnings": "one existing Rasterio NotGeoreferencedWarning"},
+  "conclusion": "PR99 remains draft, Needs contract/coordination evidence; numerical result and recorded inspected-model association are not demonstrated"
+}

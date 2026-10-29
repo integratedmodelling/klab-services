@@ -2,9 +2,44 @@
 
 ## Decision
 
+**Latest continuation:** the subsequent full local-testing authorization was
+used for preparation and three bounded attempts. The final attempt completed
+region observation but elevation failed with empty dataflow. Both owned releases
+were confirmed; no test contexts/spatial layers remained. Starting configuration
+and catalogs were restored, test-installed components/plugin removed, original
+service distribution relaunched, and native PID records updated to verified
+listening processes. No fourth attempt, hosted modification or source workaround
+was made. See the [current local result](results/resource-inspector-local-acceptance-20261029.json).
+Earlier read-only findings below remain historical, not the current authorization
+or local-state checkpoint.
+
 PR #99 remains **Needs contract/coordination evidence**, draft. Its Python CI is
 green; real numerical/model association is not demonstrated. No new computation
-or administration was authorized or performed during this investigation.
+or service modification was authorized or performed during this investigation.
+
+### Subsequent explicit read-only approval
+
+The user subsequently approved read-only investigation, including the deployed
+settings check. Authenticated, bounded `GET /settings` requests to the selected
+Runtime and Resolver both returned HTTP 403 (`AuthorizationError`). No response
+settings or credentials were printed or saved. No write request was made. The
+historical statement below that settings were not called describes the earlier
+pass, before this approval.
+
+No standard `C:/Users/lumsd/.ssh` configuration directory was present. Accessible
+local Runtime/Resolver/Resources logs, including 28 October rotations, contained
+no matches for the pilot session, original Runtime ID or model URN. The Jenkins
+build API rejected anonymous access with HTTP 403. These checks do not prove no
+other operator access route exists; none has yet been established for this agent.
+An approved operator host/account/profile or narrowly scoped log export is still
+needed. Read-only approval does not authorize bypassing service access controls.
+
+Separately, the current published observable-language sources artifact
+`1.0.0-20261029.085338-82` contains 55 `SemanticSyntax.Type` enum values; this
+branch's switch omits `RELATIONSHIP`. The local cached SNAPSHOT enum has 54 values,
+all covered. This supplies a concrete source/dependency mismatch consistent with
+the compiler failure, not confirmation of the exact artifact used by CI and not
+evidence about the deployed pilot binary. No Java or dependency change was made.
 
 ## Recovered state and CI
 

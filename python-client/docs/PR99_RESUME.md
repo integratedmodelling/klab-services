@@ -2,6 +2,45 @@
 
 ## 29 October continuation
 
+### Latest state: end-to-end local testing exhausted; restoration verified
+
+The user expanded authorization to local preparation, configuration/component
+installation/restarts, Python fixes if demonstrated, restoration and publication,
+with **three attempts × at most two observation Jobs on 20 cells**. Hosted/source
+changes and merges remain excluded. **All three attempts are exhausted**:
+1. Context creation failed: Neo4j spatial.layers missing; session release confirmed.
+2. Preflight failed after a distribution/classpath mismatch; no owned objects.
+3. Region Job 3 completed; elevation Job 4 failed with empty dataflow. Both owned
+   context and session release confirmed; zero test contexts/spatial layers remained.
+
+Local setup used clean pinned existing IMOD/staging sources, published generator
+and geospatial KARs, and a digest-verified published spatial plugin. Final attempt
+had operational Reasoner and terrain advertised on Runtime. No Python defect was
+demonstrated; no Java/scientific/source workaround was made. Resources indexing
+POST failures and Reasoner parser exceptions are diagnostic leads, not a proven
+root cause. Numerical/model association remains missing. Offline: **1,246 pass**.
+
+Temporary local changes were reverted: all 16 starting configuration/catalog paths
+match original bytes; test components removed; spatial plugin no longer active;
+original October 16 service distribution relaunched. Four local capability routes
+respond; baseline Resources is empty and Reasoner nonoperational again. Test assets,
+backups, sanitized captured logs and service index/cache data remain; no entire-DB
+rollback was performed. PR99 remains draft. See
+`docs/results/resource-inspector-local-acceptance-20261029.json` and the review.
+Do not run a fourth attempt under the exhausted budget. Continue with native
+model-discovery/indexing diagnosis without Java/scientific source changes.
+
+### Earlier local preflight and read-only checks (historical)
+
+The user subsequently authorized one bounded **local** pilot. It was attempted
+and stopped at model inspection before creating any session/context/Job. Local
+Resources returns an empty HTTP 200 body for the model and lists zero workspaces,
+projects and models; Reasoner has no worldview/accepted generation 0. Native
+local-owner read-only settings access succeeds: Runtime remote-component loading
+is true. No provisioning, installation, imports or restart occurred. See
+`docs/results/resource-inspector-local-pilot-20261029.json` and the updated review.
+Do not treat this as a successful computation or silently retry the pilot.
+
 See [the current read-only deployment handoff](PR99_DEPLOYMENT_HANDOFF.md) and
 [timestamped public metadata](results/resource-inspector-reboot-check-20261029.json).
 The recovered `80a60edc5` head's Python 3.11/3.12/3.13/core-only CI passed; Maven

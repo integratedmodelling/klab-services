@@ -2,6 +2,42 @@
 
 ## Recommendation
 
+**Latest authorized end-to-end local testing, 29 October:** the user authorized
+local preparation/restoration and up to three attempts, at most two observation
+Jobs each on the 20-cell grid, with hosted/source modifications excluded. All
+three attempts are now exhausted. After backing up starting files, unchanged
+pinned worldview/model sources and checksum-verified published component archives
+were loaded locally. Missing Neo4j spatial procedures were repaired using an
+unchanged published plugin. Attempt 1 failed context creation on that missing
+procedure; attempt 2 failed preflight after a distribution/classpath mismatch;
+attempt 3 completed the region Job but elevation returned an **empty dataflow**.
+The inspected model was retrievable and terrain was advertised by Runtime, so
+the earlier advertisement gap is not the sole remaining explanation.
+
+Resources semantic-indexing POST failures and Reasoner parser exceptions were
+captured, but are not established as the exact cause. No demonstrated Python
+defect was identified or papered over. No Java/scientific/source changes or fourth
+attempt were made. This was a one-off native local-owner harness, not acceptance
+of the shipped Hub-certificate CLI. Owned releases were confirmed; no test
+contexts/spatial layers remained. Starting configuration/catalog files were
+restored byte-for-byte and original service distribution relaunched. Index/cache
+data, backups and sanitized diagnostics are retained. **1,246 offline tests pass**
+on Python 3.12.7, one existing warning. Recommendation remains **Needs
+contract/coordination evidence**, draft: successful numerical/model association
+still missing. Full evidence and exact attempt limits are in the
+[local acceptance result](../../results/resource-inspector-local-acceptance-20261029.json).
+
+**Subsequent authorized local pilot, 29 October:** attempted the bounded local
+pilot using native, exact-origin loopback owner authentication. It stopped at
+model inspection (`ProtocolError`): local Resources returned HTTP 200 with an
+empty body for the requested model. Read-only list calls returned zero models,
+projects and workspaces. Reasoner remains nonoperational with no worldview and
+accepted generation 0. Runtime's actual loader setting is true. No session,
+context or observation Job was created; no owned cleanup was required. This is
+a failed local prerequisite/inspection attempt, **not local numerical execution**
+and not a successful pilot. See the [sanitized result](../../results/resource-inspector-local-pilot-20261029.json).
+No provisioning was authorized or performed. The recommendation remains unchanged.
+
 **29 October evidence update:** recovered head `80a60edc5` now has passing Linux
 Python 3.11/3.12/3.13 and core-only CI. Maven still fails on unchanged Java and
 Jenkins reports an error. Fresh hosted IDs differ; Reasoner initialized during
