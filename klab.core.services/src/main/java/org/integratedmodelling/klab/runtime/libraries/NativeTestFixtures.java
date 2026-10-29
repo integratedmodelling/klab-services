@@ -179,6 +179,25 @@ public final class NativeTestFixtures {
     // No observation, graph link, completion receipt or provenance activity is fabricated here.
   }
 
+  @KlabFunction(name = "fixed", type = Artifact.Type.OBJECT, geometry = "*",
+      description = "Emit one permitted native testcase member with exactly the requested geometry")
+  public static void fixed(Data.Builder builder, Geometry geometry, Observable observable, ContextScope scope) {
+    var permit = require(scope);
+    if (builder == null || geometry == null || geometry.isUniversal() || geometry.isEmpty()
+        || geometry.size() == 0 || observable == null || observable.getSemantics() == null
+        || !observable.getSemantics().isCollective())
+      throw new IllegalArgumentException("Fixed discovery requires a builder, concrete geometry and collective observable");
+    var individual = observable.builder(scope).collective(false).buildObservable();
+    if (individual == null || individual.getSemantics() == null || individual.getSemantics().isCollective())
+      throw new IllegalStateException("Fixed discovery requires the declared singular observable");
+    var key = scope.getId() + "|" + observable.getUrn() + "|" + Geometry.forTransport(geometry).encode();
+    var identity = Urn.of("native.fixture:" + java.util.UUID.nameUUIDFromBytes(key.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    if (builder.object("fixed_member", individual, geometry, identity) == null)
+      throw new IllegalStateException("Fixed discovery did not acknowledge its object builder");
+    // Normal execution owns native creation, transactions and INSTANTIATION completion.
+    permit.add("discovery", 1);
+  }
+
   @KlabFunction(name = "classify", type = Artifact.Type.CONCEPT, geometry = "*",
       description = "Return a concrete predicate through normal classification and record its actual member invocation",
       parameters = @KlabFunction.Argument(name = "result", type = Artifact.Type.CONCEPT,

@@ -116,6 +116,33 @@ class NativeTestFixturesTest {
     verify(f.runtime).getMembers(selected, f.context);verify(f.twin, never()).getKnowledgeGraph();
   }
 
+  @Test void fixedProducerRequiresLivePermitAndEmitsOneOrdinaryBuilderObject() {
+    var f = new Fixture();var builder = mock(Data.Builder.class);
+    var geometry = Geometry.create("T0(1){tstart=0,tend=100,ttype=PHYSICAL}");
+    var observable = mock(Observable.class);var collective = mock(Concept.class);
+    when(observable.getSemantics()).thenReturn(collective);when(collective.isCollective()).thenReturn(true);
+    when(observable.getUrn()).thenReturn("each test:Region");
+    var individual = mock(Observable.class);when(individual.getSemantics()).thenReturn(mock(Concept.class));
+    var mapper = mock(Observable.Builder.class);when(observable.builder(f.context)).thenReturn(mapper);
+    when(mapper.collective(false)).thenReturn(mapper);when(mapper.buildObservable()).thenReturn(individual);
+    when(builder.object(anyString(), eq(individual), eq(geometry), any())).thenReturn(mock(Data.Builder.class));
+    assertThrows(IllegalArgumentException.class, () -> NativeTestFixtures.fixed(builder, geometry, observable, f.context));
+    verifyNoInteractions(builder);
+    f.grant();NativeTestFixtures.fixed(builder, geometry, observable, f.context);
+    verify(builder).object(eq("fixed_member"), eq(individual), eq(geometry), any());
+    assertEquals(1, NativeTestFixtures.count(f.owner, f.context, "discovery"));
+    verifyNoMoreInteractions(builder);verify(f.twin, never()).getKnowledgeGraph();
+    assertTrue(NativeTestFixtures.clear(f.owner, f.context));
+    assertThrows(IllegalArgumentException.class, () -> NativeTestFixtures.fixed(builder, geometry, observable, f.context));
+    verifyNoMoreInteractions(builder);
+  }
+
+  @Test void fixedProducerRejectsUniversalGeometryBeforeObjectEmission() {
+    var f = new Fixture();f.grant();var builder = mock(Data.Builder.class);
+    assertThrows(IllegalArgumentException.class, () -> NativeTestFixtures.fixed(builder, Geometry.UNIVERSAL, mock(Observable.class), f.context));
+    verifyNoInteractions(builder);verify(f.twin, never()).getKnowledgeGraph();
+  }
+
   static class OrderedFixture extends Fixture {
     final Reasoner reasoner = mock(Reasoner.class);
     final Concept family = mock(Concept.class), concrete = mock(Concept.class), targetConcept = mock(Concept.class);

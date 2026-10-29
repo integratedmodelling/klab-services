@@ -62,6 +62,15 @@ final class SemanticExecutionFootprints {
     if (actual.getDeclaringClass() == NativeTestFixtures.class
         && Set.of("empty", "classify", "discoverAfter", "failClassifier", "failConsumer").contains(actual.getName()))
       return true; // Actual core class; its existing private testcase permit remains mandatory.
+    if (actual.getDeclaringClass() == NativeTestFixtures.class && "fixed".equals(actual.getName())
+        && "klab.tests.fixtures.fixed".equals(call.getUrn()) && actual.getReturnType() == void.class
+        && java.lang.reflect.Modifier.isStatic(actual.getModifiers())
+        && java.util.Arrays.equals(actual.getParameterTypes(), new Class<?>[] {
+            org.integratedmodelling.klab.api.data.Data.Builder.class,
+            org.integratedmodelling.klab.api.geometry.Geometry.class,
+            org.integratedmodelling.klab.api.knowledge.Observable.class,
+            org.integratedmodelling.klab.api.scope.ContextScope.class}))
+      return true; // Exact testcase producer only; execution still requires its private live permit.
     if (registry == null) { trace(scope,actual,receiver,call,false,null); return false; }
     var components=registry.getInstalledComponents(scope);
     boolean accepted=components.stream().anyMatch(component ->
