@@ -2546,6 +2546,31 @@ public class AgentCompiler {
             .addParameter(AgentScope.class, "rootScope")
             .beginControlFlow("try")
             .addStatement("Object result = VOID_VALUE");
+    // Selection is per instance, so cached generated classes serve both full and single runs.
+    method.beginControlFlow("if (selectedTestAction != null)");
+    for (var action : analyzer.getActions().values()) {
+      if ("init".equals(action.name()) || "main".equals(action.name())
+          || !hasAnnotation(action, "test")) continue;
+      method.beginControlFlow("if ($S.equals(selectedTestAction))", action.name());
+      switch (action.effectiveExecutionType()) {
+        case FUNCTION -> {
+          method.addStatement("Object selectedResult = invokeSelfFunction($S, rootScope)", action.name());
+          method.addStatement(action.callsUnknownActions()
+              ? "return awaitDynamicCalls(selectedResult)" : "return ExitValue.success(selectedResult)");
+        }
+        case SUPPLIER -> {
+          method.addStatement("Object selectedResult = invokeSelfSupplier($S, rootScope).join()", action.name());
+          method.addStatement(action.callsUnknownActions()
+              ? "return awaitDynamicCalls(selectedResult)" : "return ExitValue.success(selectedResult)");
+        }
+        case EMITTER -> method.addStatement("invokeSelfEmitter($S, rootScope)", action.name())
+            .addStatement("return TASK_RUNNING");
+      }
+      method.endControlFlow();
+    }
+    method.addStatement("throw new $T($S + selectedTestAction)",
+        IllegalArgumentException.class, "Unknown test action: ");
+    method.endControlFlow();
     var main = analyzer.getActions().get("main");
     if (main != null) {
       switch (main.effectiveExecutionType()) {

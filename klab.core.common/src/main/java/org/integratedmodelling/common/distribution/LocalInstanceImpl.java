@@ -33,7 +33,7 @@ public abstract class LocalInstanceImpl implements LocalInstance {
 
   protected static final String[] REASONER_SERVICE_JVM_ARGUMENTS = {
     // TODO remove after authority sync is debugged
-    "-Dklab.reasoner.traceCandidate=true"
+//    "-Dklab.reasoner.traceCandidate=true"
   };
   protected static final String[] RESOLVER_SERVICE_JVM_ARGUMENTS = {};
   protected static final String[] RUNTIME_SERVICE_JVM_ARGUMENTS = {};

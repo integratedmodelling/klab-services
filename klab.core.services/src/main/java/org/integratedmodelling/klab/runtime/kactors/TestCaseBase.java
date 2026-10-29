@@ -347,9 +347,28 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
     return parallelTests;
   }
 
+  /** Optional request property selecting one declared @test action, after init. */
+  protected final String selectedTestAction;
+
+  private static String selectedTestAction(KActorsBehavior behavior) {
+    if (behavior == null || behavior.getProperties() == null) return null;
+    Object selected = behavior.getProperties().get("testAction");
+    if (selected == null) return null;
+    if (!(selected instanceof String action) || action.isBlank()) {
+      throw new IllegalArgumentException("testAction must name a declared @test action");
+    }
+    if (java.util.Set.of("init", "main").contains(action)
+        || behavior.getStatements().stream().noneMatch(a -> action.equals(a.getUrn())
+            && a.getAnnotations().stream().anyMatch(n -> "test".equals(n.getName())))) {
+      throw new IllegalArgumentException("Unknown test action: " + action);
+    }
+    return action;
+  }
+
   public TestCaseBase(KActorsBehavior behavior, SessionScope scope) {
     super(behavior, scope);
     this.scope = scope;
+    this.selectedTestAction = selectedTestAction(behavior);
     this.parallelTests = runsTestsInParallel(behavior);
     this.report = initializeReport(behavior);
   }
@@ -385,6 +404,7 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       org.integratedmodelling.klab.api.scope.Scope creationScope) {
     super(behavior, scope, observation, creationScope);
     this.scope = scope;
+    this.selectedTestAction = selectedTestAction(behavior);
     this.parallelTests = runsTestsInParallel(behavior);
     this.report = initializeReport(behavior);
   }
