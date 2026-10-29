@@ -163,7 +163,10 @@ def run(profile_path, certificate_path, model_urn, *, allow_owned_work=False):
                 context = session.create_context(options=ContextOptions(name="PR99 owned pilot", persistence="EXPLICIT_ACTION"))
                 report["session_id"], report["context_id"] = session.id, context.id
                 report["stage"] = "observe_region"
-                job = context.observe(ObservationRequest("earth:Region",
+                # Elevation describes a configuration applicable to terrestrial Regions.
+                # An unqualified Region can be acknowledged yet fail contextual admission.
+                report["region_definition"] = "earth:Terrestrial earth:Region"
+                job = context.observe(ObservationRequest(report["region_definition"],
                     geometry=RectangularGeometry(200000, 200500, 6000000, 6000400, 5, 4)))
                 report["jobs"].append(job.to_handle().to_dict())
                 region = job.result(timeout=90)

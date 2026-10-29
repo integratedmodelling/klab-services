@@ -147,6 +147,7 @@ def test_recorded_models_reject_cross_association_and_missing_evidence(monkeypat
 class Pilot:
     def __init__(self, monkeypatch, fault=None):
         self.fault, self.submissions, self.releases = fault, 0, []
+        self.requests = []
         self.observation = NS(units="mm" if fault == "units" else "m", to_handle=self.handle,
             geometry=NS(raw={"dimensions": [{"type": "SPACE", "shape": [5, 4], "regular": True,
                 "parameters": {"delegate": {"proj": "EPSG:3857", "bbox": [200000, 200500, 6000000, 6000400]}}}]}),
@@ -184,6 +185,7 @@ class Pilot:
         return NS(id="s.c", observe=self.observe, within=lambda region: self.context(), release=lambda: self.release("context"))
 
     def observe(self, request):
+        self.requests.append(request)
         self.submissions += 1
         if self.fault == "submit" and self.submissions == 2:
             raise RuntimeError("private diagnostic")
@@ -213,6 +215,9 @@ def test_pilot_runs_once_and_releases_only_its_owned_objects(monkeypatch):
     assert pilot.releases == ["context", "session"] and result["cleanup"] == {"context": "confirmed", "session": "confirmed"}
     assert result["inspection"]["resources"] == [] and result["inspection"]["selection"] == "advertised candidate"
     assert result["deployed_binary_provenance"].startswith("unverified")
+    assert result["region_definition"] == "earth:Terrestrial earth:Region"
+    assert [request.observable for request in pilot.requests] == [
+        "earth:Terrestrial earth:Region", "geography:Elevation in m"]
 
 
 @pytest.mark.parametrize("fault", ["advertisement", "setup", "submit", "wait", "empty", "units", "nodata", "nonfinite", "model", "cleanup-error", "cleanup-unconfirmed"])
