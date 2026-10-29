@@ -2,6 +2,42 @@
 
 ## 29 October continuation
 
+### Latest: F2 local numerical/model-association acceptance PASSED
+
+The user authorized **five more attempts**, with the same two-Job/one-session/
+one-context/20-cell bounds. **Three used, two unused.** Attempt 1 traced the SDK,
+Resolver and Reasoner all preserving the region-focused scope, yet unqualified
+`earth:Region` still yielded no elevation strategy. The deployed binary has an
+additional contextual-admission gate absent from this checkout's Reasoner source.
+The unchanged ontology applies elevation's described configuration to a terrestrial
+Region. Using existing `earth:Terrestrial earth:Region` fixed the pilot fixture:
+
+- Attempt 2: 20/20 finite actual synthetic terrain cells in m; successful recorded
+  resolution identified `staging.vxii.basic.elevation-quantifier` (activities 76/77).
+- Attempt 3: actual shipped `workflows.resource_inspection.run` also passed, with
+  native local-owner bootstrap replacing only the Hub/profile connection setup;
+  20/20 finite cells, target model association, activities 95/96.
+- All three runs confirmed owned context/session release. No SDK focus, model,
+  algorithm, Java, component, ontology or worldview source changes were needed.
+
+Pilot fixture/regression correction committed as `36b84293c`; Windows offline
+1246 tests, focused 45 tests, lint and existing coverage gates passed. These are
+synthetic generator results, not measured elevations or accuracy validation.
+Provenance stays partial; no exhaustive lineage/root-commit/source attestation claim.
+Hosted Hub bootstrap was not rerun. Exact binary/source attestation and unchanged
+Java CI remain external limitations, not repaired by this Python fixture change.
+
+Original October16 services restored headlessly: GraphDB 44408, Reasoner 14860,
+Resources 33156, Resolver 42408, Runtime 43672; native PID records match listeners.
+Sixteen config/catalog paths and plugin inventories restored, zero configured
+projects/remaining contexts. Fresh backups, sanitized traces/logs, raw reports,
+inactive plugins and service caches retained. No whole-database rollback.
+
+See `docs/results/resource-inspector-terrestrial-acceptance-20261029.json` and the
+latest contribution assessment. **Bounded F2 acceptance is now satisfied; move to
+PR98 as requested. No PR merge/history rewrite authorized.** Two additional local
+attempts remain available from the latest allowance, not a fresh five for PR98.
+
 ### Latest: renewed three-attempt budget exhausted; no elevation strategy
 
 The user renewed up to three local attempts (two observation Jobs each, 20 cells),

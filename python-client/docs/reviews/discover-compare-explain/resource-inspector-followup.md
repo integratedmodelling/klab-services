@@ -2,6 +2,44 @@
 
 ## Recommendation
 
+**Latest — Ready for maintainer review of bounded F2 Python feature.** The third
+authorized budget allowed five additional attempts; three were used, with two
+remaining. Actual local numerical elevation and inspected-model association now
+pass in both the native pilot and shipped workflow. Keep the PR draft while the
+unchanged Java build/maintainer integration gate remains unresolved; this is not
+broader milestone/scientific acceptance or authorization to merge.
+
+Reviewed candidate `36b84293cc062fdad24ff6d08ebfb6e95a67bfb9` corrects only the
+bounded pilot's context from unqualified `earth:Region` to the existing
+`earth:Terrestrial earth:Region` and asserts the contract deterministically.
+`imod/src/geography.kwv:28-38` applies elevation's described configuration to a
+terrestrial Region. Deployed Reasoner bytecode has a contextual-admission gate
+before strategy selection that is absent from this checkout; source-only diagnosis
+was therefore incomplete. Native tracing verified identical focused scope tokens
+through SDK/Resolver/Reasoner. No public inspector/focus or excluded source changed.
+
+**Reproduced finding/correction:** the original pilot fixture could acknowledge a
+generic Region but fail elevation admission. With unchanged pinned knowledge,
+published services/components and the qualified context, attempt 2 returned 20/20
+finite synthetic terrain cells in metres and target model in accepted recorded
+resolution (76/77). Attempt 3 ran the shipped workflow with only local-owner
+connection bootstrap injected and independently passed (95/96). The evidence
+supports the pilot correction, not a claim every earlier failure had the same cause.
+
+Both successful runs confirmed context/session release. Partial provenance is
+reported honestly: model association, not exhaustive lineage/root-commit proof.
+This existing synthetic generator is not an independent scientific accuracy oracle.
+Hosted Hub bootstrap and exact binary/source attestation remain unverified here.
+Windows Python3.12: 45 focused and 1246 offline tests passed; full coverage run,
+existing coverage gates and lint passed. Sixteen starting config/catalog paths,
+plugin inventories, five listener/PID records and zero remaining contexts/projects
+were independently verified after original deployment restoration. No broad
+rollback, unrelated-terminal cleanup or source normalization was performed.
+
+Detailed commands/environments/limits and real values:
+[terrestrial acceptance evidence](../../results/resource-inspector-terrestrial-acceptance-20261029.json).
+Next feature is PR98; two unused bounded attempts remain in the latest allowance.
+
 **Latest renewed pilot outcome, 29 October:** the user authorized three more local
 attempts, each bounded to two observation Jobs on 20 cells. All three failed at
 elevation, with context/session releases confirmed. No numerical result or recorded
