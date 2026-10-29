@@ -25,6 +25,9 @@ and [contribution assessment](reviews/discover-compare-explain/resource-inspecto
 
 ## What remains for PR #99
 
+Detailed error, cross-PR impact and repair evidence requirements:
+[Shared Java build blocker](JAVA_BUILD_BLOCKER_20261029.md).
+
 1. **Java/dependency maintainer: resolve the existing Java build gate separately.**
    At the tested head, [Build and test run 40961757674](https://github.com/integratedmodelling/klab-services/actions/runs/40961757674)
    fails at `klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/LanguageAdapter.java:1234`:
