@@ -27,6 +27,7 @@ public final class ObserverResolution {
     if (provided == null) return 1;
     if (observer.getObservable() == null || !provided.is(SemanticType.AGENT)
         || !observer.getObservable().is(SemanticType.AGENT)) return -1;
+    ObserverSemanticUse.semanticComparison(scope,provided);
     var reasoner = scope.getService(Reasoner.class);
     var receipt = reasoner == null ? null : reasoner.capabilities(scope);
     return receipt != null

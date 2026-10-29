@@ -22,6 +22,46 @@ import org.jgrapht.graph.DefaultEdge;
 import org.junit.jupiter.api.Test;
 
 class CoreActorLibraryInspectorTest {
+  @Test void failedRequiresExplicitFailureRatherThanNullOrSuccessfulEmptySelection() {
+    var failure = Observation.empty(Notification.error("Required classifier failed"));
+    assertTrue(Inspector.failed(null, failure));
+    assertTrue(Inspector.present(null, failure), "Present means non-null, including failure responses");
+    assertFalse(Inspector.failed(null, null));
+    assertFalse(Inspector.failed(null, Observation.empty()), "An unexplained empty value is insufficient");
+    assertFalse(Inspector.failed(null, Observation.empty(Notification.warning("Only a warning"))));
+    var response = new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+    response.setId(Observation.QUERY_ID); response.setResolvedCoverage(1); response.setChildrenCount(0);
+    assertFalse(Inspector.failed(null, response), "Successful zero-member selection is not failure");
+    response.setEmpty(true); response.getNotifications().add(Notification.error("Contradictory response"));
+    assertFalse(Inspector.failed(null, response), "Assigned query identity cannot be a failure response");
+    response.setId(Observation.UNASSIGNED_ID);
+    for (double coverage : new double[] {Double.NaN, Double.POSITIVE_INFINITY, -1, 0.5, 1}) {
+      response.setResolvedCoverage(coverage);
+      assertFalse(Inspector.failed(null, response), "Failure response must have finite zero coverage");
+    }
+    response.setResolvedCoverage(0);
+    assertTrue(Inspector.failed(null, response));
+    response.setId(42);
+    assertFalse(Inspector.failed(null, response), "Committed identity cannot count as failed submission");
+  }
+
+  @Test void concreteClassificationVerbHasOneSemanticObjectBoundary() throws Exception {
+    var method = Inspector.class.getMethod("classificationcheckfor", org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class,
+        Object.class, ObservationInspector.MemberSnapshot.class, Object.class, Object.class);
+    assertEquals("classificationcheckfor", method.getAnnotation(Verb.class).name());
+    assertEquals(1, Arrays.stream(Inspector.class.getMethods()).filter(m -> m.getName().equals("classificationcheckfor")).count());
+  }
+  @Test void nativeCatalogSetupRejectsNonTestCallerBeforeContextOrSemanticsLookup() {
+    assertThrows(IllegalArgumentException.class, () -> Inspector.preparecatalog(null, new Object(), new Object()));
+  }
+
+  @Test void concreteNoopVerbKeepsOneTypedSemanticBoundaryWithoutReflectiveOverloads() throws Exception {
+    var method = Inspector.class.getMethod("classificationnoopfor", org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope.class,
+        Object.class, ObservationInspector.MemberSnapshot.class, Object.class, Object.class);
+    assertEquals("classificationnoopfor", method.getAnnotation(Verb.class).name());
+    assertEquals(1, java.util.Arrays.stream(Inspector.class.getMethods()).filter(m -> m.getName().equals("classificationnoopfor")).count());
+  }
+
   @Test
   void allAssetsMustBeSupportedAndNonNull() {
     assertFalse(Inspector.checkViable(null));

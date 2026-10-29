@@ -16,6 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ActuatorImpl implements Actuator {
+  private org.integratedmodelling.klab.api.services.runtime.Dataflow collectiveSelectionDependency;
+  @Override public org.integratedmodelling.klab.api.services.runtime.Dataflow getCollectiveSelectionDependency() { return collectiveSelectionDependency; }
+  public void setCollectiveSelectionDependency(org.integratedmodelling.klab.api.services.runtime.Dataflow value) { collectiveSelectionDependency = value; }
 
   private org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding dependencyFamilyBinding;
   private java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> dependencyFamilies=new java.util.ArrayList<>();

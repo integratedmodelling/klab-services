@@ -119,9 +119,9 @@ public class PrioritizerImpl implements Prioritizer<Model> {
             // Compare Agent meanings under the same admission receipt. This is an implicit
             // preference/compatibility test, never an authored observed-as query clause.
             if(!output.getObserverSemantics().is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)
-                || !effectiveObserver.is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)
-                || reasoner.semanticDistance(output.getObserverSemantics(),effectiveObserver,null,validatedRevision)<0)
-              continue;
+                || !effectiveObserver.is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)) continue;
+            org.integratedmodelling.klab.runtime.ObserverSemanticUse.semanticComparison(scope,output.getObserverSemantics());
+            if(reasoner.semanticDistance(output.getObserverSemantics(),effectiveObserver,null,validatedRevision)<0)continue;
           }
         }
         if(preference<bestPreference) {bestPreference=preference;bestDistance=distance;}

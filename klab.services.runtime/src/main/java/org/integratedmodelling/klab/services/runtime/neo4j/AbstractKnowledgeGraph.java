@@ -80,6 +80,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
    * @return
    */
   protected Map<String, Object> asParameters(Object asset, Object... additionalParameters) {
+    return parameterMap(asset, additionalParameters);
+  }
+
+  private static Map<String, Object> parameterMap(Object asset, Object... additionalParameters) {
     Map<String, Object> ret = new HashMap<>();
     if (asset != null) {
       switch (asset) {
@@ -289,7 +293,68 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     return Utils.Maps.removeNullValues(ret);
   }
 
-  private Map<String, ?> sanitizeMetadata(Metadata metadata) {
+  /**
+   * Canonical persisted observation input, for transaction read comparison only. Runtime-only
+   * fields (notifications, service coordinates, transient IDs) are deliberately excluded.
+   * Geometry relationships live outside the observation node and are included separately.
+   */
+  public static Map<String, Object> persistedObservationProperties(Observation observation) {
+    var parameters = parameterMap(observation);
+    for (var field : java.util.List.of(GraphModel.Fields.METADATA, GraphModel.Fields.ANNOTATION_PRIORITIES,
+        GraphModel.Fields.ADAPTER_PARAMETERS, GraphModel.Fields.HISTOGRAMS)) {
+      if (parameters.get(field) instanceof String json)
+        parameters.put(field, Utils.Json.parseObject(json, Object.class));
+    }
+    if (parameters.get(GraphModel.Fields.ANNOTATIONS_JSON) instanceof java.util.List<?> annotations)
+      parameters.put(GraphModel.Fields.ANNOTATIONS_JSON, annotations.stream()
+          .map(value -> Utils.Json.parseObject(value.toString(), Object.class)).toList());
+    // A referenced cached observation can acquire a later operation receipt without a native
+    // observation write. That runtime receipt is not classifier input.
+    // Keep native storage and its raw read-set guard unchanged; normalize only this comparison.
+    parameters.remove(Metadata.IM_COMMIT_ID);
+    if (parameters.get(GraphModel.Fields.METADATA) instanceof Map<?, ?> metadata) {
+      var inputMetadata = new java.util.LinkedHashMap<>(metadata);
+      inputMetadata.remove(Metadata.IM_COMMIT_ID);
+      parameters.put(GraphModel.Fields.METADATA, inputMetadata);
+    }
+    var result = new java.util.TreeMap<String, Object>();
+    result.put("properties", canonicalInput(parameters));
+    result.put("geometry", observation.getGeometry() == null ? null
+        : org.integratedmodelling.klab.api.geometry.Geometry.forTransport(observation.getGeometry()).encode());
+    var perceived = observation.getObservable().is(SemanticType.AGENT)
+        ? observation.geometry(Observation.GeometryRelationship.PERCEIVES) : null;
+    result.put("perceivedGeometry", perceived == null ? null
+        : org.integratedmodelling.klab.api.geometry.Geometry.forTransport(perceived).encode());
+    return java.util.Collections.unmodifiableMap(result);
+  }
+
+  private record PersistedNumber(String kind,String value) {}
+  private record PersistedBinary(String value) {}
+
+  private static Object canonicalInput(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      var result = new java.util.TreeMap<String, Object>();
+      map.forEach((key, item) -> result.put(key.toString(), canonicalInput(item)));
+      return java.util.Collections.unmodifiableMap(result);
+    }
+    if (value instanceof java.util.Collection<?> items)
+      return items.stream().map(AbstractKnowledgeGraph::canonicalInput).toList();
+    if (value instanceof byte[] bytes) return new PersistedBinary(java.util.Base64.getEncoder().encodeToString(bytes));
+    if (value instanceof Number number) {
+      String kind=number instanceof Byte || number instanceof Short || number instanceof Integer
+          || number instanceof Long || number instanceof java.math.BigInteger ? "integral"
+          : number instanceof java.math.BigDecimal decimal
+              ? (Utils.Json.asString(decimal).contains(".") || Utils.Json.asString(decimal).toLowerCase(java.util.Locale.ROOT).contains("e")
+                  ? "floating" : "integral")
+          : number instanceof Float || number instanceof Double
+              ? "floating" : number.getClass().getName();
+      try { return new PersistedNumber(kind,new java.math.BigDecimal(number.toString()).stripTrailingZeros().toPlainString()); }
+      catch (NumberFormatException nonFinite) { return new PersistedNumber(kind,number.toString()); }
+    }
+    return value;
+  }
+
+  private static Map<String, ?> sanitizeMetadata(Metadata metadata) {
     if (metadata == null) {
       return Map.of();
     }

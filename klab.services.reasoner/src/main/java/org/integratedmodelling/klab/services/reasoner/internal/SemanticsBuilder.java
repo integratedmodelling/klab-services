@@ -193,15 +193,17 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
   @Override
   public Observable.Builder as(UnarySemanticOperator type, Concept... participants)
       throws KlabValidationException {
-    if (syntax.getSemanticModifier() != null) {
-      // Each operator consumes the whole existing expression. Replacing its
-      // modifier loses nested rates, including rates used as ratio operands.
-      var operand = syntax;
-      syntax = new KimConceptImpl();
-      syntax.setObservable(operand);
-      syntax.setArgumentType(EnumSet.copyOf(operand.getType()));
-      syntax.setType(type.getApplicableType(operand.getType()));
-    }
+    // Consume the whole expression, including its predicates, roles, modifiers and arity.
+    // Setting a modifier on that same node moves operand qualifiers onto the result:
+    // count of (each Terrestrial Region) would become Terrestrial (count of Region).
+    // The same wrapper also preserves nested operators, including rates in ratio operands.
+    var operand = syntax;
+    syntax = new KimConceptImpl();
+    syntax.setObservable(operand);
+    syntax.setArgumentType(EnumSet.copyOf(operand.getType()));
+    var transformed = type.getApplicableType(operand.getType());
+    syntax.setType(transformed == null ? EnumSet.copyOf(operand.getType()) : transformed);
+    if (transformed == null) syntax.setCollective(operand.isCollective());
     syntax.setSemanticModifier(type);
     if (participants != null && participants.length > 0) {
       syntax.setComparisonConcept(conceptSyntax(participants[0].getUrn()));
@@ -576,14 +578,16 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
                 attributes,
                 ontology);
       }
-      if (!acceptedRoles.isEmpty()) {
+      // Distinct lexical families qualify the same subject conjunctively. One existential
+      // over a union would only require one of the roles. A compound authored role retains
+      // its own meaning as the filler of its single existential.
+      for (var role : acceptedRoles) {
         reasoner
             .owl()
             .restrictSome(
                 ret,
                 reasoner.owl().getProperty(CoreOntology.NS.HAS_ROLE_PROPERTY),
-                LogicalConnector.UNION,
-                acceptedRoles,
+                role,
                 ontology);
       }
 
@@ -703,13 +707,18 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     appliedPredicates.addAll(reasoner.traits(ret));
     appliedPredicates.addAll(reasoner.roles(ret));
     for (var predicate : appliedPredicates) {
-      if (!applicability.applicableTo(predicate, ret))
+      if (!applicability.applicableTo(predicate, ret)) {
+        // Semantic identities only: retain the actual failed combination even when exception
+        // messages are redacted by the transport/logging boundary.
+        org.integratedmodelling.common.logging.Logging.INSTANCE.warn(
+            "Predicate applicability rejected: predicate="+predicate.getUrn()+"; target="+ret.getUrn());
         throw new KlabValidationException(
             "Predicate "
                 + predicate.getUrn()
                 + " cannot qualify "
                 + ret.getUrn()
                 + ": outside its applies to domain");
+      }
     }
     if (SemanticType.isDependent(ret.getType())) {
       var inherent = reasoner.inherent(ret);

@@ -530,3 +530,26 @@ Closing a test context first cancels consequence work, drops queued handlers and
 operation finish for up to five seconds before interruption. A further five-second deadline
 applies after interruption. If the worker still cannot stop, closure fails and graph/storage
 disposal is refused. A passing observation assertion with failed cleanup is a failed testcase.
+
+
+### Geometry-only classification and native catalog setup
+
+Collective CLASSIFICATION does not require a singular focus. The canonical
+`classify_without_focus` case selects a committed Agent, supplies its geometry to the bounded
+native test operation, classifies the actual native Region members, then repeats the operation
+and requests a different concrete value of the same family. `classificationnoopfor` separates
+the operation's requested predicate from its lexical family: successful existing knowledge
+must remain unchanged even when it does not satisfy the requested concrete selection.
+The existing `classificationnoop` form retains its requested-equals-family contract.
+These checks require a fresh successful EXISTING audit, not merely absence of mutation.
+
+Native catalogs have an independent durable lifecycle. The observer-only rollback fixture
+therefore calls `preparecatalog(selection, {{earth:Region}})` and
+`preparecatalog(selection, {{earth:Stream}})` before its strict `nativesnapshot`. This explicit
+setup invokes the existing public native Runtime routine under the private fixture permit,
+with no current transaction. It verifies empty persisted catalogs and unchanged observations,
+contextualizations and unrelated catalogs. It emits no member, observation, INSTANTIATION or
+completion evidence. A prepared catalog alone must not make unknown discovery a successful
+empty query. The positive native-producer dependency case performs no catalog setup and proves
+normal discovery and classification from scratch. `nativeunchanged` continues comparing all
+catalogs and their members/contributors without exclusions.

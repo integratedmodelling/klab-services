@@ -28,7 +28,7 @@ public final class MemberClassifierExecutor {
       Geometry support,
       Scheduler.Event event) {}
 
-  private record Generation(String reasonerId, long revision) {}
+  private record Generation(String reasonerId, long revision, String semanticFingerprint, String semanticSessionId) {}
   private record Invocation(boolean durable, long member, String inputObservable,
       Scheduler.Event event, String support, Generation generation) {}
   private record InvocationResult(ClassificationMemberResult member, PendingAttribution pending) {}
@@ -50,6 +50,7 @@ public final class MemberClassifierExecutor {
   private final ServiceCall call;
   private final Reasoner reasoner;
   private final Concept predicate;
+  private final Concept family;
   private final boolean optional;
   private final Generation preparedGeneration;
 
@@ -138,6 +139,11 @@ public final class MemberClassifierExecutor {
         || !predicate.is(SemanticType.PREDICATE)
         || !reasoner.satisfiable(predicate))
       throw new IllegalArgumentException("Classification requires a consistent predicate");
+    this.family = reasoner.lexicalRoot(predicate);
+    if (family == null || family.is(SemanticType.NOTHING)
+        || !family.is(SemanticType.PREDICATE) || !reasoner.satisfiable(family)
+        || !(Objects.equals(predicate.getUrn(), family.getUrn()) || reasoner.is(predicate, family)))
+      throw new IllegalArgumentException("Classification requires a valid lexical predicate family");
     this.optional =
         actuator.getModelDependency() != null && actuator.getModelDependency().isOptional();
     requireGeneration(scope, preparedGeneration);
@@ -211,14 +217,15 @@ public final class MemberClassifierExecutor {
     existing.addAll(reasoner.directRoles(member.getObservable()));
     var classified = new LinkedHashMap<String, Concept>();
     for (var attribution : existing) {
-      if (!reasoner.is(attribution, predicate)) continue;
-      if (!validSpecialization(attribution)) {
+      if (!(Objects.equals(attribution.getUrn(), family.getUrn()) || reasoner.is(attribution, family))) continue;
+      if (!validSpecialization(attribution, family)) {
         throw new IllegalArgumentException("Member has an invalid attribution in this predicate family");
       }
       classified.putIfAbsent(attribution.getUrn(), attribution);
     }
-    // Existing knowledge satisfies the request, independently of how it was acquired. Do not
-    // invoke a classifier, stage another attribution or repeat characterization for this member.
+    // Existing family knowledge completes classification, even when it is a different class.
+    // Final selection checks the requested predicate separately. Never reclassify a known member
+    // to obtain a desired answer, stage another attribution or repeat its characterization.
     if (!classified.isEmpty()) return new InvocationResult(
         memberResult(member, classified.values(), ClassificationMemberResult.Origin.EXISTING, support, event), null);
 
@@ -270,7 +277,13 @@ public final class MemberClassifierExecutor {
     var capabilities = reasoner.capabilities(scope);
     if (!(capabilities instanceof Reasoner.Capabilities semantic)
         || semantic.getServiceId() == null || semantic.getKnowledgeRevision() < 0) return null;
-    return new Generation(semantic.getServiceId(), semantic.getKnowledgeRevision());
+    return new Generation(semantic.getServiceId(), semantic.getKnowledgeRevision(), semantic.getSemanticContentFingerprint(), semantic.getSemanticSessionId());
+  }
+
+  boolean semanticFootprint(ComponentRegistry registry,
+      org.integratedmodelling.klab.services.scopes.ServiceContextScope scope) {
+    return method == null && Boolean.TRUE.equals(actuator.getData().get(Actuator.CLASSIFICATION_CHECK_ONLY))
+        || SemanticExecutionFootprints.function(registry, method, receiver, call, scope);
   }
 
   String requestedPredicateUrn() { return predicate.getUrn(); }
@@ -293,10 +306,14 @@ public final class MemberClassifierExecutor {
   }
 
   private boolean validSpecialization(Concept value) {
+    return validSpecialization(value, predicate);
+  }
+
+  private boolean validSpecialization(Concept value, Concept boundary) {
     return !value.is(SemanticType.NOTHING)
         && !value.isAbstract() && !value.is(SemanticType.ABSTRACT)
         && value.is(SemanticType.PREDICATE) && reasoner.satisfiable(value)
-        && (Objects.equals(value.getUrn(), predicate.getUrn()) || reasoner.is(value, predicate));
+        && (Objects.equals(value.getUrn(), boundary.getUrn()) || reasoner.is(value, boundary));
   }
 
 }

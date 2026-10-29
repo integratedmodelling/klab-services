@@ -20,9 +20,47 @@ final class SelectedModelClassifierContinuation {
   private final RuntimeService runtime;
   private final List<Runnable> validationChecks;
   private final Set<String> active=new HashSet<>();
-  private SelectedModelClassifierContinuation(RuntimeService runtime,List<Runnable> validationChecks){this.runtime=runtime;this.validationChecks=validationChecks;}
+  private final java.util.function.Consumer<Dataflow> clonedInputs;
+  private SelectedModelClassifierContinuation(RuntimeService runtime,List<Runnable> validationChecks,
+      java.util.function.Consumer<Dataflow> clonedInputs){
+    this.runtime=runtime;this.validationChecks=validationChecks;this.clonedInputs=clonedInputs;
+  }
 
   static CompletableFuture<Dataflow> resume(RuntimeService runtime,Dataflow dataflow,ServiceContextScope scope,List<Runnable> validationChecks) {
+    var finalizers = new ArrayList<Runnable>();
+    return resume(runtime, dataflow, scope, validationChecks, finalizers).thenApply(resolved -> {
+      if (!finalizers.isEmpty()) throw new IllegalStateException("Root selection requires submission finalization");
+      return resolved;
+    });
+  }
+
+  static CompletableFuture<Dataflow> resume(RuntimeService runtime,Dataflow dataflow,ServiceContextScope scope,
+      List<Runnable> validationChecks, List<Runnable> selectionFinalizers) {
+    var selections = new CollectiveSelectionContinuation(runtime, validationChecks);
+    return resumeSelections(runtime, dataflow, scope, validationChecks, selections, selectionFinalizers);
+  }
+
+  private static CompletableFuture<Dataflow> resumeSelections(RuntimeService runtime, Dataflow dataflow,
+      ServiceContextScope scope, List<Runnable> validationChecks, CollectiveSelectionContinuation selections,
+      List<Runnable> selectionFinalizers) {
+    return selections.prepare(dataflow, scope)
+        .thenCompose(prepared -> resumeClassifiers(runtime, prepared, scope, validationChecks, selections::reattach)).thenCompose(resolved ->
+        CollectiveSelectionContinuation.hasSelections(resolved)
+            ? resumeSelections(runtime, resolved, scope, validationChecks, selections, selectionFinalizers)
+            : CompletableFuture.completedFuture(finishSelections(resolved, selections, selectionFinalizers)));
+  }
+
+  private static Dataflow finishSelections(Dataflow resolved, CollectiveSelectionContinuation selections,
+      List<Runnable> finalizers) {
+    if (resolved.getCollectiveSelection() != null && selections.hasPending()) {
+      finalizers.add(() -> selections.finish(resolved));
+      return resolved;
+    }
+    return selections.finish(resolved);
+  }
+
+  static CompletableFuture<Dataflow> resumeClassifiers(RuntimeService runtime,Dataflow dataflow,ServiceContextScope scope,
+      List<Runnable> validationChecks, java.util.function.Consumer<Dataflow> clonedInputs) {
     if(!hasDeferred(dataflow)) {
       if(dataflow.getResolutionOutcome()==Dataflow.ResolutionOutcome.DEFERRED)
         return CompletableFuture.failedFuture(new IllegalStateException("Deferred dataflow has no obligation"));
@@ -30,7 +68,7 @@ final class SelectedModelClassifierContinuation {
     }
     if(dataflow.getResolutionOutcome()!=Dataflow.ResolutionOutcome.DEFERRED)
       return CompletableFuture.failedFuture(new IllegalStateException("Unannounced classifier obligation"));
-    return new SelectedModelClassifierContinuation(runtime,validationChecks).resume(dataflow,scope);
+    return new SelectedModelClassifierContinuation(runtime,validationChecks,clonedInputs).resume(dataflow,scope);
   }
   private static boolean hasDeferred(Dataflow dataflow){return dataflow.getComputation().stream().anyMatch(SelectedModelClassifierContinuation::hasDeferred);}
   private static boolean hasDeferred(Actuator plan){return !plan.getClassifierDependencies().isEmpty() || plan.getChildren().stream().anyMatch(SelectedModelClassifierContinuation::hasDeferred);}
@@ -44,19 +82,36 @@ final class SelectedModelClassifierContinuation {
       transaction(scope);
       var mapper=JacksonConfiguration.newObjectMapper();
       var dataflow=mapper.readValue(mapper.writeValueAsString(incoming),Dataflow.class);
+      clonedInputs.accept(dataflow);
       CompletableFuture<Void> chain=CompletableFuture.completedFuture(null);
       for(var actuator:dataflow.getComputation())chain=chain.thenCompose(ignored->expand(actuator,scope));
       return chain.thenApply(ignored->{transaction(scope);((DataflowImpl)dataflow).setResolutionOutcome(Dataflow.ResolutionOutcome.RESOLVED);return dataflow;});
     } catch(Exception failure){return CompletableFuture.failedFuture(failure);}
   }
   private CompletableFuture<Void> expand(Actuator actuator,ServiceContextScope scope) {
+    final ServiceContextScope nativeScope;
+    try { nativeScope = CollectiveSelectionContinuation.modelScope(runtime, actuator, scope); }
+    catch (Exception failure) { return CompletableFuture.failedFuture(failure); }
     CompletableFuture<Void> chain=CompletableFuture.completedFuture(null);
-    for(var child:List.copyOf(actuator.getChildren()))chain=chain.thenCompose(ignored->expand(child,scope));
+    for(var child:List.copyOf(actuator.getChildren()))chain=chain.thenCompose(ignored->expand(child,nativeScope));
     var obligations=List.copyOf(actuator.getClassifierDependencies());
     if(obligations.size()>1)return CompletableFuture.failedFuture(new UnsupportedOperationException("Only one classifier-expanded dependency per selected model is supported in this singleton increment"));
-    for(var obligation:obligations)chain=chain.thenCompose(ignored->expand(actuator,obligation,scope));
+    for(var obligation:obligations)chain=chain.thenCompose(ignored->expand(actuator,obligation,nativeScope));
     return chain.thenRun(()->actuator.getClassifierDependencies().clear());
   }
+  static void requireContext(ClassifierDependencyPlan plan,
+      org.integratedmodelling.klab.api.knowledge.observation.Observation context, ServiceContextScope scope) {
+    if (context == null || context.getId() != plan.contextId() || context.getId() == 0 || context.getId() == -1)
+      throw new IllegalStateException("Selected model native context identity changed");
+    if (plan.contextWitness() != null) {
+      if (!Objects.equals(plan.contextWitness(), ClassifierDependencyPlan.ContextWitness.capture(context, scope.getId()))
+          || !Objects.equals(plan.contextObservable(), context.getObservable().getSemantics().getUrn()))
+        throw new IllegalStateException("Selected model native context identity, meaning or support changed");
+    } else if (context.getId() < 0 || !Objects.equals(context.getObservable().getUrn(), plan.contextObservable())) {
+      throw new IllegalStateException("Legacy classifier plans require a stable durable context");
+    }
+  }
+
   private CompletableFuture<Void> expand(Actuator parent,ClassifierDependencyPlan plan,ServiceContextScope scope) {
     final String key=plan.modelUrn()+"/"+plan.dependencyIndex()+"/"+plan.contextId()+"/"+plan.support();
     synchronized(active){if(!active.add(key))return CompletableFuture.failedFuture(new IllegalStateException("Recursive classifier dependency cycle: "+key));}
@@ -65,13 +120,13 @@ final class SelectedModelClassifierContinuation {
       if(parent.getExecutionRole()!=Actuator.ExecutionRole.INITIALIZATION)
         throw new UnsupportedOperationException("Classifier dependency continuation supports INIT only");
       var context=scope.getContextObservation();
-      if(context==null || context.getId()!=plan.contextId() || !Objects.equals(context.getObservable().getUrn(),plan.contextObservable()))
-        throw new IllegalStateException("Selected model native context identity or meaning changed");
+      requireContext(plan, context, scope);
       var reasoner=scope.getService(Reasoner.class);
       var caps=reasoner.capabilities(scope);
       if(!(caps instanceof Reasoner.Capabilities semantic) || !Objects.equals(semantic.getServiceId(),plan.reasonerId())
           || semantic.getKnowledgeRevision()!=plan.knowledgeRevision())throw new IllegalStateException("Selected model semantic commitment changed");
       validationChecks.add(()->{
+        requireContext(plan, scope.getContextObservation(), scope);
         var current=reasoner.capabilities(scope);
         if(!(current instanceof Reasoner.Capabilities accepted) || !Objects.equals(accepted.getServiceId(),plan.reasonerId())
             || accepted.getKnowledgeRevision()!=plan.knowledgeRevision())throw new IllegalStateException("Selected model semantic commitment changed before publication");

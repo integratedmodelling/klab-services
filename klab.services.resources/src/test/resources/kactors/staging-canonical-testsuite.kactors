@@ -29,6 +29,28 @@ action init:
         space: {shape: "EPSG:3857 POLYGON ((200000 6000000,200000 6000400,200500 6000400,200500 6000000,200000 6000000))", grid: "100 m"}
     }
 
+    def selection_west {
+        namespace: "staging.selection"
+        name: "west"
+        semantics: {{earth:Terrestrial earth:Region}}
+        space: {
+            shape: "EPSG:4326 POLYGON((33.796 -7.086, 34.871 -7.086, 34.871 -9.41, 33.796 -9.41, 33.796 -7.086))"
+            grid: 1.km
+        }
+        time: {year: 2014, step: 1.day}
+    }
+
+    // Synthetic category fixture: this explicit meaning is not inferred from the coordinates.
+    def selection_estuary {
+        namespace: "staging.selection"
+        name: "estuary"
+        semantics: {{earth:Estuarine earth:Region}}
+        space: {
+            shape: "EPSG:3857 POLYGON ((200000 6000000,200000 6000400,200500 6000400,200500 6000000,200000 6000000))"
+            grid: "100 m"
+        }
+    }
+
 @test(name="Substantial identity preservation", 
 	description="Check that substantial identity is preserved upon resubmission and redefinitions are disallowed")
 action check_substantial_identity:
@@ -137,7 +159,7 @@ action stream_relationships:
     connections <- ctx.query({{each earth:StreamConnection}} :target region :along "AFFECTS")
     assert inspector.present(connections)
     network <- ctx.focus(:within region)
-    assert inspector.relationshipscheck(network, connections, "earth:StreamConnection")
+    assert inspector.relationshipscheck(network, connections, {{earth:StreamConnection}})
 
 @test(name="Classification preserves member identities", description="Classify existing Regions, then verify a successful already-classified no-op")
 action classify_existing_regions:
@@ -155,14 +177,14 @@ action classify_existing_regions:
         :project "klab.staging.vxii")
     classification_commit <- classified.commit_id
     assert [classification_commit > 0]
-    assert inspector.classificationcheck(classification, before, "earth:PhysicalEnvironment")
+    assert inspector.classificationcheck(classification, before, {{earth:PhysicalEnvironment}})
     after <- inspector.membersnapshot(classification, regions)
     repeated <- inspector.apply(classification, {{earth:PhysicalEnvironment of each earth:Region}}, support
         :namespace "staging.vxii.test.classification"
         :project "klab.staging.vxii")
     repeated_commit <- repeated.commit_id
     assert [repeated_commit > 0]
-    assert inspector.classificationnoop(classification, after, "earth:PhysicalEnvironment")
+    assert inspector.classificationnoop(classification, after, {{earth:PhysicalEnvironment}})
 
 @test(name="Concrete any includes self", description="A concrete leaf category remains a valid classification result")
 action classify_concrete_self:
@@ -180,7 +202,390 @@ action classify_concrete_self:
         :project "klab.staging.vxii")
     classification_commit <- classified.commit_id
     assert [classification_commit > 0]
-    assert inspector.classificationcheck(classification, before, "earth:Terrestrial")
+    assert inspector.classificationcheckfor(classification, before, {{earth:Terrestrial}}, {{earth:PhysicalEnvironment}})
+
+// Each request has concrete predicates, with no model for the full qualified observable.
+// Expected member IDs are derived from the committed native cohort's actual classifications.
+@test(name="Concrete realm selection and satisfied reuse")
+action select_realm:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    selected <- ctx.submit({{each earth:Terrestrial earth:Region}}, support :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    selection <- ctx.focus(:within region)
+    assert inspector.selectioncheck(selection, selected, {{each earth:Terrestrial earth:Region}})
+    assert inspector.selectionreplay(selection, selected)
+    before <- inspector.nativesnapshot(selection)
+    repeated <- ctx.submit({{each earth:Terrestrial earth:Region}}, support :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, repeated, {{each earth:Terrestrial earth:Region}})
+    assert inspector.selectionreplay(selection, repeated)
+    assert inspector.nativeunchanged(selection, before)
+
+@test(name="Concrete attribute selection preserves identities")
+action select_attribute:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    // Bare discovery is an independent root; inspect and select in that same unfocused scope.
+    native_members <- ctx.submit({{each earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    selection <- ctx.scope
+    before <- inspector.membersnapshot(selection, native_members)
+    selected <- ctx.submit({{each agency:Appropriate earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, selected, {{each agency:Appropriate earth:Region}})
+    assert inspector.classificationcheck(selection, before, {{agency:Appropriateness}})
+
+@test(name="Concrete identity selection preserves the native cohort")
+action select_identity:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    // Bare discovery is an independent root; inspect and select in that same unfocused scope.
+    native_members <- ctx.submit({{each earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    selection <- ctx.scope
+    before <- inspector.membersnapshot(selection, native_members)
+    selected <- ctx.submit({{each geography:African earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, selected, {{each geography:African earth:Region}})
+    assert inspector.classificationcheck(selection, before, {{geography:Continental}})
+
+@test(name="Concrete role selection preserves identities")
+action select_role:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    // Bare discovery is an independent root; inspect and select in that same unfocused scope.
+    native_members <- ctx.submit({{each earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    selection <- ctx.scope
+    before <- inspector.membersnapshot(selection, native_members)
+    selected <- ctx.submit({{each agency:Patient earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, selected, {{each agency:Patient earth:Region}})
+    assert inspector.classificationcheck(selection, before, {{agency:Participant}})
+
+@test(name="Conjunctive selection across independent role families")
+action select_two_role_families:
+    // selectioncheck also requires the current versioned semantic-content certificate.
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    selected <- ctx.submit({{each agency:Patient imod:Reference earth:Region}}, support :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    selection <- ctx.focus(:within region)
+    assert inspector.selectioncheck(selection, selected, {{each agency:Patient imod:Reference earth:Region}})
+    before <- inspector.nativesnapshot(selection)
+    repeated <- ctx.submit({{each agency:Patient imod:Reference earth:Region}}, support :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, repeated, {{each agency:Patient imod:Reference earth:Region}})
+    assert inspector.nativeunchanged(selection, before)
+
+@test(name="Conjunctive selection across four predicate families")
+action select_multiple_families:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    selected <- ctx.submit({{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}},
+        support :within region :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    selection <- ctx.focus(:within region)
+    assert inspector.selectioncheck(selection, selected,
+        {{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}})
+    before <- inspector.nativesnapshot(selection)
+    repeated <- ctx.submit({{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}},
+        support :within region :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, repeated,
+        {{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}})
+    assert inspector.nativeunchanged(selection, before)
+
+@test(name="Deterministic transaction attribution across four families")
+action select_deterministic_four_families:
+    ctx <- context.new
+    assert inspector.fixtures(ctx)
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    selected <- ctx.submit({{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}},
+        support :within region :namespace "staging.vxii.test.selection_deterministic" :project "klab.staging.vxii")
+    selection <- ctx.focus(:within region)
+    assert inspector.selectioncheck(selection, selected, {{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}})
+    selected_count <- [selected.childrenCount]
+    assert [selected_count > 0]
+    before <- inspector.nativesnapshot(selection)
+    invocation_count <- inspector.fixturecount(ctx, "classification")
+    assert [invocation_count >= 4]
+    repeated <- ctx.submit({{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}},
+        support :within region :namespace "staging.vxii.test.selection_deterministic" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, repeated, {{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}})
+    assert inspector.nativeunchanged(selection, before)
+    repeated_count <- inspector.fixturecount(ctx, "classification")
+    assert [repeated_count == invocation_count]
+    assert inspector.clearfixtures(ctx)
+
+@test(name="Known different classification gives a successful empty selection")
+action select_known_different:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    preseed <- ctx.submit({{count of (each earth:Region)}}, support !observer :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.viable(preseed)
+    selection <- ctx.focus(:within region)
+    fixed <- inspector.apply(selection, {{any earth:Terrestrial of each earth:Region}}, support
+        :namespace "staging.vxii.test.classification" :project "klab.staging.vxii")
+    fixed_commit <- fixed.commit_id
+    assert [fixed_commit > 0]
+    before <- inspector.nativesnapshot(selection)
+    selected <- ctx.submit({{each earth:Aquatic earth:Region}}, support !observer :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, selected, {{each earth:Aquatic earth:Region}})
+    selected_count <- [selected.childrenCount]
+    assert [selected_count == 0]
+    assert inspector.nativeunchanged(selection, before)
+
+@test(name="An ordinary model consumes the selected collective")
+action selected_model_input:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    counted <- ctx.submit({{count of (each earth:Terrestrial earth:Region)}} :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.present(counted)
+    selection <- ctx.focus(:within region)
+    input <- inspector.selectioninput(selection, counted, "selected")
+    assert inspector.selectioncheck(selection, input, {{each earth:Terrestrial earth:Region}})
+    assert inspector.selectionreplay(selection, input)
+    expected_count <- [input.childrenCount]
+    assert inspector.cellcheck(selection, counted, "D2_YX", 0, expected_count, 0)
+
+@test(name="Partial native discovery is completed before selection")
+action select_partial_support:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    western_region <- ctx.submit(selection_west !observer)
+    western_support <- western_region.geometry
+    western_members <- ctx.submit({{each earth:Region}}, western_support !observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.present(western_members)
+    selection <- ctx.scope
+    western_before <- inspector.membersnapshot(selection, western_members)
+    support <- region.geometry
+    selected <- ctx.submit({{each earth:Terrestrial earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, selected, {{each earth:Terrestrial earth:Region}})
+    assert inspector.contains(selection, western_members)
+    // Full-support completion must retain every identity from the earlier western discovery.
+    completed_members <- inspector.membersnapshot(selection, western_members)
+    assert [completed_members.members().keySet().containsAll(western_before.members().keySet())]
+    assert [western_before.members().entrySet().stream().allMatch(entry -> completed_members.members().get(entry.getKey()).geometry().equals(entry.getValue().geometry()))]
+    assert [org.integratedmodelling.klab.api.geometry.Geometry.forTransport(selected.getGeometry()).encode().equals(org.integratedmodelling.klab.api.geometry.Geometry.forTransport(support).encode())]
+
+@test(name="Selection matches concrete subtypes through the Reasoner")
+action select_subtype:
+    ctx <- context.new
+    region <- ctx.submit(selection_estuary !observer)
+    support <- region.geometry
+    preseed <- ctx.submit({{count of (each earth:Region)}}, support !observer :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.viable(preseed)
+    selection <- ctx.focus(:within region)
+    fixed <- inspector.apply(selection, {{any earth:Estuarine of each earth:Region}}, support
+        :namespace "staging.vxii.test.classification" :project "klab.staging.vxii")
+    fixed_commit <- fixed.commit_id
+    assert [fixed_commit > 0]
+    before <- inspector.nativesnapshot(selection)
+    selected <- ctx.submit({{each earth:Aquatic earth:Region}}, support !observer :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, selected, {{each earth:Aquatic earth:Region}})
+    selected_count <- [selected.childrenCount]
+    assert [selected_count > 0]
+    assert inspector.nativeunchanged(selection, before)
+
+@test(name="An explicitly empty native discovery is a successful selection")
+action select_empty_native:
+    ctx <- context.new
+    // Use an Agent only to supply geometry. A Region context would itself be a Region cohort member.
+    geometry_owner <- ctx.submit(observer_definition !observer)
+    support <- geometry_owner.geometry
+    assert inspector.fixtures(ctx)
+    selected <- ctx.submit({{each earth:Terrestrial earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection_empty" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(ctx, selected, {{each earth:Terrestrial earth:Region}})
+    selected_count <- [selected.childrenCount]
+    assert [selected_count == 0]
+    initial_invocations <- inspector.fixturecount(ctx, "empty")
+    assert [initial_invocations > 0]
+    before <- inspector.nativesnapshot(ctx)
+    repeated <- ctx.submit({{each earth:Terrestrial earth:Region}}, support !observer
+        :namespace "staging.vxii.test.selection_empty" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(ctx, repeated, {{each earth:Terrestrial earth:Region}})
+    assert inspector.nativeunchanged(ctx, before)
+    repeated_invocations <- inspector.fixturecount(ctx, "empty")
+    assert [repeated_invocations == initial_invocations]
+    assert inspector.clearfixtures(ctx)
+
+@test(name="A missing required classifier does not create an empty success")
+action select_missing_classifier:
+    ctx <- context.new
+    // Establish the native catalog only; no collective discovery has run.
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    selection <- ctx.focus(:within region)
+    before <- inspector.nativesnapshot(selection)
+    failed <- ctx.submit({{each agency:Appropriate earth:Region}}, support !observer :within region
+        :namespace "staging.vxii.test.selection_missing" :project "klab.staging.vxii")
+    assert inspector.failed(failed)
+    assert inspector.nativeunchanged(selection, before)
+
+@test(name="Second-family execution failure rolls back earlier attribution and discovery")
+action select_family_rollback:
+    ctx <- context.new
+    // Existing context establishes the durable catalog without completing native discovery.
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    assert inspector.fixtures(ctx)
+    selection <- ctx.focus(:within region)
+    before <- inspector.nativesnapshot(selection)
+    failed <- ctx.submit({{each agency:Appropriate earth:Terrestrial earth:Region}}, support !observer :within region
+        :namespace "staging.vxii.test.selection_rollback" :project "klab.staging.vxii")
+    assert inspector.failed(failed)
+    prior_seen <- inspector.fixturecount(ctx, "prior")
+    failures <- inspector.fixturecount(ctx, "classifier")
+    assert [prior_seen > 0]
+    assert [failures > 0]
+    assert inspector.nativeunchanged(selection, before)
+    retried <- ctx.submit({{each agency:Appropriate earth:Terrestrial earth:Region}}, support !observer :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, retried, {{each agency:Appropriate earth:Terrestrial earth:Region}})
+    assert inspector.clearfixtures(ctx)
+
+@test(name="A consuming model failure rolls back its selected dependency")
+action select_consumer_rollback:
+    ctx <- context.new
+    region <- ctx.submit(ruaha !observer)
+    assert inspector.fixtures(ctx)
+    selection <- ctx.focus(:within region)
+    before <- inspector.nativesnapshot(selection)
+    failed <- ctx.submit({{count of (each earth:Terrestrial earth:Region)}} !observer :within region
+        :namespace "staging.vxii.test.selection_consumer_failure" :project "klab.staging.vxii")
+    assert inspector.failed(failed)
+    consumed <- inspector.fixturecount(ctx, "consumer")
+    assert [consumed > 0]
+    assert inspector.nativeunchanged(selection, before)
+    retried <- ctx.submit({{count of (each earth:Terrestrial earth:Region)}} !observer :within region
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    input <- inspector.selectioninput(selection, retried, "selected")
+    assert inspector.selectioncheck(selection, input, {{each earth:Terrestrial earth:Region}})
+    assert inspector.clearfixtures(ctx)
+
+@test(name="Selection preserves an explicitly selected observer across transport")
+action select_explicit_observer:
+    ctx <- context.new
+    observer <- ctx.submit(observer_definition !observer)
+    region <- ctx.submit(ruaha :observer observer)
+    support <- region.geometry
+    base_scope <- ctx.scope
+    selected_scope <- [base_scope.withObserver(observer).within(region)]
+    selected <- ctx.submit({{each earth:Terrestrial earth:Region}}, support :within region :observer observer
+        :namespace "staging.vxii.test.selection" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selected_scope, selected, {{each earth:Terrestrial earth:Region}})
+    assert inspector.selectionreplay(selected_scope, selected)
+    // An unselected observer scope cannot replay the observer-qualified completion evidence.
+    unselected_scope <- ctx.focus(:within region)
+    wrong_observer <- inspector.selectionreplay(unselected_scope, selected)
+    assert [wrong_observer == false]
+
+@test(name="Collective classification requires geometry but no singular context")
+action classify_without_focus:
+    ctx <- context.new
+    observer <- ctx.submit(observer_definition !observer)
+    support <- observer.geometry
+    base_scope <- ctx.scope
+    selection <- [base_scope.withObserver(observer)]
+    native_members <- ctx.submit({{each earth:Region}}, support :observer observer
+        :namespace "staging.vxii.test.classification" :project "klab.staging.vxii")
+    before <- inspector.membersnapshot(selection, native_members)
+    classified <- inspector.apply(selection, {{any earth:Terrestrial of each earth:Region}}, support
+        :namespace "staging.vxii.test.classification" :project "klab.staging.vxii")
+    classified_commit <- classified.commit_id
+    assert [classified_commit > 0]
+    assert inspector.classificationcheck(selection, before, {{earth:Terrestrial}})
+    before_repeat <- inspector.membersnapshot(selection, native_members)
+    repeated <- inspector.apply(selection, {{any earth:Terrestrial of each earth:Region}}, support
+        :namespace "staging.vxii.test.classification" :project "klab.staging.vxii")
+    repeated_commit <- repeated.commit_id
+    assert [repeated_commit > 0]
+    assert inspector.classificationnoopfor(selection, before_repeat, {{earth:Terrestrial}}, {{earth:PhysicalEnvironment}})
+    before_different <- inspector.membersnapshot(selection, native_members)
+    different <- inspector.apply(selection, {{any earth:Aquatic of each earth:Region}}, support
+        :namespace "staging.vxii.test.classification" :project "klab.staging.vxii")
+    different_commit <- different.commit_id
+    assert [different_commit > 0]
+    assert inspector.classificationnoopfor(selection, before_different, {{earth:Aquatic}}, {{earth:PhysicalEnvironment}})
+
+@test(name="A native producer executes its collective classification dependency first")
+action select_native_operation_dependency:
+    ctx <- context.new
+    observer <- ctx.submit(observer_definition !observer)
+    support <- observer.geometry
+    base_scope <- ctx.scope
+    selection <- [base_scope.withObserver(observer)]
+    assert inspector.fixtures(ctx)
+    // Supply explicit support: occupied Agent geometry is not a PERCEIVES capability.
+    selected <- ctx.submit({{each agency:Patient earth:Stream}}, support :observer observer
+        :namespace "staging.vxii.test.selection_native_dependency" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, selected, {{each agency:Patient earth:Stream}})
+    assert [selected.geometry.encode() == support.encode()]
+    assert inspector.selectionreplay(selection, selected)
+    selected_count <- [selected.childrenCount]
+    assert [selected_count == 1]
+    invoked <- inspector.fixturecount(selection, "classification")
+    ordered <- inspector.fixturecount(selection, "ordered")
+    discoveries <- inspector.fixturecount(selection, "discovery")
+    assert [invoked >= 2]
+    assert [ordered == 1]
+    assert [discoveries == 1]
+    before <- inspector.nativesnapshot(selection)
+    repeated <- ctx.submit({{each agency:Patient earth:Stream}}, support :observer observer
+        :namespace "staging.vxii.test.selection_native_dependency" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, repeated, {{each agency:Patient earth:Stream}})
+    assert inspector.selectionreplay(selection, repeated)
+    assert inspector.nativeunchanged(selection, before)
+    repeated_invocations <- inspector.fixturecount(selection, "classification")
+    repeated_discoveries <- inspector.fixturecount(selection, "discovery")
+    assert [repeated_invocations == invoked]
+    assert [repeated_discoveries == discoveries]
+    assert inspector.clearfixtures(ctx)
+
+@test(name="Consumer failure rolls back native discovery and its earlier classification dependency")
+action select_native_operation_rollback:
+    ctx <- context.new
+    observer <- ctx.submit(observer_definition !observer)
+    // A quality consumer needs a singular context; establish it before the rollback baseline.
+    region <- ctx.submit(selection_estuary :observer observer)
+    support <- region.geometry
+    base_scope <- ctx.scope
+    selection <- [base_scope.withObserver(observer).within(region)]
+    assert inspector.fixtures(ctx)
+    // The Region context already populated its catalog; only prepare the empty Stream catalog.
+    assert inspector.preparecatalog(selection, {{earth:Stream}})
+    before <- inspector.nativesnapshot(selection)
+    failed <- ctx.submit({{count of (each agency:Patient earth:Stream)}}, support :observer observer :within region
+        :namespace "staging.vxii.test.selection_native_dependency" :project "klab.staging.vxii")
+    assert inspector.failed(failed)
+    ordered <- inspector.fixturecount(selection, "ordered")
+    discoveries <- inspector.fixturecount(selection, "discovery")
+    consumed <- inspector.fixturecount(selection, "consumerMembers")
+    assert [ordered > 0]
+    assert [discoveries > 0]
+    assert [consumed == 1]
+    assert inspector.nativeunchanged(selection, before)
+    retried <- ctx.submit({{each agency:Patient earth:Stream}}, support :observer observer :within region
+        :namespace "staging.vxii.test.selection_native_dependency" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, retried, {{each agency:Patient earth:Stream}})
+    assert inspector.selectionreplay(selection, retried)
+    assert inspector.clearfixtures(ctx)
 
 // Explicit observers are concrete Agents. Their normal submission/resolution creates identity;
 // this case does not require an INSTANTIATION activity or computational initialization.

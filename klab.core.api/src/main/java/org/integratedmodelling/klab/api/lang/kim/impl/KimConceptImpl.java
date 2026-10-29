@@ -507,7 +507,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
    * @return
    */
   public boolean remove(KimConcept concept) {
-    if (this.traits.remove(concept)) {
+    boolean removed = this.traits.remove(concept);
+    removed = this.roles.remove(concept) || removed;
+    if (removed) {
       resetDefinition();
       return true;
     }
@@ -792,8 +794,24 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       return this.urn;
     }
 
-    if (!isCollective() && observable != null && observable.isCollective()) {
+    // Determine inherited collectivity after the child has finalized its own transparent
+    // wrappers. Otherwise inspecting this tree before/after a child URN read changes its flags.
+    if (observable instanceof KimConceptImpl child) child.finalizeDefinition();
+    if (semanticModifier == null && !isCollective() && observable != null && observable.isCollective()) {
       collective = true;
+    }
+
+    // Parenthesized operands may retain a transparent wrapper around an already
+    // collective child. Its collectivity is inherited, not a second `each` token.
+    // Keep every nontransparent qualifier on its own syntax node.
+    if (collective && observable instanceof KimConceptImpl child && child.isCollective()
+        && name == null && semanticModifier == null && selector() == null && !negated
+        && traits.isEmpty() && roles.isEmpty() && getModifiers().isEmpty()
+        && about.isEmpty() && valueOperators.isEmpty() && operands.isEmpty()
+        && comparisonConcept == null && authority == null && authorityTerm == null) {
+      this.urn = child.finalizeDefinition();
+      this.contextualization = Contextualization.forSemantics(this);
+      return this.urn;
     }
 
     String main = "";
@@ -805,8 +823,11 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     if (semanticModifier != null) {
       ret.append(ret.isEmpty() ? "" : " ").append(semanticModifier.declaration[0]);
-      ret.append((ret.isEmpty()) ? "" : " ")
-          .append(name == null ? ((KimConceptImpl) observable).computeUrnAndParenthesize() : name);
+      String argument = name == null ? ((KimConceptImpl) observable).computeUrnAndParenthesize() : name;
+      // A collective unary operand must be syntactically grouped, e.g. count of (each Tree).
+      if (name == null && observable.isCollective()
+          && !(argument.startsWith("(") && argument.endsWith(")"))) argument = "(" + argument + ")";
+      ret.append((ret.isEmpty()) ? "" : " ").append(argument);
       if (comparisonConcept != null) {
         ret.append(" ")
             .append(semanticModifier.declaration[1])
@@ -850,7 +871,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     }
 
     if (inherent != null) {
-      ret.append(" of ").append(((KimConceptImpl) inherent).computeUrnAndParenthesize());
+      ret.append(" of ").append(((KimConceptImpl) inherent).computeUrnAndParenthesize(true));
     }
 
     if (causant != null) {
@@ -920,12 +941,16 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
    * @return the computed URN with parentheses where necessary.
    */
   private String computeUrnAndParenthesize() {
+    return computeUrnAndParenthesize(false);
+  }
+
+  private String computeUrnAndParenthesize(boolean inherentOperand) {
 
     String urn = finalizeDefinition();
     // Transparent parser wrappers have already parenthesized their operand. Do
     // not add a new pair at every parse/build round trip of a nested operator.
     if (semanticModifier == null && observable instanceof KimConceptImpl child
-        && urn.equals(child.computeUrnAndParenthesize())) return urn;
+        && urn.equals(child.computeUrnAndParenthesize(inherentOperand))) return urn;
     boolean trivial = semanticModifier == null
         && (observable == null || observable.getSemanticModifier() == null)
         && getModifiers().isEmpty() && valueOperators.isEmpty() && about.isEmpty()
@@ -951,7 +976,31 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       }
       trivial = !allTraits || countElements == 1;
     }
+    // A qualified predicate inside the bearer has its own clause boundary. Without
+    // grouping the complete bearer, e.g. Role of Realm (OtherRole of Region) Region,
+    // reparsing can move the outer Role onto Region and lose the intended inherency.
+    // Ordinary top-level formatting and simple decorated bearers keep their spelling.
+    if (trivial && inherentOperand && hasGroupedPredicate()) trivial = false;
     return trivial ? urn : ("(" + urn + ")");
+  }
+
+  private boolean hasGroupedPredicate() {
+    if (!SemanticType.isSubstantial(type)) return false;
+    for (KimConceptImpl current = this; current != null;
+        current = current.observable instanceof KimConceptImpl child ? child : null) {
+      for (var predicate : Utils.Collections.join(current.traits, current.roles)) {
+        // A transparent wrapper may already include its child's parentheses in its
+        // own definition. Inspect the child structure as well as the rendered form.
+        for (KimConceptImpl syntax = (KimConceptImpl) predicate; syntax != null;
+            syntax = syntax.observable instanceof KimConceptImpl child ? child : null) {
+          if (syntax.semanticModifier != null || !syntax.getModifiers().isEmpty()
+              || !syntax.valueOperators.isEmpty() || !syntax.about.isEmpty()
+              || !syntax.operands.isEmpty() || syntax.negated
+              || !syntax.computeUrnAndParenthesize().equals(syntax.finalizeDefinition())) return true;
+        }
+      }
+    }
+    return false;
   }
 
   private static String renderValue(Object value) {

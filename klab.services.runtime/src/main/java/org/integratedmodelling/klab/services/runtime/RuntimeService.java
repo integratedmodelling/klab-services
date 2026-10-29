@@ -695,12 +695,34 @@ public class RuntimeService extends BaseService
   }
 
   static ContextScope submissionScope(Observation submitted, ContextScope scope) {
+    // Read-only queries inspect exactly the caller's knowledge/support/observer context;
+    // independent-root focus reset belongs only to a new observation submission.
+    if (submitted.getId() == Observation.QUERY_ID) return scope;
     // Client focus is not the bearer of an independent root submission. Nested submissions
     // retain their context for collective membership registration and lifecycle ownership.
     if (scope instanceof ServiceContextScope serviceScope
         && serviceScope.getActivity() == null
         && scope.getContextObservation() != null
         && SemanticType.isEnumerableSubstantial(submitted.getObservable().getSemantics().getType())) {
+      // A qualified collective selection binds native discovery and its family updates to this
+      // focus. It is a virtual result, not a new independent substantial whose bearer is reset.
+      // Eligibility uses the same complete admission as planning; geometry inherited later by
+      // submitWithObserver is supplied only to a detached probe here.
+      if (submitted.getObservable().getSemantics().isCollective()) {
+        var selectionRequest = submitted;
+        if (submitted.getGeometry() == null) {
+          var inheritedGeometry = ContextScope.getResolutionGeometry(scope);
+          if (inheritedGeometry != null) {
+            var detached = (ObservationImpl) Observation.forTransport(submitted);
+            detached.setGeometry(Geometry.forTransport(inheritedGeometry));
+            selectionRequest = detached;
+          }
+        }
+        if (CollectiveSelectionExecution.candidate(selectionRequest, serviceScope)) return scope;
+        if (CollectiveSelectionBinding.hasSelectionSemantics(submitted.getObservable(), serviceScope,
+            serviceScope.getService(Reasoner.class)))
+          throw new IllegalArgumentException("Collective selection requires valid support, focus, observer and semantic admission");
+      }
       return serviceScope.within(null);
     }
     return scope;
@@ -910,12 +932,15 @@ public class RuntimeService extends BaseService
               observation + " submitted");
       org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(submission,scope.getObserver());
 
+      boolean selectionTarget = CollectiveSelectionExecution.candidate(observation, serviceContextScope);
       boolean dependentTarget = observation.getObservable().is(SemanticType.QUALITY)
-          || observation.getObservable().is(SemanticType.PROCESS);
+          || observation.getObservable().is(SemanticType.PROCESS)
+          || selectionTarget;
       // A dependent may resolve to existing knowledge after specific-model attempts. Do not
       // stage a new target until that distinction is known (children share the atomic graph).
       var submissionScope = serviceContextScope.executing(submission, isRoot ? storedAgent : null,
           dependentTarget ? null : observation);
+      org.integratedmodelling.klab.runtime.ObserverSemanticUse.start(submissionScope);
       var resolver = scope.getService(Resolver.class);
       var resolution =
           Activity.of(
@@ -984,14 +1009,15 @@ public class RuntimeService extends BaseService
 
       // keep the k.LAB ownership for the resolution only if we're the root action.
       // FIXME the observer should take care of this but for now the k.LAB actor isn't considered
-      var resolutionScope =
+      var resolutionBase =
           submissionScope
               .executing(
                   resolution,
                   isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null,
-                  observation)
-              //  Add any cohort and identification strategy needed for KG maintenance.
-              .contextualizeFor(observation);
+                  observation);
+      // Selection binds discovery and its family operations to the submitted native focus.
+      // Its virtual result must not silently turn into an unrestricted root cohort query.
+      var resolutionScope = selectionTarget ? resolutionBase : resolutionBase.contextualizeFor(observation);
 
       /*
        * Save the resolution constraints in the metadata for debugging and provenance. This includes
@@ -1004,6 +1030,7 @@ public class RuntimeService extends BaseService
       // Remote generation/source checks run outside native transaction commit locks. Local
       // exact member/result read-set guards remain on that commit transaction.
       var classifierValidationChecks=new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
+      var selectionFinalizers = new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
       return (predefinedContextualization != null
               ? createPredefinedDataflow(predefinedContextualization, observation, scope)
               : resolver
@@ -1016,7 +1043,7 @@ public class RuntimeService extends BaseService
                 ret.getNotifications().add(Notification.error(t.getMessage(), t));
                 return ret;
               })
-          .thenCompose(dataflow -> SelectedModelClassifierContinuation.resume(this,dataflow,resolutionScope,classifierValidationChecks))
+          .thenCompose(dataflow -> SelectedModelClassifierContinuation.resume(this,dataflow,resolutionScope,classifierValidationChecks,selectionFinalizers))
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
@@ -1029,6 +1056,15 @@ public class RuntimeService extends BaseService
                   observationImpl.setResolvedCoverage(dataflowImpl.getResolvedCoverage());
                 }
                 if (!dataflow.isEmpty()) {
+                  if (dataflow.getCollectiveSelection() != null) {
+                    var selected = CollectiveSelectionExecution.execute(this, dataflow, observation,
+                        resolutionScope, classifierValidationChecks);
+                    selectionFinalizers.forEach(Runnable::run);
+                    classifierValidationChecks.forEach(Runnable::run);
+                    if (resolutionScope.commit() < 0)
+                      throw new IllegalStateException("Selection resolution transaction failed");
+                    return new SubmissionResolution(selected, true);
+                  }
                   var reused = dependentTarget ? referenceResult(dataflow, observation, resolutionScope) : null;
                   if (reused != null) {
                     // A receipt, not CREATED: no new target or executor enters the shared graph.
@@ -1246,6 +1282,18 @@ public class RuntimeService extends BaseService
     }
     var semantics = query.getObservable().getSemantics();
     if (SemanticType.isEnumerableSubstantial(semantics.getType()) && semantics.isCollective()) {
+      var selectionAdmission = query.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding.DATA_KEY);
+      if (selectionAdmission != null) {
+        var binding = Utils.Json.parseObject(selectionAdmission.toString(),
+            org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding.class);
+        var selectedTarget = scope.getService(Reasoner.class).resolveObservable(binding.requested());
+        binding.require(scope, selectedTarget, Geometry.create(binding.support()));
+        if (!Objects.equals(binding.nativeMembers(), query.getObservable().getUrn()))
+          throw new IllegalArgumentException("Selection native query differs from its admission");
+        return queryCollective(query, serviceScope, null, null, binding);
+      }
+      if (query.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY) != null)
+        return CollectiveSelectionExecution.query(this, query, serviceScope);
       var encoded = query.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY);
       if (encoded != null) {
         var reduction = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(encoded.toString(),
@@ -1256,7 +1304,10 @@ public class RuntimeService extends BaseService
           throw new IllegalStateException("Collective query operand differs from reduction binding");
         return queryCollective(query, serviceScope, reduction);
       }
-      return queryCollective(query, serviceScope);
+      var direct = queryCollective(query, serviceScope);
+      if (!direct.isEmpty() && direct.getResolvedCoverage() >= 1.0 - 1.0e-9) return direct;
+      var selected = CollectiveSelectionExecution.query(this, query, serviceScope);
+      return selected.isEmpty() ? direct : selected;
     }
 
     return Observation.empty(
@@ -1290,6 +1341,19 @@ public class RuntimeService extends BaseService
     if (!collective.getObservable().getSemantics().isCollective()) return List.of(collective);
     if (!(scope instanceof ServiceContextScope serviceScope))
       throw new IllegalArgumentException("Member enumeration requires a runtime context");
+    if (collective.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY) != null) {
+      var checked = CollectiveSelectionExecution.query(this, collective, serviceScope);
+      if (checked.isEmpty()) throw new IllegalStateException("Selection view no longer has complete native support");
+      var proof = Utils.Json.parseObject(checked.getMetadata().get(
+          org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY).toString(),
+          org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.class);
+      return proof.selectedIds().stream().map(id -> {
+        var member = serviceScope.getCurrentTransaction() == null ? serviceScope.getObservation(id)
+            : serviceScope.getCurrentTransaction().readObservation(serviceScope.getObservation(id));
+        if (member == null || member.isEmpty()) throw new IllegalStateException("Selection member unavailable");
+        return member;
+      }).toList();
+    }
     var semantics = collective.getObservable().getSemantics().singular();
     var reasoner = scope.getService(Reasoner.class);
     return classificationMembers(collective, collective.getGeometry(), serviceScope).stream()
@@ -1363,9 +1427,37 @@ public class RuntimeService extends BaseService
   }
 
   /** Satisfaction requires affirmative discovery and a read set stable through root commit. */
+  void captureSelectionBaseline(org.integratedmodelling.klab.api.knowledge.Observable nativeMembers,
+      ServiceContextScope scope) {
+    if (!(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction))
+      throw new IllegalStateException("Selection baseline requires a native attempt");
+    var cohort = getCohortFor(nativeMembers.getSemantics().singular(), scope, false);
+    if (cohort == null || cohort.getId() <= 0 || transaction.hasClassificationBaseline(cohort.getId())) return;
+    var graph = scope.getDigitalTwin().getKnowledgeGraph();
+    KnowledgeGraph.ClassificationReadSet read;
+    try (var capture = graph.createTransaction(scope)) { read = capture.captureClassificationMembers(cohort.getId()); }
+    catch (java.io.IOException failure) { throw new IllegalStateException("Cannot capture selection baseline", failure); }
+    if (!Objects.equals(read.cohortObservable(), cohort.getObservable().getUrn()))
+      throw new IllegalStateException("Selection cohort changed during baseline capture");
+    var members = new ArrayList<Observation>();
+    for (var snapshot : read.members()) {
+      var member = graph.materializeClassificationMember(snapshot, scope);
+      if (member == null || member.getId() != snapshot.id()
+          || !Objects.equals(member.getObservable().getUrn(), snapshot.observable())
+          || !Objects.equals(GeometryRepository.INSTANCE.sanitize(member.getGeometry()).encode(),
+              GeometryRepository.INSTANCE.sanitize(Geometry.create(snapshot.geometry())).encode()))
+        throw new IllegalStateException("Selection baseline materialization changed");
+      members.add(member);
+    }
+    transaction.guardClassificationBaseline(read, members);
+  }
+
   List<Observation> classificationMembersForCheck(Observation producer, Geometry requested, ServiceContextScope scope) {
     if (!(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction))
       throw new IllegalStateException("Classification satisfaction requires a live local attempt");
+    // Direct operation dependencies can classify a different cohort from their enclosing
+    // selection. Pin its native payload before even completion/source inspection, including no-op checks.
+    captureSelectionBaseline(producer.getObservable(), scope);
     // Reuse the read-only query's completion/provenance rules, including completed empty cohorts.
     var request = new Observation.NaiveBuilder(producer.getObservable(), scope).geometry(requested).query().build();
     var cohort = getCohortFor(producer.getObservable().getSemantics().singular(), scope, false);
@@ -1423,10 +1515,15 @@ public class RuntimeService extends BaseService
         throw new IllegalStateException("Classification completion evidence changed while captured");
       transaction.guardClassificationOverlay(cohort,source,List.of(),captured.state());
     }
-    return overlay.members().stream().filter(member -> hasMemberSupport(intersection(member.getGeometry(), requested))).toList();
+    return overlay.members().stream().filter(member -> hasMemberSupport(intersection(member.getGeometry(), requested)))
+        .filter(member -> nativeMemberMatches(member, producer, scope)).toList();
   }
 
   List<Observation> classificationMembers(Observation producer, Geometry requested, ServiceContextScope scope) {
+    // Capture before graph/cache member reads, even if every member already has its family.
+    // The outer selection's native baseline cannot guard an independent prerequisite cohort.
+    if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl)
+      captureSelectionBaseline(producer.getObservable(), scope);
     var cohort = getCohortFor(producer.getObservable().getSemantics().singular(), scope, false);
     if (cohort == null) throw new IllegalStateException("Completed producer has no cohort");
     var members = new LinkedHashMap<String, Observation>();
@@ -1459,9 +1556,22 @@ public class RuntimeService extends BaseService
       var member = scope.getCurrentTransaction() == null ? candidate
           : scope.getCurrentTransaction().readObservation(candidate);
       var overlap = intersection(member.getGeometry(), support);
-      if (hasMemberSupport(overlap)) ret.add(member);
+      if (hasMemberSupport(overlap) && nativeMemberMatches(member, producer, scope)) ret.add(member);
     }
     return ret;
+  }
+
+  /** Cohort identity alone does not prove a retained inherency, role or other native clause. */
+  private static boolean nativeMemberMatches(Observation member, Observation producer, ContextScope scope) {
+    var actual = member.getObservable().getSemantics();
+    var requested = producer.getObservable().getSemantics().singular();
+    if (!actual.equals(requested) && !scope.getService(Reasoner.class).is(actual, requested)) return false;
+    if (member.getObservable().getObserverSemantics() != null
+        || producer.getObservable().getObserverSemantics() != null) {
+      var expected = producer.getObservable().builder(scope).collective(false).buildObservable();
+      return org.integratedmodelling.klab.runtime.ObserverResolution.preference(member.getObservable(), expected, scope) >= 0;
+    }
+    return true;
   }
 
   static boolean hasMemberSupport(Geometry geometry) {
@@ -1484,6 +1594,13 @@ public class RuntimeService extends BaseService
   Observation queryCollective(Observation query, ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
+    return queryCollective(query, scope, reduction, memberView, null);
+  }
+
+  Observation queryCollective(Observation query, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
+      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection) {
 
     if (scope.getCurrentTransaction() != null && scope.getCurrentTransaction().isFailed())
       return Observation.empty(Notification.error("Cannot query completed discovery from a failed attempt"));
@@ -1494,12 +1611,15 @@ public class RuntimeService extends BaseService
           Notification.info("No cohort exists for " + query.getObservable().getUrn()));
     }
 
-    var contributors = findCollectiveContributors(query, cohort, scope, reduction,memberView);
+    List<Object> completionChecks=selection==null?null:new ArrayList<>();
+    var contributors = findCollectiveContributors(query, cohort, scope, reduction, memberView, selection,completionChecks);
     if (contributors.isEmpty()) {
       return Observation.empty(
           Notification.info(
               "No collective observation contributes to the cohort for "
-                  + query.getObservable().getUrn()));
+                  + query.getObservable().getUrn()
+                   + (selection==null?"":"; proofs="+nativeProofDiagnostics(cohort,scope,selection)
+                      +"; completionChecks="+Utils.Json.asString(completionChecks))));
     }
 
     // A single Geometry cannot represent every union of discovery supports. Time union
@@ -1539,15 +1659,22 @@ public class RuntimeService extends BaseService
         ? List.of(selected.observation().getId())
         : composition.stream().map(c -> c.observation().getId()).distinct().toList());
     if (!composition.isEmpty()) result.setChildrenCount(classificationMembers(result, requestedGeometry, scope).size());
+    var semanticSources = new SemanticExecutionEvidence.Collector();
+    for (var contribution : composition.isEmpty() ? List.of(selected) : composition)
+      semanticSources.inherit(contribution.semanticEvidence(), scope);
+    var semanticSourceProof = semanticSources.finish(scope);
+    result.getMetadata().put(SemanticExecutionEvidence.DATA_KEY, Utils.Json.asString(semanticSourceProof));
     if (collectiveCoverage < 1.0 - 1.0e-9) {
-      result
-          .getNotifications()
-          .add(
-              Notification.warning(
-                  "Collective query result covers "
-                      + String.format(Locale.ROOT, "%.2f%%", collectiveCoverage * 100.0)
-                      + " of the requested geometry"));
+      String warning = "Collective query result covers "
+          + String.format(Locale.ROOT, "%.2f%%", collectiveCoverage * 100.0)
+          + " of the requested geometry";
+      // queryResult preserves the consumed query's notifications. Replay of the same fragment
+      // must preserve its warning, including timestamp, rather than mutate that input payload.
+      if (result.getNotifications().stream().noneMatch(note ->
+          note.getLevel() == Notification.Level.Warning && warning.equals(note.getMessage())))
+        result.getNotifications().add(Notification.warning(warning));
     }
+    SemanticExecutionEvidence.issue(result, semanticSourceProof, scope);
     return result;
   }
 
@@ -1560,7 +1687,34 @@ public class RuntimeService extends BaseService
     return result;
   }
 
-  private record CollectiveContribution(Observation observation, Geometry support) {}
+  private record CollectiveContribution(Observation observation, Geometry support, org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding semanticEvidence) {}
+
+  /** Failure diagnostics only: no matching/revalidation RPC and no credentials or source code. */
+  private String nativeProofDiagnostics(Cohort cohort,ServiceContextScope scope,
+      CollectiveSelectionBinding selection) {
+    var producers=new LinkedHashMap<Object,Observation>();
+    for(var tx=scope.getCurrentTransaction();tx!=null;tx=tx.getParent())
+      for(var link:tx.incoming(cohort))if(link.type()==GraphModel.Relationship.CONTRIBUTED_TO
+          && link.source() instanceof Observation producer)producers.put(querySourceKey(producer),producer);
+    if(cohort.getId()>0)for(var producer:scope.getDigitalTwin().getKnowledgeGraph().query(Observation.class,scope)
+        .target(cohort).along(GraphModel.Relationship.CONTRIBUTED_TO).run(scope))
+      producers.put(querySourceKey(producer),producer);
+    var rows=new ArrayList<Object>();
+    for(var producer:producers.values())for(var activity:SemanticExecutionEvidence.sourceActivities(producer,scope)) {
+      var metadata=activity.getMetadata();var evidence=SemanticExecutionEvidence.decode(activity);
+      var context=metadata.get(COLLECTIVE_CONTEXT);
+      var recorded=context instanceof String text?Utils.Json.parseObject(text,CollectiveSelectionBinding.Context.class):null;
+      rows.add(SemanticExecutionEvidence.diagnostic("producer",producer.getId(),"activity",activity.getId(),
+          "type",activity.getType(),"outcome",activity.getOutcome(),"context",recorded,
+          "contextMatches",Objects.equals(recorded,selection.context()),
+          "observer",metadata.get(Metadata.IM_OBSERVER_SELECTION_ID),"expectedObserver",selection.observerId(),
+          "observerClass",metadata.get(COLLECTIVE_OBSERVER_CLASS),"expectedObserverClass",selection.observerClass(),
+          "reasoner",metadata.get(COLLECTIVE_REASONER),"revision",metadata.get(COLLECTIVE_REVISION),
+          "fingerprint",metadata.get(COLLECTIVE_FINGERPRINT),"session",metadata.get(COLLECTIVE_SESSION),
+          "support",metadata.get(Metadata.IM_EXECUTION_GEOMETRY),"executionEvidence",evidence));
+    }
+    return Utils.Json.asString(rows);
+  }
 
   /** Prove a full slab cover; never turn diagonal space/time fragments into their Cartesian hull. */
   private static List<CollectiveContribution> completeContributions(Geometry requested, List<CollectiveContribution> supplied) {
@@ -1568,7 +1722,7 @@ public class RuntimeService extends BaseService
     for (var axis : List.of(Geometry.Dimension.Type.SPACE, Geometry.Dimension.Type.TIME)) {
       if (target.extent(axis) == null) continue;
       var eligible = supplied.stream().filter(c -> sameSupportDimensions(requested,c.support()))
-          .map(c -> new CollectiveContribution(c.observation(),intersection(requested,c.support())))
+          .map(c -> new CollectiveContribution(c.observation(),intersection(requested,c.support()),c.semanticEvidence()))
           .filter(c -> hasMemberSupport(c.support()))
           .filter(c -> coverage(target.without(axis),GeometryRepository.INSTANCE.scale(c.support()).without(axis)) >= 1.0 - 1.0e-9)
           .toList();
@@ -1608,7 +1762,22 @@ public class RuntimeService extends BaseService
       Observation query, Cohort cohort, ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
+    return findCollectiveContributors(query, cohort, scope, reduction, memberView, null);
+  }
 
+  private List<CollectiveContribution> findCollectiveContributors(
+      Observation query, Cohort cohort, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
+      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection) {
+
+    return findCollectiveContributors(query,cohort,scope,reduction,memberView,selection,null);
+  }
+
+  private List<CollectiveContribution> findCollectiveContributors(Observation query,Cohort cohort,ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
+      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection,List<Object> completionChecks) {
     var ret = new LinkedHashMap<String, Observation>();
     var observableUrn = query.getObservable().getUrn();
     var transaction = scope.getCurrentTransaction();
@@ -1633,8 +1802,8 @@ public class RuntimeService extends BaseService
           .run(scope)
           .forEach(o -> ret.put(querySourceKey(o), o));
     }
-    return ret.values().stream().flatMap(producer -> completedCollectiveGeometries(producer, scope, reduction,memberView).stream()
-            .map(support -> new CollectiveContribution(producer, support)))
+    return ret.values().stream().flatMap(producer -> completedCollectiveEvidence(producer, scope, reduction, memberView, selection,completionChecks).stream()
+            .map(proof -> new CollectiveContribution(producer, proof.support(), proof.semanticEvidence())))
         .filter(contribution -> hasMemberSupport(contribution.support())).toList();
   }
 
@@ -1655,46 +1824,89 @@ public class RuntimeService extends BaseService
   private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
+    return completedCollectiveGeometries(producer, scope, reduction, memberView, null);
+  }
+
+  private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
+      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection) {
+    return completedCollectiveEvidence(producer, scope, reduction, memberView, selection).stream()
+        .map(CollectiveCompletionEvidence::support).toList();
+  }
+
+  private record CollectiveCompletionEvidence(Geometry support,
+      org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding semanticEvidence) {}
+
+  private static List<CollectiveCompletionEvidence> completedCollectiveEvidence(Observation producer, ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
+      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection) {
+    return completedCollectiveEvidence(producer,scope,reduction,memberView,selection,null);
+  }
+
+  private static List<CollectiveCompletionEvidence> completedCollectiveEvidence(Observation producer,ServiceContextScope scope,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
+      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection,List<Object> checks) {
+    var diagnostic=checks==null?null:SemanticExecutionEvidence.diagnostic("producer",producer.getId(),"meaning",producer.getObservable().getUrn(),"gate","contextualization","contextualization",producer.getObservable().getContextualization());
+    if(checks!=null)checks.add(diagnostic);
     var contextualization = producer.getObservable().getContextualization();
     if (contextualization != Contextualization.INSTANTIATION
         && contextualization != Contextualization.CONNECTION) return List.of();
     var effect = GraphModel.Relationship.forContextualization(contextualization);
     var type = Activity.Type.forContextualization(contextualization);
     var activities = new ArrayList<Activity>();
+    var currentActivities = Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
     for (var transaction = scope.getCurrentTransaction(); transaction != null;
         transaction = transaction.getParent()) {
-      if (transaction.isFailed()) return List.of();
+      if (transaction.isFailed()) { if(diagnostic!=null)diagnostic.put("gate","failedTransaction"); return List.of(); }
       transaction.incoming(producer).stream().filter(link -> link.type() == effect)
           .map(KnowledgeGraph.Link::source).filter(Activity.class::isInstance)
-          .map(Activity.class::cast).forEach(activities::add);
+          .map(Activity.class::cast).forEach(activity -> { activities.add(activity);
+            if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl nativeAttempt
+                && nativeAttempt.ownsExecutionActivity(activity)) currentActivities.add(activity); });
     }
     // Positive IDs/commit metadata can already have been assigned before a failed durable close.
     // Read the successful typed activity from the committed graph, never from those fields alone.
     if (producer.getId() > 0) scope.getDigitalTwin().getKnowledgeGraph()
         .query(Activity.class, scope).target(producer).along(effect).run(scope).stream()
         .filter(activity -> activity.getId() > 0).forEach(activities::add);
-    var support = new ArrayList<Geometry>();
+    var support = new ArrayList<CollectiveCompletionEvidence>();
+    if(diagnostic!=null){diagnostic.put("gate","activities");diagnostic.put("activityCount",activities.size());}
     for (var activity : activities) {
+      var row=checks==null?null:SemanticExecutionEvidence.diagnostic("producer",producer.getId(),"activity",activity.getId(),"gate","activityTypeAndOutcome","expectedType",type,"actualType",activity.getType(),"outcome",activity.getOutcome(),"currentExecution",currentActivities.contains(activity));
+      if(checks!=null)checks.add(row);
       if (activity.getType() != type || activity.getOutcome() != Activity.Outcome.SUCCESS) continue;
-      if (reduction != null && !reductionActivityMatches(activity, reduction)) continue;
+      if(row!=null)row.put("gate","reductionAdmission");
+      if (reduction != null && !reductionActivityMatches(activity, reduction, currentActivities.contains(activity), scope)) continue;
+      if(row!=null)row.put("gate","selectionAdmission");
+      if (selection != null && !CollectiveSelectionExecution.activityMatches(activity, selection, currentActivities.contains(activity), scope,row)) continue;
       if (memberView != null) {
+        if(row!=null)row.put("gate","memberViewAdmission");
         MemberQualityResolution.requireScope(memberView,scope);
         var witness=memberView.getRequest().container();
-        var revision=activity.getMetadata().get(COLLECTIVE_REVISION);
         var selected=activity.getMetadata().get(Metadata.IM_OBSERVER_SELECTION_ID);
-        if (!(revision instanceof Number n) || n.longValue()!=witness.knowledgeRevision()
-            || !Objects.equals(activity.getMetadata().get(COLLECTIVE_REASONER),witness.reasonerId())
+        if (!SemanticEvidence.matches(activity, witness.reasonerId(), witness.knowledgeRevision(),
+            witness.semanticFingerprint(), witness.semanticSessionId(), currentActivities.contains(activity), scope)
             || !(selected instanceof Number id)
             || id.longValue()!=(memberView.getObserverId()==null?0:memberView.getObserverId())) continue;
       }
       var encoded = activity.getMetadata().get(Metadata.IM_EXECUTION_GEOMETRY);
+      if(row!=null){row.put("gate","executionGeometry");row.put("recordedSupport",encoded);row.put("producerSupport",(producer.getGeometry()==null?null:Geometry.forTransport(producer.getGeometry()).encode()));}
       if (!(encoded instanceof String text) || text.isBlank()) continue;
       try {
         var invocation = Geometry.create(text);
-        if (!sameSupportDimensions(producer.getGeometry(), invocation)) continue;
+        boolean dimensions=sameSupportDimensions(producer.getGeometry(), invocation);
+        if(row!=null){row.put("gate","supportDimensions");row.put("sameDimensions",dimensions);}
+        if (!dimensions) continue;
         var contribution = intersection(producer.getGeometry(), invocation);
-        if (hasMemberSupport(contribution)) support.add(contribution);
+        boolean nonempty=hasMemberSupport(contribution);
+        if(row!=null){row.put("gate","supportIntersection");row.put("hasMemberSupport",nonempty);row.put("contribution",contribution==null?null:Geometry.forTransport(contribution).encode());}
+        if (nonempty) support.add(new CollectiveCompletionEvidence(contribution, SemanticExecutionEvidence.decode(activity)));
+        if(row!=null)row.put("accepted",nonempty);
       } catch (IllegalArgumentException | KlabIllegalArgumentException invalidSupport) {
+        if(row!=null){row.put("gate","invalidSupport");row.put("supportFailure",invalidSupport.getMessage());}
         // Legacy or malformed provenance does not establish discovery support.
       }
     }
@@ -1703,6 +1915,10 @@ public class RuntimeService extends BaseService
 
   static final String COLLECTIVE_REASONER = "collectiveReasonerId";
   static final String COLLECTIVE_REVISION = "collectiveKnowledgeRevision";
+  static final String COLLECTIVE_FINGERPRINT = "collectiveSemanticFingerprint";
+  static final String COLLECTIVE_SESSION = "collectiveSemanticSession";
+  static final String COLLECTIVE_CONTEXT = "collectiveNativeContext";
+  static final String COLLECTIVE_OBSERVER_CLASS = "collectiveObserverClass";
 
   static void recordCollectiveSemanticRevision(Activity activity, ServiceContextScope scope) {
     var reasoner = scope.getService(Reasoner.class);
@@ -1710,15 +1926,31 @@ public class RuntimeService extends BaseService
     if (capabilities instanceof Reasoner.Capabilities semantic && semantic.getKnowledgeRevision() >= 0) {
       activity.getMetadata().put(COLLECTIVE_REASONER, semantic.getServiceId());
       activity.getMetadata().put(COLLECTIVE_REVISION, semantic.getKnowledgeRevision());
+      activity.getMetadata().put(COLLECTIVE_FINGERPRINT, semantic.getSemanticContentFingerprint());
+      activity.getMetadata().put(COLLECTIVE_SESSION, semantic.getSemanticSessionId());
     }
+    Runnable context = () -> activity.getMetadata().put(COLLECTIVE_CONTEXT,
+        Utils.Json.asString(CollectiveSelectionExecution.projectedContext(scope)));
+    // Provisional completion is scoped by the immutable admitted input, even if an earlier
+    // prerequisite has already staged attribution. Publish the final projected context only
+    // at the root commit, alongside the attributed observations and returned view receipts.
+    activity.getMetadata().put(COLLECTIVE_CONTEXT,
+        Utils.Json.asString(CollectiveSelectionBinding.context(scope)));
+    var observer = scope.getObserver();
+    activity.getMetadata().put(COLLECTIVE_OBSERVER_CLASS,
+        observer == null || observer.getObservable() == null ? null : observer.getObservable().getSemantics().getUrn());
+    if (scope.getCurrentTransaction() != null) {
+      scope.getCurrentTransaction().update(activity);
+      scope.getCurrentTransaction().beforeCommit(context);
+    } else context.run();
   }
 
   private static boolean reductionActivityMatches(Activity activity,
-      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction) {
-    var revision = activity.getMetadata().get(COLLECTIVE_REVISION);
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction, boolean currentExecution, ServiceContextScope scope) {
     var observer = activity.getMetadata().get(Metadata.IM_OBSERVER_SELECTION_ID);
-    return revision instanceof Number n && n.longValue() == reduction.context().knowledgeRevision()
-        && java.util.Objects.equals(activity.getMetadata().get(COLLECTIVE_REASONER), reduction.context().reasonerId())
+    return SemanticEvidence.matches(activity, reduction.context().reasonerId(),
+        reduction.context().knowledgeRevision(), reduction.context().semanticFingerprint(),
+        reduction.context().semanticSessionId(), currentExecution, scope)
         && observer instanceof Number id && id.longValue() == (reduction.observerId() == null ? 0 : reduction.observerId());
   }
 
@@ -1730,7 +1962,7 @@ public class RuntimeService extends BaseService
       throw new IllegalStateException("Collective member perspective is not eligible; a whole-support reduction cannot be certified");
   }
 
-  private static boolean sameSupportDimensions(Geometry first, Geometry second) {
+  static boolean sameSupportDimensions(Geometry first, Geometry second) {
     if (first == null || second == null) return false;
     return first.getDimensions().stream().map(Geometry.Dimension::getType).collect(java.util.stream.Collectors.toSet())
         .equals(second.getDimensions().stream().map(Geometry.Dimension::getType).collect(java.util.stream.Collectors.toSet()));
@@ -2554,12 +2786,24 @@ public class RuntimeService extends BaseService
   }
 
   Observation executeClassifierProducer(Actuator plan, Geometry support, ServiceContextScope parent) {
+    return executeClassifierProducer(plan, support, parent, false);
+  }
+
+  /** Verified selection discovery can contribute a distinct fragment of the same producer. */
+  Observation executeSelectionProducer(Actuator plan, Geometry support, ServiceContextScope parent) {
+    return executeClassifierProducer(plan, support, parent, true);
+  }
+
+  private Observation executeClassifierProducer(Actuator plan, Geometry support,
+      ServiceContextScope parent, boolean selectionFragment) {
     checkSubmissionCancellation(parent);
     if(plan.getActuatorType()==Actuator.Type.REFERENCE)
       throw new UnsupportedOperationException("Persistent producer reuse needs a completion certificate");
     if(plan.getExecutionRole()!=Actuator.ExecutionRole.INITIALIZATION || plan.getObservation()==null)
       throw new UnsupportedOperationException("Classifier member producer must be an INIT observation");
     var producer=register(plan.getObservation(),parent);
+    if (producer instanceof ObservationImpl mutable)
+      mutable.setParentId(parent.getContextObservation() == null ? 0 : parent.getContextObservation().getId());
     ((org.integratedmodelling.common.runtime.ActuatorImpl)plan).setObservation(producer);
     ((org.integratedmodelling.common.runtime.ActuatorImpl)plan).setId(producer.getId());
     var activity=Activity.of(Activity.Type.RESOLUTION,parent.getActivity(),"Classifier member producer plan");
@@ -2568,7 +2812,9 @@ public class RuntimeService extends BaseService
     var cohort=getCohortFor(producer.getObservable().getSemantics().singular(),execution,true);
     if(cohort==null || !producer.getObservable().getSemantics().isCollective())
       throw new IllegalArgumentException("Classifier requires a collective native producer");
-    tx.link(parent.getContextObservation(),producer,GraphModel.Relationship.HAS_CHILD);
+    captureSelectionBaseline(producer.getObservable(), execution);
+    tx.link(parent.getContextObservation() == null ? RuntimeAsset.CONTEXT_ASSET : parent.getContextObservation(),
+        producer, GraphModel.Relationship.HAS_CHILD);
     tx.link(producer,cohort,GraphModel.Relationship.CONTRIBUTED_TO);
     tx.checkCohortGeometry(cohort,producer.getGeometry());
     var dataflow=new org.integratedmodelling.common.runtime.DataflowImpl();dataflow.setCoverage(support);
@@ -2576,8 +2822,12 @@ public class RuntimeService extends BaseService
     if(!compile(producer,dataflow,execution) || execution.commit()<0)
       throw new IllegalStateException("Classifier producer compilation failed");
     parent.getCurrentTransaction().registerExecutors();
-    if(!parent.getDigitalTwin().getScheduler().executeDependency(producer,support,Scheduler.Event.initialization(),parent))
-      throw new IllegalStateException("Classifier member producer execution failed");
+    var scheduler = parent.getDigitalTwin().getScheduler();
+    boolean success = selectionFragment
+        ? scheduler instanceof org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.SchedulerImpl nativeScheduler
+            && nativeScheduler.executeCollectiveContribution(producer, support, parent)
+        : scheduler.executeDependency(producer, support, Scheduler.Event.initialization(), parent);
+    if (!success) throw new IllegalStateException("Classifier member producer execution failed");
     checkSubmissionCancellation(parent);
     return producer;
   }

@@ -189,6 +189,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
     var result = authorityBindings.codelists(request.authority()).execute(request, scope.getIdentity().getId());
     if (operation != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.LIST) {
+      semanticContentFingerprint = null;
       concepts.invalidateAll(); observables.invalidateAll(); conceptSyntax.clear();
     }
     return result;
@@ -198,6 +199,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public synchronized String configureAuthority(Authority.ConfigurationRequest request, Scope scope) {
     if (candidateRuntime != null && !semanticOnly)
       throw new UnsupportedOperationException("Authority configuration requires a captured, independently owned candidate provider");
+    semanticContentFingerprint = null;
     var result = configureAuthorityBinding(request, scope);
     if (semanticValidationState.ready()) publishSemanticCapabilities();
     return result;
@@ -290,7 +292,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (!Objects.equals(declared.getAuthorityParameters().get("semanticBoundaries"), request.parameters().get("semanticBoundaries")))
       throw new KlabValidationException("Semantic boundaries must match the worldview configuration");
     var provider = authorityBootstrapActor ? getComponentRegistry().getAuthority(selected,scope)
-        : semanticOnly ? capturedAuthorities.provider(selected, request, semanticAssets, () -> interactiveAuthoritiesEnabled)
+        : semanticOnly ? capturedAuthorities.provider(selected, request, semanticAssets, () -> interactiveAuthoritiesEnabled && semanticProofRestoration.interactiveAllowed())
         : Utils.Resources.resolveAuthority(selected, scope, this, worldview);
     if (provider == null)
       throw new KlabValidationException("Authority provider is unavailable: " + urn);
@@ -300,7 +302,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           throw new KlabValidationException("Codelist namespace collides with an ontology: " + namespace);
     }
     try {
-      return authorityBindings.configure(request, provider);
+      var configured = authorityBindings.configure(request, provider);
+      // Binding a nested identity selects a lexical family even though ordinary nested
+      // declarations do not own a restricting property. Prepare its normal identity port
+      // during configuration, never as a side effect of lexicalRoot/read-only lookup.
+      var rootOntology = owl.getOntology(root.getNamespace());
+      createProperties(root, rootOntology);
+      rootOntology.define();
+      return configured;
     } catch (RuntimeException failure) {
       if (authorityBootstrapActor) org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.report(
           org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.Phase.AUTHORITY_CONFIGURATION,
@@ -317,6 +326,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
   private java.nio.file.Path semanticAssets;
   private volatile boolean interactiveAuthoritiesEnabled;
+  private final org.integratedmodelling.klab.services.reasoner.internal.SemanticProofRestoration semanticProofRestoration =
+      new org.integratedmodelling.klab.services.reasoner.internal.SemanticProofRestoration();
 
   /** Called under an accepted environment lease, never during candidate compilation. */
   public void enableInteractiveAuthorities() {
@@ -378,6 +389,51 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   private final OWL owl;
   private final boolean semanticOnly;
+  private volatile String semanticContentFingerprint;
+  /** Factory seal of the accepted input; editor/private mutations must never stamp receipts. */
+  public void sealSemanticContent(String fingerprint) {
+    if (!semanticOnly) throw new IllegalStateException("Only private captured actors have content identity");
+    semanticContentFingerprint = fingerprint;
+  }
+  public String semanticContentFingerprint() { return semanticContentFingerprint; }
+  public Object semanticCodelists() { return authorityBindings.semanticCodelists(); }
+
+  private final String semanticSessionId=java.util.UUID.randomUUID().toString();
+  private record PortableCapabilityIdentity(ReasonerService actor, String serviceId, long generation,String sessionId,
+      PortableCapabilityIdentity previous) {}
+  private static final ThreadLocal<PortableCapabilityIdentity> portableCapabilityIdentity = new ThreadLocal<>();
+
+  /** Internal accepted-boundary scope; private mutation revisions continue to own semantic caches. */
+  public interface PortableCapabilityLease extends AutoCloseable { @Override void close(); }
+
+  public PortableCapabilityLease portableCapabilities(String serviceId, long generation) {
+    return portableCapabilities(serviceId,generation,semanticSessionId);
+  }
+  public PortableCapabilityLease portableCapabilities(String serviceId,long generation,String sessionId) {
+    if(sessionId==null||sessionId.isBlank())throw new IllegalArgumentException("Semantic owner session required");
+    if (!semanticOnly || serviceId == null || serviceId.isBlank() || generation <= 0)
+      throw new IllegalArgumentException("Portable capabilities require a private actor and an accepted deployment generation");
+    var previous = portableCapabilityIdentity.get();
+    var identity = new PortableCapabilityIdentity(this, serviceId, generation,sessionId, previous);
+    portableCapabilityIdentity.set(identity);
+    return new PortableCapabilityLease() {
+      private boolean closed;
+      @Override public void close() {
+        if (closed) return;
+        if (portableCapabilityIdentity.get() != identity)
+          throw new IllegalStateException("Portable capability scopes must close in lexical order");
+        closed = true;
+        if (previous == null) portableCapabilityIdentity.remove();
+        else portableCapabilityIdentity.set(previous);
+      }
+    };
+  }
+
+  private PortableCapabilityIdentity portableCapabilities() {
+    for (var current = portableCapabilityIdentity.get(); current != null; current = current.previous())
+      if (current.actor() == this) return current;
+    return null;
+  }
   private boolean authorityBootstrapActor;
   private List<Worldview.AuthorityBinding> bootstrapDisposalBindings=List.of();
   public void bootstrapDisposalBindings(Worldview source) {
@@ -390,7 +446,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public synchronized void enableCandidatePublication(
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory factory) {
     if (candidateRuntime != null) throw new IllegalStateException("Candidate publication is already configured");
-    candidateRuntime = new org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime(factory);
+    candidateRuntime = new org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime(factory, serviceId());
   }
   public org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot semanticCapabilitiesSnapshot() {
     return publishedSemanticCapabilities;
@@ -419,6 +475,64 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private void rememberOntologySource(KimOntology ontology) {
     var hash = SemanticValidationRequest.sourceHash(ontology.getSourceCode());
     if (hash != null) loadedOntologySources.put(ontology.getUrn(), hash);
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request, Scope scope) {
+    if(request==null) throw new IllegalArgumentException("Semantic dependency request required");
+    if(candidateRuntime!=null && !semanticOnly) {
+      try { return candidateRuntime.invoke("semanticDependencies",new Class<?>[]{
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class,Scope.class},
+          new Object[]{request,scope}); }
+      catch(IllegalStateException unavailable) {
+        return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(request,
+            "Accepted semantic closure changed or is unavailable");
+      }
+    }
+    var capability=capabilities(scope);
+    var id=capability.getServiceId(); var generation=capability.getKnowledgeRevision();
+    var base=capability.getSemanticContentFingerprint();
+    var status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.COMPLETE;
+    String reason=null;
+    var uses=new ArrayList<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.AuthorityUse>();
+    if(!org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(base)
+        || request.expectedServiceId()==null || request.expectedKnowledgeRevision()<0
+        || !org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(request.expectedBaseFingerprint())) {
+      status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN;
+      reason="Scoped accepted recipe and expected semantic identity are required";
+    } else if(!Objects.equals(id,request.expectedServiceId()) || generation!=request.expectedKnowledgeRevision()
+        || !Objects.equals(base,request.expectedBaseFingerprint())) {
+      status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.STALE;
+      reason="Semantic dependency request targets a different accepted generation or recipe";
+    } else {
+      // Derived expression registry entries are process-local. Recompile canonical meanings
+      // under this accepted lease before proving closure; do not fetch unseen mutable answers.
+      var restorationFailure=semanticProofRestoration.restore(request.obligations(),this::resolveConcept);
+      if(restorationFailure!=null) {
+        status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN;
+        reason=restorationFailure;
+      } else {
+      var closure=new org.integratedmodelling.klab.services.reasoner.owl.AuthorityDependencySupport(owl)
+          .closure(request.obligations(),authorityBindings.snapshot());
+      if(!closure.known()) {
+        status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN;
+        reason=closure.reason();
+      } else {
+        for(var authority:closure.authorities()) {
+          var binding=authorizedAuthority(authority,scope);
+          var proof=capturedAuthorities.dependencyProof(binding); uses.add(proof);
+          if(proof.kind()==org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.UNVERSIONED) {
+            status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.REVALIDATION_REQUIRED;
+            reason="Affected mutable authority requires independently captured current semantic revalidation; known identity cache is not refresh evidence";
+          }
+        }
+      }
+    }
+    }
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness(
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.VERSION,status,id,generation,
+        base,request.inputHash(),uses,reason);
   }
 
   @Override
@@ -548,7 +662,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           }
         }
       }
-      return candidateRuntime.validate(request, response);
+      return candidateRuntime.validate(request, response,scope);
     }
     if ((semanticValidationState != null && semanticValidationState.loading())
         || !knowledgeReady
@@ -624,6 +738,20 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       response.getPendingMemberQualityDependencies().addAll(validator.getPendingMemberQualityDependencies());
       response.getConditionalModelContexts().addAll(validator.getConditionalModelContexts());
       response.getPendingModelContexts().addAll(validator.getPendingModelContexts());
+      response.setSemanticObligations(validator.getSemanticObligations());
+      response.setSemanticObligationsComplete(validator.isSemanticObligationsComplete());
+      var capabilities=capabilities(scope);
+      var dependencyRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+          capabilities.getServiceId(),capabilities.getKnowledgeRevision(),capabilities.getSemanticContentFingerprint(),
+          validator.getSemanticObligations());
+      response.setSemanticContentFingerprint(capabilities.getSemanticContentFingerprint());
+      response.setSemanticSessionId(capabilities.getSemanticSessionId());
+      try {response.setSemanticWitness(validator.isSemanticObligationsComplete()?semanticDependencies(dependencyRequest,scope)
+          :org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(dependencyRequest,
+              "Source contains unaccounted or invalid semantic expressions"));}
+      catch(SecurityException denied) {response.setSemanticWitness(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(dependencyRequest,
+              "Authority dependency access is not authorized for this validation scope"));}
       response.setStatus(SemanticValidationResponse.Status.COMPLETE);
     } catch (RuntimeException e) {
       response.setStatus(SemanticValidationResponse.Status.FAILED);
@@ -1434,10 +1562,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
               .without(SemanticRole.TRAIT)
               .without(SemanticRole.ROLE)
               .without(SemanticRole.modifiers());
-      /*
-       * TODO recognize individual identities and add their lexical root. This used to iterate
-       * directIdentities(concept), but the loop had no effect and forced an additional OWL lookup.
-       */
+      // Identity predicates do not partition cohorts. An authored substantial subclass does;
+      // native discovery clauses and execution eligibility remain separate from this category.
       Concept ret = builder.buildConcept();
       return ensureCountableSubstantial(
           ret == null || ret.is(SemanticType.NOTHING) ? original : ret);
@@ -2040,7 +2166,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.setType(Type.REASONER);
     ret.setUrl(getUrl());
     ret.setServerId(hardwareSignature == null ? null : ("REASONER_" + hardwareSignature));
-    ret.setServiceId(configuration.getServiceId());
+    var portable = portableCapabilities();
+    ret.setServiceId(portable == null ? configuration.getServiceId() : portable.serviceId());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
     if (getComponentRegistry() != null) ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
@@ -2062,8 +2189,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             binding.sourceOntology(), binding.sourceOffset(), binding.sourceLength(), binding.sourceHash(),
             binding.provider(), binding.componentUrn(), binding.componentVersion(), getUrl())).toList());
     ret.setConsistent(readable && published.consistent());
-    ret.setKnowledgeRevision(revision);
+    ret.setKnowledgeRevision(portable == null ? revision : portable.generation());
+    ret.setSemanticSessionId(acceptedMetadata!=null?candidateRuntime.semanticSessionId()
+        :portable==null?semanticSessionId:portable.sessionId());
     if (readable) ret.setWorldviewCommitment(published.commitment());
+    if (readable) ret.setSemanticContentFingerprint(acceptedMetadata == null
+        ? semanticContentFingerprint : acceptedMetadata.semanticContentFingerprint());
     return ret;
   }
 
@@ -2126,13 +2257,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private Concept lexicalRoot(Semantics trait, Set<Concept> visited) {
     if (trait == null || trait.is(SemanticType.NOTHING) || !visited.add(trait.asConcept()))
       return null;
+    // Authority families are explicitly selected by this generation's worldview binding.
+    // Neither provider ancestry nor mapped semantic boundaries choose a lexical category.
+    if (authorityIdentityResolver != null) {
+      Concept anchor = authorityIdentityResolver.lexicalRoot(trait.asConcept());
+      if (anchor != null) return anchor;
+    }
     if (CoreOntology.isCore(trait.asConcept())) return trait.asConcept();
+
+    // A transported provider concept cannot supply its own lexical boundary or erase its
+    // authority flag. Only this generation's loaded class and configured bridge can do so.
+    var owningOntology = owl().getOntology(trait.asConcept().getNamespace());
+    var loaded = owningOntology == null ? null : owningOntology.getConcept(trait.asConcept().getName());
+    if (owningOntology != null && owningOntology.isInternal()
+        && (trait.is(SemanticType.AUTHORITY_IDENTITY)
+            || loaded != null && loaded.is(SemanticType.AUTHORITY_IDENTITY))) return null;
+    if (loaded != null && loaded.is(SemanticType.AUTHORITY_IDENTITY)) {
+      if (!loaded.getUrn().equals(trait.asConcept().singular().getUrn())) return null;
+      trait = loaded;
+    }
 
     String original = trait.getMetadata().get(NS.ORIGINAL_TRAIT, String.class);
     if (original != null && !original.equals(trait.getUrn()))
-      return lexicalRoot(this.owl.getConcept(original), visited);
+      return lexicalRoot(owl().getConcept(original), visited);
 
     if (trait.getMetadata().get(NS.BASE_DECLARATION) != null) return trait.asConcept();
+    if (trait.is(SemanticType.AUTHORITY_IDENTITY) && owningOntology == null) return null;
     // Lexical categories are supplied by the worldview boundary. Composition must not turn
     // this category check into an external ancestry request.
     for (Concept parent : owl().getParents(trait.asConcept())) {
@@ -3998,8 +4148,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     // TODO annotations
 
-    builder.collective(concept.isCollective());
-
     if (concept.getSemanticModifier() != null) {
       Concept other = null;
       if (concept.getComparisonConcept() != null) {
@@ -4008,6 +4156,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       builder.as(
           concept.getSemanticModifier(), other == null ? (Concept[]) null : new Concept[] {other});
     }
+    // Unary operators wrap the full operand, including its own collectivity. This flag belongs
+    // to the outer expression and must not erase the operand before it is wrapped.
+    builder.collective(concept.isCollective());
 
     //        if (concept.getDistributedInherent() != null) {
     //            builder.withDistributedInherency(true);

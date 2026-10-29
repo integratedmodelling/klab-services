@@ -410,6 +410,8 @@ public class ResolutionCompiler {
     var binding = observationStrategy.getContextBinding();
     if(strictTierZeroOnly && observationStrategy.getRank()>0)return ResolutionGraph.empty();
     if (scope.isInterrupted()) return ResolutionGraph.empty();
+    if (observationStrategy.getCollectiveSelection() != null)
+      return resolveCollectiveSelection(observationStrategy, scaleToCover, graph, scope, explainedObservation);
     if (observationStrategy.getCollectiveReduction() != null)
       return resolveCollectiveReduction(observationStrategy, scaleToCover, graph, scope, explainedObservation);
     if (binding == null) return resolveStrategyBody(observationStrategy, scaleToCover, graph, scope, explainedObservation, fallback);
@@ -436,6 +438,55 @@ public class ResolutionCompiler {
       return ResolutionGraph.empty();
     } finally {
       activeContextBindings.remove(key);
+    }
+  }
+
+  private ResolutionGraph activeSelectionNative;
+  private Observable activeSelectionDomain;
+  private org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding activeSelectionQuery;
+
+  /** All family operations share one finite native discovery graph and one enclosing attempt. */
+  private ResolutionGraph resolveCollectiveSelection(ObservationStrategy strategy, Scale scale,
+      ResolutionGraph graph, ContextScope scope, Observation request) {
+    var binding = strategy.getCollectiveSelection();
+    if (strategy.getRank() < 1 || request == null || strictTierZeroOnly
+        || !automaticClassifiersAllowed || graph.hasPartialOutputAncestor())
+      return ResolutionGraph.empty();
+    var reasoner = scope.getService(Reasoner.class);
+    var nativeMembers = reasoner.resolveObservable(binding.nativeMembers());
+    if (nativeMembers == null) return ResolutionGraph.empty();
+    String key = "select|" + binding.requested();
+    if (activeContextBindings.size() >= 32 || !activeContextBindings.add(key)) return ResolutionGraph.empty();
+    var previousNative = activeSelectionNative;
+    var previousDomain = activeSelectionDomain;
+    try {
+      binding.require(scope, request.getObservable(), scale);
+      var result = graph.createChild(strategy, scale);
+      ResolutionGraph nativePlan;
+      var previousQuery = activeSelectionQuery;
+      activeSelectionQuery = binding;
+      try { nativePlan = resolve(nativeMembers, scale, result.withScheduleRequest(null), scope); }
+      finally { activeSelectionQuery = previousQuery; }
+      if (nativePlan.isEmpty() || !nativePlan.getCoverage().isComplete()) return ResolutionGraph.empty();
+      activeSelectionNative = nativePlan; activeSelectionDomain = nativeMembers;
+      result.merge(nativePlan, "native");
+      for (var syntax : binding.directives()) {
+        if (scope.isInterrupted()) return ResolutionGraph.empty();
+        var directive = reasoner.resolveObservable(syntax);
+        if (directive == null || directive.getContextualization() != Contextualization.CLASSIFICATION)
+          return ResolutionGraph.empty();
+        var operation = resolveOperation(directive, scale, result, scope);
+        if (operation.isEmpty() || !operation.getCoverage().isComplete()) return ResolutionGraph.empty();
+        result.merge(operation);
+        result.selectionOperations.add((OperationTarget) operation.target());
+      }
+      binding.require(scope, request.getObservable(), scale);
+      result.collectiveSelection = binding; result.selectionNative = nativePlan;
+      return result;
+    } catch (IllegalStateException failure) {
+      scope.warn(failure.getMessage()); return ResolutionGraph.empty();
+    } finally {
+      activeSelectionNative = previousNative; activeSelectionDomain = previousDomain; activeContextBindings.remove(key);
     }
   }
 
@@ -925,7 +976,7 @@ public class ResolutionCompiler {
     if(members==null || members.isAbstract() || !members.getSemantics().isCollective())return false;
     var container=new org.integratedmodelling.klab.api.knowledge.SingularContextBinding(context.getId(),context.getUrn(),
         context.getObservable().getUrn(),Geometry.forTransport(context.getGeometry()).encode(),pending.quality(),
-        graph.semanticReasonerId(),graph.semanticRevision());
+        graph.semanticReasonerId(),graph.semanticRevision(),graph.semanticFingerprint(),graph.semanticSessionId());
     var request=new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest(container,members.getUrn(),
         pending.quality(),null,scope.getResolutionConstraints()==null?List.of():List.copyOf(scope.getResolutionConstraints()));
     var plan=new org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan(model.getUrn(),model.getNamespace(),
@@ -1080,7 +1131,9 @@ public class ResolutionCompiler {
     for(var plan:plans)graph.merge(plan);
     graph.classifierDependencies.computeIfAbsent(model,ignored->new ArrayList<>()).add(new DeferredDependency(
         source,index,dependency.getStatedName(),namespace,version,fingerprint,commitment.getKnowledgeRevision(),
-        commitment.getServiceId(),Map.copyOf(operations)));
+        commitment.getServiceId(),Map.copyOf(operations),
+        org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan.ContextWitness.capture(
+            scope.getContextObservation(), scope.getId())));
     return true;
     } finally { activeClassifierDependencies.remove(recursionKey); }
   }
@@ -1122,6 +1175,10 @@ public class ResolutionCompiler {
 
   private ResolutionGraph resolve(
       Observable observable, Scale scaleToCover, ResolutionGraph graph, ContextScope scope) {
+
+    if (activeSelectionNative != null && activeSelectionDomain != null
+        && org.integratedmodelling.klab.runtime.language.DependencyContract.matches(observable, activeSelectionDomain))
+      return activeSelectionNative;
 
     var contextualizedScope = contextualizeScope(scope, observable, scaleToCover, graph);
 
@@ -1185,6 +1242,9 @@ public class ResolutionCompiler {
     if (activeCollectiveReduction != null && java.util.Objects.equals(activeCollectiveReduction.operand(), observable.getUrn()))
       query.metadata(org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY,
           org.integratedmodelling.klab.utilities.Utils.Json.asString(activeCollectiveReduction));
+    if (activeSelectionQuery != null && Objects.equals(activeSelectionQuery.nativeMembers(), observable.getUrn()))
+      query.metadata(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding.DATA_KEY,
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(activeSelectionQuery));
     var result = query.submit().join();
     if (result == null || result.isEmpty() || result.getGeometry() == null) {
       return new QueryMatch(

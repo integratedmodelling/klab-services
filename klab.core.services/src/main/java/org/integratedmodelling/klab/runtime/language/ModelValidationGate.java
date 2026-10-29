@@ -19,8 +19,11 @@ public final class ModelValidationGate {
   public static final String PRODUCER_ADMISSIONS = "im:model-admissions";
   public static final String PRODUCER_SNAPSHOTS = "im:model-snapshots";
 
-  public record NamespaceAdmission(String reasonerId, String response, java.util.Map<String,String> modelHashes)
+  public record NamespaceAdmission(String reasonerId, String response, java.util.Map<String,String> modelHashes, String semanticFingerprint)
       implements java.io.Serializable {
+    public NamespaceAdmission(String reasonerId, String response, java.util.Map<String,String> modelHashes) {
+      this(reasonerId, response, modelHashes, null);
+    }
     public NamespaceAdmission { modelHashes=java.util.Map.copyOf(modelHashes); }
   }
 
@@ -38,7 +41,11 @@ public final class ModelValidationGate {
   private record SourceKey(ResourcesService resources, Object caller, String namespace) {}
   private record ValidationKey(Reasoner reasoner, Object caller, String requestHash) {}
   private record SemanticKey(Reasoner reasoner, Object caller) {}
-  public record SemanticSnapshot(String serviceId, long revision) {}
+  private record PublicationSemanticKey(Reasoner reasoner,Object caller,String responseHash,SemanticSnapshot semantic) {}
+  public record SemanticSnapshot(String serviceId, long revision, String semanticFingerprint, String semanticSessionId) {
+    public SemanticSnapshot(String serviceId,long revision,String semanticFingerprint) { this(serviceId,revision,semanticFingerprint,null); }
+    public SemanticSnapshot(String serviceId, long revision) { this(serviceId, revision, null); }
+  }
 
   /** Frozen source and semantic admissions belong to one resolution attempt, never a later request. */
   public static final class ValidationSession implements AutoCloseable {
@@ -46,6 +53,7 @@ public final class ModelValidationGate {
     private final java.util.Map<SourceKey, KimNamespace> sources = new java.util.HashMap<>();
     private final java.util.Map<ValidationKey, String> validations = new java.util.HashMap<>();
     private final java.util.Map<SemanticKey, SemanticSnapshot> semantics = new java.util.HashMap<>();
+    private final java.util.Set<PublicationSemanticKey> semanticPublications=new java.util.HashSet<>();
     private KimNamespace publicationNamespace;
     private Object publicationCaller;
     private ValidationSession() { SESSION.set(this); }
@@ -68,7 +76,7 @@ public final class ModelValidationGate {
   public static SemanticSnapshot currentSemanticSnapshot(Scope scope) {
     var reasoner=scope.getService(Reasoner.class);
     var capabilities=reasoner==null?null:reasoner.capabilities(scope);
-    return capabilities==null?null:new SemanticSnapshot(capabilities.getServiceId(),capabilities.getKnowledgeRevision());
+    return capabilities==null?null:new SemanticSnapshot(capabilities.getServiceId(),capabilities.getKnowledgeRevision(),capabilities.getSemanticContentFingerprint(),capabilities.getSemanticSessionId());
   }
 
   public static SemanticSnapshot semanticSnapshot(Scope scope) {
@@ -86,7 +94,7 @@ public final class ModelValidationGate {
     if (session != null && session.semantics.containsKey(key)) return session.semantics.get(key);
     var capabilities = reasoner.capabilities(scope);
     if (capabilities == null) return null;
-    var snapshot = new SemanticSnapshot(capabilities.getServiceId(), capabilities.getKnowledgeRevision());
+    var snapshot = new SemanticSnapshot(capabilities.getServiceId(), capabilities.getKnowledgeRevision(), capabilities.getSemanticContentFingerprint(),capabilities.getSemanticSessionId());
     if (session != null) session.semantics.put(key, snapshot);
     return snapshot;
   }
@@ -94,9 +102,34 @@ public final class ModelValidationGate {
   /** Immutable proof of the exact source and executable candidate admitted before matching. */
   public record AdmissionReceipt(String modelUrn, String namespace, String sourceVersion,
       String sourceHash, String executableHash, String reasonerId, long knowledgeRevision,
-      java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> pendingMemberQualities)
+      java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> pendingMemberQualities, String semanticFingerprint,
+      java.util.List<String> semanticObligations, boolean semanticObligationsComplete,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticWitness, String semanticSessionId)
       implements java.io.Serializable {
-    public AdmissionReceipt { pendingMemberQualities=pendingMemberQualities==null?java.util.List.of():java.util.List.copyOf(pendingMemberQualities); }
+    public AdmissionReceipt(String modelUrn, String namespace, String sourceVersion, String sourceHash,
+        String executableHash, String reasonerId, long knowledgeRevision,
+        java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> pendingMemberQualities,
+        String semanticFingerprint, java.util.List<String> semanticObligations, boolean semanticObligationsComplete,
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticWitness) {
+      this(modelUrn,namespace,sourceVersion,sourceHash,executableHash,reasonerId,knowledgeRevision,
+          pendingMemberQualities,semanticFingerprint,semanticObligations,semanticObligationsComplete,semanticWitness,null);
+    }
+    public AdmissionReceipt(String modelUrn, String namespace, String sourceVersion, String sourceHash,
+        String executableHash, String reasonerId, long knowledgeRevision,
+        java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> pendingMemberQualities) {
+      this(modelUrn, namespace, sourceVersion, sourceHash, executableHash, reasonerId,
+          knowledgeRevision, pendingMemberQualities, null);
+    }
+    public AdmissionReceipt(String modelUrn, String namespace, String sourceVersion, String sourceHash,
+        String executableHash, String reasonerId, long knowledgeRevision,
+        java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> pendingMemberQualities,
+        String semanticFingerprint) {
+      this(modelUrn,namespace,sourceVersion,sourceHash,executableHash,reasonerId,knowledgeRevision,
+          pendingMemberQualities,semanticFingerprint,java.util.List.of(),false,null);
+    }
+    public AdmissionReceipt {
+      semanticObligations=semanticObligations==null?java.util.List.of():java.util.List.copyOf(semanticObligations);
+      pendingMemberQualities=pendingMemberQualities==null?java.util.List.of():java.util.List.copyOf(pendingMemberQualities); }
     public AdmissionReceipt(String modelUrn,String namespace,String sourceVersion,String sourceHash,
         String executableHash,String reasonerId,long knowledgeRevision) {
       this(modelUrn,namespace,sourceVersion,sourceHash,executableHash,reasonerId,knowledgeRevision,java.util.List.of());
@@ -130,7 +163,21 @@ public final class ModelValidationGate {
 
   /** Reject source, executable, semantic-generation or pending-proof drift during preparation. */
   public static boolean sameSnapshot(PreparationReceipt preparation, AdmissionReceipt executable) {
-    return preparation != null && executable != null && preparation.snapshot.equals(executable);
+    if (preparation == null || executable == null) return false;
+    var source = preparation.snapshot;
+    // Each admission owns its scoped execution witness. Entering the subject explained by a
+    // model legitimately adds that context to the signature; it does not change the frozen
+    // source/production contract. Callers still validate each receipt in its actual scope.
+    return java.util.Objects.equals(source.modelUrn(), executable.modelUrn())
+        && java.util.Objects.equals(source.namespace(), executable.namespace())
+        && java.util.Objects.equals(source.sourceVersion(), executable.sourceVersion())
+        && java.util.Objects.equals(source.sourceHash(), executable.sourceHash())
+        && java.util.Objects.equals(source.executableHash(), executable.executableHash())
+        && java.util.Objects.equals(source.reasonerId(), executable.reasonerId())
+        && source.knowledgeRevision() == executable.knowledgeRevision()
+        && java.util.Objects.equals(source.pendingMemberQualities(), executable.pendingMemberQualities())
+        && java.util.Objects.equals(source.semanticFingerprint(), executable.semanticFingerprint())
+        && java.util.Objects.equals(source.semanticSessionId(), executable.semanticSessionId());
   }
 
   private static com.fasterxml.jackson.databind.JsonNode canonical(com.fasterxml.jackson.databind.JsonNode value) {
@@ -199,7 +246,9 @@ public final class ModelValidationGate {
       var semantic=semanticSnapshot(scope.getService(Reasoner.class),scope);
       if (semantic==null || receipt.knowledgeRevision()<0
           || !java.util.Objects.equals(receipt.reasonerId(),semantic.serviceId())
-          || receipt.reasonerId()==null || receipt.knowledgeRevision()!=semantic.revision()) return false;
+          || receipt.reasonerId()==null || receipt.knowledgeRevision()!=semantic.revision()
+          || !java.util.Objects.equals(receipt.semanticFingerprint(),semantic.semanticFingerprint())
+          || !java.util.Objects.equals(receipt.semanticSessionId(),semantic.semanticSessionId())) return false;
       if (!receipt.sourceBacked()) return receipt.sourceHash()==null && receipt.sourceVersion()==null;
       var saved=source(model.getUrn(),model.getNamespace(),scope.getService(ResourcesService.class),scope);
       return saved!=null && java.util.Objects.equals(receipt.sourceVersion(),Long.toString(saved.getLastUpdateTimestamp()))
@@ -254,7 +303,7 @@ public final class ModelValidationGate {
     return requireReceipt(namespace,scope,expectedRevision,false,false,java.util.List.of());
   }
 
-  private static NamespaceAdmission publishedAdmission(KimNamespace namespace, SemanticSnapshot semantic) {
+  private static NamespaceAdmission publishedAdmission(KimNamespace namespace, SemanticSnapshot semantic, Scope scope) {
     if (semantic == null || namespace.isInactive()
         || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(namespace.getNotifications())
         || Boolean.TRUE.equals(namespace.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))) return null;
@@ -266,8 +315,54 @@ public final class ModelValidationGate {
           org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
       var request=SemanticValidationRequest.of(namespace,Long.toString(namespace.getLastUpdateTimestamp()));
       return java.util.Objects.equals(admission.reasonerId(),semantic.serviceId())
-          && response.valid() && response.matches(request,semantic.revision()) ? admission : null;
+          && org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.valid(admission.semanticFingerprint())
+          && java.util.Objects.equals(admission.semanticFingerprint(),semantic.semanticFingerprint())
+          && java.util.Objects.equals(admission.semanticFingerprint(),response.getSemanticContentFingerprint())
+          && response.valid() && response.matches(request,response.getKnowledgeRevision())
+          && scopedPublicationCurrent(response,semantic,scope) ? admission : null;
     } catch (RuntimeException malformed) { return null; }
+  }
+
+  /** A static recipe alone cannot reuse authority-dependent saved validation. The returned
+   * closure must be independently recomputed by the current Reasoner; no receipt is upgraded. */
+  private static boolean scopedPublicationCurrent(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response,
+      SemanticSnapshot semantic, Scope scope) {
+    if (!response.isSemanticObligationsComplete() || response.getSemanticWitness()==null) return false;
+    var reasoner=scope.getService(Reasoner.class);
+    var session=SESSION.get();
+    var key=new PublicationSemanticKey(reasoner,caller(scope),digest(response),semantic);
+    if(session!=null && session.semanticPublications.contains(key))return true;
+    if(!semantic.equals(currentSemanticSnapshot(scope)))return false;
+    var current=reasoner.semanticDependencies(
+        new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+            semantic.serviceId(),semantic.revision(),semantic.semanticFingerprint(),response.getSemanticObligations()),scope);
+    boolean valid=semantic.equals(currentSemanticSnapshot(scope))
+        && org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+            .revalidates(response.getSemanticWitness(),current);
+    if(valid && session!=null)session.semanticPublications.add(key);
+    return valid;
+  }
+
+  /** Mandatory declaration terms computed from the exact hash-bound executable projection.
+   * This is a lower bound, NEVER proof of a complete computation footprint. Runtime must also
+   * account for every computation, semantic argument, actual result and dynamic operation. */
+  public static java.util.List<String> declaredSemanticObligations(ProducerSnapshot snapshot) {
+    var root=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(snapshot.content(),java.util.Map.class);
+    var result=new java.util.TreeSet<String>();
+    for(var key:java.util.List.of("observables","dependencies")) {
+      if (!(root.get(key) instanceof java.util.List<?> terms))
+        throw new IllegalArgumentException("Missing executable semantic declarations");
+      for(var term:terms) {
+        if (!(term instanceof java.util.Map<?,?> fields) || !(fields.get("semantics") instanceof String meaning)
+            || meaning.isBlank()) throw new IllegalArgumentException("Unaccounted executable meaning");
+        result.add(meaning);
+        var observer=fields.get("observer");
+        if(observer instanceof String value && !value.isBlank())result.add(value);
+        else if(observer!=null)throw new IllegalArgumentException("Unaccounted executable observer meaning");
+      }
+    }
+    return java.util.List.copyOf(result);
   }
 
   private static boolean concretePublishedModel(Model model,
@@ -313,6 +408,7 @@ public final class ModelValidationGate {
       var semantic=semanticSnapshot(reasoner,scope);
       if(semantic!=null)expectedRevision=semantic.revision();
     }
+    var admittedSemantic = semanticSnapshot(reasoner, scope);
     var request = SemanticValidationRequest.of(namespace,
         Long.toString(namespace.getLastUpdateTimestamp()));
     request.setKnowledgeRevision(expectedRevision);
@@ -323,10 +419,15 @@ public final class ModelValidationGate {
     var key = session != null && expectedRevision >= 0
         ? new ValidationKey(reasoner, caller(scope), digest(request)) : null;
     var cached = key == null ? null : session.validations.get(key);
+    if (cached == null && admittedSemantic != null && !admittedSemantic.equals(currentSemanticSnapshot(scope)))
+      throw new KlabValidationException("Semantic content changed before validation");
     var response = cached == null ? reasoner.validateDocument(request, scope)
         : org.integratedmodelling.klab.utilities.Utils.Json.parseObject(cached,
             org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
     boolean receiptMatches = response != null && response.getKnowledgeRevision() >= 0
+        && (admittedSemantic == null || (cached != null || admittedSemantic.equals(currentSemanticSnapshot(scope)))
+            && java.util.Objects.equals(admittedSemantic.semanticFingerprint(),response.getSemanticContentFingerprint())
+            && java.util.Objects.equals(admittedSemantic.semanticSessionId(),response.getSemanticSessionId()))
         && response.matches(request, response.getKnowledgeRevision())
         && (!executable || java.util.Objects.equals(request.getExecutionContext(), executionContext(scope))
             && response.getPendingModelContexts().isEmpty() && response.getConditionalModelContexts().isEmpty()
@@ -401,11 +502,11 @@ public final class ModelValidationGate {
       long timestamp = source.getLastUpdateTimestamp();
       String sourceCode = source.getSourceCode();
       var semantic=semanticSnapshot(scope);
-      var published=publishedAdmission(source,semantic);
+      var published=publishedAdmission(source,semantic,scope);
       var sourceReceipt = published==null ? requireReceipt(source,scope,-1,false,false,java.util.List.of())
           : org.integratedmodelling.klab.utilities.Utils.Json.parseObject(published.response(),
               org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
-      long revision = sourceReceipt.getKnowledgeRevision();
+      long revision = published==null?sourceReceipt.getKnowledgeRevision():semantic.revision();
       if (published!=null && published.modelHashes().containsKey(name) && unconditionalPublication(sourceReceipt,name)) {
         var model=(KimModel)source.getStatements().stream()
             .filter(statement -> statement instanceof KimModel && name.equals(statement.getUrn())).findFirst().orElseThrow();
@@ -601,11 +702,11 @@ public final class ModelValidationGate {
             || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(saved.getNotifications())) return null;
         timestamp = saved.getLastUpdateTimestamp(); sourceCode = saved.getSourceCode();
         namespaceHash=digest(saved);
-        published=publishedAdmission(saved,initial);
+        published=publishedAdmission(saved,initial,scope);
         sourceReceipt=published==null ? sourceAdmission(saved,scope,expected)
             : org.integratedmodelling.klab.utilities.Utils.Json.parseObject(published.response(),
                 org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
-        revision=sourceReceipt.getKnowledgeRevision();
+        revision=published==null?sourceReceipt.getKnowledgeRevision():expected;
         pendingMembers=sourceReceipt.getPendingMemberQualityDependencies().stream().filter(p->model.getUrn().equals(p.modelUrn())).toList();
         if(!preparable && !pendingMembers.isEmpty())return null;
       }
@@ -613,7 +714,8 @@ public final class ModelValidationGate {
       if (published != null && java.util.Objects.equals(frozenHash,published.modelHashes().get(model.getUrn()))
           && concretePublishedModel(model,sourceReceipt))
         return new AdmissionReceipt(model.getUrn(),model.getNamespace(),Long.toString(timestamp),namespaceHash,
-            frozenHash,reasonerId,revision,pendingMembers);
+            frozenHash,reasonerId,revision,pendingMembers,initial==null?null:initial.semanticFingerprint(),
+            sourceReceipt.getSemanticObligations(),sourceReceipt.isSemanticObligationsComplete(),sourceReceipt.getSemanticWitness(),initial==null?null:initial.semanticSessionId());
       var syntax = new KimModelImpl();
       syntax.setUrn(model.getUrn());
       for (var output : model.getObservables()) {
@@ -644,9 +746,12 @@ public final class ModelValidationGate {
       var latest=semanticSnapshot(reasoner,scope);
       if (initial != null && (latest == null
           || !java.util.Objects.equals(reasonerId,latest.serviceId()) || expected!=latest.revision()
+          || !java.util.Objects.equals(initial.semanticFingerprint(),latest.semanticFingerprint())
+          || !java.util.Objects.equals(initial.semanticSessionId(),latest.semanticSessionId())
           || boundRevision!=expected)) return null;
       return new AdmissionReceipt(model.getUrn(),model.getNamespace(),saved==null?null:Long.toString(timestamp),
-          namespaceHash,frozenHash,reasonerId,boundRevision,pendingMembers);
+          namespaceHash,frozenHash,reasonerId,boundRevision,pendingMembers,initial==null?null:initial.semanticFingerprint(),
+          executableReceipt.getSemanticObligations(),executableReceipt.isSemanticObligationsComplete(),executableReceipt.getSemanticWitness(),initial==null?null:initial.semanticSessionId());
     } catch (RuntimeException unavailable) { return null; }
   }
 

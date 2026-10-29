@@ -63,7 +63,7 @@ class CollectiveCompletionQueryTest {
     var semantics=new ConceptImpl(); semantics.setUrn("each test:Stream"); semantics.setReferenceName("each_test_stream");
     semantics.setType(EnumSet.of(SemanticType.SUBJECT,SemanticType.COUNTABLE,SemanticType.OBSERVABLE));
     semantics.setCollective(true); semantics.setDescriptionType(Contextualization.INSTANTIATION);
-    var observable=new ObservableImpl(); observable.setSemantics(semantics);
+    var observable=new ObservableImpl(); observable.setSemantics(semantics); observable.setArtifactType(Artifact.Type.OBJECT);
     observable.setUrn("each test:Stream"); observable.setDescriptionType(Contextualization.INSTANTIATION);
     producer=new ObservationImpl(); producer.setId(-10); producer.setObservable(observable);
     producer.setGeometry(Geometry.create("T0(1){tstart=0,tend=10,ttype=PHYSICAL}"));
@@ -95,10 +95,21 @@ class CollectiveCompletionQueryTest {
       durableLinks.addAll(stagedLinks); return null;
     }).when(storage).close();
     @SuppressWarnings("unchecked") var observations=(KnowledgeGraph.Query<Observation>)mock(KnowledgeGraph.Query.class,RETURNS_SELF);
-    when(graph.query(Observation.class,scope)).thenReturn(observations);
+    var observationSource = new RuntimeAsset[1]; var observationTarget = new RuntimeAsset[1];
+    var observationEffect = new GraphModel.Relationship[1];
+    when(graph.query(Observation.class,scope)).thenAnswer(call -> {
+      observationSource[0] = null; observationTarget[0] = null; observationEffect[0] = null;
+      return observations;
+    });
+    when(observations.source(any())).thenAnswer(call -> { observationSource[0] = call.getArgument(0); return observations; });
+    when(observations.target(any())).thenAnswer(call -> { observationTarget[0] = call.getArgument(0); return observations; });
+    when(observations.along(any(), any(Object[].class))).thenAnswer(call -> { observationEffect[0] = call.getArgument(0); return observations; });
     when(observations.run(scope)).thenAnswer(call->durableLinks.stream()
-        .filter(link->link.get(2)==GraphModel.Relationship.CONTRIBUTED_TO)
-        .map(link->(Observation)durable.get(((RuntimeAsset)link.getFirst()).getId())).toList());
+        .filter(link->link.get(2)==observationEffect[0])
+        .filter(link->observationSource[0] == null || ((RuntimeAsset)link.getFirst()).getId()==observationSource[0].getId())
+        .filter(link->observationTarget[0] == null || ((RuntimeAsset)link.get(1)).getId()==observationTarget[0].getId())
+        .map(link->durable.get(((RuntimeAsset)link.get(observationSource[0] == null ? 0 : 1)).getId()))
+        .filter(Observation.class::isInstance).map(Observation.class::cast).toList());
     @SuppressWarnings("unchecked") var activities=(KnowledgeGraph.Query<Activity>)mock(KnowledgeGraph.Query.class,RETURNS_SELF);
     when(graph.query(Activity.class,scope)).thenReturn(activities);
     var target=new Observation[1]; var effect=new GraphModel.Relationship[1];
@@ -107,6 +118,15 @@ class CollectiveCompletionQueryTest {
     when(activities.run(scope)).thenAnswer(call->durableLinks.stream()
         .filter(link->link.get(2)==effect[0] && ((RuntimeAsset)link.get(1)).getId()==target[0].getId())
         .map(link->(Activity)durable.get(((RuntimeAsset)link.getFirst()).getId())).toList());
+  }
+
+  ObservableImpl memberObservable() {
+    var observable = new ObservableImpl();
+    observable.setSemantics(producer.getObservable().getSemantics().singular());
+    observable.setUrn(observable.getSemantics().getUrn());
+    observable.setDescriptionType(Contextualization.ACKNOWLEDGEMENT);
+    observable.setArtifactType(Artifact.Type.OBJECT);
+    return observable;
   }
 
   DigitalTwin.Transaction execution(Activity.Type type) {
@@ -130,7 +150,9 @@ class CollectiveCompletionQueryTest {
     var read=new KnowledgeGraph.ClassificationReadSet(scope.getId(),10,cohort.getObservable().getUrn(),List.of());
     when(storage.captureClassificationMembers(10)).thenReturn(read);
     assertTrue(runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope).isEmpty());
-    assertTrue(root.commit()>0); verify(storage).validateClassificationMembers(read);
+    assertTrue(root.commit()>0);
+    // The earliest baseline and final read-set capture are independent guards, both validated.
+    verify(storage,times(2)).validateClassificationMembers(read);
   }
   @Test void satisfactionCaptureRejectsContributorGeometryChangeDuringNativeRead() {
     cohort.setId(10);complete();
@@ -150,12 +172,12 @@ class CollectiveCompletionQueryTest {
   @Test void satisfactionCheckGuardsMembershipThroughRootCommit() {
     complete();
     assertTrue(runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope).isEmpty());
-    var member=new ObservationImpl();member.setId(-30);member.setObservable(producer.getObservable());member.setGeometry(producer.getGeometry());
+    var member=new ObservationImpl();member.setId(-30);member.setObservable(memberObservable());member.setGeometry(producer.getGeometry());
     root.link(cohort,member,GraphModel.Relationship.HAS_MEMBER);
     assertEquals(-1,root.commit()); assertTrue(durable.isEmpty());
   }
   @Test void satisfactionCheckGuardsExistingMemberMeaningAndIdentity() {
-    var member=new ObservationImpl();member.setId(-30);member.setObservable(producer.getObservable());member.setGeometry(producer.getGeometry());
+    var member=new ObservationImpl();member.setId(-30);member.setObservable(memberObservable());member.setGeometry(producer.getGeometry());
     root.link(cohort,member,GraphModel.Relationship.HAS_MEMBER);complete();
     var original=member.getObservable();
     var members=runtime.classificationMembersForCheck(producer,producer.getGeometry(),scope);
@@ -169,6 +191,19 @@ class CollectiveCompletionQueryTest {
     assertFalse(RuntimeService.completedCollective(producer,scope));
     assertFalse(root.isFailed());
   }
+  @Test void consolidatedDiagnosticRecordsActualCompletionAndUnsupportedProducerGate() throws Exception {
+    var method=RuntimeService.class.getDeclaredMethod("completedCollectiveEvidence",Observation.class,ServiceContextScope.class,
+        CollectiveReductionBinding.class,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection.class,
+        CollectiveSelectionBinding.class,List.class);method.setAccessible(true);
+    complete();var checks=new ArrayList<Object>();
+    assertFalse(((List<?>)method.invoke(null,producer,scope,null,null,null,checks)).isEmpty());
+    assertTrue(checks.stream().filter(Map.class::isInstance).map(Map.class::cast).anyMatch(row->Boolean.TRUE.equals(row.get("accepted"))&&"supportIntersection".equals(row.get("gate"))));
+    ((ObservableImpl)producer.getObservable()).setDescriptionType(Contextualization.QUANTIFICATION);
+    checks.clear();assertTrue(((List<?>)method.invoke(null,producer,scope,null,null,null,checks)).isEmpty());
+    assertEquals("contextualization",((Map<?,?>)checks.getFirst()).get("gate"));
+    verify(storage,never()).store(any());
+  }
+
   @Test void successfulEmptyDiscoveryBecomesQueryableWithoutFabricatingMembers() {
     complete();
     var result=runtime.queryCollective(query,scope);
@@ -258,8 +293,8 @@ class CollectiveCompletionQueryTest {
     producer.setGeometry(left);query.setGeometry(whole);cohort.setGeometry(whole);
     var other=new ObservationImpl();other.setId(-11);other.setObservable(producer.getObservable());other.setGeometry(right);
     root.link(other,cohort,GraphModel.Relationship.CONTRIBUTED_TO);
-    var first=new ObservationImpl();first.setId(41);first.setObservable(producer.getObservable());first.setGeometry(left);
-    var second=new ObservationImpl();second.setId(-30);second.setObservable(producer.getObservable());second.setGeometry(right);
+    var first=new ObservationImpl();first.setId(41);first.setObservable(memberObservable());first.setGeometry(left);
+    var second=new ObservationImpl();second.setId(-30);second.setObservable(memberObservable());second.setGeometry(right);
     root.link(cohort,first,GraphModel.Relationship.HAS_MEMBER);root.link(cohort,second,GraphModel.Relationship.HAS_MEMBER);
     execution(Activity.Type.INSTANTIATION,producer,left).commit();
     var fragment=runtime.queryCollective(query,scope);
@@ -276,6 +311,24 @@ class CollectiveCompletionQueryTest {
     other.setGeometry(left); // Invalidate a real contributor rather than the detached query view.
     assertEquals(-1,root.commit());assertTrue(durable.isEmpty());
   }
+  @Test void replayOfPartialQueryPreservesItsCoverageWarningWithoutAccumulation() {
+    execution(Activity.Type.INSTANTIATION,producer,period(0,2)).commit();
+    var first=runtime.queryCollective(query,scope);
+    var replay=(ObservationImpl)Observation.forTransport(first);
+    replay.setGeometry(Geometry.create(first.getMetadata().get(Metadata.IM_QUERY_GEOMETRY,String.class)));
+    var checked=runtime.queryCollective(replay,scope);
+    assertEquals(first.getGeometry().encode(),checked.getGeometry().encode());
+    assertEquals(first.getChildrenCount(),checked.getChildrenCount());
+    assertEquals(first.getResolvedCoverage(),checked.getResolvedCoverage());
+    assertEquals(first.getMetadata().get(Metadata.IM_QUERY_GEOMETRY),checked.getMetadata().get(Metadata.IM_QUERY_GEOMETRY));
+    assertEquals(1,first.getNotifications().size());
+    assertEquals(1,checked.getNotifications().size(),"Replay must not append a second timestamped coverage warning");
+    // This fixture isolates the payload contract from its intentionally unaudited source proof.
+    first.getMetadata().remove(SemanticExecutionEvidence.DATA_KEY);
+    checked.getMetadata().remove(SemanticExecutionEvidence.DATA_KEY);
+    assertTrue(SemanticExecutionEvidence.sameCheckedPayload(first,checked));
+  }
+
   @Test void disjointPeriodsForOneProducerDoNotFabricateTheirTemporalHull() {
     execution(Activity.Type.INSTANTIATION,producer,period(0,2)).commit();
     execution(Activity.Type.INSTANTIATION,producer,period(8,10)).commit();

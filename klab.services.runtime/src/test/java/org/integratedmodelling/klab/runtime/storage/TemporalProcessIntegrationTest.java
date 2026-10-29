@@ -240,6 +240,9 @@ class TemporalProcessIntegrationTest {
       link(input,output,ProcessPlan.PREREQUISITE);return output;
     }
     void configureScope(ServiceContextScope scope,UserIdentity user) {
+      // No semantic service is provisioned by this numeric scheduler fixture. In particular,
+      // Mockito's generic deep stub is not a Reasoner or a completeness certificate.
+      doReturn(null).when(scope).getService(org.integratedmodelling.klab.api.services.Reasoner.class);
       when(scope.getConsequenceCause()).thenReturn(null); // Diagnostic fixture: no consequence submission is active.
       when(scope.getObserver()).thenAnswer(call -> observer);
       when(scope.getId()).thenReturn("context");when(scope.getUser()).thenReturn(user);when(scope.getContextObservation()).thenReturn(bearer);

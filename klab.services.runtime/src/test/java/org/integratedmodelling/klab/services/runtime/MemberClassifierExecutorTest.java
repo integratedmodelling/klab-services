@@ -66,8 +66,12 @@ class MemberClassifierExecutorTest {
       when(result.getUrn()).thenReturn("test:Concrete");
       when(result.is(SemanticType.PREDICATE)).thenReturn(true);
       when(reasoner.satisfiable(any())).thenReturn(true);
+      when(reasoner.lexicalRoot(predicate)).thenReturn(predicate);
       when(reasoner.is(result, predicate)).thenReturn(true);
       member.setId(42); member.setObservable(mock(Observable.class));
+      var memberMeaning = mock(Concept.class);
+      when(memberMeaning.getUrn()).thenReturn("test:Region");
+      when(member.getObservable().getSemantics()).thenReturn(memberMeaning);
       actuator.setActuatorType(Actuator.Type.UPDATE); actuator.setEffect(Actuator.Effect.SEMANTIC_UPDATE);
       actuator.setContextualization(Contextualization.CLASSIFICATION); actuator.setOperationObservable(observable);
       actuator.getComputation().add(new ServiceCallImpl("klab.generators.random.categories"));
@@ -84,6 +88,21 @@ class MemberClassifierExecutorTest {
     }
     void optionalDependency() { var dependency = new ObservableImpl(); dependency.setOptional(true); actuator.setModelDependency(dependency); }
   }
+  @Test void repeatedGenerationCannotHideChangedContentOrReasonerIncarnation() throws Exception {
+    for (boolean sessionOnly : List.of(false, true)) {
+      var f = new Fixture(); var caps = mock(Reasoner.Capabilities.class);
+      when(f.reasoner.capabilities(any())).thenReturn(caps);
+      when(caps.getServiceId()).thenReturn("reasoner"); when(caps.getKnowledgeRevision()).thenReturn(1L);
+      when(caps.getSemanticContentFingerprint()).thenReturn("semantic-content-v2:" + "a".repeat(64));
+      when(caps.getSemanticSessionId()).thenReturn("owner-one");
+      var executor = f.executor();
+      if (sessionOnly) when(caps.getSemanticSessionId()).thenReturn("owner-two");
+      else when(caps.getSemanticContentFingerprint()).thenReturn("semantic-content-v2:" + "b".repeat(64));
+      assertThrows(IllegalStateException.class, () -> f.run(executor));
+      assertEquals(0, f.classifier.calls.get(), "The changed active fence must reject before contextualizer invocation");
+    }
+  }
+
   @Test void explicitSatisfactionCheckRequiresExistingKnowledgeAndNoImplementation() throws Exception {
     var f=new Fixture(); f.actuator.getComputation().clear();
     assertThrows(IllegalArgumentException.class, () -> MemberClassifierExecutor.compile(f.actuator, null, f.scope));
@@ -116,6 +135,37 @@ class MemberClassifierExecutorTest {
     when(f.reasoner.is(f.predicate, f.predicate)).thenReturn(true);
     assertTrue(f.run(f.executor()).isEmpty());
     assertEquals(1, f.classifier.calls.get());
+  }
+
+  @Test void differentConcreteClassInTheSameLexicalFamilyIsAlreadyKnown() throws Exception {
+    var f = new Fixture();
+    var family=mock(Concept.class);
+    when(family.getUrn()).thenReturn("test:Family");
+    when(family.is(SemanticType.PREDICATE)).thenReturn(true);
+    when(f.predicate.isAbstract()).thenReturn(false);
+    when(f.reasoner.lexicalRoot(f.predicate)).thenReturn(family);
+    when(f.reasoner.is(f.predicate,family)).thenReturn(true);
+    when(f.reasoner.is(f.result,family)).thenReturn(true);
+    when(f.reasoner.is(f.result,f.predicate)).thenReturn(false);
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(f.result));
+    f.classifier.failAt=1;
+    var outcome=f.executor().executeDetailed(Map.of("cohort",List.of(f.member)),Geometry.UNIVERSAL,f.event,f.scope);
+    assertEquals(List.of("test:Concrete"),outcome.members().getFirst().concretePredicates());
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.objects.ClassificationMemberResult.Origin.EXISTING,
+        outcome.members().getFirst().origin());
+    assertTrue(outcome.pendingAttributions().isEmpty());
+    assertEquals(0,f.classifier.calls.get());
+    // A fresh result must still satisfy the requested concrete predicate, not just its family.
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of());
+    f.classifier.failAt=0;
+    assertThrows(IllegalStateException.class,()->f.run(f.executor()));
+    assertEquals(1,f.classifier.calls.get());
+  }
+
+  @Test void unavailableLexicalFamilyCannotBeGuessedFromTheRequestedPredicate() {
+    var f=new Fixture();when(f.reasoner.lexicalRoot(f.predicate)).thenReturn(null);
+    assertThrows(IllegalArgumentException.class,f::executor);
+    assertEquals(0,f.classifier.calls.get());
   }
 
   @Test void onlyOptionalOriginalModelDependencyAllowsNull() throws Exception {

@@ -161,13 +161,22 @@ public class ResolverService extends BaseService implements Resolver {
   public CompletableFuture<Dataflow> resolve(Observation observation, ContextScope contextScope) {
     return CompletableFuture.supplyAsync(
         () -> {
+          var reasoner=contextScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+          var capabilities=reasoner==null?null:reasoner.capabilities(contextScope);
+          var owner=org.integratedmodelling.klab.runtime.ObserverSemanticUse.Owner.of(capabilities);
+          try(var observerUse=org.integratedmodelling.klab.runtime.ObserverSemanticUse.capture(contextScope,owner)) {
           var compiler = new ResolutionCompiler(this);
           var ret = compiler.resolve(observation, contextScope);
           if (!ret.isEmpty()) {
-            return new DataflowCompiler(observation, ret, contextScope).compile();
+            var result=new DataflowCompiler(observation, ret, contextScope).compile();
+            var current=reasoner==null?null:reasoner.capabilities(contextScope);
+            org.integratedmodelling.klab.runtime.ObserverSemanticUse.stamp(result,observerUse.summary(contextScope,
+                org.integratedmodelling.klab.runtime.ObserverSemanticUse.Owner.of(current)));
+            return result;
           }
 
           return unresolvedOutcome(observation.getObservable(), compiler.hasNoExplanatoryModel(), ret.getNotifications());
+          }
         },
         resolutionExecutor);
   }

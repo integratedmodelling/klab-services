@@ -275,6 +275,7 @@ public interface ServicesAPI {
 
     String SEMANTIC_SEARCH = API_BASE + "/semanticSearch";
     String VALIDATE_DOCUMENT = API_BASE + "/validate/document";
+    String SEMANTIC_DEPENDENCIES = API_BASE + "/semantic/dependencies";
 
     String HAS_TRAIT = API_BASE + "/hasTrait";
 

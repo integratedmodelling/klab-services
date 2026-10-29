@@ -8,6 +8,16 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /** Semantic diagnostics have separate ownership from parsing diagnostics in editor clients. */
 public class SemanticValidationResponse implements Serializable {
+  private java.util.List<String> semanticObligations=java.util.List.of();
+  private boolean semanticObligationsComplete;
+  private SemanticDependencyWitness semanticWitness;
+  public java.util.List<String> getSemanticObligations() { return semanticObligations; }
+  public void setSemanticObligations(java.util.List<String> values) { semanticObligations=values==null?java.util.List.of():java.util.List.copyOf(values); }
+  public boolean isSemanticObligationsComplete() { return semanticObligationsComplete; }
+  public void setSemanticObligationsComplete(boolean value) { semanticObligationsComplete=value; }
+  public SemanticDependencyWitness getSemanticWitness() { return semanticWitness; }
+  public void setSemanticWitness(SemanticDependencyWitness value) { semanticWitness=value; }
+
   public enum Status { COMPLETE, SYNTAX_ERRORS, UNAVAILABLE, STALE_KNOWLEDGE, FAILED }
   private Status status = Status.UNAVAILABLE;
   private String documentUrn;
@@ -15,6 +25,12 @@ public class SemanticValidationResponse implements Serializable {
   private String documentVersion;
   private String sourceHash;
   private long knowledgeRevision = -1;
+  private String semanticSessionId;
+  public String getSemanticSessionId() { return semanticSessionId; }
+  public void setSemanticSessionId(String value) { semanticSessionId=value; }
+  private String semanticContentFingerprint;
+  public String getSemanticContentFingerprint() { return semanticContentFingerprint; }
+  public void setSemanticContentFingerprint(String value) { semanticContentFingerprint = value; }
   private boolean executableModels;
   private String executionContext;
   private boolean classifierPreparableDependencies;

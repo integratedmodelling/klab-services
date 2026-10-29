@@ -267,7 +267,13 @@ public class ClassificationPlanFixture {
     var ret = new ObservationImpl(); ret.setObservable(o); ret.setName(o.getName()); ret.setId(id); ret.setGeometry(g); return ret;
   }
   public static KimObservationStrategyDocument document() throws Exception {
-    String source=java.nio.file.Files.readString(java.nio.file.Path.of(System.getProperty("klab.test.strategies")));
+    String configured=System.getProperty("klab.test.strategies");
+    String source;
+    if(configured!=null) source=java.nio.file.Files.readString(java.nio.file.Path.of(configured));
+    else try(var input=ClassificationPlanFixture.class.getResourceAsStream("/observation/observations-proposed.obs")) {
+      source=new String(Objects.requireNonNull(input,"Missing canonical observation strategies").readAllBytes(),
+          java.nio.charset.StandardCharsets.UTF_8);
+    }
     var parser = new ObservationStandaloneSetup().createInjectorAndDoEMFRegistration().getInstance(IParser.class);
     var parsed = parser.parse(new StringReader(source));
     assertFalse(parsed.hasSyntaxErrors());

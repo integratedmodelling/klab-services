@@ -65,6 +65,19 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       contexts.add(context);
     }
 
+    /** Native testcase ownership; IDs alone cannot establish ownership of another twin. */
+    public boolean ownsContext(ContextScope candidate) {
+      if (isDone() || candidate == null || candidate.getId() == null
+          || candidate.getDigitalTwin() == null || candidate.isInterrupted()) return false;
+      if (sameContext(context, candidate)) return true;
+      return contexts.stream().anyMatch(owned -> sameContext(owned, candidate));
+    }
+
+    private static boolean sameContext(ContextScope owned, ContextScope candidate) {
+      return owned != null && java.util.Objects.equals(owned.getId(), candidate.getId())
+          && owned.getDigitalTwin() == candidate.getDigitalTwin();
+    }
+
     @Override
     public TestCaseBase getAgent() {
       return (TestCaseBase) super.getAgent();

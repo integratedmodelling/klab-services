@@ -288,6 +288,43 @@ public class CompiledDataflow {
         .retrieve(urns.getFirst(), Resource.class, scope);
   }
 
+  static boolean sameConsumedInputs(java.util.Optional<List<Observation>> before,
+      java.util.Optional<List<Observation>> after) {
+    return before.isPresent() && after.isPresent() && before.get().size()==after.get().size()
+        && before.get().stream().allMatch(input -> after.get().stream().anyMatch(actual -> actual==input));
+  }
+
+  /** Verify actual compiled engines/receivers and return the exact inputs they used. */
+  private java.util.Optional<List<Observation>> semanticInputs(Actuator actuator, ServiceContextScope executionScope) {
+    var compiled = operations.get(actuator);
+    if (compiled == null) return java.util.Optional.empty();
+    var inputs = new ArrayList<Observation>();
+    var seen = Collections.newSetFromMap(new IdentityHashMap<Observation,Boolean>());
+    boolean declaredScalar = false; int actualScalars = 0;
+    for (var call : actuator.getComputation()) {
+      var preset = RuntimeService.CoreFunctor.classify(call);
+      if (preset == RuntimeService.CoreFunctor.EXPRESSION_RESOLVER
+          || preset == RuntimeService.CoreFunctor.CONSTANT_RESOLVER || preset == RuntimeService.CoreFunctor.LUT_RESOLVER) {
+        declaredScalar = true; continue;
+      }
+      var selected = callInfo.get(call.getUrn());
+      if (!SemanticExecutionFootprints.call(componentRegistry, selected, call, executionScope)) return java.util.Optional.empty();
+    }
+    for (var executor : compiled.executors) {
+      if (executor instanceof ScalarOperationExecutor scalar) {
+        actualScalars++;
+        var proof = scalar.semanticInputs(executionScope);
+        if (proof.isEmpty()) return java.util.Optional.empty();
+        for (var input : proof.get()) if (seen.add(input)) inputs.add(input);
+      } else if (executor.getClass() == ContextualizerExecutor.class || executor.getClass() == LocalAdapterExecutor.class) {
+        var actual = (AbstractExecutor) executor;
+        for (var input : actual.dependencies.values()) if (input != null && seen.add(input)) inputs.add(input);
+      } else return java.util.Optional.empty();
+    }
+    if (declaredScalar && actualScalars == 0) return java.util.Optional.empty();
+    return java.util.Optional.of(List.copyOf(inputs));
+  }
+
   private Extensions.FunctionDescriptor choosePrototype(ServiceCall call, Observation observation) {
     List<Pair<Extensions.FunctionDescriptor, Integer>> candidates = new ArrayList<>();
     for (var prototype : componentRegistry.getFunctionDescriptor(call, scope)) {
@@ -487,6 +524,8 @@ public class CompiledDataflow {
   }
 
   private static void requireExpandedDependencies(Actuator actuator) {
+    if (actuator.getCollectiveSelectionDependency() != null)
+      throw new IllegalStateException("Selected collective inputs must complete before eager compilation");
     if(!actuator.getClassifierDependencies().isEmpty())
       throw new IllegalStateException("Selected model classifier obligations must complete before eager compilation");
     for(var child:actuator.getChildren())requireExpandedDependencies(child);
@@ -1356,6 +1395,7 @@ public class CompiledDataflow {
       transaction.link(aTarget, aSource, GraphModel.Relationship.HAS_CHILD);
     }
 
+    recordSelectionInputs(transaction);
     if(rootActuator!=null)linkDependencyFamilies(rootActuator,transaction,new java.util.HashSet<>());
     else if(actuatorObservations.keySet().stream().anyMatch(actuator->actuator.getDependencyFamilyBinding()!=null || !actuator.getDependencyFamilies().isEmpty()))
       throw new IllegalStateException("Classifier families require an execution root");
@@ -1403,6 +1443,39 @@ public class CompiledDataflow {
     snapshots.forEach(transaction::beforeCommit);
 
     return true;
+  }
+
+  /** Persist the actual virtual ports consumed by a model, without inventing observation assets. */
+  private void recordSelectionInputs(DigitalTwinImpl.TransactionImpl transaction) {
+    for (var entry : actuatorObservations.entrySet()) {
+      var consumer = entry.getValue();
+      if (consumer == null || consumer.getId() == Observation.QUERY_ID
+          || entry.getKey().getActuatorType() == Actuator.Type.REFERENCE) continue;
+      var inputs = new java.util.TreeMap<String, Observation>();
+      for (var child : entry.getKey().getChildren()) {
+        var source = actuatorObservations.get(child);
+        if (source == null || source.getId() != Observation.QUERY_ID
+            || source.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY) == null) continue;
+        if (child.getName() == null || inputs.putIfAbsent(child.getName(), source) != null)
+          throw new IllegalStateException("Selection input requires one unambiguous model-local alias");
+      }
+      if (inputs.isEmpty()) continue;
+      var key = org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.INPUTS_KEY;
+      var previous = consumer.getMetadata().get(key);
+      Runnable capture = () -> {
+        var receipts = new java.util.TreeMap<String, String>();
+        inputs.forEach((alias, source) -> receipts.put(alias, source.getMetadata().get(
+            org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY).toString()));
+        // Native observation metadata stores POD values. A nested map would be discarded.
+        consumer.getMetadata().put(key, org.integratedmodelling.klab.utilities.Utils.Json.asString(receipts));
+      };
+      capture.run();
+      transaction.update(consumer);
+      transaction.beforeCommit(capture);
+      transaction.afterRollback(() -> {
+        if (previous == null) consumer.getMetadata().remove(key); else consumer.getMetadata().put(key, previous);
+      });
+    }
   }
 
   private boolean matchesDescription(Observation quality, org.integratedmodelling.klab.api.knowledge.Concept endpoint) {
@@ -1758,7 +1831,14 @@ public class CompiledDataflow {
       var executionScope = contextScope.executing(contextualization, observation);
       if (contextScope.getObserver() != null) executionScope.getCurrentTransaction()
           .link(contextualization,contextScope.getObserver(),GraphModel.Relationship.HAS_OBSERVER);
-      var contextualizationScope = new ContextualizationScopeImpl(observation, event);
+      var contextualizationScope = new ContextualizationScopeImpl(observation, event, geometry);
+
+      // Freeze consumed query views before this invocation can add cohort members or change
+      // their meanings. Recheck the actual compiled engines and input identities afterwards.
+      var consumedInputs = semanticInputs(actuator, executionScope);
+      var preparedEvidence = SemanticExecutionEvidence.prepare(
+          actuator,List.of(),consumedInputs.isPresent(),executionScope);
+      preparedEvidence.inputs(observation,consumedInputs.orElse(List.of()),executionScope);
 
       Throwable failure = null;
       boolean ret = true;
@@ -1783,6 +1863,10 @@ public class CompiledDataflow {
               .getService(RuntimeService.class)
               .submitContextualizationResult(
                   contextualizationScope, executionScope, Activity.Outcome.SUCCESS);
+          var actualInputs = semanticInputs(actuator, executionScope);
+          if (!sameConsumedInputs(consumedInputs,actualInputs)) preparedEvidence.unknown();
+          SemanticExecutionEvidence.recordPrepared(contextualization,preparedEvidence,observation,
+              contextualizationScope.getOutcomes(),List.of(),executionScope);
           if (executionScope.commit() < 0) {
             throw new KlabInternalErrorException("Could not commit contextualization transaction");
           }
@@ -1934,6 +2018,24 @@ public class CompiledDataflow {
         var attemptClassifier = classifier.forAttempt(executionScope);
         var detailed = attemptClassifier.executeDetailed(completed, support, event, executionScope);
         var pending = detailed.pendingAttributions();
+        // Capture the input Concepts before attribution/characterization can replace a read view.
+        // Observable wrappers and their local names never enter semantic proof signatures.
+        var semanticTerms = new ArrayList<String>();
+        for (var cohortMembers : completed.values()) for (var member : cohortMembers)
+          semanticTerms.add(member.getObservable().getSemantics().getUrn());
+        for (var attribution : pending) {
+          semanticTerms.add(attribution.originalObservable().getSemantics().getUrn());
+          semanticTerms.add(attribution.abstractPredicate().getUrn());
+          semanticTerms.add(attribution.predicate().getUrn());
+        }
+        for (var result : detailed.members()) {
+          semanticTerms.add(result.requestedPredicate()); semanticTerms.addAll(result.concretePredicates());
+        }
+        // These native inputs were consumed before this operation changes the focused member.
+        // Verify them now; the private collector remains pinned through characterization and
+        // adds resulting read views below. Root read-set/generation guards still own commit.
+        var semanticInputs = SemanticExecutionEvidence.prepare(actuator,semanticTerms,
+            attemptClassifier.semanticFootprint(componentRegistry,executionScope),executionScope);
         ((DigitalTwinImpl.TransactionImpl) executionScope.getCurrentTransaction())
             .stageAttributions(pending, executionScope);
         runtimeService.characterizePending(pending, executionScope);
@@ -1949,10 +2051,19 @@ public class CompiledDataflow {
         evidence.put("memberResults", detailed.members().stream().map(
             org.integratedmodelling.klab.api.services.runtime.objects.ClassificationMemberResult::metadata).toList());
         activity.getMetadata().put(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS, evidence);
+        var semanticResults = new ArrayList<Observation>();
+        for (var result : detailed.members()) {
+          var member = executionScope.getObservation(result.memberIdAtInvocation());
+          if (member != null) semanticResults.add(member);
+        }
+        SemanticExecutionEvidence.recordPrepared(activity,semanticInputs,null,semanticResults,List.of(),executionScope);
         if (executionScope.commit() < 0) throw new IllegalStateException("Classification stage failed");
         updateResults.put(key, true);
         return true;
       } catch (Throwable failure) {
+        // Preserve the classifier's original failure in native diagnostics. Scope error delivery
+        // would also mark an expected-negative test agent nonviable; rollback still owns outcome.
+        org.integratedmodelling.common.logging.Logging.INSTANCE.error(failure);
         executionScope.fail(failure);
         updateResults.put(key, false);
         return false;
@@ -1986,6 +2097,9 @@ public class CompiledDataflow {
         }
         characterizer.execute(member, geometry, event, executionScope);
         executionScope.getCurrentTransaction().link(activity, member, GraphModel.Relationship.CHARACTERIZED);
+        var semanticInputs = semanticInputs(actuator, executionScope);
+        SemanticExecutionEvidence.record(activity, actuator, member, List.of(), semanticInputs.orElse(List.of()), List.of(),
+            semanticInputs.isPresent(), executionScope);
         if (executionScope.commit() < 0) throw new IllegalStateException("Characterization commit failed");
         updateResults.put(key, true);
         return true;

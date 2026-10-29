@@ -50,6 +50,13 @@ class ClassifierNativeAdmissionTest {
       field(reasoner,ReasonerService.class,"loadedOntologyDiagnostics",new HashMap<>());
       var state=new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();state.settle(3,true);
       field(reasoner,ReasonerService.class,"semanticValidationState",state);
+      // Infrastructure-only fixture: declaration/validation below still uses actual OWL.
+      // It owns no accepted content snapshot and therefore cannot certify a durable witness.
+      var capabilities=mock(Reasoner.Capabilities.class);
+      when(capabilities.getServiceId()).thenReturn("native-admission-fixture");
+      when(capabilities.getKnowledgeRevision()).thenReturn(3L);
+      when(capabilities.getSemanticSessionId()).thenReturn("native-admission-fixture-owner");
+      doReturn(capabilities).when(reasoner).capabilities(any());
       doReturn(scope).when(reasoner).serviceScope();when(scope.getService(ResourcesService.class)).thenReturn(resources);
       when(scope.getService(Reasoner.class)).thenReturn(reasoner);
       when(resources.declareConcept(anyString())).thenAnswer(i->{var c=syntax.get(i.getArgument(0));return c==null?null:(KimConcept)KimConceptImpl.copyValue(c);});

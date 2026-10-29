@@ -321,6 +321,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
   }
 
+  /** Capture a new request's persisted focus; later reads retain that captured scope snapshot. */
+  Observation getObservationForAdmission(long id) {
+    if (currentTransaction == null && digitalTwin != null
+        && digitalTwin.getKnowledgeGraph() instanceof
+            org.integratedmodelling.common.services.client.digitaltwin.ClientKnowledgeGraph remote)
+      return remote.getObservationForAdmission(id, this);
+    return getObservation(id);
+  }
   /** Drop the shared cached representation only after a successful durable update. */
   public void invalidateObservation(long id) {
     observationCache.invalidate(id);
@@ -1039,6 +1047,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation getObservation(Observation observation) {
+
+    if (observation.getId() == Observation.QUERY_ID
+        && observation.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY) != null) {
+      // A selection's source IDs are discovery witnesses, not substitutes for its filtered view.
+      // QUERY_ID submission is the Runtime's existing read-only validation path.
+      var checked = getService(RuntimeService.class).submit(observation, this).join();
+      return checked == null || checked.isEmpty() ? null : checked;
+    }
 
     //    var instanceUrn = observation.getMetadata().get(Metadata.IM_FEATURE_URN);
 

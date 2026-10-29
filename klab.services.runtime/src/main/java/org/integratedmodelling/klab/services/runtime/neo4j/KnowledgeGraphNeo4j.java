@@ -83,6 +83,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       Set.of(
           Queries.OWNER_CONTEXT,
           "perceptionRevision",
+          "semanticRevision",
+          // Neo4j Spatial Constants.PROP_TYPE, injected by spatial.addNode for WKB observations.
+          // This is index structure, not a legacy flattened user metadata entry.
+          "gtype",
           GraphModel.Fields.METADATA,
           GraphModel.Fields.NAME,
           GraphModel.Fields.TYPE,
@@ -96,6 +100,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           GraphModel.Fields.ID,
           GraphModel.Fields.PARENT_ID,
           GraphModel.Fields.EVENT_TIMESTAMPS,
+          GraphModel.Fields.RESOLVED_COVERAGE,
           GraphModel.Fields.HISTOGRAMS,
           GraphModel.Fields.HISTOGRAM,
           GraphModel.Fields.SUBSTANTIAL,

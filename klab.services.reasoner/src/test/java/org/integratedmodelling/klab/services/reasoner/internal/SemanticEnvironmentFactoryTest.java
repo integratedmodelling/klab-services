@@ -209,6 +209,7 @@ class SemanticEnvironmentFactoryTest {
         invocation -> {
           if (invocation.getMethod().getName().equals("getUrl")) return java.net.URI.create("http://127.0.0.1").toURL();
           if (invocation.getMethod().getName().equals("setOperational")) return null;
+          if (invocation.getMethod().getName().equals("serviceId")) return "deployed-test-reasoner";
           return invocation.callRealMethod();
         });
     facade.enableCandidatePublication(factory); return facade;
@@ -281,6 +282,14 @@ class SemanticEnvironmentFactoryTest {
     var unsupported = new CandidatePublicationCoordinator.Input<>(normal.sourceHashes(), normal.sourceOrder(),
         normal.dependencyRevision(), "other-configuration", normal.payload(), normal.beanStatus(), List.of());
     assertThrows(IllegalArgumentException.class, () -> factory.build(unsupported, () -> false));
+    var groupingRevision = "-qualified-inherent-grouping-v1";
+    assertTrue(normal.configurationRevision().endsWith(groupingRevision));
+    var priorEncoding = normal.configurationRevision().substring(0,
+        normal.configurationRevision().length() - groupingRevision.length());
+    var priorCapture = new CandidatePublicationCoordinator.Input<>(normal.sourceHashes(), normal.sourceOrder(),
+        normal.dependencyRevision(), priorEncoding, normal.payload(), normal.beanStatus(), List.of());
+    assertThrows(IllegalArgumentException.class, () -> factory.build(priorCapture, () -> false),
+        "A source-identical capture using the former inherent encoding must be rebuilt");
     var wrongOrder = new CandidatePublicationCoordinator.Input<>(normal.sourceHashes(), List.of(),
         normal.dependencyRevision(), normal.configurationRevision(), normal.payload(), normal.beanStatus(), List.of());
     assertThrows(IllegalArgumentException.class, () -> factory.build(wrongOrder, () -> false));
@@ -679,6 +688,7 @@ class SemanticEnvironmentFactoryTest {
         invocation -> {
           if (invocation.getMethod().getName().equals("getUrl")) return java.net.URI.create("http://127.0.0.1").toURL();
           if (invocation.getMethod().getName().equals("setOperational")) return null;
+          if (invocation.getMethod().getName().equals("serviceId")) return "deployed-test-reasoner";
           return invocation.callRealMethod();
         });
     facade.enableCandidatePublication(factory);
@@ -916,6 +926,83 @@ class SemanticEnvironmentFactoryTest {
       assertEquals("deployment-id", retained.getServiceId()); assertEquals(initial.getUrl(), retained.getUrl());
       assertEquals(1, retained.getKnowledgeRevision()); assertTrue(retained.isConsistent());
     } finally { scope.close(); }
+  }
+
+  @Test void acceptedContentIdentitySurvivesUnchangedRestartAndPinnedLeaseButNotChangedSources() throws Exception {
+    var firstFactory=new SemanticEnvironmentFactory(directory.resolve("content-first"),core());
+    String fingerprint;
+    try(var first=new AcceptedSemanticRuntime(firstFactory,"deployment")) {
+      first.submit(world("unchanged",false)); assertTrue(first.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(1,first.status().acceptedGeneration());
+      fingerprint=first.metadata().semanticContentFingerprint();
+      assertNotNull(fingerprint); assertTrue(fingerprint.matches("semantic-content-v2:[a-f0-9]{64}"));
+      long acceptedOntologyCount;
+      try(var lease=first.lease()) {
+        acceptedOntologyCount=lease.state().actor().owl().getOntology().getOWLOntology()
+            .getOWLOntologyManager().ontologies().count();
+      }
+      var request=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(
+          world("unchanged",false).getOntologies().getFirst(),"saved");
+      var response=first.validate(request,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(request));
+      assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE,response.getStatus());
+      assertEquals(fingerprint,response.getSemanticContentFingerprint(),"Validation labels its actual leased actor");
+      assertEquals(first.semanticSessionId(),response.getSemanticSessionId());
+      assertTrue(response.isSemanticObligationsComplete());assertFalse(response.getSemanticObligations().isEmpty());
+      assertNotNull(response.getSemanticWitness());
+      assertTrue(response.getSemanticWitness().completeAt(System.currentTimeMillis()),
+          ()->"Source-owned witness="+response.getSemanticWitness()+"; obligations="+response.getSemanticObligations());
+      try(var lease=first.lease()) {
+        assertEquals(acceptedOntologyCount,lease.state().actor().owl().getOntology().getOWLOntology()
+            .getOWLOntologyManager().ontologies().count(),"Locality analysis must not create documents in the accepted catalog manager");
+      }
+
+      var witnessRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+          "deployment",1,fingerprint,List.of("w:Thing"));
+      var witness=first.<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness>invoke(
+          "semanticDependencies",new Class<?>[]{org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class,
+              org.integratedmodelling.klab.api.scope.Scope.class},new Object[]{witnessRequest,null});
+      assertTrue(witness.completeAt(System.currentTimeMillis()));assertEquals(witnessRequest.inputHash(),witness.inputHash());
+
+
+      var source=new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();source.setUrn("source");source.setSourceCode("model numeric");
+      var model=new org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl();model.setUrn("source.numeric");model.setNamespace("source");
+      var output=new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();output.setFormalName("elevation");output.setSemantics(
+          typedReference("w:Q1",SemanticType.QUALITY,SemanticType.OBSERVABLE));model.getObservables().add(output);
+      var expression=new org.integratedmodelling.common.lang.ContextualizableImpl();
+      expression.setExpression(org.integratedmodelling.klab.api.lang.ExpressionCode.of("elevation - 10",null));model.getContextualization().add(expression);
+      source.getStatements().add(model);
+      var modelRequest=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(source,"model");
+      var modelResponse=first.validate(modelRequest,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(modelRequest));
+      assertTrue(modelResponse.isSemanticObligationsComplete(),modelResponse.getNotifications().toString());
+      assertTrue(modelResponse.getSemanticObligations().contains("w:Q1"));
+      expression.setExpression(org.integratedmodelling.klab.api.lang.ExpressionCode.of("resolveConcept('TAXA:mutable')",null));
+      var opaque=first.validate(modelRequest,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(modelRequest));
+      assertFalse(opaque.isSemanticObligationsComplete());
+      assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN,opaque.getSemanticWitness().status());
+      var missing=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(
+          world("not-accepted",false).getOntologies().getFirst(),"missing");
+      var unavailable=first.validate(missing,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(missing));
+      assertNull(unavailable.getSemanticContentFingerprint(),"Unvalidated source is never certified");
+
+      try(var pinned=first.lease()) {
+        first.submit(world("changed",false)); assertTrue(first.awaitIdle(Duration.ofSeconds(30)));
+        assertNotEquals(fingerprint,first.metadata().semanticContentFingerprint());
+        assertEquals(fingerprint,pinned.state().semanticContentFingerprint());
+        var accepted=first.metadata().semanticContentFingerprint();
+        first.submit(world("rejected",true)); assertTrue(first.awaitIdle(Duration.ofSeconds(30)));
+        assertEquals(accepted,first.metadata().semanticContentFingerprint());
+      }
+    }
+    try(var restarted=new AcceptedSemanticRuntime(new SemanticEnvironmentFactory(directory.resolve("content-restart"),core()),"deployment")) {
+      restarted.submit(world("unchanged",false)); assertTrue(restarted.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(1,restarted.status().acceptedGeneration(),"Repeated numeric generation is expected on restart");
+      assertEquals(fingerprint,restarted.metadata().semanticContentFingerprint());
+      assertNotNull(restarted.semanticSessionId());
+      restarted.submit(world("unchanged",false)); assertTrue(restarted.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(fingerprint,restarted.metadata().semanticContentFingerprint());
+    }
   }
 
   @Test void disposableCandidateCannotAcknowledgeDurableCodelistMutation() throws Exception {

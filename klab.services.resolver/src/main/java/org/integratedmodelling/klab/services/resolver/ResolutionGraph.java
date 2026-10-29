@@ -50,6 +50,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ResolutionGraph {
 
+  org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding collectiveSelection;
+  ResolutionGraph selectionNative;
+  final List<OperationTarget> selectionOperations = new ArrayList<>();
+  final Map<Observation, ResolutionGraph> selectionDependencies = new IdentityHashMap<>();
+
   final Set<ObservationStrategy> classificationChecks = Collections.newSetFromMap(new IdentityHashMap<>());
   private Resolvable target;
   Resolvable target() { return target; }
@@ -70,7 +75,7 @@ public class ResolutionGraph {
   ResolutionGraph withScheduleRequest(org.integratedmodelling.klab.api.digitaltwin.OccurrenceNegotiation.Request request) {
     var result = new ResolutionGraph(rootScope);
     result.parent = this;
-    result.semanticReasonerId = semanticReasonerId; result.semanticRevision = semanticRevision;
+    result.semanticReasonerId = semanticReasonerId; result.semanticRevision = semanticRevision; result.semanticFingerprint = semanticFingerprint; result.semanticSessionId = semanticSessionId;
     result.target = target;
     result.targetCoverage = targetCoverage;
     result.observations = observations;
@@ -83,6 +88,10 @@ public class ResolutionGraph {
   private ContextScope rootScope;
   private String semanticReasonerId;
   private long semanticRevision = -1;
+  private String semanticFingerprint;
+  private String semanticSessionId;
+  String semanticSessionId() { return semanticSessionId; }
+  String semanticFingerprint() { return semanticFingerprint; }
 
   String semanticReasonerId() { return semanticReasonerId; }
   long semanticRevision() { return semanticRevision; }
@@ -121,7 +130,7 @@ public class ResolutionGraph {
     this.rootScope = rootScope;
     var semantic = org.integratedmodelling.klab.runtime.language.ModelValidationGate.semanticSnapshot(rootScope);
     if (semantic != null) {
-      semanticReasonerId = semantic.serviceId(); semanticRevision = semantic.revision();
+      semanticReasonerId = semantic.serviceId(); semanticRevision = semantic.revision(); semanticFingerprint = semantic.semanticFingerprint(); semanticSessionId = semantic.semanticSessionId();
     }
     this.observations = new ConcurrentHashMap<>();
     this.localResources = new CopyOnWriteArrayList<>();
@@ -179,7 +188,7 @@ public class ResolutionGraph {
     }
 
     this.rootScope = parent.rootScope;
-    this.semanticReasonerId = parent.semanticReasonerId; this.semanticRevision = parent.semanticRevision;
+    this.semanticReasonerId = parent.semanticReasonerId; this.semanticRevision = parent.semanticRevision; this.semanticFingerprint = parent.semanticFingerprint; this.semanticSessionId = parent.semanticSessionId;
   }
 
   private ResolutionGraph(
@@ -199,7 +208,7 @@ public class ResolutionGraph {
     this.targetCoverage =
         Coverage.create(GeometryRepository.INSTANCE.scale(resolvedObservation.getGeometry()), 1.0);
     this.rootScope = parent.rootScope;
-    this.semanticReasonerId = parent.semanticReasonerId; this.semanticRevision = parent.semanticRevision;
+    this.semanticReasonerId = parent.semanticReasonerId; this.semanticRevision = parent.semanticRevision; this.semanticFingerprint = parent.semanticFingerprint; this.semanticSessionId = parent.semanticSessionId;
     this.resolvedKey = referenceKey(resolvedObservation);
     this.observations.put(this.resolvedKey, resolvedObservation);
     //    this.resolutionCatalog.putAll(parent.resolutionCatalog);
@@ -263,6 +272,21 @@ public class ResolutionGraph {
    * merge.
    */
   public boolean merge(ResolutionGraph childGraph, String localName) {
+
+    selectionDependencies.putAll(childGraph.selectionDependencies);
+    if (childGraph.collectiveSelection != null) {
+      if (target instanceof Observation o && Objects.equals(o.getObservable().getUrn(), childGraph.collectiveSelection.requested())) {
+        if (collectiveSelection != null && collectiveSelection != childGraph.collectiveSelection)
+          throw new KlabIllegalStateException("Competing collective selection results for one observation");
+        collectiveSelection = childGraph.collectiveSelection;
+        selectionNative = childGraph.selectionNative;
+        selectionOperations.addAll(childGraph.selectionOperations);
+      } else if (childGraph.target instanceof Observation selected) {
+        // Preserve the enclosing model's result. This child becomes a typed deferred virtual
+        // input during lowering, rather than promoting its view descriptor to the whole flow.
+        selectionDependencies.put(selected, childGraph);
+      } else throw new KlabIllegalStateException("Unbound collective selection composition");
+    }
 
     classificationChecks.addAll(childGraph.classificationChecks);
     classifierDependencies.putAll(childGraph.classifierDependencies);

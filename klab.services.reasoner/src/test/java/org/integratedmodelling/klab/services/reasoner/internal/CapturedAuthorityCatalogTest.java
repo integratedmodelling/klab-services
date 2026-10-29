@@ -53,6 +53,79 @@ class CapturedAuthorityCatalogTest {
     assertFalse(catalog.components().getFirst().authorities().isEmpty());
     assertEquals(hash, catalog.components().getFirst().fileHash());
   }
+  @Test void semanticProjectionExcludesOuterExpiryButRetainsResponseValuesAndLegacyIsUncertified() throws Exception {
+    var fixture=fixture(); response(fixture,"","1",Long.MAX_VALUE);
+    var w=new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();
+    w.setAuthorityBindings(new ArrayList<>(List.of(fixture.binding())));
+    var first=captured(fixture);
+    assertFalse(first.certifiesDurableContent(w), "Legacy live provider cannot certify unseen mutable responses");
+    var expected=SemanticContentFingerprint.canonical(first.semanticContent(w));
+    var staticRecipe=SemanticContentFingerprint.canonical(first.semanticRecipe(w));
+    assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.UNVERSIONED,
+        first.dependencyProof(fixture.binding()).kind());
+
+    response(fixture,"","1",Long.MAX_VALUE-1);
+    assertArrayEquals(expected,SemanticContentFingerprint.canonical(captured(fixture).semanticContent(w)));
+    Path file; try(var files=Files.list(fixture.responses())) { file=files.findFirst().orElseThrow(); }
+    var envelope=json.readTree(Files.readAllBytes(file));
+    ((com.fasterxml.jackson.databind.node.ObjectNode)envelope.get("value")).put("timestamp",123);
+    Files.write(file,json.writeValueAsBytes(envelope));
+    assertFalse(Arrays.equals(expected,SemanticContentFingerprint.canonical(captured(fixture).semanticContent(w))),
+        "Semantic response properties are not recursively stripped by name");
+    assertArrayEquals(staticRecipe,SemanticContentFingerprint.canonical(captured(fixture).semanticRecipe(w)),
+        "Unrelated mutable responses live in scoped authority evidence, not the v2 static recipe");
+
+    var provider=first.provider(fixture.binding(),request(),directory.resolve("still-enabled"),()->true);
+    var id=provider.configure(AuthorityBindings.providerRequest(request()));
+    assertEquals("unseen",provider.resolveIdentity(id,"unseen").getId());
+    provider.releaseConfiguration(id);
+    assertTrue(CapturedAuthorityCatalog.empty().certifiesDurableContent(new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl()));
+  }
+  @Test void durationOnlyPolicyRecaptureNormalizesTheVerifiedResponsePrefix() throws Exception {
+    var f=fixture(); response(f,"","1",Long.MAX_VALUE);
+    var w=new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();
+    w.setAuthorityBindings(new ArrayList<>(List.of(f.binding())));
+    var before=captured(f);
+    byte[] original=SemanticContentFingerprint.canonical(before.semanticContent(w));
+    String implementation="org.integratedmodelling.klab.authority.taxa.TaxaAuthority:1.0.0:"
+        +HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(f.artifact()));
+    var changedPolicy=new Authority.CachePolicy("fixture-1",3600,86400,86400);
+    String key=CachedAuthority.digest(json.writeValueAsString(List.of("authority-cache-v2","w","TAXA","w:Identity",
+        request().parameters(),"klab.authority.taxa",implementation,changedPolicy)));
+    Path changed=Files.createDirectories(f.responses().getParent().resolve(key));
+    try(var files=Files.list(f.responses())) {
+      for(var file:files.toList()) Files.copy(file,changed.resolve(file.getFileName()));
+    }
+    String previous=System.getProperty("klab.test.authority.identitySeconds");
+    try {
+      System.setProperty("klab.test.authority.identitySeconds","3600");
+      assertArrayEquals(original,SemanticContentFingerprint.canonical(captured(f).semanticContent(w)));
+      assertNotEquals(before.revision(),captured(f).revision(),"Admission capture still records retention policy changes");
+    } finally {
+      if(previous==null)System.clearProperty("klab.test.authority.identitySeconds");
+      else System.setProperty("klab.test.authority.identitySeconds",previous);
+    }
+  }
+
+  @Test void compiledCodelistProjectionIgnoresPendingAuditButRetainsManagedMappingsAndNamespaces() throws Exception {
+    var provider=new org.integratedmodelling.klab.authority.taxa.TaxaAuthority();
+    var bindings=new AuthorityBindings();
+    var configured=new Authority.ConfigurationRequest("w","TAXA","w:Identity",Map.of("urn","klab.authority.taxa",
+        "codelists",Map.of("SPECIES","w.species")));
+    bindings.configure(configured,provider);
+    byte[] before=SemanticContentFingerprint.canonical(bindings.semanticCodelists());
+    var lists=bindings.codelists("TAXA");
+    lists.execute(new org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest(
+        org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.SUBMIT,
+        "TAXA","w.species","Pending","one",null,0,null,null,"audit",null),"author");
+    assertArrayEquals(before,SemanticContentFingerprint.canonical(bindings.semanticCodelists()));
+    lists.execute(new org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest(
+        org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.CREATE,
+        "TAXA","w.species","Managed","two",null,1,null,null,"managed",null),"reviewer");
+    assertFalse(Arrays.equals(before,SemanticContentFingerprint.canonical(bindings.semanticCodelists())));
+    assertTrue(new String(before,java.nio.charset.StandardCharsets.UTF_8).contains("w.species"));
+    bindings.clear();
+  }
   @TempDir Path directory;
   private final ObjectMapper json = new ObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
   private Authority.ConfigurationRequest request() { return new Authority.ConfigurationRequest("w","TAXA","w:Identity",Map.of("urn","klab.authority.taxa")); }

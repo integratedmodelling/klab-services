@@ -25,6 +25,7 @@ public final class AcceptedSemanticReadSession implements AutoCloseable {
   }
 
   public long generation() { checkOpen(); return lease.generation(); }
+  public String semanticContentFingerprint() { checkOpen(); return environment.semanticContentFingerprint(); }
 
   /** Returns an owned transport bean; clients cannot modify accepted caches or metadata. */
   public Concept resolveConcept(String definition) {

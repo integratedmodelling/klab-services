@@ -124,6 +124,13 @@ public class LanguageAdapter {
       ret.setFormalName(observableSyntax.getStatedName());
     }
 
+    // Older language encoders omit optionality from encode(), although the parsed
+    // production requirement is present. Preserve it when the definition is sent
+    // to a Reasoner or reparsed; this is not part of the Concept's semantic URN.
+    if (ret.isOptional() && !ret.getUrn().endsWith(" optional")) {
+      ret.setUrn(ret.getUrn() + " optional");
+    }
+
     ret.setProjectName(projectName);
     ret.setDocumentClass(documentClass);
 

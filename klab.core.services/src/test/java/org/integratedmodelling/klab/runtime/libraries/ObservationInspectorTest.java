@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.data.*;
 import org.integratedmodelling.klab.api.digitaltwin.*;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
+import org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -22,12 +23,342 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.junit.jupiter.api.*;
 
 class ObservationInspectorTest {
+  private static final String CONTENT = "semantic-content-v2:" + "a".repeat(64);
+  private static final String OTHER_CONTENT = "semantic-content-v2:" + "b".repeat(64);
   @BeforeAll static void setup() { ServiceConfiguration.injectInstantiators(); }
 
   private static Geometry geometry(String text) { return Scale.create(ShapeImpl.create(text)); }
+
+  private Fixture nativeFixture() {
+    var f = new Fixture();
+    when(f.cohort.getObservable()).thenReturn(f.member.getObservable());
+    when(f.cohort.getUrn()).thenReturn("cohort:30");when(f.cohort.getGeometry()).thenReturn(Geometry.UNIVERSAL);
+    when(f.graph.query(any(KnowledgeGraph.Query.class), eq(Cohort.class), eq(f.scope)))
+        .thenReturn(List.of(f.cohort));
+    when(f.graph.query(any(KnowledgeGraph.Query.class), eq(Observation.class), eq(f.scope))).thenAnswer(call -> {
+      var query = call.getArgument(0, KnowledgeGraphQuery.class);
+      if (query.getSource() != null && query.getSource().getId() == f.cohort.getId()) return List.copyOf(f.members);
+      if (query.getTarget() != null && query.getTarget().getId() == f.cohort.getId()) return List.of(f.producer);
+      return List.copyOf(f.assets.values());
+    });
+    return f;
+  }
+
+  @Test void nativeSnapshotsAcceptCompletedEmptyCohortsWithoutWeakeningMemberSnapshots() {
+    var f = nativeFixture();f.members.clear();f.assets.remove(20L);
+    var before = ObservationInspector.nativeSnapshot(f.scope);
+    assertTrue(before.cohorts().get(30L).members().isEmpty());
+    assertEquals(Set.of(10L), before.cohorts().get(30L).contributors());
+    assertTrue(ObservationInspector.nativeUnchanged(f.scope, before));
+    assertThrows(IllegalStateException.class, f::snapshot);
+    var bookkeeping = Activity.of(Activity.Type.SUBMISSION);bookkeeping.setId(90);f.activities.add(bookkeeping);
+    assertTrue(ObservationInspector.nativeUnchanged(f.scope, before));
+    var work = Activity.of(Activity.Type.CLASSIFICATION);work.setId(91);f.activities.add(work);
+    assertFalse(ObservationInspector.nativeUnchanged(f.scope, before));
+  }
+
+  @Test void nativeSnapshotsFreezeSemanticsAndDetectLeakedProducersOrMemberChanges() {
+    var f = nativeFixture();var before = ObservationInspector.nativeSnapshot(f.scope);
+    f.classify();
+    assertEquals("test:Region", before.observations().get(20L).semantics());
+    assertFalse(ObservationInspector.nativeUnchanged(f.scope, before));
+    f = nativeFixture();before = ObservationInspector.nativeSnapshot(f.scope);
+    var leaked = f.meaning("each test:Terrestrial test:Region", true, SemanticType.SUBJECT);
+    f.observation(21, leaked, Geometry.UNIVERSAL);
+    assertFalse(ObservationInspector.nativeUnchanged(f.scope, before));
+    var frozen = before;
+    assertThrows(UnsupportedOperationException.class, () -> frozen.observations().clear());
+  }
+
+  @Test void nativeSnapshotsRejectForeignContextsAndMissingCanonicalMembers() {
+    var f = nativeFixture();var before = ObservationInspector.nativeSnapshot(f.scope);
+    when(f.scope.getId()).thenReturn("another-context");
+    assertThrows(IllegalArgumentException.class, () -> ObservationInspector.nativeUnchanged(f.scope, before));
+    var missing = nativeFixture();missing.assets.remove(20L);
+    assertThrows(IllegalStateException.class, () -> ObservationInspector.nativeSnapshot(missing.scope));
+  }
+
+  class SelectionFixture {
+    final Fixture f = nativeFixture();
+    final org.integratedmodelling.klab.api.services.RuntimeService runtime = mock(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    final Reasoner.Capabilities capabilities = mock(Reasoner.Capabilities.class);
+    final Concept expected = f.meaning("each test:Terrestrial test:Region", true, SemanticType.SUBJECT);
+    final ObservationImpl view = new ObservationImpl();
+    final org.integratedmodelling.klab.api.provenance.impl.ActivityImpl completed = Activity.of(Activity.Type.INSTANTIATION);
+    List<CollectiveSelectionView.Member> states;
+    List<Long> selected = List.of(20L);
+
+    SelectionFixture() {
+      f.classify();
+      when(f.reasoner.directTraits(any())).thenAnswer(call -> {
+        var value = call.getArgument(0);
+        return f.traits.getOrDefault(value instanceof Observable observable ? observable.getSemantics() : value, List.of());
+      });
+      f.traits.put(expected, List.of(f.category));
+      when(f.reasoner.satisfiable(any())).thenReturn(true);
+      when(f.reasoner.lexicalRoot(f.category)).thenReturn(f.family);
+      when(f.reasoner.baseSubstantialType(any(), eq(f.scope))).thenReturn(f.region);
+      when(f.reasoner.resolveObservable("each test:Region")).thenReturn(f.producer.getObservable());
+      when(f.reasoner.capabilities(f.scope)).thenReturn(capabilities);
+      when(capabilities.getServiceId()).thenReturn("reasoner");when(capabilities.getKnowledgeRevision()).thenReturn(7L);
+      when(capabilities.getSemanticContentFingerprint()).thenReturn(CONTENT);
+      when(f.reasoner.semanticDependencies(any(),same(f.scope))).thenAnswer(call -> {
+        var request=call.getArgument(0,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class);
+        return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness(
+            "semantic-dependency-v1",org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.COMPLETE,
+            capabilities.getServiceId(),capabilities.getKnowledgeRevision(),capabilities.getSemanticContentFingerprint(),request.inputHash(),List.of(),null);
+      });
+      when(f.scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class)).thenReturn(runtime);
+      when(runtime.getMembers(view, f.scope)).thenAnswer(call -> selected.stream().map(f.assets::get).toList());
+      when(f.graph.getAsset(30L, f.scope, Cohort.class)).thenReturn(f.cohort);
+      when(f.producer.getObservable().getSemantics().singular()).thenReturn(f.region);
+      completed.setId(200);completed.setOutcome(Activity.Outcome.SUCCESS);
+      completed.getMetadata().put("collectiveReasonerId", "reasoner");
+      completed.getMetadata().put("collectiveKnowledgeRevision", 7L);
+      completed.getMetadata().put("collectiveSemanticFingerprint", CONTENT);
+      completed.getMetadata().put(Metadata.IM_OBSERVER_SELECTION_ID, 0L);
+      completed.getMetadata().put(Metadata.IM_EXECUTION_GEOMETRY, Geometry.UNIVERSAL.encode());
+      f.activities.add(completed);
+      var expectedUrn = expected.getUrn();
+      var observable = mock(Observable.class);when(observable.getUrn()).thenReturn(expectedUrn);
+      when(observable.getSemantics()).thenReturn(expected);
+      var builder = mock(Observable.Builder.class);when(observable.builder(f.scope)).thenReturn(builder);
+      when(builder.without(anyCollection())).thenReturn(builder);when(builder.buildObservable()).thenReturn(f.producer.getObservable());
+      var individual = mock(Observable.class);when(individual.getSemantics()).thenReturn(f.region);
+      var nativeBuilder = mock(Observable.Builder.class);when(f.producer.getObservable().builder(f.scope)).thenReturn(nativeBuilder);
+      when(nativeBuilder.collective(false)).thenReturn(nativeBuilder);when(nativeBuilder.buildObservable()).thenReturn(individual);
+      when(f.reasoner.is(f.attributed, f.region)).thenReturn(true);
+      view.setId(Observation.QUERY_ID);view.setObservable(observable);view.setGeometry(Geometry.UNIVERSAL);
+      view.setResolvedCoverage(1);view.setChildrenCount(1);
+      states = List.of(new CollectiveSelectionView.Member(20, f.member.getObservable().getUrn(), Geometry.UNIVERSAL.encode()));
+      receipt();
+    }
+
+    void receipt() {
+      var obligations=new java.util.TreeSet<String>(List.of(expected.getUrn(),"each test:Region",f.category.getUrn(),f.family.getUrn(),f.region.getUrn(),f.attributed.getUrn()));
+      var request=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest("reasoner",7,CONTENT,List.copyOf(obligations));
+      var evidence=new org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding(
+          "semantic-execution-evidence-v1",true,List.copyOf(obligations),f.reasoner.semanticDependencies(request,f.scope));
+      completed.getMetadata().put(org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding.DATA_KEY,Utils.Json.asString(evidence));
+      var proof = new CollectiveSelectionView(3, expected.getUrn(), "each test:Region", List.of("test:Terrestrial"),
+          List.of("test:Environment"), "reasoner", 7, 0, null, Geometry.forTransport(view.getGeometry()).encode(),
+          30, List.of(10L), states, selected, f.scope.getId(), null, null, CONTENT, evidence);
+      view.getMetadata().put(CollectiveSelectionView.DATA_KEY, Utils.Json.asString(proof));
+      view.getMetadata().put(Metadata.IM_QUERY_COHORT_ID, 30L);
+      view.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, List.of(10L));
+    }
+
+    boolean check() { return ObservationInspector.selectionCheck(f.scope, view, expected.getUrn()); }
+  }
+
+  @Test void selectionChecksActualNativeStateAndEnumerationRatherThanOnlyTheCount() {
+    var f = new SelectionFixture();
+    assertTrue(f.check());
+    when(f.runtime.getMembers(f.view, f.f.scope)).thenReturn(List.of());
+    assertFalse(f.check());
+    when(f.runtime.getMembers(f.view, f.f.scope)).thenReturn(List.of(f.f.member, f.f.member));
+    assertFalse(f.check());
+  }
+
+  @Test void selectionAcceptsProvenEmptyNativeDiscoveryButRejectsMissingCompletion() {
+    var f = new SelectionFixture();f.f.members.clear();f.f.assets.remove(20L);
+    f.states = List.of();f.selected = List.of();f.view.setChildrenCount(0);f.receipt();
+    assertTrue(f.check());
+    f.f.activities.remove(f.completed);
+    assertFalse(f.check());
+  }
+
+  @Test void selectionRejectsMembersOutsidePhysicalSupportEvenIfPortableCardinalityIsNonzero() {
+    var f = new SelectionFixture();
+    f.view.setGeometry(geometry("EPSG:3857 POLYGON ((0 0,0 10,10 10,10 0,0 0))"));
+    f.f.member.setGeometry(geometry("EPSG:3857 POINT (20 20)"));
+    f.states = List.of(new CollectiveSelectionView.Member(20, f.f.member.getObservable().getUrn(), f.f.member.getGeometry().encode()));
+    f.receipt();
+    assertFalse(f.check());
+  }
+
+  @Test void selectionRejectsUnknownFamilyKnowledgeAndContradictoryReceipts() {
+    var f = new SelectionFixture();
+    f.f.traits.put(f.f.attributed, List.of());
+    assertFalse(f.check());
+    f = new SelectionFixture();f.selected = List.of();f.view.setChildrenCount(0);f.receipt();
+    assertFalse(f.check());
+    f = new SelectionFixture();f.states = List.of(f.states.getFirst(), f.states.getFirst());f.receipt();
+    assertFalse(f.check());
+  }
+
+  @Test void selectionRejectsWrongObserverContentOrQualifiedProducer() {
+    var f = new SelectionFixture();
+    f.completed.getMetadata().put(Metadata.IM_OBSERVER_SELECTION_ID, 99L);
+    assertFalse(f.check());
+    f = new SelectionFixture();when(f.capabilities.getSemanticContentFingerprint()).thenReturn(OTHER_CONTENT);
+    assertFalse(f.check());
+    f = new SelectionFixture();f.f.observation(21, f.expected, Geometry.UNIVERSAL);
+    assertFalse(f.check());
+  }
+
+  private static CollectiveSelectionView receiptWith(CollectiveSelectionView proof, int version,
+      long revision, String fingerprint) {
+    return new CollectiveSelectionView(version, proof.requested(), proof.nativeMembers(), proof.predicates(),
+        proof.families(), proof.reasonerId(), revision, proof.observerId(), proof.observerUrn(), proof.geometry(),
+        proof.cohortId(), proof.sourceIds(), proof.members(), proof.selectedIds(), proof.scopeId(), proof.context(),
+        proof.observerClass(), fingerprint, version==3?proof.semanticEvidence():null);
+  }
+
+  @Test void selectionContentRemainsValidAcrossDifferentNumericGeneration() {
+    var f = new SelectionFixture();
+    when(f.capabilities.getKnowledgeRevision()).thenReturn(1L);
+    f.completed.getMetadata().put("collectiveKnowledgeRevision", 99L);
+    assertTrue(f.check(), "Matching semantic content preserves durable source evidence across restarts");
+    f.completed.getMetadata().put("collectiveSemanticFingerprint", OTHER_CONTENT);
+    assertFalse(f.check(), "A native completion must independently carry the matching content witness");
+  }
+
+  @Test void selectionLegacyAndUncertifiedReceiptsRemainReadableButCannotCertifyCompleteness() {
+    var f = new SelectionFixture();
+    var encoded = f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY).toString();
+    var proof = Utils.Json.parseObject(encoded, CollectiveSelectionView.class);
+    for (var version : List.of(1, 2)) {
+      var legacy = Utils.Json.asString(receiptWith(proof, version, 7, null));
+      f.view.getMetadata().put(CollectiveSelectionView.DATA_KEY, legacy);
+      assertNotNull(Utils.Json.parseObject(legacy, CollectiveSelectionView.class));
+      assertFalse(f.check());
+      assertEquals(legacy, f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY), "Inspection never stamps legacy evidence");
+    }
+    f.view.getMetadata().put(CollectiveSelectionView.DATA_KEY, encoded);
+    when(f.capabilities.getSemanticContentFingerprint()).thenReturn(null);
+    assertFalse(f.check(), "An unbounded mutable provider does not certify durable content");
+  }
+
+  @Test void receiptRejectsMalformedOrUnknownFingerprintVersions() {
+    var f = new SelectionFixture();
+    var proof = Utils.Json.parseObject(f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY).toString(), CollectiveSelectionView.class);
+    for (var malformed : List.of("semantic-content-v2:abc", "semantic-content-v3:" + "a".repeat(64),
+        "semantic-content-v2:" + "A".repeat(64)))
+      assertThrows(IllegalArgumentException.class, () -> receiptWith(proof, 2, 7, malformed));
+    assertThrows(IllegalArgumentException.class, () -> receiptWith(proof, 4, 7, CONTENT));
+    assertThrows(IllegalArgumentException.class, () -> receiptWith(proof, 1, 7, CONTENT));
+  }
+
+  @Test void selectionRejectsMembersOutsideTheRetainedNativeSemanticDomain() {
+    var f = new SelectionFixture();when(f.f.reasoner.is(f.f.attributed, f.f.region)).thenReturn(false);
+    assertFalse(f.check());
+  }
+
+  @Test void selectionRejectsWrongExpectedSemanticsInvalidCountAndNonfiniteCoverage() {
+    var f = new SelectionFixture();
+    assertFalse(ObservationInspector.selectionCheck(f.f.scope, f.view, "test:Region"));
+    f.view.setChildrenCount(0);assertFalse(f.check());
+    f.view.setChildrenCount(1);f.view.setResolvedCoverage(Double.NaN);assertFalse(f.check());
+    f.view.setResolvedCoverage(Double.POSITIVE_INFINITY);assertFalse(f.check());
+    f = new SelectionFixture();when(f.f.scope.getId()).thenReturn("foreign-context");assertFalse(f.check());
+    f = new SelectionFixture();when(f.f.scope.getContextObservation()).thenReturn(f.f.member);assertFalse(f.check());
+  }
+
+  @Test void capturedSelectionInputsUseCanonicalConsumerMetadataAndActualEnumeration() {
+    var f = new SelectionFixture();
+    var consumer = f.f.observation(40, f.f.region, Geometry.UNIVERSAL);
+    consumer.getMetadata().put(CollectiveSelectionView.INPUTS_KEY,
+        Utils.Json.asString(Map.of("selected", f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY))));
+    var expectedUrn = f.expected.getUrn();var observable = f.view.getObservable();
+    when(f.f.reasoner.resolveObservable(expectedUrn)).thenReturn(observable);
+    when(f.runtime.getMembers(any(Observation.class), eq(f.f.scope))).thenReturn(List.of(f.f.member));
+    var input = ObservationInspector.selectionInput(f.f.scope, consumer, "selected");
+    assertEquals(Observation.QUERY_ID, input.getId());assertEquals(1, input.getChildrenCount());
+    assertTrue(ObservationInspector.selectionCheck(f.f.scope, input, expectedUrn));
+    assertThrows(IllegalArgumentException.class, () -> ObservationInspector.selectionInput(f.f.scope, consumer, "other_model_alias"));
+    when(f.runtime.getMembers(any(Observation.class), eq(f.f.scope))).thenReturn(List.of(f.f.member, f.f.member));
+    assertThrows(IllegalStateException.class, () -> ObservationInspector.selectionInput(f.f.scope, consumer, "selected"));
+  }
+
+  @Test void numericCellChecksRejectMissingNonfiniteAndInvalidTolerance() {
+    assertTrue(ObservationInspector.numericCell("12.0", 12, 0));
+    assertTrue(ObservationInspector.numericCell("12.00001", 12, 0.0001));
+    assertFalse(ObservationInspector.numericCell("13", 12, 0));
+    for (var missing : Arrays.asList(null, "", "NaN", "Infinity", "-Infinity", "missing"))
+      assertFalse(ObservationInspector.numericCell(missing, 12, 0));
+    for (double tolerance : new double[]{-1, Double.NaN, Double.POSITIVE_INFINITY})
+      assertThrows(IllegalArgumentException.class, () -> ObservationInspector.numericCell("12", 12, tolerance));
+    assertThrows(IllegalArgumentException.class, () -> ObservationInspector.numericCell("12", Double.NaN, 0));
+  }
+
+  private SelectionFixture replayFixture() {
+    var f = new SelectionFixture();
+    var concept = new org.integratedmodelling.common.knowledge.ConceptImpl();
+    concept.setUrn(f.expected.getUrn());concept.setName("Region");
+    concept.setType(EnumSet.of(SemanticType.SUBJECT));concept.setCollective(true);
+    var observable = new org.integratedmodelling.common.knowledge.ObservableImpl();
+    observable.setSemantics(concept);observable.setUrn(concept.getUrn());f.view.setObservable(observable);
+    when(f.runtime.submit(any(Observation.class), eq(f.f.scope))).thenAnswer(call ->
+        java.util.concurrent.CompletableFuture.completedFuture(call.getArgument(0, Observation.class)));
+    when(f.runtime.getMembers(any(Observation.class), eq(f.f.scope))).thenAnswer(call -> f.selected.stream().map(f.f.assets::get).toList());
+    return f;
+  }
+
+  @Test void selectionReplayUsesActualObservationJsonAndNormalQueryWithoutNativeWork() {
+    var f = replayFixture();
+    assertTrue(ObservationInspector.selectionReplay(f.f.scope, f.view));
+    var request = org.mockito.ArgumentCaptor.forClass(Observation.class);
+    verify(f.runtime).submit(request.capture(), eq(f.f.scope));
+    assertNotSame(f.view, request.getValue());
+    assertEquals(Observation.QUERY_ID, request.getValue().getId());
+    assertEquals(f.view.getObservable().getSemantics(), request.getValue().getObservable().getSemantics());
+    assertEquals(f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY), request.getValue().getMetadata().get(CollectiveSelectionView.DATA_KEY));
+    assertTrue(ObservationInspector.selectionReplay(f.f.scope, f.view));
+  }
+
+  @Test void selectionReplayAcceptsIdenticalContentRestartAndHistoricalNumericAudit() {
+    var f = replayFixture();
+    when(f.capabilities.getKnowledgeRevision()).thenReturn(1L);
+    when(f.runtime.submit(any(Observation.class), eq(f.f.scope))).thenAnswer(call -> {
+      var result = call.getArgument(0, Observation.class);
+      var encoded = result.getMetadata().get(CollectiveSelectionView.DATA_KEY).toString();
+      var proof = Utils.Json.parseObject(encoded, CollectiveSelectionView.class);
+      result.getMetadata().put(CollectiveSelectionView.DATA_KEY, Utils.Json.asString(receiptWith(proof, 3, 1, CONTENT)));
+      return java.util.concurrent.CompletableFuture.completedFuture(result);
+    });
+    var before = f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY);
+    assertTrue(ObservationInspector.selectionReplay(f.f.scope, f.view));
+    assertEquals(before, f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY), "Original persisted audit bytes stay unchanged");
+  }
+
+  @Test void selectionReplayRejectsLegacyBeforeQueryWithoutChangingItsObservation() {
+    var f = replayFixture();
+    var proof = Utils.Json.parseObject(f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY).toString(), CollectiveSelectionView.class);
+    var legacy = Utils.Json.asString(receiptWith(proof, 1, 7, null));
+    f.view.getMetadata().put(CollectiveSelectionView.DATA_KEY, legacy);
+    assertFalse(ObservationInspector.selectionReplay(f.f.scope, f.view));
+    verify(f.runtime, never()).submit(any(), any());
+    assertEquals(legacy, f.view.getMetadata().get(CollectiveSelectionView.DATA_KEY));
+    assertTrue(f.f.assets.containsKey(20L), "Rejecting the receipt leaves its native observation intact");
+  }
+
+  @Test void selectionReplayRejectsStaleScopeObserverAndChangedContentBeforeQuery() {
+    var f = replayFixture();when(f.f.scope.getId()).thenReturn("wrong-context");
+    assertFalse(ObservationInspector.selectionReplay(f.f.scope, f.view));verify(f.runtime, never()).submit(any(), any());
+    f = replayFixture();when(f.capabilities.getSemanticContentFingerprint()).thenReturn(OTHER_CONTENT);
+    assertFalse(ObservationInspector.selectionReplay(f.f.scope, f.view));verify(f.runtime, never()).submit(any(), any());
+    f = replayFixture();when(f.f.scope.getObserver()).thenReturn(f.f.member);
+    assertFalse(ObservationInspector.selectionReplay(f.f.scope, f.view));verify(f.runtime, never()).submit(any(), any());
+  }
+
+  @Test void selectionReplayRejectsQueryFailureDuplicateMembersAndNativeMutation() {
+    var f = replayFixture();
+    when(f.runtime.submit(any(), eq(f.f.scope))).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
+    assertFalse(ObservationInspector.selectionReplay(f.f.scope, f.view));
+    f = replayFixture();when(f.runtime.getMembers(any(), eq(f.f.scope))).thenReturn(List.of(f.f.member, f.f.member));
+    assertFalse(ObservationInspector.selectionReplay(f.f.scope, f.view));
+    f = replayFixture();var changed = f;
+    when(f.runtime.submit(any(), eq(f.f.scope))).thenAnswer(call -> {
+      var work = Activity.of(Activity.Type.INSTANTIATION);work.setId(999);changed.f.activities.add(work);
+      return java.util.concurrent.CompletableFuture.completedFuture(call.getArgument(0, Observation.class));
+    });
+    assertFalse(ObservationInspector.selectionReplay(f.f.scope, f.view));
+  }
 
   class Fixture {
     final ContextScope scope = mock(ContextScope.class);
@@ -133,6 +464,92 @@ class ObservationInspectorTest {
     assertFalse(ObservationInspector.classificationCheck(f.scope, before, "test:Environment"));
   }
 
+  private void concreteAudit(Fixture f) {
+    when(f.reasoner.lexicalRoot(f.category)).thenReturn(f.family);
+    f.activities.getFirst().getMetadata().put(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS,
+        Map.of("context", "context", "memberResults", List.of(Map.of(
+            "memberIdAtInvocation", 20L, "inputObservable", "test:Region",
+            "requestedPredicate", "test:Terrestrial", "concretePredicates", List.of("test:Terrestrial"),
+            "origin", "CLASSIFIER"))));
+    f.incoming.put(20L, List.of(f.edge(f.activities.getFirst(), f.member, GraphModel.Relationship.CLASSIFIED,
+        Map.of("before", "test:Region", "after", "test:Terrestrial test:Region",
+            "abstractPredicate", "test:Terrestrial", "predicate", "test:Terrestrial"))));
+  }
+
+  @Test void concreteClassificationChecksRequestedPredicateSeparatelyFromFamily() {
+    var f = new Fixture(); var before = f.snapshot(); f.classify(); concreteAudit(f);
+    assertTrue(ObservationInspector.classificationCheckFor(f.scope, before, "test:Terrestrial", "test:Environment"));
+    assertFalse(ObservationInspector.classificationCheck(f.scope, before, "test:Environment"),
+        "Legacy family-request audit checking must remain exact");
+  }
+
+  @Test void concreteClassificationRejectsWrongRequestedSiblingAndWrongFamily() {
+    var f = new Fixture(); var before = f.snapshot(); f.classify(); concreteAudit(f);
+    var sibling = f.meaning("test:Aquatic", false, SemanticType.REALM, SemanticType.PREDICATE);
+    when(f.reasoner.lexicalRoot(sibling)).thenReturn(f.family);
+    assertFalse(ObservationInspector.classificationCheckFor(f.scope, before, "test:Aquatic", "test:Environment"));
+    when(f.reasoner.lexicalRoot(f.category)).thenReturn(f.category);
+    assertThrows(IllegalArgumentException.class, () -> ObservationInspector.classificationCheckFor(
+        f.scope, before, "test:Terrestrial", "test:Environment"));
+  }
+
+  @Test void concreteClassificationStillRequiresOriginalIdsAndCommittedAttribution() {
+    var f = new Fixture(); var before = f.snapshot(); f.classify(); concreteAudit(f);
+    f.members.set(0, f.observation(21, f.attributed, Geometry.UNIVERSAL));
+    assertFalse(ObservationInspector.classificationCheckFor(f.scope, before, "test:Terrestrial", "test:Environment"));
+    f.members.set(0, f.member); f.activities.clear();
+    assertFalse(ObservationInspector.classificationCheckFor(f.scope, before, "test:Terrestrial", "test:Environment"));
+  }
+
+  @Test void concreteClassificationRejectsFamilyOnlyEdgeAndWrongSiblingResult() {
+    var f = new Fixture(); var before = f.snapshot(); f.classify(); concreteAudit(f);
+    f.incoming.put(20L, List.of(f.edge(f.activities.getFirst(), f.member, GraphModel.Relationship.CLASSIFIED,
+        Map.of("before", "test:Region", "after", "test:Terrestrial test:Region",
+            "abstractPredicate", "test:Environment", "predicate", "test:Terrestrial"))));
+    assertFalse(ObservationInspector.classificationCheckFor(f.scope, before, "test:Terrestrial", "test:Environment"));
+
+    var sibling = f.meaning("test:Aquatic", false, SemanticType.REALM, SemanticType.PREDICATE);
+    var wrongMeaning = f.meaning("test:Aquatic test:Region", false, SemanticType.SUBJECT);
+    when(f.reasoner.is(sibling, f.family)).thenReturn(true);
+    f.traits.put(wrongMeaning, List.of(sibling));
+    var wrong = mock(Observable.class);when(wrong.getSemantics()).thenReturn(wrongMeaning);when(wrong.getUrn()).thenReturn("test:Aquatic test:Region");
+    f.member.setObservable(wrong);
+    f.activities.getFirst().getMetadata().put(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS,
+        Map.of("context", "context", "memberResults", List.of(Map.of(
+            "memberIdAtInvocation", 20L, "inputObservable", "test:Region", "requestedPredicate", "test:Terrestrial",
+            "concretePredicates", List.of("test:Aquatic"), "origin", "CLASSIFIER"))));
+    f.incoming.put(20L, List.of(f.edge(f.activities.getFirst(), f.member, GraphModel.Relationship.CLASSIFIED,
+        Map.of("before", "test:Region", "after", "test:Aquatic test:Region",
+            "abstractPredicate", "test:Terrestrial", "predicate", "test:Aquatic"))));
+    assertFalse(ObservationInspector.classificationCheckFor(f.scope, before, "test:Terrestrial", "test:Environment"),
+        "A matching request audit cannot certify a newly produced sibling value");
+  }
+
+  @Test void classificationRejectsDuplicateAuditResultsAndEdgesForAnUnauditedValue() {
+    var f = new Fixture(); var before = f.snapshot(); f.classify();
+    f.activities.getFirst().getMetadata().put(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS,
+        Map.of("context", "context", "memberResults", List.of(Map.of(
+            "memberIdAtInvocation", 20L, "inputObservable", "test:Region", "requestedPredicate", "test:Environment",
+            "concretePredicates", List.of("test:Terrestrial", "test:Terrestrial"), "origin", "CLASSIFIER"))));
+    assertFalse(ObservationInspector.classificationCheck(f.scope, before, "test:Environment"));
+
+    var sibling = f.meaning("test:Aquatic", false, SemanticType.REALM, SemanticType.PREDICATE);
+    when(f.reasoner.is(sibling, f.family)).thenReturn(true);
+    var both = f.meaning("test:Terrestrial test:Aquatic test:Region", false, SemanticType.SUBJECT);
+    f.traits.put(both, List.of(f.category, sibling));
+    var afterUrn = both.getUrn();
+    var after = mock(Observable.class);when(after.getSemantics()).thenReturn(both);when(after.getUrn()).thenReturn(afterUrn);
+    f.member.setObservable(after);
+    f.activities.getFirst().getMetadata().put(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS,
+        Map.of("context", "context", "memberResults", List.of(Map.of(
+            "memberIdAtInvocation", 20L, "inputObservable", "test:Region", "requestedPredicate", "test:Environment",
+            "concretePredicates", List.of("test:Terrestrial"), "origin", "CLASSIFIER"))));
+    f.incoming.put(20L, List.of(f.edge(f.activities.getFirst(), f.member, GraphModel.Relationship.CLASSIFIED,
+        Map.of("before", "test:Region", "after", both.getUrn(), "abstractPredicate", "test:Environment", "predicate", "test:Aquatic"))));
+    assertFalse(ObservationInspector.classificationCheck(f.scope, before, "test:Environment"),
+        "A family-compatible edge cannot certify a result omitted from that member's audit row");
+  }
+
   @Test void missingAuditOrWrongOriginCannotPassClassification() {
     var f = new Fixture(); var before = f.snapshot(); f.classify(); f.activities.clear();
     assertFalse(ObservationInspector.classificationCheck(f.scope, before, "test:Environment"));
@@ -168,6 +585,21 @@ class ObservationInspectorTest {
     assertTrue(ObservationInspector.classificationNoop(f.scope, before, "test:Environment"));
     f.audit(102, "test:Terrestrial test:Region", "EXISTING");
     assertFalse(ObservationInspector.classificationNoop(f.scope, before, "test:Environment"));
+  }
+
+  @Test void concreteNoopSeparatesRequestedPredicateFromItsExistingFamilyValue() {
+    var f = new Fixture(); f.classify(); var before = f.snapshot();
+    var requested = f.meaning("test:Aquatic", false, SemanticType.REALM, SemanticType.PREDICATE);
+    when(f.reasoner.lexicalRoot(requested)).thenReturn(f.family);
+    var audit = f.audit(101, "test:Terrestrial test:Region", "EXISTING");
+    audit.getMetadata().put(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS, Map.of("context", "context", "memberResults", List.of(
+        Map.of("memberIdAtInvocation", 20, "inputObservable", "test:Terrestrial test:Region", "requestedPredicate", "test:Aquatic",
+            "concretePredicates", List.of("test:Terrestrial"), "origin", "EXISTING"))));
+    assertTrue(ObservationInspector.classificationNoopFor(f.scope, before, "test:Aquatic", "test:Environment"));
+    assertFalse(ObservationInspector.classificationNoop(f.scope, before, "test:Environment"));
+    when(f.reasoner.lexicalRoot(requested)).thenReturn(f.category);
+    assertThrows(IllegalArgumentException.class, () -> ObservationInspector.classificationNoopFor(
+        f.scope, before, "test:Aquatic", "test:Environment"));
   }
 
   @Test void previouslyClassifiedFixtureCannotProveMutationAndWrongContextCannotReuseSnapshot() {

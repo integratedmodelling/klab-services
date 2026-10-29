@@ -51,6 +51,17 @@ public class ReasonerController {
         "Authority configuration requires an authorized scope");
   }
 
+  @Operation(summary = "Certify the authority dependency closure of exact semantic obligations")
+  @PostMapping(ServicesAPI.REASONER.SEMANTIC_DEPENDENCIES)
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
+      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request,
+      Principal principal) {
+    if(principal instanceof EngineAuthorization authorization)
+      return reasoner.klabService().semanticDependencies(request,authorization.getScope());
+    throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
+        "Semantic dependency certification requires an authorized scope");
+  }
+
   @Operation(
       summary = "Validate document semantics",
       description = "Return source-bound diagnostics for a parsed document snapshot")

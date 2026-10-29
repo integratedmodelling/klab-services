@@ -26,6 +26,7 @@ class NamespaceModelIndexTest {
   final Map<String, SemanticValidationResponse.Status> statuses = new HashMap<>();
 
   NamespaceModelIndexTest() {
+    when(reasoner.semanticDependencies(any(),same(scope))).thenAnswer(call -> proof(reasoner.capabilities(scope),call.getArgument(0)));
     when(resources.serviceScope()).thenReturn(scope); when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(concept.getUrn()).thenReturn("w:Value");
     when(reasoner.resolveConcept("w:Value")).thenReturn(concept);
@@ -40,12 +41,22 @@ class NamespaceModelIndexTest {
     when(reasoner.validateDocument(any(), any())).thenAnswer(invocation -> {
       SemanticValidationRequest request = invocation.getArgument(0);
       var response = SemanticValidationResponse.forRequest(request);
+      var caps=reasoner.capabilities(scope);
+      response.setSemanticContentFingerprint(caps==null?null:caps.getSemanticContentFingerprint());
+      response.setSemanticSessionId(caps==null?null:caps.getSemanticSessionId());
+      response.setSemanticObligations(List.of("w:Value"));response.setSemanticObligationsComplete(true);
+      if(caps!=null)response.setSemanticWitness(proof(caps,new SemanticDependencyRequest(caps.getServiceId(),caps.getKnowledgeRevision(),caps.getSemanticContentFingerprint(),response.getSemanticObligations())));
       response.setStatus(statuses.getOrDefault(request.getNamespace().getUrn(), SemanticValidationResponse.Status.COMPLETE));
       response.setKnowledgeRevision(request.getKnowledgeRevision() < 0 ? 7 : request.getKnowledgeRevision());
       if (invalid.contains(request.getNamespace().getUrn()))
         response.getNotifications().add(Notification.error("MODEL_DEPENDENCY_INCOMPATIBLE: " + request.getNamespace().getUrn()));
       return response;
     });
+  }
+
+  private SemanticDependencyWitness proof(Reasoner.Capabilities caps,SemanticDependencyRequest request) {
+    return caps==null?null:new SemanticDependencyWitness(SemanticDependencyWitness.VERSION,SemanticDependencyWitness.Status.COMPLETE,
+        caps.getServiceId(),caps.getKnowledgeRevision(),caps.getSemanticContentFingerprint(),request.inputHash(),List.of(),null);
   }
 
   KimNamespaceImpl source(String urn) {
@@ -78,6 +89,7 @@ class NamespaceModelIndexTest {
     var observable=new org.integratedmodelling.common.knowledge.ObservableImpl();observable.setUrn("w:Value");observable.setSemantics(semantics);
     when(reasoner.resolveObservable("w:Value")).thenReturn(observable);
     var capabilities=mock(Reasoner.Capabilities.class);when(reasoner.capabilities(scope)).thenReturn(capabilities);
+    when(capabilities.getSemanticContentFingerprint()).thenReturn("semantic-content-v2:"+"a".repeat(64));
     when(capabilities.getKnowledgeRevision()).thenReturn(7L);when(capabilities.getServiceId()).thenReturn("reasoner");
     assertDoesNotThrow(() -> org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(model,source,scope));
     var index=new NamespaceModelIndex(5);

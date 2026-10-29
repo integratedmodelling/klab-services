@@ -29,6 +29,34 @@ public final class AuthorityIdentityResolver {
     this.enriched = enriched;
   }
 
+  /**
+   * The configured worldview binding, not an arbitrary provider/boundary parent, defines this
+   * lexical family. Consult only the current generation's bindings and actually loaded classes:
+   * caller metadata is not authority admission, and this lookup never resolves or expands an ID.
+   * Codelist aliases share their canonical class and therefore this same configuration anchor.
+   */
+  public synchronized Concept lexicalRoot(Concept supplied) {
+    if (supplied == null) return null;
+    var concept = supplied.singular();
+    for (var binding : bindings.snapshot()) {
+      String namespace = AuthorityBindings.ontologyId(binding);
+      if (!namespace.equals(concept.getNamespace())) continue;
+      var ontology = owl.getOntology(namespace);
+      var canonical = ontology == null ? null : ontology.getConcept(concept.getName());
+      if (canonical == null || !canonical.getUrn().equals(concept.getUrn())
+          || !canonical.is(SemanticType.IDENTITY) || !canonical.is(SemanticType.AUTHORITY_IDENTITY)
+          || canonical.is(SemanticType.NOTHING)) return null;
+      String root = binding.request().rootIdentity();
+      int separator = root.indexOf(':');
+      if (separator <= 0 || separator == root.length() - 1) return null;
+      var rootOntology = owl.getOntology(root.substring(0, separator));
+      var anchor = rootOntology == null ? null : rootOntology.getConcept(root.substring(separator + 1));
+      return anchor != null && anchor.is(SemanticType.IDENTITY) && !anchor.is(SemanticType.NOTHING)
+          ? anchor : null;
+    }
+    return null;
+  }
+
   public synchronized Concept resolve(String name, String id) {
     return resolve(name, id, false);
   }

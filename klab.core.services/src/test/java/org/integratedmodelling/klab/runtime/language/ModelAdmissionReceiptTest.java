@@ -15,6 +15,36 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValida
 import org.junit.jupiter.api.*;
 
 class ModelAdmissionReceiptTest {
+  static final String CONTENT="semantic-content-v2:"+"a".repeat(64);
+  private static ModelValidationGate.AdmissionReceipt with(
+      ModelValidationGate.AdmissionReceipt source, String field, Object replacement) throws Exception {
+    var components=ModelValidationGate.AdmissionReceipt.class.getRecordComponents();
+    var values=new Object[components.length]; var types=new Class<?>[components.length];
+    for(int i=0;i<components.length;i++) {
+      types[i]=components[i].getType();
+      values[i]=components[i].getName().equals(field)?replacement:components[i].getAccessor().invoke(source);
+    }
+    return ModelValidationGate.AdmissionReceipt.class.getDeclaredConstructor(types).newInstance(values);
+  }
+
+  @Test void preparationIdentityAllowsIndependentScopedProofButRejectsContractDrift() throws Exception {
+    var original=new ModelValidationGate.AdmissionReceipt("test:model","test","1","a".repeat(64),
+        "b".repeat(64),"reasoner",3,List.of(),CONTENT,List.of("test:Quality","test:RequestContext"),true,null,"owner");
+    var constructor=ModelValidationGate.PreparationReceipt.class.getDeclaredConstructor(ModelValidationGate.AdmissionReceipt.class);
+    constructor.setAccessible(true);var preparation=constructor.newInstance(original);
+    var scoped=with(original,"semanticObligations",List.of("test:Quality","test:ExplainedSubject"));
+    assertNotEquals(original,scoped);
+    assertTrue(ModelValidationGate.sameSnapshot(preparation,scoped),
+        "Source preparation identity is not an execution signature; both scoped admissions remain independently required");
+    var changes=new LinkedHashMap<String,Object>();
+    changes.put("modelUrn","test:other");changes.put("namespace","other");changes.put("sourceVersion","2");
+    changes.put("sourceHash","c".repeat(64));changes.put("executableHash","d".repeat(64));
+    changes.put("reasonerId","other");changes.put("knowledgeRevision",4L);
+    changes.put("semanticFingerprint","semantic-content-v2:"+"e".repeat(64));changes.put("semanticSessionId","other-owner");
+    changes.put("pendingMemberQualities",List.of(mock(SemanticValidationResponse.PendingMemberQualityDependency.class)));
+    for(var change:changes.entrySet()) assertFalse(ModelValidationGate.sameSnapshot(preparation,
+        with(scoped,change.getKey(),change.getValue())),change.getKey());
+  }
   final ContextScope scope=mock(ContextScope.class);
   final Reasoner reasoner=mock(Reasoner.class);
   final Reasoner.Capabilities cap=mock(Reasoner.Capabilities.class);
@@ -22,14 +52,15 @@ class ModelAdmissionReceiptTest {
   final ModelImpl model=new ModelImpl();
   final KimNamespaceImpl namespace=new KimNamespaceImpl();
   ModelAdmissionReceiptTest(){
+    when(reasoner.semanticDependencies(any(),eq(scope))).thenAnswer(call -> proof(call.getArgument(0)));
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);when(scope.getService(ResourcesService.class)).thenReturn(resources);
-    when(reasoner.capabilities(scope)).thenReturn(cap);when(cap.getServiceId()).thenReturn("reasoner");when(cap.getKnowledgeRevision()).thenReturn(3L);
+    when(reasoner.capabilities(scope)).thenReturn(cap);when(cap.getServiceId()).thenReturn("reasoner");when(cap.getKnowledgeRevision()).thenReturn(3L);when(cap.getSemanticContentFingerprint()).thenReturn(CONTENT);
     namespace.setUrn("test");namespace.setLastUpdateTimestamp(17);namespace.setSourceCode("model test:Quality set to 1;");
     var source=new KimModelImpl();source.setUrn("test:model");namespace.getStatements().add(source);
     when(resources.retrieve("test",KimNamespace.class,scope)).thenReturn(namespace);
     when(resources.declareObservable(anyString())).thenReturn(new KimObservableImpl());
     when(reasoner.validateDocument(any(),eq(scope))).thenAnswer(call->{var response=SemanticValidationResponse.forRequest(call.getArgument(0));
-      response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(3);return response;});
+      response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(3);response.setSemanticContentFingerprint(cap.getSemanticContentFingerprint());stamp(response);return response;});
     var concept=new ConceptImpl();concept.setUrn("test:Quality");concept.setName("quality");concept.setReferenceName("quality");
     concept.setType(EnumSet.of(SemanticType.QUALITY));concept.setDescriptionType(Contextualization.QUANTIFICATION);
     model.setUrn("test:model");model.setNamespace("test");model.setObservables(new ArrayList<>(List.of(ObservableImpl.promote(concept,scope))));
@@ -37,6 +68,50 @@ class ModelAdmissionReceiptTest {
     model.setDescriptionType(Contextualization.QUANTIFICATION);
     var code=new ContextualizableImpl();code.setLiteral(1.0);model.setComputation(new ArrayList<>(List.of(code)));
   }
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness proof(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request) {
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness(
+        "semantic-dependency-v1",org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.COMPLETE,
+        cap.getServiceId(),cap.getKnowledgeRevision(),cap.getSemanticContentFingerprint(),request.inputHash(),List.of(),null);
+  }
+  private void stamp(SemanticValidationResponse response) {
+    response.setSemanticSessionId(cap.getSemanticSessionId());
+    response.setSemanticObligations(List.of("test:Quality"));response.setSemanticObligationsComplete(true);
+    response.setSemanticWitness(proof(new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+        cap.getServiceId(),cap.getKnowledgeRevision(),cap.getSemanticContentFingerprint(),response.getSemanticObligations())));
+  }
+
+  @Test void repeatedGenerationNewSessionInvalidatesActiveReceiptButRevalidatesSavedNamespace() {
+    when(cap.getSemanticSessionId()).thenReturn("session-a");publish();
+    var old=ModelValidationGate.validatedPreparableAdmission(model,scope,null);assertNotNull(old);
+    var bytes=namespace.getMetadata().get(ResourcesService.NAMESPACE_ADMISSION_METADATA);
+    when(cap.getSemanticSessionId()).thenReturn("session-b");
+    assertFalse(ModelValidationGate.matches(old,model,scope));
+    var current=ModelValidationGate.validatedPreparableAdmission(model,scope,null);assertNotNull(current);
+    assertEquals("session-b",current.semanticSessionId());assertEquals(bytes,namespace.getMetadata().get(ResourcesService.NAMESPACE_ADMISSION_METADATA));
+    verify(reasoner,never()).validateDocument(any(),any());
+  }
+
+  @Test void uncertifiedSavedNamespaceNeedsNormalValidationWithoutUpgradingItsProof() {
+    publish();var key=ResourcesService.NAMESPACE_ADMISSION_METADATA;
+    var admission=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(namespace.getMetadata().get(key).toString(),ModelValidationGate.NamespaceAdmission.class);
+    var response=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(admission.response(),SemanticValidationResponse.class);
+    response.setSemanticWitness(null);
+    var bytes=org.integratedmodelling.klab.utilities.Utils.Json.asString(new ModelValidationGate.NamespaceAdmission(admission.reasonerId(),
+        org.integratedmodelling.klab.utilities.Utils.Json.asString(response),admission.modelHashes(),admission.semanticFingerprint()));
+    namespace.getMetadata().put(key,bytes);
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(2)).validateDocument(any(),any());assertEquals(bytes,namespace.getMetadata().get(key));
+  }
+
+  @Test void declarationLowerBoundUsesConceptMeaningAndNeverLocalAlias() {
+    ((ObservableImpl)model.getObservables().getFirst()).setStatedName("alias_one");
+    var first=ModelValidationGate.declaredSemanticObligations(ModelValidationGate.snapshot(model));
+    ((ObservableImpl)model.getObservables().getFirst()).setStatedName("alias_two");
+    assertEquals(List.of("test:Quality"),first);
+    assertEquals(first,ModelValidationGate.declaredSemanticObligations(ModelValidationGate.snapshot(model)));
+  }
+
   private void installedInspection(RuntimeService runtime,String port) {
     doAnswer(invocation->new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection(true,
         runtime.supportsMemberQualityInput(invocation.getArgument(0),port,scope)?Set.of(port):Set.of()))
@@ -63,7 +138,7 @@ class ModelAdmissionReceiptTest {
     namespace.getMetadata().put(ResourcesService.NAMESPACE_ADMISSION_METADATA,
         org.integratedmodelling.klab.utilities.Utils.Json.asString(new ModelValidationGate.NamespaceAdmission(
             "reasoner",org.integratedmodelling.klab.utilities.Utils.Json.asString(response),
-            Map.of(model.getUrn(),ModelValidationGate.executableHash(model)))));
+            Map.of(model.getUrn(),ModelValidationGate.executableHash(model)),response.getSemanticContentFingerprint())));
     clearInvocations(reasoner,resources);
   }
 
@@ -116,7 +191,7 @@ class ModelAdmissionReceiptTest {
     namespace.getMetadata().put(ResourcesService.NAMESPACE_ADMISSION_METADATA,
         org.integratedmodelling.klab.utilities.Utils.Json.asString(new ModelValidationGate.NamespaceAdmission(
             "reasoner",org.integratedmodelling.klab.utilities.Utils.Json.asString(response),
-            Map.of(model.getUrn(),ModelValidationGate.executableHash(model)))));
+            Map.of(model.getUrn(),ModelValidationGate.executableHash(model)),response.getSemanticContentFingerprint())));
     clearInvocations(reasoner);
     assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
     verify(reasoner,times(1)).validateDocument(argThat(request -> request.isExecutableModels()),eq(scope));
@@ -125,10 +200,38 @@ class ModelAdmissionReceiptTest {
         "A publication with pending context cannot authorize catalog admission by its model-name entry alone");
   }
 
-  @Test void changedSemanticGenerationDoesNotReusePublicationAdmission() {
+  @Test void unchangedContentRestartMayReusePublicationWithDifferentNumericGeneration() {
     publish();when(cap.getKnowledgeRevision()).thenReturn(4L);
+    var receipt=ModelValidationGate.validatedPreparableAdmission(model,scope,null);
+    assertNotNull(receipt);assertEquals(4,receipt.knowledgeRevision());
+    assertEquals(CONTENT,receipt.semanticFingerprint());
+    verify(reasoner,never()).validateDocument(any(),eq(scope));
+  }
+
+  @Test void repeatedGenerationChangedContentRequiresRealRevalidation() {
+    publish();when(cap.getSemanticContentFingerprint()).thenReturn("semantic-content-v2:"+"b".repeat(64));
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(2)).validateDocument(any(),eq(scope));
+  }
+
+  @Test void legacyPublicationIsNotStampedAndMustActuallyRevalidate() {
+    publish();
+    var key=ResourcesService.NAMESPACE_ADMISSION_METADATA;
+    var old=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(namespace.getMetadata().get(key).toString(),ModelValidationGate.NamespaceAdmission.class);
+    var legacy=org.integratedmodelling.klab.utilities.Utils.Json.asString(new ModelValidationGate.NamespaceAdmission(old.reasonerId(),old.response(),old.modelHashes()));
+    namespace.getMetadata().put(key,legacy);
+    assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+    verify(reasoner,times(2)).validateDocument(any(),eq(scope));
+    assertEquals(legacy,namespace.getMetadata().get(key));
+  }
+
+  @Test void sameCounterWrongLeaseResponseCannotPassFreshValidation() {
+    when(reasoner.validateDocument(any(),eq(scope))).thenAnswer(call->{
+      var response=SemanticValidationResponse.forRequest(call.getArgument(0));
+      response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(3);
+      response.setSemanticContentFingerprint("semantic-content-v2:"+"b".repeat(64));return response;
+    });
     assertNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
-    verify(reasoner,times(1)).validateDocument(any(),eq(scope));
   }
 
   @Test void inactiveOrDeferredNamespaceIsNotAnAdmittedSubmission() {
@@ -146,7 +249,7 @@ class ModelAdmissionReceiptTest {
       for (int i=0;i<10;i++)
         assertEquals(admitted,ModelValidationGate.validatedPreparableAdmission(model,scope,null));
       verify(reasoner,times(2)).validateDocument(any(),eq(scope));
-      verify(reasoner,times(1)).capabilities(scope);
+      verify(reasoner,atLeastOnce()).capabilities(scope);
       verify(resources,times(1)).retrieve("test",KimNamespace.class,scope);
     }
     assertNotNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
@@ -249,7 +352,7 @@ class ModelAdmissionReceiptTest {
         model.getUrn(),0,"authored:Quality of authored:Member","nativeInput","authored:Member",dependency.getUrn());
     when(reasoner.validateDocument(any(),eq(scope))).thenAnswer(call->{
       var request=call.getArgument(0,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.class);
-      var response=SemanticValidationResponse.forRequest(request);response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(3);
+      var response=SemanticValidationResponse.forRequest(request);response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(3);response.setSemanticContentFingerprint(CONTENT);stamp(response);
       response.getPendingMemberQualityDependencies().add(pending);
       return response;
     });
@@ -264,7 +367,7 @@ class ModelAdmissionReceiptTest {
     // A reconstructed normalized expression cannot fabricate explicit source evidence.
     when(reasoner.validateDocument(any(),eq(scope))).thenAnswer(call->{
       var request=call.getArgument(0,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.class);
-      var response=SemanticValidationResponse.forRequest(request);response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(3);
+      var response=SemanticValidationResponse.forRequest(request);response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(3);response.setSemanticContentFingerprint(CONTENT);stamp(response);
       if(request.isExecutableModels())response.getPendingMemberQualityDependencies().add(pending);return response;
     });
     assertNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));

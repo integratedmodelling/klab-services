@@ -84,6 +84,11 @@ public class DataflowCompiler {
     ret.setCoverage(coverage == null ? null : Geometry.forTransport(coverage));
     ret.setResolvedCoverage(resolutionGraph.getResolvedCoverage());
     ret.setRequirements(resolutionGraph.getDependencies());
+    if (resolutionGraph.collectiveSelection != null) {
+      compileCollectiveSelection(ret, observation.getGeometry());
+      ret.getNotifications().addAll(resolutionGraph.getNotifications());
+      return ret;
+    }
     for (var node : resolutionGraph.rootNodes()) {
       /*
       These MUST be observations. We check for now but it shouldn't happen.
@@ -112,6 +117,47 @@ public class DataflowCompiler {
     return ret;
   }
 
+  /** Native producer roots precede operation roots. Operations only read the completed native
+   * cohort: they never own another copy of discovery, including when its support was partial. */
+  private void compileCollectiveSelection(DataflowImpl flow, Geometry support) {
+    var binding = resolutionGraph.collectiveSelection;
+    var nativePlan = resolutionGraph.selectionNative;
+    var reasoner = scope.getService(Reasoner.class);
+    var nativeMembers = reasoner.resolveObservable(binding.nativeMembers());
+    if (nativePlan.getResolved() != null) {
+      flow.getComputation().add(compileReference(nativePlan.getResolved(), support, "native", null));
+    } else if (nativePlan.target() instanceof Observation nativeObservation) {
+      flow.getComputation().addAll(compileObservation(nativeObservation,
+          GeometryRepository.INSTANCE.scale(nativeObservation.getGeometry()), null, "native"));
+    } else throw new KlabIllegalStateException("Selection has no native observation or completed reference");
+    var names = new ArrayList<String>();
+    int index = 0;
+    for (var target : resolutionGraph.selectionOperations) {
+      var operations = compileOperation(target, support, "selection_family_" + index++);
+      if (operations.size() != 1) throw new KlabIllegalStateException("Selection requires one complete family operation");
+      var operation = operations.getFirst();
+      // Preserve classifier model dependencies, but replace its shared member discovery subtree
+      // with an execution-time completed-cohort reference across the entire requested support.
+      var sourceNames = operation.getTargetBindings().getFirst().getSources();
+      operation.getChildren().removeIf(child -> sourceNames.contains(child.getName()));
+      sourceNames.clear(); sourceNames.add("members_0");
+      var query = new Observation.NaiveBuilder(nativeMembers, scope).geometry(support).query()
+          .metadata(Actuator.COMPLETE_COHORT_REFERENCE, true)
+          .metadata(Actuator.COMPLETE_COHORT_OPERATION, target.observable().getUrn()).build();
+      operation.getChildren().add(compileReference(query, support, "members_0", null));
+      names.add(operation.getName()); flow.getComputation().add(operation);
+    }
+    flow.setCollectiveSelection(new Dataflow.CollectiveSelection(observation.getObservable(), nativeMembers,
+        binding.predicates().stream().map(reasoner::resolveConcept).toList(),
+        binding.families().stream().map(reasoner::resolveConcept).toList(), names));
+    flow.getMetadata().put(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding.DATA_KEY,
+        org.integratedmodelling.klab.utilities.Utils.Json.asString(binding));
+    flow.setResolutionOutcome(flow.getComputation().stream().anyMatch(this::hasClassifierDependencies)
+        ? Dataflow.ResolutionOutcome.DEFERRED : Dataflow.ResolutionOutcome.RESOLVED);
+    flow.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_RESOLUTION_GRAPH,
+        new ResolutionFlowChartAdapter().adapt(resolutionGraph));
+  }
+
   /**
    * The entry point is calling this with a null strategy for all root observation nodes. Otherwise
    * locate and contextualize the entry point and call one of the others on the correspondent
@@ -123,6 +169,21 @@ public class DataflowCompiler {
    */
   List<Actuator> compileObservation(
       Observation observation, Geometry coverage, ObservationStrategy strategy, String localName) {
+
+    var selection = resolutionGraph.selectionDependencies.get(observation);
+    if (selection != null) {
+      var input = new ActuatorImpl();
+      input.setActuatorType(Actuator.Type.REFERENCE);
+      input.setObservation(Observation.forTransport(observation));
+      ((ObservationImpl) input.getObservation()).setId(Observation.QUERY_ID);
+      input.setId(Observation.QUERY_ID);
+      input.setName(localName == null ? observation.getObservable().getName() : localName);
+      input.setCoverage(Geometry.forTransport(coverage));
+      input.setRequestedSupport(Geometry.forTransport(observation.getGeometry()));
+      input.setResolvedGeometry(Geometry.forTransport(observation.getGeometry()));
+      input.setCollectiveSelectionDependency(new DataflowCompiler(observation, selection, scope).compile());
+      return List.of(input);
+    }
 
     // compile references for any obs with ID > 0 (coming from the remote KG) or already compiled
     if (observation.getId() > 0 || catalog.contains(observation.getId())) {
@@ -426,11 +487,11 @@ public class DataflowCompiler {
         if(lowered.size()!=1)throw new KlabValidationException("Exactly one classifier strategy is required per occurrence");
         occurrences.add(new org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan.Occurrence(entry.getKey(),lowered.getFirst()));
       }
-      var context=scope.getContextObservation();
+      var context=deferred.context();
       observationActuator.getClassifierDependencies().add(new org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan(
           model.getUrn(),deferred.namespace(),deferred.sourceVersion(),deferred.sourceFingerprint(),deferred.index(),deferred.name(),deferred.source(),
-          context.getId(),context.getObservable().getUrn(),org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(observationActuator.getCoverage()).encode(),
-          deferred.reasonerId(),deferred.semanticRevision(),occurrences));
+          context.id(),context.semantics(),org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(observationActuator.getCoverage()).encode(),
+          deferred.reasonerId(),deferred.semanticRevision(),occurrences,context));
     }
     for (var contextualizer : model.getComputation()) {
 
@@ -549,7 +610,8 @@ public class DataflowCompiler {
   }
 
   private boolean hasClassifierDependencies(Actuator actuator) {
-    return !actuator.getClassifierDependencies().isEmpty() || actuator.getChildren().stream().anyMatch(this::hasClassifierDependencies);
+    return actuator.getCollectiveSelectionDependency() != null || !actuator.getClassifierDependencies().isEmpty()
+        || actuator.getChildren().stream().anyMatch(this::hasClassifierDependencies);
   }
 
   private List<Actuator> compileOperation(

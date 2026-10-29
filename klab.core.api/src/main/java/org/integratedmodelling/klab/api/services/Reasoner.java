@@ -89,6 +89,14 @@ public interface Reasoner extends KlabService {
 
     default org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return null; }
 
+    /** Versioned accepted static recipe, independent of process-local generation. A v2 recipe
+     * must be composed with an exact scoped semantic-dependency witness; it cannot certify
+     * unseen mutable authority answers or replace access, source and freshness checks. Null
+     * means no accepted recipe is available. Legacy v1 is not a scoped certificate. */
+    default String getSemanticContentFingerprint() { return null; }
+    /** Ephemeral owner incarnation for caches/active plans only; never durable semantic evidence. */
+    default String getSemanticSessionId() { return null; }
+
     /** Monotonically increasing revision of the loaded semantic knowledge. */
     default long getKnowledgeRevision() {
       return 0L;
@@ -267,10 +275,11 @@ public interface Reasoner extends KlabService {
   /**
    * The base substantial type is the core concrete observable type for an enumerable substantial
    * (subject, event, agent, or relationship) that identifies its cohort category. Normally this is
-   * simply the observable (e.g. a Terrestrial Region becomes a Region). If the original type has an
-   * individual identity (whose adoption makes the subject a concrete individual), the lexical root
-   * of the identity is added to the result (France Region becomes Country Region). Any
-   * non-identifying attributes or roles are removed.
+   * simply the observable (e.g. a Terrestrial Region becomes a Region). All predicates, including
+   * identities, roles and their lexical roots, are removed, together with semantic modifiers.
+   * Ontology authors can define a substantial subclass when a different cohort category is needed.
+   * This category alone does not establish discovery completion or observation compatibility:
+   * requests retain their native clauses, scope, geometry, observer and generation guards.
    *
    * @param concept
    * @return
@@ -882,6 +891,13 @@ public interface Reasoner extends KlabService {
     var ret = SemanticValidationResponse.forRequest(request);
     ret.setReason("This reasoner does not support document semantic validation");
     return ret;
+  }
+
+  /** Certify only the exact semantic obligation closure, never the completeness of a caller plan. */
+  default org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request, Scope scope) {
+    return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(request,
+        "This reasoner cannot certify semantic dependency closures");
   }
 
   /**

@@ -72,6 +72,7 @@ class CoreAliasDocumentationTest {
     var service=mock(ReasonerService.class,invocation->{
       if(invocation.getMethod().getName().equals("getUrl"))return java.net.URI.create("http://127.0.0.1").toURL();
       if(invocation.getMethod().getName().equals("setOperational"))return null;
+      if(invocation.getMethod().getName().equals("serviceId"))return "deployed-test-reasoner";
       return invocation.callRealMethod();
     });service.enableCandidatePublication(factory);return service;
   }
@@ -194,6 +195,13 @@ class CoreAliasDocumentationTest {
     when(user.getService(ResourcesService.class)).thenReturn(resources);var manager=mock(ScopeManager.class);
     when(manager.collectMessagePayload(eq(user),eq(Notification.class),any())).thenReturn(user);doReturn(manager).when(service).getScopeManager();
     var capabilities=mock(ResourcesService.Capabilities.class);when(capabilities.getServiceId()).thenReturn("resources");when(resources.capabilities(user)).thenReturn(capabilities);
+    var serviceScope=mock(org.integratedmodelling.klab.api.scope.ServiceScope.class);
+    var status=mock(org.integratedmodelling.klab.api.services.KlabService.ServiceStatus.class);
+    when(status.isAvailable()).thenReturn(true);when(resources.status()).thenReturn(status);
+    when(resources.getUrl()).thenReturn(java.net.URI.create("http://127.0.0.1:8092").toURL());
+    when(capabilities.isWorldviewProvider()).thenReturn(true);when(resources.capabilities(serviceScope)).thenReturn(capabilities);
+    when(serviceScope.getServices(ResourcesService.class)).thenReturn(List.of(resources));
+    doReturn(serviceScope).when(service).serviceScope();
     var scope=new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("scope","A",false,false,false)).service());
     try(var runtime=service.candidateRuntime()) {
       service.loadKnowledge(world("A","A meaning",false,false,false),scope);assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
@@ -202,8 +210,11 @@ class CoreAliasDocumentationTest {
         String text=phase==0?"B meaning":null;
         var next=world("updated "+phase,text,false,false,phase==2);
         when(resources.retrieve("w",KimOntology.class,user)).thenReturn(next.getOntologies().getFirst());when(resources.retrieve("w",Worldview.class,user)).thenReturn(next);
+        when(resources.list(Worldview.class,null)).thenReturn(List.of(next));
         var changes=new ResourceSet();changes.getOntologies().add(new ResourceSet.Resource("resources","w","fixture",null,KlabAsset.KnowledgeClass.ONTOLOGY,0,false));
-        service.updateKnowledge(changes,user);assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
+        var result=service.updateKnowledge(changes,user);
+        assertFalse(org.integratedmodelling.klab.api.utils.Utils.Resources.hasErrors(result),result.getNotifications().toString());
+        assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
         assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID,runtime.status().logicalStatus(),runtime.status().diagnostics().toString());
         if(phase==2) assertTrue(service.resolveConcept("w:Agent").is(SemanticType.NOTHING));
         else description(service.resolveConcept("w:Agent"),text==null?BACKGROUND:text);

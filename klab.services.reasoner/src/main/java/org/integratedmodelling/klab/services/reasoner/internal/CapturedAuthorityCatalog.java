@@ -61,6 +61,72 @@ public final class CapturedAuthorityCatalog {
     return Collections.unmodifiableMap(owned);
   }
   public String revision() { return revision; }
+  /** Only deterministic restored providers certify unseen answers across process restarts.
+   * Legacy interactive providers remain enabled, but cannot issue a durable content certificate. */
+  boolean certifiesDurableContent(Worldview worldview) {
+    return worldview.getAuthorityBindings().stream().allMatch(binding -> {
+      var provider = providers.get(binding.provider().urn());
+      return supports(binding) && provider.snapshotCapable()
+          && configuredSnapshots.containsKey(binding.localId());
+    });
+  }
+
+  /** Typed semantic projection. Admission rights, TTLs and installation bookkeeping stay
+   * independently enforced, but do not redefine unchanged semantic content. */
+  Object semanticContent(Worldview worldview) {
+    var result = new TreeMap<String,Object>();
+    for (var binding : worldview.getAuthorityBindings().stream()
+        .sorted(Comparator.comparing(Worldview.AuthorityBinding::localId)).toList()) {
+      var p = providers.get(binding.provider().urn());
+      if (!supports(binding)) throw unresolved("unproved fingerprint provider " + binding.localId());
+      try {
+        var request = JSON.readValue(validatedRequests.get(binding.localId()), Authority.ConfigurationRequest.class);
+        var snapshot = configuredSnapshots.get(binding.localId());
+        Object frozen = snapshot == null ? null : Arrays.asList(snapshot.snapshot().format(),
+            snapshot.snapshot().providerUrn(), snapshot.snapshot().request(), digest(snapshot.snapshot().state()));
+        var responses = new TreeMap<String,Object>();
+        String fingerprint = digest(bytes(List.of("authority-cache-v2", request.worldview(), request.name(),
+            request.rootIdentity(), request.parameters(), binding.provider().urn(), p.implementation(), p.policy())));
+        String prefix = segment("wv", request.worldview()) + "/" + segment("configuration", request.name()) + "/" + fingerprint + "/";
+        for (var response : records.entrySet()) if (response.getKey().startsWith(prefix)) {
+          String leaf = response.getKey().substring(prefix.length());
+          if (!leaf.matches("[a-f0-9]{64}\\.json")) throw unresolved("invalid fingerprint response leaf");
+          responses.put(leaf, JSON.convertValue(JSON.readTree(response.getValue()).get("value"), Object.class));
+        }
+        result.put(binding.localId(), Arrays.asList(p.providerUrn(), p.className(), p.implementation(),
+            digest(p.archive()), p.boundaries().stream().sorted().toList(),
+            JSON.readValue(p.capabilities(), Object.class), JSON.readValue(p.seeds(), Object.class),
+            p.policy().revision(), request, frozen, responses));
+      } catch (IOException error) { throw new IllegalArgumentException("Invalid captured semantic authority content", error); }
+    }
+    return result;
+  }
+  /** Static accepted recipe. Mutable answer corpora are scoped dependencies, not global identity. */
+  Object semanticRecipe(Worldview worldview) {
+    @SuppressWarnings("unchecked") var full=(Map<String,Object>)semanticContent(worldview);
+    var result=new TreeMap<String,Object>();
+    full.forEach((name,value)-> {
+      var fields=new ArrayList<>((List<?>)value);
+      fields.remove(fields.size()-1); // typed captured response corpus, retained separately below
+      result.put(name,fields);
+    });
+    return result;
+  }
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.AuthorityUse
+      dependencyProof(Worldview.AuthorityBinding binding) {
+    var snapshot=configuredSnapshots.get(binding.localId());
+    if(supports(binding) && snapshot!=null && providers.get(binding.provider().urn()).snapshotCapable()) {
+      var p=providers.get(binding.provider().urn());
+      String proof=digest(SemanticContentFingerprint.canonical(Arrays.asList(p.implementation(),p.policy().revision(),
+          JSON.convertValue(snapshot.snapshot().request(),Object.class),snapshot.snapshot().format(),
+          snapshot.snapshot().providerUrn(),digest(snapshot.snapshot().state()))));
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.AuthorityUse(
+          binding.localId(),org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.SNAPSHOT,
+          proof,Long.MAX_VALUE);
+    }
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.AuthorityUse(
+        binding.localId(),org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.UNVERSIONED,null,0);
+  }
   /** Expired provider responses need a fresh capture before compiling another candidate. */
   public boolean hasExpiredResponses() {
     for (var response : records.values()) {

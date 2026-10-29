@@ -36,7 +36,7 @@ public class OntologyProjectValidationTest {
       when(runtime.status()).thenReturn(status);when(runtime.submittedSources()).thenReturn(Map.of("ONTOLOGY:base","accepted"));
       when(scope.getService(ResourcesService.class)).thenReturn(resources);when(project.getUrn()).thenReturn("demo");when(project.getManifest()).thenReturn(manifest);when(manifest.getDefinedWorldview()).thenReturn(defined);
       when(resources.retrieve("demo",Project.class,scope)).thenReturn(project);
-      when(runtime.validate(any(),any())).thenAnswer(i->{var r=(SemanticValidationResponse)i.getArgument(1);r.setStatus(SemanticValidationResponse.Status.COMPLETE);return r;});
+      when(runtime.validate(any(),any(),any())).thenAnswer(i->{var r=(SemanticValidationResponse)i.getArgument(1);r.setStatus(SemanticValidationResponse.Status.COMPLETE);return r;});
     }
   }
   @Test void authoritativeOrdinaryProjectReturnsSourceBoundErrorsWithoutRepairOrAcceptedMutation() throws Exception {

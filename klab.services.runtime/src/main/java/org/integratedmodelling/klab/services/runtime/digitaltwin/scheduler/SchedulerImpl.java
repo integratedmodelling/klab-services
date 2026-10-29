@@ -473,6 +473,25 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         || contextualize(observation, geometry, (ServiceContextScope) scope, event);
   }
 
+  /**
+   * Execute one verified native discovery fragment. Observation-wide INIT timestamps cannot
+   * certify a different spatial fragment of that same producer. Ordinary dependencies retain
+   * their existing once-per-observation guard; this entry point is only used after the Runtime
+   * has checked the fragment against the selected request and its completion evidence.
+   */
+  public boolean executeCollectiveContribution(
+      Observation observation, Geometry support, ServiceContextScope scope) {
+    if (observation == null || !observation.getObservable().getSemantics().isCollective()
+        || !(observation.getObservable().is(SemanticType.SUBJECT)
+            || observation.getObservable().is(SemanticType.AGENT))
+        || support == null || support.isUniversal() || scope.getCurrentTransaction() == null)
+      throw new IllegalArgumentException("A bounded collective contribution requires a transaction");
+    if (scope.isInterrupted() || Thread.currentThread().isInterrupted()) return false;
+    return initializationRuns.executeContribution(scope.getCurrentTransaction(), observation.getId(),
+        Geometry.forTransport(support).encode(),
+        () -> contextualizeOnce(observation, support, scope, Event.initialization()));
+  }
+
   private boolean initialize(Observation observation, ServiceContextScope scope) {
     var scale = GeometryRepository.INSTANCE.scale(observation.getGeometry());
     try {

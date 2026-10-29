@@ -61,6 +61,15 @@ import org.jgrapht.graph.DefaultEdge;
  */
 public class ClientKnowledgeGraph implements KnowledgeGraph {
 
+  private final java.util.concurrent.atomic.AtomicLong semanticCacheRevision =
+      new java.util.concurrent.atomic.AtomicLong();
+
+  /** Local invalidation generation, never a persisted revision or semantic-content identity. */
+  @Override
+  public long getSemanticRevision() {
+    return semanticCacheRevision.get();
+  }
+
   private static final int DEFAULT_QUERY_DEPTH = 2;
 
   private final ContextScope scope;
@@ -268,6 +277,11 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         focusIds.add(link.getSecond());
       }
     }
+    // ServiceContextScope has a second observation cache. Publish the generation only after
+    // this committed update has invalidated our own entries, so the next scoped request
+    // cannot retain pre-classification meanings for the same stable observation IDs.
+    if (!commit.getModifiedAssets().isEmpty() || !commit.getDeletedAssets().isEmpty())
+      semanticCacheRevision.incrementAndGet();
   }
 
   private boolean addRelationship(
@@ -586,6 +600,17 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   @Override
   public void clear() {}
 
+  /** Authoritative focus at an authenticated HTTP request boundary, independent of event delivery.
+   * No graph monitor is held across the Runtime callback and no cached planning object is mutated. */
+  public Observation getObservationForAdmission(long id, ContextScope requestScope) {
+    if (id <= 0) return null;
+    var asset = runtimeClient.getAsset(id, RuntimeAsset.class, requestScope);
+    if (asset == null) return null;
+    if (!(asset instanceof Observation observation) || observation.getId() != id)
+      throw new IllegalStateException("Runtime returned a different scope observation");
+    return org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation)
+        ? null : observation;
+  }
   private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {
     if (!isAddressableAssetId(id)) {
       return null;

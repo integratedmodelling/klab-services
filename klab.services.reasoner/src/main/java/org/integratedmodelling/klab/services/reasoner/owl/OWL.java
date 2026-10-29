@@ -2247,7 +2247,11 @@ public class OWL {
      * make a ConceptCount if not there, and ensure it's a continuously quantifiable
      * quality. Must be in same ontology as the original concept.
      */
-    String definition = UnarySemanticOperator.COUNT.declaration[0] + " " + concept.getUrn();
+    // A collective operand must remain a single expression when this generated identity is
+    // reparsed (e.g. by the inherent projection before the caller installs its final source URN).
+    // Bare "count of each ..." is not a concept expression in the observable grammar.
+    String operandDefinition = concept.isCollective() ? "(" + concept.getUrn() + ")" : concept.getUrn();
+    String definition = UnarySemanticOperator.COUNT.declaration[0] + " " + operandDefinition;
     String reference =
         UnarySemanticOperator.COUNT.getReferenceName(concept.getReferenceName(), null);
     Ontology ontology = getOntology(concept.getNamespace());

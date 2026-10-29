@@ -49,7 +49,7 @@ public final class MemberQualityPlan {
     var context=scope.getContextObservation();
     return new MemberQualityRequest(new SingularContextBinding(context.getId(),context.getUrn(),
         context.getObservable().getUrn(),Geometry.forTransport(context.getGeometry()).encode(),quality.getUrn(),
-        semantic.getServiceId(),semantic.getKnowledgeRevision()),collective.getUrn(),quality.getUrn());
+        semantic.getServiceId(),semantic.getKnowledgeRevision(),semantic.getSemanticContentFingerprint(),semantic.getSemanticSessionId()),collective.getUrn(),quality.getUrn());
   }
   private static Observable closed(StrategyTarget target,Reasoner reasoner) {
     KimObservable source=target==null?null:target.getObservable();

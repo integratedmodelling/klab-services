@@ -1,0 +1,37 @@
+// Fixed classification outcomes; execution still requires an actual native testcase permit.
+private namespace staging.vxii.test.selection_deterministic
+    version 1.0;
+
+// Canonical single-stage selection: discover bare Regions, classify the same members,
+// then return a source-backed predicate-filtered view. No qualified instantiator is supplied.
+private model klab:random:objects:points {fraction: 1, xdivs: 1, ydivs: 1}
+    as each earth:Region;
+
+// Seed the bare producer as a dependency: an independent substantial root intentionally
+// resets its focus, whereas this dependent quality retains the requested Region context.
+private model count of (each earth:Region)
+    observing each earth:Region named native_members
+    set to [native_members.childrenCount];
+
+private model earth:PhysicalEnvironment of each earth:Region
+    using klab.tests.fixtures.classify(result=earth:Terrestrial);
+
+private model agency:Appropriateness of each earth:Region
+    using klab.tests.fixtures.classify(result=agency:Appropriate);
+
+private model geography:Continental of each earth:Region
+    using klab.tests.fixtures.classify(result=geography:African);
+
+private model agency:Participant of each earth:Region
+    using klab.tests.fixtures.classify(result=agency:Patient);
+
+// A concrete role root is its own lexical family. It must coexist with Participant.
+// The provider is bound; the selection operation supplies `any Reference` to include this root itself.
+private model imod:Reference of each earth:Region
+    using klab.generators.random.categories();
+
+// Ordinary consumer: its input is the actual selected collection bound to this local alias.
+// The canonical case recovers that captured input and checks the computed count independently.
+private model count of (each earth:Terrestrial earth:Region)
+    observing each earth:Terrestrial earth:Region named selected
+    set to [selected.childrenCount];

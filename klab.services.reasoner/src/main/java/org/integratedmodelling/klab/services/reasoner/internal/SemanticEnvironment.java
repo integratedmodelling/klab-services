@@ -31,6 +31,7 @@ public final class SemanticEnvironment implements AutoCloseable {
     if (closed.get()) throw new IllegalStateException("Semantic environment is closed");
     return actor;
   }
+  public String semanticContentFingerprint() { return actor().semanticContentFingerprint(); }
   @Override public void close() throws Exception {
     if (!closed.compareAndSet(false, true)) return;
     try (var phase = CandidateTrace.phaseAt(CandidateTrace.Phase.PRIVATE_DISPOSE,traceKey,traceGeneration)) {

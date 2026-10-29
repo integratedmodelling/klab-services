@@ -246,6 +246,15 @@ persistence contract is in [Digital twins](DIGITALTWINS.md#the-corecontext-kacto
 | `submit(arguments...)` | Instance supplier → Observation | Build and submit an observation in this twin, with calling-agent provenance. Accepts observable/concept semantics, identity URN, geometry, definition map, focus metadata, and `:namespace`/`:project` resolution constraints. Scope options are validated and applied before semantic lookup. `!observer` suppresses automatic default-observer creation; it preserves an already selected observer. |
 | `close()` | Instance function, no result | Close the underlying context according to its persistence policy; affects all proxies. |
 
+Ordinary independent Subject/Agent submissions retain the existing ambient-focus reset. The
+bounded concrete-predicate collective selection route instead keeps its explicit `:within` focus
+and support in the returned virtual view. Invalid focus or unavailable support is rejected before
+discovery, rather than retried as an unrestricted root request. Support may be explicit or inherited
+from a valid focus or selected observer. Nested submissions retain parent ownership; an exact
+Tier-0 full-observable producer still takes precedence and returns a committed producer. This
+exception covers the supported positive, finite Subject/Agent selection contract, not arbitrary
+substantials or compound/negative selectors.
+
 ```kactors
 ctx <- context.new("Email demo context")
 result <- ctx.submit({{geography:Elevation in m}})
@@ -388,6 +397,7 @@ assertion by themselves; use `assert inspector.<check>(...)` in a testcase. See
 | `viable(assets... metadata)` | Boolean. Check all supported assets; print joined failure reasons through `core.console`. |
 | `problems(assets... metadata)` | List of failure-reason strings using the same viability policy, without printing or recording assertions. |
 | `present(asset)` | Boolean. True for any non-null captured value; does not assess viability. Argument is optional. |
+| `failed(observation)` | Boolean. Require an explicit empty, unassigned submission response with finite zero coverage and an error notification. Null captures, unexplained empty objects and successful zero-member selections fail. This checks the response protocol; assert `nativeunchanged` and fixture execution counters separately to prove rollback. |
 | `resolved(observation, minimum)` | Boolean. Nonempty observation with finite positive coverage, at most 1 and at least minimum. Optional minimum defaults to 0 and must be in 0..1. |
 | `hasdata(asset)` | Boolean. At least one valid value in scalar data or captured histograms. |
 | `nodata(asset)` | Boolean. Nonempty evidence consisting entirely of no-data. |
@@ -406,13 +416,51 @@ assertion by themselves; use `assert inspector.<check>(...)` in a testcase. See
 | `schedulecheck(context, process, step, unit, start, end, count)` | Boolean. Require one model schedule, registered PROCESS role, exact ISO-8601 bounds and exactly `count` successful, unique durable temporal commits following the calendar cadence. |
 | `relativecheck(context, process, quality, count, delta, tolerance)` | Boolean. Compare every covered cell at transition n with its own INIT value plus n × delta; require unchanged coverage and missingness, at least one finite value, and the exact transition count. Absolute tolerance has a floor of four double ULPs. |
 | `processprovenance(context, process)` | Boolean. Require one existence-only INITIALIZATION activity and the same recorded actual observer as the root, including HAS_OBSERVER links. Reject computational INIT evidence and committed INIT shards for process-created qualities. Does not trace executor dispatch. |
-| `apply(context, directive, support, options...)` | Native testcase-only CLASSIFICATION supplier → OperationReceipt. Requires an actual TestCaseScope before semantic lookup; derives validated focus/namespace/project/observer options and invokes RuntimeService.Testing with calling-agent provenance. Returns a committed receipt, never an observation. No HTTP/client operation endpoint. |
+| `apply(context, directive, support, options...)` | Native testcase-only CLASSIFICATION supplier → OperationReceipt. Requires an actual TestCaseScope before semantic lookup; derives validated focus/namespace/project/observer options and invokes RuntimeService.Testing with calling-agent provenance. Requires bounded explicit geometry; without singular focus it requires an explicitly selected persisted Agent. Returns a committed receipt, never an observation. No HTTP/client operation endpoint. |
 | `membersnapshot(context, producer)` | Immutable snapshot. Capture native cohort and member IDs, meanings, geometries, attribution links and existing classification activity IDs. Requires nonempty committed members. |
+| `nativesnapshot(context)` | Immutable snapshot of committed native observations, cohorts and contextualization provenance. Empty contexts and empty cohorts are retained as evidence. |
+| `nativeunchanged(context, before)` | Boolean. Require identical committed native identities, meanings, geometries, cohort members/contributors and contextualization provenance in the same context. Distinct from a successful classification no-op audit. |
+| `selectioncheck(context, view, expected)` | Boolean. Verify a successful virtual collective selection against the expected collective semantic literal, current native cohort/source completion and observer proof. Require a version-3 receipt, matching `semantic-content-v2` static-content identity and freshly revalidated scoped `semantic-dependency-v1` witnesses for actual execution and native provenance; missing or opaque footprints and affected unversioned authorities cannot certify completeness. Independently filter committed native members by every requested predicate, then compare exact stable member IDs, meanings, geometry, receipt membership, returned count and Runtime enumeration. A proven empty selection succeeds; missing discovery or family knowledge does not. Reject a persisted predicate-qualified producer. |
+| `selectioninput(context, consumer, alias)` | Recover the actual collective selection receipt captured for this model-local input alias on the canonical committed consumer. Reconstruct the virtual view and validate current Runtime member enumeration before returning it. Use `selectioncheck` with the expected semantic literal to assert its semantic and graph contract. The alias is a String because it names a model-local binding. |
+| `selectionreplay(context, view)` | Round-trip `Observation.forTransport(view)` through JSON and submit the decoded QUERY_ID observation through normal Runtime validation. Require the same durable receipt, native sources, selected IDs, geometry, checked member enumeration and count, with no native work or mutation. Scope, Reasoner service identity, certified semantic content and actual observer must still match. Historical numeric generations may differ across unchanged-content restarts. Legacy or uncertified receipts return false without being stamped; normal revalidation is required. Rejected queries return false; malformed receipts, explicit Runtime validation and infrastructure exceptions propagate. |
+| `cellcheck(context, observation, curve, offset, expected, tolerance)` | Boolean. Compare one numeric cell read through the existing export-view traversal in double precision. Expectation and absolute tolerance must be finite, tolerance must be nonnegative, and missing/nonfinite values fail. Use `celltext` for exact long values outside double's integral precision. This checks one cell, not an entire grid. |
+| `fixtures(context)` | Native testcase only. Grant a private nonserializable permit to a live context registered to that actual testcase and native RuntimeService.Testing instance. Metadata flags, scope IDs alone and remote clients cannot grant it. |
+| `fixturecount(context, name)` | Native testcase only. Read in-memory invocation evidence for `empty`, `classifier`, `prior`, `consumer`, `consumerMembers`, `classification`, `ordered` or `discovery`. The last three count the deterministic classifier invocation and guarded discovery functions: ordered discovery checks earlier invocation identities/ordinals and actual staged predicates through a normal Runtime native query before `Data.Builder.object`. Evidence survives deliberate transaction rollback and is not persisted provenance. |
+| `preparecatalog(context, semantics)` | Native testcase setup only, under an existing private fixture permit and outside an observation transaction. Prepare an absent or already empty durable native Subject/Agent catalog through the existing public native Runtime routine. Verify no observation, contextualization, member or completion is created, and no unrelated catalog changes. |
+| `clearfixtures(context)` | Native testcase only. Revoke the testcase's permit. Scope closure and testcase disposal also revoke it. |
 | `classificationcheck(context, before, family)` | Boolean. Require a non-vacuous classification of existing member IDs, unchanged geometry, concrete family predicates and matching committed attribution from one fresh successful audit activity. |
+| `classificationcheckfor(context, before, requested, family)` | Boolean. Apply the same mutation, identity, geometry and committed-attribution checks for an explicit requested predicate, independently from its lexical family. Require `lexicalRoot(requested) == family` and an exact audit request match; a sibling request cannot certify this operation. |
+| `classificationnoopfor(context, before, requested, family)` | Boolean. Require unchanged member state and attribution plus exactly one fresh successful EXISTING-only audit for the explicit requested predicate. Its lexical root must equal the stated family. A known different family value remains valid and unchanged. |
 | `classificationnoop(context, before, family)` | Boolean. Require unchanged captured state and attribution plus one fresh successful classification audit whose complete member results have origin EXISTING. |
 | `relationshipscheck(context, producer, relationship)` | Boolean. Verify native relationship members, semantic endpoint roles, typed directed/bond participant links and exact point-connecting line support in either geometric order. Shape serialization may reverse a line; graph links carry direction. Reject duplicate ordered pairs and self-links. |
 | `gridcheck(context, observation, expectedGeometry)` | Boolean. Check a bounded rectangular grid against independent native cell/value and physical-coordinate oracles. |
 | `observercheck(context, observation, observer)` | Boolean. Verify canonical committed identity, the actual observer selection and successful creation provenance. The observer must be a concrete singular Agent with successful submission and resolution evidence. This does not assert computational initialization or an INSTANTIATION activity. |
+
+`family` in `classificationcheck`/`classificationnoop` and `relationship` in
+`relationshipscheck` should be semantic literals, for example
+`inspector.classificationcheck(ctx, before, {{earth:PhysicalEnvironment}})` or
+`inspector.relationshipscheck(ctx, producer, {{earth:StreamConnection}})`. These assertions
+use the literal's Concept semantics: units, optional/any production requirements and
+model-local `named` bindings do not participate. Runtime `Concept`/`Observable` values and
+parsed `KimConcept`/`KimObservable` values are accepted; legacy concept-definition strings
+remain supported. A concrete classification family remains valid for the concrete `any`
+self case. Empty, unresolved or unsupported semantic arguments fail rather than using an
+arbitrary object's `toString()` value. Unit strings, time bounds and geometry strings in
+other inspector verbs keep their existing contracts.
+
+Concept assertion verbs use one `Object` parameter per semantic argument to preserve typed
+literals in both compiled and reflective calls. `classificationcheckfor` and
+`classificationnoopfor` take separate requested-predicate and family semantic literals, for example
+`inspector.classificationcheckfor(ctx, before, {{agency:Appropriate}}, {{agency:Appropriateness}})`.
+The legacy `classificationcheck` expects the operation itself to request the supplied family root;
+it does not silently substitute the concrete predicate for that request.
+Audit rows and attribution edges must agree on both the request and the member's concrete
+result; duplicate audit results are rejected. Fresh CLASSIFIER results must satisfy the
+requested predicate. Existing different family values retain the no-op contract.
+Recompile cached generated actor classes
+against the current library after upgrading; older compiled static calls to the former
+`String` method signatures are not binary compatible. No ambiguous String/Object overload
+is exposed. Source scripts using legacy strings remain compatible.
 
 `context` in membership, relationship, and storage verbs is a context actor or `ContextScope`.
 Viability accepts observations, activities, dataflows, actuators, contexts/twins/knowledge graphs,

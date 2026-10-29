@@ -104,4 +104,53 @@ class SingularContextPlanTest {
     when(service.capabilities(scope)).thenReturn(null);assertTrue(matches().isEmpty());
   }
 
+  @Test void acceptedBoundaryKeepsPrivateProofFenceAndPublishesPublicGeneration() throws Exception {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var configuration=new org.integratedmodelling.klab.services.configuration.ReasonerConfiguration();
+    configuration.setServiceId("private-compiler");
+    var validation=new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
+    validation.settle(3,true);
+    var values=new LinkedHashMap<String,Object>();
+    values.put("semanticOnly",true);values.put("configuration",configuration);
+    values.put("knowledgeRevision",new java.util.concurrent.atomic.AtomicLong(3));
+    values.put("semanticValidationState",validation);
+    values.put("publishedSemanticCapabilities",org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot.capture(
+        0,"w","w",true,List.of(),null));
+    for(var entry:values.entrySet()) {
+      var field=ReasonerService.class.getDeclaredField(entry.getKey());field.setAccessible(true);field.set(service,entry.getValue());
+    }
+    doCallRealMethod().when(service).portableCapabilities(anyString(),anyLong());
+    doCallRealMethod().when(service).portableCapabilities(anyString(),anyLong(),anyString());
+    doCallRealMethod().when(service).capabilities(any());
+    when(service.resolveConcept(anyString())).thenAnswer(i->ontology.getConcept(i.getArgument(0,String.class).substring(5)));
+    when(service.computeObservationStrategies(any(),any())).thenAnswer(i->lowerer.computeMatchingStrategies(i.getArgument(0),i.getArgument(1),true));
+    var state=mock(org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironment.class);
+    when(state.actor()).thenReturn(service);
+    var factory=mock(org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.class);
+    when(factory.dependencyRevision()).thenReturn("test");
+    when(factory.capture(any(Worldview.class))).thenAnswer(i->{Worldview world=i.getArgument(0);return new org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.Input<>(
+        org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.sources(world),
+        org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.sourceOrder(world),"test",
+        org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.CONFIGURATION_REVISION,
+        world,org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.BeanStatus.VALID,List.of());});
+    when(factory.build(any(),any())).thenReturn(new org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.Result<>(
+        state,org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator.LogicalStatus.VALID,true,List.of()));
+    var world=new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();world.setUrn("w");world.setWorldviewId("w");world.setEmpty(false);
+    var source=new KimOntologyImpl();source.setUrn("w");source.setProjectName("test");source.setSourceCode("ontology w in domain root;");
+    world.getOntologies().add(source);
+    try(var runtime=new org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime(factory,"deployed-reasoner")) {
+      runtime.submit(world);assertTrue(runtime.awaitIdle(java.time.Duration.ofSeconds(5)));
+      List<ObservationStrategy> result=runtime.invoke("computeObservationStrategies",new Class<?>[]{Observation.class,ContextScope.class},new Object[]{request,scope});
+      assertEquals(1,result.size());var binding=result.getFirst().getContextBinding();assertNotNull(binding);
+      assertEquals("deployed-reasoner",binding.reasonerId());
+      assertEquals(runtime.status().acceptedGeneration(),binding.knowledgeRevision());
+      assertEquals(3,service.knowledgeRevision(),"The proof's private mutation counter is unchanged");
+      assertEquals("private-compiler",service.capabilities(scope).getServiceId());
+    }
+  }
+
+  @Test void localProofMutationIsRejectedEvenWhenPortableGenerationIsUnchanged() {
+    when(service.knowledgeRevision()).thenReturn(3L,4L);assertTrue(matches().isEmpty());
+  }
+
 }

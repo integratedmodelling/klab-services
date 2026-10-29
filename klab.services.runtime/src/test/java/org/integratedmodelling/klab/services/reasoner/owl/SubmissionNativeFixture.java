@@ -112,6 +112,7 @@ public class SubmissionNativeFixture extends SubmissionOntologyFixture {
       when(resources.declareConcept(anyString())).thenAnswer(i->{var c=syntax.get(i.getArgument(0));return c==null?null:(KimConcept)KimConceptImpl.copyValue(c);});
       for(var name:List.of("Region","Other","Input","Result","Category","Concrete"))register(leaf(name));
     }
+    public void otherIsRegionSubtype() { sub("Other", "Region"); }
     public KimConceptImpl register(KimConceptImpl c){c.setNamespace("audit");c.finalizeDefinition();syntax.put(c.getUrn(),c);return c;}
     public KimConceptImpl bearer(String predicate){var c=leaf("Region");c.getTraits().add(leaf(predicate));return register(c);}
     public KimObservableImpl request(String head,KimConcept bearer){var c=leaf(head);c.setInherent(bearer);register(c);var o=new KimObservableImpl();o.setNamespace("audit");o.setSemantics(c);var bare=new KimConceptImpl();bare.setName("audit:"+head);bare.setType(c.getType());bare.setInherent(leaf("Region"));register(bare);return o;}

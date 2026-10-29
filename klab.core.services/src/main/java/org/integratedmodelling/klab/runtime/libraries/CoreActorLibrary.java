@@ -11,12 +11,14 @@ import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Constant;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -2754,6 +2756,18 @@ public class CoreActorLibrary {
           observation, contextScope(context), null, curve, offset);
     }
 
+    @Verb(name = "cellcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Compare one finite numeric export-view cell in double precision with an explicit absolute tolerance; missing values fail.")
+    public static boolean cellcheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "observation", description = "Committed numeric quality or detached quality query") Observation observation,
+        @Verb.Argument(name = "curve", description = "Consumer fill curve") Data.FillCurve curve,
+        @Verb.Argument(name = "offset", description = "Zero-based consumer traversal offset") long offset,
+        @Verb.Argument(name = "expected", description = "Finite expected numeric value") double expected,
+        @Verb.Argument(name = "tolerance", description = "Finite nonnegative absolute tolerance") double tolerance) {
+      return ObservationInspector.numericCell(celltext(scope, context, observation, curve, offset), expected, tolerance);
+    }
+
     @Verb(name = "schedulecheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
         description = "Check one model cadence, exact UTC bounds and durable temporal commit count.")
     public static boolean schedulecheck(RuntimeAgent.Scope scope,
@@ -2845,14 +2859,113 @@ public class CoreActorLibrary {
       return ObservationInspector.snapshot(contextScope(context), producer);
     }
 
+    @Verb(name = "nativesnapshot", executionType = Verb.Type.FUNCTION,
+        returns = ObservationInspector.NativeSnapshot.class,
+        description = "Capture committed native observations, cohorts and contextualization provenance, including an empty context.")
+    public static ObservationInspector.NativeSnapshot nativesnapshot(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context) {
+      return ObservationInspector.nativeSnapshot(contextScope(context));
+    }
+
+    @Verb(name = "nativeunchanged", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Require unchanged committed native identity, semantics, geometry, cohort membership and contextualization provenance.")
+    public static boolean nativeunchanged(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "before", description = "Native snapshot from the same context")
+            ObservationInspector.NativeSnapshot before) {
+      return ObservationInspector.nativeUnchanged(contextScope(context), before);
+    }
+
+    @Verb(name = "fixtures", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Grant a private local fixture permit to an actual testcase-owned native context; never available through flags or remote clients.")
+    public static boolean fixtures(RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Registered testcase-owned context") Object context) {
+      if (!(caller instanceof TestCaseBase.TestCaseScope))
+        throw new IllegalArgumentException("Native fixtures require an actual testcase scope");
+      return NativeTestFixtures.grant(caller, contextScope(context));
+    }
+
+    @Verb(name = "clearfixtures", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Revoke this testcase's private native fixture permit.")
+    public static boolean clearfixtures(RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Registered testcase-owned context") Object context) {
+      if (!(caller instanceof TestCaseBase.TestCaseScope))
+        throw new IllegalArgumentException("Native fixtures require an actual testcase scope");
+      return NativeTestFixtures.clear(caller, contextScope(context));
+    }
+
+    @Verb(name = "fixturecount", executionType = Verb.Type.FUNCTION, returns = Long.class,
+        description = "Read this testcase's in-memory fixture invocation evidence; evidence survives a deliberate transaction rollback.")
+    public static long fixturecount(RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Registered testcase-owned context") Object context,
+        @Verb.Argument(name = "name", description = "Counter: empty, classifier, prior, consumer, consumerMembers, classification, ordered or discovery") String name) {
+      if (!(caller instanceof TestCaseBase.TestCaseScope))
+        throw new IllegalArgumentException("Native fixtures require an actual testcase scope");
+      return NativeTestFixtures.count(caller, contextScope(context), name);
+    }
+
+    @Verb(name = "preparecatalog", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Native testcase SETUP only: prepare one empty durable native Subject or Agent catalog through the existing public native Runtime routine; create no observation or completion.")
+    public static boolean preparecatalog(RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Active testcase-owned context with an existing private fixture permit and no current transaction") Object context,
+        @Verb.Argument(name = "semantics", description = "Concrete singular native Subject or Agent semantic literal, Concept or legacy definition") Object semantics) {
+      if (!(caller instanceof TestCaseBase.TestCaseScope))
+        throw new IllegalArgumentException("Native catalog setup requires an actual testcase scope");
+      return NativeTestFixtures.prepareCatalog(caller, contextScope(context), semanticConceptDefinition(semantics));
+    }
+
+    @Verb(name = "selectioncheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Check a virtual collective selection against current native source completion, predicates, member identities, observer and enumeration.")
+    public static boolean selectioncheck(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "view", description = "Successful virtual collective selection, including zero members") Observation view,
+        @Verb.Argument(name = "expected", description = "Expected complete collective semantic literal, Concept or legacy definition") Object expected) {
+      return ObservationInspector.selectionCheck(contextScope(context), view, semanticConceptDefinition(expected));
+    }
+
+    @Verb(name = "selectionreplay", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Round-trip a selection as JSON and validate it through the normal read-only Runtime query path, preserving sources, selected identities and native state.")
+    public static boolean selectionreplay(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope owning the selection") Object context,
+        @Verb.Argument(name = "view", description = "Virtual selection to transport and replay") Observation view) {
+      return ObservationInspector.selectionReplay(contextScope(context), view);
+    }
+
+    @Verb(name = "selectioninput", executionType = Verb.Type.FUNCTION, returns = Observation.class,
+        description = "Recover and validate the actual predicate-filtered collective bound to a committed model consumer's local alias.")
+    public static Observation selectioninput(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "consumer", description = "Committed observation produced by the consuming model") Observation consumer,
+        @Verb.Argument(name = "alias", description = "Model-local input binding name") String alias) {
+      return ObservationInspector.selectionInput(contextScope(context), consumer, alias);
+    }
+
     @Verb(name = "classificationcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
         description = "Verify in-place concrete classification, unchanged member identity/geometry and committed attribution.")
     public static boolean classificationcheck(RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
         @Verb.Argument(name = "before", description = "Member snapshot captured before classification")
             ObservationInspector.MemberSnapshot before,
-        @Verb.Argument(name = "family", description = "Expected predicate family definition") String family) {
-      return ObservationInspector.classificationCheck(contextScope(context), before, family);
+        @Verb.Argument(name = "family", description = "Expected predicate family semantic literal, Concept or legacy definition") Object family) {
+      return ObservationInspector.classificationCheck(contextScope(context), before, semanticConceptDefinition(family));
+    }
+
+    @Verb(name = "classificationcheckfor", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Verify committed in-place classification for an explicit requested predicate and its lexical family, preserving member identity, geometry and attribution evidence.")
+    public static boolean classificationcheckfor(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "before", description = "Member snapshot captured before classification") ObservationInspector.MemberSnapshot before,
+        @Verb.Argument(name = "requested", description = "Predicate requested by the operation") Object requested,
+        @Verb.Argument(name = "family", description = "Explicit lexical family of the request") Object family) {
+      return ObservationInspector.classificationCheckFor(contextScope(context), before,
+          semanticConceptDefinition(requested), semanticConceptDefinition(family));
+    }
+
+    @Verb(name = "failed", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Require an explicit empty, unassigned, zero-coverage submission response carrying an error notification. Null captures and successful empty selections do not pass; assert nativeunchanged separately for rollback.")
+    public static boolean failed(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "observation", description = "Submission response", optional = true) Observation observation) {
+      return ObservationInspector.submissionFailed(observation);
     }
 
     @Verb(name = "classificationnoop", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
@@ -2861,8 +2974,19 @@ public class CoreActorLibrary {
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
         @Verb.Argument(name = "before", description = "Snapshot of already classified members")
             ObservationInspector.MemberSnapshot before,
-        @Verb.Argument(name = "family", description = "Expected predicate family definition") String family) {
-      return ObservationInspector.classificationNoop(contextScope(context), before, family);
+        @Verb.Argument(name = "family", description = "Expected predicate family semantic literal, Concept or legacy definition") Object family) {
+      return ObservationInspector.classificationNoop(contextScope(context), before, semanticConceptDefinition(family));
+    }
+
+    @Verb(name = "classificationnoopfor", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Check one successful EXISTING-only classification audit for an explicit requested predicate and lexical family, with unchanged native members and attribution.")
+    public static boolean classificationnoopfor(RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "before", description = "Snapshot of already classified members") ObservationInspector.MemberSnapshot before,
+        @Verb.Argument(name = "requested", description = "Predicate requested by the operation") Object requested,
+        @Verb.Argument(name = "family", description = "Explicit lexical family of the request") Object family) {
+      return ObservationInspector.classificationNoopFor(contextScope(context), before,
+          semanticConceptDefinition(requested), semanticConceptDefinition(family));
     }
 
     @Verb(name = "relationshipscheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
@@ -2870,8 +2994,28 @@ public class CoreActorLibrary {
     public static boolean relationshipscheck(RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
         @Verb.Argument(name = "producer", description = "Relationship collection producer") Observation producer,
-        @Verb.Argument(name = "relationship", description = "Expected relationship definition") String relationship) {
-      return ObservationInspector.relationshipsCheck(contextScope(context), producer, relationship);
+        @Verb.Argument(name = "relationship", description = "Expected relationship semantic literal, Concept or legacy definition") Object relationship) {
+      return ObservationInspector.relationshipsCheck(contextScope(context), producer, semanticConceptDefinition(relationship));
+    }
+
+    /**
+     * Concept-assertion boundary only: the inspector resolves this definition to a canonical
+     * Concept. Observable production requirements and model-local names are not semantic input.
+     * Keep this separate from apply(), whose complete observable is an execution directive.
+     */
+    static String semanticConceptDefinition(Object value) {
+      String definition;
+      if (value instanceof Concept concept) definition = concept.getUrn();
+      else if (value instanceof Observable observable)
+        return semanticConceptDefinition(observable.getSemantics());
+      else if (value instanceof KimObservable observable)
+        return semanticConceptDefinition(observable.getSemantics());
+      else if (value instanceof KimConcept concept) definition = concept.getUrn();
+      else if (value instanceof String legacy) definition = legacy;
+      else throw new IllegalArgumentException("Expected an inspector semantic literal, Concept or legacy concept definition");
+      if (definition == null || definition.isBlank())
+        throw new IllegalArgumentException("Inspector concept semantics must have a nonblank definition");
+      return definition;
     }
 
     @Verb(name = "gridcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,

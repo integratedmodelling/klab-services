@@ -48,11 +48,14 @@ class CanonicalActorsSuiteLanguageTest {
         case "Erosion" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.PROCESS;
         case "StreamConnection" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.RELATIONSHIP;
         case "HumanIndividual" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.AGENT;
-        case "Terrestrial", "PhysicalEnvironment" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.REALM;
-        case "Volitional" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.ATTRIBUTE;
+        case "Terrestrial", "Aquatic", "Estuarine", "PhysicalEnvironment" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.REALM;
+        case "Appropriate", "Appropriateness" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.ATTRIBUTE;
+        case "African", "Continental" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.IDENTITY;
+        case "Volitional", "Patient", "Participant", "Reference" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.ROLE;
         default -> org.integratedmodelling.languages.api.SemanticSyntax.Type.SUBJECT;
       };
-      return new LanguageValidationScope.ConceptDescriptor(parts[0], parts[1], type, urn, "fixture", false, false);
+      return new LanguageValidationScope.ConceptDescriptor(parts[0], parts[1], type, urn, "fixture",
+          Set.of("PhysicalEnvironment", "Appropriateness", "Continental", "Participant").contains(parts[1]), false);
     });
     var syntax = new BehaviorSyntaxImpl(root, validation) {
       @Override protected void logWarning(org.integratedmodelling.languages.api.ParsedObject target,
@@ -69,6 +72,117 @@ class CanonicalActorsSuiteLanguageTest {
     var analyzer = new BehaviorAnalyzer(behavior, new KActorsVisitor.LenientValidator());
     assertTrue(analyzer.analyze(), analyzer.getNotifications().toString());
     assertTrue(analyzer.getFields().stream().anyMatch(field -> field.name().equals("observer_definition")));
-    assertEquals(10, behavior.getStatements().size()); // init and nine canonical cases
+    assertEquals(29, behavior.getStatements().size()); // init, nine existing and nineteen selection cases
+    assertTrue(behavior.getStatements().stream().anyMatch(action -> action.getUrn().equals("select_two_role_families")));
+  }
+
+  @Test void canonicalSelectionModelsParseIncludingTypedFailureParameter() throws Exception {
+    var parser = new org.integratedmodelling.languages.KimStandaloneSetup()
+        .createInjectorAndDoEMFRegistration().getInstance(IParser.class);
+    for (String name : List.of("selection", "selection_empty", "selection_missing",
+        "selection_rollback", "selection_consumer_failure", "selection_native_dependency", "selection_deterministic")) {
+      String source;
+      try (var input = getClass().getResourceAsStream("/kim/selection/" + name + ".kim")) {
+        assertNotNull(input, name); source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+      }
+      var parsed = parser.parse(new StringReader(source));
+      var errors = new ArrayList<String>();
+      for (var node : parsed.getSyntaxErrors())
+        errors.add("line " + node.getStartLine() + ": " + node.getSyntaxErrorMessage().getMessage());
+      assertFalse(parsed.hasSyntaxErrors(), name + ": " + errors);
+      assertNotNull(parsed.getRootASTElement(), name);
+    }
+  }
+
+  @Test void canonicalModelObservableUrnsRoundTripIncludingCollectiveCountOperands() throws Exception {
+    ServiceConfiguration.injectInstantiators();
+    var kimParser = new org.integratedmodelling.languages.KimStandaloneSetup()
+        .createInjectorAndDoEMFRegistration().getInstance(IParser.class);
+    var observableInjector = new org.integratedmodelling.languages.ObservableStandaloneSetup()
+        .createInjectorAndDoEMFRegistration();
+    var parser = observableInjector.getInstance(IParser.class);
+    var grammar = observableInjector.getInstance(org.integratedmodelling.languages.services.ObservableGrammarAccess.class);
+    var scope = new org.integratedmodelling.klab.runtime.language.WorldviewValidationScope() {
+      @Override public ConceptDescriptor getConceptDescriptor(String name) {
+        var parts = name.split(":", 2);
+        var type = switch (parts[1]) {
+          case "PhysicalEnvironment", "Terrestrial", "Aquatic" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.REALM;
+          case "Appropriateness", "Appropriate" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.ATTRIBUTE;
+          case "Continental", "African" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.IDENTITY;
+          case "Participant", "Patient", "Reference" -> org.integratedmodelling.languages.api.SemanticSyntax.Type.ROLE;
+          default -> org.integratedmodelling.languages.api.SemanticSyntax.Type.SUBJECT;
+        };
+        return new ConceptDescriptor(parts[0], parts[1], type, name, "fixture",
+            Set.of("PhysicalEnvironment", "Appropriateness", "Continental", "Participant").contains(parts[1]), false);
+      }
+    };
+    var expressions = new ArrayList<String>();
+    for (var name : List.of("selection", "selection_empty", "selection_missing",
+        "selection_rollback", "selection_consumer_failure", "selection_native_dependency", "selection_deterministic")) {
+      String source;
+      try (var input = getClass().getResourceAsStream("/kim/selection/" + name + ".kim")) {
+        assertNotNull(input);source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+      }
+      var parsed = kimParser.parse(new StringReader(source));assertFalse(parsed.hasSyntaxErrors());
+      var root = (org.integratedmodelling.languages.kim.Model) parsed.getRootASTElement();
+      new ResourceImpl(URI.createURI("memory:/" + name + ".kim")).getContents().add(root);
+      var syntax = new org.integratedmodelling.languages.NamespaceSyntaxImpl(root, scope) {
+        @Override protected void logWarning(org.integratedmodelling.languages.api.ParsedObject t,
+            org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String m) {}
+        @Override protected void logError(org.integratedmodelling.languages.api.ParsedObject t,
+            org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String m) { fail(m); }
+      };
+      var namespace = LanguageAdapter.INSTANCE.adaptNamespace(syntax, "klab.staging.vxii", List.of(), 1L);
+      for (var statement : namespace.getStatements()) if (statement instanceof org.integratedmodelling.klab.api.lang.kim.KimModel model) {
+        model.getObservables().forEach(observable -> expressions.add(observable.getUrn()));
+        model.getDependencies().forEach(observable -> expressions.add(observable.getUrn()));
+      }
+    }
+    expressions.addAll(List.of("earth:Region named selected optional", "count of earth:Region", "count of (each earth:Region)",
+        "count of (each earth:Terrestrial earth:Region)", "count of (each agency:Patient earth:Stream)",
+        "count of (each earth:Terrestrial earth:Region) named selected optional",
+        "count of (each earth:Region of earth:Region) named selected optional",
+        "count of (each earth:Region) > 0"));
+    for (var expression : expressions) {
+      String canonical = null;
+      boolean optional = expression.endsWith(" optional");
+      for (int pass = 0; pass < 4; pass++) {
+        var parsed = parser.parse(grammar.getObservableSemanticsRule(), new StringReader(expression));
+        var errors = new ArrayList<String>();for (var node : parsed.getSyntaxErrors()) errors.add(node.getSyntaxErrorMessage().getMessage());
+        assertFalse(parsed.hasSyntaxErrors(), expression + ": " + errors);
+        var syntax = new org.integratedmodelling.languages.ObservableSyntaxImpl(
+            (org.integratedmodelling.languages.observable.ObservableSemantics) parsed.getRootASTElement(), scope) {
+          @Override protected void logWarning(org.integratedmodelling.languages.api.ParsedObject t,
+              org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String m) {}
+          @Override protected void logError(org.integratedmodelling.languages.api.ParsedObject t,
+              org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String m) { fail(m); }
+        };
+        var observable = LanguageAdapter.INSTANCE.adaptObservable(syntax, null, null, null);
+        var encoded = observable.getUrn();
+        var semantics = observable.getSemantics();
+        if (expression.startsWith("count of")) {
+          assertFalse(semantics.isCollective(), "Counting a collection produces a singular quality: " + expression);
+          assertTrue(semantics.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NUMEROSITY));
+          assertTrue(semantics.is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY));
+          if (expression.contains("(each ")) assertTrue(semantics.getObservable().isCollective(), expression);
+          if (expression.contains("earth:Region of earth:Region"))
+            assertTrue(encoded.contains("earth:Region of earth:Region"), "Keep the operand's inherent qualifier");
+          if (expression.contains("agency:Patient")) assertTrue(encoded.contains("agency:Patient"), "Keep the role predicate");
+          if (expression.contains("> 0")) assertTrue(encoded.contains("> 0"), "Keep the value requirement");
+          semantics.getObservable().getUrn(); // exercise child-first vs root-first finalized reads
+          ((org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl) semantics).resetDefinition();
+          assertFalse(semantics.isCollective());
+          assertEquals(encoded.substring(0, encoded.contains(" named ") ? encoded.indexOf(" named ") : encoded.length()),
+              semantics.getUrn(), "Refreshing semantics must preserve the production suffix separately");
+        }
+        assertEquals(optional, observable.isOptional(), expression);
+        assertFalse(encoded.contains("each each"), encoded);
+        if (canonical != null) assertEquals(canonical, encoded, "Repeated adaptation must not add parentheses");
+        if (expression.contains("named selected")) {
+          assertEquals("selected", observable.getFormalName());
+        }
+        canonical = encoded;expression = encoded;
+      }
+    }
   }
 }

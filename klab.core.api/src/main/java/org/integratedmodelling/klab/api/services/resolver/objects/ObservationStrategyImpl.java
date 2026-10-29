@@ -12,6 +12,10 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 
 public class ObservationStrategyImpl implements ObservationStrategy {
 
+  private org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding collectiveSelection;
+  public org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding getCollectiveSelection() { return collectiveSelection; }
+  public void setCollectiveSelection(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding value) { collectiveSelection = value; }
+
   private org.integratedmodelling.klab.api.knowledge.SingularContextBinding contextBinding;
   public org.integratedmodelling.klab.api.knowledge.SingularContextBinding getContextBinding() { return contextBinding; }
   public void setContextBinding(org.integratedmodelling.klab.api.knowledge.SingularContextBinding value) { contextBinding = value; }

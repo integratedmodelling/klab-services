@@ -79,6 +79,21 @@ public final class AuthorityBindings {
     return Map.copyOf(result);
   }
 
+  /** Published semantic mappings only, excluding proposal/audit/revision bookkeeping. */
+  public synchronized Object semanticCodelists() {
+    var result = new java.util.TreeMap<String,Object>();
+    codelists.forEach((name, lists) -> {
+      var namespaces = new java.util.TreeMap<String,Object>();
+      lists.snapshot().codelists().forEach((namespace, list) -> {
+        var entries = new java.util.ArrayList<Object>();
+        for (var code : list.codes()) entries.add(java.util.Arrays.asList(code, list.value(code)));
+        namespaces.put(namespace, java.util.Arrays.asList(list.getAuthorityId(), list.getRootConceptId(), entries));
+      });
+      result.put(name, namespaces);
+    });
+    return result;
+  }
+
   /** Namespace bindings belong to the Reasoner, not to the provider's parameter schema. */
   public static Authority.ConfigurationRequest providerRequest(Authority.ConfigurationRequest request) {
     var parameters = new LinkedHashMap<>(request.parameters());

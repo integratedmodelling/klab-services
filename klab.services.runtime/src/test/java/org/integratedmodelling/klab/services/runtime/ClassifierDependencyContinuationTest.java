@@ -113,6 +113,12 @@ class ClassifierDependencyContinuationTest {
       when(scope.getService(Resolver.class)).thenReturn(resolver);when(scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class)).thenReturn(runtime);
       when(scope.getService(RuntimeService.class)).thenReturn(runtime);when(scope.within(any())).thenReturn(scope);when(scope.withResolutionConstraints(any(ResolutionConstraint[].class))).thenReturn(scope);
       when(reasoner.resolveConcept(anyString())).thenAnswer(i->concepts.get(i.getArgument(0)));
+      // Classification resolves knowledge at the declared lexical family boundary, including
+      // concrete A1/A2 and B1/B2 predicates. Unknown families must remain unavailable.
+      when(reasoner.lexicalRoot(any(Concept.class))).thenAnswer(i->{
+        Concept predicate=i.getArgument(0);
+        return predicate==null?null:concepts.get(predicate.getUrn().replaceFirst("[12]$",""));
+      });
       when(reasoner.baseSubstantialType(any(),any())).thenReturn(concepts.get("test:Region"));when(reasoner.inherent(any())).thenReturn(concepts.get("test:Region"));
       when(reasoner.satisfiable(any())).thenReturn(true);
       when(reasoner.is(any(),any())).thenAnswer(i->{var a=(Semantics)i.getArgument(0);var b=(Semantics)i.getArgument(1);return a!=null&&b!=null&&(a.getUrn().equals(b.getUrn())||a.getUrn().matches(java.util.regex.Pattern.quote(b.getUrn())+"[12]"));});

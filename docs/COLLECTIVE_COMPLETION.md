@@ -5,6 +5,15 @@ route. It repairs the collective catalog-query boundary using existing execution
 Activities and transaction state. Containment still legalizes a request independently
 of this query: Tier-0 precomputed fulfillment does not need member discovery.
 
+## Focus at the concrete-selection submission boundary
+
+The bounded positive concrete-predicate Subject/Agent selection route preserves an explicit native
+focus before planning, so its receipt and replay remain bound to that context. Missing support or
+invalid focus fails before effects; clearing the focus is not a fallback. Ordinary independent
+substantial reset and nested ownership rules remain in place. A successful full-observable Tier-0
+model retains priority and produces a committed observation, while the automatic selection result
+is a virtual view. See [the context submit contract](AGENTS_REFERENCE.md#corecontext).
+
 ## Evidence required by the collective query
 
 `CONTRIBUTED_TO` is recorded during registration/compilation. Its presence, a positive
@@ -50,6 +59,24 @@ it is not a fresh enumeration/count of members clipped to the query fragment.
 
 ## Verification and remaining work
 
+Canonical reuse fixtures must compare discovery and selection with identical context,
+observer and support constraints. An unqualified substantial submitted as an independent
+root retains the existing focus-reset contract; a qualified collective selection preserves
+its explicit focus. Their completion receipts are deliberately incompatible when those
+contexts differ. The canonical suite therefore tests bare-native reuse without focus and
+focused qualified discovery/reuse separately. Partial-support completion also checks that
+the original member IDs remain present in the expanded cohort.
+
+Inspector mutation checks distinguish the actual requested predicate from its lexical
+family through `classificationcheckfor(context, before, requested, family)`.
+Selection itself executes family-root directives, so its classification audits name those
+families; the final concrete selection filter is not the operation's audit request. Use
+the family-root `classificationcheck` for those audits and `classificationcheckfor` for
+a direct concrete classification operation.
+Failure cases use `failed(response)` rather than the non-null-only `present` check, followed by execution
+counters and `nativeunchanged`; an explicit failure response alone does not prove rollback.
+These fixture/oracle corrections require a fresh live run. Their presence is not live or restart acceptance evidence.
+
 `CollectiveCompletionQueryTest` exercises the production query and real transaction
 state/commit logic, with an atomic test persistence boundary and recovered JSON objects.
 It covers empty/nonempty success, pending/cancelled/wrong activity, later sibling failure,
@@ -65,3 +92,47 @@ a verified discovery binding or define snapshot identity across replay. Recursiv
 context/member execution, cycles/progress limits, native domains extending outside query
 support, sampling and typed composition remain future stages. No scientific gap/overlap,
 identity coalescing or directional/volume reducer policy is selected here.
+
+## Scoped semantic evidence
+
+Version-3 selection receipts compose the exact actual execution signature with a
+`semantic-dependency-v1` Reasoner witness under `semantic-content-v2`. Static identity covers
+accepted sources and semantic configuration; process-local generation and owner session remain
+active execution fences. Each authenticated remote request fetches the observations named in
+its scope token from the owning Runtime before capturing its focus; asynchronous commit delivery
+is not a freshness proof. This targeted fetch does not rewrite earlier planning snapshots or
+clear unrelated caches. Cold revalidation reconstructs canonical Concept expressions through
+the accepted compiler before checking their dependency closure. During reconstruction, authority
+access is restricted to captured responses or configured snapshots; a missing mutable answer
+cannot be fetched or treated as independence. Durable reuse recomputes the scoped proof and checks the existing
+source/member, observer, scope, geometry and support constraints. Equal numeric generations
+alone are never proof; unchanged semantic content and relevant authority proofs may survive a
+restart. The stable worldview namespace (root ontology URN) remains part of content identity;
+the generated Resources worldview instance ID does not. That instance ID still participates in
+its separate commitment/admission checks. Reconstructing an identical namespace and typed
+semantic inputs therefore preserves content identity, while a namespace, source, strategy,
+compiler, authority recipe or published codelist change requires revalidation. Receipts made by
+a different fingerprint calculation are not relabeled. Legacy receipts retain their observations
+but are not stamped or certified by inspection.
+
+An authority-independent complete signature can be certified despite unrelated mutable providers.
+A relevant deterministic configured snapshot contributes its immutable digest. Relevant legacy
+unversioned answers require revalidation and cannot certify an exhaustive selection; unknown
+execution footprints likewise cannot become successful empty results. The current protocol does
+not implement provider refresh/retraction or claim that cached ancestry is a fresh response.
+Opaque adapters/functions remain usable through their existing routes, but cannot provide a
+complete scoped selection certificate without an audited semantic input/output contract.
+
+Actual scalar computations are attested through their private compiled engine, processed closed
+arithmetic grammar, builder revision and original bound observation identities. Source text alone
+is insufficient. Transported query inputs re-enter the ordinary Runtime query and preserve all
+payload guards; only proof-equivalent historical audit counters may differ after revalidation.
+
+Classification captures its consumed input signature before applying attributions, then adds
+post-effect results and characterization evidence through the same private, generation-pinned
+collector. A successful already-known family still binds the completed native view before
+skipping execution. Read-only QUERY_ID submissions retain the caller's context. Native replay
+uses its declared support, preserving promoted temporal defaults without changing the original
+view; final payload/source/member/observer checks still reject changed support or results.
+Concept type-set order is normalized for transport comparisons; ordered arrays and all type
+contents remain guarded.

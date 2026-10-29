@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.services.resources.persistence.ModelCatalog;
 
 /** Independent model admission snapshots. Authoring ASTs and their parser diagnostics are untouched. */
 final class NamespaceModelIndex {
-  private record Fingerprint(long timestamp, String sourceHash, long knowledgeRevision) {}
+  private record Fingerprint(long timestamp, String sourceHash, long knowledgeRevision, String serviceId, String semanticFingerprint, String semanticSessionId) {}
   private record Attempt(Fingerprint fingerprint, boolean retryable, long attemptedAt,
       List<Notification> diagnostics, String admission) {}
   private final Map<String, Attempt> attempts = new java.util.concurrent.ConcurrentHashMap<>();
@@ -25,8 +25,10 @@ final class NamespaceModelIndex {
     var present = new HashSet<String>();
     for (var namespace : namespaces) {
       String urn = namespace.getUrn(); present.add(urn);
+      var currentSemantic = ModelValidationGate.currentSemanticSnapshot(scope);
       var fingerprint = new Fingerprint(namespace.getLastUpdateTimestamp(),
-          SemanticValidationRequest.sourceHash(namespace.getSourceCode()), knowledgeRevision);
+          SemanticValidationRequest.sourceHash(namespace.getSourceCode()), knowledgeRevision,
+          currentSemantic==null?null:currentSemantic.serviceId(), currentSemantic==null?null:currentSemantic.semanticFingerprint(), currentSemantic==null?null:currentSemantic.semanticSessionId());
       var previous = attempts.get(urn);
       if (previous != null && previous.fingerprint().equals(fingerprint)
           && (!previous.retryable() || now - previous.attemptedAt() < retryDelay)) continue;
@@ -48,7 +50,7 @@ final class NamespaceModelIndex {
         var latest=ModelValidationGate.currentSemanticSnapshot(scope);
         var admission=semantic!=null && semantic.revision()==knowledgeRevision && semantic.equals(latest)
             ? org.integratedmodelling.klab.utilities.Utils.Json.asString(new ModelValidationGate.NamespaceAdmission(
-                semantic.serviceId(),org.integratedmodelling.klab.utilities.Utils.Json.asString(response),hashes)) : null;
+                semantic.serviceId(),org.integratedmodelling.klab.utilities.Utils.Json.asString(response),hashes,response.getSemanticContentFingerprint())) : null;
         catalog.replaceNamespace(namespace, scope);
         attempts.put(urn, new Attempt(fingerprint, false, now, List.of(),admission));
       } catch (RuntimeException rejected) {

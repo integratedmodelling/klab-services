@@ -57,7 +57,7 @@ public record CollectiveReductionBinding(Mode mode, SingularContextBinding conte
         || observer.getObservable() == null || !observer.getObservable().is(SemanticType.AGENT))) return null;
     var binding = new CollectiveReductionBinding(mode, new SingularContextBinding(current.getId(),
         current.getUrn(), current.getObservable().getUrn(), Geometry.forTransport(current.getGeometry()).encode(),
-        target.getUrn(), semantic.getServiceId(), semantic.getKnowledgeRevision()), collective.getUrn(),
+        target.getUrn(), semantic.getServiceId(), semantic.getKnowledgeRevision(), semantic.getSemanticContentFingerprint(), semantic.getSemanticSessionId()), collective.getUrn(),
         wholeSupport(request.getGeometry()).encode(), observer == null ? null : observer.getId(),
         observer == null ? null : observer.getUrn(), observer == null ? null : observer.getObservable().getUrn());
     binding.require(scope, target, request.getGeometry());

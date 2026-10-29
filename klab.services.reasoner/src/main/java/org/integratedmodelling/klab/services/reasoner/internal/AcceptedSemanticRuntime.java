@@ -9,6 +9,9 @@ import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
@@ -21,6 +24,9 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   private volatile boolean closed;
   private void requireOpen() { if (closed) throw new IllegalStateException("Semantic runtime is closed"); }
   private final java.util.function.LongSupplier retryClock;
+  private final String deploymentServiceId;
+  private final String semanticSessionId=java.util.UUID.randomUUID().toString();
+  public String semanticSessionId() {return semanticSessionId;}
   private String rejectedKey;
   private String submittedKey;
   private long submittedRetryAfter;
@@ -48,13 +54,26 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           }).build();
 
   public AcceptedSemanticRuntime(SemanticEnvironmentFactory factory) {
-    this(factory, System::nanoTime);
+    this(factory, System::nanoTime, null);
+  }
+  public AcceptedSemanticRuntime(SemanticEnvironmentFactory factory, String deploymentServiceId) {
+    this(factory, System::nanoTime, Objects.requireNonNull(deploymentServiceId));
+    if (deploymentServiceId.isBlank()) throw new IllegalArgumentException("Missing deployed Reasoner identity");
   }
   AcceptedSemanticRuntime(SemanticEnvironmentFactory factory, java.util.function.LongSupplier clock) {
+    this(factory, clock, null);
+  }
+  private AcceptedSemanticRuntime(SemanticEnvironmentFactory factory, java.util.function.LongSupplier clock,
+      String deploymentServiceId) {
     this.factory = Objects.requireNonNull(factory);
     this.retryClock = Objects.requireNonNull(clock);
+    this.deploymentServiceId = deploymentServiceId;
     coordinator = new CandidatePublicationCoordinator<>(factory,
         input -> !factory.authorityBootstrapEnabled() || factory.publicationCurrent(input));
+  }
+
+  private ReasonerService.PortableCapabilityLease portableCapabilities(ReasonerService actor, long generation) {
+    return deploymentServiceId == null ? () -> {} : actor.portableCapabilities(deploymentServiceId, generation,semanticSessionId);
   }
 
   /** A failed poll is not a new authoritative revision. Recheck transient failures with capped backoff. */
@@ -182,11 +201,17 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   }
   public Map<String, String> submittedSources() { return submittedSources; }
   public record Metadata(long generation, SemanticCapabilitiesSnapshot publication,
-      List<org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor> components) {}
+      List<org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor> components,
+      String semanticContentFingerprint) {
+    public Metadata(long generation, SemanticCapabilitiesSnapshot publication,
+        List<org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor> components) {
+      this(generation, publication, components, null);
+    }
+  }
   public Metadata metadata() {
     try (var lease = lease()) { return new Metadata(lease.generation(), lease.state().actor().semanticCapabilitiesSnapshot(),
-        lease.state().actor().capturedAuthorityComponents()); }
-    catch (IllegalStateException unavailable) { return new Metadata(0, SemanticCapabilitiesSnapshot.initial(), List.of()); }
+        lease.state().actor().capturedAuthorityComponents(), lease.state().semanticContentFingerprint()); }
+    catch (IllegalStateException unavailable) { return new Metadata(0, SemanticCapabilitiesSnapshot.initial(), List.of(), null); }
   }
   public boolean authorityBootstrapEnabled() { return factory.authorityBootstrapEnabled(); }
   public void invalidate(CandidateTrace.Reason reason) {
@@ -223,7 +248,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     try (var lease = lease()) {
       if (lease.generation() != expectedKnowledgeRevision) return -50;
       synchronized (lease.state()) {
-        return lease.state().actor().semanticDistance(target, requested, context);
+        var actor = lease.state().actor();
+        try (var portable = portableCapabilities(actor, lease.generation())) {
+          return actor.semanticDistance(target, requested, context);
+        }
       }
     } catch (IllegalStateException unavailable) { return -50; }
   }
@@ -234,15 +262,25 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     try (var lease = lease()) {
       if (lease.generation() != expectedKnowledgeRevision) return -1;
       synchronized (lease.state()) {
-        return lease.state().actor().assertedDistance(from, to);
+        var actor = lease.state().actor();
+        try (var portable = portableCapabilities(actor, lease.generation())) {
+          return actor.assertedDistance(from, to);
+        }
       }
     } catch (IllegalStateException unavailable) { return -1; }
   }
   public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse validate(
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request,
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
+    return validate(request,response,null);
+  }
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse validate(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response,Scope requestingScope) {
     try (var lease = lease()) {
       response.setKnowledgeRevision(lease.generation());
+      response.setSemanticSessionId(semanticSessionId);
+      response.setSemanticContentFingerprint(lease.state().semanticContentFingerprint());
       if (request.getKnowledgeRevision() >= 0 && request.getKnowledgeRevision() != lease.generation()) {
         response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.STALE_KNOWLEDGE);
         response.setReason("The accepted semantic generation changed"); return response;
@@ -252,14 +290,30 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         return unavailableValidation(request, response);
       }
       synchronized (lease.state()) {
-        var validator=new DocumentSemanticValidator(lease.state().actor(),request.isExecutableModels(),request.isClassifierPreparableDependencies(), request.getExecutionContext(), request.getPreparableMemberQualityDependencies());
+        var actor = lease.state().actor();
+        try (var portable = portableCapabilities(actor, lease.generation())) {
+        var validator=new DocumentSemanticValidator(actor,request.isExecutableModels(),request.isClassifierPreparableDependencies(), request.getExecutionContext(), request.getPreparableMemberQualityDependencies());
         response.getNotifications().addAll(validator.validate(request.document()));
         response.getPendingClassifierDependencies().addAll(validator.getPendingClassifierDependencies());
         response.getConditionalModelContexts().addAll(validator.getConditionalModelContexts());
         response.getPendingModelContexts().addAll(validator.getPendingModelContexts());
         response.getPendingMemberQualityDependencies().addAll(validator.getPendingMemberQualityDependencies());
+        response.setSemanticObligations(validator.getSemanticObligations());
+        response.setSemanticObligationsComplete(validator.isSemanticObligationsComplete());
+        var dependencyRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+            deploymentServiceId,lease.generation(),lease.state().semanticContentFingerprint(),validator.getSemanticObligations());
+        try {
+          response.setSemanticWitness(validator.isSemanticObligationsComplete()
+              ?actor.semanticDependencies(dependencyRequest,requestingScope)
+              :org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(dependencyRequest,
+                  "Source contains unaccounted or invalid semantic expressions"));
+        } catch(SecurityException unauthorized) {
+          response.setSemanticWitness(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(
+              dependencyRequest,"Authority dependency access is not authorized for this validation scope"));
+        }
         response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
         return response;
+        }
       }
     } catch (IllegalStateException unavailable) {
       if (DocumentValidationTrace.enabled())
@@ -303,6 +357,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
     var status = coordinator.status();
     response.setKnowledgeRevision(status.acceptedGeneration());
+    response.setSemanticContentFingerprint(null);
+    response.setSemanticSessionId(null);
     response.setStatus(validationBlocked(status)
         ? org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.FAILED
         : org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.UNAVAILABLE);
@@ -317,14 +373,26 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
 
   public <T> T invoke(String name, Class<?>[] signature, Object[] supplied) {
     try (var lease = lease()) {
+      // Retain the generation, but not its monitor, while Runtime materialization calls back.
+      var prepared = Arrays.stream(supplied).map(AcceptedSemanticRuntime::prepareScopes).toArray();
+      requireOpen();
+      if (coordinator.status().acceptedGeneration() != lease.generation())
+        throw new IllegalStateException("Accepted semantic generation changed during observer preparation; replan the request");
       var environment = lease.state();
       synchronized (environment) {
+        requireOpen();
+        if (coordinator.status().acceptedGeneration() != lease.generation())
+          throw new IllegalStateException("Accepted semantic generation changed before evaluation; replan the request");
         var actor = environment.actor();
+        try (var portable = portableCapabilities(actor, lease.generation())) {
         if (factory.authorityBootstrapEnabled()) actor.enableInteractiveAuthorities();
         var arguments = new Object[supplied.length];
-        for (int i = 0; i < arguments.length; i++) arguments[i] = bind(supplied[i], actor);
+        for (int i = 0; i < arguments.length; i++) arguments[i] = bind(prepared[i], actor);
         var method = ReasonerService.class.getMethod(name, signature);
         var result = method.invoke(actor, arguments);
+        requireOpen();
+        if (coordinator.status().acceptedGeneration() != lease.generation())
+          throw new IllegalStateException("Accepted semantic generation changed during evaluation; replan the request");
         // Only match exposes an output binding map; other maps remain caller-owned inputs.
         for (int i = 0; i < arguments.length; i++)
           if (name.equals("match") && supplied[i] instanceof Map original && arguments[i] instanceof Map mapped
@@ -332,6 +400,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             original.clear(); original.putAll((Map)copy(mapped));
           }
         return (T)copy(result);
+        }
       }
     } catch (InvocationTargetException failure) {
       if (failure.getCause() instanceof RuntimeException runtime) throw runtime;
@@ -356,21 +425,32 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     var persistent = existing == null ? lease() : existing.lease();
     boolean retained = existing != null;
     try (var operation = persistent.retain()) {
+      var preparedScope = existing == null ? (Scope) prepareScopes(originalScope) : null;
+      if (closed) return closedSearch(request);
+      if (existing == null && coordinator.status().acceptedGeneration() != operation.generation())
+        throw new IllegalStateException("Accepted semantic generation changed during observer preparation; restart the search");
       synchronized (operation.state()) {
+        if (closed) return closedSearch(request);
+        if (existing == null && coordinator.status().acceptedGeneration() != operation.generation())
+          throw new IllegalStateException("Accepted semantic generation changed before search evaluation; restart the search");
         var actor = operation.state().actor();
+        try (var portable = portableCapabilities(actor, operation.generation())) {
         if (factory.authorityBootstrapEnabled()) actor.enableInteractiveAuthorities();
-        var scoped = existing == null ? scope(originalScope, actor) : existing.scope();
+        var scoped = existing == null ? scope(preparedScope, actor) : existing.scope();
         var ownedRequest = JacksonConfiguration.newObjectMapper().convertValue(request,
             org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest.class);
         ownedRequest.setSearchId(existing == null ? 0 : existing.actorId());
         var response = (org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse)
             copy(actor.semanticSearch(ownedRequest, scoped));
+        if (closed) return closedSearch(request);
+        if (existing == null && coordinator.status().acceptedGeneration() != operation.generation())
+          throw new IllegalStateException("Accepted semantic generation changed during search evaluation; restart the search");
         if (request.isCancelSearch() || response.getSearchId() == 0) {
           if (existing != null) searches.invalidate(request.getSearchId());
           response.setSearchId(0); return response;
         }
         synchronized (lifecycle) {
-          if (closed) { response.setSearchId(0); return response; }
+          if (closed) return closedSearch(request);
           int externalId = request.getSearchId();
           if (existing == null) {
             var session = new SearchLease(owner, response.getSearchId(), persistent, scoped);
@@ -380,8 +460,17 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           }
           response.setSearchId(externalId); return response;
         }
+        }
       }
     } finally { if (!retained) persistent.close(); }
+  }
+
+  /** An admitted search closed while waiting returns its established terminal form, no results. */
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse closedSearch(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest request) {
+    var response = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse(0, request.getRequestId());
+    response.getErrors().add("Semantic runtime is closed");
+    return response;
   }
 
   public Scope scope(Scope original, ReasonerService actor) {
@@ -407,6 +496,11 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           }
           try {
             var result = method.invoke(original, arguments);
+            if (method.getName().equals("getObserver") && result instanceof Observation observer) {
+              var meaning = actor.resolveConcept(observer.getObservable().getSemantics().getUrn());
+              if (meaning == null || !meaning.is(SemanticType.AGENT) || meaning.is(SemanticType.NOTHING))
+                throw new IllegalStateException("Selected observer is not an Agent in the leased semantic generation");
+            }
             if (result instanceof Scope nested) return nested == original ? proxy : scope(nested, actor);
             if (result instanceof Reasoner) return actor;
             if (result instanceof ResourcesService) return actor.serviceScope().getService(ResourcesService.class);
@@ -414,6 +508,108 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           }
           catch (InvocationTargetException failure) { throw failure.getCause(); }
         });
+  }
+
+  /** Request-local observer preparation. No Runtime/graph callback may happen under the semantic monitor. */
+  static Object prepareScopes(Object value) {
+    if (value instanceof ContextScope context) return ObserverScope.prepare(context);
+    if (value instanceof Map<?, ?> map) {
+      var prepared = new LinkedHashMap<>(); map.forEach((key, item) -> prepared.put(prepareScopes(key), prepareScopes(item)));
+      return prepared;
+    }
+    if (value instanceof Collection<?> values) {
+      Collection<Object> prepared = value instanceof Set ? new LinkedHashSet<>() : new ArrayList<>();
+      values.forEach(item -> prepared.add(prepareScopes(item))); return prepared;
+    }
+    if (value != null && value.getClass().isArray() && !value.getClass().getComponentType().isPrimitive()) {
+      var prepared = Array.newInstance(value.getClass().getComponentType(), Array.getLength(value));
+      for (int i = 0; i < Array.getLength(value); i++) Array.set(prepared, i, prepareScopes(Array.get(value, i)));
+      return prepared;
+    }
+    return value;
+  }
+
+  /** Keeps root and request selections distinct, and shares only immutable per-call snapshots. */
+  private static final class ObserverScope implements InvocationHandler {
+    private final ContextScope original;
+    private final Observation observer;
+    private final IdentityHashMap<ContextScope, Observation> prepared;
+
+    private ObserverScope(ContextScope original, Observation observer,
+        IdentityHashMap<ContextScope, Observation> prepared) {
+      this.original = original; this.observer = observer; this.prepared = prepared;
+    }
+    static ContextScope prepare(ContextScope original) {
+      if (Proxy.isProxyClass(original.getClass()) && Proxy.getInvocationHandler(original) instanceof ObserverScope)
+        return original;
+      var prepared = new IdentityHashMap<ContextScope, Observation>();
+      capture(original, prepared);
+      return wrap(original, prepared.get(original), prepared);
+    }
+    private static void capture(ContextScope scope, IdentityHashMap<ContextScope, Observation> prepared) {
+      if (scope == null || prepared.containsKey(scope)) return;
+      prepared.put(scope, null); // identity recursion guard, including roots that return themselves
+      prepared.put(scope, snapshot(scope.getObserver()));
+      capture(scope.getRootContextScope(), prepared);
+      if (scope.getParentScope() instanceof ContextScope parent) capture(parent, prepared);
+    }
+    private static Observation snapshot(Observation observer) {
+      if (observer != null && (observer.getId() <= 0 || observer.getObservable() == null
+          || observer.getObservable().getSemantics() == null
+          || !observer.getObservable().getSemantics().is(SemanticType.AGENT)))
+        throw new IllegalArgumentException("Semantic evaluation requires a persisted Agent observer");
+      return observer == null ? null : (Observation) copy(Observation.forTransport(observer));
+    }
+    private static ContextScope wrap(ContextScope scope, Observation observer,
+        IdentityHashMap<ContextScope, Observation> prepared) {
+      var interfaces = new LinkedHashSet<Class<?>>(); interfaces.add(ContextScope.class);
+      for (Class<?> type = scope.getClass(); type != null; type = type.getSuperclass())
+        for (var implemented : type.getInterfaces())
+          if (Scope.class.isAssignableFrom(implemented)) interfaces.add(implemented);
+      return (ContextScope) Proxy.newProxyInstance(Scope.class.getClassLoader(),
+          interfaces.toArray(Class<?>[]::new), new ObserverScope(scope, observer, prepared));
+    }
+    @Override public Object invoke(Object proxy, Method method, Object[] arguments) throws Throwable {
+      if (method.getName().equals("getObserver")) return snapshot(observer);
+      Observation selection = observer;
+      if (method.getName().equals("withObserver")) selection = snapshot((Observation) arguments[0]);
+      if (method.getName().equals("withResolutionConstraints") && arguments != null && arguments.length == 1
+          && arguments[0] instanceof ResolutionConstraint[] constraints) {
+        var retained = new ArrayList<ResolutionConstraint>();
+        // Match the production scope's named-selection precedence over inherited numeric defaults.
+        var namedSelections = Arrays.stream(constraints).filter(Objects::nonNull)
+            .filter(constraint -> constraint.getType() == ResolutionConstraint.Type.ObserverUrn && !constraint.empty())
+            .flatMap(constraint -> constraint.payload(String.class).stream()).distinct().toList();
+        if (namedSelections.size() > 1 || namedSelections.stream().anyMatch(String::isBlank))
+          throw new IllegalArgumentException("A submission must select one nonblank observer URN");
+        for (var constraint : constraints) {
+          if (constraint == null || constraint.empty()) { retained.add(constraint); continue; }
+          boolean numeric = constraint.getType() == ResolutionConstraint.Type.Observer;
+          boolean named = constraint.getType() == ResolutionConstraint.Type.ObserverUrn;
+          if (!numeric && !named) { retained.add(constraint); continue; }
+          if (numeric && !namedSelections.isEmpty()) continue;
+          boolean matches = observer != null && (numeric
+              ? constraint.payload(Long.class).stream().allMatch(id -> id == observer.getId())
+              : constraint.payload(String.class).stream().allMatch(urn -> Objects.equals(urn, observer.getUrn())));
+          if (!matches) throw new IllegalArgumentException(
+              "Select the observer before entering semantic evaluation; a leased scope cannot resolve another observer");
+          // An identical selection is already hydrated. Delegating it would perform another KG lookup.
+        }
+        arguments = new Object[] {retained.toArray(ResolutionConstraint[]::new)};
+      }
+      final Object result;
+      try { result = method.invoke(original, arguments); }
+      catch (InvocationTargetException failure) { throw failure.getCause(); }
+      if (result instanceof ContextScope nested) {
+        if (nested == original && selection == observer) return proxy;
+        if (prepared.containsKey(nested)) return wrap(nested, prepared.get(nested), prepared);
+        boolean derived = method.getName().startsWith("with") || method.getName().equals("within")
+            || method.getName().equals("between");
+        if (!derived) throw new IllegalStateException("Context selection was not prepared before semantic evaluation");
+        return wrap(nested, selection, prepared);
+      }
+      return result;
+    }
   }
 
   private Object bind(Object value, ReasonerService actor) {
@@ -465,6 +661,12 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     if (value instanceof org.integratedmodelling.klab.api.collections.Pair<?, ?> pair)
       return org.integratedmodelling.klab.api.collections.Pair.of(bind(pair.getFirst(), actor), bind(pair.getSecond(), actor));
     if (value instanceof Optional<?> optional) return optional.map(item -> bind(item, actor));
+    // Observation getters declare Metadata, not Map: retain its contract when binding a proxy.
+    if (value instanceof org.integratedmodelling.klab.api.data.Metadata metadata) {
+      var result = org.integratedmodelling.klab.api.data.Metadata.create();
+      metadata.forEach((key, item) -> result.put(key, bind(item, actor)));
+      return result;
+    }
     if (value instanceof Map<?, ?> map) {
       var result = new LinkedHashMap<>(); map.forEach((k, v) -> result.put(bind(k, actor), bind(v, actor))); return result;
     }

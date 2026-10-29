@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.services.runtime.MemberClassifierExecutor;
@@ -230,17 +231,27 @@ public class DigitalTwinImpl implements DigitalTwin {
   /** Read-only domain interfaces with detached mutable payloads; no serialization of parents. */
   private static final class ObservationReadView implements java.lang.reflect.InvocationHandler {
     private final Object source;
+    private final TransactionImpl owner;
     private final IdentityHashMap<Object, Object> copies;
     private final Map<java.lang.reflect.Method, Object> values = new HashMap<>();
 
     private ObservationReadView(Object source, IdentityHashMap<Object, Object> copies) {
       this.source = source;
+      this.owner = copies instanceof OwnedCopies owned ? owned.owner : null;
       this.copies = copies;
     }
 
     static Observation of(Observation source) {
       return (Observation) copy(source, new IdentityHashMap<>());
     }
+    private static final class OwnedCopies extends IdentityHashMap<Object,Object> {
+      final TransactionImpl owner;
+      OwnedCopies(TransactionImpl owner) { this.owner = owner; }
+    }
+    static Observation of(Observation source, TransactionImpl owner) {
+      return (Observation) copy(source, new OwnedCopies(owner));
+    }
+
 
     static Observation source(Observation observation) {
       if (java.lang.reflect.Proxy.isProxyClass(observation.getClass())
@@ -364,6 +375,11 @@ public class DigitalTwinImpl implements DigitalTwin {
       return fingerprint(observation,ownChildDelta,List.of());
     }
     static String fingerprint(Observation observation,int ownChildDelta,List<SchedulerWrite> writes) {
+      return fingerprintValue(normalized(observation,ownChildDelta,writes),new IdentityHashMap<>());
+    }
+
+    /** Rewind only exact writes owned by this root; all other input payload stays visible. */
+    private static Observation normalized(Observation observation,int ownChildDelta,List<SchedulerWrite> writes) {
       var snapshot=of(observation);
       var snapshotHandler=(ObservationReadView)java.lang.reflect.Proxy.getInvocationHandler(snapshot);
       for(int i=writes.size()-1;i>=0;i--) {
@@ -391,7 +407,16 @@ public class DigitalTwinImpl implements DigitalTwin {
         handler.values.replaceAll((method,value)->method.getName().equals("getChildrenCount")
             ? ((Integer)value)-ownChildDelta : value);
       }
-      return fingerprintValue(snapshot,new IdentityHashMap<>());
+      return snapshot;
+    }
+
+    static Observation persistedSnapshot(Observation observation,int ownChildDelta,List<SchedulerWrite> writes) {
+      var snapshot=(ObservationImpl)Observation.forTransport(normalized(observation,ownChildDelta,writes));
+      if(source(observation) instanceof ObservationImpl original) {
+        snapshot.setAnnotationPriorities(original.getAnnotationPriorities());
+        snapshot.setSubstantialQuality(original.isSubstantialQuality());
+      }
+      return snapshot;
     }
 
     private static List<java.lang.reflect.Field> semanticFields(Class<?> type) {
@@ -497,6 +522,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
     private enum AttemptState { OPEN, COMMITTING, COMMITTED, FAILED }
     private AttemptState attemptState = AttemptState.OPEN;
+    private int preparingAttributions;
 
     private TransactionImpl rootAttempt() {
       return parent == null ? this : parent.rootAttempt();
@@ -510,6 +536,34 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final String id = Utils.Names.fastName();
     private final Set<RuntimeAsset> modified;
     private final Set<RuntimeAsset> added;
+    // Only constructors may register execution activities. Importing old provenance into the
+    // overlay must not convert a legacy receipt into evidence from this active attempt.
+    private final Set<Activity> ownedExecutionActivities = Collections.newSetFromMap(new IdentityHashMap<>());
+
+    /** Private handler/root identity is checked before any proxy property access. This admits
+     * only this open root's snapshots of ordinary Runtime semantic DTOs, never arbitrary proxies. */
+    public boolean ownsObservationReadView(Observation observation) {
+      if (observation == null || !java.lang.reflect.Proxy.isProxyClass(observation.getClass())) return false;
+      var handler = java.lang.reflect.Proxy.getInvocationHandler(observation);
+      if (!(handler instanceof ObservationReadView view) || view.owner != rootAttempt()
+          || view.source == null || view.source.getClass() != ObservationImpl.class) return false;
+      synchronized (graph) {
+        if (rootAttempt().attemptState != AttemptState.OPEN) return false;
+        var original = (ObservationImpl) view.source;
+        var observable = original.getObservable();
+        return observable != null && observable.getClass() == org.integratedmodelling.common.knowledge.ObservableImpl.class
+            && observable.getSemantics() != null
+            && observable.getSemantics().getClass() == org.integratedmodelling.common.knowledge.ConceptImpl.class;
+      }
+    }
+
+    public boolean ownsExecutionActivity(Activity candidate) {
+      synchronized (graph) {
+        var root = rootAttempt();
+        return root.attemptState == AttemptState.OPEN && root.ownedExecutionActivities.contains(candidate);
+      }
+    }
+
 
     private record Attribution(
         ObservationImpl original, ObservationImpl replacement, String before,
@@ -546,6 +600,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     private Map<Concept, Scale> cohortGeometries = new HashMap<>();
     private List<Runnable> beforeCommitActions = new ArrayList<>();
     private List<KnowledgeGraph.ClassificationReadSet> classificationReadGuards = new ArrayList<>();
+    private Map<Long,KnowledgeGraph.ClassificationReadSet> classificationBaselines = new HashMap<>();
+    private Map<Long,Observation> classificationBaselineMembers = new HashMap<>();
     private List<Runnable> classificationLocalGuards = new ArrayList<>();
     private long[] classificationMutationStamp = new long[]{0};
     // Only increments performed by this root's link() bookkeeping may be projected through a
@@ -676,19 +732,82 @@ public class DigitalTwinImpl implements DigitalTwin {
     public ClassificationOverlay stageClassificationSnapshot(
         List<MemberClassifierExecutor.PendingAttribution> pending, ContextScope execution,
         Cohort cohort, Observation producer, List<Observation> persisted, List<String> expected) {
-      synchronized(graph) {
-        requireOpen();
-        if(!classificationOverlay(cohort,producer,persisted).state().equals(expected))
-          throw new IllegalStateException("Classification projected input changed");
-        stageAttributions(pending,execution);
-        return classificationOverlay(cohort,producer,persisted);
-      }
+      return prepareAndStageAttributions(pending,execution,
+          new AttributionProjection(cohort,producer,List.copyOf(persisted),List.copyOf(expected)));
     }
 
     /** Guards run on the exact native root-commit transaction, before any root writes. */
     public void guardClassificationReadSet(KnowledgeGraph.ClassificationReadSet readSet) {
       synchronized(graph) { requireOpen(); classificationReadGuards.add(readSet); }
     }
+
+    public boolean hasClassificationBaseline(long cohortId) {
+      synchronized(graph) { requireOpen(); return classificationBaselines.containsKey(cohortId); }
+    }
+
+    /**
+     * Pin the earliest persisted input before any member read/effect. A later snapshot must never
+     * replace it and bless results derived from an older payload with unchanged semantics.
+     */
+    public void guardClassificationBaseline(KnowledgeGraph.ClassificationReadSet readSet,
+        List<Observation> freshMaterializedMembers) {
+      synchronized(graph) {
+        requireOpen();
+        try {
+          if(readSet==null || readSet.cohortId()<=0 || !Objects.equals(readSet.contextId(),scope.getId()))
+            throw new IllegalArgumentException("Native classification baseline belongs to another context");
+          var previous=classificationBaselines.get(readSet.cohortId());
+          if(previous!=null) {
+            if(!previous.equals(readSet)) throw new IllegalStateException("Earliest classification baseline changed");
+            return;
+          }
+          var fresh=new LinkedHashMap<Long,Observation>();
+          for(var member:freshMaterializedMembers) {
+            if(member==null || member.getId()<=0 || fresh.putIfAbsent(member.getId(),member)!=null)
+              throw new IllegalArgumentException("Invalid or duplicate native classification input");
+          }
+          if(fresh.size()!=readSet.members().size())
+            throw new IllegalArgumentException("Classification baseline materialization is incomplete");
+          var expected=new LinkedHashMap<Long,Map<String,Object>>();
+          var originals=new LinkedHashMap<Long,Observation>();
+          var capturedIds=new HashSet<Long>();
+          for(var captured:readSet.members()) {
+            if(!capturedIds.add(captured.id())) throw new IllegalArgumentException("Duplicate captured classification member");
+            var member=fresh.get(captured.id());
+            if(member==null || !Objects.equals(member.getObservable().getUrn(),captured.observable())
+                || member.getGeometry()==null || !Objects.equals(
+                    Geometry.forTransport(member.getGeometry()).encode(),Geometry.create(captured.geometry()).encode()))
+              throw new IllegalStateException("Classification baseline differs from captured native input");
+            var original=(Observation)checkPresentAsset(ObservationReadView.source(member));
+            var nativeInput=org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph
+                .persistedObservationProperties(ObservationReadView.persistedSnapshot(member,0,List.of()));
+            var localInput=classificationPersistedInput(original);
+            if(!nativeInput.equals(localInput))
+              throw new IllegalStateException("Existing classification input is stale before baseline capture");
+            expected.put(captured.id(),nativeInput); originals.put(captured.id(),original);
+          }
+          // Existing canonical originals have passed the comparison. For members absent locally,
+          // future reads must prefer this captured native bean over an older scope-cache object.
+          originals.forEach(classificationBaselineMembers::putIfAbsent);
+          classificationBaselines.put(readSet.cohortId(),readSet);
+          classificationReadGuards.add(readSet);
+          classificationLocalGuards.add(()->{
+            for(var input:expected.entrySet()) {
+              var original=(Observation)checkPresentAsset(originals.get(input.getKey()));
+              if(!input.getValue().equals(classificationPersistedInput(original)))
+                throw new IllegalStateException("Classification persisted input changed after baseline capture");
+            }
+          });
+        } catch(RuntimeException failure) { fail(failure); throw failure; }
+      }
+    }
+
+    private Map<String,Object> classificationPersistedInput(Observation original) {
+      return org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph.persistedObservationProperties(
+          ObservationReadView.persistedSnapshot(original,classificationChildDeltas.getOrDefault(original,0),
+              classificationSchedulerWrites));
+    }
+
 
     private List<Runnable> afterCommitActions = new ArrayList<>();
     private List<Runnable> rollbackActions = new ArrayList<>();
@@ -899,6 +1018,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       synchronized (graph) {
         this.graph.addVertex(activity);
+        ownedExecutionActivities.add(activity);
         if (scope.getConsequenceCause() != null) {
           instrumentConsequenceActivity();
           var trigger = knowledgeGraph.getAsset(scope.getConsequenceCause().triggeringActivityId(),
@@ -968,6 +1088,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.contextualizers = parent.contextualizers;
       this.beforeCommitActions = parent.beforeCommitActions;
       this.classificationReadGuards = parent.classificationReadGuards;
+      this.classificationBaselines = parent.classificationBaselines;
+      this.classificationBaselineMembers = parent.classificationBaselineMembers;
       this.classificationLocalGuards = parent.classificationLocalGuards;
       this.classificationMutationStamp = parent.classificationMutationStamp;
       this.classificationChildDeltas = parent.classificationChildDeltas;
@@ -978,6 +1100,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       synchronized (graph) {
         this.graph.addVertex(activity);
+        rootAttempt().ownedExecutionActivities.add(activity);
         instrumentConsequenceActivity();
         this.graph.addEdge(
             parent.activity, activity, new RelationshipEdge(GraphModel.Relationship.TRIGGERED));
@@ -1098,7 +1221,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       return graph.vertexSet().stream()
           .filter(a -> a instanceof Observation && a.getId() == asset.getId())
           .findFirst()
-          .orElse(asset);
+          .orElse(classificationBaselineMembers.getOrDefault(asset.getId(),(Observation)asset));
     }
 
     @Override
@@ -1166,99 +1289,200 @@ public class DigitalTwinImpl implements DigitalTwin {
     /** All members are validated and copied before any staged state becomes visible. */
     public void stageAttributions(
         List<MemberClassifierExecutor.PendingAttribution> pending, ContextScope executionScope) {
-      synchronized (graph) {
-        try {
-          stageValidatedAttributions(pending, executionScope);
-          classificationMutationStamp[0]++;
-        } catch (RuntimeException failure) {
-          fail(failure);
-          throw failure;
-        }
-      }
+      prepareAndStageAttributions(pending,executionScope,null);
     }
 
-    private void stageValidatedAttributions(
-        List<MemberClassifierExecutor.PendingAttribution> pending, ContextScope executionScope) {
-      if (activity.getType() != Activity.Type.CLASSIFICATION)
-        throw new IllegalStateException("Attributions require a CLASSIFICATION activity");
-      synchronized (graph) {
+    private record AttributionProjection(Cohort cohort,Observation producer,List<Observation> persisted,
+        List<String> expected) {}
+    private record AttributionMemberInput(ObservationImpl member,Attribution previous,ObservationImpl current,
+        Observable observable,String originalUrn,String originalState,String currentState,String familiesState,
+        List<Concept> families,long memberId,long transientId) {}
+    private record AttributionRequest(AttributionMemberInput input,
+        MemberClassifierExecutor.PendingAttribution value,String originalUrn,String semanticState,
+        String support,String event,Concept family,Concept predicate,Observation requestSource,
+        String requestMemberState,String requestSourceState,String observableState) {}
+    private record PreparedAttribution(ObservationImpl member,Observable after,List<Concept> families,
+        Set<String> snapshots) {}
+
+    private static String attributionConceptState(Concept concept) {
+      return ObservationReadView.fingerprintValue(
+          ObservationReadView.copy(concept,new IdentityHashMap<>()),new IdentityHashMap<>());
+    }
+    /** Semantic RPC inputs must not retain caller-owned mutable concepts, including API wrappers. */
+    private static Concept attributionConceptSnapshot(Concept concept) {
+      if(concept instanceof org.integratedmodelling.common.knowledge.ConceptImpl)
+        return (Concept)ObservationReadView.copy(concept,new IdentityHashMap<>());
+      var snapshot=new org.integratedmodelling.common.knowledge.ConceptImpl();
+      snapshot.setUrn(concept.getUrn());snapshot.setNamespace(concept.getNamespace());
+      snapshot.setName(concept.getName());snapshot.setReferenceName(concept.getReferenceName());
+      snapshot.setServiceId(concept.getServiceId());snapshot.setAbstract(concept.isAbstract());
+      snapshot.setCollective(concept.isCollective());snapshot.setQualifier(concept.getQualifier());
+      snapshot.setDescriptionType(concept.getDescriptionType());
+      var types=EnumSet.noneOf(SemanticType.class);
+      if(concept.getType()!=null) types.addAll(concept.getType());
+      for(var type:SemanticType.values()) if(concept.is(type)) types.add(type);
+      snapshot.setType(types);
+      if(concept.getMetadata()!=null)
+        snapshot.setMetadata((Metadata)ObservationReadView.copy(concept.getMetadata(),new IdentityHashMap<>()));
+      if(concept.getAnnotations()!=null)
+        snapshot.setAnnotations((List)ObservationReadView.copy(concept.getAnnotations(),new IdentityHashMap<>()));
+      if(concept.getNotifications()!=null)
+        snapshot.setNotifications((List)ObservationReadView.copy(concept.getNotifications(),new IdentityHashMap<>()));
+      return snapshot;
+    }
+    private static String attributionObservableState(Observable observable) {
+      return ObservationReadView.fingerprintValue(
+          ObservationReadView.copy(observable,new IdentityHashMap<>()),new IdentityHashMap<>());
+    }
+    private static String attributionFamiliesState(Attribution previous) {
+      return previous==null?"":previous.families().stream().map(TransactionImpl::attributionConceptState)
+          .collect(java.util.stream.Collectors.joining(";"));
+    }
+    private static String attributionRequestState(MemberClassifierExecutor.PendingAttribution value) {
+      return attributionConceptState(value.abstractPredicate())+":"+attributionConceptState(value.predicate())
+          +":role="+value.predicate().is(SemanticType.ROLE)+":predicate="+value.predicate().is(SemanticType.PREDICATE);
+    }
+    private void requireAttributionProjection(AttributionProjection projection) {
+      if(projection!=null && !classificationOverlay(projection.cohort(),projection.producer(),projection.persisted())
+          .state().equals(projection.expected()))
+        throw new IllegalStateException("Classification projected input changed");
+    }
+    private static void requireAttributionExecution(ContextScope execution) {
+      if(execution.isInterrupted() || Thread.currentThread().isInterrupted())
+        throw new java.util.concurrent.CancellationException("Classification preparation cancelled");
+    }
+
+    /** Semantic services may call back into this graph. Freeze locally, release, then revalidate. */
+    private ClassificationOverlay prepareAndStageAttributions(
+        List<MemberClassifierExecutor.PendingAttribution> pending,ContextScope executionScope,
+        AttributionProjection projection) {
+      boolean registered=false;
+      try {
+        requireAttributionExecution(executionScope);
+        var requests=new ArrayList<AttributionRequest>();
+        var inputs=new LinkedHashMap<Long,AttributionMemberInput>();
+        final long capturedStamp;
+        synchronized(graph) {
+          if(activity.getType()!=Activity.Type.CLASSIFICATION)
+            throw new IllegalStateException("Attributions require a CLASSIFICATION activity");
+          requireOpen();
+          if(!failures.isEmpty()) throw new IllegalStateException("Transaction already failed");
+          requireAttributionProjection(projection);
+          for(var value:List.copyOf(pending)) {
+            var requestSource=ObservationReadView.source(value.member());
+            var canonical=checkPresentAsset(requestSource);
+            if(value.member().getId()!=requestSource.getId() || requestSource.getId()!=canonical.getId())
+              throw new IllegalStateException("Classification request member association changed before preparation");
+            var input=inputs.get(value.member().getId());
+            if(input==null) {
+              if(!(canonical instanceof ObservationImpl member) || member.getId()==0 || member.getId()==-1)
+                throw new IllegalArgumentException("Classification requires a registered member");
+              var previous=attributions.get(member);
+              var current=previous==null?member:previous.replacement();
+              // Use the detached semantic value from an immutable member read projection.
+              var observable=ObservationReadView.of(current).getObservable();
+              input=new AttributionMemberInput(member,previous,current,observable,member.getObservable().getUrn(),
+                  ObservationReadView.fingerprint(member),ObservationReadView.fingerprint(current),
+                  attributionFamiliesState(previous),previous==null?List.of():previous.families().stream()
+                      .map(TransactionImpl::attributionConceptSnapshot).toList(),member.getId(),member.getTransientId());
+              inputs.put(member.getId(),input);
+            }
+            requests.add(new AttributionRequest(input,value,value.originalObservable().getUrn(),
+                attributionRequestState(value),value.support().encode(),value.event().toKey(),
+                attributionConceptSnapshot(value.abstractPredicate()),attributionConceptSnapshot(value.predicate()),
+                requestSource,ObservationReadView.fingerprint(value.member()),
+                ObservationReadView.fingerprint(requestSource),
+                attributionObservableState(value.originalObservable())));
+          }
+          capturedStamp=classificationMutationStamp[0];
+          rootAttempt().preparingAttributions++;
+          registered=true;
+        }
+
+        // All Reasoner/builder calls, including callbacks that materialize an observer/focus,
+        // happen outside the graph monitor. The batch remains invisible until validation below.
+        var reasoner=executionScope.getService(Reasoner.class);
+        var batch=new LinkedHashMap<ObservationImpl,PreparedAttribution>();
+        var audit=new ArrayList<Map<String,Object>>();
+        var auditedMembers=new ArrayList<ObservationImpl>();
+        for(var request:requests) {
+          requireAttributionExecution(executionScope);
+          var input=request.input();var member=input.member();
+          var prepared=batch.get(member);var previous=input.previous();
+          var currentObservable=prepared!=null?prepared.after():input.observable();
+          var previousSnapshots=prepared!=null?prepared.snapshots():previous==null?Set.<String>of():previous.snapshots();
+          if(prepared==null && previous==null
+              ? !Objects.equals(input.originalUrn(),request.originalUrn())
+              : previous!=null && !Objects.equals(input.originalUrn(),previous.before())
+                  || !previousSnapshots.contains(request.originalUrn()))
+            throw new IllegalStateException("Concurrent member classification");
+          var families=new ArrayList<Concept>(prepared!=null?prepared.families()
+              :input.families());
+          for(var family:families)
+            if(Objects.equals(family.getUrn(),request.family().getUrn())
+                || reasoner.is(family,request.family()) || reasoner.is(request.family(),family)
+                || reasoner.is(request.predicate(),family))
+              throw new IllegalStateException("Repeated classification in the same predicate family");
+          var existing=new ArrayList<Concept>(reasoner.directTraits(currentObservable));
+          existing.addAll(reasoner.directRoles(currentObservable));
+          for(var predicate:existing)
+            if(Objects.equals(predicate.getUrn(),request.family().getUrn())
+                || reasoner.is(predicate,request.family()))
+              throw new IllegalStateException("Member is already classified in this predicate family");
+          var builder=currentObservable.builder(executionScope);
+          if(request.predicate().is(SemanticType.ROLE)) builder.withRole(request.predicate());
+          else if(request.predicate().is(SemanticType.PREDICATE)) builder.withTrait(request.predicate());
+          else throw new IllegalArgumentException("Classification result is neither trait nor role");
+          var after=builder.buildObservable();
+          if(after==null || !reasoner.satisfiable(after.getSemantics()))
+            throw new IllegalArgumentException("Inconsistent attributed observable");
+          families.add(request.family());
+          var snapshots=new HashSet<>(previousSnapshots);
+          snapshots.add(input.originalUrn());snapshots.add(after.getUrn());
+          batch.put(member,new PreparedAttribution(member,after,List.copyOf(families),Set.copyOf(snapshots)));
+          var item=new LinkedHashMap<String,Object>();
+          item.put("memberTransientId",input.transientId());item.put("memberId",input.memberId());
+          item.put("before",currentObservable.getUrn());item.put("after",after.getUrn());
+          item.put("abstractPredicate",request.family().getUrn());item.put("predicate",request.predicate().getUrn());
+          item.put("support",request.support());item.put("event",request.event());
+          audit.add(item);auditedMembers.add(member);
+        }
+        requireAttributionExecution(executionScope);
+        synchronized(graph) {
         requireOpen();
         if (!failures.isEmpty()) throw new IllegalStateException("Transaction already failed");
-        var reasoner = executionScope.getService(Reasoner.class);
-        var batch = new LinkedHashMap<Observation, Attribution>();
-        var audit = new ArrayList<Map<String, Object>>();
-        var auditedMembers = new ArrayList<Observation>();
-        for (var value : pending) {
-          var canonical = checkPresentAsset(ObservationReadView.source(value.member()));
-          // The graph is unchanged until the entire batch validates, including aliases of a
-          // registered member supplied more than once within this batch.
-          for (var stagedMember : batch.keySet()) {
-            if (stagedMember.getId() == value.member().getId()) {
-              canonical = stagedMember;
-              break;
-            }
-          }
-          if (!(canonical instanceof ObservationImpl member)
-              || member.getId() == 0
-              || member.getId() == -1)
-            throw new IllegalArgumentException("Classification requires a registered member");
-          var previous = batch.containsKey(member) ? batch.get(member) : attributions.get(member);
-          var current = previous == null ? member : previous.replacement();
-          if (previous == null
-              ? !Objects.equals(member.getObservable().getUrn(), value.originalObservable().getUrn())
-              : !Objects.equals(member.getObservable().getUrn(), previous.before())
-                  || !previous.snapshots().contains(value.originalObservable().getUrn()))
-            throw new IllegalStateException("Concurrent member classification");
-          var families = new ArrayList<Concept>();
-          if (previous != null) families.addAll(previous.families());
-          for (var family : families) {
-            if (Objects.equals(family.getUrn(), value.abstractPredicate().getUrn())
-                || reasoner.is(family, value.abstractPredicate())
-                || reasoner.is(value.abstractPredicate(), family)
-                || reasoner.is(value.predicate(), family))
-              throw new IllegalStateException("Repeated classification in the same predicate family");
-          }
-          // A concrete attribution can belong to overlapping families even when neither family
-          // specializes the other. Never overwrite an existing result in the requested family.
-          var existing = new ArrayList<Concept>(reasoner.directTraits(current.getObservable()));
-          existing.addAll(reasoner.directRoles(current.getObservable()));
-          for (var predicate : existing) {
-            if (Objects.equals(predicate.getUrn(), value.abstractPredicate().getUrn())
-                || reasoner.is(predicate, value.abstractPredicate()))
-              throw new IllegalStateException("Member is already classified in this predicate family");
-          }
-          var builder = current.getObservable().builder(executionScope);
-          if (value.predicate().is(SemanticType.ROLE)) builder.withRole(value.predicate());
-          else if (value.predicate().is(SemanticType.PREDICATE))
-            builder.withTrait(value.predicate());
-          else
-            throw new IllegalArgumentException("Classification result is neither trait nor role");
-          var after = builder.buildObservable();
-          if (after == null || !reasoner.satisfiable(after.getSemantics()))
-            throw new IllegalArgumentException("Inconsistent attributed observable");
-          var replacement = current.copyForAttribution(after);
-          families.add(value.abstractPredicate());
-          var snapshots = new HashSet<String>();
-          if (previous != null) snapshots.addAll(previous.snapshots());
-          snapshots.add(member.getObservable().getUrn());
-          snapshots.add(after.getUrn());
-          batch.put(member, new Attribution(member, replacement, member.getObservable().getUrn(),
-              List.copyOf(families), Set.copyOf(snapshots)));
-          var item = new LinkedHashMap<String, Object>();
-          item.put("memberTransientId", member.getTransientId());
-          item.put("memberId", member.getId());
-          item.put("before", current.getObservable().getUrn());
-          item.put("after", after.getUrn());
-          item.put("abstractPredicate", value.abstractPredicate().getUrn());
-          item.put("predicate", value.predicate().getUrn());
-          item.put("support", value.support().encode());
-          item.put("event", value.event().toKey());
-          audit.add(item);
-          auditedMembers.add(member);
+        if(classificationMutationStamp[0]!=capturedStamp)
+          throw new IllegalStateException("Classification graph changed during semantic preparation");
+        requireAttributionProjection(projection);
+        for(var input:inputs.values()) {
+          if(checkPresentAsset(input.member())!=input.member() || attributions.get(input.member())!=input.previous()
+              || !input.originalState().equals(ObservationReadView.fingerprint(input.member()))
+              || !input.currentState().equals(ObservationReadView.fingerprint(input.current()))
+              || !input.familiesState().equals(attributionFamiliesState(input.previous())))
+            throw new IllegalStateException("Classification input changed during semantic preparation");
+        }
+        for(var request:requests) {
+          var value=request.value();
+          if(ObservationReadView.source(value.member())!=request.requestSource()
+              || !request.requestMemberState().equals(ObservationReadView.fingerprint(value.member()))
+              || !request.requestSourceState().equals(ObservationReadView.fingerprint(request.requestSource()))
+              || !request.observableState().equals(attributionObservableState(value.originalObservable()))
+              || !Objects.equals(request.originalUrn(),value.originalObservable().getUrn())
+              || !request.semanticState().equals(attributionRequestState(value))
+              || !request.support().equals(value.support().encode()) || !request.event().equals(value.event().toKey()))
+            throw new IllegalStateException("Classification request changed during semantic preparation");
+        }
+        requireAttributionExecution(executionScope);
+        var stagedBatch=new LinkedHashMap<Observation,Attribution>();
+        for(var prepared:batch.values()) {
+          var input=inputs.get(prepared.member().getId());
+          var replacement=input.current().copyForAttribution(prepared.after());
+          stagedBatch.put(prepared.member(),new Attribution(prepared.member(),replacement,input.originalUrn(),
+              prepared.families(),prepared.snapshots()));
         }
         int i = 0;
         for (var member : auditedMembers) {
-          var attribution = batch.get(member);
+          var attribution = stagedBatch.get(member);
           var item = audit.get(i++);
           var data = new ArrayList<Object>();
           item.forEach(
@@ -1270,13 +1494,22 @@ public class DigitalTwinImpl implements DigitalTwin {
               activity, attribution.original(), GraphModel.Relationship.CLASSIFIED, data.toArray());
           if (attribution.original().getId() > 0) modified.add(attribution.original());
         }
-        attributions.putAll(batch);
+        attributions.putAll(stagedBatch);
         var previousAudit = activity.getMetadata().get(Metadata.IM_ATTRIBUTIONS);
         if (previousAudit instanceof List<?> entries) {
           var combined = new ArrayList<Object>(entries);
           combined.addAll(audit);
           activity.getMetadata().put(Metadata.IM_ATTRIBUTIONS, combined);
         } else activity.getMetadata().put(Metadata.IM_ATTRIBUTIONS, audit);
+        classificationMutationStamp[0]++;
+        rootAttempt().preparingAttributions--;registered=false;
+        return projection==null?null:classificationOverlay(projection.cohort(),projection.producer(),projection.persisted());
+        }
+      } catch(RuntimeException failure) {
+        synchronized(graph) {fail(failure);}
+        throw failure;
+      } finally {
+        if(registered) synchronized(graph) {rootAttempt().preparingAttributions--;}
       }
     }
 
@@ -1284,7 +1517,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     public Observation readObservation(Observation observation) {
       synchronized (graph) {
         if (!failures.isEmpty()) throw new IllegalStateException("Transaction already failed");
-        return ObservationReadView.of((Observation) staged(checkPresentAsset(ObservationReadView.source(observation))));
+        return ObservationReadView.of((Observation) staged(checkPresentAsset(ObservationReadView.source(observation))), rootAttempt());
       }
     }
 
@@ -1338,6 +1571,10 @@ public class DigitalTwinImpl implements DigitalTwin {
         var root = rootAttempt();
         if (root.attemptState == AttemptState.FAILED) return -1;
         requireOpen();
+        if(root.preparingAttributions>0) {
+          failLocked(new IllegalStateException("Cannot commit while classification semantic preparation is active"));
+          return -1;
+        }
         classificationMutationStamp[0]++;
         if (parent != null) return commitOpen();
         attemptState = AttemptState.COMMITTING;

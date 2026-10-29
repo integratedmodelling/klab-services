@@ -364,7 +364,7 @@ public class ScopeManager {
 
     if (contextualization.observationPath() != null) {
       for (var observationId : contextualization.observationPath()) {
-        var observation = ret.getObservation(observationId);
+        var observation = ret.getObservationForAdmission(observationId);
         if (observation == null) {
           throw new KlabResourceAccessException(
               "Observation with ID "

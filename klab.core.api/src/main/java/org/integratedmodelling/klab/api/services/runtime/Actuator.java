@@ -71,6 +71,9 @@ public interface Actuator extends Serializable, RuntimeAsset {
   String PRODUCING_MODELS_KEY = "im:producing-models";
 
   default List<ClassifierDependencyPlan> getClassifierDependencies() { return List.of(); }
+  /** An unresolved virtual cohort input, expanded inside the enclosing native transaction before
+   * eager compilation. Its placeholder is never a durable observation or a new producer. */
+  default Dataflow getCollectiveSelectionDependency() { return null; }
   /** Separate typed ports: never coerced to scalar Observation dependencies. */
   default java.util.Map<String,MemberQualityInputPlan> getMemberQualityInputs() { return java.util.Map.of(); }
 

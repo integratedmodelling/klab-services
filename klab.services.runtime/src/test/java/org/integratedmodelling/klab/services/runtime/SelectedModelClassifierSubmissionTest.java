@@ -116,7 +116,8 @@ class SelectedModelClassifierSubmissionTest {
     final SubmissionNativeFixture semantic;
     final ReasonerService reasoner;
     final ResourcesService resources;
-    final RuntimeService runtime=mock(RuntimeService.class,CALLS_REAL_METHODS);
+    final RuntimeService runtime=mock(RuntimeService.class,withSettings().defaultAnswer(CALLS_REAL_METHODS)
+        .extraInterfaces(org.integratedmodelling.klab.api.services.RuntimeService.Testing.class));
     final ResolverService resolver=mock(ResolverService.class,CALLS_REAL_METHODS);
     final DigitalTwinImpl twin=mock(DigitalTwinImpl.class);
     final KnowledgeGraphNeo4j graph=mock(KnowledgeGraphNeo4j.class);
@@ -148,6 +149,7 @@ class SelectedModelClassifierSubmissionTest {
     final ServiceContextScope scope;
     final SchedulerImpl scheduler;
     final Classifier classifier=new Classifier();
+    org.integratedmodelling.klab.runtime.kactors.TestCaseBase.TestCaseScope gatedOwner;
     final KimObservableImpl output,input,original;
     Fixture()throws Exception { this(false); }
     Fixture(boolean categoryOnInput)throws Exception {
@@ -160,6 +162,8 @@ class SelectedModelClassifierSubmissionTest {
       var directive=semantic.named("Category");directive.setInherent(collective);semantic.register(directive);
       var classification=new KimObservableImpl();classification.setSemantics(directive);
       for(var syntax:List.of(output,input,original,observable(collective),classification))remember(syntax);
+      // Persisted fixtures model registered observations, whose Runtime always provisions this bean.
+      region.setContextualizationData(new ObservationImpl.ContextualizationDataImpl());
       region.setId(41);region.setName("Observed native region");region.setUrn("context.region");
       region.setObservable(reasoner.declareObservable(observable(semantic.bearer("Concrete"))));region.setGeometry(geometry);durable.put(41L,region);classificationMembers.add(region);
       cohort.setId(10);cohort.setObservable(reasoner.declareObservable(observable(semantic.named("Region"))));cohort.setGeometry(geometry);
@@ -191,6 +195,11 @@ class SelectedModelClassifierSubmissionTest {
         return List.of(result);
       });
       var commitment=mock(Reasoner.Capabilities.class);when(commitment.getServiceId()).thenReturn("native-reasoner");when(commitment.getKnowledgeRevision()).thenReturn(3L);
+      // Controlled accepted-content identity; ontology reasoning and scoped locality extraction
+      // remain real. This authored-only fixture configures no external authorities.
+      when(commitment.getSemanticContentFingerprint()).thenReturn("semantic-content-v2:"+"f".repeat(64));
+      when(commitment.getSemanticSessionId()).thenReturn("native-fixture-owner");
+      field(reasoner,ReasonerService.class,"authorityBindings",new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings());
       doReturn(commitment).when(reasoner).capabilities(any());
       doReturn(KlabService.Type.REASONER).when(reasoner).serviceType();doReturn("native-reasoner").when(reasoner).serviceId();
       when(resources.serviceId()).thenReturn("resources");
@@ -207,6 +216,7 @@ class SelectedModelClassifierSubmissionTest {
       var user=mock(UserIdentity.class);when(user.getUsername()).thenReturn("tester");
       var session=new ServiceSessionScope(new ServiceUserScope(user,runtime));
       var base=new ServiceContextScope(session,DigitalTwin.Configuration.builder().id("automatic-submission").name("fixture").persistence(Persistence.EXPLICIT_ACTION).build(),user);
+      base.setId(base.getConfiguration().getId());
       base.setDigitalTwin(twin);base.addService(runtime);base.addService(reasoner);base.addService(resolver);base.addService(resources);
       scope=((ServiceContextScope)base.within(region)).withCancellation(cancelled::get);
       scope.getData().put("__RESOLUTION_GRAPH__",ResolutionGraph.create(scope));
@@ -219,6 +229,10 @@ class SelectedModelClassifierSubmissionTest {
       when(graph.getAsset(anyLong(),any(),eq(Observation.class))).thenAnswer(i->durable.get(i.getArgument(0)));
       var cohortQuery=mock(KnowledgeGraph.Query.class,RETURNS_SELF);when(cohortQuery.run(any())).thenReturn(List.of(cohort));when(graph.query(eq(Cohort.class),any())).thenReturn(cohortQuery);
       var observationQuery=mock(KnowledgeGraph.Query.class,RETURNS_SELF);when(observationQuery.run(any())).thenReturn(List.of());when(graph.query(eq(Observation.class),any())).thenReturn(observationQuery);
+      // No historical contextualization activities are supplied by this persistence fixture.
+      // Their absence is an unknown semantic footprint, not authority-independence evidence.
+      var activityQuery=mock(KnowledgeGraph.Query.class,RETURNS_SELF);
+      when(activityQuery.run(any())).thenReturn(List.of());when(graph.query(eq(Activity.class),any())).thenReturn(activityQuery);
       when(graph.getLinks(any(),any(),any(),any(GraphModel.Relationship[].class))).thenAnswer(i->{
         var target=(RuntimeAsset)i.getArgument(0);var direction=(GraphModel.Relationship.Direction)i.getArgument(1);var current=(ContextScope)i.getArgument(2);
         if(current.getCurrentTransaction()==null)return List.of();
@@ -227,7 +241,12 @@ class SelectedModelClassifierSubmissionTest {
       });
       when(nativeTx.captureClassificationMembers(10)).thenAnswer(i->memberReadSet());
       doAnswer(i->{if(!memberReadSet().equals(i.getArgument(0)))throw new IllegalStateException("Native classifier membership or inputs changed");return null;}).when(nativeTx).validateClassificationMembers(any());
-      when(graph.materializeClassificationMember(any(),any())).thenAnswer(i->{var snapshot=(KnowledgeGraph.ClassificationMemberSnapshot)i.getArgument(0);var member=new ObservationImpl();member.setId(snapshot.id());member.setName(snapshot.properties().get("name").toString());member.setUrn(snapshot.properties().get("urn").toString());member.setObservable(reasoner.declareObservable(observable(semantic.resources.declareConcept(snapshot.observable()))));member.setGeometry(Geometry.create(snapshot.geometry()));member.getMetadata().putAll(org.integratedmodelling.common.utils.Utils.Json.parseObject(snapshot.properties().get("fixtureMetadata").toString(),Map.class));return member;});
+      when(graph.materializeClassificationMember(any(),any())).thenAnswer(i->{
+        var snapshot=(KnowledgeGraph.ClassificationMemberSnapshot)i.getArgument(0);
+        // The fixture Resources transport must retain the authored native observable syntax.
+        remember(observable(semantic.resources.declareConcept(snapshot.observable())));
+        return i.callRealMethod();
+      });
       doAnswer(i->{var asset=(RuntimeAsset)i.getArgument(0);if(asset instanceof ObservationImpl o){if(o.getId()<0)o.setId(ids.incrementAndGet());durable.put(o.getId(),o);}else if(asset instanceof ActivityImpl a){a.setId(ids.incrementAndGet());if(a.getType()==Activity.Type.SUBMISSION)rootCommits.incrementAndGet();}else if(asset instanceof ActuatorImpl a)a.setId(ids.incrementAndGet());else if(asset instanceof CohortImpl c)c.setId(ids.incrementAndGet());else if(asset instanceof org.integratedmodelling.klab.common.data.impl.ShardImpl shard)shard.setId(ids.incrementAndGet());else {producerEvidence.add("Unpersisted fixture asset "+asset.getClass()+" id="+asset.getId());throw new IllegalStateException("Unpersisted fixture asset "+asset.getClass()+" id="+asset.getId());}return null;}).when(nativeTx).store(any());
 
       doAnswer(i->{if(i.getArgument(0) instanceof Observation parent && i.getArgument(1) instanceof ObservationImpl child
@@ -255,6 +274,10 @@ class SelectedModelClassifierSubmissionTest {
         case "fixture.aggregate" -> aggregateDescriptor;
         default -> descriptor;
       }));
+      // Admission inspects the installed method through the one-argument catalogue API;
+      // execution uses the lexical-scope overload. Both must expose the same fixture functions.
+      when(registry.getFunctionDescriptor(any(ServiceCall.class)))
+          .thenAnswer(i -> registry.getFunctionDescriptor(i.getArgument(0, ServiceCall.class), scope));
       when(registry.implementation(descriptor)).thenReturn(implementation);when(registry.implementation(discoveryDescriptor)).thenReturn(discoveryImplementation);
       var requirements=new ResourceSet();requirements.setEmpty(false);doReturn(requirements).when(runtime).resolveContextualizables(anyList(),any());
       doAnswer(i->{var producer=(Observation)i.callRealMethod();var execution=(ServiceContextScope)i.getArgument(2);
@@ -279,6 +302,32 @@ class SelectedModelClassifierSubmissionTest {
       }).when(reasoner).computeObservationStrategies(any(),any());
     }
     KimObservableImpl observable(KimConcept semantics){var o=new KimObservableImpl();o.setSemantics(semantics);o.setUrn(semantics.getUrn());o.setNamespace("audit");return o;}
+    AutoCloseable useGatedEmptyProducer() throws Exception {
+      var agent=mock(org.integratedmodelling.klab.runtime.kactors.TestCaseBase.class);
+      when(agent.status()).thenReturn("running");
+      var owner=new org.integratedmodelling.klab.runtime.kactors.TestCaseBase.TestCaseScope(agent,null,null);
+      gatedOwner=owner;
+      owner.registerContext(scope);
+      assertTrue(org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Inspector.fixtures(owner,scope));
+      var producer=(KimModel)sources.values().stream().filter(ns->ns.getSourceCode().equals("producer"))
+          .findFirst().orElseThrow().getStatements().getFirst();
+      producer.getContextualization().clear();
+      var call=new ContextualizableImpl();call.setServiceCall(new ServiceCallImpl("klab.tests.fixtures.empty"));
+      producer.getContextualization().add(call);
+      var descriptor=new org.integratedmodelling.klab.api.services.runtime.extension.Extensions.FunctionDescriptor();
+      descriptor.staticMethod=true;descriptor.serviceInfo=new ServiceInfoImpl();
+      var implementation=new ComponentRegistry.ServiceImplementation();
+      implementation.method=org.integratedmodelling.klab.runtime.libraries.NativeTestFixtures.class.getMethod("empty",
+          Data.Builder.class,Geometry.class,Observable.class,Scope.class);
+      var registry=runtime.getComponentRegistry();
+      when(registry.implementation(descriptor)).thenReturn(implementation);
+      when(registry.getFunctionDescriptor(argThat(c->c!=null&&"klab.tests.fixtures.empty".equals(c.getUrn())),any(Scope.class)))
+          .thenReturn(List.of(descriptor));
+      return owner::done;
+    }
+    long gatedDiscoveries() {
+      return org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Inspector.fixturecount(gatedOwner,scope,"empty");
+    }
     void remember(KimObservableImpl syntax){if(syntax.getUrn()==null)syntax.setUrn(syntax.getSemantics().getUrn());observables.put(syntax.getUrn(),syntax);}
     Contextualizable expression(String code){var c=new ContextualizableImpl();c.setExpression(ExpressionCode.of(code,"groovy"));return c;}
     void model(String name,KimObservable primary,List<KimObservable> dependencies,Contextualizable... computations){
@@ -299,16 +348,26 @@ class SelectedModelClassifierSubmissionTest {
     KnowledgeGraph.ClassificationReadSet memberReadSet() {
       // The native adapter keeps persisted input separate from the framework's staged objects.
       // Domain membership is live; native payload changes must update this explicit persisted map.
-      return new KnowledgeGraph.ClassificationReadSet("automatic-submission",10,cohort.getObservable().getUrn(),classificationMembers.stream().sorted(Comparator.comparingLong(Observation::getId)).map(member->
+      return new KnowledgeGraph.ClassificationReadSet(scope.getId(),cohort.getId(),cohort.getObservable().getUrn(),classificationMembers.stream().sorted(Comparator.comparingLong(Observation::getId)).map(member->
           persistedClassifierInputs.computeIfAbsent(member.getId(),id->new KnowledgeGraph.ClassificationMemberSnapshot(member.getId(),member.getObservable().getUrn(),GeometryRepository.INSTANCE.sanitize(member.getGeometry()).encode(),0,
-              Map.of("name",Objects.toString(member.getName(),""),"urn",Objects.toString(member.getUrn(),""),"fixtureMetadata",org.integratedmodelling.common.utils.Utils.Json.asString(new LinkedHashMap<>(member.getMetadata()))),null))).toList());
+              nativeObservationProperties(member),null))).toList());
+    }
+    @SuppressWarnings("unchecked")
+    Map<String,Object> nativeObservationProperties(Observation member) {
+      try {
+        var encoder=org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph.class
+            .getDeclaredMethod("parameterMap",Object.class,Object[].class);
+        encoder.setAccessible(true);
+        return (Map<String,Object>)encoder.invoke(null,member,new Object[0]);
+      } catch(ReflectiveOperationException failure) {throw new AssertionError("Cannot capture actual native observation properties",failure);}
     }
     void crops(String... crops) {
       semantic.cropVocabulary();sources.clear();modelForObservable.clear();observables.clear();classificationMembers.clear();persistedClassifierInputs.clear();
       semantic.request("HarvestCashValue",semantic.named("Region")); // Parser adapter supplies the detached plain native residual too.
       region.setObservable(reasoner.declareObservable(observable(semantic.named("Region"))));
       for(int index=0;index<crops.length;index++) {
-        var member=new ObservationImpl();member.setId(42+index);member.setUrn("context.crop-region."+index);member.setName("Crop region "+index);
+        var member=new ObservationImpl();member.setContextualizationData(new ObservationImpl.ContextualizationDataImpl());
+        member.setId(42+index);member.setUrn("context.crop-region."+index);member.setName("Crop region "+index);
         member.setObservable(reasoner.declareObservable(observable(semantic.named("Region"))));member.setGeometry(geometry);member.getMetadata().put("fixture.crop",crops[index]);
         classificationMembers.add(member);durable.put(member.getId(),member);
       }
@@ -330,8 +389,9 @@ class SelectedModelClassifierSubmissionTest {
       for(var namespace:sources.values())for(var statement:namespace.getStatements())if(statement instanceof KimModel model && model.getObservables().getFirst().getSemantics().is(SemanticType.QUALITY))
         model.getAnnotations().add(AnnotationImpl.create("type","value","double"));
     }
-    void cartesian() {
-      crops("Wheat","Maize");semantic.seasonVocabulary();
+    void cartesian() {cartesian("Wheat","Maize");}
+    void cartesian(String... memberCrops) {
+      crops(memberCrops);semantic.seasonVocabulary();
       for(var predicate:List.of("Wheat","Maize","Warm","Cool"))semantic.bearer(predicate);
       for(var member:classificationMembers)member.getMetadata().put("fixture.season",member.getId()==42?"Warm":"Cool");
       classifier.byOperation=(operation,member)->"audit:"+member.getMetadata().get(operation.getSemantics().getUrn().contains("Season")?"fixture.season":"fixture.crop");
@@ -360,6 +420,7 @@ class SelectedModelClassifierSubmissionTest {
       }
     }
     List<String> failures(){try{var field=DigitalTwinImpl.TransactionImpl.class.getDeclaredField("failures");field.setAccessible(true);var result=new ArrayList<String>();for(var attempt:attempts)for(var failure:(Collection<Throwable>)field.get(attempt))result.add(failure.getMessage());return result;}catch(Exception failure){throw new IllegalStateException(failure);}}
+    List<String> failureCauses(){try{var field=DigitalTwinImpl.TransactionImpl.class.getDeclaredField("failures");field.setAccessible(true);var result=new ArrayList<String>();for(var attempt:attempts)for(var failure:(Collection<Throwable>)field.get(attempt))for(var cause=failure;cause!=null;cause=cause.getCause())result.add(cause.getMessage());return result;}catch(Exception failure){throw new IllegalStateException(failure);}}
     CompletableFuture<Observation> submit(){var o=new ObservationImpl();o.setObservable(reasoner.declareObservable(output));o.setGeometry(geometry);return runtime.submit(o,scope);}
     public void close(){resolverExecutor.shutdownNow();scheduler.close();for(var store:stores.values())store.close(null);semantic.close();runtime.shardExecution().close();}
   }
@@ -399,6 +460,14 @@ class SelectedModelClassifierSubmissionTest {
           assertEquals(3,snapshot.members().size());assertTrue(snapshot.members().stream().anyMatch(m->m.id()==f.region.getId()));
           assertEquals(f.cohort.getObservable().getUrn(),snapshot.cohortObservable());
           assertEquals(snapshot.cohortObservable(),graph.getAsset(f.cohort.getId(),f.scope,Cohort.class).getObservable().getUrn());
+          for (var captured : snapshot.members()) {
+            var nativeMember = graph.materializeClassificationMember(captured, f.scope);
+            var localMember = captured.id() == f.region.getId() ? f.region : f.classificationMembers.stream()
+                .filter(member -> member.getId() == captured.id()).findFirst().orElseThrow();
+            assertEquals(org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph.persistedObservationProperties(nativeMember),
+                org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph.persistedObservationProperties(localMember),
+                "Seeded local member must represent its actual native input: " + captured.id());
+          }
         }
         var result=f.submit().get(60,TimeUnit.SECONDS);
         assertFalse(result.isEmpty(),result.getNotifications()+" "+f.failures()+" "+f.producerEvidence);
@@ -514,11 +583,34 @@ class SelectedModelClassifierSubmissionTest {
       assertEquals(0,f.classifier.discoveries.get());assertEquals(0,f.rootCommits.get());
     }
   }
-  @Test void missingRequiredClassifierRejectsBeforeDiscovery() throws Exception {
-    try(var f=new Fixture()) {
-      f.modelForObservable.entrySet().removeIf(e->e.getValue().endsWith(".classifier"));
+  @Test void missingRequiredClassifierRejectsUnknownMemberWithoutPublishing() throws Exception {
+    try(var f=new Fixture(true)) {
+      f.region.setObservable(f.reasoner.declareObservable(f.observable(f.semantic.named("Region"))));
+      assertEquals("audit:Region",f.region.getObservable().getSemantics().getUrn());
+      assertEquals(1,f.memberReadSet().members().size());
+      assertTrue(f.modelForObservable.entrySet().removeIf(e->e.getValue().endsWith(".classifier")),"Fixture classifier mapping must exist before removal");
       var result=f.submit().get(30,TimeUnit.SECONDS);
-      assertTrue(result.isEmpty());assertEquals(0,f.classifier.discoveries.get());assertEquals(0,f.rootCommits.get());
+      assertTrue(result.isEmpty(),result.getNotifications()+" "+f.failures());
+      // Discovery must complete before a model-free check can distinguish known from unknown members.
+      assertEquals(1,f.classifier.discoveries.get());assertEquals(0,f.classifier.calls.get());assertEquals(0,f.rootCommits.get());
+      assertTrue(f.failureCauses().stream().anyMatch(message->message!=null && message.contains("Unclassified member requires a classifier model")),f.failureCauses().toString());
+      assertEquals("audit:Region",f.region.getObservable().getSemantics().getUrn());
+      verify(f.nativeTx,never()).updateSemantics(any(),anyString());
+    }
+  }
+
+  @Test void existingClassificationNeedsNoClassifierModelAndPreservesNativeIdentity() throws Exception {
+    try(var f=new Fixture()) {
+      long memberId=f.region.getId();var original=f.region.getObservable();
+      assertTrue(f.reasoner.directTraits(original).stream().anyMatch(trait->trait.getUrn().equals("audit:Concrete")));
+      assertTrue(f.modelForObservable.entrySet().removeIf(e->e.getValue().endsWith(".classifier")),"Fixture classifier mapping must exist before removal");
+      var result=f.submit().get(30,TimeUnit.SECONDS);
+      assertFalse(result.isEmpty(),result.getNotifications()+" "+f.failures());
+      try(var read=StorageReads.open(result,f.scope,null,Data.FillCurve.D1_LINEAR,Storage.DoubleScanner.class)){assertEquals(7,read.scanners().getFirst().get());}
+      assertEquals(memberId,f.region.getId());assertSame(original,f.region.getObservable());
+      assertEquals(0,f.classifier.calls.get());assertEquals(1,f.classifier.discoveries.get());assertEquals(1,f.rootCommits.get());
+      assertTrue(f.modelQueries.contains("audit:Category of each audit:Region"));
+      verify(f.nativeTx,never()).updateSemantics(any(),anyString());
     }
   }
 
@@ -898,7 +990,7 @@ class SelectedModelClassifierSubmissionTest {
   @Test void nativeCropInputPayloadMutationAfterCaptureCannotPublish() throws Exception {
     try(var f=new Fixture(true)) {
       f.crops("Wheat");
-      f.classifier.classification=member->{var old=f.persistedClassifierInputs.get(member.getId());var changed=new LinkedHashMap<String,Object>(old.properties());changed.put("fixtureMetadata","{\"fixture.crop\":\"Maize\"}");f.persistedClassifierInputs.put(member.getId(),new KnowledgeGraph.ClassificationMemberSnapshot(old.id(),old.observable(),old.geometry(),old.semanticRevision(),changed,old.perceivedGeometry()));return "audit:Wheat";};
+      f.classifier.classification=member->{var old=f.persistedClassifierInputs.get(member.getId());var changed=new LinkedHashMap<String,Object>(old.properties());changed.put(GraphModel.Fields.METADATA,"{\"fixture.crop\":\"Maize\"}");changed.put("fixture.crop","Maize");f.persistedClassifierInputs.put(member.getId(),new KnowledgeGraph.ClassificationMemberSnapshot(old.id(),old.observable(),old.geometry(),old.semanticRevision(),changed,old.perceivedGeometry()));return "audit:Wheat";};
       var result=f.submit().get(30,TimeUnit.SECONDS);assertTrue(result.isEmpty());assertEquals(0,f.classifier.valuations.get());assertEquals(0,f.rootCommits.get());
     }
   }
@@ -944,10 +1036,50 @@ class SelectedModelClassifierSubmissionTest {
       verify(f.nativeTx,never()).updateSemantics(any(),anyString());
     }
   }
-  @Test void missingRequiredSecondClassifierCannotHideBehindEmptyMemberDomain() throws Exception {
+  @Test void missingSecondClassifierRollsBackActualFirstFamilyAttributionsOnUnknownMembers() throws Exception {
     try(var f=new Fixture(true)) {
-      f.cartesian();f.classificationMembers.clear();f.persistedClassifierInputs.clear();f.modelForObservable.entrySet().removeIf(e->e.getValue().endsWith(".seasonClassifier"));
-      var result=f.submit().get(30,TimeUnit.SECONDS);assertTrue(result.isEmpty());assertEquals(0,f.classifier.calls.get());assertEquals(0,f.classifier.valuations.get());assertEquals(0,f.rootCommits.get());
+      f.cartesian();assertEquals(2,f.memberReadSet().members().size());
+      var before=f.classificationMembers.stream().collect(java.util.stream.Collectors.toMap(Observation::getId,member->member.getObservable().getSemantics().getUrn()));
+      assertTrue(before.values().stream().allMatch("audit:Region"::equals));
+      var staged=new AtomicBoolean();
+      doAnswer(call->{
+        var pending=(List<MemberClassifierExecutor.PendingAttribution>)call.getArgument(0);
+        var execution=(ServiceContextScope)call.getArgument(1);
+        if(!pending.isEmpty() && pending.stream().allMatch(effect->effect.abstractPredicate().getUrn().equals("audit:Crop"))) {
+          assertEquals(2,pending.size());
+          var tx=(DigitalTwinImpl.TransactionImpl)execution.getCurrentTransaction();
+          for(var effect:pending) assertTrue(f.reasoner.directTraits(tx.readObservation(effect.member()).getObservable()).contains(effect.predicate()),"First-family attribution must actually be staged before the missing second-family check");
+          staged.set(true);
+        }
+        return call.callRealMethod();
+      }).when(f.runtime).characterizePending(anyList(),any());
+      assertTrue(f.modelForObservable.entrySet().removeIf(e->e.getValue().endsWith(".seasonClassifier")),"Fixture classifier mapping must exist before removal");
+      var result=f.submit().get(30,TimeUnit.SECONDS);
+      assertTrue(result.isEmpty(),result.getNotifications()+" "+f.failures());assertTrue(staged.get());
+      assertEquals(1,f.classifier.discoveries.get());assertEquals(2,f.classifier.calls.get());assertEquals(0,f.classifier.valuations.get());assertEquals(0,f.rootCommits.get());
+      assertTrue(f.failureCauses().stream().anyMatch(message->message!=null && message.contains("Unclassified member requires a classifier model")),f.failureCauses().toString());
+      assertEquals(before,f.classificationMembers.stream().collect(java.util.stream.Collectors.toMap(Observation::getId,member->member.getObservable().getSemantics().getUrn())));
+      assertTrue(f.persistedClassifierInputs.values().stream().allMatch(member->member.observable().equals("audit:Region")));
+      verify(f.nativeTx,never()).updateSemantics(any(),anyString());
+    }
+  }
+
+  @Test void completedEmptyFamilyNeedsNoClassifierModelAndAuthoredAggregateReturnsZero() throws Exception {
+    try(var f=new Fixture(true)) {
+      f.cartesian(new String[0]);
+      assertEquals(Set.of(f.region.getId()),f.durable.keySet(),"The empty fixture must not retain seeded native members");
+      assertTrue(f.modelForObservable.entrySet().removeIf(e->e.getValue().endsWith(".seasonClassifier")),"Fixture classifier mapping must exist before removal");
+      assertTrue(f.memberReadSet().members().isEmpty());
+      var result=f.submit().get(30,TimeUnit.SECONDS);
+      assertFalse(result.isEmpty(),result.getNotifications()+" "+f.failures());
+      try(var read=StorageReads.open(result,f.scope,null,Data.FillCurve.D1_LINEAR,Storage.DoubleScanner.class)){assertEquals(0,read.scanners().getFirst().get());}
+      assertEquals(1,f.classifier.discoveries.get());assertEquals(0,f.classifier.calls.get());assertEquals(1,f.classifier.valuations.get());assertEquals(1,f.rootCommits.get());
+      var families=f.scope.getDependencyFamilies(result);assertEquals(1,families.size());assertTrue(families.getFirst().branches().isEmpty());
+      assertTrue(f.scope.getDependencyInputs(result,families.getFirst().id()).isEmpty());assertTrue(f.classifier.consumedInputs.isEmpty());
+      assertTrue(f.memberReadSet().members().isEmpty());assertTrue(f.persistedClassifierInputs.isEmpty());
+      assertEquals(3,f.durable.size(),"Only the existing context, real empty producer and authored aggregate may be observations");
+      verify(f.nativeTx,atLeastOnce()).store(argThat(asset->asset instanceof Activity activity && activity.getType()==Activity.Type.INSTANTIATION && activity.getOutcome()==Activity.Outcome.SUCCESS));
+      verify(f.nativeTx,never()).updateSemantics(any(),anyString());
     }
   }
   @Test void failedMandatoryCharacterizationPreventsParentPublication() throws Exception {

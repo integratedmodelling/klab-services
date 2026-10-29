@@ -22,6 +22,191 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.junit.jupiter.api.*;
 
 class ClassificationTransactionTest {
+  @Test void semanticReasonerCallbackCanReadTheSameTransactionGraph() throws Exception {
+    semanticCallback(false);
+  }
+  @Test void projectedSnapshotSemanticCallbackCanReadTheSameTransactionGraph() throws Exception {
+    semanticCallback(true);
+  }
+  private void semanticCallback(boolean projected) throws Exception {
+    var initial=pending(41,false);
+    var meaning=new org.integratedmodelling.common.knowledge.ConceptImpl();
+    meaning.setUrn("test:Region41");
+    meaning.setType(EnumSet.of(SemanticType.SUBJECT,SemanticType.OBSERVABLE));
+    var before=new org.integratedmodelling.common.knowledge.ObservableImpl();
+    before.setUrn(meaning.getUrn());before.setSemantics(meaning);
+    ((ObservationImpl)initial.member()).setObservable(before);
+    var value=new PendingAttribution(initial.member(),before,initial.abstractPredicate(),initial.predicate(),
+        initial.support(),initial.event());
+    root.add(value.member());
+    var transactionField=ServiceContextScope.class.getDeclaredField("currentTransaction");
+    transactionField.setAccessible(true);transactionField.set(scope,root);
+    doCallRealMethod().when(scope).getObservation(41L);
+    var after=new org.integratedmodelling.common.knowledge.ObservableImpl(before);
+    after.setUrn("test:ClassifiedRegion41");
+    var readCompleted=new java.util.concurrent.atomic.AtomicBoolean();
+    var cohort=new org.integratedmodelling.common.knowledge.CohortImpl();cohort.setId(10);cohort.setObservable(before);
+    var producer=pending(90,false).member();
+    when(producer.getObservable().getContextualization()).thenReturn(Contextualization.INSTANTIATION);
+    List<String> expected;
+    if(projected) {
+      root.link(cohort,value.member(),GraphModel.Relationship.HAS_MEMBER);root.add(producer);
+      expected=child.classificationOverlay(cohort,producer).state();
+    } else expected=List.of();
+    try(var callback=java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      when(reasoner.buildObservable(any(ObservableBuildStrategy.class),eq(scope))).thenAnswer(call->{
+        // This is the actual ObservableBuildStrategy -> Reasoner API boundary. Model the
+        // Reasoner's Runtime callback on a different HTTP thread. Runtime scope reconstruction
+        // resolves a transaction-local focus through this actual getObservation -> assets path.
+        var response=callback.submit(()->{
+          var snapshot=scope.getObservation(value.member().getId());
+          assertEquals(41,snapshot.getId());
+          readCompleted.set(true);
+          return snapshot;
+        });
+        try {response.get(2,java.util.concurrent.TimeUnit.SECONDS);}
+        catch(java.util.concurrent.TimeoutException blocked) {
+          throw new IllegalStateException("Semantic Runtime callback is blocked by the attribution graph monitor",blocked);
+        }
+        return after;
+      });
+      assertDoesNotThrow(()->{
+        if(projected) child.stageClassificationSnapshot(List.of(value),scope,cohort,producer,List.of(),expected);
+        else child.stageAttributions(List.of(value),scope);
+      });
+      assertTrue(readCompleted.get());
+      assertEquals(after.getUrn(),root.readObservation(value.member()).getObservable().getUrn());
+      verify(reasoner).buildObservable(any(ObservableBuildStrategy.class),eq(scope));
+    }
+  }
+
+  @Test void graphMutationDuringSemanticPreparationRejectsTheWholeBatch() throws Exception {
+    var value=pending(41,false);root.add(value.member());
+    var after=value.originalObservable().builder(scope).buildObservable();
+    try(var callback=java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      when(value.originalObservable().builder(scope).buildObservable()).thenAnswer(call->{
+        callback.submit(()->root.add(pending(42,false).member())).get(2,java.util.concurrent.TimeUnit.SECONDS);
+        return after;
+      });
+      var failure=assertThrows(IllegalStateException.class,()->child.stageAttributions(List.of(value),scope));
+      assertTrue(failure.getMessage().contains("graph changed"));
+      assertUnstagedFailure();
+    }
+  }
+  @Test void unjournaledMemberMutationDuringPreparationRejectsWithoutPartialStaging() throws Exception {
+    var first=pending(41,false);var second=pending(42,false);
+    root.add(first.member());root.add(second.member());
+    var after=first.originalObservable().builder(scope).buildObservable();
+    try(var callback=java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      when(first.originalObservable().builder(scope).buildObservable()).thenAnswer(call->{
+        callback.submit(()->second.member().getMetadata().put("external","changed"))
+            .get(2,java.util.concurrent.TimeUnit.SECONDS);
+        return after;
+      });
+      var failure=assertThrows(IllegalStateException.class,()->child.stageAttributions(List.of(first,second),scope));
+      assertTrue(failure.getMessage().contains("input changed"));
+      assertEquals("changed",second.member().getMetadata().get("external"));
+      assertUnstagedFailure();
+    }
+  }
+  @Test void concurrentCommitCannotPublishWhileSemanticPreparationIsInFlight() throws Exception {
+    var value=pending(41,false);root.add(value.member());
+    var after=value.originalObservable().builder(scope).buildObservable();
+    var receipt=new java.util.concurrent.atomic.AtomicLong();
+    try(var callback=java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      when(value.originalObservable().builder(scope).buildObservable()).thenAnswer(call->{
+        receipt.set(callback.submit(()->root.commit()).get(2,java.util.concurrent.TimeUnit.SECONDS));
+        return after;
+      });
+      assertThrows(IllegalStateException.class,()->child.stageAttributions(List.of(value),scope));
+      assertEquals(-1,receipt.get());assertUnstagedFailure();
+    }
+  }
+  @Test void cancellationDuringSemanticPreparationCannotStageResults() throws Exception {
+    var value=pending(41,false);root.add(value.member());
+    var after=value.originalObservable().builder(scope).buildObservable();
+    var cancelled=new java.util.concurrent.atomic.AtomicBoolean();
+    when(scope.isInterrupted()).thenAnswer(call->cancelled.get());
+    when(value.originalObservable().builder(scope).buildObservable()).thenAnswer(call->{cancelled.set(true);return after;});
+    assertThrows(java.util.concurrent.CancellationException.class,()->child.stageAttributions(List.of(value),scope));
+    assertUnstagedFailure();
+  }
+  @Test void semanticPreparationUsesDetachedInputsEvenWhenOriginalsChangeAndRestore() {
+    var initial=pending(41,false);
+    var meaning=new org.integratedmodelling.common.knowledge.ConceptImpl();
+    meaning.setUrn("test:Region41");meaning.setType(EnumSet.of(SemanticType.SUBJECT));
+    var before=new org.integratedmodelling.common.knowledge.ObservableImpl();
+    before.setUrn(meaning.getUrn());before.setSemantics(meaning);
+    ((ObservationImpl)initial.member()).setObservable(before);
+    var family=new org.integratedmodelling.common.knowledge.ConceptImpl();family.setUrn("test:Family");
+    var predicate=new org.integratedmodelling.common.knowledge.ConceptImpl();
+    predicate.setUrn("test:Concrete");predicate.setType(EnumSet.of(SemanticType.PREDICATE));
+    var value=new PendingAttribution(initial.member(),before,family,predicate,initial.support(),initial.event());
+    root.add(value.member());
+    var after=new org.integratedmodelling.common.knowledge.ObservableImpl(before);after.setUrn("test:After");
+    var existing=new org.integratedmodelling.common.knowledge.ConceptImpl();existing.setUrn("test:Unrelated");
+    when(reasoner.directTraits(any())).thenAnswer(call->{
+      meaning.setUrn("test:ChangedBase");family.setUrn("test:ChangedFamily");
+      predicate.setUrn("test:ChangedResult");predicate.setType(EnumSet.of(SemanticType.ROLE));
+      return List.of(existing);
+    });
+    when(reasoner.is(any(Concept.class),any(Concept.class))).thenAnswer(call->{
+      Concept capturedFamily=call.getArgument(1);
+      assertNotSame(family,capturedFamily);assertEquals("test:Family",capturedFamily.getUrn());
+      return false;
+    });
+    when(reasoner.buildObservable(any(ObservableBuildStrategy.class),eq(scope))).thenAnswer(call->{
+      ObservableBuildStrategy strategy=call.getArgument(0);
+      assertNotSame(before,strategy.getBaseObservable());
+      assertNotSame(meaning,strategy.getBaseObservable().getSemantics());
+      assertEquals("test:Region41",strategy.getBaseObservable().getSemantics().getUrn());
+      var operation=strategy.getOperations().stream()
+          .filter(op->op.getType()==ObservableBuildStrategy.OperationType.WITH_TRAITS).findFirst().orElseThrow();
+      var captured=operation.getConcepts().getFirst();
+      assertNotSame(predicate,captured);assertEquals("test:Concrete",captured.getUrn());
+      assertTrue(captured.is(SemanticType.PREDICATE));assertFalse(captured.is(SemanticType.ROLE));
+      // A before/after fingerprint alone would miss this ABA mutation. Computation must use
+      // the captured values throughout, even though the caller restores its values before apply.
+      meaning.setUrn("test:Region41");family.setUrn("test:Family");
+      predicate.setUrn("test:Concrete");predicate.setType(EnumSet.of(SemanticType.PREDICATE));
+      return after;
+    });
+    assertDoesNotThrow(()->child.stageAttributions(List.of(value),scope));
+    assertEquals("test:After",root.readObservation(value.member()).getObservable().getUrn());
+    var evidence=(List<Map<String,Object>>)activity.getMetadata().get(Metadata.IM_ATTRIBUTIONS);
+    assertEquals("test:Family",evidence.getFirst().get("abstractPredicate"));
+    assertEquals("test:Concrete",evidence.getFirst().get("predicate"));
+  }
+  @Test void requestAliasCannotRedirectItsMemberDuringSemanticPreparation() {
+    var canonical=pending(41,false);root.add(canonical.member());
+    var alias=new ObservationImpl();alias.setId(41);alias.setUrn("alias:41");
+    alias.setObservable(canonical.originalObservable());alias.setGeometry(canonical.member().getGeometry());
+    var value=new PendingAttribution(alias,canonical.originalObservable(),canonical.abstractPredicate(),
+        canonical.predicate(),canonical.support(),canonical.event());
+    var after=value.originalObservable().builder(scope).buildObservable();
+    when(value.originalObservable().builder(scope).buildObservable()).thenAnswer(call->{alias.setId(42);return after;});
+    var failure=assertThrows(IllegalStateException.class,()->child.stageAttributions(List.of(value),scope));
+    assertTrue(failure.getMessage().contains("request changed"));
+    assertEquals(41,canonical.member().getId());assertEquals(42,alias.getId());assertUnstagedFailure();
+  }
+  @Test void staleReadViewCannotSelectARedirectedSourceBeforePreparation() {
+    var original=pending(41,false);root.add(original.member());
+    var view=root.readObservation(original.member());
+    ((ObservationImpl)original.member()).setId(42);
+    assertEquals(41,view.getId());assertEquals(42,original.member().getId());
+    var value=new PendingAttribution(view,original.originalObservable(),original.abstractPredicate(),
+        original.predicate(),original.support(),original.event());
+    var failure=assertThrows(IllegalStateException.class,()->child.stageAttributions(List.of(value),scope));
+    assertTrue(failure.getMessage().contains("association changed before preparation"));
+    assertUnstagedFailure();verify(reasoner,never()).buildObservable(any(),any());
+  }
+  private void assertUnstagedFailure() {
+    assertTrue(root.isFailed());
+    assertTrue(child.outgoing(activity).stream().noneMatch(link->link.type()==GraphModel.Relationship.CLASSIFIED));
+    assertNull(activity.getMetadata().get(Metadata.IM_ATTRIBUTIONS));
+    assertEquals(-1,root.commit());verifyNoInteractions(storage);
+  }
+
   @Test void parallelDescriptivePropertiesPersistWithDurableBearerAndDoNotBecomeWriterClaims() {
     var source = pending(41, false).member();
     var target = pending(42, false).member();
@@ -217,8 +402,11 @@ class ClassificationTransactionTest {
       assertFalse(
           child.outgoing(activity).stream()
               .anyMatch(l -> l.type() == GraphModel.Relationship.CREATED));
-      if (role) verify(pending.originalObservable().builder(scope)).withRole(pending.predicate());
-      else verify(pending.originalObservable().builder(scope)).withTrait(pending.predicate());
+      var captured=org.mockito.ArgumentCaptor.forClass(Concept.class);
+      if (role) verify(pending.originalObservable().builder(scope)).withRole(captured.capture());
+      else verify(pending.originalObservable().builder(scope)).withTrait(captured.capture());
+      assertEquals(pending.predicate().getUrn(),captured.getValue().getUrn());
+      assertNotSame(pending.predicate(),captured.getValue());
     }
   }
 
@@ -347,7 +535,8 @@ class ClassificationTransactionTest {
   @Test void overlappingFamilyRejectsAndPoisonsWholeAttempt() {
     var first = pending(41, false);
     var second = independent(first, "test:SubtypeFamily");
-    when(reasoner.is(second.abstractPredicate(), first.abstractPredicate())).thenReturn(true);
+    when(reasoner.is(argThat((Concept c)->c!=null&&Objects.equals(c.getUrn(),second.abstractPredicate().getUrn())),
+        argThat((Concept c)->c!=null&&Objects.equals(c.getUrn(),first.abstractPredicate().getUrn())))).thenReturn(true);
     child.stageAttributions(List.of(first), scope);
     assertThrows(IllegalStateException.class, () -> child.stageAttributions(List.of(second), scope));
     assertEquals(-1, root.commit());

@@ -94,6 +94,9 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
   /** Typed whole-support unary reduction, evaluated only after completed collective discovery. */
   default CollectiveReductionBinding getCollectiveReduction() { return null; }
 
+  /** Bounded native discovery and normal family classification followed by a virtual view. */
+  default CollectiveSelectionBinding getCollectiveSelection() { return null; }
+
   /**
    * The compiled Markdown/AsciiDoc documentation relative to the observable being resolved by this
    * strategy, ready for inclusion in documentation and provenance. This is obtained in each

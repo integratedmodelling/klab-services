@@ -131,7 +131,7 @@ worldview binding invariants, current implementation status, and development pla
 | `resolveObservable(definition)` | yes | yes | Parses and declares a k.IM observable, including mediation and value operators. Results are cached. |
 | `compose(concepts, connector)` | yes | yes | Builds an OWL union or intersection. Empty input yields `owl:Nothing`; exclusion and disjoint union are rejected. The client composes a definition and resolves it. |
 | `coreObservable(semantics)` | yes | yes | Follows `CORE_OBSERVABLE_PROPERTY` metadata transitively, with cycle protection, to the worldview core observable. |
-| `baseSubstantialType(semantics, scope)` | partial | yes | Removes traits, roles, and semantic modifiers from a substantial. Individual-identity lexical roots are not yet restored. |
+| `baseSubstantialType(semantics, scope)` | yes | yes | Removes all predicates, including identities and roles, and semantic modifiers. A substantial subclass defines a distinct cohort category; discovery still requires the request's native clauses, scope, geometry, observer and generation proof. |
 | `baseObservable(semantics)` | yes | yes | Returns a concept unchanged; for an observable, walks toward the declared base observable. |
 | `rawObservable(semantics)` | yes | yes | Removes explicit restrictions by resolving the stored core-observable definition without descending to the worldview core. |
 | `describedType(semantics)` | yes | yes | Returns the observable referenced by `DESCRIBES_OBSERVABLE_PROPERTY`, used by unary operators. |
@@ -210,7 +210,7 @@ so a contextual match cannot reuse a result computed for another context.
 | `directRealms(semantics)` | yes | yes | Direct realm restrictions. |
 | `hasTrait(semantics, trait)` | yes | yes | True when an inherited trait is equal to or specializes the requested trait. |
 | `hasDirectTrait(semantics, trait)` | yes | yes | Tests directly asserted traits using subsumption. |
-| `lexicalRoot(trait)` | yes | yes | Walks parents to the base declaration, respecting original-trait metadata. |
+| `lexicalRoot(trait)` | yes | yes | Returns the authored lexical boundary; configured authority concepts use their current worldview binding root. |
 | `roles(semantics)` | yes | yes | Inherited role restrictions. |
 | `directRoles(semantics)` | yes | yes | Direct role restrictions. |
 | `hasRole(semantics, role)` | yes | yes | True when an inherited role is equal to or specializes the requested role. |
@@ -625,6 +625,27 @@ rather than attempting to create ontologies with a null manager.
 A predicate with no identifiable lexical root produces a warning. It remains in the expression
 and retains its generic OWL predicate restriction; unknown roots do not establish trait-family
 equivalence. Missing concepts and cyclic ancestry terminate lexical-root lookup safely.
+Top-level worldview declarations establish lexical boundaries even when they specialize a
+parent in another ontology. Nested declarations inherit their enclosing boundary. Authors must
+therefore use nesting when descendants belong to one classification family; declaring a new
+top-level specialization intentionally establishes another family. The rule applies to
+attributes, realms, identities and roles. A lexical root need not itself be abstract; normal
+classification of a concrete root uses the explicit `any` form.
+
+Configured authority concepts use the exact worldview concept bound by `rootIdentity`, including
+a nested binding concept. Provider ancestry and mapped semantic boundaries do not choose a
+different lexical family. Codelist aliases share their canonical authority concept and binding
+root; current codelist configuration maps names to namespaces and has no separate per-list root.
+Lookup requires a currently loaded canonical class and current binding, without fetching or
+completing external ancestry. It does not establish provider admission: a deferred identity may
+have a lexical root while still lacking complete authority hierarchy evidence. Validated
+binding configuration prepares the selected root's identity restricting property, including for
+nested roots, so normal observable composition can use the explicit family. Root lookup itself
+does not create properties or change the ontology. Authored
+specializations retain their own declaration boundaries; transported flags and metadata cannot
+invent one for an internal provider concept after its binding is released. See
+[authority lexical families](../notes/authority-lexical-family.md) for the bounded contract and
+test coverage.
 For an ontology source mismatch, the reasoner retrieves the saved ontology and imports from
 Resources in the caller's scope and synchronizes changed sources in dependency order through
 `updateKnowledge`. Only a request matching the saved source can trigger this synchronization;

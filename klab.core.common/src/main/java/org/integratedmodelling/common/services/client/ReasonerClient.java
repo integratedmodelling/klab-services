@@ -742,6 +742,15 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request, Scope scope) {
+    var result=client.withScope(scope).post(ServicesAPI.REASONER.SEMANTIC_DEPENDENCIES,request,
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.class);
+    return result==null?org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(
+        request,"Semantic closure certification is unavailable"):result;
+  }
+
+  @Override
   public SemanticValidationResponse validateDocument(
       SemanticValidationRequest request, Scope scope) {
     var response =

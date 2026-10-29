@@ -68,6 +68,16 @@ public class ObservationReasoner {
       }
     }
     if (isResolution) {
+      // This finite composition has a typed portable contract, like whole-support reduction.
+      // It is offered after authored Tier-0 routes and never executes during strategy matching.
+      var selection = CollectiveSelectionBinding.capture(observation, scope, reasoner);
+      if (selection != null) {
+        var strategy = new ObservationStrategyImpl();
+        strategy.setUrn("klab:collective-concrete-selection");
+        strategy.setNamespace("klab"); strategy.setRank(1);
+        strategy.setCollectiveSelection(selection);
+        result.add(strategy);
+      }
       CollectiveReductionBinding binding = null;
       try { binding = CollectiveReductionBinding.capture(observation, scope, reasoner); }
       catch (IllegalStateException stale) { scope.warn("Collective reduction unavailable: " + stale.getMessage()); }
@@ -428,7 +438,8 @@ public class ObservationReasoner {
     // Only the production OWL clause proof can authorize this route. No containment shortcut.
     if (!(reasoner instanceof ReasonerService service))
       throw new UnsupportedOperationException("Native context proof is unavailable");
-    long revision = service.knowledgeRevision();
+    long localRevision = service.knowledgeRevision();
+    var admittedCapabilities = service.capabilities(scope);
     var clauses = new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(service.owl());
     if (clauses.bearerConstraints(child.asConcept()).isEmpty()
         || clauses.clauseCompatibility(child.asConcept(), SemanticRole.INHERENT,
@@ -436,12 +447,18 @@ public class ObservationReasoner {
               org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport.Compatibility.COMPATIBLE)
       throw new IllegalArgumentException("Child has no proven compatible native bearer");
     var capabilities = service.capabilities(scope);
-    if (capabilities == null || capabilities.getServiceId() == null || revision < 0
-        || capabilities.getKnowledgeRevision() != revision)
+    if (capabilities == null || admittedCapabilities == null || capabilities.getServiceId() == null
+        || localRevision < 0 || localRevision != service.knowledgeRevision()
+        || capabilities.getKnowledgeRevision() < 0
+        || !Objects.equals(admittedCapabilities.getServiceId(), capabilities.getServiceId())
+        || admittedCapabilities.getKnowledgeRevision() != capabilities.getKnowledgeRevision()
+        || !Objects.equals(admittedCapabilities.getSemanticContentFingerprint(), capabilities.getSemanticContentFingerprint())
+        || !Objects.equals(admittedCapabilities.getSemanticSessionId(),capabilities.getSemanticSessionId()))
       throw new IllegalArgumentException("Native proof semantic revision changed or is unavailable");
     var binding = new SingularContextBinding(context.getId(), context.getUrn(),
         context.getObservable().getUrn(), Geometry.forTransport(context.getGeometry()).encode(),
-        child.getUrn(), capabilities.getServiceId(), revision);
+        child.getUrn(), capabilities.getServiceId(), capabilities.getKnowledgeRevision(),
+        capabilities.getSemanticContentFingerprint(),capabilities.getSemanticSessionId());
     var operation = new ObservationStrategyImpl.OperationImpl();
     operation.setType(ObservationStrategy.Operation.Type.valueOf(producer.getMode().name()));
     operation.setObservable(child);

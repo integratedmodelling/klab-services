@@ -51,6 +51,23 @@ class CapturedConfiguredAuthorityTest {
   private CapturedAuthorityCatalog capture(Fixture f)throws Exception{
     return CapturedAuthorityCatalog.captureRecorded(f.data,f.source,Map.of("UN.M49",0L),CapturedAuthorityCatalog.captureProviderEvidence(f.data),f.hashes);
   }
+  @Test void deterministicConfiguredSnapshotCertifiesContentAndOpaqueStateBytesRemainSignificant() throws Exception {
+    var f=fixture(); var catalog=capture(f);
+    assertTrue(catalog.certifiesDurableContent(f.source));
+    var proof=catalog.dependencyProof(f.binding);
+    assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.SNAPSHOT,proof.kind());
+    assertTrue(proof.proof().matches("[a-f0-9]{64}"));assertEquals(Long.MAX_VALUE,proof.expiresAt());
+
+    var original=SemanticContentFingerprint.canonical(catalog.semanticContent(f.source));
+    assertArrayEquals(original,SemanticContentFingerprint.canonical(capture(f).semanticContent(f.source)));
+    var changed=new ConfiguredAuthoritySnapshot("fixture-v1","test.snapshot",f.request,
+        "frozen-vocabulary-with-different-content".getBytes(StandardCharsets.UTF_8));
+    Files.write(f.state,json.writeValueAsBytes(changed));
+    var next=new Fixture(f.data,f.archive,f.state,f.source,f.binding,f.request,
+        Map.of("UN.M49",digest(Files.readAllBytes(f.state))));
+    assertFalse(Arrays.equals(original,SemanticContentFingerprint.canonical(capture(next).semanticContent(f.source))));
+    assertArrayEquals("frozen-vocabulary-with-different-content".getBytes(StandardCharsets.UTF_8),changed.state());
+  }
   @Test void zeroTtlConfiguredStateReplaysFromOwnedArchiveWithoutLiveConfigure()throws Exception{
     var f=fixture();var catalog=capture(f);assertTrue(catalog.supports(f.binding));Files.delete(f.archive);
     var interactive=new java.util.concurrent.atomic.AtomicBoolean();
@@ -66,7 +83,7 @@ class CapturedConfiguredAuthorityTest {
     assertFalse(Files.exists(directory.resolve("owned/interactive-authority-cache")));
     provider.releaseConfiguration(id);assertThrows(IllegalStateException.class,()->provider.resolveIdentity(id,"Spain"));
   }
-  @Test void configuredSnapshotDistanceRemainsUnknownUntilInteractiveAndAfterReturningToCandidate()throws Exception{
+  @Test void configuredSnapshotDistanceUsesFrozenStateBeforeDuringAndAfterInteractiveUse()throws Exception{
     var f=fixture();var catalog=capture(f);Files.delete(f.archive);
     var interactive=new java.util.concurrent.atomic.AtomicBoolean();
     var provider=catalog.provider(f.binding,f.request,directory.resolve("distance-owned"),interactive::get);
@@ -74,12 +91,14 @@ class CapturedConfiguredAuthorityTest {
     String id=provider.configure(AuthorityBindings.providerRequest(f.request));
     assertEquals(0,provider.getCachePolicy().identitySeconds());
     assertEquals("Spain",provider.resolveIdentity(id,"Spain").getId());
-    assertEquals(Authority.DistanceStatus.UNKNOWN,provider.semanticDistance(id,"Europe","Spain").status());
+    assertEquals(Authority.DistanceStatus.COMPATIBLE,provider.semanticDistance(id,"Europe","Spain").status());
+    assertEquals(2,provider.semanticDistance(id,"Europe","Spain").distance());
     interactive.set(true);
     var distance=provider.semanticDistance(id,"Europe","Spain");
     assertEquals(Authority.DistanceStatus.COMPATIBLE,distance.status());assertEquals(2,distance.distance());
     interactive.set(false);
-    assertEquals(Authority.DistanceStatus.UNKNOWN,provider.semanticDistance(id,"Europe","Spain").status());
+    assertEquals(Authority.DistanceStatus.COMPATIBLE,provider.semanticDistance(id,"Europe","Spain").status());
+    assertEquals(2,provider.semanticDistance(id,"Europe","Spain").distance());
     assertFalse(Files.exists(directory.resolve("distance-owned/interactive-authority-cache")));
     provider.releaseConfiguration(id);
     assertThrows(IllegalStateException.class,()->provider.semanticDistance(id,"Europe","Spain"));

@@ -124,6 +124,9 @@ class ClassificationExecutionTest {
         mock(org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j.class);
     when(twin.getKnowledgeGraph()).thenReturn(knowledgeGraph);
     when(knowledgeGraph.dataflow()).thenReturn(RuntimeAsset.DATAFLOW_ASSET);
+    var activityQuery=mock(KnowledgeGraph.Query.class,RETURNS_SELF);
+    when(activityQuery.run(any())).thenReturn(List.of());
+    when(knowledgeGraph.query(eq(Activity.class),any())).thenReturn(activityQuery);
     when(scope.getService(Reasoner.class)).thenReturn(f.reasoner);
     when(scope.getService(RuntimeService.class)).thenReturn(runtime);
     when(scope.within(any(Observation.class))).thenReturn(scope);
@@ -226,6 +229,7 @@ class ClassificationExecutionTest {
               var executing = mock(ServiceContextScope.class);
               var tx = rootTransaction.getChild(activity, executing);
               when(executing.getCurrentTransaction()).thenReturn(tx);
+              when(executing.getDigitalTwin()).thenReturn(twin);
               when(executing.getService(Reasoner.class)).thenReturn(f.reasoner);
               when(executing.getService(RuntimeService.class)).thenReturn(runtime);
               when(executing.within(any(Observation.class))).thenReturn(executing);

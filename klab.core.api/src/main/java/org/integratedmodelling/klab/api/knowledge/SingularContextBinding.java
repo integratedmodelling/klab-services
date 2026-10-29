@@ -8,7 +8,25 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 
 /** Request-local native-context witness, never a discovery, coverage or reuse certificate. */
 public record SingularContextBinding(long contextId, String contextUrn, String contextObservable,
-    String contextSupport, String childObservable, String reasonerId, long knowledgeRevision) implements java.io.Serializable {
+    String contextSupport, String childObservable, String reasonerId, long knowledgeRevision, String semanticFingerprint, String semanticSessionId) implements java.io.Serializable {
+
+  public SingularContextBinding(long contextId, String contextUrn, String contextObservable,
+      String contextSupport, String childObservable, String reasonerId, long knowledgeRevision,
+      String semanticFingerprint) {
+    this(contextId, contextUrn, contextObservable, contextSupport, childObservable, reasonerId,
+        knowledgeRevision, semanticFingerprint, null);
+  }
+
+  public SingularContextBinding {
+    if (semanticFingerprint != null && !SemanticContentFingerprint.valid(semanticFingerprint))
+      throw new IllegalArgumentException("Invalid singular context semantic fingerprint");
+  }
+
+  public SingularContextBinding(long contextId, String contextUrn, String contextObservable,
+      String contextSupport, String childObservable, String reasonerId, long knowledgeRevision) {
+    this(contextId, contextUrn, contextObservable, contextSupport, childObservable, reasonerId,
+        knowledgeRevision, null);
+  }
 
   public static boolean eligible(Observation context) {
     return context != null && context.getId() > 0 && !context.isEmpty()
@@ -51,7 +69,9 @@ public record SingularContextBinding(long contextId, String contextUrn, String c
     var capabilities = reasoner == null ? null : reasoner.capabilities(scope);
     if (!(capabilities instanceof Reasoner.Capabilities semantic)
         || reasonerId == null || !Objects.equals(reasonerId, semantic.getServiceId())
-        || knowledgeRevision < 0 || knowledgeRevision != semantic.getKnowledgeRevision())
+        || knowledgeRevision < 0 || knowledgeRevision != semantic.getKnowledgeRevision()
+        || !Objects.equals(semanticFingerprint, semantic.getSemanticContentFingerprint())
+        || !Objects.equals(semanticSessionId, semantic.getSemanticSessionId()))
       throw new IllegalStateException("Singular binding semantic revision is unavailable or changed");
     return actual;
   }

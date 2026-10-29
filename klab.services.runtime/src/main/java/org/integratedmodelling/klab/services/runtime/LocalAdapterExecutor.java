@@ -44,12 +44,17 @@ public class LocalAdapterExecutor extends AbstractExecutor
 
     var res = resource;
     var scanner = scanners == null ? null : scanners.get(Dataflow.SELF_ID);
+    var invocationGeometry = contextualizationScope instanceof ContextualizationScopeImpl local
+        ? local.executionGeometry() : null;
+    var geometry = TemporalGeometry.localize(scanner == null
+        ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
+        : scanner.shard().getGeometry(), event);
     if (adapter.hasContextualizer()) {
       try {
         res =
             adapter.contextualize(
                 resource,
-                TemporalGeometry.localize(scanner == null ? observation.getGeometry() : scanner.shard().getGeometry(), event),
+                geometry,
                 scope);
       } catch (Throwable e) {
         observation.getNotifications().add(Notification.error(e));
@@ -69,7 +74,7 @@ public class LocalAdapterExecutor extends AbstractExecutor
           scanner,
           event,
           scope,
-          contextualizationScope);
+          contextualizationScope, geometry);
     } catch (Throwable e) {
       observation.getNotifications().add(Notification.error(e));
       return false;

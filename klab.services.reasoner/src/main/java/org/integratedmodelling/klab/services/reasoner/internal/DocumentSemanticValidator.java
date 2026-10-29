@@ -21,6 +21,9 @@ public class DocumentSemanticValidator
   private final List<ObserverDeclaration> observerDeclarations=new ArrayList<>();
   private boolean sourceValid;
   private final ReasonerService reasoner;
+  private final SemanticObligationCollector semanticObligations;
+  public List<String> getSemanticObligations() { return semanticObligations.terms(); }
+  public boolean isSemanticObligationsComplete() { return sourceValid && semanticObligations.complete(); }
   private final boolean executableModels;
   private final String executionContext;
   private final List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingModelContext> pendingModelContexts=new ArrayList<>();
@@ -63,11 +66,15 @@ public class DocumentSemanticValidator
     this.classifierPreparableDependencies = classifierPreparableDependencies;
     this.executableModels = executableModels;
     this.reasoner = reasoner;
+    this.semanticObligations = new SemanticObligationCollector(reasoner);
     this.clauses = new OWLSemanticClauseSupport(reasoner.owl());
   }
 
   public List<Notification> validate(KlabDocument<?> document) {
     observerDeclarations.clear();conditionalModelContexts.clear();pendingModelContexts.clear();sourceValid=false;
+    semanticObligations.reset();
+    if(executionContext!=null)try { semanticObligations.add(reasoner.resolveConcept(executionContext)); }
+      catch(RuntimeException unavailable) {semanticObligations.incomplete();}
     var diagnostics=validateSource(document);
     sourceValid=!org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(diagnostics);
     return diagnostics;
@@ -98,6 +105,20 @@ public class DocumentSemanticValidator
     var visitor = new KimOntologyVisitor(this, null);
     visitor.visit((KimOntology) document);
     return visitor.getNotifications();
+  }
+
+  @Override
+  public List<Notification> validateStatement(KlabStatement statement,KimObservableVisitor.Context context) {
+    try {semanticObligations.statement(statement,context);}
+    catch(RuntimeException unsupported) {semanticObligations.incomplete();}
+    return List.of();
+  }
+  @Override
+  public List<Notification> validateServiceCall(org.integratedmodelling.klab.api.lang.ServiceCall call,
+      KimObservableVisitor.Context context) {
+    try {semanticObligations.call(call,context);}
+    catch(RuntimeException unsupported) {semanticObligations.incomplete();}
+    return List.of();
   }
 
   @Override
@@ -533,7 +554,7 @@ public class DocumentSemanticValidator
     // is a different occurrence and must receive its own diagnostic.
     if (context.getParent() != null && context.getParent().getNode() instanceof KimConcept)
       return List.of();
-    if (syntax.isPattern()) return List.of();
+    if (syntax.isPattern()) {semanticObligations.incomplete(); return List.of();}
     var result = new ArrayList<Notification>();
     try {
       var head =
@@ -624,6 +645,7 @@ public class DocumentSemanticValidator
                     context));
         }
       }
+      semanticObligations.add(concept);
       collect(concept, syntax, context, result);
     } catch (RuntimeException e) {
       result.add(error(e, syntax, context));
