@@ -2,6 +2,42 @@
 
 ## Recommendation
 
+**Resumed indexing diagnosis, 29 October — concrete native failure and compatible
+candidate established:** no observation/session/context submissions were made.
+Controlled native Resources→Reasoner tracing captured HTTP 500 for
+`count of each each agency:Patient earth:Stream`. The public regression source
+contains `count of (each agency:Patient earth:Stream)` at
+`selection_native_dependency.kim:22`; independent use of the deployed grammar
+rejects the former and accepts the latter. Elevation's native request returned
+HTTP 200. This identifies an actual malformed native encoding/indexing failure,
+not a Python observation defect or proof of the sole empty-dataflow cause.
+
+The unchanged staging revision `9d20c1c236e5a033487ee47b34cd910c3ebbbe51`
+(27 October) predates those later regression namespaces. Its elevation namespace
+is byte-identical. With the same published October 27 services and unchanged IMOD,
+Resources became semantic-search capable, Reasoner operational, the target model
+retrievable, and all 13 captured observable calls returned HTTP 200. This is
+**index-readiness evidence, not numerical acceptance**. No source workaround,
+rewritten model, forced selection, or fourth computation was used.
+
+The earlier external administrative harness also needs a correction: plain JSON
+maps omit the native `ParametersImpl` discriminator/delegate shape. A controlled
+read-only query returned HTTP 500 for plain maps and 200 for native Parameters.
+The deployed Git importer rejects file URIs; correctly typed HTTPS imports both
+finished. Therefore the earlier property-import HTTP 500s must not be attributed
+to a broken service import implementation. This does not change the public
+ResourceInspector's GET-based contract or demonstrate an SDK defect.
+
+All three administrative diagnostic runs restored their eight starting config/
+catalog paths byte-for-byte; original services and PID metadata were restored;
+no temporary backend listener or visible service terminal remains. Sources stayed
+clean. Captured headers/credentials were not persisted; unknown request bodies
+were retained only as hashes. Prior Python offline/CI results remain historical;
+no application code changed in this pass. **Needs contract/coordination evidence**
+remains: the older compatible candidate needs a newly authorized bounded numerical
+pilot and recorded model association. The original three-attempt budget remains
+exhausted. See the [index diagnosis result](../../results/resource-inspector-index-diagnosis-20261029.json).
+
 **Latest authorized end-to-end local testing, 29 October:** the user authorized
 local preparation/restoration and up to three attempts, at most two observation
 Jobs each on the 20-cell grid, with hosted/source modifications excluded. All

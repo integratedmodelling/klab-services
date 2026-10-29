@@ -2,6 +2,45 @@
 
 ## 29 October continuation
 
+### Resumed diagnosis — compatible index candidate established, no new computation
+
+Resumed from clean `b4f7c9a76`. Its Python CI passed all versions/core-only; Maven
+still fails at unchanged `LanguageAdapter.java:1234`. No numerical budget was
+renewed or consumed. All new process launches were headless.
+
+Native indexing trace captured a malformed expression:
+`count of each each agency:Patient earth:Stream` → HTTP 500. The unchanged source
+at `selection_native_dependency.kim:22` has one `each` inside parentheses. Deployed
+grammar checks reject the malformed encoding, accept the source form, and accept
+elevation. Native elevation resolution itself returned HTTP 200. This is a real
+native indexing failure, not proof it solely caused the earlier empty dataflow.
+
+**Candidate to use next:** staging `9d20c1c236e5a033487ee47b34cd910c3ebbbe51`,
+IMOD `1328000fff63a1951465b1f7b130c0af15264c95`, and the previously verified
+published component/spatial archives. The older staging revision predates new
+selection regression namespaces; `src/staging/vxii/basic.kim` is byte-identical.
+Index-only comparison reached semantic-search capable Resources, operational
+Reasoner, retrievable elevation model and 13/13 successful captured observable
+calls. No Java/scientific/source changes or numerical observations were made.
+
+Administrative harness correction: property bodies need the native Parameters
+discriminator/delegate; Git imports require HTTP(S), not file URIs. Correctly
+typed HTTPS imports succeed. Earlier plain-map HTTP 500s are not a demonstrated
+import service defect. Public F2 SDK behavior was unchanged.
+
+Each of three administrative diagnostic runs restored eight starting config/
+catalog paths byte-for-byte. Original October 16 services are running again;
+Resources PID 6180, Reasoner PID 14860, other service PIDs unchanged. All native
+PID records match listeners; temporary proxy/backend is gone; zero visible
+service console windows. Clean unconfigured Git clones, the older compatible
+clone, backups, sanitized logs and caches are retained. Current baseline remains
+empty Resources/nonoperational Reasoner, not the temporary ready candidate.
+
+See `docs/results/resource-inspector-index-diagnosis-20261029.json` and the updated
+review. **PR99 remains draft; next numerical verification needs renewed bounded
+authorization. Do not reinterpret these indexing diagnostics as extra pilot runs
+or a renewal of the exhausted three-attempt budget.**
+
 ### Latest state: end-to-end local testing exhausted; restoration verified
 
 **Pause checkpoint:** the user requested commit/push and resumption later. The
