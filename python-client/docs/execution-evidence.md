@@ -57,7 +57,11 @@ therefore reject even a compact wire response. Budgets are not an RSS guarantee.
 No implicit recursive activity traversal occurs; exhausting the activity budget
 adds a diagnostic, not an invented complete graph. Pagination has no snapshot lease.
 
-Live persisted diagram retrieval and representation of the real fixture computation
-remain required acceptance gates, not established by the source-derived offline
-payloads. See [contracts](discover-compare-explain-contracts.md) and
+Live persisted diagram retrieval and representation were verified on 29 October
+against an actual 20-cell synthetic terrain result: its recorded resolution named
+the inspected model, and its contextualization chart named the terrain generator.
+This is not independent scientific accuracy or exhaustive lineage. A valid
+nonowner/private-context denial fixture remains required for permission acceptance.
+See [live evidence](results/execution-evidence-local-acceptance-20261029.json),
+[contracts](discover-compare-explain-contracts.md) and
 [the feature review](reviews/discover-compare-explain/execution-evidence.md).
