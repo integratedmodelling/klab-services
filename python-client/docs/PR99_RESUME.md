@@ -1,5 +1,16 @@
 # Reboot/session handoff — 28 October 2026
 
+## 29 October continuation
+
+See [the current read-only deployment handoff](PR99_DEPLOYMENT_HANDOFF.md) and
+[timestamped public metadata](results/resource-inspector-reboot-check-20261029.json).
+The recovered `80a60edc5` head's Python 3.11/3.12/3.13/core-only CI passed; Maven
+still failed on the unchanged Java switch. Hosted IDs have changed. Reasoner
+initialized during checks and a fresh authenticated inventory succeeded, but the
+Resources-versus-Runtime generator advertisement concern persists. No new
+computation or service change was performed. Operator logs/build/loading evidence
+and fresh pilot authorization are still required. Historical handoff follows.
+
 ## Active task
 
 Finish **PR #99: F2 resource/model inspector** first. Each feature has its own PR

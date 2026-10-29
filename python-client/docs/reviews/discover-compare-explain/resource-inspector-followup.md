@@ -2,6 +2,14 @@
 
 ## Recommendation
 
+**29 October evidence update:** recovered head `80a60edc5` now has passing Linux
+Python 3.11/3.12/3.13 and core-only CI. Maven still fails on unchanged Java and
+Jenkins reports an error. Fresh hosted IDs differ; Reasoner initialized during
+read-only checks, and authenticated component inventory subsequently succeeded
+with the same advertisement concern. No new computation or administration was
+performed. The recommendation below is unchanged; see the
+[operator handoff](../../PR99_DEPLOYMENT_HANDOFF.md) for exact scope and next actions.
+
 **Needs contract/coordination evidence — not ready.** The authorized real pilot
 failed at the elevation Job; model/result association was not demonstrated. A
 concrete cross-service component-advertisement mismatch was observed, but the
