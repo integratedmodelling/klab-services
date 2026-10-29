@@ -64,6 +64,7 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
   @Override
   protected ReasonerService createPrimaryService(
       ServiceScope serviceScope, ServiceStartupOptions options) {
+    ModuleExtractionTraceFilter.install();
     var service = new ReasonerService(serviceScope, options);
     try {
       var factory = org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.fromLocalCatalog(
