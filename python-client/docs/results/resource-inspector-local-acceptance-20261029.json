@@ -78,6 +78,7 @@
     "test_spatial_plugin_removed_from_active_directory": true,
     "original_distribution_relaunched": "202610161554",
     "native_pid_records": "updated to verified listening process IDs and OS creation timestamps after relaunch",
+    "terminal_cleanup_correction": "Initial cleanup report missed four visible service-launch terminal windows. On user correction, all four were hidden (not terminated), preserving restored services and leaving the unrelated terminal untouched; five service listeners verified afterward",
     "all_four_public_capabilities_respond": true,
     "restored_baseline": "Resources has no adopted worldview, Reasoner not operational, all four advertise internal component only",
     "whole_database_rollback": false,

@@ -8,3 +8,6 @@
 - Supporting documentation may preserve evidence but must not replace a
   self-contained chat update. Distinguish verified results from hypotheses and
   implementation completion from acceptance completion.
+- Launch background services without creating visible terminal windows. Include
+  agent-created console windows in cleanup checks; do not close unrelated user
+  terminals or terminate restored services merely to remove window clutter.

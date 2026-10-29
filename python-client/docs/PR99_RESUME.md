@@ -4,6 +4,16 @@
 
 ### Latest state: end-to-end local testing exhausted; restoration verified
 
+**Pause checkpoint:** the user requested commit/push and resumption later. The
+earlier cleanup report missed four Windows Terminal windows created by service
+relaunches. They were subsequently identified by their exact service executable
+title and hidden, not terminated; the unrelated existing terminal was untouched.
+Verified listeners remain GraphDB PID 39860 (native launcher), Reasoner 42780,
+Resources 33012, Resolver 20756 and Runtime 41292. All native PID records match
+their listening processes. Future launches must be headless; visual terminal
+cleanup is part of completion. Do not start further testing during this pause or
+treat the three-attempt budget as renewed on resumption.
+
 The user expanded authorization to local preparation, configuration/component
 installation/restarts, Python fixes if demonstrated, restoration and publication,
 with **three attempts × at most two observation Jobs on 20 cells**. Hosted/source
