@@ -2,6 +2,12 @@
 
 ## 29 October continuation
 
+**Current completion/remaining-work summary:** [PR99_REMAINING.md](PR99_REMAINING.md).
+PR99's bounded feature acceptance passed. PR98 does **not** block PR99; the
+remaining PR99 gates are Java CI and maintainer/base-integration decisions.
+After the subsequent PR98 positive-control run, four of the latest five attempts
+are used and one remains; the older budget notes below are checkpoint history.
+
 ### Latest: F2 local numerical/model-association acceptance PASSED
 
 The user authorized **five more attempts**, with the same two-Job/one-session/
