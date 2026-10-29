@@ -2,6 +2,32 @@
 
 ## Recommendation
 
+**Latest renewed pilot outcome, 29 October:** the user authorized three more local
+attempts, each bounded to two observation Jobs on 20 cells. All three failed at
+elevation, with context/session releases confirmed. No numerical result or recorded
+inspected-model association was obtained. Therefore the recommendation remains
+**Needs contract/coordination evidence**; PR99 stays draft. PR98 is not yet unblocked.
+
+The final unchanged-forwarding native trace captured HTTP 200 with an empty
+elevation observation-strategy list; **no elevation model-discovery query occurred**.
+The captured model queries were for `earth:Region` (a downstream EOF failure,
+then an empty HTTP 200 ResourceSet). The worldview's dependent-quality strategy
+requires an existing context observation; native focus/guard propagation is now
+a diagnostic lead, not an established cause or demonstrated Python defect.
+Compatible indexing did not establish execution compatibility. No Java, model,
+component, ontology, worldview, algorithm or public Python source was changed.
+
+Per contribution-review evidence rules, this live result overrides any inference
+from offline coverage or operational/index readiness. Historical Python CI at
+`99e55c047` passed all Python versions/core-only; Maven remains separately failed.
+No new broad offline run was needed for this evidence-only pass. Retained pilot
+reports/native traces were checked against the summary; configuration/catalog
+bytes, plugin inventories, five PID records/listeners, absence of temporary backend
+listeners and zero remaining contexts were checked after restoration. Sources and
+unrelated terminals were preserved. The renewed budget is exhausted; read-only
+native diagnosis may continue, but any additional computation needs authorization.
+See [renewed acceptance result](../../results/resource-inspector-renewed-acceptance-20261029.json).
+
 **Resumed indexing diagnosis, 29 October — concrete native failure and compatible
 candidate established:** no observation/session/context submissions were made.
 Controlled native Resources→Reasoner tracing captured HTTP 500 for

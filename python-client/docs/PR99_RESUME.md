@@ -2,6 +2,40 @@
 
 ## 29 October continuation
 
+### Latest: renewed three-attempt budget exhausted; no elevation strategy
+
+The user renewed up to three local attempts (two observation Jobs each, 20 cells),
+asked to continue working, move to PR98 after finishing PR99, and remove completed
+sidebar items. All three renewed attempts are now used. Each inspected the model,
+returned the region observation, failed elevation with empty dataflow, and confirmed
+owned context/session releases. Six observation Jobs were submitted in this batch;
+none produced numerical elevation data. No new budget is implied by "continue".
+
+The final native trace is more specific than the original failure: Reasoner
+returned HTTP 200 with **an empty observation-strategy list for elevation**.
+No elevation model-discovery request followed. Both captured model queries were
+for `earth:Region`; one transient downstream EOF/HTTP-header-parser failure was
+followed by an empty HTTP 200 ResourceSet. Do not describe those as elevation
+queries or the malformed regression encoding as the sole known cause.
+
+The unchanged worldview's `dependent.direct` strategy requires `context.exists()`
+and `request.fully_specified($this)`. Elevation was concrete/non-generic in the
+request. Native focus/context propagation or guard evaluation is a lead, not a
+demonstrated cause or SDK defect. No application source was changed.
+
+Original October 16 deployment restored headlessly: GraphDB 41864, Reasoner 43856,
+Resources 41008, Resolver 42448, Runtime 43372. Sixteen config/catalog paths match
+starting bytes; Resources/Runtime plugin inventories match; spatial plugin and
+procedure removed; proxy/backend listeners gone; zero configured projects and
+remaining Runtime contexts. Native PID records match listeners. Retained fresh
+backups (including GraphDB data), sanitized traces/logs, pilot reports, inactive
+plugins and index/cache data are disclosed; no whole-database rollback occurred.
+
+See `docs/results/resource-inspector-renewed-acceptance-20261029.json`. PR99 remains
+draft, **Needs contract/coordination evidence**. Continue read-only investigation
+of native strategy/context contracts; no fourth renewed numerical attempt without
+new explicit authorization. PR98 must not be treated as unblocked by this failure.
+
 ### Resumed diagnosis — compatible index candidate established, no new computation
 
 Resumed from clean `b4f7c9a76`. Its Python CI passed all versions/core-only; Maven
