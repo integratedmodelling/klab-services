@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.utilities;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,9 +11,9 @@ import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.LocalFileHeader;
@@ -614,10 +612,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     //    private static final Logger logger = LoggerFactory.getLogger(Maven.class);
 
-    private static final String MAVEN_CENTRAL_SEARCH_API =
-        "https://central.sonatype.com/solrsearch/select";
-    private static final String MAVEN_CENTRAL_SNAPSHOTS_API =
-        "https://central.sonatype.com/repository/maven-snapshots";
     private static final String MAVEN_CENTRAL_RELEASES_URL = "https://repo.maven.apache.org/maven2";
     private static final String MAVEN_CENTRAL_SNAPSHOTS_URL =
         "https://central.sonatype.com/repository/maven-snapshots";
@@ -625,7 +619,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository";
     private static final HttpClient HTTP_CLIENT =
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static final MavenSnapshotRepository SNAPSHOTS = new MavenSnapshotRepository(
+        HTTP_CLIENT, System::nanoTime,
+        Duration.ofMinutes(Long.getLong("maven.snapshot.cache.minutes", 20L)));
 
     /** Maven coordinates holder class */
     public static class MavenCoordinates {
@@ -700,137 +697,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * @throws IOException if there's an error communicating with Maven Central
      */
     public static SnapshotInfo getLatestSnapshotDate(MavenCoordinates coordinates) {
-      if (!coordinates.getVersion().endsWith("-SNAPSHOT")) {
-        throw new KlabIllegalArgumentException("Version must be a SNAPSHOT version");
-      }
-
-      try {
-        // First, try to get snapshot info from Maven Central search API
-        Optional<SnapshotInfo> searchResult = getSnapshotInfoFromSearch(coordinates);
-        return searchResult.orElseGet(() -> getSnapshotInfoFromRepository(coordinates));
-
-        // If search API doesn't work, try the direct repository approach
-
-      } catch (Exception e) {
-        throw new KlabIOException("Failed to retrieve snapshot metadata", e);
-      }
-    }
-
-    /** Attempts to get snapshot information using Maven Central's search API */
-    private static Optional<SnapshotInfo> getSnapshotInfoFromSearch(MavenCoordinates coordinates) {
-
-      String query =
-          String.format(
-              "q=g:%s+AND+a:%s+AND+v:%s&core=gav&rows=1&wt=json",
-              coordinates.getGroupId(), coordinates.getArtifactId(), coordinates.getVersion());
-
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(MAVEN_CENTRAL_SEARCH_API + "?" + query))
-              .timeout(Duration.ofSeconds(60))
-              .GET()
-              .build();
-
-      HttpResponse<String> response = null;
-      try {
-        response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new KlabIOException("Snapshot metadata request was interrupted", e);
-      } catch (IOException e) {
-        throw new KlabIOException(e);
-      }
-
-      if (response.statusCode() != 200) {
-        Logging.INSTANCE.warn(
-            "Maven Central search returned status {}: {}", response.statusCode(), response.body());
-        return Optional.empty();
-      }
-
-      try {
-        JsonNode root = OBJECT_MAPPER.readTree(response.body());
-        JsonNode docs = root.path("response").path("docs");
-
-        if (docs.isArray() && docs.size() > 0) {
-          JsonNode doc = docs.get(0);
-          long timestamp = doc.path("timestamp").asLong();
-          String version = doc.path("v").asText();
-
-          LocalDateTime lastModified =
-              LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
-
-          return Optional.of(new SnapshotInfo(lastModified, version, true));
-        }
-      } catch (Exception e) {
-        Logging.INSTANCE.warn("Error parsing Maven Central search response", e);
-      }
-
-      return Optional.empty();
-    }
-
-    /** Attempts to get snapshot information by checking the repository metadata */
-    private static SnapshotInfo getSnapshotInfoFromRepository(MavenCoordinates coordinates) {
-
-      String metadataPath =
-          String.format(
-              "%s/%s/%s/%s/maven-metadata.xml",
-              MAVEN_CENTRAL_SNAPSHOTS_API,
-              coordinates.getGroupId().replace('.', '/'),
-              coordinates.getArtifactId(),
-              coordinates.getVersion());
-
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(metadataPath))
-              .timeout(Duration.ofSeconds(30))
-              .GET()
-              .build();
-
-      HttpResponse<String> response = null;
-      try {
-        response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new KlabIOException("Snapshot metadata request was interrupted", e);
-      } catch (IOException e) {
-        throw new KlabIOException(e);
-      }
-
-      if (response.statusCode() == 404) {
-        return new SnapshotInfo(null, null, false);
-      }
-
-      if (response.statusCode() != 200) {
-        throw new KlabIOException(
-            "Failed to fetch metadata from Maven Central: HTTP " + response.statusCode());
-      }
-
-      // Parse the maven-metadata.xml to extract timestamp information
-      return parseMetadataXml(response.body(), coordinates.getVersion());
-    }
-
-    /** Parses Maven metadata XML to extract snapshot information */
-    private static SnapshotInfo parseMetadataXml(String xmlContent, String version) {
-      try {
-        // Simple XML parsing for lastUpdated timestamp
-        // In a production environment, you might want to use a proper XML parser
-        String lastUpdatedPattern = "<lastUpdated>(\\d{14})</lastUpdated>";
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(lastUpdatedPattern);
-        java.util.regex.Matcher matcher = pattern.matcher(xmlContent);
-
-        if (matcher.find()) {
-          String timestamp = matcher.group(1);
-          // Format: yyyyMMddHHmmss
-          DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-          LocalDateTime lastModified = LocalDateTime.parse(timestamp, formatter);
-
-          return new SnapshotInfo(lastModified, version, true);
-        }
-      } catch (Exception e) {
-        Logging.INSTANCE.warn("Error parsing metadata XML", e);
-      }
-
-      return new SnapshotInfo(null, version, false);
+      return SNAPSHOTS.latest(coordinates);
     }
 
     /**
@@ -875,54 +742,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         baseUrl = MAVEN_CENTRAL_SNAPSHOTS_URL;
 
         try {
-          // Get the latest snapshot metadata
-          SnapshotInfo snapshotInfo = getLatestSnapshotDate(coordinates);
-          if (!snapshotInfo.isFound()) {
-            return null;
-          }
-
-          // Parse maven-metadata.xml to get the exact timestamped version
-          String metadataUrl = String.format("%s/%s/maven-metadata.xml", baseUrl, artifactPath);
-
-          HttpRequest request =
-              HttpRequest.newBuilder()
-                  .uri(URI.create(metadataUrl))
-                  .timeout(Duration.ofSeconds(30))
-                  .GET()
-                  .build();
-
-          HttpResponse<String> response =
-              HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-
-          if (response.statusCode() != 200) {
-            throw new IOException(
-                "Failed to fetch snapshot metadata: HTTP " + response.statusCode());
-          }
-
-          // Extract timestamp and buildNumber
-          String xmlContent = response.body();
-          String timestampPattern = "<timestamp>([\\d.]+)</timestamp>";
-          String buildNumberPattern = "<buildNumber>([\\d]+)</buildNumber>";
-
-          java.util.regex.Pattern tsPattern = java.util.regex.Pattern.compile(timestampPattern);
-          java.util.regex.Pattern bnPattern = java.util.regex.Pattern.compile(buildNumberPattern);
-
-          java.util.regex.Matcher tsMatcher = tsPattern.matcher(xmlContent);
-          java.util.regex.Matcher bnMatcher = bnPattern.matcher(xmlContent);
-
-          if (tsMatcher.find() && bnMatcher.find()) {
-            String timestamp = tsMatcher.group(1);
-            String buildNumber = bnMatcher.group(1);
-
-            // Form the actual version with timestamp
-            String snapshotVersion = coordinates.getVersion();
-            // Replace SNAPSHOT with timestamp-buildNumber
-            artifactVersion =
-                snapshotVersion.replace("-SNAPSHOT", "-" + timestamp + "-" + buildNumber);
-          }
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          return null;
+          artifactVersion = SNAPSHOTS.downloadVersion(coordinates);
+          if (artifactVersion == null) return null;
         } catch (Exception e) {
           return null;
         }
