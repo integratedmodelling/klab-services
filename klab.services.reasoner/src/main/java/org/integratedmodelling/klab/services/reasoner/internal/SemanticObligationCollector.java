@@ -14,15 +14,17 @@ final class SemanticObligationCollector {
   private final ReasonerService reasoner;
   private final TreeSet<String> terms=new TreeSet<>();
   private boolean complete=true;
+  private boolean sourceComplete=true;
   SemanticObligationCollector(ReasonerService reasoner) { this.reasoner=reasoner; }
-  void reset() { terms.clear(); complete=true; }
+  void reset() { terms.clear(); complete=true; sourceComplete=true; }
   List<String> terms() { return List.copyOf(terms); }
   boolean complete() { return complete; }
+  boolean sourceComplete() { return sourceComplete; }
   void add(Concept concept) {
-    if(concept==null||concept.getUrn()==null||concept.is(SemanticType.NOTHING))complete=false;
+    if(concept==null||concept.getUrn()==null||concept.is(SemanticType.NOTHING))incomplete();
     else terms.add(concept.getUrn());
   }
-  void incomplete() { complete=false; }
+  void incomplete() { complete=false; sourceComplete=false; }
   void statement(KlabStatement statement,KimObservableVisitor.Context context) {
     KimModel model=null;
     for(var item:context.getPath())if(item instanceof KimModel m)model=m;
@@ -46,8 +48,8 @@ final class SemanticObligationCollector {
     if(value instanceof Concept concept) { add(concept); return; }
     if(value instanceof org.integratedmodelling.klab.api.knowledge.Observable observable) {add(observable.getSemantics());return;}
     if(value instanceof KimConcept syntax) {
-      try { if(syntax.isPattern())complete=false; else add(reasoner.declareConcept(syntax)); }
-      catch(RuntimeException unavailable) {complete=false;} return;
+      try { if(syntax.isPattern())incomplete(); else add(reasoner.declareConcept(syntax)); }
+      catch(RuntimeException unavailable) {incomplete();} return;
     }
     if(value instanceof KimObservable observable) {
       value(observable.getSemantics(),model,seen);value(observable.getObserverSemantics(),model,seen);
@@ -80,10 +82,13 @@ final class SemanticObligationCollector {
     if(value instanceof Map<?,?> map) {map.forEach((key,item)->{value(key,model,seen);value(item,model,seen);});return;}
     if(value instanceof Iterable<?> values) {for(var item:values)value(item,model,seen);return;}
     if(value instanceof Object[] values) {for(var item:values)value(item,model,seen);return;}
+    // Typed quantities contain only a number and unit/currency strings, with no semantic
+    // operands used by the source validator. Retain the legacy conservative runtime flag.
+    if(value instanceof org.integratedmodelling.klab.api.lang.Quantity) { complete=false; return; }
     // Declarative scalar syntax has no hidden evaluator or semantic operands.
     if(value instanceof KimQuantity||value instanceof KimDate||value instanceof org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl
         ||value instanceof org.integratedmodelling.klab.api.geometry.Geometry||value instanceof Urn)return;
-    complete=false;
+    incomplete();
   }
   static boolean closedScalar(ExpressionCode expression,KimModel model) {
     if(expression==null)return true;

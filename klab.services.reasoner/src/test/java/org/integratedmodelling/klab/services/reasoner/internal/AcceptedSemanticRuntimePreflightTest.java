@@ -271,6 +271,7 @@ class AcceptedSemanticRuntimePreflightTest {
       var owned=BeanIngestionPreflight.snapshot((Worldview)call.getArgument(0));
       owned.getMetadata().put(metadata,selection.get()); return owned;
     });
+    when(factory.authoritySelectionRevision(any(),same(scope))).thenAnswer(call -> selection.get());
     when(factory.build(any(),any())).thenAnswer(call->{
       CandidatePublicationCoordinator.Input<Worldview> input=call.getArgument(0);
       boolean local="local-artifact".equals(input.payload().getMetadata().get(metadata));
@@ -298,6 +299,70 @@ class AcceptedSemanticRuntimePreflightTest {
       }
       assertEquals(generation,runtime.status().inputGeneration());
       verify(factory,times(3)).build(any(),any());
+      assertNull(source.getMetadata().get(metadata));
+    }
+  }
+
+  @Test void pollingUsesFreshSelectionWithoutCopyingAndMatchesOwnedPreflightKeys() throws Exception {
+    bootstrapEnabled();
+    var selection = new AtomicReference<>("provider-one");
+    var source = world("unchanged");
+    var version = org.integratedmodelling.klab.api.data.Version.create("1.0.0");
+    var descriptor = new org.integratedmodelling.klab.api.services.runtime.extension.Extensions.AuthorityDescriptor(
+        "fixture.provider", version, true, true, List.of(), List.of());
+    source.getAuthorityBindings().add(new Worldview.AuthorityBinding("FIXTURE", "w:Identity", "w", 0, 1,
+        "hash", descriptor, "fixture.provider", version, null));
+    String metadata = org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA;
+    when(factory.authoritySelectionRevision(same(source), same(scope))).thenAnswer(call -> selection.get());
+    when(factory.refreshAuthoritySelection(same(source), same(scope))).thenAnswer(call -> {
+      var copy = BeanIngestionPreflight.snapshot(source);
+      copy.getMetadata().put(metadata, selection.get());
+      return copy;
+    });
+    try (var runtime = runtime()) {
+      // The existing owned path defines the identity; the polling fast path must agree with it.
+      var attempt = runtime.beginPreflight(source, scope);
+      assertTrue(runtime.rejectPreflight(attempt, errors, scope));
+      clearInvocations(factory);
+      for (int i = 0; i < 4; i++) assertFalse(runtime.shouldRetryPreflight(source, scope));
+      verify(factory, times(4)).authoritySelectionRevision(same(source), same(scope));
+      verify(factory, never()).refreshAuthoritySelection(any(), any());
+      assertNull(source.getMetadata().get(metadata));
+
+      selection.set("provider-two");
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
+      var replacement = runtime.beginPreflight(source, scope);
+      assertNotEquals(attempt.key(), replacement.key());
+      assertEquals("provider-two", replacement.snapshot().getMetadata().get(metadata));
+      assertTrue(runtime.rejectPreflight(replacement, errors, scope));
+      assertFalse(runtime.shouldRetryPreflight(source, scope));
+      when(factory.authoritySelectionRevision(same(source), same(scope)))
+          .thenThrow(new IllegalArgumentException("unavailable selection"))
+          .thenAnswer(call -> selection.get());
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
+      assertFalse(runtime.shouldRetryPreflight(source, scope));
+
+      // Every other key dimension still invalidates independently of the unchanged selection.
+      source.getMetadata().put("authority.catalog.revision", "catalog-two");
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
+      assertTrue(runtime.rejectPreflight(runtime.beginPreflight(source, scope), errors, scope));
+      dependency.set("dependency-two");
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
+      assertTrue(runtime.rejectPreflight(runtime.beginPreflight(source, scope), errors, scope));
+      var second = new KimOntologyImpl(); second.setUrn("second"); second.setSourceCode("second");
+      source.getOntologies().add(second);
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
+      assertTrue(runtime.rejectPreflight(runtime.beginPreflight(source, scope), errors, scope));
+      Collections.reverse(source.getOntologies());
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
+      assertTrue(runtime.rejectPreflight(runtime.beginPreflight(source, scope), errors, scope));
+      source.getAuthorityBindings().set(0, new Worldview.AuthorityBinding("FIXTURE", "w:Identity", "w", 0, 1,
+          "changed-configuration", descriptor, "fixture.provider", version, null));
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
+      assertTrue(runtime.rejectPreflight(runtime.beginPreflight(source, scope), errors, scope));
+      var group = mock(Group.class); when(group.getName()).thenReturn("new-access");
+      when(owner.getGroups()).thenReturn(List.of(group));
+      assertTrue(runtime.shouldRetryPreflight(source, scope));
       assertNull(source.getMetadata().get(metadata));
     }
   }

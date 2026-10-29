@@ -80,7 +80,12 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   public boolean shouldRetryPreflight(Worldview snapshot, Scope scope) {
     synchronized (lifecycle) { if (closed) return false; }
     final String key;
-    try { key = preflightKey(refreshAuthoritySelection(snapshot, scope), scope); }
+    try {
+      var selection = factory.authorityBootstrapEnabled() && !snapshot.getAuthorityBindings().isEmpty()
+          ? factory.authoritySelectionRevision(snapshot, scope)
+          : snapshot.getMetadata().get(org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA);
+      key = preflightKey(snapshot, scope, selection);
+    }
     catch (IllegalArgumentException malformed) {
       // Let the normal preflight report malformed inputs; an unreadable key must not hide them.
       synchronized (lifecycle) { return !closed; }
@@ -175,13 +180,18 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   }
 
   private String preflightKey(Worldview snapshot, Scope scope) {
+    return preflightKey(snapshot, scope, snapshot.getMetadata().get(
+        org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA));
+  }
+
+  private String preflightKey(Worldview snapshot, Scope scope, Object selectionRevision) {
     try {
       var metadataRevision = snapshot.getMetadata().get(
           org.integratedmodelling.klab.components.AuthorityComponentResolver.REVISION_METADATA);
       var payload = Arrays.asList(new TreeMap<>(SemanticEnvironmentFactory.sources(snapshot)),
           SemanticEnvironmentFactory.sourceOrder(snapshot), factory.dependencyRevision(),
           SemanticEnvironmentFactory.CONFIGURATION_REVISION, metadataRevision,
-          snapshot.getMetadata().get(org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA),
+          selectionRevision,
           snapshot.getAuthorityBindings().stream().sorted(Comparator.comparing(Worldview.AuthorityBinding::localId)).toList(),
           org.integratedmodelling.klab.components.AuthorityComponentResolver.ownerRevision(scope));
       var bytes = JacksonConfiguration.newObjectMapper()
@@ -300,6 +310,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         response.getPendingMemberQualityDependencies().addAll(validator.getPendingMemberQualityDependencies());
         response.setSemanticObligations(validator.getSemanticObligations());
         response.setSemanticObligationsComplete(validator.isSemanticObligationsComplete());
+        response.setSourceSemanticsComplete(validator.isSourceSemanticsComplete());
         var dependencyRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
             deploymentServiceId,lease.generation(),lease.state().semanticContentFingerprint(),validator.getSemanticObligations());
         try {

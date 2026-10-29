@@ -24,6 +24,7 @@ public class DocumentSemanticValidator
   private final SemanticObligationCollector semanticObligations;
   public List<String> getSemanticObligations() { return semanticObligations.terms(); }
   public boolean isSemanticObligationsComplete() { return sourceValid && semanticObligations.complete(); }
+  public boolean isSourceSemanticsComplete() { return sourceValid && semanticObligations.sourceComplete(); }
   private final boolean executableModels;
   private final String executionContext;
   private final List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingModelContext> pendingModelContexts=new ArrayList<>();

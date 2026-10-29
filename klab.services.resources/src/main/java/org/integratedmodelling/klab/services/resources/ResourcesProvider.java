@@ -524,7 +524,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         index=namespaceModelIndex;
       }
       // Catalog publication serializes on its own index, never the provider's HTTP-facing monitor.
-      index.reconcile(workspaceManager.getNamespaces(), kbox, scope, revision, System.nanoTime());
+      index.reconcile(workspaceManager::getNamespaces, kbox, scope, revision, System.nanoTime());
     } catch (Throwable t) {
       Logging.INSTANCE.error("Error indexing semantic content", t);
       return false;

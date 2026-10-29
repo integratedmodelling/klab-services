@@ -37,6 +37,12 @@ public final class SemanticEnvironmentFactory
   }
   public boolean authorityBootstrapEnabled() { return bootstrap != null; }
 
+  /** Fresh provider selection metadata only; polling does not need an owned bean graph. */
+  public String authoritySelectionRevision(Worldview source, org.integratedmodelling.klab.api.scope.Scope owner) {
+    return bootstrap == null || source.getAuthorityBindings().isEmpty()
+        ? null : bootstrap.selectionRevision(source, owner);
+  }
+
   public Worldview refreshAuthoritySelection(Worldview source, org.integratedmodelling.klab.api.scope.Scope owner) {
     if (bootstrap == null || source.getAuthorityBindings().isEmpty()) return source;
     var snapshot = BeanIngestionPreflight.snapshot(source);

@@ -20,12 +20,18 @@ class NamespaceModelIndexTest {
   final ServiceScope scope = mock(ServiceScope.class);
   final ResourcesService resources = mock(ResourcesService.class);
   final Reasoner reasoner = mock(Reasoner.class);
+  final Reasoner.Capabilities capabilities=mock(Reasoner.Capabilities.class);
+  final java.util.concurrent.atomic.AtomicLong revision=new java.util.concurrent.atomic.AtomicLong(7);
   final Concept concept = mock(Concept.class);
   final Map<String, KimNamespaceImpl> sources = new LinkedHashMap<>();
   final Set<String> invalid = new HashSet<>();
   final Map<String, SemanticValidationResponse.Status> statuses = new HashMap<>();
 
   NamespaceModelIndexTest() {
+    when(reasoner.capabilities(scope)).thenReturn(capabilities);
+    when(capabilities.getServiceId()).thenReturn("reasoner");
+    when(capabilities.getKnowledgeRevision()).thenAnswer(call->revision.get());
+    when(capabilities.getSemanticContentFingerprint()).thenReturn("semantic-content-v2:"+"a".repeat(64));
     when(reasoner.semanticDependencies(any(),same(scope))).thenAnswer(call -> proof(reasoner.capabilities(scope),call.getArgument(0)));
     when(resources.serviceScope()).thenReturn(scope); when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(concept.getUrn()).thenReturn("w:Value");
@@ -155,6 +161,7 @@ class NamespaceModelIndexTest {
       index.reconcile(new ArrayList<>(sources.values()), catalog, scope, 7, 0);
       assertEquals(2, catalog.count());
       statuses.put("pending", SemanticValidationResponse.Status.UNAVAILABLE);
+      revision.set(8);
       index.reconcile(new ArrayList<>(sources.values()), catalog, scope, 8, 1);
       assertTrue(catalog.hasModel("good.model"),()->index.diagnostics().toString()); assertFalse(catalog.hasModel("pending.model"));
       statuses.clear();
@@ -169,6 +176,140 @@ class NamespaceModelIndexTest {
       statuses.clear();
       index.reconcile(new ArrayList<>(sources.values()), catalog, scope, 8, 12);
       assertTrue(catalog.hasModel("pending.model"));
+    }
+  }
+
+  @Test void unchangedReconciliationUsesTwoFreshSemanticSnapshotsRegardlessOfNamespaceCount() {
+    for(int i=0;i<20;i++)source("source"+i);
+    var catalog=mock(ModelCatalog.class);var index=new NamespaceModelIndex(5);
+    index.reconcile(()->new ArrayList<>(sources.values()),catalog,scope,7,0);
+    clearInvocations(reasoner,catalog);
+    index.reconcile(()->new ArrayList<>(sources.values()),catalog,scope,7,10);
+    verify(reasoner,times(2)).capabilities(scope);
+    verify(reasoner,never()).validateDocument(any(),any());
+    verify(catalog,never()).replaceNamespace(any(),any());
+  }
+
+  @Test void incompleteRuntimeFootprintPublishesOnlyExplicitStaticAcceptance() {
+    var source=source("static");var catalog=mock(ModelCatalog.class);var index=new NamespaceModelIndex(5);
+    doAnswer(call->{
+      var request=call.getArgument(0,SemanticValidationRequest.class);var response=SemanticValidationResponse.forRequest(request);
+      response.setStatus(SemanticValidationResponse.Status.COMPLETE);response.setKnowledgeRevision(7);
+      response.setSemanticContentFingerprint(capabilities.getSemanticContentFingerprint());
+      response.setSourceSemanticsComplete(true);response.setSemanticObligations(List.of("w:Value"));
+      response.setSemanticWitness(SemanticDependencyWitness.unknown(new SemanticDependencyRequest("reasoner",7,
+          capabilities.getSemanticContentFingerprint(),response.getSemanticObligations()),"Runtime footprint incomplete"));return response;
+    }).when(reasoner).validateDocument(any(),same(scope));
+    index.reconcile(List.of(source),catalog,scope,7,0);
+    var portable=index.forTransport(source);
+    var admission=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+        portable.getMetadata().get(ResourcesService.NAMESPACE_ADMISSION_METADATA).toString(),
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.NamespaceAdmission.class);
+    assertEquals(org.integratedmodelling.klab.runtime.language.ModelValidationGate.SOURCE_ADMISSION_CONTRACT,admission.sourceContract());
+    assertTrue(admission.modelHashes().isEmpty());
+    var response=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(admission.response(),SemanticValidationResponse.class);
+    assertFalse(response.isSemanticObligationsComplete());assertTrue(response.isSourceSemanticsComplete());
+    assertEquals(SemanticDependencyWitness.Status.UNKNOWN,response.getSemanticWitness().status());
+    verify(reasoner,never()).semanticDependencies(any(),any());
+  }
+
+  @Test void generationChangeDuringPublishWithdrawsEveryAffectedEntryAndDiscardsClaims() {
+    var first=source("first");var second=source("second");
+    var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);var visible=new HashSet<String>();
+    doAnswer(call->{visible.add(call.getArgument(0,KimNamespace.class).getUrn());revision.set(8);return null;})
+        .when(catalog).replaceNamespace(any(),same(scope));
+    doAnswer(call->{visible.remove(call.getArgument(0,String.class));return null;}).when(catalog).withholdNamespace(anyString(),same(scope));
+    assertThrows(IllegalStateException.class,()->index.reconcile(()->new ArrayList<>(sources.values()),catalog,scope,7,0));
+    assertTrue(visible.isEmpty());verify(catalog).withholdNamespace("first",scope);verify(catalog).withholdNamespace("second",scope);
+    assertFalse(index.forTransport(first).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA));
+    assertFalse(index.forTransport(second).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA));
+    verify(catalog,never()).replaceNamespace(same(second),same(scope));
+  }
+
+  @Test void mismatchedInitialGenerationCannotPublishAndWithdrawalFailuresPropagate() {
+    var source=source("source");var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
+    revision.set(8);
+    assertThrows(IllegalStateException.class,()->index.reconcile(List.of(source),catalog,scope,7,0));
+    verify(catalog,never()).replaceNamespace(any(),any());
+    doThrow(new IllegalStateException("withdraw unavailable")).when(catalog).withholdNamespace("source",scope);
+    assertEquals("withdraw unavailable",assertThrows(IllegalStateException.class,
+        ()->index.reconcile(List.of(source),catalog,scope,7,0)).getMessage());
+  }
+
+  @Test void generationChangeWhileReadingFinalManifestIsFencedBeforeClaimsCommit() {
+    var source=source("source");var catalog=mock(ModelCatalog.class);var index=new NamespaceModelIndex(5);
+    var reads=new java.util.concurrent.atomic.AtomicInteger();
+    assertThrows(IllegalStateException.class,()->index.reconcile(()->{
+      if(reads.incrementAndGet()==2)revision.set(8);return List.of(source);
+    },catalog,scope,7,0));
+    verify(catalog).withholdNamespace("source",scope);
+    assertFalse(index.forTransport(source).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA));
+  }
+
+  @Test void failedWithdrawalStillDiscardsAllClaimsAndAttemptsEveryNamespace() {
+    var first=source("first");var second=source("second");var catalog=mock(ModelCatalog.class);var index=new NamespaceModelIndex(5);
+    index.reconcile(List.of(first,second),catalog,scope,7,0);
+    assertTrue(index.forTransport(first).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA));
+    doThrow(new IllegalStateException("withdraw unavailable")).when(catalog).withholdNamespace("first",scope);
+    revision.set(8);clearInvocations(catalog);
+    assertThrows(IllegalStateException.class,()->index.reconcile(List.of(first,second),catalog,scope,7,10));
+    verify(catalog).withholdNamespace("first",scope);verify(catalog).withholdNamespace("second",scope);
+    assertFalse(index.forTransport(first).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA));
+    assertFalse(index.forTransport(second).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA));
+  }
+
+  @Test void authoritativeManifestReplacementRemovalAdditionAndOrderChangesAbortPublication() {
+    for(String change:List.of("replacement","removal","addition","order")) {
+      var first=source("first");var second=source("second");
+      var manifest=new java.util.concurrent.atomic.AtomicReference<Collection<KimNamespace>>(List.of(first,second));
+      var catalog=mock(ModelCatalog.class);var index=new NamespaceModelIndex(5);var once=new java.util.concurrent.atomic.AtomicBoolean();
+      doAnswer(call->{
+        if(once.compareAndSet(false,true))switch(change) {
+          case "replacement" -> {var replacement=source("first");replacement.setSourceCode("changed source");manifest.set(List.of(replacement,second));}
+          case "removal" -> manifest.set(List.of(first));
+          case "addition" -> manifest.set(List.of(first,second,source("third")));
+          case "order" -> manifest.set(List.of(second,first));
+        }
+        return null;
+      }).when(catalog).replaceNamespace(any(),same(scope));
+      assertThrows(IllegalStateException.class,()->index.reconcile(manifest::get,catalog,scope,7,0),change);
+      assertFalse(index.forTransport(first).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA),change);
+      verify(catalog).withholdNamespace("first",scope);verify(catalog).withholdNamespace("second",scope);
+      sources.clear();
+    }
+  }
+
+  @Test void unchangedSourceWithInactiveOrDeferredConfigurationIsWithdrawn() {
+    for(String configuration:List.of("inactive","deferred","error")) {
+      var source=source("configured");var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
+      index.reconcile(List.of(source),catalog,scope,7,0);clearInvocations(catalog);
+      switch(configuration) {
+        case "inactive" -> source.setInactive(true);
+        case "deferred" -> source.getMetadata().put(ResourcesService.VALIDATION_DEFERRED_METADATA,true);
+        case "error" -> source.getNotifications().add(Notification.error("invalid source"));
+      }
+      index.reconcile(List.of(source),catalog,scope,7,10);
+      verify(catalog).withholdNamespace("configured",scope);verify(catalog,never()).replaceNamespace(any(),any());
+      assertFalse(index.forTransport(source).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA));sources.clear();
+    }
+  }
+
+  @Test void namespaceConfigurationChangesInvalidateDetachedClaimsAndReindexWithoutTextChanges() {
+    for(String configuration:List.of("scenario","scope","criteria","disjoint","imports")) {
+      var source=source("configured");var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
+      index.reconcile(List.of(source),catalog,scope,7,0);
+      assertTrue(index.forTransport(source).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA));
+      switch(configuration) {
+        case "scenario" -> source.setScenario(true);
+        case "scope" -> source.setScope(KlabStatement.Scope.PRIVATE);
+        case "criteria" -> source.getResolutionCriteria().put("lexical",1);
+        case "disjoint" -> source.getDisjointNamespaces().add("other");
+        case "imports" -> source.getImports().put("other",null);
+      }
+      assertFalse(index.forTransport(source).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA),configuration);
+      index.reconcile(List.of(source),catalog,scope,7,10);
+      verify(catalog,times(2)).replaceNamespace(source,scope);
+      assertTrue(index.forTransport(source).getMetadata().containsKey(ResourcesService.NAMESPACE_ADMISSION_METADATA),configuration);sources.clear();
     }
   }
 }

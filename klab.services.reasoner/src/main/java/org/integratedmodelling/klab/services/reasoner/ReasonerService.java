@@ -514,7 +514,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         reason=restorationFailure;
       } else {
       var closure=new org.integratedmodelling.klab.services.reasoner.owl.AuthorityDependencySupport(owl)
-          .closure(request.obligations(),authorityBindings.snapshot());
+          .closure(request.obligations(),authorityBindings.snapshot(),base);
       if(!closure.known()) {
         status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN;
         reason=closure.reason();
@@ -740,6 +740,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       response.getPendingModelContexts().addAll(validator.getPendingModelContexts());
       response.setSemanticObligations(validator.getSemanticObligations());
       response.setSemanticObligationsComplete(validator.isSemanticObligationsComplete());
+      response.setSourceSemanticsComplete(validator.isSourceSemanticsComplete());
       var capabilities=capabilities(scope);
       var dependencyRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
           capabilities.getServiceId(),capabilities.getKnowledgeRevision(),capabilities.getSemanticContentFingerprint(),

@@ -95,6 +95,10 @@ public class OWL {
   private boolean reasonerSynchronizing = false;
   private int declarationStagingDepth;
   private final MonotoneRefinementSupport monotoneRefinements = new MonotoneRefinementSupport(this);
+  private final AuthorityDependencySupport.Cache authorityDependencyCache = new AuthorityDependencySupport.Cache();
+
+  AuthorityDependencySupport.Cache authorityDependencyCache() { return authorityDependencyCache; }
+  Object structuralReasonerIdentity() { return reasoner; }
 
   public MonotoneRefinementSupport monotoneRefinements() { return monotoneRefinements; }
 
@@ -175,6 +179,7 @@ public class OWL {
   private synchronized void registerOwlClass(OWLClass cls, String urn) {
     if (!owlClasses.containsValue(cls)) {
       owlClasses.put(urn, cls);
+      authorityDependencyCache.changed();
     }
   }
 
@@ -389,6 +394,7 @@ public class OWL {
   }
 
   public synchronized void reset() {
+    authorityDependencyCache.reset();
     monotoneRefinements.reset(true);
     if (reasoner != null) {
       reasoner.dispose();
@@ -640,6 +646,7 @@ public class OWL {
     if (Objects.equals(previousUrn, urn)) {
       return;
     }
+    authorityDependencyCache.changed();
 
     if (conceptsById.get(previousUrn) == concept) {
       OWLClass owlClass = owlClasses.remove(previousUrn);
@@ -951,7 +958,7 @@ public class OWL {
   }
 
   public void releaseOntology(Ontology ontology) {
-
+    authorityDependencyCache.changed();
     var documentedSubjects = coreAliasDocumentation.documentedSubjects(ontology);
     this.namespaces.remove(ontology.getName());
     var onto = ontologies.remove(ontology.getName());
@@ -2985,6 +2992,7 @@ public class OWL {
     if (mergedReasonerOntology != null) {
       mergedReasonerOntology.addImport(o);
       if (reasoner != null && reasonerSynchronizing) {
+        authorityDependencyCache.changed();
         reasoner.flush();
       }
     }
@@ -2994,6 +3002,7 @@ public class OWL {
     flushRequests++;
     if (reasoner != null && !reasonerSynchronizing && declarationStagingDepth == 0) {
       actualFlushes++;
+      authorityDependencyCache.changed();
       reasoner.flush();
     }
   }
@@ -3129,6 +3138,7 @@ public class OWL {
 
   public synchronized void flush() {
     if (reasoner != null) {
+      authorityDependencyCache.changed();
       reasoner.flush();
     }
   }

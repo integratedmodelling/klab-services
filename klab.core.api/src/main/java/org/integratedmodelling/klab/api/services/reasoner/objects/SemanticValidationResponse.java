@@ -10,11 +10,16 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public class SemanticValidationResponse implements Serializable {
   private java.util.List<String> semanticObligations=java.util.List.of();
   private boolean semanticObligationsComplete;
+  /** All semantics used by static source validation are accounted for. This says nothing
+   * about hidden evaluator/runtime footprints and cannot grant executable completeness. */
+  private boolean sourceSemanticsComplete;
   private SemanticDependencyWitness semanticWitness;
   public java.util.List<String> getSemanticObligations() { return semanticObligations; }
   public void setSemanticObligations(java.util.List<String> values) { semanticObligations=values==null?java.util.List.of():java.util.List.copyOf(values); }
   public boolean isSemanticObligationsComplete() { return semanticObligationsComplete; }
   public void setSemanticObligationsComplete(boolean value) { semanticObligationsComplete=value; }
+  public boolean isSourceSemanticsComplete() { return sourceSemanticsComplete; }
+  public void setSourceSemanticsComplete(boolean value) { sourceSemanticsComplete=value; }
   public SemanticDependencyWitness getSemanticWitness() { return semanticWitness; }
   public void setSemanticWitness(SemanticDependencyWitness value) { semanticWitness=value; }
 

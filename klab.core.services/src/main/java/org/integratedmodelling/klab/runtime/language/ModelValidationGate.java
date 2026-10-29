@@ -18,9 +18,15 @@ public final class ModelValidationGate {
 
   public static final String PRODUCER_ADMISSIONS = "im:model-admissions";
   public static final String PRODUCER_SNAPSHOTS = "im:model-snapshots";
+  public static final String SOURCE_ADMISSION_CONTRACT = "static-source-admission-v1";
 
-  public record NamespaceAdmission(String reasonerId, String response, java.util.Map<String,String> modelHashes, String semanticFingerprint)
+  /** Source acceptance and executable-footprint completeness are independent contracts. */
+  public record NamespaceAdmission(String reasonerId, String response, java.util.Map<String,String> modelHashes, String semanticFingerprint,
+      String sourceContract)
       implements java.io.Serializable {
+    public NamespaceAdmission(String reasonerId,String response,java.util.Map<String,String> modelHashes,String semanticFingerprint) {
+      this(reasonerId,response,modelHashes,semanticFingerprint,null);
+    }
     public NamespaceAdmission(String reasonerId, String response, java.util.Map<String,String> modelHashes) {
       this(reasonerId, response, modelHashes, null);
     }
@@ -314,21 +320,30 @@ public final class ModelValidationGate {
       var response=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(admission.response(),
           org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
       var request=SemanticValidationRequest.of(namespace,Long.toString(namespace.getLastUpdateTimestamp()));
-      return java.util.Objects.equals(admission.reasonerId(),semantic.serviceId())
+      boolean matches=java.util.Objects.equals(admission.reasonerId(),semantic.serviceId())
           && org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.valid(admission.semanticFingerprint())
           && java.util.Objects.equals(admission.semanticFingerprint(),semantic.semanticFingerprint())
           && java.util.Objects.equals(admission.semanticFingerprint(),response.getSemanticContentFingerprint())
-          && response.valid() && response.matches(request,response.getKnowledgeRevision())
-          && scopedPublicationCurrent(response,semantic,scope) ? admission : null;
+          && response.valid() && response.matches(request,response.getKnowledgeRevision());
+      if(!matches)return null;
+      try { if(scopedPublicationCurrent(response,semantic,scope))return admission; }
+      catch(RuntimeException unavailable) {
+        // A source-only acceptance cannot grant access to any execution. Recheck the selected
+        // model instead of treating an unrelated namespace-wide proof as its executable proof.
+      }
+      if(SOURCE_ADMISSION_CONTRACT.equals(admission.sourceContract()) && response.isSourceSemanticsComplete()
+          && semantic.equals(currentSemanticSnapshot(scope)))
+        return new NamespaceAdmission(admission.reasonerId(),admission.response(),java.util.Map.of(),
+            admission.semanticFingerprint(),admission.sourceContract());
+      return null;
     } catch (RuntimeException malformed) { return null; }
   }
 
-  /** A static recipe alone cannot reuse authority-dependent saved validation. The returned
-   * closure must be independently recomputed by the current Reasoner; no receipt is upgraded. */
+  /** A complete saved footprint may retain the legacy shortcut only after fresh scoped proof. */
   private static boolean scopedPublicationCurrent(
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response,
       SemanticSnapshot semantic, Scope scope) {
-    if (!response.isSemanticObligationsComplete() || response.getSemanticWitness()==null) return false;
+    if(!response.isSemanticObligationsComplete() || response.getSemanticWitness()==null)return false;
     var reasoner=scope.getService(Reasoner.class);
     var session=SESSION.get();
     var key=new PublicationSemanticKey(reasoner,caller(scope),digest(response),semantic);
@@ -368,7 +383,8 @@ public final class ModelValidationGate {
   private static boolean concretePublishedModel(Model model,
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
     var urn=model.getUrn();
-    return !model.getObservables().isEmpty()
+    return response.isSemanticObligationsComplete() && response.getSemanticWitness()!=null
+        && response.getSemanticWitness().completeAt(System.currentTimeMillis()) && !model.getObservables().isEmpty()
         && model.getObservables().stream().allMatch(o -> !o.isGeneric() && o.getGenericComponents().isEmpty()
             && (!o.isAbstract() || o.is(SemanticType.PREDICATE)))
         && model.getDependencies().stream().allMatch(o -> !o.isGeneric() && o.getGenericComponents().isEmpty())
@@ -480,6 +496,7 @@ public final class ModelValidationGate {
     return validatedRevision(name, namespace, resources, scope, requested) >= 0;
   }
 
+  /** With no requested observable this is source-only catalog acceptance, never an execution receipt. */
   public static long validatedRevision(String name, String namespace, ResourcesService resources, Scope scope,
       Observable requested) {
     return validatedCatalogRevision(name, namespace, resources, scope, requested, true);

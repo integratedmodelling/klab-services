@@ -218,18 +218,37 @@ public class JacksonConfiguration {
 
   static class PolymorphicDeserializer<T> extends JsonDeserializer<T> {
 
+    /** Class identity includes its loader; ClassValue does not retain unloaded plugin classes. */
+    private static final ClassValue<Map<String, FieldMetadata>> FIELDS = new ClassValue<>() {
+      @Override protected Map<String, FieldMetadata> computeValue(Class<?> type) {
+        var fields = new HashMap<String, FieldMetadata>();
+        for (var current = type; current != null; current = current.getSuperclass()) {
+          for (var field : current.getDeclaredFields()) {
+            // Match getDeclaredField followed by superclass lookup: the nearest field wins.
+            fields.putIfAbsent(field.getName(), new FieldMetadata(field, field.getType()));
+          }
+        }
+        return Map.copyOf(fields);
+      }
+    };
+
+    record FieldMetadata(Field field, Class<?> rawType) {
+      java.lang.reflect.Type genericType() {
+        // The cached Field retains its lazily parsed generic signature. Do not resolve unused
+        // field signatures or bind a TypeVariable outside its containing request's JavaType.
+        return field.getGenericType();
+      }
+    }
+
     private final Class<?> interfaceClass;
 
     public PolymorphicDeserializer(Class<?> interfaceClass) {
       this.interfaceClass = interfaceClass;
     }
 
-    Field findField(Class<?> cls, String name) {
-      try {
-        return cls.getDeclaredField(name);
-      } catch (Throwable t) {
-        return cls != Object.class ? findField(cls.getSuperclass(), name) : null;
-      }
+    FieldMetadata findField(Class<?> cls, String name) {
+      // Unknown input keys cannot grow the cache: only declared field names are indexed.
+      return FIELDS.get(cls).get(name);
     }
 
     @SuppressWarnings("unchecked")
@@ -242,7 +261,7 @@ public class JacksonConfiguration {
           if(concrete==null || !Semantics.class.isAssignableFrom(concrete))
             throw new IllegalArgumentException("Semantic transport requires a registered semantic implementation");
         }
-        return (T) deserialize(node, p, (Field) null);
+        return (T) deserialize(node, p, (FieldMetadata) null);
       } catch (Exception e) {
         throw new KlabIOException(e);
       }
@@ -299,17 +318,17 @@ public class JacksonConfiguration {
       return parser.getCodec().treeToValue(node, type);
     }
 
-    private Object deserialize(JsonNode node, JsonParser parser, Field field) throws Exception {
+    private Object deserialize(JsonNode node, JsonParser parser, FieldMetadata field) throws Exception {
 
-      if (field != null && field.getGenericType() instanceof ParameterizedType) {
-        return deserializeTypedContainer(node, parser, field.getGenericType());
+      if (field != null && field.genericType() instanceof ParameterizedType) {
+        return deserializeTypedContainer(node, parser, field.genericType());
       }
       if (node.isObject()) {
         return deserializeObject(node, parser, getObjectClass(node));
       } else if (node.isArray()) {
         return deserializeArray(node, parser, field);
       }
-      Class<?> targetType = field == null ? Object.class : field.getType();
+      Class<?> targetType = field == null ? Object.class : field.rawType();
       return parser.getCodec().treeToValue(node, targetType);
     }
 
@@ -358,9 +377,9 @@ public class JacksonConfiguration {
       return deserialize(node, parser, type instanceof Class<?> cls ? cls : Object.class);
     }
 
-    private Class<?> getGenericType(Field field, int n) {
+    private Class<?> getGenericType(FieldMetadata field, int n) {
       Class<?> ret = Object.class;
-      if (field != null && field.getGenericType() instanceof ParameterizedType type) {
+      if (field != null && field.genericType() instanceof ParameterizedType type) {
         try {
           ret = Class.forName(type.getActualTypeArguments()[n].getTypeName());
         } catch (ClassNotFoundException e) {
@@ -370,9 +389,9 @@ public class JacksonConfiguration {
       return ret;
     }
 
-    private Object deserializeArray(JsonNode node, JsonParser parser, Field field)
+    private Object deserializeArray(JsonNode node, JsonParser parser, FieldMetadata field)
         throws Exception {
-      Collection<Object> ret = field == null ? new ArrayList<>() : newCollection(field.getType());
+      Collection<Object> ret = field == null ? new ArrayList<>() : newCollection(field.rawType());
       for (var elementNode : node) {
         ret.add(deserialize(elementNode, parser, getGenericType(field, 0)));
       }
@@ -409,21 +428,21 @@ public class JacksonConfiguration {
           // FIXME must pass the generic type for the field
           map.put(field, deserialize(node.get(field), parser, getGenericType(declaredField, 1)));
         } else if (declaredField != null) {
-          declaredField.setAccessible(true);
+          declaredField.field().setAccessible(true);
           Object value;
           if (declaredType != null
-              && declaredField.getGenericType() instanceof java.lang.reflect.TypeVariable<?>) {
+              && declaredField.genericType() instanceof java.lang.reflect.TypeVariable<?>) {
             // Pair<T1,T2> and other generic beans must retain the containing field's bindings.
             var memberType = ((ObjectMapper) parser.getCodec()).getTypeFactory()
-                .resolveMemberType(declaredField.getGenericType(), declaredType.getBindings());
+                .resolveMemberType(declaredField.genericType(), declaredType.getBindings());
             value = deserialize(node.get(field), parser, memberType.getRawClass());
           } else {
             value = deserialize(node.get(field), parser, declaredField);
           }
-          declaredField.set(
+          declaredField.field().set(
               ret,
               checkField(
-                  declaredField.getType(), value));
+                  declaredField.rawType(), value));
         } else {
           throw new KlabInternalErrorException(
               "Unexpected field name " + field + " in " + "deserialization of " + cls);

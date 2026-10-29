@@ -8,6 +8,31 @@ import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.junit.jupiter.api.Test;
 
 class SemanticObligationCollectorTest {
+  private SemanticObligationCollector collect(Object value) {
+    var collector=new SemanticObligationCollector(org.mockito.Mockito.mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class));
+    var symbol=new KimSymbolDefinitionImpl();symbol.setValue(value);
+    var namespace=new KimNamespaceImpl();namespace.setUrn("fixture");namespace.getStatements().add(symbol);
+    new org.integratedmodelling.klab.runtime.language.KimNamespaceVisitor(new org.integratedmodelling.klab.runtime.language.KimNamespaceVisitor.Validator(){
+      @Override public List<org.integratedmodelling.klab.api.services.runtime.Notification> validateStatement(
+          org.integratedmodelling.klab.api.lang.kim.KlabStatement statement,org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Context context) {
+        collector.statement(statement,context);return List.of();
+      }
+    },null).visit(namespace);
+    return collector;
+  }
+  @Test void typedQuantitiesAndOpaqueEvaluatorsHaveStaticCoverageWithoutExecutableCompleteness() {
+    for(var value:List.of(org.integratedmodelling.common.lang.QuantityImpl.parse("1.km"),ExpressionCode.of("resolveConcept('w:Hidden')",null))) {
+      var collector=collect(value);assertTrue(collector.sourceComplete());assertFalse(collector.complete());
+    }
+  }
+  @Test void patternsUnsupportedObjectsAndCollectionFailuresCannotClaimStaticCoverage() {
+    var pattern=new KimConceptImpl();pattern.setPattern(true);
+    for(var value:List.of(pattern,new Object())) {
+      var collector=collect(value);assertFalse(collector.sourceComplete());assertFalse(collector.complete());
+    }
+    var collector=collect(1);collector.incomplete();assertFalse(collector.sourceComplete());assertFalse(collector.complete());
+    collector.reset();assertTrue(collector.sourceComplete());assertTrue(collector.complete());
+  }
   private KimModelImpl model() {
     var model=new KimModelImpl();
     var numeric=new KimObservableImpl();numeric.setFormalName("elevation");numeric.setNonSemanticType(Artifact.Type.NUMBER);
