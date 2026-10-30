@@ -1,5 +1,10 @@
 # Contribution review: PR99 bounded resource/model inspector
 
+**Historical review before upstream integration.** The [current post-integration
+review](resource-inspector-post-integration-20261030.md) records the credential-view
+fix, 1,357 offline tests and a fresh passing functional test on the October30 stack.
+The old Java/Jenkins failure below is resolved, not a current blocker.
+
 ## Recommendation
 
 **Ready for maintainer review of the bounded Python feature; not merge approval.**
