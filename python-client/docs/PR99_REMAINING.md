@@ -1,5 +1,13 @@
 # PR #99: completed feature and remaining integration gates
 
+**Latest dependent-merge status:** PR101 is merged. PR99 now targets
+`feature/python-discover-compare-explain-integration`, base58d2a0ca4. Candidate
+617e36ed8 passes1,362 offline tests, coverage/lint and a fresh actual17.26s Java
+functional test with20/20 finite cells and recorded model association. Setup and
+owned work are restored/cleaned. The user authorized merge once the contributor
+review and current-head checks pass; verify the newly published head before merge.
+See the latest section of the [review](reviews/discover-compare-explain/resource-inspector-post-integration-20261030.md).
+
 ## Current status after upstream integration and recheck
 
 The [current contributor review](reviews/discover-compare-explain/resource-inspector-post-integration-20261030.md)

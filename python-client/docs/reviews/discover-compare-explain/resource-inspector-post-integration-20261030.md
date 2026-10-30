@@ -1,5 +1,44 @@
 # Contribution review: PR99 after upstream integration
 
+## Dependent merge review after PR101 merged
+
+**Current recommendation: bounded F2 passes contributor review; merge after exact-head
+CI succeeds.** The user explicitly authorized the upstream-first dependent merge.
+PR101 merged at `58d2a0ca4ce8ff85235272c4221b014f1a6c3cae` into
+`feature/python-discover-compare-explain-integration`; PR99 now targets that branch.
+It no longer targets draft101's branch. No PR102 work is authorized in this pass.
+
+The integrated executable candidate is `617e36ed8fca91c5ab9baae4bb654e99e3b9b042`.
+The only added executable change versus the previously reviewed99 candidate is
+PR101's independently reviewed/live-tested semantic-identity rejection. F2's
+production source/workflow and all Java source remain unchanged. Read-only diff
+inspection found no new blocking/important defect or untested conflict resolution.
+The limitations and contributor coordination below remain explicit.
+
+Revalidation on this exact integrated executable content:
+
+- Passed exit0:1,362 unit/integration tests, using the same full pytest/coverage
+  command below with external `pr99-dependent-merge-review-coverage.json`.
+- Passed exit0: exact branch coverage gate, all new-module arguments retained;
+  Ruff E9,F63,F7,F82 and whitespace checks.
+- Passed exit0: `python <external>/pr99-dependent-live-20261030.py prepare`, then
+  `python <external>/pr99-dependent-live-20261030.py test`. The actual shipped
+  functional body passed once in17.26s on October30 binaries. This was a separately
+  authorized new test, not reuse of the older live result.
+- One owned session/context, Jobs4/5, observation166, resolution Activity170 and
+  numerical Activity171;20/20 finite cells in m; inspected model found in accepted
+  resolution. Source SHA256 matches the current client after restoration.
+- Both releases confirmed;16 configuration/catalog files byte-exact; all original
+  component/plugin inventories preserved; zero contexts/projects; five listener/PID
+  matches and no visible service consoles. No source or scientific algorithm edit.
+
+See [fresh integrated evidence](../../results/resource-inspector-dependent-merge-20261030.json).
+Final publication changes only evidence/docs relative to that tested content.
+Confirm current head/base and all GitHub/Jenkins checks before the authorized merge;
+no approving self-review, forced history change or check bypass.
+
+The remainder is the earlier detailed review, retained as historical context.
+
 ## Recommendation
 
 **Ready for maintainer review of bounded F2.** The demonstrated credential-display
