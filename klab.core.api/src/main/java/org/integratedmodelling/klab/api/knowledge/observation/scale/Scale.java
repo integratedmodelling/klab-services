@@ -233,6 +233,7 @@ public interface Scale extends Geometry, Topology<Scale> {
      * @return
      */
     static Scale create(Geometry geometry, Scope scope) {
+        if (geometry instanceof Geometry.LocalSnapshot local) return local.promote(scope);
         if (geometry instanceof Scale) {
             return (Scale) geometry;
         }

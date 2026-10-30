@@ -574,12 +574,18 @@ or phases of Observables that have been reached or are ongoing, such as
 `pollinated`, `irrigated`, `adult`, and finally (iv) as subjective
 _ordering_ by defining non-quantitative rankings to be attributed to
 Observables, such as `severe`, `mild`, `hot`, `damaged`.
-* Realm restricts the physical location of an Observable, for example,
-the temperature of the `atmosphere` or the amount of soil in the
-`soil stratum`. This predicate can be intended, in a similar fashion
+* Realm requires the Observable's bearer to be within that realm,
+spatially or conceptually. It is not a mere attribute-like qualification.
+For example, an atmospheric realm on temperature constrains its bearer
+to be within the atmosphere; a soil-stratum realm constrains its bearer
+to be within that stratum. Computation from, reference to, or provenance
+in a realm does not establish that membership. This predicate can be intended, in a similar fashion
 to that of realms included in the International Union for Conservation
 of Nature (IUCN) , as parts of the biosphere which are divided into
 terrestrial, subterranean, atmospheric, marine, and freshwater.
+This is the normative containment commitment; current realm-predicate
+representation does not by itself establish complete runtime containment
+enforcement. See [the language contract](ONTOLOGY_LANGUAGE.md#531-realm-containment-contract).
 * Role is a dependent and contingent Predicate that is played by other
 entities and is bound to a context. The same entity can play multiple
 roles simultaneously in different contexts without affecting its

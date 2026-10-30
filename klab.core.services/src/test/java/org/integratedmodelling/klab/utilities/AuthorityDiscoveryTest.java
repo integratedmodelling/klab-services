@@ -20,8 +20,8 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.junit.jupiter.api.Test;
 
 class AuthorityDiscoveryTest {
-  @Test void startupInstallsFromTheWorldviewProvider() {
-    var scope = mock(ServiceScope.class);
+  @Test void startupInstallsFromAnAuthorizedResourcesProvider() {
+    var scope = serviceScope();
     var resources = resources(true, "imod");
     when(scope.getServices(ResourcesService.class)).thenReturn(List.of(resources));
     var resolution = component();
@@ -30,7 +30,8 @@ class AuthorityDiscoveryTest {
     var registry = target.getComponentRegistry();
     var authority = mock(Authority.class);
     when(registry.getAuthority(eq("test.authority"), any(), same(scope)))
-        .thenReturn(null, authority);
+        .thenReturn(null);
+    when(registry.getAuthority(any(org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding.class),same(scope))).thenReturn(authority);
     when(registry.loadComponents(any(), same(scope))).thenReturn(true);
 
     var worldview = worldview();
@@ -40,7 +41,7 @@ class AuthorityDiscoveryTest {
     verify(resources).resolve("test.authority", KnowledgeClass.COMPONENT, null);
   }
 
-  @Test void reloadRetainsUserScopeAndRefreshesInstalledDependencies() {
+  @Test void reloadKeepsInstalledAuthorityWithoutRediscovery() {
     var scope = mock(UserScope.class);
     var resources = resources(true, "imod");
     when(scope.getServices(ResourcesService.class)).thenReturn(List.of(resources));
@@ -51,20 +52,19 @@ class AuthorityDiscoveryTest {
     var refreshed = mock(Authority.class);
     when(registry.getAuthority(eq("test.authority"), any(), same(scope))).thenReturn(old, refreshed);
     when(registry.loadComponents(any(), same(scope))).thenReturn(true);
-    assertSame(refreshed, Utils.Resources.resolveAuthority("test.authority", scope, target, worldview()));
-    verify(resources).resolve("test.authority", KnowledgeClass.COMPONENT, scope);
+    assertSame(old, Utils.Resources.resolveAuthority("test.authority", scope, target, worldview()));
+    verify(resources,never()).resolve(anyString(),any(),any());
+    verify(registry,never()).loadComponents(any(),any());
   }
 
-  @Test void unrelatedResourcesAreNotQueriedAndFailedInstallationIsNotUsed() {
-    var scope = mock(ServiceScope.class);
+  @Test void generalResourcesAreQueriedAndFailedInstallationIsNotUsed() {
+    var scope = serviceScope();
     var ordinary = resources(false, "imod");
     var otherWorldview = resources(true, "other");
     var provider = resources(true, "imod");
     when(scope.getServices(ResourcesService.class)).thenReturn(List.of(ordinary, otherWorldview, provider));
     when(provider.resolve("test.authority", KnowledgeClass.COMPONENT, null)).thenReturn(component());
     var target = target();
-    when(target.getComponentRegistry().getAuthority(anyString(), any(), same(scope)))
-        .thenReturn(mock(Authority.class));
     when(target.getComponentRegistry().loadComponents(any(), same(scope))).thenAnswer(invocation -> {
       ResourceSet result = invocation.getArgument(0);
       result.getNotifications().add(
@@ -77,8 +77,8 @@ class AuthorityDiscoveryTest {
         () -> Utils.Resources.resolveAuthority("test.authority", scope, target, worldview()));
     assertTrue(failure.getMessage().contains("test.authority"));
     assertTrue(failure.getMessage().contains("Component registry has not been initialized"));
-    verify(ordinary, never()).resolve(anyString(), any(), any());
-    verify(otherWorldview, never()).resolve(anyString(), any(), any());
+    verify(ordinary).resolve(anyString(), any(), any());
+    verify(otherWorldview).resolve(anyString(), any(), any());
   }
 
   private org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding binding() {
@@ -90,7 +90,7 @@ class AuthorityDiscoveryTest {
   }
 
   @Test void pinnedAuthorityUsesInstalledExactProviderWithoutRediscovery() {
-    var scope = mock(ServiceScope.class);
+    var scope = serviceScope();
     var target = target(); var binding = binding(); var provider = mock(Authority.class);
     when(target.getComponentRegistry().getAuthority(binding, scope)).thenReturn(provider);
     assertSame(provider, Utils.Resources.resolveAuthority(binding, scope, target, worldview()));
@@ -98,9 +98,9 @@ class AuthorityDiscoveryTest {
   }
 
   @Test void pinnedAuthorityRejectsCompatibleButDifferentComponentVersion() {
-    var scope = mock(ServiceScope.class); var source = resources(true, "imod");
+    var scope = serviceScope(); var source = resources(true, "imod");
     when(scope.getServices(ResourcesService.class)).thenReturn(List.of(source));
-    when(source.resolve("test.component@1.0.0", KnowledgeClass.COMPONENT, null))
+    when(source.resolve("test.authority", KnowledgeClass.COMPONENT, null))
         .thenReturn(ResourceSet.of(new ResourceSet.Resource("resources", "test.component", null,
             Version.create("1.1.0"), KnowledgeClass.COMPONENT, 1, false)));
     var target = target();
@@ -109,9 +109,9 @@ class AuthorityDiscoveryTest {
   }
 
   @Test void pinnedAuthorityInstallsExactComponentAndUsesExactLookup() {
-    var scope = mock(ServiceScope.class); var source = resources(true, "imod");
+    var scope = serviceScope(); var source = resources(true, "imod");
     when(scope.getServices(ResourcesService.class)).thenReturn(List.of(source));
-    when(source.resolve("test.component@1.0.0", KnowledgeClass.COMPONENT, null)).thenReturn(component());
+    when(source.resolve("test.authority", KnowledgeClass.COMPONENT, null)).thenReturn(component());
     var target = target(); var binding = binding(); var provider = mock(Authority.class);
     when(target.getComponentRegistry().loadComponents(any(), same(scope))).thenReturn(true);
     when(target.getComponentRegistry().getAuthority(binding, scope)).thenReturn(null, provider);
@@ -138,11 +138,30 @@ class AuthorityDiscoveryTest {
     when(resources.capabilities(any(Scope.class))).thenReturn(capabilities);
     when(capabilities.isWorldviewProvider()).thenReturn(provider);
     when(capabilities.getAdoptedWorldview()).thenReturn(worldview);
+    when(capabilities.getComponents()).thenReturn(List.of(descriptor()));
+    when(resources.serviceId()).thenReturn("resources");
+    when(resources.getUrl()).thenReturn(url());
+    var status=mock(KlabService.ServiceStatus.class);when(status.isOperational()).thenReturn(true);when(resources.status()).thenReturn(status);
     return resources;
   }
 
   private ResourceSet component() {
-    return ResourceSet.of(new ResourceSet.Resource("resources", "test.component", null,
+    var result=ResourceSet.of(new ResourceSet.Resource("resources", "test.component", null,
         Version.create("1.0.0"), KnowledgeClass.COMPONENT, 1, false));
+    result.getServices().put("resources",url());return result;
+  }
+
+  private ServiceScope serviceScope() {
+    var scope=mock(ServiceScope.class);var owner=mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);
+    when(owner.getUsername()).thenReturn("owner");when(owner.getId()).thenReturn("owner-id");when(owner.getGroups()).thenReturn(List.of());when(scope.getIdentity()).thenReturn(owner);return scope;
+  }
+  private java.net.URL url() {
+    try{return java.net.URI.create("https://resources.invalid").toURL();}catch(java.net.MalformedURLException impossible){throw new AssertionError(impossible);}
+  }
+  private org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor descriptor() {
+    var rights=new org.integratedmodelling.klab.api.authentication.ResourcePrivileges();rights.setPublic(true);
+    return new org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor(
+        "test.component",Version.create("1.0.0"),"fixture",new java.io.File("fixture.jar"),"hash",null,rights,List.of(),List.of(),List.of(binding().provider()),
+        java.util.Map.of(),java.util.Map.of(),java.util.Map.of(),java.util.Map.of(),java.util.Map.of(),null,1,null,null,0);
   }
 }

@@ -236,6 +236,8 @@ public class ResourceAdminController {
     return resourcesServer
         .klabService()
         .manageRepository(
-            urn, request.getOperation(), request.getParameters().toArray(new String[] {}));
+            urn, request.getOperation(),
+            principal instanceof EngineAuthorization auth ? auth.getScope(UserScope.class) : null,
+            request.getCredentialId(), request.getParameters().toArray(new String[] {}));
   }
 }

@@ -128,10 +128,12 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       if (initialized) {
         if (EventSupport.individual(observation)) stageIndividual(observation, serviceContextScope);
         var previous = observation.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY);
-        observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
+        if(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl local)
+          local.markSchedulerRegistered(observation);
+        else observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
         var transaction = scope.getCurrentTransaction();
         transaction.update(observation);
-        transaction.afterRollback(
+        if(!(transaction instanceof DigitalTwinImpl.TransactionImpl)) transaction.afterRollback(
             () -> restoreMetadata(observation, Scheduler.REGISTRATION_METADATA_KEY, previous));
         transaction.afterCommit(
             () -> {
@@ -279,12 +281,16 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     var geometry =
         org.integratedmodelling.klab.services.runtime.TemporalGeometry.localize(
             observation.getGeometry(), event);
-    var scope =
-        rootScope.executingFresh(
-            org.integratedmodelling.klab.api.provenance.Activity.of(
-                org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION),
-            observation);
+    ServiceContextScope attempt = null;
     try {
+      var original = rootScope.of(observation);
+      var activity = org.integratedmodelling.klab.api.provenance.Activity.of(
+          org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION);
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(activity,original.getObserver());
+      var scope = original.executingFresh(activity,observation);
+      attempt = scope;
+      if (original.getObserver() != null) scope.getCurrentTransaction()
+          .link(activity,original.getObserver(),GraphModel.Relationship.HAS_OBSERVER);
       var bearer = registration == null ? observation.getParentId() : registration.bearerId();
       if (registration == null && observation.getMetadata().get(Scheduler.PLAN_METADATA_KEY) instanceof String encoded) {
         var plan = Utils.Json.parseObject(encoded, org.integratedmodelling.klab.api.services.runtime.Actuator.class);
@@ -325,11 +331,12 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
                             && link.source() instanceof Observation input
                             && (writes.changed(input) || input.getId() == observation.getId()));
         if (!triggered) continue;
-        var executor = restoreExecutor(consequence, scope);
+        var consequenceScope = scope.of(consequence);
+        var executor = restoreExecutor(consequence, consequenceScope);
         var support =
             org.integratedmodelling.klab.services.runtime.TemporalGeometry.localize(
                 consequence.getGeometry(), event);
-        if (executor == null || !execute(executor, consequence, support, event, scope))
+        if (executor == null || !execute(executor, consequence, support, event, consequenceScope))
           throw new IllegalStateException(
               "Causal contextualization failed for " + consequence.getUrn());
       }
@@ -434,7 +441,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         throw new IllegalStateException("Temporal transaction did not commit");
       return true;
     } catch (Throwable failure) {
-      scope.fail(failure);
+      if (attempt != null) attempt.fail(failure);
       rootScope.error(failure);
       return false;
     }
@@ -464,6 +471,25 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
           "Temporal prerequisites are selected by causal dispatch, not INIT recursion");
     return checkEvent(observation, event)
         || contextualize(observation, geometry, (ServiceContextScope) scope, event);
+  }
+
+  /**
+   * Execute one verified native discovery fragment. Observation-wide INIT timestamps cannot
+   * certify a different spatial fragment of that same producer. Ordinary dependencies retain
+   * their existing once-per-observation guard; this entry point is only used after the Runtime
+   * has checked the fragment against the selected request and its completion evidence.
+   */
+  public boolean executeCollectiveContribution(
+      Observation observation, Geometry support, ServiceContextScope scope) {
+    if (observation == null || !observation.getObservable().getSemantics().isCollective()
+        || !(observation.getObservable().is(SemanticType.SUBJECT)
+            || observation.getObservable().is(SemanticType.AGENT))
+        || support == null || support.isUniversal() || scope.getCurrentTransaction() == null)
+      throw new IllegalArgumentException("A bounded collective contribution requires a transaction");
+    if (scope.isInterrupted() || Thread.currentThread().isInterrupted()) return false;
+    return initializationRuns.executeContribution(scope.getCurrentTransaction(), observation.getId(),
+        Geometry.forTransport(support).encode(),
+        () -> contextualizeOnce(observation, support, scope, Event.initialization()));
   }
 
   private boolean initialize(Observation observation, ServiceContextScope scope) {
@@ -747,10 +773,13 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     if (observation instanceof ObservationImpl concrete && scope.getCurrentTransaction() != null) {
       var previousTimestamps = new ArrayList<>(observation.getEventTimestamps());
       var previousHistograms = observation.getHistograms();
+      boolean ledgerOwnsTimestamps=event.getType()==Event.Type.INITIALIZATION
+          && scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl;
       scope
           .getCurrentTransaction()
           .afterRollback(() -> {
-            concrete.setEventTimestamps(previousTimestamps);
+            if(!ledgerOwnsTimestamps)
+              concrete.setEventTimestamps(previousTimestamps);
             concrete.setHistograms(previousHistograms);
           });
     }
@@ -944,7 +973,10 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       } else {
         timestamps.add(event.getTime().getEnd().getMilliseconds());
       }
-      observation1.setEventTimestamps(timestamps);
+      if(event.getType()==Event.Type.INITIALIZATION && transaction instanceof DigitalTwinImpl.TransactionImpl local)
+        local.appendSchedulerInitializationTimestamps(observation,
+            timestamps.subList(observation.getEventTimestamps().size(),timestamps.size()));
+      else observation1.setEventTimestamps(timestamps);
       transaction.update(observation);
     }
   }

@@ -39,6 +39,7 @@ class SchedulerHistogramTest {
     canonical.setSubstantialQuality(true);
     var detached = (ObservationImpl) Observation.forTransport(canonical);
     var scope = mock(ServiceContextScope.class, RETURNS_DEEP_STUBS);
+    when(scope.getConsequenceCause()).thenReturn(null);
     var twin = mock(DigitalTwinImpl.class);
     var transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
         RuntimeAsset.PROVENANCE_ASSET, canonical);
@@ -72,4 +73,42 @@ class SchedulerHistogramTest {
     assertTrue(canonical.getHistograms().isEmpty());
     assertTrue(canonical.getEventTimestamps().isEmpty());
   }
-}
+  private record InitializationFixture(SchedulerImpl scheduler,DigitalTwinImpl.TransactionImpl transaction,ObservationImpl member) {}
+  private InitializationFixture initializationFixture() throws Exception {
+    ServiceConfiguration.injectInstantiators();
+    var concept=new ConceptImpl();concept.setUrn("test:Region");concept.setName("Region");concept.getType().add(SemanticType.SUBJECT);concept.setContextualization(org.integratedmodelling.klab.api.knowledge.Contextualization.ACKNOWLEDGEMENT);
+    var member=new ObservationImpl();member.setId(42);member.setObservable(ObservableImpl.promote(concept,null));
+    member.setGeometry(Geometry.create("T0(1){ttype=PHYSICAL,tstart=1000,tend=10000}"));
+    var scope=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);when(scope.getConsequenceCause()).thenReturn(null);
+    var twin=mock(DigitalTwinImpl.class);var graph=mock(org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j.class);
+    when(twin.getKnowledgeGraph()).thenReturn(graph);when(scope.getDigitalTwin()).thenReturn(twin);
+    var graphField=DigitalTwinImpl.class.getDeclaredField("knowledgeGraph");graphField.setAccessible(true);graphField.set(twin,graph);
+    var transaction=twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION),scope,RuntimeAsset.PROVENANCE_ASSET,member);
+    when(scope.getCurrentTransaction()).thenReturn(transaction);
+    var scheduler=new SchedulerImpl(scope,twin);
+    scheduler.registerExecutor(member,(geometry,event,execution)->{
+      var cohort=new org.integratedmodelling.common.knowledge.CohortImpl();cohort.setId(10);cohort.setObservable(member.getObservable());
+      transaction.guardClassificationOverlay(cohort,member,List.of(member),transaction.classificationOverlay(cohort,member,List.of(member)).state());
+      return true;
+    });
+    assertTrue(scheduler.submit(member,scope));
+    return new InitializationFixture(scheduler,transaction,member);
+  }
+  @Test void schedulerSubmitOwnsInitializationRollbackForCapturedConsumer() throws Exception {
+    var fixture=initializationFixture();try {
+      assertFalse(fixture.member().getEventTimestamps().isEmpty());
+      assertEquals(true,fixture.member().getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY));
+      fixture.transaction().fail(new java.util.concurrent.CancellationException());
+      assertTrue(fixture.member().getEventTimestamps().isEmpty());
+      assertFalse(fixture.member().getMetadata().containsKey(Scheduler.REGISTRATION_METADATA_KEY));
+    } finally {fixture.scheduler().close();}
+  }
+  @Test void schedulerRollbackPreservesForeignTimestampAndRegistrationEdits() throws Exception {
+    var fixture=initializationFixture();try {
+      fixture.member().getEventTimestamps().add(99L);
+      fixture.member().getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY,false);
+      fixture.transaction().fail(new java.util.concurrent.CancellationException());
+      assertEquals(99L,fixture.member().getEventTimestamps().getLast());
+      assertEquals(false,fixture.member().getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY));
+    } finally {fixture.scheduler().close();}
+  }}

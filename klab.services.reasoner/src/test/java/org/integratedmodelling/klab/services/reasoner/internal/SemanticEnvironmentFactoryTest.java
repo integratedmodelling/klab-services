@@ -1,0 +1,1054 @@
+package org.integratedmodelling.klab.services.reasoner.internal;
+
+import static org.junit.jupiter.api.Assertions.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+class SemanticEnvironmentFactoryTest {
+  @TempDir Path directory;
+  private Map<String, byte[]> core() throws Exception {
+    return Map.of("odo.owl",Files.readAllBytes(Path.of(System.getProperty("klab.test.core.directory"),"odo.owl")));
+  }
+  private KimConceptStatementImpl statement(String name, SemanticType type, int position) {
+    var statement = new KimConceptStatementImpl(); statement.setUrn(name); statement.setNamespace("w");
+    statement.setOffsetInDocument(position);
+    statement.setType(EnumSet.of(type, SemanticType.OBSERVABLE));
+    if (type == SemanticType.SUBJECT) statement.getType().add(SemanticType.COUNTABLE);
+    return statement;
+  }
+  private KimConceptImpl reference(String name) {
+    var reference = new KimConceptImpl(); reference.setName(name); reference.setUrn(name); reference.setOffsetInDocument(999);
+    return reference;
+  }
+  private KimConceptImpl typedReference(String name, SemanticType... types) {
+    var value = reference(name); value.setType(EnumSet.copyOf(List.of(types))); return value;
+  }
+  private Worldview world(String version, boolean conflict) {
+    var ontology = new KimOntologyImpl(); ontology.setUrn("w"); ontology.setProjectName("fixture");
+    ontology.setSourceCode(" ".repeat(1100) + version);
+    var thing = statement("Thing", SemanticType.SUBJECT, 1); thing.setUpperConceptDefined("odo:Subject");
+    var value = statement("Value", SemanticType.QUALITY, 2); value.setUpperConceptDefined("odo:Quality");
+    var group = statement("Group", SemanticType.SUBJECT, 3); group.setDeclaredParent(reference("w:Thing"));
+    group.setChildrenDisjoint(true);
+    group.getChildren().add(statement("A", SemanticType.SUBJECT, 4));
+    group.getChildren().add(statement("B", SemanticType.SUBJECT, 5));
+    var first = statement("Q1", SemanticType.QUALITY, 6); first.setDeclaredParent(reference("w:Value"));
+    first.setDeclaredInherent(reference("w:A"));
+    ontology.getStatements().addAll(List.of(thing, value, group, first));
+    if (conflict) {
+      var second = statement("Q2", SemanticType.QUALITY, 7); second.setDeclaredParent(reference("w:Q1"));
+      second.setDeclaredInherent(reference("w:B")); ontology.getStatements().add(second);
+    }
+    var worldview = new WorldviewImpl(); worldview.setUrn("w"); worldview.setWorldviewId("w");
+    worldview.setEmpty(false); worldview.setOntologies(new ArrayList<>(List.of(ontology)));
+    return worldview;
+  }
+  private Map<String,byte[]> configurationCore() throws Exception {
+    String xml=new String(core().get("odo.owl"),java.nio.charset.StandardCharsets.UTF_8);
+    String additions="""
+      <owl:ObjectProperty rdf:about="http://integratedmodelling.org/odo#describesConfiguration">
+        <rdfs:domain rdf:resource="http://integratedmodelling.org/odo#Domain"/>
+        <rdfs:range rdf:resource="http://integratedmodelling.org/odo#Configuration"/>
+      </owl:ObjectProperty>
+      <owl:Class rdf:about="http://integratedmodelling.org/odo#NoConfigurationDomain">
+        <rdfs:subClassOf rdf:resource="http://integratedmodelling.org/odo#Domain"/>
+        <rdfs:subClassOf><owl:Restriction>
+          <owl:onProperty rdf:resource="http://integratedmodelling.org/odo#describes"/>
+          <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:maxCardinality>
+        </owl:Restriction></rdfs:subClassOf>
+      </owl:Class>
+      """;
+    return Map.of("odo.owl",xml.replace("</rdf:RDF>",additions+"</rdf:RDF>").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+  }
+
+  @Test void identityRequirementsSurviveCandidateCompilationAndBothCompositionPaths() throws Exception {
+    var worldview = world("identity-requirements", false);
+    var ontology = worldview.getOntologies().getFirst();
+    var identity = statement("Identity", SemanticType.IDENTITY, 21);
+    identity.setType(EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+    identity.setUpperConceptDefined("odo:Identity"); identity.setAbstract(true);
+    var root = statement("IdentityRoot", SemanticType.IDENTITY, 22);
+    root.setType(EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+    root.setDeclaredParent(typedReference("w:Identity", SemanticType.IDENTITY, SemanticType.PREDICATE)); root.setAbstract(true);
+    var concrete = statement("ConcreteIdentity", SemanticType.IDENTITY, 23);
+    concrete.setType(EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+    concrete.setDeclaredParent(typedReference("w:IdentityRoot", SemanticType.IDENTITY, SemanticType.PREDICATE));
+    var process = statement("Process", SemanticType.PROCESS, 24);
+    process.setUpperConceptDefined("odo:Process"); process.setAbstract(true);
+    var qualified = statement("IdentifiedProcess", SemanticType.PROCESS, 25);
+    qualified.setDeclaredParent(typedReference("w:Process", SemanticType.PROCESS, SemanticType.OBSERVABLE));
+    qualified.getRequiredIdentities().add(typedReference("w:IdentityRoot", SemanticType.IDENTITY, SemanticType.PREDICATE));
+    var inherited = statement("InheritedGroup", SemanticType.SUBJECT, 26);
+    inherited.setDeclaredParent(typedReference("w:Group", SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE));
+    ontology.getStatements().addAll(List.of(identity, root, concrete, process, qualified, inherited));
+    for (var name : List.of("ConditionOne", "ConditionTwo", "RequiredRule", "InferredDerived")) {
+      var declaration = statement(name, SemanticType.SUBJECT, 27);
+      declaration.setDeclaredParent(typedReference("w:Thing", SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE));
+      if (name.equals("RequiredRule")) {
+        declaration.setAbstract(true);
+        declaration.getRequiredIdentities().add(typedReference("w:IdentityRoot", SemanticType.IDENTITY, SemanticType.PREDICATE));
+      }
+      ontology.getStatements().add(declaration);
+    }
+    ontology.getStatements().stream().filter(s -> s.getUrn().equals("Group")).findFirst().orElseThrow()
+        .getRequiredIdentities().add(typedReference("w:IdentityRoot", SemanticType.IDENTITY, SemanticType.PREDICATE));
+    var factory = new SemanticEnvironmentFactory(directory.resolve("identity-actors"), core());
+    var result = factory.build(input(factory, worldview), () -> false);
+    assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+    try (var state = result.state()) {
+      var actor = state.actor();
+      // Install an imported-style rule in this private fixture: the source declaration
+      // model does not express equivalence to a conjunction. No active graph is touched.
+      var graph = actor.owl().getOntology("w").getOWLOntology();
+      var manager = graph.getOWLOntologyManager(); var f = manager.getOWLDataFactory();
+      java.util.function.Function<String, org.semanticweb.owlapi.model.OWLClass> named = name -> graph.classesInSignature()
+          .filter(c -> c.getIRI().getRemainder().orElse("").equals(name)).findFirst().orElseThrow();
+      manager.addAxioms(graph, java.util.Set.of(
+          f.getOWLEquivalentClassesAxiom(named.apply("RequiredRule"),
+              f.getOWLObjectIntersectionOf(named.apply("ConditionOne"), named.apply("ConditionTwo"))),
+          f.getOWLSubClassOfAxiom(named.apply("InferredDerived"), named.apply("ConditionOne")),
+          f.getOWLSubClassOfAxiom(named.apply("InferredDerived"), named.apply("ConditionTwo"))));
+      actor.owl().flushReasoner();
+      var invalidate = actor.getClass().getDeclaredMethod("invalidateSemanticCaches");
+      invalidate.setAccessible(true); invalidate.invoke(actor);
+      // Resolve the shared trait before nested composition, avoiding a recursive
+      // Caffeine loader computation after this fixture deliberately clears caches.
+      actor.resolveConcept("w:ConcreteIdentity");
+      assertTrue(actor.owl().isEntailed(f.getOWLSubClassOfAxiom(named.apply("InferredDerived"), named.apply("RequiredRule"))));
+      for (var head : List.of("w:Group", "w:InheritedGroup", "w:InferredDerived")) {
+        assertTrue(actor.resolveConcept(head).isAbstract(), head);
+        var parsed = actor.serviceScope().getService(org.integratedmodelling.klab.api.services.ResourcesService.class).declareConcept(head);
+        assertFalse(parsed.getType().isEmpty(), "Parsed atomic head has types: " + head);
+        assertFalse(actor.resolveConcept("w:ConcreteIdentity " + head).isAbstract(), head);
+        assertFalse(actor.resolveConceptWithBuilder("w:ConcreteIdentity " + head, actor.serviceScope()).isAbstract(), head);
+        assertTrue(actor.resolveConcept(head).isAbstract(), "Qualified resolution must not mutate " + head);
+      }
+      assertTrue(actor.resolveConcept("w:ConcreteIdentity w:IdentifiedProcess").isAbstract(),
+          "A process-owned identity cannot discharge a bearer-directed requirement");
+      assertFalse(actor.resolveConcept("w:IdentifiedProcess of (w:ConcreteIdentity w:Group)").isAbstract(),
+          "Identity evidence on the actual bearer discharges the process requirement");
+      assertFalse(actor.resolveConceptWithBuilder("w:IdentifiedProcess of (w:ConcreteIdentity w:Group)",
+          actor.serviceScope()).isAbstract());
+      assertTrue(actor.resolveConcept("w:ConcreteIdentity w:Process").isAbstract(), "Explicit abstract stays binding");
+      assertTrue(actor.resolveConcept("w:ConcreteIdentity w:RequiredRule").isAbstract(), "Inferred children do not inherit this independent flag");
+      assertTrue(actor.children(actor.resolveConcept("w:Group")).stream()
+          .filter(c -> c.getUrn().equals("w:InheritedGroup")).findFirst().orElseThrow().isAbstract());
+      assertTrue(actor.closure(actor.resolveConcept("w:Group")).stream()
+          .filter(c -> c.getUrn().equals("w:InheritedGroup")).findFirst().orElseThrow().isAbstract());
+    }
+  }
+  private Worldview configurationWorld(boolean conflict) {
+    var world=world(conflict?"config-conflict":"config-independent",false);
+    var ontology=(KimOntologyImpl)world.getOntologies().getFirst();
+    var rootSystem=statement("SystemRoot",SemanticType.CONFIGURATION,11);rootSystem.setType(EnumSet.of(SemanticType.CONFIGURATION));rootSystem.setUpperConceptDefined("odo:Configuration");
+    var system=statement("System",SemanticType.CONFIGURATION,12);system.setType(EnumSet.of(SemanticType.CONFIGURATION));system.setDeclaredParent(reference("w:SystemRoot"));
+    system.setChildrenDisjoint(true);
+    for(String name:List.of("Earth","Mars")){var child=statement(name,SemanticType.CONFIGURATION,13);child.setType(EnumSet.of(SemanticType.CONFIGURATION));system.getChildren().add(child);}
+    var domain=statement("Perspective",SemanticType.DOMAIN,15);domain.setType(EnumSet.of(SemanticType.DOMAIN,SemanticType.PREDICATE));
+    var rootDomain=statement("DomainRoot",SemanticType.DOMAIN,14);rootDomain.setType(EnumSet.of(SemanticType.DOMAIN,SemanticType.PREDICATE));
+    rootDomain.setUpperConceptDefined(conflict?"odo:NoConfigurationDomain":"odo:Domain");domain.setDeclaredParent(reference("w:DomainRoot"));
+    for(String name:List.of("Earth","Mars"))domain.getObservablesDescribed().add(new org.integratedmodelling.klab.api.collections.impl.PairImpl<>(reference("w:"+name),org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.DescriptionType.DESCRIBES));
+    ontology.getStatements().addAll(List.of(rootSystem,system,rootDomain,domain));return world;
+  }
+  @Test void capturedParserRegistersCoreAliasTargetsFromTheAuthoritativeWorldview() throws Exception {
+    assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.NOTHING,
+        org.integratedmodelling.klab.runtime.language.WorldviewValidationScope.getMainType(EnumSet.of(SemanticType.RELATIONSHIP,SemanticType.STRUCTURAL,SemanticType.EVENT)));
+    assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.NOTHING,
+        org.integratedmodelling.klab.runtime.language.WorldviewValidationScope.getMainType(EnumSet.of(SemanticType.RELATIONSHIP,SemanticType.STRUCTURAL,SemanticType.FUNCTIONAL)));
+    var worldview=world("core-parser",false);var ontology=(KimOntologyImpl)worldview.getOntologies().getFirst();
+    var speed=statement("Speed",SemanticType.VELOCITY,19);speed.setType(EnumSet.of(SemanticType.QUALITY,SemanticType.OBSERVABLE,SemanticType.VELOCITY,SemanticType.INTENSIVE,SemanticType.QUANTIFIABLE,SemanticType.ABSTRACT));speed.setUpperConceptDefined("odo:Speed");ontology.getStatements().add(speed);
+    var relationship=statement("Relationship",SemanticType.RELATIONSHIP,20);relationship.setType(EnumSet.of(SemanticType.RELATIONSHIP,SemanticType.STRUCTURAL,SemanticType.OBSERVABLE,SemanticType.COUNTABLE,SemanticType.ABSTRACT));relationship.setUpperConceptDefined("odo:Relationship");ontology.getStatements().add(relationship);
+    var parser=new org.integratedmodelling.klab.runtime.language.CapturedSemanticExpressionParser(worldview);
+    var parsedRelationship=parser.concept("odo:Relationship");assertTrue(parsedRelationship.is(SemanticType.STRUCTURAL));assertFalse(parsedRelationship.is(SemanticType.FUNCTIONAL));
+    var expression=parser.concept("change rate of odo:Speed");
+    assertEquals("change rate of odo:Speed",expression.getUrn());
+    assertFalse(expression.is(SemanticType.NOTHING));
+    assertThrows(IllegalArgumentException.class,()->parser.concept("Nothing"));
+  }
+  @Test void wholeCandidateRejectsUnsatisfiableDescribingDomainAndKeepsIndependentWitnesses() throws Exception {
+    var factory=new SemanticEnvironmentFactory(directory.resolve("config-actors"),configurationCore());
+    var captured=factory.capture(configurationWorld(false));
+    assertEquals(CandidatePublicationCoordinator.BeanStatus.VALID,captured.beanStatus(),captured.diagnostics().toString());
+    var positive=factory.build(captured,()->false);
+    try(var state=positive.state()) {
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID,positive.logicalStatus(),positive.diagnostics().toString());
+      assertTrue(state.actor().owl().isConsistent());
+      assertTrue(state.actor().satisfiable(state.actor().resolveConcept("w:Perspective")));
+
+    }
+    try(var runtime=new AcceptedSemanticRuntime(factory)) {
+      runtime.submit(configurationWorld(false));assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));assertEquals(1,runtime.status().acceptedGeneration());
+      runtime.submit(configurationWorld(true));assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.INVALID,runtime.status().logicalStatus(),runtime.status().diagnostics().toString());
+      assertEquals(1,runtime.status().acceptedGeneration());
+    }
+  }
+  private CandidatePublicationCoordinator.Input<Worldview> input(SemanticEnvironmentFactory factory, Worldview world) {
+    var sources = SemanticEnvironmentFactory.sources(world);
+    return new CandidatePublicationCoordinator.Input<>(sources, SemanticEnvironmentFactory.sourceOrder(world),
+        factory.dependencyRevision(), SemanticEnvironmentFactory.CONFIGURATION_REVISION, world,
+        CandidatePublicationCoordinator.BeanStatus.VALID, List.of());
+  }
+  private org.integratedmodelling.klab.services.reasoner.ReasonerService facade(SemanticEnvironmentFactory factory) throws Exception {
+    var facade = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class,
+        invocation -> {
+          if (invocation.getMethod().getName().equals("getUrl")) return java.net.URI.create("http://127.0.0.1").toURL();
+          if (invocation.getMethod().getName().equals("setOperational")) return null;
+          if (invocation.getMethod().getName().equals("serviceId")) return "deployed-test-reasoner";
+          return invocation.callRealMethod();
+        });
+    facade.enableCandidatePublication(factory); return facade;
+  }
+
+  @Test void realCompilerCreatesIndependentStateWithoutDeploymentSideEffects() throws Exception {
+    var main = ServiceConfiguration.INSTANCE.getMainService(); var execution = Klab.INSTANCE.getExecutionContext();
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var left = factory.build(input(factory, world("left", false)), () -> false);
+    var right = factory.build(input(factory, world("right", false)), () -> false);
+    try (var first = left.state(); var second = right.state()) {
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, left.logicalStatus(), left.diagnostics().toString());
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, right.logicalStatus(), right.diagnostics().toString());
+      assertNotSame(first.actor(), second.actor()); assertNotSame(first.actor().owl(), second.actor().owl());
+      assertNotSame(first.actor().owl().getOntology("w").getOWLOntology().getOWLOntologyManager(),
+          second.actor().owl().getOntology("w").getOWLOntology().getOWLOntologyManager());
+      assertNotSame(first.actor().resolveConcept("w:Q1"), second.actor().resolveConcept("w:Q1"));
+      assertSame(first.actor(), first.actor().serviceScope().getService(org.integratedmodelling.klab.api.services.Reasoner.class));
+      assertSame(main, ServiceConfiguration.INSTANCE.getMainService()); assertSame(execution, Klab.INSTANCE.getExecutionContext());
+      try (var files = Files.walk(directory)) {
+        assertTrue(files.noneMatch(p -> p.getFileName().toString().equals("reasoner.yaml")
+            || p.getFileName().toString().contains("secret") || p.getFileName().toString().endsWith(".properties")));
+      }
+    }
+    try (var files = Files.list(directory.resolve("actors"))) { assertEquals(0, files.count()); }
+  }
+
+  @Test void failedRealCompilerCandidatePreservesAcceptedEnvironmentAndCache() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    try (var coordinator = new CandidatePublicationCoordinator<Worldview, SemanticEnvironment>(factory, i -> true)) {
+      coordinator.submit(input(factory, world("good", false)));
+      assertTrue(coordinator.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, coordinator.status().logicalStatus(), coordinator.status().diagnostics().toString());
+      try (var accepted = coordinator.accepted().orElseThrow()) {
+        var concept = accepted.state().actor().resolveConcept("w:Q1");
+        var graph = accepted.state().actor().owl().getOntology("w").getOWLOntology().getAxioms();
+        coordinator.submit(input(factory, world("bad", true)));
+        assertTrue(coordinator.awaitIdle(Duration.ofSeconds(15)));
+        assertEquals(CandidatePublicationCoordinator.LogicalStatus.INVALID, coordinator.status().logicalStatus(), coordinator.status().diagnostics().toString());
+        assertEquals(1, coordinator.status().acceptedGeneration());
+        assertSame(concept, accepted.state().actor().resolveConcept("w:Q1"));
+        assertEquals(graph, accepted.state().actor().owl().getOntology("w").getOWLOntology().getAxioms());
+        assertTrue(accepted.state().actor().satisfiable(concept));
+      }
+    }
+    try (var files = Files.list(directory.resolve("actors"))) { assertEquals(0, files.count()); }
+  }
+
+  @Test void manifestMismatchDoesNotConstructAnActor() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var normal = input(factory, world("original", false));
+    var wrong = new CandidatePublicationCoordinator.Input<>(Map.of("wrong", "hash"), List.of("wrong"),
+        factory.dependencyRevision(), "semantic-defaults", normal.payload(), CandidatePublicationCoordinator.BeanStatus.VALID, List.of());
+    assertThrows(IllegalArgumentException.class, () -> factory.build(wrong, () -> false));
+    assertFalse(Files.exists(directory.resolve("actors")));
+  }
+
+  @Test void unavailableScopeAndParsingNeverUseLiveServices() throws Exception {
+    var source = new CapturedSemanticSourceResolver(world("captured", false));
+    var scope = new SemanticEnvironmentScope(source.service());
+    assertThrows(UnsupportedOperationException.class, () -> scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class));
+    assertThrows(IllegalArgumentException.class, () -> source.service().declareConcept("within ("));
+    assertThrows(UnsupportedOperationException.class, () -> scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class));
+    scope.close();
+  }
+
+  @Test void configurationAndOrderMustMatchTheCompilerSnapshot() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var normal = factory.capture(world("normal", false));
+    var unsupported = new CandidatePublicationCoordinator.Input<>(normal.sourceHashes(), normal.sourceOrder(),
+        normal.dependencyRevision(), "other-configuration", normal.payload(), normal.beanStatus(), List.of());
+    assertThrows(IllegalArgumentException.class, () -> factory.build(unsupported, () -> false));
+    var groupingRevision = "-qualified-inherent-grouping-v1";
+    assertTrue(normal.configurationRevision().endsWith(groupingRevision));
+    var priorEncoding = normal.configurationRevision().substring(0,
+        normal.configurationRevision().length() - groupingRevision.length());
+    var priorCapture = new CandidatePublicationCoordinator.Input<>(normal.sourceHashes(), normal.sourceOrder(),
+        normal.dependencyRevision(), priorEncoding, normal.payload(), normal.beanStatus(), List.of());
+    assertThrows(IllegalArgumentException.class, () -> factory.build(priorCapture, () -> false),
+        "A source-identical capture using the former inherent encoding must be rebuilt");
+    var wrongOrder = new CandidatePublicationCoordinator.Input<>(normal.sourceHashes(), List.of(),
+        normal.dependencyRevision(), normal.configurationRevision(), normal.payload(), normal.beanStatus(), List.of());
+    assertThrows(IllegalArgumentException.class, () -> factory.build(wrongOrder, () -> false));
+    assertFalse(Files.exists(directory.resolve("actors")));
+  }
+
+  @Test void submissionCaptureAndCompilerOwnTheirSourceTrees() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var original = world("normal", false);
+    var captured = factory.capture(original);
+    original.getOntologies().getFirst().getStatements().clear();
+    var result = factory.build(captured, () -> false);
+    try (var state = result.state()) {
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+      assertNotNull(state.actor().resolveConcept("w:Q1"));
+      captured.payload().getOntologies().getFirst().getStatements().clear();
+      assertNotNull(state.actor().resolveConcept("w:Q1"));
+    }
+  }
+
+  @Test void authoritativeBeanErrorsNeverConstructAnActor() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var rejected = world("rejected", false);
+    rejected.getOntologies().getFirst().getNotifications().add(
+        org.integratedmodelling.klab.api.services.runtime.Notification.error("source error"));
+    var captured = factory.capture(rejected);
+    assertEquals(CandidatePublicationCoordinator.BeanStatus.INVALID, captured.beanStatus());
+    assertThrows(IllegalArgumentException.class, () -> factory.build(captured, () -> false));
+    assertFalse(Files.exists(directory.resolve("actors")));
+  }
+
+  @Test void strategyExpressionsReceiveOwlDependentValidation() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var built = factory.build(factory.capture(world("normal", false)), () -> false);
+    try (var state = built.state()) {
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, built.logicalStatus(), built.diagnostics().toString());
+      var syntax = reference("w:Q1");
+      syntax.setInherent(reference("w:B"));
+      var observable = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
+      observable.setSemantics(syntax); observable.setUrn("w:Q1 of w:B");
+      var alternative = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationPlanImpl.MatchAlternativeImpl();
+      alternative.setObservable(observable);
+      var selection = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationPlanImpl.StrategySelectionImpl();
+      selection.getAlternatives().add(alternative);
+      var strategy = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategyImpl();
+      strategy.setUrn("s"); strategy.setNamespace("strategies"); strategy.setSelection(selection);
+      var document = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl();
+      document.setUrn("strategies"); document.getStatements().add(strategy);
+      var errors = new DocumentSemanticValidator(state.actor()).validate(document);
+      assertTrue(org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(errors), errors.toString());
+    }
+  }
+
+  @Test void leasedReadersRetainGenerationAndReturnOwnedBeans() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    try (var coordinator = new CandidatePublicationCoordinator<Worldview, SemanticEnvironment>(factory, i -> true)) {
+      coordinator.submit(factory.capture(world("first", false)));
+      assertTrue(coordinator.awaitIdle(Duration.ofSeconds(15)));
+      try (var old = AcceptedSemanticReadSession.open(coordinator)) {
+        var concept = old.resolveConcept("w:Q1");
+        var unknown = old.resolveConcept("w:Deleted");
+        assertThrows(IllegalArgumentException.class, () -> old.satisfiable(unknown));
+        assertThrows(IllegalArgumentException.class, () -> old.parents(unknown));
+        assertThrows(IllegalArgumentException.class, () -> old.is(unknown, concept));
+        concept.getMetadata().put("client-only", "mutation");
+        assertNull(old.resolveConcept("w:Q1").getMetadata().get("client-only"));
+        coordinator.submit(factory.capture(world("second", false)));
+        assertTrue(coordinator.awaitIdle(Duration.ofSeconds(15)));
+        try (var current = AcceptedSemanticReadSession.open(coordinator)) {
+          assertEquals(1, old.generation()); assertEquals(2, current.generation());
+          assertTrue(old.satisfiable(concept)); assertTrue(current.satisfiable(concept));
+          try (var files = Files.list(directory.resolve("actors"))) { assertEquals(2, files.count()); }
+        }
+      }
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(1, files.count()); }
+    }
+    try (var files = Files.list(directory.resolve("actors"))) { assertEquals(0, files.count()); }
+  }
+
+  @Test void unavailableNumberedCoreImportCannotProduceValidCandidate() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var source = world("unsupported-core", false);
+    source.getOntologies().getFirst().getOwlImports().add(
+        org.integratedmodelling.klab.api.collections.Pair.of("odo", "http://integratedmodelling.org/odo/uncaptured"));
+    var result = factory.build(factory.capture(source), () -> false);
+    assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, result.logicalStatus());
+    assertNull(result.state());
+    assertFalse(Files.exists(directory.resolve("actors")));
+  }
+
+  @Test void officialOdoReleaseUrlUsesMatchingCapturedVersionWithoutNetwork() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"),
+        Map.of("odo.owl", CoreOntologyCatalog.bundledOdo()));
+    for (var url : List.of(
+        "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.2.0/odo.owl",
+        "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl",
+        "https://example.org/releases/0.2.0/odo.owl")) {
+      var source = world("release-import", false);
+      source.getOntologies().getFirst().getOwlImports().add(
+          org.integratedmodelling.klab.api.collections.Pair.of("odo", url));
+      var result = factory.build(factory.capture(source), () -> false);
+      try (var environment = result.state()) {
+        if (url.equals("https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.2.0/odo.owl")) {
+          assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+          assertNotNull(environment);
+        } else {
+          assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED, result.logicalStatus());
+          assertNull(environment);
+        }
+      }
+    }
+  }
+
+  @Test void ambiguousCoreDocumentsAreRejectedBeforeAnyActor() throws Exception {
+    var bytes = core().get("odo.owl");
+    assertThrows(IllegalArgumentException.class, () -> new SemanticEnvironmentFactory(
+        directory.resolve("actors"), Map.of("odo.owl", bytes, "alias.owl", bytes)));
+    assertFalse(Files.exists(directory.resolve("actors")));
+  }
+
+  @Test void localCaptureIgnoresHiddenImportCachesAtEveryDepth() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("catalog"));
+    Files.write(catalog.resolve("odo.owl"), core().get("odo.owl"));
+    var before = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
+    // Cache entries can be stale, conflicting, or incomplete; the core loader skips them.
+    Files.createDirectories(catalog.resolve(".imports"));
+    Files.writeString(catalog.resolve(".imports/odo.owl"), "not an ontology");
+    Files.createDirectories(catalog.resolve("nested/.cache"));
+    Files.writeString(catalog.resolve("nested/.cache/odo.owl"), "also not an ontology");
+    var after = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
+    assertEquals(before.dependencyRevision(), after.dependencyRevision());
+    var result = after.build(after.capture(world("hidden-cache", false)), () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment);
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(),
+          result.diagnostics().toString());
+    }
+  }
+
+  @Test void bundledOdoOverridesStaleInstalledBytesAndTheirManifest() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("catalog"));
+    var bundled = CoreOntologyCatalog.bundledOdo();
+    assertTrue(new String(bundled, java.nio.charset.StandardCharsets.UTF_8)
+        .contains("http://integratedmodelling.org/odo/0.2.0"));
+    Files.writeString(catalog.resolve("odo.owl"), "obsolete installed ontology");
+    Files.writeString(catalog.resolve("source-catalog.properties"),
+        "odo=https://example.org/releases/0.1.0/odo.owl\nodo.sha256=obsolete\n");
+    var captured = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
+    var bundledOnly = new SemanticEnvironmentFactory(directory.resolve("actors"), CoreOntologyCatalog.bundledCore());
+    assertEquals(bundledOnly.dependencyRevision(), captured.dependencyRevision());
+    var source = world("bundled", false);
+    for (var name : List.of("PhysicalDomain", "KnowledgeDomain", "NormativeDomain")) {
+      var declaration = statement(name, SemanticType.SUBJECT, 10);
+      declaration.setUpperConceptDefined("odo:" + name);
+      source.getOntologies().getFirst().getStatements().add(declaration);
+    }
+    assertFalse(captured.capture(source).diagnostics().stream()
+        .anyMatch(message -> message.contains("CORE_ALIAS_TARGET_UNAVAILABLE")));
+    // Re-capture after a stale local edit still has the exact same dependency identity.
+    Files.writeString(catalog.resolve("odo.owl"), "another stale local copy");
+    assertEquals(captured.dependencyRevision(),
+        SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog).dependencyRevision());
+  }
+
+  @Test void legacyCoreExtractionReplacesStaleOdoButPrivateSnapshotsStayFrozen() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("legacy"));
+    Files.writeString(catalog.resolve("odo.owl"), "old core");
+    new CoreOntology(catalog.toFile(), null, true);
+    assertArrayEquals(CoreOntologyCatalog.bundledOdo(), Files.readAllBytes(catalog.resolve("odo.owl")));
+    Files.writeString(catalog.resolve("odo.owl"), "captured private core");
+    new CoreOntology(catalog.toFile(), null, false);
+    assertEquals("captured private core", Files.readString(catalog.resolve("odo.owl")));
+  }
+
+  @Test void bundledStructuralCoreIgnoresStaleInstalledDocumentsAndProvenanceWithoutWriting() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("stale"));
+    var properties = new StringBuilder();
+    for (var name : List.of("odo", "dc", "klab")) {
+      Files.writeString(catalog.resolve(name.equals("dc") ? "DC.owl" : name + ".owl"), "stale " + name);
+      properties.append(name).append("=https://example.org/obsolete\n")
+          .append(name).append(".sha256=obsolete\n");
+    }
+    Files.writeString(catalog.resolve("source-catalog.properties"), properties);
+    var expected = new SemanticEnvironmentFactory(directory.resolve("actors"), CoreOntologyCatalog.bundledCore());
+    assertEquals(expected.dependencyRevision(),
+        SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog).dependencyRevision());
+    for (var name : List.of("odo", "dc", "klab"))
+      assertEquals("stale " + name, Files.readString(catalog.resolve(name.equals("dc") ? "DC.owl" : name + ".owl")));
+    assertEquals(properties.toString(), Files.readString(catalog.resolve("source-catalog.properties")));
+    var absent = directory.resolve("absent");
+    assertEquals(expected.dependencyRevision(),
+        SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), absent).dependencyRevision());
+    assertFalse(Files.exists(absent));
+    assertFalse(Files.exists(directory.resolve("actors")));
+  }
+
+  @Test void bundledStructuralCorePreservesCustomImportsMetadataLocatorsAndPins() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("extensions/external" )).getParent();
+    var extension = """
+        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                 xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+                 xmlns:owl="http://www.w3.org/2002/07/owl#">
+          <owl:Ontology rdf:about="http://example.org/custom">
+            <rdfs:comment>Custom authored metadata</rdfs:comment>
+            <owl:imports rdf:resource="http://protege.stanford.edu/plugins/owl/dc/protege-dc.owl"/>
+          </owl:Ontology>
+          <owl:Class rdf:about="http://example.org/custom#Thing"/>
+        </rdf:RDF>
+        """.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    Files.write(catalog.resolve("external/klab.owl"), extension);
+    var pin = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(extension));
+    var properties = "external.klab=https://example.org/custom-document.owl\nexternal.klab.sha256=" + pin + "\n";
+    Files.writeString(catalog.resolve("source-catalog.properties"), properties);
+    Files.createDirectories(catalog.resolve(".imports"));
+    Files.writeString(catalog.resolve(".imports/klab.owl"), "hidden stale core");
+    var core = new java.util.LinkedHashMap<>(CoreOntologyCatalog.bundledCore());
+    core.put("external/klab.owl", extension);
+    var expected = new SemanticEnvironmentFactory(directory.resolve("actors"), core,
+        Map.of("external.klab", "https://example.org/custom-document.owl"), Map.of("external.klab", pin));
+    var actual = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog);
+    assertEquals(expected.dependencyRevision(), actual.dependencyRevision());
+    var result = actual.build(actual.capture(world("custom-structural", false)), () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment);
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+      assertNotNull(environment.actor().owl().getConcept("external.klab:Thing"));
+    }
+    assertArrayEquals(extension, Files.readAllBytes(catalog.resolve("external/klab.owl")));
+    assertEquals(properties, Files.readString(catalog.resolve("source-catalog.properties")));
+    Files.writeString(catalog.resolve("source-catalog.properties"), properties.replace(pin, "incorrect-pin"));
+    assertThrows(IllegalArgumentException.class,
+        () -> SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), catalog));
+  }
+
+  @Test void ordinaryStructuralSynchronizationPreservesExtensionsAndPrivateSnapshots() throws Exception {
+    var catalog = Files.createDirectories(directory.resolve("ordinary"));
+    for (var name : List.of("odo.owl", "dc.owl", "klab.owl"))
+      Files.writeString(catalog.resolve(name), "old " + name);
+    Files.writeString(catalog.resolve("custom.owl"), "owned custom bytes");
+    Files.writeString(catalog.resolve("source-catalog.properties"), "custom=authored-locator\n");
+    new CoreOntology(catalog.toFile(), null, true);
+    for (var entry : CoreOntologyCatalog.bundledCore().entrySet())
+      assertArrayEquals(entry.getValue(), Files.readAllBytes(catalog.resolve(entry.getKey())));
+    assertEquals("owned custom bytes", Files.readString(catalog.resolve("custom.owl")));
+    assertEquals("custom=authored-locator\n", Files.readString(catalog.resolve("source-catalog.properties")));
+    for (var name : List.of("odo.owl", "dc.owl", "klab.owl"))
+      Files.writeString(catalog.resolve(name), "private " + name);
+    new CoreOntology(catalog.toFile(), null, false);
+    for (var name : List.of("odo.owl", "dc.owl", "klab.owl"))
+      assertEquals("private " + name, Files.readString(catalog.resolve(name)));
+  }
+
+  @Test void immutableOfficialReleaseRequiresTheVerifiedCommitPathAndExactCapturedHash() throws Exception {
+    String url = "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
+        + "9cfe20e306e39747a0474bf6754c24e49d99df71/releases/0.1.1/odo.owl";
+    String lf = "d8771dc5456a48e0d1d64f7ba1c92f8e6a9f89ddddfd1fa6cabf1c93e363ea52";
+    String crlf = "6851a4a34aa66191687232e9c37c2dc12e8b779b73e1a10bdf5abd1dd31ab038";
+    for (var hash : List.of(lf, crlf))
+      assertEquals("http://integratedmodelling.org/odo/0.1.1", CoreOntologyCatalog.odoReleaseIdentity(url, hash));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(url, null));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(url, "0".repeat(64)));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(null, lf));
+    for (var rejected : List.of(
+        url.replace("raw.githubusercontent.com", "raw.githubusercontent.com.evil.test"),
+        url.replace("integratedmodelling/odo-im/", "other/odo-im/"),
+        url.replace("odo-im/", "other-repository/"),
+        url.replace("https:", "http:"),
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "0".repeat(40)),
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "develop"),
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "9cfe20e"),
+        url.replace("0.1.1/odo.owl", "latest/odo.owl"),
+        url.replace("0.1.1/odo.owl", "0.1.0/odo.owl"),
+        url.replace("releases/", "other/"),
+        url.replace("/odo.owl", "/other.owl"), url + "?download=1", url + "#fragment",
+        url.replace("/releases/", "/x/../releases/")))
+      assertNull(CoreOntologyCatalog.odoReleaseIdentity(rejected, lf), rejected);
+    assertEquals("http://integratedmodelling.org/odo/0.1.1", CoreOntologyCatalog.odoReleaseIdentity(
+        url.replace("9cfe20e306e39747a0474bf6754c24e49d99df71", "master"), lf));
+  }
+
+  @Test void localCatalogAdmitsVerifiedImmutableReleaseWithoutInjectedLocatorOrPin() throws Exception {
+    var factory = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), directory.resolve("absent"));
+    var url = "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
+        + "08e5a29abbbd32ca8c1b933fc157a1762ba3ee5c/releases/0.2.0/odo.owl";
+    assertEquals("http://integratedmodelling.org/odo/0.2.0",
+        CoreOntologyCatalog.odoReleaseIdentity(url, "496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57"));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(url, null));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(url, "0".repeat(64)));
+    assertNull(CoreOntologyCatalog.odoReleaseIdentity(url,
+        "d8771dc5456a48e0d1d64f7ba1c92f8e6a9f89ddddfd1fa6cabf1c93e363ea52"));
+    var source = world("immutable-local-catalog", false);
+    source.getOntologies().getFirst().getOwlImports().add(
+        org.integratedmodelling.klab.api.collections.Pair.of("odo", url));
+    var result = factory.build(factory.capture(source), () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment);
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+    }
+    // Same ontology identity/version is insufficient if the exact captured document differs.
+    var different = new java.util.LinkedHashMap<>(CoreOntologyCatalog.bundledCore());
+    different.put("odo.owl", (new String(different.get("odo.owl"), java.nio.charset.StandardCharsets.UTF_8)
+        + "\n<!-- unverified byte change -->\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    var unverified = new SemanticEnvironmentFactory(directory.resolve("unverified"), different);
+    assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED,
+        unverified.build(unverified.capture(source), () -> false).logicalStatus());
+    for (var rejected : List.of(url.replace("08e5a29abbbd32ca8c1b933fc157a1762ba3ee5c", "0".repeat(40)),
+        url.replace("odo-im/", "wrong-repo/"), url.replace("raw.githubusercontent.com", "example.org"),
+        url.replace("08e5a29abbbd32ca8c1b933fc157a1762ba3ee5c", "develop"),
+        url.replace("0.2.0/odo.owl", "0.1.1/odo.owl"),
+        url.replace("0.2.0/odo.owl", "latest/odo.owl"), url + "?download=1", url + "#fragment",
+        url.replace("/releases/", "/wrong-path/"))) {
+      source.getOntologies().getFirst().getOwlImports().clear();
+      source.getOntologies().getFirst().getOwlImports().add(
+          org.integratedmodelling.klab.api.collections.Pair.of("odo", rejected));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED,
+          factory.build(factory.capture(source), () -> false).logicalStatus(), rejected);
+    }
+  }
+
+  @Test void qualifiedCoreAliasMatchesTheLoadedOntologyAndItsVersion() throws Exception {
+    var captured = new java.util.LinkedHashMap<>(core());
+    captured.put("external/CustomCore.owl", """
+        <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                 xmlns:owl="http://www.w3.org/2002/07/owl#">
+          <owl:Ontology rdf:about="http://example.org/custom">
+            <owl:versionIRI rdf:resource="http://example.org/custom/1"/>
+          </owl:Ontology>
+          <owl:Class rdf:about="http://example.org/custom#Thing"/>
+        </rdf:RDF>
+        """.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), captured);
+    var source = world("qualified", false);
+    source.getOntologies().getFirst().getOwlImports().add(
+        org.integratedmodelling.klab.api.collections.Pair.of(
+            "external.custom-core", "http://example.org/custom/1"));
+    var result = factory.build(factory.capture(source), () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment);
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(),
+          result.diagnostics().toString());
+      var concept = environment.actor().owl().getConcept("external.custom-core:Thing");
+      assertNotNull(concept);
+      assertEquals("external.custom-core", concept.getNamespace());
+    }
+    source.getOntologies().getFirst().getOwlImports().clear();
+    source.getOntologies().getFirst().getOwlImports().add(
+        org.integratedmodelling.klab.api.collections.Pair.of("odo", "http://example.org/custom/1"));
+    assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED,
+        factory.build(factory.capture(source), () -> false).logicalStatus());
+  }
+
+  @Test void normalizedAliasCollisionsIdentifyBothDocuments() throws Exception {
+    var error = assertThrows(IllegalArgumentException.class, () -> new SemanticEnvironmentFactory(
+        directory.resolve("actors"), Map.of("ODO.owl", core().get("odo.owl"), "odo.owl", core().get("odo.owl"))));
+    assertTrue(error.getMessage().contains("ODO.owl"));
+    assertTrue(error.getMessage().contains("odo.owl"));
+    assertTrue(error.getMessage().contains("alias odo"));
+  }
+
+  @Test void queuedSnapshotCannotLoseDeclarationsBeforeTheWorkerBuilds() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var input = factory.capture(world("queued", false));
+    var entered = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> delayed = (candidate, cancellation) -> {
+      entered.countDown();
+      if (!release.await(5, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("test timeout");
+      return factory.build(candidate, cancellation);
+    };
+    try (var coordinator = new CandidatePublicationCoordinator<Worldview, SemanticEnvironment>(delayed, i -> true)) {
+      coordinator.submit(input);
+      assertTrue(entered.await(5, java.util.concurrent.TimeUnit.SECONDS));
+      input.payload().getOntologies().getFirst().getStatements().removeIf(s -> s.getUrn().equals("Q1"));
+      release.countDown();
+      assertTrue(coordinator.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, coordinator.status().logicalStatus(),
+          coordinator.status().diagnostics().toString());
+      try (var reader = AcceptedSemanticReadSession.open(coordinator)) {
+        assertFalse(reader.resolveConcept("w:Q1").is(SemanticType.NOTHING));
+      }
+    } finally { release.countDown(); }
+  }
+
+  @Test void localParserUsesOnlyItsCapturedWorldview() {
+    var original = world("parser", false);
+    var resolver = new CapturedSemanticSourceResolver(original);
+    original.getOntologies().getFirst().getStatements().clear();
+    assertNotNull(resolver.service().declareConcept("w:Q1 of w:A"));
+    assertNotNull(resolver.service().declareObservable("w:Q1"));
+    assertThrows(IllegalArgumentException.class, () -> resolver.service().declareConcept("within ("));
+  }
+
+  @Test void productionLoadGateSchedulesAndApiReadsPreserveAcceptedActor() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var facade = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class,
+        invocation -> {
+          if (invocation.getMethod().getName().equals("getUrl")) return java.net.URI.create("http://127.0.0.1").toURL();
+          if (invocation.getMethod().getName().equals("setOperational")) return null;
+          if (invocation.getMethod().getName().equals("serviceId")) return "deployed-test-reasoner";
+          return invocation.callRealMethod();
+        });
+    facade.enableCandidatePublication(factory);
+    var source = new CapturedSemanticSourceResolver(world("sources", false));
+    var scope = new SemanticEnvironmentScope(source.service());
+    try (var runtime = facade.candidateRuntime()) {
+      var pending = facade.loadKnowledge(world("accepted", false), scope);
+      assertFalse(org.integratedmodelling.klab.api.utils.Utils.Resources.hasErrors(pending));
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, runtime.status().logicalStatus(), runtime.status().diagnostics().toString());
+      var accepted = facade.resolveConcept("w:Q1");
+      assertTrue(facade.satisfiable(accepted));
+      facade.loadKnowledge(world("rejected", true), scope);
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.INVALID, runtime.status().logicalStatus(), runtime.status().diagnostics().toString());
+      assertEquals(1, facade.knowledgeRevision());
+      assertTrue(facade.satisfiable(facade.resolveConcept("w:Q1")));
+      assertTrue(facade.is(facade.resolveConcept("w:A"), facade.resolveConcept("w:Thing")));
+      accepted.getMetadata().put("outside", "client mutation");
+      assertNull(facade.resolveConcept("w:Q1").getMetadata().get("outside"));
+    } finally { scope.close(); }
+  }
+
+  @Test void controllerBuilderPinsOldActorThroughPublicationAndReleasesAtBuild() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var facade = facade(factory);
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var builder = SemanticsBuilder.create(facade.resolveConcept("w:Q1"), facade, scope);
+      facade.loadKnowledge(world("next", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(2, files.count()); }
+      assertNotNull(builder.buildObservable());
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(1, files.count()); }
+      assertThrows(IllegalStateException.class, builder::buildConcept);
+    } finally { scope.close(); }
+  }
+
+  @Test void tokenSearchPinsActorAcrossHttpCallsUntilCancellation() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var facade = facade(factory);
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest();
+      request.setQueryString(""); request.setRequestId(1);
+      var response = facade.semanticSearch(request, scope);
+      assertTrue(response.getSearchId() > 0, response.getErrors().toString());
+      facade.loadKnowledge(world("next", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(2, files.count()); }
+      request.setSearchId(response.getSearchId()); request.setRequestId(2); request.setQueryString("Q");
+      assertEquals(response.getSearchId(), facade.semanticSearch(request, scope).getSearchId());
+      request.setCancelSearch(true); request.setRequestId(3);
+      assertEquals(0, facade.semanticSearch(request, scope).getSearchId());
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(1, files.count()); }
+    } finally { scope.close(); }
+  }
+
+  @Test void productionUpdateCompilesPrefetchedBeanAndRetainsAcceptedOnBeanFailure() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    var facade = facade(factory);
+    var resources = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var user = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    org.mockito.Mockito.when(user.getService(org.integratedmodelling.klab.api.services.ResourcesService.class)).thenReturn(resources);
+    var manager = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ScopeManager.class);
+    org.mockito.Mockito.when(manager.collectMessagePayload(org.mockito.ArgumentMatchers.eq(user),
+        org.mockito.ArgumentMatchers.eq(org.integratedmodelling.klab.api.services.runtime.Notification.class),
+        org.mockito.ArgumentMatchers.any())).thenReturn(user);
+    org.mockito.Mockito.doReturn(manager).when(facade).getScopeManager();
+    var capabilities = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.services.ResourcesService.Capabilities.class);
+    org.mockito.Mockito.when(capabilities.getServiceId()).thenReturn("resources");
+    org.mockito.Mockito.when(resources.capabilities(user)).thenReturn(capabilities);
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var saved = world("saved", false);
+      // Global admission independently discovers service-visible beans; caller copies may mutate.
+      var service = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.ServiceScope.class);
+      var publicSaved = BeanIngestionPreflight.snapshot(saved);
+      var status = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.services.KlabService.ServiceStatus.class);
+      org.mockito.Mockito.when(status.isAvailable()).thenReturn(true);
+      org.mockito.Mockito.when(resources.status()).thenReturn(status);
+      org.mockito.Mockito.when(resources.getUrl()).thenReturn(java.net.URI.create("http://127.0.0.1:8092/resources").toURL());
+      org.mockito.Mockito.when(capabilities.isWorldviewProvider()).thenReturn(true);
+      org.mockito.Mockito.when(resources.capabilities(service)).thenReturn(capabilities);
+      org.mockito.Mockito.when(service.getServices(org.integratedmodelling.klab.api.services.ResourcesService.class)).thenReturn(List.of(resources));
+      org.mockito.Mockito.when(resources.list(Worldview.class,null)).thenReturn(List.of(publicSaved));
+      org.mockito.Mockito.doReturn(service).when(facade).serviceScope();
+      org.mockito.Mockito.when(resources.retrieve("w", org.integratedmodelling.klab.api.lang.kim.KimOntology.class, user))
+          .thenReturn(saved.getOntologies().getFirst());
+      org.mockito.Mockito.when(resources.retrieve("w", Worldview.class, user)).thenReturn(saved);
+      var changes = new org.integratedmodelling.klab.api.services.resources.ResourceSet();
+      changes.getOntologies().add(new org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource(
+          "resources", "w", "fixture", null, org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.ONTOLOGY, 0, false));
+      facade.updateKnowledge(changes, user);
+      saved.getOntologies().getFirst().getStatements().clear();
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      assertEquals(2, runtime.status().acceptedGeneration(), runtime.status().diagnostics().toString());
+      assertFalse(facade.resolveConcept("w:Q1").is(SemanticType.NOTHING));
+      org.mockito.Mockito.when(resources.retrieve("w", org.integratedmodelling.klab.api.lang.kim.KimOntology.class, user)).thenReturn(null);
+      var rejected = facade.updateKnowledge(changes, user);
+      assertTrue(org.integratedmodelling.klab.api.utils.Utils.Resources.hasErrors(rejected));
+      // A private retrieval failure is not evidence against the unchanged service snapshot.
+      assertEquals(CandidatePublicationCoordinator.BeanStatus.VALID, runtime.status().beanStatus());
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, runtime.status().logicalStatus());
+      assertEquals(2, runtime.status().acceptedGeneration());
+      assertTrue(facade.satisfiable(facade.resolveConcept("w:Q1")));
+    } finally { scope.close(); }
+  }
+
+  @Test void explicitDocumentLocatorUsesActualAliasUrlOrdering() throws Exception {
+    String document = "https://example.test/captured/odo.owl";
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core(), Map.of("odo", document));
+    var source = world("document", false);
+    source.getOntologies().getFirst().getOwlImports().add(org.integratedmodelling.klab.api.collections.Pair.of("odo", document));
+    var result = factory.build(factory.capture(source), () -> false);
+    try (var state = result.state()) {
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+    }
+    assertThrows(IllegalArgumentException.class, () -> new SemanticEnvironmentFactory(directory.resolve("other"), core(),
+        Map.of("odo", "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/uncaptured/odo.owl")));
+  }
+  @Test void documentationAndCompoundInputsUseOneAcceptedActor() throws Exception {
+    var facade = facade(new SemanticEnvironmentFactory(directory.resolve("actors"), core()));
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      String documentation = facade.info("w:Q1", org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.CONCEPT, String.class, null);
+      assertTrue(documentation.contains("Q1"));
+      assertThrows(IllegalStateException.class, facade::owl);
+      var exportDirectory = Files.createDirectory(directory.resolve("export"));
+      assertTrue(facade.exportNamespace("w", exportDirectory.toFile()));
+      try (var exports = Files.list(exportDirectory)) { assertTrue(exports.findAny().isPresent()); }
+      var strategy = new org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy(facade.resolveConcept("w:Q1"), scope);
+      var before = strategy.getBaseConcept();
+      facade.loadKnowledge(world("next", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      assertNotNull(facade.buildObservable(strategy, scope));
+      assertSame(before, strategy.getBaseConcept());
+      var a = facade.resolveConcept("w:A"); var thing = facade.resolveConcept("w:Thing");
+      assertEquals(thing.getUrn(), facade.concretize(a, Map.of(a, thing)).getUrn());
+      var context = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+      var observation = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+      var observable = facade.resolveObservable("w:Q1");
+      org.mockito.Mockito.when(observation.getObservable()).thenReturn(observable);
+      org.mockito.Mockito.when(context.getObservations()).thenReturn(List.of(observation));
+      org.mockito.Mockito.when(context.getServices(org.integratedmodelling.klab.api.services.KlabService.class)).thenReturn(List.of(facade));
+      try (var lease = runtime.lease()) {
+        var bound = (org.integratedmodelling.klab.api.scope.ContextScope)runtime.scope(context, lease.state().actor());
+        assertSame(lease.state().actor(), bound.getServices(org.integratedmodelling.klab.api.services.KlabService.class).iterator().next());
+        assertNotSame(observation, bound.getObservations().getFirst());
+        assertEquals("w:Q1", bound.getObservations().getFirst().getObservable().getSemantics().getUrn());
+      }
+    } finally { scope.close(); }
+  }
+
+  @Test void builderCloseWinsAgainstBlockedTerminalBuild() throws Exception {
+    var facade = facade(new SemanticEnvironmentFactory(directory.resolve("actors"), core()));
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var builder = SemanticsBuilder.create(facade.resolveConcept("w:Q1"), facade, scope);
+      try (var lease = runtime.lease()) {
+        var result = new java.util.concurrent.CompletableFuture<Throwable>();
+        Thread worker;
+        synchronized (lease.state()) {
+          worker = Thread.ofPlatform().start(() -> {
+            try { builder.buildConcept(); result.complete(null); } catch (Throwable failure) { result.complete(failure); }
+          });
+          long limit = System.nanoTime() + Duration.ofSeconds(3).toNanos();
+          while (worker.getState() != Thread.State.BLOCKED && System.nanoTime() < limit) Thread.onSpinWait();
+          assertEquals(Thread.State.BLOCKED, worker.getState());
+          builder.close();
+        }
+        assertInstanceOf(IllegalStateException.class, result.get(5, java.util.concurrent.TimeUnit.SECONDS));
+        worker.join(5000);
+      }
+    } finally { scope.close(); }
+  }
+
+  @Test void searchShutdownCannotRegisterLatePersistentLease() throws Exception {
+    var facade = facade(new SemanticEnvironmentFactory(directory.resolve("actors"), core()));
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    var runtime = facade.candidateRuntime();
+    try {
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest();
+      request.setQueryString(""); request.setRequestId(1);
+      var result = new java.util.concurrent.CompletableFuture<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse>();
+      Thread worker;
+      try (var lease = runtime.lease()) {
+        synchronized (lease.state()) {
+          worker = Thread.ofPlatform().start(() -> {
+            try { result.complete(facade.semanticSearch(request, scope)); } catch (Throwable failure) { result.completeExceptionally(failure); }
+          });
+          long limit = System.nanoTime() + Duration.ofSeconds(3).toNanos();
+          while (worker.getState() != Thread.State.BLOCKED && System.nanoTime() < limit) Thread.onSpinWait();
+          assertEquals(Thread.State.BLOCKED, worker.getState());
+          runtime.close();
+        }
+        assertEquals(0, result.get(5, java.util.concurrent.TimeUnit.SECONDS).getSearchId());
+        worker.join(5000);
+      }
+      assertThrows(IllegalStateException.class, () -> facade.semanticSearch(request, scope));
+      try (var files = Files.list(directory.resolve("actors"))) { assertEquals(0, files.count()); }
+    } finally { runtime.close(); scope.close(); }
+  }
+
+  @Test void deploymentCapabilitiesRemainAvailableStableAndIndependentOfSemanticMonitor() throws Exception {
+    var facade = facade(new SemanticEnvironmentFactory(directory.resolve("actors"), core()));
+    var configuration = new org.integratedmodelling.klab.services.configuration.ReasonerConfiguration();
+    configuration.setServiceId("deployment-id");
+    var field = org.integratedmodelling.klab.services.reasoner.ReasonerService.class.getDeclaredField("configuration");
+    field.setAccessible(true); field.set(facade, configuration);
+    var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(world("source", false)).service());
+    try (var runtime = facade.candidateRuntime()) {
+      var initial = facade.capabilities(scope);
+      assertEquals("deployment-id", initial.getServiceId()); assertEquals(facade.getUrl(), initial.getUrl());
+      assertEquals(0, initial.getKnowledgeRevision()); assertFalse(initial.isConsistent());
+      facade.loadKnowledge(world("first", false), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var accepted = facade.capabilities(scope);
+      assertEquals("deployment-id", accepted.getServiceId()); assertEquals(initial.getUrl(), accepted.getUrl());
+      assertEquals(1, accepted.getKnowledgeRevision()); assertTrue(accepted.isConsistent());
+      try (var lease = runtime.lease()) {
+        synchronized (lease.state()) {
+          var response = new java.util.concurrent.CompletableFuture<org.integratedmodelling.klab.api.services.Reasoner.Capabilities>();
+          var thread = Thread.ofPlatform().start(() -> {
+            try { response.complete(facade.capabilities(scope)); } catch (Throwable failure) { response.completeExceptionally(failure); }
+          });
+          assertEquals("deployment-id", response.get(2, java.util.concurrent.TimeUnit.SECONDS).getServiceId());
+          thread.join(2000);
+        }
+      }
+      facade.loadKnowledge(world("rejected", true), scope); assertTrue(runtime.awaitIdle(Duration.ofSeconds(15)));
+      var retained = facade.capabilities(scope);
+      assertEquals("deployment-id", retained.getServiceId()); assertEquals(initial.getUrl(), retained.getUrl());
+      assertEquals(1, retained.getKnowledgeRevision()); assertTrue(retained.isConsistent());
+    } finally { scope.close(); }
+  }
+
+  @Test void acceptedContentIdentitySurvivesUnchangedRestartAndPinnedLeaseButNotChangedSources() throws Exception {
+    var firstFactory=new SemanticEnvironmentFactory(directory.resolve("content-first"),core());
+    String fingerprint;
+    try(var first=new AcceptedSemanticRuntime(firstFactory,"deployment")) {
+      first.submit(world("unchanged",false)); assertTrue(first.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(1,first.status().acceptedGeneration());
+      fingerprint=first.metadata().semanticContentFingerprint();
+      assertNotNull(fingerprint); assertTrue(fingerprint.matches("semantic-content-v2:[a-f0-9]{64}"));
+      long acceptedOntologyCount;
+      try(var lease=first.lease()) {
+        acceptedOntologyCount=lease.state().actor().owl().getOntology().getOWLOntology()
+            .getOWLOntologyManager().ontologies().count();
+      }
+      var request=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(
+          world("unchanged",false).getOntologies().getFirst(),"saved");
+      var response=first.validate(request,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(request));
+      assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE,response.getStatus());
+      assertEquals(fingerprint,response.getSemanticContentFingerprint(),"Validation labels its actual leased actor");
+      assertEquals(first.semanticSessionId(),response.getSemanticSessionId());
+      assertTrue(response.isSemanticObligationsComplete());assertFalse(response.getSemanticObligations().isEmpty());
+      assertNotNull(response.getSemanticWitness());
+      assertTrue(response.getSemanticWitness().completeAt(System.currentTimeMillis()),
+          ()->"Source-owned witness="+response.getSemanticWitness()+"; obligations="+response.getSemanticObligations());
+      try(var lease=first.lease()) {
+        assertEquals(acceptedOntologyCount,lease.state().actor().owl().getOntology().getOWLOntology()
+            .getOWLOntologyManager().ontologies().count(),"Locality analysis must not create documents in the accepted catalog manager");
+      }
+
+      var witnessRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+          "deployment",1,fingerprint,List.of("w:Thing"));
+      var witness=first.<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness>invoke(
+          "semanticDependencies",new Class<?>[]{org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class,
+              org.integratedmodelling.klab.api.scope.Scope.class},new Object[]{witnessRequest,null});
+      assertTrue(witness.completeAt(System.currentTimeMillis()));assertEquals(witnessRequest.inputHash(),witness.inputHash());
+
+
+      var source=new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();source.setUrn("source");source.setSourceCode("model numeric");
+      var model=new org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl();model.setUrn("source.numeric");model.setNamespace("source");
+      var output=new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();output.setFormalName("elevation");output.setSemantics(
+          typedReference("w:Q1",SemanticType.QUALITY,SemanticType.OBSERVABLE));model.getObservables().add(output);
+      var expression=new org.integratedmodelling.common.lang.ContextualizableImpl();
+      expression.setExpression(org.integratedmodelling.klab.api.lang.ExpressionCode.of("elevation - 10",null));model.getContextualization().add(expression);
+      source.getStatements().add(model);
+      var modelRequest=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(source,"model");
+      var modelResponse=first.validate(modelRequest,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(modelRequest));
+      assertTrue(modelResponse.isSemanticObligationsComplete(),modelResponse.getNotifications().toString());
+      assertTrue(modelResponse.getSemanticObligations().contains("w:Q1"));
+      expression.setExpression(org.integratedmodelling.klab.api.lang.ExpressionCode.of("resolveConcept('TAXA:mutable')",null));
+      var opaque=first.validate(modelRequest,org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(modelRequest));
+      assertFalse(opaque.isSemanticObligationsComplete());
+      assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN,opaque.getSemanticWitness().status());
+      var missing=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(
+          world("not-accepted",false).getOntologies().getFirst(),"missing");
+      var unavailable=first.validate(missing,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(missing));
+      assertNull(unavailable.getSemanticContentFingerprint(),"Unvalidated source is never certified");
+
+      try(var pinned=first.lease()) {
+        first.submit(world("changed",false)); assertTrue(first.awaitIdle(Duration.ofSeconds(30)));
+        assertNotEquals(fingerprint,first.metadata().semanticContentFingerprint());
+        assertEquals(fingerprint,pinned.state().semanticContentFingerprint());
+        var accepted=first.metadata().semanticContentFingerprint();
+        first.submit(world("rejected",true)); assertTrue(first.awaitIdle(Duration.ofSeconds(30)));
+        assertEquals(accepted,first.metadata().semanticContentFingerprint());
+      }
+    }
+    try(var restarted=new AcceptedSemanticRuntime(new SemanticEnvironmentFactory(directory.resolve("content-restart"),core()),"deployment")) {
+      restarted.submit(world("unchanged",false)); assertTrue(restarted.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(1,restarted.status().acceptedGeneration(),"Repeated numeric generation is expected on restart");
+      assertEquals(fingerprint,restarted.metadata().semanticContentFingerprint());
+      assertNotNull(restarted.semanticSessionId());
+      restarted.submit(world("unchanged",false)); assertTrue(restarted.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(fingerprint,restarted.metadata().semanticContentFingerprint());
+    }
+  }
+
+  @Test void disposableCandidateCannotAcknowledgeDurableCodelistMutation() throws Exception {
+    var facade=facade(new SemanticEnvironmentFactory(directory.resolve("actors"),core()));
+    try(var runtime=facade.candidateRuntime()) {
+      var request=new org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.SUBMIT,
+          "TAXA","taxonomy.species","human","1",null,0,null,null,null,null);
+      assertThrows(UnsupportedOperationException.class,()->facade.authorityCodelists(request,null));
+      assertEquals(0,runtime.status().acceptedGeneration());
+    }
+  }
+
+  @Test void acceptedBottomRemainsStructuredAndUnsatisfiable() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("bottom-actors"), core());
+    try (var runtime = new AcceptedSemanticRuntime(factory)) {
+      runtime.submit(world("bottom-contract", false));
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(1, runtime.status().acceptedGeneration());
+      var bottom = new org.integratedmodelling.common.knowledge.ConceptImpl();
+      bottom.setUrn("owl:Nothing"); bottom.setNamespace("owl");
+      bottom.setNonSemanticId(org.integratedmodelling.common.knowledge.ConceptImpl.NOTHING_ID);
+      bottom.getType().add(SemanticType.NOTHING);
+      org.integratedmodelling.klab.api.knowledge.Concept result = runtime.invoke("coreObservable",
+          new Class<?>[]{org.integratedmodelling.klab.api.knowledge.Semantics.class}, new Object[]{bottom});
+      assertNotNull(result); assertEquals("owl:Nothing", result.getUrn());
+      assertTrue(result.is(SemanticType.NOTHING)); assertNotSame(bottom, result);
+      assertFalse(runtime.<Boolean>invoke("satisfiable",
+          new Class<?>[]{org.integratedmodelling.klab.api.knowledge.Semantics.class}, new Object[]{bottom}));
+    }
+  }
+  @Test void acceptedRoutingStillRejectsUnknownNamedIdentityAndResolvesKnownIdentity() throws Exception {
+    var factory = new SemanticEnvironmentFactory(directory.resolve("named-actors"), core());
+    try (var runtime = new AcceptedSemanticRuntime(factory)) {
+      runtime.submit(world("named-contract", false)); assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
+      var supplied = new org.integratedmodelling.common.knowledge.ConceptImpl();
+      supplied.setUrn("w:Missing"); supplied.getType().add(SemanticType.NOTHING);
+      assertThrows(IllegalArgumentException.class, () -> runtime.invoke("coreObservable",
+          new Class<?>[]{org.integratedmodelling.klab.api.knowledge.Semantics.class}, new Object[]{supplied}));
+      supplied.setUrn("w:Q1"); supplied.getType().clear();
+      org.integratedmodelling.klab.api.knowledge.Concept result = runtime.invoke("coreObservable",
+          new Class<?>[]{org.integratedmodelling.klab.api.knowledge.Semantics.class}, new Object[]{supplied});
+      assertNotNull(result); assertFalse(result.is(SemanticType.NOTHING));
+      assertEquals("w:Q1", supplied.getUrn()); assertTrue(supplied.getType().isEmpty());
+      assertEquals(1, runtime.status().acceptedGeneration());
+    }
+  }
+
+}

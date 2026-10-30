@@ -1,0 +1,295 @@
+# Contribution review follow-up: PR #99 live model association
+
+## Recommendation
+
+**Latest — Ready for maintainer review of bounded F2 Python feature.** The third
+authorized budget allowed five additional attempts; three were used, with two
+remaining. Actual local numerical elevation and inspected-model association now
+pass in both the native pilot and shipped workflow. Keep the PR draft while the
+unchanged Java build/maintainer integration gate remains unresolved; this is not
+broader milestone/scientific acceptance or authorization to merge.
+
+Reviewed candidate `36b84293cc062fdad24ff6d08ebfb6e95a67bfb9` corrects only the
+bounded pilot's context from unqualified `earth:Region` to the existing
+`earth:Terrestrial earth:Region` and asserts the contract deterministically.
+`imod/src/geography.kwv:28-38` applies elevation's described configuration to a
+terrestrial Region. Deployed Reasoner bytecode has a contextual-admission gate
+before strategy selection that is absent from this checkout; source-only diagnosis
+was therefore incomplete. Native tracing verified identical focused scope tokens
+through SDK/Resolver/Reasoner. No public inspector/focus or excluded source changed.
+
+**Reproduced finding/correction:** the original pilot fixture could acknowledge a
+generic Region but fail elevation admission. With unchanged pinned knowledge,
+published services/components and the qualified context, attempt 2 returned 20/20
+finite synthetic terrain cells in metres and target model in accepted recorded
+resolution (76/77). Attempt 3 ran the shipped workflow with only local-owner
+connection bootstrap injected and independently passed (95/96). The evidence
+supports the pilot correction, not a claim every earlier failure had the same cause.
+
+Both successful runs confirmed context/session release. Partial provenance is
+reported honestly: model association, not exhaustive lineage/root-commit proof.
+This existing synthetic generator is not an independent scientific accuracy oracle.
+Hosted Hub bootstrap and exact binary/source attestation remain unverified here.
+Windows Python3.12: 45 focused and 1246 offline tests passed; full coverage run,
+existing coverage gates and lint passed. Sixteen starting config/catalog paths,
+plugin inventories, five listener/PID records and zero remaining contexts/projects
+were independently verified after original deployment restoration. No broad
+rollback, unrelated-terminal cleanup or source normalization was performed.
+
+Detailed commands/environments/limits and real values:
+[terrestrial acceptance evidence](../../results/resource-inspector-terrestrial-acceptance-20261029.json).
+Next feature is PR98; two unused bounded attempts remain in the latest allowance.
+
+**Latest renewed pilot outcome, 29 October:** the user authorized three more local
+attempts, each bounded to two observation Jobs on 20 cells. All three failed at
+elevation, with context/session releases confirmed. No numerical result or recorded
+inspected-model association was obtained. Therefore the recommendation remains
+**Needs contract/coordination evidence**; PR99 stays draft. PR98 is not yet unblocked.
+
+The final unchanged-forwarding native trace captured HTTP 200 with an empty
+elevation observation-strategy list; **no elevation model-discovery query occurred**.
+The captured model queries were for `earth:Region` (a downstream EOF failure,
+then an empty HTTP 200 ResourceSet). The worldview's dependent-quality strategy
+requires an existing context observation; native focus/guard propagation is now
+a diagnostic lead, not an established cause or demonstrated Python defect.
+Compatible indexing did not establish execution compatibility. No Java, model,
+component, ontology, worldview, algorithm or public Python source was changed.
+
+Per contribution-review evidence rules, this live result overrides any inference
+from offline coverage or operational/index readiness. Historical Python CI at
+`99e55c047` passed all Python versions/core-only; Maven remains separately failed.
+No new broad offline run was needed for this evidence-only pass. Retained pilot
+reports/native traces were checked against the summary; configuration/catalog
+bytes, plugin inventories, five PID records/listeners, absence of temporary backend
+listeners and zero remaining contexts were checked after restoration. Sources and
+unrelated terminals were preserved. The renewed budget is exhausted; read-only
+native diagnosis may continue, but any additional computation needs authorization.
+See [renewed acceptance result](../../results/resource-inspector-renewed-acceptance-20261029.json).
+
+**Resumed indexing diagnosis, 29 October — concrete native failure and compatible
+candidate established:** no observation/session/context submissions were made.
+Controlled native Resources→Reasoner tracing captured HTTP 500 for
+`count of each each agency:Patient earth:Stream`. The public regression source
+contains `count of (each agency:Patient earth:Stream)` at
+`selection_native_dependency.kim:22`; independent use of the deployed grammar
+rejects the former and accepts the latter. Elevation's native request returned
+HTTP 200. This identifies an actual malformed native encoding/indexing failure,
+not a Python observation defect or proof of the sole empty-dataflow cause.
+
+The unchanged staging revision `9d20c1c236e5a033487ee47b34cd910c3ebbbe51`
+(27 October) predates those later regression namespaces. Its elevation namespace
+is byte-identical. With the same published October 27 services and unchanged IMOD,
+Resources became semantic-search capable, Reasoner operational, the target model
+retrievable, and all 13 captured observable calls returned HTTP 200. This is
+**index-readiness evidence, not numerical acceptance**. No source workaround,
+rewritten model, forced selection, or fourth computation was used.
+
+The earlier external administrative harness also needs a correction: plain JSON
+maps omit the native `ParametersImpl` discriminator/delegate shape. A controlled
+read-only query returned HTTP 500 for plain maps and 200 for native Parameters.
+The deployed Git importer rejects file URIs; correctly typed HTTPS imports both
+finished. Therefore the earlier property-import HTTP 500s must not be attributed
+to a broken service import implementation. This does not change the public
+ResourceInspector's GET-based contract or demonstrate an SDK defect.
+
+All three administrative diagnostic runs restored their eight starting config/
+catalog paths byte-for-byte; original services and PID metadata were restored;
+no temporary backend listener or visible service terminal remains. Sources stayed
+clean. Captured headers/credentials were not persisted; unknown request bodies
+were retained only as hashes. Prior Python offline/CI results remain historical;
+no application code changed in this pass. **Needs contract/coordination evidence**
+remains: the older compatible candidate needs a newly authorized bounded numerical
+pilot and recorded model association. The original three-attempt budget remains
+exhausted. See the [index diagnosis result](../../results/resource-inspector-index-diagnosis-20261029.json).
+
+**Latest authorized end-to-end local testing, 29 October:** the user authorized
+local preparation/restoration and up to three attempts, at most two observation
+Jobs each on the 20-cell grid, with hosted/source modifications excluded. All
+three attempts are now exhausted. After backing up starting files, unchanged
+pinned worldview/model sources and checksum-verified published component archives
+were loaded locally. Missing Neo4j spatial procedures were repaired using an
+unchanged published plugin. Attempt 1 failed context creation on that missing
+procedure; attempt 2 failed preflight after a distribution/classpath mismatch;
+attempt 3 completed the region Job but elevation returned an **empty dataflow**.
+The inspected model was retrievable and terrain was advertised by Runtime, so
+the earlier advertisement gap is not the sole remaining explanation.
+
+Resources semantic-indexing POST failures and Reasoner parser exceptions were
+captured, but are not established as the exact cause. No demonstrated Python
+defect was identified or papered over. No Java/scientific/source changes or fourth
+attempt were made. This was a one-off native local-owner harness, not acceptance
+of the shipped Hub-certificate CLI. Owned releases were confirmed; no test
+contexts/spatial layers remained. Starting configuration/catalog files were
+restored byte-for-byte and original service distribution relaunched. Index/cache
+data, backups and sanitized diagnostics are retained. **1,246 offline tests pass**
+on Python 3.12.7, one existing warning. Recommendation remains **Needs
+contract/coordination evidence**, draft: successful numerical/model association
+still missing. Full evidence and exact attempt limits are in the
+[local acceptance result](../../results/resource-inspector-local-acceptance-20261029.json).
+
+**Subsequent authorized local pilot, 29 October:** attempted the bounded local
+pilot using native, exact-origin loopback owner authentication. It stopped at
+model inspection (`ProtocolError`): local Resources returned HTTP 200 with an
+empty body for the requested model. Read-only list calls returned zero models,
+projects and workspaces. Reasoner remains nonoperational with no worldview and
+accepted generation 0. Runtime's actual loader setting is true. No session,
+context or observation Job was created; no owned cleanup was required. This is
+a failed local prerequisite/inspection attempt, **not local numerical execution**
+and not a successful pilot. See the [sanitized result](../../results/resource-inspector-local-pilot-20261029.json).
+No provisioning was authorized or performed. The recommendation remains unchanged.
+
+**29 October evidence update:** recovered head `80a60edc5` now has passing Linux
+Python 3.11/3.12/3.13 and core-only CI. Maven still fails on unchanged Java and
+Jenkins reports an error. Fresh hosted IDs differ; Reasoner initialized during
+read-only checks, and authenticated component inventory subsequently succeeded
+with the same advertisement concern. No new computation or administration was
+performed. The recommendation below is unchanged; see the
+[operator handoff](../../PR99_DEPLOYMENT_HANDOFF.md) for exact scope and next actions.
+
+**Needs contract/coordination evidence — not ready.** The authorized real pilot
+failed at the elevation Job; model/result association was not demonstrated. A
+concrete cross-service component-advertisement mismatch was observed, but the
+exact Job failure cause is not established. Python safeguards/tests pass. This
+assessment follows `KLAB_CLI_Contribution_Review.md` and does not replace a failed
+live check with offline success or claim maintainer acceptance.
+
+## Reviewed state
+
+- PR: #99, head `feature/python-resource-inspector`, base
+  `feature/python-semantic-explorer` at `69c424a3b`.
+- Reviewed follow-up code: `a7d57fc7b85732b60d65ac2452664029dcd6cbd4`.
+- Previous F2 checkpoint: `e4580f17fc70622aa36b9c8dd7e6a93cf8737cd2`.
+- Milestone/final integration base: `1e20fc478f645b5fb5c2fd00ffd223a040ca2878`.
+- Isolated F2 worktree and separate Python 3.12.7 environment. No F3/F4/delivery
+  code was imported into this feature branch and no existing branch was reset.
+- Included new F2-only pilot/runner/tests, named suite selection, CI coverage,
+  documentation and sanitized evidence. SDK production source is unchanged from
+  the previous F2 checkpoint.
+- User explicitly authorized **one** hosted pilot: one owned session/context, at
+  most two observation Jobs for the 5×4 region, readback and owned cleanup; no
+  imports, component changes, restarts or other users' objects. That pilot was
+  consumed; later operations were read-only capability/diagnostic requests.
+- The failed pilot used the initial helper before the subsequent preflight and
+  diagnostic guards. Its SDK identity is recorded, but it is not successful live
+  acceptance of the reviewed follow-up helper.
+
+## Capability and boundaries
+
+The F2 pilot now tests the missing association without depending on F3 rendering:
+inspect an explicit candidate, request a bounded region/field, verify actual
+geometry/units/finite data, require an actual successful numerical effect and
+read this observation's accepted recorded resolution for the model URN.
+Namespace is ranking context, never forced selection. Recorded plan membership
+is not relabeled as execution of every branch or durable-root-commit proof.
+
+The helper does no provisioning/retry. It requires explicit authorization, fresh
+report output, independently owned objects, and confirmed release. New guards
+snapshot bounded component/function advertisements, retain safe Job-status
+diagnostics before cleanup, and conservatively require Runtime advertisement of
+the model's direct computation service before spending Jobs. This is a pilot
+policy, not a claim that dynamic/remote loading is universally unsupported.
+
+## Findings, ordered by consequence
+
+1. **Failed required live acceptance; deployed cause unestablished.** The model
+   `staging.vxii.basic.elevation-quantifier` was retrieved and the region Job
+   completed, but elevation Job 2 raised `JobFailedError`. No successful field,
+   selected-model association or numerical validation is claimed. Both owned
+   context and session releases were confirmed. After cleanup, querying the
+   original Job returned `MissingAssetError`; its detailed failure reason was
+   not recovered. The original helper retained only the exception type. Safe
+   pre-cleanup enum/trace-availability diagnostics were added for future pilots.
+2. **Observed deployment compatibility concern, not proven root cause.** Resources
+   advertises `klab.component.generators`, `klab.component.geospatial` and
+   `klab.generators.geospatial.terrain`; Runtime and Resolver advertise only
+   `internal.local.service.component` and no terrain function. The model's
+   contextualization explicitly references that terrain function. Exact deployed
+   binary provenance is still unknown. Advertised `fileHash` values are preserved
+   without inventing a hash algorithm/source commit.
+3. **Contract uncertainty — native dynamic loading.** Source inspection at the
+   pinned base shows `RuntimeService` and `Setting.LOAD_REMOTE_RUNTIME_COMPONENTS`
+   support conditional remote component loading/resolution. Therefore absence
+   from a capability snapshot alone cannot prove an implementation is impossible
+   or identify the Job's failure. An operator must inspect the actual selected
+   Runtime/Resolver diagnostics and supported loading/routing configuration.
+   Python must not install plugins or broaden settings silently. The current
+   pilot's conservative preflight does not certify other loading modes.
+4. **External CI findings retained.** The previous PR head's Linux Python
+   3.11/3.12/3.13 and core-only jobs passed. Its separate Maven build failed and
+   Jenkins reported an error. No Java change was made here; these findings need
+   triage/coordination, not an unauthorized Java fix. New-head CI must rerun.
+
+No demonstrated F2 SDK decoding/routing defect was identified from this failed
+computation. This does not establish the SDK or the deployment is otherwise correct.
+
+## Validation actually performed
+
+Commands below ran in `python-client` using the isolated `pr99-inspector-312`
+Python 3.12.7 environment. `<external>` denotes the approved OpenCode temp root;
+certificate arguments are paths only, never credential contents.
+
+| Check / exact command | Revision/environment | Status | Establishes / limits |
+| --- | --- | --- | --- |
+| `python -m pytest tests/unit tests/integration -q --tb=short --cov=klab_client --cov=workflows.resource_inspection --cov=run_resource_inspector_acceptance --cov-branch --cov-report=term --cov-report=json:<external>/pr99-final-coverage.json` | Exact executable content of `a7d57fc7b` | Passed, exit 0; 1,246 tests; existing Rasterio warning | New pilot/CLI and F2 module have 100% unexcluded line/branch coverage |
+| `python tools/check_feature_coverage.py <external>/pr99-final-coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30` with complete module arguments in `.github/workflows/python-client.yml` | Same code | Passed, exit 0 | Existing inherited/new-module/changed-code gates; no exclusions/threshold reductions |
+| `python -m ruff check src tests examples tools --select E9,F63,F7,F82`; `git diff --check` | Same code before commit | Passed, exit 0 each | Static/whitespace gates |
+| `python -m pytest tests/functional/test_resource_inspection.py --collect-only -q -o addopts=` | Candidate `a7d57fc7b` | Passed, exit 0; one case collected | Named actual-Java case exists; collection is not acceptance |
+| `python tools/run_resource_inspector_acceptance.py --profile examples/hosted-deployment.json --certificate <private-ENGINE-certificate-path> --model staging.vxii.basic.elevation-quantifier --report <external>/pr99-hosted-pilot-20261028.json --allow-owned-work` | F2 SDK `e4580f17f`; initial helper before follow-up guards | **Failed, exit 1**, stage `observe_elevation`, `JobFailedError` | Model retrieval/region completion/owned cleanup observed; no successful numerical/model association |
+| Authenticated GET capabilities for Runtime/Resolver/Resources, `connect(..., initialize=False)` | Same F2 SDK; follow-up helper inventory | Passed read-only probes | Actual component/function advertisement mismatch; no new observations or admin changes |
+| Original Job status GET after cleanup | Same F2 SDK | Failed with `MissingAssetError` | Detailed original failure no longer available through this scoped path |
+| Successful second computation, installed-wheel follow-up, new-head CI | Not performed at review | Not run | No authorization inferred for another pilot; previous checkpoints are not current acceptance |
+
+The first local workflow test run exposed an incomplete test double (missing
+activity outcome), corrected before the full passing run. It was not a backend
+failure. An initial standalone inventory command lacked the tools import path;
+it failed before connecting and was rerun with the explicit repository tools path.
+
+## Scientific and lifecycle evidence
+
+The [sanitized record](../../results/resource-inspector-hosted-pilot-20261028.json)
+preserves actual model URN/origin, advertised empty resource/dependency lists,
+original Job references, SDK package digest, service IDs, failed outcome, confirmed
+cleanup and later capability snapshots. Empty advertisement is not a complete
+dependency closure; metadata availability is not executability. It contains no
+credential material or arbitrary stack text and makes no independent accuracy claim.
+
+Deterministic tests cover no implicit mutation, two submissions maximum, no retry,
+scoped Runtime binding, malformed/missing/oversized chart or component metadata,
+label spoofing versus canonical model URNs, wrong activity/observation identity,
+missing numerical effect, missing required Runtime service, failure and cleanup
+paths, secret-message omission and fresh report publication. Existing SDK tests
+cover authorization/malformed-response distinctions. Lower-layer success cannot
+replace the failed hosted acceptance.
+
+## Contributor coordination
+
+No Java, component, worldview or shared-service configuration was changed. No
+maintainer was assigned or contacted outside the existing PR. Deployment operators
+must resolve the execution prerequisite/diagnostic gap or supply an already
+compatible owned deployment. Updating the existing component/runtime configuration
+requires a separate explicit authorization; the pilot permission did not grant it.
+Downstream stacked PRs retain their historical checkpoints and will need deliberate
+additive integration of this follow-up; none was silently rebased or merged.
+
+## Smallest next actions
+
+1. Have the selected deployment operator correlate the recorded pilot context/Jobs
+   with Runtime/Resolver logs and verify supported generator component loading/
+   routing, permissions, archive provenance and exact service builds.
+2. Use an already compatible unchanged execution deployment, or obtain separate
+   explicit administration authorization if changes are required. Do not infer it
+   from the request to finish a Python PR.
+3. Obtain authorization for a new bounded pilot after prerequisites are verified;
+   pass actual field and recorded model association, confirm cleanup, then update
+   this recommendation and current CI evidence. No full four-cell milestone matrix
+   is imposed as an unnecessary prerequisite for the F2-only pilot.
+
+## Suggested PR description
+
+F2 adds bounded typed model/resource inspection plus a narrowly scoped live pilot
+that connects inspected identifiers to an actual recorded numerical result without
+forcing models. 1,246 offline tests and existing coverage/lint gates pass. One real
+authorized hosted pilot **failed** at elevation; cleanup was confirmed. Resources
+advertises the required generator while Runtime/Resolver do not; exact cause remains
+unproven. Safe prerequisite/diagnostic guards and sanitized evidence are included.
+Keep this PR draft until compatible execution and model/result association pass.

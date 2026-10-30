@@ -15,9 +15,10 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
+import org.integratedmodelling.klab.services.reasoner.owl.SemanticBuilderOwlFixture;
 import org.junit.jupiter.api.Test;
 
-/** Real portable-builder dispatch and semantic mutations; Resources and OWL storage are doubles. */
+/** Real portable-builder dispatch and mutations; provenance uses isolated in-memory OWL storage. */
 class RealSemanticBuilderTest {
   @Test
   void transportedClausesDispatchToTheirCorrespondingBuilderMethods() throws Exception {
@@ -50,7 +51,7 @@ class RealSemanticBuilderTest {
     var resources = mock(ResourcesService.class);
     var reasoner = mock(ReasonerService.class);
     when(reasoner.serviceScope()).thenReturn(scope);
-    when(reasoner.owl()).thenReturn(mock(OWL.class));
+    doReturn(lookupOnlyOwl()).when(reasoner).owl();
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     var child = concept("test:P2", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
@@ -72,7 +73,7 @@ class RealSemanticBuilderTest {
     var scope = mock(ContextScope.class);
     var resources = mock(ResourcesService.class);
     var reasoner = mock(ReasonerService.class);
-    var owl = mock(OWL.class);
+    var owl = SemanticBuilderOwlFixture.create();
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(reasoner.owl()).thenReturn(owl);
@@ -129,6 +130,7 @@ class RealSemanticBuilderTest {
     var result = reasoner.buildObservable(wire, scope);
     assertEquals("test:Forest of test:Region", result.getUrn());
     assertEquals(Contextualization.CHARACTERIZATION, result.getContextualization());
+    assertTrue(SemanticBuilderOwlFixture.hasUniversalBearer(owl));
     var returned =
         mapper.readValue(
             mapper
@@ -139,11 +141,11 @@ class RealSemanticBuilderTest {
   }
 
   @Test
-  void collectiveInherentRestrictionComparesMemberTypes() {
+  void collectiveInherentRestrictionComparesMemberTypes() throws Exception {
     var scope = mock(ContextScope.class);
     var resources = mock(ResourcesService.class);
     var reasoner = mock(ReasonerService.class);
-    var owl = mock(OWL.class);
+    var owl = SemanticBuilderOwlFixture.create();
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(reasoner.owl()).thenReturn(owl);
@@ -189,6 +191,7 @@ class RealSemanticBuilderTest {
     var result = new ObservableBuildStrategy(predicate, scope).of(collective).buildConcept();
     assertFalse(result.is(SemanticType.NOTHING), result.getNotifications().toString());
     verify(reasoner).is(member, member);
+    assertTrue(SemanticBuilderOwlFixture.hasUniversalBearer(owl));
 
     // A genuinely incompatible member restriction must still be rejected.
     when(reasoner.inherent(any()))
@@ -224,7 +227,7 @@ class RealSemanticBuilderTest {
     var scope = mock(ContextScope.class);
     var resources = mock(ResourcesService.class);
     var reasoner = mock(ReasonerService.class);
-    var owl = mock(OWL.class);
+    var owl = SemanticBuilderOwlFixture.create();
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(reasoner.owl()).thenReturn(owl);
@@ -253,6 +256,7 @@ class RealSemanticBuilderTest {
       assertEquals("data:Normalized of geography:Elevation", result.getUrn());
       assertEquals(Contextualization.TRANSFORMATION, result.getContextualization());
       assertNull(predicateSyntax.getInherent(), "Cached Resources syntax must remain atomic");
+      assertTrue(SemanticBuilderOwlFixture.hasUniversalBearer(owl));
     }
     assertEquals(predicate, new ObservableBuildStrategy(predicate, scope).buildConcept());
 
@@ -307,7 +311,7 @@ class RealSemanticBuilderTest {
     when(scope.getService(ResourcesService.class)).thenReturn(resources);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     when(reasoner.buildObservable(any(), eq(scope))).thenCallRealMethod();
-    when(reasoner.owl()).thenReturn(mock(OWL.class));
+    doReturn(lookupOnlyOwl()).when(reasoner).owl();
     var predicate = concept("data:Normalized", SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
     var quality = concept("geography:Elevation", SemanticType.QUALITY, SemanticType.LENGTH);
     var pSyntax = syntax(predicate.getUrn(), SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
@@ -332,5 +336,11 @@ class RealSemanticBuilderTest {
             .without(List.of(predicate))
             .buildObservable();
     assertEquals(quality.getUrn(), result.getUrn());
+  }
+  private static OWL lookupOnlyOwl() {
+    var owl=mock(OWL.class);
+    // Existing host collaboration must be present even when only builder dispatch is under test.
+    when(owl.monotoneRefinements()).thenReturn(mock(org.integratedmodelling.klab.services.reasoner.owl.MonotoneRefinementSupport.class));
+    return owl;
   }
 }

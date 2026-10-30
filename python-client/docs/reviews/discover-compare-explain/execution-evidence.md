@@ -2,6 +2,50 @@
 
 ## Recommendation
 
+**Current follow-up:** see the [30 October contributor review](execution-evidence-final-20261030.md).
+The shipped owner/nonowner functional suite is now implemented and collected;
+1260 unit/integration tests pass. The actual two-user functional run is still
+blocked by missing retained fixtures. Collection and mock guardrail tests are not
+reported as functional acceptance. Do not approve or merge until it passes.
+
+**29 October live update — positive numerical/diagram gate PASSED; remaining
+permission gate still Needs contract/coordination evidence.** At exact existing
+PR98 head `b45e0b8c28c588881a708d338d3ab982a02522a6`, attempt 4 of the user's
+latest shared five-attempt budget produced an actual 20-cell synthetic elevation
+field and retrieved its own persisted resolution/contextualization charts using
+`fetch_execution_evidence`. The recorded resolution names the inspected model;
+the MEASURE activity's chart names the terrain contextualizer. No separate resolve
+was substituted for the computation's recorded plan, and no application-source
+change was necessary. One authorized attempt remains unused.
+
+The existing plain/HTML projections succeeded and kept `partial=True`, unknown
+durable commit and explicit missing diagrams. This meets the real persisted-diagram
+positive control, not independent scientific accuracy, complete lineage, binary/
+source attestation or nonowner isolation. The source module was explicitly loaded
+from this PR98 checkout, not the prior editable PR99 install. All excluded sources
+and other users were untouched. No PR merge or history rewrite was performed;
+F2's latest follow-up is not yet graph-integrated into this branch.
+
+**Still blocking:** a distinct valid authorized nonowner/private-context fixture is
+not available. An expired context, invalid token or mocked 403 would not establish
+the required isolation contract. Keep PR98 draft; request that fixture through an
+authorized operator before claiming permission acceptance. Do not spend the last
+attempt on an unchanged duplicate numerical success. Packaging/notebook/final-stack
+gates remain separately scoped; the full scientific matrix remains unaccepted.
+
+Windows Python3.12.7: 55 focused tests/100% line+branch; 1254 full offline tests;
+existing feature coverage and lint gates passed. Live owner positive control and
+context/session cleanup passed. Sixteen config/catalog paths, plugin inventories,
+zero configured projects/remaining contexts and five restored listeners/native PID
+records verified independently. Temporary spatial plugin/procedure removed;
+original October16 services restored headlessly. Raw diagrams, synthetic numerical
+values, HTML, backups, sanitized logs and caches retained; no whole-database rollback.
+
+Exact commands, native graph sizes/activity identifiers, values and limitations:
+[local acceptance result](../../results/execution-evidence-local-acceptance-20261029.json).
+The sections below are historical assessment, superseded for the positive-control
+claim by this live evidence; their unresolved isolation/full-milestone limits remain.
+
 **Needs contract/coordination evidence.** Bounded decoding, scoped activity
 retrieval and the existing offline/static/coverage gates pass. The required real
 Java computation exposing its own interpretable persisted evidence has not passed.

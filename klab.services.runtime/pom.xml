@@ -44,6 +44,8 @@
     </build>
 
     <dependencies>
+        <dependency><groupId>org.integratedmodelling</groupId><artifactId>klab.services.resolver</artifactId><version>${klab.version}</version><scope>test</scope></dependency>
+        <dependency><groupId>org.integratedmodelling</groupId><artifactId>klab.services.reasoner</artifactId><version>${klab.version}</version><scope>test</scope></dependency>
         <dependency>
             <groupId>org.neo4j.test</groupId>
             <artifactId>neo4j-harness</artifactId>

@@ -1,0 +1,14 @@
+private namespace staging.vxii.test.selection_rollback
+    version 1.0;
+
+// The provider's single-division point branch always yields one nonempty representative point.
+private model klab:random:objects:points {fraction: 1, xdivs: 1, ydivs: 1}
+    as each earth:Region;
+
+private model agency:Appropriateness of each earth:Region
+    using klab.generators.random.categories();
+
+// Predicate URN ordering executes Appropriateness first. The gated failure function must
+// independently see that earlier concrete attribution on its actual member before throwing.
+private model earth:PhysicalEnvironment of each earth:Region
+    using klab.tests.fixtures.failclassifier(after=agency:Appropriateness);

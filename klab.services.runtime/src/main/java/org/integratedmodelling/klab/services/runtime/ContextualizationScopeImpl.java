@@ -19,6 +19,7 @@ public class ContextualizationScopeImpl
 
   private final Observation target;
   private final Scheduler.Event event;
+  private final org.integratedmodelling.klab.api.geometry.Geometry executionGeometry;
   private final List<Observation> outcomes = new ArrayList<>();
   private final java.util.Map<Observation, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>>
       outcomeConstraints = new java.util.IdentityHashMap<>();
@@ -33,8 +34,19 @@ public class ContextualizationScopeImpl
   }
 
   public ContextualizationScopeImpl(Observation observation, Scheduler.Event event) {
+    this(observation, event, null);
+  }
+
+  ContextualizationScopeImpl(Observation observation, Scheduler.Event event,
+      org.integratedmodelling.klab.api.geometry.Geometry executionGeometry) {
     this.target = observation;
     this.event = event;
+    this.executionGeometry = executionGeometry;
+  }
+
+  /** Invocation support is distinct from the producer's declared observation geometry. */
+  org.integratedmodelling.klab.api.geometry.Geometry executionGeometry() {
+    return executionGeometry;
   }
 
   @Override

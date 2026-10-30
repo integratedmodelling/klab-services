@@ -32,6 +32,10 @@ public class ObservableImpl implements Observable {
   private Collection<ResolutionDirective> resolutionDirectives =
       EnumSet.noneOf(ResolutionDirective.class);
   private Object defaultValue;
+  private Object value;
+
+  @Override public Object getValue() { return value; }
+  public void setValue(Object value) { this.value = value; }
   private String statedName;
   private List<Annotation> annotations = new ArrayList<>();
   private String referenceName;
@@ -50,6 +54,24 @@ public class ObservableImpl implements Observable {
 
   public void setResolving(Knowledge resolving) {
     this.resolving = resolving;
+  }
+
+  /** Detached observer-only result refinement. The absolute representation tail remains intact. */
+  public static ObservableImpl withObserverSemantics(Observable absolute, Concept observer) {
+    if (!(absolute instanceof ObservableImpl implementation) || absolute.getObserverSemantics()!=null
+        || observer==null || !observer.is(SemanticType.AGENT) || observer.is(SemanticType.NOTHING))
+      throw new IllegalArgumentException("Observer refinement requires an absolute observable and Agent class");
+    String base=absolute.asConcept().getUrn(), full=absolute.getUrn();
+    if(base==null || full==null || !full.startsWith(base)
+        || full.length()>base.length() && full.charAt(base.length())!=' '
+        || full.contains(" observed as "))
+      throw new IllegalArgumentException("Noncanonical absolute observable identity");
+    var result=new ObservableImpl(implementation);
+    result.setObserverSemantics(observer);
+    result.setUrn(base+" observed as "+observer.getUrn()+full.substring(base.length()));
+    if(absolute.getReferenceName()!=null && observer.getReferenceName()!=null)
+      result.setReferenceName(absolute.getReferenceName()+"_observed_as_"+observer.getReferenceName());
+    return result;
   }
 
   public void setGenericComponents(Set<Concept> genericComponents) {
@@ -88,6 +110,7 @@ public class ObservableImpl implements Observable {
     this.generic = other.generic;
     this.resolutionDirectives.addAll(other.resolutionDirectives);
     this.defaultValue = other.defaultValue;
+    this.value = other.value;
     this.statedName = other.statedName;
     this.annotations.addAll(other.annotations);
     this.referenceName = other.referenceName;

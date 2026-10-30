@@ -29,6 +29,8 @@ public class ConfigurationBuilder {
   private String serviceId;
   private String description;
   private String owner;
+  private String sessionFederationId;
+  public ConfigurationBuilder sessionFederationId(String value) { sessionFederationId = value; return this; }
   private Observation observer;
   private boolean empty;
   private String behaviorUrn;
@@ -79,6 +81,9 @@ public class ConfigurationBuilder {
     this.notifications.addAll(configuration.getNotifications());
     this.createWhenAbsent = configuration.isCreateWhenAbsent();
     this.serviceId = configuration.getServiceId();
+    this.description = configuration.getDescription();
+    this.owner = configuration.getOwner();
+    this.sessionFederationId = configuration.getSessionFederationId();
     this.observer = configuration.getObserver();
     this.empty = configuration.isEmpty();
     this.behaviorUrn = configuration.getBehaviorUrn();
@@ -233,6 +238,7 @@ public class ConfigurationBuilder {
         this.observer,
         this.behaviorUrn);
     result.setWorldviewCommitment(worldviewCommitment);
+    result.setSessionFederationId(sessionFederationId);
     result.setGridUrn(gridUrn);
     result.setGridDefinition(gridDefinition);
     result.setGridAlignment(gridAlignment);

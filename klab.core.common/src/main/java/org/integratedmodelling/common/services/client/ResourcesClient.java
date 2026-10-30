@@ -182,7 +182,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   @Override
   public ResourceSet resolve(String urn, KnowledgeClass assetClass, UserScope scope) {
 
-    Logging.INSTANCE.info("Resolving " + assetClass + " " + urn + " in service " + serviceName());
+    Logging.INSTANCE.debug("Resolving " + assetClass + " " + urn + " in service " + serviceName());
 
     // Media types contain slashes (and may contain parameters), so they cannot be carried in
     // the generic resolver's single URN path segment. Use the existing query-based endpoints.
@@ -460,6 +460,19 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
+  public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
+      UserScope scope, String credentialId, String... arguments) {
+    var request = new ProjectRequest();
+    request.setOperation(operation);
+    request.setCredentialId(credentialId);
+    request.setParameters(arguments == null ? java.util.List.of() : java.util.Arrays.asList(arguments));
+    var result = client.withScope(scope).postCollectionOrThrow(ServicesAPI.RESOURCES.MANAGE_PROJECT,
+        request, ResourceSet.class, "urn", projectName);
+    invalidateCaches();
+    return result;
+  }
+
+  @Override
   public CompletableFuture<Resource> publishObservation(
       Observation observation, ContextScope scope) {
     return null;
@@ -467,12 +480,12 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public boolean lockProject(String urn, UserScope scope) {
-    return client.get(ServicesAPI.RESOURCES.LOCK_PROJECT, Boolean.class, "urn", urn);
+    return client.withScope(scope).get(ServicesAPI.RESOURCES.LOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   @Override
   public boolean unlockProject(String urn, UserScope scope) {
-    return client.get(ServicesAPI.RESOURCES.UNLOCK_PROJECT, Boolean.class, "urn", urn);
+    return client.withScope(scope).get(ServicesAPI.RESOURCES.UNLOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   private void invalidateCaches() {

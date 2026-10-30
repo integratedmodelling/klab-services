@@ -29,8 +29,9 @@ class AuthorityInsertionTest {
         new Extensions.AuthorityDescriptor("provider.taxa", Version.create("1.0.0"), true, true, List.of(), List.of()),
         "component.taxa", Version.create("1.0.0"), null)));
     var provider = mock(Authority.class); when(provider.configure(any())).thenReturn("private");
+    when(provider.getCodelistDefinitions("private")).thenReturn(Map.of());
     var bindings = new AuthorityBindings(); bindings.configure(new Authority.ConfigurationRequest("test", "TAXA",
-        "test:Species", Map.of("urn", "provider.taxa")), provider);
+        "test:Species", Map.of("urn", "provider.taxa", "codelists", Map.of("species", "taxonomy.species"))), provider);
     var owl = mock(OWL.class); set(service, "worldview", worldview); set(service, "authorityBindings", bindings); set(service, "owl", owl);
     var method = ReasonerService.class.getDeclaredMethod("resolveAuthoritySelection", String.class, String.class, Scope.class);
     method.setAccessible(true);
@@ -45,6 +46,13 @@ class AuthorityInsertionTest {
     when(concept.is(SemanticType.IDENTITY)).thenReturn(true); when(owl.getConcept("TAXA:123")).thenReturn(concept);
     var selected = (SemanticSearchSession.AuthoritySelection) method.invoke(service, "TAXA", "123", scope);
     assertEquals("TAXA:123", selected.declaration()); assertSame(concept, selected.concept());
+    assertTrue(selected.aliases().isEmpty());
+    bindings.codelists("TAXA").execute(new org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest(
+        org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.CREATE,
+        "TAXA", "taxonomy.species", "Oak", "123", null, 0, null, null, null, null), "admin");
+    var named = (SemanticSearchSession.AuthoritySelection) method.invoke(service, "TAXA", "123", scope);
+    assertEquals(List.of("taxonomy.species:Oak"), named.aliases());
+    assertEquals("TAXA:123", named.declaration()); assertSame(concept, named.concept());
     assertThrows(InvocationTargetException.class, () -> method.invoke(service, "OTHER", "123", scope));
   }
   private void set(Object target, String field, Object value) throws Exception {

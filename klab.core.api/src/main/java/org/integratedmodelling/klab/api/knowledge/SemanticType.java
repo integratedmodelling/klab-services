@@ -189,7 +189,8 @@ public enum SemanticType {
   RESCALING,
   /** A process that defines the change of its inherent quality. */
   CHANGE,
-  /** A quality that describes the speed of change of its inherent quality. */
+  /** Signed numeric temporal derivative of a quality. Temporal distribution is intensive;
+   * spatial intensive/extensive character is inherited independently from the operand. */
   RATE,
   /** An event that results from a change of value in the inherent quality. */
   CHANGED,

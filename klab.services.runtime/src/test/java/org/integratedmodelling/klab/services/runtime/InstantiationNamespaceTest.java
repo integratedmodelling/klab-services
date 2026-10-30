@@ -16,6 +16,43 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
 class InstantiationNamespaceTest {
+  @Test void successfulEmptyInstantiationAndFailureRemainDistinctWithoutCreatingChildren() {
+    var collective=mock(Observation.class); var observable=mock(Observable.class);
+    when(collective.getObservable()).thenReturn(observable);
+    when(observable.getContextualization()).thenReturn(Contextualization.INSTANTIATION);
+    var outcomes=new ContextualizationScopeImpl(collective,null);
+    var parent=mock(ContextScope.class); var runtime=mock(RuntimeService.class,CALLS_REAL_METHODS);
+    assertDoesNotThrow(()->runtime.submitContextualizationResult(outcomes,parent,Activity.Outcome.SUCCESS));
+    verify(parent).within(collective); verify(parent,never()).getService(any());
+    clearInvocations(parent);
+    runtime.submitContextualizationResult(outcomes,parent,Activity.Outcome.FAILURE);
+    verifyNoInteractions(parent);
+    assertTrue(outcomes.getOutcomes().isEmpty());
+  }
+
+  @Test void requiredMemberEmptyExceptionalAndCancelledResultsBlockSuccessfulCompletion() {
+    var collective=mock(Observation.class); var observable=mock(Observable.class);
+    when(collective.getObservable()).thenReturn(observable);
+    when(collective.getNotifications()).thenReturn(new java.util.ArrayList<>());
+    when(observable.getContextualization()).thenReturn(Contextualization.INSTANTIATION);
+    var child=mock(Observation.class); var outcomes=new ContextualizationScopeImpl(collective,null);
+    outcomes.getOutcomes().add(child);
+    var parent=mock(ContextScope.class); var memberScope=mock(ContextScope.class);
+    when(parent.within(collective)).thenReturn(memberScope);
+    when(memberScope.withResolutionConstraints(any(ResolutionConstraint[].class))).thenReturn(memberScope);
+    var client=mock(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    when(memberScope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class)).thenReturn(client);
+    var cancelled=new CompletableFuture<Observation>(); cancelled.cancel(false);
+    var empty=mock(Observation.class); when(empty.isEmpty()).thenReturn(true);
+    var results=List.of(CompletableFuture.<Observation>completedFuture(null),
+        CompletableFuture.completedFuture(empty),
+        CompletableFuture.<Observation>failedFuture(new IllegalStateException("member failed")),cancelled);
+    var runtime=mock(RuntimeService.class,CALLS_REAL_METHODS);
+    for (var result : results) {
+      when(client.submit(child,memberScope)).thenReturn(result);
+      assertThrows(RuntimeException.class,()->runtime.submitContextualizationResult(outcomes,parent,Activity.Outcome.SUCCESS));
+    }
+  }
   @Test void transportedProducerBindingsReachEachMembersSubmission() throws Exception {
     var plan = new ActuatorImpl();
     plan.getComputationConstraints().put(0, List.of(

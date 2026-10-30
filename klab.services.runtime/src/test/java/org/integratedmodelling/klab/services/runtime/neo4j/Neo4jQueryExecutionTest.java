@@ -13,6 +13,35 @@ import org.neo4j.harness.Neo4jBuilders;
 
 /** Execute the generated query, rather than only checking its syntax. */
 class Neo4jQueryExecutionTest {
+  @Test void collectiveCompletionQueryReadsTypedActivityOnlyInsideOwnedContext() {
+    try(var database=Neo4jBuilders.newInProcessBuilder().withDisabledServer()
+        .withConfig(org.neo4j.configuration.connectors.BoltConnector.enabled,false).build()) {
+      database.defaultDatabaseService().executeTransactionally("""
+          CREATE (context:Context {id:'completion.context'}), (producer:Observation {id:10}),
+                 (successful:Activity {id:11,type:'INSTANTIATION',outcome:'SUCCESS'}),
+                 (resolution:Activity {id:12,type:'RESOLUTION',outcome:'SUCCESS'}),
+                 (foreign:Context {id:'foreign.context'}),
+                 (other:Activity {id:13,type:'INSTANTIATION',outcome:'SUCCESS'}),
+                 (context)-[:HAS_CHILD]->(producer),
+                 (context)-[:HAS_ACTIVITY]->(successful),
+                 (context)-[:HAS_ACTIVITY]->(resolution),
+                 (foreign)-[:HAS_ACTIVITY]->(other),
+                 (successful)-[:INSTANTIATED]->(producer),
+                 (resolution)-[:RESOLVED]->(producer),
+                 (other)-[:INSTANTIATED]->(producer)
+          """);
+      var producer=new ObservationImpl(); producer.setId(10);
+      var query=new KnowledgeGraphQuery<org.integratedmodelling.klab.api.provenance.Activity>(KnowledgeGraphQuery.AssetType.ACTIVITY);
+      query.target(producer).along(GraphModel.Relationship.INSTANTIATED);
+      var compiled=Neo4jQueryCompiler.compile(query,"completion.context");
+      var ids=database.defaultDatabaseService().executeTransactionally(compiled.cypher(),compiled.parameters(),result->{
+        var found=new ArrayList<Long>();
+        while(result.hasNext()) found.add((Long)((org.neo4j.graphdb.Node)result.next().get("n")).getProperty("id"));
+        return found;
+      });
+      assertEquals(List.of(11L),ids);
+    }
+  }
   @Test
   void childrenOfCollectiveRemainVisibleAndOtherContextsStayExcluded() {
     assertChildren("(root)-[:HAS_CHILD]->(parent)");

@@ -135,9 +135,13 @@ class SemanticExplorer:
         revision = payload.get("knowledgeRevision")
         if revision is not None and (type(revision) is not int or revision < 0):
             raise ProtocolError("Invalid knowledge revision")
-        return KnowledgeState(_normalize_service_url(self.client.transport.endpoint("reasoner").url),
-            required_text(payload, "serviceId"), scope_token(self.scope), required_text(payload, "worldviewId"),
-            revision if revision else None)
+        return KnowledgeState(
+            service_url=_normalize_service_url(self.client.transport.endpoint("reasoner").url),
+            service_id=required_text(payload, "serviceId"),
+            scope=scope_token(self.scope),
+            worldview_id=required_text(payload, "worldviewId"),
+            revision=revision if revision else None,
+        )
 
     def _unchanged(self, expected):
         if self._state() != expected:
@@ -158,7 +162,13 @@ class SemanticExplorer:
             raise UnsupportedOperationError("Unknown semantic classification; inspect the service contract before interpreting it")
         raw = freeze(payload, self.client.transport.redact)
         label = _optional_text(semantics, "displayLabel")
-        return SemanticResult(kind, required_text(payload, "urn"), self.client.transport.redact(label) if label else label, state, raw)
+        return SemanticResult(
+            kind=kind,
+            urn=required_text(payload, "urn"),
+            label=self.client.transport.redact(label) if label else label,
+            knowledge=state,
+            raw=raw,
+        )
 
     def _resolve(self, definition, kind, state):
         return self._semantic(self._request("POST", "/api/v1/resolve/" + kind, text=text(definition, "Definition")), kind, state)
@@ -208,14 +218,34 @@ class SemanticExplorer:
                 raise ProtocolError("Authority candidate has a duplicate or mismatching canonical identity")
             seen.add(code)
             score = row.get("score")
-            if score is not None and (type(score) not in (int, float) or not math.isfinite(score)):
-                raise ProtocolError("Authority score must be finite or null")
+            if score is not None:
+                try:
+                    finite_score = type(score) in (int, float) and math.isfinite(score)
+                except OverflowError:
+                    finite_score = False
+                if not finite_score:
+                    raise ProtocolError("Authority score must be finite or null")
             raw = freeze(row, self.client.transport.redact)
-            matches.append(AuthorityCandidate(name, code, row["locator"], _optional_text(raw, "label"),
-                _optional_text(raw, "description"), score, state, raw, self._owner))
+            matches.append(AuthorityCandidate(
+                authority=name,
+                code=code,
+                locator=row["locator"],
+                label=_optional_text(raw, "label"),
+                description=_optional_text(raw, "description"),
+                score=score,
+                knowledge=state,
+                raw=raw,
+                _owner=self._owner,
+            ))
         self._unchanged(state)
-        return AuthoritySearch(status, tuple(matches), total, None if following == -1 else following,
-                               state, freeze(payload, self.client.transport.redact))
+        return AuthoritySearch(
+            status=status,
+            matches=tuple(matches),
+            total=total,
+            next_offset=None if following == -1 else following,
+            knowledge=state,
+            raw=freeze(payload, self.client.transport.redact),
+        )
 
     def _candidate(self, candidate):
         if not isinstance(candidate, AuthorityCandidate) or candidate._owner is not self._owner:

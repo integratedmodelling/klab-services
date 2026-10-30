@@ -187,7 +187,7 @@ class ExperimentBatch:
                     or result.counts != data["counts"]):
                 raise ValueError()
             return result
-        except (ValueError, TypeError, KeyError, KlabError):
+        except (ValueError, TypeError, KeyError, OverflowError, KlabError):
             raise InvalidRequestError("Invalid or unsupported experiment manifest; no remote work was restored") from None
 
 
@@ -352,7 +352,16 @@ class ExperimentRunner:
             self._update(index, state=state, error_type=type(error).__name__)
         except Exception as error:
             record = self.outcomes[index]
-            state = "setup_failed" if record.stage == "setup" else "processing_failed" if record.stage == "processing" else "result_invalid" if terminal else "wait_error" if current_job is not None else "submission_unknown"
+            if record.stage == "setup":
+                state = "setup_failed"
+            elif record.stage == "processing":
+                state = "processing_failed"
+            elif terminal:
+                state = "result_invalid"
+            elif current_job is not None:
+                state = "wait_error"
+            else:
+                state = "submission_unknown"
             if current_job is None and record.stage != "setup" and isinstance(error, (AuthenticationError, AuthorizationError, InvalidRequestError)) and getattr(error, "status_code", None) in (400, 401, 403, 404, 422):
                 state = "submission_rejected"
             self._update(index, state=state, error_type=type(error).__name__)
@@ -381,7 +390,11 @@ class ExperimentRunner:
             self._update(index, cleanup_errors=tuple(errors), cleanup_elapsed=self._clock() - cleanup_started)
 
     def run(self, experiments, *, timeout=120, cancel=None, cancel_remote=False):
-        if type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0 or type(cancel_remote) is not bool:
+        try:
+            valid_timeout = type(timeout) in (int, float) and math.isfinite(timeout) and timeout > 0
+        except OverflowError:
+            valid_timeout = False
+        if not valid_timeout or type(cancel_remote) is not bool:
             raise InvalidRequestError("Experiment timeout must be finite/positive; cancellation policy must be boolean")
         if cancel is not None and not isinstance(cancel, Event):
             raise InvalidRequestError("Use a threading.Event for caller cancellation")

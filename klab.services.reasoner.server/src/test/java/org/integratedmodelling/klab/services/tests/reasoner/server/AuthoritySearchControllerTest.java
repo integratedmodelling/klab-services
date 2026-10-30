@@ -14,6 +14,24 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class AuthoritySearchControllerTest {
+  @Test void hierarchyRequiresAuthenticationAndForwardsTheCanonicalCode() throws Exception {
+    var service = mock(ReasonerService.class); var server = mock(ReasonerServer.class);
+    when(server.klabService()).thenReturn(service);
+    var controller = new AuthoritySearchController();
+    ReflectionTestUtils.setField(controller, "reasoner", server);
+    var mvc = MockMvcBuilders.standaloneSetup(controller).build();
+    String body = "{\"authority\":\"CHEM\",\"identity\":\"CID:2244\"}";
+    mvc.perform(post(ServicesAPI.REASONER.AUTHORITY_HIERARCHY).contentType("application/json").content(body))
+        .andExpect(status().isForbidden());
+    verifyNoInteractions(service);
+    var scope = mock(ContextScope.class); var authorization = mock(EngineAuthorization.class);
+    when(authorization.getScope()).thenReturn(scope);
+    mvc.perform(post(ServicesAPI.REASONER.AUTHORITY_HIERARCHY).principal(authorization)
+        .contentType("application/json").content(body)).andExpect(status().isOk())
+        .andExpect(header().string("Cache-Control", "no-store"));
+    verify(service).resolveAuthorityHierarchy("CHEM", "CID:2244", scope);
+  }
+
   @Test void requiresAuthenticationAndForwardsScopeForSearchAndInsertion() throws Exception {
     var service = mock(ReasonerService.class); var server = mock(ReasonerServer.class);
     when(server.klabService()).thenReturn(service);

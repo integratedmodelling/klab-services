@@ -12,6 +12,54 @@ import org.junit.jupiter.api.io.TempDir;
 class ProjectMaterialIOTest {
   @TempDir Path root;
 
+  @Test void excludesInternalNamesAtEveryLevelAndRejectsTheirCreation() throws Exception {
+    Files.createDirectory(root.resolve("assets"));
+    Files.writeString(root.resolve("assets/0-file.css"), "body {}");
+    var storage = new FileProjectStorage(root.toFile(), "project", null);
+    for (String internal : List.of(".cache", "_private", "-temporary", "éinternal", "١internal")) {
+      Files.createDirectory(root.resolve(internal));
+      Files.createDirectory(root.resolve("assets/" + internal));
+      Files.writeString(root.resolve(internal + ".txt"), "internal");
+      Files.writeString(root.resolve("assets/" + internal + ".txt"), "internal");
+      assertThrows(IllegalArgumentException.class, () -> ProjectMaterial.canonicalPath(internal));
+      assertThrows(IllegalArgumentException.class, () -> ProjectMaterialIO.write(storage,
+          "assets/" + internal + ".css", new byte[0], SubmissionMode.ADD));
+      assertThrows(IllegalArgumentException.class, () -> ProjectMaterial.coordinates("project/assets/" + internal + "/"));
+    }
+    var listing = ProjectMaterialIO.retrieve(storage, ProjectMaterial.coordinates("project/"));
+    assertEquals(List.of("assets"), listing.getEntries().stream().map(ProjectMaterial::getPath).toList());
+    var nested = ProjectMaterialIO.retrieve(storage, ProjectMaterial.coordinates("project/assets/"));
+    assertEquals(List.of("assets/0-file.css"), nested.getEntries().stream().map(ProjectMaterial::getPath).toList());
+    assertEquals("assets/Aé.css", ProjectMaterial.canonicalPath("assets/Aé.css"));
+  }
+
+  @Test void listsOnlyUnmanagedEntriesWithoutDownloadingContentAndCreatesEmptyFolders() throws Exception {
+    for (String managed : List.of("src", "apps", "behaviors", "scripts", "testcases", "strategies", "docs", "resources", "META-INF")) {
+      Files.createDirectory(root.resolve(managed));
+      Files.writeString(root.resolve(managed).resolve("arbitrary.css"), "managed");
+      assertThrows(IllegalArgumentException.class, () -> ProjectMaterial.canonicalPath(managed));
+      assertThrows(IllegalArgumentException.class, () -> ProjectMaterial.canonicalPath(managed + "/arbitrary.css"));
+    }
+    Files.createDirectory(root.resolve("assets"));
+    Files.writeString(root.resolve("assets/style.css"), "body {}");
+    var storage = new FileProjectStorage(root.toFile(), "project", null);
+    var listing = ProjectMaterialIO.retrieve(storage, ProjectMaterial.coordinates("project/"));
+    assertEquals(List.of("assets"), listing.getEntries().stream().map(ProjectMaterial::getPath).toList());
+    assertTrue(listing.getEntries().getFirst().isDirectory());
+    var children = ProjectMaterialIO.retrieve(storage, ProjectMaterial.coordinates("project/assets/"));
+    assertEquals(1, children.getEntries().size());
+    assertNull(children.getEntries().getFirst().getContent());
+    assertEquals(7, children.getEntries().getFirst().getSize());
+    var directory = ProjectMaterial.coordinates("project/assets/locales/");
+    ProjectMaterialIO.createDirectory(storage, directory, SubmissionMode.ADD);
+    assertTrue(Files.isDirectory(root.resolve("assets/locales")));
+    assertThrows(java.io.IOException.class, () -> ProjectMaterialIO.createDirectory(storage, directory, SubmissionMode.ADD));
+    assertThrows(IllegalArgumentException.class, () -> ProjectMaterialIO.createDirectory(storage, ProjectMaterial.coordinates("project/"), SubmissionMode.ADD));
+    assertThrows(java.io.IOException.class, () -> ProjectMaterialIO.deleteDirectory(storage, "assets"));
+    assertTrue(ProjectMaterialIO.deleteDirectory(storage, "assets/locales"));
+    assertTrue(Files.exists(root.resolve("assets/style.css")));
+  }
+
   @Test void stagesBinaryCrudWithoutCommittingOrChangingUnrelatedIndexEntries() throws Exception {
     try (var git = Git.init().setDirectory(root.toFile()).call()) {
       Files.writeString(root.resolve("README.md"), "project"); git.add().addFilepattern("README.md").call();
@@ -53,6 +101,7 @@ class ProjectMaterialIOTest {
     catch (java.io.IOException | UnsupportedOperationException denied) { org.junit.jupiter.api.Assumptions.abort("Symbolic links unavailable"); }
     var storage = new FileProjectStorage(project.toFile(), "project", null);
     assertThrows(java.io.IOException.class, () -> ProjectMaterialIO.write(storage, "link/file.txt", new byte[]{1}, SubmissionMode.ADD));
+    assertTrue(ProjectMaterialIO.retrieve(storage, ProjectMaterial.coordinates("project/")).getEntries().isEmpty());
     assertFalse(Files.exists(outside.resolve("file.txt")));
   }
 }

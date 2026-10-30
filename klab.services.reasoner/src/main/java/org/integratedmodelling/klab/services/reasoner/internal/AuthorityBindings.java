@@ -35,6 +35,7 @@ public final class AuthorityBindings {
   }
 
   public synchronized String configure(Authority.ConfigurationRequest request, Authority provider) {
+    if (!request.semanticBoundaries().isEmpty()) request.requireSupportedBoundaries(provider.getSemanticBoundaries());
     var previous = bindings.get(request.name());
     if (previous != null) {
       if ((previous.provider() == provider || (previous.provider() instanceof CachedAuthority cached && cached.wraps(provider)))
@@ -46,7 +47,7 @@ public final class AuthorityBindings {
         && !request.worldview().equals(capabilities.getWorldview()))
       throw new KlabValidationException("Authority is incompatible with worldview " + request.worldview());
     Authority hosted = cacheRoot == null ? provider : new CachedAuthority(provider, cacheRoot);
-    String id = hosted.configure(request);
+    String id = hosted.configure(cacheRoot == null ? providerRequest(request) : request);
     if (id == null || id.isBlank())
       throw new KlabValidationException("Authority returned an empty configuration ID: " + request.name());
     var binding = new Binding(request, hosted, id);
@@ -59,6 +60,46 @@ public final class AuthorityBindings {
       bindings.put(request.name(), binding);
     } catch (RuntimeException failure) { hosted.releaseConfiguration(id); throw failure; }
     return id;
+  }
+
+  public synchronized Map<String, org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot> configuredSnapshots() {
+    var result = new java.util.TreeMap<String, org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot>();
+    long total = 0;
+    for (var binding : bindings.values()) {
+      var snapshot = binding.provider() instanceof CachedAuthority cached ? cached.configuredSnapshot(binding.id())
+          : binding.provider() instanceof org.integratedmodelling.klab.api.services.SnapshottingAuthority snapshotting
+              ? snapshotting.captureConfiguration(binding.id()) : null;
+      if (snapshot == null) continue;
+      if (!snapshot.providerUrn().equals(binding.provider().getUrn()) || !snapshot.request().equals(providerRequest(binding.request())))
+        throw new KlabValidationException("Configured snapshot differs from its successful bridge");
+      total += snapshot.state().length;
+      if (total > 256L * 1024 * 1024) throw new KlabValidationException("Configured snapshots exceed total bound");
+      result.put(binding.request().name(), snapshot);
+    }
+    return Map.copyOf(result);
+  }
+
+  /** Published semantic mappings only, excluding proposal/audit/revision bookkeeping. */
+  public synchronized Object semanticCodelists() {
+    var result = new java.util.TreeMap<String,Object>();
+    codelists.forEach((name, lists) -> {
+      var namespaces = new java.util.TreeMap<String,Object>();
+      lists.snapshot().codelists().forEach((namespace, list) -> {
+        var entries = new java.util.ArrayList<Object>();
+        for (var code : list.codes()) entries.add(java.util.Arrays.asList(code, list.value(code)));
+        namespaces.put(namespace, java.util.Arrays.asList(list.getAuthorityId(), list.getRootConceptId(), entries));
+      });
+      result.put(name, namespaces);
+    });
+    return result;
+  }
+
+  /** Namespace bindings belong to the Reasoner, not to the provider's parameter schema. */
+  public static Authority.ConfigurationRequest providerRequest(Authority.ConfigurationRequest request) {
+    var parameters = new LinkedHashMap<>(request.parameters());
+    parameters.remove("codelists");
+    return new Authority.ConfigurationRequest(request.worldview(), request.name(),
+        request.rootIdentity(), parameters);
   }
 
   /** Search only exact bindings. Dotted filter aliases must be supplied as explicit filters. */
@@ -126,6 +167,8 @@ public final class AuthorityBindings {
         var copy = new org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity();
         copy.setAliases(aliases.getOrDefault(identity.getId(), java.util.List.of()));
         copy.setId(identity.getId()); copy.setAuthorityName(binding.request().name());
+        copy.setSemanticBoundaries(identity.getSemanticBoundaries());
+        copy.setHierarchyStatus(identity.getHierarchyStatus());
         copy.setLocator(org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax
             .encode(binding.request().name(), identity.getId()));
         copy.setLabel(identity.getLabel()); copy.setDescription(identity.getDescription());

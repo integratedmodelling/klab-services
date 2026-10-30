@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.services.resources.persistence;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
+
 import java.util.*;
 import org.h2gis.utilities.SpatialResultSet;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
@@ -240,7 +242,13 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints,
       ContextScope scope) {
+    return query(observable, geometry, contextObservable, resolutionConstraints, scope, ModelDiscoveryMode.EXECUTABLE);
+  }
 
+  @Override public Collection<ModelReference> query(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints, ContextScope scope, ModelDiscoveryMode mode) {
+    java.util.Objects.requireNonNull(mode, "model discovery mode");
     initialize(scope);
 
     List<ModelReference> local = new ArrayList<>();
@@ -250,7 +258,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     if (database.hasTable("model")) {
       try {
         for (ModelReference md :
-            queryModels(observable, geometry, contextObservable, resolutionConstraints, scope)) {
+            queryModels(observable, geometry, contextObservable, resolutionConstraints, scope, mode)) {
           if (ModelVisibility.authorized(md, scope)) {
             local.add(md);
           }
@@ -279,8 +287,15 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints,
       ContextScope context) {
+    return queryModels(observable, geometry, contextObservable, resolutionConstraints, context, ModelDiscoveryMode.EXECUTABLE);
+  }
 
+  @Override public List<ModelReference> queryModels(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints, ContextScope context, ModelDiscoveryMode mode) {
+    java.util.Objects.requireNonNull(mode, "model discovery mode");
     List<ModelReference> ret = new ArrayList<>();
+    ModelVisibility.requireReady(resourceService, context);
 
     if (!database.hasTable("model")) {
       return ret;
@@ -320,7 +335,20 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     final List<Long> oids = database.queryIds(query);
     for (long l : oids) {
       ModelReference model = retrieveModel(l, context);
-      if (model != null) {
+      if (model != null && ModelVisibility.accepts(model, observable, resolutionConstraints)) {
+        long validatedRevision = mode == ModelDiscoveryMode.PREPARABLE
+            ? org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableCatalogRevision(
+                model.getName(), model.getNamespaceId(), resourceService, context, observable)
+            : org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
+                model.getName(), model.getNamespaceId(), resourceService, context, observable);
+        if (validatedRevision < 0) continue;
+        // Keep observable-level semantics (including observed-as) out of the coarse Concept index.
+        // The full wrapper is authoritative for matching, after source/revision validation.
+        var candidate = scope.getService(Reasoner.class).resolveObservable(model.getObservable());
+        if (candidate == null || candidate.getSemantics() == null
+            || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
+        if (mode == ModelDiscoveryMode.EXECUTABLE && scope.getService(Reasoner.class).semanticDistance(
+            candidate, observable, contextObservable, validatedRevision) < 0) continue;
         Coverage coverage =
             resourceService.info(
                 model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, context);
@@ -383,7 +411,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
 
   private String observableQuery(Observable observable, Concept context) {
 
-    Set<Long> ids = this.getCompatibleTypeIds(observable, context);
+    Set<Long> ids = this.getCandidateTypeIds(observable);
     if (ids == null || ids.isEmpty()) {
       return null;
     }
@@ -426,6 +454,8 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     var scenarios = getConstraints(resolutionConstraints, ResolutionConstraint.Type.Scenarios, String.class);
     if (!scenarios.isEmpty()) visibility += " OR (" + joinStringConditions("model.namespaceid", scenarios, "OR") + ")";
     String ret = "(" + visibility + ")";
+    ret += namespace == null ? " AND model.scope <> 'PRIVATE'"
+        : " AND (model.scope <> 'PRIVATE' OR model.namespaceid = '" + Utils.Escape.forSQL(namespace) + "')";
     // Project-private models never escape their project, including explicit scenarios.
     ret += project == null ? " AND model.scope <> 'PROJECT_PRIVATE'"
         : " AND (model.scope <> 'PROJECT_PRIVATE' OR model.projectid = '" + Utils.Escape.forSQL(project) + "')";
@@ -656,6 +686,12 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
 
   @Override
   public long store(Object o, Scope monitor) {
+
+    if (o instanceof ModelReference model)
+      org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(
+          model.getName(), model.getNamespaceId(), resourceService, monitor);
+    if (o instanceof KimModel model)
+      org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(model, monitor);
 
     initialize(monitor);
 

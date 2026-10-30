@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.resources.persistence;
 
+import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
+
 import java.util.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
@@ -34,24 +36,31 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
     return marker == null ? "" : (String) marker.getOrDefault("generation", "");
   }
   private boolean active(Map<String, Object> document) {
-    return generation((String) document.get("namespace")).equals(document.getOrDefault("generation", ""));
+    var marker = documents.get("namespace:" + document.get("namespace"));
+    return (marker == null || !Boolean.TRUE.equals(marker.get("withheld")))
+        && generation((String) document.get("namespace")).equals(document.getOrDefault("generation", ""));
   }
-  @Override public synchronized void replaceNamespace(KimNamespace namespace, Scope scope) {
-    String previous = generation(namespace.getUrn());
+  @Override public void replaceNamespace(KimNamespace namespace, Scope scope) {
+    long timestamp = namespace.getLastUpdateTimestamp();
+    String source = namespace.getSourceCode();
+    org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(namespace, scope);
+    var inferred = new ArrayList<List<ModelReference>>();
+    for (var statement : namespace.getStatements())
+      if (statement instanceof KimModel model) inferred.add(new ArrayList<>(inferModels(model, scope)));
+    synchronized (this) {
+    if (timestamp != namespace.getLastUpdateTimestamp() || !Objects.equals(source, namespace.getSourceCode()))
+      throw new KlabStorageException("Namespace changed during model validation: " + namespace.getUrn());
     String next = UUID.randomUUID().toString();
     var staged = new ArrayList<String>();
     try {
-      for (var statement : namespace.getStatements()) {
-        if (statement instanceof KimModel model) {
-          var descriptors = new ArrayList<>(inferModels(model, scope));
+      for (var descriptors : inferred) {
           if (!descriptors.isEmpty()) {
             if (descriptors.stream().anyMatch(d -> !namespace.getUrn().equals(d.getNamespaceId())))
               throw new IllegalArgumentException("Model descriptor belongs to another namespace");
-            String key = "model:" + next + ":" + model.getUrn();
+            String key = "model:" + next + ":" + descriptors.getFirst().getName();
             staged.add(key);
             storeDescriptors(key, descriptors, scope, next);
           }
-        }
       }
     } catch (RuntimeException failure) {
       for (String key : staged) {
@@ -62,34 +71,49 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
     // A single manifest replacement publishes the complete namespace. On an ambiguous publish
     // failure retain staged documents: the server may have committed the manifest already.
     documents.put("namespace:" + namespace.getUrn(), Map.of("kind", "namespace",
-        "timestamp", namespace.getLastUpdateTimestamp(), "scenario", namespace.isScenario(), "generation", next));
+        "timestamp", namespace.getLastUpdateTimestamp(), "scenario", namespace.isScenario(),
+        "generation", next, "withheld", false));
     for (var document : documents.find("namespace", List.of(namespace.getUrn())))
-      if (previous.equals(document.getOrDefault("generation", ""))) deleteDocument(document);
+      if (!next.equals(document.getOrDefault("generation", ""))) deleteDocument(document);
+    }
   }
   private void deleteDocument(Map<String, Object> document) {
     documents.delete((String) document.getOrDefault("key", document.get("_id")));
   }
-  @Override public synchronized long store(Object object, Scope scope) {
+  @Override public long store(Object object, Scope scope) {
+    if (object instanceof KimModel model)
+      org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(model, scope);
+    if (object instanceof ModelReference descriptor)
+      org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(
+          descriptor.getName(), descriptor.getNamespaceId(), resourceService, scope);
+    // Remote semantic validation above must never run under the catalog monitor.
+    var inferred = object instanceof KimModel model ? new ArrayList<>(inferModels(model, scope)) : null;
+    synchronized (this) {
     if (object instanceof KimNamespace namespace) {
-      documents.put("namespace:" + namespace.getUrn(), Map.of("kind", "namespace",
+      var previous = documents.get("namespace:" + namespace.getUrn());
+      var marker = new HashMap<String, Object>(Map.of("kind", "namespace",
           "timestamp", namespace.getLastUpdateTimestamp(), "scenario", namespace.isScenario(),
           "generation", generation(namespace.getUrn())));
+      if (previous != null && Boolean.TRUE.equals(previous.get("withheld"))) marker.put("withheld", true);
+      documents.put("namespace:" + namespace.getUrn(), marker);
       return 0;
     }
     if (object instanceof KimModel model) {
       String generation = generation(model.getNamespace());
       String key = "model:" + generation + ":" + model.getUrn();
-      var descriptors = new ArrayList<>(inferModels(model, scope));
+      var descriptors = inferred;
       if (descriptors.isEmpty()) {
         documents.delete(key);
         return -1;
       }
       return storeDescriptors(key, descriptors, scope, generation);
     }
-    if (object instanceof ModelReference descriptor)
+    if (object instanceof ModelReference descriptor) {
       return storeDescriptors("descriptor:" + documents.nextId(), List.of(descriptor), scope,
           generation(descriptor.getNamespaceId()));
+    }
     throw new IllegalArgumentException("Unsupported model catalog object: " + object);
+    }
   }
 
   private long storeDescriptors(String key, List<ModelReference> models, Scope scope, String generation) {
@@ -157,6 +181,12 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
     documents.delete("namespace:" + namespace);
     return count;
   }
+  @Override public synchronized void withholdNamespace(String namespace, Channel monitor) {
+    // Visibility changes with one manifest write, including when cleanup later fails.
+    documents.put("namespace:" + namespace, Map.of("kind", "namespace", "timestamp", 0L,
+        "generation", UUID.randomUUID().toString(), "withheld", true));
+    for (var document : documents.find("namespace", List.of(namespace))) deleteDocument(document);
+  }
   @Override public void remove(String namespace, Channel monitor) { clearNamespace(namespace, monitor); }
   @Override public long getNamespaceTimestamp(KimNamespace namespace) {
     var document = documents.get("namespace:" + namespace.getUrn());
@@ -173,8 +203,14 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
   @Override public Collection<ModelReference> query(Observable observable,
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
       List<ResolutionConstraint> constraints, ContextScope scope) {
+    return query(observable, geometry, context, constraints, scope, ModelDiscoveryMode.EXECUTABLE);
+  }
+  @Override public Collection<ModelReference> query(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
+      List<ResolutionConstraint> constraints, ContextScope scope, ModelDiscoveryMode mode) {
+    java.util.Objects.requireNonNull(mode, "model discovery mode");
     try {
-      return queryModels(observable, geometry, context, constraints, scope).stream()
+      return queryModels(observable, geometry, context, constraints, scope, mode).stream()
           .filter(m -> ModelVisibility.authorized(m, scope)).toList();
     } catch (RuntimeException failure) {
       var error = new KlabStorageException("Model discovery failed for " + observable.getUrn());
@@ -185,13 +221,20 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
   @Override public List<ModelReference> queryModels(Observable observable,
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
       List<ResolutionConstraint> constraints, ContextScope scope) {
+    return queryModels(observable, geometry, context, constraints, scope, ModelDiscoveryMode.EXECUTABLE);
+  }
+  @Override public List<ModelReference> queryModels(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
+      List<ResolutionConstraint> constraints, ContextScope scope, ModelDiscoveryMode mode) {
+    java.util.Objects.requireNonNull(mode, "model discovery mode");
     List<ModelReference> result = new ArrayList<>();
+    ModelVisibility.requireReady(resourceService, scope);
     if (geometry == null || geometry.isEmpty()) return result;
     var scale = GeometryRepository.INSTANCE.scale(geometry);
     Object time = scale.getTime();
     if (time instanceof EnumeratedExtension<?> enumeration) time = enumeration.getPhysicalExtent();
     if (time instanceof EnumeratedExtension<?>) throw new KlabUnimplementedException("enumerated extension");
-    var types = getCompatibleTypeIds(observable, context);
+    var types = getCandidateTypeIds(observable);
     for (var document : documents.find("typeIds", types)) {
       if (!active(document)) continue;
       var storedTypes = numbers(document, "typeIds");
@@ -200,6 +243,20 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
         if (!types.contains(storedTypes.get(i).longValue())) continue;
         var model = ModelReferenceCodec.decode(payloads.get(i), reasoner());
         if (!ModelVisibility.accepts(model, observable, constraints) || !matchesSpace(model, scale)) continue;
+        var validationScope = scope == null ? resourceService.serviceScope() : scope;
+        long validatedRevision = mode == ModelDiscoveryMode.PREPARABLE
+            ? org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableCatalogRevision(
+                model.getName(), model.getNamespaceId(), resourceService, validationScope, observable)
+            : org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
+                model.getName(), model.getNamespaceId(), resourceService, validationScope, observable);
+        if (validatedRevision < 0) continue;
+        // The indexed Concept omits observable-level clauses such as an explicit observer.
+        // Reconstruct the complete authored wrapper only after current source validation succeeds.
+        var candidate = reasoner().resolveObservable(model.getObservable());
+        if (candidate == null || candidate.getSemantics() == null
+            || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
+        if (mode == ModelDiscoveryMode.EXECUTABLE
+            && reasoner().semanticDistance(candidate, observable, context, validatedRevision) < 0) continue;
         Coverage coverage = resourceService.info(model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, scope);
         if (coverage == null || coverage.checkConstraints(scale)) result.add(model);
       }

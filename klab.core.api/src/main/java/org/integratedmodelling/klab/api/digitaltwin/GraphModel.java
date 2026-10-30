@@ -45,6 +45,7 @@ public interface GraphModel {
     String STRATEGY = "strategy";
     String COMPUTATION = "computation";
     String ACTUATOR_SCHEMA_VERSION = "actuatorSchemaVersion";
+    String OPERATION_OBSERVABLE = "operationObservable";
     String EXECUTION_ROLE = "executionRole";
     String OCCURRENCE_SCHEDULES_JSON = "occurrenceSchedulesJson";
     String ACTUATOR_TYPE = "actuatorType";

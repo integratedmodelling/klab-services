@@ -8,11 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Request for the runtime to add an observation to the knowledge graph. The resolution constraints come from
- * the scope, creating a new content scope at server side from the root context scope pointed to by the scope
- * token. The observation is forced to be an observer if the role == OBSERVER, which should be used when the
- * initial observer is submitted into an empty context; otherwise the knowledge graph has the faculty of
- * providing a default observer if a regular observation is made in a scope that doesn't have one.
+ * Request for the runtime to submit an observation. Resolution constraints derive the server-side
+ * scope from the context identified by the scope token. An observation with ID
+ * {@link Observation#QUERY_ID} requests read-only lookup and mediation of existing knowledge; the
+ * server does not create a provenance agent for it. Other unresolved observations enter the normal
+ * resolution lifecycle, with observer selection expressed through resolution constraints.
  */
 public class ResolutionRequest {
 

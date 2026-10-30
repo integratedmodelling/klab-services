@@ -345,6 +345,29 @@ def test_manifest_bounds_unknown_versions_and_malformed_reports(monkeypatch):
             ExperimentBatch.loads(invalid)
 
 
+@pytest.mark.parametrize("timeout", [10**400, -(10**400)], ids=["too-large", "too-small"])
+def test_unrepresentable_timeout_rejects_before_creating_a_client(timeout):
+    calls = []
+    with ExperimentRunner(lambda: calls.append("factory")) as runner:
+        with pytest.raises(InvalidRequestError, match="timeout"):
+            runner.run(experiments(1), timeout=timeout)
+    assert not calls
+
+
+@pytest.mark.parametrize("value", [10**400, -(10**400)], ids=["too-large", "too-small"])
+@pytest.mark.parametrize("field", ["batch_elapsed", "elapsed", "cleanup_elapsed"])
+def test_manifest_large_integer_durations_raise_the_documented_input_error(monkeypatch, field, value):
+    stack = Stack(monkeypatch)
+    with ExperimentRunner(stack.factory) as runner:
+        data = json.loads(runner.run(experiments(1)).dumps())
+    if field == "batch_elapsed":
+        data["elapsed"] = value
+    else:
+        data["outcomes"][0][field] = value
+    with pytest.raises(InvalidRequestError, match="manifest"):
+        ExperimentBatch.loads(json.dumps(data))
+
+
 def test_missing_runtime_closed_client_and_secret_name_are_rejected_and_closed(monkeypatch):
     stack = Stack(monkeypatch)
     def missing_runtime():

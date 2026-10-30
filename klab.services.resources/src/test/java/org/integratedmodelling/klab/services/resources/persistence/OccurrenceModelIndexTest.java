@@ -28,7 +28,7 @@ class OccurrenceModelIndexTest {
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     var process = observable("test:Erosion", SemanticType.PROCESS);
     var quality = observable("test:Elevation", SemanticType.QUALITY);
-    when(reasoner.affectedBy(quality, process)).thenReturn(true);
+    when(reasoner.affectedBy(quality.getSemantics(), process.getSemantics())).thenReturn(true);
     var builder = mock(Observable.Builder.class);
     when(quality.builder(scope)).thenReturn(builder);
     when(builder.as(UnarySemanticOperator.CHANGE)).thenReturn(builder);
@@ -45,6 +45,8 @@ class OccurrenceModelIndexTest {
     when(observable.getUrn()).thenReturn(urn);
     when(observable.getSemantics()).thenReturn(concept);
     when(concept.getUrn()).thenReturn(urn);
+    when(observable.asConcept()).thenReturn(concept);
+    when(concept.getType()).thenReturn(new java.util.HashSet<>(List.of(types)));
     for (var type : types) when(observable.is(type)).thenReturn(true);
     when(observable.getContextualization()).thenReturn(Contextualization.SIMULATION);
     return observable;
@@ -63,6 +65,21 @@ class OccurrenceModelIndexTest {
     var reasoner = mock(Reasoner.class);
     var resources = mock(ResourcesService.class);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    when(scope.getService(ResourcesService.class)).thenReturn(resources);
+    ModelAdmissionFixtures.valid(reasoner);
+    var capabilities = mock(Reasoner.Capabilities.class);
+    when(capabilities.getServiceId()).thenReturn("fixture.reasoner");
+    when(capabilities.getKnowledgeRevision()).thenReturn(7L);
+    when(reasoner.capabilities(scope)).thenReturn(capabilities);
+    when(resources.declareObservable(anyString())).thenAnswer(invocation -> {
+      var parsed = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
+      var meaning = new KimConceptImpl();
+      String urn = invocation.getArgument(0); meaning.setName(urn);
+      var resolved = reasoner.resolveObservable(urn);
+      if (resolved != null) meaning.setType(new java.util.HashSet<>(resolved.getSemantics().getType()));
+      parsed.setSemantics(meaning); parsed.setUrn(urn);
+      return parsed;
+    });
     var process = observable("test:Erosion", SemanticType.PROCESS);
     var affected = observable("test:Elevation", SemanticType.QUALITY);
     var created = observable("test:Sediment", SemanticType.QUALITY);
@@ -75,8 +92,8 @@ class OccurrenceModelIndexTest {
       when(builder.as(UnarySemanticOperator.CHANGE)).thenReturn(builder);
       when(builder.buildObservable()).thenReturn(pair.getLast());
     }
-    when(reasoner.affectedBy(affected, process)).thenReturn(true);
-    when(reasoner.createdBy(created, process)).thenReturn(true);
+    when(reasoner.affectedBy(affected.getSemantics(), process.getSemantics())).thenReturn(true);
+    when(reasoner.createdBy(created.getSemantics(), process.getSemantics())).thenReturn(true);
     for (var observable : List.of(process, affected, created, input))
       when(reasoner.resolveObservable(observable.getUrn())).thenReturn(observable);
     var model = new KimModelImpl();
@@ -93,11 +110,13 @@ class OccurrenceModelIndexTest {
     verify(input, never()).builder(any());
 
     var executable = new ModelImpl();
+    executable.setUrn("fixture.executable");
+    executable.setCoverage(org.integratedmodelling.klab.api.geometry.Geometry.UNIVERSAL);
     executable.getObservables().add(process);
     executable.getDependencies().addAll(List.of(affected, created, input));
-    when(reasoner.semanticDistance(process, changeX, null)).thenReturn(-1);
-    when(reasoner.semanticDistance(changeY, changeX, null)).thenReturn(-1);
-    when(reasoner.semanticDistance(changeX, changeX, null)).thenReturn(0);
+    when(reasoner.semanticDistance(process, changeX, null, 7)).thenReturn(-1);
+    when(reasoner.semanticDistance(changeY, changeX, null, 7)).thenReturn(-1);
+    when(reasoner.semanticDistance(changeX, changeX, null, 7)).thenReturn(0);
     assertEquals(0, new PrioritizerImpl(scope, null, Map.of(), changeX, null).semanticDistance(executable));
   }
 }
