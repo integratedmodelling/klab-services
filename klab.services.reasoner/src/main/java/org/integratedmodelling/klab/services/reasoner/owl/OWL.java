@@ -3343,6 +3343,17 @@ public class OWL {
     return reasoner.getSuperClasses(arg0, arg1);
   }
 
+  /** Named classes visible to this reasoner, without classifying its hierarchy. */
+  synchronized List<OWLClass> reasonerClassSignature() {
+    requireAvailableClosure();
+    if (reasoner == null) return List.of();
+    return reasoner.getRootOntology().importsClosure()
+        .flatMap(ontology -> ontology.getClassesInSignature().stream())
+        .distinct()
+        .sorted(Comparator.comparing(concept -> concept.getIRI().toString()))
+        .toList();
+  }
+
   public synchronized NodeSet<OWLDataProperty> getSuperDataProperties(OWLDataProperty arg0, boolean arg1)
       throws InconsistentOntologyException,
           FreshEntitiesException,

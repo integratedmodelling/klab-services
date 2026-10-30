@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 import org.integratedmodelling.klab.indexing.SemanticClauseSupport;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.search.EntitySearcher;
 
 /** Preserves complete OWL fillers: a union is one bound, multiple restrictions are conjunctive. */
@@ -343,15 +344,32 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
             var root = owl.getOWLClass(concept);
             if (root == null) throw new IllegalArgumentException("No ontology class for " + key);
             visit(root, false, new HashSet<>(), result,checkpoint);
-            // Include inferred superclasses as well as asserted/equivalent class definitions.
+            // Prove inheritance only for owners that contribute bounds. Enumerating the full
+            // hierarchy reclassifies every speculative expression added by semantic search.
             if (owl.hasReasoner()) {
               owl.flushReasoner();
-              for (var parent : owl.getSuperClasses(root, false).getFlattened())
-                if (!parent.isOWLThing() && !parent.equals(root))
-                  visit(parent, true, new HashSet<>(), result,checkpoint);
-              for (var equivalent : owl.getEquivalentClasses(root).getEntities())
-                if (!equivalent.isOWLThing() && !equivalent.equals(root))
-                  visit(equivalent, true, new HashSet<>(), result,checkpoint);
+              if (owl.isPrecomputed(InferenceType.CLASS_HIERARCHY)) {
+                // Reuse an existing classification; targeted owner discovery is only
+                // needed when a new speculative expression has invalidated it.
+                for (var parent : owl.getSuperClasses(root, false).getFlattened())
+                  if (!parent.isOWLThing() && !parent.equals(root))
+                    visit(parent, true, new HashSet<>(), result, checkpoint);
+                for (var equivalent : owl.getEquivalentClasses(root).getEntities())
+                  if (!equivalent.isOWLThing() && !equivalent.equals(root))
+                    visit(equivalent, true, new HashSet<>(), result, checkpoint);
+              } else {
+                // Match the reasoner's import scope: an unsatisfiable root also entails
+                // subclasshood of names in unrelated manager ontologies.
+                for (var owner : owl.reasonerClassSignature()) {
+                  checkpoint.run();
+                  if (owner.isOWLThing() || owner.equals(root)) continue;
+                  var inherited = new ArrayList<Bound>();
+                  visit(owner, true, new HashSet<>(), inherited, checkpoint);
+                  if (!inherited.isEmpty()
+                      && entails(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(root, owner)))
+                    result.addAll(inherited);
+                }
+              }
             }
             return result.stream()
                 .distinct()
