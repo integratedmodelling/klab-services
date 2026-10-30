@@ -44,6 +44,11 @@ Unknown semantic classifications reject rather than silently acquiring meaning.
 MIME-to-URL descriptors only: the SDK never fetches these URLs, follows redirects,
 executes provider HTML, or forwards the Reasoner credential to their origins.
 
+Canonical service, worldview, concept and authority identities containing a
+configured credential are rejected with `ProtocolError`. They are not silently
+redacted into different identities that might later be sent back to Java. Labels
+and raw metadata remain redacted inspection data.
+
 Defaults: 100 hierarchy items, 1 MiB per HTTP response. Caller budgets are bounded
 at 1,000 items and 16 MiB. Hierarchy is one direct page, not a transitive traversal.
 Authority requests obey Java's limit 1..100, offset 0..10000, query 1..256 UTF-16

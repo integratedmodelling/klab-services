@@ -1,5 +1,10 @@
 # Contribution review: PR101 semantic explorer
 
+**Historical review.** The [current post-integration review](semantic-explorer-post-integration-20261030.md)
+records the credential-identity fix,1,172 passing offline tests and both shipped
+functional tests passing on October30 Java. The former live-fixture blocker is
+resolved for bounded F1; current-head CI/review still needs explicit confirmation.
+
 ## Recommendation
 
 **Needs contract/coordination evidence. No approval or merge.** A malformed-score
