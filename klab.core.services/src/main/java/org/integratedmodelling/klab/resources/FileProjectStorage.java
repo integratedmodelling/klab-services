@@ -472,10 +472,15 @@ public class FileProjectStorage implements ProjectStorage {
   public URL create(String resourceId, ResourceType resourceType, String contents, Scope scope) {
     if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
       try {
-        ProjectMaterialIO.write(this, resourceId, contents.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+        ProjectMaterialIO.write(
+            this,
+            resourceId,
+            contents.getBytes(java.nio.charset.StandardCharsets.UTF_8),
             org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.ADD);
         return locate(resourceId, resourceType);
-      } catch (IOException e) { throw new KlabIOException(e); }
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
     }
 
     if (!rootFolder.exists()) {
@@ -549,27 +554,33 @@ public class FileProjectStorage implements ProjectStorage {
       String content,
       boolean overwriteExisting) {
     if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
-      if (!previousUrn.equals(updatedUrn)) throw new KlabIOException("Material rename requires explicit create and delete");
+      if (!previousUrn.equals(updatedUrn))
+        throw new KlabIOException("Material rename requires explicit create and delete");
       try {
-        ProjectMaterialIO.write(this, updatedUrn, content.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-            overwriteExisting ? org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.CREATE_OR_UPDATE
+        ProjectMaterialIO.write(
+            this,
+            updatedUrn,
+            content.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            overwriteExisting
+                ? org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode
+                    .CREATE_OR_UPDATE
                 : org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.UPDATE);
         return locate(updatedUrn, resourceType);
-      } catch (IOException e) { throw new KlabIOException(e); }
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
     }
     try {
       File previousFile =
           new File(
               rootFolder
                   + File.separator
-                  + ProjectStorage.getRelativeFilePath(
-                      previousUrn, resourceType, File.separator));
+                  + ProjectStorage.getRelativeFilePath(previousUrn, resourceType, File.separator));
       File updatedFile =
           new File(
               rootFolder
                   + File.separator
-                  + ProjectStorage.getRelativeFilePath(
-                      updatedUrn, resourceType, File.separator));
+                  + ProjectStorage.getRelativeFilePath(updatedUrn, resourceType, File.separator));
 
       if (!previousFile.equals(updatedFile)) {
         if (!previousFile.isFile()) {
@@ -606,11 +617,55 @@ public class FileProjectStorage implements ProjectStorage {
     }
   }
 
+  /** Mutate a retained authoring source by its physical identity, never by a declared URN. */
+  private Path existingOntologySource(URL source) throws Exception {
+    if (source == null || !"file".equalsIgnoreCase(source.getProtocol()))
+      throw new IOException("Ontology source must be a project-owned file");
+    var requested = Path.of(source.toURI());
+    if (Files.isSymbolicLink(requested)) throw new IOException("Symbolic ontology source is not editable");
+    var root = rootFolder.toPath().toRealPath();
+    var target = requested.toRealPath();
+    if (!target.startsWith(root.resolve("src")) || !Files.isRegularFile(target)
+        || !target.getFileName().toString().endsWith(".kwv"))
+      throw new IOException("Ontology source is outside the project's source tree");
+    return target;
+  }
+
+  public String readExistingOntologySource(URL source) {
+    try { return Files.readString(existingOntologySource(source), java.nio.charset.StandardCharsets.UTF_8); }
+    catch (Exception failure) { throw new KlabIOException(failure); }
+  }
+
+  /** Keep the physical path even when an unsupported authoring declaration is renamed. */
+  public void writeExistingOntologySource(URL source, String content) {
+    try {
+      Files.writeString(existingOntologySource(source), content, java.nio.charset.StandardCharsets.UTF_8,
+          StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, LinkOption.NOFOLLOW_LINKS);
+    } catch (Exception failure) { throw new KlabIOException(failure); }
+  }
+
+  public void deleteExistingOntologySource(URL source) {
+    try {
+      var target = existingOntologySource(source);
+      if (isTracked()) try (var git = Git.open(rootFolder)) {
+        var relative = rootFolder.toPath().toRealPath().relativize(target).toString().replace('\\', '/');
+        if (git.getRepository().readDirCache().getEntry(relative) != null) {
+          git.rm().addFilepattern(relative).call(); return;
+        }
+      }
+      Files.delete(target);
+    } catch (Exception failure) { throw new KlabIOException(failure); }
+  }
+
   /** Remove a document from the working tree and stage its removal when tracked. */
   public void deleteDocument(String urn, ResourceType resourceType) {
     if (resourceType == ResourceType.ADDITIONAL_MATERIAL) {
-      try { ProjectMaterialIO.delete(this, urn); return; }
-      catch (IOException e) { throw new KlabIOException(e); }
+      try {
+        ProjectMaterialIO.delete(this, urn);
+        return;
+      } catch (IOException e) {
+        throw new KlabIOException(e);
+      }
     }
     var document = locate(urn, resourceType);
     if (document == null) {
@@ -641,7 +696,8 @@ public class FileProjectStorage implements ProjectStorage {
   /** Return the URL of an existing document, or null if it is absent. */
   public URL locate(String urn, ResourceType resourceType) {
     try {
-      if (resourceType == ResourceType.ADDITIONAL_MATERIAL && ProjectMaterialIO.read(this, urn) == null) return null;
+      if (resourceType == ResourceType.ADDITIONAL_MATERIAL
+          && ProjectMaterialIO.read(this, urn) == null) return null;
       File resourceFile =
           new File(
               rootFolder

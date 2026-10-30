@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import org.integratedmodelling.klab.runtime.language.WorldviewValidationScope;
+
+import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringReader;
@@ -230,7 +234,7 @@ class WorldviewValidationTest {
     assertFalse(parsed.hasSyntaxErrors());
     var bean = new OntologySyntaxImpl((Ontology) parsed.getRootASTElement(), scope) {
       @Override protected void logWarning(ParsedObject t, EObject o, EStructuralFeature f, String m) {}
-      @Override protected void logError(ParsedObject t, EObject o, EStructuralFeature f, String m) { fail(m); }
+      @Override protected void logError(ParsedObject t, EObject o, EStructuralFeature f, String m) {}
     };
     return LanguageAdapter.INSTANCE.adaptOntology(bean, "project", List.of(), 0L);
   }

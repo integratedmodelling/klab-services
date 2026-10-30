@@ -51,6 +51,39 @@ for replication by endpoint IDs and type alone. Several links between the same n
 different computational meanings or geometry. Define a durable edge identity before supporting
 property updates and precise deletion in a remote view.
 
+## Relationship nature and orientation
+
+A relationship has two independent semantic axes. Its nature is `structural` or
+`functional`; its orientation is `directed relationship` (ordered source and target)
+or `bond` (unordered participants). Plain `relationship` does not select either axis.
+Functional does not mean an OWL functional property, and a bond does not assert
+transitivity or create a general symmetric property axiom.
+
+An abstract declaration may leave either axis unspecified. A descendant inherits
+settled choices and may fill an unspecified choice; repeating the same choice is
+legal, contradicting an inherited choice is an error even on an abstract descendant.
+A concrete effective relationship must have both axes determined. Omission never
+defaults to directed or bond. Independent intersection parents combine constraints;
+union parents supply only choices shared by every alternative. An alias cannot
+refine its canonical target by adding a previously unspecified choice.
+
+```kim
+abstract relationship Connection;
+abstract functional relationship Interaction is Connection;
+functional directed relationship FeedingConnection is Interaction;
+structural bond Association is Connection;
+```
+
+These are schematic declarations illustrating the axes, not production ecology
+terms. `structural relationship Incomplete;` is invalid because its concrete
+orientation is unspecified. A bond descendant of a directed relationship is invalid.
+Raw authored choices remain distinct from inherited effective choices through API
+and workspace transport. Exported OWL class annotations preserve both; known nature
+also uses the existing ODO structural/functional relationship class. No ODO release
+or core pin change is required by these annotations. Runtime connection operations
+reject unknown or conflicting effective axes; swapping bond participants preserves
+identity, whereas swapping directed endpoints changes their ordered meaning.
+
 ## Relationship observations
 
 The [CONNECTION implementation](CONNECTION.md) is complete and accepted, including

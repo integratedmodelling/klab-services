@@ -1,5 +1,7 @@
 package org.integratedmodelling.common.services.client;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -17,6 +19,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.actors.Agent;
 import org.integratedmodelling.klab.api.actors.RuntimeAgent;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
@@ -39,6 +42,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.api.services.runtime.objects.ObservationExportRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
@@ -54,6 +58,30 @@ public class RuntimeClient extends BaseServiceClient
       Settings settings,
       BiConsumer<KlabService.ServiceStatus, Boolean>... statusListeners) {
     super(monitor, userScope, settings, statusListeners);
+  }
+
+  @Override
+  public InputStream exportObservation(
+      Observation observation, String mediaType,
+      Parameters<String> parameters,
+      ContextScope scope) {
+    if (observation == null || observation.isEmpty()
+        || observation.getId() < Observation.QUERY_ID)
+      throw new IllegalArgumentException("An existing observation or query result is required");
+    if (observation.getId() > 0)
+      return RuntimeService.super.exportObservation(observation, mediaType, parameters, scope);
+    var request = new ObservationExportRequest();
+    request.setObservation(Observation.forTransport(observation));
+    request.setParameters(parameters);
+    byte[] bytes = client.withScope(scope).accepting(List.of(mediaType))
+        .postRequired(ServicesAPI.EXPORT_OBSERVATION, request, byte[].class);
+    return new ByteArrayInputStream(bytes);
+  }
+
+  @Override
+  public List<Observation> getMembers(Observation collective, ContextScope scope) {
+    return client.withScope(scope).postCollectionOrThrow(ServicesAPI.OBSERVATION_MEMBERS,
+        Observation.forTransport(collective), Observation.class);
   }
 
   @Override
@@ -73,26 +101,46 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public CompletableFuture<Observation> submit(Observation observation, ContextScope scope) {
+  public CompletableFuture<Observation> submit(Observation observation, ContextScope requestedScope) {
 
     if (observation.getId() > 0) {
       return CompletableFuture.completedFuture(observation);
     }
 
+    var scope = org.integratedmodelling.common.runtime.ObserverSubmissionPolicy.apply(
+        requestedScope,
+        requestedScope instanceof ClientContextScope clientScope && clientScope.getEngine() != null
+            ? clientScope.getEngine().getSettings() : null);
+
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(Observation.forTransport(observation));
-    resolutionRequest.setAgentName(Objects.requireNonNull(Provenance.getAgent(scope)).getName());
+    if (observation.getId() != Observation.QUERY_ID)
+      resolutionRequest.setAgentName(Objects.requireNonNull(Provenance.getAgent(scope)).getName());
     resolutionRequest.setResolutionConstraints(
         scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
     var submission =
         client
         .withScope(scope)
         .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
+    return receiveSubmission(submission, resolutionRequest.getObservation(), scope);
+  }
+
+  private CompletableFuture<Observation> receiveSubmission(CompletableFuture<Observation> submission,
+      Observation requested, ContextScope scope) {
     if (submission
         instanceof org.integratedmodelling.common.utils.Utils.Http.PollingFuture<Observation>
             pollingFuture) {
+      submission.whenComplete((resolved, failure) -> {
+        org.integratedmodelling.common.runtime.SubmissionDiagnostics.result(
+            failure == null ? "client.received" : "client.exception", scope, requested, resolved,
+            pollingFuture.getJobId(), failure);
+      });
       return pollingFuture.transformResult(resolved -> synchronizeSubmission(resolved, scope));
     }
+    submission.whenComplete((resolved, failure) -> {
+      org.integratedmodelling.common.runtime.SubmissionDiagnostics.result(
+          failure == null ? "client.received" : "client.exception", scope, requested, resolved, null, failure);
+    });
     return submission.thenApply(resolved -> synchronizeSubmission(resolved, scope));
   }
 
@@ -110,6 +158,32 @@ public class RuntimeClient extends BaseServiceClient
           observation));
     }
     return observation;
+  }
+
+  @Override
+  public CompletableFuture<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberQualities(org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+          ContextScope scope) {
+    request.validate();
+    var transported=new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest(
+        request.container(),request.members(),request.quality(),
+        Objects.requireNonNull(Provenance.getAgent(scope)).getName(),
+        scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
+    return client.withScope(scope).postAsync(ServicesAPI.RUNTIME.MEMBER_QUALITIES, transported,
+        org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection.class);
+  }
+
+  @Override public boolean supportsMemberQualityInput(org.integratedmodelling.klab.api.lang.ServiceCall call,
+      String port,ContextScope scope) {
+    return Boolean.TRUE.equals(client.withScope(scope).post(ServicesAPI.RUNTIME.MEMBER_QUALITY_CONSUMER,
+        new org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerRequest(call,port),Boolean.class));
+  }
+
+  @Override public org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
+      inspectMemberQualityInputs(org.integratedmodelling.klab.api.lang.ServiceCall call,Scope scope) {
+    var result=client.withScope(scope).post(ServicesAPI.RUNTIME.MEMBER_QUALITY_INPUTS,call,
+        org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.class);
+    return result==null ? org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.unavailable() : result;
   }
 
   @Override
@@ -272,9 +346,9 @@ public class RuntimeClient extends BaseServiceClient
   }
 
   @Override
-  public ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
+  public synchronized ContextScope connectContext(DigitalTwin.Configuration configuration, UserScope userScope) {
 
-    var ret = ClientScopeManager.INSTANCE.getScope(configuration.getId(), ClientContextScope.class);
+    var ret = ClientScopeManager.INSTANCE.getScope(serviceId(), configuration.getId(), userScope.getUser().getUsername(), ClientContextScope.class);
     if (ret != null) {
       return ret;
     }
@@ -292,23 +366,20 @@ public class RuntimeClient extends BaseServiceClient
             .withScope(userScope)
             .post(ServicesAPI.RUNTIME.CONNECT, request, DigitalTwin.Configuration.class);
 
-    if (descriptor != null && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
-
-      final var service = this;
-      descriptor.getNotifications().forEach(n -> userScope.send(n));
+    if (descriptor != null) descriptor.getNotifications().forEach(userScope::send);
+    if (descriptor != null && !descriptor.isEmpty() && descriptor.getId() != null
+        && !descriptor.getId().isBlank()
+        && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
 
       var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
-      var sessionScope = ClientScopeManager.INSTANCE.getScope(sessionId, ClientSessionScope.class);
+      var sessionScope = ClientScopeManager.INSTANCE.getScope(serviceId(), sessionId, userScope.getUser().getUsername(), ClientSessionScope.class);
       if (sessionScope == null) {
         sessionScope = (ClientSessionScope) userScope.getUserSession(this);
-        ClientScopeManager.INSTANCE.register(sessionScope);
       }
 
-      // Add the known data that are null; notify for anything that isn't and differs.
-      configuration.defineFromExisting(descriptor);
-
-      ret = new ClientContextScope(sessionScope, this, configuration);
-      ret.setId(descriptor.getId());
+      // Reconnect adopts the same authoritative descriptor as creation.
+      ret = new ClientContextScope(sessionScope, this, descriptor);
+      ret.setFromConfiguration(descriptor);
       var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
       if (federation != null && ret instanceof MessagingChannelImpl messagingChannel) {
         var queues =
@@ -320,7 +391,12 @@ public class RuntimeClient extends BaseServiceClient
         messagingChannel.setupMessaging(federation, ret.getId(), queues);
         Logging.INSTANCE.info("Connected to queue for context scope " + ret.getId());
       }
-      ret.createDigitalTwin(descriptor.getId());
+      try {
+        ClientScopeManager.INSTANCE.register(ret);
+      } catch (RuntimeException failure) {
+        ret.closePeer();
+        throw failure;
+      }
       return ret;
     }
 

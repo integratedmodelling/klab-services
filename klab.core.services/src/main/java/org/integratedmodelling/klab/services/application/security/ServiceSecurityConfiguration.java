@@ -42,6 +42,8 @@ public class ServiceSecurityConfiguration {
                         "/api.html",
                         "/",
                         "/ui/**",
+                        "/apps/**",
+                        "/ui-bus",
                         "/index.html",
                         "/assets/**",
                         "/klab-logo.svg",

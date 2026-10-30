@@ -34,7 +34,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.integratedmodelling.klab.services.reasoner.ObservationReasoner;
-import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
+import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
 import org.integratedmodelling.languages.ObservationStandaloneSetup;
 import org.integratedmodelling.languages.ObservationSyntaxAdapter;
 import org.integratedmodelling.languages.api.*;
@@ -113,6 +113,33 @@ class ObservationPipelineTest {
     exercise(SemanticType.RELATIONSHIP, true, false, true, true);
   }
 
+  @Test void aSharedNewEndpointResolvesOnceAndFeedsBothDataflowPorts() throws Exception {
+    // Keep the original identical, initially missing source/target endpoint all the way
+    // through strategy selection, resolution and the one final dataflow compilation.
+    var dataflow = exercise(SemanticType.RELATIONSHIP, true, true, false, false, false);
+    var root = dataflow.getComputation().getFirst();
+    var producers = root.getChildren().stream().filter(a -> a.getActuatorType()
+        == org.integratedmodelling.klab.api.services.runtime.Actuator.Type.OBSERVE).toList();
+    var references = root.getChildren().stream().filter(a -> a.getActuatorType()
+        == org.integratedmodelling.klab.api.services.runtime.Actuator.Type.REFERENCE).toList();
+    assertEquals(1, producers.size());
+    assertEquals(1, references.size());
+    var producer = producers.getFirst();
+    var reference = references.getFirst();
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.Actuator.Type.OBSERVE, producer.getActuatorType());
+    assertFalse(producer.getComputation().isEmpty());
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.Actuator.Type.REFERENCE, reference.getActuatorType());
+    assertTrue(reference.getComputation().isEmpty());
+    assertEquals(producer.getId(), reference.getId());
+    assertTrue(producer.getId() < 0, "The shared endpoint was newly resolved, not an existing KG reference");
+    assertEquals(Set.of("source", "target"), Set.of(producer.getName(), reference.getName()));
+    var parameters = root.getComputation().getFirst().getParameters();
+    assertEquals("source", assertInstanceOf(org.integratedmodelling.klab.api.collections.Identifier.class,
+        parameters.get("source")).getValue());
+    assertEquals("target", assertInstanceOf(org.integratedmodelling.klab.api.collections.Identifier.class,
+        parameters.get("target")).getValue());
+  }
+
   @Test void endpointCoverageCannotResolveARelationshipWithoutAModel() throws Exception {
     exercise(SemanticType.RELATIONSHIP, true, false);
   }
@@ -129,15 +156,35 @@ class ObservationPipelineTest {
     }
   }
 
+  @Test void cotechinoRegionWithUnrestrictedModelsResolvesAllThreeDependencies() throws Exception {
+    var geometry = Geometry.create(
+        "T1(1){tstart=1388534400000,tend=1420070400000,ttype=GRID,tunit=YEAR,tscope=1}"
+            + "S2(237,258){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((33.796 -7.086&comma;35.946 -7.086&comma;35.946 -9.41&comma;33.796 -9.41&comma;33.796 -7.086))}");
+    new DependencyContextFixture(false, false, geometry).run();
+  }
+
+  @Test void abstractElevationBlocksTheExplanationBeforeModelDiscoveryAndReportsWhy() throws Exception {
+    var fixture = new DependencyContextFixture(false, false);
+    ((ConceptImpl) fixture.elevation.getSemantics()).setAbstract(true);
+    ((ObservableImpl) fixture.elevation).setAbstract(true);
+    var graph = fixture.resolve();
+    assertTrue(graph.isEmpty());
+    assertTrue(fixture.warnings.stream().anyMatch(message ->
+        message.contains("No observation strategy for dependency test:Elevation (abstract=true)")));
+    assertTrue(fixture.warnings.stream().anyMatch(message ->
+        message.contains("mandatory dependency test:Elevation")));
+  }
+
   /** Scope doubles derive immutable context/constraint snapshots, just as service scopes do. */
   private static class DependencyContextFixture {
-    final Geometry geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
+    final Geometry geometry;
     final Reasoner reasoner = mock(Reasoner.class);
     final RuntimeService runtime = mock(RuntimeService.class);
     final Parameters<String> data = Parameters.create();
     final java.util.concurrent.atomic.AtomicLong ids = new java.util.concurrent.atomic.AtomicLong(-10);
     final Map<String, Model> models = new HashMap<>();
     final List<String> selected = new ArrayList<>();
+    final List<String> warnings = new ArrayList<>();
     final Observable owner;
     final Observable freshwater = named(SemanticType.SUBJECT, true, "Freshwater");
     final Observable elevation = named(SemanticType.QUALITY, false, "Elevation");
@@ -147,6 +194,11 @@ class ObservationPipelineTest {
     final ContextScope initial;
 
     DependencyContextFixture(boolean collective, boolean nested) throws Exception {
+      this(collective, nested, Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}"));
+    }
+
+    DependencyContextFixture(boolean collective, boolean nested, Geometry geometry) throws Exception {
+      this.geometry = geometry;
       owner = named(SemanticType.SUBJECT, collective, "Region");
       requested = observation(owner, -2, geometry);
       outer = nested ? observation(named(SemanticType.SUBJECT, false, "Outer"), 25, geometry) : null;
@@ -169,8 +221,11 @@ class ObservationPipelineTest {
           assertConstraint(current, ResolutionConstraint.Type.ResolutionProject, "example.project");
         }
         var strategies = strategyReasoner.computeMatchingStrategies(target, current, true);
-        assertEquals(1, strategies.size(), target.getObservable().getUrn());
-        selected.add(strategies.getFirst().getUrn());
+        if (target.getObservable().isAbstract()) assertTrue(strategies.isEmpty());
+        else {
+          assertEquals(1, strategies.size(), target.getObservable().getUrn());
+          selected.add(strategies.getFirst().getUrn());
+        }
         return mapper.readValue(mapper.writerFor(listType).writeValueAsString(strategies), listType);
       });
       var requirements = new ResourceSet(); requirements.setEmpty(false);
@@ -183,9 +238,11 @@ class ObservationPipelineTest {
       });
       for (var observable : List.of(owner, freshwater, elevation, slope)) {
         var model = mock(Model.class);
+        when(model.getUrn()).thenReturn("pipeline." + observable.getReferenceName());
+        when(model.getObservables()).thenReturn(List.of(observable));
         when(model.getNamespace()).thenReturn(observable == freshwater ? "freshwater.example" : "private.example");
         when(model.getProjectName()).thenReturn(observable == freshwater ? "freshwater.project" : "example.project");
-        when(model.getCoverage()).thenReturn(geometry);
+        when(model.getCoverage()).thenReturn(Coverage.universal());
         when(model.getAnnotations()).thenReturn(List.of());
         when(model.getDependencies()).thenReturn(observable == owner ? List.of(freshwater, elevation, slope) : List.of());
         var computation = new ContextualizableImpl();
@@ -211,6 +268,8 @@ class ObservationPipelineTest {
       when(result.getResolutionConstraints()).thenReturn(new ArrayList<>(constraints.values()));
       when(result.getService(Reasoner.class)).thenReturn(reasoner);
       when(result.getService(RuntimeService.class)).thenReturn(runtime);
+      doAnswer(i -> { warnings.add(Arrays.deepToString(i.getRawArguments())); return null; })
+          .when(result).warn(any(Object[].class));
       when(result.within(nullable(Observation.class))).thenAnswer(i -> scope(i.getArgument(0), constraints));
       when(result.withResolutionConstraints(any(ResolutionConstraint[].class))).thenAnswer(i -> {
         var merged = new EnumMap<ResolutionConstraint.Type, ResolutionConstraint>(ResolutionConstraint.Type.class);
@@ -236,7 +295,7 @@ class ObservationPipelineTest {
       assertEquals(List.of(expected), constraint.payload(String.class));
     }
 
-    void run() {
+    ResolutionGraph resolve() {
       var compiler = new ResolutionCompiler(mock(ResolverService.class)) {
         @Override public List<Model> queryModels(Observable o, Concept context, ContextScope s, Scale scale) {
           assertConstraint(s, ResolutionConstraint.Type.Scenarios, "baseline");
@@ -247,13 +306,21 @@ class ObservationPipelineTest {
             assertConstraint(s, ResolutionConstraint.Type.ResolutionProject, "example.project");
             if (o.is(SemanticType.QUALITY)) assertSame(owner.getSemantics(), context);
           }
-          return List.of(models.get(o.getUrn()));
+          var candidate = models.get(o.getUrn());
+          var resources = ModelAdmissionFixtures.prepare(s, reasoner);
+          ModelAdmissionFixtures.saved(resources, candidate, s);
+          return org.integratedmodelling.klab.runtime.language.ModelValidationGate.admits(candidate, s, o)
+              ? List.of(candidate) : List.of();
         }
         @Override QueryMatch query(Observable o, Scale scale, ContextScope s) {
           return new QueryMatch(null, null, scale, null, Coverage.create(scale, 0));
         }
       };
-      var graph = compiler.resolve(requested, initial);
+      return compiler.resolve(requested, initial);
+    }
+
+    void run() {
+      var graph = resolve();
       assertFalse(graph.isEmpty());
       assertTrue(graph.getCoverage().isComplete());
       assertEquals(2, Collections.frequency(selected, "dependent.direct"));
@@ -272,8 +339,13 @@ class ObservationPipelineTest {
     exercise(kind, collective, modelAvailable, endpointsExist, false);
   }
 
-  private void exercise(SemanticType kind, boolean collective, boolean modelAvailable,
+  private Dataflow exercise(SemanticType kind, boolean collective, boolean modelAvailable,
       boolean endpointsExist, boolean unnamed) throws Exception {
+    return exercise(kind, collective, modelAvailable, endpointsExist, unnamed, true);
+  }
+
+  private Dataflow exercise(SemanticType kind, boolean collective, boolean modelAvailable,
+      boolean endpointsExist, boolean unnamed, boolean distinctMissingEndpoints) throws Exception {
     var geometry = Geometry.create("T0(1){tend=10,tstart=0,ttype=PHYSICAL}");
     var observable = observable(kind, collective);
     var requested = observation(observable, -2L, geometry);
@@ -296,6 +368,16 @@ class ObservationPipelineTest {
     when(reasoner.relationshipSource(any())).thenReturn(endpoint);
     when(reasoner.relationshipTarget(any())).thenReturn(endpoint);
     when(reasoner.resolveObservable("each test:SUBJECT")).thenReturn(observable(SemanticType.SUBJECT, true));
+    if (!endpointsExist && distinctMissingEndpoints) {
+      var source = DependencyContextFixture.named(SemanticType.SUBJECT, false, "Source");
+      var target = DependencyContextFixture.named(SemanticType.SUBJECT, false, "Target");
+      when(reasoner.relationshipSource(any())).thenReturn(source.getSemantics());
+      when(reasoner.relationshipTarget(any())).thenReturn(target.getSemantics());
+      when(reasoner.resolveObservable("each test:Source")).thenReturn(
+          DependencyContextFixture.named(SemanticType.SUBJECT, true, "Source"));
+      when(reasoner.resolveObservable("each test:Target")).thenReturn(
+          DependencyContextFixture.named(SemanticType.SUBJECT, true, "Target"));
+    }
     var strategyReasoner = new ObservationReasoner(reasoner, ignored -> { throw new AssertionError("No closed observables in tier zero"); });
     var strategies = document();
     if (unnamed) {
@@ -341,20 +423,31 @@ class ObservationPipelineTest {
     var requirements = new ResourceSet(); requirements.setEmpty(false);
     when(runtime.resolveContextualizables(any(), eq(scope))).thenReturn(requirements);
     var model = mock(Model.class);
+    when(model.getUrn()).thenReturn("pipeline.model");
     when(model.getCoverage()).thenReturn(geometry);
     when(model.getDependencies()).thenReturn(List.of());
-    when(model.getAnnotations()).thenReturn(List.of());
+    // The real primary now participates in occurrence admission. This bounded extent
+    // has no inherited grid cadence, so occurrence producers declare their own cadence.
+    when(model.getAnnotations()).thenReturn(kind == SemanticType.PROCESS || kind == SemanticType.EVENT
+        ? List.of(org.integratedmodelling.klab.api.lang.Annotation.of("time", "step",
+            org.integratedmodelling.common.lang.QuantityImpl.parse("1.millisecond"))) : List.of());
     var computation = new ContextualizableImpl();
     computation.setServiceCall(new ServiceCallImpl("test.compute"));
     when(model.getComputation()).thenReturn(List.of(computation));
     var endpointModel = mock(Model.class);
+    when(endpointModel.getUrn()).thenReturn("pipeline.endpoint");
     when(endpointModel.getCoverage()).thenReturn(geometry);
     when(endpointModel.getDependencies()).thenReturn(List.of());
     when(endpointModel.getAnnotations()).thenReturn(List.of());
     when(endpointModel.getComputation()).thenReturn(List.of(computation));
     var compiler = new ResolutionCompiler(mock(ResolverService.class)) {
       @Override public List<Model> queryModels(Observable o, Concept context, ContextScope s, Scale requestedScale) {
-        return modelAvailable ? List.of(o.getUrn().equals(observable.getUrn()) ? model : endpointModel) : List.of();
+        if (!modelAvailable) return List.of();
+        var candidate = o.getUrn().equals(observable.getUrn()) ? model : endpointModel;
+        when(candidate.getObservables()).thenReturn(List.of(o));
+        ModelAdmissionFixtures.prepare(s, reasoner);
+        return org.integratedmodelling.klab.runtime.language.ModelValidationGate.admits(candidate, s, o)
+            ? List.of(candidate) : List.of();
       }
       @Override QueryMatch query(Observable o, Scale requestedScale, ContextScope s) {
         if (o.getUrn().equals(observable.getUrn()) || !endpointsExist)
@@ -364,8 +457,8 @@ class ObservationPipelineTest {
       }
     };
     var graph = compiler.resolve(requested, scope);
-    assertEquals(!modelAvailable, graph.isEmpty());
-    if (!modelAvailable) return;
+    assertEquals(!modelAvailable, graph.isEmpty(), kind + " pipeline model availability");
+    if (!modelAvailable) return null;
     assertTrue(graph.getCoverage().isComplete());
     Dataflow dataflow = new DataflowCompiler(requested, graph, scope).compile();
     var actuator = dataflow.getComputation().getFirst();
@@ -377,10 +470,24 @@ class ObservationPipelineTest {
       assertEquals(2, actuator.getChildren().size(), "The same endpoint may feed two distinct ports");
       assertTrue(actuator.getComputation().getFirst().getParameters().containsKey("source"));
       assertTrue(actuator.getComputation().getFirst().getParameters().containsKey("target"));
-      if (!endpointsExist) {
+      if (!endpointsExist && distinctMissingEndpoints) {
         assertTrue(actuator.getChildren().stream().allMatch(a -> !a.getComputation().isEmpty()));
         verify(reasoner, atLeast(3)).computeObservationStrategies(any(), eq(scope));
       }
+      if (!endpointsExist && !distinctMissingEndpoints) {
+        verify(reasoner, times(2)).computeObservationStrategies(any(), eq(scope));
+      }
     }
+    return dataflow;
   }
+  @Test void optionalQualityAbsenceIsDistinctFromRequiredAbsenceAndPlanningFailure() {
+    var quality=(ObservableImpl)observable(SemanticType.QUALITY,false);quality.setDescriptionType(Contextualization.QUANTIFICATION);quality.setOptional(true);
+    assertEquals(Dataflow.ResolutionOutcome.NO_MODEL,ResolverService.unresolvedOutcome(quality,true,List.of()).getResolutionOutcome());
+    quality.setOptional(false);
+    assertEquals(Dataflow.ResolutionOutcome.FAILED,ResolverService.unresolvedOutcome(quality,true,List.of()).getResolutionOutcome());
+    quality.setOptional(true);
+    assertEquals(Dataflow.ResolutionOutcome.FAILED,ResolverService.unresolvedOutcome(quality,false,List.of()).getResolutionOutcome());
+    assertEquals(Dataflow.ResolutionOutcome.FAILED,ResolverService.unresolvedOutcome(quality,true,List.of(org.integratedmodelling.klab.api.services.runtime.Notification.error("admission failed"))).getResolutionOutcome());
+  }
+
 }

@@ -61,6 +61,17 @@ public interface ContextScope extends SessionScope {
    */
   DigitalTwin.Transaction getCurrentTransaction();
 
+  /** Completed expansion inventories for the current target; empty closure differs from optional absence. */
+  default java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> getDependencyFamilies(Observation modeledObservation) {
+    throw new UnsupportedOperationException("Dependency family views require an execution context");
+  }
+
+  /** Transaction-aware prerequisite inputs, in concrete branch order, for one exact family. */
+  default java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input> getDependencyInputs(Observation modeledObservation, String familyId) {
+    throw new UnsupportedOperationException("Dependency family views require an execution context");
+  }
+
+
   /**
    * Return the observer for this context. This should normally not be null even if the context is
    * not focused on an observation except at context initialization; the system should provide a
@@ -115,20 +126,29 @@ public interface ContextScope extends SessionScope {
   }
 
   /**
-   * Return all the known observation perspectives for the passed observable. These are the
-   * different observations of the same observable made by different observers. The observer in the
-   * scope and in the passed observable will be ignored when matching.
+   * Enumerate existing observations visible as direct children at this scope's knowledge-graph
+   * insertion point (the focused observation, or the digital-twin root). Their canonical observable
+   * semantics must be identical to the query except for the {@code observed as} restriction.
+   * Every other clause and observable representation constraint remains significant; subtype
+   * compatibility is insufficient. Absolute observations are included. Scope/session observer
+   * selection does not filter or rank this enumeration.
    *
-   * @param observable
-   * @param <T>
-   * @return zero or more observations of the same observable. If > 1, the resulting observations
-   *     are guaranteed to have different observers.
+   * <p>All matching records, supports and occurrences are retained, including multiple observations
+   * with the same semantic observer or actual provenance Agent. No grouping, composition, model
+   * resolution or discovery is performed. This uses the ordinary existing-observation enumeration,
+   * not {@link #getObservation(Observation)}'s special unresolved transaction lookup. Qualities are
+   * the primary use case; substantial observations are currently permitted.
+   *
+   * @param observable the full observable whose observer-neutral semantics must match
+   * @param <T> observation result convention; no observation is converted
+   * @return all matching existing observations, possibly empty
    */
   <T extends Observation> Collection<T> getPerspectives(Observable observable);
 
   /**
    * Return the observer for the passed observation, or null. The observer of a dependent
-   * observation can be inherited from its context observation if not specified directly.
+   * observation can use the effective selection inherited at creation. Historical absence of a
+   * recorded selection must not be guessed from its parent or the current scope's default.
    *
    * @param observation
    * @return
@@ -422,6 +442,11 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   String getTransactionId();
+
+  /** Background decision responsible for this request, or null for ordinary user work. */
+  default org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause getConsequenceCause() {
+    return null;
+  }
 
   /**
    * Obtain the properly formatted scope token for the {@link

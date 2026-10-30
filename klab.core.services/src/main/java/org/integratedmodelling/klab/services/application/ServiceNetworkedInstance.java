@@ -79,6 +79,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @ComponentScan(
     basePackages = {
       "org.integratedmodelling.klab.services.application.security",
+      "org.integratedmodelling.klab.services.application.ui",
       "org.integratedmodelling.klab.services.messaging",
       "org.integratedmodelling.klab.services.application.controllers"
     })
@@ -133,10 +134,14 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     var authentication = Authentication.INSTANCE.getLastEngineAuthenticationResponse();
     if (authentication != null && authentication.getHub() != null) {
       var hub = authentication.getHub();
-      var url = hub.getUrls() == null ? null : hub.getUrls().stream()
-          .filter(Objects::nonNull)
-          .filter(candidate -> candidate.regionMatches(true, 0, "https://", 0, 8))
-          .findFirst().orElse(null);
+      var url =
+          hub.getUrls() == null
+              ? null
+              : hub.getUrls().stream()
+                  .filter(Objects::nonNull)
+                  .filter(candidate -> candidate.regionMatches(true, 0, "https://", 0, 8))
+                  .findFirst()
+                  .orElse(null);
       webAuthentication.configureHub(url, hub.getId());
     }
     return identity;
@@ -174,6 +179,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
   public static boolean start(
       Class<? extends ServiceNetworkedInstance<?>> cls, ServiceStartupOptions options) {
 
+    options.prepareDataRoot();
     File logDirectory = BaseService.getConfigurationSubdirectory(options, "logs");
     File logFile =
         new File(

@@ -49,7 +49,8 @@ public class KlabJobController {
   }
 
   @Operation(
-      summary = "Get a job result", description = "Return the completed textual result of a job")
+      summary = "Get a job result",
+      description = "Return the completed textual result of a job")
   @GetMapping(ServicesAPI.JOBS.RETRIEVE)
   public String retrieveJob(@PathVariable(name = "id") long id, Principal principal)
       throws Throwable {

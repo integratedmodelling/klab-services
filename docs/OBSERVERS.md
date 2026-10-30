@@ -296,3 +296,25 @@ connection configuration. The client forwards new-twin configuration notificatio
 notification channel, as it already does when connecting to an existing twin.
 
 Dimensionless geometry encoding is `1` for SCALAR, `*` for UNIVERSAL, and `X` for EMPTY. Scalar and universal are both nonempty. Geometry and runtime Scale parsing/encoding preserve these distinctions.
+
+### Observer selection during accepted semantic evaluation
+
+A Reasoner call pins its accepted generation, then materializes the request's selected observer
+before acquiring that generation's monitor. It rejects publication or closure during hydration,
+while waiting for the monitor, or during evaluation. Evaluation uses a detached, per-call observer snapshot whose
+Concept is rebound to that generation. It does not perform a lazy Runtime graph lookup while
+holding the monitor: graph materialization can itself need Reasoner services.
+
+Derived request scopes retain that observer policy; a root scope retains its own policy.
+Explicit `withObserver(null)` or `withObserver(agent)` creates a separate policy branch.
+An identical numeric/URN observer constraint is redundant. A named constraint takes precedence
+over an inherited numeric default, as in ordinary ContextScope selection. Selecting a different
+observer by ID or URN must happen before semantic evaluation; a leased semantic scope rejects
+that reselection rather than performing remote I/O under the semantic monitor. This restriction
+is internal to accepted semantic evaluation and does not change ContextScope's public methods.
+
+`AcceptedSemanticObserverScopeTest` checks an actual semantic invocation's cross-thread callback,
+publication/closure while waiting for the monitor, typed observer metadata transport, request/root
+and derived scope isolation, selector precedence, snapshot refresh on the next call and rebinding
+to each accepted actor. The snapshot records request-time eligibility; the Runtime still validates
+durable observer eligibility and execution-time witnesses before committing effects.

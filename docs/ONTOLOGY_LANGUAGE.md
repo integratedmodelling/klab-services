@@ -1,5 +1,19 @@
 # Worldview ontology language guide
 
+## Project placement
+
+In this release, `.kwv` ontologies belong only to worldview-defining projects:
+the owning project's manifest must have a nonblank `definedWorldview`. Adopting
+an existing worldview does not make an ordinary project a worldview definition.
+Use `.kim` namespaces for models in ordinary projects. Unsupported `.kwv` files
+remain on disk and receive an `ONTOLOGY_PROJECT_REQUIRES_WORLDVIEW` error bound
+to the document; retrying synchronization cannot admit them. Duplicate ontology
+URNs also require correction rather than selecting one physical file.
+
+This rule does not add user publication permissions or a local/remote reasoner
+policy. Project-isolated semantic environments remain a deferred design, described
+in [the staged-validation engineering note](STAGED_WORLDVIEW_VALIDATION.md#deferred-project-semantic-environments).
+
 The [reasoner documentation](REASONING.md) covers semantic APIs, knowledge loading and
 [document validation after synchronization](REASONING.md#ontology-synchronization-boundary).
 
@@ -80,8 +94,7 @@ process WaterFlow
 
 volume WaterVolume
     "A volume of water associated with a hydrological subject."
-    is imod:Volume
-    within earth:Region
+    is imod:Volume of earth:Region
 ;
 
 process Runoff
@@ -230,6 +243,39 @@ the active language and service implementation.
 Types are observational commitments, not cosmetic labels. They influence what an observation is,
 how it can be contextualized, and which semantic operators apply.
 
+## Relationship nature and orientation
+
+A relationship has two independent semantic axes. Its nature is `structural` or
+`functional`; its orientation is `directed relationship` (ordered source and target)
+or `bond` (unordered participants). Plain `relationship` does not select either axis.
+Functional does not mean an OWL functional property, and a bond does not assert
+transitivity or create a general symmetric property axiom.
+
+An abstract declaration may leave either axis unspecified. A descendant inherits
+settled choices and may fill an unspecified choice; repeating the same choice is
+legal, contradicting an inherited choice is an error even on an abstract descendant.
+A concrete effective relationship must have both axes determined. Omission never
+defaults to directed or bond. Independent intersection parents combine constraints;
+union parents supply only choices shared by every alternative. An alias cannot
+refine its canonical target by adding a previously unspecified choice.
+
+```kim
+abstract relationship Connection;
+abstract functional relationship Interaction is Connection;
+functional directed relationship FeedingConnection is Interaction;
+structural bond Association is Connection;
+```
+
+These are schematic declarations illustrating the axes, not production ecology
+terms. `structural relationship Incomplete;` is invalid because its concrete
+orientation is unspecified. A bond descendant of a directed relationship is invalid.
+Raw authored choices remain distinct from inherited effective choices through API
+and workspace transport. Exported OWL class annotations preserve both; known nature
+also uses the existing ODO structural/functional relationship class. No ODO release
+or core pin change is required by these annotations. Runtime connection operations
+reject unknown or conflicting effective axes; swapping bond participants preserves
+identity, whereas swapping directed endpoints changes their ordered meaning.
+
 ### 5.1. Substantials and occurrents
 
 | Declaration | Meaning |
@@ -239,7 +285,7 @@ how it can be contextualized, and which semantic operators apply.
 | `agent` | An agentive substantial; may be `deliberative`, `interactive`, or `reactive` |
 | `process` | An open-ended dynamic occurrence |
 | `event` | A bounded occurrence with temporal identity |
-| `relationship` | A directed relationship; normally `functional` or `structural` |
+| `relationship` | Neutral orientation; abstract roots may leave axes unspecified. Concrete effective axes must resolve. |
 | `bond` | A bond-like connection; normally `functional` or `structural` |
 
 ```kwv
@@ -251,7 +297,7 @@ process Infiltration;
 
 event Flood;
 
-functional relationship DrainsTo
+functional directed relationship DrainsTo
     links earth:Region to earth:WaterBody
 ;
 ```
@@ -261,8 +307,27 @@ require a qualifier for concrete declarations where the distinction matters.
 
 ### 5.2. Qualities and properties
 
-The generic declarations are `quality`, `class`, `quantity`, `ordering`, and `extent`. The grammar
-also provides property keywords whose physical behavior is known:
+The generic declarations are `quality`, `class`, `quantity`, `ordering`, and `extent`.
+
+The `quality` keyword inherits its specific quality type from a declared superclass or parent
+expression. For example, `quality X is ratio of Y to Z;` has the RATIO type of that expression,
+rather than losing its specialization to generic QUALITY. A further `quality W is X;` retains
+that specialization too. The parent expression and its operator ancestry are preserved.
+When no parent or specialized quality type is supplied, the declaration inherits `odo:Quality`.
+This abstract core class is also available through a worldview alias such as `imod:Quality`.
+Its abstractness does not automatically make a new child abstract: use the child's own `abstract`
+keyword for that independent constraint. Thus `abstract quality Heterogeneity;` remains abstract,
+while a generic-keyword child without that keyword does not acquire it merely from its parent.
+
+Core aliases to `odo:Ratio`, `odo:Numerosity`, and `odo:Proportion` refine the coarse `quantity`
+keyword to their existing specific semantic kinds. For example, `abstract quantity Ratio is core
+odo:Ratio;` and `quality NamedRatio is imod:Ratio;` retain RATIO rather than competing QUANTITY
+and RATIO kinds. Refinement follows the canonical target, not the alias's name, and preserves local
+abstractness and worldview interpretation. It adds neither a `ratio Name;` declaration keyword
+nor a denominator-free `ratio of X` operator. Named specialization alone does not infer units,
+dimensionlessness, or a numerical quotient.
+
+The grammar also provides property keywords whose physical behavior is known:
 
 | Extensive properties | Intensive properties |
 | --- | --- |
@@ -273,13 +338,11 @@ their support; intensive properties generally cannot be summed meaningfully.
 
 ```kwv
 volume RainfallVolume
-    is imod:Volume
-    within earth:Region
+    is imod:Volume of earth:Region
 ;
 
 temperature AtmosphericTemperature
-    is imod:Temperature
-    within earth:Location
+    is imod:Temperature of earth:Location
 ;
 ```
 
@@ -290,7 +353,7 @@ temperature AtmosphericTemperature
 | `attribute` | An accidental descriptive predicate; may be `deniable` or `rescaling` |
 | `identity` | A classificatory identity; may be `individual` |
 | `role` | A context-dependent role |
-| `realm` | A realm or broad contextual predicate |
+| `realm` | Requires the bearer to be within a spatial or conceptual realm |
 | `domain` | A worldview domain |
 
 ```kwv
@@ -307,6 +370,24 @@ role WaterSupplier
 
 `deniable attribute` records that negation can be represented meaningfully. The separate
 `deniable as` clause assigns an explicit negated alias.
+
+#### 5.3.1. Realm containment contract
+
+A realm requires the bearer to be within that realm, including when the realm is
+conceptual rather than spatial. It is not a mere qualification interchangeable
+with an `attribute`. On a dependent observable this concerns the effective bearer;
+on a substantial it concerns that substantial.
+
+Reference to a realm, provenance from it, or computation from observations in it
+does not establish within-realm membership. For example, deriving Elevation from
+crustal data does not justify a Crust realm on its Region bearer. Keep the scientific
+source relation separate from the bearer containment commitment.
+
+The language currently represents realms as semantic predicates with applicability
+and hierarchy constraints. This does not certify complete instance-level spatial
+or conceptual containment enforcement. Authors must state and justify the intended
+containment; validation reports must identify the evidence and the remaining gap.
+See [observable realm semantics](OBSERVABLES.md#21-realms-constrain-the-bearer-by-containment).
 
 ## 6. Concept references and observable expressions
 
@@ -343,8 +424,8 @@ effects next, children last—to keep reviews intelligible.
 
 ```kwv
 is <concept-ref> [within <concept-ref>]
-is core <concept-ref> [within <concept-ref>]
-equals <concept-ref> [within <concept-ref>]
+is core <concept-ref>
+equals <concept-ref>
 ```
 
 `is` declares specialization. `equals` declares an alias or semantic equivalence. `is core`
@@ -356,8 +437,7 @@ process Runoff
 ;
 
 temperature AirTemperature
-    is imod:Temperature
-    within earth:Atmosphere
+    is imod:Temperature of earth:Atmosphere
 ;
 
 abstract process Process
@@ -403,7 +483,7 @@ is especially important for attributes, roles, realms, and configurations.
 ### 7.5. `links ... to ...`
 
 ```kwv
-functional relationship DrainsTo
+functional directed relationship DrainsTo
     links earth:Region to earth:WaterBody
 ;
 ```
@@ -455,6 +535,22 @@ still apply. For example, process intensity can describe Erosion itself while El
 the Region that Erosion affects. See [OCCURRENCE.md](OCCURRENCE.md).
 
 ### 7.7. `emerges from` and `implies`
+
+Configuration `of` is an English-like shorthand for `emerges from`, using the same
+canonical trigger list in singleton declarations and the same OWL emergence property
+in nested expressions. It does not denote native inherency or application scope.
+Use `applies to` to name the application target; predicates and quality/process
+`of` retain their distinct effective-head contracts in [OBSERVABLES](OBSERVABLES.md#binary-of-native-inherency-and-applicability).
+Boolean parent alternatives retain scope; no branch becomes an unconditional trigger.
+
+
+An emergence trigger does not require a reverse description relation. For example,
+Terrain may `emerge from` Elevation without Elevation `describing` Terrain. The
+trigger must not by itself transfer Terrain's realm/bearer restrictions into the
+triggering quality. This preserves the distinction between a configuration that
+may be recognized after observations become available and what each observation
+describes. The declaration alone does not establish implemented or successfully
+executed post-commit runtime emergence; that needs separate runtime evidence.
 
 Both clauses accept contextualized expressions:
 
@@ -517,6 +613,23 @@ requires extent <concept-ref> [, ...]
 requires attribute <concept-ref> [, ...]
 ```
 
+For a dependent quality or process, `requires identity` targets the effective bearer.
+Preserve OR within a boolean clause and AND across independent inherited clauses.
+An abstract identity root is a category constraint: its abstractness alone does not
+make the dependent abstract, but the bearer's declared/inherited identities must
+prove the complete requirement. Possible overlap or a single qualifying subtype
+does not prove the general bearer qualifies. Explicit authored abstractness and
+concrete/authority identity fulfillment remain separate obligations. Native process
+identities are not reassigned to the bearer.
+
+For example, Height requiring `(Areal or Volumetric)` may have a nonabstract child
+whose Region bearer proves Areal. A Location bearer without either proof remains
+unresolved. A Region specializing Location satisfies a Location applicability bound;
+unknown membership and provably incompatible bearers must receive distinct diagnostics.
+These identity rules do not claim equivalent implementation for every other
+`requires` dimension. A realm requirement retains the containment contract above.
+See [identity requirements](IDENTITY_REQUIREMENTS.md) for boolean and witness rules.
+
 An authority requirement belongs to an identity concept, uses an uppercase local name, and
 requires a nonblank quoted provider `urn` in its configuration map:
 
@@ -542,7 +655,7 @@ abstract identity PrecipitationType
 ;
 ```
 
-A simple child may include a `within` specialization and description. Use a parenthesized full
+A supported subject/agent or event/process child may include a `within` observational-containment specialization and description. This does not assign a native bearer. Use a parenthesized full
 definition when a child needs its own annotations or clauses:
 
 ```kwv
@@ -712,3 +825,35 @@ Therefore:
 When adding or completing a construct, update the grammar, syntax adapter, public API model,
 visitor/validator, Reasoner translation, and real-file tests together. A clause is not operational
 merely because the parser accepts it.
+
+
+### Additive observational containment
+
+**Containment here is an observational contract, not spatial enclosure or physical
+parthood.** It declares which collective observation can realize an authored
+container/type relationship. For example, `Region contains Stream` permits the
+declared Stream collective, whose successful result may have zero members; it does
+not assert that any Stream exists, lies inside a polygon, or covers the Region.
+An unresolved or failed Stream discovery is not a successful empty result.
+
+Declarations may use `contains <type>[, <type> ...]` or
+`contained into <type>[, <type> ...]`, including nested concept definitions.
+`thing Region contains earth:Stream;` and
+`thing Stream contained into earth:Region;` illustrate the two directions; they
+normalize to the same container-to-contained pair. These examples are alternatives,
+not instructions to redeclare existing concepts. Existing reference-order and
+namespace rules still apply.
+
+`Child is Parent within Container` and nested `Child within Container` are shorthand
+for the same container-to-child contract, while retaining structural inheritance.
+They no longer supply `declaredInherent`; explicit native bearers use `of`.
+The supported endpoint-family checks apply equally to the shorthand. In particular,
+legacy quality-within-subject or process-within-subject declarations require explicit
+migration rather than silent reinterpretation as an accepted containment relation.
+
+The single canonical property is `odo:observationallyContains`. The declaration is
+additive and has no individual-member existential obligation, exhaustive type bound,
+inherency, physical-part, geometry, coverage or generic transitivity consequence.
+See [the observable contract](OBSERVABLES.md#observational-containment-declarations)
+for supported endpoint families, successful empty collectives, OWL serialization,
+and the distinction between implemented declaration support and planned execution.

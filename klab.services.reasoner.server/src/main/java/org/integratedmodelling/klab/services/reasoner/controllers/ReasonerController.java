@@ -51,6 +51,17 @@ public class ReasonerController {
         "Authority configuration requires an authorized scope");
   }
 
+  @Operation(summary = "Certify the authority dependency closure of exact semantic obligations")
+  @PostMapping(ServicesAPI.REASONER.SEMANTIC_DEPENDENCIES)
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
+      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request,
+      Principal principal) {
+    if(principal instanceof EngineAuthorization authorization)
+      return reasoner.klabService().semanticDependencies(request,authorization.getScope());
+    throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
+        "Semantic dependency certification requires an authorized scope");
+  }
+
   @Operation(
       summary = "Validate document semantics",
       description = "Return source-bound diagnostics for a parsed document snapshot")
@@ -95,15 +106,19 @@ public class ReasonerController {
     throw new IllegalArgumentException("Semantic construction requires an authorized scope");
   }
 
+  private static Concept baseConcept(Semantics value) {
+    return value instanceof Concept concept?concept:value.asConcept();
+  }
+
   private static void requireArguments(
-      Concept[] arguments, int minimum, int maximum, String operation) {
+      Semantics[] arguments, int minimum, int maximum, String operation) {
     if (arguments == null || arguments.length < minimum || arguments.length > maximum) {
       String expected = minimum == maximum ? Integer.toString(minimum) : minimum + " to " + maximum;
       throw new IllegalArgumentException(
           operation + " requires " + expected + " concept argument(s)");
     }
     int i = 1;
-    for (Concept argument : arguments) {
+    for (Semantics argument : arguments) {
       if (argument == null && i < minimum) {
         throw new IllegalArgumentException(operation + " does not accept null concepts");
       }
@@ -137,10 +152,7 @@ public class ReasonerController {
 
       var scope = authorization.getScope();
       if (alternative) {
-        var syntax = scope.getService(ResourcesService.class).declareConcept(definition);
-        if (syntax != null) {
-          return SemanticsBuilder.create(syntax, reasoner.klabService(), scope).buildConcept();
-        }
+        return reasoner.klabService().resolveConceptWithBuilder(definition, scope);
       }
     }
     return reasoner.klabService().resolveConcept(definition);
@@ -217,6 +229,12 @@ public class ReasonerController {
         @ApiResponse(responseCode = "200", description = "Observable resolved successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid observable definition")
       })
+  @PostMapping(ServicesAPI.REASONER.DECLARE_OBSERVABLE)
+  public @ResponseBody Observable declareObservable(
+      @RequestBody org.integratedmodelling.klab.api.lang.kim.KimObservable syntax) {
+    return reasoner.klabService().declareObservable(syntax);
+  }
+
   @PostMapping(ServicesAPI.REASONER.RESOLVE_OBSERVABLE)
   public @ResponseBody Observable resolveObservable(
       @Parameter(description = "Observable definition") @RequestBody String definition) {
@@ -258,7 +276,7 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.MATCHES)
   public boolean matches(
-      @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] concepts) {
+      @Parameter(description = "Array of two semantic expressions to check") @RequestBody Semantics[] concepts) {
     requireArguments(concepts, 2, 2, "Matching");
     return reasoner.klabService().match(concepts[0], concepts[1]);
   }
@@ -405,6 +423,12 @@ public class ReasonerController {
     return reasoner.klabService().closure(target);
   }
 
+  @Operation(summary = "Get inferred closure restricted to the accepted authored vocabulary")
+  @PostMapping(ServicesAPI.REASONER.AUTHORED_CLOSURE)
+  public @ResponseBody Collection<Concept> authoredClosure(@RequestBody Concept target) {
+    return reasoner.klabService().authoredClosure(target);
+  }
+
   /** Get the core observable of a concept */
   @Operation(
       summary = "Get core observable",
@@ -445,16 +469,32 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.DISTANCE)
   public int assertedDistance(
-      @Parameter(description = "Array of concepts (2 or 3)") @RequestBody Concept[] concepts,
+      @Parameter(description = "Array of concepts (2 or 3)") @RequestBody Semantics[] concepts,
       @Parameter(description = "Whether to use asserted distance")
           @RequestParam(name = "asserted", defaultValue = "false")
-          boolean asserted) {
+          boolean asserted,
+      @RequestParam(name = "knowledgeRevision", defaultValue = "-1") long knowledgeRevision) {
     requireArguments(concepts, 2, 3, "Distance");
     return asserted
-        ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
-        : reasoner
-            .klabService()
-            .semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2]);
+        ? knowledgeRevision < 0
+            ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
+            : reasoner.klabService().assertedDistanceAtRevision(baseConcept(concepts[0]), baseConcept(concepts[1]), knowledgeRevision)
+        : knowledgeRevision < 0
+            ? reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2])
+            : reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2], knowledgeRevision);
+  }
+
+  @Operation(summary = "Compute distance against an admitted semantic generation")
+  @PostMapping(ServicesAPI.REASONER.VALIDATED_DISTANCE)
+  public int validatedDistance(
+      @RequestBody Semantics[] concepts,
+      @RequestParam(name = "asserted", defaultValue = "false") boolean asserted,
+      @RequestParam(name = "knowledgeRevision") long knowledgeRevision) {
+    if (knowledgeRevision < 0)
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST,
+          "Validated distance requires a nonnegative knowledge revision");
+    return assertedDistance(concepts, asserted, knowledgeRevision);
   }
 
   @Operation(
@@ -958,7 +998,7 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.COMPATIBLE)
   public boolean compatible(
-      @Parameter(description = "Array of two concepts to check") @RequestBody Concept[] args) {
+      @Parameter(description = "Array of two semantic expressions to check") @RequestBody Semantics[] args) {
     requireArguments(args, 2, 2, "Compatibility check");
     return reasoner.klabService().compatible(args[0], args[1]);
   }
@@ -974,7 +1014,7 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.CONTEXTUALLY_COMPATIBLE)
   public boolean contextuallyCompatible(
-      @Parameter(description = "Array of three concepts to check") @RequestBody Concept[] args) {
+      @Parameter(description = "Array of three semantic expressions to check") @RequestBody Semantics[] args) {
     requireArguments(args, 3, 3, "Contextual compatibility check");
     return reasoner.klabService().contextuallyCompatible(args[0], args[1], args[2]);
   }

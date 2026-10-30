@@ -1,0 +1,27 @@
+web app tests.ui.workflow
+    "Application workflow conformance fixture"
+    version 1.0
+    with properties {locale: "en", translations: "i18n/messages", stylesheets: ("light", "styles/workflow")}
+    using core.ui as ui
+
+action main:
+    (
+        ui.text(#READY) :class "status" #status
+        ui.input(#NAME :value "initial") #name
+        ui.button(#RUN):
+            event -> ui.set("status", ui.get("name"))
+        ui.button("Details"):
+            event -> self.details
+    ) :layout "column" :gap "12px" :class "workspace" #workspace
+
+@header
+action header:
+    ui.text(#TITLE)
+
+@footer
+action footer:
+    ui.text("Workflow testing")
+
+@dialog(title="#TITLE")
+action details:
+    ui.text("The application remains on the server.")

@@ -53,3 +53,60 @@ model occurrence of agriculture:Pollinator biology:Insect caused by earth:Weathe
 After writing and testing this model and proving that it explains its observable adequately, you can contribute that knowledge through a public project available on the network, adding a new piece to an ever-expanding semantic web that integrates science from all sources. You can also tie your model to a specific context of execution, so that it will not be used to explain the observable outside of some specific contexts and conditions (the model above, incarnating the results of an empirical local study, clearly calls for that). The principle behind all this is that scientists are experts at _something_, not _everything_, and usually their knowledge only applies to well-defined contexts. Using observables as the key to knowledge under a common _worldview_ allows us to codify and reuse any useful scientific result so that they can be found when needed, by humans or by k.LAB-enabled algorithms, enabling the fully integrated, interoperable science that is the motivation behind k.LAB.
 
 Where to go from here ---
+
+
+## Semantic admission and realm commitments
+
+Model bearer/dependency admission precedes semantic-distance ranking. Authoring
+templates may defer obligations; executable models must prove them in the bound
+modeled observation, with a matching accepted knowledge revision. Valid namespaces
+remain available while rejected namespaces retain diagnostics and await correction.
+See [model dependency validation](MODEL_DEPENDENCY_VALIDATION.md).
+
+A realm commits the bearer to being within its spatial or conceptual scope.
+Deriving a measurement from a realm or using data whose provenance concerns it
+does not prove that membership. Keep such source relationships separate; current
+realm predicate representation does not certify complete runtime containment
+enforcement. See [realm containment](ONTOLOGY_LANGUAGE.md#531-realm-containment-contract).
+
+## Pending model validation contracts (2026-10-20)
+
+The intended model-validation contract is broader than the implemented semantic
+checks. Bearer identity and dependency compatibility validation do not certify
+external data or the combined computation. The following requirements remain
+pending; this section records intent and does not assert that they are implemented.
+
+### Resource data types versus declared semantics — pending
+
+A resource's produced data type must be checked against the semantics and artifact
+kind declared by the model: for example numeric measurements versus concept-valued
+classifications, values/units/ranges, and the intended output target. The scope of
+such checking, adapter-provided guarantees and permitted conversions are not yet
+specified. Existing checks for some mapping targets are partial and do not constitute
+this resource-to-semantics guarantee.
+
+### Multiple external sources and contextualizers — pending
+
+When a model declares more than one resource URN, more than one `using`
+contextualizer, or both, validation must check the computational path as a whole,
+including intermediate inputs and outputs and the final modeled observation.
+Individually valid sources do not establish that their combination is valid.
+No default pipeline, fallback, merge or execution ordering is established here.
+
+The smallest decisions needed before implementing these checks are:
+
+1. **Composition:** do multiple URNs/contextualizers form an ordered pipeline,
+   parallel inputs, alternatives/fallbacks, or an explicit combination? Which syntax
+   selects the operation, and what determines order and output-target assignment?
+2. **Contracts:** where are each source/contextualizer's required inputs and produced
+   outputs declared, including artifact/value type, semantic type, units, multiplicity,
+   spatial/temporal support and missing-data behavior? Who owns and validates these
+   declarations, including intermediate outputs?
+3. **Conversions:** which conversions may be implicit, which must be authored, and
+   which must fail (including units, numeric/category mappings, resampling and lossy
+   conversions)? What evidence makes a conversion valid?
+
+Until those contracts are settled and implemented, semantic model admission must
+not be described as validation of resource result types or of a composed executable
+pipeline. These requirements do not authorize silently choosing a composition rule
+or adding speculative conversions.

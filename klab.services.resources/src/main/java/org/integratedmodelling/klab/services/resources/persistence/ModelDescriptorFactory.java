@@ -35,6 +35,7 @@ final class ModelDescriptorFactory {
     this.resourceService = resourceService;
   }
   public Collection<ModelReference> inferModels(KimModel model, Scope monitor) {
+    org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(model, monitor);
 
     List<ModelReference> ret = new ArrayList<>();
 
@@ -51,6 +52,13 @@ final class ModelDescriptorFactory {
             .resolveObservable(model.getObservables().getFirst().getUrn());
 
     ret.addAll(getModelDescriptors(model, monitor));
+    // Resolve every output and dependency before assigning any descriptor's visibility.
+    boolean subjective = java.util.stream.Stream.concat(
+        model.getObservables().stream(), model.getDependencies().stream()).anyMatch(o -> {
+          if (org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(o)) return true;
+          var resolved = monitor.getService(Reasoner.class).resolveObservable(o.getUrn());
+          return resolved != null && resolved.is(SemanticType.SUBJECTIVE);
+        });
 
     if (!ret.isEmpty()) {
 
@@ -86,11 +94,12 @@ final class ModelDescriptorFactory {
           Concept context = monitor.getService(Reasoner.class).inherent(type);
           if (context == null
               || !monitor.getService(Reasoner.class).is(context, mainObservable.getSemantics())) {
-            type = observable.builder(monitor).of(mainObservable.getSemantics()).buildConcept();
+            observable = observable.builder(monitor).of(mainObservable.getSemantics()).buildObservable();
+            type = observable.getSemantics();
           }
         }
         ModelReference m = ret.get(0).copy();
-        m.setObservable(type.getUrn());
+        m.setObservable(observable.getUrn());
         m.setObservableConcept(type);
         m.setObservationType(observable.getContextualization().name());
         m.setDereifyingAttribute(attr.getFormalName());
@@ -106,6 +115,10 @@ final class ModelDescriptorFactory {
       }
     }
 
+    if (subjective) {
+      for (var descriptor : ret) descriptor.setScope(
+          org.integratedmodelling.klab.api.lang.kim.KlabStatement.Scope.PRIVATE);
+    }
     return ret;
   }
 

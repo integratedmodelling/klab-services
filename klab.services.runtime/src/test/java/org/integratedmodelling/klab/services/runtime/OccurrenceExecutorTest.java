@@ -134,6 +134,8 @@ class OccurrenceExecutorTest {
           ? SemanticType.PROCESS : SemanticType.EVENT, 100);
       if (role == Actuator.ExecutionRole.EVENT_INSTANTIATOR)
         ((ConceptImpl) process.getObservable().getSemantics()).setCollective(true);
+      when(scope.executing(any(org.integratedmodelling.klab.api.provenance.Activity.class),eq(process))).thenReturn(scope);
+      when(scope.getCurrentTransaction()).thenReturn(mock(DigitalTwin.Transaction.class));
       var input = observation("elevation", SemanticType.QUALITY, 101);
       when(scope.getObservation(100)).thenReturn(process);
       when(scope.getObservation(101)).thenReturn(input);
@@ -179,6 +181,8 @@ class OccurrenceExecutorTest {
     var twin = mock(DigitalTwin.class);
     when(scope.getDigitalTwin()).thenReturn(twin);
     var process = observation("rainfall", SemanticType.PROCESS, 100);
+    when(scope.executing(any(org.integratedmodelling.klab.api.provenance.Activity.class),eq(process))).thenReturn(scope);
+    var transaction=mock(DigitalTwin.Transaction.class);when(scope.getCurrentTransaction()).thenReturn(transaction);
     var bearer = observation("region", SemanticType.SUBJECT, 200);
     when(scope.getObservation(100)).thenReturn(process);
     when(scope.getContextObservation()).thenReturn(bearer);
@@ -196,7 +200,11 @@ class OccurrenceExecutorTest {
     var snapshot = Utils.Json.parseObject(Utils.Json.asString(CompiledDataflow.portableOccurrencePlan(plan)), Actuator.class);
     var executor = new CompiledDataflow(runtime, process, scope).restoreOccurrenceExecutor(snapshot);
     assertTrue(executor.run(process.getGeometry(), Scheduler.Event.initialization(), scope));
-    assertTrue(snapshot.getChildren().isEmpty());
+    assertTrue(snapshot.getChildren().isEmpty());    var initialization=org.mockito.ArgumentCaptor.forClass(org.integratedmodelling.klab.api.provenance.Activity.class);
+    verify(transaction).link(initialization.capture(),eq(process),eq(GraphModel.Relationship.CREATED));
+    assertEquals(org.integratedmodelling.klab.api.provenance.Activity.Type.INITIALIZATION,initialization.getValue().getType());
+    assertEquals(0L,((Number)initialization.getValue().getMetadata().get(org.integratedmodelling.klab.api.data.Metadata.IM_OBSERVER_SELECTION_ID)).longValue());
+    verify(transaction,never()).add(any());
     verify(runtime, never()).getComputationBuilder(any(), any(), any(), anyMap());
     verify(twin, never()).getStorageManager();
     verify(twin, never()).getScheduler();

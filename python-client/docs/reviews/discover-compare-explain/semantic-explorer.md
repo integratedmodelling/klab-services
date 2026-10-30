@@ -2,6 +2,11 @@
 
 ## Recommendation
 
+**30 October follow-up:** the [current review](semantic-explorer-final-20261030.md)
+records the local malformed-score fix, 1,167 passing offline tests and the new
+shipped authority/hierarchy functional suite. The suite has not run on Java;
+changes are local and unpublished. The recommendation remains blocked on evidence.
+
 **Needs contract/coordination evidence.** The bounded Python capability is
 implemented and locally tested, including the established 100% line/branch gate.
 It is suitable for continued local milestone integration, not final acceptance:

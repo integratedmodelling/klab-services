@@ -16,5 +16,4 @@ public class ServiceAuthenticationRequest extends AuthenticationRequest {
   public KlabService.Type getType() {
     return type;
   }
-
 }

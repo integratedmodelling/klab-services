@@ -1,0 +1,90 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] klab-services                                                      [pom]
+[INFO] Core API classes                                                   [jar]
+[INFO] 
+[INFO] ---------------< org.integratedmodelling:klab-services >----------------
+[INFO] Building klab-services 1.0.0-SNAPSHOT                              [1/2]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab-services ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\Ferd\git\klab-services
+[INFO] Storing buildNumber: 7ba326160a6983a6a7763e07c6d2c4a91dd78b7d at timestamp: 1791644537251
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- install:3.1.1:install (default-install) @ klab-services ---
+[INFO] Installing C:\Users\Ferd\git\klab-services\pom.xml to C:\Users\Ferd\.m2\repository\org\integratedmodelling\klab-services\1.0.0-SNAPSHOT\klab-services-1.0.0-SNAPSHOT.pom
+[INFO] 
+[INFO] ---------------< org.integratedmodelling:klab.core.api >----------------
+[INFO] Building Core API classes 1.0.0-SNAPSHOT                           [2/2]
+[INFO]   from klab.core.api\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab.core.api ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\Ferd\git\klab-services\klab.core.api
+[INFO] Storing buildNumber: 7ba326160a6983a6a7763e07c6d2c4a91dd78b7d at timestamp: 1791644538163
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab.core.api ---
+[INFO] Copying 5 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ klab.core.api ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 469 source files with javac [debug target 21] to target\classes
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Resource.java:[221,13] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Resource.java:[422,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/Data.java:[708,19] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/Data.java:[741,13] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/Data.java:[775,17] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/Data.java:[784,30] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/KnowledgeGraph.java:[518,9] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/mediation/classification/LookupTable.java:[57,16] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Expression.java:[44,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[528,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[535,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[542,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[553,16] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[563,11] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[581,11] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/ResourcesService.java:[399,31] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/runtime/extension/KlabFunction.java:[193,11] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/view/modeler/views/ContextInspector.java:[13,8] deprecated item is not annotated with @Deprecated
+[INFO] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/utils/Utils.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/utils/Utils.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/utils/Utils.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/Ferd/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/utils/Utils.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab.core.api ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ klab.core.api ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 13 source files with javac [debug target 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ klab.core.api ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.3.0:jar (default-jar) @ klab.core.api ---
+[INFO] Building jar: C:\Users\Ferd\git\klab-services\klab.core.api\target\klab.core.api-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- install:3.1.1:install (default-install) @ klab.core.api ---
+[INFO] Installing C:\Users\Ferd\git\klab-services\klab.core.api\pom.xml to C:\Users\Ferd\.m2\repository\org\integratedmodelling\klab.core.api\1.0.0-SNAPSHOT\klab.core.api-1.0.0-SNAPSHOT.pom
+[INFO] Installing C:\Users\Ferd\git\klab-services\klab.core.api\target\klab.core.api-1.0.0-SNAPSHOT.jar to C:\Users\Ferd\.m2\repository\org\integratedmodelling\klab.core.api\1.0.0-SNAPSHOT\klab.core.api-1.0.0-SNAPSHOT.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for klab-services 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] klab-services ...................................... SUCCESS [  1.834 s]
+[INFO] Core API classes ................................... SUCCESS [ 33.266 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  36.313 s
+[INFO] Finished at: 2026-10-10T16:02:51+01:00
+[INFO] ------------------------------------------------------------------------

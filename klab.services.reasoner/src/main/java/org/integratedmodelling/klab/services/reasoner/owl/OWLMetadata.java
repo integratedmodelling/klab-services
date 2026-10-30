@@ -62,6 +62,8 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
         "http://integratedmodelling.org/ks/klab.owl#baseDeclaration",
         CoreOntology.NS.BASE_DECLARATION);
     metadataVocabulary.put("http://integratedmodelling.org/odo#isAbstract", NS.IS_ABSTRACT);
+    metadataVocabulary.put(
+        "http://integratedmodelling.org/ks/klab.owl#negationOf", NS.IS_NEGATION_OF);
     metadataVocabulary.put("http://integratedmodelling.org/odo#isSubjective", NS.IS_SUBJECTIVE);
     metadataVocabulary.put("http://integratedmodelling.org/odo#unit", NS.SI_UNIT_PROPERTY);
     metadataVocabulary.put(

@@ -1,0 +1,6 @@
+private namespace staging.vxii.test.selection_missing
+    version 1.0;
+
+// Discovery is available; the required Appropriateness classifier is intentionally absent.
+private model klab:random:objects:polygons {fraction: 1, xdivs: 3, ydivs: 3}
+    as each earth:Region;

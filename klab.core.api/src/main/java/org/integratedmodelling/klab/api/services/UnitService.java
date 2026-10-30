@@ -22,6 +22,13 @@ public interface UnitService extends Service {
    */
   Unit getDefaultUnitFor(Concept concept);
 
+  /** Ordinary difference-unit derivative per SI second (affine offsets do not survive).
+   * Records TEMPORAL/INTENSIVE using Unit extent metadata and preserves other distributions.
+   * This does not contextualize, integrate values, or enable contextual conversion. */
+  default Unit temporalDerivative(Unit operand) {
+    throw new UnsupportedOperationException("Temporal derivative unit construction is unavailable");
+  }
+
   /**
    * Return the unit for meters.
    *

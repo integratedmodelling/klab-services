@@ -7,6 +7,12 @@ import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 
 public interface KimConceptStatement extends KlabStatement {
+  default org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature getDeclaredRelationshipNature() {
+    return org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED;
+  }
+  default org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation getDeclaredRelationshipOrientation() {
+    return org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED;
+  }
   /** Whether the declaration inherits its fundamental type from its is expression. */
   default boolean isGenericQuality() {
     return false;
@@ -14,8 +20,43 @@ public interface KimConceptStatement extends KlabStatement {
 
   record DeclarationClause(String kind, String source, int offset, int length) {}
 
+  /** Canonical container-to-contained declaration, independent of authored clause direction.
+   * Does not establish observed membership, inherency or an executable contextual route. */
+  record ObservationalContainment(KimConcept container, KimConcept contained) {}
+
+  default List<ObservationalContainment> getObservationalContainments() { return List.of(); }
+
   default List<DeclarationClause> getDeclarationClauses() {
     return List.of();
+  }
+
+  /** Local name introduced by {@code deniable as}, retained across bean transport. */
+  default String getDeniedAlias() { return null; }
+
+  /** Also accepts source-only beans produced before the typed alias field was available. */
+  default String deniedAlias() {
+    if (getDeniedAlias() != null) {
+      if (!getDeniedAlias().matches("[A-Z][a-zA-Z0-9_]*"))
+        throw new IllegalArgumentException("Invalid denial alias: " + getDeniedAlias());
+      return getDeniedAlias();
+    }
+    for (var clause : getDeclarationClauses()) {
+      if ("deniabilityClause".equals(clause.kind())) {
+        var matcher = java.util.regex.Pattern.compile(
+            "(?s)\\s*deniable(?:\\s+as\\s+([A-Z][a-zA-Z0-9_]*))?\\s*;?\\s*")
+            .matcher(clause.source().replaceAll("(?s)/\\*.*?\\*/|//[^\\r\\n]*", " "));
+        if (!matcher.matches())
+          throw new IllegalArgumentException("Invalid deniable as clause: " + clause.source());
+        return matcher.group(1);
+      }
+    }
+    return null;
+  }
+
+  /** Deniability may be a declaration modifier or a clause with an optional alias. */
+  default boolean deniable() {
+    return getDeniedAlias() != null || getType().contains(SemanticType.DENIABLE)
+        || getDeclarationClauses().stream().anyMatch(c -> "deniabilityClause".equals(c.kind()));
   }
 
   /** Source references, including references in clauses not yet compiled to OWL. */
@@ -29,13 +70,26 @@ public interface KimConceptStatement extends KlabStatement {
    * @author ferdinando.villa
    */
   enum DescriptionType {
+    /** One-way necessary characterization; never reverse sufficiency or computation. */
     DESCRIBES,
+    /** Nondecreasing within scope with other conditions fixed; plateaus allowed, no causality. */
     INCREASES_WITH,
+    /** Nonincreasing within scope with other conditions fixed; plateaus allowed, no causality. */
     DECREASES_WITH,
+    /** Imposes no value, truth or threshold; models assign values. */
     MARKS,
+    /** Does not imply an exclusive or exhaustive partition. */
     CLASSIFIES,
+    /** Numeric nonoverlap, contiguity and complete declared-range coverage, with one endpoint owner. */
     DISCRETIZES
   }
+
+  /**
+   * Explicit PhysicalDomain targets interpreted by this KnowledgeDomain declaration.
+   * This is authored linkage, not evidence inferred from an OWL existential. Language surface
+   * syntax must populate this field once its spelling is settled.
+   */
+  default List<KimConcept> getInterpretedPhysicalDomains() { return List.of(); }
 
   /**
    * Anything that "applies to" (including subject linked by relationships) gets this descriptor. If

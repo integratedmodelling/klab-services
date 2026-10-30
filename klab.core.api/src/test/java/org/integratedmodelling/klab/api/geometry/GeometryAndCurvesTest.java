@@ -12,6 +12,18 @@ import org.junit.jupiter.api.Test;
 
 class GeometryAndCurvesTest {
 
+  @Test void parameterSeparatorsRoundTripWithoutChangingShapeOrCellLayout() {
+    var original=Geometry.create("S2(3,1){proj=EPSG:4326,shape=EPSG:4326 POLYGON ((0 0&comma;0 1&comma;3 1&comma;3 0&comma;0 0)),label=a&eq;b&comma;c}");
+    String encoded=original.encode();
+    assertTrue(encoded.contains("&comma;"));assertTrue(encoded.contains("&eq;"));
+    var copy=Geometry.create(encoded);
+    assertEquals(original.dimension(Geometry.Dimension.Type.SPACE).getParameters(),
+        copy.dimension(Geometry.Dimension.Type.SPACE).getParameters());
+    assertEquals(List.of(3L,1L),copy.dimension(Geometry.Dimension.Type.SPACE).getShape());
+    assertEquals(3,copy.size());assertEquals(encoded,copy.encode());
+    assertEquals("[1.0 2.0]",org.integratedmodelling.klab.api.geometry.impl.GeometryImpl.encodeVal(new double[]{1,2}));
+  }
+
   @Test void universalAndScalarAreNonemptyAndRetainTheirEncoding() {
     assertFalse(Geometry.UNIVERSAL.isEmpty());
     assertEquals("*", Geometry.UNIVERSAL.encode());

@@ -176,6 +176,13 @@ public @interface Verb {
   String producesAgent() default "";
 
   /**
+   * An emitter may synchronously return a construction handle implementing this behavior while
+   * continuing to fire its ordinary event payloads. This is distinct from producesAgent, which
+   * describes the emitted values. The Java method must return a non-void handle immediately.
+   */
+  String returnsHandle() default "";
+
+  /**
    * The execution mode of this verb. This may not be passed if {@link #fires()} is set, which
    * implies EMITTER, or the method returns a value (which implies FUNCTION) or a {@link
    * java.util.concurrent.CompletableFuture} (which implies SUPPLIER).

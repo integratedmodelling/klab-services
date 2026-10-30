@@ -41,6 +41,7 @@ public class JavaLocalInstance extends LocalInstanceImpl {
           "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:"
               + getProduct().getType().getDebugPort());
     }
+    ret.addArguments(getAdditionalJvmArguments(product));
     ret.addArgument("-Dfile.encoding=UTF-8");
     if (getProduct().getType().isService()) {
       ret.addArgument("-Dserver-port=" + instancePort());

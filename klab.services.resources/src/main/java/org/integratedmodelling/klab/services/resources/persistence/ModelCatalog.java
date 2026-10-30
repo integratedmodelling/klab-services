@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.resources.persistence;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
@@ -17,6 +18,7 @@ public interface ModelCatalog extends AutoCloseable {
   long store(Object object, Scope scope);
   /** Infer before removing existing data. Document catalogs additionally publish atomically. */
   default void replaceNamespace(KimNamespace namespace, Scope scope) {
+    org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(namespace, scope);
     var descriptors = new java.util.ArrayList<ModelReference>();
     for (var statement : namespace.getStatements())
       if (statement instanceof KimModel model) descriptors.addAll(inferModels(model, scope));
@@ -36,7 +38,16 @@ public interface ModelCatalog extends AutoCloseable {
   List<ModelReference> queryModels(Observable observable,
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
       List<ResolutionConstraint> constraints, ContextScope scope);
+  /** Explicit coarse preparation discovery. Existing callers retain executable matching by default. */
+  Collection<ModelReference> query(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
+      List<ResolutionConstraint> constraints, ContextScope scope, ModelDiscoveryMode mode);
+  List<ModelReference> queryModels(Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
+      List<ResolutionConstraint> constraints, ContextScope scope, ModelDiscoveryMode mode);
   int clearNamespace(String namespace, Channel monitor);
+  /** Withdraw indexed models only. Authoring documents remain owned by the workspace. */
+  default void withholdNamespace(String namespace, Channel monitor) { clearNamespace(namespace, monitor); }
   void remove(String namespace, Channel monitor);
   int removeIfOlder(KimNamespace namespace, Channel monitor);
   long getNamespaceTimestamp(KimNamespace namespace);

@@ -36,6 +36,14 @@ public final class WorldviewAuthorityValidator {
           throw new IllegalArgumentException("Authority root must be a valid identity concept");
         var request = new Authority.ConfigurationRequest(worldview.getUrn(), name, root,
             statement.getAuthorityParameters());
+        for (var target : request.semanticBoundaries().values()) {
+          var boundary = worldview.allConceptStatements().stream()
+              .filter(s -> target.equals(s.getNamespace() + ":" + s.getUrn())).findFirst().orElse(null);
+          if (boundary == null || !boundary.getType().contains(SemanticType.IDENTITY)
+              || boundary.getType().contains(SemanticType.NOTHING)
+              || org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(boundary.getNotifications()))
+            throw new IllegalArgumentException("Semantic boundary must name a valid worldview identity: " + target);
+        }
         if (request.parameters().containsKey("codelists")) {
           if (!(request.parameters().get("codelists") instanceof Map<?, ?> lists))
             throw new IllegalArgumentException("codelists must map provider IDs to local namespaces");

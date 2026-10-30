@@ -41,6 +41,47 @@ class KimValueMappingValidatorTest {
         () -> KimValueMappingValidator.validate(discretization(range(null, 0.0, false), range(0.0, null, false))));
   }
 
+  @Test
+  void validatesCoverageAndEveryEndpointWithoutConstrainingClassifications() {
+    var partition = discretization(range(0.0, 5.0, false), range(5.0, 10.0, true));
+    assertDoesNotThrow(() -> KimValueMappingValidator.validateDiscretization(partition,
+        new NumericRangeImpl(0.0, 10.0, false, false)));
+    for (var extent : List.of(new NumericRangeImpl(-1.0, 10.0, false, false),
+        new NumericRangeImpl(0.0, 11.0, false, false)))
+      assertThrows(KlabValidationException.class,
+          () -> KimValueMappingValidator.validateDiscretization(partition, extent));
+    assertDoesNotThrow(() -> KimValueMappingValidator.validateDiscretization(partition,
+        new NumericRangeImpl(0.0, 10.0, true, false)));
+    assertThrows(KlabValidationException.class,
+        () -> KimValueMappingValidator.validateDiscretization(partition, null));
+    var gap = discretization(range(0.0, 4.0, false), range(5.0, 10.0, true));
+    assertThrows(KlabValidationException.class, () -> KimValueMappingValidator.validateDiscretization(gap,
+        new NumericRangeImpl(0.0, 10.0, false, false)));
+    ((KimClassificationImpl) gap).setDiscretization(false);
+    assertDoesNotThrow(() -> KimValueMappingValidator.validate(gap));
+    assertThrows(KlabValidationException.class,
+        () -> KimValueMappingValidator.validate(discretization(range(5.0, 5.0, true))));
+    assertThrows(KlabValidationException.class,
+        () -> KimValueMappingValidator.validate(discretization(range(Double.NaN, 5.0, false))));
+    var doubleExcluded = new KimClassifierImpl();
+    doubleExcluded.setIntervalMatch(new NumericRangeImpl(0.0, 5.0, false, true));
+    assertThrows(KlabValidationException.class, () -> KimValueMappingValidator.validate(
+        discretization(doubleExcluded, range(5.0, 10.0, true))));
+  }
+  @Test
+  void discretizationClipsToApplicabilityAndAllowsOverhangAndOutsideGaps() {
+    var first = new KimClassifierImpl();
+    first.setIntervalMatch(new NumericRangeImpl(-5.0, 5.0, false, true));
+    var partition = discretization(first, range(5.0, 15.0, false));
+    var applicability = new NumericRangeImpl(0.0, 10.0, false, false);
+    assertDoesNotThrow(() -> KimValueMappingValidator.validateDiscretization(partition, applicability));
+    var outsideGap = discretization(range(-20.0, -10.0, false), range(-5.0, 15.0, false));
+    assertDoesNotThrow(() -> KimValueMappingValidator.validateDiscretization(outsideGap, applicability));
+    var overlap = discretization(range(-5.0, 5.0, false), range(5.0, 15.0, false));
+    assertThrows(KlabValidationException.class, () -> KimValueMappingValidator.validateDiscretization(overlap, applicability));
+    var missingEndpoint = discretization(range(0.0, 15.0, true));
+    assertThrows(KlabValidationException.class, () -> KimValueMappingValidator.validateDiscretization(missingEndpoint, applicability));
+  }
   private static KimClassification discretization(KimClassifier... classifiers) {
     var ret = new KimClassificationImpl();
     ret.setDiscretization(true);

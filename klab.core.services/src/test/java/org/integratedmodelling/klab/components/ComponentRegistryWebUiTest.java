@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.components;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -28,6 +30,85 @@ import org.pf4j.PluginState;
 import org.pf4j.PluginWrapper;
 
 class ComponentRegistryWebUiTest {
+  @org.junit.jupiter.api.io.TempDir java.nio.file.Path directory;
+
+  @Test
+  void retainedToolkitBlocksArchiveReplacementBeforeCopying() throws Exception {
+    var fixture = fixture();
+    when(fixture.wrapper().getPluginState()).thenReturn(PluginState.STARTED);
+    when(fixture.component().uiToolkits())
+        .thenReturn(
+            List.of(
+                new org.integratedmodelling.klab.api.view.application.UiToolkitDescriptor(
+                    "test-kit",
+                    1,
+                    java.util.Set.of("web"),
+                    java.util.Set.of("container"),
+                    java.util.Set.of("column"),
+                    "catalog-browser")));
+    var pluginFolder = java.nio.file.Files.createDirectory(directory.resolve("plugins"));
+    var pluginPath = ComponentRegistry.class.getDeclaredField("pluginPath");
+    pluginPath.setAccessible(true);
+    pluginPath.set(fixture.registry(), pluginFolder.toFile());
+    var source = directory.resolve("replacement.jar");
+    var manifest = new java.util.jar.Manifest();
+    var attributes = manifest.getMainAttributes();
+    attributes.putValue("Manifest-Version", "1.0");
+    attributes.putValue("Plugin-Id", "test.component");
+    attributes.putValue("Plugin-Version", "2.0.0");
+    try (var jar =
+        new java.util.jar.JarOutputStream(java.nio.file.Files.newOutputStream(source), manifest)) {}
+    try (var lease = fixture.registry().acquireUiToolkit("test-kit")) {
+      assertThrows(
+          IllegalStateException.class,
+          () -> fixture.registry().installComponent(source.toFile(), null));
+      assertFalse(java.nio.file.Files.exists(pluginFolder.resolve("replacement.jar")));
+      assertTrue(java.nio.file.Files.exists(source));
+    }
+  }
+
+  @Test
+  void toolkitSelectionPinsComponentVersionAndRejectsDuplicateOrUndeclaredModules()
+      throws Exception {
+    var fixture = fixture();
+    when(fixture.wrapper().getPluginState()).thenReturn(PluginState.STARTED);
+    var descriptor =
+        new org.integratedmodelling.klab.api.view.application.UiToolkitDescriptor(
+            "test-kit",
+            1,
+            java.util.Set.of("web"),
+            java.util.Set.of("container", "text"),
+            java.util.Set.of("column"),
+            "catalog-browser");
+    when(fixture.component().uiToolkits()).thenReturn(List.of(descriptor));
+    var one = fixture.registry().acquireUiToolkit("test-kit");
+    var two = fixture.registry().acquireUiToolkit("test-kit");
+    assertEquals(descriptor, one.descriptor());
+    assertEquals("public/ui/components/test.component/1.0.0/catalog.js", one.moduleUrl());
+    assertThrows(
+        IllegalStateException.class,
+        () -> fixture.registry().unloadComponent("test.component", Version.create("1.0.0")));
+    one.close();
+    one.close();
+    assertThrows(
+        IllegalStateException.class,
+        () -> fixture.registry().removeComponent("test.component", Version.create("1.0.0")));
+    two.close();
+    var counts = ComponentRegistry.class.getDeclaredField("uiToolkitUsers");
+    counts.setAccessible(true);
+    assertTrue(((Map<?, ?>) counts.get(fixture.registry())).isEmpty());
+    when(fixture.component().uiToolkits()).thenReturn(List.of(descriptor, descriptor));
+    assertThrows(
+        IllegalArgumentException.class, () -> fixture.registry().acquireUiToolkit("test-kit"));
+    when(fixture.component().webUiModules()).thenReturn(Map.of());
+    when(fixture.component().uiToolkits()).thenReturn(List.of(descriptor));
+    assertThrows(
+        IllegalArgumentException.class, () -> fixture.registry().acquireUiToolkit("test-kit"));
+    when(fixture.component().uiToolkits()).thenReturn(List.of());
+    assertEquals("quasar", fixture.registry().acquireUiToolkit("quasar").descriptor().id());
+    assertThrows(
+        IllegalArgumentException.class, () -> fixture.registry().acquireUiToolkit("missing"));
+  }
 
   @Test
   void installedComponentContributesModulesPanelsAndPages() throws Exception {
@@ -63,10 +144,8 @@ class ComponentRegistryWebUiTest {
     when(loader.getResourceAsStream("META-INF/klab/webui/catalog.js"))
         .thenReturn(new ByteArrayInputStream(source));
 
-    var module =
-        fixture.registry().getWebUiResource("test.component", "1.0.0", "catalog.js");
-    var undeclared =
-        fixture.registry().getWebUiResource("test.component", "1.0.0", "other.js");
+    var module = fixture.registry().getWebUiResource("test.component", "1.0.0", "catalog.js");
+    var undeclared = fixture.registry().getWebUiResource("test.component", "1.0.0", "other.js");
 
     assertTrue(module.isPresent());
     assertArrayEquals(source, module.get().content());
@@ -90,8 +169,7 @@ class ComponentRegistryWebUiTest {
     var manager = mock(PluginManager.class);
     when(manager.getPlugins()).thenReturn(List.of(wrapper));
     when(manager.getPlugin("test.component")).thenReturn(wrapper);
-    var registry =
-        new ComponentRegistry(service, null, null, List.of(descriptor(version)));
+    var registry = new ComponentRegistry(service, null, null, List.of(descriptor(version)));
     Field managerField = ComponentRegistry.class.getDeclaredField("componentManager");
     managerField.setAccessible(true);
     managerField.set(registry, manager);

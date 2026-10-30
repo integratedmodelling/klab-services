@@ -28,17 +28,32 @@ public final class CachedAuthority implements Authority {
 
   public CachedAuthority(Authority source, Path root) { this(source, root, Clock.systemUTC()); }
   CachedAuthority(Authority source, Path root, Clock clock) {
+    this(source, root, clock, implementationRevision(source));
+  }
+  /** Owned in-memory archives already have a verified implementation digest. */
+  CachedAuthority(Authority source, Path root, Clock clock, String revision) {
     this.source = Objects.requireNonNull(source);
     this.root = Objects.requireNonNull(root);
     this.clock = clock;
-    this.revision = implementationRevision(source);
+    this.revision = Objects.requireNonNull(revision);
   }
   public boolean wraps(Authority provider) { return source == provider; }
   @Override public String getUrn() { return source.getUrn(); }
   @Override public Capabilities getCapabilities() { return source.getCapabilities(); }
   @Override public CachePolicy getCachePolicy() { return source.getCachePolicy(); }
+  @Override public Set<String> getSemanticBoundaries() { return source.getSemanticBoundaries(); }
   @Override public Map<String, Codelist> getCodelists() { return source.getCodelists(); }
   @Override public synchronized Map<String, Codelist> getCodelists(String id) { check(id); return source.getCodelists(providerId); }
+  @Override public synchronized Map<String, CodelistDefinition> getCodelistDefinitions(String id) {
+    check(id); return source.getCodelistDefinitions(providerId);
+  }
+
+  /** Export the exact live configured bridge without changing response-cache lifetimes. */
+  synchronized org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot configuredSnapshot(String id) {
+    check(id);
+    return source instanceof org.integratedmodelling.klab.api.services.SnapshottingAuthority snapshotting
+        ? snapshotting.captureConfiguration(providerId) : null;
+  }
 
   @Override public synchronized String configure(ConfigurationRequest request) {
     if (this.request != null) {
@@ -46,9 +61,9 @@ public final class CachedAuthority implements Authority {
       throw new IllegalArgumentException("A cached authority wrapper owns one bridge");
     }
     policy = Objects.requireNonNull(source.getCachePolicy(), "Authority cache policy is required");
-    String fingerprint = digest(canonical(List.of("authority-cache-v1", request.worldview(), request.name(),
+    String fingerprint = digest(canonical(List.of("authority-cache-v2", request.worldview(), request.name(),
         request.rootIdentity(), request.parameters(), getUrn(), revision, policy)));
-    String configured = source.configure(request);
+    String configured = source.configure(AuthorityBindings.providerRequest(request));
     if (configured == null || configured.isBlank()) return configured;
     this.request = request;
     providerId = configured;
@@ -70,9 +85,24 @@ public final class CachedAuthority implements Authority {
     }
   }
 
+  @Override public synchronized Subsumption subsumption(String id, String target, String candidate) {
+    check(id);
+    return source.subsumption(providerId, target, candidate);
+  }
+
+  @Override public synchronized SemanticDistance semanticDistance(String id, String target, String candidate) {
+    check(id);
+    return source.semanticDistance(providerId, target, candidate);
+  }
+
   @Override public synchronized Identity resolveIdentity(String id, String identity) {
     check(id);
-    return resolve(source, "", identity);
+    return resolve(source, "", identity, ResolutionMode.CONFIGURED);
+  }
+
+  @Override public synchronized Identity resolveIdentity(String id, String identity, ResolutionMode mode) {
+    check(id);
+    return resolve(source, "", identity, mode);
   }
 
   @Override public synchronized List<Identity> search(String query, String subAuthority, String id) {
@@ -90,15 +120,19 @@ public final class CachedAuthority implements Authority {
     return delegate == null ? null : new View(delegate, catalog);
   }
 
-  private Identity resolve(Authority provider, String view, String identity) {
-    String key = canonical(Arrays.asList("identity", view, identity));
+  private Identity resolve(Authority provider, String view, String identity, ResolutionMode mode) {
+    String operation = mode == ResolutionMode.FULL_HIERARCHY ? "identity-full" : "identity";
+    String key = canonical(Arrays.asList(operation, view, identity));
     var cached = readIdentity(key, policy.identitySeconds());
     if (cached != null) return cached;
-    var result = provider.resolveIdentity(providerId, identity);
+    var result = mode == ResolutionMode.CONFIGURED ? provider.resolveIdentity(providerId, identity)
+        : provider.resolveIdentity(providerId, identity, mode);
+    if (mode == ResolutionMode.FULL_HIERARCHY && result != null && result.getHierarchyStatus() == HierarchyStatus.DEFERRED)
+      throw new IllegalStateException("Authority returned deferred ancestry for a full lookup");
     if (clean(result)) {
       cache.put(key, JSON.valueToTree(StoredIdentity.of(result)), policy.identitySeconds());
       // A canonical synonym ID must not force a second lookup after a restart.
-      if (!Objects.equals(identity, result.getId())) cache.put(canonical(Arrays.asList("identity", view, result.getId())),
+      if (!Objects.equals(identity, result.getId())) cache.put(canonical(Arrays.asList(operation, view, result.getId())),
           JSON.valueToTree(StoredIdentity.of(result)), policy.identitySeconds());
     }
     return result;
@@ -187,15 +221,27 @@ public final class CachedAuthority implements Authority {
   /** Cache DTO independent of plug-in classes and classloaders. Diagnostics are never persisted. */
   public record StoredIdentity(String id, String conceptName, String authorityName, String baseIdentity,
       List<String> parentIds, List<String> parentRelationship, String description, String label,
-      float score, String locator, Map<String, java.net.URL> documentation) implements Identity {
+      float score, String locator, Map<String, java.net.URL> documentation,
+      Set<String> semanticBoundaries, HierarchyStatus hierarchyStatus) implements Identity {
+    public StoredIdentity(String id, String conceptName, String authorityName, String baseIdentity,
+        List<String> parentIds, List<String> parentRelationship, String description, String label,
+        float score, String locator, Map<String, java.net.URL> documentation) {
+      this(id, conceptName, authorityName, baseIdentity, parentIds, parentRelationship, description,
+          label, score, locator, documentation, Set.of(), HierarchyStatus.COMPLETE);
+    }
     public StoredIdentity {
       parentIds = parentIds == null ? List.of() : List.copyOf(parentIds);
       parentRelationship = parentRelationship == null ? List.of() : List.copyOf(parentRelationship);
       documentation = documentation == null ? Map.of() : Map.copyOf(documentation);
+      semanticBoundaries = semanticBoundaries == null ? Set.of() : Set.copyOf(semanticBoundaries);
+      hierarchyStatus = hierarchyStatus == null ? HierarchyStatus.COMPLETE : hierarchyStatus;
     }
     static StoredIdentity of(Identity i) { return new StoredIdentity(i.getId(), i.getConceptName(),
         i.getAuthorityName(), i.getBaseIdentity(), i.getParentIds(), i.getParentRelationship(),
-        i.getDescription(), i.getLabel(), i.getScore(), i.getLocator(), i.getDocumentation()); }
+        i.getDescription(), i.getLabel(), i.getScore(), i.getLocator(), i.getDocumentation(),
+        i.getSemanticBoundaries(), i.getHierarchyStatus()); }
+    @Override public Set<String> getSemanticBoundaries() { return semanticBoundaries; }
+    @Override public HierarchyStatus getHierarchyStatus() { return hierarchyStatus; }
     @Override public String getId() { return id; }
     @Override public String getConceptName() { return conceptName; }
     @Override public String getAuthorityName() { return authorityName; }
@@ -218,12 +264,25 @@ public final class CachedAuthority implements Authority {
     @Override public String getUrn() { return delegate.getUrn(); }
     @Override public Capabilities getCapabilities() { return delegate.getCapabilities(); }
     @Override public CachePolicy getCachePolicy() { return delegate.getCachePolicy(); }
+    @Override public Set<String> getSemanticBoundaries() { return delegate.getSemanticBoundaries(); }
     @Override public Map<String, Codelist> getCodelists() { return delegate.getCodelists(); }
     @Override public Map<String, Codelist> getCodelists(String id) { check(id); return delegate.getCodelists(providerId); }
+    @Override public Map<String, CodelistDefinition> getCodelistDefinitions(String id) {
+      check(id); return delegate.getCodelistDefinitions(providerId);
+    }
     @Override public String configure(ConfigurationRequest request) { return CachedAuthority.this.configure(request); }
     @Override public void releaseConfiguration(String id) { CachedAuthority.this.releaseConfiguration(id); }
+    @Override public Subsumption subsumption(String id, String target, String candidate) {
+      synchronized (CachedAuthority.this) { check(id); return delegate.subsumption(providerId,target,candidate); }
+    }
+    @Override public SemanticDistance semanticDistance(String id, String target, String candidate) {
+      synchronized (CachedAuthority.this) { check(id); return delegate.semanticDistance(providerId,target,candidate); }
+    }
     @Override public Identity resolveIdentity(String id, String identity) {
-      synchronized (CachedAuthority.this) { check(id); return resolve(delegate, path, identity); }
+      synchronized (CachedAuthority.this) { check(id); return resolve(delegate, path, identity, ResolutionMode.CONFIGURED); }
+    }
+    @Override public Identity resolveIdentity(String id, String identity, ResolutionMode mode) {
+      synchronized (CachedAuthority.this) { check(id); return resolve(delegate, path, identity, mode); }
     }
     @Override public List<Identity> search(String query, String subAuthority, String id) {
       synchronized (CachedAuthority.this) { check(id); return CachedAuthority.this.search(delegate, path, query, subAuthority); }

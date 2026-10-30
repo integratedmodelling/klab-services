@@ -18,9 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * There is one job manager per session at service side. Jobs expire when the session is closed.
- */
+/** There is one job manager per session at service side. Jobs expire when the session is closed. */
 public class JobManager {
 
   private record Job(
@@ -54,9 +52,9 @@ public class JobManager {
               job.cancellationRequested().get()
                   ? new CancellationException("Job was cancelled")
                   : failure;
-          if (storedFailure == null && result == null) {
-            storedFailure = new KlabResourceAccessException("Job completed without a result");
-          }
+          // Result delivery is independent of logging, whose writers may themselves fail.
+          results.put(ret, Pair.of(result, storedFailure));
+          jobs.remove(ret, job);
           if (storedFailure instanceof CancellationException || task.isCancelled()) {
             Logging.INSTANCE.info("Job " + description + " was cancelled");
           } else if (storedFailure != null) {
@@ -65,8 +63,6 @@ public class JobManager {
           } else {
             Logging.INSTANCE.info("Job " + description + " " + completionDescription(result));
           }
-          results.put(ret, Pair.of(result, storedFailure));
-          jobs.remove(ret, job);
         });
     return ret;
   }
@@ -88,11 +84,14 @@ public class JobManager {
     if (result != null) {
       if (result.getSecond() instanceof CancellationException) {
         ret.setStatus(Scope.Status.INTERRUPTED);
+      } else if (result.getFirst() != null) {
+        ret.setStatus(Scope.Status.FINISHED);
       } else if (result.getSecond() != null) {
         ret.setStatus(Scope.Status.ABORTED);
         ret.setStackTrace(Utils.Exceptions.stackTrace(result.getSecond()));
       } else {
-        ret.setStatus(Scope.Status.FINISHED);
+        ret.setStatus(Scope.Status.ABORTED);
+        ret.setStackTrace("Job completed without returning a result");
       }
       return ret;
     }
@@ -103,17 +102,10 @@ public class JobManager {
         ret.setStatus(Scope.Status.INTERRUPTED);
         return ret;
       }
-      var task = job.task();
-      // most of these should never happen
-      if (task.isCompletedExceptionally()) {
-        ret.setStatus(Scope.Status.ABORTED);
-      } else if (task.isCancelled()) {
-        ret.setStatus(Scope.Status.INTERRUPTED);
-      } else if (task.isDone()) {
-        ret.setStatus(Scope.Status.FINISHED);
-      } else {
-        ret.setStatus(Scope.Status.WAITING);
-      }
+      // A future becomes done before its completion callbacks finish. Only the published
+      // result/failure envelope above makes terminal status safe for immediate retrieval.
+      // In particular, FINISHED here would let a poller fetch a result not yet in the cache.
+      ret.setStatus(Scope.Status.WAITING);
 
       return ret;
     }

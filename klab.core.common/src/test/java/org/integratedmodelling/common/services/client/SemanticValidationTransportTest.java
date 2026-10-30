@@ -127,4 +127,38 @@ class SemanticValidationTransportTest {
     assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
     assertFalse(response.valid()); assertTrue(response.getNotifications().isEmpty());
   }
+
+  @Test void actualContextAndConditionalSourceObligationsRoundTripAndBindTheReceipt() throws Exception {
+    var mapper=JacksonConfiguration.newObjectMapper();
+    var namespace=new KimNamespaceImpl();namespace.setUrn("context.models");namespace.setSourceCode("snapshot");
+    var request=SemanticValidationRequest.of(namespace,"1");request.setExecutableModels(true);
+    request.setExecutionContext("earth:TerrestrialRegion");
+    var transported=mapper.readValue(mapper.writeValueAsBytes(request),SemanticValidationRequest.class);
+    assertEquals("earth:TerrestrialRegion",transported.getExecutionContext());
+    var response=SemanticValidationResponse.forRequest(transported);response.setKnowledgeRevision(7);
+    response.getConditionalModelContexts().add(new SemanticValidationResponse.ConditionalModelContext(
+        "context.models.gradient",java.util.List.of("earth:TerrestrialRegion")));
+    response.getPendingModelContexts().add(new SemanticValidationResponse.PendingModelContext(
+        "context.models.gradient","earth:Region",java.util.List.of("geography:Elevation","geography:Slope")));
+    var receipt=mapper.readValue(mapper.writeValueAsBytes(response),SemanticValidationResponse.class);
+    assertTrue(receipt.matches(request,7));
+    assertEquals(response.getConditionalModelContexts(),receipt.getConditionalModelContexts());
+    assertEquals(response.getPendingModelContexts(),receipt.getPendingModelContexts());
+    request.setExecutionContext("earth:Region");assertFalse(receipt.matches(request,7));
+    request.setExecutionContext(null);assertFalse(receipt.matches(request,7));
+  }
+
+  @Test void canonicalUnitMetadataSurvivesInterfaceWorkspaceTransport() throws Exception {
+    var mapper=JacksonConfiguration.newObjectMapper();
+    var declaration=new KimConceptStatementImpl();declaration.setUrn("Gradient");
+    declaration.getMetadata().put("odo:unit","1");
+    var ontology=new KimOntologyImpl();ontology.setUrn("geography");ontology.getStatements().add(declaration);
+    var project=new org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl();
+    project.setUrn("imod");project.getOntologies().add(ontology);
+    var workspace=new org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl();
+    workspace.setUrn("im-main");workspace.getProjects().add(project);
+    var bytes=mapper.writerFor(org.integratedmodelling.klab.api.knowledge.organization.Workspace.class).writeValueAsBytes(workspace);
+    var copy=mapper.readValue(bytes,org.integratedmodelling.klab.api.knowledge.organization.Workspace.class);
+    assertEquals("1",copy.getProjects().iterator().next().getOntologies().iterator().next().getStatements().getFirst().getMetadata().get("odo:unit"));
+  }
 }

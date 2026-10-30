@@ -5,15 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Credential holder. Still basic and tentative, the key should be host+scheme as there should only be one per
- * such pair in a single-user environment. At the moment it does not support multiple rights for the same
- * hosts, but it should. It could also store an optional serviceId for client environments and a
- * {@link org.integratedmodelling.klab.api.authentication.ResourcePrivileges} object for access.
- *
- * In fact this could have a URN like credentials:/xxxx and use the same resource rights permissions as
- * the rest of the k.LAB assets.
- */
+/** A named credential set. Secret material is accepted on writes and resolved only inside a service. */
 public class ExternalAuthenticationCredentials {
 
     public final static String BASIC = "basic";
@@ -31,7 +23,12 @@ public class ExternalAuthenticationCredentials {
      * @param schema
      * @param key the unique key to the relevant credentials.
      */
-    public record CredentialInfo(String host, String description, String schema, String key) {
+    public record CredentialInfo(String host, String description, String schema, String key,
+                                 Map<String, String> parameters, List<String> configuredFields,
+                                 ResourcePrivileges privileges) {
+        public CredentialInfo(String host, String description, String schema, String key) {
+            this(host, description, schema, key, Map.of(), List.of(), ResourcePrivileges.empty());
+        }
     }
 
     /**
@@ -42,16 +39,27 @@ public class ExternalAuthenticationCredentials {
     static {
         parameterKeys = new HashMap<>();
         parameterKeys.put(BASIC, new String[]{"username", "password"});
-        parameterKeys.put(OIDC, new String[]{"grant_type", "client_id", "client_secrets", "provider_id"});
-        parameterKeys.put(S3, new String[]{"accessKey", "secretKey"});
+        parameterKeys.put(OIDC, new String[]{"grant_type", "client_id", "client_secret", "token_endpoint"});
+        parameterKeys.put(S3, new String[]{"accessKey", "secretKey", "sessionToken"});
         parameterKeys.put(KEY, new String[]{"key"});
-        parameterKeys.put(SSH, new String[]{"passkey"});
+        parameterKeys.put(SSH, new String[]{"username", "privateKey", "passphrase"});
+        parameterKeys.put("token", new String[]{"username", "password"});
     }
 
-    private ResourcePrivileges privileges = ResourcePrivileges.empty();
+    private ResourcePrivileges privileges;
 
 
     private String id;
+    private String name;
+    private String endpoint;
+    public String getEndpoint() { return endpoint; }
+    public void setEndpoint(String endpoint) { this.endpoint = endpoint; }
+    private Map<String, String> parameters = new HashMap<>();
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public Map<String, String> getParameters() { return parameters; }
+    public void setParameters(Map<String, String> parameters) { this.parameters = parameters; }
 
     /**
      * Credentials, depending on scheme
@@ -86,7 +94,7 @@ public class ExternalAuthenticationCredentials {
         // TODO return a shareable descriptive string built according to scheme, with no sensitive details
         //  but informative enough to
         //  select among a set.
-        return credentials.getFirst();
+        return name == null ? id : name;
     }
 
     /**
@@ -111,7 +119,7 @@ public class ExternalAuthenticationCredentials {
     }
 
     public CredentialInfo info(String host) {
-        return new CredentialInfo(host, /* TODO */ credentials.getFirst(), scheme, id);
+        return new CredentialInfo(host, description(), scheme, id);
     }
 
 }

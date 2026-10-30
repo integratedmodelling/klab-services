@@ -11,6 +11,32 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 
 class WorldviewOwlRestrictionTest {
+  @Test void bundledDomainFoundationRemainsConsistentAndDisjoint() throws Exception {
+    var manager = OWLManager.createOWLOntologyManager();
+    var ontology = manager.loadOntologyFromOntologyDocument(
+        getClass().getResourceAsStream("/knowledge/odo.owl"));
+    var f = manager.getOWLDataFactory();
+    String ns = "http://integratedmodelling.org/odo#";
+    var physical = f.getOWLClass(IRI.create(ns + "PhysicalDomain"));
+    var knowledge = f.getOWLClass(IRI.create(ns + "KnowledgeDomain"));
+    var normative = f.getOWLClass(IRI.create(ns + "NormativeDomain"));
+    var interprets = f.getOWLObjectProperty(IRI.create(ns + "interpretsPhysicalDomain"));
+    assertTrue(ontology.containsAxiom(f.getOWLSubClassOfAxiom(knowledge,
+        f.getOWLObjectSomeValuesFrom(interprets, physical))));
+    var reasoner = new org.semanticweb.HermiT.Reasoner.ReasonerFactory().createReasoner(ontology);
+    try {
+      assertTrue(reasoner.isConsistent());
+      for (var domain : List.of(physical, knowledge, normative)) {
+        assertTrue(reasoner.isSatisfiable(domain));
+        assertTrue(reasoner.isEntailed(f.getOWLSubClassOfAxiom(domain,
+            f.getOWLClass(IRI.create(ns + "Domain")))));
+      }
+      assertFalse(reasoner.isSatisfiable(f.getOWLObjectIntersectionOf(physical, knowledge)));
+      assertFalse(reasoner.isSatisfiable(f.getOWLObjectIntersectionOf(physical, normative)));
+      assertFalse(reasoner.isSatisfiable(f.getOWLObjectIntersectionOf(knowledge, normative)));
+    } finally { reasoner.dispose(); }
+  }
+
   @Test
   void shippedCoreContractsUseAlternativesAndTypedRequirements() throws Exception {
     var manager = OWLManager.createOWLOntologyManager();

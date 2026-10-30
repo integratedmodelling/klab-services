@@ -22,6 +22,11 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 /** The reasoner service collects all functionalities that use semantics in k.LAB. */
 public interface Reasoner extends KlabService {
 
+  /** Explicitly expand deferred external ancestry in place. This may perform network I/O. */
+  default Concept resolveAuthorityHierarchy(String authority, String identity, Scope scope) {
+    throw new UnsupportedOperationException("Authority hierarchy expansion is unavailable");
+  }
+
   /** Authenticated provider search; failures are explicit statuses, never empty successful results. */
   default org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse authorityCodelists(
       org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest request, Scope scope) {
@@ -84,6 +89,14 @@ public interface Reasoner extends KlabService {
 
     default org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return null; }
 
+    /** Versioned accepted static recipe, independent of process-local generation. A v2 recipe
+     * must be composed with an exact scoped semantic-dependency witness; it cannot certify
+     * unseen mutable authority answers or replace access, source and freshness checks. Null
+     * means no accepted recipe is available. Legacy v1 is not a scoped certificate. */
+    default String getSemanticContentFingerprint() { return null; }
+    /** Ephemeral owner incarnation for caches/active plans only; never durable semantic evidence. */
+    default String getSemanticSessionId() { return null; }
+
     /** Monotonically increasing revision of the loaded semantic knowledge. */
     default long getKnowledgeRevision() {
       return 0L;
@@ -107,6 +120,12 @@ public interface Reasoner extends KlabService {
    * @return
    */
   Observable resolveObservable(String definition);
+
+  /** Redeclare a complete generated syntax tree, preserving units, provenance and optionality. */
+  default Observable declareObservable(org.integratedmodelling.klab.api.lang.kim.KimObservable syntax) {
+    throw new UnsupportedOperationException("Typed observable declaration is unavailable");
+  }
+
 
   /**
    * True if the candidate resolves the first observable, i.e. a candidate's description (model) can
@@ -198,8 +217,9 @@ public interface Reasoner extends KlabService {
   Collection<Concept> allParents(Semantics target);
 
   /**
-   * The closure is the inferred version of {@link #allChildren(Semantics)}, which only uses the
-   * asserted hierarchy. Inferred results exclude the entire OWL bottom equivalence node:
+   * The closure includes the target itself and all inferred specializations. Unlike closure,
+   * {@link #allChildren(Semantics)} is a strict traversal of the asserted hierarchy.
+   * Inferred results exclude the entire OWL bottom equivalence node:
    * unsatisfiable named classes are not usable specializations, even though OWL places them below
    * every class.
    *
@@ -207,6 +227,17 @@ public interface Reasoner extends KlabService {
    * @return
    */
   Collection<Concept> closure(Semantics target);
+
+  /**
+   * Inferred closure restricted to the accepted source vocabulary: named ontology declarations,
+   * their explicit aliases and deniable names. Alias targets retain their complete meaning,
+   * including scopes. Runtime-created expressions are excluded unless an authored name denotes
+   * that same meaning. Membership and inference are evaluated in one accepted generation.
+   * Implementations without source provenance must fail, rather than widen to ordinary closure.
+   */
+  default Collection<Concept> authoredClosure(Semantics target) {
+    throw new UnsupportedOperationException("Authored vocabulary closure is not supported");
+  }
 
   /**
    * Compute a semantic distance score between two concepts. Evaluates the distance between the
@@ -217,8 +248,9 @@ public interface Reasoner extends KlabService {
    * @param target candidate model semantics (may be broader than the request)
    * @param other requested semantics
    * @return zero if the concepts are equivalent; a positive integer if the concepts are
-   *     semantically distant but compatible; a negative integer if the concepts are semantically
-   *     incompatible
+   *     semantically distant but admitted; a negative integer if matching is not admitted,
+   *     including unresolved compatibility or request eligibility. A negative score alone does
+   *     not prove semantic disjointness.
    */
   int semanticDistance(Semantics target, Semantics other);
 
@@ -234,6 +266,16 @@ public interface Reasoner extends KlabService {
   int semanticDistance(Semantics target, Semantics other, Semantics context);
 
   /**
+   * Rank against the exact semantic generation that admitted the model and request.
+   * A negative result also covers stale or unavailable admission evidence. Implementations
+   * without revision-aware matching fail closed instead of invoking the unversioned metric.
+   */
+  default int semanticDistance(Semantics target, Semantics requested, Semantics context,
+      long expectedKnowledgeRevision) {
+    return -50;
+  }
+
+  /**
    * The core observable represented by the target, from the root namespace of the worldview.
    *
    * @param first
@@ -244,10 +286,11 @@ public interface Reasoner extends KlabService {
   /**
    * The base substantial type is the core concrete observable type for an enumerable substantial
    * (subject, event, agent, or relationship) that identifies its cohort category. Normally this is
-   * simply the observable (e.g. a Terrestrial Region becomes a Region). If the original type has an
-   * individual identity (whose adoption makes the subject a concrete individual), the lexical root
-   * of the identity is added to the result (France Region becomes Country Region). Any
-   * non-identifying attributes or roles are removed.
+   * simply the observable (e.g. a Terrestrial Region becomes a Region). All predicates, including
+   * identities, roles and their lexical roots, are removed, together with semantic modifiers.
+   * Ontology authors can define a substantial subclass when a different cohort category is needed.
+   * This category alone does not establish discovery completion or observation compatibility:
+   * requests retain their native clauses, scope, geometry, observer and generation guards.
    *
    * @param concept
    * @return
@@ -859,6 +902,13 @@ public interface Reasoner extends KlabService {
     var ret = SemanticValidationResponse.forRequest(request);
     ret.setReason("This reasoner does not support document semantic validation");
     return ret;
+  }
+
+  /** Certify only the exact semantic obligation closure, never the completeness of a caller plan. */
+  default org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request, Scope scope) {
+    return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(request,
+        "This reasoner cannot certify semantic dependency closures");
   }
 
   /**
