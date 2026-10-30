@@ -569,8 +569,9 @@ public class RuntimeService extends BaseService
     }
 
     if (submitted.getId() > 0 || submitted.isEmpty()) {
-      return CompletableFuture.completedFuture(submitted.isEmpty() ? submitted
-          : recordExistingPerception(submitted, effectiveScope, explicitAgent));
+      return CompletableFuture.completedFuture(submissionOutcome("runtime.preassignedOrEmpty", submitted, scope,
+          submitted.isEmpty() ? submitted
+          : recordExistingPerception(submitted, effectiveScope, explicitAgent), null));
     }
 
     if (submitted.getId() == Observation.QUERY_ID) {
@@ -580,9 +581,11 @@ public class RuntimeService extends BaseService
         // shared empty sentinel before changing its ID.
         var empty = (ObservationImpl) Observation.forTransport(result);
         empty.setId(Observation.QUERY_ID);
-        return CompletableFuture.completedFuture(empty);
+        return CompletableFuture.completedFuture(submissionOutcome(
+            "runtime.queryEmpty", submitted, scope, empty, null));
       }
-      return CompletableFuture.completedFuture(result);
+      return CompletableFuture.completedFuture(submissionOutcome(
+          "runtime.queryReturned", submitted, scope, result, null));
     }
 
     var submissionScope = submissionScope(submitted, scope);
@@ -757,7 +760,8 @@ public class RuntimeService extends BaseService
         if (existingCoverage != null && existingCoverage.isComplete()) {
           if (submitted.getObservable().is(SemanticType.QUALITY) || submitted.getObservable().is(SemanticType.PROCESS))
             org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(existing, requested, scope);
-          return CompletableFuture.completedFuture(existing);
+          return CompletableFuture.completedFuture(submissionOutcome(
+              "runtime.existingCoverage", submitted, scope, existing, null));
         }
       }
     }
@@ -770,7 +774,8 @@ public class RuntimeService extends BaseService
      * sufficient indication that submission is already complete.
      */
     if (observation != submitted || observation.getId() > 0 || observation.isEmpty()) {
-      return CompletableFuture.completedFuture(observation);
+      return CompletableFuture.completedFuture(submissionOutcome(
+          "runtime.registerTerminal", submitted, scope, observation, null));
     }
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
@@ -796,8 +801,8 @@ public class RuntimeService extends BaseService
       if (observation.getObservable().is(SemanticType.QUALITY)
           && scope.getContextObservation() == null) {
         return CompletableFuture.completedFuture(
-            Observation.empty(
-                Notification.error("Cannot observe a quality without a context observation")));
+            submissionOutcome("runtime.qualityWithoutContext", submitted, scope, Observation.empty(
+                Notification.error("Cannot observe a quality without a context observation")), null));
       }
 
       /* Dependents are the only situation when we accept an observation w/o geometry */
@@ -861,22 +866,22 @@ public class RuntimeService extends BaseService
                       scope);
           if (requirements == null || requirements.isEmpty()) {
             return CompletableFuture.completedFuture(
-                Observation.empty(
+                submissionOutcome("runtime.adapterInvisible", submitted, scope, Observation.empty(
                     Notification.error(
                         "Adapter '"
                             + contextualizationData.getAdapterId()
-                            + "' referenced in submission is not visible to the digital twin runtime")));
+                            + "' referenced in submission is not visible to the digital twin runtime")), null));
           }
           if (!ingestResources(
               requirements,
               scope,
               settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
             return CompletableFuture.completedFuture(
-                Observation.empty(
+                submissionOutcome("runtime.adapterInaccessible", submitted, scope, Observation.empty(
                     Notification.error(
                         "Adapter '"
                             + contextualizationData.getAdapterId()
-                            + "' referenced in submission is not accessible to the digital twin runtime")));
+                            + "' referenced in submission is not accessible to the digital twin runtime")), null));
           }
 
           if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)) {
@@ -885,11 +890,11 @@ public class RuntimeService extends BaseService
                     .getAdapter(contextualizationData.getAdapterId(), Version.ANY_VERSION, scope);
             if (adapter == null || !adapter.isEmbeddable()) {
               return CompletableFuture.completedFuture(
-                  Observation.empty(
+                  submissionOutcome("runtime.adapterNotEmbeddable", submitted, scope, Observation.empty(
                       Notification.error(
                           "Adapter '"
                               + contextualizationData.getAdapterId()
-                              + "' referenced in submission is unavailable or not embeddable into to the digital twin runtime")));
+                              + "' referenced in submission is unavailable or not embeddable into to the digital twin runtime")), null));
             }
           }
         }
@@ -1038,6 +1043,7 @@ public class RuntimeService extends BaseService
                   .resolve(observation, resolutionScope))
           .exceptionally(
               t -> {
+                submissionOutcome("runtime.resolverException", submitted, scope, null, t);
                 resolutionScope.fail(t);
                 var ret = Dataflow.empty();
                 ret.getNotifications().add(Notification.error(t.getMessage(), t));
@@ -1055,6 +1061,8 @@ public class RuntimeService extends BaseService
                     && dataflow instanceof DataflowImpl dataflowImpl) {
                   observationImpl.setResolvedCoverage(dataflowImpl.getResolvedCoverage());
                 }
+                var rejectionOrigin = dataflow.isEmpty() ? "runtime.emptyDataflow"
+                    : "runtime.compileFailed";
                 if (!dataflow.isEmpty()) {
                   if (dataflow.getCollectiveSelection() != null) {
                     var selected = CollectiveSelectionExecution.execute(this, dataflow, observation,
@@ -1067,6 +1075,7 @@ public class RuntimeService extends BaseService
                   }
                   var reused = dependentTarget ? referenceResult(dataflow, observation, resolutionScope) : null;
                   if (reused != null) {
+                    rejectionOrigin = "runtime.referenceResolutionCommitFailed";
                     // A receipt, not CREATED: no new target or executor enters the shared graph.
                     resolution.getMetadata().put("reusedObservationId", reused.getId());
                     resolution.getMetadata().put("reusedObservationUrn", reused.getUrn());
@@ -1075,6 +1084,7 @@ public class RuntimeService extends BaseService
                   } else {
                     if (dependentTarget) stageNewObservation.run();
                     if (compile(observation, dataflow, resolutionScope)) {
+                    rejectionOrigin = "runtime.resolutionCommitFailed";
                     checkSubmissionCancellation(resolutionScope);
                     attachResolutionDiagnostics(dataflow, resolution);
                     if (resolutionScope.commit() >= 0) {
@@ -1086,12 +1096,13 @@ public class RuntimeService extends BaseService
                   }
                   }
                 }
+                submissionOutcome("runtime.resolutionDetails", submitted, scope, observation, null);
                 resolutionScope.fail();
-                return new SubmissionResolution(Observation.empty(
+                return new SubmissionResolution(submissionOutcome(rejectionOrigin, submitted, scope, Observation.empty(
                     Notification.error(
                         "Resolution of "
                             + observation.getObservable().getUrn()
-                            + " failed: empty dataflow")), false);
+                            + " failed: empty dataflow")), null), false);
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
@@ -1102,8 +1113,10 @@ public class RuntimeService extends BaseService
                   classifierValidationChecks.forEach(Runnable::run);
                   submission.getMetadata().put("reusedObservationId", o.getId());
                   submission.getMetadata().put("reusedObservationUrn", o.getUrn());
-                  return submissionScope.commit() >= 0 ? o
-                      : Observation.empty(Notification.error("Reference submission commit failed"));
+                  return submissionScope.commit() >= 0 ? submissionOutcome(
+                      "runtime.referenceCompleted", submitted, scope, o, null)
+                      : submissionOutcome("runtime.referenceCommitFailed", submitted, scope,
+                          Observation.empty(Notification.error("Reference submission commit failed")), null);
                 }
 
                 // FIXME this comes from the original submission while the executors and storage
@@ -1121,7 +1134,7 @@ public class RuntimeService extends BaseService
                             Notification.error(
                                 "Contextualization of " + o.getObservable().getUrn() + " failed"));
                     failed.getNotifications().addAll(o.getNotifications());
-                    return failed;
+                    return submissionOutcome("runtime.contextualizationFailed", submitted, scope, failed, null);
                   }
 
                   // TODO add more info about the contextualization to the action's metadata
@@ -1135,7 +1148,7 @@ public class RuntimeService extends BaseService
                             Notification.error(
                                 "Commit of " + o.getObservable().getUrn() + " failed"));
                     failed.getNotifications().addAll(o.getNotifications());
-                    return failed;
+                    return submissionOutcome("runtime.commitFailed", submitted, scope, failed, null);
                   }
                   if (commitId > 0) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
@@ -1153,12 +1166,13 @@ public class RuntimeService extends BaseService
                   submissionScope.fail();
                   o.getNotifications().add(Notification.error("Submission failed"));
                 }
-                return o;
+                return submissionOutcome("runtime.returned", submitted, scope, o, null);
               })
           .exceptionally(
               t -> {
                 submissionScope.fail(t);
-                return Observation.empty(Notification.error(t.getMessage(), t));
+                return submissionOutcome("runtime.exception", submitted, scope,
+                    Observation.empty(Notification.error(t.getMessage(), t)), t);
               });
     }
     throw new KlabInternalErrorException(
@@ -1166,6 +1180,12 @@ public class RuntimeService extends BaseService
   }
 
   private record SubmissionResolution(Observation observation, boolean reused) {}
+
+  private Observation submissionOutcome(String origin, Observation request, ContextScope scope,
+      Observation result, Throwable failure) {
+    return org.integratedmodelling.common.runtime.SubmissionDiagnostics.result(
+        origin, scope, request, result, null, failure);
+  }
 
   /** Terminal reference answers bypass creation/storage/execution and retain the source ID. */
   private Observation referenceResult(Dataflow dataflow, Observation requested, ContextScope scope) {

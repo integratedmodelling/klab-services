@@ -27,6 +27,36 @@ import org.integratedmodelling.klab.utilities.Utils;
 import org.junit.jupiter.api.*;
 
 class ObservationInspectorTest {
+  @Test
+  @org.junit.jupiter.api.parallel.ResourceLock("submissionDiagnosticsProperty")
+  void optionalInvalidViewDiagnosticReachesExistingWarningWithoutChangingVerdict() {
+    var property = org.integratedmodelling.common.runtime.SubmissionDiagnostics.PROPERTY;
+    var previous = System.getProperty(property);
+    try {
+      var scope = mock(ContextScope.class);
+      when(scope.getId()).thenReturn("test-context");
+      var view = Observation.empty(org.integratedmodelling.klab.api.services.runtime.Notification.error(
+          "Resolution of private:secret failed: empty dataflow"));
+      var warning = org.mockito.ArgumentCaptor.forClass(Object[].class);
+      System.setProperty(property, "false");
+      assertFalse(ObservationInspector.selectionCheck(scope, view, "test:Region"));
+      verify(scope).warn(warning.capture());
+      assertEquals("Selection inspector rejected: guard=G01; scope=test-context; viewId=-1", warning.getValue()[0]);
+      clearInvocations(scope);
+      System.setProperty(property, "true");
+      assertFalse(ObservationInspector.selectionCheck(scope, view, "test:Region"));
+      verify(scope).warn(warning.capture());
+      var text = warning.getValue()[0].toString();
+      assertTrue(text.contains("inspector.G01"));
+      assertTrue(text.contains("RESOLUTION_EMPTY_DATAFLOW_OR_COMPILE_COMMIT"));
+      assertFalse(text.contains("private:secret"));
+      verify(scope, never()).getService(Reasoner.class);
+      assertEquals(1, view.getNotifications().size());
+    } finally {
+      if (previous == null) System.clearProperty(property); else System.setProperty(property, previous);
+    }
+  }
+
   private static final String CONTENT = "semantic-content-v2:" + "a".repeat(64);
   private static final String OTHER_CONTENT = "semantic-content-v2:" + "b".repeat(64);
   @BeforeAll static void setup() { ServiceConfiguration.injectInstantiators(); }

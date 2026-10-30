@@ -122,11 +122,25 @@ public class RuntimeClient extends BaseServiceClient
         client
         .withScope(scope)
         .postAsync(ServicesAPI.RUNTIME.SUBMIT_OBSERVATION, resolutionRequest, Observation.class);
+    return receiveSubmission(submission, resolutionRequest.getObservation(), scope);
+  }
+
+  private CompletableFuture<Observation> receiveSubmission(CompletableFuture<Observation> submission,
+      Observation requested, ContextScope scope) {
     if (submission
         instanceof org.integratedmodelling.common.utils.Utils.Http.PollingFuture<Observation>
             pollingFuture) {
+      submission.whenComplete((resolved, failure) -> {
+        org.integratedmodelling.common.runtime.SubmissionDiagnostics.result(
+            failure == null ? "client.received" : "client.exception", scope, requested, resolved,
+            pollingFuture.getJobId(), failure);
+      });
       return pollingFuture.transformResult(resolved -> synchronizeSubmission(resolved, scope));
     }
+    submission.whenComplete((resolved, failure) -> {
+      org.integratedmodelling.common.runtime.SubmissionDiagnostics.result(
+          failure == null ? "client.received" : "client.exception", scope, requested, resolved, null, failure);
+    });
     return submission.thenApply(resolved -> synchronizeSubmission(resolved, scope));
   }
 

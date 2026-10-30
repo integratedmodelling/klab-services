@@ -99,8 +99,11 @@ public final class ObservationInspector {
    */
   /** Diagnostic only: preserve the assertion result and report its first failed invariant. */
   private static boolean selectionRejected(ContextScope scope, Observation view, String guard) {
+    var diagnostic = org.integratedmodelling.common.runtime.SubmissionDiagnostics.summary(
+        "inspector." + guard, scope, null, view, null, null);
     scope.warn("Selection inspector rejected: guard=" + guard + "; scope=" + scope.getId()
-        + "; viewId=" + (view == null ? "null" : view.getId()));
+        + "; viewId=" + (view == null ? "null" : view.getId())
+        + (diagnostic == null ? "" : "; diagnostic=" + diagnostic));
     return false;
   }
   public static boolean selectionCheck(ContextScope scope, Observation view, String expectedDefinition) {
