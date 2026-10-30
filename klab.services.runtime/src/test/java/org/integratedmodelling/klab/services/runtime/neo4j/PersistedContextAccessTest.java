@@ -70,8 +70,10 @@ class PersistedContextAccessTest {
         when(result.records()).thenReturn(records);
         return result;
       }).when(graph).query(anyString(), anyMap(), any(Scope.class));
-      assertNull(graph.getAuthorizedConfiguration("owner.private", user("bob")));
-      assertNull(graph.getAuthorizedConfiguration("owner.excluded", user("bob")));
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class,
+          () -> graph.getAuthorizedConfiguration("owner.private", user("bob")));
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class,
+          () -> graph.getAuthorizedConfiguration("owner.excluded", user("bob")));
       var original = graph.getAuthorizedConfiguration("owner.private", user("alice"));
       assertEquals("alice", original.getOwner());
       assertEquals("alice", original.getAccessRights().toString());
