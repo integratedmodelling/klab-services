@@ -16,6 +16,7 @@ class ManagedScopeAccessTest {
     var identity = mock(UserIdentity.class);
     when(identity.getUsername()).thenReturn(username);
     when(identity.getGroups()).thenReturn(java.util.List.of());
+    when(identity.getData()).thenReturn(org.integratedmodelling.klab.api.collections.Parameters.create());
     when(scope.getUser()).thenReturn(identity);
     return scope;
   }
