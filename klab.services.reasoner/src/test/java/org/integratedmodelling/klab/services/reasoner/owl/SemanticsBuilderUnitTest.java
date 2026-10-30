@@ -28,7 +28,9 @@ class SemanticsBuilderUnitTest {
     concept.setUrn("test:Length");
     concept.getType().addAll(types);
     var reasoner = mock(ReasonerService.class);
-    when(reasoner.owl()).thenReturn(mock(OWL.class));
+    var owl = mock(OWL.class);
+    when(owl.monotoneRefinements()).thenReturn(mock(MonotoneRefinementSupport.class));
+    when(reasoner.owl()).thenReturn(owl);
     when(reasoner.resolveConcept("test:Length")).thenReturn(concept);
     when(reasoner.serviceScope()).thenReturn(mock(ServiceScope.class));
     return SemanticsBuilder.create(syntax, reasoner, mock(Scope.class));
