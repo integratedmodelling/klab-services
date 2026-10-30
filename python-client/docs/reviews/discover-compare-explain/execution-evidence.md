@@ -2,6 +2,12 @@
 
 ## Recommendation
 
+**Current follow-up:** see the [30 October contributor review](execution-evidence-final-20261030.md).
+The shipped owner/nonowner functional suite is now implemented and collected;
+1260 unit/integration tests pass. The actual two-user functional run is still
+blocked by missing retained fixtures. Collection and mock guardrail tests are not
+reported as functional acceptance. Do not approve or merge until it passes.
+
 **29 October live update — positive numerical/diagram gate PASSED; remaining
 permission gate still Needs contract/coordination evidence.** At exact existing
 PR98 head `b45e0b8c28c588881a708d338d3ab982a02522a6`, attempt 4 of the user's
