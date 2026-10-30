@@ -94,6 +94,20 @@ def test_source_identity_matches_installed_current_sources():
     assert len(value["candidate_sha"]) == 40 and value["package_version"]
 
 
+@pytest.mark.parametrize("metadata_file", ["METADATA", "PKG-INFO"])
+def test_source_identity_handles_wheel_and_editable_metadata(monkeypatch, metadata_file):
+    metadata = "Metadata-Version: 2.4\nName: klab-python-client\nVersion: 0.1.0\n"
+    monkeypatch.setattr(tool.importlib.metadata, "distribution",
+        lambda name: NS(version="0.1.0", read_text=lambda filename: metadata if filename == metadata_file else None))
+    assert tool.source_identity()["installed_metadata_sha256"] == tool.digest(metadata.encode())
+
+
+def test_source_identity_rejects_missing_metadata_instead_of_inventing_a_hash(monkeypatch):
+    monkeypatch.setattr(tool.importlib.metadata, "distribution", lambda name: NS(read_text=lambda filename: None))
+    with pytest.raises(ConfigurationError, match="metadata"):
+        tool.source_identity()
+
+
 def test_factory_keeps_credentials_in_provider_only(tmp_path, monkeypatch):
     calls = []
     monkeypatch.setattr(tool.DeploymentProfile, "load", lambda path: "explicit-profile")

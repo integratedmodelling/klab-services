@@ -147,11 +147,15 @@ def source_identity():
                  for p in Path(klab_client.__file__).parent.rglob("*.py")}
     expected = {name.removeprefix("src/klab_client/"): value for name, value in files.items() if name.startswith("src/klab_client/")}
     require(installed == expected, "Installed SDK sources do not match this candidate")
+    distribution = importlib.metadata.distribution("klab-python-client")
+    metadata = distribution.read_text("METADATA") or distribution.read_text("PKG-INFO")
+    if not metadata:
+        raise ConfigurationError("Installed SDK package metadata is unavailable")
     return {"candidate_sha": git("rev-parse", "HEAD"), "dirty": bool(git("status", "--porcelain")),
             "source_sha256": digest(json.dumps(files, sort_keys=True).encode()),
             "installed_package_sha256": digest(json.dumps(installed, sort_keys=True).encode()),
-            "installed_metadata_sha256": digest(importlib.metadata.distribution("klab-python-client").read_text("METADATA").encode()),
-            "package_version": importlib.metadata.version("klab-python-client"),
+            "installed_metadata_sha256": digest(metadata.encode()),
+            "package_version": distribution.version,
             "python": platform.python_version(), "platform": platform.platform()}
 
 
