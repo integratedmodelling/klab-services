@@ -60,6 +60,13 @@ public class DocumentObservableKbox implements AutoCloseable {
         .map(d -> (String) d.get("definition")).sorted().toList();
   }
   public Set<Long> getCompatibleTypeIds(Observable observable, Concept context) {
+    return getTypeIds(observable, context, true);
+  }
+  /** Coarse enumeration only: validate each model source before computing semantic distance. */
+  public Set<Long> getCandidateTypeIds(Observable observable) {
+    return getTypeIds(observable, null, false);
+  }
+  private Set<Long> getTypeIds(Observable observable, Concept context, boolean match) {
     var reasoner = reasoner();
     var core = reasoner.coreObservable(observable);
     Set<Long> result = new HashSet<>();
@@ -87,7 +94,7 @@ public class DocumentObservableKbox implements AutoCloseable {
       var candidateCore = reasoner.coreObservable(candidate);
       if (candidateCore != null && "".equals(document.get("core"))) requireConceptId(candidate, resourceService.serviceScope());
       if (candidateCore != null && heads.contains(candidateCore.getUrn())
-          && reasoner.semanticDistance(candidate, observable, context) >= 0)
+          && (!match || reasoner.semanticDistance(candidate, observable, context) >= 0))
         result.add(((Number) document.get("id")).longValue());
     }
     return result;

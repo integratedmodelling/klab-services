@@ -17,6 +17,9 @@ public class DataflowImpl implements Dataflow {
   @Serial private static final long serialVersionUID = 873406284216826384L;
 
   private boolean empty;
+  private CollectiveSelection collectiveSelection;
+  @Override public CollectiveSelection getCollectiveSelection() { return collectiveSelection; }
+  public void setCollectiveSelection(CollectiveSelection value) { collectiveSelection = value; }
   private ResolutionOutcome resolutionOutcome;
   public ResolutionOutcome getResolutionOutcome() {
     return resolutionOutcome == null ? Dataflow.super.getResolutionOutcome() : resolutionOutcome;

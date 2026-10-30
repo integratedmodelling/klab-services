@@ -21,6 +21,12 @@ public interface KimObservable extends KlabStatement, Resolvable {
     KimConcept getSemantics();
 
     /**
+     * Explicit `observed as` Agent-class semantics, or null for the absolute perspective.
+     * This is authored observable meaning, not the runtime/session selected observer observation.
+     */
+    KimConcept getObserverSemantics();
+
+    /**
      * @return the range
      */
     NumericRange getRange();

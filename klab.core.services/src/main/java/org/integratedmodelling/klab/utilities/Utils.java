@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.utilities;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,9 +11,9 @@ import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.LocalFileHeader;
@@ -112,29 +110,29 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     /**
      * Resolve an authority into a Reasoner, installing its component from a Resources service when
-     * the authority is advertised as embeddable. Only Resources providers of the loaded worldview
-     * participate in discovery. Locally installed providers remain available without discovery.
+     * the authority is advertised as embeddable. Connected owner-authorized Resources
+     * services participate through COMPONENT resolution; worldview hosting is unrelated.
+     * Locally installed providers remain available without discovery.
      */
     public static org.integratedmodelling.klab.api.services.Authority resolveAuthority(
         Worldview.AuthorityBinding binding, Scope scope, BaseService targetService, Worldview worldview) {
       var registry = targetService.getComponentRegistry();
       var provider = registry.getAuthority(binding, scope);
       if (provider != null || !binding.provider().embeddable()) return provider;
-      for (var service : scope.getServices(ResourcesService.class)) {
-        var capabilities = service.capabilities(scope);
-        if (capabilities == null || !capabilities.isWorldviewProvider()
-            || !Objects.equals(worldview.getUrn(), capabilities.getAdoptedWorldview())) continue;
-        var response = service.resolve(binding.componentUrn() + "@" + binding.componentVersion(),
-            KlabAsset.KnowledgeClass.COMPONENT, scope instanceof UserScope user ? user : null);
-        if (response == null || response.isEmpty()) continue;
-        // Existing component resolution may choose a compatible version. Reject substitutions.
-        if (response.getResults().stream().noneMatch(resource ->
-            binding.componentUrn().equals(resource.getResourceUrn())
-                && binding.componentVersion().equals(resource.getResourceVersion()))) continue;
-        if (registry.loadComponents(response, scope)) {
-          provider = registry.getAuthority(binding, scope);
-          if (provider != null) return provider;
-        }
+      var resolution = org.integratedmodelling.klab.components.AuthorityComponentResolver.resolve(
+          binding.provider().urn() + "@" + binding.provider().version(), scope);
+      var exact = resolution.components().stream()
+          .filter(component -> component.id().equals(binding.componentUrn())
+              && component.version().equals(binding.componentVersion())
+              && component.authorities().contains(binding.provider())).toList();
+      if (exact.size() > 1) throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+          "Ambiguous authority component content for " + binding.provider().urn());
+      if (exact.size() == 1) {
+        var resources = resolution.resources();
+        resources.getResults().removeIf(resource -> !binding.componentUrn().equals(Version.splitVersion(resource.getResourceUrn()).getFirst())
+            || !binding.componentVersion().equals(resource.getResourceVersion()));
+        if (!resources.isEmpty() && loadAuthorityComponents(resources, scope, registry))
+          return registry.getAuthority(binding, scope);
       }
       return null;
     }
@@ -150,37 +148,45 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           targetService
               .getComponentRegistry()
               .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
-      // Startup has a service scope, not a user scope. The client retains its authenticated
-      // service-owner credentials when no user scope is supplied to the resolver.
-      var responses = new ArrayList<ResourceSet>();
-      for (var service : scope.getServices(ResourcesService.class)) {
-        try {
-          var capabilities = service.capabilities(scope);
-          if (capabilities == null || !capabilities.isWorldviewProvider()
-              // adoptedWorldview is a name, not the opaque ID of a loaded worldview instance.
-              || worldview == null || worldview.getUrn() == null
-              || !Objects.equals(worldview.getUrn(), capabilities.getAdoptedWorldview())) {
-            continue;
-          }
-          var response = service.resolve(urn, KlabAsset.KnowledgeClass.COMPONENT,
-              scope instanceof UserScope userScope ? userScope : null);
-          if (response != null && !response.isEmpty()) responses.add(response);
-        } catch (RuntimeException e) {
-          scope.warn("Cannot discover authority " + urn + " from " + service.serviceName()
-              + ": " + e.getMessage());
-        }
-      }
-      var result = merge(responses.toArray(ResourceSet[]::new));
+      if (ret != null) return ret;
+      var resolved = org.integratedmodelling.klab.components.AuthorityComponentResolver.resolve(urn, scope);
+      if (resolved.components().size() > 1)
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+            "Ambiguous authority component content for " + coordinates.getFirst());
+      var result = resolved.resources();
       if (!result.isEmpty()) {
-        if (!targetService.getComponentRegistry().loadComponents(result, scope)) {
+        if (!loadAuthorityComponents(result, scope, targetService.getComponentRegistry())) {
           throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
               "Failed to load component for authority " + urn + ": " + result.getNotifications());
         }
-        return targetService
-            .getComponentRegistry()
-            .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
+        var component = resolved.components().getFirst();
+        var authorities = component.authorities().stream().filter(authority ->
+            coordinates.getFirst().equals(authority.urn())
+                && (!urn.contains("@") || coordinates.getSecond().equals(authority.version()))).toList();
+        if (authorities.size() != 1)
+          throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+              "Cannot honor an exact authority descriptor for " + urn);
+        return targetService.getComponentRegistry().getAuthority(new Worldview.AuthorityBinding(
+            coordinates.getFirst(), "", "", 0, 0, "", authorities.getFirst(),
+            component.id(), component.version(), null), scope);
       }
       return result.isEmpty() ? ret : null;
+    }
+
+    private static boolean loadAuthorityComponents(ResourceSet resources, Scope scope,
+        org.integratedmodelling.klab.components.ComponentRegistry registry) {
+      synchronized (registry) {
+        for (var resource : resources.getResults()) {
+          var requested = Version.splitVersion(resource.getResourceUrn());
+          var installed = registry.getComponent(requested.getFirst(), requested.getSecond());
+          // The legacy loader accepts compatible installed components. Authority binding is exact.
+          if (installed != null && !installed.version().equals(requested.getSecond()))
+            throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+                "Cannot honor exact authority component " + resource.getResourceUrn()
+                    + ": installed compatible version " + installed.version() + " would be selected");
+        }
+        return registry.loadComponents(resources, scope);
+      }
     }
   }
 
@@ -606,10 +612,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     //    private static final Logger logger = LoggerFactory.getLogger(Maven.class);
 
-    private static final String MAVEN_CENTRAL_SEARCH_API =
-        "https://central.sonatype.com/solrsearch/select";
-    private static final String MAVEN_CENTRAL_SNAPSHOTS_API =
-        "https://central.sonatype.com/repository/maven-snapshots";
     private static final String MAVEN_CENTRAL_RELEASES_URL = "https://repo.maven.apache.org/maven2";
     private static final String MAVEN_CENTRAL_SNAPSHOTS_URL =
         "https://central.sonatype.com/repository/maven-snapshots";
@@ -617,7 +619,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository";
     private static final HttpClient HTTP_CLIENT =
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static final MavenSnapshotRepository SNAPSHOTS = new MavenSnapshotRepository(
+        HTTP_CLIENT, System::nanoTime,
+        Duration.ofMinutes(Long.getLong("maven.snapshot.cache.minutes", 20L)));
 
     /** Maven coordinates holder class */
     public static class MavenCoordinates {
@@ -692,132 +697,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
      * @throws IOException if there's an error communicating with Maven Central
      */
     public static SnapshotInfo getLatestSnapshotDate(MavenCoordinates coordinates) {
-      if (!coordinates.getVersion().endsWith("-SNAPSHOT")) {
-        throw new KlabIllegalArgumentException("Version must be a SNAPSHOT version");
-      }
-
-      try {
-        // First, try to get snapshot info from Maven Central search API
-        Optional<SnapshotInfo> searchResult = getSnapshotInfoFromSearch(coordinates);
-        return searchResult.orElseGet(() -> getSnapshotInfoFromRepository(coordinates));
-
-        // If search API doesn't work, try the direct repository approach
-
-      } catch (Exception e) {
-        Thread.currentThread().interrupt();
-        throw new KlabIOException("Request was interrupted", e);
-      }
-    }
-
-    /** Attempts to get snapshot information using Maven Central's search API */
-    private static Optional<SnapshotInfo> getSnapshotInfoFromSearch(MavenCoordinates coordinates) {
-
-      String query =
-          String.format(
-              "q=g:%s+AND+a:%s+AND+v:%s&core=gav&rows=1&wt=json",
-              coordinates.getGroupId(), coordinates.getArtifactId(), coordinates.getVersion());
-
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(MAVEN_CENTRAL_SEARCH_API + "?" + query))
-              .timeout(Duration.ofSeconds(60))
-              .GET()
-              .build();
-
-      HttpResponse<String> response = null;
-      try {
-        response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-      } catch (Exception e) {
-        throw new KlabIOException(e);
-      }
-
-      if (response.statusCode() != 200) {
-        Logging.INSTANCE.warn(
-            "Maven Central search returned status {}: {}", response.statusCode(), response.body());
-        return Optional.empty();
-      }
-
-      try {
-        JsonNode root = OBJECT_MAPPER.readTree(response.body());
-        JsonNode docs = root.path("response").path("docs");
-
-        if (docs.isArray() && docs.size() > 0) {
-          JsonNode doc = docs.get(0);
-          long timestamp = doc.path("timestamp").asLong();
-          String version = doc.path("v").asText();
-
-          LocalDateTime lastModified =
-              LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
-
-          return Optional.of(new SnapshotInfo(lastModified, version, true));
-        }
-      } catch (Exception e) {
-        Logging.INSTANCE.warn("Error parsing Maven Central search response", e);
-      }
-
-      return Optional.empty();
-    }
-
-    /** Attempts to get snapshot information by checking the repository metadata */
-    private static SnapshotInfo getSnapshotInfoFromRepository(MavenCoordinates coordinates) {
-
-      String metadataPath =
-          String.format(
-              "%s/%s/%s/%s/maven-metadata.xml",
-              MAVEN_CENTRAL_SNAPSHOTS_API,
-              coordinates.getGroupId().replace('.', '/'),
-              coordinates.getArtifactId(),
-              coordinates.getVersion());
-
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(metadataPath))
-              .timeout(Duration.ofSeconds(30))
-              .GET()
-              .build();
-
-      HttpResponse<String> response = null;
-      try {
-        response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-      } catch (Exception e) {
-        throw new KlabIOException(e);
-      }
-
-      if (response.statusCode() == 404) {
-        return new SnapshotInfo(null, null, false);
-      }
-
-      if (response.statusCode() != 200) {
-        throw new KlabIOException(
-            "Failed to fetch metadata from Maven Central: HTTP " + response.statusCode());
-      }
-
-      // Parse the maven-metadata.xml to extract timestamp information
-      return parseMetadataXml(response.body(), coordinates.getVersion());
-    }
-
-    /** Parses Maven metadata XML to extract snapshot information */
-    private static SnapshotInfo parseMetadataXml(String xmlContent, String version) {
-      try {
-        // Simple XML parsing for lastUpdated timestamp
-        // In a production environment, you might want to use a proper XML parser
-        String lastUpdatedPattern = "<lastUpdated>(\\d{14})</lastUpdated>";
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(lastUpdatedPattern);
-        java.util.regex.Matcher matcher = pattern.matcher(xmlContent);
-
-        if (matcher.find()) {
-          String timestamp = matcher.group(1);
-          // Format: yyyyMMddHHmmss
-          DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-          LocalDateTime lastModified = LocalDateTime.parse(timestamp, formatter);
-
-          return new SnapshotInfo(lastModified, version, true);
-        }
-      } catch (Exception e) {
-        Logging.INSTANCE.warn("Error parsing metadata XML", e);
-      }
-
-      return new SnapshotInfo(null, version, false);
+      return SNAPSHOTS.latest(coordinates);
     }
 
     /**
@@ -862,53 +742,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         baseUrl = MAVEN_CENTRAL_SNAPSHOTS_URL;
 
         try {
-          // Get the latest snapshot metadata
-          SnapshotInfo snapshotInfo = getLatestSnapshotDate(coordinates);
-          if (!snapshotInfo.isFound()) {
-            return null;
-          }
-
-          // Parse maven-metadata.xml to get the exact timestamped version
-          String metadataUrl = String.format("%s/%s/maven-metadata.xml", baseUrl, artifactPath);
-
-          HttpRequest request =
-              HttpRequest.newBuilder()
-                  .uri(URI.create(metadataUrl))
-                  .timeout(Duration.ofSeconds(30))
-                  .GET()
-                  .build();
-
-          HttpResponse<String> response =
-              HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-
-          if (response.statusCode() != 200) {
-            throw new IOException(
-                "Failed to fetch snapshot metadata: HTTP " + response.statusCode());
-          }
-
-          // Extract timestamp and buildNumber
-          String xmlContent = response.body();
-          String timestampPattern = "<timestamp>([\\d.]+)</timestamp>";
-          String buildNumberPattern = "<buildNumber>([\\d]+)</buildNumber>";
-
-          java.util.regex.Pattern tsPattern = java.util.regex.Pattern.compile(timestampPattern);
-          java.util.regex.Pattern bnPattern = java.util.regex.Pattern.compile(buildNumberPattern);
-
-          java.util.regex.Matcher tsMatcher = tsPattern.matcher(xmlContent);
-          java.util.regex.Matcher bnMatcher = bnPattern.matcher(xmlContent);
-
-          if (tsMatcher.find() && bnMatcher.find()) {
-            String timestamp = tsMatcher.group(1);
-            String buildNumber = bnMatcher.group(1);
-
-            // Form the actual version with timestamp
-            String snapshotVersion = coordinates.getVersion();
-            // Replace SNAPSHOT with timestamp-buildNumber
-            artifactVersion =
-                snapshotVersion.replace("-SNAPSHOT", "-" + timestamp + "-" + buildNumber);
-          }
+          artifactVersion = SNAPSHOTS.downloadVersion(coordinates);
+          if (artifactVersion == null) return null;
         } catch (Exception e) {
-          Thread.currentThread().interrupt();
           return null;
         }
       } else {
@@ -1731,7 +1567,39 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       return ret;
     }
 
-    private static CredentialsProvider getCredentialsProvider(
+    private record CredentialContext(org.integratedmodelling.common.authentication.CredentialVault vault,
+                                     Scope caller, String id, boolean nativeGit) {}
+    private static final ThreadLocal<CredentialContext> credentialContext = new ThreadLocal<>();
+
+    /** Bind the owning service and requesting principal for one synchronous repository operation. */
+    public static <T> T withCredentials(org.integratedmodelling.klab.services.base.BaseService service,
+        Scope caller, String id, java.util.function.Supplier<T> operation) {
+      if (caller == null) throw new SecurityException("A repository operation requires a caller");
+      var previous = credentialContext.get();
+      credentialContext.set(new CredentialContext(service.credentialVault(), caller, id, service.isLocal()));
+      try { return operation.get(); }
+      finally { if (previous == null) credentialContext.remove(); else credentialContext.set(previous); }
+    }
+
+    private static ExternalAuthenticationCredentials resolveCredentials(String endpoint, Scope scope, String storedId) {
+      var context = credentialContext.get();
+      if (context != null) return context.vault().resolve(
+          context.id() == null || context.id().isBlank() ? storedId : context.id(), endpoint, context.caller());
+      if (scope == null) throw new SecurityException("A repository operation requires a caller");
+      for (var service : scope.getServices(org.integratedmodelling.klab.api.services.KlabService.class)) {
+        if (service instanceof org.integratedmodelling.klab.services.base.BaseService local
+            && (local.serviceScope() == scope || scope instanceof org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl reactive
+                && local.serviceId().equals(reactive.getHostServiceId()))) {
+          return local.credentialVault().resolve(storedId, endpoint, scope);
+        }
+      }
+      if (scope instanceof org.integratedmodelling.klab.api.scope.ServiceSideScope
+          || scope instanceof org.integratedmodelling.klab.api.scope.ServiceScope)
+        throw new SecurityException("The owning service credential vault is unavailable");
+      return org.integratedmodelling.common.authentication.Authentication.INSTANCE.getCredentials(endpoint, scope);
+    }
+
+    static CredentialsProvider getCredentialsProvider(
         org.eclipse.jgit.api.Git git, Scope scope) {
 
       CredentialsProvider ret = null;
@@ -1741,8 +1609,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           if ("origin".equals(remoteConfig.getName()) && !remoteConfig.getURIs().isEmpty()) {
             for (var uri : remoteConfig.getURIs()) {
               credentials =
-                  org.integratedmodelling.common.authentication.Authentication.INSTANCE
-                      .getCredentials(uri.toString(), scope);
+                  resolveCredentials(uri.toString(), scope,
+                      git.getRepository().getConfig().getString("klab", null, "credentialId"));
               if (credentials != null) {
                 break;
               }
@@ -1753,7 +1621,74 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         throw new RuntimeException(e);
       }
 
-      return getCredentialsProvider(credentials);
+      var provider = getCredentialsProvider(credentials);
+      if (credentials != null && credentials.getId() != null) {
+        try {
+          git.getRepository().getConfig().setString("klab", null, "credentialId", credentials.getId());
+          git.getRepository().getConfig().save();
+        } catch (IOException error) { throw new KlabIOException(error); }
+      }
+      if (provider == null && credentialContext.get() != null && credentialContext.get().nativeGit()) {
+        var origin = git.getRepository().getConfig().getString("remote", "origin", "url");
+        if (origin != null) provider = getCredentialsProvider(NativeGitCredentials.resolve(origin, git.getRepository().getWorkTree()));
+      }
+      return provider;
+    }
+
+    /** Check local publication eligibility before committing or contacting the origin. */
+    public static void requireWriteCredentials(File directory, Scope caller) {
+      try (var repository = openRepository(directory); var git = new org.eclipse.jgit.api.Git(repository)) {
+        if (getCredentialsProvider(git, caller) == null)
+          throw new SecurityException("Publishing or committing requires an authorized Git credential set or installed Git credentials");
+      } catch (IOException error) { throw new KlabIOException(error); }
+    }
+
+    public static String repositoryName(String coordinates) {
+      String path;
+      try {
+        path = new org.eclipse.jgit.transport.URIish(coordinates.split("#", 2)[0]).getPath();
+      } catch (java.net.URISyntaxException error) { throw new IllegalArgumentException("Invalid Git repository URL", error); }
+      if (path == null || path.endsWith("/")) throw new IllegalArgumentException("Invalid Git repository URL");
+      var name = path.substring(path.lastIndexOf('/') + 1);
+      return name.endsWith(".git") ? name.substring(0, name.length() - 4) : name;
+    }
+
+    private static final class EndpointCredentialsProvider extends UsernamePasswordCredentialsProvider {
+      private final String endpoint;
+      EndpointCredentialsProvider(ExternalAuthenticationCredentials credentials) {
+        super(credentials.getParameters().get("username"), credentials.getParameters().get("password"));
+        endpoint = credentials.getEndpoint();
+      }
+      @Override
+      public boolean get(org.eclipse.jgit.transport.URIish uri, org.eclipse.jgit.transport.CredentialItem... items) {
+        if (!org.integratedmodelling.common.authentication.CredentialVault.matchesEndpoint(endpoint, uri.toString()))
+          throw new SecurityException("Credential destination does not match its endpoint");
+        return super.get(uri, items);
+      }
+    }
+
+    private static void secureTransport(org.eclipse.jgit.transport.Transport transport, CredentialsProvider provider) {
+      if (!(provider instanceof EndpointCredentialsProvider bound)) return;
+      if (!(transport instanceof org.eclipse.jgit.transport.TransportHttp http))
+        throw new SecurityException("HTTP credentials require an HTTP transport");
+      var delegate = http.getHttpConnectionFactory();
+      // Check every connection, including redirects after authentication has already been cached.
+      http.setHttpConnectionFactory(new org.eclipse.jgit.transport.http.HttpConnectionFactory() {
+        private void check(java.net.URL url) throws java.io.IOException {
+          try {
+            var uri = url.toURI();
+            if (uri.getUserInfo() != null || !org.integratedmodelling.common.authentication.CredentialVault.matchesEndpoint(
+                bound.endpoint, new java.net.URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null).toString()))
+              throw new java.io.IOException("Credential transport destination is outside its configured endpoint");
+          } catch (java.net.URISyntaxException e) { throw new java.io.IOException("Invalid credential transport destination"); }
+        }
+        public org.eclipse.jgit.transport.http.HttpConnection create(java.net.URL url) throws java.io.IOException {
+          check(url); return delegate.create(url);
+        }
+        public org.eclipse.jgit.transport.http.HttpConnection create(java.net.URL url, java.net.Proxy proxy) throws java.io.IOException {
+          check(url); return delegate.create(url, proxy);
+        }
+      });
     }
 
     public static CredentialsProvider getCredentialsProvider(
@@ -1764,41 +1699,11 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         ret =
             switch (credentials.getScheme()) {
               case ExternalAuthenticationCredentials.BASIC ->
-                  new UsernamePasswordCredentialsProvider(
-                      credentials.getCredentials().get(0), credentials.getCredentials().get(1));
-              case ExternalAuthenticationCredentials.KEY -> null;
-              default -> null;
+                  new EndpointCredentialsProvider(credentials);
+              case "bearer" -> throw new IllegalArgumentException("Git requires a basic/token schema with username and password fields");
+              case "ssh" -> throw new IllegalArgumentException("Stored SSH keys require an SSH transport adapter; use HTTPS tokens for Git");
+              default -> throw new IllegalArgumentException("Credential schema has no Git authentication adapter");
             };
-
-        // check if we need to add a transport mechanism instead
-        if (ret == null && ExternalAuthenticationCredentials.SSH.equals(credentials.getScheme())) {
-
-          //                    SshSessionFactory sshSessionFactory = new
-          //                    JschConfigSessionFactory() {
-          //                        @Override
-          //                        protected void configure(Host host, Session session) {
-          //                            // do nothing
-          //                        }
-          //
-          //                        @Override
-          //                        protected JSch createDefaultJSch(FS fs) throws
-          //                        JSchException {
-          //                            JSch defaultJSch = super.createDefaultJSch(fs);
-          //                            defaultJSch.addIdentity("c:/path/to/my/private_key");
-          //
-          //                            // if key is protected with passphrase
-          //                            // defaultJSch.addIdentity("c:/path/to/my/private_key",
-          //                            "my_passphrase");
-          //
-          //                            return defaultJSch;
-          //                        }
-          //                    };
-          //
-          //                    command.setTransportConfigCallback(transport -> {
-          //                        SshTransport sshTransport = (SshTransport) transport;
-          //                        sshTransport.setSshSessionFactory(sshSessionFactory);
-          //                    });
-        }
       }
       return ret;
     }
@@ -1878,11 +1783,13 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     private static FetchResult fetchOrigin(
         org.eclipse.jgit.api.Git git, Scope scope, Modifications ret) throws GitAPIException {
 
+      var provider = getCredentialsProvider(git, scope);
       FetchCommand fetchCommand =
           git.fetch()
               .setRemote("origin")
               .setRemoveDeletedRefs(true)
-              .setCredentialsProvider(getCredentialsProvider(git, scope));
+              .setCredentialsProvider(provider)
+              .setTransportConfigCallback(transport -> secureTransport(transport, provider));
       FetchResult result = fetchCommand.call();
       if (result != null && result.getMessages() != null && !result.getMessages().isBlank()) {
         ret.getNotifications().add(Notification.info(result.getMessages()));
@@ -2022,7 +1929,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
       PushCommand pushCommand = git.push().setRemote("origin");
       pushCommand.add("refs/heads/" + normalizeBranchName(branch));
-      pushCommand.setCredentialsProvider(getCredentialsProvider(git, scope));
+      var provider = getCredentialsProvider(git, scope);
+      pushCommand.setCredentialsProvider(provider);
+      pushCommand.setTransportConfigCallback(transport -> secureTransport(transport, provider));
       Iterable<PushResult> pushResults = pushCommand.call();
       boolean reported = false;
       for (PushResult pushResult : pushResults) {
@@ -2480,7 +2389,23 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     public static String clone(
         String gitUrl, File directory, boolean removeIfExisting, Scope scope) {
 
-      String dirname = URLs.getURLBaseName(gitUrl);
+      String dirname = repositoryName(gitUrl);
+
+      String[] pdefs = gitUrl.split("#");
+      String branch;
+      if (pdefs.length < 2) {
+        branch = MAIN_BRANCH;
+      } else {
+        branch = pdefs[1];
+      }
+      String url = pdefs[0];
+
+      var credentials = resolveCredentials(url, scope, null);
+      if (credentials == null && credentialContext.get() != null && credentialContext.get().nativeGit())
+        credentials = NativeGitCredentials.resolve(url, directory);
+      CredentialsProvider credentialsProvider = getCredentialsProvider(credentials);
+
+      Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
 
       File pdir = new File(directory + File.separator + dirname);
       if (pdir.exists()) {
@@ -2495,30 +2420,19 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         }
       }
 
-      String[] pdefs = gitUrl.split("#");
-      String branch;
-      if (pdefs.length < 2) {
-        branch = MAIN_BRANCH;
-      } else {
-        branch = branchExists(pdefs[0], pdefs[1]) ? pdefs[1] : MAIN_BRANCH;
-      }
-      String url = pdefs[0];
-
-      Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
-
-      CredentialsProvider credentialsProvider =
-          getCredentialsProvider(
-              org.integratedmodelling.common.authentication.Authentication.INSTANCE.getCredentials(
-                  url, scope));
-
       try (org.eclipse.jgit.api.Git result =
           org.eclipse.jgit.api.Git.cloneRepository()
               .setURI(url)
               .setCredentialsProvider(credentialsProvider)
+              .setTransportConfigCallback(transport -> secureTransport(transport, credentialsProvider))
               .setBranch(branch)
               .setDirectory(pdir)
               .call()) {
 
+        if (credentials != null && credentials.getId() != null) {
+          result.getRepository().getConfig().setString("klab", null, "credentialId", credentials.getId());
+          result.getRepository().getConfig().save();
+        }
         Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());
 
         if (!branch.equals(MAIN_BRANCH)) {

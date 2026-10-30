@@ -18,8 +18,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 
 /**
  * Service-owned SMTP sender. Configuration is read atomically from the settings API on every
- * operation, so completed setting changes apply to the next message without a restart.
- * Construction and configuration checks never connect to an SMTP server.
+ * operation, so completed setting changes apply to the next message without a restart. Construction
+ * and configuration checks never connect to an SMTP server.
  */
 public class EmailManager {
   private final Settings settings;
@@ -71,7 +71,8 @@ public class EmailManager {
         Boolean.TRUE.equals(values.get(Setting.EMAIL_ENABLED.name())), invalid);
   }
 
-  private static void requireText(Map<String, Object> values, Setting setting, List<Setting> invalid) {
+  private static void requireText(
+      Map<String, Object> values, Setting setting, List<Setting> invalid) {
     if (!(values.get(setting.name()) instanceof String text) || text.isBlank()) {
       if (!invalid.contains(setting)) invalid.add(setting);
     }
@@ -97,22 +98,31 @@ public class EmailManager {
     return send(recipient, subject, text, false);
   }
 
-  /** Send UTF-8 text or HTML with the same non-configuration and failure semantics as {@link #send}. */
+  /**
+   * Send UTF-8 text or HTML with the same non-configuration and failure semantics as {@link #send}.
+   */
   public boolean send(String recipient, String subject, String body, boolean html) {
     var values = settings.asMap();
     if (!status(values).configured()) return false;
-    if (recipient == null || recipient.isBlank() || subject == null || body == null
-        || subject.contains("\r") || subject.contains("\n")) {
-      throw new KlabIllegalArgumentException("A recipient, single-line subject and body are required");
+    if (recipient == null
+        || recipient.isBlank()
+        || subject == null
+        || body == null
+        || subject.contains("\r")
+        || subject.contains("\n")) {
+      throw new KlabIllegalArgumentException(
+          "A recipient, single-line subject and body are required");
     }
     var sender = createSender(values);
     var message = sender.createMimeMessage();
     try {
       var helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
       helper.setValidateAddresses(true);
-      helper.setFrom(new InternetAddress(
-          string(values, Setting.EMAIL_FROM_ADDRESS), string(values, Setting.EMAIL_FROM_NAME),
-          StandardCharsets.UTF_8.name()));
+      helper.setFrom(
+          new InternetAddress(
+              string(values, Setting.EMAIL_FROM_ADDRESS),
+              string(values, Setting.EMAIL_FROM_NAME),
+              StandardCharsets.UTF_8.name()));
       helper.setTo(recipient);
       var replyTo = string(values, Setting.EMAIL_REPLY_TO);
       if (!replyTo.isBlank()) helper.setReplyTo(replyTo);
@@ -125,7 +135,8 @@ public class EmailManager {
       sender.send(message);
       return true;
     } catch (MailException e) {
-      // Keep SMTP diagnostics (which may contain server/user information) out of the public message.
+      // Keep SMTP diagnostics (which may contain server/user information) out of the public
+      // message.
       throw new KlabIOException("Email delivery failed", e);
     }
   }
@@ -142,13 +153,19 @@ public class EmailManager {
     var properties = sender.getJavaMailProperties();
     properties.setProperty("mail.smtp.auth", Boolean.toString(authentication));
     var security = string(values, Setting.EMAIL_SECURITY);
-    properties.setProperty("mail.smtp.starttls.enable", Boolean.toString("STARTTLS".equals(security)));
-    properties.setProperty("mail.smtp.starttls.required", Boolean.toString("STARTTLS".equals(security)));
+    properties.setProperty(
+        "mail.smtp.starttls.enable", Boolean.toString("STARTTLS".equals(security)));
+    properties.setProperty(
+        "mail.smtp.starttls.required", Boolean.toString("STARTTLS".equals(security)));
     properties.setProperty("mail.smtp.ssl.enable", Boolean.toString("SSL".equals(security)));
     properties.setProperty("mail.smtp.ssl.checkserveridentity", "true");
-    properties.setProperty("mail.smtp.connectiontimeout", values.get(Setting.EMAIL_CONNECTION_TIMEOUT_MS.name()).toString());
-    properties.setProperty("mail.smtp.timeout", values.get(Setting.EMAIL_READ_TIMEOUT_MS.name()).toString());
-    properties.setProperty("mail.smtp.writetimeout", values.get(Setting.EMAIL_WRITE_TIMEOUT_MS.name()).toString());
+    properties.setProperty(
+        "mail.smtp.connectiontimeout",
+        values.get(Setting.EMAIL_CONNECTION_TIMEOUT_MS.name()).toString());
+    properties.setProperty(
+        "mail.smtp.timeout", values.get(Setting.EMAIL_READ_TIMEOUT_MS.name()).toString());
+    properties.setProperty(
+        "mail.smtp.writetimeout", values.get(Setting.EMAIL_WRITE_TIMEOUT_MS.name()).toString());
     return sender;
   }
 

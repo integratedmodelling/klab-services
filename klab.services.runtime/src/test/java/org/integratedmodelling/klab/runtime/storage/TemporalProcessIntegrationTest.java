@@ -35,6 +35,7 @@ import org.ojalgo.array.BufferArray;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
+@Timeout(60)
 class TemporalProcessIntegrationTest {
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
   @TempDir Path directory;
@@ -70,6 +71,9 @@ class TemporalProcessIntegrationTest {
     final List<TemporalStateDelta> deltas=new ArrayList<>();
     final List<TransitionCommit> envelopes=new ArrayList<>();
     final List<KnowledgeGraph.Link> links=new ArrayList<>();
+    final Map<Long,List<Activity>> creators=new HashMap<>();
+    final Map<Long,List<Activity>> activityParents=new HashMap<>();
+    final Map<Long,List<Observation>> activityObservers=new HashMap<>();
     final AtomicLong keys=new AtomicLong(1000);
     SchedulerImpl scheduler;
     boolean failCommit;
@@ -81,16 +85,29 @@ class TemporalProcessIntegrationTest {
       var cd=new ObservationImpl.ContextualizationDataImpl(); cd.setNativeShardingStrategy(layout); quality.setContextualizationData(cd);
       field(twin,"knowledgeGraph",graph); field(twin,"commitCache",CacheBuilder.newBuilder().build());
       when(twin.getKnowledgeGraph()).thenReturn(graph); when(twin.getStorageManager()).thenReturn(manager);
+      when(twin.getScheduler()).thenAnswer(call -> scheduler);
       var user=mock(UserIdentity.class); when(user.getUsername()).thenReturn("tester");
       configureScope(root,user);
-      when(root.executingFresh(any(Activity.class),any(Observation.class))).thenAnswer(call -> {
-        staged.clear();
-        var scope=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS); configureScope(scope,user);
-        var tx=twin.new TransactionImpl(call.getArgument(0),scope,RuntimeAsset.PROVENANCE_ASSET,call.getArgument(1,Observation.class));
-        when(scope.getCurrentTransaction()).thenReturn(tx);
-        when(scope.commit()).thenAnswer(ignored -> tx.commit());
-        doAnswer(callFailure -> {failure=callFailure.getArgument(0,Throwable.class);tx.fail(failure);return null;}).when(scope).fail(any(Throwable.class));
-        return scope;
+      for(var observation:observations.values())recordInitialSelection(observation);
+      when(graph.query(eq(Activity.class),any())).thenAnswer(call ->
+          new org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<Activity>(
+              org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery.AssetType.ACTIVITY));
+      when(graph.query(eq(Observation.class),any())).thenAnswer(call ->
+          new org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<Observation>(
+              org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery.AssetType.OBSERVATION));
+      when(graph.query(any(KnowledgeGraph.Query.class),eq(Activity.class),any())).thenAnswer(call -> {
+        var query=(org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<?>)call.getArgument(0);
+        if(query.getTarget()==null)return List.of();
+        return query.getRelationship()==GraphModel.Relationship.CREATED
+            ? creators.getOrDefault(query.getTarget().getId(),List.of())
+            : query.getRelationship()==GraphModel.Relationship.TRIGGERED
+                ? activityParents.getOrDefault(query.getTarget().getId(),List.of()):List.of();
+      });
+      when(graph.query(any(KnowledgeGraph.Query.class),eq(Observation.class),any())).thenAnswer(call -> {
+        var query=(org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<?>)call.getArgument(0);
+        if (query.getSource()==null && query.getTarget()==null) return List.copyOf(observations.values());
+        return query.getSource()!=null && query.getRelationship()==GraphModel.Relationship.HAS_OBSERVER
+            ? activityObservers.getOrDefault(query.getSource().getId(),List.of()):List.of();
       });
       when(graph.nextKey()).thenAnswer(call -> keys.incrementAndGet());
       when(graph.createTransaction(any())).thenReturn(graphTx);
@@ -147,6 +164,13 @@ class TemporalProcessIntegrationTest {
       }).when(graphTx).store(any());
       doAnswer(call -> {
         long source=call.getArgument(0,RuntimeAsset.class).getId(),target=call.getArgument(1,RuntimeAsset.class).getId();
+        var type=call.getArgument(2,GraphModel.Relationship.class);
+        if(type==GraphModel.Relationship.CREATED && call.getArgument(0) instanceof Activity activity)
+          staged.add(()->creators.computeIfAbsent(target,ignored->new ArrayList<>()).add(activity));
+        if(type==GraphModel.Relationship.TRIGGERED && call.getArgument(0) instanceof Activity activity)
+          staged.add(()->activityParents.computeIfAbsent(target,ignored->new ArrayList<>()).add(activity));
+        if(type==GraphModel.Relationship.HAS_OBSERVER && call.getArgument(1) instanceof Observation selected)
+          staged.add(()->activityObservers.computeIfAbsent(source,ignored->new ArrayList<>()).add(selected));
         if(call.getArgument(2)==GraphModel.Relationship.HAS_DATA)
           staged.add(() -> data.computeIfAbsent(source,ignored->new ArrayList<>()).add(descriptors.get(target)));
         return null;
@@ -205,6 +229,7 @@ class TemporalProcessIntegrationTest {
       var output=observation(name,SemanticType.QUALITY,id);output.setParentId(20);
       output.setObservable(((ObservableImpl)output.getObservable()).as(org.integratedmodelling.klab.api.knowledge.Contextualization.QUANTIFICATION));
       var cd=new ObservationImpl.ContextualizationDataImpl();cd.setNativeShardingStrategy(layout);output.setContextualizationData(cd);observations.put(id,output);
+      recordInitialSelection(output);
       var storage=store(output);var scanner=storage.scan(Scheduler.Event.initialization(),layout,Storage.DoubleScanner.class,false).getFirst();
       scanner.add(value);scanner.add(value);scanner.add(value);storage.finalizeRun(scanner);
       manager.persistTemporalShard(scanner.shard(),((StorageImpl.BaseScanner)scanner).data);data.put(id,new ArrayList<>(List.of(scanner.shard())));
@@ -215,6 +240,10 @@ class TemporalProcessIntegrationTest {
       link(input,output,ProcessPlan.PREREQUISITE);return output;
     }
     void configureScope(ServiceContextScope scope,UserIdentity user) {
+      // No semantic service is provisioned by this numeric scheduler fixture. In particular,
+      // Mockito's generic deep stub is not a Reasoner or a completeness certificate.
+      doReturn(null).when(scope).getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      when(scope.getConsequenceCause()).thenReturn(null); // Diagnostic fixture: no consequence submission is active.
       when(scope.getObserver()).thenAnswer(call -> observer);
       when(scope.getId()).thenReturn("context");when(scope.getUser()).thenReturn(user);when(scope.getContextObservation()).thenReturn(bearer);
       when(scope.within(bearer)).thenReturn(scope);
@@ -222,14 +251,44 @@ class TemporalProcessIntegrationTest {
       when(scope.getDigitalTwin()).thenReturn(twin);when(scope.getConfiguration().getPersistence()).thenReturn(Persistence.EXPLICIT_ACTION);
       when(scope.getObservation(anyLong())).thenAnswer(call -> observations.get(call.getArgument(0)));
       doReturn(runtime).when(scope).getService(RuntimeService.class);
+      doCallRealMethod().when(scope).of(any(Observation.class));
+      when(scope.withObserver(nullable(Observation.class))).thenAnswer(call -> {
+        var copy=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);configureScope(copy,user);
+        when(copy.getObserver()).thenReturn(call.getArgument(0));
+        when(copy.getCurrentTransaction()).thenAnswer(ignored->scope.getCurrentTransaction());
+        return copy;
+      });
+      doAnswer(call->{failure=call.getArgument(0,Throwable.class);return null;}).when(scope).error(any(Throwable.class));
+      when(scope.executingFresh(any(Activity.class),any(Observation.class))).thenAnswer(call -> {
+        staged.clear();var fresh=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);configureScope(fresh,user);
+        when(fresh.getObserver()).thenAnswer(ignored->scope.getObserver());
+        var tx=twin.new TransactionImpl(call.getArgument(0),fresh,RuntimeAsset.PROVENANCE_ASSET,call.getArgument(1,Observation.class));
+        when(fresh.getCurrentTransaction()).thenReturn(tx);when(fresh.commit()).thenAnswer(ignored->tx.commit());
+        doAnswer(failed->{failure=failed.getArgument(0,Throwable.class);tx.fail(failure);return null;}).when(fresh).fail(any(Throwable.class));
+        return fresh;
+      });
       when(scope.executing(any(Activity.class),any(Observation.class))).thenAnswer(call -> {
         var child=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);configureScope(child,user);
+        when(child.getObserver()).thenAnswer(ignored->scope.getObserver());
         var tx=scope.getCurrentTransaction().getChild(call.getArgument(0),child,call.getArgument(1,Observation.class));
         when(child.getCurrentTransaction()).thenReturn(tx);when(child.commit()).thenAnswer(ignored->tx.commit());
         doAnswer(callFailure->{failure=callFailure.getArgument(0,Throwable.class);tx.fail(failure);return null;}).when(child).fail(any(Throwable.class));
         return child;
       });
     }
+    void recordInitialSelection(Observation observation) {
+      var creation=Activity.of(Activity.Type.SUBMISSION);creation.setId(keys.incrementAndGet());
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(creation,null);
+      creators.put(observation.getId(),new ArrayList<>(List.of(creation)));
+    }
+    void selectInitialObserver(Observation selected) {
+      observer=selected;observations.put(selected.getId(),selected);
+      for(var activities:creators.values())for(var creation:activities) {
+        org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(creation,selected);
+        activityObservers.put(creation.getId(),List.of(selected));
+      }
+    }
+    String failureDescription(){return failure==null?"No recorded runtime failure":Utils.Exceptions.stackTrace(failure);}
     StorageImpl store(Observation observation) {
       return stores.computeIfAbsent(observation.getId(),id -> {
         when(graph.query(Storage.Shard.class,root).source(observation).along(GraphModel.Relationship.HAS_DATA).run(root))
@@ -257,7 +316,9 @@ class TemporalProcessIntegrationTest {
       f.scheduler.close();
       when(f.graph.getScheduledObservations(f.root)).thenReturn(List.of());
       f.scheduler = new SchedulerImpl(f.root, f.twin);
-      var scope = f.root.executingFresh(Activity.of(Activity.Type.SUBMISSION), f.process);
+      var submission=Activity.of(Activity.Type.SUBMISSION);
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(submission,f.root.getObserver());
+      var scope = f.root.executingFresh(submission, f.process);
       scope.getCurrentTransaction().resolveWith(f.process, new DigitalTwin.Executor() {
         public List<org.integratedmodelling.klab.api.lang.ServiceCall> serialized() { return plan.getComputation(); }
         public Actuator getActuator() { return plan; }
@@ -270,7 +331,7 @@ class TemporalProcessIntegrationTest {
       assertTrue(f.scheduler.submit(f.process, scope));
       assertTrue(f.journals.isEmpty());
       assertTrue(scope.commit() > 0);
-      assertEquals(12, f.journals.size(), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertEquals(12, f.journals.size(), () -> f.failureDescription());
       assertEquals(13, f.data.get(101L).size());
       assertArrayEquals(new double[]{-20,80,230}, f.values(END));
       assertArrayEquals(new double[]{100,200,350}, f.values(START));
@@ -287,7 +348,7 @@ class TemporalProcessIntegrationTest {
     try(var f=new Fixture("elevation - 10")) {
       f.failCommit=true;assertFalse(f.scheduler.advanceTo(date("2014-02-01")));
       assertArrayEquals(new double[]{100,200,350},f.values(START));assertEquals(1,f.files());assertEquals(1,f.data.get(101L).size());
-      f.failCommit=false;assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->Utils.Exceptions.stackTrace(f.failure));
+      f.failCommit=false;assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->f.failureDescription());
       assertArrayEquals(new double[]{90,190,340},f.values(date("2014-02-01")));assertEquals(2,f.files());
       assertTrue(f.scheduler.advanceTo(date("2014-02-01")));assertEquals(2,f.data.get(101L).size());
       f.restart();assertTrue(f.scheduler.advanceTo(date("2014-03-01")));
@@ -304,10 +365,21 @@ class TemporalProcessIntegrationTest {
     }
   }
 
+  @Test void unknownHistoricalSelectionDoesNotDispatchOrBorrowCurrentObserver() throws Exception {
+    try(var f=new Fixture("elevation-10")) {
+      f.selectInitialObserver(observation("observer",SemanticType.AGENT,30));
+      f.creators.remove(f.process.getId());
+      assertFalse(f.scheduler.advanceTo(date("2014-02-01")));
+      assertNotNull(f.failure);assertTrue(f.failure.getMessage().contains("resubmit"));
+      assertTrue(f.journals.isEmpty());assertEquals(1,f.files());
+      assertArrayEquals(new double[]{100,200,350},f.values(START));
+    }
+  }
+
   @Test void inlineNoOpCommitsOnlyCompletionAndSurvivesRestart() throws Exception {
     try(var f=new Fixture("elevation")) {
-      f.observer=f.bearer;
-      assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->Utils.Exceptions.stackTrace(f.failure));
+      f.selectInitialObserver(observation("observer",SemanticType.AGENT,30));
+      assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->f.failureDescription());
       f.restart();assertTrue(f.scheduler.advanceTo(date("2014-02-01")));
       assertEquals(1,f.files());assertEquals(1,f.data.get(101L).size());assertTrue(f.quality.getEventTimestamps().isEmpty());
       assertEquals(1,f.journals.size());assertTrue(f.journals.getFirst().changedAssets().isEmpty());assertFalse(f.journals.getFirst().publicationPending());
@@ -321,7 +393,7 @@ class TemporalProcessIntegrationTest {
     double[][] reference = new double[12][];
     List<String> supports;
     try (var f = new Fixture("elevation - 10")) {
-      assertTrue(f.scheduler.advanceTo(END), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertTrue(f.scheduler.advanceTo(END), () -> f.failureDescription());
       for (int month = 1; month <= 12; month++)
         reference[month - 1] = f.values(java.time.LocalDate.of(2014,1,1).plusMonths(month)
             .atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli());
@@ -335,7 +407,7 @@ class TemporalProcessIntegrationTest {
         f.failCommit = month == 5;
         if (f.failCommit) assertFalse(f.scheduler.advanceTo(end));
         f.failCommit = false;
-        assertTrue(f.scheduler.advanceTo(end), () -> Utils.Exceptions.stackTrace(f.failure));
+        assertTrue(f.scheduler.advanceTo(end), () -> f.failureDescription());
         f.restart();
         assertTrue(f.scheduler.advanceTo(end));
         assertArrayEquals(reference[month - 1], f.values(end));
@@ -353,7 +425,7 @@ class TemporalProcessIntegrationTest {
       var difference=f.downstream("difference",102,f.quality,"elevation","elevation - elevation",0);
       var untouched=f.downstream("untouched",103,difference,"difference","difference + 1",1);
       var doubled=f.downstream("doubled",104,f.quality,"elevation","elevation * 2",0);
-      assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->Utils.Exceptions.stackTrace(f.failure));
+      assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->f.failureDescription());
       assertEquals(1,f.data.get(102L).size());assertEquals(1,f.data.get(103L).size());
       assertEquals(List.of(101L,104L),f.journals.getFirst().changedAssets());
       assertArrayEquals(new double[]{180,380,680},f.values(doubled,date("2014-02-01")));
@@ -365,7 +437,7 @@ class TemporalProcessIntegrationTest {
   @Test void multipleNamedOutputsReadPriorStateRegardlessOfAssignmentOrder() throws Exception {
     for(boolean reverse : List.of(false,true)) try(var f=new Fixture("elevation - 10")) {
       var second=f.secondAssignment(reverse);
-      assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->Utils.Exceptions.stackTrace(f.failure));
+      assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->f.failureDescription());
       assertArrayEquals(new double[]{90,190,340},f.values(date("2014-02-01")));
       assertArrayEquals(new double[]{100,200,350},f.values(second,date("2014-02-01")));
       assertEquals(List.of(101L,102L),f.journals.getFirst().changedAssets());
@@ -386,9 +458,9 @@ class TemporalProcessIntegrationTest {
 
   @Test void scalarTimeParameterUsesNativeMonthlyTransition() throws Exception {
     try(var f=new Fixture("(time.end.milliseconds - time.start.milliseconds) / 86400000")) {
-      assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->Utils.Exceptions.stackTrace(f.failure));
+      assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->f.failureDescription());
       assertArrayEquals(new double[]{31,31,31},f.values(date("2014-02-01")));
-      f.restart();assertTrue(f.scheduler.advanceTo(date("2014-03-01")),()->Utils.Exceptions.stackTrace(f.failure));
+      f.restart();assertTrue(f.scheduler.advanceTo(date("2014-03-01")),()->f.failureDescription());
       assertArrayEquals(new double[]{28,28,28},f.values(date("2014-03-01")));
     }
   }
@@ -398,12 +470,12 @@ class TemporalProcessIntegrationTest {
       f.createPrecipitation();assertEquals(3,f.observations.size());
       f.failCommit=true;assertFalse(f.scheduler.advanceTo(date("2014-02-01")));
       assertEquals(3,f.observations.size());assertEquals(1,f.files());assertFalse(f.process.getMetadata().containsKey("klab.process.created.precipitation"));
-      f.failCommit=false;assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->Utils.Exceptions.stackTrace(f.failure));
+      f.failCommit=false;assertTrue(f.scheduler.advanceTo(date("2014-02-01")),()->f.failureDescription());
       long createdId=((Number)f.process.getMetadata().get("klab.process.created.precipitation")).longValue();
       var created=f.observations.get(createdId);assertNotNull(created);assertEquals(20,created.getParentId());
       assertEquals(List.of(date("2014-02-01")),created.getEventTimestamps());assertEquals(1,f.data.get(createdId).size());
       assertEquals(List.of(createdId),f.journals.getFirst().changedAssets());
-      f.restart();assertTrue(f.scheduler.advanceTo(date("2014-03-01")),()->Utils.Exceptions.stackTrace(f.failure));
+      f.restart();assertTrue(f.scheduler.advanceTo(date("2014-03-01")),()->f.failureDescription());
       assertEquals(createdId,((Number)f.process.getMetadata().get("klab.process.created.precipitation")).longValue());
       assertEquals(2,f.data.get(createdId).size());assertEquals(4,f.observations.size());assertEquals(3,f.files());
       var scanner=f.store(created).scan(new TransitionEvent("query",date("2014-02-01"),date("2014-03-01"),null),f.layout,Storage.DoubleScanner.class,true).getFirst();
@@ -427,7 +499,7 @@ class TemporalProcessIntegrationTest {
       ((ActuatorImpl) plan.getChildren().getFirst()).setCoverage(event.getGeometry());
       plan.getOccurrenceSchedules().clear();
       event.getMetadata().put(Scheduler.PLAN_METADATA_KEY, Utils.Json.asString(plan));
-      f.observations.put(event.getId(), event);
+      f.observations.put(event.getId(), event);f.recordInitialSelection(event);
       when(f.graph.getScheduledObservations(f.root)).thenReturn(List.of(event));
       f.restart();
       assertTrue(f.scheduler.advanceTo(start - 1));
@@ -437,7 +509,7 @@ class TemporalProcessIntegrationTest {
       assertTrue(ObservedEvent.pending(event));
       assertArrayEquals(new double[] {100, 200, 350}, f.values(start));
       f.failCommit = false;
-      assertTrue(f.scheduler.advanceTo(start), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertTrue(f.scheduler.advanceTo(start), () -> f.failureDescription());
       assertFalse(ObservedEvent.pending(event));
       assertArrayEquals(new double[] {100, 190, 350}, f.values(start));
       assertArrayEquals(new double[] {0, 380, 0}, f.values(consequence, start));
@@ -446,7 +518,7 @@ class TemporalProcessIntegrationTest {
       f.restart();
       assertTrue(f.scheduler.advanceTo(END));
       assertEquals(1, f.journals.size(), "The event outlives the instantiation horizon");
-      assertTrue(f.scheduler.advanceTo(end), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertTrue(f.scheduler.advanceTo(end), () -> f.failureDescription());
       assertArrayEquals(new double[] {100, 180, 350}, f.values(end));
       assertArrayEquals(new double[] {0, 360, 0}, f.values(consequence, end));
       assertEquals(2, f.journals.size());
@@ -494,16 +566,89 @@ class TemporalProcessIntegrationTest {
   @Test void occurrenceOwnedCreationRetainsItsBearerAcrossRestart() throws Exception {
     try (var f = new Fixture("elevation")) {
       f.createPrecipitation(ProcessPlan.Bearer.OCCURRENT);
-      assertTrue(f.scheduler.advanceTo(date("2014-02-01")), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertTrue(f.scheduler.advanceTo(date("2014-02-01")), () -> f.failureDescription());
       long id = ((Number) f.process.getMetadata().get("klab.process.created.precipitation")).longValue();
       assertEquals(f.process.getId(), f.observations.get(id).getParentId());
       verify(f.graphTx).link(eq(f.process), eq(f.observations.get(id)),
           eq(GraphModel.Relationship.HAS_CHILD), any(Object[].class));
       f.restart();
-      assertTrue(f.scheduler.advanceTo(date("2014-03-01")), () -> Utils.Exceptions.stackTrace(f.failure));
+      assertTrue(f.scheduler.advanceTo(date("2014-03-01")), () -> f.failureDescription());
       assertEquals(id, ((Number) f.process.getMetadata().get("klab.process.created.precipitation")).longValue());
       assertEquals(f.process.getId(), f.observations.get(id).getParentId());
       assertEquals(2, f.data.get(id).size());
     }
   }
-}
+  @Test void processExistenceProvenanceRecoversActualObserverAndRollsBackWithRegistration() throws Exception {
+    for (boolean selected : List.of(false,true)) for (boolean fail : List.of(false,true)) {
+      try (var f=new Fixture("elevation - 10")) {
+        var observer=selected?observation("selectedObserver",SemanticType.AGENT,500):null;
+        if(observer!=null)f.selectInitialObserver(observer);
+        f.quality.setEventTimestamps(new ArrayList<>(List.of(0L)));
+        f.creators.remove(f.process.getId());
+        var registration=Utils.Json.parseObject(f.process.getMetadata().remove(OccurrenceRegistration.METADATA_KEY).toString(),OccurrenceRegistration.class);
+        var plan=Utils.Json.parseObject(registration.plan(),Actuator.class);
+        f.scheduler.close();when(f.graph.getScheduledObservations(f.root)).thenReturn(List.of());
+        f.scheduler=new SchedulerImpl(f.root,f.twin);
+        var submission=Activity.of(Activity.Type.SUBMISSION);
+        org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(submission,observer);
+        var scope=f.root.executingFresh(submission,f.bearer);
+        if(observer!=null)scope.getCurrentTransaction().link(submission,observer,GraphModel.Relationship.HAS_OBSERVER);
+        var executor=new CompiledDataflow(f.runtime,f.process,scope).restoreOccurrenceExecutor(plan);
+        scope.getCurrentTransaction().resolveWith(f.process,executor);
+        assertTrue(f.scheduler.submit(f.process,scope),()->f.failureDescription());
+        assertFalse(org.integratedmodelling.common.runtime.ObserverProvenance.recover(f.root,f.process).known());
+        assertTrue(f.journals.isEmpty());assertArrayEquals(new double[]{100,200,350},f.values(START));
+        f.failCommit=fail;
+        if(fail) {
+          assertTrue(scope.commit()<0);
+          assertFalse(f.creators.containsKey(f.process.getId()));
+          assertFalse(f.process.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY));
+          assertTrue(f.journals.isEmpty());assertEquals(1,f.data.get(101L).size());
+        } else {
+          assertTrue(scope.commit()>0,()->f.failureDescription());
+          var selection=org.integratedmodelling.common.runtime.ObserverProvenance.recover(f.root,f.process);
+          assertTrue(selection.known());assertEquals(observer==null?0:observer.getId(),selection.observer()==null?0:selection.observer().getId());
+          var initialization=f.creators.get(f.process.getId()).stream().filter(a->a.getType()==Activity.Type.INITIALIZATION).toList();
+          assertEquals(1,initialization.size());assertFalse(initialization.getFirst().getType().isContextualization());
+          assertEquals(12,f.journals.size(),()->f.failureDescription());
+          assertArrayEquals(new double[]{-20,80,230},f.values(END));
+          assertArrayEquals(new double[]{100,200,350},f.values(START));
+          assertTrue(TemporalInspector.scheduleCheck(f.root,f.process,1,Time.Resolution.Type.MONTH,
+              "2014-01-01T00:00:00Z","2015-01-01T00:00:00Z",12));
+          assertFalse(TemporalInspector.scheduleCheck(f.root,f.process,1,Time.Resolution.Type.DAY,
+              "2014-01-01T00:00:00Z","2015-01-01T00:00:00Z",12));
+          assertFalse(TemporalInspector.scheduleCheck(f.root,f.process,1,Time.Resolution.Type.MONTH,
+              "2014-01-01T00:00:00Z","2015-01-01T00:00:00Z",11));
+          assertTrue(TemporalInspector.relativeCheck(f.root,f.process,f.quality,12,-10,1e-8));
+          assertFalse(TemporalInspector.relativeCheck(f.root,f.process,f.quality,12,-9,1e-8));
+          assertTrue(TemporalInspector.provenanceCheck(f.root,f.process));
+        }
+      }
+    }
+  }
+
+  @Test void processExistenceProvenanceDoesNotInitializeCreatesQualities() throws Exception {
+    try(var f=new Fixture("elevation")) {
+      f.createPrecipitation();f.quality.setEventTimestamps(new ArrayList<>(List.of(0L)));f.creators.remove(f.process.getId());
+      var registration=Utils.Json.parseObject(f.process.getMetadata().remove(OccurrenceRegistration.METADATA_KEY).toString(),OccurrenceRegistration.class);
+      var plan=Utils.Json.parseObject(registration.plan(),Actuator.class);
+      assertEquals(1,plan.getChildren().size());assertEquals("elevation",plan.getChildren().getFirst().getName());
+      f.scheduler.close();when(f.graph.getScheduledObservations(f.root)).thenReturn(List.of());f.scheduler=new SchedulerImpl(f.root,f.twin);
+      var submission=Activity.of(Activity.Type.SUBMISSION);org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(submission,null);
+      var scope=f.root.executingFresh(submission,f.bearer);
+      scope.getCurrentTransaction().resolveWith(f.process,new CompiledDataflow(f.runtime,f.process,scope).restoreOccurrenceExecutor(plan));
+      assertTrue(f.scheduler.submit(f.process,scope),()->f.failureDescription());
+      assertEquals(3,f.observations.size());assertFalse(f.process.getMetadata().containsKey("klab.process.created.precipitation"));
+      assertTrue(f.journals.isEmpty());assertEquals(1,f.files());
+      assertTrue(scope.commit()>0,()->f.failureDescription());
+      long createdId=((Number)f.process.getMetadata().get("klab.process.created.precipitation")).longValue();
+      var created=f.observations.get(createdId);assertNotNull(created);
+      assertEquals(date("2014-02-01"),created.getEventTimestamps().getFirst());
+      assertFalse(created.getEventTimestamps().contains(0L));assertEquals(12,f.data.get(createdId).size());
+      assertTrue(f.creators.getOrDefault(createdId,List.of()).stream().noneMatch(a->a.getType()==Activity.Type.INITIALIZATION));
+      assertEquals(12,f.journals.size());assertTrue(f.scheduler.advanceTo(date("2015-02-01")));assertEquals(12,f.journals.size());
+      assertTrue(TemporalInspector.provenanceCheck(f.root,f.process));
+      assertEquals(12,f.data.get(createdId).size(),"Inspector must not allocate INIT storage");
+    }
+  }}
+

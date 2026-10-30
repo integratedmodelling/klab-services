@@ -41,6 +41,52 @@ final class ContextActorSupport {
     throw new IllegalArgumentException(option + " requires an Observation");
   }
 
+  static ContextScope submissionScope(ContextScope context, Metadata options) {
+    // Validate the entire request before deriving scopes or touching runtime/graph services.
+    var allowed = Set.of("within", "source", "target", "observer", "namespace", "project");
+    for (String key : options.keySet()) if (!allowed.contains(key))
+      throw new IllegalArgumentException("Unknown context submit option: " + key);
+    for (String key : List.of("namespace", "project")) if (options.containsKey(key)
+        && (!(options.get(key) instanceof String value) || value.isBlank()))
+      throw new IllegalArgumentException(key + " requires a nonblank string");
+    boolean within = options.containsKey("within"), source = options.containsKey("source"),
+        target = options.containsKey("target");
+    if (within && (source || target))
+      throw new IllegalArgumentException("within cannot be combined with source/target");
+    if (source != target) throw new IllegalArgumentException("Focus requires both source and target");
+    for (String key : List.of("within", "source", "target"))
+      if (options.containsKey(key)) observation(options.get(key), key);
+    Observation observer = null;
+    if (options.containsKey("observer") && !Boolean.FALSE.equals(options.get("observer"))) {
+      observer = observation(options.get("observer"), "observer");
+      var observable = observer.getObservable();
+      if (observer.getId() <= 0 || observable == null || observable.getSemantics() == null
+          || !observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)
+          || observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT)
+          || observable.getSemantics().isCollective())
+        throw new IllegalArgumentException("observer requires a persisted concrete singular Agent observation");
+    }
+    var selected = focus(context, options);
+    var constraints = new ArrayList<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>();
+    if (options.containsKey("observer")) {
+      // Negation inhibits automatic preparation; it never clears an inherited actual observer.
+      constraints.add(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+          observer == null
+              ? org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.DoNotCreateDefaultObserver
+              : org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.Observer,
+          observer == null ? true : observer.getId()));
+    }
+    for (String key : List.of("namespace", "project")) if (options.containsKey(key))
+      constraints.add(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+          key.equals("namespace")
+              ? org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ResolutionNamespace
+              : org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ResolutionProject,
+          options.get(key)));
+    // Lexical resolution scope is independent of the definition map's namespace/name identity.
+    return constraints.isEmpty() ? selected : selected.withResolutionConstraints(
+        constraints.toArray(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint[]::new));
+  }
+
   static Object query(ContextScope base, Object... arguments) {
     var options = metadata(arguments);
     Set<String> allowed = Set.of("type", "id", "urn", "semantics", "within", "source", "target",

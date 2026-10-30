@@ -20,6 +20,94 @@ import org.junit.jupiter.api.Test;
 class NavigableBehaviorLifecycleTest {
 
   @Test
+  void repeatedCreatesThenSaveKeepOneDocumentForEveryBehaviorKind() {
+    for (var type : KActorsBehavior.Type.values()) {
+      var project = new ProjectImpl();
+      project.setUrn("test.project");
+      var workspace = new WorkspaceImpl();
+      workspace.setUrn("test.workspace");
+      workspace.getProjects().add(project);
+      var navigable = new TestWorkspace(workspace);
+      var current = new java.util.concurrent.atomic.AtomicReference<>(behavior("test.document", type));
+      var service = (org.integratedmodelling.klab.api.services.ResourcesService)
+          java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+              new Class<?>[] {org.integratedmodelling.klab.api.services.ResourcesService.class},
+              (proxy, method, args) -> method.getName().equals("retrieve") ? current.get() : null);
+      var scope = (org.integratedmodelling.klab.api.scope.UserScope)
+          java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+              new Class<?>[] {org.integratedmodelling.klab.api.scope.UserScope.class},
+              (proxy, method, args) -> method.getName().equals("findService")
+                  ? java.util.Optional.of(service) : null);
+      var changes = new ResourceSet();
+      var change = new ResourceSet.Resource();
+      change.setResourceUrn("test.document");
+      change.setProjectUrn("test.project");
+      change.setKnowledgeClass(KlabAsset.classify(current.get()));
+      change.setOperation(org.integratedmodelling.klab.api.authentication.CRUDOperation.CREATE);
+      changes.getBehaviors().add(change);
+      navigable.mergeChanges(changes, scope);
+      var document = navigable.findAsset("test.document", NavigableKActorsBehavior.class, change.getKnowledgeClass());
+      navigable.mergeChanges(changes, scope);
+
+      current.set(behavior("test.document", type));
+      current.get().setSourceCode("saved source");
+      change.setOperation(org.integratedmodelling.klab.api.authentication.CRUDOperation.UPDATE);
+      for (int save = 0; save < 2; save++) {
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> navigable.mergeChanges(changes, scope));
+        assertSame(document, navigable.findAsset("test.document", NavigableKActorsBehavior.class, change.getKnowledgeClass()));
+        assertEquals("saved source", document.getSourceCode());
+        assertEquals(1, document.parent().children().size(), type.name());
+      }
+    }
+  }
+
+  @Test
+  void firstLocalApplicationAlreadyPresentInProjectIsNotAddedTwice() {
+    var project = new ProjectImpl();
+    project.setUrn("test.project");
+    var workspace = new WorkspaceImpl();
+    workspace.setUrn("test.workspace");
+    workspace.getProjects().add(project);
+    var navigable = new TestWorkspace(workspace);
+    var app = behavior("test.app", KActorsBehavior.Type.APP);
+    // A local service may share the project bean and populate it before CREATE is delivered.
+    project.getApps().add(app);
+    var added = navigable.add(app);
+    assertEquals(1, added.parent().children().size());
+    assertSame(added, added.parent().children().getFirst());
+  }
+
+  @Test
+  void ambiguousApplicationUpdateDoesNotThrowOrReportNullAssets() {
+    var project = new ProjectImpl();
+    project.setUrn("test.project");
+    project.getApps().add(behavior("test.app", KActorsBehavior.Type.APP));
+    project.getApps().add(behavior("test.app", KActorsBehavior.Type.APP));
+    var workspace = new WorkspaceImpl();
+    workspace.setUrn("test.workspace");
+    workspace.getProjects().add(project);
+    var navigable = new TestWorkspace(workspace);
+    var updated = behavior("test.app", KActorsBehavior.Type.APP);
+    var service = (org.integratedmodelling.klab.api.services.ResourcesService)
+        java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+            new Class<?>[] {org.integratedmodelling.klab.api.services.ResourcesService.class},
+            (proxy, method, args) -> method.getName().equals("retrieve") ? updated : null);
+    var scope = (org.integratedmodelling.klab.api.scope.UserScope)
+        java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+            new Class<?>[] {org.integratedmodelling.klab.api.scope.UserScope.class},
+            (proxy, method, args) -> method.getName().equals("findService")
+                ? java.util.Optional.of(service) : null);
+    var changes = new ResourceSet();
+    var change = new ResourceSet.Resource();
+    change.setResourceUrn("test.app");
+    change.setProjectUrn("test.project");
+    change.setKnowledgeClass(KlabAsset.KnowledgeClass.APPLICATION);
+    change.setOperation(org.integratedmodelling.klab.api.authentication.CRUDOperation.UPDATE);
+    changes.getBehaviors().add(change);
+    org.junit.jupiter.api.Assertions.assertTrue(navigable.mergeChanges(changes, scope).isEmpty());
+  }
+
+  @Test
   void behaviorSubtypesUseTheirCanonicalStorageLocations() {
     assertEquals(
         ProjectStorage.ResourceType.BEHAVIOR,

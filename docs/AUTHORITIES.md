@@ -40,7 +40,8 @@ their authority URN. Each Reasoner owns bindings keyed by local name within its 
 
 Only an `identity` concept may declare an authority requirement. That concept is the worldview
 anchor for the provider's top-level/base identity. Other identities inherit through the provider's
-base identity and parent graph; the Reasoner does not add a direct anchor superclass to each leaf.
+base identity and parent graph. An explicit semantic boundary mapping can instead attach a
+reconciled identity directly to the anchor and mapped identity categories, deferring ancestry.
 The authority is responsible for the correctness of its hierarchy. Source validation and ingestion
 require an identity declaration, an uppercase local name, and a nonblank string `urn` parameter.
 
@@ -95,7 +96,7 @@ must prevent concept creation.
 The old `api.knowledge.Authority` interface is deprecated and is no longer a discoverable provider
 contract. Its `setup()`, `Configuration.getResolutionEndpoint()`, documentation, and distance methods
 have not been carried over as an operational remote protocol. New providers use `api.services.Authority`.
-Distance delegation still needs an API decision. Identity documentation is published through the authenticated Reasoner documentation routes.
+Configured distance delegation is described in [authority distance](AUTHORITY_DISTANCE.md). Identity documentation is published through the authenticated Reasoner documentation routes.
 
 Provider projects using the previous service interface must add `configure(ConfigurationRequest)`,
 pass configuration IDs to `resolveIdentity` and `search`, and return the annotated URN from
@@ -107,8 +108,102 @@ code identity, hierarchy, search, reconciliation, release selection and legacy G
 Providers may declare `Capabilities.areSubAuthoritiesSearchFilters()` when subdivisions only limit
 search space. For these providers, `NAME.RANK:<id>` resolves through the configured `NAME` bridge
 when `RANK` is advertised in capabilities. It shares the canonical concept, ontology and locator;
-the provider still resolves all parent ranks. An exact explicitly configured dotted binding takes
+the provider still resolves all parent ranks unless semantic boundaries are explicitly configured.
+An exact explicitly configured dotted binding takes
 precedence. Without this capability, the Reasoner does not infer subdivision semantics.
+
+### Semantic boundaries and deferred ancestry
+
+Reconciliation establishes what an identity denotes; reconstructing its external hierarchy is
+optional when the provider can establish a sufficiently precise semantic boundary. A worldview
+opts in by mapping provider-defined boundary IDs to declared worldview **identity** concepts:
+
+```kwv
+identity ChemicalIdentity requires authority CHEM {
+    urn: "klab.authority.pubchem",
+    semanticBoundaries: {
+        "COMPOUND": "chemistry:Compound"
+    }
+};
+```
+
+This example assumes `chemistry:Compound` is a declared identity category. The Resources validator
+rejects absent, invalid or non-identity targets. The Reasoner requires these mappings to match the
+worldview declaration. Providers advertise supported IDs through `getSemanticBoundaries()` and
+validate them during configuration with `request.requireSupportedBoundaries(...)`.
+
+The provider must reconcile and validate the canonical identity before assigning boundary
+membership. It returns that membership through `Identity.getSemanticBoundaries()`. Search filters,
+user-selected subdivisions and community aliases never establish membership by themselves.
+Boundaries may be provider subdivisions, or authoritative codelists whose membership the provider
+can independently attest. A provider could advertise `codelist:official` and classify members of
+that list using exactly the same contract; merely adding a codelist namespace does not opt in.
+
+For mapped identities, providers may return `HierarchyStatus.DEFERRED` without parent/base edges.
+The Reasoner adds the bridge anchor and every mapped category as superclasses, retains the canonical
+identity, and records `authorityHierarchyStatus=DEFERRED` in concept metadata. This explicitly
+distinguishes unavailable ancestry from an authoritative empty parent list. Providers can use the
+immutable `Authority.ClassifiedIdentity` helper. Unmapped identities and legacy providers retain
+the existing hierarchy behavior; default membership is empty and default status is `COMPLETE`.
+
+PubChem supports `COMPOUND` for reconciled PubChem CIDs and `CHEBI` for ChEBI identities that remain
+distinct after reconciliation. A ChEBI code reconciled to a CID belongs to `COMPOUND`, regardless
+of the search catalog. TAXA uses the **accepted usage's rank**, such as `SPECIES` or `GENUS`;
+synonym rank and the selected search filter cannot override it. For example, map `SPECIES` to
+`life:SpeciesIdentity` and `GENUS` to `life:GenusIdentity`, provided these are declared identities.
+
+Full ancestry remains available through
+`resolveIdentity(configurationId, code, ResolutionMode.FULL_HIERARCHY)`. Providers adopting
+deferral must implement this overload; it must never return deferred ancestry. The Reasoner exposes
+`resolveAuthorityHierarchy(authority, code, scope)` and authenticated
+`POST /api/v1/authority/hierarchy` with `{"authority":"CHEM","identity":"CID:2244"}`.
+This uses the configured authority name and a canonical code. It validates the complete graph,
+enriches the **same concept**, marks it complete and invalidates semantic caches. A failed provider
+lookup or graph validation leaves the accepted concept intact and retryable. Inspecting parents
+also requests enrichment, as does direct authority-identity subsumption. Operations that use only
+the declared worldview category need no ancestry. Other consumers of the OWL graph must inspect
+the status and explicitly request expansion before assuming external ancestry is complete.
+
+The persistent authority cache includes mappings in its configuration fingerprint and keeps
+configured and full-hierarchy resolution records separate. Membership and hierarchy status survive
+cache reloads; a deferred record cannot satisfy a full-hierarchy request. Deploy updated providers
+and services, then reload a worldview with the desired mappings to enable this behavior.
+
+### Configured snapshots for candidate isolation
+
+`SnapshottingAuthority` is an optional capability for providers whose configured
+state can be restored independently. It exports a `ConfiguredAuthoritySnapshot`
+with a format/version identifier, provider URN, exact provider configuration and
+owned payload bytes (maximum 32 MiB). Parameters and payload are defensively owned.
+`restoreConfiguration` must validate the exact request and format, create a new
+bridge without network access or mutable discovery, and support identity, full
+hierarchy, search and reconciliation from the frozen state. Closing the provider
+must release its owned clients and bridge state.
+
+The bootstrap resolves authorized component descriptors and verifies artifact
+content before execution. Captured implementations are discovered from annotations
+in that exact archive, not from a global classpath or provider-name allowlist.
+New implementations must implement the snapshot capability; the existing TAXA
+and PubChem cache-replay implementations remain supported for compatibility.
+Providers with configuration-dependent codelist definitions still require explicit
+frozen codelist support and are rejected by the existing admission gate.
+
+After successful producer compilation, snapshot bytes are bound to its source,
+configuration, provider artifact/metadata, rights and codelist revision proof.
+Missing, changed, extra/unbound or unproved snapshot state cannot certify a bridge.
+The immutable catalog fingerprints the exact bytes read. Snapshot files are bounded
+to 48 MiB each and 384 MiB total (allowing JSON/base64 transport overhead); producer
+payloads are bounded to 256 MiB total. Isolated compilation never calls the live
+configuration route for a snapshot provider. Accepted operations restore and retain
+that same owned state. Legacy accepted providers retain their existing interactive
+route; a failed candidate leaves the prior accepted environment intact.
+
+This capture contract is separate from `CachePolicy`: a zero response lifetime
+still writes no persistent identity/search/reconciliation cache entries. UN uses
+the snapshot contract to freeze its selected Caliper scheme and vocabulary while
+retaining all-zero response-cache lifetimes. Explicit source pins, when supplied,
+must include every selected component with exact versions and MD5/SHA256; up to
+32 explicitly named component identities are supported. Missing pins fail closed.
 
 ### Configuration endpoint
 
@@ -332,7 +427,9 @@ For each valid `requires authority NAME {...}` declaration, the Reasoner:
    binding, even when provider URNs match.
 5. Make `NAME:<identifier>` available to semantic parsing and resolve it lazily through
    `resolveIdentity(configurationId, identityId)`.
-6. Recursively obtains missing base/parent identities, stopping each branch at the first known
+6. For a provider-attested mapped boundary, attaches the reconciled identity directly to the
+   anchor and mapped categories and marks ancestry deferred. Otherwise recursively obtains
+   missing base/parent identities, stopping each branch at the first known
    concept. A visited graph prevents endless recursion; the provider remains responsible for
    hierarchy consistency. Top-level identities (no remaining base/parent edges) inherit from the
    worldview anchor; supplied base/parent edges carry that inheritance to descendants. A
@@ -357,7 +454,7 @@ This syntax must preserve the complete bracketed payload rather than applying or
 rules. It enables an authority to expose intuitive local aliases while evaluating equivalence,
 subsumption, or distance from a multidimensional external definition. Ordinary OWL reasoning can
 still use the materialized parent structure; comparisons whose meaning belongs to the external
-classification will need a configured-provider distance API, which is not currently exposed.
+classification can use the configured-provider distance hook described in [authority distance](AUTHORITY_DISTANCE.md).
 
 Concepts materialized from an authority should behave like normal concepts for hierarchy,
 restriction, caching, display, and transport. Their origin remains significant: normal asserted
@@ -370,7 +467,7 @@ configuration equivalence.
 
 | Area | Status |
 | --- | --- |
-| Java annotation and provider interface | Available for provider identity, bridge configuration, search, codelists and hierarchy data. Reasoner documentation transport is available; authority-specific distance remains pending. |
+| Java annotation and provider interface | Available for provider identity, bridge configuration, search, codelists and hierarchy data. Reasoner documentation transport and configured authority distance are available; remote provider hosting remains pending. |
 | Component scanning and validation | Available. Empty URNs, wrong interface types, missing no-argument constructors, and annotation/implementation URN mismatches are rejected. |
 | Descriptor advertisement and serialization | Available. `ComponentDescriptor.authorities()` is published with service capabilities. |
 | Reasoner-only instantiation | Available. Resources indexes and advertises providers without hosting them. |
@@ -386,7 +483,7 @@ configuration equivalence.
 | Search-only sub-authority dispatch | Implemented for opted-in providers: advertised dotted suffixes resolve through the base bridge, cache and canonical ontology. Exact configured dotted bindings take precedence. |
 | Taxonomic provider | The sibling `klab.authority.taxa` implements pinned COL XR configuration, code lookup, synonym canonicalization, hierarchy validation, scientific/vernacular search and explicit reconciliation. See its README for parameters and limits. |
 | Explicit reconciliation | Optional shared Java API and capability flag available. TAXA rejects ambiguous and higher-rank matches; service/UI transport remains pending. |
-| Authority-aware semantic distance | Not implemented in Reasoner matching. |
+| Authority-aware semantic distance | Configured provider hook and normal matcher delegation implemented; see [direction, status, caching and capture limits](AUTHORITY_DISTANCE.md). |
 | Bracketed complex expressions (`NAME:[...]`) | Canonical serialization, Resources parser/adapter retention, OWL decoding, and HTTP semantic insertion/undo are implemented and regression-tested. |
 | Remote authority API | Authenticated Reasoner configuration, search, documentation, and semantic identity insertion are available. Standalone provider hosting, distance, and CRUD protocols remain undefined. |
 
@@ -411,9 +508,9 @@ The next implementation work should proceed in dependency order:
    expressions (`NAME:[...]`). Preserve payloads, including embedded colons and escaped closing
    brackets, through qualified-name splitting, provider dispatch and canonicalization. Canonical
    forms must remain unambiguous and round-trip through service DTOs.
-6. **Integrate reasoning.** Route authority identity comparisons to the correct configured binding,
-   combine provider distance with ordinary concept reasoning, and invalidate all related caches on
-   binding, component, or worldview revision changes.
+6. **Extend reasoning integration.** Configured authority identity comparisons now delegate through
+   the normal matcher. Specify policy-revision caching, cross-binding mediation and captured distance
+   replay; preserve ordinary observable-head and contextual restrictions.
 7. **Define remote hosting.** Specify request/response DTOs for capabilities, configuration,
    identity lookup, search, distance, documentation, and optional CRUD. Include authorization,
    timeouts, cancellation, health, and failure semantics before treating

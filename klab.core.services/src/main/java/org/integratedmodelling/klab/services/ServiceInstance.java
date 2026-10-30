@@ -344,6 +344,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
   public boolean start(ServiceStartupOptions options) {
 
+    options.prepareDataRoot();
     setEnvironment(options);
     this.serviceScope = createServiceScope();
     bootTime = System.currentTimeMillis();
@@ -358,7 +359,11 @@ public abstract class ServiceInstance<T extends BaseService> {
     // TODO sync the config environment with the options
   }
 
-  private void timedTasks() {
+  private synchronized void timedTasks() {
+
+    if (scheduler.isShutdown()) {
+      return;
+    }
 
     try {
 
@@ -451,8 +456,12 @@ public abstract class ServiceInstance<T extends BaseService> {
     this.operationalized.set(operationalized);
   }
 
-  public void stop() {
-    klabService().shutdown();
+  public synchronized void stop() {
+    // Serialize cleanup with initialization and prevent any further maintenance after shutdown.
+    scheduler.shutdownNow();
+    if (klabService() != null) {
+      klabService().shutdown();
+    }
   }
 
   public T klabService() {

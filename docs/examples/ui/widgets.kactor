@@ -1,0 +1,57 @@
+web app examples.ui.widgets
+    "Extended widget examples"
+    version 1.0
+    using core.ui as ui
+
+action main:
+    ui.text("Ready") #summary
+    (
+        ui.input("Name" :field "name" :value "Ada" +required :debounce 0) #name
+        ui.switch("Enabled" :field "enabled" +value) #enabled
+        ui.multiselect("Regions" :field "regions" :options ("eu", "af", "as") :value ("eu")) #regions
+        ui.textarea("Notes" :field "notes" :maxlength 2000) #notes
+        ui.number("Count" :field "count" :value 1 :min 1 :max 10) #count
+        ui.date("Day" :field "day" :value "2024-02-29") #day
+        ui.time("Hour" :field "hour" :value "12:30") #hour
+        ui.color("Tint" :field "tint" :value "#315da8") #tint
+        ui.range("Interval" :field "interval" :min 0 :max 100 :value {min: 10, max: 80}) #interval
+        ui.submit("Save"):
+            event -> ui.set("summary", [event.value.toString()])
+        ui.reset("Reset")
+    ) +form :layout "column" :gap "12px" #profile
+
+    ui.upload("Upload CSV" :accept ".csv,text/csv" :maxbytes 1048576):
+        event -> ui.set("copy", [event.value])
+    ui.download("Download uploaded file") #copy
+    ui.download("Download generated report") #report
+    ui.set("report", ui.file("report.csv", "id,value\nsample,42\n", "text/csv"))
+
+    ui.table("Measurements"
+        :columns ("label", "amount") :pagesize 5
+        :items ({id: "a", label: "Alpha", amount: 10}, {id: "b", label: "Beta", amount: 20})) #measurements
+    ui.tree("Hierarchy"
+        :items ({id: "root", label: "Root", children: ({id: "leaf", label: "Leaf"})})
+        :expanded ("root")) #hierarchy
+    ui.list("Accounts" :items ({id: "alice", label: "Alice"}, {id: "bob", label: "Bob"})) #accounts
+
+    ui.tabs("Sections" :options ("overview", "details") :value "overview") #sections
+    ui.stepper("Workflow" :options ("prepare", "review", "finish") :value "prepare") #steps
+    ui.pagination("Page" :min 1 :max 20 :value 1) #page
+    ui.breadcrumbs("Path" :options ("home", "accounts") :value "home") #path
+    ui.radio("Mode" :options ("quick", "full") :value "quick") #mode
+    ui.select("Region" :options ("eu", "af") :value "eu") #region
+    ui.slider("Level" :min 0 :max 10 :value 5) #level
+    ui.checkbox("Include summary" +value) #include
+    ui.button("Run") #run
+    ui.iconbutton("Refresh" :icon "refresh") #refresh
+    ui.link("Help" :href "https://quasar.dev/") #help
+    ui.markdown("## Results\n**Ready** to review.") #markdown
+    ui.image("Example image" :src "https://example.org/image.png" :alt "Example") #image
+    ui.icon("Complete" :icon "check") #icon
+    ui.separator("")
+    ui.badge("New")
+    ui.progress(0.5) #progress
+    ui.spinner("Working")
+    ui.audio("Audio" :src "https://example.org/audio.mp3") #audio
+    ui.video("Video" :src "https://example.org/video.mp4") #video
+    ui.text("Complete") #complete

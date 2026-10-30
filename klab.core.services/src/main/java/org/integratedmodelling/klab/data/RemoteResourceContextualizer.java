@@ -41,13 +41,20 @@ public class RemoteResourceContextualizer extends AbstractResourceContextualizer
   @Override
   protected Data.Builder getData(
       Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
+    return getData(scanner, event, scope, null);
+  }
+
+  @Override
+  protected Data.Builder getData(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope,
+      org.integratedmodelling.klab.api.geometry.Geometry invocationGeometry) {
     try {
       var data =
           service
               .contextualize(
                   resource,
                   observation,
-                  scanner.shard().getGeometry(),
+                  scanner == null ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
+                      : scanner.shard().getGeometry(),
                   event,
                   getInputData(scope),
                   scope)

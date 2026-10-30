@@ -24,7 +24,8 @@ class PredicateModelDiscoveryTest {
     databaseField.set(box, database);
     when(database.hasTable("model")).thenReturn(true);
     when(request.getUrn()).thenReturn("earth:PhysicalEnvironment of each earth:Region");
-    doThrow(failure).when(box).queryModels(request, geometry, null, List.of(), context);
+    doThrow(failure).when(box).queryModels(request, geometry, null, List.of(), context,
+        org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode.EXECUTABLE);
     var thrown = assertThrows(org.integratedmodelling.klab.api.exceptions.KlabStorageException.class,
         () -> box.query(request, geometry, null, List.of(), context));
     assertSame(failure, thrown.getCause());

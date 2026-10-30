@@ -6,7 +6,9 @@ import org.integratedmodelling.klab.api.lang.kim.KimAsset;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KimAssetImpl implements KimAsset {
+public class KimAssetImpl implements KimAsset, java.io.Serializable {
+
+    @java.io.Serial private static final long serialVersionUID = 1L;
 
     private int offsetInDocument;
     private int length;
@@ -21,9 +23,11 @@ public class KimAssetImpl implements KimAsset {
     public KimAssetImpl(KimAssetImpl other) {
         this.offsetInDocument = other.offsetInDocument;
         this.length = other.length;
-        this.annotations.addAll(other.annotations);
+        this.annotations.addAll(KimSyntaxCopy.copy(other.annotations));
         this.deprecated = other.deprecated;
         this.deprecation = other.deprecation;
+        this.projectName = other.projectName;
+        this.serviceId = other.serviceId;
     }
 
     @Override

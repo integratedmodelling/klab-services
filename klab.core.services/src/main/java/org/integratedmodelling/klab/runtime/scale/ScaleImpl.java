@@ -210,7 +210,7 @@ public class ScaleImpl implements Scale {
   }
 
   public ScaleImpl(List<Extent<?>> extents) {
-    define(extents);
+    define(new ArrayList<>(extents));
   }
 
   /**

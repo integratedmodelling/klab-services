@@ -22,6 +22,7 @@ class PrioritizerContractTest {
   private final Reasoner reasoner = mock(Reasoner.class);
   private PrioritizerImpl rank(Map<String,Integer> criteria) {
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    ModelAdmissionFixtures.prepare(scope, reasoner);
     return new PrioritizerImpl(scope,null,criteria,request,null);
   }
   private Model model(String urn, Map<String,Integer> overrides) {
@@ -50,12 +51,14 @@ class PrioritizerContractTest {
     var a=model("a",Map.of()); var b=model("b",Map.of("im:semantic-concordance",0));
     when(a.getNamespace()).thenReturn("external-a");
     when(b.getNamespace()).thenReturn("external-b");
-    when(reasoner.semanticDistance(b.getObservables().getFirst(),request,null)).thenReturn(10);
+    var resources = scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    ModelAdmissionFixtures.saved(resources, a, scope); ModelAdmissionFixtures.saved(resources, b, scope);
+    when(reasoner.semanticDistance(b.getObservables().getFirst(),request,null,7)).thenReturn(10);
     rank.prepare(List.of(a,b));
     assertTrue(rank.compare(a,b)<0); assertTrue(rank.compare(b,a)>0);
     assertEquals(List.of("im:semantic-concordance"),rank.listCriteria());
     assertThrows(UnsupportedOperationException.class,()->rank.getRanking(a).put(Criterion.LEXICAL_SCOPE,1.0));
-    verify(reasoner,times(1)).semanticDistance(a.getObservables().getFirst(),request,null);
+    verify(reasoner,times(1)).semanticDistance(a.getObservables().getFirst(),request,null,7);
   }
   @Test void namespaceChangesBetweenScopesSelectDifferentPolicies() {
     namespacePolicy("outer",Map.of("im:semantic-concordance",0));
@@ -63,8 +66,8 @@ class PrioritizerContractTest {
     namespacePolicy("inner",Map.of("im:semantic-concordance",1));
     var inner=rank(Map.of("im:semantic-concordance",1));
     var a=model("a",Map.of()); var b=model("b",Map.of());
-    when(reasoner.semanticDistance(a.getObservables().getFirst(),request,null)).thenReturn(20);
-    when(reasoner.semanticDistance(b.getObservables().getFirst(),request,null)).thenReturn(0);
+    when(reasoner.semanticDistance(a.getObservables().getFirst(),request,null,7)).thenReturn(20);
+    when(reasoner.semanticDistance(b.getObservables().getFirst(),request,null,7)).thenReturn(0);
     assertTrue(outer.compare(a,b)<0); assertTrue(inner.compare(a,b)>0);
   }
   @Test void namespacePolicyPreservesJacksonInterfaceTransport() throws Exception {
@@ -137,9 +140,9 @@ class PrioritizerContractTest {
   @Test void generalSemanticDistanceIsAscendingUncappedAndComparatorIsTransitive() {
     var rank=rank(Map.of("im:semantic-concordance",1));
     var a=model("a",Map.of());var b=model("b",Map.of());var c=model("c",Map.of());
-    when(reasoner.semanticDistance(a.getObservables().getFirst(),request,null)).thenReturn(0);
-    when(reasoner.semanticDistance(b.getObservables().getFirst(),request,null)).thenReturn(150);
-    when(reasoner.semanticDistance(c.getObservables().getFirst(),request,null)).thenReturn(300);
+    when(reasoner.semanticDistance(a.getObservables().getFirst(),request,null,7)).thenReturn(0);
+    when(reasoner.semanticDistance(b.getObservables().getFirst(),request,null,7)).thenReturn(150);
+    when(reasoner.semanticDistance(c.getObservables().getFirst(),request,null,7)).thenReturn(300);
     rank.prepare(List.of(a,b,c));
     assertTrue(rank.compare(a,b)<0);assertTrue(rank.compare(b,c)<0);assertTrue(rank.compare(a,c)<0);
     assertEquals(300.0,rank.getRanking(c).get(Criterion.SEMANTIC_DISTANCE));

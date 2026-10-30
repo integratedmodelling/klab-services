@@ -68,7 +68,7 @@ class ProcessModelBindingsTest {
       model.getDependencies().add(elevation);
       when(reasoner.inherent(elevation)).thenReturn(region.getObservable().getSemantics());
       when(reasoner.is(region.getObservable(), region.getObservable().getSemantics())).thenReturn(true);
-      when(reasoner.affectedBy(elevation, process)).thenReturn(true);
+      when(reasoner.affectedBy(elevation.getSemantics(), process.getSemantics())).thenReturn(true);
       when(expression.getExpression()).thenReturn(org.integratedmodelling.klab.api.lang.ExpressionCode.of("elevation - 10", "groovy"));
       when(expression.getTargetId()).thenReturn("elevation");
       model.getComputation().add(expression);
@@ -93,8 +93,8 @@ class ProcessModelBindingsTest {
 
   @Test void creationTakesPrecedenceOverMutationAndPreservesAnObligation() {
     var f = new Fixture();
-    when(f.reasoner.createdBy(f.elevation, f.process)).thenReturn(true);
-    when(f.reasoner.affectedBy(f.elevation, f.process)).thenReturn(true);
+    when(f.reasoner.createdBy(f.elevation.getSemantics(), f.process.getSemantics())).thenReturn(true);
+    when(f.reasoner.affectedBy(f.elevation.getSemantics(), f.process.getSemantics())).thenReturn(true);
     when(f.reasoner.influences(f.process)).thenReturn(List.of(
         new SemanticInfluence(f.elevation.getSemantics(), SemanticInfluence.Kind.CREATES)));
     var plan = ProcessModelBindings.analyze(f.model, f.scope);
@@ -104,7 +104,7 @@ class ProcessModelBindingsTest {
 
   @Test void createdDependencyNeverQueriesOrAllocatesAnObservationDuringResolution() throws Exception {
     var f = new Fixture();
-    when(f.reasoner.createdBy(f.elevation, f.process)).thenReturn(true);
+    when(f.reasoner.createdBy(f.elevation.getSemantics(), f.process.getSemantics())).thenReturn(true);
     when(f.scope.withResolutionConstraints(any(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint[].class)))
         .thenReturn(f.scope);
     var runtime = mock(org.integratedmodelling.klab.api.services.RuntimeService.class);
@@ -174,7 +174,7 @@ class ProcessModelBindingsTest {
   @Test void occurrenceInherencyWinsAndSurvivesTransport() {
     var f = new Fixture();
     when(f.reasoner.inherent(f.elevation)).thenReturn(f.process.getSemantics());
-    when(f.reasoner.affectedBy(f.elevation, f.process)).thenReturn(false);
+    when(f.reasoner.affectedBy(f.elevation.getSemantics(), f.process.getSemantics())).thenReturn(false);
     var plan = ProcessModelBindings.analyze(f.model, f.scope);
     assertEquals(ProcessPlan.Bearer.OCCURRENT, plan.binding("elevation").bearer());
     assertEquals(plan, Utils.Json.parseObject(Utils.Json.asString(plan), ProcessPlan.class));
@@ -207,10 +207,10 @@ class ProcessModelBindingsTest {
     var method = ResolutionCompiler.class.getDeclaredMethod("resolve", Model.class,
         org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class,
         ResolutionGraph.class, ContextScope.class,
-        org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+        org.integratedmodelling.klab.api.knowledge.observation.Observation.class, ContextScope.class, Observable.class);
     method.setAccessible(true);
     var result = (ResolutionGraph) method.invoke(new ResolutionCompiler(mock(ResolverService.class)),
-        f.model, GeometryRepository.INSTANCE.scale(geometry), ResolutionGraph.create(f.scope), f.scope, occurrence);
+        f.model, GeometryRepository.INSTANCE.scale(geometry), ResolutionGraph.create(f.scope), f.scope, occurrence, f.scope, f.process);
     assertFalse(result.isEmpty());
     verify(local).getObservation(any(org.integratedmodelling.klab.api.knowledge.observation.Observation.class));
     verify(f.scope, never()).getObservation(any(org.integratedmodelling.klab.api.knowledge.observation.Observation.class));
@@ -218,9 +218,9 @@ class ProcessModelBindingsTest {
 
   @Test void contextAssignmentRequiresSemanticEffectAndKnownInherency() {
     var f = new Fixture();
-    when(f.reasoner.affectedBy(f.elevation, f.process)).thenReturn(false);
+    when(f.reasoner.affectedBy(f.elevation.getSemantics(), f.process.getSemantics())).thenReturn(false);
     assertThrows(KlabValidationException.class, () -> ProcessModelBindings.analyze(f.model, f.scope));
-    when(f.reasoner.createdBy(f.elevation, f.process)).thenReturn(true);
+    when(f.reasoner.createdBy(f.elevation.getSemantics(), f.process.getSemantics())).thenReturn(true);
     assertEquals(ProcessPlan.Bearer.CONTEXT,
         ProcessModelBindings.analyze(f.model, f.scope).binding("elevation").bearer());
     when(f.reasoner.inherent(f.elevation)).thenReturn(null);
@@ -238,7 +238,7 @@ class ProcessModelBindingsTest {
     assertThrows(KlabValidationException.class,
         () -> org.integratedmodelling.klab.runtime.language.OccurrentSemantics.bearer(
             f.elevation, event, f.region.getObservable(), f.reasoner));
-    when(f.reasoner.affectedBy(f.elevation, event)).thenReturn(true);
+    when(f.reasoner.affectedBy(f.elevation.getSemantics(), event.getSemantics())).thenReturn(true);
     assertEquals(ProcessPlan.Bearer.CONTEXT,
         org.integratedmodelling.klab.runtime.language.OccurrentSemantics.bearer(
             f.elevation, event, f.region.getObservable(), f.reasoner));
@@ -257,10 +257,23 @@ class ProcessModelBindingsTest {
     var otherBearer = observable("other", SemanticType.SUBJECT);
     when(f.reasoner.inherent(f.elevation)).thenReturn(otherBearer.getSemantics());
     assertThrows(KlabValidationException.class, () -> ProcessModelBindings.analyze(f.model, f.scope));
-    when(f.reasoner.is(f.region.getObservable(), otherBearer.getSemantics())).thenReturn(true);
+    when(f.reasoner.is(f.region.getObservable().getSemantics(), otherBearer.getSemantics())).thenReturn(true);
     assertDoesNotThrow(() -> ProcessModelBindings.analyze(f.model, f.scope));
     f.model.getDependencies().clear();
     f.model.getDependencies().add(observable("elevation", SemanticType.SUBJECT));
     assertThrows(KlabValidationException.class, () -> ProcessModelBindings.analyze(f.model, f.scope));
   }
-}
+  @Test void assignmentUsesItsOwnModelLocalAlias() {
+    var f = new Fixture();
+    for (var alias : List.of("elevation", "height")) {
+      f.elevation.setStatedName(alias);
+      when(f.expression.getTargetId()).thenReturn(alias);
+      var plan = ProcessModelBindings.analyze(f.model, f.scope);
+      assertEquals(ProcessPlan.Effect.AFFECTED, plan.binding(alias).effect());
+      assertEquals(f.elevation.getSemantics(), plan.binding(alias).observable().getSemantics());
+      when(f.expression.getTargetId()).thenReturn("otherModelAlias");
+      assertThrows(KlabValidationException.class, () -> ProcessModelBindings.analyze(f.model, f.scope));
+    }
+  }}
+
+

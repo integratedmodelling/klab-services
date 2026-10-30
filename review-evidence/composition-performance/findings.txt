@@ -1,0 +1,122 @@
+Assisted composition performance investigation — 10 October 2026
+
+Changes are in three local checkouts: klab-services, klab.authority.pubchem,
+and klab-ide. The running stack was inspected but not restarted or redeployed.
+
+MEASUREMENTS
+
+These are observations on the existing local stack, not controlled benchmarks
+or before/after measurements of the complete patch. No caches were forcibly cleared.
+
+* Selecting imod:Physical with maxResults=30 (the IDE's setting): 21,512 ms
+  server time, 21,641 ms wall time. Repeating its suggestions: 501 ms server.
+* TAXA search "Quercus robur", limit=5: 8,613 ms initially measured, 808 ms repeated.
+* Inserting TAXA:[4R5YN], maxResults=9: 7,661 ms server initially, 789 ms repeated.
+* CHEM combined search "aspirin": FAILED after about 5 seconds. An isolated
+  provider probe traced this to PubChemClient.cids rejecting a CID array [0]
+  while expanding the ChEBI search candidate CHEBI:747596. This discarded the
+  already-found aspirin result. A direct public API request confirmed [0].
+* Restricting that provider probe to COMPOUND returned CID:2244 in 2,429 ms.
+* The patched isolated provider returned ten combined matches in 12,247 ms,
+  including CID:2244 and unmapped ChEBI identities. This confirms the failure
+  is fixed; it does not make broad multi-catalog searches instantaneous.
+
+TRACED PATHS AND CHANGES
+
+1. SemanticComposer sends SELECT/IDENTITY with maxResults=30. SemanticSearchSession
+   commits the edit, describes it, and synchronously prepares the next proposals
+   before returning. A live thread sample during the slow SELECT was waiting at:
+     SemanticSearchSession.handleCurrent -> Indexer.query -> candidateFilter
+       -> replay -> complete -> resolveObservable -> declareObservable
+       -> compileInternal -> SemanticsBuilder.create
+       -> ResourcesClient.declareConcept -> HTTP POST
+   ResourcesClient.useCaches is false. Merely caching authority responses does
+   not remove these parsing calls or the semantic validation of the suggestions.
+
+   Appends now validate from a private copy of the accepted frame stack instead
+   of replaying every accepted token for every suggestion. Mutable collections
+   and search callbacks are isolated. Undo still reconstructs state. Completed
+   frames retain their observable, avoiding the duplicate final resolution.
+
+2. SemanticsBuilder now shares a bounded, Reasoner-owned concept-syntax cache.
+   Keys include the Resources service instance and definition. Serialized
+   snapshots return independent syntax trees, including nested children.
+   Missing, inconsistent, and diagnostic-bearing results are not retained.
+   Knowledge reload/update, shutdown, and codelist mutations clear the cache.
+   Clearing swaps the cache so an in-flight old parse cannot refill the current
+   revision or hold cache invalidation behind a network request.
+
+   A regression constructs twenty builders with the same head and operand:
+   forty potential parsing calls become two actual Resources calls.
+
+3. AuthorityBrowser previously selected the first result automatically and
+   fetched full documentation immediately. AuthorityBindings.documentation calls
+   resolveIdentity, which can validate the complete hierarchy and generate GIF
+   depictions. This work occurs under synchronization also used by insertion.
+
+   The IDE now renders the search-provided description immediately and offers
+   "Load full documentation" explicitly. Browsing no longer automatically starts
+   full authority resolution. Late documentation responses remain guarded by
+   selection revisions.
+
+4. PubChem search performs sequential name lookup, per-compound property fetches,
+   ChEBI search, term fetches, InChI mapping, and additional property fetches.
+   Each HTTP request has its own timeout and shared 250 ms pacing. A broad search
+   can therefore exceed the IDE's 30-second deadline even with healthy endpoints.
+
+   PubChem CID zero is now treated as an unmapped structure, retaining the ChEBI
+   identity. Other malformed identifiers still fail. Per-configuration bounded
+   five-minute caches retain validated properties, identifier mappings, and
+   ChEBI references. Search and selection reuse those results. Failed responses
+   remain retryable. A filled result page no longer starts the second catalog.
+
+5. The IDE filter selector now includes advertised provider sub-authorities as
+   well as managed codelists. CHEM offers COMPOUND and CHEBI; TAXA advertises ranks.
+   AuthoritySearchRequest.filter carries the selection while authority remains
+   the worldview-local binding. Selection still uses the canonical identity code.
+   The default remains "All identities".
+
+6. The IDE retains up to fifty successful exact authority-query/filter results
+   for five minutes within the browser instance. Repeated searches show cached
+   rows immediately with "Showing cached results; checking ... for updates...".
+   The current authorized search still runs. Cached rows are previews, not
+   selectable proposals until confirmed. Errors/timeouts clear the preview;
+   query, filter and source changes remain protected from late replies.
+
+EXISTING PERSISTENT AUTHORITY CACHE
+
+CachedAuthority/AuthorityCache already persist successful provider responses,
+isolated by worldview, binding, root, parameters, provider implementation and
+cache policy. TAXA's release-bound identity policy is already non-expiring;
+PubChem identities use one day and query results five minutes. These policies
+were preserved. Lightweight search candidates do not seed the full identity
+cache: full lookup must still validate hierarchy and canonicalization.
+
+LIMITATIONS AND ACTIVATION
+
+First-time hierarchy resolution and broad compound suggestions still involve
+real remote work. These changes remove repeated work and accidental eager
+resolution, but do not promise that every cold request will meet the IDE deadline.
+The existing synchronous authority locks remain; removing them safely requires
+configuration-lifecycle and ontology-concurrency work beyond these changes.
+
+Build/restart the Reasoner with the updated klab.core.services classes, rebuild
+and redeploy the PubChem component, and rebuild/restart the IDE to activate all
+changes. No user sessions, service configuration, or installed components were
+replaced during this investigation.
+
+VALIDATION
+
+Backend focused suite: 155 tests passed across API, common, core-services and
+Reasoner modules. Includes composition, authority insertion/cache/transport,
+semantic validation, builder behavior, syntax copy isolation, and invalidation
+during an in-flight parse. See backend-tests.log.
+
+PubChem: 23 tests passed; two separately opt-in live tests skipped. Live API
+behavior was additionally checked with the isolated probe described above.
+See pubchem-tests.log.
+
+IDE composer suite: 46 tests passed. See ide-tests.log. The test JVM requires
+--add-reads=org.integratedmodelling.klab.ide=jdk.httpserver for its HTTP fixture.
+The stale chooser test was aligned with existing support for non-searchable
+providers that may expose managed codelists.

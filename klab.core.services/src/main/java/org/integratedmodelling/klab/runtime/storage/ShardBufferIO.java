@@ -9,7 +9,10 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.ojalgo.structure.Access1D;
 import org.ojalgo.structure.Mutate1D;
 
-/** Bounded primitive payload transfer. Header validation, file ownership and durability belong to the caller. */
+/**
+ * Bounded primitive payload transfer. Header validation, file ownership and durability belong to
+ * the caller.
+ */
 final class ShardBufferIO {
   static final int BLOCK_BYTES = 64 * 1024;
 
@@ -17,16 +20,19 @@ final class ShardBufferIO {
 
   static void write(Access1D<?> source, OutputStream output, Storage.Type type) throws IOException {
     var block = buffer(source.count(), type, ByteOrder.BIG_ENDIAN);
-    for (long offset = 0; offset < source.count();) {
+    for (long offset = 0; offset < source.count(); ) {
       int values = (int) Math.min(block.capacity() / type.size(), source.count() - offset);
       block.clear();
       switch (type) {
-        // DataOutputStream's version-1 encoding canonicalizes NaNs; putFloat/putDouble alone do not.
+        // DataOutputStream's version-1 encoding canonicalizes NaNs; putFloat/putDouble alone do
+        // not.
         case DOUBLE -> {
-          for (int i = 0; i < values; i++) block.putLong(Double.doubleToLongBits(source.doubleValue(offset + i)));
+          for (int i = 0; i < values; i++)
+            block.putLong(Double.doubleToLongBits(source.doubleValue(offset + i)));
         }
         case FLOAT -> {
-          for (int i = 0; i < values; i++) block.putInt(Float.floatToIntBits(source.floatValue(offset + i)));
+          for (int i = 0; i < values; i++)
+            block.putInt(Float.floatToIntBits(source.floatValue(offset + i)));
         }
         case LONG -> {
           for (int i = 0; i < values; i++) block.putLong(source.longValue(offset + i));
@@ -46,7 +52,7 @@ final class ShardBufferIO {
   static void read(Mutate1D target, DataInputStream input, Storage.Type type, ByteOrder order)
       throws IOException {
     var block = buffer(target.count(), type, order);
-    for (long offset = 0; offset < target.count();) {
+    for (long offset = 0; offset < target.count(); ) {
       int values = (int) Math.min(block.capacity() / type.size(), target.count() - offset);
       // Fill the complete block (or throw EOFException) before touching its destination values.
       input.readFully(block.array(), 0, values * type.size());

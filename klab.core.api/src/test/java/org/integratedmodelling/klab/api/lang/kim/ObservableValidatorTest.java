@@ -15,6 +15,58 @@ class ObservableValidatorTest {
 
   private final ObservableValidator validator = new ObservableValidator();
 
+  @Test void ofRejectsIndependentSubstantialHeadsButDoesNotRequireADependentOperand() {
+    var tree=concept(SemanticType.SUBJECT,SemanticType.COUNTABLE);
+    for(var type:List.of(SemanticType.SUBJECT,SemanticType.AGENT,SemanticType.EVENT)) {
+      var independent=concept(type,SemanticType.COUNTABLE);independent.setInherent(tree);
+      assertError(independent,"INHERENCY_HEAD_INDEPENDENT");
+    }
+    for(var type:List.of(SemanticType.QUALITY,SemanticType.PROCESS)) {
+      var dependent=concept(type);dependent.setInherent(tree);
+      assertTrue(validator.validateConcept(dependent).isEmpty());
+    }
+    tree.setCollective(true);
+    var quality=concept(SemanticType.QUALITY);quality.setInherent(tree);
+    assertTrue(validator.validateConcept(quality).isEmpty(),"of each changes the operand's collectivity, not the head rule");
+  }
+
+  @Test void transformedQualityHeadIsCheckedAfterItsUnaryOperator() {
+    var derived=concept(SemanticType.SUBJECT,SemanticType.COUNTABLE);
+    derived.setObservable(concept(SemanticType.SUBJECT,SemanticType.COUNTABLE));
+    derived.setSemanticModifier(UnarySemanticOperator.PRESENCE);
+    derived.setInherent(concept(SemanticType.SUBJECT,SemanticType.COUNTABLE));
+    assertTrue(validator.validateConcept(derived).stream().noneMatch(n->
+        n.getMessage().contains("INHERENCY_HEAD_INDEPENDENT")));
+    var standalone=concept(SemanticType.QUALITY);standalone.setSemanticModifier(UnarySemanticOperator.COUNT);
+    standalone.setObservable(concept(SemanticType.SUBJECT,SemanticType.COUNTABLE));
+    assertTrue(validator.validateConcept(standalone).isEmpty(),"unary count of is not a binary inherency clause");
+  }
+
+  @Test void applicabilityOfPreservesPredicateContextualizationAndConfigurationTargets() {
+    var target=concept(SemanticType.SUBJECT,SemanticType.COUNTABLE,SemanticType.ABSTRACT);
+    var configuration=concept(SemanticType.CONFIGURATION);configuration.setInherent(target);
+    assertTrue(validator.validateConcept(configuration).isEmpty());
+    var predicate=concept(SemanticType.PREDICATE,SemanticType.ATTRIBUTE);predicate.setInherent(target);
+    assertTrue(validator.validateConcept(predicate).isEmpty());
+    assertEquals(org.integratedmodelling.klab.api.knowledge.Contextualization.CHARACTERIZATION,
+        org.integratedmodelling.klab.api.knowledge.Contextualization.forSemantics(predicate));
+    target.setCollective(true);
+    assertEquals(org.integratedmodelling.klab.api.knowledge.Contextualization.CLASSIFICATION,
+        org.integratedmodelling.klab.api.knowledge.Contextualization.forSemantics(predicate));
+    predicate.setInherent(concept(SemanticType.QUALITY));
+    assertTrue(validator.validateConcept(predicate).isEmpty());
+    assertEquals(org.integratedmodelling.klab.api.knowledge.Contextualization.TRANSFORMATION,
+        org.integratedmodelling.klab.api.knowledge.Contextualization.forSemantics(predicate));
+  }
+
+  @Test void booleanSubjectHeadsCannotHideAnInherencyClause() {
+    var head=concept(SemanticType.UNION);
+    head.setExpressionType(KimConcept.Expression.UNION);
+    head.setOperands(List.of(concept(SemanticType.SUBJECT),concept(SemanticType.SUBJECT)));
+    head.setInherent(concept(SemanticType.SUBJECT));
+    assertError(head,"INHERENCY_HEAD_INDEPENDENT");
+  }
+
   @Test void acceptsProcessInherencyWithoutMakingProcessesCountable() {
     var quality = concept(SemanticType.QUALITY);
     var process = concept(SemanticType.PROCESS);

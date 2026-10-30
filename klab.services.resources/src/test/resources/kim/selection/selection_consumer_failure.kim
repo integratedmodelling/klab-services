@@ -1,0 +1,13 @@
+private namespace staging.vxii.test.selection_consumer_failure
+    version 1.0;
+
+// The provider's single-division point branch always yields one nonempty representative point.
+private model klab:random:objects:points {fraction: 1, xdivs: 1, ydivs: 1}
+    as each earth:Region;
+
+private model earth:PhysicalEnvironment of each earth:Region
+    using klab.generators.random.categories();
+
+private model count of (each earth:Terrestrial earth:Region)
+    observing each earth:Terrestrial earth:Region named selected
+    using klab.tests.fixtures.failconsumer();

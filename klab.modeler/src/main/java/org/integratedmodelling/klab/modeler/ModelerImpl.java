@@ -181,6 +181,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     List<Object> resolvables = new ArrayList<>();
     List<ResolutionConstraint> constraints = new ArrayList<>();
+    if (engine() != null && Boolean.TRUE.equals(
+        engine().getSettings().get(Setting.DO_NOT_CREATE_A_DEFAULT_OBSERVER, Boolean.class))) {
+      constraints.add(ResolutionConstraint.of(
+          ResolutionConstraint.Type.DoNotCreateDefaultObserver, true));
+    }
 
     /** Assets are observed by URN unless they're models or observation definitions */
     if (asset instanceof NavigableKlabStatement<?> navigableAsset) {
@@ -226,7 +231,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             ResolutionConstraint.of(ResolutionConstraint.Type.UsingModel, model.getUrn()));
         builder = new Observation.NaiveBuilder(model, currentContext);
       } else if (statement instanceof KimSymbolDefinition definition) {
-        if ("observation".equals(definition.getDefineClass())) {
+        if ("observation".equals(definition.getDefineClass())
+            || "query".equals(definition.getDefineClass())) {
           resolvables.add(statement);
           builder = new Observation.NaiveBuilder(definition, currentContext);
         } else if ("observer".equals(definition.getDefineClass())) {
@@ -308,9 +314,14 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
               currentContext.getService(RuntimeService.class),
               obs);
           if (obs.isEmpty()) {
-            currentContext.error("Observation " + observation + " was not resolved due to errors");
+            if (observation.getId() == Observation.QUERY_ID) {
+              currentContext.info("Query returned no observations");
+            } else {
+              currentContext.error("Observation " + observation + " was not resolved due to errors");
+            }
           } else {
-            currentContext.info("Observation of " + obs + " resolved successfully");
+            currentContext.info(observation.getId() == Observation.QUERY_ID
+                ? "Query completed successfully" : "Observation of " + obs + " resolved successfully");
           }
         });
     return submission;
@@ -335,6 +346,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
           .error("Cannot create a context without a runtime service", UIView.Interactivity.DISPLAY);
       return null;
     }
+    return openNewContext(configuration, runtimeService, dispatchEvent);
+  }
+
+  /** Create on the selected runtime and enter the same modeler lifecycle as default contexts. */
+  public ContextScope openNewContext(
+      DigitalTwin.Configuration configuration, RuntimeService runtimeService, boolean dispatchEvent) {
     var ret = user().getUserSession(runtimeService).createContext(configuration);
     if (ret != null) {
       contexts.put(ret.getId(), ret);
@@ -569,7 +586,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         .start(
             () -> {
               try {
-                var ret = resources.manageRepository(projectId, operation, arguments);
+                var ret = resources.manageRepository(projectId, operation, currentUser(), null, arguments);
                 handleResultSets(ret);
               } catch (Exception e) {
                 handleResultSets(List.of(ResourceSet.empty(

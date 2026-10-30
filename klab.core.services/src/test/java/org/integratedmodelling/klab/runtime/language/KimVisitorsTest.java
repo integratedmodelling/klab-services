@@ -187,7 +187,7 @@ class KimVisitorsTest {
         .getDeclarationClauses()
         .add(
             new KimConceptStatement.DeclarationClause(
-                "within", "within test:Context", 74, 19));
+                "impliesClause", "implies test:Value within test:Context", 74, 38));
     ontology.getStatements().add(statement);
     var visitor = new KimOntologyVisitor();
 
@@ -197,12 +197,12 @@ class KimVisitorsTest {
         visitor.getNotifications().stream()
             .filter(n -> n.getMessage().contains("scoped/denial semantics"))
             .toList();
-    assertEquals(2, warnings.size());
+    assertEquals(1, warnings.size());
     assertEquals(
-        List.of(42, 74),
+        List.of(74),
         warnings.stream().map(n -> n.getLexicalContext().getOffsetInDocument()).toList());
     assertEquals(
-        List.of(25, 19),
+        List.of(38),
         warnings.stream().map(n -> n.getLexicalContext().getLength()).toList());
   }
 

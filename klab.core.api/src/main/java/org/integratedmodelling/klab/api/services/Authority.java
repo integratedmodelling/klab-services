@@ -9,6 +9,77 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public interface Authority {
 
+  /** Directional resolution result: can candidate supply target? UNKNOWN is not disjointness.
+   * UNSUPPORTED alone permits fallback to ordinary asserted hierarchy matching. */
+  record SemanticDistance(DistanceStatus status, int distance, List<String> explanations) {
+    public SemanticDistance {
+      java.util.Objects.requireNonNull(status);
+      explanations = List.copyOf(explanations);
+      if (status == DistanceStatus.COMPATIBLE ? distance < 0 || distance > 100 : distance != -1)
+        throw new IllegalArgumentException("Compatible distance must be 0..100; other statuses use -1");
+    }
+    public static SemanticDistance unsupported() {
+      return new SemanticDistance(DistanceStatus.UNSUPPORTED, -1, List.of());
+    }
+    public static SemanticDistance unknown(String reason) {
+      return new SemanticDistance(DistanceStatus.UNKNOWN, -1, List.of(reason));
+    }
+  }
+  enum DistanceStatus { COMPATIBLE, INCOMPATIBLE, UNKNOWN, UNSUPPORTED }
+
+  /** Compare canonical IDs within this exact live bridge. Zero is equivalence; positive values
+   * rank admitted candidate specializations. Do not return compatibility for mere overlap.
+   * Providers own their comparison policy in ConfigurationRequest parameters. Results are not cached
+   * by the host: mutable policy/evidence must not reuse identity/search cache lifetimes.
+   * Default preserves existing providers' asserted-hierarchy behavior. */
+  default SemanticDistance semanticDistance(String configurationId, String targetId, String candidateId) {
+    return SemanticDistance.unsupported();
+  }
+
+  /** Strict directional proof, separate from policy-admitted semantic distance.
+   * UNKNOWN is absence of proof, INCOMPATIBLE is a provider-proven exclusion.
+   * Only UNSUPPORTED permits the host's existing asserted-hierarchy fallback. */
+  enum Subsumption { SUBSUMES, INCOMPATIBLE, UNKNOWN, UNSUPPORTED }
+
+  /** Does target strictly include or equal candidate within this admitted live bridge?
+   * Approximate/fuzzy acceptance is never sufficient. Default leaves existing providers unchanged. */
+  default Subsumption subsumption(String configurationId, String targetId, String candidateId) {
+    return Subsumption.UNSUPPORTED;
+  }
+
+  enum HierarchyStatus { COMPLETE, DEFERRED }
+  enum ResolutionMode { CONFIGURED, FULL_HIERARCHY }
+
+  /** Immutable provider helper. Deferral suppresses ancestry, never reconciliation or diagnostics. */
+  final class ClassifiedIdentity implements Identity {
+    private final Identity delegate;
+    private final java.util.Set<String> semanticBoundaries;
+    private final HierarchyStatus hierarchyStatus;
+    public ClassifiedIdentity(Identity delegate, java.util.Set<String> semanticBoundaries,
+        HierarchyStatus hierarchyStatus) {
+      this.delegate = java.util.Objects.requireNonNull(delegate);
+      this.semanticBoundaries = java.util.Set.copyOf(semanticBoundaries);
+      this.hierarchyStatus = java.util.Objects.requireNonNull(hierarchyStatus);
+    }
+    @Override public String getId() { return delegate.getId(); }
+    @Override public String getConceptName() { return delegate.getConceptName(); }
+    @Override public String getAuthorityName() { return delegate.getAuthorityName(); }
+    @Override public String getBaseIdentity() { return hierarchyStatus == HierarchyStatus.DEFERRED ? null : delegate.getBaseIdentity(); }
+    @Override public List<String> getParentIds() { return hierarchyStatus == HierarchyStatus.DEFERRED ? List.of() : delegate.getParentIds(); }
+    @Override public List<String> getParentRelationship() { return hierarchyStatus == HierarchyStatus.DEFERRED ? List.of() : delegate.getParentRelationship(); }
+    @Override public Map<String, URL> getDocumentation() { return delegate.getDocumentation(); }
+    @Override public String getDescription() { return delegate.getDescription(); }
+    @Override public String getLabel() { return delegate.getLabel(); }
+    @Override public float getScore() { return delegate.getScore(); }
+    @Override public String getLocator() { return delegate.getLocator(); }
+    @Override public List<Notification> getNotifications() { return delegate.getNotifications(); }
+    @Override public java.util.Set<String> getSemanticBoundaries() { return semanticBoundaries; }
+    @Override public HierarchyStatus getHierarchyStatus() { return hierarchyStatus; }
+  }
+
+  /** Stable metadata key on materialized concepts; DEFERRED is not an empty hierarchy. */
+  String HIERARCHY_STATUS = "authorityHierarchyStatus";
+
   /** Context for one independent worldview bridge. Parameters include the provider urn. */
   record ConfigurationRequest(
       String worldview, String name, String rootIdentity, Map<String, Object> parameters) {
@@ -23,7 +94,31 @@ public interface Authority {
         throw new IllegalArgumentException("A nonblank string urn parameter is required");
       var copy = new java.util.LinkedHashMap<>(parameters);
       if (copy.get("codelists") instanceof Map<?, ?> lists) copy.put("codelists", Map.copyOf(lists));
+      if (copy.containsKey("semanticBoundaries")) {
+        if (!(copy.get("semanticBoundaries") instanceof Map<?, ?> boundaries))
+          throw new IllegalArgumentException("semanticBoundaries must map provider boundary IDs to identity URNs");
+        var validated = new java.util.TreeMap<String, String>();
+        for (var entry : boundaries.entrySet()) {
+          if (!(entry.getKey() instanceof String id) || id.isBlank()
+              || !(entry.getValue() instanceof String target)
+              || !target.matches("[a-z][a-z0-9_.]*:[A-Z][A-Za-z0-9_]*"))
+            throw new IllegalArgumentException("Invalid semantic boundary binding");
+          validated.put(id, target);
+        }
+        copy.put("semanticBoundaries", Map.copyOf(validated));
+      }
       parameters = java.util.Collections.unmodifiableMap(copy);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, String> semanticBoundaries() {
+      return (Map<String, String>) parameters.getOrDefault("semanticBoundaries", Map.of());
+    }
+
+    /** Providers opt in explicitly, including authoritative codelist boundary IDs if supported. */
+    public void requireSupportedBoundaries(java.util.Set<String> supported) {
+      if (!supported.containsAll(semanticBoundaries().keySet()))
+        throw new IllegalArgumentException("Unsupported semantic boundary in " + semanticBoundaries().keySet());
     }
   }
 
@@ -31,11 +126,18 @@ public interface Authority {
    * Create an independent bridge and return its opaque provider-held configuration ID. The provider
    * must retain configuration state separately for each bridge, and throw a validation exception on
    * failure. The root identity is supplied by the worldview, not by the provider.
+   * The Reasoner retains the reserved {@code codelists} namespace mappings and removes them before
+   * calling a provider; all provider parameters, including {@code urn}, are passed unchanged.
    */
   String configure(ConfigurationRequest request);
 
   /** Release provider-held state when a bridge is removed or its worldview is reloaded. */
   default void releaseConfiguration(String configurationId) {}
+
+  /** Provider-defined categories whose membership can be established without reconstructing ancestry.
+   * These may be sub-authorities or authoritative codelists; search filters and community aliases
+   * alone do not establish membership. The empty default preserves legacy behavior. */
+  default java.util.Set<String> getSemanticBoundaries() { return java.util.Set.of(); }
 
   /**
    * Lifetimes in seconds for successful Reasoner-side cached results. Zero disables caching for an
@@ -61,6 +163,13 @@ public interface Authority {
   }
 
   interface Identity {
+
+    /** Boundaries established by reconciliation of the canonical identity, never by the search UI. */
+    default java.util.Set<String> getSemanticBoundaries() { return java.util.Set.of(); }
+
+    /** COMPLETE means the supplied ancestry is authoritative. DEFERRED requires a mapped boundary
+     * and carries no external parent/base edges; explicit full resolution must remain available. */
+    default HierarchyStatus getHierarchyStatus() { return HierarchyStatus.COMPLETE; }
 
     /**
      * The official authority ID, which may be different from what the user provided.
@@ -158,6 +267,9 @@ public interface Authority {
   }
 
   interface Capabilities {
+    /** Advertises provider-defined distance for captured/accepted execution environments. */
+    default boolean isSemanticDistanceSupported() { return false; }
+
 
     /**
      * @return
@@ -240,6 +352,16 @@ public interface Authority {
    */
   Identity resolveIdentity(String configurationId, String identityId);
 
+  /** Resolve external ancestry on demand without changing canonical identity or configured boundaries.
+   * Providers supporting deferral must override this overload; legacy providers need no changes. */
+  default Identity resolveIdentity(String configurationId, String identityId, ResolutionMode mode) {
+    var identity = resolveIdentity(configurationId, identityId);
+    if (mode == ResolutionMode.FULL_HIERARCHY && identity != null
+        && identity.getHierarchyStatus() == HierarchyStatus.DEFERRED)
+      throw new UnsupportedOperationException("This authority cannot expand deferred ancestry");
+    return identity;
+  }
+
   /**
    * Explicitly reconcile a name or external identifier with optional disambiguating fields. Field
    * names and accepted match policies belong to the provider. Return a canonical identity only when
@@ -272,6 +394,25 @@ public interface Authority {
 
   /** Provider-local list IDs and seed data for one configured bridge. Never a mutable service store. */
   default Map<String, Codelist> getCodelists(String configurationId) { return getCodelists(); }
+
+  /** Provider-owned seed data and policy; namespace bindings remain owned by the worldview. */
+  record CodelistDefinition(Codelist codelist, boolean acceptsProposals) {
+    public CodelistDefinition {
+      java.util.Objects.requireNonNull(codelist, "Codelist seed data is required");
+    }
+  }
+
+  /**
+   * Declare provider lists with an explicit proposal policy. Legacy lists accept proposals for
+   * compatibility. A worldview may also bind IDs absent from this map: those become empty community
+   * lists accepting proposals. A declaration's policy cannot be overridden by the worldview.
+   */
+  default Map<String, CodelistDefinition> getCodelistDefinitions(String configurationId) {
+    var result = new java.util.LinkedHashMap<String, CodelistDefinition>();
+    getCodelists(configurationId).forEach((id, list) ->
+        result.put(id, new CodelistDefinition(list, true)));
+    return Map.copyOf(result);
+  }
 
   /**
    * If the authority has lower-level subcatalogs, return the singleton that will handle the catalog

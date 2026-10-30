@@ -31,6 +31,12 @@ public interface ServicesAPI {
    */
   String SCOPE_HEADER = "klab-scope";
 
+  /** Optional assertion of the credential's user; never grants authority to impersonate a user. */
+  String USERNAME_HEADER = "klab-user";
+
+  /** Optional federation assertion, verified against server-authoritative user membership. */
+  String FEDERATION_HEADER = "klab-federation";
+
   /** Should be checked at each request at production */
   String KLAB_VERSION_HEADER = "klab-version";
 
@@ -47,6 +53,9 @@ public interface ServicesAPI {
   String SERVICE_ID_HEADER = "klab-service";
 
   String TRANSACTION_ID_HEADER = "klab-transaction";
+
+  /** Base64-encoded UTF-8 consequence cause, scoped to this request's authorized context. */
+  String CONSEQUENCE_HEADER = "klab-consequence";
   String CONTEXT_OBSERVATION_ID_HEADER = "klab-context-observation";
   String SOURCE_OBSERVATION_ID_HEADER = "klab-source-observation";
   String TARGET_OBSERVATION_ID_HEADER = "klab-target-observation";
@@ -141,14 +150,25 @@ public interface ServicesAPI {
    */
   String EXPORT = "/export/{class}/{urn}";
 
+  /** POST an observation view and export parameters without reducing it to a catalog URN. */
+  String EXPORT_OBSERVATION = "/export/observation";
+
+  String OBSERVATION_MEMBERS = "/observation/members";
+
   /** General administration endpoints common to all services */
   interface ADMIN {
 
+    String LOGS_QUERY = "/admin/logs/query";
+    String LOGS_CAPABILITIES = "/admin/logs/capabilities";
     String SHUTDOWN = "/shutdown";
     String CHECK_CREDENTIALS = "/checkCredentials";
     String CREDENTIALS = "/credentials";
+    String CREDENTIAL_SCHEMAS = "/credentials/schemata";
     String SETTINGS = "/settings";
     String SET = "/set/{setting}";
+    /** Submit component maintenance jobs; bodies contain component and optional version. */
+    String UPDATE_COMPONENT = "/components/update";
+    String REMOVE_COMPONENT = "/components/remove";
   }
 
   /**
@@ -226,6 +246,7 @@ public interface ServicesAPI {
     String AUTHORITY_CODELISTS = API_BASE + "/authority/codelists";
 
     String AUTHORITY_SEARCH = API_BASE + "/authority/search";
+    String AUTHORITY_HIERARCHY = API_BASE + "/authority/hierarchy";
 
     String CONFIGURE_AUTHORITY = API_BASE + "/authority/configure";
 
@@ -250,9 +271,11 @@ public interface ServicesAPI {
      * @produces {@link Observable}
      */
     String RESOLVE_OBSERVABLE = API_BASE + "/resolve/observable";
+    String DECLARE_OBSERVABLE = API_BASE + "/declare/observable";
 
     String SEMANTIC_SEARCH = API_BASE + "/semanticSearch";
     String VALIDATE_DOCUMENT = API_BASE + "/validate/document";
+    String SEMANTIC_DEPENDENCIES = API_BASE + "/semantic/dependencies";
 
     String HAS_TRAIT = API_BASE + "/hasTrait";
 
@@ -273,6 +296,7 @@ public interface ServicesAPI {
     String ALL_PARENTS = API_BASE + "/allParents";
 
     String CLOSURE = API_BASE + "/closure";
+    String AUTHORED_CLOSURE = API_BASE + "/authoredClosure";
 
     String CORE_OBSERVABLE = API_BASE + "/coreObservable";
     String BUILD_CONCEPT = API_BASE + "/buildConcept";
@@ -283,6 +307,8 @@ public interface ServicesAPI {
     String SPLIT_OPERATORS = API_BASE + "/splitOperators";
 
     String DISTANCE = API_BASE + "/distance";
+    /** Revision-bound matching requires explicit server support; never falls back to DISTANCE. */
+    String VALIDATED_DISTANCE = DISTANCE + "/validated";
 
     String ROLES = API_BASE + "/roles";
 
@@ -413,6 +439,9 @@ public interface ServicesAPI {
      * org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.
      */
     String SUBMIT_OBSERVATION = API_BASE + "/submit";
+    String MEMBER_QUALITIES = API_BASE + "/memberQualities";
+    String MEMBER_QUALITY_CONSUMER = API_BASE + "/memberQualities/consumer";
+    String MEMBER_QUALITY_INPUTS = API_BASE + "/memberQualities/consumer/inputs";
     String UPDATE_OBSERVER_GEOMETRY = API_BASE + "/observer/geometry";
     String GET_OBSERVER_GEOMETRY = API_BASE + "/observer/{id}/geometry";
 

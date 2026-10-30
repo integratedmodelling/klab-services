@@ -9,11 +9,14 @@ testcase klab.staging.vxii.storage
 action storage_views:
     ctx <- context.new
     region <- ctx.submit({urn: "staging.storage:rectangle",
-        semantics: {{geography:Region}},
+        semantics: {{earth:Terrestrial earth:Region}},
         space: {shape: "EPSG:3857 POLYGON ((200000 6000000,200000 6000400,200500 6000400,200500 6000000,200000 6000000))", grid: "100 m"} })
     assert inspector.viable(region)
-    elevation <- ctx.submit({{geography:Elevation in m}} :within region)
+    elevation <- ctx.submit({{geography:Elevation in m}} :within region
+        :namespace "staging.vxii.basic" :project "klab.staging.vxii")
     assert inspector.viable(elevation !nodata)
+    assert inspector.gridcheck(ctx, elevation,
+        "S2(5,4){proj=EPSG:3857,bbox=[200000 200500 6000000 6000400]}")
     assert inspector.contains(ctx, elevation)
     assert inspector.scancheck(ctx, elevation, "D2_XY", 1, 8)
     assert inspector.scancheck(ctx, elevation, "D2_YX", 3, 8)
