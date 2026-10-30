@@ -32,12 +32,15 @@ from klab_client.analysis import (AnalysisArtifact, RasterDescriptor, RasterAnal
 from klab_client.provenance import ProvenanceNode, ProvenanceLink, ProvenanceView, fetch_provenance
 from klab_client.semantics import (SemanticExplorer, SemanticResult, KnowledgeState,
     AuthorityCandidate, AuthoritySearch, StaleKnowledgeError)
+from klab_client.inspection import (ResourceInspector, AssetInspection, InspectionOrigin,
+    AdvertisedObservable, ResourceReference, ResourceResolution)
 from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError, HandleIOError,
     load_handle, restore_handle, save_handle, to_handle)
 from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
 
 __all__ = [
+    "ResourceInspector", "AssetInspection", "InspectionOrigin", "AdvertisedObservable", "ResourceReference", "ResourceResolution",
     "SemanticExplorer", "SemanticResult", "KnowledgeState", "AuthorityCandidate", "AuthoritySearch", "StaleKnowledgeError",
     "Connection", "SelectionPolicy", "connect", "DeploymentProfile", "ConnectionIdentity", "ServiceReference",
     "ServiceCatalog", "CatalogEntry", "CredentialExpiredError", "ConnectionIdentityError", "ServiceSelectionError",

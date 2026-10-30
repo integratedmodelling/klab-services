@@ -113,10 +113,11 @@ class _RemoteService:
         check_notifications(payload, self.client.transport.redact)
         return payload
 
-    def capabilities(self, scope: Scope | None = None) -> ServiceCapabilities:
+    def capabilities(self, scope: Scope | None = None, *, max_response_bytes=None) -> ServiceCapabilities:
         """Return the server ID and complete checked capabilities payload."""
         from klab_client.dto import required_text
-        payload = self._checked(self._request("GET", "/public/capabilities", scope), "capabilities")
+        payload = self._checked(self._request("GET", "/public/capabilities", scope,
+                                             max_response_bytes=max_response_bytes), "capabilities")
         identity = required_text(payload, "serviceId")
         self.client._service_id_cache[self.service] = identity
         return ServiceCapabilities(identity, payload)
@@ -158,31 +159,34 @@ class ResourcesServiceImpl(_RemoteService, ResourcesService):
             return "RESOURCE"
         raise UnsupportedOperationError("Pass a supported Java KnowledgeClass enum name (e.g. RESOURCE)")
 
-    def retrieve(self, urn: str, asset_class: str | type[KlabAsset] = "RESOURCE", scope: UserScope | None = None) -> KlabAsset:
+    def retrieve(self, urn: str, asset_class: str | type[KlabAsset] = "RESOURCE", scope: UserScope | None = None, *, max_response_bytes=None) -> KlabAsset:
         """Retrieve an explicit knowledge class as a URN plus retained wire DTO."""
         from urllib.parse import quote
         from klab_client.dto import required_text
         from klab_client.errors import MissingAssetError
         knowledge_class = self._knowledge_class(asset_class)
-        payload = self._request("GET", f"/api/v1/retrieve/{knowledge_class}/{quote(urn, safe='')}", scope)
+        payload = self._request("GET", f"/api/v1/retrieve/{knowledge_class}/{quote(urn, safe='')}", scope,
+                                max_response_bytes=max_response_bytes)
         if payload is None:
             raise MissingAssetError("Resource service returned no asset")
         payload = self._checked(payload, "asset")
         return KlabAsset(required_text(payload, "urn"), payload)
 
-    def list(self, knowledge_class: str = "RESOURCE", scope: UserScope | None = None) -> list[KlabAsset]:
+    def list(self, knowledge_class: str = "RESOURCE", scope: UserScope | None = None, *, max_response_bytes=None) -> list[KlabAsset]:
         from klab_client.dto import required_text
         from klab_client.errors import ProtocolError
-        payload = self._request("GET", f"/api/v1/list/{self._knowledge_class(knowledge_class)}", scope)
+        payload = self._request("GET", f"/api/v1/list/{self._knowledge_class(knowledge_class)}", scope,
+                                max_response_bytes=max_response_bytes)
         if not isinstance(payload, list):
             raise ProtocolError("Asset list must be a JSON array")
         return [KlabAsset(required_text(self._checked(p, "asset"), "urn"), p) for p in payload]
 
-    def resolve(self, urn: str, scope: Scope | None = None, *, knowledge_class: str = "RESOURCE") -> ResourceSet:
+    def resolve(self, urn: str, scope: Scope | None = None, *, knowledge_class: str = "RESOURCE", max_response_bytes=None) -> ResourceSet:
         from urllib.parse import quote
         from klab_client.dto import required_text, object_payload
         from klab_client.errors import ProtocolError
-        payload = self._checked(self._request("GET", f"/api/v1/resolve/{self._knowledge_class(knowledge_class)}/{quote(urn, safe='')}", scope), "resource set")
+        payload = self._checked(self._request("GET", f"/api/v1/resolve/{self._knowledge_class(knowledge_class)}/{quote(urn, safe='')}", scope,
+                                             max_response_bytes=max_response_bytes), "resource set")
         results = payload.get("results")
         if not isinstance(results, list):
             raise ProtocolError("ResourceSet results must be a list")

@@ -67,7 +67,7 @@ def test_connected_suites_do_not_silently_use_ambient_credentials(monkeypatch):
     assert error.value.code == 2
 
 
-@pytest.mark.parametrize("suite", ["connected-context-recovery", "connected-tiny-compute"])
+@pytest.mark.parametrize("suite", ["connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection"])
 def test_connected_work_needs_explicit_authorization(suite, monkeypatch):
     import sys
     import run_functional_acceptance as runner
