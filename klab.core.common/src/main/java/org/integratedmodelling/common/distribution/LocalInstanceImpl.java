@@ -28,6 +28,19 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 /** Common implementation of {@link LocalInstance} for all products. */
 public abstract class LocalInstanceImpl implements LocalInstance {
 
+  /** Additional JVM arguments for the local instance of each service. TODO expose in settings. */
+  protected static final String[] RESOURCES_SERVICE_JVM_ARGUMENTS = {};
+
+  protected static final String[] REASONER_SERVICE_JVM_ARGUMENTS = {
+    // TODO remove after authority sync is debugged
+//    "-Dklab.reasoner.traceCandidate=true"
+  };
+  protected static final String[] RESOLVER_SERVICE_JVM_ARGUMENTS = {};
+  protected static final String[] RUNTIME_SERVICE_JVM_ARGUMENTS = {};
+  protected static final String[] LANGUAGE_SERVER_JVM_ARGUMENTS = {};
+  protected static final String[] DATABASE_SERVER_JVM_ARGUMENTS = {};
+  protected static final String[] AMQP_BROKER_JVM_ARGUMENTS = {};
+
   private final Distribution.Product product;
   private final Settings settings;
   private final File pidFile;
@@ -54,6 +67,25 @@ public abstract class LocalInstanceImpl implements LocalInstance {
    * @return
    */
   protected abstract CommandLine getCommandLine(Distribution.Product product, Settings settings);
+
+  /**
+   * Returns the hard-coded JVM arguments configured for the given local product.
+   *
+   * <p>The arrays are intentionally empty by default and can be changed independently when a
+   * service needs additional JVM options.
+   */
+  protected String[] getAdditionalJvmArguments(Distribution.Product product) {
+    return switch (product.getType()) {
+      case RESOURCES_SERVICE -> RESOURCES_SERVICE_JVM_ARGUMENTS;
+      case REASONER_SERVICE -> REASONER_SERVICE_JVM_ARGUMENTS;
+      case RESOLVER_SERVICE -> RESOLVER_SERVICE_JVM_ARGUMENTS;
+      case RUNTIME_SERVICE -> RUNTIME_SERVICE_JVM_ARGUMENTS;
+      case LANGUAGE_SERVER -> LANGUAGE_SERVER_JVM_ARGUMENTS;
+      case DATABASE_SERVER -> DATABASE_SERVER_JVM_ARGUMENTS;
+      case AMQP_BROKER -> AMQP_BROKER_JVM_ARGUMENTS;
+      case CLI -> new String[0];
+    };
+  }
 
   public LocalInstanceImpl(Distribution.Product product, Settings settings, Stack.Tag tag) {
     this.product = product;

@@ -148,6 +148,14 @@ def test_invalid_knowledge_fails(caps):
         explorer.resolve_concept("TAXA:123")
 
 
+@pytest.mark.parametrize("score", [10**400, -(10**400)], ids=["too-large", "too-small"])
+def test_oversized_authority_scores_are_reported_as_protocol_errors(score):
+    page = {**PAGE, "matches": [{**MATCH, "score": score}]}
+    client, explorer, _ = setup(page=page)
+    with client, pytest.raises(ProtocolError, match="score"):
+        explorer.search_authority("TAXA", "oak")
+
+
 @pytest.mark.parametrize("kwargs", [{"authority": "authority.taxa"}, {"query": ""}, {"query": "x" * 257},
     {"query": "😀" * 129}, {"filter": ""}, {"offset": -1}, {"offset": True}, {"offset": 10001},
     {"limit": 0}, {"limit": 101}, {"limit": True}])

@@ -98,8 +98,11 @@ class ResourceInspector:
 
     def _origin(self):
         capabilities = self._call(self.client.resources.capabilities, self.scope)
-        return InspectionOrigin(_normalize_service_url(self.client.transport.endpoint("resources").url),
-            capabilities.service_id, scope_token(self.scope))
+        return InspectionOrigin(
+            service_url=_normalize_service_url(self.client.transport.endpoint("resources").url),
+            service_id=capabilities.service_id,
+            scope=scope_token(self.scope),
+        )
 
     def _call(self, operation, *args, **kwargs):
         try:
@@ -129,8 +132,13 @@ class ResourceInspector:
             optional = raw.get("optional")
             if optional is not None and type(optional) is not bool:
                 raise ProtocolError("Advertised optional must be boolean or null")
-            result.append(AdvertisedObservable(_optional_text(raw, "urn"), _optional_text(raw, "formalName"),
-                _optional_text(raw, "unit"), optional, raw))
+            result.append(AdvertisedObservable(
+                urn=_optional_text(raw, "urn"),
+                formal_name=_optional_text(raw, "formalName"),
+                unit=_optional_text(raw, "unit"),
+                optional=optional,
+                raw=raw,
+            ))
         return tuple(result)
 
     def _asset(self, asset, knowledge_class, origin):
@@ -139,11 +147,22 @@ class ResourceInspector:
         resources = payload.get("resourceUrns")
         if resources is not None:
             resources = freeze(self._rows(resources, "resourceUrns"), self.client.transport.redact)
-        return AssetInspection(asset.urn, knowledge_class, origin, _optional_text(raw, "label"),
-            self._advertisements(payload, "observables"), self._advertisements(payload, "dependencies"),
-            resources, raw.get("version"), _optional_text(raw, "namespace"), _optional_text(raw, "projectName"),
-            raw.get("notifications", ()), freeze({key: payload[key] for key in ("serviceId", "adapterType") if key in payload},
-                                                 self.client.transport.redact), raw)
+        provider_metadata = {key: payload[key] for key in ("serviceId", "adapterType") if key in payload}
+        return AssetInspection(
+            urn=asset.urn,
+            knowledge_class=knowledge_class,
+            origin=origin,
+            label=_optional_text(raw, "label"),
+            advertised_observables=self._advertisements(payload, "observables"),
+            listed_dependencies=self._advertisements(payload, "dependencies"),
+            resource_urns=resources,
+            version=raw.get("version"),
+            namespace=_optional_text(raw, "namespace"),
+            project_name=_optional_text(raw, "projectName"),
+            notifications=raw.get("notifications", ()),
+            provider_metadata=freeze(provider_metadata, self.client.transport.redact),
+            raw=raw,
+        )
 
     @staticmethod
     def _knowledge_class(value):
@@ -181,10 +200,21 @@ class ResourceInspector:
         results = []
         for row in self._rows(payload["results"], "ResourceSet results"):
             value = freeze(row, self.client.transport.redact)
-            results.append(ResourceReference(required_text(row, "resourceUrn"), _optional_text(value, "serviceId"),
-                _optional_text(value, "knowledgeClass"), value.get("resourceVersion"), value))
+            results.append(ResourceReference(
+                urn=required_text(row, "resourceUrn"),
+                service_id=_optional_text(value, "serviceId"),
+                knowledge_class=_optional_text(value, "knowledgeClass"),
+                version=value.get("resourceVersion"),
+                raw=value,
+            ))
         services = payload.get("services", {})
         if not isinstance(services, dict) or any(not isinstance(url, str) for url in services.values()):
             raise ProtocolError("ResourceSet services must map service IDs to URL strings")
         self._unchanged(origin)
-        return ResourceResolution(urn, origin, tuple(results), freeze(services, self.client.transport.redact), raw)
+        return ResourceResolution(
+            requested_urn=urn,
+            origin=origin,
+            results=tuple(results),
+            services=freeze(services, self.client.transport.redact),
+            raw=raw,
+        )

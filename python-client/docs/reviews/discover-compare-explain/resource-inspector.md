@@ -2,6 +2,11 @@
 
 ## Recommendation
 
+**28 October follow-up:** see the [PR #99 live-pilot reassessment](resource-inspector-followup.md).
+The hosted connection now works, but the authorized numerical pilot failed and
+exposed a component-advertisement mismatch. The historical assessment below is
+preserved for its exact original candidate; it is not the current live result.
+
 **Needs contract/coordination evidence.** The bounded Python implementation and
 all offline regression/coverage/static gates pass. Local additive integration is
 supported with an explicitly tracked live dependency. The milestone requirement

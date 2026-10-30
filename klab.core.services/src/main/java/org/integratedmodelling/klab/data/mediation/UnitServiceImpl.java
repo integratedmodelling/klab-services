@@ -54,8 +54,44 @@ public class UnitServiceImpl implements UnitService {
 
   @Override
   public Unit getDefaultUnitFor(Concept concept) {
-    // TODO Auto-generated method stub
-    return null;
+    if (Boolean.TRUE.equals(concept.getMetadata().get(
+        org.integratedmodelling.klab.api.data.Metadata.IM_IS_RESCALED))) return null;
+    // Direct annotations only; operator construction materializes an unambiguous inherited unit.
+    Object definition = concept.getMetadata().get("odo:unit");
+    if (definition == null) return null;
+    if (!(definition instanceof String text) || text.isBlank())
+      throw new IllegalArgumentException("Invalid default unit annotation");
+    var result = (UnitImpl)getUnit(text);
+    if (concept.is(org.integratedmodelling.klab.api.knowledge.SemanticType.RATE))
+      result.setAggregatedDimensions(Map.of(ExtentDimension.TEMPORAL,
+          org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistribution.INTENSIVE));
+    return result;
+  }
+
+  @Override
+  public Unit temporalDerivative(Unit operand) {
+    if (!(operand instanceof UnitImpl definition) || definition.isContextual())
+      throw new UnsupportedOperationException("Derivative units require an ordinary unit definition");
+    var ordinary = getUnit(definition.getDefinition());
+    var source = peer(ordinary);
+    var system = source.getSystemUnit();
+    var systemUnit = getUnit(formatter.format(system));
+    // Use only the affine scale: d(a*x+b)/dt = a*dx/dt. In particular Cel/s is K/s,
+    // without adding 273.15 to a derivative value. No numerical integration occurs here.
+    double factor = conversion(systemUnit, ordinary).factor();
+    var physicalDerivative = system.divide(tech.units.indriya.unit.Units.SECOND);
+    var derivative = physicalDerivative.multiply(factor);
+    // Indriya may format a transformed unit with a numeric factor inside a product,
+    // which its ASCII parser cannot read back. Our portable unit syntax already
+    // supports an explicit leading scale followed by an ordinary physical unit.
+    String physicalDefinition = formatter.format(physicalDerivative);
+    String portableDefinition = factor == 1.0 ? physicalDefinition : factor + " " + physicalDefinition;
+    var result = new UnitImpl(portableDefinition).withData(new FunctionalUnit(derivative));
+    var distributions = new HashMap<>(operand.getAggregatedDimensions());
+    distributions.put(ExtentDimension.TEMPORAL,
+        org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistribution.INTENSIVE);
+    result.setAggregatedDimensions(distributions);
+    return result;
   }
 
   @Override
@@ -63,6 +99,14 @@ public class UnitServiceImpl implements UnitService {
 
     if (string.trim().isEmpty()) {
       return null;
+    }
+
+    // SI's unit one is an explicit unitless definition, distinct from missing metadata.
+    // The generic leading-scale parser otherwise consumes the entire "1" token and
+    // attempts to parse an empty physical unit. Do not infer semantic quantity kind
+    // from dimensional compatibility: angles remain dimensionless in this library.
+    if ("1".equals(string.trim())) {
+      return new UnitImpl("1").withData(new FunctionalUnit(tech.units.indriya.AbstractUnit.ONE));
     }
 
     Pair<Double, String> pd = Utils.Strings.splitNumberFromString(string);
@@ -121,11 +165,18 @@ public class UnitServiceImpl implements UnitService {
   public Conversion conversion(Unit destination, Unit source) {
     try {
       var converter = peer(source).getConverterToAny(peer(destination));
-      for (var step : converter.getConversionSteps())
-        if (!step.isLinear() && !(step instanceof tech.units.indriya.function.AddConverter))
+      double factor = 1.0;
+      for (var step : converter.getConversionSteps()) {
+        if (step.isLinear()) {
+          // Compose slopes directly: subtracting converted absolute values loses
+          // small affine scales through cancellation against the temperature offset.
+          factor *= step.convert(1.0);
+        } else if (!(step instanceof tech.units.indriya.function.AddConverter)) {
           throw new UnsupportedOperationException("Non-affine unit conversion is not supported");
+        }
+      }
       double zero = converter.convert(0.0);
-      return new Conversion(converter.convert(1.0) - zero, zero);
+      return new Conversion(factor, zero);
     } catch (javax.measure.IncommensurableException | javax.measure.UnconvertibleException e) {
       throw new IllegalArgumentException("Incompatible units", e);
     }

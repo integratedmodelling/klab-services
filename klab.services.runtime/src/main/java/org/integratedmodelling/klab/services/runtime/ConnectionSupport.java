@@ -13,6 +13,9 @@ final class ConnectionSupport {
   private ConnectionSupport() {}
 
   static boolean isIndividual(Observation observation) {
+    if(observation.getObservable().is(SemanticType.RELATIONSHIP))
+      org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(observation.getObservable().getSemantics().getType())
+          .requireComplete(observation.getObservable().getSemantics().getUrn());
     return observation.getObservable().is(SemanticType.RELATIONSHIP)
         && !observation.getObservable().getSemantics().isCollective();
   }

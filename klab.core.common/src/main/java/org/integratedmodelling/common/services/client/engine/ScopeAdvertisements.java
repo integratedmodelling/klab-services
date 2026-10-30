@@ -12,12 +12,14 @@ import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotifi
 
 /** Retains the latest advertisement until acknowledged, with one delivery per target at a time. */
 final class ScopeAdvertisements implements AutoCloseable {
-  private record Delivery(BaseServiceClient client, UserScopeNotification notification) {}
+  private record Delivery(BaseServiceClient client, UserScopeNotification notification, long generation) {}
 
   private final ConcurrentHashMap<String, Delivery> pending = new ConcurrentHashMap<>();
   private final Set<String> delivering = ConcurrentHashMap.newKeySet();
   private final Consumer<Runnable> dispatch;
   private ScheduledExecutorService retries;
+  private boolean closed;
+  private volatile long generation;
 
   ScopeAdvertisements() {
     this(task -> Thread.ofVirtual().start(task));
@@ -30,38 +32,48 @@ final class ScopeAdvertisements implements AutoCloseable {
     this.dispatch = dispatch;
   }
 
-  void submit(BaseServiceClient client, UserScopeNotification notification) {
+  synchronized void submit(BaseServiceClient client, UserScopeNotification notification) {
+    if (closed) return;
     var id = client.serviceId();
     if (id != null) {
-      pending.put(id, new Delivery(client, notification.copy()));
+      pending.put(id, new Delivery(client, notification.copy(), generation));
     }
   }
 
   void deliverPending() {
     pending.forEach((id, delivery) -> {
       if (delivering.add(id)) {
-        dispatch.accept(() -> {
-          try {
-            if (delivery.client().notifyScope(delivery.notification())) {
-              // An older acknowledgement must not discard a newer advertisement.
-              pending.remove(id, delivery);
+        try {
+          dispatch.accept(() -> {
+            try {
+              // clear()/close() may invalidate queued work before it starts.
+              if (delivery.generation() != generation) return;
+              if (delivery.client().notifyScope(delivery.notification())) {
+                // An older acknowledgement must not discard a newer advertisement.
+                pending.remove(id, delivery);
+              }
+            } catch (Exception e) {
+              Logging.INSTANCE.warn("Scope advertisement to " + id + " failed; will retry: " + e);
+            } finally {
+              delivering.remove(id);
             }
-          } catch (Exception e) {
-            Logging.INSTANCE.warn("Scope advertisement to " + id + " failed; will retry: " + e);
-          } finally {
-            delivering.remove(id);
-          }
-        });
+          });
+        } catch (RuntimeException e) {
+          delivering.remove(id);
+          Logging.INSTANCE.warn("Cannot dispatch scope advertisement to " + id + ": " + e);
+        }
       }
     });
   }
 
-  void clear() {
+  synchronized void clear() {
+    generation++;
     pending.clear();
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
+    closed = true;
     if (retries != null) {
       retries.shutdownNow();
     }

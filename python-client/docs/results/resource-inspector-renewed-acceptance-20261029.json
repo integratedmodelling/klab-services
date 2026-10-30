@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-29",
+  "tested_revision": "99e55c047a9f31ef58a035315562c4cfc84deb52",
+  "authorization": "Renewed three local attempts, at most two observation Jobs each on 20 cells; no hosted, Java, scientific algorithm, component-source, ontology-source or worldview-source changes",
+  "result": "not accepted",
+  "python_changes": "none; no demonstrated SDK defect",
+  "deployment": {
+    "service_distribution": "202610271533",
+    "graphdb_distribution": "202610161554",
+    "staging_commit": "9d20c1c236e5a033487ee47b34cd910c3ebbbe51",
+    "imod_commit": "1328000fff63a1951465b1f7b130c0af15264c95",
+    "elevation_namespace_unchanged": true,
+    "components": ["klab.component.generators", "klab.component.geospatial"],
+    "component_and_spatial_archive_identities": "Same digest-verified published archives as resource-inspector-local-acceptance-20261029.json",
+    "readiness": "All four services operational, Resources semantic search capable, target model retrievable, terrain advertised in Resources and Runtime, spatial.layers registered",
+    "source_binary_attestation": "unverified"
+  },
+  "attempts": [
+    {"attempt": 1, "session_id": "24b4c4c77ca84ca7bb302ea198f7a2be", "context_id": "24b4c4c77ca84ca7bb302ea198f7a2be.y5ah3qeh4", "elevation_job_id": 5, "observation_jobs": 2, "stage": "observe_elevation", "error_type": "JobFailedError", "application_outcome": "empty dataflow; Submission failed", "context_release": "confirmed", "session_release": "confirmed"},
+    {"attempt": 2, "session_id": "eaa661bf719e4b2b8af59b081b5feb76", "context_id": "eaa661bf719e4b2b8af59b081b5feb76.y8lrmxi2k", "region_job_id": 10, "elevation_job_id": 11, "observation_jobs": 2, "stage": "observe_elevation", "error_type": "JobFailedError", "application_outcome": "empty dataflow; Submission failed", "context_release": "confirmed", "session_release": "confirmed"},
+    {"attempt": 3, "session_id": "a4fa4664bdca4bec93fdec2c46ac3907", "context_id": "a4fa4664bdca4bec93fdec2c46ac3907.ybq8wgxms", "region_job_id": 15, "elevation_job_id": 16, "observation_jobs": 2, "stage": "observe_elevation", "error_type": "JobFailedError", "application_outcome": "empty dataflow; Submission failed", "context_release": "confirmed", "session_release": "confirmed"}
+  ],
+  "renewed_observation_jobs_total": 6,
+  "renewed_attempts_remaining": 0,
+  "numerical_cells_read": 0,
+  "inspected_model_recorded_association": "not established",
+  "native_trace": {
+    "method": "Temporary fixed-destination loopback proxies; requests/responses forwarded unchanged, headers not recorded, credentials redacted, no observation replay outside pilot",
+    "attempt_2": "Two identical model queries returned HTTP 200, empty ResourceSets and no notifications. Request bodies were retained only as hashes, so this trace does not identify the requested observable",
+    "attempt_3": {
+      "elevation_strategy_request": "geography:Elevation in m; MEASURE, concrete, non-generic, 5 by 4 geometry; namespace constraint staging.vxii.basic",
+      "elevation_strategy_http": 200,
+      "elevation_strategy_response": [],
+      "elevation_model_queries_captured": 0,
+      "region_strategy_http": 200,
+      "region_strategy": "substantial.direct",
+      "region_model_queries": "Two identical earth:Region requests: first HTTP 500 wrapping a downstream EOF/header-parser collection-request failure, second HTTP 200 with empty ResourceSet",
+      "region_exception": "KlabStorageException: Model discovery failed for earth:Region, ModelKbox.query:267; caused by HTTP/1.1 header parser received no bytes / EOF reached while reading",
+      "limits": "The EOF occurred after diagnostic restarts and may be transient; it is not proven to explain the elevation outcome"
+    },
+    "worldview_guard": "imod/strategies/observations.obs:22-32, dependent.direct requires context.exists() and request.fully_specified($this)",
+    "source_guard_implementation": "ObservationReasoner.evaluate maps context.exists to scope.getContextObservation()!=null in the inspected checkout",
+    "establishes": "In final trace, elevation produced no native observation strategy and never reached elevation model discovery; compatible indexing alone did not fix execution",
+    "hypothesis": "Native focus/context propagation or strategy guard evaluation may be responsible; exact failing guard and deployed source contract remain unproven",
+    "not_proven": "No demonstrated Python defect; no proof the inspected elevation model or terrain algorithm is defective; no proof the previous malformed regression encoding solely caused empty elevation dataflow"
+  },
+  "diagnostic_harness_limits": "Two initial proxy preparation failures occurred before attempt 2 submitted Jobs (listener-close timing, then PowerShell empty-result exit handling). They were corrected without submitting observations; they are not scientific service results",
+  "restoration": {
+    "configuration_catalog_paths": 16,
+    "all_starting_bytes_match": true,
+    "resource_runtime_plugin_inventories_match_start": true,
+    "temporary_spatial_plugin_removed": true,
+    "spatial_procedure_absent": true,
+    "temporary_proxy_backend_listeners_remaining": false,
+    "configured_projects": 0,
+    "remaining_runtime_contexts": 0,
+    "distribution_restored": "202610161554",
+    "native_pid_records_match_listeners": true,
+    "pids": {"graphdb": 41864, "reasoner": 43856, "resources": 41008, "resolver": 42448, "runtime": 43372},
+    "launches": "All processes launched with CREATE_NO_WINDOW; unrelated terminals preserved",
+    "visible_service_console_windows": 0,
+    "retained": "Fresh config/catalog backups and GraphDB data backup; raw pilot reports; sanitized native traces and service logs; inactive downloaded plugins; service index/cache data. No whole-database rollback"
+  },
+  "evidence_directory": "C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-renewed-local-acceptance-20261029",
+  "validation_commands": [
+    {"command": "& C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-inspector-312/Scripts/python.exe C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-renewed-environment.py prepare", "exit_status": 0, "status": "Passed", "meaning": "Pinned local prerequisite preparation, not scientific execution"},
+    {"command": "& C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-inspector-312/Scripts/python.exe C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-local-pilot-20261029.py --batch compatible --attempt 1", "exit_status": 0, "status": "Failed", "meaning": "Harness returned normally with passed=false; elevation application failure, owned cleanup confirmed"},
+    {"command": "& C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-inspector-312/Scripts/python.exe C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-trace-discovery.py", "status": "Failed", "meaning": "Two preparation invocations exited 1 before pilot submission; after correction two invocations exited 0, running attempts 2 and 3 respectively, both with passed=false. The external harness evolved between invocations; native observations were never replayed outside those two pilots"},
+    {"command": "& C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-inspector-312/Scripts/python.exe C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-renewed-environment.py restore", "exit_status": 0, "status": "Passed", "meaning": "Original services/config/catalog/plugin inventories restored; independent read-only checks subsequently verified state"},
+    {"command": "git diff --check", "exit_status": 0, "status": "Passed"},
+    {"command": "gh run view 40933976559 --repo integratedmodelling/klab-services --log-failed", "exit_status": 0, "status": "Blocked", "meaning": "Read succeeded; Maven build itself failed at unchanged LanguageAdapter.java:1234 non-exhaustive switch"}
+  ],
+  "recommendation": "PR99 remains draft, Needs contract/coordination evidence; do not advance to PR98 as if F2 accepted. Read-only native strategy/context diagnosis can continue, but another numerical run requires explicit renewed budget"
+}

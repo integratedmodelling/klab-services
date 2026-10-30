@@ -14,13 +14,14 @@ class PredicateModelRankingTest {
     var request = mock(Observable.class);
     var scope = mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
     when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    ModelAdmissionFixtures.prepare(scope, reasoner);
     var prioritizer = new PrioritizerImpl(scope, null,
         java.util.Map.of("im:semantic-concordance", 1), request, null);
     var exact = model(); var parent = model(); var ancestor = model(); var unrelated = model();
-    when(reasoner.semanticDistance(exact.getObservables().getFirst(), request, null)).thenReturn(0);
-    when(reasoner.semanticDistance(parent.getObservables().getFirst(), request, null)).thenReturn(50);
-    when(reasoner.semanticDistance(ancestor.getObservables().getFirst(), request, null)).thenReturn(100);
-    when(reasoner.semanticDistance(unrelated.getObservables().getFirst(), request, null)).thenReturn(-50);
+    when(reasoner.semanticDistance(exact.getObservables().getFirst(), request, null, 7)).thenReturn(0);
+    when(reasoner.semanticDistance(parent.getObservables().getFirst(), request, null, 7)).thenReturn(50);
+    when(reasoner.semanticDistance(ancestor.getObservables().getFirst(), request, null, 7)).thenReturn(100);
+    when(reasoner.semanticDistance(unrelated.getObservables().getFirst(), request, null, 7)).thenReturn(-50);
     var models = new ArrayList<>(List.of(ancestor, unrelated, parent, exact));
     models.removeIf(model -> prioritizer.semanticDistance(model) == Integer.MAX_VALUE);
     models.sort(prioritizer);

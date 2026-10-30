@@ -1,0 +1,122 @@
+{
+  "candidate_sha": "80a60edc58221b0c8d80b9786327cc5f5c85f71c",
+  "date": "2026-10-29",
+  "first_authenticated_inventory_attempt": {
+    "detail": "Runtime transport observation failed; cause unestablished",
+    "error_type": "ServiceSelectionError",
+    "outcome": "failed before inventory"
+  },
+  "limits": [
+    "No observation, session, context, component import, restart or setting change requested.",
+    "Public metadata is not authenticated scientific acceptance or verified binary provenance.",
+    "Observations are sequential, timestamped snapshots, not an atomic deployment view.",
+    "Earlier ad-hoc probes used incorrect reasoner/resolver /main suffixes; their 403 responses are excluded from selected-service conclusions."
+  ],
+  "mode": "unauthenticated public metadata only; exact committed profile URLs",
+  "observations": [
+    {
+      "available": true,
+      "http": 200,
+      "observed_at": "2026-10-29T13:24:38.231561+00:00",
+      "operational": true,
+      "route": "/public/status",
+      "service": "resources",
+      "serviceId": "d07d43fe-2a4a-46d0-a46b-c0bbe1b6e6d6",
+      "url": "https://services.integratedmodelling.org/resources/main"
+    },
+    {
+      "adoptedWorldview": "imod",
+      "component_ids": [
+        "internal.local.service.component",
+        "klab.authority.taxa",
+        "klab.component.generators",
+        "klab.component.geospatial",
+        "klab.authority.un",
+        "klab.authority.land",
+        "klab.authority.pubchem"
+      ],
+      "http": 200,
+      "observed_at": "2026-10-29T13:24:39.187047+00:00",
+      "route": "/public/capabilities",
+      "service": "resources",
+      "serviceId": "d07d43fe-2a4a-46d0-a46b-c0bbe1b6e6d6",
+      "url": "https://services.integratedmodelling.org/resources/main"
+    },
+    {
+      "available": true,
+      "http": 200,
+      "observed_at": "2026-10-29T13:24:39.541194+00:00",
+      "operational": true,
+      "route": "/public/status",
+      "semantic_candidate": {
+        "acceptedGeneration": 1,
+        "beanStatus": "VALID",
+        "inputGeneration": 46,
+        "logicalStatus": "VALID"
+      },
+      "service": "reasoner",
+      "serviceId": "c929ee54-15e1-4e67-aa66-fc47b9e580e2",
+      "url": "https://services.integratedmodelling.org/reasoner"
+    },
+    {
+      "component_ids": [
+        "internal.local.service.component",
+        "klab.authority.land",
+        "klab.authority.pubchem",
+        "klab.authority.taxa",
+        "klab.authority.un"
+      ],
+      "http": 200,
+      "knowledgeRevision": 1,
+      "observed_at": "2026-10-29T13:24:39.679195+00:00",
+      "route": "/public/capabilities",
+      "service": "reasoner",
+      "serviceId": "c929ee54-15e1-4e67-aa66-fc47b9e580e2",
+      "url": "https://services.integratedmodelling.org/reasoner",
+      "worldviewId": "_uu_wv:5017406921366017"
+    },
+    {
+      "available": true,
+      "http": 200,
+      "observed_at": "2026-10-29T13:24:39.837959+00:00",
+      "operational": true,
+      "route": "/public/status",
+      "service": "resolver",
+      "serviceId": "ba9757a1-6fe1-4b5d-be3d-3fda7e279431",
+      "url": "https://services.integratedmodelling.org/resolver"
+    },
+    {
+      "component_ids": [
+        "internal.local.service.component"
+      ],
+      "http": 200,
+      "observed_at": "2026-10-29T13:24:39.977043+00:00",
+      "route": "/public/capabilities",
+      "service": "resolver",
+      "serviceId": "ba9757a1-6fe1-4b5d-be3d-3fda7e279431",
+      "url": "https://services.integratedmodelling.org/resolver"
+    },
+    {
+      "available": true,
+      "http": 200,
+      "observed_at": "2026-10-29T13:24:40.235216+00:00",
+      "operational": true,
+      "route": "/public/status",
+      "service": "runtime",
+      "serviceId": "f57bb519-19c9-4dbe-a0f5-671b665096ae",
+      "url": "https://services.integratedmodelling.org/runtime/main"
+    },
+    {
+      "component_ids": [
+        "internal.local.service.component"
+      ],
+      "http": 200,
+      "observed_at": "2026-10-29T13:24:40.372312+00:00",
+      "route": "/public/capabilities",
+      "service": "runtime",
+      "serviceId": "f57bb519-19c9-4dbe-a0f5-671b665096ae",
+      "url": "https://services.integratedmodelling.org/runtime/main"
+    }
+  ],
+  "schema_version": 1
+}

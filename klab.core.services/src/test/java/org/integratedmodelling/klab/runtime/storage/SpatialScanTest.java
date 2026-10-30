@@ -70,9 +70,12 @@ class SpatialScanTest {
       var plan = f.storage.plan(request);
       gate(f, false);
       var failure = assertThrows(UnsupportedOperationException.class, () -> f.storage.plan(request));
-      assertTrue(failure.getMessage().contains("ACCEPT_LOSSY_MEDIATIONS=false"));
-      assertTrue(failure.getMessage().contains("resolution differs"));
-      assertThrows(UnsupportedOperationException.class, () -> f.storage.open(plan));
+      assertTrue(failure.getMessage().startsWith(
+          "ACCEPT_LOSSY_MEDIATIONS is false: spatial extents do not match: "));
+      assertTrue(failure.getMessage().contains("cell resolution differs"));
+      var issuedHandleFailure = assertThrows(UnsupportedOperationException.class, () -> f.storage.open(plan));
+      assertTrue(issuedHandleFailure.getMessage().startsWith("ACCEPT_LOSSY_MEDIATIONS is false: "));
+      assertTrue(issuedHandleFailure.getMessage().contains("previously issued resampling plan"));
       verifyNoInteractions(f.manager);
       assertEquals(2,f.storage.plan(request(grid(5,4,0,5,0,4),FillCurve.D2_YX,
           StorageScan.Sampling.NEAREST,StorageScan.Coverage.MISSING_OUTSIDE,List.of())).description().version());

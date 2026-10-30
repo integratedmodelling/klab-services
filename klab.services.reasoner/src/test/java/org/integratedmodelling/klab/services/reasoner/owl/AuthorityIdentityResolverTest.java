@@ -15,6 +15,78 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class AuthorityIdentityResolverTest {
+  @Test void mappedBoundaryDefersAndLaterEnrichesTheSameConceptWithoutLosingItOnFailure() {
+    var owl = new TestOWL();
+    var roots = owl.requireOntology("biology");
+    roots.define(List.of(Axiom.ClassAssertion("Taxon", EnumSet.of(SemanticType.IDENTITY)),
+        Axiom.ClassAssertion("Species", EnumSet.of(SemanticType.IDENTITY))));
+    var provider = mock(Authority.class);
+    when(provider.getSemanticBoundaries()).thenReturn(Set.of("SPECIES"));
+    var request = new Authority.ConfigurationRequest("worldview", "TAXA", "biology:Taxon",
+        Map.of("urn", "test.authority", "semanticBoundaries", Map.of("SPECIES", "biology:Species")));
+    when(provider.configure(request)).thenReturn("bridge");
+    var leafIdentity = identity("Leaf", null);
+    when(leafIdentity.getHierarchyStatus()).thenReturn(Authority.HierarchyStatus.DEFERRED);
+    when(leafIdentity.getSemanticBoundaries()).thenReturn(Set.of("SPECIES"));
+    when(provider.resolveIdentity("bridge", "Alias")).thenReturn(leafIdentity);
+    var bindings = new AuthorityBindings(); bindings.configure(request, provider);
+    var expansions = new java.util.concurrent.atomic.AtomicInteger();
+    var resolver = new AuthorityIdentityResolver(owl, bindings, expansions::incrementAndGet);
+    when(leafIdentity.getSemanticBoundaries()).thenReturn(Set.of("UNKNOWN"));
+    assertThrows(KlabValidationException.class, () -> resolver.resolve("TAXA", "Alias"));
+    assertNull(owl.getOntology(AuthorityBindings.ontologyId(bindings.get("TAXA"))));
+    when(leafIdentity.getSemanticBoundaries()).thenReturn(Set.of("SPECIES"));
+    var leaf = resolver.resolve("TAXA", "Alias");
+    var ontology = owl.getOntology(leaf.getNamespace()).getOWLOntology();
+    assertTrue(ontology.containsAxiom(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(
+        owl.getOWLClass(leaf), owl.getOWLClass(roots.getConcept("Species")))));
+    assertEquals("DEFERRED", leaf.getMetadata().get(Authority.HIERARCHY_STATUS));
+    assertFalse(resolver.acceptedFor(leaf, bindings.get("TAXA")));
+    long count = ontology.getAxiomCount();
+    assertThrows(KlabValidationException.class, () -> resolver.resolve("TAXA", "Leaf", true));
+    assertEquals(count, ontology.getAxiomCount());
+    assertSame(leaf, resolver.resolve("TAXA", "Leaf"));
+    var full = identity("Leaf", null, "Parent");
+    when(provider.resolveIdentity("bridge", "Leaf", Authority.ResolutionMode.FULL_HIERARCHY)).thenReturn(full);
+    var parent = identity("Parent", "biology:Taxon");
+    when(provider.resolveIdentity("bridge", "Parent", Authority.ResolutionMode.FULL_HIERARCHY)).thenReturn(parent);
+    when(parent.getParentIds()).thenReturn(List.of("Leaf"));
+    assertThrows(KlabValidationException.class, () -> resolver.resolve("TAXA", "Leaf", true));
+    assertEquals(count, ontology.getAxiomCount());
+    when(parent.getParentIds()).thenReturn(List.of());
+    assertSame(leaf, resolver.resolve("TAXA", "Leaf", true));
+    assertEquals("COMPLETE", leaf.getMetadata().get(Authority.HIERARCHY_STATUS));
+    assertTrue(resolver.acceptedFor(leaf, bindings.get("TAXA")));
+    assertFalse(resolver.acceptedFor(new org.integratedmodelling.common.knowledge.ConceptImpl(
+        (org.integratedmodelling.common.knowledge.ConceptImpl) leaf), bindings.get("TAXA")),
+        "A caller-provided copy is not captured resolver admission evidence");
+    assertEquals(1, expansions.get());
+    resolver.ensureHierarchy(leaf);
+    assertEquals(1, expansions.get());
+    verify(provider, never()).resolveIdentity("bridge", "Parent");
+  }
+
+  @Test void distanceDispatchUsesCanonicalCodesAndExactLiveBindingsAndFailsClosed() {
+    var owl=new TestOWL(); owl.requireOntology("bio").define(List.of(Axiom.ClassAssertion("Root",EnumSet.of(SemanticType.IDENTITY))));
+    var provider=mock(Authority.class); var bindings=new AuthorityBindings();
+    for(String name:List.of("AA","BB")) {
+      var request=new Authority.ConfigurationRequest("wv",name,"bio:Root",Map.of("urn","test"));
+      when(provider.configure(request)).thenReturn("bridge-"+name); bindings.configure(request,provider);
+      var canonicalIdentity=identity("Canonical",null); var otherIdentity=identity("Other",null);
+      when(provider.resolveIdentity("bridge-"+name,"alias")).thenReturn(canonicalIdentity);
+      when(provider.resolveIdentity("bridge-"+name,"Other")).thenReturn(otherIdentity);
+    }
+    var resolver=new AuthorityIdentityResolver(owl,bindings);
+    var a=resolver.resolve("AA","alias"); var other=resolver.resolve("AA","Other"); var b=resolver.resolve("BB","alias");
+    when(provider.semanticDistance("bridge-AA","Canonical","Other")).thenReturn(new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE,3,List.of()));
+    assertEquals(3,resolver.semanticDistance(a,other).distance());
+    assertEquals(Authority.DistanceStatus.UNKNOWN,resolver.semanticDistance(a,b).status());
+    verify(provider,never()).semanticDistance(eq("bridge-BB"),anyString(),anyString());
+    when(provider.semanticDistance("bridge-AA","Canonical","Other")).thenThrow(new IllegalStateException("unavailable"));
+    assertEquals(Authority.DistanceStatus.UNKNOWN,resolver.semanticDistance(a,other).status());
+    bindings.clear(); assertEquals(Authority.DistanceStatus.UNSUPPORTED,resolver.semanticDistance(a,other).status());
+  }
+
   private static class TestOWL extends OWL {
     TestOWL() {
       super(mock(Scope.class));
@@ -33,8 +105,9 @@ class AuthorityIdentityResolverTest {
         "TAXA", "DomesticCat", "Cat", null, true));
     var request = new Authority.ConfigurationRequest("worldview", "TAXA", "biology:Species",
         Map.of("urn", "test.authority", "codelists", Map.of("species", "taxonomy.species")));
-    when(provider.configure(request)).thenReturn("bridge");
+    when(provider.configure(AuthorityBindings.providerRequest(request))).thenReturn("bridge");
     when(provider.getCodelists("bridge")).thenReturn(Map.of("species", seed));
+    when(provider.getCodelistDefinitions("bridge")).thenCallRealMethod();
     var cat = identity("Cat", null);
     when(provider.resolveIdentity("bridge", "Cat")).thenReturn(cat);
     var bindings = new AuthorityBindings(); bindings.configure(request, provider);

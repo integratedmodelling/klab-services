@@ -53,28 +53,35 @@ public class KlabServiceController {
 
   @Autowired private HealthEndpoint healthEndpoint;
 
-  @Operation(summary = "Adapt source content", description =
-      "Accept selects the output media type. FlowChart JSON supports image/png; Resources also "
-          + "parses semantic source as application/json with the assetClass parameter.")
+  @Operation(
+      summary = "Adapt source content",
+      description =
+          "Accept selects the output media type. FlowChart JSON supports image/png; Resources also "
+              + "parses semantic source as application/json with the assetClass parameter.")
   @PostMapping(ServicesAPI.ADAPT)
   public ResponseEntity<byte[]> adapt(
       @RequestBody String source,
       @RequestHeader(value = HttpHeaders.ACCEPT, defaultValue = "application/json") String accept,
       @RequestParam(value = "assetClass", required = false) KlabAsset.KnowledgeClass assetClass,
       Principal principal) {
-    var scope = principal instanceof EngineAuthorization authorization
-        && authorization.getScope() instanceof UserScope user ? user : null;
+    var scope =
+        principal instanceof EngineAuthorization authorization
+                && authorization.getScope() instanceof UserScope user
+            ? user
+            : null;
     try {
       var mediaTypes = new java.util.ArrayList<>(MediaType.parseMediaTypes(accept));
       MediaType.sortBySpecificityAndQuality(mediaTypes);
       for (var requested : mediaTypes) {
         if (requested.getQualityValue() == 0) continue;
-        var mediaType = requested.isWildcardType() || requested.isWildcardSubtype()
-            ? (assetClass == null ? MediaType.IMAGE_PNG : MediaType.APPLICATION_JSON)
-            : new MediaType(requested.getType(), requested.getSubtype());
+        var mediaType =
+            requested.isWildcardType() || requested.isWildcardSubtype()
+                ? (assetClass == null ? MediaType.IMAGE_PNG : MediaType.APPLICATION_JSON)
+                : new MediaType(requested.getType(), requested.getSubtype());
         if (!requested.isCompatibleWith(mediaType)) continue;
         try {
-          return ResponseEntity.ok().contentType(mediaType)
+          return ResponseEntity.ok()
+              .contentType(mediaType)
               .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
               .body(instance.klabService().adapt(source, mediaType.toString(), assetClass, scope));
         } catch (UnsupportedOperationException unsupported) {
@@ -88,7 +95,6 @@ public class KlabServiceController {
           org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid adaptation input", invalid);
     }
   }
-
 
   @Operation(
       summary = "Get service health",
@@ -135,7 +141,10 @@ public class KlabServiceController {
   @Operation(
       summary = "Get asset information",
       description = "Return typed information for an asset identified by URN and knowledge class")
-  @GetMapping(value = ServicesAPI.INFO, params = "infoClass", produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(
+      value = ServicesAPI.INFO,
+      params = "infoClass",
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public <T> T info(
       @PathVariable(name = "urn") String urn,
       @PathVariable(name = "knowledgeClass") KlabAsset.KnowledgeClass objectClass,
@@ -157,14 +166,18 @@ public class KlabServiceController {
     if (principal instanceof EngineAuthorization authorization
         && authorization.getScope() instanceof UserScope userScope) {
       var markdown = instance.klabService().info(urn, objectClass, String.class, userScope);
-      return markdown == null ? ResponseEntity.notFound().build()
-          : ResponseEntity.ok().contentType(MediaType.parseMediaType("text/markdown;charset=UTF-8"))
-              .header(HttpHeaders.CACHE_CONTROL, "private, no-store").body(markdown);
+      return markdown == null
+          ? ResponseEntity.notFound().build()
+          : ResponseEntity.ok()
+              .contentType(MediaType.parseMediaType("text/markdown;charset=UTF-8"))
+              .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+              .body(markdown);
     }
     throw new KlabAuthorizationException("No valid scope in service INFO request");
   }
 
-  @Operation(summary = "Render asset information as PNG",
+  @Operation(
+      summary = "Render asset information as PNG",
       description = "Layout an adaptable process using ELK and return a headless PNG rendering")
   @GetMapping(value = ServicesAPI.INFO, produces = MediaType.IMAGE_PNG_VALUE)
   public ResponseEntity<byte[]> infoImage(
@@ -174,8 +187,10 @@ public class KlabServiceController {
     if (principal instanceof EngineAuthorization authorization
         && authorization.getScope() instanceof UserScope userScope) {
       var image = instance.klabService().info(urn, objectClass, BufferedImage.class, userScope);
-      return image == null ? ResponseEntity.notFound().build()
-          : ResponseEntity.ok().contentType(MediaType.IMAGE_PNG)
+      return image == null
+          ? ResponseEntity.notFound().build()
+          : ResponseEntity.ok()
+              .contentType(MediaType.IMAGE_PNG)
               .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
               .body(FlowChartService.encodePng(image));
     }

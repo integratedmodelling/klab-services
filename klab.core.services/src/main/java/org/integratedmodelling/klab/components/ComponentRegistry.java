@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.jar.JarFile;
 import javassist.Modifier;
@@ -131,6 +132,39 @@ public class ComponentRegistry {
   private ComponentEventLog componentEventLog = new ComponentEventLog(null);
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+  private boolean ownedBootstrapRegistry;
+
+  /**
+   * Explicit owned staging paths; never reads global deployment catalog/cache or schedules updates.
+   */
+  public static ComponentRegistry ownedBootstrap(
+      BaseService service, StartupOptions options, java.nio.file.Path root)
+      throws java.io.IOException {
+    var path = root.toAbsolutePath().normalize();
+    if (java.nio.file.Files.exists(path))
+      throw new IllegalArgumentException("Bootstrap registry must be fresh");
+    java.nio.file.Files.createDirectories(path);
+    java.nio.file.Files.createDirectories(path.resolve("cache"));
+    var registry =
+        new ComponentRegistry(
+            service, options, new MavenComponentCache(path.resolve("cache").toFile()), List.of());
+    registry.ownedBootstrapRegistry = true;
+    registry.catalogFile = path.resolve("catalog.json").toFile();
+    java.nio.file.Files.writeString(registry.catalogFile.toPath(), "[]");
+    registry.componentEventLog = new ComponentEventLog(path.resolve("history.jsonl").toFile());
+    registry.initializeComponents(path.toFile());
+    return registry;
+  }
+
+  public synchronized void closeOwnedBootstrap() {
+    if (!ownedBootstrapRegistry) throw new IllegalStateException("Not an owned bootstrap registry");
+    scheduler.shutdownNow();
+    if (componentManager != null) {
+      componentManager.stopPlugins();
+      componentManager.unloadPlugins();
+    }
+  }
+
   public ComponentRegistry(BaseService service, StartupOptions options) {
     this(service, options, null, List.of());
     readConfiguration(service, options);
@@ -173,6 +207,72 @@ public class ComponentRegistry {
 
   public MavenComponentCache getComponentCache() {
     return this.cache;
+  }
+
+  private final Map<String, Integer> uiToolkitUsers = new HashMap<>();
+
+  private synchronized void requireIdleUiToolkit(String id, Version version) {
+    // PF4J loads one plugin per ID, even if registry history has several version descriptors.
+    if (uiToolkitUsers.entrySet().stream()
+        .anyMatch(entry -> entry.getKey().startsWith(id + "@") && entry.getValue() > 0))
+      throw new IllegalStateException("Component is retained by running UI applications: " + id);
+  }
+
+  /** Resolve trusted installed contributions and pin the exact component version until release. */
+  public synchronized org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease
+      acquireUiToolkit(String id) {
+    var descriptors =
+        new LinkedHashMap<
+            String, org.integratedmodelling.klab.api.view.application.UiToolkitDescriptor>();
+    var owners = new HashMap<String, String>();
+    var urls = new HashMap<String, String>();
+    descriptors.put(
+        "quasar", org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease.QUASAR);
+    if (componentManager != null) {
+      for (var wrapper : componentManager.getPlugins()) {
+        if (!(wrapper.getPlugin() instanceof KlabComponent component)
+            || wrapper.getPluginState() != PluginState.STARTED
+            || getExactComponent(component.getName(), component.getVersion()) == null) continue;
+        for (var descriptor : component.uiToolkits()) {
+          if (descriptors.putIfAbsent(descriptor.id(), descriptor) != null)
+            throw new IllegalArgumentException("Duplicate UI toolkit " + descriptor.id());
+          if (!descriptor.platforms().contains("web")) continue;
+          if (descriptor.rendererModule() == null)
+            throw new IllegalArgumentException(
+                "Component UI toolkit requires a web renderer module: " + descriptor.id());
+          var path = component.webUiModules().get(descriptor.rendererModule());
+          if (path == null)
+            throw new IllegalArgumentException(
+                "Undeclared UI toolkit module " + descriptor.rendererModule());
+          path = normalizeWebUiModulePath(path);
+          if (path == null) throw new IllegalArgumentException("Invalid UI toolkit module path");
+          owners.put(descriptor.id(), component.getName() + "@" + component.getVersion());
+          urls.put(
+              descriptor.id(),
+              "public/ui/components/"
+                  + encodePathSegment(component.getName())
+                  + "/"
+                  + encodePathSegment(component.getVersion().toString())
+                  + "/"
+                  + encodeResourcePath(path));
+        }
+      }
+    }
+    var descriptor = descriptors.get(id);
+    if (descriptor == null) throw new IllegalArgumentException("Unknown UI toolkit " + id);
+    if (!descriptor.platforms().contains("web"))
+      throw new IllegalArgumentException("UI toolkit does not support web: " + id);
+    var owner = owners.get(id);
+    if (owner != null) uiToolkitUsers.merge(owner, 1, Integer::sum);
+    return new org.integratedmodelling.klab.runtime.kactors.view.UiToolkitLease(
+        descriptor,
+        urls.get(id),
+        () -> {
+          synchronized (ComponentRegistry.this) {
+            if (owner != null)
+              uiToolkitUsers.computeIfPresent(owner, (key, count) -> count == 1 ? null : count - 1);
+          }
+        });
   }
 
   /**
@@ -984,11 +1084,40 @@ public class ComponentRegistry {
     return ret;
   }
 
-  public Collection<Extensions.ComponentDescriptor> getComponents(Scope scope) {
+  /**
+   * Installed inventory for service capabilities. Discovery must not perform update checks or
+   * recursively request another service's capabilities. Explicit component listing still obtains
+   * fresh update status through {@link #getComponents(Scope)}.
+   */
+  public Collection<Extensions.ComponentDescriptor> getInstalledComponents(Scope scope) {
     return components.values().stream()
-        .filter(/* TODO permissions */ c -> true)
-        .map(component -> computeUpdateStatus(component, scope))
+        .filter(/* TODO permissions: same visibility as getComponents */ c -> true)
         .toList();
+  }
+
+  private final AtomicBoolean checkingComponentUpdates = new AtomicBoolean();
+
+  public Collection<Extensions.ComponentDescriptor> getComponents(Scope scope) {
+    // A dependency's explicit listing may return to this registry through another service.
+    // A registry-wide guard also breaks HTTP cycles arriving on another request thread.
+    if (!checkingComponentUpdates.compareAndSet(false, true)) {
+      return getInstalledComponents(scope).stream()
+          .map(
+              component ->
+                  component.isUpdateable()
+                          && component.importType() != Extensions.ComponentImportType.FILE
+                      ? component.withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L)
+                      : component)
+          .toList();
+    }
+    try {
+      return components.values().stream()
+          .filter(/* TODO permissions */ c -> true)
+          .map(component -> computeUpdateStatus(component, scope))
+          .toList();
+    } finally {
+      checkingComponentUpdates.set(false);
+    }
   }
 
   private Extensions.ComponentDescriptor computeUpdateStatus(
@@ -1053,7 +1182,13 @@ public class ComponentRegistry {
     rememberSourceService(source);
     try {
       var sourceDescriptor =
-          source.capabilities(scope).getComponents().stream()
+          source
+              .query(
+                  null,
+                  KlabAsset.KnowledgeClass.COMPONENT,
+                  Extensions.ComponentDescriptor.class,
+                  scope instanceof UserScope user ? user : null)
+              .stream()
               .filter(candidate -> Objects.equals(candidate.id(), component.id()))
               .filter(candidate -> Objects.equals(candidate.version(), component.version()))
               .findFirst()
@@ -1477,11 +1612,12 @@ public class ComponentRegistry {
    * for administrative removal but would make a failed hot replacement unavailable to the current
    * resolution.
    */
-  private boolean unloadDependencyComponentForReplacement(
+  private synchronized boolean unloadDependencyComponentForReplacement(
       Extensions.ComponentDescriptor dependency) {
     if (componentManager == null || componentManager.getPlugin(dependency.id()) == null) {
       return false;
     }
+    requireIdleUiToolkit(dependency.id(), dependency.version());
     if (!componentManager.deletePlugin(dependency.id())) {
       return false;
     }
@@ -1716,7 +1852,7 @@ public class ComponentRegistry {
         0L);
   }
 
-  private Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
+  private synchronized Pair<Extensions.ComponentDescriptor, ResourceSet> installComponent(
       File resourcePath,
       String mavenCoordinates,
       Extensions.ComponentImportType importType,
@@ -1733,6 +1869,18 @@ public class ComponentRegistry {
     // TODO allow same path with different versions and replacing same version
     var pluginDestination =
         new File(pluginPath, Utils.Files.getFileBaseName(resourcePath) + ".jar");
+    if (!uiToolkitUsers.isEmpty()) {
+      // Check before copying or loading: a failed late registration must never overwrite/delete
+      // an archive whose renderer is retained by a live (possibly disconnected) application.
+      var incoming = new ManifestPluginDescriptorFinder().find(resourcePath.toPath());
+      requireIdleUiToolkit(incoming.getPluginId(), Version.create(incoming.getVersion()));
+      for (var loaded : componentManager.getPlugins()) {
+        if (loaded.getPluginPath() != null && loaded.getPluginPath().toAbsolutePath().normalize()
+            .equals(pluginDestination.toPath().toAbsolutePath().normalize())) {
+          requireIdleUiToolkit(loaded.getPluginId(), Version.ANY_VERSION);
+        }
+      }
+    }
 
     // check if we're installing from a different location
     if (!isInPluginDirectory(resourcePath)) {
@@ -1742,9 +1890,13 @@ public class ComponentRegistry {
         Files.copy(
             resourcePath.toPath(), pluginDestination.toPath(), StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
-        Logging.INSTANCE.error(
+        if (ownedBootstrapRegistry) OwnedBootstrapDiagnostics.report(
+            OwnedBootstrapDiagnostics.Phase.COMPONENT_INSTALL,
+            Utils.Files.getFileBaseName(resourcePath), OwnedBootstrapDiagnostics.Reason.EXCEPTION, e);
+        else Logging.INSTANCE.error(
             "Unable to copy " + resourcePath.getAbsolutePath() + " to " + pluginDestination, e);
-        return Pair.of(null, ResourceSet.empty(Notification.error(e)));
+        return Pair.of(null, ResourceSet.empty(Notification.error(
+            ownedBootstrapRegistry ? "AUTHORITY_COMPONENT_INSTALL_FAILED" : e)));
       }
     } else if (!pluginDestination.exists()) {
       pluginDestination = resourcePath;
@@ -1789,8 +1941,12 @@ public class ComponentRegistry {
         Utils.Files.deleteQuietly(pluginDestination);
       }
     } catch (Throwable t) {
-      Logging.INSTANCE.error("Failed to install component " + pluginDestination, t);
-      ret = ResourceSet.empty(Notification.error(t));
+      if (ownedBootstrapRegistry) OwnedBootstrapDiagnostics.report(
+          OwnedBootstrapDiagnostics.Phase.COMPONENT_INSTALL,
+          Utils.Files.getFileBaseName(resourcePath), OwnedBootstrapDiagnostics.Reason.EXCEPTION, t);
+      else Logging.INSTANCE.error("Failed to install component " + pluginDestination, t);
+      ret = ResourceSet.empty(Notification.error(
+          ownedBootstrapRegistry ? "AUTHORITY_COMPONENT_INSTALL_FAILED" : t));
       Utils.Files.deleteQuietly(pluginDestination);
     }
 
@@ -1931,7 +2087,7 @@ public class ComponentRegistry {
     return registerComponent(component, mavenCoordinates, pluginFile, null, null, 0L);
   }
 
-  private Extensions.ComponentDescriptor registerComponent(
+  private synchronized Extensions.ComponentDescriptor registerComponent(
       KlabComponent component,
       String mavenCoordinates,
       File pluginFile,
@@ -1977,6 +2133,7 @@ public class ComponentRegistry {
       sourceServiceId =
           existingDescriptor == null ? service.serviceId() : existingDescriptor.sourceServiceId();
     }
+    requireIdleUiToolkit(componentName, componentVersion);
     removeComponentRegistration(componentName, componentVersion);
 
     scanPackage(
@@ -2275,7 +2432,9 @@ public class ComponentRegistry {
         try {
           cls.getDeclaredMethod(method.getName(), method.getParameterTypes());
           continue; // A subclass may hide a static factory with a covariant return type.
-        } catch (NoSuchMethodException inherited) { /* Keep the inherited public contract. */ }
+        } catch (NoSuchMethodException inherited) {
+          /* Keep the inherited public contract. */
+        }
       }
       if (Modifier.isPublic(method.getModifiers())
           && method.isAnnotationPresent(Verb.class)) { // no verbs in libraries
@@ -2466,10 +2625,16 @@ public class ComponentRegistry {
       if (verb != null && !verb.producesAgent().isBlank()) {
         ret.behaviorUrn = verb.producesAgent().trim();
       }
+      if (verb != null && !verb.returnsHandle().isBlank()) {
+        if (verb.executionType() != Verb.Type.EMITTER || method.getReturnType() == void.class)
+          throw new IllegalArgumentException("Construction handles require a non-void emitter: " + method);
+        ret.handleBehaviorUrn = verb.returnsHandle().trim();
+      }
       if (java.lang.reflect.Modifier.isStatic(implementation.method.getModifiers())) {
         // A static factory/adapter needs no constructible instance of its bound actor class.
         ret.staticMethod = true;
-      } else if (clss.isAnnotationPresent(Actor.class) && !clss.getAnnotation(Actor.class).singleton()) {
+      } else if (clss.isAnnotationPresent(Actor.class)
+          && !clss.getAnnotation(Actor.class).singleton()) {
         // Instance verbs receive the actual actor handle. Adapters instantiate lazily if needed.
       } else if (serviceInfo.isReentrant()) {
         // use a global class instance
@@ -2789,15 +2954,21 @@ public class ComponentRegistry {
   /** Exact worldview selection; never substitute a compatible version or another component. */
   public org.integratedmodelling.klab.api.services.Authority getAuthority(
       org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding binding, Scope scope) {
-    var matching = authorities.get(binding.provider().urn()).stream()
-        .filter(candidate -> binding.componentUrn().equals(candidate.componentUrn())
-            && binding.componentVersion().equals(candidate.componentVersion()))
-        .toList();
+    var matching =
+        authorities.get(binding.provider().urn()).stream()
+            .filter(
+                candidate ->
+                    binding.componentUrn().equals(candidate.componentUrn())
+                        && binding.componentVersion().equals(candidate.componentVersion()))
+            .toList();
     if (matching.size() != 1) return null;
-    var component = components.get(binding.componentUrn()).stream()
-        .filter(candidate -> binding.componentVersion().equals(candidate.version()))
-        .findFirst().orElse(null);
-    if (component == null || !binding.componentVersion().equals(component.version())
+    var component =
+        components.get(binding.componentUrn()).stream()
+            .filter(candidate -> binding.componentVersion().equals(candidate.version()))
+            .findFirst()
+            .orElse(null);
+    if (component == null
+        || !binding.componentVersion().equals(component.version())
         || component.authorities().stream().noneMatch(binding.provider()::equals)) return null;
     return matching.getFirst().implementation();
   }
@@ -2866,6 +3037,7 @@ public class ComponentRegistry {
           Notification.error("Built-in component " + component.id() + " cannot be removed"));
     }
     var details = Map.of("trigger", "ADMINISTRATOR_SETTING", "decision", "EXPLICIT_REMOVAL");
+    requireIdleUiToolkit(component.id(), component.version());
     if (componentManager != null
         && componentManager.getPlugin(component.id()) != null
         && !componentManager.deletePlugin(component.id())) {
@@ -2904,6 +3076,7 @@ public class ComponentRegistry {
       String urn, Version version, String eventMessage, Map<String, String> eventDetails) {
     var component = getComponent(urn, version);
     if (component == null) return false;
+    requireIdleUiToolkit(component.id(), component.version());
     var ret = false;
     if (componentManager != null && componentManager.getPlugin(component.id()) != null) {
       ret = componentManager.deletePlugin(component.id());
@@ -2930,6 +3103,8 @@ public class ComponentRegistry {
   public synchronized boolean loadComponents(ResourceSet resourceSet, Scope scope) {
 
     if (pluginPath == null || componentManager == null) {
+      reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD, null,
+          OwnedBootstrapDiagnostics.Reason.REGISTRY_UNINITIALIZED, null);
       var diagnostic = Notification.error("Component registry has not been initialized");
       resourceSet.getNotifications().add(diagnostic);
       scope.error(diagnostic.getMessage());
@@ -2970,9 +3145,16 @@ public class ComponentRegistry {
                   + installed.id()
                   + " is older than the copy advertised by Resources service "
                   + result.getServiceId());
-          resourceSet.getNotifications().add(
-              Notification.error("Failed to refresh component " + result.getResourceUrn()
-                  + " from Resources service " + result.getServiceId()));
+          resourceSet
+              .getNotifications()
+              .add(
+                  Notification.error(
+                      "Failed to refresh component "
+                          + result.getResourceUrn()
+                          + " from Resources service "
+                          + result.getServiceId()));
+          reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD, result,
+              OwnedBootstrapDiagnostics.Reason.DEPENDENCY_REFRESH_REJECTED, null);
           return false;
         }
         continue;
@@ -2986,9 +3168,16 @@ public class ComponentRegistry {
               .orElse(null);
 
       if (service == null) {
-        resourceSet.getNotifications().add(
-            Notification.error("Resources service " + result.getServiceId()
-                + " is unavailable for component " + result.getResourceUrn()));
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD, result,
+            OwnedBootstrapDiagnostics.Reason.SERVICE_UNAVAILABLE, null);
+        resourceSet
+            .getNotifications()
+            .add(
+                Notification.error(
+                    "Resources service "
+                        + result.getServiceId()
+                        + " is unavailable for component "
+                        + result.getResourceUrn()));
         recordComponentEvent(
             coordinates.getFirst(),
             coordinates.getSecond(),
@@ -2998,6 +3187,18 @@ public class ComponentRegistry {
             ComponentHistory.Outcome.FAILURE,
             "The Resources service advertising this dependency is unavailable",
             Map.of());
+        return false;
+      }
+      var approvedSource = result.getMetadata().get("authority.bootstrap.source.url", String.class);
+      if (approvedSource != null
+          && (service.getUrl() == null
+              || !approvedSource.equals(
+                  service.getUrl().toExternalForm().replaceFirst("/+$", "")))) {
+        resourceSet
+            .getNotifications()
+            .add(Notification.error("Authority component source differs from explicit approval"));
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_LOAD, result,
+            OwnedBootstrapDiagnostics.Reason.SOURCE_MISMATCH, null);
         return false;
       }
       rememberSourceService(service);
@@ -3037,10 +3238,44 @@ public class ComponentRegistry {
         // give the OS time to react - found that often the file is truncated
         TimeUnit.SECONDS.sleep(2);
       } catch (Exception e) {
-        resourceSet.getNotifications().add(Notification.error(e));
-        scope.error(e);
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_EXPORT, result,
+            OwnedBootstrapDiagnostics.Reason.EXCEPTION, e);
+        Object visible = ownedBootstrapRegistry ? "AUTHORITY_COMPONENT_EXPORT_FAILED" : e;
+        resourceSet.getNotifications().add(Notification.error(visible));
+        scope.error(visible);
         return false;
       }
+      // Bootstrap adds a descriptor-vetted content pin; verify before executing plugin code.
+      var expectedHash = result.getMetadata().get("authority.bootstrap.expected.md5", String.class);
+      if (expectedHash != null && !expectedHash.equals(Utils.Files.hash(plugin))) {
+        resourceSet
+            .getNotifications()
+            .add(Notification.error("Authority artifact differs from selected descriptor"));
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_VERIFY, result,
+            OwnedBootstrapDiagnostics.Reason.MD5_MISMATCH, null);
+        return false;
+      }
+      var approvedSha256 =
+          result.getMetadata().get("authority.bootstrap.expected.sha256", String.class);
+      if (approvedSha256 != null)
+        try (var input = new java.io.FileInputStream(plugin)) {
+          if (!approvedSha256.equals(
+              org.apache.commons.codec.digest.DigestUtils.sha256Hex(input))) {
+            resourceSet
+                .getNotifications()
+                .add(Notification.error("Authority artifact differs from approved SHA-256"));
+            reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_VERIFY, result,
+                OwnedBootstrapDiagnostics.Reason.SHA256_MISMATCH, null);
+            return false;
+          }
+        } catch (IOException failure) {
+          reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_VERIFY, result,
+              OwnedBootstrapDiagnostics.Reason.EXCEPTION, failure);
+          resourceSet
+              .getNotifications()
+              .add(Notification.error("Cannot verify approved authority artifact SHA-256"));
+          return false;
+        }
       var installation =
           installComponent(
               plugin,
@@ -3051,8 +3286,11 @@ public class ComponentRegistry {
               result.getServiceId(),
               result.getTimestamp());
       if (installation == null || installation.getFirst() == null) {
-        resourceSet.getNotifications().add(
-            Notification.error("Failed to install component " + result.getResourceUrn()));
+        reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase.COMPONENT_INSTALL, result,
+            OwnedBootstrapDiagnostics.Reason.INSTALL_REJECTED, null);
+        resourceSet
+            .getNotifications()
+            .add(Notification.error("Failed to install component " + result.getResourceUrn()));
         if (installation != null) {
           resourceSet.getNotifications().addAll(installation.getSecond().getNotifications());
         }
@@ -3083,6 +3321,12 @@ public class ComponentRegistry {
     componentManager.startPlugins();
 
     return true;
+  }
+
+  private void reportOwnedBootstrapFailure(OwnedBootstrapDiagnostics.Phase phase,
+      ResourceSet.Resource resource, OwnedBootstrapDiagnostics.Reason reason, Throwable original) {
+    if (ownedBootstrapRegistry) OwnedBootstrapDiagnostics.report(phase,
+        resource == null ? "-" : resource.getResourceUrn(), reason, original);
   }
 
   static boolean requiresDependencyRefresh(
@@ -3239,12 +3483,19 @@ public class ComponentRegistry {
       KlabComponent component,
       Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) {
 
+    var discovery = new ClassGraph().enableAnnotationInfo().ignoreParentClassLoaders();
+    var componentPath = component.getWrapper().getPluginPath();
+    if (Files.isRegularFile(componentPath)) {
+      // Discover only this component's contributions. Adding its loader to the host
+      // classpath scans unrelated contributions and identical archive copies; ClassGraph
+      // 4.8.162 can then lose an owned file slice and leave the JAR locked on Windows.
+      discovery.overrideClasspath(componentPath.toFile());
+    } else {
+      // Development plug-ins may keep classes below target/classes rather than their root.
+      discovery.overrideClassLoaders(component.getWrapper().getPluginClassLoader());
+    }
     try (ScanResult scanResult =
-        new ClassGraph()
-            .enableAnnotationInfo()
-            .addClassLoader(component.getWrapper().getPluginClassLoader())
-            .acceptPackages(component.getClass().getPackageName())
-            .scan()) {
+        discovery.acceptPackages(component.getClass().getPackageName()).scan()) {
       for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
         for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(ah)) {
           try {

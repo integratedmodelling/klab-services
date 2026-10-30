@@ -1,0 +1,35 @@
+web app examples.ui.handles
+    "Widget handles and fluent file transfers"
+    version 1.0
+    using core.ui as ui
+
+action main:
+    ui.text("Ready") #status
+    status <- ui.widget("status")
+    btn <- ui.button("Click me")
+    btn.events():
+        event -> (
+            btn.settext("I'm disabled now")
+            btn.enabled(false)
+            status.settext("Clicked")
+        )
+
+    upload <- ui.upload("Upload CSV" :accept ".csv,text/csv" :maxbytes 1048576)
+    download <- ui.download("Download uploaded file")
+    upload.events():
+        event -> (
+            download.source(upload)
+            file <- upload.file()
+            status.settext(file.text())
+        )
+    report <- ui.download("Generated report")
+    generated <- report.content("report.csv", "id,value\nsample,42\n", "text/csv")
+    report.source(generated)
+
+    choice <- ui.select("Region" :options ("eu", "af") :value "eu")
+    choice.options(("eu", "as"))
+    choice.set("as")
+    choice.readonly(true)
+    accounts <- ui.list("Accounts" :items ({id: "a", label: "Alice"}, {id: "b", label: "Bob"}))
+    accounts.items(({id: "a", label: "Ada"}, {id: "b", label: "Bob"}))
+    ui.text("Constructed") #constructed

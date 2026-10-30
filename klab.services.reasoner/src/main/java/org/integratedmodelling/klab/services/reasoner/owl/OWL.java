@@ -93,6 +93,41 @@ public class OWL {
 
   private boolean reasonerActive;
   private boolean reasonerSynchronizing = false;
+  private int declarationStagingDepth;
+  private final MonotoneRefinementSupport monotoneRefinements = new MonotoneRefinementSupport(this);
+  private final AuthorityDependencySupport.Cache authorityDependencyCache = new AuthorityDependencySupport.Cache();
+
+  AuthorityDependencySupport.Cache authorityDependencyCache() { return authorityDependencyCache; }
+  Object structuralReasonerIdentity() { return reasoner; }
+
+  public MonotoneRefinementSupport monotoneRefinements() { return monotoneRefinements; }
+
+  private volatile boolean derivedClosureUnavailable;
+
+  /** A failed retraction retires this semantic actor; recovery requires a fresh accepted actor. */
+  public void quarantineDerivedClosure() { derivedClosureUnavailable = true; }
+
+  public void requireAvailableClosure() {
+    if (derivedClosureUnavailable)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException(
+          "Semantic closure unavailable after failed derived-proof retraction; reload knowledge");
+  }
+
+  private long reasonerCreations, flushRequests, actualFlushes, satisfiabilityQueries, entailmentQueries;
+
+  /** Private compilation suppresses partial-graph DL queries until the complete candidate exists. */
+  public synchronized AutoCloseable stageDeclarations() {
+    declarationStagingDepth++;
+    return () -> { synchronized (this) {
+      if (declarationStagingDepth <= 0) throw new IllegalStateException("Unbalanced declaration staging");
+      declarationStagingDepth--;
+    }};
+  }
+  public synchronized Map<String,Long> compilationMetrics() {
+    return Map.of("reasonerCreations",reasonerCreations,"flushRequests",flushRequests,
+        "actualFlushes",actualFlushes,"satisfiabilityQueries",satisfiabilityQueries,
+        "entailmentQueries",entailmentQueries);
+  }
   private Ontology mergedReasonerOntology;
   private OWLReasoner reasoner;
   // HermiT queries mutate tableau state. Queries, flush, creation and disposal must
@@ -114,9 +149,15 @@ public class OWL {
   private Concept nothing;
 
   private CoreOntology coreOntology;
+  private final File privateKnowledgeDirectory;
 
   public OWL(Scope scope) {
+    this(scope, null);
+  }
+
+  public OWL(Scope scope, File privateKnowledgeDirectory) {
     this.scope = scope;
+    this.privateKnowledgeDirectory = privateKnowledgeDirectory;
   }
 
   public Concept nothing(String urn, Throwable... exceptions) {
@@ -138,6 +179,7 @@ public class OWL {
   private synchronized void registerOwlClass(OWLClass cls, String urn) {
     if (!owlClasses.containsValue(cls)) {
       owlClasses.put(urn, cls);
+      authorityDependencyCache.changed();
     }
   }
 
@@ -276,7 +318,30 @@ public class OWL {
 
     manager = OWLManager.createOWLOntologyManager();
     // this.loadPath = loadPath;
-    coreOntology = new CoreOntology(ServiceConfiguration.INSTANCE.getDataPath("knowledge"), this);
+    coreOntology = privateKnowledgeDirectory == null
+        ? new CoreOntology(ServiceConfiguration.INSTANCE.getDataPath("knowledge"), this)
+        : new CoreOntology(privateKnowledgeDirectory, this, false);
+    if (privateKnowledgeDirectory != null) {
+      var root = privateKnowledgeDirectory.toPath().toAbsolutePath().normalize();
+      var local = new AutoIRIMapper(privateKnowledgeDirectory, true);
+      manager.getIRIMappers().add(iri -> {
+        if ("file".equalsIgnoreCase(iri.toURI().getScheme())) {
+          if (!java.nio.file.Path.of(iri.toURI()).toAbsolutePath().normalize().startsWith(root))
+            throw new KlabValidationException("Candidate OWL import escaped its private catalog: " + iri);
+          return iri;
+        }
+        // The mapper also assigns document IRIs during creation of source/internal ontologies.
+        // Keep these generated documents local; a missing import then fails as a local file,
+        // rather than permitting an HTTP fallback. Core imports still require captured bytes.
+        if (iri.toString().startsWith(DEFAULT_ONTOLOGY_PREFIX + "/")) {
+          return IRI.create(root.resolve("generated-" + privateDocumentHash(iri) + ".owl").toUri());
+        }
+        var document = local.getDocumentIRI(iri);
+        if (document == null)
+          throw new KlabValidationException("Candidate OWL import is absent from its captured catalog: " + iri);
+        return document;
+      });
+    }
     // coreOntology.load(monitor);
     load(coreOntology.getRoot());
 
@@ -316,9 +381,10 @@ public class OWL {
     // overall),
     // monitor);
     // }
-    if (ServiceConfiguration.INSTANCE.useReasoner()) {
+    if (privateKnowledgeDirectory != null || ServiceConfiguration.INSTANCE.useReasoner()) {
       this.reasoner =
           new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
+      reasonerCreations++;
       reasonerActive = true;
     }
 
@@ -328,6 +394,8 @@ public class OWL {
   }
 
   public synchronized void reset() {
+    authorityDependencyCache.reset();
+    monotoneRefinements.reset(true);
     if (reasoner != null) {
       reasoner.dispose();
       reasoner = null;
@@ -347,10 +415,32 @@ public class OWL {
     conceptsById.clear();
     classId.set(1L);
     manager = null;
+    coreAliasDocumentation.reset();
   }
+
+  private static String privateDocumentHash(IRI iri) {
+    try {
+      return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+          .digest(iri.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (java.security.NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 is unavailable", e);
+    }
+  }
+
+  private final CoreAliasDocumentation coreAliasDocumentation = new CoreAliasDocumentation(this);
+
+  public CoreAliasDocumentation coreAliasDocumentation() { return coreAliasDocumentation; }
 
   public CoreOntology getCoreOntology() {
     return this.coreOntology;
+  }
+
+  /** Reject unavailable operator bases before creating a definition or writing any axioms. */
+  private void requireOperatorSuperclass(String coreId) {
+    if (getConcept(coreId) == null) {
+      throw new KlabValidationException(
+          "Required operator superclass is unavailable in the core ontology: " + coreId);
+    }
   }
 
   String importOntology(
@@ -422,6 +512,8 @@ public class OWL {
       }
     }
 
+    if (result != null && CoreOntology.CORE_ONTOLOGY_NAME.equals(result.getNamespace()))
+      coreAliasDocumentation.track(result);
     return result;
   }
 
@@ -469,6 +561,8 @@ public class OWL {
     ret.setName(id);
     ret.setNamespace(ontologyName);
     ret.getType().addAll(type);
+    var relationshipAxes=RelationshipOntologySupport.read(owlClass,manager.ontologies().toList());
+    if(relationshipAxes!=null)relationshipAxes.apply(ret.getType());
     registerConcept(ret);
     return ret;
   }
@@ -552,6 +646,7 @@ public class OWL {
     if (Objects.equals(previousUrn, urn)) {
       return;
     }
+    authorityDependencyCache.changed();
 
     if (conceptsById.get(previousUrn) == concept) {
       OWLClass owlClass = owlClasses.remove(previousUrn);
@@ -633,14 +728,14 @@ public class OWL {
             ? ""
             : (path
                 + (path.isEmpty() ? "" : ".")
-                + Utils.CamelCase.toLowerCase(Utils.Files.getFileBaseName(f.toString()), '-'));
+                + org.integratedmodelling.klab.services.reasoner.internal.CoreOntologyCatalog.segment(f.getName()));
 
     if (forcePath) {
       pth = path;
     }
 
     if (f.isDirectory()) {
-      if (!Utils.Files.getFileBaseName(f.toString()).startsWith(".")) {
+      if (!f.getName().startsWith(".")) {
         for (File fl : Objects.requireNonNull(f.listFiles())) {
           loadInternal(fl, pth, false, monitor);
         }
@@ -676,6 +771,9 @@ public class OWL {
         }
 
       } catch (Exception e) {
+
+        if (privateKnowledgeDirectory != null)
+          throw new KlabValidationException("Candidate core ontology could not be loaded: " + f + ": " + e.getMessage());
 
         /*
          * everything else is probably an error
@@ -860,7 +958,8 @@ public class OWL {
   }
 
   public void releaseOntology(Ontology ontology) {
-
+    authorityDependencyCache.changed();
+    var documentedSubjects = coreAliasDocumentation.documentedSubjects(ontology);
     this.namespaces.remove(ontology.getName());
     var onto = ontologies.remove(ontology.getName());
     for (var concept : onto.getConcepts()) {
@@ -871,6 +970,7 @@ public class OWL {
     }
     iri2ns.remove(((Ontology) ontology).getPrefix());
     manager.removeOntology(((Ontology) ontology).ontology);
+    coreAliasDocumentation.refresh(documentedSubjects);
   }
 
   public void clear() {
@@ -1327,11 +1427,55 @@ public class OWL {
     return ret;
   }
 
+  /** Check correlated choices in authored boolean ancestry, not just its common flags. */
+  public boolean permitsRelationshipAxes(Concept concept, org.integratedmodelling.klab.api.knowledge.RelationshipAxes requested) {
+    return permitsRelationshipAxes(List.of(concept),requested);
+  }
+  public boolean permitsRelationshipAxes(Collection<Concept> constraints, org.integratedmodelling.klab.api.knowledge.RelationshipAxes requested) {
+    for(var nature:List.of(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.STRUCTURAL,org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.FUNCTIONAL))
+      for(var orientation:List.of(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.DIRECTED,org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.BOND)) {
+        var candidate=new org.integratedmodelling.klab.api.knowledge.RelationshipAxes(nature,orientation);
+        try { requested.merge(candidate); if(constraints.stream().allMatch(c->permitsAxesExpression(getOWLClass(c),candidate,new HashSet<>())))return true; }
+        catch(IllegalArgumentException conflict) { /* No realization with this axis pair. */ }
+      }
+    return false;
+  }
+  private boolean permitsAxesExpression(OWLClassExpression expression,org.integratedmodelling.klab.api.knowledge.RelationshipAxes candidate,Set<OWLClass> visiting) {
+    if(expression instanceof OWLObjectUnionOf union)
+      return union.operands().anyMatch(o->permitsAxesExpression(o,candidate,visiting));
+    if(expression instanceof OWLObjectIntersectionOf intersection)
+      return intersection.operands().allMatch(o->permitsAxesExpression(o,candidate,visiting));
+    if(!(expression instanceof OWLClass cls)||cls.isOWLThing())return true;
+    if(cls.isOWLNothing())return false;
+    if(!visiting.add(cls))return true;
+    try {
+      var concept=getExistingOrCreate(cls);
+      org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(concept.getType()).merge(candidate);
+      return EntitySearcher.getSuperClasses(cls,manager.ontologies()).allMatch(o->permitsAxesExpression(o,candidate,visiting));
+    } catch(IllegalArgumentException conflict) { return false; }
+    finally {visiting.remove(cls);}
+  }
+
+  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes relationshipExpressionAxes(
+      Collection<Concept> concepts, boolean union) {
+    if (concepts.stream().noneMatch(c -> c.is(SemanticType.RELATIONSHIP))) return null;
+    if (concepts.stream().anyMatch(c -> !c.is(SemanticType.RELATIONSHIP)))
+      throw new IllegalArgumentException("RELATIONSHIP_AXIS_CONFLICT: mixed relationship expression");
+    org.integratedmodelling.klab.api.knowledge.RelationshipAxes result = null;
+    for (var concept : concepts) {
+      var next = org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(concept.getType());
+      result = result == null ? next : union ? result.common(next) : result.merge(next);
+    }
+    return result;
+  }
+
   public Concept getIntersection(
       Collection<Concept> concepts, Ontology destination, Collection<SemanticType> stype) {
 
     EnumSet<SemanticType> type = EnumSet.copyOf(stype);
     type.add(SemanticType.INTERSECTION);
+    var axes = relationshipExpressionAxes(concepts, false);
+    if (axes != null) axes.apply(type);
 
     List<String> ids = new ArrayList<>();
     Set<OWLClassExpression> classes = new HashSet<>();
@@ -1348,6 +1492,10 @@ public class OWL {
 
     Concept ret = ((Ontology) destination).getConcept(id.toString());
     if (ret != null) {
+      if (axes != null) {
+        axes.apply(ret.getType());
+        RelationshipOntologySupport.compileEffective(this,destination,ret);
+      }
       return ret;
     }
 
@@ -1357,6 +1505,7 @@ public class OWL {
     manager.addAxiom(
         ((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
 
+    if (axes != null) RelationshipOntologySupport.compileEffective(this,destination,ret);
     setDisplayLabel(ret, concepts.stream().map(Concept::displayLabel).sorted()
         .collect(java.util.stream.Collectors.joining(" and ")));
     return ret;
@@ -1367,6 +1516,8 @@ public class OWL {
 
     EnumSet<SemanticType> type = EnumSet.copyOf(stype);
     type.add(SemanticType.UNION);
+    var axes = relationshipExpressionAxes(concepts, true);
+    if (axes != null) axes.apply(type);
 
     List<String> ids = new ArrayList<>();
     Set<OWLClassExpression> classes = new HashSet<>();
@@ -1383,6 +1534,10 @@ public class OWL {
 
     Concept ret = ((Ontology) destination).getConcept(id.toString());
     if (ret != null) {
+      if (axes != null) {
+        axes.apply(ret.getType());
+        RelationshipOntologySupport.compileEffective(this,destination,ret);
+      }
       return ret;
     }
 
@@ -1392,6 +1547,7 @@ public class OWL {
     manager.addAxiom(
         ((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
 
+    if (axes != null) RelationshipOntologySupport.compileEffective(this,destination,ret);
     setDisplayLabel(ret, concepts.stream().map(Concept::displayLabel).sorted()
         .collect(java.util.stream.Collectors.joining(" or ")));
     return ret;
@@ -1548,6 +1704,11 @@ public class OWL {
         LogicalConnector.UNION,
         applicables,
         ontology);
+    if (!applicables.isEmpty()) {
+      var fillers = applicables.stream().map(this::getOWLClass).collect(java.util.stream.Collectors.toSet());
+      OWLSemanticClauseSupport.markUniversalBearer(this, type, getProperty(NS.APPLIES_TO_PROPERTY),
+          fillers.size() == 1 ? fillers.iterator().next() : manager.getOWLDataFactory().getOWLObjectUnionOf(fillers), ontology);
+    }
   }
 
   public void defineRelationship(
@@ -1620,27 +1781,34 @@ public class OWL {
   }
 
   public Concept makeNegation(Concept attribute) {
-
-    var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-
     String orig = attribute.getMetadata().get(NS.IS_NEGATION_OF, String.class);
     if (orig != null) {
       return getConcept(orig);
     }
 
+    if (!attribute.is(SemanticType.ATTRIBUTE))
+      throw new KlabValidationException("Only attributes can be negated");
+
     Ontology aontology = getOntology(attribute.getNamespace());
     String prop =
         attribute.getMetadata().get(CoreOntology.NS.TRAIT_RESTRICTING_PROPERTY, String.class);
-    String conceptId = "Not" + getCleanId(attribute);
+    // Labels are authored presentation and must never determine semantic identity.
+    String conceptId = "Not" + attribute.getName();
     Concept ret = aontology.getConcept(conceptId);
-    Concept parent = reas.parent(attribute);
+    if (ret != null) {
+      if (!attribute.getUrn().equals(ret.getMetadata().get(NS.IS_NEGATION_OF, String.class)))
+        throw new KlabValidationException("Negation name already in use: "
+            + aontology.getName() + ":" + conceptId);
+      return ret;
+    }
 
     if (ret == null) {
 
       EnumSet<SemanticType> newType = EnumSet.copyOf(attribute.getType());
 
       aontology.add(Axiom.ClassAssertion(conceptId, newType));
-      aontology.add(Axiom.SubClass(parent.getNamespace() + ":" + parent.getName(), conceptId));
+      // A complement includes everything outside the original class. Inheriting its
+      // parent would incorrectly constrain that complement (and can make it empty).
       aontology.add(Axiom.AnnotationAssertion(conceptId, CoreOntology.NS.BASE_DECLARATION, "true"));
       aontology.add(
           Axiom.AnnotationAssertion(
@@ -1651,7 +1819,7 @@ public class OWL {
           Axiom.AnnotationAssertion(conceptId, "rdfs:label", "Not" + getCleanId(attribute)));
       aontology.add(
           Axiom.AnnotationAssertion(
-              conceptId, NS.CONCEPT_DEFINITION_PROPERTY, "not  " + attribute.getUrn()));
+              conceptId, NS.CONCEPT_DEFINITION_PROPERTY, "not " + attribute.getUrn()));
 
       if (prop != null) {
         aontology.add(Axiom.AnnotationAssertion(conceptId, NS.TRAIT_RESTRICTING_PROPERTY, prop));
@@ -1660,12 +1828,20 @@ public class OWL {
       aontology.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
           org.integratedmodelling.common.knowledge.SemanticLabels.unary(
               UnarySemanticOperator.NOT, attribute.displayLabel(), null)));
+      var factory = manager.getOWLDataFactory();
+      var negationOf = factory.getOWLAnnotationProperty(
+          IRI.create("http://integratedmodelling.org/ks/klab.owl#negationOf"));
+      manager.addAxiom(aontology.getOWLOntology(), factory.getOWLDeclarationAxiom(negationOf));
+      manager.addAxiom(aontology.getOWLOntology(), factory.getOWLAnnotationAssertionAxiom(
+          negationOf, IRI.create(aontology.getPrefix() + "#" + conceptId),
+          factory.getOWLLiteral(attribute.getUrn())));
       aontology.define();
 
       ret = aontology.getConcept(conceptId);
+      ret.getMetadata().put(NS.IS_NEGATION_OF, attribute.getUrn());
 
-      restrictSome(
-          ret, getProperty(CoreOntology.NS.IS_NEGATION_OF), attribute, (Ontology) aontology);
+      manager.addAxiom(aontology.getOWLOntology(), factory.getOWLEquivalentClassesAxiom(
+          getOWLClass(ret), factory.getOWLObjectComplementOf(getOWLClass(attribute))));
     }
 
     return ret;
@@ -1703,7 +1879,13 @@ public class OWL {
     return id;
   }
 
+  /** Existing complete expression only; does not parse, resolve or materialize anything. */
+  synchronized OWLClass getMaterializedClass(String definition) {
+    return definition == null ? null : owlClasses.get(definition);
+  }
+
   synchronized OWLClass getOWLClass(Concept concept) {
+    requireAvailableClosure();
     var owlClass = owlClasses.get(concept.getUrn());
     // Collectivity belongs to observation semantics, not OWL identity. Generated classes
     // may be registered with either form, depending on which expression was resolved first.
@@ -1840,29 +2022,36 @@ public class OWL {
     return ontology.getConcept(conceptId);
   }
 
-  /**
-   * Turn a concept into its change if it's not already one, implementing the corresponding semantic
-   * operator.
-   *
-   * @param concept the untransformed concept
-   * @return the transformed concept
-   */
+  /** Construct a signed numeric temporal derivative. Reapplying RATE produces a distinct
+   * higher derivative; the same operand still reuses its existing definition. */
   public synchronized Concept makeRate(Concept concept) {
-
-    if (concept.is(SemanticType.RATE)) {
-      return concept;
-    }
+    if (concept == null || !concept.is(SemanticType.QUALITY)
+        || !concept.is(SemanticType.QUANTIFIABLE) || concept.is(SemanticType.CLASS)
+        || concept.is(SemanticType.ORDERING) || concept.is(SemanticType.PRESENCE))
+      throw new KlabValidationException("Temporal derivatives require a numeric quality operand");
 
     String cName = getCleanId(concept) + "ChangeRate";
-
-    if (!concept.is(SemanticType.QUALITY)) {
-      return null;
-    }
 
     // this.hasUnaryOp = true;
     var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
-    String definition = UnarySemanticOperator.RATE.declaration[0] + " " + concept.getUrn();
+    requireOperatorSuperclass(NS.CORE_CHANGE_RATE);
+
+    // Resolve/validate units before allocating a generated definition. Missing units on an
+    // abstract numeric quality remain unknown, never silently dimensionless.
+    String operandUnit = derivativeOperandUnit(concept);
+    String derivativeUnit = null;
+    if (operandUnit != null) {
+      var units = ServiceConfiguration.INSTANCE.getService(org.integratedmodelling.klab.api.services.UnitService.class);
+      derivativeUnit = ((org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl)
+          units.temporalDerivative(units.getUnit(operandUnit))).getDefinition();
+    }
+
+    String definition = UnarySemanticOperator.RATE.declaration[0] + " (" + concept.getUrn() + ")";
+    // Definition IDs must use the same syntax normalization as subsequent source
+    // resolution. Otherwise constructing every derivative first can distinguish
+    // equivalent atomic parentheses and allocate duplicate OWL classes.
+    definition = canonicalOperatorDefinition(definition);
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);
     Concept context = reas.inherent(concept);
@@ -1879,9 +2068,14 @@ public class OWL {
       ArrayList<Axiom> ax = new ArrayList<>();
       ax.add(Axiom.ClassAssertion(conceptId, newType));
       ax.add(Axiom.SubClass(NS.CORE_CHANGE_RATE, conceptId));
+      if (concept.is(SemanticType.EXTENSIVE))
+        ax.add(Axiom.SubClass(NS.CORE_EXTENSIVE_PHYSICAL_PROPERTY, conceptId));
+      if (concept.is(SemanticType.INTENSIVE))
+        ax.add(Axiom.SubClass(NS.CORE_INTENSIVE_PHYSICAL_PROPERTY, conceptId));
+      if (derivativeUnit != null)
+        ax.add(Axiom.AnnotationAssertion(conceptId, NS.SI_UNIT_PROPERTY, derivativeUnit));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
-      ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
       ax.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY,
@@ -1893,6 +2087,7 @@ public class OWL {
 
       restrictSome(
           ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
+      restrictSome(ret, getProperty(NS.DESCRIBES_QUALITY_PROPERTY), concept, ontology);
 
       /*
        * context of the change is the same context as the quality it describes - FIXME
@@ -1905,6 +2100,64 @@ public class OWL {
     }
 
     return ontology.getConcept(conceptId);
+  }
+
+  /** Normalize syntax and already verified exact aliases, without authority lookup or
+   * equivalence based on units, subclassing, algebra or operator commutation. */
+  private String canonicalOperatorDefinition(String definition) {
+    var parsed = scope.getService(ResourcesService.class).declareConcept(definition);
+    return canonicalOperatorDefinition(parsed);
+  }
+
+  /** Canonical identity text for a builder-owned syntax tree; source metadata stays authored. */
+  public String canonicalOperatorDefinition(org.integratedmodelling.klab.api.lang.kim.KimConcept parsed) {
+    if (!(parsed instanceof org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl syntax)
+        || syntax.is(SemanticType.NOTHING))
+      throw new KlabValidationException("Cannot normalize operator definition");
+    var canonical = syntax.mapSyntax(node -> {
+      if (node.getName() == null || !QualifiedName.validate(node.getName())) return;
+      var name = new QualifiedName(node.getName());
+      var ontology = getOntology(name.getNamespace());
+      // Ontology delegates contain exact, previously verified aliases. Do not
+      // call getConcept here: its authority resolver can perform external discovery.
+      var resolved = ontology == null ? null : ontology.getConcept(name.getName());
+      if (resolved != null && QualifiedName.validate(resolved.getUrn())) node.setName(resolved.getUrn());
+    });
+    canonical.resetDefinition();
+    return canonical.getUrn();
+  }
+
+  /** Nearest unit on each asserted ancestor branch; differing branches require an authored unit.
+   * No reasoner flush or mutable service discovery is required during staged compilation. */
+  private String derivativeOperandUnit(Concept concept) {
+    var pending = new ArrayList<Concept>(); pending.add(concept);
+    var visited = new HashSet<String>();
+    var units = new TreeSet<String>();
+    while (!pending.isEmpty()) {
+      var next = new ArrayList<Concept>();
+      for (var current : pending) {
+        if (!visited.add(current.getUrn())) continue;
+        if (visited.size() > 1024) throw new KlabValidationException("Derivative unit ancestry exceeds bounds");
+        var value = current.getMetadata().get(NS.SI_UNIT_PROPERTY);
+        if (value != null) {
+          if (!(value instanceof String text) || text.isBlank())
+            throw new KlabValidationException("Invalid derivative operand unit");
+          units.add((String)value);
+        } else {
+          // Imported foundation annotations need not be materialized in Concept metadata.
+          // Read the pinned OWL annotations without altering canonical alias documentation.
+          var declared = new TreeSet<String>();
+          manager.ontologies().flatMap(o -> EntitySearcher.getAnnotations(getOWLClass(current), o))
+              .filter(a -> a.getProperty().getIRI().toString().equals("http://integratedmodelling.org/odo#unit"))
+              .forEach(a -> a.getValue().asLiteral().ifPresent(l -> declared.add(l.getLiteral())));
+          if (declared.isEmpty()) next.addAll(getParents(current));
+          else units.addAll(declared);
+        }
+      }
+      if (units.size() > 1) throw new KlabValidationException("Ambiguous derivative operand units require an explicit unit");
+      pending = next;
+    }
+    return units.isEmpty() ? null : units.first();
   }
 
   /**
@@ -2001,7 +2254,11 @@ public class OWL {
      * make a ConceptCount if not there, and ensure it's a continuously quantifiable
      * quality. Must be in same ontology as the original concept.
      */
-    String definition = UnarySemanticOperator.COUNT.declaration[0] + " " + concept.getUrn();
+    // A collective operand must remain a single expression when this generated identity is
+    // reparsed (e.g. by the inherent projection before the caller installs its final source URN).
+    // Bare "count of each ..." is not a concept expression in the observable grammar.
+    String operandDefinition = concept.isCollective() ? "(" + concept.getUrn() + ")" : concept.getUrn();
+    String definition = UnarySemanticOperator.COUNT.declaration[0] + " " + operandDefinition;
     String reference =
         UnarySemanticOperator.COUNT.getReferenceName(concept.getReferenceName(), null);
     Ontology ontology = getOntology(concept.getNamespace());
@@ -2170,6 +2427,8 @@ public class OWL {
 
     // this.hasUnaryOp = true;
 
+    requireOperatorSuperclass(NS.CORE_OCCURRENCE);
+
     String cName = getCleanId(concept) + "Occurrence";
     String definition = UnarySemanticOperator.OCCURRENCE.declaration[0] + " " + concept.getUrn();
     Ontology ontology = getOntology(concept.getNamespace());
@@ -2224,6 +2483,8 @@ public class OWL {
     }
 
     // this.hasUnaryOp = true;
+
+    requireOperatorSuperclass(NS.CORE_MAGNITUDE);
 
     String cName = getCleanId(concept) + "Magnitude";
     String definition = UnarySemanticOperator.MAGNITUDE.declaration[0] + " " + concept.getUrn();
@@ -2280,6 +2541,8 @@ public class OWL {
     }
 
     // this.hasUnaryOp = true;
+
+    requireOperatorSuperclass(NS.CORE_LEVEL);
 
     String cName = getCleanId(concept) + "Level";
     String definition = UnarySemanticOperator.LEVEL.declaration[0] + " " + concept.getUrn();
@@ -2535,6 +2798,8 @@ public class OWL {
                         + comparison.getUrn()
                         + ")"));
 
+    definition = canonicalOperatorDefinition(definition);
+
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);
 
@@ -2727,13 +2992,17 @@ public class OWL {
     if (mergedReasonerOntology != null) {
       mergedReasonerOntology.addImport(o);
       if (reasoner != null && reasonerSynchronizing) {
+        authorityDependencyCache.changed();
         reasoner.flush();
       }
     }
   }
 
   public synchronized void flushReasoner() {
-    if (reasoner != null && !reasonerSynchronizing) {
+    flushRequests++;
+    if (reasoner != null && !reasonerSynchronizing && declarationStagingDepth == 0) {
+      actualFlushes++;
+      authorityDependencyCache.changed();
       reasoner.flush();
     }
   }
@@ -2828,9 +3097,9 @@ public class OWL {
   }
 
   /**
-   * Synonym of getSubclasses, in Concepts; defaults to asserted children if reasoner is off. Will
-   * not return owl:Thing (which should never appear anyway) or owl:Nothing, which is a child of
-   * everything.
+   * Reflexive inferred closure in Concepts. Includes satisfiable self and strict inferred
+   * subclass nodes; defaults to self plus asserted children if the reasoner is off.
+   * Excludes the bottom equivalence node and an unsatisfiable target.
    *
    * @param main
    * @return the semantic closure of the concept
@@ -2839,6 +3108,8 @@ public class OWL {
 
     if (reasoner != null) {
       Set<Concept> ret = new HashSet<>();
+      // Semantic closure is reflexive; getSubClasses supplies only strict descendants.
+      if (!main.is(SemanticType.NOTHING) && isSatisfiable(main)) ret.add(main);
       for (var node : getSubClasses(getOWLClass(main.asConcept()), false).getNodes()) {
         // Every unsatisfiable named class is equivalent to owl:Nothing and is
         // returned beneath every class. Exclude the whole node before flattening.
@@ -2856,7 +3127,9 @@ public class OWL {
       return ret;
     }
     var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-    return reas.allChildren(main);
+    var ret=new HashSet<>(reas.allChildren(main));
+    if (!main.is(SemanticType.NOTHING)) ret.add(main);
+    return ret;
   }
 
   /*
@@ -2865,6 +3138,7 @@ public class OWL {
 
   public synchronized void flush() {
     if (reasoner != null) {
+      authorityDependencyCache.changed();
       reasoner.flush();
     }
   }
@@ -2874,6 +3148,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDataPropertyDomains(arg0, arg1);
   }
 
@@ -2882,6 +3157,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDataPropertyValues(arg0, arg1);
   }
 
@@ -2890,6 +3166,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDifferentIndividuals(arg0);
   }
 
@@ -2898,6 +3175,7 @@ public class OWL {
           TimeOutException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    requireAvailableClosure();
     return reasoner.getDisjointClasses(arg0);
   }
 
@@ -2906,6 +3184,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDisjointDataProperties(arg0);
   }
 
@@ -2915,6 +3194,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getDisjointObjectProperties(arg0);
   }
 
@@ -2924,6 +3204,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getEquivalentClasses(arg0);
   }
 
@@ -2932,6 +3213,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getEquivalentDataProperties(arg0);
   }
 
@@ -2941,6 +3223,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getEquivalentObjectProperties(arg0);
   }
 
@@ -2950,6 +3233,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getInstances(arg0, arg1);
   }
 
@@ -2959,6 +3243,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getInverseObjectProperties(arg0);
   }
 
@@ -2967,6 +3252,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getObjectPropertyDomains(arg0, arg1);
   }
 
@@ -2975,6 +3261,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getObjectPropertyRanges(arg0, arg1);
   }
 
@@ -2984,14 +3271,17 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getObjectPropertyValues(arg0, arg1);
   }
 
   public synchronized String getReasonerName() {
+    requireAvailableClosure();
     return reasoner.getReasonerName();
   }
 
   public synchronized Version getReasonerVersion() {
+    requireAvailableClosure();
     return reasoner.getReasonerVersion();
   }
 
@@ -3000,6 +3290,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSameIndividuals(arg0);
   }
 
@@ -3009,6 +3300,7 @@ public class OWL {
           FreshEntitiesException,
           InconsistentOntologyException,
           ClassExpressionNotInProfileException {
+    requireAvailableClosure();
     return reasoner.getSubClasses(arg0, arg1);
   }
 
@@ -3017,6 +3309,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSubDataProperties(arg0, arg1);
   }
 
@@ -3026,11 +3319,18 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSubObjectProperties(arg0, arg1);
   }
 
   public synchronized boolean hasReasoner() {
-    return reasoner != null;
+    return reasoner != null && declarationStagingDepth == 0;
+  }
+
+  // Only the caller holding this monitor can pin a buffering reasoner between flushes.
+  boolean hasPinnedBufferingReasoner() {
+    return Thread.holdsLock(this) && declarationStagingDepth == 0 && reasoner != null
+        && reasoner.getBufferingMode() == org.semanticweb.owlapi.reasoner.BufferingMode.BUFFERING;
   }
 
   public synchronized NodeSet<OWLClass> getSuperClasses(OWLClassExpression arg0, boolean arg1)
@@ -3039,7 +3339,19 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSuperClasses(arg0, arg1);
+  }
+
+  /** Named classes visible to this reasoner, without classifying its hierarchy. */
+  synchronized List<OWLClass> reasonerClassSignature() {
+    requireAvailableClosure();
+    if (reasoner == null) return List.of();
+    return reasoner.getRootOntology().importsClosure()
+        .flatMap(ontology -> ontology.getClassesInSignature().stream())
+        .distinct()
+        .sorted(Comparator.comparing(concept -> concept.getIRI().toString()))
+        .toList();
   }
 
   public synchronized NodeSet<OWLDataProperty> getSuperDataProperties(OWLDataProperty arg0, boolean arg1)
@@ -3047,6 +3359,7 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSuperDataProperties(arg0, arg1);
   }
 
@@ -3056,10 +3369,12 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getSuperObjectProperties(arg0, arg1);
   }
 
   public synchronized long getTimeOut() {
+    requireAvailableClosure();
     return reasoner.getTimeOut();
   }
 
@@ -3068,11 +3383,13 @@ public class OWL {
           FreshEntitiesException,
           ReasonerInterruptedException,
           TimeOutException {
+    requireAvailableClosure();
     return reasoner.getTypes(arg0, arg1);
   }
 
   public synchronized Node<OWLClass> getUnsatisfiableClasses()
       throws ReasonerInterruptedException, TimeOutException, InconsistentOntologyException {
+    requireAvailableClosure();
     return reasoner.getUnsatisfiableClasses();
   }
 
@@ -3081,6 +3398,7 @@ public class OWL {
   }
 
   public synchronized boolean isConsistent() throws ReasonerInterruptedException, TimeOutException {
+    requireAvailableClosure();
     return reasoner.isConsistent();
   }
 
@@ -3091,6 +3409,8 @@ public class OWL {
           AxiomNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    entailmentQueries++;
+    requireAvailableClosure();
     return reasoner.isEntailed(arg0);
   }
 
@@ -3101,14 +3421,18 @@ public class OWL {
           AxiomNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    entailmentQueries++;
+    requireAvailableClosure();
     return reasoner.isEntailed(arg0);
   }
 
   public synchronized boolean isEntailmentCheckingSupported(AxiomType<?> arg0) {
+    requireAvailableClosure();
     return reasoner.isEntailmentCheckingSupported(arg0);
   }
 
   public synchronized boolean isPrecomputed(InferenceType arg0) {
+    requireAvailableClosure();
     return reasoner.isPrecomputed(arg0);
   }
 
@@ -3118,6 +3442,8 @@ public class OWL {
           ClassExpressionNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    satisfiabilityQueries++;
+    requireAvailableClosure();
     return reasoner.isSatisfiable(arg0);
   }
 

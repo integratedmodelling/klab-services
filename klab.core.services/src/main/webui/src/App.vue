@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import CredentialsPanel from "./components/CredentialsPanel.vue";
 import CapabilitiesPanel from "./components/CapabilitiesPanel.vue";
 import ExtensionPanel from "./components/ExtensionPanel.vue";
 import FullPageExtension from "./components/FullPageExtension.vue";
 import LoginControl from "./components/LoginControl.vue";
 import StatusGrid from "./components/StatusGrid.vue";
+import ActorApplication from "./components/ActorApplication.vue";
 import { authState, initializeAuthentication } from "./services/auth";
 import { serviceApi } from "./services/api";
 import type { DashboardConfiguration, DashboardContext, FullPageComponent } from "./types";
@@ -18,6 +20,13 @@ const error = ref("");
 let refreshTimer: number | undefined;
 let refreshGeneration = 0;
 const pageName = ref(pageNameFromLocation());
+const applicationUrn = ref(applicationFromLocation());
+
+function applicationFromLocation(): string | null {
+  const base = new URL(document.baseURI).pathname;
+  const match = /^apps\/([^/]+)\/?$/.exec(window.location.pathname.slice(base.length));
+  return match ? decodeURIComponent(match[1]) : null;
+}
 
 const context = reactive({
   api: serviceApi,
@@ -34,6 +43,8 @@ const advisories = computed(() =>
 const selectedPage = computed<FullPageComponent | undefined>(() =>
   config.value?.pages.find((page) => page.name === pageName.value),
 );
+const canAdminister = computed(() => authState.authenticated && Array.isArray(capabilities.value?.permissions)
+  && capabilities.value.permissions.includes("ADMINISTER"));
 const isFullPageRoute = computed(() => pageName.value !== null);
 
 onMounted(async () => {
@@ -67,11 +78,13 @@ function pageNameFromLocation(): string | null {
 
 function updateRoute(): void {
   pageName.value = pageNameFromLocation();
+  applicationUrn.value = applicationFromLocation();
 }
 
 function navigate(relativePath: string, nextPageName: string | null): void {
   window.history.pushState({}, "", new URL(relativePath, document.baseURI));
   pageName.value = nextPageName;
+  applicationUrn.value = applicationFromLocation();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -166,14 +179,17 @@ watch(() => authState.authenticated, () => {
             </q-item>
           </q-list>
         </q-btn-dropdown>
+        <q-btn v-if="canAdminister" flat label="Credentials" @click="navigate('ui/credentials', 'credentials')" />
         <LoginControl :auth="authState" />
       </q-toolbar>
     </q-header>
 
     <q-page-container>
       <q-page class="dashboard-page">
+        <CredentialsPanel v-if="pageName === 'credentials' && canAdminister" :key="authState.username" />
+        <ActorApplication v-else-if="applicationUrn && config" :urn="applicationUrn" :context="context" />
         <FullPageExtension
-          v-if="selectedPage"
+          v-else-if="selectedPage"
           :page="selectedPage"
           :context="context"
         />

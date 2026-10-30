@@ -289,7 +289,7 @@ for correction. Checks are for the submitted bytes, not the current unsaved sour
 Human `SCIENTIFIC_REVIEW` is recorded separately on authorized acceptance. `APPLICATION` and
 `PR_HANDOFF` stay blocked. Client self-reports and offline results cannot forge those states.
 The offline four-artifact pilot's `PILOT_MANIFEST` and `ROOT_CONTEXT` labels are not service check
-types; its zero exit status may accompany acceptance BLOCKED. Older [backend outcome](review/BACKEND_RESULT.md)
+types; its zero exit status may accompany acceptance BLOCKED. Older [backend outcome](workflows/BACKEND_RESULT.md)
 and [IDE notes][ide-notes] predate the schema increment; the merged [schema implementation evidence][increment]
 supersedes that specific historical blocker.
 
@@ -558,7 +558,7 @@ bridge, content/target actor, authorization and IDE action sources inspected for
 [AGENTS_REFERENCE.md](AGENTS_REFERENCE.md#workflow-target-binding-and-restoration) describe shipped
 mechanisms; [WORKFLOW_EXTENSION.md](WORKFLOW_EXTENSION.md) records remaining generic contracts.
 
-Use merged source when prose differs. [PROPOSAL_REVIEW_CONTRACT.md](review/PROPOSAL_REVIEW_CONTRACT.md) gives
+Use merged source when prose differs. [PROPOSAL_REVIEW_CONTRACT.md](workflows/PROPOSAL_REVIEW_CONTRACT.md) gives
 the typed protocol; [SCHEMA_VALIDATION_INCREMENT.md][increment] updates the older schema limitation.
 [WORKFLOWS.md](WORKFLOWS.md) explains generic access and projections; the proposal-specific restrictions
 in [WorkflowManager][manager] and [ProposalReviewProtocol][protocol] take precedence for this flow.
@@ -567,8 +567,8 @@ in [WorkflowManager][manager] and [ProposalReviewProtocol][protocol] take preced
 - [Controller][controller], [shared binding inspector][binding] and [isolated validator][validator]: authentication surface, saved-byte identity and current check limits.
 - Pinned IDE [stage form][ide-stage], [workflow shell][ide-shell], [workspace controls][ide-workspace], [review model][ide-model] and [lexical markers][ide-markers]: labels, decision gate, draft handling and source links.
 - Pinned IDE [tab host][ide-tab-host]: individual workflow-tab close confirmation and disposal.
-- [Dossier mapping](review/DOSSIER_MAPPING.md), [context pack][context], [proposal schema][schema] and [bootstrap method][method]: interpretation and research boundaries.
-- [Backend test evidence][increment], [earlier validation evidence](review/VALIDATION_INCREMENT.md) and pinned [IDE verification notes][ide-notes]: reported checks, with live integration limits retained.
+- [Dossier mapping](workflows/DOSSIER_MAPPING.md), [context pack][context], [proposal schema][schema] and [bootstrap method][method]: interpretation and research boundaries.
+- [Backend test evidence][increment], [earlier validation evidence](workflows/VALIDATION_INCREMENT.md) and pinned [IDE verification notes][ide-notes]: reported checks, with live integration limits retained.
 
 [context]: ../llm/DOMAIN_CONTEXT_PACK.md
 [schema]: ../klab.services.resources/src/main/resources/schemas/llm/domain-context-proposal.schema.json
@@ -579,7 +579,7 @@ in [WorkflowManager][manager] and [ProposalReviewProtocol][protocol] take preced
 [binding]: ../klab.core.common/src/main/java/org/integratedmodelling/common/review/ProposalCandidateBinding.java
 [controller]: ../klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/WorkflowController.java
 [validator]: ../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/workflow/IsolatedProposalCandidateValidator.java
-[increment]: review/SCHEMA_VALIDATION_INCREMENT.md
+[increment]: workflows/SCHEMA_VALIDATION_INCREMENT.md
 [ide-shell]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/WorkflowEditor.java
 [ide-stage]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/ProposalStageEditor.java
 [ide-workspace]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/WorkspaceEditor.java

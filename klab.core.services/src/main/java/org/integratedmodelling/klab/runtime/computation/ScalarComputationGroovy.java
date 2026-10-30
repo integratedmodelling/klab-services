@@ -45,6 +45,8 @@ public class ScalarComputationGroovy implements ScalarComputation {
   static class BuilderImpl implements Builder {
 
     private final List<Step> steps = new ArrayList<>();
+    private long semanticRevision;
+    private boolean unsupportedSemanticStep;
     private final ContextScope scope;
     private final Actuator actuator;
     private final Observation target;
@@ -75,6 +77,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
 
     @Override
     public boolean add(ServiceCall contextualizable) {
+      semanticRevision++;
 
       if (RuntimeService.CoreFunctor.EXPRESSION_RESOLVER
           .getServiceCallName()
@@ -102,6 +105,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
       } else if (RuntimeService.CoreFunctor.LUT_RESOLVER
           .getServiceCallName()
           .equals(contextualizable.getUrn())) {
+        unsupportedSemanticStep = true; // Value mappings need their own finite execution footprint.
         var step = new Step();
         var classification =
             contextualizable.getParameters().get("classification", KimClassification.class);
@@ -143,6 +147,7 @@ public class ScalarComputationGroovy implements ScalarComputation {
                 ExpressionCode.of(code, "groovy"), scope, target, observations);
         steps.add(step);
       } else {
+        unsupportedSemanticStep = true;
         // non-scalar contextualizer
       }
 
@@ -341,7 +346,32 @@ public class ScalarComputationGroovy implements ScalarComputation {
         return null; // or a no-op ScalarComputation
       }
       return new ScalarComputationGroovy(
-          compiled, scope, output.toString(), Set.copyOf(scalarBuffers.keySet()));
+          compiled, scope, output.toString(), Set.copyOf(scalarBuffers.keySet()), this,
+          semanticRevision, semanticSteps());
+    }
+
+    private List<SemanticStep> semanticSteps() {
+      if (unsupportedSemanticStep || steps.isEmpty() || groovyProcessor.getClass()!=GroovyProcessor.class
+          || groovyShell.getClass()!=KlabGroovyShell.class) return null;
+      var captured=new ArrayList<SemanticStep>();
+      for(var step:steps) {
+        if(step.valueMapping!=null || !(step.expressionDescriptor instanceof GroovyProcessor.GroovyDescriptor descriptor)
+            || descriptor.getClass()!=GroovyProcessor.GroovyDescriptor.class || !descriptor.getTemplateFields().isEmpty())return null;
+        var bindings=new LinkedHashMap<String,Observation>();
+        var rawBindings=new LinkedHashMap<String,Observation>();
+        var inputs=new ArrayList<Observation>();
+        var seen=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Observation,Boolean>());
+        for(var entry:descriptor.getIdentifiers().entrySet()) {
+          var binding=entry.getValue();var observation=binding.observation();
+          if(observation==null)continue;
+          bindings.put(entry.getKey(),observation);
+          rawBindings.put(entry.getKey(),observation);
+          if(binding.nonScalarReferenceCount()>0)bindings.put(entry.getKey()+"Obs",observation);
+          if(seen.add(observation))inputs.add(observation);
+        }
+        captured.add(new SemanticStep(descriptor.getProcessedCode(),Map.copyOf(bindings),Map.copyOf(rawBindings),List.copyOf(inputs)));
+      }
+      return List.copyOf(captured);
     }
 
     private void addPredefinedVariable(
@@ -408,6 +438,10 @@ public class ScalarComputationGroovy implements ScalarComputation {
   private ContextScope scope;
   private String sourceCode;
   private final Set<String> inputNames;
+  private final BuilderImpl semanticOwner;
+  private final long semanticRevision;
+  private final List<SemanticStep> semanticSteps;
+  private record SemanticStep(String processedCode,Map<String,Observation> bindings,Map<String,Observation> rawBindings,List<Observation> inputs) {}
 
   @Override
   public Set<String> inputNames() {
@@ -415,11 +449,13 @@ public class ScalarComputationGroovy implements ScalarComputation {
   }
 
   private ScalarComputationGroovy(
-      ExpressionBase groovyScript, ContextScope scope, String sourceCode, Set<String> inputNames) {
+      ExpressionBase groovyScript, ContextScope scope, String sourceCode, Set<String> inputNames,
+      BuilderImpl semanticOwner,long semanticRevision,List<SemanticStep> semanticSteps) {
     this.script = groovyScript;
     this.scope = scope;
     this.sourceCode = sourceCode;
     this.inputNames = inputNames;
+    this.semanticOwner=semanticOwner;this.semanticRevision=semanticRevision;this.semanticSteps=semanticSteps;
   }
 
   @Override
@@ -432,6 +468,49 @@ public class ScalarComputationGroovy implements ScalarComputation {
       scope.error(t, sourceCode);
     }
     return false;
+  }
+
+  /** Actual compiled engine ownership and a bounded processed-code footprint. Caller supplies
+   * the Runtime receiver gate (standard DTO or its own immutable read proxy), not a serialized
+   * completeness flag. Returned inputs are the actual compiler bindings, identity-deduplicated. */
+  public static java.util.Optional<List<Observation>> semanticInputs(Builder builder,ScalarComputation mapper,
+      java.util.function.Predicate<Observation> trustedObservation) {
+    if(builder==null||mapper==null||trustedObservation==null||builder.getClass()!=BuilderImpl.class
+        ||mapper.getClass()!=ScalarComputationGroovy.class)return java.util.Optional.empty();
+    var owner=(BuilderImpl)builder;var actual=(ScalarComputationGroovy)mapper;
+    if(actual.semanticOwner!=owner||actual.semanticRevision!=owner.semanticRevision||actual.semanticSteps==null)
+      return java.util.Optional.empty();
+    var result=new ArrayList<Observation>();
+    var seen=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Observation,Boolean>());
+    for(var step:actual.semanticSteps) {
+      if(!ClosedScalarArithmetic.accepts(step.processedCode(),step.bindings(),trustedObservation))return java.util.Optional.empty();
+      for(var observation:step.inputs())if(seen.add(observation))result.add(observation);
+    }
+    return java.util.Optional.of(List.copyOf(result));
+  }
+
+  /** Verify names as well as identity: finding the old observation under another alias does
+   * not establish that the scanner used for this expression is still the compiled input. */
+  public static java.util.Optional<List<Observation>> semanticInputs(Builder builder,ScalarComputation mapper,
+      java.util.function.Predicate<Observation> trustedObservation,Map<String,Observation> actualBindings,
+      Observation actualTarget) {
+    var captured=semanticInputs(builder,mapper,trustedObservation);
+    if(captured.isEmpty()||actualBindings==null)return java.util.Optional.empty();
+    var actual=(ScalarComputationGroovy)mapper;
+    for(var step:actual.semanticSteps)for(var entry:step.rawBindings().entrySet()) {
+      var binding=Dataflow.SELF_ID.equals(entry.getKey())?actualTarget:actualBindings.get(entry.getKey());
+      if(entry.getValue()!=binding)return java.util.Optional.empty();
+    }
+    return captured;
+  }
+
+  public static java.util.Optional<List<Observation>> semanticInputs(Builder builder,ScalarComputation mapper) {
+    return semanticInputs(builder,mapper,o->{
+      if(o==null||o.getClass()!=org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl.class)return false;
+      var observable=o.getObservable();
+      return observable!=null&&observable.getClass()==org.integratedmodelling.common.knowledge.ObservableImpl.class
+          && observable.getSemantics()!=null&&observable.getSemantics().getClass()==org.integratedmodelling.common.knowledge.ConceptImpl.class;
+    });
   }
 
   public static Builder builder(

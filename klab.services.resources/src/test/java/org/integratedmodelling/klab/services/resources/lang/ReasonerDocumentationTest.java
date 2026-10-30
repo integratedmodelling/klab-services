@@ -15,6 +15,33 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class ReasonerDocumentationTest {
+  @Test void inferredClosureKeepsBottomOutAndReportsRootEquivalentNameBoundary() throws Exception {
+    var owl=new OWL(null);
+    var manager=OWLManager.createOWLOntologyManager();
+    var managerField=OWL.class.getDeclaredField("manager");managerField.setAccessible(true);managerField.set(owl,manager);
+    var ontology=owl.requireOntology("inferredclosure");
+    for(var name:List.of("Parent","Child","Alias","Impossible"))
+      ontology.define(List.of(Axiom.ClassAssertion(name,EnumSet.of(SemanticType.ATTRIBUTE))));
+    var lookup=OWL.class.getDeclaredMethod("getOWLClass",org.integratedmodelling.klab.api.knowledge.Concept.class);lookup.setAccessible(true);
+    var parent=(org.semanticweb.owlapi.model.OWLClass)lookup.invoke(owl,ontology.getConcept("Parent"));
+    var child=(org.semanticweb.owlapi.model.OWLClass)lookup.invoke(owl,ontology.getConcept("Child"));
+    var alias=(org.semanticweb.owlapi.model.OWLClass)lookup.invoke(owl,ontology.getConcept("Alias"));
+    var impossible=(org.semanticweb.owlapi.model.OWLClass)lookup.invoke(owl,ontology.getConcept("Impossible"));
+    var f=manager.getOWLDataFactory();
+    manager.addAxioms(ontology.getOWLOntology(),java.util.Set.of(f.getOWLSubClassOfAxiom(child,parent),
+        f.getOWLEquivalentClassesAxiom(child,alias),f.getOWLSubClassOfAxiom(impossible,parent),
+        f.getOWLSubClassOfAxiom(impossible,f.getOWLNothing())));
+    var delegate=new org.semanticweb.HermiT.Reasoner.ReasonerFactory().createReasoner(ontology.getOWLOntology());
+    var field=OWL.class.getDeclaredField("reasoner");field.setAccessible(true);field.set(owl,delegate);
+    try {
+      assertEquals(java.util.Set.of(ontology.getConcept("Parent"),ontology.getConcept("Child"),ontology.getConcept("Alias")),new java.util.HashSet<>(owl.getSemanticClosure(ontology.getConcept("Parent"))));
+      assertTrue(owl.getSemanticClosure(ontology.getConcept("Impossible")).isEmpty());
+      // Existing API returns the requested name and strict subclass nodes, not
+      // the other names in its own equivalence node. Do not widen that policy here.
+      assertEquals(java.util.Set.of(ontology.getConcept("Child")),new java.util.HashSet<>(owl.getSemanticClosure(ontology.getConcept("Child"))));
+      assertEquals(java.util.Set.of(ontology.getConcept("Alias")),new java.util.HashSet<>(owl.getSemanticClosure(ontology.getConcept("Alias"))));
+    } finally {delegate.dispose();}
+  }
   @Test void semanticClosureExcludesEveryMemberOfTheBottomEquivalenceNode() throws Exception {
     var owl = new OWL(null);
     var managerField = OWL.class.getDeclaredField("manager");
@@ -39,10 +66,11 @@ class ReasonerDocumentationTest {
         manager.getOWLDataFactory().getOWLNothing(), impossible, otherImpossible)));
     var delegate = mock(org.semanticweb.owlapi.reasoner.OWLReasoner.class);
     when(delegate.getSubClasses(parent, false)).thenReturn(descendants);
+    when(delegate.isSatisfiable(parent)).thenReturn(true);
     var reasonerField = OWL.class.getDeclaredField("reasoner");
     reasonerField.setAccessible(true);
     reasonerField.set(owl, delegate);
-    assertEquals(java.util.Set.of(ontology.getConcept("Valid"), ontology.getConcept("Alias")),
+    assertEquals(java.util.Set.of(ontology.getConcept("Parent"), ontology.getConcept("Valid"), ontology.getConcept("Alias")),
         new java.util.HashSet<>(owl.getSemanticClosure(ontology.getConcept("Parent"))));
   }
 

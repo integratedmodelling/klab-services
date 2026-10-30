@@ -1,0 +1,197 @@
+{
+  "authorized_pilot": {
+    "cleanup": {
+      "context": "confirmed",
+      "session": "confirmed"
+    },
+    "context_id": "a8b010433fc240bd9a2014e901b0b4e5.1coobkgbe53",
+    "deployed_binary_provenance": "unverified: service identity is not a binary/source commit",
+    "error_type": "JobFailedError",
+    "inspection": {
+      "dependencies": [],
+      "namespace": "staging.vxii.basic",
+      "origin": {
+        "service_id": "d92c3f52-9038-4b7f-8029-9a38cb58fed7",
+        "service_url": "https://services.integratedmodelling.org/resources/main"
+      },
+      "project": "klab.staging.vxii",
+      "resources": [],
+      "selection": "advertised candidate; not evidence of Resolver selection or execution",
+      "urn": "staging.vxii.basic.elevation-quantifier"
+    },
+    "jobs": [
+      {
+        "context_id": "a8b010433fc240bd9a2014e901b0b4e5.1coobkgbe53",
+        "job_id": 1,
+        "kind": "job",
+        "result_kind": "observation",
+        "runtime_id": "5641e5b2-944d-4ed4-8fb0-fc464a718d0f",
+        "runtime_url": "https://services.integratedmodelling.org/runtime/main",
+        "scope": "a8b010433fc240bd9a2014e901b0b4e5.1coobkgbe53",
+        "service": "runtime",
+        "service_id": "5641e5b2-944d-4ed4-8fb0-fc464a718d0f",
+        "service_url": "https://services.integratedmodelling.org/runtime/main",
+        "version": 1
+      },
+      {
+        "context_id": "a8b010433fc240bd9a2014e901b0b4e5.1coobkgbe53",
+        "job_id": 2,
+        "kind": "job",
+        "result_kind": "observation",
+        "runtime_id": "5641e5b2-944d-4ed4-8fb0-fc464a718d0f",
+        "runtime_url": "https://services.integratedmodelling.org/runtime/main",
+        "scope": "a8b010433fc240bd9a2014e901b0b4e5.1coobkgbe53.91",
+        "service": "runtime",
+        "service_id": "5641e5b2-944d-4ed4-8fb0-fc464a718d0f",
+        "service_url": "https://services.integratedmodelling.org/runtime/main",
+        "version": 1
+      }
+    ],
+    "model_urn": "staging.vxii.basic.elevation-quantifier",
+    "package": {
+      "installed_source_sha256": "b1191f9a3efbc930b16e7042c779ff5f0ab364448b860baf3e36806bc9fb2ba0",
+      "python": "3.12.7"
+    },
+    "passed": false,
+    "scientific_accuracy": "not assessed: F2 model association pilot only",
+    "service_ids": {
+      "reasoner": "a1bea5f7-37bb-4c07-8082-f8587095492c",
+      "resolver": "b4eeb86b-ace9-4019-9520-ce2f095bbd07",
+      "resources": "d92c3f52-9038-4b7f-8029-9a38cb58fed7",
+      "runtime": "5641e5b2-944d-4ed4-8fb0-fc464a718d0f"
+    },
+    "session_id": "a8b010433fc240bd9a2014e901b0b4e5",
+    "stage": "observe_elevation",
+    "version": 1
+  },
+  "date": "2026-10-28",
+  "limits": [
+    "The single authorized pilot failed at elevation Job; no scientific computation success is claimed.",
+    "Context and session release were confirmed; no further observation Jobs were submitted.",
+    "Component mismatch is observed, but exact failure cause was not captured before cleanup.",
+    "Pilot predates the added prerequisite and diagnostic guards; those changes have offline tests and read-only capability evidence, not a successful second pilot.",
+    "Service IDs and advertised component versions/hashes do not verify exact running binary/source provenance."
+  ],
+  "original_job_status_after_cleanup": "MissingAssetError",
+  "read_only_followup": {
+    "resolver": {
+      "components": [
+        {
+          "fileHash": null,
+          "id": "internal.local.service.component",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "alpha1"
+          }
+        }
+      ],
+      "required_terrain_call_advertised": false,
+      "service_id": "b4eeb86b-ace9-4019-9520-ce2f095bbd07"
+    },
+    "resources": {
+      "components": [
+        {
+          "fileHash": null,
+          "id": "internal.local.service.component",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "alpha1"
+          }
+        },
+        {
+          "fileHash": "6f39e319dace243777bf7b191e475746",
+          "id": "klab.authority.taxa",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "SNAPSHOT"
+          }
+        },
+        {
+          "fileHash": "a44cd324aa72cea0602f437af8c638fd",
+          "id": "klab.component.generators",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "SNAPSHOT"
+          }
+        },
+        {
+          "fileHash": "07e8975486e5c7e62c2d974fcca4cfae",
+          "id": "klab.authority.un",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "SNAPSHOT"
+          }
+        },
+        {
+          "fileHash": "9a7244c431fd9fe5c3d9eb2ea63f202a",
+          "id": "klab.component.geospatial",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "SNAPSHOT"
+          }
+        },
+        {
+          "fileHash": "a8b4eb32ada97ceff5dae965787ebe73",
+          "id": "klab.authority.land",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "SNAPSHOT"
+          }
+        },
+        {
+          "fileHash": "41f46f005e460c2f4529e58277596817",
+          "id": "klab.authority.pubchem",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "SNAPSHOT"
+          }
+        }
+      ],
+      "required_terrain_call_advertised": true,
+      "service_id": "d92c3f52-9038-4b7f-8029-9a38cb58fed7"
+    },
+    "runtime": {
+      "components": [
+        {
+          "fileHash": null,
+          "id": "internal.local.service.component",
+          "version": {
+            "build": 0,
+            "constraints": [],
+            "major": 1,
+            "minor": 0,
+            "modifier": "alpha1"
+          }
+        }
+      ],
+      "required_terrain_call_advertised": false,
+      "service_id": "5641e5b2-944d-4ed4-8fb0-fc464a718d0f"
+    }
+  },
+  "schema_version": 1,
+  "sdk_candidate": "e4580f17fc70622aa36b9c8dd7e6a93cf8737cd2"
+}

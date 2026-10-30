@@ -43,6 +43,13 @@ public abstract class AbstractResourceContextualizer {
       Scheduler.Event event,
       ContextScope scope,
       RuntimeService.ContextualizationScope contextualizationScope) {
+    return contextualize(scanner, event, scope, contextualizationScope, null);
+  }
+
+  /** Internal invocation support; the producer observation retains its declared geometry. */
+  public boolean contextualize(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope,
+      RuntimeService.ContextualizationScope contextualizationScope,
+      org.integratedmodelling.klab.api.geometry.Geometry invocationGeometry) {
 
     if (observation.getContextualizationData()
         instanceof ObservationImpl.ContextualizationDataImpl contextualizationData) {
@@ -51,7 +58,7 @@ public abstract class AbstractResourceContextualizer {
     }
 
     try {
-      var builder = getData(scanner, event, scope);
+      var builder = getData(scanner, event, scope, invocationGeometry);
 
       // TODO the shards have been filled. Update shard data in the transaction for KG update
       if (scanner != null) {
@@ -72,9 +79,7 @@ public abstract class AbstractResourceContextualizer {
       // run.
       if (observable.is(SemanticType.COUNTABLE)) {
         var objects = builder.getObjects();
-        if (observation instanceof ObservationImpl observationImpl) {
-          observationImpl.setChildrenCount(objects.size());
-        }
+        // Cumulative member counts are owned by transactional HAS_CHILD registration.
         contextualizationScope.getOutcomes().addAll(objects.stream().map(Data.Builder::getObservation).toList());
       }
 
@@ -107,6 +112,11 @@ public abstract class AbstractResourceContextualizer {
    * @return TODO CHECK this shouldn't need to return Data in all situations, just when remote, so
    *     absorb into the specific API
    */
+  protected Data.Builder getData(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope,
+      org.integratedmodelling.klab.api.geometry.Geometry invocationGeometry) {
+    return getData(scanner, event, scope);
+  }
+
   protected abstract Data.Builder getData(
       Storage.Scanner scanner, Scheduler.Event event, ContextScope scope);
 }

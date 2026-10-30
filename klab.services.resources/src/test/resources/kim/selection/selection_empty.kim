@@ -1,0 +1,9 @@
+private namespace staging.vxii.test.selection_empty
+    version 1.0;
+
+// The private testcase permit enables a real contextualizer that produces zero members.
+// Normal execution must record successful typed INSTANTIATION completion; no receipt is fabricated.
+private model each earth:Region using klab.tests.fixtures.empty();
+
+private model earth:PhysicalEnvironment of each earth:Region
+    using klab.generators.random.categories();

@@ -74,4 +74,10 @@ public class KlabComponent extends Plugin {
     public Map<String, String> webUiModules() {
         return Map.of();
     }
+
+  /** Live UI renderers installed with this component; browser modules must be allowlisted above. */
+  public java.util.List<org.integratedmodelling.klab.api.view.application.UiToolkitDescriptor>
+      uiToolkits() {
+    return java.util.List.of();
+  }
 }

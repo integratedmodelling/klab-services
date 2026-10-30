@@ -26,6 +26,9 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
 class MemberClassifierExecutorTest {
+  @org.junit.jupiter.api.BeforeAll static void configureScaleFactory() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+  }
   public static class Classifier {
     Concept result;
     int failAt;
@@ -63,8 +66,12 @@ class MemberClassifierExecutorTest {
       when(result.getUrn()).thenReturn("test:Concrete");
       when(result.is(SemanticType.PREDICATE)).thenReturn(true);
       when(reasoner.satisfiable(any())).thenReturn(true);
+      when(reasoner.lexicalRoot(predicate)).thenReturn(predicate);
       when(reasoner.is(result, predicate)).thenReturn(true);
       member.setId(42); member.setObservable(mock(Observable.class));
+      var memberMeaning = mock(Concept.class);
+      when(memberMeaning.getUrn()).thenReturn("test:Region");
+      when(member.getObservable().getSemantics()).thenReturn(memberMeaning);
       actuator.setActuatorType(Actuator.Type.UPDATE); actuator.setEffect(Actuator.Effect.SEMANTIC_UPDATE);
       actuator.setContextualization(Contextualization.CLASSIFICATION); actuator.setOperationObservable(observable);
       actuator.getComputation().add(new ServiceCallImpl("klab.generators.random.categories"));
@@ -80,6 +87,35 @@ class MemberClassifierExecutorTest {
       return executor.execute(Map.of("cohort", List.of(member)), Geometry.UNIVERSAL, event, scope);
     }
     void optionalDependency() { var dependency = new ObservableImpl(); dependency.setOptional(true); actuator.setModelDependency(dependency); }
+  }
+  @Test void repeatedGenerationCannotHideChangedContentOrReasonerIncarnation() throws Exception {
+    for (boolean sessionOnly : List.of(false, true)) {
+      var f = new Fixture(); var caps = mock(Reasoner.Capabilities.class);
+      when(f.reasoner.capabilities(any())).thenReturn(caps);
+      when(caps.getServiceId()).thenReturn("reasoner"); when(caps.getKnowledgeRevision()).thenReturn(1L);
+      when(caps.getSemanticContentFingerprint()).thenReturn("semantic-content-v2:" + "a".repeat(64));
+      when(caps.getSemanticSessionId()).thenReturn("owner-one");
+      var executor = f.executor();
+      if (sessionOnly) when(caps.getSemanticSessionId()).thenReturn("owner-two");
+      else when(caps.getSemanticContentFingerprint()).thenReturn("semantic-content-v2:" + "b".repeat(64));
+      assertThrows(IllegalStateException.class, () -> f.run(executor));
+      assertEquals(0, f.classifier.calls.get(), "The changed active fence must reject before contextualizer invocation");
+    }
+  }
+
+  @Test void explicitSatisfactionCheckRequiresExistingKnowledgeAndNoImplementation() throws Exception {
+    var f=new Fixture(); f.actuator.getComputation().clear();
+    assertThrows(IllegalArgumentException.class, () -> MemberClassifierExecutor.compile(f.actuator, null, f.scope));
+    f.actuator.getData().put(Actuator.CLASSIFICATION_CHECK_ONLY,true);
+    var executor=MemberClassifierExecutor.compile(f.actuator,null,f.scope);
+    assertThrows(IllegalStateException.class, () -> f.run(executor));
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(f.result));
+    var result=MemberClassifierExecutor.compile(f.actuator,null,f.scope).executeDetailed(
+        Map.of("cohort",List.of(f.member)),Geometry.UNIVERSAL,f.event,f.scope);
+    assertTrue(result.pendingAttributions().isEmpty());assertEquals(0,f.classifier.calls.get());
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.objects.ClassificationMemberResult.Origin.EXISTING,result.members().getFirst().origin());
+    f.actuator.getComputation().add(new ServiceCallImpl("malformed"));
+    assertThrows(IllegalArgumentException.class,()->MemberClassifierExecutor.compile(f.actuator,null,f.scope));
   }
   @Test void typedInvocationReturnsPendingAttributionWithoutMutation() throws Exception {
     var f = new Fixture(); var before = f.member.getObservable();
@@ -99,6 +135,37 @@ class MemberClassifierExecutorTest {
     when(f.reasoner.is(f.predicate, f.predicate)).thenReturn(true);
     assertTrue(f.run(f.executor()).isEmpty());
     assertEquals(1, f.classifier.calls.get());
+  }
+
+  @Test void differentConcreteClassInTheSameLexicalFamilyIsAlreadyKnown() throws Exception {
+    var f = new Fixture();
+    var family=mock(Concept.class);
+    when(family.getUrn()).thenReturn("test:Family");
+    when(family.is(SemanticType.PREDICATE)).thenReturn(true);
+    when(f.predicate.isAbstract()).thenReturn(false);
+    when(f.reasoner.lexicalRoot(f.predicate)).thenReturn(family);
+    when(f.reasoner.is(f.predicate,family)).thenReturn(true);
+    when(f.reasoner.is(f.result,family)).thenReturn(true);
+    when(f.reasoner.is(f.result,f.predicate)).thenReturn(false);
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(f.result));
+    f.classifier.failAt=1;
+    var outcome=f.executor().executeDetailed(Map.of("cohort",List.of(f.member)),Geometry.UNIVERSAL,f.event,f.scope);
+    assertEquals(List.of("test:Concrete"),outcome.members().getFirst().concretePredicates());
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.objects.ClassificationMemberResult.Origin.EXISTING,
+        outcome.members().getFirst().origin());
+    assertTrue(outcome.pendingAttributions().isEmpty());
+    assertEquals(0,f.classifier.calls.get());
+    // A fresh result must still satisfy the requested concrete predicate, not just its family.
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of());
+    f.classifier.failAt=0;
+    assertThrows(IllegalStateException.class,()->f.run(f.executor()));
+    assertEquals(1,f.classifier.calls.get());
+  }
+
+  @Test void unavailableLexicalFamilyCannotBeGuessedFromTheRequestedPredicate() {
+    var f=new Fixture();when(f.reasoner.lexicalRoot(f.predicate)).thenReturn(null);
+    assertThrows(IllegalArgumentException.class,f::executor);
+    assertEquals(0,f.classifier.calls.get());
   }
 
   @Test void onlyOptionalOriginalModelDependencyAllowsNull() throws Exception {
@@ -133,6 +200,33 @@ class MemberClassifierExecutorTest {
       assertEquals(0, f.classifier.calls.get());
       assertSame(before, f.member.getObservable());
     }
+  }
+
+  @Test void mixedExistingAndNewClassificationsRetainExistingKnowledge() throws Exception {
+    var f = new Fixture();
+    when(f.reasoner.directTraits(f.member.getObservable())).thenReturn(List.of(f.result));
+    var fresh = new ObservationImpl();
+    fresh.setId(43); fresh.setObservable(mock(Observable.class));
+    var pending = f.executor().execute(Map.of("cohort", List.of(f.member, fresh)),
+        Geometry.UNIVERSAL, f.event, f.scope);
+    assertEquals(1, pending.size());
+    assertSame(fresh, pending.getFirst().member());
+    assertEquals(1, f.classifier.calls.get());
+    assertEquals(List.of(f.result), f.reasoner.directTraits(f.member.getObservable()));
+  }
+
+  @Test void classifierReadsTentativeParentAttributionBeforeInvoking() throws Exception {
+    var f = new Fixture();
+    var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var transaction = mock(org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction.class);
+    when(scope.getCurrentTransaction()).thenReturn(transaction);
+    var view = f.member.copyForAttribution(mock(Observable.class));
+    when(transaction.readObservation(f.member)).thenReturn(view);
+    when(f.reasoner.directTraits(view.getObservable())).thenReturn(List.of(f.result));
+    assertTrue(f.executor().execute(Map.of("cohort", List.of(f.member)),
+        Geometry.UNIVERSAL, f.event, scope).isEmpty());
+    assertEquals(0, f.classifier.calls.get());
+    assertTrue(f.reasoner.directTraits(f.member.getObservable()).isEmpty());
   }
 
   @Test void rejectsInvalidExistingAttributionAndPreservesOtherPredicates() throws Exception {
@@ -186,7 +280,9 @@ class MemberClassifierExecutorTest {
     String source = System.getProperty("classifier.generator.source");
     Assumptions.assumeTrue(source != null, "Set classifier.generator.source to test the actual generator checkout");
     var compiler = ToolProvider.getSystemJavaCompiler(); assertNotNull(compiler);
-    assertEquals(0, compiler.run(null, null, null, "-classpath", System.getProperty("surefire.test.class.path", System.getProperty("java.class.path")),
+    Path sourceRoot=Path.of(source).toAbsolutePath().getParent();
+    for (int i=0;i<4;i++) sourceRoot=sourceRoot.getParent();
+    assertEquals(0, compiler.run(null, null, null, "-sourcepath", sourceRoot.toString(), "-classpath", System.getProperty("surefire.test.class.path", System.getProperty("java.class.path")),
         "-d", temp.toString(), source));
     try (var loader = new URLClassLoader(new java.net.URL[]{temp.toUri().toURL()}, getClass().getClassLoader())) {
       var method = loader.loadClass("org.integratedmodelling.generators.library.RandomContextualizers")
@@ -201,6 +297,7 @@ class MemberClassifierExecutorTest {
       f.optionalDependency();
       assertTrue(f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope)).isEmpty());
       when(f.predicate.isAbstract()).thenReturn(false);
+      when(f.reasoner.closure(f.predicate)).thenReturn(Set.of(f.predicate));
       assertSame(f.predicate, f.run(new MemberClassifierExecutor(f.actuator, method, null, f.scope))
           .getFirst().predicate());
     }

@@ -47,6 +47,63 @@ class AgentRegistryTest {
   private interface ConnectedScope extends Scope, MessagingChannel {}
 
   @Test
+  void selectedTestRunsAfterInitAndCachedClassStillSupportsFullSuites() throws Exception {
+    var behavior = finiteBehavior("test.registry.selected." + UUID.randomUUID().toString().replace("-", ""));
+    behavior.setBehaviorType(KActorsBehavior.Type.UNITTEST);
+    var actions = new java.util.ArrayList<KActorsActionImpl>();
+    for (var name : List.of("init", "main", "first", "second", "helper")) {
+      var action = new KActorsActionImpl();
+      action.setUrn(name);
+      var assignment = new KActorsStatementImpl.AssignmentImpl();
+      assignment.setVariable(name + "Ran");
+      assignment.setAssignmentScope(org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment.Scope.ACTOR);
+      assignment.setValue(value(1));
+      action.setCode(List.of(assignment));
+      if (List.of("first", "second").contains(name)) action.setAnnotations(List.of(Annotation.of("test")));
+      actions.add(action);
+    }
+    var initCode = new java.util.ArrayList<org.integratedmodelling.klab.api.lang.kactors.KActorsStatement>(actions.getFirst().getCode());
+    for (var name : List.of("main", "first", "second", "helper")) {
+      var declaration = new KActorsStatementImpl.AssignmentImpl();
+      declaration.setVariable(name + "Ran");
+      declaration.setAssignmentScope(org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment.Scope.ACTOR);
+      declaration.setValue(value(0));
+      initCode.add(declaration);
+    }
+    actions.getFirst().setCode(initCode);
+    behavior.setStatements(new java.util.ArrayList<>(actions));
+    Class<?> cached = null;
+    for (var selection : List.of("first", "second", "")) {
+      if (selection.isEmpty()) behavior.getProperties().remove("testAction");
+      else behavior.getProperties().put("testAction", selection);
+      var handle = AgentRegistry.INSTANCE.getOrCreateAgent(request(behavior.getUrn(), "selected test"), behavior, null);
+      assertTrue(handle.isViable(), () -> handle.getNotifications().toString());
+      var compiled = AgentRegistry.INSTANCE.getCompiledClass(behavior);
+      if (cached == null) cached = compiled;
+      else assertSame(cached, compiled);
+      var runtime = (org.integratedmodelling.klab.runtime.kactors.TestCaseBase)
+          AgentRegistry.INSTANCE.getRuntimeAgent(handle.getUrn());
+      assertTrue(handle.start(), () -> handle.getNotifications().toString());
+      for (int i = 0; i < 200 && handle.isAlive(); i++) Thread.sleep(10);
+      assertFalse(handle.isAlive());
+      var reportField = org.integratedmodelling.klab.runtime.kactors.TestCaseBase.class.getDeclaredField("report");
+      reportField.setAccessible(true);
+      var report = (org.integratedmodelling.klab.api.collections.DomainObject) reportField.get(runtime);
+      assertEquals(selection.isEmpty() ? List.of("first", "second") : List.of(selection),
+          report.getChildren().stream().map(org.integratedmodelling.klab.api.collections.DomainObject::urn).toList());
+      var scopeField = RuntimeAgentBase.class.getDeclaredField("rootScope");
+      scopeField.setAccessible(true);
+      var scope = (org.integratedmodelling.klab.runtime.kactors.AgentScope) scopeField.get(runtime);
+      assertEquals(1, ((Number) scope.get("initRan")).intValue());
+      assertEquals(selection.isEmpty() ? 1 : 0, ((Number) scope.get("mainRan")).intValue());
+      assertEquals(0, ((Number) scope.get("helperRan")).intValue());
+    }
+    behavior.getProperties().put("testAction", "helper");
+    var invalid = AgentRegistry.INSTANCE.getOrCreateAgent(request(behavior.getUrn(), "invalid test"), behavior, null);
+    assertFalse(invalid.isViable());
+  }
+
+  @Test
   void executedReturnInPersistentMainTerminatesTheAgentConditionally() throws Exception {
     var terminating =
         persistentConditionalReturnBehavior(

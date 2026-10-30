@@ -88,6 +88,15 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
    */
   List<Operation> getOperations();
 
+  /** Explicit native singular binding; null for ordinary flat plans. */
+  default SingularContextBinding getContextBinding() { return null; }
+
+  /** Typed whole-support unary reduction, evaluated only after completed collective discovery. */
+  default CollectiveReductionBinding getCollectiveReduction() { return null; }
+
+  /** Bounded native discovery and normal family classification followed by a virtual view. */
+  default CollectiveSelectionBinding getCollectiveSelection() { return null; }
+
   /**
    * The compiled Markdown/AsciiDoc documentation relative to the observable being resolved by this
    * strategy, ready for inclusion in documentation and provenance. This is obtained in each
@@ -106,7 +115,8 @@ public interface ObservationStrategy extends Knowledge, Resolvable {
   String getNamespace();
 
   /**
-   * Rank is only used for informational purposes.
+   * Lower ranks are attempted first. Rank zero is the direct model tier; contextual
+   * recursive routes belong to rank one or higher and run only for outstanding support.
    *
    * @return
    */

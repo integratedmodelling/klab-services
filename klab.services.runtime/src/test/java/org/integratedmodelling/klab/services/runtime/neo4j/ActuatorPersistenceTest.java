@@ -110,11 +110,19 @@ class ActuatorPersistenceTest {
             if (method.getName().equals("values")) return List.of(Values.value(properties));
             throw new AssertionError(method);
           });
+      var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.Scope.class);
+      var reasoner = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+      org.mockito.Mockito.when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+      org.mockito.Mockito.when(reasoner.resolveObservable(org.mockito.ArgumentMatchers.anyString())).thenAnswer(call -> {
+        var concept = new org.integratedmodelling.common.knowledge.ConceptImpl();
+        concept.setUrn(call.getArgument(0)); concept.getType().add(org.integratedmodelling.klab.api.knowledge.SemanticType.PROCESS);
+        return org.integratedmodelling.common.knowledge.ObservableImpl.promote(concept,null);
+      });
       return adapt(new EagerResult() {
         public List<String> keys() { return List.of("n"); }
         public List<Record> records() { return List.of(record); }
         public ResultSummary summary() { throw new AssertionError(); }
-      }, Actuator.class, null).getFirst();
+      }, Actuator.class, scope).getFirst();
     }
 
     public KnowledgeGraph contextualize(DigitalTwin.Configuration configuration, UserScope scope) {

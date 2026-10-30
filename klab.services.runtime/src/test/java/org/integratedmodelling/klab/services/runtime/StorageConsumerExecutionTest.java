@@ -211,7 +211,9 @@ class StorageConsumerExecutionTest {
       };
       assertFalse(executor.execute(Scheduler.Event.initialization(),f.scope,null));
       assertTrue(executor.getCause().getMessage().contains("elevation"));assertNotNull(executor.getCause().getCause());
-      assertTrue(executor.getCause().getMessage().contains("ACCEPT_LOSSY_MEDIATIONS=false"));
+      assertTrue(executor.getCause().getMessage().contains(
+          ": ACCEPT_LOSSY_MEDIATIONS is false: spatial extents do not match: "));
+      assertTrue(executor.getCause().getMessage().contains("cell resolution differs"));
       verify(f.manager.getStorage(output),never()).scan(any(),any(),any(),eq(false));
       try(var read=StorageReads.open(output,f.scope,null,Data.FillCurve.D2_XY,Storage.DoubleScanner.class)){assertEquals(0,read.scanners().getFirst().get());}
     }

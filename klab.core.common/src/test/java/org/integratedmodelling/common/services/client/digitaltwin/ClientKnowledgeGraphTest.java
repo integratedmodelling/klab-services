@@ -82,7 +82,12 @@ class ClientKnowledgeGraphTest {
     when(runtime.getCommit(81, scope)).thenReturn(commit);
     when(runtime.getAsset(421, RuntimeAsset.class, scope)).thenReturn(after);
     var submission = observation(422, 81L);
+    long beforeRevision=graph.getSemanticRevision();
     graph.ingest(submission);
+    long afterRevision=graph.getSemanticRevision();
+    assertTrue(afterRevision>beforeRevision,"The enclosing scope cache needs the committed invalidation generation");
+    graph.ingest(submission);
+    assertEquals(afterRevision,graph.getSemanticRevision(),"Duplicate delivery must not invent another invalidation");
     var refreshed = graph.getAsset(421, scope, RuntimeAsset.class);
     assertSame(after, refreshed);
     assertEquals("test:Forest test:Region", ((ObservationImpl) refreshed).getObservable().getUrn());

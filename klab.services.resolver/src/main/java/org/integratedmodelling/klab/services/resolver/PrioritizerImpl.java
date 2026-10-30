@@ -24,6 +24,11 @@ public class PrioritizerImpl implements Prioritizer<Model> {
   private final Scale scale;
   private final Observable observable;
   private final Concept contextObservable;
+  private final Concept effectiveObserver;
+  private final Map<Model,Integer> observerPreferences = new HashMap<>();
+  private final Map<Model,Integer> jointChangePreferences = new IdentityHashMap<>();
+  private final Map<Model,org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt> admissions = new java.util.IdentityHashMap<>();
+  org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt admission(Model model) { return admissions.get(model); }
   private final Map<Criterion, Integer> defaults;
   private final List<Criterion> order;
   private final Map<Model, Integer> distances = new HashMap<>();
@@ -38,6 +43,9 @@ public class PrioritizerImpl implements Prioritizer<Model> {
     this.scale = scale;
     this.observable = Objects.requireNonNull(observable);
     this.contextObservable = contextObservable;
+    var selectedObserver=scope.getObserver();
+    this.effectiveObserver=selectedObserver==null||selectedObserver.getObservable()==null
+        ? null : selectedObserver.getObservable().asConcept();
     this.defaults = parse(Objects.requireNonNull(criteria));
     String namespace = null, project = null;
     for (var constraint : scope.getResolutionConstraints()) {
@@ -84,6 +92,10 @@ public class PrioritizerImpl implements Prioritizer<Model> {
 
   public int semanticDistance(Model model) {
     return distances.computeIfAbsent(model, candidate -> {
+      var receipt = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableAdmission(candidate,scope,observable);
+      if (receipt == null) return Integer.MAX_VALUE;
+      admissions.put(candidate,receipt);
+      long validatedRevision=receipt.knowledgeRevision();
       var outputs = candidate.getObservables();
       if (outputs == null) return Integer.MAX_VALUE;
       if (observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.CHANGE)
@@ -94,14 +106,44 @@ public class PrioritizerImpl implements Prioritizer<Model> {
         outputs.addAll(org.integratedmodelling.klab.runtime.language.OccurrentSemantics.changes(
             outputs.getFirst(), qualities, scope));
       }
-      return outputs.stream().filter(Objects::nonNull)
-          .mapToInt(output -> scope.getService(Reasoner.class)
-              .semanticDistance(output, observable, contextObservable))
-          .filter(distance -> distance >= 0).min().orElse(Integer.MAX_VALUE);
+      int bestDistance=Integer.MAX_VALUE,bestPreference=Integer.MAX_VALUE;
+      var reasoner=scope.getService(Reasoner.class);
+      for(var output:outputs) {
+        if(output==null)continue;
+        int distance=reasoner.semanticDistance(output,observable,contextObservable,validatedRevision);
+        if(distance<0)continue;
+        int preference=0;
+        if(observable.getObserverSemantics()==null&&effectiveObserver!=null) {
+          if(output.getObserverSemantics()==null)preference=1;
+          else {
+            // Compare Agent meanings under the same admission receipt. This is an implicit
+            // preference/compatibility test, never an authored observed-as query clause.
+            if(!output.getObserverSemantics().is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)
+                || !effectiveObserver.is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)) continue;
+            org.integratedmodelling.klab.runtime.ObserverSemanticUse.semanticComparison(scope,output.getObserverSemantics());
+            if(reasoner.semanticDistance(output.getObserverSemantics(),effectiveObserver,null,validatedRevision)<0)continue;
+          }
+        }
+        if(preference<bestPreference) {bestPreference=preference;bestDistance=distance;}
+        else if(preference==bestPreference)bestDistance=Math.min(bestDistance,distance);
+      }
+      observerPreferences.put(candidate,bestPreference);
+      return bestDistance;
     });
   }
 
+  /** Observer preference is a semantic partition, independent of configurable numeric weights. */
+  int observerPreference(Model model) {
+    if(observable.getObserverSemantics()!=null||effectiveObserver==null)return 0;
+    semanticDistance(model);
+    return observerPreferences.getOrDefault(model,Integer.MAX_VALUE);
+  }
+
   @Override public int compare(Model first, Model second) {
+    int perspective=Integer.compare(observerPreference(first),observerPreference(second));
+    if(perspective!=0)return perspective;
+    int joint = Integer.compare(jointChangePreference(second), jointChangePreference(first));
+    if (joint != 0) return joint;
     var left = computeCriteria(first); var right = computeCriteria(second);
     for (var criterion : order) {
       int comparison = Double.compare(left.get(criterion), right.get(criterion));
@@ -109,6 +151,46 @@ public class PrioritizerImpl implements Prioritizer<Model> {
     }
     // No identity-hash or arrival-time tie breaker: stable asset identities survive service boundaries.
     return Comparator.nullsLast(String::compareTo).compare(first.getUrn(), second.getUrn());
+  }
+
+  /** This partition is inside model selection; strategy tiers are still chosen by the compiler. */
+  int jointChangePreference(Model model) {
+    if (!observable.is(org.integratedmodelling.klab.api.knowledge.SemanticType.CHANGE)
+        || contextObservable == null) return 0;
+    var requested = ResolutionConstraint.getPayload(scope, ResolutionConstraint.Type.ChangeQualities,
+        Observable.class);
+    if (requested.size() < 2) return 0;
+    // Never rank semantic claims from an unadmitted model.
+    if (semanticDistance(model) == Integer.MAX_VALUE) return 0;
+    return jointChangePreferences.computeIfAbsent(model, candidate -> jointChangeCoverage(
+        candidate, requested, contextObservable, scope.getService(Reasoner.class),
+        admissions.get(candidate).knowledgeRevision()));
+  }
+
+  static int jointChangeCoverage(Model model, List<Observable> requested, Concept bearer,
+      Reasoner reasoner, long revision) {
+    if (model.getObservables().isEmpty()) return 0;
+    var process = model.getObservables().getFirst();
+    if (!process.is(org.integratedmodelling.klab.api.knowledge.SemanticType.PROCESS)) return 0;
+    var inherent = reasoner.inherent(process);
+    // Exact/equivalent bearer specificity is stronger than merely being applicable to a superclass.
+    if (inherent == null || reasoner.semanticDistance(inherent, bearer, null, revision) != 0
+        || reasoner.semanticDistance(bearer, inherent, null, revision) != 0) return 0;
+    var declared = new ArrayList<>(model.getObservables().subList(1, model.getObservables().size()));
+    declared.addAll(model.getDependencies());
+    var covered = new HashSet<String>();
+    for (var quality : requested) {
+      if (!quality.is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY)) continue;
+      for (var output : declared) {
+        if (output.is(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY)
+            && (reasoner.affectedBy(output, process) || reasoner.createdBy(output, process))
+            && reasoner.semanticDistance(output, quality, bearer, revision) >= 0) {
+          covered.add(quality.getUrn());
+          break;
+        }
+      }
+    }
+    return covered.size() > 1 ? covered.size() : 0;
   }
 
   @Override public Map<Criterion, Double> computeCriteria(Model model) {

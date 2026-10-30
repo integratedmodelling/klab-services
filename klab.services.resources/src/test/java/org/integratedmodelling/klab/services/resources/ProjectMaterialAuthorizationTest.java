@@ -19,6 +19,31 @@ import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.junit.jupiter.api.Test;
 
 class ProjectMaterialAuthorizationTest {
+  @Test void directoryDiscoveryRequiresWriteEvenWhenIndividualMaterialCanBeRead() throws Exception {
+    var service = mock(ResourcesProvider.class, CALLS_REAL_METHODS);
+    var manager = mock(WorkspaceManager.class);
+    var field = ResourcesProvider.class.getDeclaredField("workspaceManager");
+    field.setAccessible(true); field.set(service, manager);
+    var user = mock(ServiceUserScope.class);
+    doReturn(false).when(service).canProjectOperation(eq("project"), any(), same(user));
+    doReturn(true).when(service).canProjectOperation("project", CRUDOperation.READ, user);
+    var file = new ProjectMaterial("project", "assets/style.css", new byte[0]);
+    when(manager.readMaterial(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    assertNotNull(service.retrieve(file.getUrn(), ProjectMaterial.class, user));
+    assertThrows(RuntimeException.class, () -> service.retrieve("project/", ProjectMaterial.class, user));
+    assertThrows(RuntimeException.class, () -> service.retrieve("project/assets/", ProjectMaterial.class, user));
+    verify(manager, times(1)).readMaterial(any());
+    assertThrows(RuntimeException.class, () -> service.submit(ProjectMaterial.coordinates("project/assets/"), SubmissionMode.ADD, user));
+    verify(manager, never()).writeMaterial(any(), any(), any());
+    doReturn(true).when(service).canProjectOperation("project", CRUDOperation.UPDATE, user);
+    assertTrue(service.retrieve("project/", ProjectMaterial.class, user).isDirectory());
+    service.submit(file, SubmissionMode.ADD, user);
+    service.submit(file, SubmissionMode.UPDATE, user);
+    verify(manager).writeMaterial(file, SubmissionMode.ADD, user);
+    verify(manager).writeMaterial(file, SubmissionMode.UPDATE, user);
+    assertThrows(RuntimeException.class, () -> service.delete("project/assets/", KnowledgeClass.ADDITIONAL_MATERIAL, user));
+    verify(manager, never()).deleteMaterial(any(), any());
+  }
   @Test void metadataPrivilegeCannotBeUsedToWriteDocumentsOrDeleteMaterialAndRequiresProjectAccess() throws Exception {
     var service = mock(ResourcesProvider.class, CALLS_REAL_METHODS);
     var manager = mock(WorkspaceManager.class); var catalog = mock(ResourcesKBox.class);

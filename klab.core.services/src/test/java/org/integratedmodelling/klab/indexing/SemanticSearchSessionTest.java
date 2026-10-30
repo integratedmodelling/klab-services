@@ -13,6 +13,20 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 import org.junit.jupiter.api.Test;
 
 class SemanticSearchSessionTest {
+  @Test void appendingSuggestionsDoesNotRevalidateTheAcceptedPrefix() {
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    candidates.add(new SemanticMatch(BinarySemanticOperator.UNION));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    clearInvocations(reasoner);
+    var accepted = select("test:Height");
+    assertNotNull(accepted.getObservable());
+    assertTrue(accepted.getMatches().stream().anyMatch(m -> m.getId().equals("of")));
+    verify(reasoner, never()).resolveObservable("test:Height");
+    assertEquals("test:Height of", select("of").getDeclaration());
+    assertEquals("test:Height", call(SemanticSearchRequest.Mode.UNDO).getDeclaration());
+  }
+
   private final Reasoner reasoner = mock(Reasoner.class);
   private final List<SemanticMatch> candidates = new ArrayList<>();
   private final Map<String, Observable> valid = new HashMap<>();
@@ -590,7 +604,8 @@ class SemanticSearchSessionTest {
     var identity = concept("internal:Taxon", SemanticType.IDENTITY, SemanticType.PREDICATE);
     valid.put("TAXA:123", valid.get("internal:Taxon"));
     var resolver = mock(SemanticSearchSession.AuthorityResolver.class);
-    when(resolver.resolve("TAXA", "123")).thenReturn(new SemanticSearchSession.AuthoritySelection(identity, "TAXA:123"));
+    when(resolver.resolve("TAXA", "123")).thenReturn(new SemanticSearchSession.AuthoritySelection(
+        identity, "TAXA:123", List.of("taxonomy.species:Oak")));
     var composing = new SemanticSearchSession(reasoner, (text, scope, limit) -> List.of(),
         new SemanticSearchRequest(), new SemanticClauseSupport(reasoner), resolver);
     var initial = composing.handle(request(SemanticSearchRequest.Mode.TOKEN), 42);
@@ -600,6 +615,9 @@ class SemanticSearchSessionTest {
     assertTrue(inserted.getErrors().isEmpty(), inserted.getErrors().toString());
     assertEquals("TAXA:123", inserted.getDeclaration()); assertTrue(inserted.isCanUndo());
     assertEquals("TAXA:123", inserted.getCode().getFirst().getValue());
+    assertEquals(List.of("taxonomy.species:Oak"), inserted.getCode().getFirst().getAliases());
+    assertEquals(List.of("taxonomy.species:Oak"), composing.handle(request(SemanticSearchRequest.Mode.TOKEN), 42)
+        .getCode().getFirst().getAliases());
     var stale = request(SemanticSearchRequest.Mode.IDENTITY);
     stale.setAuthority("TAXA"); stale.setIdentityCode("123"); stale.setMatchesRequestId(initial.getRequestId());
     assertFalse(composing.handle(stale, 42).getErrors().isEmpty());

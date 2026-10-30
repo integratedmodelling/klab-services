@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-29T15:07:48.726309+00:00",
+  "candidate_sha": "789fe711a4dd632f318bec485c63cdfbf3a97b8e",
+  "authorization": "one local owned session/context and at most two observation Jobs; no provisioning or retries",
+  "authentication": "native loopback local-owner server-key, exact origin/path bound; no credentials persisted",
+  "installed_source_sha256": "b1191f9a3efbc930b16e7042c779ff5f0ab364448b860baf3e36806bc9fb2ba0",
+  "passed": false,
+  "stage": "inspect_model",
+  "error_type": "ProtocolError",
+  "model_urn": "staging.vxii.basic.elevation-quantifier",
+  "jobs": [],
+  "owned_session_created": false,
+  "owned_context_created": false,
+  "cleanup_required": false,
+  "deployed_binary_provenance": "unverified",
+  "local_services": {
+    "reasoner": {"url": "http://127.0.0.1:8091/reasoner", "service_id": "570b4341-cd02-4e27-a77f-dc35352ffc0d", "operational": false, "worldview_id": null, "accepted_generation": 0},
+    "resources": {"url": "http://127.0.0.1:8092/resources", "service_id": "4fa96242-5fa1-4647-ba24-cdc8b29e7549", "operational": true, "adopted_worldview": null},
+    "resolver": {"url": "http://127.0.0.1:8093/resolver", "service_id": "85406374-4413-4503-a651-054b88c3f7d0", "operational": true},
+    "runtime": {"url": "http://127.0.0.1:8094/runtime", "service_id": "100bf613-81b4-4347-8194-aec59a615959", "operational": true}
+  },
+  "component_inventory": "all four advertise only internal.local.service.component; Runtime function inventory includes klab.data.normalize, not terrain",
+  "read_only_followup": {
+    "model_retrieve": {"http": 200, "body_bytes": 0, "meaning": "No model DTO returned; transport JSON decoding raises ProtocolError"},
+    "workspace_list": {"http": 200, "item_count": 0},
+    "project_list": {"http": 200, "item_count": 0},
+    "model_list": {"http": 200, "item_count": 0},
+    "runtime_settings": {"http": 200, "LOAD_REMOTE_RUNTIME_COMPONENTS": true},
+    "resolver_settings": {"http": 200, "loader_setting_present": false},
+    "local_knowledge_directory_entries": 0,
+    "resources_component_plugins_directory_entries": 0
+  },
+  "limits": [
+    "Pilot invocation stopped before computation. No numerical execution or model/result association was tested successfully.",
+    "No hosted endpoint was used for this local pilot; no remote imports, service configuration changes, component installation, restarts or scientific code changes were made.",
+    "Local owner credentials were loaded in memory and never printed or stored in reports.",
+    "Status, capability and read-only follow-up observations are sequential, not an atomic deployment view.",
+    "Local deployment absence of model/worldview does not establish the cause of the earlier hosted Job failure."
+  ]
+}

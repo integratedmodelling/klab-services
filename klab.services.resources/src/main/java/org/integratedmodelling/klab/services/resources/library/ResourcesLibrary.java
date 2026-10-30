@@ -6,7 +6,6 @@ import java.util.Map;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -34,13 +33,12 @@ public class ResourcesLibrary {
       fileExtensions = {"json", "zip"})
   public static ResourceSet importLegacyResource(
       File archive, ResourcesProvider service, UserScope scope) {
-    //    var definition = Utils.Json.load(archive, Map.class);
-    //    if (definition != null) {
-    return loadLegacyResource(archive, service, scope, null);
-    //    }
-    //    return ResourceSet.empty(
-    //        Notification.error("Legacy resource ingestion: submitted resource data cannot be
-    // parsed"));
+    try {
+      return loadLegacyResource(archive, service, scope, null);
+    } catch (RuntimeException failure) {
+      return ResourceSet.empty(
+          Notification.error("Legacy resource ingestion failed: " + failure.getMessage()));
+    }
   }
 
   //  @Importer(
@@ -100,13 +98,16 @@ public class ResourcesLibrary {
           Notification.error(
               "Legacy resource ingestion: submitted resource data are not a supported file type (currently json or zip)"));
     }
-    try {
-      Utils.Maps.ensureContains(definition, "urn", "type", "geometry", "adapterType", "version");
-    } catch (KlabIllegalStateException e) {
-      return ResourceSet.empty(
-          Notification.error(
-              "Legacy resource ingestion: submitted resource data are incomplete "
-                  + definition.get("urn")));
+    if (definition == null) {
+      return ResourceSet.empty(Notification.error("Legacy resource ingestion: cannot read JSON definition"));
+    }
+    for (var field : new String[] {"urn", "type", "geometry", "adapterType", "version"}) {
+      var value = definition.get(field);
+      if (value == null || value.toString().isBlank()) {
+        return ResourceSet.empty(
+            Notification.error("Legacy resource ingestion: missing or empty " + field
+                + " in resource " + definition.get("urn")));
+      }
     }
     var builder =
         Resource.builder(definition.get("urn").toString())
@@ -128,7 +129,7 @@ public class ResourcesLibrary {
         /** TODO add {@link Metadata#DC_COVERAGE_SPATIAL} */
       }
       var time = geometry.dimension(Geometry.Dimension.Type.TIME);
-      if (time != null && space.getParameters().containsKey(GeometryImpl.PARAMETER_TIME_START)) {
+      if (time != null && time.getParameters().containsKey(GeometryImpl.PARAMETER_TIME_START)) {
         /** TODO add {@link Metadata#DC_COVERAGE_TEMPORAL} */
       }
 
@@ -170,6 +171,8 @@ public class ResourcesLibrary {
     // ignore local paths, we submit whole zips if there are local data
     // ignore history for now. We will treat that differently in 1.0
 
-    return service.ingestResource(builder.build(), scope);
+    // Preserve the actual source identity even if the manifest metadata contains an older origin.
+    builder.withMetadata(Metadata.IM_ORIGINAL_URN, definition.get("urn").toString());
+    return service.ingestLegacyResource(builder.build(), scope);
   }
 }

@@ -330,6 +330,14 @@ public abstract class ObservableKbox extends H2Kbox {
    * @return the IDs of all compatible concepts that have been used in the kbox.
    */
   public synchronized Set<Long> getCompatibleTypeIds(Observable observable, Concept context) {
+    return getTypeIds(observable, context, true);
+  }
+
+  public synchronized Set<Long> getCandidateTypeIds(Observable observable) {
+    return getTypeIds(observable, null, false);
+  }
+
+  private Set<Long> getTypeIds(Observable observable, Concept context, boolean match) {
 
     Set<Long> ret = new HashSet<>();
     Concept main = scope.getService(Reasoner.class).coreObservable(observable);
@@ -360,7 +368,7 @@ public abstract class ObservableKbox extends H2Kbox {
        * to specialized contexts
        */
 
-      if (scope.getService(Reasoner.class).semanticDistance(candidate, observable, context) /*
+      if (!match || scope.getService(Reasoner.class).semanticDistance(candidate, observable, context) /*
                              * TODO handle the resolved predicates?
                              * candidate.getSemanticDistance(observable, context,
                              * !observable.isSpecialized(), ((Observable)

@@ -108,6 +108,11 @@ observable compared against its recorded baseline. Stale or missing targets fail
 Indexed observable, semantics, and semantic-type properties change together; unrelated state is
 preserved. Explicit replacement/combination and repeated concurrent staging are unsupported.
 
+Existing-member input checks compare the cached observation with the captured native input.
+They exclude only the reserved `im:commit-id` receipt: a later context-only operation can advance
+that cached receipt without rewriting the observation. Model and user metadata remain part of
+the comparison, and the native read set is still checked for concurrent durable changes.
+
 Successful root commit publishes semantics to live objects, reports existing IDs in
 `Commit.modifiedAssets`, and invalidates graph, scope, and client caches. New members remain in
 `addedObservations`. Invocation, characterization, staging, or storage failure rolls back the

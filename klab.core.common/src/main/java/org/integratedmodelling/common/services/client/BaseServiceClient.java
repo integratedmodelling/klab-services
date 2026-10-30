@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.configuration.Settings;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -49,7 +50,7 @@ public abstract class BaseServiceClient implements KlabService {
   protected final Settings settings;
   protected ServiceCapabilities capabilities;
 
-  List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new ArrayList<>();
+  List<BiConsumer<ServiceStatus, Boolean>> statusListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
   @SafeVarargs
   public BaseServiceClient(
@@ -181,6 +182,18 @@ public abstract class BaseServiceClient implements KlabService {
     return settings;
   }
 
+  /** Retrieve a bounded page of vetted diagnostics using this service's administration identity. */
+  public org.integratedmodelling.klab.api.services.logging.LogPage queryLogs(
+      org.integratedmodelling.klab.api.services.logging.LogQuery query) {
+    return client.withScope(userScope).postWithStatus(ServicesAPI.ADMIN.LOGS_QUERY, query,
+        org.integratedmodelling.klab.api.services.logging.LogPage.class);
+  }
+
+  public org.integratedmodelling.klab.api.services.logging.LogCapabilities logCapabilities() {
+    return client.withScope(userScope).get(ServicesAPI.ADMIN.LOGS_CAPABILITIES,
+        org.integratedmodelling.klab.api.services.logging.LogCapabilities.class);
+  }
+
   /** Read the settings exposed by this service's administration API. */
   public Map<String, Object> readSettings() {
     return client.withScope(userScope).get(ServicesAPI.ADMIN.SETTINGS, Map.class);
@@ -196,6 +209,25 @@ public abstract class BaseServiceClient implements KlabService {
             returnType,
             "setting",
             setting.name());
+  }
+
+  /** Update an installed component and retrieve the administration job's result. */
+  public CompletableFuture<Map<?, ?>> updateComponent(String component, Version version) {
+    return componentAction(ServicesAPI.ADMIN.UPDATE_COMPONENT, component, version);
+  }
+
+  /** Remove an installed component and retrieve the administration job's result. */
+  public CompletableFuture<Map<?, ?>> removeComponent(String component, Version version) {
+    return componentAction(ServicesAPI.ADMIN.REMOVE_COMPONENT, component, version);
+  }
+
+  private CompletableFuture<Map<?, ?>> componentAction(
+      String endpoint, String component, Version version) {
+    Map<String, Object> request = new LinkedHashMap<>();
+    request.put("component", component);
+    if (version != null) request.put("version", version.toString());
+    return client.withScope(userScope).postAsync(endpoint, request, Map.class)
+        .thenApply(result -> result);
   }
 
   @Override
@@ -279,7 +311,11 @@ public abstract class BaseServiceClient implements KlabService {
           client
               .withScope(sessionScope)
               .post(ServicesAPI.CREATE_CONTEXT, request, DigitalTwin.Configuration.class);
-      if (configuration != null && !configuration.isEmpty()) {
+      if (configuration != null && !configuration.isEmpty()
+          && configuration.getId() != null && !configuration.getId().isBlank()) {
+        if (contextScope instanceof org.integratedmodelling.common.services.client.scope.ClientContextScope peer) {
+          peer.setFromConfiguration(configuration);
+        }
         setupMessaging(contextScope, sessionScope, configuration.getId());
       }
       return configuration == null
@@ -345,7 +381,7 @@ public abstract class BaseServiceClient implements KlabService {
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
     return client
         .withScope(scope)
-        .getCollection(
+        .getCollectionOrThrow(
             ServicesAPI.ADMIN.CREDENTIALS, ExternalAuthenticationCredentials.CredentialInfo.class);
   }
 
@@ -357,10 +393,22 @@ public abstract class BaseServiceClient implements KlabService {
     request.setCredentials(credentials);
     return client
         .withScope(scope)
-        .post(
+        .postWithStatus(
             ServicesAPI.ADMIN.CREDENTIALS,
             request,
             ExternalAuthenticationCredentials.CredentialInfo.class);
+  }
+
+  @Override
+  public java.util.List<org.integratedmodelling.klab.api.authentication.CredentialSchema> getCredentialSchemas(Scope scope) {
+    return client.withScope(scope).getCollectionOrThrow(ServicesAPI.ADMIN.CREDENTIAL_SCHEMAS,
+        org.integratedmodelling.klab.api.authentication.CredentialSchema.class);
+  }
+
+  @Override
+  public boolean removeCredentials(String id, Scope scope) {
+    return client.withScope(scope).deleteCollectionOrThrow(ServicesAPI.ADMIN.CREDENTIALS, Boolean.class, "id", id)
+        .stream().anyMatch(Boolean.TRUE::equals);
   }
 
   @Override

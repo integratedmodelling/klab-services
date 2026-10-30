@@ -8,6 +8,25 @@ import java.util.Set;
 
 public class CommitImpl implements KnowledgeGraph.Commit {
 
+  /** Detach a commit before handing it to another thread, handler or message consumer. */
+  public static CommitImpl copyOf(KnowledgeGraph.Commit source) {
+    var copy = new CommitImpl();
+    copy.setId(source.getId());
+    copy.setTimestamp(source.getTimestamp());
+    copy.setOwner(source.getOwner());
+    copy.setConsequenceCause(source.getConsequenceCause());
+    copy.getAddedAssets().addAll(source.getAddedAssets());
+    copy.getAddedObservations().addAll(source.getAddedObservations());
+    copy.getAddedCohorts().addAll(source.getAddedCohorts());
+    copy.getModifiedAssets().addAll(source.getModifiedAssets());
+    copy.getDeletedAssets().addAll(source.getDeletedAssets());
+    source.getAddedLinks().forEach(link -> copy.getAddedLinks().add(
+        Triple.of(link.getFirst(), link.getSecond(), link.getThird())));
+    source.getDeletedLinks().forEach(link -> copy.getDeletedLinks().add(
+        Triple.of(link.getFirst(), link.getSecond(), link.getThird())));
+    return copy;
+  }
+
   private long id;
   private long timestamp;
   private Set<Long> addedAssets = new HashSet<>();
@@ -18,6 +37,16 @@ public class CommitImpl implements KnowledgeGraph.Commit {
   private Set<Long> addedCohorts = new HashSet<>();
   private Set<Long> modifiedAssets = new HashSet<>();
   private String owner;
+  private org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause consequenceCause;
+
+  @Override
+  public org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause getConsequenceCause() {
+    return consequenceCause;
+  }
+
+  public void setConsequenceCause(org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause cause) {
+    this.consequenceCause = cause;
+  }
 
   @Override
   public long getId() {

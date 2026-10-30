@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -40,6 +41,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
+import org.integratedmodelling.klab.api.services.runtime.objects.ObservationExportRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.api.services.runtime.objects.VisualizationRequest;
 import org.integratedmodelling.klab.rest.AgentInstantiationRequest;
@@ -53,6 +55,7 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -65,6 +68,50 @@ import org.springframework.web.bind.annotation.*;
 public class RuntimeServerController {
 
   @Autowired private RuntimeServer runtimeService;
+
+  @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITY_CONSUMER)
+  public boolean memberQualityConsumer(
+      @RequestBody org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerRequest request,
+      Principal principal) {
+    if(!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope=authorization.getScope(ContextScope.class);
+    if(scope==null)throw new IllegalArgumentException("Consumer inspection requires an authorized context");
+    request.validate();
+    return runtimeService.klabService().supportsMemberQualityInput(request.call(),request.port(),scope);
+  }
+
+  @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITY_INPUTS)
+  public org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
+      memberQualityInputs(@RequestBody org.integratedmodelling.klab.api.lang.ServiceCall call,Principal principal) {
+    if(!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope=authorization.getScope(Scope.class);
+    if(scope==null)throw new IllegalArgumentException("Consumer inspection requires an authorized scope");
+    if(call==null || call.getUrn()==null || call.getUrn().isBlank())
+      throw new IllegalArgumentException("Consumer inspection requires a named function");
+    return runtimeService.klabService().inspectMemberQualityInputs(call,scope);
+  }
+
+  @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITIES)
+  @Operation(summary = "Resolve a native quality for each member without creating a container field")
+  public long memberQualities(
+      @RequestBody org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+      Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope=authorization.getScope(ContextScope.class);
+    if (!(scope instanceof ServiceContextScope serviceScope))
+      throw new IllegalArgumentException("Member qualities require an authorized context");
+    request.validate();
+    if (request.agentName()==null || request.agentName().isBlank())
+      throw new IllegalArgumentException("Member qualities require a provenance agent");
+    var agent=serviceScope.getDigitalTwin().getKnowledgeGraph().requireAgent(request.agentName());
+    var selected=serviceScope.withResolutionConstraints(request.resolutionConstraints().toArray(new ResolutionConstraint[0]))
+        .withResolutionConstraints(ResolutionConstraint.of(ResolutionConstraint.Type.Provenance,agent));
+    var future=runtimeService.klabService().resolveMemberQualities(request,selected);
+    return serviceScope.getJobManager().submit(future,"Native member qualities",()->future.cancel(true));
+  }
 
   @Operation(summary = "Read one observation cell", description = "Exact text from a planned read view; null denotes missing data")
   @PostMapping(value = ServicesAPI.RUNTIME.READ_VALUE, produces = "text/plain")
@@ -141,14 +188,13 @@ public class RuntimeServerController {
                       .getResolutionConstraints()
                       .toArray(new ResolutionConstraint[0]));
       if (contextScope instanceof ServiceContextScope serviceContextScope) {
-        var agent =
-            serviceContextScope
-                .getDigitalTwin()
-                .getKnowledgeGraph()
-                .requireAgent(resolutionRequest.getAgentName());
-        var scope =
-            serviceContextScope.withResolutionConstraints(
-                ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
+        var scope = serviceContextScope;
+        if (resolutionRequest.getObservation().getId() != Observation.QUERY_ID) {
+          var agent = serviceContextScope.getDigitalTwin().getKnowledgeGraph()
+              .requireAgent(resolutionRequest.getAgentName());
+          scope = serviceContextScope.withResolutionConstraints(
+              ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
+        }
         var submission =
             runtimeService
                 .klabService()
@@ -163,6 +209,34 @@ public class RuntimeServerController {
       }
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
+
+  @PostMapping(ServicesAPI.EXPORT_OBSERVATION)
+  public void exportObservation(
+      @RequestBody ObservationExportRequest request,
+      @RequestHeader(HttpHeaders.ACCEPT) String mediaType,
+      HttpServletResponse response, Principal principal) throws IOException {
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new KlabAuthorizationException(
+          "Observation export requires a context scope");
+    var scope = authorization.getScope(ContextScope.class);
+    try (var stream = runtimeService.klabService().exportObservation(
+        request.getObservation(), mediaType, request.getParameters(), scope)) {
+      if (stream == null) throw new IllegalArgumentException("Exporter returned no data");
+      response.setContentType(mediaType);
+      stream.transferTo(response.getOutputStream());
+    }
+  }
+
+  @PostMapping(ServicesAPI.OBSERVATION_MEMBERS)
+  public List<Observation> observationMembers(
+      @RequestBody Observation observation, Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new KlabAuthorizationException(
+          "Member enumeration requires a context scope");
+    return runtimeService.klabService()
+        .getMembers(observation, authorization.getScope(ContextScope.class)).stream()
+        .map(Observation::forTransport).toList();
   }
 
   /**
@@ -707,8 +781,11 @@ public class RuntimeServerController {
                   .getScopeManager()
                   .getScope(request.getConfiguration().getId(), SessionScope.class);
           if (existing != null) {
-            // TODO bookkeeping of users connected if user is different, possibly validate other
-            //  parameters
+            if (!(existing instanceof ServiceSessionScope managed)
+                || !org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(managed, userScope)) {
+              throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+                  "Session is not accessible to the requesting user");
+            }
             return existing.getId();
           }
         }
@@ -803,9 +880,27 @@ public class RuntimeServerController {
 
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
+          var requestedId = contextId == null ? request.getConfiguration().getId() : contextId;
+          if (requestedId != null) {
+            if (!requestedId.startsWith(sessionScope.getId() + ".")) {
+              throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context does not belong to the authorized session");
+            }
+            var existing = runtimeService.klabService().getConfiguration(requestedId, userScope);
+            if (existing != null) {
+              var connected = runtimeService.klabService().connectContext(existing, userScope);
+              return connected == null ? null : connected.getConfiguration();
+            }
+          }
+
           var ret =
               new ServiceContextScope(
-                  serviceSessionScope, request.getConfiguration(), userScope.getUser());
+                  serviceSessionScope.forRequest((ServiceUserScope) userScope), request.getConfiguration(), userScope.getUser());
+
+          if (request.getConfiguration() instanceof org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl configuration) {
+            configuration.setOwner(userScope.getUser().getUsername());
+            configuration.setSessionFederationId(org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(serviceSessionScope, userScope)
+                && federation != null ? federation.getId() : null);
+          }
 
           if (!ret.getUser().getUsername().equals(identity.getUsername())) {
             ret = ret.withIdentity(identity);
@@ -859,7 +954,17 @@ public class RuntimeServerController {
     if (principal instanceof EngineAuthorization authorization) {
       var sessionScope = authorization.getScope(SessionScope.class);
       if (sessionScope != null) {
-        sessionScope.close();
+        var registered = runtimeService.klabService().getScopeManager()
+            .getScope(sessionScope.getId(), ServiceSessionScope.class);
+        if (registered == null) return false;
+        var requester = runtimeService.klabService().getScopeManager().getOrCreateUserScope(authorization);
+        if (!org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(registered, requester)
+            || (org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(registered)
+                && !authorization.getRoles().contains(org.integratedmodelling.klab.services.application.security.Role.ROLE_ADMINISTRATOR))) {
+          throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+              "Only an administrator may release a shared federation session");
+        }
+        registered.close();
         return true;
       }
     }

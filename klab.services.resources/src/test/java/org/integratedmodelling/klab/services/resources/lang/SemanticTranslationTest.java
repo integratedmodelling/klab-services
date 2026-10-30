@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -12,6 +14,124 @@ import org.integratedmodelling.languages.validation.LanguageValidationScope.Conc
 import org.junit.jupiter.api.Test;
 
 class SemanticTranslationTest {
+  @Test void valueOperatorUrnsReparseWithoutLosingSubjectiveLeaves() {
+    var parser = new org.integratedmodelling.languages.ObservableStandaloneSetup()
+        .createInjectorAndDoEMFRegistration().getInstance(org.eclipse.xtext.parser.IParser.class);
+    for (boolean subjective : List.of(false, true)) {
+      var scope = new org.integratedmodelling.languages.validation.BasicObservableValidationScope() {
+        @Override public ConceptDescriptor getConceptDescriptor(String name) {
+          return new ConceptDescriptor("test", name.substring(name.indexOf(':') + 1),
+              name.equals("test:Value") ? SemanticSyntax.Type.ATTRIBUTE : SemanticSyntax.Type.LENGTH,
+              name, "", false, false, subjective && name.equals("test:Value"), false);
+        }
+      };
+      for (String source : List.of("test:Height is test:Value",
+          "test:Height where test:Height is test:Value")) {
+        String urn = source;
+        for (int pass = 0; pass < 2; pass++) {
+          var parsed = parser.parse(new java.io.StringReader(urn + ";"));
+          assertFalse(parsed.hasSyntaxErrors(), urn);
+          var root = (org.integratedmodelling.languages.observable.ObservableSequence) parsed.getRootASTElement();
+          var syntax = new org.integratedmodelling.languages.ObservableSyntaxImpl(
+              root.getObservables().getFirst().getSemantics(), scope) {
+            @Override protected void logWarning(org.integratedmodelling.languages.api.ParsedObject t,
+                org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String message) {}
+            @Override protected void logError(org.integratedmodelling.languages.api.ParsedObject t,
+                org.eclipse.emf.ecore.EObject o, org.eclipse.emf.ecore.EStructuralFeature f, String message) { fail(message); }
+          };
+          var adapted = LanguageAdapter.INSTANCE.adaptObservable(syntax, "test", "project", KlabAsset.KnowledgeClass.ONTOLOGY);
+          assertEquals(subjective, org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(adapted));
+          assertFalse(adapted.getSemantics().getValueOperators().isEmpty());
+          assertTrue(adapted.getUrn().contains("test:Value"));
+          urn = adapted.getUrn();
+        }
+      }
+    }
+  }
+  @Test void adapterMakesSubjectiveOutputsAndDependenciesPrivateEvenInPublicNamespaces() throws Exception {
+    for (boolean inAbout : List.of(false, true)) {
+    for (int subjectivePosition : new int[] {-1, 0, 1}) {
+      var namespace = new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();
+      namespace.setUrn("owner");
+      namespace.setScope(org.integratedmodelling.klab.api.lang.kim.KlabStatement.Scope.PUBLIC);
+      var model = mock(org.integratedmodelling.languages.api.ModelSyntax.class);
+      when(model.getName()).thenReturn("model");
+      var observables = new java.util.ArrayList<org.integratedmodelling.languages.api.ObservableSyntax>();
+      for (int i = 0; i < 2; i++) {
+        var semantic = leaf("Value" + i, SemanticSyntax.Type.LENGTH);
+        when(semantic.getObservable()).thenReturn(new SemanticSyntax.ConceptData(
+            new ConceptDescriptor("test", "Value" + i, SemanticSyntax.Type.LENGTH,
+                "Value", "", false, false, i == subjectivePosition, false), null, false));
+        var observable = mock(org.integratedmodelling.languages.api.ObservableSyntax.class);
+        var head = leaf("Head" + i, SemanticSyntax.Type.DOMAIN);
+        when(head.getRestrictions()).thenReturn(List.of(Tuples.create(
+            SemanticSyntax.BinaryOperator.ABOUT, List.of(semantic), false)));
+        when(observable.getSemantics()).thenReturn(inAbout ? head : semantic);
+        when(observable.encode()).thenReturn("test:Value" + i);
+        observables.add(observable);
+      }
+      when(model.getObservables()).thenReturn(List.of(observables.get(0)));
+      when(model.getDependencies()).thenReturn(List.of(observables.get(1)));
+      var method = LanguageAdapter.class.getDeclaredMethod("adaptModel",
+          org.integratedmodelling.languages.api.ModelSyntax.class,
+          org.integratedmodelling.klab.api.lang.kim.KimNamespace.class, java.util.Map.class);
+      method.setAccessible(true);
+      var adapted = (org.integratedmodelling.klab.api.lang.kim.KimModel)
+          method.invoke(LanguageAdapter.INSTANCE, model, namespace, java.util.Map.of());
+      var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+      var transported = mapper.readValue(mapper.writerFor(org.integratedmodelling.klab.api.lang.kim.KimModel.class)
+          .writeValueAsString(adapted), org.integratedmodelling.klab.api.lang.kim.KimModel.class);
+      assertEquals(subjectivePosition < 0
+          ? org.integratedmodelling.klab.api.lang.kim.KlabStatement.Scope.PUBLIC
+          : org.integratedmodelling.klab.api.lang.kim.KlabStatement.Scope.PRIVATE, transported.getScope());
+      assertEquals("owner", transported.getNamespace());
+    }
+    }
+  }
+
+  @Test void subjectiveDescriptionValuesPropagateThroughAdaptation() throws Exception {
+    for (boolean subjective : List.of(false, true)) {
+      var head = leaf("Height", SemanticSyntax.Type.LENGTH);
+      var value = leaf("Value", SemanticSyntax.Type.ATTRIBUTE);
+      when(value.getObservable()).thenReturn(new SemanticSyntax.ConceptData(
+          new ConceptDescriptor("test", "Value", SemanticSyntax.Type.ATTRIBUTE,
+              "Value", "", false, false, subjective, false), null, false));
+      when(head.getValueOperators()).thenReturn(List.of(Tuples.pair(SemanticSyntax.ValueOperator.IS, value)));
+      var result = adapt(head);
+      assertEquals(subjective, result.is(org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE));
+      assertEquals(1, result.getValueOperators().size());
+      assertEquals("test:Height is test:Value", result.getUrn());
+      var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+      var restored = mapper.readValue(mapper.writerFor(KimConcept.class).writeValueAsString(result), KimConcept.class);
+      assertEquals(result.getUrn(), restored.getUrn());
+      assertInstanceOf(KimConcept.class, restored.getValueOperators().getFirst().getSecond());
+      assertEquals(subjective, org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(restored));
+      assertFalse(result.is(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT));
+    }
+  }
+
+  @Test void removingSubjectiveFillerRecomputesStatusAfterTransport() throws Exception {
+    for (boolean subjectiveHead : List.of(false, true)) {
+      var head = leaf("Height", SemanticSyntax.Type.LENGTH);
+      when(head.getObservable()).thenReturn(new SemanticSyntax.ConceptData(
+          new ConceptDescriptor("test", "Height", SemanticSyntax.Type.LENGTH,
+              "Height", "", false, false, subjectiveHead, false), null, false));
+      var adapted = (org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl) adapt(head);
+      var filler = new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
+      filler.setName("test:View");
+      filler.setType(java.util.EnumSet.of(org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE, org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECT, org.integratedmodelling.klab.api.knowledge.SemanticType.OBSERVABLE, org.integratedmodelling.klab.api.knowledge.SemanticType.COUNTABLE));
+      adapted.setInherent(filler);
+      adapted.resetDefinition();
+      var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+      var restored = mapper.readValue(mapper.writerFor(KimConcept.class).writeValueAsString(adapted), KimConcept.class);
+      var removed = ((org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl) restored)
+          .removeComponents(org.integratedmodelling.klab.api.knowledge.SemanticRole.INHERENT);
+      assertEquals(subjectiveHead, org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(removed));
+      assertTrue(org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(restored));
+      assertNotNull(restored.getInherent());
+    }
+  }
+
   @Test void parserFinalizesUnaryTypesBeforeRegisteringGenericDeclarations() {
     var parser = new org.integratedmodelling.languages.WorldviewStandaloneSetup()
         .createInjectorAndDoEMFRegistration().getInstance(org.eclipse.xtext.parser.IParser.class);
@@ -117,7 +237,7 @@ class SemanticTranslationTest {
     assertEquals("test:Managed", inside.getObservable().getTraits().getFirst().getUrn());
     assertEquals("presence of test:Managed test:Tree", inside.getUrn());
     assertFalse(inside.is(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT));
-    assertFalse(inside.is(org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE));
+    assertTrue(inside.is(org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE));
 
     when(presence.getConceptReferences()).thenReturn(List.of());
     when(attribute.iterator()).thenAnswer(invocation -> List.of(attribute, presence).iterator());
