@@ -229,6 +229,17 @@ public interface Reasoner extends KlabService {
   Collection<Concept> closure(Semantics target);
 
   /**
+   * Inferred closure restricted to the accepted source vocabulary: named ontology declarations,
+   * their explicit aliases and deniable names. Alias targets retain their complete meaning,
+   * including scopes. Runtime-created expressions are excluded unless an authored name denotes
+   * that same meaning. Membership and inference are evaluated in one accepted generation.
+   * Implementations without source provenance must fail, rather than widen to ordinary closure.
+   */
+  default Collection<Concept> authoredClosure(Semantics target) {
+    throw new UnsupportedOperationException("Authored vocabulary closure is not supported");
+  }
+
+  /**
    * Compute a semantic distance score between two concepts. Evaluates the distance between the
    * different dimensions, including inherency and all clauses.
    *

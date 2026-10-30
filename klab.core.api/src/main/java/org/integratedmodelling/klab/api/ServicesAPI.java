@@ -296,6 +296,7 @@ public interface ServicesAPI {
     String ALL_PARENTS = API_BASE + "/allParents";
 
     String CLOSURE = API_BASE + "/closure";
+    String AUTHORED_CLOSURE = API_BASE + "/authoredClosure";
 
     String CORE_OBSERVABLE = API_BASE + "/coreObservable";
     String BUILD_CONCEPT = API_BASE + "/buildConcept";

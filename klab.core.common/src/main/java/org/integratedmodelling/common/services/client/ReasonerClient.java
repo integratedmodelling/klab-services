@@ -265,6 +265,15 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public Collection<Concept> authoredClosure(Semantics target) {
+    var result = client.postCollectionOrThrow(
+        ServicesAPI.REASONER.AUTHORED_CLOSURE, target.asConcept(), Concept.class);
+    if (result == null)
+      throw new IllegalStateException("Reasoner did not return an authored vocabulary closure");
+    return result;
+  }
+
+  @Override
   public int semanticDistance(Semantics target, Semantics other) {
     return semanticDistance(target, other, null);
   }

@@ -166,6 +166,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private final IntelligentMap<Set<Emergence>> emergence;
   private ObservationReasoner observationReasoner;
   private volatile Worldview worldview;
+  private volatile org.integratedmodelling.klab.services.reasoner.internal.AuthoredVocabulary authoredVocabulary;
   private final org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
       authorityBindings;
 
@@ -1514,6 +1515,24 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("closure", new Class<?>[] { Semantics.class }, new Object[] { target });
   return projectHierarchy(this.owl.getSemanticClosure(target.asConcept()));
+  }
+
+  @Override
+  public Collection<Concept> authoredClosure(Semantics target) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke("authoredClosure", new Class<?>[] { Semantics.class }, new Object[] { target });
+    var source = worldview;
+    long revision = knowledgeRevision();
+    var vocabulary = authoredVocabulary;
+    if (vocabulary == null || !vocabulary.belongsTo(source, revision)) {
+      vocabulary = org.integratedmodelling.klab.services.reasoner.internal.AuthoredVocabulary.capture(
+          source, revision, owl::getConcept);
+      authoredVocabulary = vocabulary;
+    }
+    var membership = vocabulary;
+    return projectHierarchy(owl.getSemanticClosure(target.asConcept()).stream()
+        .filter(membership::contains)
+        .sorted(java.util.Comparator.comparing(Concept::getUrn)).toList());
   }
 
   private Collection<Concept> projectHierarchy(Collection<Concept> concepts) {

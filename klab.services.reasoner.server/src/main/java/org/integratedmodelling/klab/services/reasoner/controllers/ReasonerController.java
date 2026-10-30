@@ -423,6 +423,12 @@ public class ReasonerController {
     return reasoner.klabService().closure(target);
   }
 
+  @Operation(summary = "Get inferred closure restricted to the accepted authored vocabulary")
+  @PostMapping(ServicesAPI.REASONER.AUTHORED_CLOSURE)
+  public @ResponseBody Collection<Concept> authoredClosure(@RequestBody Concept target) {
+    return reasoner.klabService().authoredClosure(target);
+  }
+
   /** Get the core observable of a concept */
   @Operation(
       summary = "Get core observable",
