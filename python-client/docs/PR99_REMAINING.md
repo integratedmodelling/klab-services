@@ -5,6 +5,12 @@ F3's second-identity/nonowner-denial fixture belongs to #98, not #99 acceptance.
 
 ## Completed for this bounded feature
 
+**Compatibility policy:** the Python client targets the existing Java contract;
+it does not require Java/parser/dependency changes. See the
+[existing-Java compatibility checks](EXISTING_JAVA_COMPATIBILITY.md). The Maven
+build failure below is a separate shared build-input problem, not evidence of a
+required Java upgrade for the Python API.
+
 - Typed resource/model inspection and bounded pilot implemented.
 - Pilot fixture corrected to use existing `earth:Terrestrial earth:Region`, as
   required by the unchanged elevation contextual-admission contract. No public
