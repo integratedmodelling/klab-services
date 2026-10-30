@@ -26,6 +26,7 @@ SUITES = {
     "geojson-export": "tests/functional/test_export_deliverables.py::test_native_geojson_export_preserves_identity_and_known_geometry",
     "geotiff-export": "tests/functional/test_export_deliverables.py::test_native_geotiff_export_preserves_values_units_and_mask",
     "provider-reference": "tests/functional/test_provider_reference.py",
+    "semantic-explorer": "tests/functional/test_semantic_explorer.py",
 }
 
 CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute"}
