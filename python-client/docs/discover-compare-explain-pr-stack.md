@@ -10,7 +10,7 @@ rewritten. Feature branches point to their already reviewed checkpoints.
 | F2 resource/model inspector | `feature/python-resource-inspector` / `e4580f17f` | `feature/python-semantic-explorer` | [#99](https://github.com/integratedmodelling/klab-services/pull/99) |
 | F3 execution evidence | `feature/python-execution-evidence` / `b45e0b8c2` | `feature/python-resource-inspector` | [#98](https://github.com/integratedmodelling/klab-services/pull/98) |
 | F4 experiment runner | `feature/python-experiment-runner` / `7fae2ea97` | `feature/python-execution-evidence` | [#100](https://github.com/integratedmodelling/klab-services/pull/100) |
-| Delivery | `feature/python-milestone-delivery` / reviewed delivery checkpoint | `feature/python-experiment-runner` | Created after delivery assessment |
+| Delivery | `feature/python-milestone-delivery` / executable candidate `bec1c1708`, assessment `a2f4c52f8` | `feature/python-experiment-runner` | [#102](https://github.com/integratedmodelling/klab-services/pull/102) |
 
 `feature/python-discover-compare-explain-integration` preserves the common
 reconnaissance/specification checkpoint `6bb7a8224`. Stacked bases keep each PR's
