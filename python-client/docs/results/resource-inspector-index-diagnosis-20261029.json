@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-29",
+  "reviewed_head": "b4f7c9a7662f930d28a15c4e03d8753dc2a2d6e1",
+  "scope": "Authorized local setup and indexing diagnosis only; headless processes, no observation/session/context submissions and no Java/scientific/source changes",
+  "observation_jobs_submitted": 0,
+  "computation_budget": "The earlier three attempts remain exhausted; these diagnostics do not renew or reinterpret that budget",
+  "ci_at_reviewed_head": {"python_3_11_3_12_3_13_and_core_only": "passed", "maven": "failed at unchanged LanguageAdapter.java:1234, non-exhaustive switch"},
+  "administrative_harness_correction": {
+    "plain_map_read_only_model_query": {"http": 500},
+    "native_parameters_read_only_model_query": {"http": 200, "items": 0},
+    "native_parameters_shape": {"@CLASS": "org.integratedmodelling.klab.api.collections.impl.ParametersImpl", "delegate": {}, "unnamedKeys": []},
+    "meaning": "The earlier one-off property-import harness omitted native Parameters typing; those HTTP 500s are not evidence of a broken import implementation",
+    "file_uri_control": "Typed project.git.import accepted the request but its administrative Job aborted because the deployed importer requires HTTP(S) coordinates. No project was loaded by that request",
+    "valid_https_control": "Typed HTTP(S) imports of unchanged IMOD and staging repositories both finished successfully; actual clone commits verified afterward",
+    "sdk_scope": "No public ResourceInspector or production SDK defect demonstrated; this correction concerns the external administrative harness"
+  },
+  "offline_syntax_probe": {
+    "distribution": "202610271533",
+    "namespace_count": 19,
+    "model_observable_encoding_count": 55,
+    "syntax_failures_with_empty_validation_scope": 0,
+    "limits": "Encoding probe used an empty validation scope; it does not validate semantics or reproduce worldview-informed encoding. Initial JShell classpath setup failures were diagnostic harness failures, not parser results",
+    "controls": [
+      {"input": "count of each each agency:Patient earth:Stream", "syntax_errors": true},
+      {"input": "count of (each agency:Patient earth:Stream)", "syntax_errors": false},
+      {"input": "geography:Elevation in m", "syntax_errors": false}
+    ]
+  },
+  "native_trace": {
+    "method": "Temporary fixed-destination loopback proxy between Resources and Reasoner, recording only body hashes/content type/status and expressions independently matched to public model source; headers/credentials never recorded",
+    "staging_commit": "1fe0a13746cd6a4ad6965f5787574d04c60f9f93",
+    "imod_commit": "1328000fff63a1951465b1f7b130c0af15264c95",
+    "listed_models": 55,
+    "observable_requests": 10,
+    "failed_observable_requests": 1,
+    "failed_request": {
+      "time": "2026-10-29T18:30:35.730228+00:00",
+      "expression": "count of each each agency:Patient earth:Stream",
+      "body_bytes": 46,
+      "body_sha256": "4c69e7966f2443ee39f5535a9b2d32d8e11a2d8b7dd84c481f23496e1ffadbe5",
+      "content_type": "text/plain; charset=utf-8",
+      "http": 500,
+      "reasoner_stack_location": "CapturedSemanticExpressionParser.observable:61, syntax/root-result rejection before semantic validation"
+    },
+    "source_location": "klab.staging.vxii/src/staging/vxii/test/selection_native_dependency.kim:22",
+    "source_form": "private model count of (each agency:Patient earth:Stream)",
+    "source_change_introducing_namespace": "1fe0a13746cd6a4ad6965f5787574d04c60f9f93, 2026-10-29T04:09:25Z",
+    "elevation_request": {"time": "2026-10-29T18:30:19.061140+00:00", "expression": "geography:Elevation in m", "http": 200},
+    "establishes": "A concrete malformed native observable encoding/indexing failure, independent of Python observation submission",
+    "limits": "Does not establish this is the sole cause of the earlier empty elevation dataflow; no numerical re-execution occurred"
+  },
+  "compatible_unchanged_candidate": {
+    "staging_commit": "9d20c1c236e5a033487ee47b34cd910c3ebbbe51",
+    "commit_time": "2026-10-27T14:02:44Z",
+    "project_changes_to_newer_commit": "Later selection regression namespaces/docs/testcase edits; elevation namespace unchanged",
+    "elevation_namespace_file": "src/staging/vxii/basic.kim",
+    "elevation_namespace_byte_identical": true,
+    "elevation_namespace_sha256": "c2ef48d4d9de5203c05c414a9ca541223546d011d96115738f5906ae90557cd3",
+    "sources_clean": true,
+    "configuration": "Supported temporary FILE project configuration using pinned unchanged IMOD and older staging sources",
+    "listed_models": 25,
+    "reasoner_operational": true,
+    "resources_semantic_search_capable": true,
+    "elevation_model_retrievable": true,
+    "captured_observable_requests": 13,
+    "failed_captured_observable_requests": 0,
+    "elevation_native_resolution_http": 200,
+    "numerical_execution": "not run; requires renewed bounded pilot authorization",
+    "limits": "Index readiness and model retrieval are not numerical/model-association acceptance. Native regression encoding was not patched or normalized in Python"
+  },
+  "distribution_consistency": {
+    "build": "202610271533",
+    "checked_across": ["resources", "reasoner", "resolver", "runtime"],
+    "identical_jar_sha256": {
+      "org.integratedmodelling.languages.observable-1.0.0-SNAPSHOT.jar": "c86bb1862ff4a3f7dfe280614519f21175af4ab02ec4778bad03f9646454f4fb",
+      "org.integratedmodelling.languages.kim-1.0.0-SNAPSHOT.jar": "c6a3f1cc08a1a89995a8d26a216cdf57352570e9200ef79db8e1f135b2edcd28",
+      "klab.core.api-1.0.0-SNAPSHOT.jar": "40cf44558b2b7751f76b00c2e8aef0f51d5d72b121182cf9e9dda277078bd452",
+      "klab.core.common-1.0.0-SNAPSHOT.jar": "12ea25b33261ef802fa12c97b9e3b5703742abd2b10e0c049c6a11526fc649a8",
+      "klab.core.services-1.0.0-SNAPSHOT.jar": "84565b8dffdae24e40a652cdf22b2b7eddafac096aee8f57d4978d171bea818a"
+    },
+    "source_attestation": "still unverified; matching hashes do not identify source commits"
+  },
+  "restoration": {
+    "three_administrative_diagnostic_runs": "Unsupported file URI control, valid HTTPS trace, older-revision indexing comparison; not observation pilots",
+    "starting_configuration_catalog_paths_per_run": 8,
+    "all_paths_match_starting_bytes": true,
+    "original_distribution_restored": "202610161554",
+    "temporary_backend_listener_18091_remaining": false,
+    "visible_service_console_windows": 0,
+    "native_pid_records_match_five_listeners": true,
+    "resources_pid": 6180,
+    "reasoner_pid": 14860,
+    "baseline": "Resources has no configured project/adopted worldview; Reasoner nonoperational as before diagnostics",
+    "retained": "Clean unconfigured native Git clones, compatible historical clone, diagnostic backups, sanitized logs and service index/cache data"
+  },
+  "recommendation": "PR99 remains draft, Needs contract/coordination evidence; a compatible unchanged indexing candidate is established, but numerical result and recorded inspected-model association still require verification"
+}

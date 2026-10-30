@@ -1,12 +1,29 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.server.ResponseStatusException;
 
 class KlabErrorHandlerTest {
+  @Test void serverUnhandledFailureLogsSafeStackAndKeepsErrorResponse() {
+    var logging = org.integratedmodelling.common.logging.Logging.INSTANCE;
+    var previous = logging.getErrorWriter();
+    var output = new java.util.ArrayList<String>();
+    try {
+      logging.setErrorWriter(output::add);
+      var handler = new org.integratedmodelling.klab.services.application.controllers.KlabErrorHandler();
+      var response = handler.handleDefaultException(new IllegalStateException("SECRET_SERVER_EXCEPTION"));
+      assertEquals(500, response.getStatusCode().value());
+      assertEquals(1, output.size());
+      assertTrue(output.getFirst().contains("Unhandled service request failure"));
+      assertTrue(output.getFirst().contains("serverUnhandledFailureLogsSafeStack"));
+      assertFalse(output.getFirst().contains("SECRET_SERVER_EXCEPTION"));
+    } finally { logging.setErrorWriter(previous); }
+  }
+
+
   @org.springframework.web.bind.annotation.RestController
   static class FailingExportController {
     @org.springframework.web.bind.annotation.GetMapping("/export")

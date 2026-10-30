@@ -10,6 +10,19 @@ import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.junit.jupiter.api.Test;
 
 class ColorRampTest {
+  @Test void retainedOverrideFlagDoesNotInvalidateTheSelectedColormap() {
+    var annotation = new org.integratedmodelling.klab.api.lang.AnnotationImpl();
+    annotation.setName("colormap");
+    annotation.putUnnamed("heat");
+    annotation.put("override", true);
+    var observation = new ObservationImpl();
+    observation.mergeAnnotations(List.of(annotation), 0);
+    var ramp = ColorRamp.fromObservation(observation);
+    assertEquals(0xff000000, ramp.argb(0, 0, 1));
+    assertEquals(0xffffffff, ramp.argb(1, 0, 1));
+    assertEquals(true, observation.getAnnotations().getFirst().get("override"));
+  }
+
   @Test void copyingAnAnnotationPreservesOneUnnamedPalette() {
     var original = new org.integratedmodelling.klab.api.lang.AnnotationImpl();
     original.setName("colormap");

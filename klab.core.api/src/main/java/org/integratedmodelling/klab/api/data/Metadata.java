@@ -205,6 +205,9 @@ public interface Metadata extends Parameters<String> {
    */
   String IM_OBSERVER_TAG = "im:observer-tag";
 
+  /** Recorded activity perspective: zero is deliberately null; positive is its existing Agent ID. */
+  String IM_OBSERVER_SELECTION_ID = "im:observer-selection-id";
+
   String IM_THEMATIC_AREA = "im:thematic-area";
 
   String IM_GEOGRAPHIC_AREA = "im:geographic-area";
@@ -214,6 +217,9 @@ public interface Metadata extends Parameters<String> {
   /** Accepted Resolver graph as a portable FlowChart, carried from Dataflow to resolution Activity. */
   /** Portable per-member classification audit records; durable details also live on CLASSIFIED edges. */
   String IM_ATTRIBUTIONS = "im:attributions";
+
+  /** Invocation-scoped member results, including reused current-view knowledge; not a closure certificate. */
+  String IM_CLASSIFICATION_MEMBER_RESULTS = "im:classification-member-results";
 
   String IM_RESOLUTION_GRAPH = "im:resolution-graph";
 
@@ -247,6 +253,9 @@ public interface Metadata extends Parameters<String> {
 
   /** Encoded geometry requested in an observation query. */
   String IM_QUERY_GEOMETRY = "im:query-geometry";
+
+  /** Encoded support of one contextualization invocation, carried by its execution Activity. */
+  String IM_EXECUTION_GEOMETRY = "im:execution-geometry";
 
   /** IDs of the observations whose geometries contributed to an observation query result. */
   String IM_QUERY_SOURCE_IDS = "im:query-source-ids";

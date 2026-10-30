@@ -49,6 +49,15 @@ public class SemanticSearchRequest {
     public int getMatchesRequestId() { return matchesRequestId; }
     public void setMatchesRequestId(int value) { matchesRequestId = value; }
 
+    /**
+     * TOKEN search text: an unqualified concept-name prefix, or {@code namespace:name}
+     * to restrict that prefix to an exact ontology namespace. {@code namespace:} lists
+     * concepts in that ontology. Name matching is case-insensitive and exact names rank
+     * ahead of longer prefixes. Qualified searches still only propose candidates; clients
+     * must SELECT the exact returned concept ID at the returned proposal revision to edit
+     * the expression and obtain its documentation snapshot. Input is never Lucene syntax.
+     * VALUE requests instead carry their literal here.
+     */
     public String getQueryString() {
         return queryString;
     }

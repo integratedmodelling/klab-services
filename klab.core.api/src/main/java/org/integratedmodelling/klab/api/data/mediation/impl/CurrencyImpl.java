@@ -73,4 +73,7 @@ public class CurrencyImpl implements Currency {
         this.definition = definition;
     }
 
+    @Override
+    public String toString() { return String.valueOf(definition); }
+
 }

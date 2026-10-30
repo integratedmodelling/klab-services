@@ -19,10 +19,10 @@ public final class OccurrentSemantics {
     var inherent = reasoner.inherent(quality);
     // Inherency to the occurrence takes precedence, including inherited restrictions.
     if (inherent != null && (occurrent.getSemantics().equals(inherent)
-        || reasoner.is(occurrent, inherent))) return ProcessPlan.Bearer.OCCURRENT;
+        || reasoner.is(occurrent.getSemantics(), inherent))) return ProcessPlan.Bearer.OCCURRENT;
     if (context != null && inherent != null
-        && (context.getSemantics().equals(inherent) || reasoner.is(context, inherent))
-        && (reasoner.affectedBy(quality, occurrent) || reasoner.createdBy(quality, occurrent)))
+        && (context.getSemantics().equals(inherent) || reasoner.is(context.getSemantics(), inherent))
+        && (reasoner.affectedBy(quality.getSemantics(), occurrent.getSemantics()) || reasoner.createdBy(quality.getSemantics(), occurrent.getSemantics())))
       return ProcessPlan.Bearer.CONTEXT;
     throw new KlabValidationException("Quality " + quality.getUrn()
         + " must inhere to " + occurrent.getUrn()
@@ -37,7 +37,7 @@ public final class OccurrentSemantics {
     var changes = new LinkedHashMap<String, Observable>();
     for (var quality : qualities) {
       if (!quality.is(SemanticType.QUALITY)
-          || !(reasoner.affectedBy(quality, process) || reasoner.createdBy(quality, process))) continue;
+          || !(reasoner.affectedBy(quality.getSemantics(), process.getSemantics()) || reasoner.createdBy(quality.getSemantics(), process.getSemantics()))) continue;
       var change = quality.builder(scope).as(UnarySemanticOperator.CHANGE).buildObservable();
       if (change == null) {
         throw new KlabValidationException("Cannot infer change in " + quality.getUrn()

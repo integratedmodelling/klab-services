@@ -184,6 +184,7 @@ public class KimObservableVisitor {
     observables.add(observable);
     addNotifications(validator.validateObservable(observable, context), context);
     visitConcept(observable.getSemantics(), child(context, observable.getSemantics()));
+    visitConcept(observable.getObserverSemantics(), child(context, observable.getObserverSemantics()));
     visitValue(observable.getValue(), context);
     visitValue(observable.getDefaultValue(), context);
     for (var operator : safe(observable.getValueOperators())) {
@@ -221,6 +222,7 @@ public class KimObservableVisitor {
     visitConcept(concept.getComparisonConcept(), conceptContext);
     visitConcept(concept.getRelationshipSource(), conceptContext);
     visitConcept(concept.getRelationshipTarget(), conceptContext);
+    for (var target : safe(concept.getAbout())) visitConcept(target, conceptContext);
     for (var trait : safe(concept.getTraits())) visitConcept(trait, conceptContext);
     for (var role : safe(concept.getRoles())) visitConcept(role, conceptContext);
     for (var operand : safe(concept.getOperands())) visitConcept(operand, conceptContext);
@@ -343,6 +345,12 @@ public class KimObservableVisitor {
         statement.getUpperConceptDefined(), KlabAsset.KnowledgeClass.CONCEPT, statement, context);
     visitConcept(statement.getDeclaredParent(), context);
     visitConcept(statement.getDeclaredInherent(), context);
+    for (var declaration : safe(statement.getObservationalContainments())) {
+      if (declaration != null) {
+        visitConcept(declaration.container(), context);
+        visitConcept(declaration.contained(), context);
+      }
+    }
     for (var concept : safe(statement.getQualitiesAffected())) visitConcept(concept, context);
     for (var concept : safe(statement.getObservablesCreated())) visitConcept(concept, context);
     for (var concept : safe(statement.getTraitsConferred())) visitConcept(concept, context);

@@ -24,6 +24,12 @@ public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities
   public void setWorldviewCommitment(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment value) { worldviewCommitment = value; }
   private boolean consistent;
   private long knowledgeRevision;
+  private String semanticSessionId;
+  public String getSemanticSessionId() { return semanticSessionId; }
+  public void setSemanticSessionId(String value) { semanticSessionId=value; }
+  private String semanticContentFingerprint;
+  public String getSemanticContentFingerprint() { return semanticContentFingerprint; }
+  public void setSemanticContentFingerprint(String value) { semanticContentFingerprint = value; }
 
   @Override
   public KlabService.Type getType() {

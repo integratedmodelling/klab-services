@@ -37,6 +37,12 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
   @Override
   protected Data.Builder getData(
       Storage.Scanner scanner, Scheduler.Event event, ContextScope scope) {
+    return getData(scanner, event, scope, null);
+  }
+
+  @Override
+  protected Data.Builder getData(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope,
+      org.integratedmodelling.klab.api.geometry.Geometry invocationGeometry) {
 
     var name =
         observation.getObservable().getStatedName() == null
@@ -56,7 +62,8 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
     //  storage and anything the adapter may want.
     adapter.encode(
         resource,
-        scanner == null ? observation.getGeometry() : scanner.shard().getGeometry(),
+        scanner == null ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
+            : scanner.shard().getGeometry(),
         event,
         builder,
         scanner,

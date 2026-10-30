@@ -25,18 +25,18 @@ public interface Templates {
   String observationStrategiesTemplate = "strategies __NAMESPACE__\n" + "   version 1.0;\n\n";
 
   static String getTemplateContent(ProjectStorage.ResourceType resourceType, String resourceId) {
-      return switch (resourceType) {
-          case ONTOLOGY -> ontologyTemplate.replace("__NAMESPACE__", resourceId);
-          case MODEL_NAMESPACE -> namespaceTemplate.replace("__NAMESPACE__", resourceId);
-          case STRATEGY -> observationStrategiesTemplate.replace("__NAMESPACE__", resourceId);
-          case BEHAVIOR -> behaviorTemplate.replace("__NAMESPACE__", resourceId);
-          case APPLICATION -> applicationTemplate.replace("__NAMESPACE__", resourceId);
-          case SCRIPT -> scriptTemplate.replace("__NAMESPACE__", resourceId);
-          case TESTCASE -> testcaseTemplate.replace("__NAMESPACE__", resourceId);
-          default ->
-                  throw new KlabIllegalArgumentException(
-                          "Unsupported resource type in template engine: " + resourceType);
-      };
+    return switch (resourceType) {
+      case ONTOLOGY -> ontologyTemplate.replace("__NAMESPACE__", resourceId);
+      case MODEL_NAMESPACE -> namespaceTemplate.replace("__NAMESPACE__", resourceId);
+      case STRATEGY -> observationStrategiesTemplate.replace("__NAMESPACE__", resourceId);
+      case BEHAVIOR -> behaviorTemplate.replace("__NAMESPACE__", resourceId);
+      case APPLICATION -> applicationTemplate.replace("__NAMESPACE__", resourceId);
+      case SCRIPT -> scriptTemplate.replace("__NAMESPACE__", resourceId);
+      case TESTCASE -> testcaseTemplate.replace("__NAMESPACE__", resourceId);
+      default ->
+          throw new KlabIllegalArgumentException(
+              "Unsupported resource type in template engine: " + resourceType);
+    };
   }
 
   static void createDocument(ProjectStorage.ResourceType resourceType, String resourceId, File file)

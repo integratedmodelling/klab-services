@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.api.services.reasoner.objects;
 
 /** Canonical authority terminals for the observable grammar (AUTHORITY_CONCEPT and EXPR). */
 public final class AuthorityIdentitySyntax {
+  /** Bounded complex definitions (including typed pattern envelopes), before bracket escaping. */
+  public static final int MAX_CODE_LENGTH = 131072;
   private AuthorityIdentitySyntax() {}
   public static void validateAuthority(String authority) {
     if (authority == null || !authority.matches("[A-Z][A-Z0-9_]+(\\.[A-Z][A-Z0-9_]+)*"))
@@ -9,9 +11,9 @@ public final class AuthorityIdentitySyntax {
   }
   public static String encode(String authority, String code) {
     validateAuthority(authority);
-    if (code == null || code.isBlank() || code.length() > 2048
+    if (code == null || code.isBlank() || code.length() > MAX_CODE_LENGTH
         || code.chars().anyMatch(Character::isISOControl))
-      throw new IllegalArgumentException("A nonblank authority code of at most 2048 characters is required");
+      throw new IllegalArgumentException("A nonblank authority code of at most " + MAX_CODE_LENGTH + " characters is required");
     if (code.matches("[a-z][a-z0-9_]*|[A-Z][A-Z0-9_]+|[0-9]+")) return authority + ":" + code;
     return authority + ":[" + code.replace("\\", "\\\\").replace("]", "\\]") + "]";
   }

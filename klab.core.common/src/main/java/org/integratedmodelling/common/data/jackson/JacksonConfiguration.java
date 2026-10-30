@@ -69,6 +69,60 @@ public class JacksonConfiguration {
 
   public static final String CLASS_FIELD = "@CLASS";
 
+  /** A distinct diagnostic type, retained even in logs that redact exception messages. */
+  public static class LocalViewSerializationException extends JsonMappingException {
+    LocalViewSerializationException(JsonGenerator generator, Object value) {
+      super(generator, "Cannot serialize an in-process view or dynamic proxy implementing "
+          + Arrays.stream(value.getClass().getInterfaces()).map(Class::getName).sorted().toList()
+          + ". Create an explicit transport representation before crossing a service boundary"
+          + " (Observation.forTransport or Geometry.forTransport for observation/geometry views).");
+    }
+  }
+
+  public static boolean isLocalViewSerializationFailure(Throwable failure) {
+    var seen = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
+    for (; failure != null && seen.add(failure); failure = failure.getCause()) {
+      if (failure instanceof LocalViewSerializationException) return true;
+    }
+    return false;
+  }
+
+  private static void requireTransportValue(Object value, JsonGenerator generator)
+      throws LocalViewSerializationException {
+    if (value instanceof org.integratedmodelling.klab.api.data.LocalView
+        || java.lang.reflect.Proxy.isProxyClass(value.getClass()))
+      throw new LocalViewSerializationException(generator, value);
+  }
+
+  /** Keep the guard when a caller explicitly selects a plain API-interface bean serializer. */
+  private static class InterfaceBoundarySerializer
+      extends com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer {
+    InterfaceBoundarySerializer(JavaType type, JsonSerializer<?> delegate) {
+      super(new com.fasterxml.jackson.databind.util.StdConverter<Object, Object>() {
+        @Override public Object convert(Object value) { return value; }
+      }, type, delegate);
+    }
+
+    @Override protected com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer withDelegate(
+        com.fasterxml.jackson.databind.util.Converter<Object, ?> converter,
+        JavaType type, JsonSerializer<?> delegate) {
+      return new InterfaceBoundarySerializer(type, delegate);
+    }
+
+    @Override public void serialize(Object value, JsonGenerator generator, SerializerProvider provider)
+        throws IOException {
+      requireTransportValue(value, generator);
+      super.serialize(value, generator, provider);
+    }
+
+    @Override public void serializeWithType(Object value, JsonGenerator generator,
+        SerializerProvider provider, com.fasterxml.jackson.databind.jsontype.TypeSerializer typeSerializer)
+        throws IOException {
+      requireTransportValue(value, generator);
+      super.serializeWithType(value, generator, provider, typeSerializer);
+    }
+  }
+
   private static Class<?> workflowImplementation(Class<?> type) {
     if (type == Workflow.class) return WorkflowImpl.class;
     if (type == Workflow.AttachmentRule.class) return WorkflowImpl.AttachmentRuleImpl.class;
@@ -114,6 +168,7 @@ public class JacksonConfiguration {
     @Override
     public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
+      requireTransportValue(value, gen);
       if (value instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl binding
           && binding.storageSource() != null) {
         // Snapshot the current durable identity, never the copied temporary fields or live source link.
@@ -163,18 +218,37 @@ public class JacksonConfiguration {
 
   static class PolymorphicDeserializer<T> extends JsonDeserializer<T> {
 
+    /** Class identity includes its loader; ClassValue does not retain unloaded plugin classes. */
+    private static final ClassValue<Map<String, FieldMetadata>> FIELDS = new ClassValue<>() {
+      @Override protected Map<String, FieldMetadata> computeValue(Class<?> type) {
+        var fields = new HashMap<String, FieldMetadata>();
+        for (var current = type; current != null; current = current.getSuperclass()) {
+          for (var field : current.getDeclaredFields()) {
+            // Match getDeclaredField followed by superclass lookup: the nearest field wins.
+            fields.putIfAbsent(field.getName(), new FieldMetadata(field, field.getType()));
+          }
+        }
+        return Map.copyOf(fields);
+      }
+    };
+
+    record FieldMetadata(Field field, Class<?> rawType) {
+      java.lang.reflect.Type genericType() {
+        // The cached Field retains its lazily parsed generic signature. Do not resolve unused
+        // field signatures or bind a TypeVariable outside its containing request's JavaType.
+        return field.getGenericType();
+      }
+    }
+
     private final Class<?> interfaceClass;
 
     public PolymorphicDeserializer(Class<?> interfaceClass) {
       this.interfaceClass = interfaceClass;
     }
 
-    Field findField(Class<?> cls, String name) {
-      try {
-        return cls.getDeclaredField(name);
-      } catch (Throwable t) {
-        return cls != Object.class ? findField(cls.getSuperclass(), name) : null;
-      }
+    FieldMetadata findField(Class<?> cls, String name) {
+      // Unknown input keys cannot grow the cache: only declared field names are indexed.
+      return FIELDS.get(cls).get(name);
     }
 
     @SuppressWarnings("unchecked")
@@ -182,9 +256,13 @@ public class JacksonConfiguration {
     public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       JsonNode node = p.getCodec().readTree(p);
       try {
-        return (T) deserialize(node, p, (Field) null);
+        if(interfaceClass==Semantics.class && node.isObject()) {
+          var concrete=getObjectClass(node);
+          if(concrete==null || !Semantics.class.isAssignableFrom(concrete))
+            throw new IllegalArgumentException("Semantic transport requires a registered semantic implementation");
+        }
+        return (T) deserialize(node, p, (FieldMetadata) null);
       } catch (Exception e) {
-        e.printStackTrace();
         throw new KlabIOException(e);
       }
     }
@@ -240,17 +318,17 @@ public class JacksonConfiguration {
       return parser.getCodec().treeToValue(node, type);
     }
 
-    private Object deserialize(JsonNode node, JsonParser parser, Field field) throws Exception {
+    private Object deserialize(JsonNode node, JsonParser parser, FieldMetadata field) throws Exception {
 
-      if (field != null && field.getGenericType() instanceof ParameterizedType) {
-        return deserializeTypedContainer(node, parser, field.getGenericType());
+      if (field != null && field.genericType() instanceof ParameterizedType) {
+        return deserializeTypedContainer(node, parser, field.genericType());
       }
       if (node.isObject()) {
         return deserializeObject(node, parser, getObjectClass(node));
       } else if (node.isArray()) {
         return deserializeArray(node, parser, field);
       }
-      Class<?> targetType = field == null ? Object.class : field.getType();
+      Class<?> targetType = field == null ? Object.class : field.rawType();
       return parser.getCodec().treeToValue(node, targetType);
     }
 
@@ -299,9 +377,9 @@ public class JacksonConfiguration {
       return deserialize(node, parser, type instanceof Class<?> cls ? cls : Object.class);
     }
 
-    private Class<?> getGenericType(Field field, int n) {
+    private Class<?> getGenericType(FieldMetadata field, int n) {
       Class<?> ret = Object.class;
-      if (field != null && field.getGenericType() instanceof ParameterizedType type) {
+      if (field != null && field.genericType() instanceof ParameterizedType type) {
         try {
           ret = Class.forName(type.getActualTypeArguments()[n].getTypeName());
         } catch (ClassNotFoundException e) {
@@ -311,9 +389,9 @@ public class JacksonConfiguration {
       return ret;
     }
 
-    private Object deserializeArray(JsonNode node, JsonParser parser, Field field)
+    private Object deserializeArray(JsonNode node, JsonParser parser, FieldMetadata field)
         throws Exception {
-      Collection<Object> ret = field == null ? new ArrayList<>() : newCollection(field.getType());
+      Collection<Object> ret = field == null ? new ArrayList<>() : newCollection(field.rawType());
       for (var elementNode : node) {
         ret.add(deserialize(elementNode, parser, getGenericType(field, 0)));
       }
@@ -350,21 +428,21 @@ public class JacksonConfiguration {
           // FIXME must pass the generic type for the field
           map.put(field, deserialize(node.get(field), parser, getGenericType(declaredField, 1)));
         } else if (declaredField != null) {
-          declaredField.setAccessible(true);
+          declaredField.field().setAccessible(true);
           Object value;
           if (declaredType != null
-              && declaredField.getGenericType() instanceof java.lang.reflect.TypeVariable<?>) {
+              && declaredField.genericType() instanceof java.lang.reflect.TypeVariable<?>) {
             // Pair<T1,T2> and other generic beans must retain the containing field's bindings.
             var memberType = ((ObjectMapper) parser.getCodec()).getTypeFactory()
-                .resolveMemberType(declaredField.getGenericType(), declaredType.getBindings());
+                .resolveMemberType(declaredField.genericType(), declaredType.getBindings());
             value = deserialize(node.get(field), parser, memberType.getRawClass());
           } else {
             value = deserialize(node.get(field), parser, declaredField);
           }
-          declaredField.set(
+          declaredField.field().set(
               ret,
               checkField(
-                  declaredField.getType(), value));
+                  declaredField.rawType(), value));
         } else {
           throw new KlabInternalErrorException(
               "Unexpected field name " + field + " in " + "deserialization of " + cls);
@@ -446,6 +524,14 @@ public class JacksonConfiguration {
     mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
 
     SimpleModule module = new SimpleModule();
+    module.setSerializerModifier(new com.fasterxml.jackson.databind.ser.BeanSerializerModifier() {
+      @Override public JsonSerializer<?> modifySerializer(SerializationConfig config,
+          BeanDescription bean, JsonSerializer<?> serializer) {
+        return bean.getBeanClass().isInterface()
+            && serializer instanceof com.fasterxml.jackson.databind.ser.std.BeanSerializerBase
+            ? new InterfaceBoundarySerializer(bean.getType(), serializer) : serializer;
+      }
+    });
     for (var cls :
         new Class<?>[] {
           Group.class,
@@ -467,6 +553,7 @@ public class JacksonConfiguration {
           Worldview.class,
           Workspace.class,
           Concept.class,
+          Semantics.class,
           Observable.class,
           Resource.class,
           KimOntology.class,
@@ -581,6 +668,8 @@ public class JacksonConfiguration {
           Model.class,
           ServiceCall.class,
           Observation.class,
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection.class,
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection.Entry.class,
           Histogram.class,
           Histogram.Bin.class,
           NumericRange.class,
@@ -628,6 +717,15 @@ public class JacksonConfiguration {
       module.addDeserializer(cls, new PolymorphicDeserializer<>(cls));
     }
 
+    // Also reject local views of interfaces that do not use our reflective serializer.
+    module.addSerializer(org.integratedmodelling.klab.api.data.LocalView.class,
+        new JsonSerializer<org.integratedmodelling.klab.api.data.LocalView>() {
+          @Override public void serialize(org.integratedmodelling.klab.api.data.LocalView value,
+              JsonGenerator generator, SerializerProvider serializers) throws IOException {
+            throw new LocalViewSerializationException(generator, value);
+          }
+        });
+
     // Material is a concrete binary transport contract. Never instantiate a class supplied by
     // its discriminator, and run canonical-path validation for both tagged and plain JSON.
     module.addDeserializer(org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class,
@@ -639,6 +737,15 @@ public class JacksonConfiguration {
                 node.path("projectName").asText(null), node.path("path").asText(null),
                 node.hasNonNull("content") ? node.get("content").binaryValue() : null);
             material.setServiceId(node.path("serviceId").asText(null));
+            material.setDirectory(node.path("directory").asBoolean(false));
+            material.setSize(node.path("size").asLong(0));
+            if (node.hasNonNull("entries")) {
+              if (!node.get("entries").isArray() || node.get("entries").size() > 10000)
+                throw new IOException("Invalid material directory listing");
+              for (var entry : node.get("entries"))
+                material.getEntries().add(parser.getCodec().treeToValue(entry,
+                    org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class));
+            }
             if (node.hasNonNull("metadata")) {
               var metadata = node.get("metadata");
               material.setMetadata(metadata.has(CLASS_FIELD)

@@ -366,6 +366,17 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
+  public java.util.List<org.integratedmodelling.klab.api.authentication.CredentialSchema> getCredentialSchemas(Scope scope) {
+    return primary().getCredentialSchemas(scope);
+  }
+
+  @Override
+  public boolean removeCredentials(String id, Scope scope) {
+    return primary().removeCredentials(id, scope);
+  }
+
+
+  @Override
   public <T extends Serializable> T retrieveAsset(
       String urn, Scheduler.Event locator, Class<T> assetClass, Scope scope) {
     return first(service -> service.retrieveAsset(urn, locator, assetClass, scope));
@@ -485,6 +496,13 @@ public class ResourcesMerger implements ResourcesService {
       String projectName, RepositoryState.Operation operation, String... arguments) {
     return primary().manageRepository(projectName, operation, arguments);
   }
+
+  @Override
+  public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
+      UserScope scope, String credentialId, String... arguments) {
+    return primary().manageRepository(projectName, operation, scope, credentialId, arguments);
+  }
+
 
   @Override
   public CompletableFuture<Resource> publishObservation(

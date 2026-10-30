@@ -42,8 +42,12 @@ class StorageMediationBaselineTest {
       assertEquals(3.75f, view.get());
       assertFalse(view.hasNext());
       assertSame(shard, view.shard());
-      // Current iterator does not enforce exhaustion; stage 1 must decide the contract.
-      assertEquals(3, view.nextLong());
+      assertEquals(3, view.position());
+      assertEquals(3, nativeScanner.position());
+      assertThrows(java.util.NoSuchElementException.class, view::nextLong);
+      assertThrows(java.util.NoSuchElementException.class, nativeScanner::nextLong);
+      assertEquals(3, view.position(), "Exhausted reads cannot advance the shared cursor");
+      assertEquals(3, nativeScanner.position());
       assertEquals(2.5, buffer.doubleValue(1));
     } finally {
       buffer.close();

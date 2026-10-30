@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "vue-tsc --noEmit",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc --noEmit && vite build && vite build --config vite.embedded.config.ts",
     "test:flowchart": "playwright test",
-    "test:auth": "playwright test --config playwright.auth.config.ts"
+    "test:auth": "playwright test --config playwright.auth.config.ts",
+    "test:application": "playwright test --config playwright.application.config.ts"
   },
   "dependencies": {
     "@quasar/extras": "2.0.4",

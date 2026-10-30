@@ -64,23 +64,14 @@ public enum Authentication {
    */
   public static final String FEDERATION_MESSAGING_BROKER = "federation.broker";
 
-  private final AtomicReference<Collection<String>> sshHosts = new AtomicReference<>();
   private final AtomicReference<EngineAuthenticationResponse> lastEngineAuthenticationResponse =
       new AtomicReference<>();
   private final Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
 
-  /** any external credentials taken from the .klab/credentials.json file if any. */
-  private Utils.FileCatalog<ExternalAuthenticationCredentials> externalCredentials;
+  /** Legacy local-client credentials are isolated by principal; services own separate vaults. */
+  private final Map<String, CredentialVault> credentialVaults = new java.util.concurrent.ConcurrentHashMap<>();
 
-  Authentication() {
-    this.externalCredentials =
-        new Utils.FileCatalog<>(
-            Configuration.INSTANCE.getFileWithTemplate("credentials.json", "{}"),
-            ExternalAuthenticationCredentials.class,
-            ExternalAuthenticationCredentials.class);
-
-    this.sshHosts.set(Utils.SSH.readHostFile());
-  }
+  Authentication() {}
 
   public EngineAuthenticationResponse getLastEngineAuthenticationResponse() {
     return lastEngineAuthenticationResponse.get();
@@ -395,75 +386,28 @@ public enum Authentication {
     return Pair.of(ret, services);
   }
 
-  Utils.FileCatalog<ExternalAuthenticationCredentials> getExternalCredentialsCatalog(Scope scope) {
-    // TODO use separate catalog for services and user scopes
-    return externalCredentials;
+  private CredentialVault localVault(Scope scope) {
+    if (!(scope instanceof UserScope user) || user.getUser() == null
+        || !user.getUser().isAuthenticated() || user.getUser().isAnonymous())
+      throw new SecurityException("Local credentials require an authenticated user");
+    String principal = user.getUser().getUsername();
+    String key = java.util.UUID.nameUUIDFromBytes(principal.getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
+    return credentialVaults.computeIfAbsent(key, ignored -> {
+      var directory = Configuration.INSTANCE.getFileWithTemplate("credentials-client/" + key + "/.keep", "").toPath().getParent();
+      return new CredentialVault(directory, directory.resolve("credentials.key"),
+          candidate -> candidate instanceof UserScope caller && caller.getUser() != null
+              && caller.getUser().isAuthenticated() && !caller.getUser().isAnonymous()
+              && principal.equals(caller.getUser().getUsername()));
+    });
   }
 
   public ExternalAuthenticationCredentials.CredentialInfo addExternalCredentials(
       String host, ExternalAuthenticationCredentials credentials, Scope scope) {
-    var catalog = getExternalCredentialsCatalog(scope);
-    // TODO improve key
-    catalog.put(extractHost(host), credentials);
-    catalog.write();
-    return credentials.info(host);
+    return localVault(scope).save(host, credentials, scope);
   }
 
   public ExternalAuthenticationCredentials getCredentials(String hostUrl, Scope scope) {
-
-    var catalog = getExternalCredentialsCatalog(scope);
-    var host = extractHost(hostUrl);
-
-    var candidateKeys = new ArrayList<String>();
-    for (var hostKey : catalog.keySet()) {
-      if (hostKey.startsWith(host) && hostUrl.contains(hostKey)) {
-        candidateKeys.add(hostKey);
-      }
-    }
-
-    if (!candidateKeys.isEmpty()) {
-      // sort longest first
-      candidateKeys.sort((s1, s2) -> Integer.compare(s2.length(), s1.length()));
-      return catalog.get(candidateKeys.getFirst());
-    }
-
-    // FIXME match hostname, then compare all keys that start with hostname, choosing the longest
-    // that
-    //  is contained in the URL
-    var ret = catalog.get(host);
-
-    if (ret == null && sshHosts.get().contains(host)) {
-      ret = new ExternalAuthenticationCredentials();
-      ret.setScheme("ssh");
-      // save with no passkey, if it's needed in an interactive app we'll ask and save it.
-      ret.setCredentials(List.of(null));
-      externalCredentials.put(hostUrl, ret);
-      externalCredentials.write();
-    }
-
-    return ret;
-  }
-
-  private String extractHost(String hostUrl) {
-    if (hostUrl.contains(":/")) {
-      /**
-       * Only use the host:port part. If there are no credentials for this host but the host is
-       * known to the ssh authentication, insert credentials from there.
-       */
-      try {
-        var url = new URI(hostUrl);
-        var host = url.getHost();
-        if (host != null) {
-          if (url.getPort() > 0) {
-            host += ":" + url.getPort();
-          }
-          hostUrl = host;
-        }
-      } catch (URISyntaxException e) {
-        // leave hostUrl as is
-      }
-    }
-    return hostUrl;
+    return localVault(scope).resolve(null, hostUrl, scope);
   }
 
   /**
@@ -482,17 +426,17 @@ public enum Authentication {
       @Override
       public Credentials getCredentials(AuthScope arg0) {
 
-        String auth = arg0.getHost() + (arg0.getPort() == 80 ? "" : (":" + arg0.getPort()));
+        String auth = arg0.getHost() + (arg0.getPort() <= 0 || arg0.getPort() == 80 ? "" : (":" + arg0.getPort()));
 
         ExternalAuthenticationCredentials credentials =
-            getExternalCredentialsCatalog(scope).get(auth);
+            Authentication.this.getCredentials("https://" + auth, scope);
 
-        if (credentials == null) {
-          throw new KlabAuthorizationException(auth);
+        if (credentials == null || !ExternalAuthenticationCredentials.BASIC.equals(credentials.getScheme())) {
+          throw new KlabAuthorizationException("No compatible HTTP credentials available");
         }
 
         return new UsernamePasswordCredentials(
-            credentials.getCredentials().get(0), credentials.getCredentials().get(1));
+            credentials.getParameters().get("username"), credentials.getParameters().get("password"));
       }
 
       @Override
@@ -504,14 +448,7 @@ public enum Authentication {
   }
 
   public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
-    var ret = new ArrayList<ExternalAuthenticationCredentials.CredentialInfo>();
-    for (var host : getExternalCredentialsCatalog(scope).keySet()) {
-      var credentials = getExternalCredentialsCatalog(scope).get(host);
-      if (credentials.getPrivileges().checkAuthorization(scope)) {
-        ret.add(credentials.info(host));
-      }
-    }
-    return ret;
+    return localVault(scope).list(scope);
   }
 
   /**
@@ -536,8 +473,13 @@ public enum Authentication {
     return ret;
   }
 
+  public boolean removeCredentials(String id, Scope scope) {
+    return localVault(scope).delete(id, scope);
+  }
+
+  /** @deprecated Provide the authenticated local-client scope. */
+  @Deprecated
   public boolean removeCredentials(String id) {
-    // TODO
-    return false;
+    throw new SecurityException("An authenticated scope is required");
   }
 }

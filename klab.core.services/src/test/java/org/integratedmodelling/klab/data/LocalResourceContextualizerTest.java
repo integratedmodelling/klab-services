@@ -32,4 +32,22 @@ class LocalResourceContextualizerTest {
         same(scanner), same(observation), same(observable), any(), any(), same(scope));
     verifyNoInteractions(scope);
   }
+  @Test void remoteRequestUsesInvocationSupportWithoutOutputScannerAndPreservesShardPrecedence() {
+    var resource = mock(Resource.class); when(resource.getUrn()).thenReturn("test:remote:resource:data");
+    var observation = mock(Observation.class); when(observation.getObservable()).thenReturn(mock(Observable.class));
+    when(observation.getGeometry()).thenReturn(Geometry.UNIVERSAL);
+    var scope = mock(ContextScope.class); var service = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var data = mock(org.integratedmodelling.klab.api.data.Data.class);
+    when(service.contextualize(eq(resource), same(observation), any(Geometry.class), isNull(), isNull(), same(scope)))
+        .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(data));
+    var contextualizer = new RemoteResourceContextualizer(service, resource, observation, Map.of());
+    var fragment = Geometry.create("T0(1){ttype=PHYSICAL,tstart=1000,tend=5000}");
+    contextualizer.getData(null, null, scope, fragment);
+    verify(service).contextualize(resource, observation, fragment, null, null, scope);
+    var scanner = mock(Storage.Scanner.class, RETURNS_DEEP_STUBS);
+    var shard = Geometry.create("T0(1){ttype=PHYSICAL,tstart=2000,tend=3000}");
+    when(scanner.shard().getGeometry()).thenReturn(shard);
+    contextualizer.getData(scanner, null, scope, fragment);
+    verify(service).contextualize(resource, observation, shard, null, null, scope);
+  }
 }

@@ -143,6 +143,10 @@ public interface ResourcesService extends KlabService {
      * of the asset and storing the previous. Must have update permissions.
      */
     UPDATE,
+    /** Save an existing ontology/namespace without publishing dependent semantic changes. */
+    UPDATE_DEFERRED,
+    /** Validate the caller's deferred documents in the submitted workspace. */
+    VALIDATE,
     /**
      * Merge the contents of the submitted asset into the existing one, creating a new version of
      * the asset and storing the previous. Must have update permissions and the adapter must support
@@ -166,6 +170,11 @@ public interface ResourcesService extends KlabService {
      */
     CREATE_OR_UPDATE
   }
+
+  /** True on a saved document whose dependency/semantic validation has been deferred. */
+  String VALIDATION_DEFERRED_METADATA = "klab.validation.deferred";
+  /** Resources-owned publication receipt, attached to detached saved namespace responses only. */
+  String NAMESPACE_ADMISSION_METADATA = "klab.validation.namespaceAdmission";
 
   /** Metadata key used to nominate an editor when a non-editor publishes a resource. */
   String INTENDED_EDITOR_METADATA = "klab.publication.intendedEditor";
@@ -386,6 +395,13 @@ public interface ResourcesService extends KlabService {
    */
   List<ResourceSet> manageRepository(
       String projectName, RepositoryState.Operation operation, String... arguments);
+
+  /** Execute using the caller's credential grants and an optional explicit credential set ID. */
+  default List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
+      UserScope scope, String credentialId, String... arguments) {
+    throw new UnsupportedOperationException("Scoped repository operations are unavailable");
+  }
+
 
   /**
    * Publish an observation from the passed context scope into a persistent resource. The resource

@@ -31,7 +31,26 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
  * bridging to the ontology manager. Efficient if caching is implemented in both services and
  * clients.
  */
-public class SemanticsBuilder implements Observable.Builder {
+public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
+  private CandidatePublicationCoordinator<Worldview, SemanticEnvironment>.Lease readLease;
+  private SemanticEnvironment readEnvironment;
+  private volatile boolean completed;
+  private static final java.lang.ref.Cleaner LEASE_CLEANER = java.lang.ref.Cleaner.create();
+  private java.lang.ref.Cleaner.Cleanable abandonedLease;
+
+  private static SemanticsBuilder pin(ReasonerService root,
+      java.util.function.Function<ReasonerService, SemanticsBuilder> create) {
+    var lease = root.candidateRuntime().lease();
+    try {
+      var environment = lease.state();
+      synchronized (environment) {
+        var builder = create.apply(environment.actor());
+        builder.readLease = lease; builder.readEnvironment = environment;
+        builder.abandonedLease = LEASE_CLEANER.register(builder, lease::close);
+        return builder;
+      }
+    } catch (RuntimeException | Error failure) { lease.close(); throw failure; }
+  }
 
   private KimConceptImpl syntax;
   private KimConceptImpl observerSyntax;
@@ -43,10 +62,35 @@ public class SemanticsBuilder implements Observable.Builder {
   private String statedName;
   private boolean optional;
   private boolean generic;
+  private Object defaultValue;
+  private Object value;
+  private boolean projectedSubjective;
+
+  public SemanticsBuilder withInlineValue(Object value) {
+    this.value = value;
+    return this;
+  }
+
+  private boolean subjective(Object value) {
+    return org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(value, leaf -> {
+      var resolved = leaf.getName() == null ? null : reasoner.resolveConcept(leaf.getName());
+      return resolved == null
+          ? org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.declarationTypes(leaf)
+          : resolved.getType();
+    });
+  }
   private List<Annotation> annotations = new ArrayList<>();
   private Collection<Notification> notifications = new ArrayList<>();
 
+  private KimConcept conceptSyntax(String definition) {
+    var cache = reasoner.conceptSyntaxCache();
+    return cache == null ? resourcesService.declareConcept(definition)
+        : cache.get(resourcesService, definition);
+  }
+
   public static SemanticsBuilder create(KimConcept concept, ReasonerService reasoner, Scope scope) {
+    if (reasoner.candidateRuntime() != null && !reasoner.isSemanticExecution())
+      return pin(reasoner, actor -> create(concept, actor, actor.serviceScope()));
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
@@ -59,10 +103,13 @@ public class SemanticsBuilder implements Observable.Builder {
   }
 
   public static SemanticsBuilder create(Concept concept, ReasonerService reasoner, Scope scope) {
+    if (reasoner.candidateRuntime() != null && !reasoner.isSemanticExecution())
+      return pin(reasoner, actor -> create(concept, actor, actor.serviceScope()));
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
-    var syntax = scope.getService(ResourcesService.class).declareConcept(concept.getUrn());
+    var syntax = ret.conceptSyntax(concept.getUrn());
+    ret.projectedSubjective = concept.is(SemanticType.SUBJECTIVE) && !ret.subjective(syntax);
     if (syntax instanceof KimConceptImpl kimConcept) {
       // Isolate mutable builder state from Resources caches and other builders.
       ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
@@ -73,14 +120,22 @@ public class SemanticsBuilder implements Observable.Builder {
 
   public static SemanticsBuilder create(
       Observable observable, ReasonerService reasoner, Scope scope) {
+    if (reasoner.candidateRuntime() != null && !reasoner.isSemanticExecution())
+      return pin(reasoner, actor -> create(observable, actor, actor.serviceScope()));
     var ret = new SemanticsBuilder();
     ret.reasoner = reasoner;
     ret.resourcesService = scope.getService(ResourcesService.class);
     var syntax =
-        scope.getService(ResourcesService.class).declareConcept(observable.getSemantics().getUrn());
+        ret.conceptSyntax(observable.getSemantics().getUrn());
+    ret.defaultValue = observable.getDefaultValue();
+    ret.value = observable.getValue();
+    ret.projectedSubjective = observable.is(SemanticType.SUBJECTIVE)
+        && !ret.subjective(syntax) && !ret.subjective(ret.defaultValue) && !ret.subjective(ret.value);
     if (syntax instanceof KimConceptImpl kimConcept) {
       // Isolate mutable builder state from Resources caches and other builders.
       ret.syntax = (KimConceptImpl) kimConcept.removeComponents();
+      if(observable.getObserverSemantics()!=null)
+        ret.observerSyntax=(KimConceptImpl)ret.conceptSyntax(observable.getObserverSemantics().getUrn());
       ret.unit = observable.getUnit();
       ret.currency = observable.getCurrency();
       ret.statedName = observable.getStatedName();
@@ -95,42 +150,42 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder of(Concept inherent) {
-    syntax.setInherent(resourcesService.declareConcept(inherent.getUrn()));
+    syntax.setInherent(conceptSyntax(inherent.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder with(Concept compresent) {
-    syntax.setCompresent(resourcesService.declareConcept(compresent.getUrn()));
+    syntax.setCompresent(conceptSyntax(compresent.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withGoal(Concept goal) {
-    syntax.setGoal(resourcesService.declareConcept(goal.getUrn()));
+    syntax.setGoal(conceptSyntax(goal.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withCausant(Concept causant) {
-    syntax.setCausant(resourcesService.declareConcept(causant.getUrn()));
+    syntax.setCausant(conceptSyntax(causant.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withCaused(Concept caused) {
-    syntax.setCaused(resourcesService.declareConcept(caused.getUrn()));
+    syntax.setCaused(conceptSyntax(caused.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withRole(Concept role) {
-    syntax.getRoles().add(resourcesService.declareConcept(role.getUrn()));
+    syntax.getRoles().add(conceptSyntax(role.getUrn()));
     syntax.resetDefinition();
     return this;
   }
@@ -138,9 +193,20 @@ public class SemanticsBuilder implements Observable.Builder {
   @Override
   public Observable.Builder as(UnarySemanticOperator type, Concept... participants)
       throws KlabValidationException {
+    // Consume the whole expression, including its predicates, roles, modifiers and arity.
+    // Setting a modifier on that same node moves operand qualifiers onto the result:
+    // count of (each Terrestrial Region) would become Terrestrial (count of Region).
+    // The same wrapper also preserves nested operators, including rates in ratio operands.
+    var operand = syntax;
+    syntax = new KimConceptImpl();
+    syntax.setObservable(operand);
+    syntax.setArgumentType(EnumSet.copyOf(operand.getType()));
+    var transformed = type.getApplicableType(operand.getType());
+    syntax.setType(transformed == null ? EnumSet.copyOf(operand.getType()) : transformed);
+    if (transformed == null) syntax.setCollective(operand.isCollective());
     syntax.setSemanticModifier(type);
     if (participants != null && participants.length > 0) {
-      syntax.setComparisonConcept(resourcesService.declareConcept(participants[0].getUrn()));
+      syntax.setComparisonConcept(conceptSyntax(participants[0].getUrn()));
     }
     syntax.resetDefinition();
     return this;
@@ -154,7 +220,7 @@ public class SemanticsBuilder implements Observable.Builder {
   @Override
   public Observable.Builder withTrait(Collection<Concept> concepts) {
     syntax.addTraits(
-        concepts.stream().map(c -> resourcesService.declareConcept(c.getUrn())).toList(),
+        concepts.stream().map(c -> conceptSyntax(c.getUrn())).toList(),
         (added, original) -> {
           var baseTraitAdded = reasoner.lexicalRoot(reasoner.resolveConcept(added.getUrn()));
           var baseTraitOriginal = reasoner.lexicalRoot(reasoner.resolveConcept(original.getUrn()));
@@ -175,21 +241,21 @@ public class SemanticsBuilder implements Observable.Builder {
   @Override
   public Observable.Builder without(Concept... concepts) {
     for (var concept : concepts) {
-      syntax.remove(resourcesService.declareConcept(concept.getUrn()));
+      syntax.remove(conceptSyntax(concept.getUrn()));
     }
     return this;
   }
 
   @Override
   public Observable.Builder withCooccurrent(Concept cooccurrent) {
-    syntax.setCooccurrent(resourcesService.declareConcept(cooccurrent.getUrn()));
+    syntax.setCooccurrent(conceptSyntax(cooccurrent.getUrn()));
     syntax.resetDefinition();
     return this;
   }
 
   @Override
   public Observable.Builder withAdjacent(Concept adjacent) {
-    syntax.setAdjacent(resourcesService.declareConcept(adjacent.getUrn()));
+    syntax.setAdjacent(conceptSyntax(adjacent.getUrn()));
     syntax.resetDefinition();
     return this;
   }
@@ -244,8 +310,8 @@ public class SemanticsBuilder implements Observable.Builder {
         || !source.is(SemanticType.COUNTABLE)
         || !target.is(SemanticType.COUNTABLE))
       throw new KlabValidationException("linking requires two substantial endpoints");
-    syntax.setRelationshipSource(resourcesService.declareConcept(source.getUrn()));
-    syntax.setRelationshipTarget(resourcesService.declareConcept(target.getUrn()));
+    syntax.setRelationshipSource(conceptSyntax(source.getUrn()));
+    syntax.setRelationshipTarget(conceptSyntax(target.getUrn()));
     syntax.resetDefinition();
     return this;
   }
@@ -277,7 +343,7 @@ public class SemanticsBuilder implements Observable.Builder {
   @Override
   public Observable.Builder withTemporalInherent(Concept concept) {
     // TODO check
-    //    this.syntax.setCooccurrent(resourcesService.declareConcept(concept.getUrn()));
+    //    this.syntax.setCooccurrent(conceptSyntax(concept.getUrn()));
     return this;
   }
 
@@ -289,22 +355,20 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withUnit(String unit) {
-    this.unit = org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE
-        .getService(org.integratedmodelling.klab.api.services.UnitService.class)
-        .getUnit(Objects.requireNonNull(unit, "Unit definition"));
-    if (this.unit == null) {
-      throw new KlabValidationException("Invalid unit definition: " + unit);
-    }
-    return this;
+    if (unit == null) return withUnit((Unit) null);
+    if (unit.isBlank()) throw new KlabValidationException("Invalid empty unit definition");
+    return withUnit(org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE
+        .getService(org.integratedmodelling.klab.api.services.UnitService.class).getUnit(unit.trim()));
   }
 
   @Override
   public Observable.Builder withCurrency(String currency) {
-    return this;
+    return withCurrency(currency==null ? null : new org.integratedmodelling.klab.api.data.mediation.impl.CurrencyImpl(currency));
   }
 
   @Override
   public Observable.Builder withDefaultValue(Object defaultValue) {
+    this.defaultValue = defaultValue;
     return this;
   }
 
@@ -322,8 +386,8 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Observable.Builder withObserverSemantics(Concept observerSemantics) {
-    this.observerSyntax =
-        (KimConceptImpl) resourcesService.declareConcept(observerSemantics.getUrn());
+    this.observerSyntax = observerSemantics==null ? null :
+        (KimConceptImpl) conceptSyntax(observerSemantics.getUrn());
     return this;
   }
 
@@ -353,6 +417,10 @@ public class SemanticsBuilder implements Observable.Builder {
     if (kimConcept == null) {
       return null;
     }
+
+    String definition = kimConcept.getSemanticModifier() == UnarySemanticOperator.RATE
+            || kimConcept.getSemanticModifier() == UnarySemanticOperator.RATIO
+        ? reasoner.owl().canonicalOperatorDefinition(kimConcept) : kimConcept.getUrn();
 
     var ret =
         (ConceptImpl)
@@ -437,7 +505,7 @@ public class SemanticsBuilder implements Observable.Builder {
     if ((valueOperators.size() + modifiers.size() + traits.size()) + roles.size() > 0) {
 
       var parent = ret;
-      ret = (ConceptImpl) reasoner.owl().makeSubclass(ret, kimConcept.getUrn());
+      ret = (ConceptImpl) reasoner.owl().makeSubclass(ret, definition);
 
       Set<Concept> baseTraits = new HashSet<>();
       // add traits and the proper axioms for each (move restrictions to OWL, handle the base trait)
@@ -510,14 +578,16 @@ public class SemanticsBuilder implements Observable.Builder {
                 attributes,
                 ontology);
       }
-      if (!acceptedRoles.isEmpty()) {
+      // Distinct lexical families qualify the same subject conjunctively. One existential
+      // over a union would only require one of the roles. A compound authored role retains
+      // its own meaning as the filler of its single existential.
+      for (var role : acceptedRoles) {
         reasoner
             .owl()
             .restrictSome(
                 ret,
                 reasoner.owl().getProperty(CoreOntology.NS.HAS_ROLE_PROPERTY),
-                LogicalConnector.UNION,
-                acceptedRoles,
+                role,
                 ontology);
       }
 
@@ -526,6 +596,17 @@ public class SemanticsBuilder implements Observable.Builder {
 
         // validate with parent class first!
         var modifying = buildConcept(modifier.getSecond());
+        if (modifier.getFirst() == SemanticRole.INHERENT && parent.is(SemanticType.CONFIGURATION)) {
+          if (modifying == null || modifying.is(SemanticType.NOTHING))
+            throw new KlabValidationException("Unresolved configuration emergence ingredient");
+          if (!modifying.is(SemanticType.OBSERVABLE) && !modifying.is(SemanticType.CONFIGURATION)
+              && !modifying.is(SemanticType.EXTENT)
+              && java.util.Collections.disjoint(modifying.getType(),SemanticType.BASE_OBSERVABLE_TYPES))
+            throw new KlabValidationException("Configuration emergence requires an observable ingredient");
+          // Head-kind-dependent 'of' never creates native inherency for configurations.
+          reasoner.owl().restrictSome(ret, reasoner.owl().getProperty("odo:emergesFrom"), modifying, ontology);
+          continue;
+        }
         var inherited =
             switch (modifier.getFirst()) {
               case INHERENT -> reasoner.inherent(ret);
@@ -604,6 +685,10 @@ public class SemanticsBuilder implements Observable.Builder {
                         }),
                 modifying,
                 ontology);
+        if (modifier.getFirst() == SemanticRole.INHERENT)
+          org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport.markUniversalBearer(
+              reasoner.owl(), ret, reasoner.owl().getProperty(CoreOntology.NS.IS_INHERENT_TO_PROPERTY),
+              modifying, ontology);
       }
 
       // and value ops
@@ -622,13 +707,18 @@ public class SemanticsBuilder implements Observable.Builder {
     appliedPredicates.addAll(reasoner.traits(ret));
     appliedPredicates.addAll(reasoner.roles(ret));
     for (var predicate : appliedPredicates) {
-      if (!applicability.applicableTo(predicate, ret))
+      if (!applicability.applicableTo(predicate, ret)) {
+        // Semantic identities only: retain the actual failed combination even when exception
+        // messages are redacted by the transport/logging boundary.
+        org.integratedmodelling.common.logging.Logging.INSTANCE.warn(
+            "Predicate applicability rejected: predicate="+predicate.getUrn()+"; target="+ret.getUrn());
         throw new KlabValidationException(
             "Predicate "
                 + predicate.getUrn()
                 + " cannot qualify "
                 + ret.getUrn()
                 + ": outside its applies to domain");
+      }
     }
     if (SemanticType.isDependent(ret.getType())) {
       var inherent = reasoner.inherent(ret);
@@ -660,9 +750,10 @@ public class SemanticsBuilder implements Observable.Builder {
      * long as the OWL registry is rekeyed with them.
      */
     if (ret != resolvedConcept) {
-      reasoner.owl().setConceptUrn(ret, kimConcept.getUrn());
+      reasoner.owl().setConceptUrn(ret, definition);
     }
     ret.setDescriptionType(Contextualization.forSemantics(kimConcept));
+    reasoner.owl().monotoneRefinements().register(ret, kimConcept, reasoner);
 
     return ret;
   }
@@ -730,44 +821,93 @@ public class SemanticsBuilder implements Observable.Builder {
 
   @Override
   public Concept buildConcept() throws KlabValidationException {
+    if (completed) throw new IllegalStateException("Leased semantic builder is complete");
+    if (readEnvironment == null) return buildConceptUnleased();
+    synchronized (readEnvironment) {
+      if (completed) throw new IllegalStateException("Leased semantic builder is complete");
+      try { return (Concept)AcceptedSemanticRuntime.copy(buildConceptUnleased()); }
+      finally { close(); }
+    }
+  }
+
+  private Concept buildConceptUnleased() throws KlabValidationException {
 
     if (syntax.isPattern()) {
       throw new KlabIllegalStateException("Cannot build a concept pattern: " + syntax.getUrn());
     }
     var concept = buildConcept(syntax);
     if (concept == null) return null;
-    var result = ((ConceptImpl) concept).withExpressionStatus(syntax, reasoner::resolveConcept);
+    var result = new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(
+        reasoner.owl(), reasoner::identityEligible).project((ConceptImpl) concept, syntax);
+    if (result.is(SemanticType.QUALITY) && hasRescalingTrait(result)) {
+      result = new ConceptImpl(result);
+      result.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_IS_RESCALED, true);
+      result.getMetadata().remove("odo:unit");
+    }
+    if (projectedSubjective || subjective(defaultValue) || subjective(value)) {
+      result.getType().add(SemanticType.SUBJECTIVE);
+    }
     result.setAnnotations(AnnotationCollector.collect(syntax, reasoner::resolveConcept));
     return result;
   }
 
+  private boolean hasRescalingTrait(Concept concept) {
+    var pending = new ArrayDeque<Concept>(reasoner.traits(concept));
+    var visited = new HashSet<String>();
+    while (!pending.isEmpty()) {
+      var predicate = pending.removeFirst();
+      if (!visited.add(predicate.getUrn())) continue;
+      if (predicate.is(SemanticType.RESCALING)) return true;
+      pending.addAll(reasoner.parents(predicate));
+    }
+    return false;
+  }
+
   @Override
   public Observable buildObservable() {
+    if (completed) throw new IllegalStateException("Leased semantic builder is complete");
+    if (readEnvironment == null) return buildObservableUnleased();
+    synchronized (readEnvironment) {
+      if (completed) throw new IllegalStateException("Leased semantic builder is complete");
+      try { return (Observable)AcceptedSemanticRuntime.copy(buildObservableUnleased()); }
+      finally { close(); }
+    }
+  }
 
-    Concept obs = buildConcept();
+  private Observable buildObservableUnleased() {
+
+    Concept obs = buildConceptUnleased();
 
     var ret = ObservableImpl.promote(obs, reasoner.serviceScope());
 
-    if (currency != null) {
-      ret.setCurrency(currency);
-      ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
-    } else if (unit != null) {
-      ret.setUnit(unit);
-      if (!(unit instanceof org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl portable)) {
-        throw new KlabValidationException("Unit definition is not portable");
-      }
-      ret.setUrn(ret.getUrn() + " in " + portable.getDefinition());
+    if(observerSyntax!=null) {
+      // Delegate complete Agent expressions, including boolean operands, to canonical construction.
+      var observer=reasoner.declareConcept(observerSyntax);
+      if(observer==null || !observer.is(SemanticType.AGENT))
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException("OBSERVER_AGENT_REQUIRED: observed as requires a resolved Agent class");
+      ret.setObserverSemantics(observer);
+      ret.setUrn(ret.getUrn()+" observed as "+observer.getUrn());
+      ret.setReferenceName(ret.getReferenceName()+"_observed_as_"+observer.getReferenceName());
     }
 
-    if (observerSyntax != null) {
-      ret.setObserverSemantics(buildConcept(observerSyntax));
+    boolean rescaled = Boolean.TRUE.equals(obs.getMetadata().get(
+        org.integratedmodelling.klab.api.data.Metadata.IM_IS_RESCALED));
+    if (!rescaled && currency != null) {
+      ret.setCurrency(currency);
+      ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
+    } else if (!rescaled && unit != null) {
+      ret.setUnit(unit);
+      ret.setUrn(ret.getUrn() + " in " + ret.getUnit());
     }
+
 
     ret.setStatedName(this.statedName);
     ret.setOptional(this.optional);
     ret.getAnnotations().addAll(annotations);
     ret.setGeneric(this.generic);
     ret.setRange(this.numericRange);
+    ret.setDefaultValue(this.defaultValue);
+    ret.setValue(this.value);
     //
     //    if (unitStatement != null) {
     //      /* TODO CHECK */
@@ -798,5 +938,15 @@ public class SemanticsBuilder implements Observable.Builder {
     }
 
     return ret;
+  }
+  @Override public void close() {
+    if (readLease == null || completed) return;
+    synchronized (readEnvironment) {
+      if (!completed) {
+        completed = true; readLease.close();
+        if (abandonedLease != null) abandonedLease.clean();
+        readLease = null; reasoner = null; resourcesService = null;
+      }
+    }
   }
 }

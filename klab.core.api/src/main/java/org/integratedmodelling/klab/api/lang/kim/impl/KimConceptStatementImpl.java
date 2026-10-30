@@ -12,7 +12,19 @@ import java.util.List;
 import java.util.Set;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
+  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature declaredRelationshipNature = org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED;
+  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation declaredRelationshipOrientation = org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED;
+  @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature getDeclaredRelationshipNature() { return declaredRelationshipNature; }
+  public void setDeclaredRelationshipNature(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature value) { declaredRelationshipNature = java.util.Objects.requireNonNull(value); }
+  @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation getDeclaredRelationshipOrientation() { return declaredRelationshipOrientation; }
+  public void setDeclaredRelationshipOrientation(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation value) { declaredRelationshipOrientation = java.util.Objects.requireNonNull(value); }
   private boolean genericQuality;
+  private String deniedAlias;
+
+  @Override
+  public String getDeniedAlias() { return deniedAlias; }
+
+  public void setDeniedAlias(String deniedAlias) { this.deniedAlias = deniedAlias; }
 
   @Override
   public boolean isGenericQuality() {
@@ -93,6 +105,16 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   private List<KimConcept> observablesCreated = new ArrayList<>();
   private List<KimConcept> affectedBy = new ArrayList<>();
   private List<KimConcept> createdBy = new ArrayList<>();
+  private List<ObservationalContainment> observationalContainments = new ArrayList<>();
+
+  @Override
+  public List<ObservationalContainment> getObservationalContainments() {
+    return observationalContainments;
+  }
+
+  public void setObservationalContainments(List<ObservationalContainment> declarations) {
+    this.observationalContainments = declarations;
+  }
   private List<KimConcept> traitsConferred = new ArrayList<>();
   private List<KimConcept> traitsInherited = new ArrayList<>();
   private List<KimConcept> requiredExtents = new ArrayList<>();
@@ -111,6 +133,14 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   private String urn;
   //    private boolean macro;
   private List<PairImpl<KimConcept, DescriptionType>> observablesDescribed = new ArrayList<>();
+  private List<KimConcept> interpretedPhysicalDomains = new ArrayList<>();
+
+  @Override
+  public List<KimConcept> getInterpretedPhysicalDomains() { return interpretedPhysicalDomains; }
+
+  public void setInterpretedPhysicalDomains(List<KimConcept> domains) {
+    interpretedPhysicalDomains = domains == null ? new ArrayList<>() : new ArrayList<>(domains);
+  }
   private List<ApplicableConcept> subjectsLinked = new ArrayList<>();
   private List<ApplicableConcept> appliesTo = new ArrayList<>();
   private String docstring;

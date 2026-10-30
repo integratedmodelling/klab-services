@@ -24,9 +24,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Browser authentication through the hub's existing /api/v2/users/me?remote=true contract.
- * Trust comes from the configured hub's HTTPS response, never from a caller-supplied JWT payload.
- * The hub JWT stays server-side; the browser receives a bounded, short-lived opaque credential.
+ * Browser authentication through the hub's existing /api/v2/users/me?remote=true contract. Trust
+ * comes from the configured hub's HTTPS response, never from a caller-supplied JWT payload. The hub
+ * JWT stays server-side; the browser receives a bounded, short-lived opaque credential.
  */
 @Component
 public class HubWebAuthentication {
@@ -48,28 +48,41 @@ public class HubWebAuthentication {
 
   @Autowired
   public HubWebAuthentication(Environment environment) {
-    this(environment, Clock.systemUTC(), new ProfileClient() {
-      private final HttpClient http = HttpClient.newBuilder()
-          .connectTimeout(Duration.ofSeconds(10)).followRedirects(HttpClient.Redirect.NEVER).build();
-      private final ObjectMapper json = new ObjectMapper();
+    this(
+        environment,
+        Clock.systemUTC(),
+        new ProfileClient() {
+          private final HttpClient http =
+              HttpClient.newBuilder()
+                  .connectTimeout(Duration.ofSeconds(10))
+                  .followRedirects(HttpClient.Redirect.NEVER)
+                  .build();
+          private final ObjectMapper json = new ObjectMapper();
 
-      public JsonNode fetch(URI endpoint, String accessToken) throws Exception {
-        var response = http.send(HttpRequest.newBuilder(endpoint)
-            .timeout(Duration.ofSeconds(15)).header("Accept", "application/json")
-            .header("Authorization", "Bearer " + accessToken).GET().build(),
-            HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() == 204) {
-          throw failure(HttpStatus.FORBIDDEN, "Complete your k.LAB hub registration and agreement first.");
-        }
-        if (response.statusCode() == 401 || response.statusCode() == 403) {
-          throw failure(HttpStatus.UNAUTHORIZED, "The hub did not accept this sign-in.");
-        }
-        if (response.statusCode() != 200 && response.statusCode() != 202) {
-          throw failure(HttpStatus.BAD_GATEWAY, "The hub could not complete authentication.");
-        }
-        return json.readTree(response.body());
-      }
-    });
+          public JsonNode fetch(URI endpoint, String accessToken) throws Exception {
+            var response =
+                http.send(
+                    HttpRequest.newBuilder(endpoint)
+                        .timeout(Duration.ofSeconds(15))
+                        .header("Accept", "application/json")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .GET()
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 204) {
+              throw failure(
+                  HttpStatus.FORBIDDEN,
+                  "Complete your k.LAB hub registration and agreement first.");
+            }
+            if (response.statusCode() == 401 || response.statusCode() == 403) {
+              throw failure(HttpStatus.UNAUTHORIZED, "The hub did not accept this sign-in.");
+            }
+            if (response.statusCode() != 200 && response.statusCode() != 202) {
+              throw failure(HttpStatus.BAD_GATEWAY, "The hub could not complete authentication.");
+            }
+            return json.readTree(response.body());
+          }
+        });
   }
 
   HubWebAuthentication(Environment environment, Clock clock, ProfileClient client) {
@@ -85,11 +98,19 @@ public class HubWebAuthentication {
   }
 
   public record Login(String token, String username, long expiresAt) {}
-  private record Session(String issuer, String hubToken, UserIdentityImpl user,
-                         List<Role> roles, Instant expires, ServiceUserScope scope) {}
+
+  private record Session(
+      String issuer,
+      String hubToken,
+      UserIdentityImpl user,
+      List<Role> roles,
+      Instant expires,
+      ServiceUserScope scope) {}
 
   public Login exchange(String accessToken, ServiceInstance<?> instance) {
-    if (accessToken == null || accessToken.isBlank() || accessToken.length() > 32768
+    if (accessToken == null
+        || accessToken.isBlank()
+        || accessToken.length() > 32768
         || accessToken.startsWith(PREFIX)) {
       throw failure(HttpStatus.UNAUTHORIZED, "A Keycloak access token is required.");
     }
@@ -104,13 +125,21 @@ public class HubWebAuthentication {
       String hubToken = profile.path("jwtToken").asText("");
       // Only decode a token just obtained directly from the trusted hub. This is NOT a verifier
       // for tokens supplied by clients. The current hub contract has no public signing-key route.
-      var claims = new JwtConsumerBuilder().setSkipAllValidators().setDisableRequireSignature()
-          .setSkipSignatureVerification().build().processToClaims(hubToken);
+      var claims =
+          new JwtConsumerBuilder()
+              .setSkipAllValidators()
+              .setDisableRequireSignature()
+              .setSkipSignatureVerification()
+              .build()
+              .processToClaims(hubToken);
       String username = profile.path("name").asText("");
       Instant now = clock.instant();
-      if (username.isBlank() || !username.equals(claims.getSubject())
-          || !issuer.equals(claims.getIssuer()) || !claims.getAudience().contains("engine")
-          || claims.getExpirationTime() == null || claims.getIssuedAt() == null
+      if (username.isBlank()
+          || !username.equals(claims.getSubject())
+          || !issuer.equals(claims.getIssuer())
+          || !claims.getAudience().contains("engine")
+          || claims.getExpirationTime() == null
+          || claims.getIssuedAt() == null
           || claims.getIssuedAt().getValue() > now.plusSeconds(30).getEpochSecond()
           || claims.getExpirationTime().getValue() <= now.getEpochSecond()) {
         throw failure(HttpStatus.BAD_GATEWAY, "The hub returned an invalid k.LAB identity.");
@@ -123,10 +152,17 @@ public class HubWebAuthentication {
       if (!roles.contains(Role.ROLE_USER)) {
         throw failure(HttpStatus.FORBIDDEN, "Your hub account has no k.LAB user role.");
       }
-      var grant = ServicePermissionPolicy.resolve(instance.klabService().isLocal(),
-          instance.getServiceOwner(), hubIssuer, issuer, username, roles);
+      var grant =
+          ServicePermissionPolicy.resolve(
+              instance.klabService().isLocal(),
+              instance.getServiceOwner(),
+              hubIssuer,
+              issuer,
+              username,
+              roles);
       if (instance.klabService().isLocal() && !grant.localOwner()) {
-        throw failure(HttpStatus.FORBIDDEN,
+        throw failure(
+            HttpStatus.FORBIDDEN,
             "This local service requires its authenticated owner from the startup hub.");
       }
       var user = new UserIdentityImpl();
@@ -144,8 +180,10 @@ public class HubWebAuthentication {
           user.getGroups().add(group);
         }
       }
-      Instant expires = Instant.ofEpochSecond(Math.min(now.plusSeconds(300).getEpochSecond(),
-          claims.getExpirationTime().getValue()));
+      Instant expires =
+          Instant.ofEpochSecond(
+              Math.min(
+                  now.plusSeconds(300).getEpochSecond(), claims.getExpirationTime().getValue()));
       var scope = new ServiceUserScope(user, instance.klabService());
       scope.setId("webui:" + UUID.randomUUID());
       scope.getRoles().addAll(grant.roles());
@@ -157,9 +195,12 @@ public class HubWebAuthentication {
       synchronized (sessions) {
         removeExpired();
         if (sessions.size() >= MAX_SESSIONS) {
-          throw failure(HttpStatus.SERVICE_UNAVAILABLE, "Too many active browser sessions. Try again later.");
+          throw failure(
+              HttpStatus.SERVICE_UNAVAILABLE, "Too many active browser sessions. Try again later.");
         }
-        sessions.put(credential, new Session(issuer, hubToken, user, List.copyOf(grant.roles()), expires, scope));
+        sessions.put(
+            credential,
+            new Session(issuer, hubToken, user, List.copyOf(grant.roles()), expires, scope));
       }
       return new Login(credential, username, expires.toEpochMilli());
     } catch (ResponseStatusException e) {
@@ -176,13 +217,17 @@ public class HubWebAuthentication {
   static URI profileEndpoint(String url) {
     try {
       URI base = URI.create(url);
-      if (!"https".equalsIgnoreCase(base.getScheme()) || base.getHost() == null
-          || base.getUserInfo() != null || base.getQuery() != null || base.getFragment() != null) {
+      if (!"https".equalsIgnoreCase(base.getScheme())
+          || base.getHost() == null
+          || base.getUserInfo() != null
+          || base.getQuery() != null
+          || base.getFragment() != null) {
         throw new IllegalArgumentException();
       }
       return URI.create(url.replaceAll("/+$", "") + "/api/v2/users/me?remote=true");
     } catch (Exception e) {
-      throw failure(HttpStatus.SERVICE_UNAVAILABLE, "Configure a trusted HTTPS hub URL for browser sign-in.");
+      throw failure(
+          HttpStatus.SERVICE_UNAVAILABLE, "Configure a trusted HTTPS hub URL for browser sign-in.");
     }
   }
 
@@ -192,8 +237,14 @@ public class HubWebAuthentication {
       var session = sessions.get(credential);
       // These sessions own independent user scopes. They cannot select privileged IDE scopes.
       if (session == null || headers.get(ServicesAPI.SCOPE_HEADER) != null) return null;
-      var authorization = new EngineAuthorization(session.issuer(), session.user().getUsername(),
-          session.hubToken(), headers, session.user().getGroups(), session.roles());
+      var authorization =
+          new EngineAuthorization(
+              session.issuer(),
+              session.user().getUsername(),
+              session.hubToken(),
+              headers,
+              session.user().getGroups(),
+              session.roles());
       authorization.setAuthenticated(true);
       authorization.setEmailAddress(session.user().getEmailAddress());
       authorization.setExpiration(session.expires());
@@ -203,7 +254,9 @@ public class HubWebAuthentication {
   }
 
   public void revoke(String credential) {
-    synchronized (sessions) { sessions.remove(credential); }
+    synchronized (sessions) {
+      sessions.remove(credential);
+    }
   }
 
   private void removeExpired() {

@@ -57,7 +57,56 @@ therefore reject even a compact wire response. Budgets are not an RSS guarantee.
 No implicit recursive activity traversal occurs; exhausting the activity budget
 adds a diagnostic, not an invented complete graph. Pagination has no snapshot lease.
 
-Live persisted diagram retrieval and representation of the real fixture computation
-remain required acceptance gates, not established by the source-derived offline
-payloads. See [contracts](discover-compare-explain-contracts.md) and
+Live persisted diagram retrieval and representation were verified on 29 October
+against an actual 20-cell synthetic terrain result: its recorded resolution named
+the inspected model, and its contextualization chart named the terrain generator.
+This is not independent scientific accuracy or exhaustive lineage. A valid
+nonowner/private-context denial fixture remains required for permission acceptance.
+See [live evidence](results/execution-evidence-local-acceptance-20261029.json),
+[contracts](discover-compare-explain-contracts.md) and
 [the feature review](reviews/discover-compare-explain/execution-evidence.md).
+
+## Functional acceptance against existing Java
+
+Run the shipped suite against an explicitly prepared, authorized test state:
+
+```sh
+python tools/run_functional_acceptance.py --suite execution-evidence --state-dir /approved/test-state --report /approved/results/execution-evidence.xml
+```
+
+The existing `scientist.json` supplies the trusted service URLs and the owner's
+and second user's valid test credentials. Do not commit that private file or
+substitute an administrator credential, invented token or another user's account.
+
+Place this additional manifest in the same state directory:
+
+```json
+{
+  "shared_observation": "shared-observation.handle.json",
+  "private_observation": "private-observation.handle.json",
+  "units": "m",
+  "model_urn": "staging.vxii.basic.elevation-quantifier",
+  "contextualizer": "klab.generators.geospatial.terrain"
+}
+```
+
+Both handle files must refer to **already computed, still-live** 5x4 EPSG:3857
+results with 20 finite cells and the expected model/function represented in their
+recorded diagrams. They must belong to distinct contexts on the selected Runtime:
+
+- The owner can read the private result and its evidence.
+- The second authenticated user can read the shared result and its evidence, but
+  cannot read the private result/evidence.
+- The owner must still read the private result after the denial. A deleted fixture
+  or invalid credential is not accepted as a successful isolation check.
+
+The tests only restore/read those results. They never submit an observation,
+request a new plan, create a session/context or release the operator's work.
+Fixture preparation and eventual cleanup remain explicit operator operations.
+Missing state fails with a configuration error rather than skipping or claiming
+functional acceptance. Functional-test guardrail unit tests use mocks and are
+reported only as unit tests, never as live Java/permission evidence.
+
+**Current status:** the earlier live owner positive control passed, but this new
+two-user shipped suite has not run against an authorized retained fixture. It
+must pass before PR98 is approved/merged under the user's testing requirement.

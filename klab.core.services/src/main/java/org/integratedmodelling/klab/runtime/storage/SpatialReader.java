@@ -18,7 +18,11 @@ final class SpatialReader implements IndexedStorageReader {
   private final int[] touched;
   private final String[] definitions;
   private int touchedCount, winningCode;
-  public org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() { return readers.getFirst().key(); }
+
+  public org.integratedmodelling.klab.api.data.mediation.classification.DataKey key() {
+    return readers.getFirst().key();
+  }
+
   private int windowSource = -1, windowLength, selected = -1;
   private long windowStart, selectedOffset, last = -1;
   private double value;
@@ -32,14 +36,23 @@ final class SpatialReader implements IndexedStorageReader {
     this.type = readers.getFirst().type();
     this.blockValues = blockValues;
     window =
-        new double[type == Storage.Type.KEYED || plan.sampling == StorageScan.Sampling.NEAREST ? 0 : Math.min(4096, blockValues)];
+        new double
+            [type == Storage.Type.KEYED || plan.sampling == StorageScan.Sampling.NEAREST
+                ? 0
+                : Math.min(4096, blockValues)];
     int categories = plan.sampling == StorageScan.Sampling.MAJORITY ? key().size() - 1 : 0;
-    categoryWeights = new double[categories + 1]; touched = new int[categories]; definitions = new String[categories + 1];
-    for(int i=1;i<=categories;i++) definitions[i]=((org.integratedmodelling.klab.api.knowledge.Concept)key().lookup(i)).getUrn();
+    categoryWeights = new double[categories + 1];
+    touched = new int[categories];
+    definitions = new String[categories + 1];
+    for (int i = 1; i <= categories; i++)
+      definitions[i] =
+          ((org.integratedmodelling.klab.api.knowledge.Concept) key().lookup(i)).getUrn();
   }
 
   public Storage.Type type() {
-    return type == Storage.Type.KEYED || plan.sampling == StorageScan.Sampling.NEAREST ? type : Storage.Type.DOUBLE;
+    return type == Storage.Type.KEYED || plan.sampling == StorageScan.Sampling.NEAREST
+        ? type
+        : Storage.Type.DOUBLE;
   }
 
   public long size() {
@@ -90,9 +103,11 @@ final class SpatialReader implements IndexedStorageReader {
     value = Double.NaN;
     if (plan.conservative()) aggregate();
     else {
-      if (plan.targetLattice.reference.world().length==4) {
-        plan.world(point[0],point[1],lower); plan.world(point[0]+1,point[1]+1,upper);
-        lower[0]=(lower[0]+upper[0])/2; lower[1]=(lower[1]+upper[1])/2;
+      if (plan.targetLattice.reference.world().length == 4) {
+        plan.world(point[0], point[1], lower);
+        plan.world(point[0] + 1, point[1] + 1, upper);
+        lower[0] = (lower[0] + upper[0]) / 2;
+        lower[1] = (lower[1] + upper[1]) / 2;
       } else plan.world(point[0] + 0.5, point[1] + 0.5, lower);
       double x = plan.coordinate(lower[0], 0), y = plan.coordinate(lower[1], 1);
       if (plan.sampling == StorageScan.Sampling.NEAREST) {
@@ -105,13 +120,13 @@ final class SpatialReader implements IndexedStorageReader {
   private void interpolate(double x, double y) {
     long ix = SpatialScan.floor(x), iy = SpatialScan.floor(y);
     double fx = x - ix, fy = y - iy, sum = 0;
-    if (plan.sourceLattice.reference.world().length==4) {
-      double coordinate=y+0.5;
+    if (plan.sourceLattice.reference.world().length == 4) {
+      double coordinate = y + 0.5;
       // In logical source-cell coordinates a clipped centre may differ from row+0.5.
       if (coordinate < rowCentre(iy)) iy--;
-      else if (coordinate > rowCentre(iy+1)) iy++;
-      double low=rowCentre(iy),high=rowCentre(iy+1);
-      fy=(coordinate-low)/(high-low);
+      else if (coordinate > rowCentre(iy + 1)) iy++;
+      double low = rowCentre(iy), high = rowCentre(iy + 1);
+      fy = (coordinate - low) / (high - low);
     }
     for (int dx = 0; dx < 2; dx++)
       for (int dy = 0; dy < 2; dy++) {
@@ -126,13 +141,13 @@ final class SpatialReader implements IndexedStorageReader {
   }
 
   private double rowCentre(long row) {
-    var lattice=plan.sourceLattice;
-    double[] world=lattice.reference.world();
-    double min=(world[2]-lattice.reference.bounds()[2])/lattice.step[1];
-    double max=(world[3]-lattice.reference.bounds()[2])/lattice.step[1];
+    var lattice = plan.sourceLattice;
+    double[] world = lattice.reference.world();
+    double min = (world[2] - lattice.reference.bounds()[2]) / lattice.step[1];
+    double max = (world[3] - lattice.reference.bounds()[2]) / lattice.step[1];
     // Outside rows remain absent support; interpolation must not extrapolate at a pole.
-    if(row+1<=min || row>=max) return row+0.5;
-    return (Math.max(row,min)+Math.min(row+1,max))/2;
+    if (row + 1 <= min || row >= max) return row + 0.5;
+    return (Math.max(row, min) + Math.min(row + 1, max)) / 2;
   }
 
   private void aggregate() {
@@ -141,14 +156,21 @@ final class SpatialReader implements IndexedStorageReader {
     double x0 = plan.coordinate(lower[0], 0), y0 = plan.coordinate(lower[1], 1);
     double x1 = plan.coordinate(upper[0], 0), y1 = plan.coordinate(upper[1], 1);
     var bounds = plan.source.directory.bounds;
-    long fromX = plan.source.longitudePeriod>0 ? SpatialScan.floor(x0) : Math.max(bounds.start[0], SpatialScan.floor(x0));
+    long fromX =
+        plan.source.longitudePeriod > 0
+            ? SpatialScan.floor(x0)
+            : Math.max(bounds.start[0], SpatialScan.floor(x0));
     long fromY = Math.max(bounds.start[1], SpatialScan.floor(y0));
-    long toX = plan.source.longitudePeriod>0 ? (long)Math.ceil(x1) : Math.min(bounds.start[0] + bounds.shape[0], (long) Math.ceil(x1));
+    long toX =
+        plan.source.longitudePeriod > 0
+            ? (long) Math.ceil(x1)
+            : Math.min(bounds.start[0] + bounds.shape[0], (long) Math.ceil(x1));
     long toY = Math.min(bounds.start[1] + bounds.shape[1], (long) Math.ceil(y1));
     double sum = 0, weightSum = 0;
     boolean majority = plan.sampling == StorageScan.Sampling.MAJORITY;
-    for(int i=0;i<touchedCount;i++) categoryWeights[touched[i]]=0;
-    touchedCount=0; winningCode=0;
+    for (int i = 0; i < touchedCount; i++) categoryWeights[touched[i]] = 0;
+    touchedCount = 0;
+    winningCode = 0;
     for (long x = fromX; x < toX; x++)
       for (long y = fromY; y < toY; y++) {
         double weight =
@@ -156,22 +178,30 @@ final class SpatialReader implements IndexedStorageReader {
         if (weight <= 0) continue;
         if (!select(x, y)) return;
         if (majority) {
-          int code=readers.get(selected).readInt(selectedOffset);
-          if(code<=0 || code>=categoryWeights.length)throw new IllegalStateException("Unknown category code " + code);
-          if(categoryWeights[code]==0)touched[touchedCount++]=code;
-          categoryWeights[code]+=weight;
-        } else sum += numeric() * (plan.sampling == StorageScan.Sampling.CONSERVATIVE_TOTAL
-            ? weight / plan.area(x,x+1,y,y+1) : weight);
+          int code = readers.get(selected).readInt(selectedOffset);
+          if (code <= 0 || code >= categoryWeights.length)
+            throw new IllegalStateException("Unknown category code " + code);
+          if (categoryWeights[code] == 0) touched[touchedCount++] = code;
+          categoryWeights[code] += weight;
+        } else
+          sum +=
+              numeric()
+                  * (plan.sampling == StorageScan.Sampling.CONSERVATIVE_TOTAL
+                      ? weight / plan.area(x, x + 1, y, y + 1)
+                      : weight);
         weightSum += weight;
       }
     if (weightSum > 0) {
       if (majority) {
-        for(int i=0;i<touchedCount;i++) {
-          int code=touched[i];
-          if(winningCode==0 || categoryWeights[code]>categoryWeights[winningCode]
-              || categoryWeights[code]==categoryWeights[winningCode] && definitions[code].compareTo(definitions[winningCode])<0) winningCode=code;
+        for (int i = 0; i < touchedCount; i++) {
+          int code = touched[i];
+          if (winningCode == 0
+              || categoryWeights[code] > categoryWeights[winningCode]
+              || categoryWeights[code] == categoryWeights[winningCode]
+                  && definitions[code].compareTo(definitions[winningCode]) < 0) winningCode = code;
         }
-        valid=true;return;
+        valid = true;
+        return;
       }
       value = plan.sampling == StorageScan.Sampling.CONSERVATIVE_TOTAL ? sum : sum / weightSum;
       valid = !Double.isNaN(value);
@@ -210,7 +240,9 @@ final class SpatialReader implements IndexedStorageReader {
 
   public synchronized int readInt(long index) {
     requireValid(index);
-    return plan.sampling == StorageScan.Sampling.MAJORITY ? winningCode : readers.get(selected).readInt(selectedOffset);
+    return plan.sampling == StorageScan.Sampling.MAJORITY
+        ? winningCode
+        : readers.get(selected).readInt(selectedOffset);
   }
 
   public synchronized long readLong(long index) {

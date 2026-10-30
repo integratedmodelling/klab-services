@@ -3,7 +3,8 @@ import { computed, ref, watch } from "vue";
 import type { DashboardContext } from "@klab-dashboard/types";
 const props = defineProps<{ context: DashboardContext }>();
 interface Proposal { id: string; namespace: string; alias: string; identity: string; status: string; approvedAlias?: string; message?: string }
-interface Snapshot { revision: number; proposals: Proposal[]; codelists: Record<string, { entries: { code: string; value: string }[] }> }
+interface Snapshot { revision: number; proposals: Proposal[]; codelists: Record<string, { entries: { code: string; value: string }[] }>;
+  policies?: Record<string, { listId: string; providerDeclared: boolean; acceptsProposals: boolean }> }
 const authority = ref(""), snapshot = ref<Snapshot | null>(null), busy = ref(false), error = ref("");
 const selected = ref<Proposal | null>(null), approvedAlias = ref(""), rationale = ref("");
 const administrator = computed(() => Array.isArray(props.context.capabilities?.permissions)
@@ -15,6 +16,7 @@ const authorities = computed(() => {
 const namespace = ref(""), editing = ref<string | null>(null), codeAlias = ref(""), identity = ref("");
 const namespaces = computed(() => Object.keys(snapshot.value?.codelists || {}).sort());
 const entries = computed(() => snapshot.value?.codelists[namespace.value]?.entries || []);
+const policy = computed(() => snapshot.value?.policies?.[namespace.value]);
 function editable(alias: string) {
   const history = snapshot.value?.proposals.filter(p => p.namespace === namespace.value && p.approvedAlias === alias) || [];
   return history.some(p => p.status === "MANAGED")
@@ -81,6 +83,8 @@ async function remove(namespace: string, alias: string) {
           </select></label>
           <p v-if="!namespaces.length">No codelists are declared for this authority.</p>
           <template v-else>
+            <p v-if="policy">{{ policy.providerDeclared ? 'Provider-declared codelist' : 'Community codelist' }}:
+              {{ policy.acceptsProposals ? 'accepts proposals.' : 'closed to new proposals; administrators can manage codes.' }}</p>
             <p>Accepted community aliases and predefined entries are read-only.</p>
             <table><thead><tr><th>Alias</th><th>Authority code</th><th>Actions</th></tr></thead>
               <tbody><tr v-for="entry in entries" :key="entry.code">

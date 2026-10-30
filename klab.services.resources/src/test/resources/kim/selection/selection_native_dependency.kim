@@ -1,0 +1,24 @@
+private namespace staging.vxii.test.selection_native_dependency
+    version 1.0;
+
+// Geometry comes from a selected Agent. No singular Region is needed for CLASSIFICATION.
+private model klab:random:objects:points {fraction: 1, xdivs: 1, ydivs: 1}
+    as each earth:Region;
+
+private model agency:Appropriateness of each earth:Region
+    using klab.tests.fixtures.classify(result=agency:Appropriate);
+
+// The operation is an ordinary direct CLASSIFICATION dependency of this native producer.
+// The gated function checks actual earlier invocations AND staged Region attributions
+// before emitting one normal Stream object. It never creates completion provenance itself.
+private model each earth:Stream
+    observing agency:Appropriateness of each earth:Region
+    using klab.tests.fixtures.discoverafter(members=earth:Region, family=agency:Appropriateness);
+
+private model agency:Participant of each earth:Stream
+    using klab.tests.fixtures.classify(result=agency:Patient);
+
+// Failure occurs after the real selected Stream dependency was executed and consumed.
+private model count of (each agency:Patient earth:Stream)
+    observing each agency:Patient earth:Stream named selected
+    using klab.tests.fixtures.failconsumer();

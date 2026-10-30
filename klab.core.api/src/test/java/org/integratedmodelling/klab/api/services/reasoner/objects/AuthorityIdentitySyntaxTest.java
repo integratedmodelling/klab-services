@@ -11,6 +11,12 @@ class AuthorityIdentitySyntaxTest {
     assertEquals("TAXA:123", AuthorityIdentitySyntax.encode("TAXA", "123"));
     assertEquals("TAXA:[A B]", AuthorityIdentitySyntax.encode("TAXA", "A B"));
   }
+  @Test void boundedComplexDefinitionsRoundTripWithoutTruncation() {
+    String code="rule2:" + "x]".repeat(2000);
+    String token=AuthorityIdentitySyntax.encode("LAND",code);
+    assertEquals(code,AuthorityIdentitySyntax.decode(token.substring(5)));
+    assertThrows(IllegalArgumentException.class,()->AuthorityIdentitySyntax.encode("LAND","x".repeat(AuthorityIdentitySyntax.MAX_CODE_LENGTH+1)));
+  }
   @Test void requestBoundsAndInjectedAuthorityNamesAreRejected() {
     assertThrows(IllegalArgumentException.class, () -> AuthorityIdentitySyntax.encode("TAXA:bad", "123"));
     assertThrows(IllegalArgumentException.class, () -> AuthorityIdentitySyntax.decode("[a] bad]"));

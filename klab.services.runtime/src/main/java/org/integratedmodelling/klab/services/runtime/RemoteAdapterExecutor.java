@@ -20,7 +20,6 @@ public class RemoteAdapterExecutor extends AbstractExecutor
 
   private final AdapterDescriptor adapterInfo;
   private Resource resource;
-  private RemoteResourceContextualizer contextualizer;
   private ResourcesService service = null;
 
   public RemoteAdapterExecutor(
@@ -66,6 +65,13 @@ public class RemoteAdapterExecutor extends AbstractExecutor
       ContextScope scope,
       RuntimeService.ContextualizationScope contextualizationScope) {
 
+    var invocationGeometry = contextualizationScope instanceof ContextualizationScopeImpl local
+        ? local.executionGeometry() : null;
+    var scanner = scanners.get(Dataflow.SELF_ID);
+    var geometry = TemporalGeometry.localize(scanner == null
+        ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
+        : scanner.shard().getGeometry(), event);
+
     if (resource == null) {
       cause = new KlabResourceAccessException("Resource not found in remote resource adapter");
       return false;
@@ -74,7 +80,8 @@ public class RemoteAdapterExecutor extends AbstractExecutor
       cause = new KlabServiceAccessException("No adapter info for resource " + resource.getUrn());
       return false;
     }
-    if (contextualizer == null) {
+    final RemoteResourceContextualizer contextualizer;
+    {
       var service =
           scope.getServices(ResourcesService.class).stream()
               .filter(r -> r.serviceId().equals(resource.getServiceId()))
@@ -95,11 +102,7 @@ public class RemoteAdapterExecutor extends AbstractExecutor
                 .get()
                 .contextualizeResource(
                     resource,
-                    TemporalGeometry.localize(
-                        scanners.get(Dataflow.SELF_ID) == null
-                            ? observation.getGeometry()
-                            : scanners.get(Dataflow.SELF_ID).shard().getGeometry(),
-                        event),
+                    geometry,
                     scope);
       }
 
@@ -108,7 +111,7 @@ public class RemoteAdapterExecutor extends AbstractExecutor
           new RemoteResourceContextualizer(service.get(), res, observation, dependencies);
     }
     return contextualizer.contextualize(
-        scanners.get(Dataflow.SELF_ID), event, scope, contextualizationScope);
+        scanner, event, scope, contextualizationScope, geometry);
   }
 
   @Override

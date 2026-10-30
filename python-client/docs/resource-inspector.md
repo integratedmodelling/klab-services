@@ -47,3 +47,46 @@ Source-derived offline acceptance is not a claim that a deployed executable mode
 was inspected. Live executable-model/resource association remains a separate gate.
 See the [contract inventory](discover-compare-explain-contracts.md) and
 [contribution review](reviews/discover-compare-explain/resource-inspector.md).
+
+## PR #99 live acceptance pilot
+
+`tools/run_resource_inspector_acceptance.py` and the existing functional runner's
+`connected-resource-inspection` suite perform one explicitly authorized owned
+session/context pilot. The request is a 5×4 EPSG:3857 region followed by elevation
+in metres, using a namespace as ranking context, never forced model selection.
+The pilot checks actual grid metadata, finite actual data, a successful numerical
+effect and the inspected model URN in this result's recorded accepted resolution.
+This narrow identifier check does not implement F3's general diagram viewer or
+claim independent scientific accuracy/full lineage/durable root commit.
+
+```powershell
+python tools/run_resource_inspector_acceptance.py --profile examples/hosted-deployment.json --certificate <private-ENGINE-certificate-path> --model staging.vxii.basic.elevation-quantifier --report <fresh-external-report.json> --allow-owned-work
+```
+
+This is not a read-only command. The explicit flag is required; there are at most
+two observation submissions and no retries, imports, component changes or restarts.
+Only the pilot's own context/session are released. Failures remain failures, with
+known handles and cleanup outcomes retained. Arbitrary server exception/stack text
+is not published. A failed release makes the pilot unsuccessful.
+
+The follow-up prerequisite guard snapshots configured service component/function
+advertisements with byte/item bounds and credential redaction. It requires the
+selected Runtime to advertise the model's explicit computation service before
+spending any Jobs; dynamic/remote component loading is not silently assumed.
+Snapshot versions and `fileHash` fields are advertisements, not verified source
+commits or locally calculated SHA-256 values.
+
+**Observed 28 October 2026:** the single authorized hosted pilot inspected the
+model and completed its region Job, but the elevation Job failed (`JobFailedError`).
+Java confirmed release of both owned objects. A read-only follow-up found Resources
+advertising `klab.generators.geospatial.terrain` in the generators/geospatial
+components, while Runtime and Resolver advertised only their internal component.
+The original Job was no longer accessible after cleanup. This is a concrete
+deployment compatibility concern, not proof of the exact Job failure cause.
+
+The prerequisite/diagnostic guards were added after that failed pilot and have not
+been used to claim a successful second computation. See the
+[sanitized failure/capability evidence](results/resource-inspector-hosted-pilot-20261028.json).
+PR #99 remains draft until a compatible execution deployment is established and a
+separately authorized pilot passes model/result association. No component was
+installed and no failed check was skipped or replaced by mock scientific output.

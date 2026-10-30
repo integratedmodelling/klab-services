@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-29",
+  "candidate": "36b84293cc062fdad24ff6d08ebfb6e95a67bfb9",
+  "scope": "F2 bounded resource inspector numerical/model-association acceptance; not independent scientific accuracy or complete milestone acceptance",
+  "authorization": "Third batch: up to five further local attempts, two observation Jobs and one owned session/context per attempt, 20 cells, no parallel computation. Three attempts used; two unused",
+  "result": "passed for bounded local F2 acceptance",
+  "model_urn": "staging.vxii.basic.elevation-quantifier",
+  "scientific_interpretation": "Existing synthetic terrain generator. These are actual computed synthetic values, not measured physical elevations or an independent accuracy benchmark",
+  "deployment": {
+    "services": "Published unchanged distribution 202610271533",
+    "graphdb": "202610161554 plus temporary digest-verified published spatial plugin",
+    "staging": "9d20c1c236e5a033487ee47b34cd910c3ebbbe51",
+    "imod": "1328000fff63a1951465b1f7b130c0af15264c95",
+    "components": "Same digest-verified published generator/geospatial archives recorded in resource-inspector-local-acceptance-20261029.json",
+    "source_binary_attestation": "unverified; service identities and matching library hashes do not attest exact source commits",
+    "authentication": "Native loopback origin-bound local-owner key; private values not recorded. Hosted Hub bootstrap not rerun"
+  },
+  "diagnosis": {
+    "attempt_1": "Unqualified earth:Region; elevation failed with empty strategy list. SDK, Resolver and Reasoner all used the exact same region-focused scope token; dropping that token was not the cause",
+    "offline_control": "Deployed ObservationReasoner plus retrieved native dependent.direct strategy and captured elevation payload: mocked unfocused scope rejected context.exists, mocked focused scope selected dependent.direct. No service requests or numerical Jobs",
+    "additional_deployed_gate": "Published ReasonerService.computeObservationStrategies bytecode invokes ContextualRequestAdmission.admits before matching observation strategies; the checkout source lacks this gate, so source-only diagnosis was insufficient",
+    "ontology_contract": "Unchanged imod/src/geography.kwv:28-38: Elevation describes TerrestrialSurfaceArrangement, which applies to earth:Terrestrial earth:Region",
+    "demonstrated_fixture_correction": "Use the existing earth:Terrestrial earth:Region context instead of unqualified earth:Region. No model, ontology, worldview or component-source change",
+    "causality_limit": "This controlled context correction made both local runs succeed. It does not prove all historical failures shared the same sole cause"
+  },
+  "attempts": [
+    {"attempt": 1, "region": "earth:Region", "passed": false, "observation_jobs": 2, "context_release": "confirmed", "session_release": "confirmed"},
+    {
+      "attempt": 2,
+      "region": "earth:Terrestrial earth:Region",
+      "passed": true,
+      "context_id": "1081b2bb61d04191b06313508cca7952.11eke2h7vs",
+      "region_job_id": 13,
+      "elevation_job_id": 14,
+      "observation_jobs": 2,
+      "cells_read": 20,
+      "valid_finite_cells": 20,
+      "units": "m",
+      "values_as_decimal_text": ["1074.148047973243", "2549.0111366320584", "2225.598430288393", "3382.8076972844997", "2163.9369400469145", "3777.957399003574", "2976.4652009535507", "3028.411196168691", "2206.3073497915607", "1510.8278792140718", "3405.177101976793", "2410.7096924625694", "2231.642195884186", "2084.104735902153", "2343.048019060211", "2476.584128682367", "2880.99878935178", "3127.460092705149", "3074.823610120374", "3185.8797935464404"],
+      "accepted_model_urns": ["staging.vxii.basic.elevation-quantifier"],
+      "successful_resolution_activity_ids": [76],
+      "numerical_activity_ids": [77],
+      "recorded_view_partial": true,
+      "context_release": "confirmed",
+      "session_release": "confirmed"
+    },
+    {
+      "attempt": 3,
+      "region": "earth:Terrestrial earth:Region",
+      "passed": true,
+      "implementation": "Actual shipped workflows.resource_inspection.run, with only deployment-profile/Hub connection bootstrap replaced by native loopback local-owner connection. Scientific workflow, inspector, service operations and evidence checks were not mocked",
+      "observation_jobs": 2,
+      "cells_read": 20,
+      "valid_finite_cells": 20,
+      "units": "m",
+      "grid": {"shape": [5, 4], "crs": "EPSG:3857", "bbox": [200000, 200500, 6000000, 6000400]},
+      "accepted_model_urns": ["staging.vxii.basic.elevation-quantifier"],
+      "successful_resolution_activity_ids": [95],
+      "numerical_activity_ids": [96],
+      "recorded_view_partial": true,
+      "context_release": "confirmed",
+      "session_release": "confirmed"
+    }
+  ],
+  "recorded_evidence_limits": "Accepted inspected-model resolution linked to actual numerical result; partial provenance is not exhaustive lineage, root-commit proof or exact binary/source attestation",
+  "python_change": "Only the bounded pilot fixture and deterministic regression assertions changed. Public SDK inspector/focus implementation unchanged",
+  "validation": [
+    {"command": "python -m pytest tests/unit/test_resource_inspection_workflow.py -q --tb=short", "status": "Passed", "exit": 0, "result": "45 passed"},
+    {"command": "python -m pytest tests/unit tests/integration -q --tb=short", "status": "Passed", "exit": 0, "result": "1246 passed, one existing Rasterio NotGeoreferencedWarning"},
+    {"command": "python -m pytest -q tests/unit tests/integration --cov=klab_client --cov=workflows.resource_inspection --cov=run_resource_inspector_acceptance --cov-branch --cov-report=json", "status": "Passed", "exit": 0, "result": "1246 passed"},
+    {"command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 [all existing workflow --new-module arguments]", "status": "Passed", "exit": 0, "result": "Existing 100% new-module line/branch and changed-code gates passed; exact module list in .github/workflows/python-client.yml:25"},
+    {"command": "python -m ruff check src tests examples tools --select E9,F63,F7,F82", "status": "Passed", "exit": 0},
+    {"command": "git diff --check", "status": "Passed", "exit": 0},
+    {"command": "python pr99-local-pilot-20261029.py --batch five-more --attempt 2 --region-definition 'earth:Terrestrial earth:Region'", "status": "Passed", "exit": 0},
+    {"command": "python pr99-local-shipped-workflow.py", "status": "Passed", "exit": 0},
+    {"command": "python pr99-five-more-environment.py restore", "status": "Passed", "exit": 0}
+  ],
+  "validation_environment": "Windows, Python 3.12.7 at C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-inspector-312/Scripts/python.exe; Python commands from python-client unless external absolute helper. Tests/live workflow ran with the exact source changes subsequently committed as candidate",
+  "restoration": {
+    "configuration_catalog_paths_byte_exact": 16,
+    "resources_runtime_plugin_inventories_restored": true,
+    "temporary_spatial_plugin_removed": true,
+    "configured_projects": 0,
+    "remaining_contexts": 0,
+    "five_listeners_and_pid_metadata_verified": true,
+    "restored_distribution": "202610161554",
+    "pids": {"graphdb": 44408, "reasoner": 14860, "resources": 33156, "resolver": 42408, "runtime": 43672},
+    "process_launches": "Headless CREATE_NO_WINDOW; unrelated terminals preserved",
+    "retained": "Fresh backups including GraphDB data; sanitized native scope traces/strategy document/offline replay; raw pilot reports and numerical values; inactive downloaded plugins; service index/cache data. No whole-database rollback"
+  },
+  "evidence_directory": "C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-five-more-local-acceptance-20261029",
+  "recommendation": "Bounded F2 live criterion satisfied; ready for maintainer review of Python feature. Keep PR draft pending unchanged Java CI/maintainer integration gate; broader scientific milestone remains unaccepted. Proceed to PR98 without merging PRs or rewriting history"
+}

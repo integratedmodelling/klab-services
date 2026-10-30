@@ -18,6 +18,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     private static final long serialVersionUID = -727467882879783393L;
 
     private KimConcept semantics;
+    private KimConcept observerSemantics;
     private NumericRangeImpl range;
     private String unit;
     private String currency;
@@ -40,9 +41,71 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     private String pattern;
     private Collection<String> patternVariables = new HashSet<>();
 
+    public KimObservableImpl() {}
+
+    /** Deeply detached observable, including its syntax and mutable payloads. */
+    public KimObservableImpl(KimObservableImpl other) {
+        this(other, null);
+    }
+
+    /**
+     * Single-pass mapped copy of retained semantic slots. Never serializes a semantic tree or its
+     * excluded parent back-reference. A null transform makes an ordinary copy preserving definitions.
+     */
+    public KimObservableImpl(KimObservableImpl other,
+            java.util.function.BiConsumer<List<String>, KimConceptImpl> transform) {
+        this(other, List.of(), new KimConceptImpl.SyntaxMapping(
+                transform == null ? (path, node) -> {} : transform, transform != null));
+    }
+
+    KimObservableImpl(KimObservableImpl other, List<String> path, KimConceptImpl.SyntaxMapping transform) {
+        super(other);
+        transform.enter(other, path);
+        try {
+        semantics = (KimConcept) KimConceptImpl.mapValue(other.semantics, KimConceptImpl.childPath(path, "semantics"), transform);
+        observerSemantics = (KimConcept) KimConceptImpl.mapValue(other.observerSemantics, KimConceptImpl.childPath(path, "observerSemantics"), transform);
+        range = other.range == null ? null : new NumericRangeImpl(other.range);
+        unit = other.unit;
+        currency = other.currency;
+        formalName = other.formalName;
+        value = KimConceptImpl.mapValue(other.value, KimConceptImpl.childPath(path, "value"), transform);
+        defaultValue = KimConceptImpl.mapValue(other.defaultValue, KimConceptImpl.childPath(path, "defaultValue"), transform);
+        resolutionDirectives.addAll(other.resolutionDirectives);
+        for (int i = 0; i < other.valueOperators.size(); i++) {
+            var operator = other.valueOperators.get(i);
+            valueOperators.add(Pair.of(operator.getFirst(), KimConceptImpl.mapValue(operator.getSecond(),
+                    KimConceptImpl.childPath(path, "valueOperators", Integer.toString(i), "operand"), transform)));
+        }
+        attributeIdentifier = other.attributeIdentifier;
+        optional = other.optional;
+        modelReference = other.modelReference;
+        nonSemanticType = other.nonSemanticType;
+        codeName = other.codeName;
+        generic = other.generic;
+        referenceName = other.referenceName;
+        global = other.global;
+        exclusive = other.exclusive;
+        urn = transform.invalidateDefinitions() ? null : other.urn;
+        version = KimSyntaxCopy.copy(other.version);
+        pattern = other.pattern;
+        patternVariables.addAll(other.patternVariables);
+        } finally {
+            transform.leave(other);
+        }
+    }
+
     @Override
     public KimConcept getSemantics() {
         return this.semantics;
+    }
+
+    @Override
+    public KimConcept getObserverSemantics() {
+        return observerSemantics;
+    }
+
+    public void setObserverSemantics(KimConcept observerSemantics) {
+        this.observerSemantics = observerSemantics;
     }
 
     @Override
@@ -267,6 +330,10 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     @Override
     public <T> T format(CodeAppender<T> appender) {
         this.semantics.format(appender);
+        if (observerSemantics != null) {
+            appender.append("observed as", LexicalRole.KEYWORD);
+            observerSemantics.format(appender);
+        }
         // TODO unit, currency, range, given name, optional
         return appender.output();
     }

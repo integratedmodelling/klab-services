@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
@@ -10,6 +9,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -70,9 +70,9 @@ public class KlabAdminController {
       summary = "Check stored credentials",
       description = "Report whether credentials are available for the requested scheme and host")
   @GetMapping(ServicesAPI.ADMIN.CHECK_CREDENTIALS)
-  public boolean checkCredentials(String scheme, String host) {
-    // TODO check if we have credentials for the passed scheme/host, return true if we do
-    return false;
+  public boolean checkCredentials(@RequestParam String scheme, @RequestParam String host, Principal principal) {
+    return instance.klabService().getCredentialInfo(credentialScope(principal)).stream()
+        .anyMatch(info -> info.schema().equals(scheme) && info.host().equals(host));
   }
 
   /**
@@ -90,12 +90,16 @@ public class KlabAdminController {
   @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
   public @ResponseBody ExternalAuthenticationCredentials.CredentialInfo setCredentials(
       @RequestBody CredentialsRequest request, Principal principal) {
-    var scope =
-        principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
-    request.getCredentials().setId(Utils.Names.shortUUID());
-    request.getCredentials().setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(scope));
-    return Authentication.INSTANCE.addExternalCredentials(
-        request.getHost(), request.getCredentials(), scope);
+    var scope = credentialScope(principal);
+    if (request == null || request.getCredentials() == null)
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Missing credential set");
+    try {
+      return instance.klabService().addCredentials(request.getHost(), request.getCredentials(), scope);
+    } catch (IllegalArgumentException e) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage());
+    } catch (SecurityException e) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+    }
   }
 
   /**
@@ -105,10 +109,11 @@ public class KlabAdminController {
    * @return true if the credentials were there and were deleted, false otherwise
    */
   @Operation(
-      summary = "Delete credentials", description = "Delete stored credentials by identifier")
+      summary = "Delete credentials",
+      description = "Delete stored credentials by identifier")
   @DeleteMapping(ServicesAPI.ADMIN.CREDENTIALS)
-  public boolean removeCredentials(@RequestParam("id") String id) {
-    return Authentication.INSTANCE.removeCredentials(id);
+  public boolean removeCredentials(@RequestParam("id") String id, Principal principal) {
+    return instance.klabService().removeCredentials(id, credentialScope(principal));
   }
 
   /**
@@ -126,12 +131,19 @@ public class KlabAdminController {
   @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)
   public @ResponseBody List<ExternalAuthenticationCredentials.CredentialInfo> listCredentials(
       Principal principal) {
-    return instance
-        .klabService()
-        .getCredentialInfo(
-            principal instanceof EngineAuthorization authorization
-                ? authorization.getScope()
-                : null);
+    return instance.klabService().getCredentialInfo(credentialScope(principal));
+  }
+
+  @GetMapping(ServicesAPI.ADMIN.CREDENTIAL_SCHEMAS)
+  public List<org.integratedmodelling.klab.api.authentication.CredentialSchema> credentialSchemas(Principal principal) {
+    return instance.klabService().getCredentialSchemas(credentialScope(principal));
+  }
+
+  private Scope credentialScope(Principal principal) {
+    if (principal instanceof EngineAuthorization authorization
+        && authorization.getScope() instanceof ServiceUserScope scope
+        && scope.isAuthorized(CRUDOperation.ADMINISTER)) return scope;
+    throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
   }
 
   /**
@@ -161,16 +173,35 @@ public class KlabAdminController {
         var body = Utils.Json.parseObject(dataBody, s.valueClass);
         return userScope
             .getJobManager()
-            .submit(
-                settings.set(s, body),
-                "Setting change: " + setting);
+            .submit(settings.set(s, body), "Setting change: " + setting);
       }
     }
     if (scope instanceof ServiceUserScope userScope
         && !userScope.isAuthorized(CRUDOperation.ADMINISTER)) {
-      throw new KlabAuthorizationException("ADMINISTER permission is required for service settings");
+      throw new KlabAuthorizationException(
+          "ADMINISTER permission is required for service settings");
     }
     throw new KlabIllegalArgumentException("Invalid setting: " + setting);
+  }
+
+  @Operation(
+      summary = "Update an installed component",
+      description =
+          "Submit a component update job. The body contains component (ID) and optional version; "
+              + "the job returns action, component, version, result and message.")
+  @PostMapping(ServicesAPI.ADMIN.UPDATE_COMPONENT)
+  public long updateComponent(@RequestBody Map<String, Object> request, Principal principal) {
+    return postSetting(Utils.Json.asString(request), Setting.UPDATE_COMPONENT.name(), principal);
+  }
+
+  @Operation(
+      summary = "Remove an installed component",
+      description =
+          "Submit a component removal job. The body contains component (ID) and optional version; "
+              + "built-in components cannot be removed.")
+  @PostMapping(ServicesAPI.ADMIN.REMOVE_COMPONENT)
+  public long removeComponent(@RequestBody Map<String, Object> request, Principal principal) {
+    return postSetting(Utils.Json.asString(request), Setting.REMOVE_COMPONENT.name(), principal);
   }
 
   @Operation(

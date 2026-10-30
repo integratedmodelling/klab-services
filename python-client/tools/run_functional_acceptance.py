@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "connected-resource-inspection": "tests/functional/test_resource_inspection.py::test_existing_executable_model_links_inspection_to_recorded_computation",
     "connected-semantic-readiness": "tests/functional/test_connected_semantics.py::test_connected_reasoner_publishes_accepted_semantic_knowledge",
     "connected-unit-contract": "tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit",
     "connected-onboarding": "tests/functional/test_connected_workflows.py::test_connected_onboarding_and_profile_roundtrip",
@@ -26,9 +27,11 @@ SUITES = {
     "geojson-export": "tests/functional/test_export_deliverables.py::test_native_geojson_export_preserves_identity_and_known_geometry",
     "geotiff-export": "tests/functional/test_export_deliverables.py::test_native_geotiff_export_preserves_values_units_and_mask",
     "provider-reference": "tests/functional/test_provider_reference.py",
+    "execution-evidence": "tests/functional/test_execution_evidence.py",
+    "semantic-explorer": "tests/functional/test_semantic_explorer.py",
 }
 
-CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute"}
+CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection"}
 CONNECTED_SUITES = {"connected-semantic-readiness", "connected-unit-contract", "connected-onboarding",
                     "connected-credential-renewal"} | CONNECTED_WORK_SUITES
 

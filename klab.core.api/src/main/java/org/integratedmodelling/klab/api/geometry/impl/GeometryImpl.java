@@ -308,7 +308,9 @@ public class GeometryImpl implements Geometry {
       }
       ret += "]";
     } else {
-      ret = val.toString();
+      // Parameter separators have a matching decoder in decodeForSerialization(). WKT
+      // shapes contain commas; emitting them raw turns coordinates into new key/value pairs.
+      ret = val.toString().replace(",", "&comma;").replace("=", "&eq;");
     }
     return ret;
   }

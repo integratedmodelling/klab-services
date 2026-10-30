@@ -52,3 +52,32 @@ characters and optional filter length 128. Unsupported filters are decided by Ja
 Implementation/offline checks are separate from live acceptance. See the
 [contract inventory](discover-compare-explain-contracts.md) and
 [feature contribution review](reviews/discover-compare-explain/semantic-explorer.md).
+
+## Actual Java functional acceptance
+
+The shipped `semantic-explorer` suite requires an explicitly authorized prepared
+state directory containing private `scientist.json` (the existing functional
+configuration: `token`, `username`, `urls` for runtime/reasoner/resources/resolver)
+and `semantic-explorer.json` with these nonblank fields:
+
+| Field | Independently verified fixture expectation |
+| --- | --- |
+| `authority`, `query`, `code` | Configured local authority, bounded search text, canonical code on the first result page |
+| `identity_urn` | Exact resolved concept URN for that code |
+| `documentation_media_type` | Expected advertised documentation type, e.g. `text/html` |
+| `parent`, `child` | Distinct direct asserted hierarchy URNs, both satisfiable; child specializes parent but not conversely |
+
+Obtain expectations independently from the existing Java/worldview state, not by
+copying the Python results under test. Do not publish credentials or private state.
+
+```powershell
+python tools/run_functional_acceptance.py --suite semantic-explorer --state-dir <prepared-private-directory> --report <fresh-report.xml>
+```
+
+The two tests cover explicit authority selection/documentation/resolution and
+direct parents/children plus directional `is_a`/satisfiability. They create no
+session, context, observation or numerical Job and never fetch provider URLs.
+Semantic resolution can nevertheless materialize Reasoner knowledge, so use only
+an authorized test state. Missing fixtures fail; there are no fallback or skipped
+successes. The suite has **not run against Java** in the current review. Offline
+guardrail tests and collection do not establish live semantic acceptance.

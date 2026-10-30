@@ -46,6 +46,29 @@ public interface Dataflow extends Serializable, RuntimeAsset {
    */
   String SELF_ID = "self";
 
+  /**
+   * A result view over one completed native cohort after normal classification operations.
+   * This descriptor neither creates a qualified producer nor certifies discovery completion:
+   * the Runtime verifies completion, current generation, observer and member state itself.
+   */
+  record CollectiveSelection(
+      org.integratedmodelling.klab.api.knowledge.Observable requested,
+      org.integratedmodelling.klab.api.knowledge.Observable nativeMembers,
+      List<org.integratedmodelling.klab.api.knowledge.Concept> predicates,
+      List<org.integratedmodelling.klab.api.knowledge.Concept> families,
+      List<String> classificationOperations) implements Serializable {
+    public CollectiveSelection {
+      predicates = List.copyOf(predicates);
+      families = List.copyOf(families);
+      classificationOperations = List.copyOf(classificationOperations);
+      if (requested == null || nativeMembers == null || predicates.isEmpty()
+          || predicates.size() != families.size())
+        throw new IllegalArgumentException("Collective selection requires aligned predicates and families");
+    }
+  }
+
+  default CollectiveSelection getCollectiveSelection() { return null; }
+
   default RuntimeAsset.Type classify() {
     return Type.DATAFLOW;
   }
@@ -109,7 +132,7 @@ public interface Dataflow extends Serializable, RuntimeAsset {
   List<Notification> getNotifications();
 
   /** Resolution absence is distinct from compilation, transport or execution failure. */
-  enum ResolutionOutcome { RESOLVED, NO_MODEL, FAILED }
+  enum ResolutionOutcome { RESOLVED, DEFERRED, NO_MODEL, FAILED }
 
   default ResolutionOutcome getResolutionOutcome() {
     return isEmpty() ? ResolutionOutcome.FAILED : ResolutionOutcome.RESOLVED;

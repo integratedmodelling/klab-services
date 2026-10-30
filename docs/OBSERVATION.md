@@ -1,5 +1,69 @@
 # Observation strategies: language guide and accepted baseline
 
+The isolated [whole-support count/presence increment](TIER1_COLLECTIVE_REDUCTIONS.md) is a
+bounded executable subset, not completion of general S7/S9 context bridges. It discovers a
+collective only after unsuccessful Tier-0 alternatives, proves successful full-support
+completion, enumerates visible members and writes a scalar count/boolean. Explicit
+nondistributed support, initialization, observer/revision binding and failure distinctions
+are required. See [conditional source model obligations](CONDITIONAL_MODEL_CONTEXT.md) for
+separate cross-bearer model admission. General quality redistribution still needs typed
+native-member result composition; containment declarations alone do not provide it.
+
+## Native member-quality collection candidate
+
+The next isolated increment is under validation, not deployed. It keeps three bindings
+separate: invocation container, actual native member and each quality's support. A Region
+may request a collection of Stream-native results without becoming their bearer. The view
+is keyed by actual member identity; it is not a new Observation, group, scalar or regional
+field. Successful complete discovery with no members produces an empty collection. Failed,
+partial, stale or unknown discovery does not; no-data does not imply zero or absence.
+
+Existing MemberPlan syntax has a restricted explicit typed `resolveMemberPlan` API path:
+one collective resolve, one native-quality resolve within each member and yields. This is
+not general MemberPlan execution in the existing single-Observation strategy compiler.
+Ordinary native submissions can reuse existing observations and models. Cancellation stops
+new scheduling and cancels the active child cooperatively, without rollback of committed work.
+
+A regional model must select a contextualizer that explicitly consumes the native collection
+and defines any regional mapping. The test maximum is an example selected by a test model,
+not an automatic reduction or redistribution policy. Regional Elevation/Slope sampling for
+the original StreambedGradient model, generic Height mediation and arbitrary strategy bodies
+remain outside this bounded candidate.
+
+## Relationship nature and orientation
+
+A relationship has two independent semantic axes. Its nature is `structural` or
+`functional`; its orientation is `directed relationship` (ordered source and target)
+or `bond` (unordered participants). Plain `relationship` does not select either axis.
+Functional does not mean an OWL functional property, and a bond does not assert
+transitivity or create a general symmetric property axiom.
+
+An abstract declaration may leave either axis unspecified. A descendant inherits
+settled choices and may fill an unspecified choice; repeating the same choice is
+legal, contradicting an inherited choice is an error even on an abstract descendant.
+A concrete effective relationship must have both axes determined. Omission never
+defaults to directed or bond. Independent intersection parents combine constraints;
+union parents supply only choices shared by every alternative. An alias cannot
+refine its canonical target by adding a previously unspecified choice.
+
+```kim
+abstract relationship Connection;
+abstract functional relationship Interaction is Connection;
+functional directed relationship FeedingConnection is Interaction;
+structural bond Association is Connection;
+```
+
+These are schematic declarations illustrating the axes, not production ecology
+terms. `structural relationship Incomplete;` is invalid because its concrete
+orientation is unspecified. A bond descendant of a directed relationship is invalid.
+Raw authored choices remain distinct from inherited effective choices through API
+and workspace transport. Exported OWL class annotations preserve both; known nature
+also uses the existing ODO structural/functional relationship class. No ODO release
+or core pin change is required by these annotations. Runtime connection operations
+reject unknown or conflicting effective axes; swapping bond participants preserves
+identity, whereas swapping directed endpoints changes their ordered meaning.
+
+
 This is the running design document for observation strategies in k.LAB. It connects the
 semantic observation process to strategy selection, graph construction, dataflow compilation,
 and execution. Read [Observable expressions, Section 1](OBSERVABLES.md#1-observable-observation-and-model)
@@ -641,8 +705,10 @@ bindings. Event publication and duration history begin at START, independently o
 
 Model discovery also indexes `change in X` for a process's declared affected/created quality outputs
 and dependencies. Semantic-distance filtering considers these inferred outputs as well as explicit
-outputs. This does not choose between one joint process and several independent processes; that
-collinearity policy is pending.
+outputs. Automatic consequence requests now supply the observed quality group so model ranking
+prefers admitted joint processes inherent specifically to that bearer. This preference remains
+inside strategy precedence and is not a global collinearity optimizer; see the
+[consequence engine](CONSEQUENCE_ENGINE.md#automatic-change-resolution).
 
 The current loops fall short of the intended partial-contribution contract. The observation loop
 collects relevant strategy graphs but calls `strategyResolution.checkCoverage(strategyResolution)`
@@ -1992,3 +2058,115 @@ explanation, and successful discovery with no characterization model, are explic
 
 [FlowChart metadata](FLOWCHARTS.md) exposes the accepted resolution graph and execution plan to
 clients while retaining their distinct meanings. Neither diagram is a graph-reproduction document.
+
+
+### Observational containment: declaration support versus contextual execution
+
+**Containment here is an observational contract, not spatial enclosure or physical
+parthood.** It declares which collective observation can realize an authored
+container/type relationship. For example, `Region contains Stream` permits the
+declared Stream collective, whose successful result may have zero members; it does
+not assert that any Stream exists, lies inside a polygon, or covers the Region.
+An unresolved or failed Stream discovery is not a successful empty result.
+
+The worldview clauses `A contains B` / `B contained into A` normalize to the same
+additive `odo:observationallyContains` declaration. See
+[Observational containment declarations](OBSERVABLES.md#observational-containment-declarations)
+for the empty-safe asserted OWL carrier and its application-level interpretation.
+Declaration support does not complete S7/S9 or authorize a cross-bearer dependency
+without a typed execution route. It does not change native bearers or member extents.
+
+A collective that successfully returns zero members realizes the observational
+contract; unresolved, failed or cancelled discovery does not. Verify existing
+collective lifecycle behavior before adding runtime machinery. The current query
+foundation requires successful typed execution and invocation support, rejects failed
+attempt reuse, and returns one proven fragment rather than an unsafe union. See
+[Collective query completion](COLLECTIVE_COMPLETION.md) for its limits. A declaration alone
+does not mean that discovery has run or completed, and an error/empty observation
+sentinel must not be counted as successful empty membership.
+
+Contextual request permission is now checked before strategy selection for qualities
+and processes. It uses native bearer compatibility or authored containment with
+asserted container inheritance and a single named native bearer witness. See the
+[admission boundary](OBSERVABLES.md#observational-containment-declarations).
+This does not admit unbridged computational dependencies or lower unsupported context/member
+plans. Legal requests and choice of implementation remain separate. Precomputed
+Tier-0 models may fulfill a legal request independently, without a discovery receipt.
+Recursive domain discovery/computation is Tier-1+ and must be deferred until Tier-0
+alternatives leave relevant support unfulfilled. Preserve accepted partial coverage
+and native computation extents; never turn missing/unrepresentable support into
+success. S7/S9 still require actual domain bindings, typed sampling/composition,
+gap/overlap policies, provenance, cycle protection and execution-side-effect tests.
+
+
+### Configuration detection and later resolution
+
+A configuration observation emerges through **DETECTION**; models never instantiate
+configurations. `model each Configuration` is illegal, including aliases and effective
+configuration heads. `model Configuration` remains a legitimate request to resolve
+an observation after emergence. It must not be described as creating that observation.
+`model Quality of each Bearer` qualifies the bearer collectively and is a distinct,
+legal form; unary-derived qualities are classified by their effective quality kind.
+
+The intended lifecycle places a configuration detected through (com)presence of
+dependents under those dependents' bearer. Detection from substantials places it
+in root-level cohorts, like substantials. Relationship emergence produces Network
+configurations; resolving an emerged Network then creates the scientific network
+model. Placement for dependent ingredients with different bearers is a future-stage
+question; do not invent automatic bearer coalescing or silently discard ingredients.
+
+**Implemented boundary:** source/loaded-world model validation rejects configuration
+instantiation. The API already maps configurations to DETECTION, the grammar carries
+`emerges from`, and the reasoner registers trigger declarations. These are not proof
+of functioning detection or placement: ReasonerService.emergentResolvables currently
+returns an empty map, and its observation catalog/matching runtime is incomplete.
+Detection, placement and network construction are not added by this declaration slice.
+
+### Future consequence engine: after observation commits
+
+The authoritative collaborator-facing design draft is
+[CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md). It specifies future consequences
+after observation/knowledge commits: configuration DETECTION, change processes for
+qualities in occurrent contexts, conferred roles, role implications and optional
+uncertainty resolution. Consequences can recursively cause consequences through
+models. Reuse resolution idempotency/reuse, verify bounded distinct work as well as
+duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
+contracts, actual source support, proposed integration and open questions. No
+consequence runtime is implemented by this declaration/validation slice.
+
+
+## Bounded singular binding capability - 2026-10-21
+
+The isolated S7a candidate implements one explicit current-context reference and one
+native quality OBSERVE child, with typed identity/revision transport and lazy Tier-1
+admission. It requires the identical result obligation and full native context support.
+Same-obligation RESOLVE, other context/result bindings, member iteration, discovery and
+composition remain unavailable. See [the capability contract](SINGULAR_CONTEXT_BINDING.md).
+
+
+## Prepared predicate-dependency expansion boundary - 2026-10-21
+
+The isolated P0 candidate freezes source/declaration/occurrence identities once and applies
+keyed completed outcomes, including nonblocking CompletionStage composition. This preserves
+positional Cartesian choices across asynchronous completion without supplying classifier
+completion certificates, member snapshots or production Resolver wiring. Generated syntax
+still requires redeclaration and eligibility validation before distance/execution. See
+[the precise boundary and remaining integration seam](PREDICATE_DEPENDENCY_EXPANSION.md).
+
+
+## Selected-model classifier execution - 2026-10-21 isolated increment
+
+The bounded ordinary-submission route now plans and executes a classifier prerequisite for one
+deferred abstract ATTRIBUTE occurrence, then resolves its concrete closure as independent child
+dependency observations of one modeled output. The final contextualizer reads exact prerequisite
+bindings from the graph and supplies any aggregation itself. Successful precomputed Tier-0
+alternatives precede this automatic Tier-1 work. See
+[dependency families](CLASSIFIER_DEPENDENCY_FAMILIES.md) for conditional admission, live-attempt
+guards, the dynamic crop cash-value fixture, test adapters and remaining multi-occurrence limits.
+This advances the earlier prepared-expansion boundary without claiming general recursive sampling
+or typed outer-context composition.
+
+
+The subsequent isolated [independent product and native recovery increment](CLASSIFIER_CARTESIAN_RECOVERY.md)
+extends the preserved single-occurrence family milestone. Its exact admission, producer identity,
+characterization, embedded persistence and verification boundaries are documented separately.

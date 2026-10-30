@@ -1,4 +1,13 @@
 import { test, expect } from "@playwright/test";
+test("declared closed lists retain admin controls and community lists advertise proposals", async ({ page }) => {
+  await page.goto("/tests/authority-codelists.html?closed");
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(page.getByText("Provider-declared codelist: closed to new proposals; administrators can manage codes.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add code", exact: true })).toBeEnabled();
+  await page.goto("/tests/authority-codelists.html?community");
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(page.getByText("Community codelist: accepts proposals.")).toBeVisible();
+});
 test("review transmits exact proposal and displayed revision", async ({ page }) => {
   await page.goto("/tests/authority-codelists.html");
   await page.getByRole("button", { name: "Refresh", exact: true }).click();

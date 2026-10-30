@@ -58,6 +58,7 @@ public class CoreOntology {
     coreConceptIds.put(SemanticType.CONFIGURATION, NS.CORE_CONFIGURATION);
     coreConceptIds.put(SemanticType.CLASS, NS.CORE_TYPE);
     coreConceptIds.put(SemanticType.QUANTITY, NS.CORE_QUANTITY);
+    coreConceptIds.put(SemanticType.QUALITY, NS.CORE_QUALITY);
     coreConceptIds.put(SemanticType.DOMAIN, NS.CORE_DOMAIN);
     coreConceptIds.put(SemanticType.ENERGY, NS.CORE_ENERGY);
     coreConceptIds.put(SemanticType.ENTROPY, NS.CORE_ENTROPY);
@@ -88,6 +89,7 @@ public class CoreOntology {
     coreConceptIds.put(SemanticType.RATIO, NS.CORE_RATIO);
     coreConceptIds.put(SemanticType.VALUE, NS.CORE_VALUE);
     coreConceptIds.put(SemanticType.CHANGE, NS.CORE_CHANGE);
+    coreConceptIds.put(SemanticType.RATE, NS.CORE_CHANGE_RATE);
     coreConceptIds.put(SemanticType.OCCURRENCE, NS.CORE_OCCURRENCE);
     coreConceptIds.put(SemanticType.PRESENCE, NS.CORE_PRESENCE);
     coreConceptIds.put(SemanticType.EXTENT, NS.CORE_EXTENT);
@@ -134,6 +136,7 @@ public class CoreOntology {
                   + " is ambiguous: "
                   + implemented);
         } else if (implemented.isEmpty()) {
+          // FIXME these are mostly wrong, should reconsider core inheritance
           scope.warn(
               "Inconsistent worldview: can't establish the fundamental type for core concept "
                   + concept.getNamespace()
@@ -144,32 +147,54 @@ public class CoreOntology {
                   + ")");
         } else {
           var type = implemented.iterator().next();
-          if (coreConcepts.containsKey(type)) {
-            // should be an error
-            scope.warn(
-                "Inconsistent worldview: fundamental type "
-                    + type
-                    + ", assigned to core concept "
-                    + coreConcepts.get(type)
-                    + ", is being reassigned to "
-                    + concept.getNamespace()
-                    + ":"
-                    + concept.getUrn());
-          } else {
-            coreConcepts.put(type, concept.getNamespace() + ":" + concept.getUrn());
+          // Specialized Domain aliases name distinct canonical ODO classes; they
+          // do not each claim the fundamental Domain slot.
+          if (type == SemanticType.DOMAIN
+              && !sameCoreIdentity(concept.getUpperConceptDefined(), NS.CORE_DOMAIN)) {
+            if (Set.of("odo:PhysicalDomain", "odo:KnowledgeDomain", "odo:NormativeDomain")
+                .stream().anyMatch(id -> sameCoreIdentity(concept.getUpperConceptDefined(), id)))
+              continue;
+            scope.warn("Inconsistent worldview: core alias " + concept.getNamespace() + ":"
+                + concept.getUrn() + " declares fundamental type DOMAIN but targets "
+                + concept.getUpperConceptDefined() + " instead of a canonical ODO Domain kind");
+            continue;
           }
+//          if (coreConcepts.containsKey(type)) {
+            // should be an error
+            // FIXME these are mostly wrong, should reconsider core inheritance
+//            scope.warn(
+//                "Inconsistent worldview: fundamental type "
+//                    + type
+//                    + ", assigned to core concept "
+//                    + coreConcepts.get(type)
+//                    + ", is being reassigned to "
+//                    + concept.getNamespace()
+//                    + ":"
+//                    + concept.getUrn());
+//          } else {
+            coreConcepts.put(type, concept.getNamespace() + ":" + concept.getUrn());
+//          }
         }
       }
     }
 
     for (SemanticType type : SemanticType.DECLARABLE_TYPES) {
       if (!coreConcepts.containsKey(type)) {
-        scope.warn(
-            "Inconsistent worldview: fundamental type "
-                + type
-                + " is not assigned to a worldview concept");
+        // FIXME these are mostly wrong, should reconsider core inheritance
+//        scope.warn(
+//            "Inconsistent worldview: fundamental type "
+//                + type
+//                + " is not assigned to a worldview concept");
       }
     }
+  }
+
+  /** Compare resolved canonical concept identities, independently of local alias spelling. */
+  private boolean sameCoreIdentity(String declared, String canonical) {
+    var target = owl.getConcept(declared);
+    var expected = owl.getConcept(canonical);
+    return target != null && expected != null
+        && Objects.equals(target.getUrn(), expected.getUrn());
   }
 
   public static interface NS {
@@ -191,8 +216,10 @@ public class CoreOntology {
     public static final String HAS_SUBJECTIVE_TRAIT_PROPERTY = "odo:hasSubjectiveTrait";
     public static final String IS_SUBJECTIVE = "odo:isSubjective";
     public static final String IS_INHERENT_TO_PROPERTY = "odo:isInherentTo";
+    public static final String OBSERVATIONALLY_CONTAINS_PROPERTY = "odo:observationallyContains";
     // TODO decide which ones go in klab and which in ODO
     public static final String DESCRIBES_OBSERVABLE_PROPERTY = "klab:describesObservable";
+    public static final String DESCRIBES_QUALITY_PROPERTY = "odo:describesQuality";
     public static final String IS_COMPARED_TO_PROPERTY = "klab:isComparedTo";
     public static final String HAS_ROLE_PROPERTY = "odo:hasRole";
     public static final String DENIABILITY_PROPERTY = "odo:isDeniable";
@@ -278,6 +305,7 @@ public class CoreOntology {
     public static final String CORE_PROCESS = "odo:Process";
     public static final String CORE_EVENT = "odo:Event";
     public static final String CORE_IDENTITY = "odo:Identity";
+    public static final String CORE_QUALITY = "odo:Quality";
     public static final String CORE_QUANTITY = "odo:ContinuousNumericallyQuantifiableQuality";
     public static final String CORE_SUBJECT = "odo:Subject";
     public static final String CORE_EXTENSIVE_PHYSICAL_PROPERTY = "odo:ExtensivePhysicalProperty";
@@ -330,9 +358,20 @@ public class CoreOntology {
   }
 
   public CoreOntology(File directory, OWL owl) {
+    this(directory, owl, true);
+  }
+
+  public CoreOntology(File directory, OWL owl, boolean extractClasspath) {
     this.root = directory;
     this.owl = owl;
-    Utils.Classpath.extractKnowledgeFromClasspath(this.root);
+    if (extractClasspath) {
+      Utils.Classpath.extractKnowledgeFromClasspath(this.root);
+      try {
+        CoreOntologyCatalog.synchronizeBundledCore(this.root.toPath());
+      } catch (java.io.IOException failure) {
+        throw new IllegalStateException("Cannot synchronize bundled core ontology", failure);
+      }
+    }
   }
 
   public CoreOntology(List<Pair<String, String>> ontologies, OWL owl) {
@@ -420,7 +459,7 @@ public class CoreOntology {
     } else if (type.contains(SemanticType.LENGTH)) {
       ret = SemanticType.LENGTH;
     } else if (type.contains(SemanticType.MASS)) {
-      ret = SemanticType.LENGTH;
+      ret = SemanticType.MASS;
     } else if (type.contains(SemanticType.VOLUME)) {
       ret = SemanticType.VOLUME;
     } else if (type.contains(SemanticType.WEIGHT)) {
@@ -471,6 +510,8 @@ public class CoreOntology {
       ret = SemanticType.VALUE;
     } else if (type.contains(SemanticType.MONETARY_VALUE)) {
       ret = SemanticType.MONETARY_VALUE;
+    } else if (type.contains(SemanticType.RATE)) {
+      ret = SemanticType.RATE;
     } else if (type.contains(SemanticType.OCCURRENCE)) {
       ret = SemanticType.OCCURRENCE;
     } else if (type.contains(SemanticType.PRESENCE)) {
@@ -483,6 +524,9 @@ public class CoreOntology {
       ret = SemanticType.EXTENSIVE;
     } else if (type.contains(SemanticType.INTENSIVE)) {
       ret = SemanticType.INTENSIVE;
+    } else if (type.contains(SemanticType.QUALITY)) {
+      // A bare quality has no specialized parent. More specific quality types take precedence.
+      ret = SemanticType.QUALITY;
     } /*
        * else if (type.contains(Type.ASSESSMENT)) { ret = Type.ASSESSMENT; }
        */

@@ -1,0 +1,38 @@
+Recorded local reproduction, 29 October 2026
+JDK: Temurin javac 21.0.12.1; Windows; production source ref c872c1040c354375b7c72b180a649c7508bcebc6.
+Paths below replace only machine-specific directories with <...> placeholders.
+No production Java source was modified.
+
+PORTABLE REAL-METHOD REPRODUCER (tested without private distribution dependencies)
+
+old: 1.0.0-20261016.113257-72; enum values=54; unhandled=[]; javac exit=0
+new: 1.0.0-20261029.085338-82; enum values=55; unhandled=['RELATIONSHIP']; javac exit=1
+<output>/source/AdapterSwitchReproduction.java:8: error: the switch expression does not cover all possible input values
+        switch (type) {
+        ^
+1 error
+Expected old-pass/new-fail reproduced: True
+
+Underlying javac command, each case (all source text unchanged between cases):
+javac --release 21 -proc:none -classpath <pinned-case-jar> -sourcepath <empty-directory> -d <case-output> <source>/SemanticType.java <source>/AdapterSwitchReproduction.java
+
+FULL PRODUCTION-FILE REPRODUCTION (supplementary local installation required)
+
+New binary first on classpath; process exit 1:
+javac -proc:none --release 21 -classpath "<new-pinned-jar>;<Resources-distribution>/*" -sourcepath <empty-directory> -d <output> <checkout>/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/LanguageAdapter.java <checkout>/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/ObservationPlanAdapter.java
+
+<checkout>/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/LanguageAdapter.java:1234: error: the switch expression does not cover all possible input values
+        switch (type) {
+        ^
+Note: <checkout>/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/LanguageAdapter.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 error
+
+Old 1.0.0-20261016.113257-72 binary first on the same classpath; process exit 0:
+Note: <checkout>/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/LanguageAdapter.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+The full-file probe initially omitted ObservationPlanAdapter.java and failed with a missing-symbol preparation error. Including that unchanged companion file produced the exact switch failure above. That initial preparation failure is not counted as reproduction of the CI error.
+
+These are compiler checks only, not semantic correctness tests or a full Maven CI replay.
+No observation Jobs, sessions, contexts, service restarts or computation-attempt budget were used.

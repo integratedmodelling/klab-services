@@ -1,0 +1,1850 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] klab-services                                                      [pom]
+[INFO] Core API classes                                                   [jar]
+[INFO] klab.core.common                                                   [jar]
+[INFO] k.LAB services core                                                [jar]
+[INFO] k.LAB reasoner service                                             [jar]
+[INFO] klab.services.resolver                                             [jar]
+[INFO] k.LAB resources service                                            [jar]
+[INFO] klab.services.reasoner.server                                      [jar]
+[INFO] 
+[INFO] ---------------< org.integratedmodelling:klab-services >----------------
+[INFO] Building klab-services 1.0.0-SNAPSHOT                              [1/8]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab-services ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\mario\git\klab-services
+[INFO] Storing buildNumber: 853aee07197ce67ca43353ef838917dc95820697 at timestamp: 1792229666149
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] ---------------< org.integratedmodelling:klab.core.api >----------------
+[INFO] Building Core API classes 1.0.0-SNAPSHOT                           [2/8]
+[INFO]   from klab.core.api\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab.core.api ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\mario\git\klab-services\klab.core.api
+[INFO] Storing buildNumber: 853aee07197ce67ca43353ef838917dc95820697 at timestamp: 1792229666366
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab.core.api ---
+[INFO] Copying 5 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ klab.core.api ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 473 source files with javac [debug target 21] to target\classes
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Resource.java:[221,13] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Resource.java:[422,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/Data.java:[708,19] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/Data.java:[741,13] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/Data.java:[775,17] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/Data.java:[784,30] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/KnowledgeGraph.java:[518,9] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/mediation/classification/LookupTable.java:[57,16] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Expression.java:[44,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[528,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[535,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[542,10] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[553,16] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[563,11] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Reasoner.java:[581,11] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/ResourcesService.java:[399,31] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/runtime/extension/KlabFunction.java:[193,11] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/view/modeler/views/ContextInspector.java:[13,8] deprecated item is not annotated with @Deprecated
+[INFO] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/utils/Utils.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/utils/Utils.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/utils/Utils.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.api/src/main/java/org/integratedmodelling/klab/api/utils/Utils.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab.core.api ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ klab.core.api ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 18 source files with javac [debug target 21] to target\test-classes
+[INFO] /C:/Users/mario/git/klab-services/klab.core.api/src/test/java/org/integratedmodelling/klab/api/lang/kim/DependencyExpansionDetachmentTest.java: C:\Users\mario\git\klab-services\klab.core.api\src\test\java\org\integratedmodelling\klab\api\lang\kim\DependencyExpansionDetachmentTest.java uses unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.api/src/test/java/org/integratedmodelling/klab/api/lang/kim/DependencyExpansionDetachmentTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ klab.core.api ---
+[INFO] 
+[INFO] --------------< org.integratedmodelling:klab.core.common >--------------
+[INFO] Building klab.core.common 1.0.0-SNAPSHOT                           [3/8]
+[INFO]   from klab.core.common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab.core.common ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\mario\git\klab-services\klab.core.common
+[INFO] Storing buildNumber: 853aee07197ce67ca43353ef838917dc95820697 at timestamp: 1792229674309
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- avro:1.12.1:schema (default) @ klab.core.common ---
+[INFO] 
+[INFO] --- avro:1.12.1:protocol (default) @ klab.core.common ---
+[INFO] 
+[INFO] --- avro:1.12.1:idl-protocol (default) @ klab.core.common ---
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab.core.common ---
+[INFO] skip non existing resourceDirectory C:\Users\mario\git\klab-services\klab.core.common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ klab.core.common ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 133 source files with javac [debug target 21] to target\classes
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.common/src/main/java/org/integratedmodelling/common/authentication/Authentication.java:[439,34] non-varargs call of varargs method with inexact argument type for last parameter;
+  cast to java.lang.String for a varargs call
+  cast to java.lang.String[] for a non-varargs call and to suppress this warning
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.common/src/main/java/org/integratedmodelling/klab/rest/NodeCapabilities.java:[14,8] deprecated item is not annotated with @Deprecated
+[WARNING] /C:/Users/mario/git/klab-services/klab.core.common/src/main/java/org/integratedmodelling/klab/rest/ObservableReference.java:[13,8] deprecated item is not annotated with @Deprecated
+[INFO] /C:/Users/mario/git/klab-services/klab.core.common/src/main/java/org/integratedmodelling/common/utils/Utils.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.common/src/main/java/org/integratedmodelling/common/utils/Utils.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.common/src/main/java/org/integratedmodelling/common/utils/Utils.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.common/src/main/java/org/integratedmodelling/common/utils/Utils.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab.core.common ---
+[INFO] skip non existing resourceDirectory C:\Users\mario\git\klab-services\klab.core.common\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ klab.core.common ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 67 source files with javac [debug target 21] to target\test-classes
+[INFO] /C:/Users/mario/git/klab-services/klab.core.common/src/test/java/org/integratedmodelling/common/knowledge/WorldviewAuthorityTransportTest.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.common/src/test/java/org/integratedmodelling/common/knowledge/WorldviewAuthorityTransportTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.common/src/test/java/org/integratedmodelling/common/services/client/digitaltwin/ClientKnowledgeGraphTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.core.common/src/test/java/org/integratedmodelling/common/services/client/digitaltwin/ClientKnowledgeGraphTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ klab.core.common ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.integratedmodelling.common.knowledge.WorldviewAuthorityTransportTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\mario\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.5\byte-buddy-agent-1.17.5.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.426 s -- in org.integratedmodelling.common.knowledge.WorldviewAuthorityTransportTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -------------< org.integratedmodelling:klab.core.services >-------------
+[INFO] Building k.LAB services core 1.0.0-SNAPSHOT                        [4/8]
+[INFO]   from klab.core.services\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab.core.services ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\mario\git\klab-services\klab.core.services
+[INFO] Storing buildNumber: 853aee07197ce67ca43353ef838917dc95820697 at timestamp: 1792229681978
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- groovy-eclipse-compiler:3.9.0:add-groovy-build-paths (default-add-groovy-build-paths) @ klab.core.services ---
+[INFO] Adding /src/main/groovy to the list of source folders
+[INFO] Adding /src/test/groovy to the list of test source folders
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab.core.services ---
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (compile) @ klab.core.services ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Using Groovy-Eclipse compiler to compile both Java and Groovy files
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\persistence\h2\SQL.java:[25,8] 
+1. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\persistence\h2\SQL.java (at line 25)
+	import java.util.Collections;
+	       ^^^^^^^^^^^^^^^^^^^^^
+The import java.util.Collections is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\persistence\h2\SQL.java:[26,8] 
+2. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\persistence\h2\SQL.java (at line 26)
+	import java.util.HashMap;
+	       ^^^^^^^^^^^^^^^^^
+The import java.util.HashMap is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\testing\exceptions\KlabTestCaseBuildingException.java:[5,8] 
+3. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\testing\exceptions\KlabTestCaseBuildingException.java (at line 5)
+	import org.integratedmodelling.klab.testing.TestCases;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.testing.TestCases is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java:[23,14] 
+4. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java (at line 23)
+	public class ItemDeserializer extends StdDeserializer<Item> {
+	             ^^^^^^^^^^^^^^^^
+The serializable class ItemDeserializer does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java:[75,1] 
+5. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java (at line 75)
+	STACGeometry geometry = item.getGeometry();
+	^^^^^^^^^^^^
+STACGeometry is a raw type. References to generic type STACGeometry<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java:[79,1] 
+6. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java (at line 79)
+	geometry.setCoordinates(JsonValueHelper.getDoubleArray1(child, "coordinates"));
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: The method setCoordinates(Object) belongs to the raw type STACGeometry. References to generic type STACGeometry<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java:[82,1] 
+7. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java (at line 82)
+	geometry.setCoordinates(JsonValueHelper.getDoubleArray2(child, "coordinates"));
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: The method setCoordinates(Object) belongs to the raw type STACGeometry. References to generic type STACGeometry<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java:[85,1] 
+8. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java (at line 85)
+	geometry.setCoordinates(JsonValueHelper.getDoubleArray3(child, "coordinates"));
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: The method setCoordinates(Object) belongs to the raw type STACGeometry. References to generic type STACGeometry<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java:[88,1] 
+9. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java (at line 88)
+	geometry.setCoordinates(JsonValueHelper.getDoubleArray4(child, "coordinates"));
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: The method setCoordinates(Object) belongs to the raw type STACGeometry. References to generic type STACGeometry<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java:[163,9] 
+10. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java (at line 163)
+	switch (node.numberType()) {
+	        ^^^^^^^^^^^^^^^^^
+The enum constant BIG_DECIMAL needs a corresponding case label in this enum switch on JsonParser.NumberType
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java:[163,9] 
+11. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\ItemDeserializer.java (at line 163)
+	switch (node.numberType()) {
+	        ^^^^^^^^^^^^^^^^^
+The enum constant BIG_INTEGER needs a corresponding case label in this enum switch on JsonParser.NumberType
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\KimWorldviewValidator.java:[176,29] 
+12. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\KimWorldviewValidator.java (at line 176)
+	private KimConceptStatement find(List<KimConceptStatement> statements, String namespace, String urn) {
+	                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method find(List<KimConceptStatement>, String, String) from the type KimWorldviewValidator is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\CoverageImpl.java:[62,70] 
+13. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\CoverageImpl.java (at line 62)
+	private Map<Dimension.Type, List<Pair<LogicalConnector, Extent<?>>>> merged = new HashMap<>();
+	                                                                     ^^^^^^
+The value of the field CoverageImpl.merged is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\compiler\runtime\AgentRegistry.java:[835,20] 
+14. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\compiler\runtime\AgentRegistry.java (at line 835)
+	public final class ManagedAgent implements Agent {
+	                   ^^^^^^^^^^^^
+The serializable class ManagedAgent does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\compiler\runtime\AgentRegistry.java:[1179,28] 
+15. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\compiler\runtime\AgentRegistry.java (at line 1179)
+	private static final class JavaCompilationException extends Exception {
+	                           ^^^^^^^^^^^^^^^^^^^^^^^^
+The serializable class JavaCompilationException does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResourcesConfiguration.java:[6,8] 
+16. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResourcesConfiguration.java (at line 6)
+	import java.net.CacheRequest;
+	       ^^^^^^^^^^^^^^^^^^^^^
+The import java.net.CacheRequest is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResourcesConfiguration.java:[7,8] 
+17. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResourcesConfiguration.java (at line 7)
+	import java.net.URI;
+	       ^^^^^^^^^^^^
+The import java.net.URI is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResourcesConfiguration.java:[13,8] 
+18. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResourcesConfiguration.java (at line 13)
+	import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.authentication.CRUDOperation is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[35,20] 
+19. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 35)
+	this.stacURL = new URL(baseURL);
+	                   ^^^^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[46,20] 
+20. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 46)
+	this.stacURL = new URL(baseURL);
+	                   ^^^^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[60,51] 
+21. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 60)
+	final HTTPResponse response = this.client.get(new URL(this.stacURL + "/collections"));
+	                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[73,21] 
+22. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 73)
+	this.client.get(new URL(this.stacURL + "/collections/" + collectionName));
+	                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[101,51] 
+23. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 101)
+	final HTTPResponse response = this.client.get(new URL(href));
+	                                                  ^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[115,51] 
+24. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 115)
+	final HTTPResponse response = this.client.get(new URL(href));
+	                                                  ^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[166,51] 
+25. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 166)
+	final HTTPResponse response = this.client.get(new URL(href.toString()));
+	                                                  ^^^^^^^^^^^^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[198,51] 
+26. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 198)
+	final HTTPResponse response = this.client.get(new URL(href));
+	                                                  ^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[223,51] 
+27. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 223)
+	final HTTPResponse response = this.client.get(new URL(href));
+	                                                  ^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[246,51] 
+28. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 246)
+	final HTTPResponse response = this.client.get(new URL(asset.getHref()));
+	                                                  ^^^^^^^^^^^^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java:[256,51] 
+29. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\STACClient.java (at line 256)
+	final HTTPResponse response = this.client.get(new URL(href));
+	                                                  ^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java:[24,8] 
+30. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java (at line 24)
+	import java.util.stream.Stream;
+	       ^^^^^^^^^^^^^^^^^^^^^^^
+The import java.util.stream.Stream is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java:[43,8] 
+31. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java (at line 43)
+	import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java:[75,8] 
+32. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java (at line 75)
+	import javax.print.DocFlavor;
+	       ^^^^^^^^^^^^^^^^^^^^^
+The import javax.print.DocFlavor is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java:[116,18] 
+33. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java (at line 116)
+	private Identity identity;
+	                 ^^^^^^^^
+The value of the field BaseService.identity is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java:[793,16] 
+34. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java (at line 793)
+	for (var doc : KnowledgeRepository.INSTANCE.ingest(resourceSet, scope, Knowledge.class)) {
+	               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: A generic array of Pair<KlabAsset.KnowledgeClass,Function<KlabAsset,List<KlabAsset>>> is created for a varargs parameter
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java:[795,9] 
+35. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\base\BaseService.java (at line 795)
+	ret.add((T) doc);
+	        ^^^^^^^
+Type safety: Unchecked cast from Knowledge to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\WrappingDataBuilder.java:[28,19] 
+36. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\WrappingDataBuilder.java (at line 28)
+	private final Urn identity;
+	                  ^^^^^^^^
+The value of the field WrappingDataBuilder.identity is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\StorageImpl.java:[56,8] 
+37. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\StorageImpl.java (at line 56)
+	public ComparableLongList() {
+	       ^^^^^^^^^^^^^^^^^^^^
+The constructor StorageImpl.ComparableLongList() is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\UserServiceScope.java:[22,8] 
+38. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\UserServiceScope.java (at line 22)
+	import org.integratedmodelling.klab.api.utils.Utils;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.utils.Utils is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\UserServiceScope.java:[42,70] 
+39. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\UserServiceScope.java (at line 42)
+	private final Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
+	                                                                     ^^^^^^^^^^^^^^^^
+The value of the field UserServiceScope.responseHandlers is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\time\TimeImpl.java:[5,8] 
+40. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\time\TimeImpl.java (at line 5)
+	import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\time\TimeImpl.java:[278,8] 
+41. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\time\TimeImpl.java (at line 278)
+	return (Extent<T>) create(mergedStart, mergedEnd);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from TimeImpl to Extent<T>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\time\TimeImpl.java:[645,21] 
+42. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\time\TimeImpl.java (at line 645)
+	private static Time initialization(Scale scale) {
+	                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method initialization(Scale) from the type TimeImpl is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\libraries\CoreActorLibrary.java:[1918,2] 
+43. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\libraries\CoreActorLibrary.java (at line 1918)
+	.requireAgent(scope.getAgent().getName());
+	 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method requireAgent(String) from the type KnowledgeGraph is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\SpatialDeserializer.java:[14,14] 
+44. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\SpatialDeserializer.java (at line 14)
+	public class SpatialDeserializer extends StdDeserializer<SpatialExtent> {
+	             ^^^^^^^^^^^^^^^^^^^
+The serializable class SpatialDeserializer does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\SpaceImpl.java:[14,8] 
+45. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\SpaceImpl.java (at line 14)
+	import org.integratedmodelling.klab.api.utils.Utils;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.utils.Utils is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\SpaceImpl.java:[37,7] 
+46. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\SpaceImpl.java (at line 37)
+	Space ret = null;
+	      ^^^
+The value of the local variable ret is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\SpaceImpl.java:[106,34] 
+47. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\SpaceImpl.java (at line 106)
+	if (!(scope instanceof UserScope userScope)) {
+	                                 ^^^^^^^^^
+The value of the local variable userScope is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabJobController.java:[12,8] 
+48. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabJobController.java (at line 12)
+	import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.services.scopes.ServiceSessionScope is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabJobController.java:[16,8] 
+49. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabJobController.java (at line 16)
+	import org.springframework.web.bind.annotation.RequestParam;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.springframework.web.bind.annotation.RequestParam is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java:[9,8] 
+50. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java (at line 9)
+	import org.integratedmodelling.common.logging.Logging;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.common.logging.Logging is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java:[95,8] 
+51. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java (at line 95)
+	return (T) resourcesMerger;
+	       ^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from ResourcesMerger to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java:[110,39] 
+52. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java (at line 110)
+	ret.addAll(services.stream().map(s -> (T) s).toList());
+	                                      ^^^^^
+Type safety: Unchecked cast from KlabService to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java:[119,11] 
+53. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java (at line 119)
+	.map(s -> (T) s)
+	          ^^^^^
+Type safety: Unchecked cast from KlabService to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java:[253,24] 
+54. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java (at line 253)
+	final ServiceUserScope originalScope = this;
+	                       ^^^^^^^^^^^^^
+The value of the local variable originalScope is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java:[493,25] 
+55. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceUserScope.java (at line 493)
+	this.payloadCollector = (List<Object>) payloadCollection;
+	                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from List<T> to List<Object>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\mediation\UnitServiceImpl.java:[17,8] 
+56. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\mediation\UnitServiceImpl.java (at line 17)
+	import java.util.Collections;
+	       ^^^^^^^^^^^^^^^^^^^^^
+The import java.util.Collections is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\mediation\UnitServiceImpl.java:[18,8] 
+57. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\mediation\UnitServiceImpl.java (at line 18)
+	import java.util.HashMap;
+	       ^^^^^^^^^^^^^^^^^
+The import java.util.HashMap is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\mediation\UnitServiceImpl.java:[147,10] 
+58. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\mediation\UnitServiceImpl.java (at line 147)
+	UnitImpl ui = (UnitImpl) unit;
+	         ^^
+The value of the local variable ui is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabAdminController.java:[12,8] 
+59. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabAdminController.java (at line 12)
+	import org.integratedmodelling.klab.api.collections.Parameters;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.collections.Parameters is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabAdminController.java:[15,8] 
+60. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabAdminController.java (at line 15)
+	import org.integratedmodelling.klab.api.scope.Scope;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.scope.Scope is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabAdminController.java:[16,8] 
+61. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabAdminController.java (at line 16)
+	import org.integratedmodelling.klab.api.scope.UserScope;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.scope.UserScope is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ObservationPlanAdapter.java:[252,59] 
+62. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ObservationPlanAdapter.java (at line 252)
+	} else if (syntax instanceof ObservationSyntax.AnyPattern value) {
+	                                                          ^^^^^
+The value of the local variable value is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ObservationPlanAdapter.java:[255,62] 
+63. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ObservationPlanAdapter.java (at line 255)
+	} else if (syntax instanceof ObservationSyntax.AbsentPattern value) {
+	                                                             ^^^^^
+The value of the local variable value is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\CapturedSemanticExpressionParser.java:[48,18] 
+64. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\CapturedSemanticExpressionParser.java (at line 48)
+	var syntax = new SemanticSyntaxImpl(expression, false, null, scope) {
+	                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\CapturedSemanticExpressionParser.java:[63,18] 
+65. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\CapturedSemanticExpressionParser.java (at line 63)
+	var syntax = new ObservableSyntaxImpl(expression, scope) {
+	                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Extensible.java:[39,30] 
+66. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Extensible.java (at line 39)
+	return this.fields != null ? (T) this.fields.get(name) : null;
+	                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Object to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Extensible.java:[80,29] 
+67. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Extensible.java (at line 80)
+	return extensions != null ? (T) extensions.get(extensionType) : null;
+	                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Extension<capture#2-of ?> to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java:[17,8] 
+68. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java (at line 17)
+	return (T) scanners.getFirst();
+	       ^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Storage.Scanner to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java:[24,31] 
+69. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java (at line 24)
+	private abstract static class RemappingScanner implements Storage.Scanner {}
+	                              ^^^^^^^^^^^^^^^^
+The type ScannerAdapters.RemappingScanner is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java:[28,31] 
+70. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java (at line 28)
+	private abstract static class MergingScanner implements Storage.Scanner {}
+	                              ^^^^^^^^^^^^^^
+The type ScannerAdapters.MergingScanner is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java:[163,22] 
+71. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java (at line 163)
+	private static class MockShard implements Storage.Shard {
+	                     ^^^^^^^^^
+The type ScannerAdapters.MockShard is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java:[165,8] 
+72. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ScannerAdapters.java (at line 165)
+	public MockShard(Geometry geometry, Data.ShardingStrategy shardingStrategy) {}
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The constructor ScannerAdapters.MockShard(Geometry, Data.ShardingStrategy) is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[988,32] 
+73. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 988)
+	Extensions.ComponentDescriptor target = null;
+	                               ^^^^^^
+The value of the local variable target is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[989,5] 
+74. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 989)
+	var empty = true;
+	    ^^^^^
+The value of the local variable empty is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[2002,25] 
+75. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 2002)
+	var license = component.getWrapper().getDescriptor().getLicense();
+	                        ^^^^^^^^^^^^
+The method getWrapper() from the type Plugin is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[2003,29] 
+76. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 2003)
+	var description = component.getWrapper().getDescriptor().getPluginDescription();
+	                            ^^^^^^^^^^^^
+The method getWrapper() from the type Plugin is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[2007,11] 
+77. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 2007)
+	component.getWrapper().getPluginPath() == null
+	          ^^^^^^^^^^^^
+The method getWrapper() from the type Plugin is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[2009,13] 
+78. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 2009)
+	: component.getWrapper().getPluginPath().toFile();
+	            ^^^^^^^^^^^^
+The method getWrapper() from the type Plugin is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[2658,9] 
+79. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 2658)
+	switch (serviceInfo.getFunctionType()) {
+	        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The enum constant FREEFORM needs a corresponding case label in this enum switch on ServiceInfo.FunctionType
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[2673,1] 
+80. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 2673)
+	Class[] ret = null;
+	^^^^^
+Class is a raw type. References to generic type Class<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[3319,27] 
+81. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 3319)
+	.addClassLoader(component.getWrapper().getPluginClassLoader())
+	                          ^^^^^^^^^^^^
+The method getWrapper() from the type Plugin is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[3327,44] 
+82. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 3327)
+	routeClassInfo.getName(), false, component.getWrapper().getPluginClassLoader());
+	                                           ^^^^^^^^^^^^
+The method getWrapper() from the type Plugin is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[3361,26] 
+83. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 3361)
+	ret.setFilter(annotation.filter());
+	                         ^^^^^^^^
+The method filter() from the type KlabFunction is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java:[3694,22] 
+84. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\components\ComponentRegistry.java (at line 3694)
+	var file = component.getWrapper().getPluginPath().toFile();
+	                     ^^^^^^^^^^^^
+The method getWrapper() from the type Plugin is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\utilities\Utils.java:[10,8] 
+85. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\utilities\Utils.java (at line 10)
+	import java.nio.file.Files;
+	       ^^^^^^^^^^^^^^^^^^^
+The import java.nio.file.Files is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\utilities\Utils.java:[500,10] 
+86. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\utilities\Utils.java (at line 500)
+	for (var pair : templates) {
+	         ^^^^
+The value of the local variable pair is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\utilities\Utils.java:[1745,21] 
+87. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\utilities\Utils.java (at line 1745)
+	CredentialsProvider ret = null;
+	                    ^^^
+The value of the local variable ret is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java:[3,8] 
+88. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java (at line 3)
+	import java.io.File;
+	       ^^^^^^^^^^^^
+The import java.io.File is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java:[4,8] 
+89. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java (at line 4)
+	import java.net.URI;
+	       ^^^^^^^^^^^^
+The import java.net.URI is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java:[7,8] 
+90. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java (at line 7)
+	import org.integratedmodelling.common.utils.Utils;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.common.utils.Utils is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java:[8,8] 
+91. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java (at line 8)
+	import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.authentication.CRUDOperation is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java:[9,8] 
+92. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java (at line 9)
+	import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.authentication.ResourcePrivileges is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java:[10,8] 
+93. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\configuration\ResolverConfiguration.java (at line 10)
+	import org.integratedmodelling.klab.api.collections.Parameters;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.collections.Parameters is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\ScalarComputationGroovy.java:[49,24] 
+94. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\ScalarComputationGroovy.java (at line 49)
+	private final Actuator actuator;
+	                       ^^^^^^^^
+The value of the field ScalarComputationGroovy.BuilderImpl.actuator is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\ScalarComputationGroovy.java:[408,22] 
+95. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\ScalarComputationGroovy.java (at line 408)
+	private ContextScope scope;
+	                     ^^^^^
+The value of the field ScalarComputationGroovy.scope is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\STACException.java:[3,14] 
+96. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\STACException.java (at line 3)
+	public class STACException extends Exception {
+	             ^^^^^^^^^^^^^
+The serializable class STACException does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java:[27,8] 
+97. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java (at line 27)
+	import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java:[153,9] 
+98. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java (at line 153)
+	public <T extends KlabService> T getService(Class<T> serviceClass) {
+	        ^
+The type parameter T is hiding the type T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java:[169,9] 
+99. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java (at line 169)
+	public <T extends KlabService> Optional<T> findService(
+	        ^
+The type parameter T is hiding the type T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java:[178,9] 
+100. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java (at line 178)
+	public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+	        ^
+The type parameter T is hiding the type T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java:[316,1] 
+101. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\ServiceInstance.java (at line 316)
+	ServiceClientCatalog.INSTANCE.getService(
+                s.getUrls().getFirst(),
+                SettingsImpl.forServiceOwner(s.getIdentityType()),
+                scope,
+                s.getIdentityType().classify());
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: A generic array of BiConsumer<KlabService.ServiceStatus,Boolean> is created for a varargs parameter
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\GenericRAMIndexer.java:[5,8] 
+102. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\GenericRAMIndexer.java (at line 5)
+	import java.util.Collections;
+	       ^^^^^^^^^^^^^^^^^^^^^
+The import java.util.Collections is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\GenericRAMIndexer.java:[6,8] 
+103. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\GenericRAMIndexer.java (at line 6)
+	import java.util.HashMap;
+	       ^^^^^^^^^^^^^^^^^
+The import java.util.HashMap is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\ScannerAdapter.java:[13,8] 
+104. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\ScannerAdapter.java (at line 13)
+	return (T) scanner;
+	       ^^^^^^^^^^^
+Type safety: Unchecked cast from Storage.Scanner to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SearchContext.java:[139,23] 
+105. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SearchContext.java (at line 139)
+	private SearchContext parent = null;
+	                      ^^^^^^
+The value of the field SearchContext.parent is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\ApplicationBase.java:[11,21] 
+106. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\ApplicationBase.java (at line 11)
+	public static class ApplicationScope extends AgentScope {
+	                    ^^^^^^^^^^^^^^^^
+The serializable class ApplicationScope does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java:[248,13] 
+107. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java (at line 248)
+	private int errors = 0;
+	            ^^^^^^
+The value of the field RuntimeAgentBase.errors is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java:[555,12] 
+108. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java (at line 555)
+	return new AgentScope(this) {
+	           ^^^^^^^^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java:[1435,22] 
+109. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java (at line 1435)
+	private final String urn;
+	                     ^^^
+The value of the field RuntimeAgentBase.ImportedBehaviorBinding.urn is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java:[1436,22] 
+110. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java (at line 1436)
+	private final String alias;
+	                     ^^^^^
+The value of the field RuntimeAgentBase.ImportedBehaviorBinding.alias is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java:[2591,20] 
+111. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java (at line 2591)
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	                   ^^^^^^^^^^^
+Unnecessary @SuppressWarnings("unchecked")
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java:[2591,33] 
+112. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\RuntimeAgentBase.java (at line 2591)
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	                                ^^^^^^^^^^
+Unnecessary @SuppressWarnings("rawtypes")
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthenticationResponse.java:[5,8] 
+113. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthenticationResponse.java (at line 5)
+	import org.integratedmodelling.klab.api.identities.Group;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.identities.Group is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthenticationResponse.java:[6,8] 
+114. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthenticationResponse.java (at line 6)
+	import org.integratedmodelling.klab.api.services.Service;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.services.Service is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthenticationResponse.java:[7,8] 
+115. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthenticationResponse.java (at line 7)
+	import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.rest.AuthenticatedIdentity is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\extension\KlabComponent.java:[30,1] 
+116. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\extension\KlabComponent.java (at line 30)
+	super(wrapper);
+	^^^^^^^^^^^^^^^
+The constructor Plugin(PluginWrapper) is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\extensions\ExtensionType.java:[27,31] 
+117. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\extensions\ExtensionType.java (at line 27)
+	private final Class<? extends Extension> extClass;
+	                              ^^^^^^^^^
+Extension is a raw type. References to generic type Extension<E> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\extensions\ExtensionType.java:[27,42] 
+118. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\extensions\ExtensionType.java (at line 27)
+	private final Class<? extends Extension> extClass;
+	                                         ^^^^^^^^
+The value of the field ExtensionType.extClass is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\extensions\ExtensionType.java:[29,31] 
+119. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\extensions\ExtensionType.java (at line 29)
+	ExtensionType(Class<? extends Extension> clazz, String value, String description) {
+	                              ^^^^^^^^^
+Extension is a raw type. References to generic type Extension<E> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[92,16] 
+120. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 92)
+	private String version = Version.CURRENT;
+	               ^^^^^^^
+The value of the field ServiceNetworkedInstance<T>.version is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[93,16] 
+121. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 93)
+	private String basePackage = "org.integratedmodelling.klab.services.reasoner.controllers";
+	               ^^^^^^^^^^^
+The value of the field ServiceNetworkedInstance<T>.basePackage is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[94,16] 
+122. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 94)
+	private String title = "k.LAB Reasoner API";
+	               ^^^^^
+The value of the field ServiceNetworkedInstance<T>.title is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[95,16] 
+123. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 95)
+	private String description =
+	               ^^^^^^^^^^^
+The value of the field ServiceNetworkedInstance<T>.description is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[98,16] 
+124. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 98)
+	private String contactName = "Integrated Modelling Partnership";
+	               ^^^^^^^^^^^
+The value of the field ServiceNetworkedInstance<T>.contactName is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[99,16] 
+125. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 99)
+	private String contactEmail = "info@integratedmodelling.org";
+	               ^^^^^^^^^^^^
+The value of the field ServiceNetworkedInstance<T>.contactEmail is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[105,31] 
+126. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 105)
+	private SimpMessagingTemplate webSocket;
+	                              ^^^^^^^^^
+The value of the field ServiceNetworkedInstance<T>.webSocket is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[264,30] 
+127. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 264)
+	.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+	                             ^^^^^^^^^^^^^^^^^^^^^
+The field SerializationFeature.WRITE_NULL_MAP_VALUES is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[280,14] 
+128. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 280)
+	private void setPropertiesFromEnvironment(Environment environment) {
+	             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method setPropertiesFromEnvironment(Environment) from the type ServiceNetworkedInstance<T> is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java:[284,14] 
+129. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\ServiceNetworkedInstance.java (at line 284)
+	.map(ps -> ((EnumerablePropertySource) ps).getPropertyNames())
+	             ^^^^^^^^^^^^^^^^^^^^^^^^
+EnumerablePropertySource is a raw type. References to generic type EnumerablePropertySource<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\AgentScope.java:[23,23] 
+130. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\AgentScope.java (at line 23)
+	public abstract class AgentScope extends ParametersImpl<String> implements RuntimeAgent.Scope {
+	                      ^^^^^^^^^^
+The serializable class AgentScope does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\AgentScope.java:[109,12] 
+131. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\AgentScope.java (at line 109)
+	return new AgentScope(AgentScope.this, actionId) {
+	           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\configuration\ServiceConfiguration.java:[1069,20] 
+132. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\configuration\ServiceConfiguration.java (at line 1069)
+	private static int MAX_THREADS = 10;
+	                   ^^^^^^^^^^^
+The value of the field ServiceConfiguration.MAX_THREADS is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ArgumentMatcher.java:[27,8] 
+133. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ArgumentMatcher.java (at line 27)
+	import java.util.Scanner;
+	       ^^^^^^^^^^^^^^^^^
+The import java.util.Scanner is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ArgumentMatcher.java:[65,1] 
+134. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ArgumentMatcher.java (at line 65)
+	(Class<? extends Storage.Scanner>) parameterType));
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Class<capture#5-of ?> to Class<? extends Storage.Scanner>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ArgumentMatcher.java:[206,13] 
+135. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\ArgumentMatcher.java (at line 206)
+	DigitalTwin digitalTwin = null;
+	            ^^^^^^^^^^^
+The value of the local variable digitalTwin is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ProjectionImpl.java:[21,27] 
+136. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ProjectionImpl.java (at line 21)
+	private static Projection defaultProjection;
+	                          ^^^^^^^^^^^^^^^^^
+The value of the field ProjectionImpl.defaultProjection is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ProjectionImpl.java:[22,27] 
+137. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ProjectionImpl.java (at line 22)
+	private static Projection latlonProjection;
+	                          ^^^^^^^^^^^^^^^^
+The value of the field ProjectionImpl.latlonProjection is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\WorldviewValidationScope.java:[93,5] 
+138. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\WorldviewValidationScope.java (at line 93)
+	var coreId = coreConcept.encode();
+	    ^^^^^^
+The value of the local variable coreId is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\EventWriteSession.java:[22,30] 
+139. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\EventWriteSession.java (at line 22)
+	private final ConceptDataKey key;
+	                             ^^^
+The value of the field EventWriteSession<T>.key is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\DataflowGraph.java:[19,14] 
+140. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\DataflowGraph.java (at line 19)
+	public class DataflowGraph implements Dataflow {
+	             ^^^^^^^^^^^^^
+The serializable class DataflowGraph does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\DataflowGraph.java:[21,30] 
+141. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\DataflowGraph.java (at line 21)
+	private final KnowledgeGraph database;
+	                             ^^^^^^^^
+The value of the field DataflowGraph.database is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\DataflowGraph.java:[22,28] 
+142. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\DataflowGraph.java (at line 22)
+	private final ContextScope scope;
+	                           ^^^^^
+The value of the field DataflowGraph.scope is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\TemporalDeserializer.java:[14,14] 
+143. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\parser\TemporalDeserializer.java (at line 14)
+	public class TemporalDeserializer extends StdDeserializer<TemporalExtent> {
+	             ^^^^^^^^^^^^^^^^^^^^
+The serializable class TemporalDeserializer does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\GroovyExpression.java:[72,11] 
+144. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\GroovyExpression.java (at line 72)
+	throw new KlabException("Error evaluating Groovy expression: " + code, t) {};
+	          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java:[20,8] 
+145. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java (at line 20)
+	import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.digitaltwin.Scheduler is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java:[36,8] 
+146. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java (at line 36)
+	import org.integratedmodelling.klab.api.scope.SessionScope;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.scope.SessionScope is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java:[37,8] 
+147. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java (at line 37)
+	import org.integratedmodelling.klab.api.scope.UserScope;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.scope.UserScope is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java:[62,21] 
+148. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java (at line 62)
+	private static long MAX_CACHED_GEOMETRIES = 20;
+	                    ^^^^^^^^^^^^^^^^^^^^^
+The value of the field ServiceContextScope.MAX_CACHED_GEOMETRIES is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java:[721,8] 
+149. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceContextScope.java (at line 721)
+	return (T) constraint.payload(defaultValue.getClass()).getFirst();
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from capture#1-of ? extends Object to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\RemoteResourceContextualizer.java:[5,8] 
+150. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\RemoteResourceContextualizer.java (at line 5)
+	import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\RemoteResourceContextualizer.java:[8,8] 
+151. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\RemoteResourceContextualizer.java (at line 8)
+	import org.integratedmodelling.klab.api.geometry.Geometry;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.geometry.Geometry is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\RemoteResourceContextualizer.java:[9,8] 
+152. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\RemoteResourceContextualizer.java (at line 9)
+	import org.integratedmodelling.klab.api.knowledge.Observable;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.knowledge.Observable is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\DirectDataBuilder.java:[4,8] 
+153. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\DirectDataBuilder.java (at line 4)
+	import org.integratedmodelling.klab.api.data.Storage;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.data.Storage is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\DirectDataBuilder.java:[5,8] 
+154. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\DirectDataBuilder.java (at line 5)
+	import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\DirectDataBuilder.java:[11,8] 
+155. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\DirectDataBuilder.java (at line 11)
+	import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.services.runtime.Dataflow is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\DirectDataBuilder.java:[80,5] 
+156. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\DirectDataBuilder.java (at line 80)
+	var ret = new DirectDataBuilder(this);
+	    ^^^
+The value of the local variable ret is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\resources\FileProjectStorage.java:[33,14] 
+157. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\resources\FileProjectStorage.java (at line 33)
+	private File file;
+	             ^^^^
+The value of the field FileProjectStorage.file is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\resources\FileProjectStorage.java:[39,8] 
+158. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\resources\FileProjectStorage.java (at line 39)
+	String currentBranch;
+	       ^^^^^^^^^^^^^
+The value of the local variable currentBranch is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\resources\FileProjectStorage.java:[369,9] 
+159. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\resources\FileProjectStorage.java (at line 369)
+	switch (type) {
+	        ^^^^
+The enum constant ADDITIONAL_MATERIAL needs a corresponding case label in this enum switch on ProjectStorage.ResourceType
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticClauseSupport.java:[70,62] 
+160. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticClauseSupport.java (at line 70)
+	add(result, SemanticRole.RELATIONSHIP_SOURCE, null, reasoner.relationshipSource(concept));
+	                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method relationshipSource(Semantics) from the type Reasoner is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticClauseSupport.java:[71,62] 
+161. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticClauseSupport.java (at line 71)
+	add(result, SemanticRole.RELATIONSHIP_TARGET, null, reasoner.relationshipTarget(concept));
+	                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method relationshipTarget(Semantics) from the type Reasoner is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\ConceptDataKey.java:[13,13] 
+162. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\ConceptDataKey.java (at line 13)
+	final class ConceptDataKey implements DataKey {
+	            ^^^^^^^^^^^^^^
+The serializable class ConceptDataKey does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\ConceptDataKey.java:[187,12] 
+163. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\ConceptDataKey.java (at line 187)
+	return new DataKey() {
+	           ^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticScope.java:[261,9] 
+164. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticScope.java (at line 261)
+	switch (op) {
+	        ^^
+The enum constant EXISTS needs a corresponding case label in this enum switch on ValueOperator
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticScope.java:[261,9] 
+165. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticScope.java (at line 261)
+	switch (op) {
+	        ^^
+The enum constant WHOSE needs a corresponding case label in this enum switch on ValueOperator
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticScope.java:[261,9] 
+166. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticScope.java (at line 261)
+	switch (op) {
+	        ^^
+The enum constant WHEN needs a corresponding case label in this enum switch on ValueOperator
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticScope.java:[261,9] 
+167. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticScope.java (at line 261)
+	switch (op) {
+	        ^^
+The enum constant NOTEQUAL needs a corresponding case label in this enum switch on ValueOperator
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\resources\ProjectSettingsIO.java:[47,3] 
+168. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\resources\ProjectSettingsIO.java (at line 47)
+	: Utils.Json.parseObject(new String(previousManifest, StandardCharsets.UTF_8), Map.class);
+	  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: The expression of type Map needs unchecked conversion to conform to Map<String,Object>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Item.java:[22,11] 
+169. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Item.java (at line 22)
+	protected STACGeometry geometry;
+	          ^^^^^^^^^^^^
+STACGeometry is a raw type. References to generic type STACGeometry<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Item.java:[63,8] 
+170. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Item.java (at line 63)
+	public STACGeometry getGeometry() {
+	       ^^^^^^^^^^^^
+STACGeometry is a raw type. References to generic type STACGeometry<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Item.java:[67,25] 
+171. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\model\Item.java (at line 67)
+	public void setGeometry(STACGeometry geometry) {
+	                        ^^^^^^^^^^^^
+STACGeometry is a raw type. References to generic type STACGeometry<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\StorageReadInspector.java:[5,8] 
+172. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\storage\StorageReadInspector.java (at line 5)
+	import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.digitaltwin.Scheduler is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\HttpClient.java:[112,9] 
+173. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\HttpClient.java (at line 112)
+	switch (this.authentication.getType()) {
+	        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The enum constant NONE needs a corresponding case label in this enum switch on AuthenticationType
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\HttpClient.java:[130,47] 
+174. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\HttpClient.java (at line 130)
+	URLConnection connection = openConnection(new URL(this.authentication.getLoginUrl()));
+	                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The constructor URL(String) is deprecated since version 20
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\HttpClient.java:[151,41] 
+175. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\data\stac\HttpClient.java (at line 151)
+	final Map.Entry<String, String> entry = ((Map<String, String>) data).entrySet().stream()
+	                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Object to Map<String,String>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\LanguageAdapter.java:[214,19] 
+176. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\LanguageAdapter.java (at line 214)
+	Set<SemanticType> type = null;
+	                  ^^^^
+The value of the local variable type is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\LanguageAdapter.java:[1952,1] 
+177. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\language\LanguageAdapter.java (at line 1952)
+	(Map<? extends String, ?>)
+                adaptValue(
+                    syntax.getProperties(),
+                    behaviorUrn,
+                    projectName,
+                    KlabAsset.KnowledgeClass.BEHAVIOR));
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Object to Map<? extends String,?>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java:[7,8] 
+178. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java (at line 7)
+	import org.integratedmodelling.common.logging.Logging;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.common.logging.Logging is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java:[8,8] 
+179. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java (at line 8)
+	import org.integratedmodelling.common.services.client.BaseServiceClient;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.common.services.client.BaseServiceClient is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java:[9,8] 
+180. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java (at line 9)
+	import org.integratedmodelling.common.utils.Utils;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.common.utils.Utils is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java:[10,8] 
+181. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java (at line 10)
+	import org.integratedmodelling.klab.api.Klab;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.Klab is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java:[11,8] 
+182. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java (at line 11)
+	import org.integratedmodelling.klab.api.ServicesAPI;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.ServicesAPI is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java:[17,8] 
+183. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java (at line 17)
+	import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java:[20,8] 
+184. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java (at line 20)
+	import org.integratedmodelling.klab.api.scope.UserScope;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.scope.UserScope is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java:[23,8] 
+185. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ServiceSessionScope.java (at line 23)
+	import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticExpression.java:[210,5] 
+186. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticExpression.java (at line 210)
+	int a = text.length();
+	    ^
+The value of the local variable a is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticExpression.java:[212,5] 
+187. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticExpression.java (at line 212)
+	int b = text.length();
+	    ^
+The value of the local variable b is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticExpression.java:[401,15] 
+188. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\indexing\SemanticExpression.java (at line 401)
+	SemanticToken start = getCurrentLexicalContext();
+	              ^^^^^
+The value of the local variable start is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\ScriptBase.java:[15,21] 
+189. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\ScriptBase.java (at line 15)
+	public static class ScriptScope extends AgentScope {
+	                    ^^^^^^^^^^^
+The serializable class ScriptScope does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java:[17,8] 
+190. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java (at line 17)
+	import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.knowledge.observation.Observation is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java:[52,48] 
+191. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java (at line 52)
+	@Autowired private ServiceAuthorizationManager authenticationManager;
+	                                               ^^^^^^^^^^^^^^^^^^^^^
+The value of the field KlabServiceController.authenticationManager is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java:[74,11] 
+192. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java (at line 74)
+	MediaType.sortBySpecificityAndQuality(mediaTypes);
+	          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method sortBySpecificityAndQuality(List<MediaType>) from the type MediaType has been deprecated since version 6.0 and marked for removal
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java:[218,8] 
+193. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java (at line 218)
+	return (Class<T>) Class.forName(className);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Class<capture#10-of ?> to Class<T>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java:[352,46] 
+194. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabServiceController.java (at line 352)
+	if (principal instanceof EngineAuthorization authorization) {
+	                                             ^^^^^^^^^^^^^
+The value of the local variable authorization is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\ProvenanceGraph.java:[16,30] 
+195. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\ProvenanceGraph.java (at line 16)
+	private final KnowledgeGraph database;
+	                             ^^^^^^^^
+The value of the field ProvenanceGraph.database is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\ProvenanceGraph.java:[17,28] 
+196. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\knowledge\ProvenanceGraph.java (at line 17)
+	private final ContextScope scope;
+	                           ^^^^^
+The value of the field ProvenanceGraph.scope is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java:[134,8] 
+197. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java (at line 134)
+	return Utils.Json.parseObject(writer.toString(), Map.class);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: The expression of type Map needs unchecked conversion to conform to Map<String,Object>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java:[1163,8] 
+198. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java (at line 1163)
+	return (Extent<T>) copy();
+	       ^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from ShapeImpl to Extent<T>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java:[1166,8] 
+199. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java (at line 1166)
+	return (Extent<T>) union(shape);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Shape to Extent<T>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java:[1168,8] 
+200. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java (at line 1168)
+	return (Extent<T>) intersection(shape);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Shape to Extent<T>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java:[1170,8] 
+201. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java (at line 1170)
+	return (Extent<T>) difference(shape);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Shape to Extent<T>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java:[1339,8] 
+202. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java (at line 1339)
+	return (T) this;
+	       ^^^^^^^^
+Type safety: Unchecked cast from ShapeImpl to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java:[1342,8] 
+203. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\space\ShapeImpl.java (at line 1342)
+	return (T) org.integratedmodelling.klab.api.geometry.Geometry.create(encode());
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Geometry to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java:[7,8] 
+204. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java (at line 7)
+	import org.integratedmodelling.klab.api.data.Data;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.data.Data is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java:[24,14] 
+205. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java (at line 24)
+	public class ScaleImpl implements Scale {
+	             ^^^^^^^^^
+The serializable class ScaleImpl does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java:[150,6] 
+206. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java (at line 150)
+	for (Extent extent : extents) {
+	     ^^^^^^
+Extent is a raw type. References to generic type Extent<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java:[159,5] 
+207. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java (at line 159)
+	new ScaleLocator() {
+	    ^^^^^^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java:[222,19] 
+208. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java (at line 222)
+	private ScaleImpl(Extent[] extents, long size) {
+	                  ^^^^^^
+Extent is a raw type. References to generic type Extent<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java:[396,21] 
+209. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java (at line 396)
+	Set<Dimension.Type> commonConcepts = EnumSet.noneOf(Dimension.Type.class);
+	                    ^^^^^^^^^^^^^^
+The value of the local variable commonConcepts is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java:[567,7] 
+210. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\scale\ScaleImpl.java (at line 567)
+	class DelegatingScale implements Scale {
+	      ^^^^^^^^^^^^^^^
+The serializable class DelegatingScale does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java:[4,8] 
+211. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java (at line 4)
+	import java.util.concurrent.Callable;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import java.util.concurrent.Callable is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java:[23,29] 
+212. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java (at line 23)
+	private static final Logger log = LoggerFactory.getLogger(AbstractResourceContextualizer.class);
+	                            ^^^
+The value of the field AbstractResourceContextualizer.log is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java:[61,52] 
+213. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java (at line 61)
+	this.observation.getNotifications().addAll(builder.getNotifications());
+	                                                   ^^^^^^^^^^^^^^^^^^
+The method getNotifications() from the type Data.Builder is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java:[63,43] 
+214. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java (at line 63)
+	if (Utils.Notifications.hasErrors(builder.getNotifications())) {
+	                                          ^^^^^^^^^^^^^^^^^^
+The method getNotifications() from the type Data.Builder is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java:[74,23] 
+215. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java (at line 74)
+	var objects = builder.getObjects();
+	                      ^^^^^^^^^^^^
+The method getObjects() from the type Data.Builder is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java:[78,66] 
+216. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\data\AbstractResourceContextualizer.java (at line 78)
+	contextualizationScope.getOutcomes().addAll(objects.stream().map(Data.Builder::getObservation).toList());
+	                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method getObservation() from the type Data.Builder is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabScopeController.java:[6,8] 
+217. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabScopeController.java (at line 6)
+	import java.util.*;
+	       ^^^^^^^^^
+The import java.util is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabScopeController.java:[9,8] 
+218. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabScopeController.java (at line 9)
+	import org.integratedmodelling.common.services.client.ServiceClientCatalog;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.common.services.client.ServiceClientCatalog is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabScopeController.java:[11,8] 
+219. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabScopeController.java (at line 11)
+	import org.integratedmodelling.klab.api.identities.Federation;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.identities.Federation is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabScopeController.java:[12,8] 
+220. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\controllers\KlabScopeController.java (at line 12)
+	import org.integratedmodelling.klab.api.identities.UserIdentity;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.identities.UserIdentity is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\TestCaseBase.java:[26,21] 
+221. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\TestCaseBase.java (at line 26)
+	public static class TestCaseScope extends AgentScope {
+	                    ^^^^^^^^^^^^^
+The serializable class TestCaseScope does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\TestCaseBase.java:[323,24] 
+222. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\kactors\TestCaseBase.java (at line 323)
+	if (failure instanceof ThreadDeath threadDeath) {
+	                       ^^^^^^^^^^^
+The type ThreadDeath has been deprecated since version 20 and marked for removal
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\EngineAuthorization.java:[41,14] 
+223. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\EngineAuthorization.java (at line 41)
+	public class EngineAuthorization extends AbstractAuthenticationToken
+	             ^^^^^^^^^^^^^^^^^^^
+The serializable class EngineAuthorization does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\EngineAuthorization.java:[46,22] 
+224. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\EngineAuthorization.java (at line 46)
+	private final String scopeId;
+	                     ^^^^^^^
+The value of the field EngineAuthorization.scopeId is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\EngineAuthorization.java:[262,8] 
+225. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\EngineAuthorization.java (at line 262)
+	return (T) ret;
+	       ^^^^^^^
+Type safety: Unchecked cast from Scope to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[252,5] 
+226. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 252)
+	var scope = scopes.get(scopeId);
+	    ^^^^^
+The value of the local variable scope is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[302,9] 
+227. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 302)
+	ret.add((T) scope);
+	        ^^^^^^^^^
+Type safety: Unchecked cast from ServiceUserScope to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[391,39] 
+228. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 391)
+	if (service instanceof RuntimeService runtimeService) {
+	                                      ^^^^^^^^^^^^^^
+The value of the local variable runtimeService is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[427,39] 
+229. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 427)
+	if (service instanceof RuntimeService runtimeService
+	                                      ^^^^^^^^^^^^^^
+The value of the local variable runtimeService is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[516,8] 
+230. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 516)
+	return (T) ret;
+	       ^^^^^^^
+Type safety: Unchecked cast from ServiceUserScope to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[569,8] 
+231. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 569)
+	return (T) userScope;
+	       ^^^^^^^^^^^^^
+Type safety: Unchecked cast from ServiceUserScope to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[574,24] 
+232. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 574)
+	ContextScope.ScopeData scopeData;
+	                       ^^^^^^^^^
+The value of the local variable scopeData is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[611,8] 
+233. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 611)
+	return (T) ret;
+	       ^^^^^^^
+Type safety: Unchecked cast from ServiceUserScope to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[701,8] 
+234. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 701)
+	return (T) ((ServiceContextScope) ret).forRequest(userScope);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from ServiceContextScope to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[734,8] 
+235. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 734)
+	return (T) getOrCreateSessionScope(scopeId, authorization, userScope, runtimeId);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from ServiceSessionScope to T
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java:[888,8] 
+236. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\scopes\ScopeManager.java (at line 888)
+	return (S) ret;
+	       ^^^^^^^
+Type safety: Unchecked cast from ServiceUserScope to S
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\JobManager.java:[9,8] 
+237. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\JobManager.java (at line 9)
+	import org.integratedmodelling.klab.api.exceptions.KlabException;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.exceptions.KlabException is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[48,29] 
+238. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 48)
+	private static final String TOKEN_CLASS_PACKAGE = "org.integratedmodelling.node.resource.token";
+	                            ^^^^^^^^^^^^^^^^^^^
+The value of the field ServiceAuthorizationManager.TOKEN_CLASS_PACKAGE is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[50,29] 
+239. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 50)
+	private static final String DEFAULT_TOKEN_CLASS = EngineAuthorization.class.getSimpleName();
+	                            ^^^^^^^^^^^^^^^^^^^
+The value of the field ServiceAuthorizationManager.DEFAULT_TOKEN_CLASS is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[51,27] 
+240. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 51)
+	private static final long JWKS_UPDATE_INTERVAL_MS = 10 * 60 * 1000; // every 10 minutes
+	                          ^^^^^^^^^^^^^^^^^^^^^^^
+The value of the field ServiceAuthorizationManager.JWKS_UPDATE_INTERVAL_MS is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[53,29] 
+241. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 53)
+	private static final String JWT_CLAIM_TOKEN_TYPE = "cls";
+	                            ^^^^^^^^^^^^^^^^^^^^
+The value of the field ServiceAuthorizationManager.JWT_CLAIM_TOKEN_TYPE is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[75,16] 
+242. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 75)
+	private String tokenDescription(String token) {
+	               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method tokenDescription(String) from the type ServiceAuthorizationManager is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[328,14] 
+243. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 328)
+	List<String> groupStrings = claims.getStringListClaimValue(JWT_CLAIM_KEY_PERMISSIONS);
+	             ^^^^^^^^^^^^
+The value of the local variable groupStrings is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[531,20] 
+244. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 531)
+	private Set<Group> filterGroups(List<String> groupStrings) {
+	                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method filterGroups(List<String>) from the type ServiceAuthorizationManager is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[533,14] 
+245. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 533)
+	List<String> authenticated = new ArrayList<>();
+	             ^^^^^^^^^^^^^
+The value of the local variable authenticated is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java:[534,13] 
+246. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\ServiceAuthorizationManager.java (at line 534)
+	for (String groupId : groupStrings) {
+	            ^^^^^^^
+The value of the local variable groupId is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\TokenAuthorizationFilter.java:[11,8] 
+247. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\TokenAuthorizationFilter.java (at line 11)
+	import org.integratedmodelling.klab.api.services.Service;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.services.Service is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\TokenAuthorizationFilter.java:[12,8] 
+248. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\TokenAuthorizationFilter.java (at line 12)
+	import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\TokenAuthorizationFilter.java:[60,8] 
+249. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\TokenAuthorizationFilter.java (at line 60)
+	String serverKey = req.getHeader(ServicesAPI.SERVER_KEY_HEADER);
+	       ^^^^^^^^^
+The value of the local variable serverKey is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\TokenAuthorizationFilter.java:[61,8] 
+250. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\services\application\security\TokenAuthorizationFilter.java (at line 61)
+	String runtimeId = req.getHeader(ServicesAPI.SERVICE_ID_HEADER);
+	       ^^^^^^^^^
+The value of the local variable runtimeId is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java:[5,8] 
+251. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java (at line 5)
+	import java.io.File;
+	       ^^^^^^^^^^^^
+The import java.io.File is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java:[6,8] 
+252. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java (at line 6)
+	import java.io.IOException;
+	       ^^^^^^^^^^^^^^^^^^^
+The import java.io.IOException is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java:[7,8] 
+253. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java (at line 7)
+	import java.lang.reflect.Constructor;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import java.lang.reflect.Constructor is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java:[8,8] 
+254. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java (at line 8)
+	import java.util.Arrays;
+	       ^^^^^^^^^^^^^^^^
+The import java.util.Arrays is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java:[60,8] 
+255. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\main\java\org\integratedmodelling\klab\runtime\computation\KlabGroovyShell.java (at line 60)
+	return getClassLoader().parseClass(gcs);
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: The expression of type Class needs unchecked conversion to conform to Class<ExpressionBase>
+[INFO] 255 problems (255 warnings)
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab.core.services ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (testCompile) @ klab.core.services ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Using Groovy-Eclipse compiler to compile both Java and Groovy files
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\SpatialScanTest.java:[57,1] 
+1. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\SpatialScanTest.java (at line 57)
+	when(client.readSettings()).thenReturn(Map.of(Setting.ACCEPT_LOSSY_MEDIATIONS.name(),true),
+        Map.of(Setting.ACCEPT_LOSSY_MEDIATIONS.name(),false));
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: A generic array of Map<String,Object> is created for a varargs parameter
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\SpatialScanTest.java:[181,32] 
+2. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\SpatialScanTest.java (at line 181)
+	private static volatile double sink;
+	                               ^^^^
+The value of the field SpatialScanTest.sink is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\indexing\SemanticSearchSessionTest.java:[277,15] 
+3. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\indexing\SemanticSearchSessionTest.java (at line 277)
+	when(reasoner.relationshipSource(relationship)).thenReturn(source);
+	              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method relationshipSource(Semantics) from the type Reasoner is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\indexing\SemanticSearchSessionTest.java:[278,15] 
+4. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\indexing\SemanticSearchSessionTest.java (at line 278)
+	when(reasoner.relationshipTarget(relationship)).thenReturn(target);
+	              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method relationshipTarget(Semantics) from the type Reasoner is deprecated
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\indexing\SemanticSearchSessionTest.java:[642,5] 
+5. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\indexing\SemanticSearchSessionTest.java (at line 642)
+	var height = concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+	    ^^^^^^
+The value of the local variable height is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\SpatialCoverageTest.java:[15,32] 
+6. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\SpatialCoverageTest.java (at line 15)
+	private static volatile double allocationSink;
+	                               ^^^^^^^^^^^^^^
+The value of the field SpatialCoverageTest.allocationSink is not used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\StorageConsumerIntegrationTest.java:[9,8] 
+7. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\StorageConsumerIntegrationTest.java (at line 9)
+	import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.knowledge.observation.Observation is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\scale\space\GridAlignmentTest.java:[99,1] 
+8. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\scale\space\GridAlignmentTest.java (at line 99)
+	((List<Integer>)values.get("resolutions")).clear();
+	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: Unchecked cast from Object to List<Integer>
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\BehaviorAnalyzerTest.java:[38,8] 
+9. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\BehaviorAnalyzerTest.java (at line 38)
+	import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.lang.kactors.KActorsAction is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\BehaviorAnalyzerTest.java:[39,8] 
+10. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\BehaviorAnalyzerTest.java (at line 39)
+	import org.integratedmodelling.klab.api.lang.kactors.KActorsAction.Argument;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.klab.api.lang.kactors.KActorsAction.Argument is never used
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\KeyedStorageTest.java:[31,26] 
+11. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\KeyedStorageTest.java (at line 31)
+	while(scanner.hasNext()) scanner.add(scanner.cell().bounds().getFirst().minX()<2 ? f.b : f.a);
+	                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Type safety: The method add(Serializable) belongs to the raw type Storage.KeyScanner. References to generic type Storage.KeyScanner<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\KeyedStorageTest.java:[89,21] 
+12. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\KeyedStorageTest.java (at line 89)
+	StorageScan.Request<Storage.KeyScanner> request(String geometry,StorageScan.Sampling sampling) {
+	                    ^^^^^^^^^^^^^^^^^^
+Storage.KeyScanner is a raw type. References to generic type Storage.KeyScanner<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\KeyedStorageTest.java:[136,46] 
+13. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\KeyedStorageTest.java (at line 136)
+	assertThrows(IllegalStateException.class,()->scan.add(f.b));
+	                                             ^^^^^^^^^^^^^
+Type safety: The method add(Serializable) belongs to the raw type Storage.KeyScanner. References to generic type Storage.KeyScanner<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\KeyedStorageTest.java:[182,1] 
+14. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\storage\KeyedStorageTest.java (at line 182)
+	writer.add(f.a);
+	^^^^^^^^^^^^^^^
+Type safety: The method add(Serializable) belongs to the raw type Storage.KeyScanner. References to generic type Storage.KeyScanner<T> should be parameterized
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\RuntimeAgentBaseTest.java:[1300,12] 
+15. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\RuntimeAgentBaseTest.java (at line 1300)
+	return new AgentScope(this) {
+	           ^^^^^^^^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\RuntimeAgentBaseTest.java:[1721,12] 
+16. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\RuntimeAgentBaseTest.java (at line 1721)
+	return new TestCaseScope(this, null, null) {
+	           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The serializable class  does not declare a static final serialVersionUID field of type long
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\RuntimeAgentBaseTest.java:[1806,15] 
+17. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\RuntimeAgentBaseTest.java (at line 1806)
+	public String getDisplayName() {
+	              ^^^^^^^^^^^^^^^^
+The method getDisplayName() from the type RuntimeAgentBaseTest.PlainJavaBean is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\RuntimeAgentBaseTest.java:[1810,15] 
+18. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\kactors\compiler\RuntimeAgentBaseTest.java (at line 1810)
+	public String combineValues(String first, String second) {
+	              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The method combineValues(String, String) from the type RuntimeAgentBaseTest.PlainJavaBean is never used locally
+[WARNING] C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\language\KimVisitorsTest.java:[7,8] 
+19. WARNING in C:\Users\mario\git\klab-services\klab.core.services\src\test\java\org\integratedmodelling\klab\runtime\language\KimVisitorsTest.java (at line 7)
+	import org.integratedmodelling.common.lang.ServiceCallImpl;
+	       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The import org.integratedmodelling.common.lang.ServiceCallImpl is never used
+[INFO] 19 problems (19 warnings)
+[INFO] 
+[INFO] --- surefire:3.1.0:test (default-test) @ klab.core.services ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.integratedmodelling.klab.components.AuthorityComponentResolverTest
+WARNING: A Java agent has been loaded dynamically (C:\Users\mario\.m2\repository\net\bytebuddy\byte-buddy-agent\1.14.15\byte-buddy-agent-1.14.15.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.307 s - in org.integratedmodelling.klab.components.AuthorityComponentResolverTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -----------< org.integratedmodelling:klab.services.reasoner >-----------
+[INFO] Building k.LAB reasoner service 1.0.0-SNAPSHOT                     [5/8]
+[INFO]   from klab.services.reasoner\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab.services.reasoner ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\mario\git\klab-services\klab.services.reasoner
+[INFO] Storing buildNumber: 853aee07197ce67ca43353ef838917dc95820697 at timestamp: 1792229697666
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab.services.reasoner ---
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ klab.services.reasoner ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 59 source files with javac [debug target 21] to target\classes
+[WARNING] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/SyntacticMatcher.java:[36,46] deprecated item is not annotated with @Deprecated
+[INFO] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ObservationReasoner.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ObservationReasoner.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab.services.reasoner ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ klab.services.reasoner ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 54 source files with javac [debug target 21] to target\test-classes
+[INFO] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/CapabilitiesPublicationTest.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/CapabilitiesPublicationTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/SemanticValidationPublicationTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/SemanticValidationPublicationTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ klab.services.reasoner ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntimePreflightTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\mario\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.5\byte-buddy-agent-1.17.5.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.513 s -- in org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntimePreflightTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.internal.AuthorityBootstrapPlanTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.291 s -- in org.integratedmodelling.klab.services.reasoner.internal.AuthorityBootstrapPlanTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.internal.AuthorityBootstrapTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in org.integratedmodelling.klab.services.reasoner.internal.AuthorityBootstrapTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.internal.BootstrapSourcePinTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.142 s -- in org.integratedmodelling.klab.services.reasoner.internal.BootstrapSourcePinTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinatorTest
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.256 s -- in org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinatorTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactoryTest
+Oct 17, 2026 11:35:06 AM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.928 s -- in org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactoryTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupportTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.201 s -- in org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupportTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.owl.WorldviewIngestionContractTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.133 s -- in org.integratedmodelling.klab.services.reasoner.owl.WorldviewIngestionContractTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.owl.WorldviewLoadingSupportTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in org.integratedmodelling.klab.services.reasoner.owl.WorldviewLoadingSupportTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.owl.WorldviewOwlRestrictionTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in org.integratedmodelling.klab.services.reasoner.owl.WorldviewOwlRestrictionTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.SemanticValidationPublicationTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.512 s -- in org.integratedmodelling.klab.services.reasoner.SemanticValidationPublicationTest
+[INFO] Running org.integratedmodelling.klab.services.reasoner.WorldviewDiscoveryTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in org.integratedmodelling.klab.services.reasoner.WorldviewDiscoveryTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 140, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -----------< org.integratedmodelling:klab.services.resolver >-----------
+[INFO] Building klab.services.resolver 1.0.0-SNAPSHOT                     [6/8]
+[INFO]   from klab.services.resolver\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab.services.resolver ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\mario\git\klab-services\klab.services.resolver
+[INFO] Storing buildNumber: 853aee07197ce67ca43353ef838917dc95820697 at timestamp: 1792229713188
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab.services.resolver ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ klab.services.resolver ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 9 source files with javac [debug target 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] org.pf4j.processor.ExtensionAnnotationProcessor init
+[INFO] Options {}
+[INFO] Processing @org.pf4j.Extension
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolverService.java: C:\Users\mario\git\klab-services\klab.services.resolver\src\main\java\org\integratedmodelling\klab\services\resolver\ResolverService.java uses unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolverService.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab.services.resolver ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ klab.services.resolver ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 13 source files with javac [debug target 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] org.pf4j.processor.ExtensionAnnotationProcessor init
+[INFO] Options {}
+[INFO] Processing @org.pf4j.Extension
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resolver/src/test/java/org/integratedmodelling/klab/services/resolver/ResolverTransportSerializationTest.java: C:\Users\mario\git\klab-services\klab.services.resolver\src\test\java\org\integratedmodelling\klab\services\resolver\ResolverTransportSerializationTest.java uses unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resolver/src/test/java/org/integratedmodelling/klab/services/resolver/ResolverTransportSerializationTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ klab.services.resolver ---
+[INFO] 
+[INFO] ----------< org.integratedmodelling:klab.services.resources >-----------
+[INFO] Building k.LAB resources service 1.0.0-SNAPSHOT                    [7/8]
+[INFO]   from klab.services.resources\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab.services.resources ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\mario\git\klab-services\klab.services.resources
+[INFO] Storing buildNumber: 853aee07197ce67ca43353ef838917dc95820697 at timestamp: 1792229716490
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab.services.resources ---
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ klab.services.resources ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 30 source files with javac [debug target 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] org.pf4j.processor.ExtensionAnnotationProcessor init
+[INFO] Options {}
+[INFO] Processing @org.pf4j.Extension
+[WARNING] /C:/Users/mario/git/klab-services/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/storage/WorkspaceManager.java:[4058,20] deprecated item is not annotated with @Deprecated
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab.services.resources ---
+[INFO] Copying 11 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ klab.services.resources ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 56 source files with javac [debug target 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] org.pf4j.processor.ExtensionAnnotationProcessor init
+[INFO] Options {}
+[INFO] Processing @org.pf4j.Extension
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resolver/ObservationPipelineTest.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/mario/git/klab-services/klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resolver/ObservationPipelineTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ klab.services.resources ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.integratedmodelling.klab.services.resources.lang.RemoteAuthorityMetadataAdmissionTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\mario\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.5\byte-buddy-agent-1.17.5.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.917 s -- in org.integratedmodelling.klab.services.resources.lang.RemoteAuthorityMetadataAdmissionTest
+[INFO] Running org.integratedmodelling.klab.services.resources.lang.WorldviewAuthorityValidatorTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.063 s -- in org.integratedmodelling.klab.services.resources.lang.WorldviewAuthorityValidatorTest
+[INFO] Running org.integratedmodelling.klab.services.resources.lang.WorldviewClauseAuditTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.170 s -- in org.integratedmodelling.klab.services.resources.lang.WorldviewClauseAuditTest
+[INFO] Running org.integratedmodelling.klab.services.resources.lang.WorldviewValidationTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.986 s -- in org.integratedmodelling.klab.services.resources.lang.WorldviewValidationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -------< org.integratedmodelling:klab.services.reasoner.server >--------
+[INFO] Building klab.services.reasoner.server 1.0.0-SNAPSHOT              [8/8]
+[INFO]   from klab.services.reasoner.server\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- buildnumber:3.1.0:create (default) @ klab.services.reasoner.server ---
+[INFO] maven is executed in offline mode, Updating project files from SCM: skipped.
+[INFO] Executing: cmd.exe /X /C "git rev-parse --verify HEAD"
+[INFO] Working directory: C:\Users\mario\git\klab-services\klab.services.reasoner.server
+[INFO] Storing buildNumber: 853aee07197ce67ca43353ef838917dc95820697 at timestamp: 1792229726220
+[INFO] Storing scmBranch: develop
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab.services.reasoner.server ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ klab.services.reasoner.server ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 7 source files with javac [debug target 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] org.pf4j.processor.ExtensionAnnotationProcessor init
+[INFO] Options {}
+[INFO] Processing @org.pf4j.Extension
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab.services.reasoner.server ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ klab.services.reasoner.server ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug target 21] to target\test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] org.pf4j.processor.ExtensionAnnotationProcessor init
+[INFO] Options {}
+[INFO] Processing @org.pf4j.Extension
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ klab.services.reasoner.server ---
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for klab-services 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] klab-services ...................................... SUCCESS [  0.594 s]
+[INFO] Core API classes ................................... SUCCESS [  7.383 s]
+[INFO] klab.core.common ................................... SUCCESS [  7.129 s]
+[INFO] k.LAB services core ................................ SUCCESS [ 16.232 s]
+[INFO] k.LAB reasoner service ............................. SUCCESS [ 15.939 s]
+[INFO] klab.services.resolver ............................. SUCCESS [  3.277 s]
+[INFO] k.LAB resources service ............................ SUCCESS [  9.667 s]
+[INFO] klab.services.reasoner.server ...................... SUCCESS [  3.887 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:04 min
+[INFO] Finished at: 2026-10-17T11:35:29+02:00
+[INFO] ------------------------------------------------------------------------

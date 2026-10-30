@@ -20,6 +20,109 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.junit.jupiter.api.Test;
 
 class ConnectionExecutionTest {
+  @Test void transactionViewsRejectJsonButExplicitTransportSnapshotsRoundTrip() throws Exception {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var point = observation(11, SemanticType.SUBJECT, false, false);
+    var shape = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+        "EPSG:4326 POINT (1 2)");
+    var twin = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class);
+    var transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION),
+        mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class),
+        org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
+    var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+    for (var geometry : List.of(org.integratedmodelling.klab.api.geometry.Geometry.create(shape.encode()),
+        org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.create(shape))) {
+      point.setGeometry(geometry);
+      var read = transaction.readObservation(point);
+      var space = org.integratedmodelling.klab.api.knowledge.observation.scale.Scale
+          .create(read.getGeometry()).getSpace();
+      for (var view : List.of(read, read.getGeometry(), space, space.getGeometricShape())) {
+        assertInstanceOf(org.integratedmodelling.klab.api.data.LocalView.class, view);
+        var failure = assertThrows(com.fasterxml.jackson.databind.JsonMappingException.class,
+            () -> mapper.writeValueAsString(Map.of("endpoint", view)));
+        assertTrue(org.integratedmodelling.common.data.jackson.JacksonConfiguration
+            .isLocalViewSerializationFailure(failure));
+      }
+      var portable = Observation.forTransport(read);
+      assertFalse(portable.getGeometry() instanceof org.integratedmodelling.klab.api.data.LocalView);
+      var json = mapper.writeValueAsString(portable);
+      assertFalse(json.contains("$Proxy"));
+      var restored = mapper.readValue(json, Observation.class);
+      assertEquals(point.getId(), restored.getId());
+      assertEquals(point.getObservable().getUrn(), restored.getObservable().getUrn());
+      assertEquals(geometry.encode(), restored.getGeometry().encode());
+    }
+    transaction.fail(new java.util.concurrent.CancellationException());
+  }
+
+  @Test void privateEndpointPointCanBePromotedThroughTheSpatialApi() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var point = observation(11, SemanticType.SUBJECT, false, false);
+    var original = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+        "EPSG:4326 POINT (1 2)");
+    point.setGeometry(org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.create(original));
+    var twin = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class);
+    var transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION),
+        mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class),
+        org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
+    var read = transaction.readObservation(point);
+    var space = org.integratedmodelling.klab.api.knowledge.observation.scale.Scale
+        .create(read.getGeometry()).getSpace();
+    assertFalse(space instanceof org.integratedmodelling.klab.runtime.scale.space.ShapeImpl);
+    assertFalse(space.isEmpty());
+    var shape = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl
+        .promote(space.getGeometricShape()).transform(original.getProjection());
+    assertTrue(original.getJTSGeometry().equalsExact(shape.getJTSGeometry()));
+    assertEquals(original.getProjection(), shape.getProjection());
+    transaction.fail(new java.util.concurrent.CancellationException());
+  }
+
+  @Test void endpointReadSemanticsRetainEqualityAndCanBeSentForSubsumption() throws Exception {
+    var producer = observation(10, SemanticType.SUBJECT, true, false);
+    var point = observation(11, SemanticType.SUBJECT, false, false);
+    var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var twin = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class);
+    var transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
+        org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
+    var read = transaction.readObservation(point);
+    assertEquals(point.getObservable().getSemantics(), read.getObservable().getSemantics());
+    assertEquals(read.getObservable().getSemantics(), point.getObservable().getSemantics());
+    assertNotSame(point.getObservable(), read.getObservable());
+    assertNotSame(point.getObservable().getSemantics(), read.getObservable().getSemantics());
+    read.getObservable().getSemantics().getMetadata().put("private", "read");
+    read.getObservable().getSemantics().getType().clear();
+    assertFalse(point.getObservable().getSemantics().getMetadata().containsKey("private"));
+    assertFalse(point.getObservable().getSemantics().getType().isEmpty());
+
+    var runtime = mock(RuntimeService.class, CALLS_REAL_METHODS);
+    doReturn(List.of(transaction.readObservation(point))).when(runtime)
+        .classificationMembers(eq(producer), any(), eq(scope));
+    var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+    assertEquals(1, runtime.getMembers(producer, scope).size());
+    verifyNoInteractions(reasoner);
+
+    ((ConceptImpl) point.getObservable().getSemantics()).setUrn("test:SpecialSubject");
+    doReturn(List.of(transaction.readObservation(point))).when(runtime)
+        .classificationMembers(eq(producer), any(), eq(scope));
+    when(reasoner.is(any(), any())).thenAnswer(invocation -> {
+      var candidate = (org.integratedmodelling.klab.api.knowledge.Semantics) invocation.getArgument(0);
+      var parent = (org.integratedmodelling.klab.api.knowledge.Semantics) invocation.getArgument(1);
+      var json = org.integratedmodelling.common.utils.Utils.Json.asString(
+          List.of(candidate.asConcept(), parent.asConcept()));
+      assertFalse(json.contains("$Proxy"));
+      var restored = org.integratedmodelling.common.utils.Utils.Json.parseObject(json,
+          org.integratedmodelling.klab.api.knowledge.Concept[].class);
+      assertEquals("test:SpecialSubject", restored[0].getUrn());
+      assertEquals("test:SUBJECT", restored[1].getUrn());
+      return true;
+    });
+    assertEquals(1, runtime.getMembers(producer, scope).size());
+    var observableJson = org.integratedmodelling.common.utils.Utils.Json.asString(
+        transaction.readObservation(point).getObservable());
+    assertFalse(observableJson.contains("$Proxy"));
+    transaction.fail(new java.util.concurrent.CancellationException());
+  }
   @Test void connectionSeesPointMembersInParentTransaction() {
     org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
     var producer = observation(10, SemanticType.SUBJECT, true, false);
@@ -36,12 +139,48 @@ class ConnectionExecutionTest {
     var child = mock(DigitalTwin.Transaction.class);
     when(scope.getCurrentTransaction()).thenReturn(child);
     when(child.getParent()).thenReturn(parent);
+    var transactionView = point.copyForAttribution(point.getObservable());
+    when(child.readObservation(point)).thenReturn(transactionView);
     var cohort = mock(org.integratedmodelling.klab.api.knowledge.Cohort.class);
     when(parent.outgoing(cohort)).thenReturn(List.of(
         new org.integratedmodelling.klab.api.data.impl.LinkImpl(cohort, point, GraphModel.Relationship.HAS_MEMBER)));
     var runtime = mock(RuntimeService.class, CALLS_REAL_METHODS);
     doReturn(cohort).when(runtime).getCohortFor(any(), eq(scope), eq(false));
-    assertEquals(List.of(point), runtime.getMembers(producer, scope));
+    assertEquals(List.of(transactionView), runtime.getMembers(producer, scope));
+    verify(child).readObservation(point);
+  }
+
+  @Test void classificationMembersIntersectsRealTransactionReadGeometry() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var producer = observation(10, SemanticType.SUBJECT, true, false);
+    var inside = observation(11, SemanticType.SUBJECT, false, false);
+    var outside = observation(12, SemanticType.SUBJECT, false, false);
+    producer.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+            "EPSG:4326 POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))").encode()));
+    inside.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create("EPSG:4326 POINT (1 1)").encode()));
+    outside.setGeometry(org.integratedmodelling.klab.api.geometry.Geometry.create(
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create("EPSG:4326 POINT (3 3)").encode()));
+    var scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var twin = mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class);
+    when(scope.getDigitalTwin()).thenReturn(twin);
+    var parent = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
+        org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
+    var child = parent.getChild(Activity.of(Activity.Type.CLASSIFICATION), scope);
+    when(scope.getCurrentTransaction()).thenReturn(child);
+    var cohort = mock(org.integratedmodelling.klab.api.knowledge.Cohort.class);
+    when(cohort.getId()).thenReturn(-100L);
+    parent.link(cohort, inside, GraphModel.Relationship.HAS_MEMBER);
+    parent.link(cohort, outside, GraphModel.Relationship.HAS_MEMBER);
+    var runtime = mock(RuntimeService.class, CALLS_REAL_METHODS);
+    doReturn(cohort).when(runtime).getCohortFor(any(), eq(scope), eq(false));
+    var members = runtime.classificationMembers(producer, producer.getGeometry(), scope);
+    assertEquals(List.of(inside.getId()), members.stream().map(Observation::getId).toList());
+    assertNotSame(inside, members.getFirst());
+    assertNotSame(inside.getGeometry(), members.getFirst().getGeometry());
+    assertEquals(inside.getGeometry().encode(), members.getFirst().getGeometry().encode());
+    parent.fail(new java.util.concurrent.CancellationException());
   }
 
   @Test void namedReferenceUsesTheProducerInstanceRegardlessOfPortOrder() throws Exception {
@@ -74,6 +213,8 @@ class ConnectionExecutionTest {
     concept.setUrn("test:" + type + (bond ? "Bond" : ""));
     concept.setName(type.name()); concept.setReferenceName(type.name().toLowerCase());
     var types = EnumSet.of(type, SemanticType.COUNTABLE);
+    if(type==SemanticType.RELATIONSHIP)types.addAll(EnumSet.of(SemanticType.FUNCTIONAL,
+        bond?SemanticType.BIDIRECTIONAL:SemanticType.UNIDIRECTIONAL));
     if (bond) types.add(SemanticType.BIDIRECTIONAL);
     concept.setType(types); concept.setCollective(collective);
     var observable = new ObservableImpl(); observable.setSemantics(concept);
@@ -195,6 +336,31 @@ class ConnectionExecutionTest {
     when(scope.getObservation(target.getId())).thenReturn(target);
     when(scope.getService(Reasoner.class)).thenReturn(mock(Reasoner.class));
     return scope;
+  }
+
+  @Test void unresolvedAndConflictingRelationshipAxesFailBeforeParticipantOrGraphAccess() {
+    for(var unknown:List.of(SemanticType.FUNCTIONAL,SemanticType.UNIDIRECTIONAL)) {
+      var relationship=observation(-90,SemanticType.RELATIONSHIP,false,false);
+      relationship.getObservable().getSemantics().getType().remove(unknown);
+      var context=mock(ContextScope.class);
+      assertThrows(IllegalArgumentException.class,()->ConnectionSupport.participants(relationship,context));
+      assertThrows(IllegalArgumentException.class,()->ConnectionSupport.link(relationship,context));
+      assertThrows(IllegalArgumentException.class,()->ConnectionSupport.checkIdentity(relationship,relationship,context));
+      verifyNoInteractions(context);
+    }
+    var conflict=observation(-91,SemanticType.RELATIONSHIP,false,false);
+    conflict.getObservable().getSemantics().getType().add(SemanticType.BIDIRECTIONAL);
+    assertThrows(IllegalArgumentException.class,()->ConnectionSupport.participants(conflict,mock(ContextScope.class)));
+  }
+
+  @Test void bondPermutationPreservesParticipantIdentityButDirectedPermutationDoesNot() {
+    var a=observation(101,SemanticType.AGENT,false,false);var b=observation(102,SemanticType.SUBJECT,false,false);
+    var context=scope(a,b);var existing=observation(103,SemanticType.RELATIONSHIP,false,true);
+    var bond=observation(104,SemanticType.RELATIONSHIP,false,true);bond.setParticipants(List.of(b,a));
+    when(context.getRelationshipParticipants(existing)).thenReturn(List.of(a,b));
+    assertDoesNotThrow(()->ConnectionSupport.checkIdentity(existing,bond,context));
+    var directed=observation(105,SemanticType.RELATIONSHIP,false,false);directed.setParticipants(List.of(b,a));
+    assertThrows(IllegalArgumentException.class,()->ConnectionSupport.checkIdentity(existing,directed,context));
   }
 
   @Test void scopeQueriesReturnRelationshipObservationsAndBothBondDirections() throws Exception {
