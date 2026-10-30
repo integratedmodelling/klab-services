@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "candidate_source_commit": "ba2b73145a16dc0fbd738ac50b1ffb9fd7eecfa8",
+  "base_commit": "324a67af761a421a26da8dc7326dd594059ce699",
+  "installed_source_sha256": "203a974515ff3c9b56f32ecabee033070fa55a926dab836eec1fa8584c0fcf4f",
+  "distribution_build": "202610301844",
+  "python": "3.12.7",
+  "pytest_exit": 0,
+  "functional_tests_passed": 2,
+  "functional_seconds": 1.31,
+  "authority": "CHEM",
+  "query": "aspirin",
+  "selected_canonical_code": "CID:2244",
+  "resolved_identity_urn": "CHEM:[CID:2244]",
+  "advertised_documentation_type_checked": "text/html",
+  "independent_reference": {
+    "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/2244/property/Title/JSON",
+    "response": {"CID": 2244, "Title": "Aspirin"},
+    "locator_contract": "AuthorityIdentitySyntax.encode(CHEM, CID:2244)"
+  },
+  "hierarchy": {
+    "parent": "earth:Georeferenced",
+    "child": "earth:Geolocated",
+    "independent_source": "imod/src/earth.kwv:9-17",
+    "source_commit": "1328000fff63a1951465b1f7b130c0af15264c95",
+    "source_sha256": "e6bdb233d880264e9a56907d5e0d2d38173d78b359bdf60eb937ff68390fc8fc",
+    "direct_parent_and_child_queries_passed": true,
+    "child_specializes_parent": true,
+    "parent_specializes_child": false,
+    "both_satisfiable": true
+  },
+  "reasoner_state": {
+    "service_id": "570b4341-cd02-4e27-a77f-dc35352ffc0d",
+    "worldview_id": "_uu_wv:5017406921366017",
+    "knowledge_revision": 1,
+    "consistent": true
+  },
+  "client_request_counts": {
+    "java_requests": 35,
+    "numerical_submissions": 0,
+    "sessions_created": 0,
+    "contexts_created": 0,
+    "external_provider_content_fetches": 0
+  },
+  "remaining_contexts": 0,
+  "remaining_projects": 0,
+  "bootstrap": "native loopback owner; hosted Hub bootstrap not retested",
+  "limits": [
+    "Semantic resolution may materialize concepts; no Java, component or worldview source was edited.",
+    "Provider URLs were inspected as descriptors, not fetched by the client.",
+    "The independent PubChem reference request was separate from the counted Java functional requests.",
+    "No numerical science, two-user permission test, complete reasoning proof or exact binary/source attestation is claimed."
+  ]
+}

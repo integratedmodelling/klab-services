@@ -62,6 +62,10 @@ UI emulation and Java API parity. These are explicit boundaries, not empty succe
 
 ## Connection orchestration
 
+Semantic exploration: `SemanticExplorer`, `SemanticResult`, `KnowledgeState`,
+`AuthorityCandidate`, `AuthoritySearch`, `StaleKnowledgeError`. See
+[semantic exploration and its acceptance boundary](semantic-explorer.md).
+
 `DeploymentProfile`, `ConnectionIdentity`, `ServiceReference`, `CatalogEntry`,
 `ServiceCatalog`, `CredentialGrant`, `CredentialProvider`, `IssuedTokenProvider`,
 `HubCertificateProvider`, `SelectionPolicy`, `Connection` and `connect` are public.

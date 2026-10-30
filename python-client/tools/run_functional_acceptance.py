@@ -26,6 +26,7 @@ SUITES = {
     "geojson-export": "tests/functional/test_export_deliverables.py::test_native_geojson_export_preserves_identity_and_known_geometry",
     "geotiff-export": "tests/functional/test_export_deliverables.py::test_native_geotiff_export_preserves_values_units_and_mask",
     "provider-reference": "tests/functional/test_provider_reference.py",
+    "semantic-explorer": "tests/functional/test_semantic_explorer.py",
 }
 
 CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute"}
@@ -34,7 +35,8 @@ CONNECTED_SUITES = {"connected-semantic-readiness", "connected-unit-contract", "
 
 
 def command(suites, report=None):
-    arguments = [sys.executable, "-m", "pytest", "-o", "addopts=", "-o", "junit_family=xunit1",
+    # Long tracebacks include function arguments, including credentials during bootstrap.
+    arguments = [sys.executable, "-m", "pytest", "--tb=short", "-o", "addopts=", "-o", "junit_family=xunit1",
                  "-m", "functional", "-s", *[SUITES[name] for name in suites]]
     if report is not None:
         arguments.append("--junitxml=" + str(report))
