@@ -51,6 +51,22 @@ def test_hyperedges_cycles_and_disconnected_nodes_are_retained():
     assert result.phase == "resolution plan"
 
 
+@pytest.mark.parametrize("kind", ["node", "port", "link"])
+def test_chart_identities_cannot_expose_credentials_or_be_silently_rewritten(kind):
+    chart = deepcopy(CHART)
+    if kind == "node":
+        chart["root"]["id"] = "root-issued-secret"
+    elif kind == "port":
+        chart["root"]["ports"][0]["id"] = "input-issued-secret"
+        for edge in chart["root"]["edges"][:2]:
+            edge["sources"] = ["input-issued-secret"]
+    else:
+        chart["root"]["edges"][0]["id"] = "edge-issued-secret"
+    with pytest.raises(ProtocolError, match="credential") as caught:
+        decode_flowchart(chart, redact=lambda value: value.replace("issued-secret", "[REDACTED]"))
+    assert "issued-secret" not in str(caught.value)
+
+
 @pytest.mark.parametrize("mutate", [
     lambda c: c.update(root=None),
     lambda c: c["root"].update(id=""),
@@ -121,6 +137,12 @@ def test_actual_outcomes_do_not_imply_computation(outcome):
 def test_unknown_or_contradictory_dataflow_fails(changes, error):
     with pytest.raises(error):
         decode_dataflow({**DATAFLOW, **changes})
+
+
+@pytest.mark.parametrize("coverage", [10**400, -(10**400)], ids=["too-large", "too-small"])
+def test_unrepresentable_coverage_raises_protocol_error(coverage):
+    with pytest.raises(ProtocolError, match="coverage"):
+        decode_dataflow({**DATAFLOW, "resolvedCoverage": coverage})
 
 
 @pytest.mark.parametrize("changes", [{"actuatorType": "UNKNOWN"}, {"id": True}, {"id": 2**63},
