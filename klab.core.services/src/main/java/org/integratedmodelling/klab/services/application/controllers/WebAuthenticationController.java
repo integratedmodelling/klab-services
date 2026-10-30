@@ -14,30 +14,36 @@ public class WebAuthenticationController {
   private final HubWebAuthentication authentication;
   private final ServiceNetworkedInstance<?> instance;
 
-  public WebAuthenticationController(HubWebAuthentication authentication, ServiceNetworkedInstance<?> instance) {
+  public WebAuthenticationController(
+      HubWebAuthentication authentication, ServiceNetworkedInstance<?> instance) {
     this.authentication = authentication;
     this.instance = instance;
   }
 
   @PostMapping(HubWebAuthentication.ENDPOINT)
-  public ResponseEntity<?> login(@RequestHeader(value = "Authorization", required = false) String header) {
+  public ResponseEntity<?> login(
+      @RequestHeader(value = "Authorization", required = false) String header) {
     try {
-      return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+      return ResponseEntity.ok()
+          .cacheControl(CacheControl.noStore())
           .body(authentication.exchange(bearer(header), instance));
     } catch (ResponseStatusException e) {
-      return ResponseEntity.status(e.getStatusCode()).cacheControl(CacheControl.noStore())
+      return ResponseEntity.status(e.getStatusCode())
+          .cacheControl(CacheControl.noStore())
           .body(Map.of("message", e.getReason()));
     }
   }
 
   @DeleteMapping(HubWebAuthentication.ENDPOINT)
-  public ResponseEntity<Void> logout(@RequestHeader(value = "Authorization", required = false) String header) {
+  public ResponseEntity<Void> logout(
+      @RequestHeader(value = "Authorization", required = false) String header) {
     authentication.revoke(bearer(header));
     return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
   }
 
   private String bearer(String header) {
     return header != null && header.regionMatches(true, 0, "Bearer ", 0, 7)
-        ? header.substring(7).trim() : null;
+        ? header.substring(7).trim()
+        : null;
   }
 }

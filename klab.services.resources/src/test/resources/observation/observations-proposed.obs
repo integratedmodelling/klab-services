@@ -108,7 +108,6 @@ strategy 0 named classification.members
       inherent = capture members as node { collective = true; };
     }
   }
-  ensure context.exists()
   resolve $members to cohort
   observe $this with inputs(members = cohort);
 

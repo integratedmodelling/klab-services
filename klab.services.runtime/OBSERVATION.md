@@ -68,10 +68,11 @@ The ID and the empty flag describe different aspects of state:
 | Failed | `isEmpty() == true` | The operation failed or found no query result. Notifications explain why. |
 
 An ID-0 query result is intentionally distinguishable from a persisted observation. Detached
-queries are limited to enumerable collective substantials: subjects, agents, events, and
-relationships. Their results remain ID 0, and `getResolvedCoverage()` plus the query metadata
-describe the covered fraction. Qualities are never detached query views: contextual lookup either
-returns the existing positive-ID quality, which is complete by definition, or finds nothing.
+queries support qualities and enumerable collective substantials: subjects, agents, events, and
+relationships. Their results remain ID 0. Collective results expose `getResolvedCoverage()` plus
+query metadata describing the covered fraction. Explicit quality queries return a detached view
+with requested geometry, observable, and annotations; reads bind to the durable source named in
+query metadata. Normal quality submissions still reuse existing positive-ID contextual qualities.
 
 The principal query metadata keys are:
 
@@ -121,15 +122,30 @@ terminal cases without opening a transaction:
 5. Otherwise the normal observation cycle continues. Registration assigns a negative ID; identity
    lookup may still return an existing individual substantial.
 
-Detached queries are supported only for collective subjects, agents, events, and relationships:
+Detached queries support qualities and collective subjects, agents, events, and relationships:
 
-- A collective query finds the cohort and unions the geometries of matching collective observations
-  linked through `CONTRIBUTED_TO`. The union preserves areas in which a collective observation found
-  no instances.
+- A collective query finds the cohort and chooses one proven coverage fragment from matching
+  collective observations linked through `CONTRIBUTED_TO`. This avoids inventing support between
+  disjoint fragments and preserves areas in which collective observation found no instances.
+- A quality query validates a storage read plan using the requested geometry and semantics, keeping
+  request annotations and source ownership separate. Source histograms are omitted from the view
+  because they describe native values and support.
 - No source or zero geometric intersection produces an empty observation with informational
-  notifications.
+  notifications. Explicit query submissions retain ID 0 even for empty results, so clients can
+  distinguish a completed lookup from a failed resolution.
 - A partial result reports its actual geometry and exact coverage without creating an activity,
   dataflow, scheduler registration, storage, or knowledge-graph asset.
+
+`RuntimeService.exportObservation` carries detached views through a dedicated POST export path.
+The runtime revalidates the query in the authorized scope and uses the existing export dispatcher
+and storage scanner mediation. Query source IDs, adapter parameters, and storage pointers supplied
+by a client are not accepted as authoritative. Revalidation must select the same durable sources;
+otherwise export fails and the caller must submit the query again. This is a fresh read, not a
+persistent snapshot.
+URN-only export remains appropriate for durable observations. Collective view members are exposed
+through `getMembers` and the member POST endpoint; `getChildrenOf` delegates there for detached
+collectives. Query results complete in the IDE as separate observation cards, without graph nodes
+or commits. See [Modeler](../docs/MODELER.md) for classified definitions and UI behavior.
 
 ## Transaction and activity structure
 

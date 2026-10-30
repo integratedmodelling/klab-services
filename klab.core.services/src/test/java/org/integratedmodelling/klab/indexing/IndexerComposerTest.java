@@ -14,6 +14,23 @@ import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.junit.jupiter.api.Test;
 
 class IndexerComposerTest {
+  @Test void qualifiedQueriesRestrictTheOntologyAndRankTheExactNameFirst() throws Exception {
+    try (var fixture = new Fixture()) {
+      fixture.add("other:Tree", SemanticType.SUBJECT);
+      fixture.add("ecology.forest:TreeHeight", SemanticType.QUALITY);
+      fixture.add("ecology.forest:Tree", SemanticType.SUBJECT);
+      fixture.refresh();
+      assertEquals(List.of("ecology.forest:Tree"), fixture.index
+          .query("ecology.forest:Tree", SemanticScope.root(), 1).stream().map(SemanticMatch::getId).toList());
+      assertEquals(Set.of("ecology.forest:Tree", "ecology.forest:TreeHeight"), new HashSet<>(fixture.index
+          .query("ecology.forest:tr", SemanticScope.root(), 30).stream().map(SemanticMatch::getId).toList()));
+      assertEquals(2, fixture.index.query("ecology.forest:", SemanticScope.root(), 30).size());
+      assertTrue(fixture.index.query("missing:Tree", SemanticScope.root(), 30).isEmpty());
+      assertTrue(fixture.index.query("ecology:Tree", SemanticScope.root(), 30).isEmpty());
+      assertEquals(3, fixture.index.query("tree", SemanticScope.root(), 30).size());
+    }
+  }
+
   @Test void sameFamilyIdentitiesCannotCrowdObservableHeadsOutOfCompletions() throws Exception {
     try (var fixture = new Fixture()) {
       fixture.add("test:Oak", SemanticType.IDENTITY, SemanticType.PREDICATE);
@@ -157,6 +174,7 @@ class IndexerComposerTest {
       when(reasoner.resolveConcept(id)).thenReturn(concept);
       var document = new Document();
       document.add(new StringField("id", id, Field.Store.YES));
+      document.add(new StringField("namespace", id.substring(0, id.indexOf(':')), Field.Store.YES));
       document.add(new TextField("name", id.substring(id.indexOf(':') + 1), Field.Store.YES));
       document.add(new StoredField("vmtype", SemanticMatch.Type.CONCEPT.ordinal()));
       document.add(new StoredField("vctype", type.ordinal()));

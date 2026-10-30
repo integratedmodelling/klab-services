@@ -61,6 +61,21 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
  * @author ferdinando.villa
  */
 public interface Actuator extends Serializable, RuntimeAsset {
+  /** Intrinsic, execution-checked satisfaction; an empty classifier model is not this operation. */
+  String CLASSIFICATION_CHECK_ONLY = "klab.classification.check-only";
+  /** Read-only native cohort query, refreshed after its classification dependency completes. */
+  String COMPLETE_COHORT_REFERENCE = "klab.classification.cohort-reference";
+  String COMPLETE_COHORT_OPERATION = "klab.classification.cohort-operation";
+
+  /** Ordered model contributions, including empty models; blank marks unknown identity. Not a reuse lease. */
+  String PRODUCING_MODELS_KEY = "im:producing-models";
+
+  default List<ClassifierDependencyPlan> getClassifierDependencies() { return List.of(); }
+  /** An unresolved virtual cohort input, expanded inside the enclosing native transaction before
+   * eager compilation. Its placeholder is never a durable observation or a new producer. */
+  default Dataflow getCollectiveSelectionDependency() { return null; }
+  /** Separate typed ports: never coerced to scalar Observation dependencies. */
+  default java.util.Map<String,MemberQualityInputPlan> getMemberQualityInputs() { return java.util.Map.of(); }
 
   enum ExecutionRole { INITIALIZATION, PROCESS, EVENT_INSTANTIATOR, EVENT }
 
@@ -220,6 +235,11 @@ public interface Actuator extends Serializable, RuntimeAsset {
    * @return
    */
   String getStrategyUrn();
+
+  default DependencyFamily.Binding getDependencyFamilyBinding() { return null; }
+  default java.util.List<DependencyFamily> getDependencyFamilies() { return java.util.List.of(); }
+
+  default org.integratedmodelling.klab.api.knowledge.SingularContextBinding getContextBinding() { return null; }
 
   /**
    * The actuator's geometry is a merge of the native coverage of all models downstream of the

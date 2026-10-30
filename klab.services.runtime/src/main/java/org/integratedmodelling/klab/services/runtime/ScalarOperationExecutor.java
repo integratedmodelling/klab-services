@@ -13,6 +13,7 @@ public class ScalarOperationExecutor extends AbstractExecutor
 
   private final ScalarComputation.Builder scalarBuilder;
   private ScalarComputation scalarMapper;
+  private final Map<String,Observation> compiledDependencies;
 
   public ScalarOperationExecutor(
       ScalarComputation.Builder builder,
@@ -22,6 +23,32 @@ public class ScalarOperationExecutor extends AbstractExecutor
       ShardExecution shardExecution) {
     super(null, observation, scope, dependencies, shardExecution);
     this.scalarBuilder = builder;
+    this.compiledDependencies = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(dependencies));
+  }
+
+  java.util.Optional<java.util.List<Observation>> semanticInputs(
+      org.integratedmodelling.klab.services.scopes.ServiceContextScope executionScope) {
+    if (getClass() != ScalarOperationExecutor.class || !compiledDependencies.keySet().equals(dependencies.keySet()))
+      return java.util.Optional.empty();
+    for (var entry : compiledDependencies.entrySet())
+      if (entry.getValue() != dependencies.get(entry.getKey())) return java.util.Optional.empty();
+    var proof = org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy.semanticInputs(
+        scalarBuilder, scalarMapper, input -> {
+          if (input == null) return false;
+          if (input.getClass() == org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl.class) {
+            var observable = input.getObservable();
+            return observable != null && observable.getClass() == org.integratedmodelling.common.knowledge.ObservableImpl.class
+                && observable.getSemantics() != null
+                && observable.getSemantics().getClass() == org.integratedmodelling.common.knowledge.ConceptImpl.class;
+          }
+          return executionScope.getCurrentTransaction() instanceof
+              org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.TransactionImpl transaction
+              && transaction.ownsObservationReadView(input);
+        }, dependencies, observation);
+    if (proof.isEmpty()) return proof;
+    for (var input : proof.get()) if (input != observation
+        && compiledDependencies.values().stream().noneMatch(candidate -> candidate == input)) return java.util.Optional.empty();
+    return proof;
   }
 
   @Override

@@ -130,6 +130,12 @@ public class UnitImpl implements Unit {
     return definition;
   }
 
+  /** Portable authored spelling; functional conversion state is deliberately not part of identity. */
+  @Override
+  public String toString() {
+    return String.valueOf(definition);
+  }
+
   public void setDefinition(String definition) {
     this.definition = definition;
   }

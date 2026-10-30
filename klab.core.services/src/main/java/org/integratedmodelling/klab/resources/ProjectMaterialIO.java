@@ -12,6 +12,69 @@ public final class ProjectMaterialIO {
 
   private ProjectMaterialIO() {}
 
+  /** Shallow authoring listing. Directory discovery is authorized by the Resources provider. */
+  public static ProjectMaterial retrieve(FileProjectStorage storage, ProjectMaterial material)
+      throws IOException {
+    if (!material.isDirectory()) {
+      byte[] content = read(storage, material.getPath());
+      if (content == null) return null;
+      material.setContent(content);
+      material.setSize(content.length);
+      return material;
+    }
+    Path directory = material.getPath().isEmpty()
+        ? storage.getRootFolder().toPath().toRealPath() : target(storage, material.getPath());
+    if (!Files.exists(directory)) return null;
+    if (!Files.isDirectory(directory)) throw new IOException("Material is not a directory");
+    var entries = new java.util.ArrayList<ProjectMaterial>();
+    try (var stream = Files.newDirectoryStream(directory)) {
+      for (var entry : stream) {
+        String relative = material.getPath().isEmpty() ? entry.getFileName().toString()
+            : material.getPath() + "/" + entry.getFileName();
+        try {
+          target(storage, relative);
+        } catch (IllegalArgumentException | IOException excluded) { continue; }
+        if (!Files.isDirectory(entry) && !Files.isRegularFile(entry)) continue;
+        if (entries.size() == 10000) throw new IOException("Material directory exceeds 10000 entries");
+        var child = new ProjectMaterial(material.getProjectName(), relative, null);
+        child.setDirectory(Files.isDirectory(entry));
+        child.setSize(child.isDirectory() ? 0 : Files.size(entry));
+        entries.add(child);
+      }
+    }
+    entries.sort(java.util.Comparator.comparing(ProjectMaterial::isDirectory).reversed()
+        .thenComparing(ProjectMaterial::getPath));
+    material.setContent(null);
+    material.setEntries(entries);
+    return material;
+  }
+
+  /** Only ADD creates directories. Existing directories and the listing root cannot be overwritten. */
+  public static void createDirectory(FileProjectStorage storage, ProjectMaterial material,
+      SubmissionMode mode) throws IOException {
+    if (storage.isReadOnly()) throw new IOException("Read-only project");
+    if (!material.isDirectory() || material.getContent() != null || mode != SubmissionMode.ADD)
+      throw new IllegalArgumentException("Directories require ADD and no content");
+    Path directory = target(storage, material.getPath());
+    validateGit(storage, material.getPath());
+    Files.createDirectory(directory);
+  }
+
+  public static boolean exists(FileProjectStorage storage, String path) throws IOException {
+    return Files.exists(target(storage, path));
+  }
+
+  /** Empty-directory deletion is deliberate: never recursively remove unlisted project content. */
+  public static boolean deleteDirectory(FileProjectStorage storage, String path) throws IOException {
+    if (storage.isReadOnly()) throw new IOException("Read-only project");
+    Path directory = target(storage, path);
+    if (!Files.exists(directory)) return false;
+    if (!Files.isDirectory(directory)) throw new IOException("Material is not a directory");
+    validateGit(storage, path);
+    Files.delete(directory);
+    return true;
+  }
+
   private static Path target(FileProjectStorage storage, String relative) throws IOException {
     ProjectMaterial.canonicalPath(relative);
     Path root = storage.getRootFolder().toPath().toRealPath();

@@ -18,6 +18,47 @@ class CachedAuthorityTest {
     catch (java.net.MalformedURLException e) { throw new AssertionError(e); }
   }
 
+  @Test void distanceForwardsTheTransientBridgeAndIsNeverPersistentlyCached() {
+    var source=org.mockito.Mockito.mock(Authority.class);
+    var request=request();
+    org.mockito.Mockito.when(source.getUrn()).thenReturn("test.authority");
+    org.mockito.Mockito.when(source.getCachePolicy()).thenReturn(new Authority.CachePolicy("v1",100,100,100));
+    org.mockito.Mockito.when(source.configure(request)).thenReturn("transient");
+    org.mockito.Mockito.when(source.semanticDistance("transient","target","candidate"))
+        .thenReturn(new Authority.SemanticDistance(Authority.DistanceStatus.COMPATIBLE,1,List.of()))
+        .thenReturn(Authority.SemanticDistance.unknown("changed"));
+    var wrapper=new CachedAuthority(source,directory,Clock.systemUTC(),"implementation");
+    String id=wrapper.configure(request);
+    assertEquals(1,wrapper.semanticDistance(id,"target","candidate").distance());
+    assertEquals(Authority.DistanceStatus.UNKNOWN,wrapper.semanticDistance(id,"target","candidate").status());
+    org.mockito.Mockito.verify(source,org.mockito.Mockito.times(2)).semanticDistance("transient","target","candidate");
+    wrapper.releaseConfiguration(id);
+    assertThrows(IllegalArgumentException.class,()->wrapper.semanticDistance(id,"target","candidate"));
+  }
+
+  @Test void strictSubsumptionForwardsUncachedThroughRootAndViewAndRejectsReleasedBridge() {
+    var source=org.mockito.Mockito.mock(Authority.class);
+    var view=org.mockito.Mockito.mock(Authority.class);
+    var request=request();
+    org.mockito.Mockito.when(source.getUrn()).thenReturn("test.authority");
+    org.mockito.Mockito.when(source.getCachePolicy()).thenReturn(new Authority.CachePolicy("v1",100,100,100));
+    org.mockito.Mockito.when(source.configure(request)).thenReturn("transient");
+    org.mockito.Mockito.when(source.subAuthority("CHILD")).thenReturn(view);
+    org.mockito.Mockito.when(source.subsumption("transient","target","candidate"))
+        .thenReturn(Authority.Subsumption.SUBSUMES).thenReturn(Authority.Subsumption.UNKNOWN);
+    org.mockito.Mockito.when(view.subsumption("transient","target","candidate"))
+        .thenReturn(Authority.Subsumption.INCOMPATIBLE);
+    var wrapper=new CachedAuthority(source,directory,Clock.systemUTC(),"implementation");
+    var id=wrapper.configure(request);
+    assertEquals(Authority.Subsumption.SUBSUMES,wrapper.subsumption(id,"target","candidate"));
+    assertEquals(Authority.Subsumption.UNKNOWN,wrapper.subsumption(id,"target","candidate"));
+    var child=wrapper.subAuthority("CHILD");
+    assertEquals(Authority.Subsumption.INCOMPATIBLE,child.subsumption(id,"target","candidate"));
+    wrapper.releaseConfiguration(id);
+    assertThrows(IllegalArgumentException.class,()->wrapper.subsumption(id,"target","candidate"));
+    assertThrows(IllegalArgumentException.class,()->child.subsumption(id,"target","candidate"));
+  }
+
   private Authority.ConfigurationRequest request(String worldview, String name, String root, int release) {
     return new Authority.ConfigurationRequest(worldview, name, root,
         Map.of("urn", "test.authority", "release", release));
@@ -61,12 +102,27 @@ class CachedAuthorityTest {
         @Override public List<Notification> getNotifications() { return List.of(Notification.error("Unavailable")); }
       };
     }
-    @Override public Identity resolveIdentity(String config, String id) { lookups++; return identity(id); }
+    @Override public Set<String> getSemanticBoundaries() { return Set.of("SPECIES"); }
+    @Override public Identity resolveIdentity(String config, String id) {
+      lookups++;
+      var result = identity(id);
+      return request.semanticBoundaries().isEmpty() ? result
+          : new ClassifiedIdentity(result, Set.of("SPECIES"), HierarchyStatus.DEFERRED);
+    }
+    @Override public Identity resolveIdentity(String config, String id, ResolutionMode mode) {
+      if (mode == ResolutionMode.CONFIGURED) return resolveIdentity(config, id);
+      lookups++; return identity(id);
+    }
     @Override public List<Identity> search(String query, String sub, String config) { searches++; return List.of(identity("A")); }
     @Override public Identity reconcile(String config, Map<String,String> fields) { matches++; return identity("A"); }
     @Override public Capabilities getCapabilities() { return null; }
     @Override public Map<String,Codelist> getCodelists() { return Map.of(); }
     @Override public Map<String,Codelist> getCodelists(String id) { codelistConfiguration = id; return Map.of(); }
+    @Override public Map<String,CodelistDefinition> getCodelistDefinitions(String id) {
+      codelistConfiguration = id;
+      return Map.of("official", new CodelistDefinition(
+          new org.integratedmodelling.klab.api.knowledge.impl.CodelistImpl(), false));
+    }
     @Override public Authority subAuthority(String catalog) { return this; }
   }
 
@@ -76,7 +132,36 @@ class CachedAuthorityTest {
     String id = cached.configure(request());
     cached.getCodelists(id);
     assertEquals("session-1", provider.codelistConfiguration);
+    var definitions = cached.getCodelistDefinitions(id);
+    assertFalse(definitions.get("official").acceptsProposals());
+    assertEquals("session-1", provider.codelistConfiguration);
+    assertFalse(cached.subAuthority("rank").getCodelistDefinitions(id).get("official").acceptsProposals());
+    assertThrows(IllegalArgumentException.class, () -> cached.getCodelistDefinitions("unconfigured"));
     assertThrows(IllegalArgumentException.class, () -> cached.getCodelists("unconfigured"));
+  }
+
+  @Test void deferredAndFullRecordsPersistSeparatelyAndMappingsIsolateConfigurations() {
+    var parameters = new HashMap<String, Object>(request().parameters());
+    parameters.put("semanticBoundaries", Map.of("SPECIES", "bio:Species"));
+    var request = new Authority.ConfigurationRequest("wv", "TAXA", "bio:Root", parameters);
+    var source = new Provider();
+    var first = new CachedAuthority(source, directory);
+    String id = first.configure(request);
+    assertEquals(Authority.HierarchyStatus.DEFERRED, first.resolveIdentity(id, "alias").getHierarchyStatus());
+    assertEquals(Set.of("SPECIES"), first.resolveIdentity(id, "A").getSemanticBoundaries());
+    assertEquals(1, source.lookups);
+    assertEquals(Authority.HierarchyStatus.COMPLETE,
+        first.resolveIdentity(id, "A", Authority.ResolutionMode.FULL_HIERARCHY).getHierarchyStatus());
+    assertEquals(2, source.lookups);
+    var restoredProvider = new Provider();
+    var restored = new CachedAuthority(restoredProvider, directory);
+    String restoredId = restored.configure(request);
+    assertEquals(Authority.HierarchyStatus.DEFERRED, restored.resolveIdentity(restoredId, "A").getHierarchyStatus());
+    assertFalse(restored.resolveIdentity(restoredId, "A", Authority.ResolutionMode.FULL_HIERARCHY).getParentIds().isEmpty());
+    assertEquals(0, restoredProvider.lookups);
+    parameters.put("semanticBoundaries", Map.of("SPECIES", "bio:Other"));
+    var changed = new CachedAuthority(new Provider(), directory);
+    assertNotEquals(restoredId, changed.configure(new Authority.ConfigurationRequest("wv", "TAXA", "bio:Root", parameters)));
   }
 
   @Test void persistsIdentitiesSearchAndReconciliationAcrossRestartWithStableBridgeId() {

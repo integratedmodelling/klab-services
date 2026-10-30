@@ -479,7 +479,7 @@ public interface KlabService extends Service {
   boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope);
 
   /**
-   * Retrieve all stored credential information for the passed scope.
+   * Retrieve credential set metadata for an administrator. Secret fields are never returned.
    *
    * @param scope
    * @return
@@ -487,16 +487,27 @@ public interface KlabService extends Service {
   List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope);
 
   /**
-   * Add the passed credentials to the service's credential store. Scope determines what the
-   * credentials can apply to.
+   * Create or update a named credential set as an administrator. A null ID creates a set;
+   * an existing ID updates it. Omitted parameter fields preserve stored values. Usage grants
+   * are explicit in the credentials privileges and default to administrators only.
    *
-   * @param host stripped-down hostname (possibly with port and path), e.g. github.com/user
+   * @param host absolute endpoint URL, e.g. https://github.com/organization
    * @param credentials
    * @param scope
-   * @return true if successful
+   * @return metadata for the saved set, including its stable ID
    */
   ExternalAuthenticationCredentials.CredentialInfo addCredentials(
       String host, ExternalAuthenticationCredentials credentials, Scope scope);
+
+  /** Schema discovery and credential deletion use the existing administrative credential facility. */
+  default java.util.List<org.integratedmodelling.klab.api.authentication.CredentialSchema> getCredentialSchemas(Scope scope) {
+    throw new UnsupportedOperationException("Credential schemas are unavailable");
+  }
+
+  default boolean removeCredentials(String id, Scope scope) {
+    throw new UnsupportedOperationException("Credential administration is unavailable");
+  }
+
 
   /**
    * Retrieve a specific asset under the purview of this service. The URN must identify a

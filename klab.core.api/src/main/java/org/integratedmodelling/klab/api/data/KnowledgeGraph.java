@@ -118,6 +118,11 @@ public interface KnowledgeGraph {
     Set<Long> getModifiedAssets();
 
     String getOwner();
+
+    /** Non-null for background commits caused by a consequence decision; never implies UI focus. */
+    default org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause getConsequenceCause() {
+      return null;
+    }
   }
 
   /**
@@ -279,7 +284,71 @@ public interface KnowledgeGraph {
     public Code getCode() { return code; }
   }
 
+  /** Immutable raw persisted input read set; private to one live Runtime request, never a cache version. */
+  record ClassificationMemberSnapshot(long id, String observable, String geometry, long semanticRevision,
+      java.util.Map<String,Object> properties, String perceivedGeometry) implements java.io.Serializable {
+    public ClassificationMemberSnapshot { properties=freezeClassificationProperties(properties); }
+    public ClassificationMemberSnapshot(long id,String observable,String geometry,long revision) {
+      this(id,observable,geometry,revision,java.util.Map.of(),null);
+    }
+    /** Fresh native values for materialization; mutation cannot alter the captured read set. */
+    public java.util.Map<String,Object> nativeProperties() {
+      var result=new java.util.LinkedHashMap<String,Object>();
+      properties.forEach((key,value)->result.put(key,restoreClassificationValue(value)));
+      return result;
+    }
+  }
+  /** Neo4j binary properties need value equality without retaining a mutable byte array. */
+  record ClassificationBinaryValue(String base64) implements java.io.Serializable {
+    public ClassificationBinaryValue { java.util.Objects.requireNonNull(base64); }
+  }
+  private static java.util.Map<String,Object> freezeClassificationProperties(java.util.Map<String,Object> values) {
+    var result=new java.util.LinkedHashMap<String,Object>();
+    values.forEach((key,value)->result.put(key,freezeClassificationValue(value)));
+    return java.util.Collections.unmodifiableMap(result);
+  }
+  private static Object freezeClassificationValue(Object value) {
+    if(value==null || value instanceof String || value instanceof Number || value instanceof Boolean) return value;
+    if(value instanceof ClassificationBinaryValue) return value;
+    if(value instanceof byte[] bytes) return new ClassificationBinaryValue(java.util.Base64.getEncoder().encodeToString(bytes));
+    if(value instanceof java.util.List<?> list) return list.stream().map(KnowledgeGraph::freezeClassificationValue).toList();
+    throw new IllegalArgumentException("Unsupported native observation property "+value.getClass());
+  }
+  private static Object restoreClassificationValue(Object value) {
+    if(value instanceof ClassificationBinaryValue binary) return java.util.Base64.getDecoder().decode(binary.base64());
+    if(value instanceof java.util.List<?> list) return list.stream().map(KnowledgeGraph::restoreClassificationValue).toList();
+    return value;
+  }
+
+  record ClassificationReadSet(String contextId, long cohortId, String cohortObservable, java.util.List<ClassificationMemberSnapshot> members)
+      implements java.io.Serializable {
+    public ClassificationReadSet { members = java.util.List.copyOf(members); }
+    public ClassificationReadSet(String contextId,long cohortId,java.util.List<ClassificationMemberSnapshot> members) {
+      this(contextId,cohortId,null,members);
+    }
+  }
+
+  /** Materialize only the captured native properties; this must not fetch a newer geometry/state. */
+  default Observation materializeClassificationMember(ClassificationMemberSnapshot snapshot, ContextScope scope) {
+    throw new UnsupportedOperationException("Captured observation materialization is unavailable");
+  }
+
   interface Transaction extends Closeable {
+    /** Coherent raw membership/input read under native context/member locks. */
+    default ClassificationReadSet captureClassificationMembers(long cohortId) {
+      throw new UnsupportedOperationException("Classification snapshots are unavailable");
+    }
+
+    /** Acquire the union of existing guarded/read and write observation IDs once, in ascending order. */
+    default void lockClassificationInputs(java.util.Collection<Long> ids) {
+      throw new UnsupportedOperationException("Classification read locks are unavailable");
+    }
+
+    /** Compare on this same native transaction before root writes, including reused read-only inputs. */
+    default void validateClassificationMembers(ClassificationReadSet expected) {
+      throw new UnsupportedOperationException("Classification snapshot validation is unavailable");
+    }
+
     /**
      * Store the passed asset, return its unique long ID.
      *
@@ -311,6 +380,14 @@ public interface KnowledgeGraph {
      * Implementations must fail the transaction on a stale baseline or missing observation. */
     default void updateSemantics(Observation observation, String expectedObservable) {
       throw new UnsupportedOperationException("Atomic semantic updates are not supported");
+    }
+
+    /** Semantic update plus exactly this root attempt's nonnegative HAS_CHILD increments.
+     * The increment must be atomic with semantic comparison and must not replace other payload.
+     * Graphs without this bookkeeping support must fail instead of discarding a nonzero delta. */
+    default void updateSemantics(Observation observation,String expectedObservable,int ownedChildDelta) {
+      if(ownedChildDelta!=0)throw new UnsupportedOperationException("Atomic semantic child bookkeeping is not supported");
+      updateSemantics(observation,expectedObservable);
     }
 
 

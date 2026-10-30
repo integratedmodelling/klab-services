@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 @ComponentScan(
     basePackages = {
       "org.integratedmodelling.klab.services.application.security",
+      "org.integratedmodelling.klab.services.application.ui",
       "org.integratedmodelling.klab.services.messaging",
       "org.integratedmodelling.klab.services.application.controllers",
       "org.integratedmodelling.klab.services.reasoner.controllers"
@@ -63,7 +64,20 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
   @Override
   protected ReasonerService createPrimaryService(
       ServiceScope serviceScope, ServiceStartupOptions options) {
-    return new ReasonerService(serviceScope, options);
+    ModuleExtractionTraceFilter.install();
+    var service = new ReasonerService(serviceScope, options);
+    try {
+      var factory = org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.fromLocalCatalog(
+              org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE.getDataPath("semantic-candidates").toPath(),
+              org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE.getDataPath("knowledge").toPath(),
+              org.integratedmodelling.klab.services.base.BaseService.getConfigurationDirectory(options).toPath());
+      // Production ingestion must synchronize providers before compiling the candidate.
+      factory.enableAuthorityBootstrap();
+      service.enableCandidatePublication(factory);
+    } catch (Exception failure) {
+      throw new IllegalStateException("Cannot capture local semantic dependencies", failure);
+    }
+    return service;
   }
 
   public static void main(String[] args) {

@@ -18,6 +18,12 @@ public class AgentInstantiationRequest {
   private long observationId = Observation.UNASSIGNED_ID;
   private String suggestedName;
 
+  /**
+   * A UNITTEST behavior may carry a {@code testAction} string in its properties. The value must
+   * name a declared {@code @test} action (excluding init/main). The runtime runs init followed by
+   * only that action, retaining other actions as callable helpers. Without the property it runs
+   * the complete suite, including main. Selection is per execution and does not change the URN.
+   */
   public KActorsBehavior getBehavior() {
     return behavior;
   }

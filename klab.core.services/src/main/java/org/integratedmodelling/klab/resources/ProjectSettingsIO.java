@@ -22,17 +22,24 @@ public final class ProjectSettingsIO {
     }
     // Preserve the former override precedence until the next successful save migrates the file.
     var legacy = storage.listResources(ProjectStorage.ResourceType.PROJECT_SETTINGS);
-    if (!legacy.isEmpty()) settings.getMetadata().putAll(Utils.Json.load(legacy.getFirst(), ProjectSettings.class).getMetadata());
+    if (!legacy.isEmpty())
+      settings
+          .getMetadata()
+          .putAll(Utils.Json.load(legacy.getFirst(), ProjectSettings.class).getMetadata());
     return settings;
   }
 
-  public static void write(FileProjectStorage storage, ProjectSettings settings) throws IOException {
+  public static void write(FileProjectStorage storage, ProjectSettings settings)
+      throws IOException {
     write(storage, settings, () -> {});
   }
 
-  /** Replace manifest settings and retire the legacy file, compensating both on catalog failure.
-   * Git's working tree records modifications/deletions; the index and HEAD are never changed here. */
-  public static void write(FileProjectStorage storage, ProjectSettings settings, Runnable catalogUpdate)
+  /**
+   * Replace manifest settings and retire the legacy file, compensating both on catalog failure.
+   * Git's working tree records modifications/deletions; the index and HEAD are never changed here.
+   */
+  public static void write(
+      FileProjectStorage storage, ProjectSettings settings, Runnable catalogUpdate)
       throws IOException {
     if (storage.isReadOnly()) throw new IOException("Project is read-only");
     validateGitPaths(storage);
@@ -43,8 +50,11 @@ public final class ProjectSettingsIO {
     var legacy = directory.resolve("project.json");
     byte[] previousManifest = Files.exists(manifest) ? Files.readAllBytes(manifest) : null;
     byte[] previousLegacy = Files.exists(legacy) ? Files.readAllBytes(legacy) : null;
-    Map<String, Object> fields = previousManifest == null ? new LinkedHashMap<>()
-        : Utils.Json.parseObject(new String(previousManifest, StandardCharsets.UTF_8), Map.class);
+    Map<String, Object> fields =
+        previousManifest == null
+            ? new LinkedHashMap<>()
+            : Utils.Json.parseObject(
+                new String(previousManifest, StandardCharsets.UTF_8), Map.class);
     fields.put("metadata", settings.getMetadata());
     if (settings.getDefinedWorldview() != null) {
       if (settings.getDefinedWorldview().isBlank()) fields.remove("definedWorldview");
@@ -53,7 +63,8 @@ public final class ProjectSettingsIO {
     var temporary = Files.createTempFile(directory, "manifest-", ".tmp");
     try {
       Files.writeString(temporary, Utils.Json.asString(fields), StandardCharsets.UTF_8);
-      Files.move(temporary, manifest, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+      Files.move(
+          temporary, manifest, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
       try {
         validateGitPaths(storage); // Includes a newly created manifest and ignore rules.
         Files.deleteIfExists(legacy);
@@ -64,7 +75,8 @@ public final class ProjectSettingsIO {
           restore(legacy, previousLegacy, temporary);
         } catch (IOException restoreFailure) {
           failure.addSuppressed(restoreFailure);
-          throw new IOException("Settings save failed and original project files could not be restored", failure);
+          throw new IOException(
+              "Settings save failed and original project files could not be restored", failure);
         }
         throw failure;
       }
@@ -77,7 +89,8 @@ public final class ProjectSettingsIO {
     if (previous == null) Files.deleteIfExists(target);
     else {
       Files.write(temporary, previous);
-      Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+      Files.move(
+          temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
   }
 
@@ -86,9 +99,11 @@ public final class ProjectSettingsIO {
     try (var git = org.eclipse.jgit.api.Git.open(storage.getRootFolder())) {
       var status = git.status().call();
       for (String path : List.of("META-INF/manifest.json", "META-INF/project.json")) {
-        if (status.getConflicting().contains(path)) throw new IOException("Resolve Git conflict before saving " + path);
-        if (path.endsWith("manifest.json") && status.getIgnoredNotInIndex().stream()
-            .anyMatch(ignored -> path.equals(ignored) || path.startsWith(ignored + "/"))) {
+        if (status.getConflicting().contains(path))
+          throw new IOException("Resolve Git conflict before saving " + path);
+        if (path.endsWith("manifest.json")
+            && status.getIgnoredNotInIndex().stream()
+                .anyMatch(ignored -> path.equals(ignored) || path.startsWith(ignored + "/"))) {
           throw new IOException("Settings path is ignored by Git: " + path);
         }
       }

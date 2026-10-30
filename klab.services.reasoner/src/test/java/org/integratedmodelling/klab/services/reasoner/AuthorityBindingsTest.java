@@ -9,6 +9,53 @@ import org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
 import org.junit.jupiter.api.Test;
 
 class AuthorityBindingsTest {
+  @org.junit.jupiter.api.io.TempDir java.nio.file.Path directory;
+
+  private static final class StrictProvider implements Authority {
+    int configurations, releases;
+    @Override public String getUrn() { return "test.authority"; }
+    @Override public Capabilities getCapabilities() { return null; }
+    @Override public String configure(ConfigurationRequest supplied) {
+      if (!supplied.parameters().keySet().equals(java.util.Set.of("urn", "datasetKey")))
+        throw new IllegalArgumentException("Unknown provider parameter");
+      assertEquals(312578, supplied.parameters().get("datasetKey"));
+      assertEquals("worldview", supplied.worldview());
+      assertEquals("TAXA", supplied.name());
+      assertEquals("life:TaxonomicIdentity", supplied.rootIdentity());
+      configurations++;
+      return "provider-session";
+    }
+    @Override public void releaseConfiguration(String id) {
+      assertEquals("provider-session", id); releases++;
+    }
+    @Override public Map<String, org.integratedmodelling.klab.api.knowledge.Codelist> getCodelists(String id) {
+      assertEquals("provider-session", id);
+      return Map.of("species", new org.integratedmodelling.klab.api.knowledge.impl.CodelistImpl());
+    }
+    @Override public Identity resolveIdentity(String configuration, String code) { return null; }
+    @Override public Authority subAuthority(String catalog) { return this; }
+    @Override public java.util.List<Identity> search(String query, String filter, String configuration) {
+      return java.util.List.of();
+    }
+  }
+
+  @Test void reasonerCodelistMappingsNeverReachStrictProviders() {
+    for (boolean cached : new boolean[] {false, true}) {
+      var provider = new StrictProvider();
+      var bindings = cached ? new AuthorityBindings(directory) : new AuthorityBindings();
+      var request = new Authority.ConfigurationRequest("worldview", "TAXA", "life:TaxonomicIdentity",
+          Map.of("urn", "test.authority", "datasetKey", 312578,
+              "codelists", Map.of("species", "taxonomy.species")));
+      var id = bindings.configure(request, provider);
+      assertEquals(request, bindings.get("TAXA").request());
+      assertEquals(java.util.Set.of("taxonomy.species"), bindings.codelists("TAXA").namespaces());
+      assertEquals(id, bindings.configure(request, provider));
+      assertEquals(1, provider.configurations);
+      bindings.clear();
+      assertEquals(1, provider.releases);
+    }
+  }
+
   @Test
   void loadedInstanceIdsNormalizeToTheSamePersistentWorldviewName() {
     var worldview = new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();

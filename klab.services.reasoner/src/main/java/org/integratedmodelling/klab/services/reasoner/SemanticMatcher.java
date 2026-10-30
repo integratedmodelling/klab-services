@@ -56,6 +56,12 @@ public class SemanticMatcher {
     Scope serviceScope();
 
     long knowledgeRevision();
+
+    default org.integratedmodelling.klab.api.services.Authority.SemanticDistance authorityDistance(
+        Concept target, Concept candidate) {
+      return org.integratedmodelling.klab.api.services.Authority.SemanticDistance.unsupported();
+    }
+    default boolean hasConfiguredAuthorities() { return false; }
   }
 
   private static final class ServiceOperations implements Operations {
@@ -139,6 +145,12 @@ public class SemanticMatcher {
       return service.serviceScope();
     }
 
+    public org.integratedmodelling.klab.api.services.Authority.SemanticDistance authorityDistance(
+        Concept target, Concept candidate) {
+      return service.authoritySemanticDistance(target, candidate);
+    }
+    public boolean hasConfiguredAuthorities() { return service.hasConfiguredAuthorities(); }
+
     public long knowledgeRevision() {
       return service.knowledgeRevision();
     }
@@ -177,6 +189,10 @@ public class SemanticMatcher {
     Concept targetConcept = target.asConcept();
     Concept otherConcept = other.asConcept();
     Concept contextConcept = context == null ? null : context.asConcept();
+    // Authority policy may change independently of OWL revision, including inside modifiers.
+    // Bypass the aggregate cache whenever live bridges exist until a policy revision API is defined.
+    if (operations.hasConfiguredAuthorities()) return semanticDistance(targetConcept, otherConcept,
+        contextConcept, true, null, operations.serviceScope());
     var key =
         new DistanceKey(
             operations.knowledgeRevision(), targetConcept, otherConcept, contextConcept);
@@ -238,6 +254,7 @@ public class SemanticMatcher {
     // should have all the same traits - additional traits are allowed only
     // in contextual types
     Set<Concept> acceptedTraits = new HashSet<>();
+    List<Concept> requiredTraits = new ArrayList<>();
     for (Concept t : operations.traits(from)) {
       if (t.isAbstract()
           && resolvedAbstractPredicates != null
@@ -249,12 +266,14 @@ public class SemanticMatcher {
         distance += predicateDistance;
         acceptedTraits.add(resolvedAbstractPredicates.get(t));
       } else {
-        boolean ok = operations.hasTrait(to, t);
-        if (!ok) {
-          return -50;
-        }
+        requiredTraits.add(t);
       }
     }
+    var traitMatches = matchTraits(requiredTraits, operations.traits(to),
+        candidate -> acceptedTraits.contains(candidate) || operations.hasTrait(from, candidate));
+    if (traitMatches == null) return -50;
+    distance += traitMatches.distance();
+    acceptedTraits.addAll(traitMatches.acceptedCandidates());
 
     for (Concept t : operations.traits(to)) {
       if (!acceptedTraits.contains(t) && !operations.hasTrait(from, t)) {
@@ -458,6 +477,78 @@ public class SemanticMatcher {
     return assertedDistance(core2, core1);
   }
 
+  private record TraitOptions(int distance, boolean mediated, List<Concept> candidates) {}
+  private record TraitMatches(int distance, Set<Concept> acceptedCandidates) {}
+
+  /** Retain every equally ranked alternative instead of letting set iteration select one.
+   * Exact canonical identity takes precedence over distinct provider-equivalent identities;
+   * otherwise keep compatible mediation before hierarchy fallback, then its lowest distance. */
+  private TraitOptions traitOptions(Concept target, List<Concept> candidates) {
+    var exact = candidates.stream().filter(candidate -> target.getUrn().equals(candidate.getUrn())).toList();
+    if (!exact.isEmpty()) return new TraitOptions(0, true, exact);
+    var best = new ArrayList<Concept>();
+    int distance = Integer.MAX_VALUE;
+    boolean mediated = false;
+    for (Concept candidate : candidates) {
+      var result = operations.authorityDistance(target, candidate);
+      switch (result.status()) {
+        case COMPATIBLE -> {
+          if (!mediated || result.distance() < distance) {
+            best.clear(); distance = result.distance(); mediated = true;
+          }
+          if (result.distance() == distance) best.add(candidate);
+        }
+        case UNSUPPORTED -> {
+          if (!mediated && operations.is(candidate, target)) {
+            distance = 0; best.add(candidate);
+          }
+        }
+        case UNKNOWN, INCOMPATIBLE -> { }
+      }
+    }
+    return best.isEmpty() ? null : new TraitOptions(distance, mediated, List.copyOf(best));
+  }
+
+  /** Maximize coverage of otherwise-extra traits among the equally best alternatives.
+   * Each required trait can mediate at most one candidate. Augmenting paths reconsider earlier
+   * choices, so a lexical or iteration-order winner cannot hide a valid complete assignment.
+   * Uncovered extras retain the caller's existing rejection or contextual penalty. */
+  private TraitMatches matchTraits(Collection<Concept> required, Collection<Concept> candidates,
+      java.util.function.Predicate<Concept> alreadyAccepted) {
+    var orderedCandidates = candidates.stream().distinct().sorted(Comparator.comparing(Concept::getUrn)).toList();
+    var options = new ArrayList<TraitOptions>();
+    int distance = 0;
+    for (Concept target : required.stream().distinct().sorted(Comparator.comparing(Concept::getUrn)).toList()) {
+      var row = traitOptions(target, orderedCandidates);
+      if (row == null) return null;
+      options.add(row); distance += row.distance();
+    }
+    Map<Integer, Concept> claimed = new HashMap<>();
+    for (Concept candidate : orderedCandidates) {
+      if (!alreadyAccepted.test(candidate)) claimTrait(candidate, options, claimed, new HashSet<>());
+    }
+    return new TraitMatches(distance, new HashSet<>(claimed.values()));
+  }
+
+  private boolean claimTrait(Concept candidate, List<TraitOptions> options,
+      Map<Integer, Concept> claimed, Set<Integer> visited) {
+    for (int row = 0; row < options.size(); row++) {
+      var choices = options.get(row);
+      if (!choices.mediated() || !choices.candidates().contains(candidate) || !visited.add(row)) continue;
+      var previous = claimed.get(row);
+      if (previous == null || claimTrait(previous, options, claimed, visited)) {
+        claimed.put(row, candidate);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Same specialization/trait contract as other semantic clauses; observer classes are constraints. */
+  int observerClauseDistance(Concept candidate,Concept requested) {
+    return distance(candidate,requested,false);
+  }
+
   private int distance(Concept from, Concept to, boolean acceptAbsent) {
 
     int ret = 0;
@@ -466,16 +557,14 @@ public class SemanticMatcher {
     } else if (from != null && to == null) {
       ret = -50;
     } else if (from != null) {
-      ret = operations.is(to, from) ? assertedDistance(to, from) : -100;
+      ret = assertedDistance(to, from);
       if (ret >= 0) {
-        for (Concept t : operations.traits(from)) {
-          boolean ok = operations.hasTrait(to, t);
-          if (!ok) {
-            return -50;
-          }
-        }
+        var matches = matchTraits(operations.traits(from), operations.traits(to),
+            candidate -> operations.hasTrait(from, candidate));
+        if (matches == null) return -50;
+        ret += matches.distance();
         for (Concept t : operations.traits(to)) {
-          if (!operations.hasTrait(from, t)) {
+          if (!matches.acceptedCandidates().contains(t) && !operations.hasTrait(from, t)) {
             ret += 10;
           }
         }
@@ -488,6 +577,12 @@ public class SemanticMatcher {
   public int assertedDistance(Semantics from, Semantics to) {
     Objects.requireNonNull(from, "from");
     Objects.requireNonNull(to, "to");
+    if (from.asConcept().isCollective() != to.asConcept().isCollective()) return -1;
+    if (from.asConcept().getUrn().equals(to.asConcept().getUrn())) return 0;
+    var delegated = operations.authorityDistance(to.asConcept(), from.asConcept());
+    if (delegated.status() != org.integratedmodelling.klab.api.services.Authority.DistanceStatus.UNSUPPORTED)
+      return delegated.status() == org.integratedmodelling.klab.api.services.Authority.DistanceStatus.COMPATIBLE
+          ? delegated.distance() : -1;
     var key = new HierarchyKey(operations.knowledgeRevision(), from, to);
     return assertedDistanceCache.get(
         key, ignored -> shortestAssertedDistance(from, to, operations::parents));
@@ -495,6 +590,8 @@ public class SemanticMatcher {
 
   static int shortestAssertedDistance(
       Semantics from, Semantics to, Function<Semantics, Collection<Concept>> parentProvider) {
+    boolean collective = from.asConcept().isCollective();
+    if (collective != to.asConcept().isCollective()) return -1;
     if (from.equals(to)) {
       return 0;
     }
@@ -504,7 +601,10 @@ public class SemanticMatcher {
     queue.add(Pair.of(from.asConcept(), 0));
     while (!queue.isEmpty()) {
       Pair<Concept, Integer> current = queue.removeFirst();
-      for (Concept parent : parentProvider.apply(current.getFirst())) {
+      for (Concept canonicalParent : parentProvider.apply(current.getFirst())) {
+        // OWL parents are canonical singular classes. Preserve the query's mode
+        // through the hierarchy without admitting collective/singular substitution.
+        Concept parent = collective ? canonicalParent.collective() : canonicalParent.singular();
         if (parent.equals(to.asConcept())) {
           return current.getSecond() + 1;
         }

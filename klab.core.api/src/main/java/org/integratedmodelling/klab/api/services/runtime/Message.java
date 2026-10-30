@@ -174,6 +174,11 @@ public interface Message extends Serializable {
     DigitalTwinDeleted(Queue.Events, DigitalTwin.Configuration.class),
     DigitalTwinConnected(Queue.Events, DigitalTwin.Configuration.class),
 
+    /** A post-commit consequence decision, including deferred or failed evaluation. */
+    ConsequenceDecision(Queue.Events, org.integratedmodelling.klab.api.digitaltwin.Consequence.Decision.class),
+    /** New committed changes caused by a consequence, correlated with its decision. */
+    ConsequenceCommitted(Queue.Events, org.integratedmodelling.klab.api.digitaltwin.Consequence.Commit.class),
+
     /*
      * Notification-class types. Sent only if the correspondent Queue is enabled.
      */

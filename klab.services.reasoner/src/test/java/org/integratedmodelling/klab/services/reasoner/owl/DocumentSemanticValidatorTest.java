@@ -16,6 +16,126 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class DocumentSemanticValidatorTest {
+  @Test void modelEachUsesResolvedConfigurationKindAndDoesNotConfuseOperandCollectivity() {
+    var reasoner=mock(ReasonerService.class);when(reasoner.owl()).thenReturn(mock(OWL.class));
+    var syntax=new KimConceptImpl();syntax.setName("w:Alias");syntax.setCollective(true);
+    var effective=mock(Concept.class);when(effective.is(SemanticType.CONFIGURATION)).thenReturn(true);
+    when(reasoner.declareConcept(syntax)).thenReturn(effective);
+    var observable=new KimObservableImpl();observable.setSemantics(syntax);
+    var model=new KimModelImpl();model.getObservables().add(observable);
+    var namespace=new KimNamespaceImpl();namespace.setUrn("models");namespace.getStatements().add(model);
+    var diagnostics=new DocumentSemanticValidator(reasoner).validate(namespace);
+    assertTrue(diagnostics.stream().anyMatch(n->n.getMessage().contains("CONFIGURATION_INSTANTIATION")));
+    when(effective.is(SemanticType.CONFIGURATION)).thenReturn(false); // unary-derived quality head
+    assertTrue(new DocumentSemanticValidator(reasoner).validate(namespace).stream().noneMatch(n->
+        n.getMessage().contains("CONFIGURATION_INSTANTIATION")));
+    syntax.setCollective(false); // model Quality of each Bearer: only operand is collective
+    when(effective.is(SemanticType.CONFIGURATION)).thenReturn(true);
+    var bearer=new KimConceptImpl();bearer.setCollective(true);syntax.setInherent(bearer);
+    assertTrue(new DocumentSemanticValidator(reasoner).validate(namespace).stream().noneMatch(n->
+        n.getMessage().contains("CONFIGURATION_INSTANTIATION")));
+  }
+  @Test void loadingKnowledgeReturnsBeforeTakingTheIngestionMonitor() throws Exception {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var state = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
+    state.begin(7);
+    var field = ReasonerService.class.getDeclaredField("semanticValidationState");
+    field.setAccessible(true); field.set(reasoner, state);
+    var document = new KimNamespaceImpl(); document.setUrn("models");
+    try (var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      synchronized (reasoner) {
+        var response = worker.submit(() -> reasoner.validateDocument(
+            SemanticValidationRequest.of(document, "saved"), mock(Scope.class)))
+            .get(1, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+        assertFalse(response.valid());
+      }
+    }
+  }
+
+  @Test void failedUpdateCannotCertifyANamespaceAgainstPartialKnowledge() throws Exception {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    when(reasoner.knowledgeRevision()).thenReturn(7L);
+    var state = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
+    state.settle(7, false);
+    var field = ReasonerService.class.getDeclaredField("semanticValidationState");
+    field.setAccessible(true); field.set(reasoner, state);
+    var ready = ReasonerService.class.getDeclaredField("knowledgeReady");
+    ready.setAccessible(true); ready.set(reasoner, true);
+    var owl = mock(OWL.class); when(owl.isInitialized()).thenReturn(true);
+    when(reasoner.owl()).thenReturn(owl);
+    var worldview = ReasonerService.class.getDeclaredField("worldview");
+    worldview.setAccessible(true); worldview.set(reasoner, mock(Worldview.class));
+    var scope = mock(Scope.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class))
+        .thenReturn(mock(org.integratedmodelling.klab.api.services.ResourcesService.class));
+    var document = new KimNamespaceImpl(); document.setUrn("models");
+    var request = SemanticValidationRequest.of(document, "saved"); request.setKnowledgeRevision(7);
+    var response = reasoner.validateDocument(request, scope);
+    assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+    assertFalse(response.valid());
+    assertTrue(response.getReason().contains("completed knowledge update"));
+  }
+  @Test void missingResourcesBecomeDocumentAnnotationsBeforeKnowledgeStartup() {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class))
+        .thenThrow(new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
+            "No suitable service for request of ResourcesService"));
+    var document = new KimOntologyImpl();
+    document.setUrn("imod"); document.setProjectName("worldview");
+    document.setSourceCode("ontology imod");
+    var response = reasoner.validateDocument(SemanticValidationRequest.of(document, "saved"), scope);
+    assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+    assertFalse(response.valid());
+    assertEquals(1, response.getNotifications().size());
+    var diagnostic = response.getNotifications().getFirst();
+    assertEquals(org.integratedmodelling.klab.api.services.runtime.Notification.Level.Warning,
+        diagnostic.getLevel());
+    assertTrue(diagnostic.getMessage().contains("No suitable service"));
+    assertEquals("imod", diagnostic.getLexicalContext().getDocumentUrn());
+    assertEquals("worldview", diagnostic.getLexicalContext().getProjectUrn());
+    assertEquals(SemanticValidationRequest.sourceHash(document.getSourceCode()), response.getSourceHash());
+  }
+
+  @Test void sourceErrorsDoNotWaitForTheWorldviewIngestionMonitor() throws Exception {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var document = new KimOntologyImpl(); document.setUrn("imod");
+    var error = org.integratedmodelling.klab.api.services.runtime.Notification.error("Invalid domain");
+    document.getNotifications().add(error);
+    // Hold the same monitor used by loadKnowledge, and validate from another thread.
+    try (var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+      synchronized (reasoner) {
+        var result = worker.submit(() -> reasoner.validateDocument(
+            SemanticValidationRequest.of(document, "saved"), null));
+        var response = result.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals(SemanticValidationResponse.Status.SYNTAX_ERRORS, response.getStatus());
+        assertEquals(List.of(error), response.getNotifications());
+      }
+    }
+  }
+
+  @Test void missingResourcesDuringNamespacePreflightAreUnavailableInsteadOfThrown() throws Exception {
+    var reasoner = mock(ReasonerService.class);
+    when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var ready = ReasonerService.class.getDeclaredField("knowledgeReady");
+    ready.setAccessible(true); ready.set(reasoner, true);
+    var owl = mock(OWL.class); when(owl.isInitialized()).thenReturn(true);
+    when(reasoner.owl()).thenReturn(owl);
+    var scope = mock(Scope.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class))
+        .thenThrow(new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException("Resources offline"));
+    var document = new KimNamespaceImpl(); document.setUrn("models");
+    var response = reasoner.validateDocument(SemanticValidationRequest.of(document, "saved"), scope);
+    assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+    assertEquals("models", response.getNotifications().getFirst().getLexicalContext().getDocumentUrn());
+    assertTrue(response.getNotifications().getFirst().getMessage().contains("Resources offline"));
+  }
+
   @Test void genericDeclarationUsesResolvedParentTypesBeforeCreatingItsOwlClass() throws Exception {
     var scope = mock(Scope.class);
     var owl = new OWL(scope);
@@ -34,6 +154,9 @@ class DocumentSemanticValidatorTest {
     var reasoner = mock(ReasonerService.class, CALLS_REAL_METHODS);
     var owlField = ReasonerService.class.getDeclaredField("owl");
     owlField.setAccessible(true); owlField.set(reasoner, owl);
+    // CALLS_REAL_METHODS bypasses field initializers, including the ingestion domain registry.
+    var domainsField = ReasonerService.class.getDeclaredField("declarationDomains");
+    domainsField.setAccessible(true); domainsField.set(reasoner, new HashMap<>());
     var indexerField = ReasonerService.class.getDeclaredField("indexer");
     indexerField.setAccessible(true);
     indexerField.set(reasoner, mock(org.integratedmodelling.klab.indexing.Indexer.class));
@@ -115,13 +238,16 @@ class DocumentSemanticValidatorTest {
     var document = new KimOntologyImpl(); document.setUrn("earth");
     var earlier = new KimConceptStatementImpl(); earlier.setUrn("Earlier"); earlier.setOffsetInDocument(10); earlier.setLength(40);
     var later = new KimConceptStatementImpl(); later.setUrn("Later"); later.setOffsetInDocument(100); later.setLength(20);
-    earlier.getDeclaredReferences().add(syntax("Later", 30));
+    earlier.setType(EnumSet.of(SemanticType.QUALITY,SemanticType.OBSERVABLE));
+    later.setType(EnumSet.of(SemanticType.QUALITY,SemanticType.OBSERVABLE));
+    earlier.setDeclaredParent(syntax("Later", 30));
     document.getStatements().addAll(List.of(earlier, later));
     var loaded = mock(Concept.class);
     when(reasoner.resolveConcept(anyString())).thenReturn(loaded);
+    when(reasoner.declareConcept(any())).thenReturn(loaded);
     when(reasoner.satisfiable(loaded)).thenReturn(true);
     var errors = new DocumentSemanticValidator(reasoner).validate(document);
-    assertEquals(1, errors.size());
+    assertEquals(1, errors.size(),errors.toString());
     assertTrue(errors.getFirst().getMessage().contains("before its declaration"));
     assertEquals(30, errors.getFirst().getLexicalContext().getOffsetInDocument());
     later.setOffsetInDocument(1);
@@ -250,6 +376,10 @@ class DocumentSemanticValidatorTest {
   @Test void savedOntologiesSynchronizeDependenciesBeforeValidationButDraftsDoNot() throws Exception {
     var reasoner = mock(ReasonerService.class);
     when(reasoner.validateDocument(any(), any())).thenCallRealMethod();
+    var state = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
+    state.settle(0, false);
+    var stateField = ReasonerService.class.getDeclaredField("semanticValidationState");
+    stateField.setAccessible(true); stateField.set(reasoner, state);
     var ready = ReasonerService.class.getDeclaredField("knowledgeReady"); ready.setAccessible(true); ready.set(reasoner, true);
     var owl = mock(OWL.class); when(owl.isInitialized()).thenReturn(true); when(reasoner.owl()).thenReturn(owl);
     var hashes = new HashMap<String,String>();
@@ -269,6 +399,7 @@ class DocumentSemanticValidatorTest {
       assertEquals(List.of("base", "earth"), changes.getOntologies().stream().map(r -> r.getResourceUrn()).toList());
       hashes.put("base", SemanticValidationRequest.sourceHash(dependency.getSourceCode()));
       hashes.put("earth", SemanticValidationRequest.sourceHash(ontology.getSourceCode()));
+      state.settle(0, true);
       return changes;
     });
     assertTrue(reasoner.validateDocument(SemanticValidationRequest.of(ontology, "1"), scope).valid());

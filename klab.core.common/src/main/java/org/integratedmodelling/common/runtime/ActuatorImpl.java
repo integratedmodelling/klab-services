@@ -16,6 +16,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ActuatorImpl implements Actuator {
+  private org.integratedmodelling.klab.api.services.runtime.Dataflow collectiveSelectionDependency;
+  @Override public org.integratedmodelling.klab.api.services.runtime.Dataflow getCollectiveSelectionDependency() { return collectiveSelectionDependency; }
+  public void setCollectiveSelectionDependency(org.integratedmodelling.klab.api.services.runtime.Dataflow value) { collectiveSelectionDependency = value; }
+
+  private org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding dependencyFamilyBinding;
+  private java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> dependencyFamilies=new java.util.ArrayList<>();
+  public org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding getDependencyFamilyBinding() { return dependencyFamilyBinding; }
+  public void setDependencyFamilyBinding(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding value) { dependencyFamilyBinding=value; }
+  public java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> getDependencyFamilies() { return dependencyFamilies; }
+  public void setDependencyFamilies(java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> value) { dependencyFamilies=value; }
+
+  private List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> classifierDependencies = new ArrayList<>();
+  private java.util.Map<String,org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan> memberQualityInputs=new java.util.LinkedHashMap<>();
+  public java.util.Map<String,org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan> getMemberQualityInputs() { return memberQualityInputs; }
+  public void setMemberQualityInputs(java.util.Map<String,org.integratedmodelling.klab.api.services.runtime.MemberQualityInputPlan> value) {
+    memberQualityInputs=value==null?new java.util.LinkedHashMap<>():new java.util.LinkedHashMap<>(value);
+  }
+  public List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> getClassifierDependencies() { return classifierDependencies; }
+  public void setClassifierDependencies(List<org.integratedmodelling.klab.api.services.runtime.ClassifierDependencyPlan> plans) { classifierDependencies = plans == null ? new ArrayList<>() : plans; }
 
   private ExecutionRole executionRole = ExecutionRole.INITIALIZATION;
   private java.util.Map<Integer, org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule>
@@ -75,6 +94,9 @@ public class ActuatorImpl implements Actuator {
   public void setComputationConstraints(java.util.Map<Integer, List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>> value) {
     computationConstraints = value == null ? new java.util.HashMap<>() : value;
   }
+  private org.integratedmodelling.klab.api.knowledge.SingularContextBinding contextBinding;
+  public org.integratedmodelling.klab.api.knowledge.SingularContextBinding getContextBinding() { return contextBinding; }
+  public void setContextBinding(org.integratedmodelling.klab.api.knowledge.SingularContextBinding value) { contextBinding = value; }
   private String strategyUrn;
   private List<Actuator> children = new ArrayList<>();
   private List<ServiceCall> computation = new ArrayList<>();
@@ -145,7 +167,8 @@ public class ActuatorImpl implements Actuator {
 
   public void setObservation(Observation observation) {
     this.observation = observation;
-    if (observation != null) {
+    if (observation != null && this.operationObservable == null) {
+      // Rebinding an execution target must not erase the original authored operation/query.
       this.operationObservable = observation.getObservable();
       this.contextualization = operationObservable == null ? null : operationObservable.getContextualization();
     }

@@ -66,21 +66,21 @@ final class ProcessModelBindings {
       var qualityBearer = org.integratedmodelling.klab.runtime.language.OccurrentSemantics.bearer(
           observable, process, semantics, reasoner);
       if (process.is(SemanticType.EVENT) && assigned.contains(entry.getKey())
-          && !reasoner.affectedBy(observable, process) && !reasoner.createdBy(observable, process))
+          && !reasoner.affectedBy(observable.getSemantics(), process.getSemantics()) && !reasoner.createdBy(observable.getSemantics(), process.getSemantics()))
         throw new KlabValidationException("An event assignment requires affects or creates: " + entry.getKey());
       var effect =
-          reasoner.createdBy(observable, process)
+          reasoner.createdBy(observable.getSemantics(), process.getSemantics())
               ? ProcessPlan.Effect.CREATED
-              : reasoner.affectedBy(observable, process) || assigned.contains(entry.getKey())
+              : reasoner.affectedBy(observable.getSemantics(), process.getSemantics()) || assigned.contains(entry.getKey())
                   ? ProcessPlan.Effect.AFFECTED
                   : ProcessPlan.Effect.INPUT;
       var relations = new java.util.TreeSet<String>();
       for (var influence : evidence) {
         if (observable.getSemantics().equals(influence.target())
-            || reasoner.is(observable, influence.target())) relations.add(influence.kind().name());
+            || reasoner.is(observable.getSemantics(), influence.target())) relations.add(influence.kind().name());
       }
       if (effect == ProcessPlan.Effect.CREATED) relations.add("CREATES");
-      if (effect == ProcessPlan.Effect.AFFECTED && reasoner.affectedBy(observable, process))
+      if (effect == ProcessPlan.Effect.AFFECTED && reasoner.affectedBy(observable.getSemantics(), process.getSemantics()))
         relations.add("AFFECTS");
       if (assigned.contains(entry.getKey())) relations.add("ASSIGNMENT");
       bindings.add(
@@ -133,7 +133,7 @@ final class ProcessModelBindings {
 
   private static void compatible(Observable observable, Observable bearer, Reasoner reasoner) {
     var inherent = reasoner.inherent(observable);
-    if (inherent != null && !reasoner.is(bearer, inherent))
+    if (inherent != null && !reasoner.is(bearer.getSemantics(), inherent))
       throw new KlabValidationException(
           "Incompatible process bearer for "
               + observable.getUrn()

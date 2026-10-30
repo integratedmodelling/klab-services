@@ -42,6 +42,13 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
   protected Throwable cause;
   protected final ShardExecution shardExecution;
   protected Map<String, Observation> dependencies = new HashMap<>();
+  private Map<String,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection> memberQualityInputs=Map.of();
+  final void bindMemberQualityInputs(Map<String,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection> inputs) {
+    memberQualityInputs=Map.copyOf(inputs);
+  }
+  protected final Map<String,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection> memberQualityInputs() {
+    return memberQualityInputs;
+  }
 
   public AbstractExecutor(
       CompiledDataflow.CallDescriptors callInfo,
@@ -358,7 +365,13 @@ public abstract class AbstractExecutor implements CompiledDataflow.ContextualExe
 
     if (method != null) {
       for (var argument : method.getParameters()) {
-        if (ContextScope.class.isAssignableFrom(argument.getType())) {
+        if(argument.getType()==org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection.class) {
+          var input=argument.getAnnotation(org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Input.class);
+          if(input==null || input.name().isBlank() || !(scope instanceof ContextScope contextScope))
+            throw new IllegalStateException("Collection inputs require an exact declared @Input name and context");
+          var view=memberQualityInputs.get(input.name());
+          MemberQualityResolution.requireForConsumption(view,contextScope);runArguments.add(view);
+        } else if (ContextScope.class.isAssignableFrom(argument.getType())) {
           // TODO consider wrapping into read-only delegating wrappers
           runArguments.add(scope);
         } else if (Scope.class.isAssignableFrom(argument.getType())) {

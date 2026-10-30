@@ -19,12 +19,23 @@ public final class ServicePermissionPolicy {
   }
 
   /** The startup issuer must come from authenticated service startup data, not web overrides. */
-  public static Grant resolve(boolean localService, Identity owner, String startupIssuer,
-      String verifiedIssuer, String verifiedUsername, Collection<Role> verifiedRoles) {
-    boolean localOwner = localService
-        && owner instanceof UserIdentity user && user.isAuthenticated() && !user.isAnonymous()
-        && verifiedUsername != null && verifiedUsername.equals(user.getUsername())
-        && startupIssuer != null && !startupIssuer.isBlank() && startupIssuer.equals(verifiedIssuer);
+  public static Grant resolve(
+      boolean localService,
+      Identity owner,
+      String startupIssuer,
+      String verifiedIssuer,
+      String verifiedUsername,
+      Collection<Role> verifiedRoles) {
+    boolean localOwner =
+        localService
+            && owner instanceof UserIdentity user
+            && user.isAuthenticated()
+            && !user.isAnonymous()
+            && verifiedUsername != null
+            && verifiedUsername.equals(user.getUsername())
+            && startupIssuer != null
+            && !startupIssuer.isBlank()
+            && startupIssuer.equals(verifiedIssuer);
     var roles = EnumSet.noneOf(Role.class);
     roles.addAll(verifiedRoles);
     if (localOwner) {
@@ -32,8 +43,10 @@ public final class ServicePermissionPolicy {
       roles.add(Role.ROLE_ADMINISTRATOR);
       roles.add(Role.ROLE_DATA_MANAGER);
     }
-    var permissions = roles.contains(Role.ROLE_ADMINISTRATOR) || roles.contains(Role.ROLE_SYSTEM)
-        ? EnumSet.allOf(CRUDOperation.class) : EnumSet.of(CRUDOperation.READ);
+    var permissions =
+        roles.contains(Role.ROLE_ADMINISTRATOR) || roles.contains(Role.ROLE_SYSTEM)
+            ? EnumSet.allOf(CRUDOperation.class)
+            : EnumSet.of(CRUDOperation.READ);
     return new Grant(roles, permissions, localOwner);
   }
 }

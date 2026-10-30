@@ -260,6 +260,8 @@ public interface Extensions {
     public int methodCall;
     public boolean staticMethod;
     public String behaviorUrn;
+    /** Immediate construction reference, separate from the emitted value behaviorUrn. */
+    public String handleBehaviorUrn;
     public boolean error;
   }
 

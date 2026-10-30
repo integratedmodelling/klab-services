@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
@@ -41,6 +42,9 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
 public class CompiledDataflow {
+  private static final String OBSERVER_CONTRIBUTIONS = "im:observer-contributions";
+  record ObserverContribution(String modelUrn, String observerUrn, String support, long revision) {}
+
 
   private final RuntimeService runtimeService;
   private final ServiceContextScope scope;
@@ -151,10 +155,19 @@ public class CompiledDataflow {
 
   static Activity createContextualizationActivity(
       org.integratedmodelling.klab.api.documentation.FlowChart plan, Observation observation, Activity parent) {
+    return createContextualizationActivity(plan, observation, parent, observation.getGeometry());
+  }
+
+  static Activity createContextualizationActivity(
+      org.integratedmodelling.klab.api.documentation.FlowChart plan, Observation observation,
+      Activity parent, Geometry executionGeometry) {
     var activity = Activity.of(
         Activity.Type.forContextualization(observation.getObservable().getContextualization()),
         observation, parent, "Contextualization of " + observation.getObservable());
     activity.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_DATAFLOW_GRAPH, plan);
+    if (executionGeometry != null)
+      activity.getMetadata().put(Metadata.IM_EXECUTION_GEOMETRY,
+          GeometryRepository.INSTANCE.sanitize(executionGeometry).encode());
     return activity;
   }
 
@@ -275,6 +288,43 @@ public class CompiledDataflow {
         .retrieve(urns.getFirst(), Resource.class, scope);
   }
 
+  static boolean sameConsumedInputs(java.util.Optional<List<Observation>> before,
+      java.util.Optional<List<Observation>> after) {
+    return before.isPresent() && after.isPresent() && before.get().size()==after.get().size()
+        && before.get().stream().allMatch(input -> after.get().stream().anyMatch(actual -> actual==input));
+  }
+
+  /** Verify actual compiled engines/receivers and return the exact inputs they used. */
+  private java.util.Optional<List<Observation>> semanticInputs(Actuator actuator, ServiceContextScope executionScope) {
+    var compiled = operations.get(actuator);
+    if (compiled == null) return java.util.Optional.empty();
+    var inputs = new ArrayList<Observation>();
+    var seen = Collections.newSetFromMap(new IdentityHashMap<Observation,Boolean>());
+    boolean declaredScalar = false; int actualScalars = 0;
+    for (var call : actuator.getComputation()) {
+      var preset = RuntimeService.CoreFunctor.classify(call);
+      if (preset == RuntimeService.CoreFunctor.EXPRESSION_RESOLVER
+          || preset == RuntimeService.CoreFunctor.CONSTANT_RESOLVER || preset == RuntimeService.CoreFunctor.LUT_RESOLVER) {
+        declaredScalar = true; continue;
+      }
+      var selected = callInfo.get(call.getUrn());
+      if (!SemanticExecutionFootprints.call(componentRegistry, selected, call, executionScope)) return java.util.Optional.empty();
+    }
+    for (var executor : compiled.executors) {
+      if (executor instanceof ScalarOperationExecutor scalar) {
+        actualScalars++;
+        var proof = scalar.semanticInputs(executionScope);
+        if (proof.isEmpty()) return java.util.Optional.empty();
+        for (var input : proof.get()) if (seen.add(input)) inputs.add(input);
+      } else if (executor.getClass() == ContextualizerExecutor.class || executor.getClass() == LocalAdapterExecutor.class) {
+        var actual = (AbstractExecutor) executor;
+        for (var input : actual.dependencies.values()) if (input != null && seen.add(input)) inputs.add(input);
+      } else return java.util.Optional.empty();
+    }
+    if (declaredScalar && actualScalars == 0) return java.util.Optional.empty();
+    return java.util.Optional.of(List.copyOf(inputs));
+  }
+
   private Extensions.FunctionDescriptor choosePrototype(ServiceCall call, Observation observation) {
     List<Pair<Extensions.FunctionDescriptor, Integer>> candidates = new ArrayList<>();
     for (var prototype : componentRegistry.getFunctionDescriptor(call, scope)) {
@@ -307,8 +357,15 @@ public class CompiledDataflow {
    */
   public boolean compile(Actuator rootActuator) {
 
+    requireExpandedDependencies(rootActuator);
+    validateBoundContexts(rootActuator, scope);
     validateSupportedPlan(rootActuator);
-    // build the observations as required
+    validateObserverBindings(rootActuator);
+    // Establish root identity before walking descendants. Transport copies of the root must
+    // never be allocated as a second observation or scheduled instead of the submitted target.
+    validateRootTarget(rootActuator);
+    validateProducingModels(rootActuator, scope);
+    this.rootActuator = rootActuator;
     requireObservations(rootActuator);
 
     // harmonize the sharding strategies according to runtime configuration, native strategy and
@@ -331,6 +388,147 @@ public class CompiledDataflow {
       operations.put(pair.getFirst(), operation);
     }
     return true;
+  }
+
+  private void validateRootTarget(Actuator plan) {
+    if(plan.getActuatorType()==Actuator.Type.UPDATE)return;
+    var declared=plan.getObservation();
+    if(rootObservation==null || declared==null || rootObservation.getId()==Observation.UNASSIGNED_ID
+        || rootObservation.getId()==Observation.QUERY_ID || rootObservation.getObservable()==null
+        || !(Objects.equals(rootObservation.getObservable().getUrn(),declared.getObservable().getUrn())
+            || verifiedObserverRefinement(plan))
+        || rootObservation.getId()!=declared.getId() || plan.getId()!=declared.getId()
+        || !sameRootSupport(plan, declared)
+        || rootObservation.getParentId()!=declared.getParentId())
+      throw new IllegalArgumentException("Executable root must retain its bound target identity, meaning, native parent and support");
+  }
+
+  private boolean sameRootSupport(Actuator plan, Observation declared) {
+    var reduction = collectiveReduction(plan);
+    if (reduction == null) return Objects.equals(GeometryRepository.INSTANCE.sanitize(rootObservation.getGeometry()).encode(),
+        GeometryRepository.INSTANCE.sanitize(declared.getGeometry()).encode());
+    try {
+      // Keep the actual submitted target scalar; the portable witness only repairs loss of flags at transport.
+      reduction.require(scope, rootObservation.getObservable(), rootObservation.getGeometry());
+      return Objects.equals(reduction.support(), Geometry.forTransport(declared.getGeometry()).encode());
+    } catch (IllegalStateException rejected) { return false; }
+  }
+
+  /** Accept only a uniform observer refinement evidenced by the selected producing outputs.
+   * This does not change the original operation/query or authorize arbitrary meaning changes. */
+  private boolean verifiedObserverRefinement(Actuator plan) {
+    return verifiedObserverRefinement(plan, rootObservation.getObservable());
+  }
+
+  private boolean verifiedObserverRefinement(Actuator plan, org.integratedmodelling.klab.api.knowledge.Observable original) {
+    var actual = plan.getObservation().getObservable();
+    if (plan.getActuatorType() != Actuator.Type.OBSERVE || original.getObserverSemantics() != null
+        || actual.getObserverSemantics() == null || plan.getOperationObservable() == null
+        || !Objects.equals(original.getUrn(), plan.getOperationObservable().getUrn())
+        || !(original.is(SemanticType.QUALITY) || original.is(SemanticType.PROCESS))
+        || !Objects.equals(original.asConcept().getUrn(), actual.asConcept().getUrn())
+        || !Objects.equals(original.getUnit(), actual.getUnit())
+        || !Objects.equals(original.getCurrency(), actual.getCurrency())
+        || !Objects.equals(original.getRange(), actual.getRange())
+        || original.getContextualization() != actual.getContextualization()
+        || !Objects.equals(actual.getUrn(), org.integratedmodelling.common.knowledge.ObservableImpl
+            .withObserverSemantics(original, actual.getObserverSemantics()).getUrn())
+        || !(plan.getData().get(OBSERVER_CONTRIBUTIONS) instanceof List<?> entries) || entries.isEmpty()
+        || !(plan.getData().get(Actuator.PRODUCING_MODELS_KEY) instanceof List<?> models)) return false;
+    var selected = scope.getObserver();
+    if (selected != null && selected.getObservable() == null) return false;
+    var requestedSupport = GeometryRepository.INSTANCE.scale(plan.getObservation().getGeometry(), scope);
+    var verifiedSupport = org.integratedmodelling.klab.api.services.resolver.Coverage.create(requestedSupport, 0);
+    var currentModels = new HashMap<String,org.integratedmodelling.klab.runtime.language.ModelValidationGate.ProducerSnapshot>();
+    for (var entry : entries) {
+      if (!(entry instanceof String text)) return false;
+      var contribution = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text, ObserverContribution.class);
+      if (contribution.revision() < 0 || contribution.modelUrn() == null || contribution.modelUrn().isBlank()
+          || !models.contains(contribution.modelUrn())
+          || !Objects.equals(contribution.observerUrn(), actual.getObserverSemantics().getUrn())
+          || !(plan.getData().get("modelAdmissionRevision") instanceof Number revision)
+          || revision.longValue() != contribution.revision()) return false;
+      var source = currentModels.computeIfAbsent(contribution.modelUrn(),
+          urn -> producingSnapshot(plan, urn));
+      if (source == null) return false;
+      var content = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(source.content(), Map.class);
+      if (!(content.get("coverage") instanceof String coverage)
+          || !(content.get("observables") instanceof List<?> outputs)
+          || outputs.stream().noneMatch(output -> output instanceof Map<?,?> fields
+              && Objects.equals(fields.get("semantics"), original.asConcept().getUrn())
+              && Objects.equals(fields.get("observer"), contribution.observerUrn()))) return false;
+      if (contribution.support() == null) return false;
+      var declaredSupport = GeometryRepository.INSTANCE.scale(Geometry.create(contribution.support()), scope);
+      var supported = GeometryRepository.INSTANCE.getMerged(requestedSupport,
+          GeometryRepository.INSTANCE.scale(Geometry.create(coverage), scope),
+          org.integratedmodelling.klab.api.lang.LogicalConnector.INTERSECTION,
+          org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class);
+      if (supported == null || supported.isEmpty()
+          || !Objects.equals(Geometry.forTransport(supported).encode(), Geometry.forTransport(declaredSupport).encode())) return false;
+      var contributionCoverage = org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(supported, requestedSupport);
+      if (contributionCoverage == null) return false;
+      verifiedSupport = contributionCoverage.isComplete()
+          ? org.integratedmodelling.klab.api.services.resolver.Coverage.create(requestedSupport, 1)
+          : verifiedSupport.merge(supported, org.integratedmodelling.klab.api.lang.LogicalConnector.UNION);
+    }
+    return verifiedSupport.isComplete();
+  }
+
+  /** A plan carries its admitted executable content, independent of later Resources edits. */
+  private org.integratedmodelling.klab.runtime.language.ModelValidationGate.ProducerSnapshot
+      producingSnapshot(Actuator actuator, String urn) {
+    var encoded = actuator.getData().get(
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_SNAPSHOTS);
+    if (!(encoded instanceof List<?> snapshots)) return null;
+    org.integratedmodelling.klab.runtime.language.ModelValidationGate.ProducerSnapshot selected = null;
+    for (var entry : snapshots) {
+      if (!(entry instanceof String text)) throw new IllegalStateException("Malformed producing-model snapshot");
+      var model = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text,
+          org.integratedmodelling.klab.runtime.language.ModelValidationGate.ProducerSnapshot.class);
+      if (Objects.equals(urn, model.modelUrn())) {
+        if (selected != null) throw new IllegalStateException("Duplicate producing-model snapshot: " + urn);
+        selected = model;
+      }
+    }
+    if (selected == null) return null;
+    var receipts = actuator.getData().get(
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS);
+    if (!(receipts instanceof List<?> values)) return null;
+    for (var value : values) {
+      if (!(value instanceof String text)) return null;
+      var receipt = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text,
+          org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt.class);
+      if (Objects.equals(urn, receipt.modelUrn())
+          && Objects.equals(receipt.executableHash(), selected.executableHash()))
+        return selected;
+    }
+    return null;
+  }
+
+  private void validateObserverBindings(Actuator actuator) {
+    if (actuator.getData().get(OBSERVER_CONTRIBUTIONS) instanceof List<?> entries) {
+      var contributions = entries.stream().map(entry -> org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+          entry.toString(), ObserverContribution.class)).toList();
+      if (contributions.stream().anyMatch(c -> c.observerUrn() != null)
+          && contributions.stream().anyMatch(c -> c.modelUrn() != null)
+          && contributions.stream().anyMatch(c -> c.modelUrn() == null))
+        throw new UnsupportedOperationException("Observer-specific model/reference output composition requires an explicit value-fill operator");
+    }
+    if (actuator.getActuatorType() == Actuator.Type.OBSERVE && actuator.getOperationObservable() != null
+        && actuator.getObservation() != null
+        && !Objects.equals(actuator.getOperationObservable().getObserverSemantics(),
+            actuator.getObservation().getObservable().getObserverSemantics())
+        && !verifiedObserverRefinement(actuator, actuator.getOperationObservable()))
+      throw new IllegalArgumentException("Unverified nested result observer refinement");
+    for (var child : actuator.getChildren()) validateObserverBindings(child);
+  }
+
+  private static void requireExpandedDependencies(Actuator actuator) {
+    if (actuator.getCollectiveSelectionDependency() != null)
+      throw new IllegalStateException("Selected collective inputs must complete before eager compilation");
+    if(!actuator.getClassifierDependencies().isEmpty())
+      throw new IllegalStateException("Selected model classifier obligations must complete before eager compilation");
+    for(var child:actuator.getChildren())requireExpandedDependencies(child);
   }
 
   /** Prepare the typed classifier without allocating an observation. */
@@ -461,6 +659,7 @@ public class CompiledDataflow {
     copy.setType(source.getType());
     copy.setActuatorType(source.getActuatorType());
     copy.setObservation(Observation.forTransport(source.getObservation()));
+    copy.setOperationObservable(source.getOperationObservable());
     copy.getObservation().getMetadata().remove(Scheduler.PLAN_METADATA_KEY);
     copy.getObservation().getMetadata().remove(org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.OccurrenceRegistration.METADATA_KEY);
     copy.getObservation().getMetadata().remove(org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.DispatchProgress.KEY);
@@ -470,6 +669,7 @@ public class CompiledDataflow {
     copy.setExecutionRole(source.getExecutionRole());
     copy.getOccurrenceSchedules().putAll(source.getOccurrenceSchedules());
     copy.getComputation().addAll(source.getComputation());
+    copy.getMemberQualityInputs().putAll(source.getMemberQualityInputs());
     copy.getComputationConstraints().putAll(source.getComputationConstraints());
     copy.getData().putAll(source.getData());
     copy.getData().replaceAll((key, value) -> Geometry.valueForTransport(value));
@@ -697,6 +897,16 @@ public class CompiledDataflow {
     if (rootActuator.getActuatorType() != Actuator.Type.UPDATE
         && rootObservation instanceof ObservationImpl target) {
       target.mergeAnnotations(rootActuator.getObservation());
+      if (!Objects.equals(target.getObservable().getUrn(), rootActuator.getObservation().getObservable().getUrn())) {
+        if (!verifiedObserverRefinement(rootActuator)) throw new IllegalArgumentException("Unverified result observer refinement");
+        target.setObservable(rootActuator.getObservation().getObservable());
+      }
+      if (rootActuator.getData().containsKey(OBSERVER_CONTRIBUTIONS))
+        target.getMetadata().put(OBSERVER_CONTRIBUTIONS, rootActuator.getData().get(OBSERVER_CONTRIBUTIONS));
+      if(target.getContextualizationData()==null)
+        target.setContextualizationData(new ObservationImpl.ContextualizationDataImpl());
+      ((ActuatorImpl)rootActuator).setObservation(target);
+      ((ActuatorImpl)rootActuator).setId(target.getId());
     }
     if (rootActuator.getActuatorType() != Actuator.Type.UPDATE)
       actuatorObservations.put(rootActuator, rootObservation);
@@ -714,6 +924,33 @@ public class CompiledDataflow {
       actuatorObservations.put(actuator, observations.get(actuator.getId()));
     }
     for (var child : actuator.getChildren()) bindLocalReferences(child, observations);
+  }
+
+  private void linkDependencyFamilies(Actuator parent,DigitalTwinImpl.TransactionImpl transaction,java.util.Set<String> emitted) {
+    for(int rank=0;rank<parent.getChildren().size();rank++) {
+      var child=parent.getChildren().get(rank);var binding=child.getDependencyFamilyBinding();
+      if(binding!=null) {
+        if(!emitted.add(binding.branchId()))throw new IllegalStateException("Duplicate family branch binding");
+        var family=parent.getDependencyFamilies().stream().filter(f->f.id().equals(binding.familyId())).findFirst()
+            .orElseThrow(()->new IllegalStateException("Orphan classifier dependency binding"));
+        var branch=family.branches().stream().filter(b->b.id().equals(binding.branchId())).findFirst()
+            .orElseThrow(()->new IllegalStateException("Unknown classifier dependency branch"));
+        if(branch.outcome()!=org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Outcome.RESOLVED)
+          throw new IllegalStateException("An absent branch cannot have a dependency edge");
+        var target=actuatorObservations.get(parent);var source=actuatorObservations.get(child);
+        if(source==null && child.getActuatorType()==Actuator.Type.REFERENCE)source=child.getObservation();
+        if(source!=null && source.getId()==Observation.QUERY_ID)source=org.integratedmodelling.klab.runtime.storage.StorageReads.source(source,scope);
+        if(source==null || target==null || source.getId()==Observation.UNASSIGNED_ID || target.getId()==Observation.UNASSIGNED_ID)
+          throw new IllegalStateException("A family branch has no bound source or target");
+        transaction.link(source,target,GraphModel.Relationship.AFFECTS,"rank",rank,
+            ProcessPlan.EDGE_ROLE,ProcessPlan.PREREQUISITE,"readState","CURRENT",
+            org.integratedmodelling.klab.api.data.StorageScan.Binding.PROPERTY,
+            org.integratedmodelling.klab.utilities.Utils.Json.asString(storageBinding(child,source,rank)),
+            org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding.PROPERTY,
+            org.integratedmodelling.klab.utilities.Utils.Json.asString(binding));
+      }
+      linkDependencyFamilies(child,transaction,emitted);
+    }
   }
 
   private org.integratedmodelling.klab.api.data.StorageScan.Binding storageBinding(Actuator input, Observation source, int rank) {
@@ -747,6 +984,16 @@ public class CompiledDataflow {
       var transaction = scope.getCurrentTransaction();
       if (transaction != null) {
         transaction.add(ret);
+        var supplied=ret;
+        ret=transaction.assets().stream().filter(Observation.class::isInstance).map(Observation.class::cast)
+            .filter(candidate->candidate.getId()==supplied.getId()).findFirst().orElse(supplied);
+        if(!Objects.equals(ret.getObservable().getUrn(),supplied.getObservable().getUrn())
+            || ret.getParentId()!=supplied.getParentId()
+            || !Objects.equals(GeometryRepository.INSTANCE.sanitize(ret.getGeometry()).encode(),
+                GeometryRepository.INSTANCE.sanitize(supplied.getGeometry()).encode()))
+          throw new IllegalArgumentException("Dependency identity has another native meaning or support");
+        ((ObservationImpl)ret).mergeAnnotations(supplied);
+        ((ActuatorImpl)actuator).setObservation(ret);
       }
       var contextualizationData =
           (ObservationImpl.ContextualizationDataImpl) ret.getContextualizationData();
@@ -769,14 +1016,171 @@ public class CompiledDataflow {
    *
    * @param transaction
    */
+  /** Check the resolver's frozen admissions locally; execution never reopens mutable source. */
+  void validateProducingModels(Actuator actuator, ContextScope requested) {
+    validateProducingModel(actuator, requested);
+    for (var child : actuator.getChildren()) validateProducingModels(child, requested);
+  }
+
+  private void validateProducingModel(Actuator actuator, ContextScope requested) {
+    var coveredMemberPorts=new HashSet<String>();
+    var invocationScope = requested;
+    if (actuator.getObservation() != null && actuator.getObservation().getObservable().is(SemanticType.QUALITY)
+        && actuator.getObservation().getParentId() > 0) {
+      var nativeBearer = requested.getObservation(actuator.getObservation().getParentId());
+      if (nativeBearer == null) throw new IllegalStateException("Producing model native context is inaccessible");
+      if (requested.getContextObservation() != nativeBearer) invocationScope = requested.within(nativeBearer);
+    }
+    var encoded = actuator.getData().get(Actuator.PRODUCING_MODELS_KEY);
+    if (encoded != null) {
+      if (!(encoded instanceof List<?> models) || models.stream().anyMatch(m -> !(m instanceof String)))
+        throw new IllegalStateException("Malformed producing-model admission receipt");
+      for (var entry : models) {
+        String urn = (String)entry;
+        if (urn.isBlank()) continue; // Truly ad-hoc producers have no saved source contract.
+        var revision = actuator.getData().get("modelAdmissionRevision");
+        if (!(revision instanceof Number captured) || captured.longValue() < 0
+            || !(actuator.getData().get("modelAdmissionReasonerId") instanceof String reasonerId)
+            || reasonerId.isBlank())
+          throw new IllegalStateException("Producing-model semantic admission snapshot is missing");
+        if (!(invocationScope instanceof ServiceContextScope))
+          throw new IllegalStateException("Model execution requires a service context");
+        var receiptData=actuator.getData().get(org.integratedmodelling.klab.runtime.language.ModelValidationGate.PRODUCER_ADMISSIONS);
+        if (!(receiptData instanceof List<?> values)) throw new IllegalStateException("Missing original model source admission; replan the request");
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt admission=null;
+        for (var value:values) {
+          if (!(value instanceof String text)) throw new IllegalStateException("Malformed original model admission");
+          var candidate=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(text,org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt.class);
+          if (Objects.equals(candidate.modelUrn(),urn)) {
+            if (admission!=null && !admission.equals(candidate)) throw new IllegalStateException("Conflicting original model source admissions");
+            admission=candidate;
+          }
+        }
+        if (admission==null || !admission.sourceBacked()
+            || admission.knowledgeRevision()!=captured.longValue()
+            || !Objects.equals(admission.reasonerId(), reasonerId)
+            || admission.sourceVersion()==null || admission.sourceHash()==null || admission.sourceHash().isBlank()
+            || admission.executableHash()==null || admission.executableHash().isBlank())
+          throw new IllegalStateException("Missing or inconsistent producing-model admission snapshot: "+urn);
+        var frozen = producingSnapshot(actuator, urn);
+        if (frozen == null || !Objects.equals(admission.namespace(), frozen.namespace())
+            || !Objects.equals(admission.executableHash(), frozen.executableHash()))
+          throw new IllegalStateException("Producing-model snapshot differs from its admission: " + urn);
+        requireMemberInputPlans(actuator,admission,invocationScope,coveredMemberPorts);
+      }
+    }
+    if(!coveredMemberPorts.equals(actuator.getMemberQualityInputs().keySet()))
+      throw new IllegalStateException("Uncovered or forged typed member-quality input plan");
+    var requiredMemberPorts=new HashSet<String>();
+    for(var call:actuator.getComputation())
+      requiredMemberPorts.addAll(MemberQualityConsumerSupport.requiredPorts(componentRegistry,call));
+    if(!requiredMemberPorts.equals(actuator.getMemberQualityInputs().keySet()))
+      throw new IllegalStateException("Installed typed consumer requires exact source-backed member-quality inputs");
+  }
+
+  private void requireMemberInputPlans(Actuator actuator,
+      org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt admission,
+      ContextScope invocationScope,Set<String> covered) {
+    for(var pending:admission.pendingMemberQualities()) {
+      var plan=actuator.getMemberQualityInputs().get(pending.port());
+      if(plan==null)throw new IllegalStateException("Pending member-quality dependency has no bound typed port");
+      plan.validate();
+      if(!covered.add(plan.port()) || !Objects.equals(plan.modelUrn(),admission.modelUrn())
+          || !Objects.equals(plan.namespace(),admission.namespace()) || !Objects.equals(plan.sourceVersion(),admission.sourceVersion())
+          || !Objects.equals(plan.sourceHash(),admission.sourceHash()) || plan.dependencyIndex()!=pending.dependencyIndex()
+          || !Objects.equals(plan.port(),pending.port()) || !Objects.equals(plan.sourceObservable(),pending.sourceObservable())
+          || !Objects.equals(plan.request().quality(),pending.quality()))
+        throw new IllegalStateException("Typed member-quality input differs from its original source receipt");
+      MemberQualityResolution.preflight(plan.request(),invocationScope);
+      var reasoner=invocationScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var nativeBearer=reasoner.resolveConcept(pending.nativeBearer());
+      var collective=nativeBearer==null?null:reasoner.resolveObservable(nativeBearer.collective().getUrn());
+      if(collective==null || !Objects.equals(collective.getUrn(),plan.request().members())
+          || actuator.getExecutionRole()!=Actuator.ExecutionRole.INITIALIZATION
+          || actuator.getActuatorType()!=Actuator.Type.OBSERVE
+          || actuator.getComputation().size()!=1
+          || !runtimeService.supportsMemberQualityInput(actuator.getComputation().getFirst(),plan.port(),invocationScope))
+        throw new IllegalStateException("No installed exact typed consumer for the native collection input");
+    }
+  }
+
+  private Map<String,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberInputs(Actuator actuator,ServiceContextScope invocationScope) {
+    var results=new LinkedHashMap<String,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>();
+    for(var entry:actuator.getMemberQualityInputs().entrySet()) {
+      var task=runtimeService.resolveMemberQualities(entry.getValue().request(),invocationScope);
+      try {
+        while(true) {
+          if(invocationScope.isInterrupted() || Thread.currentThread().isInterrupted())
+            throw new java.util.concurrent.CancellationException("Member-quality input cancelled");
+          try {results.put(entry.getKey(),task.get(250,java.util.concurrent.TimeUnit.MILLISECONDS));break;}
+          catch(java.util.concurrent.TimeoutException waiting) { /* Keep cooperative cancellation responsive. */ }
+        }
+      } catch(Exception failure) {
+        task.cancel(true);
+        if(failure instanceof InterruptedException)Thread.currentThread().interrupt();
+        throw new IllegalStateException("Cannot resolve native member-quality input",failure);
+      }
+      MemberQualityResolution.requireForConsumption(results.get(entry.getKey()),invocationScope);
+    }
+    validateProducingModel(actuator,invocationScope);
+    return Map.copyOf(results);
+  }
+
+  static org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding collectiveReduction(Actuator actuator) {
+    var encoded = actuator.getData().get(org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY);
+    return encoded == null ? null : org.integratedmodelling.klab.utilities.Utils.Json.parseObject(encoded.toString(),
+        org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.class);
+  }
+
+  private void validateBoundContexts(Actuator actuator, ContextScope requested) {
+    var reduction = collectiveReduction(actuator);
+    if (reduction != null) {
+      reduction.require(requested, actuator.getOperationObservable(), actuator.getRequestedSupport());
+      if (actuator.getObservation() == null || !actuator.getComputation().isEmpty()
+          || actuator.getActuatorType() != Actuator.Type.OBSERVE
+          || !java.util.Objects.equals(actuator.getOperationObservable().getUrn(), actuator.getObservation().getObservable().getUrn())
+          || actuator.getObservation().getParentId() > 0 && actuator.getObservation().getParentId() != reduction.context().contextId())
+        throw new IllegalStateException("Invalid collective reduction plan");
+    }
+    if (actuator.getContextBinding() != null) {
+      actuator.getContextBinding().require(requested, actuator.getOperationObservable());
+      if (actuator.getRequestedSupport() == null
+          || !java.util.Objects.equals(actuator.getContextBinding().contextSupport(),
+              Geometry.forTransport(actuator.getRequestedSupport()).encode())
+          || actuator.getObservation() == null
+          || !(java.util.Objects.equals(actuator.getOperationObservable().getUrn(),
+              actuator.getObservation().getObservable().getUrn())
+              || verifiedObserverRefinement(actuator, actuator.getOperationObservable()))
+          || actuator.getObservation().getParentId() > 0
+              && actuator.getObservation().getParentId() != actuator.getContextBinding().contextId())
+        throw new IllegalStateException("Bound result requires the same native context and support");
+    }
+    for (var child : actuator.getChildren()) validateBoundContexts(child, requested);
+  }
+
   public boolean store(DigitalTwinImpl.TransactionImpl transaction) {
+    // Validate the complete bound subtree before staging any observations or ownership links.
+    for (var actuator : operations.keySet()) {
+      if (actuator.getContextBinding() != null)
+        validateBoundContexts(actuator, scope);
+    }
 
     var knowledgeGraph = scope.getDigitalTwin().getKnowledgeGraph();
+    for(var entry:actuatorObservations.entrySet())if(!entry.getKey().getDependencyFamilies().isEmpty())
+      entry.getValue().getMetadata().put(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY,
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(entry.getKey().getDependencyFamilies()));
 
     /*
     The links to be made depend on the reciprocal nature of the root and its dependents
      */
-    var rootRole = Observation.classifyRole(rootObservation);
+    boolean operationRoot = rootActuator != null && rootActuator.getActuatorType() == Actuator.Type.UPDATE
+        && rootObservation == null;
+    // Characterization can explicitly anchor an UPDATE to its real existing member. Preserve
+    // that lifecycle; only an observation-free operation obtains ownership from the within scope.
+    var ownershipObservation = operationRoot ? scope.getContextObservation() : rootObservation;
+    if (ownershipObservation == null) throw new IllegalStateException("An UPDATE plan requires a real ownership context");
+    var rootRole = Observation.classifyRole(ownershipObservation);
     var qualityBearers = processQualityBearers();
 
     /* Add all missing and unresolved observations. The unresolved ones will be automatically added. */
@@ -805,7 +1209,7 @@ public class CompiledDataflow {
                         scope.getContextObservation(),
                         dependent,
                         GraphModel.Relationship.HAS_CHILD);
-                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS,
+                    transaction.link(dependent, ownershipObservation, GraphModel.Relationship.AFFECTS,
                         ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE);
                   }
                   case COLLECTIVE_SUBSTANTIAL -> {
@@ -869,8 +1273,8 @@ public class CompiledDataflow {
                     }
 
                     // AFFECTS and HAS_CHILD
-                    transaction.link(rootObservation, dependent, GraphModel.Relationship.HAS_CHILD);
-                    transaction.link(dependent, rootObservation, GraphModel.Relationship.AFFECTS,
+                    transaction.link(ownershipObservation, dependent, GraphModel.Relationship.HAS_CHILD);
+                    transaction.link(dependent, ownershipObservation, GraphModel.Relationship.AFFECTS,
                         ProcessPlan.EDGE_ROLE, ProcessPlan.PREREQUISITE);
                   }
                   default ->
@@ -959,7 +1363,8 @@ public class CompiledDataflow {
 
     transaction.link(transaction.getActivity(), rootActuator, GraphModel.Relationship.HAS_PLAN);
     transaction.link(knowledgeGraph.dataflow(), rootActuator, GraphModel.Relationship.HAS_CHILD);
-    transaction.link(transaction.getActivity(), rootObservation, GraphModel.Relationship.RESOLVED);
+    // Effect-only UPDATE roots have plans and real members, but no resolved result observation.
+    if (!operationRoot) transaction.link(transaction.getActivity(), ownershipObservation, GraphModel.Relationship.RESOLVED);
 
     /* Record and link actuators */
     for (var edge : dependencyGraph.edgeSet()) {
@@ -974,6 +1379,7 @@ public class CompiledDataflow {
       if (source != null && source.getId() == Observation.QUERY_ID && source.getObservable().is(SemanticType.QUALITY))
         source = org.integratedmodelling.klab.runtime.storage.StorageReads.source(source, scope);
       if (source != null && target != null && source.getId() != Observation.QUERY_ID && target.getId() != Observation.QUERY_ID
+          && aSource.getDependencyFamilyBinding()==null
           && aTarget.getExecutionRole() != Actuator.ExecutionRole.PROCESS
           && aTarget.getExecutionRole() != Actuator.ExecutionRole.EVENT) {
         var processBindings = processPlan(aTarget);
@@ -988,6 +1394,11 @@ public class CompiledDataflow {
       }
       transaction.link(aTarget, aSource, GraphModel.Relationship.HAS_CHILD);
     }
+
+    recordSelectionInputs(transaction);
+    if(rootActuator!=null)linkDependencyFamilies(rootActuator,transaction,new java.util.HashSet<>());
+    else if(actuatorObservations.keySet().stream().anyMatch(actuator->actuator.getDependencyFamilyBinding()!=null || !actuator.getDependencyFamilies().isEmpty()))
+      throw new IllegalStateException("Classifier families require an execution root");
 
     for (var actuator : actuatorObservations.keySet()) {
       var plan = processPlan(actuator);
@@ -1032,6 +1443,39 @@ public class CompiledDataflow {
     snapshots.forEach(transaction::beforeCommit);
 
     return true;
+  }
+
+  /** Persist the actual virtual ports consumed by a model, without inventing observation assets. */
+  private void recordSelectionInputs(DigitalTwinImpl.TransactionImpl transaction) {
+    for (var entry : actuatorObservations.entrySet()) {
+      var consumer = entry.getValue();
+      if (consumer == null || consumer.getId() == Observation.QUERY_ID
+          || entry.getKey().getActuatorType() == Actuator.Type.REFERENCE) continue;
+      var inputs = new java.util.TreeMap<String, Observation>();
+      for (var child : entry.getKey().getChildren()) {
+        var source = actuatorObservations.get(child);
+        if (source == null || source.getId() != Observation.QUERY_ID
+            || source.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY) == null) continue;
+        if (child.getName() == null || inputs.putIfAbsent(child.getName(), source) != null)
+          throw new IllegalStateException("Selection input requires one unambiguous model-local alias");
+      }
+      if (inputs.isEmpty()) continue;
+      var key = org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.INPUTS_KEY;
+      var previous = consumer.getMetadata().get(key);
+      Runnable capture = () -> {
+        var receipts = new java.util.TreeMap<String, String>();
+        inputs.forEach((alias, source) -> receipts.put(alias, source.getMetadata().get(
+            org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY).toString()));
+        // Native observation metadata stores POD values. A nested map would be discarded.
+        consumer.getMetadata().put(key, org.integratedmodelling.klab.utilities.Utils.Json.asString(receipts));
+      };
+      capture.run();
+      transaction.update(consumer);
+      transaction.beforeCommit(capture);
+      transaction.afterRollback(() -> {
+        if (previous == null) consumer.getMetadata().remove(key); else consumer.getMetadata().put(key, previous);
+      });
+    }
   }
 
   private boolean matchesDescription(Observation quality, org.integratedmodelling.klab.api.knowledge.Concept endpoint) {
@@ -1087,6 +1531,13 @@ public class CompiledDataflow {
     }
 
     private boolean compile(Actuator actuator) {
+      var reduction = collectiveReduction(actuator);
+      if (reduction != null) {
+        var executor = new CollectiveReductionExecutor(runtimeService, actuator, reduction);
+        if (!executor.validate()) return false;
+        executors.add(executor);
+        return true;
+      }
       if (actuator.getActuatorType() == Actuator.Type.UPDATE) {
         if (actuator.getContextualization() == Contextualization.CHARACTERIZATION)
           characterizer = MemberCharacterizerExecutor.compile(actuator, componentRegistry, scope);
@@ -1266,6 +1717,30 @@ public class CompiledDataflow {
     public boolean run(Geometry geometry, Scheduler.Event event, ContextScope scope) {
 
       var contextScope = (ServiceContextScope) scope;
+      if (scope.isInterrupted()) return false;
+      try { validateProducingModel(actuator, scope); }
+      catch (IllegalStateException invalid) { scope.error(invalid.getMessage()); return false; }
+      if (collectiveReduction(actuator) != null) {
+        try {
+          var reduction = collectiveReduction(actuator);
+          reduction.require(scope, actuator.getOperationObservable(), geometry);
+          validateBoundContexts(actuator, scope);
+          for (var child : actuator.getChildren()) {
+            var input = actuatorObservations.get(child);
+            if (input == null || !digitalTwin.getScheduler().executeDependency(input, input.getGeometry(), event, contextScope))
+              return false;
+          }
+        } catch (IllegalStateException failure) { scope.error(failure.getMessage()); return false; }
+      }
+      if (actuator.getContextBinding() != null) {
+        try {
+          validateBoundContexts(actuator, scope);
+          if (geometry == null || !java.util.Objects.equals(actuator.getContextBinding().contextSupport(),
+              Geometry.forTransport(geometry).encode()))
+            throw new IllegalStateException("Bound child invocation requires the full native support");
+        }
+        catch (IllegalStateException invalidBinding) { scope.error(invalidBinding.getMessage()); return false; }
+      }
       if (actuator.getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION) {
         contextScope = (ServiceContextScope) executionScope(contextScope);
         if (event.getType() == Scheduler.Event.Type.INITIALIZATION) {
@@ -1275,7 +1750,8 @@ public class CompiledDataflow {
             if (input != null && !digitalTwin.getScheduler().executeDependency(
                 input, input.getGeometry(), event, contextScope)) return false;
           }
-          return true;
+          return actuator.getExecutionRole() != Actuator.ExecutionRole.PROCESS
+              || recordProcessExistence(contextScope);
         }
         var bindings = processPlan(actuator);
         if (bindings == null && actuator.getComputation().stream().anyMatch(call ->
@@ -1291,10 +1767,54 @@ public class CompiledDataflow {
       }
       if (characterizer != null) return runCharacterization(geometry, event, contextScope);
       if (classifier != null) return runClassification(geometry, event, contextScope);
+      // Resolve typed native collections before opening the parent's output storage or invoking its mapper.
+      if(!actuator.getMemberQualityInputs().isEmpty()) {
+        final Map<String,org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection> inputs;
+        try {inputs=resolveMemberInputs(actuator,contextScope);}
+        catch(IllegalStateException invalidInput) {contextScope.error(invalidInput);return false;}
+        for(var executor:executors) {
+          if(!(executor instanceof ContextualizerExecutor contextualizer))
+            throw new IllegalStateException("Native collections require a registered typed contextualizer");
+          contextualizer.bindMemberQualityInputs(inputs);
+        }
+      }
       // Operation prerequisites have no observation and therefore no AFFECTS/scheduler entry.
       for (var child : actuator.getChildren()) {
         if (child.getActuatorType() == Actuator.Type.UPDATE
             && !operations.get(child).run(geometry, event, contextScope)) return false;
+      }
+
+      for (var child : actuator.getChildren()) {
+        if (child.getActuatorType() == Actuator.Type.REFERENCE
+            && Boolean.TRUE.equals(child.getData().get(Actuator.COMPLETE_COHORT_REFERENCE))) {
+          try {
+            var view = runtimeService.completedCohortReference(child.getObservation(),contextScope);
+            var operationUrn = child.getData().get(Actuator.COMPLETE_COHORT_OPERATION);
+            var matching = actuator.getChildren().stream().filter(a -> a.getActuatorType() == Actuator.Type.UPDATE
+                && a.getContextualization() == Contextualization.CLASSIFICATION
+                && a.getOperationObservable() != null
+                && Objects.equals(operationUrn,a.getOperationObservable().getUrn())).toList();
+            if (matching.size() != 1) throw new IllegalStateException("Completed cohort requires its classification prerequisite");
+            // Certify the refreshed set, including members arriving after the classifier's snapshot.
+            // This check cannot invoke a generator and its read guards survive until root commit.
+            var prerequisite = matching.getFirst();
+            var nativeDomain=contextScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class).directInherent(prerequisite.getOperationObservable());
+            if(nativeDomain==null || !Objects.equals(nativeDomain.getUrn(),view.getObservable().getSemantics().getUrn()))
+              throw new IllegalStateException("Completed cohort does not match classification member domain");
+            var check = new ActuatorImpl();
+            check.setActuatorType(Actuator.Type.UPDATE); check.setEffect(Actuator.Effect.SEMANTIC_UPDATE);
+            check.setContextualization(Contextualization.CLASSIFICATION);
+            check.setOperationObservable(prerequisite.getOperationObservable());
+            check.setTargetBindings(prerequisite.getTargetBindings());
+            check.getData().put(Actuator.CLASSIFICATION_CHECK_ONLY,true);
+            var members = runtimeService.classificationMembersForCheck(view,view.getGeometry(),contextScope);
+            var completed = new HashMap<String,List<Observation>>();
+            for (var source : check.getTargetBindings().getFirst().getSources()) completed.put(source,members);
+            MemberClassifierExecutor.compile(check,null,contextScope)
+                .executeDetailed(completed,view.getGeometry(),event,contextScope);
+            localReferences.put(child.getName(),view);
+          } catch (IllegalStateException incomplete) { contextScope.error(incomplete); return false; }
+        }
       }
 
       if (observation.getObservable().is(SemanticType.QUALITY)) {
@@ -1304,10 +1824,21 @@ public class CompiledDataflow {
       }
 
       var contextualization = createContextualizationActivity(
-          planChart, observation, contextScope.getActivity());
-
+          planChart, observation, contextScope.getActivity(), geometry);
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(contextualization,contextScope.getObserver());
+      if (observation.getObservable().getSemantics().isCollective())
+        RuntimeService.recordCollectiveSemanticRevision(contextualization, contextScope);
       var executionScope = contextScope.executing(contextualization, observation);
-      var contextualizationScope = new ContextualizationScopeImpl(observation, event);
+      if (contextScope.getObserver() != null) executionScope.getCurrentTransaction()
+          .link(contextualization,contextScope.getObserver(),GraphModel.Relationship.HAS_OBSERVER);
+      var contextualizationScope = new ContextualizationScopeImpl(observation, event, geometry);
+
+      // Freeze consumed query views before this invocation can add cohort members or change
+      // their meanings. Recheck the actual compiled engines and input identities afterwards.
+      var consumedInputs = semanticInputs(actuator, executionScope);
+      var preparedEvidence = SemanticExecutionEvidence.prepare(
+          actuator,List.of(),consumedInputs.isPresent(),executionScope);
+      preparedEvidence.inputs(observation,consumedInputs.orElse(List.of()),executionScope);
 
       Throwable failure = null;
       boolean ret = true;
@@ -1321,12 +1852,21 @@ public class CompiledDataflow {
         contextualizationScope.bindOutcomes(firstOutcome, executorConstraints.getOrDefault(executor, List.of()));
       }
 
+      if (actuator.getContextBinding() != null
+          && (scope.isInterrupted() || executionScope.isInterrupted())) {
+        ret = false;
+        failure = new java.util.concurrent.CancellationException("Bound child was cancelled");
+      }
       if (ret) {
         try {
           executionScope
               .getService(RuntimeService.class)
               .submitContextualizationResult(
                   contextualizationScope, executionScope, Activity.Outcome.SUCCESS);
+          var actualInputs = semanticInputs(actuator, executionScope);
+          if (!sameConsumedInputs(consumedInputs,actualInputs)) preparedEvidence.unknown();
+          SemanticExecutionEvidence.recordPrepared(contextualization,preparedEvidence,observation,
+              contextualizationScope.getOutcomes(),List.of(),executionScope);
           if (executionScope.commit() < 0) {
             throw new KlabInternalErrorException("Could not commit contextualization transaction");
           }
@@ -1346,6 +1886,26 @@ public class CompiledDataflow {
       return ret;
     }
 
+    /** Provenance only: no process computation, INIT value, or CREATED quality is produced. */
+    private boolean recordProcessExistence(ServiceContextScope contextScope) {
+      var activity = Activity.of(Activity.Type.INITIALIZATION, observation,
+          "Record existence of process " + observation.getObservable());
+      var observer = contextScope.getObserver();
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(activity, observer);
+      var provenance = contextScope.executing(activity, observation);
+      var transaction = provenance.getCurrentTransaction();
+      transaction.link(activity, observation, GraphModel.Relationship.CREATED);
+      if (observer != null) transaction.link(activity, observer, GraphModel.Relationship.HAS_OBSERVER);
+      try {
+        if (provenance.commit() < 0)
+          throw new KlabInternalErrorException("Could not record process existence");
+        return true;
+      } catch (Throwable failure) {
+        provenance.fail(failure);
+        observation.getNotifications().add(Notification.error(failure.getMessage(), failure));
+        return false;
+      }
+    }
     private boolean runProcessAssignments(Scheduler.Event event, ServiceContextScope executionScope, ProcessPlan plan) {
       var transaction = executionScope.getCurrentTransaction();
       var writes = transaction.getTemporalWrites();
@@ -1449,18 +2009,61 @@ public class CompiledDataflow {
                 && !digitalTwin.getScheduler().executeDependency(producer, producer.getGeometry(), event, executionScope))
               throw new IllegalStateException("Member producer failed");
             if (actuator.getTargetBindings().stream().anyMatch(b -> b.getSources().contains(child.getName())))
-              completed.put(child.getName(), runtimeService.classificationMembers(producer, geometry, executionScope));
+              completed.put(child.getName(), Boolean.TRUE.equals(actuator.getData().get(Actuator.CLASSIFICATION_CHECK_ONLY))
+                  ? runtimeService.classificationMembersForCheck(producer, geometry, executionScope)
+                  : runtimeService.classificationMembers(producer, geometry, executionScope));
           }
         }
         var support = actuator.getRequestedSupport() == null ? geometry : actuator.getRequestedSupport();
-        var pending = classifier.forAttempt(executionScope).execute(completed, support, event, executionScope);
+        var attemptClassifier = classifier.forAttempt(executionScope);
+        var detailed = attemptClassifier.executeDetailed(completed, support, event, executionScope);
+        var pending = detailed.pendingAttributions();
+        // Capture the input Concepts before attribution/characterization can replace a read view.
+        // Observable wrappers and their local names never enter semantic proof signatures.
+        var semanticTerms = new ArrayList<String>();
+        for (var cohortMembers : completed.values()) for (var member : cohortMembers)
+          semanticTerms.add(member.getObservable().getSemantics().getUrn());
+        for (var attribution : pending) {
+          semanticTerms.add(attribution.originalObservable().getSemantics().getUrn());
+          semanticTerms.add(attribution.abstractPredicate().getUrn());
+          semanticTerms.add(attribution.predicate().getUrn());
+        }
+        for (var result : detailed.members()) {
+          semanticTerms.add(result.requestedPredicate()); semanticTerms.addAll(result.concretePredicates());
+        }
+        // These native inputs were consumed before this operation changes the focused member.
+        // Verify them now; the private collector remains pinned through characterization and
+        // adds resulting read views below. Root read-set/generation guards still own commit.
+        var semanticInputs = SemanticExecutionEvidence.prepare(actuator,semanticTerms,
+            attemptClassifier.semanticFootprint(componentRegistry,executionScope),executionScope);
         ((DigitalTwinImpl.TransactionImpl) executionScope.getCurrentTransaction())
             .stageAttributions(pending, executionScope);
         runtimeService.characterizePending(pending, executionScope);
+        attemptClassifier.verifyGeneration(executionScope);
+        if (executionScope.isInterrupted() || executionScope.getCurrentTransaction().isFailed())
+          throw new java.util.concurrent.CancellationException("Classification stage was cancelled or failed");
+        var evidence = new LinkedHashMap<String, Object>();
+        evidence.put("version", 1);
+        evidence.put("rootAttempt", root.getId());
+        evidence.put("context", executionScope.getId());
+        evidence.put("reasonerId", detailed.reasonerId());
+        evidence.put("knowledgeRevision", detailed.knowledgeRevision());
+        evidence.put("memberResults", detailed.members().stream().map(
+            org.integratedmodelling.klab.api.services.runtime.objects.ClassificationMemberResult::metadata).toList());
+        activity.getMetadata().put(Metadata.IM_CLASSIFICATION_MEMBER_RESULTS, evidence);
+        var semanticResults = new ArrayList<Observation>();
+        for (var result : detailed.members()) {
+          var member = executionScope.getObservation(result.memberIdAtInvocation());
+          if (member != null) semanticResults.add(member);
+        }
+        SemanticExecutionEvidence.recordPrepared(activity,semanticInputs,null,semanticResults,List.of(),executionScope);
         if (executionScope.commit() < 0) throw new IllegalStateException("Classification stage failed");
         updateResults.put(key, true);
         return true;
       } catch (Throwable failure) {
+        // Preserve the classifier's original failure in native diagnostics. Scope error delivery
+        // would also mark an expected-negative test agent nonviable; rollback still owns outcome.
+        org.integratedmodelling.common.logging.Logging.INSTANCE.error(failure);
         executionScope.fail(failure);
         updateResults.put(key, false);
         return false;
@@ -1494,6 +2097,9 @@ public class CompiledDataflow {
         }
         characterizer.execute(member, geometry, event, executionScope);
         executionScope.getCurrentTransaction().link(activity, member, GraphModel.Relationship.CHARACTERIZED);
+        var semanticInputs = semanticInputs(actuator, executionScope);
+        SemanticExecutionEvidence.record(activity, actuator, member, List.of(), semanticInputs.orElse(List.of()), List.of(),
+            semanticInputs.isPresent(), executionScope);
         if (executionScope.commit() < 0) throw new IllegalStateException("Characterization commit failed");
         updateResults.put(key, true);
         return true;

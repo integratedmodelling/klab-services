@@ -349,3 +349,207 @@ disabled. The deterministic JUnit suite additionally covers Celsius/Kelvin, boun
 fixed currency quotes, two bindings from one source, temporal snapshots, provenance JSON recovery,
 transaction failure and zero per-value allocation. Live provider selection, complete HTTP/service
 integration and live Neo4j restart remain full-harness checks; no full stack was launched here.
+
+## Canonical monthly process case
+
+The staging project adds `monthly_process` to its existing
+`testcases/klab/staging/vxii/testsuite.kactors`. It uses the same Ruaha geometry and daily 2014
+scope as `staging.vxii.test.process.basic.testregion`, with resolution constrained to that
+namespace. Keep the namespace's monthly Erosion model unchanged: its Elevation dependency has
+the model-local alias `elevation`, and each transition subtracts 10 metres. The initial terrain
+is random, so no absolute starting elevation belongs in this test.
+
+The generic inspector assertions are:
+
+```kactors
+simulation <- ctx.focus(:within region)
+assert inspector.schedulecheck(simulation, process, 1, "MONTH",
+    "2014-01-01T00:00:00Z", "2015-01-01T00:00:00Z", 12)
+assert inspector.relativecheck(simulation, process, elevation, 12, -10, 0.00000001)
+assert inspector.processprovenance(simulation, process)
+```
+
+`schedulecheck` checks the persisted process plan, its single model cadence and context bounds,
+then reads successful process creation activities carrying durable transition envelopes. Event
+and commit IDs must be unique; the twelve supports must be contiguous calendar months covering
+the year. Calendar months are advanced natively, never approximated by a fixed millisecond span.
+The check intentionally supports one journal per process transaction; other history shapes fail
+explicitly rather than being interpreted as the same contract.
+
+The occurrence registration is authoritative. Its portable plan must identify the supplied
+process and agree with the registered cadence and context bounds. Every journal must match its
+registration ID, plan revision, context, actual observer and physical support. An unrelated
+ordinary prerequisite plan cannot establish process history.
+
+`relativecheck` opens read-only planned scans at INIT and at every committed transition. It
+compares all covered positions and missingness, verifies that the quality is among each journal's
+changed assets, and checks `value[n] = value[INIT] + n * delta`. It closes every scan. The example's
+absolute tolerance is 1e-8 metres, far below the generated terrain's meaningful precision; a
+minimum of four double ULPs accommodates representation rounding at large magnitudes. At least
+one finite covered value is required, so an empty or entirely missing fixture cannot pass.
+Each value read also requires the exact event-keyed quality revision, committed quality delta
+and matching native shard identities. Equal timestamps or a fallback to INIT are insufficient,
+including when the requested expected change is zero. Unchanged writes may be omitted by the
+runtime; this assertion intentionally requires actual committed quality revisions.
+
+`processprovenance` distinguishes a process's existence record from contextualization. The one
+INITIALIZATION creator must have no execution geometry or scheduler invocation times; actual
+observer selection must agree with the root and with graph links on every creator. For CREATED
+bindings, committed matching qualities may have no INITIALIZATION creator or timestamp-zero
+storage descriptor. This is a read-only graph inspection: it never calls the native INIT storage
+accessor, which may allocate a buffer. The Erosion fixture has no CREATED binding, so this last
+condition is exercised separately by `TemporalProcessIntegrationTest`. No provenance query can
+prove that an unrecorded executor call did not happen: `OccurrenceExecutorTest` explicitly
+verifies that the process-existence path never obtains a computation builder, invokes the
+scheduler or allocates quality storage.
+
+These are assertions, not scheduler controls: they inspect completed committed history without
+advancing time, submitting work or changing provenance. Invalid or unavailable evidence throws;
+value or contract mismatches return false. Use the testcase assertion report as the result of
+live execution; a compiled behavior or a normally terminated agent alone is insufficient.
+
+## Classification and relationship cases
+
+Submission applies `:namespace` and `:project` to the selected context before interpreting
+semantics or selecting models. `:within` selects a focus; `:source` and `:target` must be supplied
+together and cannot be combined with `:within`. Unknown options and invalid types fail before
+submission. A private model requires an explicit applicable lexical scope rather than a
+visibility bypass. Pending relationship participants travel together with their complete
+geometry so the Resolver can interpret the transaction's endpoint scope before commit.
+Selecting a non-null `within` focus replaces inherited endpoint focus and its pending snapshots.
+At the Java scope API, `within(null)` retains its separate role of clearing the ambient context
+while preserving endpoints; selecting `between` retains the surrounding network context.
+
+Ordinary fixture roots use `!observer` to avoid default-observer creation. The flag does not clear
+an inherited or explicit observer. The monthly process case retains its real observer so its
+provenance checks remain meaningful. The separate `observer_instantiation` case submits a
+concrete singular Agent, selects it with `:observer`, and verifies canonical identity reuse and
+successful submission/resolution evidence through `observercheck`. This asserts creation and
+resolution of an observer; it does not imply computational initialization.
+
+The staging suite creates a plain `each earth:Region` producer through ordinary `ctx.submit`.
+Classification directives use the separate native testcase capability:
+
+```kactors
+support <- region.geometry
+classification <- ctx.focus(:within region)
+before <- inspector.membersnapshot(classification, regions)
+receipt <- inspector.apply(classification, {{earth:PhysicalEnvironment of each earth:Region}}, support
+    :namespace "staging.vxii.test.classification" :project "klab.staging.vxii")
+commit <- receipt.commit_id
+assert [commit > 0]
+assert inspector.classificationcheck(classification, before, "earth:PhysicalEnvironment")
+```
+
+`inspector.apply` requires an actual TestCaseScope before context, option or semantic processing,
+and a native runtime implementing `RuntimeService.Testing`. The bounded capability currently
+accepts CLASSIFICATION directives only. It executes the existing UPDATE path
+with calling-agent provenance and returns an OperationReceipt (context, commit, activity and
+directive). It has no RuntimeClient implementation or HTTP endpoint. Production
+`ContextScope.submit` keeps its observation-in, observation-out contract. Explicit support geometry
+is required: focus alone is not an operation geometry. Capture `membersnapshot` before each apply,
+including a repeated directive whose successful no-op must commit a fresh audit.
+
+`classificationcheck` requires at least one previously unclassified member, preserves the exact
+member IDs, URNs and geometry, and checks concrete predicate assignment against a fresh complete
+audit and its own successful CLASSIFIED attribution edges. Existing classified members are
+allowed. Fractional, duplicate, missing or foreign member IDs do not establish an audit.
+
+`classificationnoop` verifies successful repeated classification through explicit EXISTING audit
+results for every captured member, with unchanged meanings, geometry and attribution. Absence
+of changes alone is not proof of a successful no-op. The separate concrete-self case requests
+`any earth:Terrestrial of each earth:Region` in a fresh context, so it does not conflict with
+random Aquatic assignments from another test. Initial and generated cohort sizes are not fixed.
+The bare Region resource uses `{fraction: 1, xdivs: 3, ydivs: 3}` to avoid an empty random
+producer making mutation assertions vacuous. A subdivision step is at most two thirds of
+the envelope width on each axis, guaranteeing at least one populated cell while keeping
+the canonical classification case small. Polygon coordinates remain random.
+
+The stream connection case checks actual native cohort members and current committed endpoint
+assets, rather than stale objects stored in link references. Endpoint meanings and relationship
+axes come from the worldview. Directed roles are verified through the typed source/target links
+and their endpoint meanings. The two-coordinate line must connect those exact points in either
+geometric order: shared shape serialization normalizes LineStrings and may reverse them.
+Geometry therefore cannot independently prove the original generator's direction when both
+endpoint roles have the same meaning. Bonds match endpoint roles by Concept meaning, not
+numeric ID order. Self-links and duplicate ordered pairs are rejected. The inspector currently
+supports single-point endpoints; it fails explicitly for unimplemented area/line endpoint
+geometry contracts. The random point and relationship generators do not warrant fixed counts
+or hard-coded endpoint pairs.
+The canonical point resource explicitly uses `{fraction: 1, xdivs: 10, ydivs: 10}`. Its fraction
+is a probability, while the relationship contextualizer's `fraction = 20` is a percentage.
+Populating every generated cell removes the default probability of an empty endpoint pool.
+Each subdivision increment is bounded by twice its nominal width, so ten divisions per axis
+provide at least four intervals on each axis. The resulting endpoint pool supports at least
+three sampled sources and targets at twenty percent, ensuring a nonself target is available.
+The test still compares actual members and endpoints rather than asserting generated counts.
+The collective dependency producer is selected with
+`ctx.query({{each earth:StreamConnection}} :target region :along "AFFECTS")`.
+Its members belong to the linked native cohort; it is not a `HAS_CHILD` observation of the root.
+
+## Rectangular scanner and geometry oracle
+
+The storage example is newly exercised coverage. Its terrain provider is private, so the quality
+submission explicitly selects `staging.vxii.basic` and project `klab.staging.vxii`. Elevation also
+requires a Terrestrial Region under the worldview's complete bearer/applicability constraints;
+a bare Region does not prove that requirement. These fixture choices retain strict visibility
+and semantic admission.
+
+```kactors
+assert inspector.gridcheck(ctx, elevation,
+    "S2(5,4){proj=EPSG:3857,bbox=[200000 200500 6000000 6000400]}")
+assert inspector.unitcheck(ctx, elevation, "mm", 1000, 0)
+```
+
+The expected rectangle is 500 by 400 metres, with 5 columns, 4 rows and 100 metre cells. Its
+southwest centre is (200050, 6000050), and northeast centre (200450, 6000350). `gridcheck`
+compares canonical extents, CRS and dimensions, decodes committed native INIT shards using
+independent explicit curve formulas, and compares all covered values, validity, coordinates and
+physical cell footprints in all requested consumer traversals/partitions. XY traverses x outside
+y; YX traverses y outside x; inverted-Y reverses y with x outside. Grid y=0 is south. It never
+calls a native INIT accessor that could allocate storage. Missing or duplicate descriptors,
+incorrect geometry/value selection and nonfinite evidence fail. This oracle is distinct from
+`scancheck`, which checks consistency among shared planner routes. For this 20-cell fixture,
+`unitcheck` visits every cell and compares the converted value against its own native value
+times 1000 with zero offset; no random initial terrain value is hard-coded.
+The expected multiplier and offset must be finite, and at least one finite comparison must
+succeed. Matching missing cells are allowed alongside valid cells; an all-missing sample is
+insufficient evidence. Nonfinite converted or expected values fail before tolerance comparison.
+
+Native shard descriptors may omit a CRS inherited from their owning observation. Native cell
+and coordinate reads and the planned native fast path retain that source projection; they do
+not assume EPSG:4326 when no CRS is available. Unsupported grid formats and requests above the
+bounded cell budget fail explicitly.
+
+The exploratory StreambedGradient model in staging's basic namespace remains commented out.
+Its regional Elevation/Slope inputs do not establish the current stream-reach bearer contract;
+atomic namespace admission otherwise withholds the valid quality models too. Correcting that
+model's contract is deferred. The code is retained, and namespace validation is not weakened.
+
+Closing a test context first cancels consequence work, drops queued handlers and lets the active
+operation finish for up to five seconds before interruption. A further five-second deadline
+applies after interruption. If the worker still cannot stop, closure fails and graph/storage
+disposal is refused. A passing observation assertion with failed cleanup is a failed testcase.
+
+
+### Geometry-only classification and native catalog setup
+
+Collective CLASSIFICATION does not require a singular focus. The canonical
+`classify_without_focus` case selects a committed Agent, supplies its geometry to the bounded
+native test operation, classifies the actual native Region members, then repeats the operation
+and requests a different concrete value of the same family. `classificationnoopfor` separates
+the operation's requested predicate from its lexical family: successful existing knowledge
+must remain unchanged even when it does not satisfy the requested concrete selection.
+The existing `classificationnoop` form retains its requested-equals-family contract.
+These checks require a fresh successful EXISTING audit, not merely absence of mutation.
+
+Native catalogs have an independent durable lifecycle. The observer-only rollback fixture
+therefore calls `preparecatalog(selection, {{earth:Region}})` and
+`preparecatalog(selection, {{earth:Stream}})` before its strict `nativesnapshot`. This explicit
+setup invokes the existing public native Runtime routine under the private fixture permit,
+with no current transaction. It verifies empty persisted catalogs and unchanged observations,
+contextualizations and unrelated catalogs. It emits no member, observation, INSTANTIATION or
+completion evidence. A prepared catalog alone must not make unknown discovery a successful
+empty query. The positive native-producer dependency case performs no catalog setup and proves
+normal discovery and classification from scratch. `nativeunchanged` continues comparing all
+catalogs and their members/contributors without exclusions.

@@ -77,9 +77,21 @@ public class ContextualizerExecutor extends AbstractExecutor
       ContextScope scope,
       RuntimeService.ContextualizationScope contextualizationScope) {
 
+    if(!memberQualityInputs().isEmpty()) {
+      var actual=componentRegistry.implementation(callInfo.serviceInfo());
+      for(var entry:memberQualityInputs().entrySet()) {
+        if(actual==null || !MemberQualityConsumerSupport.supports(actual.method,entry.getKey())
+            || !MemberQualityConsumerSupport.supports(componentRegistry,call,entry.getKey()))
+          throw new IllegalStateException("Installed collection consumer changed before invocation");
+        MemberQualityResolution.requireForConsumption(entry.getValue(),scope);
+      }
+    }
+
+    var invocationGeometry = contextualizationScope instanceof ContextualizationScopeImpl local
+        ? local.executionGeometry() : null;
     var geometry =
         scanners.get(Dataflow.SELF_ID) == null
-            ? observation.getGeometry()
+            ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
             : scanners.get(Dataflow.SELF_ID).shard().getGeometry();
     geometry = TemporalGeometry.localize(geometry, event);
 
@@ -162,9 +174,7 @@ public class ContextualizerExecutor extends AbstractExecutor
           return false;
         var outcomes = builder.getObjects().stream().map(Data.Builder::getObservation).toList();
         contextualizationScope.getOutcomes().addAll(outcomes);
-          if (!observation.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.EVENT)
-              && observation instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl impl)
-          impl.setChildrenCount(outcomes.size());
+        // Transactional HAS_CHILD registration owns the cumulative count and rollback.
       }
     }
     return true;

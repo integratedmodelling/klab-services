@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -33,6 +34,15 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
     @Override
     public List<Notification> validateModel(KimModel model, Context context) {
       var diagnostics = new java.util.ArrayList<Notification>();
+      for (var output : safe(model.getObservables())) {
+        var semantics = output.getSemantics();
+        if (semantics != null && semantics.isCollective()
+            && effectiveHeadTypes(semantics, java.util.Collections.newSetFromMap(
+                new java.util.IdentityHashMap<>())).contains(SemanticType.CONFIGURATION))
+          diagnostics.add(Notification.error("CONFIGURATION_INSTANTIATION: configurations emerge through DETECTION; "
+              + "model each Configuration is illegal; model Configuration resolves it after emergence",
+              Notification.LexicalContext.of(output, context.getDocument())));
+      }
       for (var contextualizable : safe(model.getContextualization())) {
         var target = contextualizable.getTarget();
         if (contextualizable.getTargetId() != null && !contextualizable.getTargetId().isBlank()) {

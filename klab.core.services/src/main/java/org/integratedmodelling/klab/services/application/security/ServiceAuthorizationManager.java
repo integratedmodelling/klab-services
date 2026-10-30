@@ -271,7 +271,12 @@ public class ServiceAuthorizationManager {
   public EngineAuthorization validateToken(String token, Map<String, String> requestHeaders) {
 
     if (token != null && token.startsWith(HubWebAuthentication.PREFIX)) {
-      return webAuthentication.authorize(token, requestHeaders);
+      var web = webAuthentication.authorize(token, requestHeaders);
+      if (web != null
+          && web.getScope() instanceof org.integratedmodelling.klab.api.scope.UserScope requester) {
+        web.validateIdentityHeaders(requestHeaders, requester);
+      }
+      return web;
     }
 
     EngineAuthorization ret = null;
@@ -443,7 +448,8 @@ public class ServiceAuthorizationManager {
     }
 
     /** User scope is created anyway. */
-    Scope scope = klabService.get().klabService().getScopeManager().getOrCreateUserScope(ret);
+    var scope = klabService.get().klabService().getScopeManager().getOrCreateUserScope(ret);
+    ret.validateIdentityHeaders(requestHeaders, scope);
     Scope resolvedScope;
     if (scopeHeader == null) {
       resolvedScope = scope;
@@ -473,25 +479,6 @@ public class ServiceAuthorizationManager {
               .getScopeManager()
               .getScope(ret, scopeData.type().classify(), scopeData.scopeId(), runtimeId);
 
-      if (resolvedScope == null) {
-        var exactScope =
-            klabService.get().klabService().getScopeManager().getScope(scopeHeader, Scope.class);
-        if (exactScope != null) {
-          Logging.INSTANCE.warn(
-              "Recovered propagated scope "
-                  + scopeHeader
-                  + " by exact lookup after parsed lookup failed; parsed scopeId="
-                  + scopeData.scopeId()
-                  + ", parsedType="
-                  + scopeData.type()
-                  + ", runtimeId="
-                  + runtimeId
-                  + ", user="
-                  + ret.getUsername());
-          resolvedScope = exactScope;
-        }
-      }
-
       if (resolvedScope instanceof ServiceContextScope serviceContextScope) {
 
         /*
@@ -515,8 +502,7 @@ public class ServiceAuthorizationManager {
               + scopeHeader);
     }
 
-    ret.setInfo(
-        "scopeHeader=" + scopeHeader + "; runtimeId=" + runtimeId);
+    ret.setInfo("scopeHeader=" + scopeHeader + "; runtimeId=" + runtimeId);
 
     ret.setScope(resolvedScope);
 

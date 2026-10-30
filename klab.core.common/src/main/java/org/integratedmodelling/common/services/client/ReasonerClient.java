@@ -44,7 +44,15 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   private record BinaryKey(long revision, Concept first, Concept second) {}
 
-  private record DistanceKey(long revision, Concept target, Concept other, Concept context) {}
+  private record DistanceKey(long revision, String target, String other, String context) {}
+
+  private static String semanticKey(Semantics value) {
+    if(value==null)return "<null>";
+    if(!(value instanceof Observable o))return "concept:"+value.getUrn();
+    return "observable:"+o.getUrn()+"|observer="+(o.getObserverSemantics()==null?"<absolute>":o.getObserverSemantics().getUrn())
+        +"|method="+o.getContextualization()+"|unit="+o.getUnit()+"|currency="+o.getCurrency()+"|range="+o.getRange()
+        +"|genericComponents="+o.getGenericComponents().stream().map(c->c.getUrn()).sorted().toList();
+  }
 
   /** Caches for concepts and observables. */
   private final Cache<String, Concept> concepts =
@@ -131,6 +139,11 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     return client.withScope(scope).postRequired(ServicesAPI.REASONER.CONFIGURE_AUTHORITY, request, String.class);
   }
 
+  @Override public Concept resolveAuthorityHierarchy(String authority, String identity, Scope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.REASONER.AUTHORITY_HIERARCHY,
+        new org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityHierarchyRequest(authority, identity), Concept.class);
+  }
+
   @Override
   public org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse searchAuthority(
       org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {
@@ -165,6 +178,11 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     return Map.copyOf(result);
   }
 
+  @Override
+  public Observable declareObservable(org.integratedmodelling.klab.api.lang.kim.KimObservable syntax) {
+    return client.postRequired(ServicesAPI.REASONER.DECLARE_OBSERVABLE, syntax, Observable.class);
+  }
+
   public Observable resolveObservableInternal(String definition) {
     return client.postRequired(
         ServicesAPI.REASONER.RESOLVE_OBSERVABLE, definition, Observable.class);
@@ -175,11 +193,17 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     var key = new BinaryKey(currentRevision(), conceptImpl.asConcept(), other.asConcept());
     return subsumption.get(
         key,
-        ignored ->
-            client.post(
-                ServicesAPI.REASONER.SUBSUMES,
-                List.of(conceptImpl.asConcept(), other.asConcept()),
-                Boolean.class));
+        ignored -> {
+          Boolean result = client.postRequired(
+              ServicesAPI.REASONER.SUBSUMES,
+              List.of(conceptImpl.asConcept(), other.asConcept()),
+              Boolean.class);
+          if (result == null) {
+            throw new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
+                "Subsumption check returned an empty response");
+          }
+          return result;
+        });
   }
 
   @Override
@@ -241,28 +265,41 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public Collection<Concept> authoredClosure(Semantics target) {
+    var result = client.postCollectionOrThrow(
+        ServicesAPI.REASONER.AUTHORED_CLOSURE, target.asConcept(), Concept.class);
+    if (result == null)
+      throw new IllegalStateException("Reasoner did not return an authored vocabulary closure");
+    return result;
+  }
+
+  @Override
   public int semanticDistance(Semantics target, Semantics other) {
     return semanticDistance(target, other, null);
   }
 
   @Override
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-    Concept contextConcept = context == null ? null : context.asConcept();
-    var key =
-        new DistanceKey(currentRevision(), target.asConcept(), other.asConcept(), contextConcept);
-    int distance =
-        semanticDistances.get(
-            key,
-            ignored ->
-                client.post(
-                    ServicesAPI.REASONER.DISTANCE,
-                    Lists.newArrayList(target.asConcept(), other.asConcept(), contextConcept),
-                    Integer.class));
-    if (distance < 0) {
-      return distance;
-    }
-    int observableDistance = observableDistance(target, other);
-    return observableDistance < 0 ? observableDistance : distance + observableDistance;
+    var key=new DistanceKey(currentRevision(),semanticKey(target),semanticKey(other),semanticKey(context));
+    return semanticDistances.get(key,ignored -> client.post(
+        ServicesAPI.REASONER.DISTANCE,Lists.newArrayList(target,other,context),Integer.class));
+  }
+
+  @Override
+  public int semanticDistance(Semantics target, Semantics requested, Semantics context,
+      long expectedKnowledgeRevision) {
+    if(expectedKnowledgeRevision<0)return -50;
+    // Preserve complete wrappers; server compatibility/representation checks use the same receipt.
+    return validatedDistanceScore(Lists.newArrayList(target,requested,context),
+        "knowledgeRevision",Long.toString(expectedKnowledgeRevision));
+  }
+
+  private int validatedDistanceScore(Object payload, Object... parameters) {
+    Integer score = client.postRequired(ServicesAPI.REASONER.VALIDATED_DISTANCE, payload, Integer.class, parameters);
+    if (score == null)
+      throw new org.integratedmodelling.common.utils.Utils.Http.Client.RequestFailure(
+          0, "Validated semantic distance returned no score", null);
+    return score;
   }
 
   @Override
@@ -647,7 +684,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   public boolean match(Semantics candidate, Semantics pattern) {
     return client.post(
         ServicesAPI.REASONER.MATCHES,
-        List.of(candidate.asConcept(), pattern.asConcept()),
+        List.of(candidate, pattern),
         Boolean.class);
   }
 
@@ -714,6 +751,15 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request, Scope scope) {
+    var result=client.withScope(scope).post(ServicesAPI.REASONER.SEMANTIC_DEPENDENCIES,request,
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.class);
+    return result==null?org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(
+        request,"Semantic closure certification is unavailable"):result;
+  }
+
+  @Override
   public SemanticValidationResponse validateDocument(
       SemanticValidationRequest request, Scope scope) {
     var response =
@@ -734,18 +780,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       Observation observation, ContextScope scope) {
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservation(Observation.forTransport(observation));
-    resolutionRequest
-        .getResolutionConstraints()
-        .addAll(
-            scope.getResolutionConstraints().stream().map(ResolverClient::forTransport).toList());
-    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
-      resolutionRequest
-          .getResolutionConstraints()
-          .add(
-              ResolutionConstraint.of(
-                  ResolutionConstraint.Type.UnresolvedContextObservation,
-                  Observation.forTransport(scope.getContextObservation())));
-    }
+    resolutionRequest.setResolutionConstraints(ResolverClient.scopeForTransport(scope));
     return client
         .withScope(scope)
         .postCollection(
@@ -759,15 +794,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       Observable observable, ContextScope scope) {
     ResolutionRequest resolutionRequest = new ResolutionRequest();
     resolutionRequest.setObservable(observable);
-    resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());
-    if (scope.getContextObservation() != null && scope.getContextObservation().getId() < 0) {
-      resolutionRequest
-          .getResolutionConstraints()
-          .add(
-              ResolutionConstraint.of(
-                  ResolutionConstraint.Type.UnresolvedContextObservation,
-                  scope.getContextObservation()));
-    }
+    resolutionRequest.setResolutionConstraints(ResolverClient.scopeForTransport(scope));
     return client
         .withScope(scope)
         .post(
@@ -810,46 +837,6 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   private long currentRevision() {
     Capabilities current = capabilities;
     return current == null ? 0L : current.getKnowledgeRevision();
-  }
-
-  private int observableDistance(Semantics target, Semantics other) {
-    if (!(target instanceof Observable targetObservable)
-        || !(other instanceof Observable otherObservable)) {
-      return 0;
-    }
-    int distance = 0;
-    Concept targetObserver = targetObservable.getObserverSemantics();
-    Concept otherObserver = otherObservable.getObserverSemantics();
-    if (targetObserver != null) {
-      if (otherObserver == null) {
-        return -50;
-      }
-      int observerDistance = assertedDistance(otherObserver, targetObserver);
-      if (observerDistance < 0) {
-        return -50;
-      }
-      distance += observerDistance;
-    } else if (otherObserver != null) {
-      distance++;
-    }
-    if (targetObservable.getContextualization() != null
-        && (otherObservable.getContextualization() == null
-            || !otherObservable.is(targetObservable.getContextualization()))) {
-      return -50;
-    }
-    var targetMediator = targetObservable.mediator();
-    var otherMediator = otherObservable.mediator();
-    if (targetMediator != null) {
-      if (otherMediator == null || !targetMediator.isCompatible(otherMediator)) {
-        return -50;
-      }
-      if (!targetMediator.equals(otherMediator)) {
-        distance++;
-      }
-    } else if (otherMediator != null) {
-      distance++;
-    }
-    return distance;
   }
 
   @Override
