@@ -2,6 +2,12 @@
 
 ## Recommendation
 
+**30 October follow-up:** see the [current contributor review](bounded-experiments-final-20261030.md).
+An oversized-duration validation bug is fixed locally with eight regression cases;
+1,295 unit/integration tests pass in a separate PR100 environment. The update has
+not been pushed. Actual Java functional/scientific checks still require an
+authorized fixture and renewed computation allowance before approval/merge.
+
 **Needs contract/coordination evidence.** The bounded Python runner has passing
 offline lifecycle, concurrency and fresh-process checks, but no unchanged-Java
 four-cell scientific acceptance or measured scientific throughput. This is the
