@@ -3,6 +3,12 @@
 **PR #98 does not block PR #99.** The stack runs F1 #101 → F2 #99 → F3 #98.
 F3's second-identity/nonowner-denial fixture belongs to #98, not #99 acceptance.
 
+**Latest review:** [30 October contributor review](reviews/discover-compare-explain/resource-inspector-final-20261030.md).
+The readability candidate passed1342 unit/integration tests and the actual shipped
+functional test against unchanged Java. This is ready for maintainer review, not
+an approving self-review or authorization to bypass red CI. All five latest
+authorized computation attempts are now used.
+
 ## Completed for this bounded feature
 
 **Compatibility policy:** the Python client targets the existing Java contract;
@@ -77,5 +83,7 @@ The deployment was restored again after the subsequent #98 positive-control run;
 do not assume the ready test setup is still installed. See #98's
 `execution-evidence-local-acceptance-20261029.json` on its branch for that later
 restoration checkpoint. Sanitized logs, backups and caches are retained externally.
-Four of the latest five authorized attempts have been used across both PRs; one
-remains. This documentation commit neither consumes nor renews that allowance.
+All five latest authorized computation attempts have now been used across both
+PRs; the last passed the actual shipped F2 functional test on30 October. The earlier
+deselected test invocation submitted no scientific work. Further computation needs
+new authorization; review/documentation work does not renew the allowance.

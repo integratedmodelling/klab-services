@@ -2,6 +2,17 @@
 
 ## 29 October continuation
 
+**30 October final-review checkpoint:** contributor-guide review of readable
+inspector candidate`f0ce00c3b` passed1342 unit/integration tests,coverage/lint gates
+and the actual shipped functional pytest against unchanged Java (20/20 cells in m,
+recorded model association,owned cleanup). See
+`docs/reviews/discover-compare-explain/resource-inspector-final-20261030.md`.
+All five latest computation attempts are now used. Original deployment restored;
+current PIDs GraphDB31600,Reasoner41208,Resources31172,Resolver42048,Runtime38380;
+native PID/listener records match,zero contexts/projects,zero visible consoles.
+No approval or merge:shared Java CI and maintainer/stack decision remain explicit.
+Review PR98 next; its functional/nonowner evidence must not be replaced by mocks.
+
 **Current completion/remaining-work summary:** [PR99_REMAINING.md](PR99_REMAINING.md).
 PR99's bounded feature acceptance passed. PR98 does **not** block PR99; the
 remaining PR99 gates are Java CI and maintainer/base-integration decisions.
