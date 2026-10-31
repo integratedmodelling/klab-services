@@ -241,6 +241,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
+  public Long getObserverId() {
+    return observer == null ? null : observer.getId();
+  }
+
+  @Override
   public Observation getObserver() {
     if (observer != null
         && observer.getId() > 0
@@ -383,8 +388,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private Observation selectedObserver(String field, Object value) {
     if (digitalTwin == null)
       throw new IllegalArgumentException("Observer selection requires a knowledge graph");
-    // Selecting or refreshing an observer must not depend on that observer. Remote graph
-    // queries encode their scope through getObserver(), which would re-enter this lookup.
+    // Selecting or refreshing an observer must not depend on that observer's visibility.
     // Keep the caller's identity and context focus, but remove the observer selection.
     var lookupScope = withObserver(null);
     var matches = digitalTwin.getKnowledgeGraph().query(Observation.class, lookupScope)

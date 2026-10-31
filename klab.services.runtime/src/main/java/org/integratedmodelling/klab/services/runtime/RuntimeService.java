@@ -967,9 +967,7 @@ public class RuntimeService extends BaseService
       var collective = observation.getObservable().getSemantics().isCollective();
       if (cohort == null || collective || scope.getContextObservation() != null) {
         transaction.link(
-            scope.getContextObservation() == null
-                ? RuntimeAsset.CONTEXT_ASSET
-                : scope.getContextObservation(),
+            submissionParent(scope),
             observation,
             GraphModel.Relationship.HAS_CHILD);
       }
@@ -1197,7 +1195,7 @@ public class RuntimeService extends BaseService
         || root.getObservation() == null || root.getObservation().getId() != root.getId()) return null;
     var existing = scope.getDigitalTwin().getKnowledgeGraph().getAsset(root.getId(), scope, Observation.class);
     if (existing == null || existing.isEmpty() || existing.getId() != root.getId()
-        || existing.getParentId() != requested.getParentId()
+        || existing.getParentId() != referenceParent(requested, scope)
         || !Objects.equals(existing.getObservable().asConcept().getUrn(), requested.getObservable().asConcept().getUrn())
         || org.integratedmodelling.klab.runtime.ObserverResolution.preference(
             existing.getObservable(), requested.getObservable(), scope) < 0)
@@ -1213,6 +1211,28 @@ public class RuntimeService extends BaseService
     org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(
         existing, requested.getGeometry(), scope);
     return existing;
+  }
+
+  /** The same parent used when staging a new HAS_CHILD observation. */
+  private static RuntimeAsset submissionParent(ContextScope scope) {
+    var context = scope.getContextObservation();
+    return context == null ? RuntimeAsset.CONTEXT_ASSET : context;
+  }
+
+  /** A reference is validated before dependent targets have acquired their stored parent ID. */
+  private static long referenceParent(Observation requested, ContextScope scope) {
+    var parent = submissionParent(scope);
+    if (parent instanceof Observation context) {
+      var id = context.getId();
+      var accessible = id == Observation.UNASSIGNED_ID || id == Observation.QUERY_ID
+          ? null : scope.getObservation(id);
+      if (accessible == null || accessible.isEmpty() || accessible.getId() != id)
+        throw new IllegalStateException("Reference answer is no longer compatible or accessible");
+    }
+    if (requested.getParentId() != Observation.UNASSIGNED_ID
+        && requested.getParentId() != parent.getId())
+      throw new IllegalStateException("Reference answer is no longer compatible or accessible");
+    return parent.getId();
   }
 
   private SubmissionIdentity submissionIdentity(Observation observation, ContextScope scope) {

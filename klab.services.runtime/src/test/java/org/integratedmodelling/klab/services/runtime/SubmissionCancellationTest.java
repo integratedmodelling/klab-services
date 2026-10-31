@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.*;
@@ -98,7 +99,7 @@ class SubmissionCancellationTest {
     var registry = RuntimeService.class.getDeclaredField("inFlightSubmissions");
     registry.setAccessible(true);
     registry.set(f.runtime, new ConcurrentHashMap<>());
-    var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+    var reasoner = f.reasoner;
     var status = f.resolver.status();
     when(reasoner.status()).thenReturn(status);
     var baseType = mock(Concept.class);
@@ -118,6 +119,7 @@ class SubmissionCancellationTest {
   static class Fixture {
     final RuntimeService runtime = mock(RuntimeService.class);
     final Resolver resolver = mock(Resolver.class);
+    final Reasoner reasoner = mock(Reasoner.class);
     final DigitalTwin twin = mock(DigitalTwin.class);
     final Scheduler scheduler = mock(Scheduler.class);
     final DigitalTwinImpl.TransactionImpl rootTransaction = mock(DigitalTwinImpl.TransactionImpl.class);
@@ -137,6 +139,10 @@ class SubmissionCancellationTest {
       when(status.isOperational()).thenReturn(true);
       when(resolver.status()).thenReturn(status);
       scope.addService(resolver);
+      when(reasoner.status()).thenReturn(status);
+      scope.addService(reasoner);
+      when(rootTransaction.getId()).thenReturn("submission-root");
+      when(resolutionTransaction.getId()).thenReturn("submission-resolution");
       when(twin.getKnowledgeGraph()).thenReturn(mock(KnowledgeGraphNeo4j.class));
       when(twin.getOptions()).thenReturn(scope.getConfiguration());
       when(twin.getScheduler()).thenReturn(scheduler);

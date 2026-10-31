@@ -83,6 +83,16 @@ public interface ContextScope extends SessionScope {
   Observation getObserver();
 
   /**
+   * Stable identity of the selected observer for scope transport, or null if none is selected.
+   * This does not validate access to the observer. Implementations whose {@link #getObserver()}
+   * refreshes an observation must override this method without performing graph or network reads.
+   */
+  default Long getObserverId() {
+    var observer = getObserver();
+    return observer == null ? null : observer.getId();
+  }
+
+  /**
    * Return all the observations visible in this context, ordered by submission timestamp.
    *
    * @return
@@ -488,8 +498,9 @@ public interface ContextScope extends SessionScope {
     }
 
     // observers are necessarily resolved
-    if (scope.getObserver() != null) {
-      ret.append("#").append(scope.getObserver().getId());
+    var observerId = scope.getObserverId();
+    if (observerId != null) {
+      ret.append("#").append(observerId);
     }
 
     return ret.toString();

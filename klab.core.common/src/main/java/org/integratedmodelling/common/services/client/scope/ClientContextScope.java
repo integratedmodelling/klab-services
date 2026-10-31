@@ -105,6 +105,11 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   @Override
+  public Long getObserverId() {
+    return observer == null ? null : observer.getId();
+  }
+
+  @Override
   public Observation getObserver() {
     if (observer != null && digitalTwin != null
         && digitalTwin.getTransitionHistory().modifies(observer.getId())) {
