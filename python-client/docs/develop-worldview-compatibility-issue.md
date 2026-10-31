@@ -1,5 +1,57 @@
 # Python/Java compatibility: current verified state
 
+## Current hosted status: 31 October 2026
+
+**The exact hosted regressions now pass: 4 tests passed, 0 failed/errors/skips.**
+This supersedes the 17 October hosted result below, not the original pinned local
+Java/worldview/ODO failure. No Java source or Python runtime code was changed to
+obtain these passes during this recheck; current behavior must not be credited to a client
+workaround. The exact server binary commit and upstream fix attribution remain
+unverified.
+
+| Original gate | 31 October actual hosted result |
+| --- | --- |
+| Accepted semantic knowledge | Passed: accepted generation 1, logical VALID, 6 retained diagnostics |
+| `geography:Elevation in m` | Passed: raw Java unit definition `m`, unit-bearing URN and SDK unit retained |
+| `geography:Elevation in mm` | Passed: raw Java unit definition `mm`, distinct response hash and SDK unit retained |
+| Original tiny terrestrial-region request | Passed: one submitted Job 1 returned observation 14; session/context cleanup passed |
+
+The tested Python candidate was `e9581c01bfef3c072c52134d57e6a3e66657ed84`, using
+the unchanged shipped test bodies and the existing explicit hosted profile/ENGINE
+certificate. Semantic/unit tests passed in 9.16s; the separate one-Job, 20-cell-request
+test passed in 103.36s, including setup and teardown. There was no automatic retry,
+Java/component/worldview change, shared-service restart or administrative import.
+See [sanitized evidence](results/hosted-worldview-compatibility-20261031.json) for
+source/SDK identities, service IDs and raw report hashes. Raw reports/private paths
+remain external.
+
+Reproduce with explicit private certificate and fresh report destinations:
+
+```powershell
+python tools/run_functional_acceptance.py --suite connected-semantic-readiness --suite connected-unit-contract --profile examples/hosted-deployment.json --certificate "$HOME/.klab/klab.cert" --report <fresh-semantic-report.xml>
+python tools/run_functional_acceptance.py --suite connected-tiny-compute --allow-owned-work --profile examples/hosted-deployment.json --certificate "$HOME/.klab/klab.cert" --report <fresh-computation-report.xml>
+```
+
+The first command creates no sessions/contexts or observation Jobs. The second
+requires a new explicit computation allowance: one owned session/context and one
+20-cell region request, with cleanup. Do not run it under an exhausted allowance.
+
+PR #102 now requires these four original compatibility checks in addition to its
+eight integration cases. It reuses the original test bodies rather than creating
+a weaker duplicate. Missing/skipped/failed compatibility results block the delivery
+builder. The units-only milestone selector remains read-only; the computation
+selector still requires explicit owned-work consent.
+
+**Limits:** wire-level m/mm preservation is not numerical unit-conversion proof.
+The tiny test checks a returned bound region observation; it does not compare 20
+numerical elevation cells or certify independent scientific accuracy. Full matrix,
+exports, permissions, scientific notebook, throughput and deployment attestation still
+have separate gates. The original exact local Java 671a818 / IMOD 608bef / ODO 0.1.0
+tuple has not been rerun. PR #102 remains draft and must not be merged without later
+user review.
+
+## Historical 17 October report (retained verbatim below)
+
 **Last verified: 17 October 2026.** Python base:
 `3ef427d2058c2b1b140c92fbc4832a1c4dadc1e4`; current work is on
 `feature/python-client-ide-throughput`. Changes are confined to `python-client/`.

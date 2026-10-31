@@ -1,5 +1,9 @@
 # Contribution review: PR102 integration, simplicity and readability
 
+**Later scope extension:** the [hosted compatibility follow-up](hosted-compatibility-followup-20261031.md)
+records four passing original hosted regressions and the new twelve-case acceptance
+gate. This earlier simplicity pass remains valid history, not a full live milestone pass.
+
 ## Recommendation
 
 **Needs contract/coordination evidence; leave draft and unmerged.** The code-quality

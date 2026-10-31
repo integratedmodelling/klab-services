@@ -7,13 +7,20 @@ offline evidence from missing live acceptance.
 
 ## Current checkpoint:31October
 
+- Later compatibility extension: all four exact hosted readiness/m/mm/tiny-region
+  checks now pass. The full milestone gate now requires twelve cases, and the
+  updated offline suite passes 1,599 tests. No Java or client runtime workaround
+  was needed in this recheck. See the [compatibility follow-up](reviews/discover-compare-explain/hosted-compatibility-followup-20261031.md).
+
 - F1 #101 and F2 #99 are merged into milestone integration. F3 #98 and F4 #100
   remain draft with live gates;102 now includes their latest reviewed fixes/suites.
 - PR102's simplicity/contributor pass fixes geometry/numeric/hash validation,
   selected-model association and copied-artifact verification.1,594 offline tests,
   existing coverage/lint, wheel/sdist and isolated core-only wheel smoke pass.
-- Sixteen relevant functional cases collect;full live acceptance has not passed.
-  No new computations or service changes were made in this102 pass.
+- The earlier readability pass collected sixteen relevant functional cases without
+  computation. The later compatibility recheck used one owned Job and passed all
+  four exact hosted checks. The expanded twelve-case full milestone has not passed;
+  no shared services were restarted or administered.
 - The user reserves102 for later review: **do not merge**.
 - See [current review](reviews/discover-compare-explain/delivery-readability-post-integration-20261031.md).
 

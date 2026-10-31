@@ -1,5 +1,12 @@
 # Prepared combined PR package — draft, not accepted delivery
 
+**Current scope extension (31 October):** PR #102 also requires the four original
+hosted worldview/unit/tiny-region regressions. Those four passed in a fresh hosted
+recheck, without a Java or client runtime change. See
+[current compatibility evidence](results/hosted-worldview-compatibility-20261031.json).
+Full milestone acceptance now requires twelve test cases; the prepared package below
+is historical and is not a claim that the full milestone has passed.
+
 Title: **Python: discover, compare, and explain scientific experiments**
 
 Final target: `feature/python-client`.
@@ -19,7 +26,7 @@ Implements four remote Python capability slices and their shared scientific jour
 4. Independent bounded named experiments with explicit ownership and recoverable handles.
 
 Delivery tooling adds independent numerical raster/analysis/evidence validators,
-eight named functional suites, isolated original-result restoration, notebook 08
+eight integration suites plus two compatibility selectors (twelve test cases), original-result restoration, notebook 08
 source/execution/HTML, correctness-gated 1/4-worker throughput on two workload sizes,
 candidate/package/fixture manifests and a fail-closed evidence builder.
 

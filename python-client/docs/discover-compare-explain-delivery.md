@@ -53,7 +53,16 @@ python tools/run_milestone_acceptance.py --milestone-fixture <verified-fixture.j
 
 This is explicitly computational and must be authorized for the selected deployment.
 It uses the existing `run_functional_acceptance.py` suite dispatch and safety gates.
-For a single case, select a named suite there: `milestone-discovery`,
+The full adapter first selects `milestone-compatibility-units` (semantic readiness
+and the exact hosted m/mm wire-contract tests) and `milestone-compatibility-compute`
+(the original terrestrial-region request), followed by the eight integration cases.
+The original test bodies and assertions are reused, not weakened or duplicated.
+This adds one owned session/context and one 20-cell observation Job to the full
+acceptance workload; no automatic retry. Each future execution needs explicit
+authorization for its workload. The latest bounded compatibility recheck passed
+all four cases; it is not a passing run of the full twelve-case milestone.
+
+For individual integration cases, select a named suite there: `milestone-discovery`,
 `milestone-evidence`, `milestone-science`, `milestone-parallel`, `milestone-failure`,
 `milestone-restore`, `milestone-permissions`, `milestone-notebook`. Missing required
 inputs fail, never skip a required live gate. Ambient milestone credential paths
@@ -114,7 +123,7 @@ unrun batches separately. Retained remote contexts are disclosed, not called dis
 python tools/build_milestone_deliverable.py --acceptance <run/acceptance.json> --throughput <throughput/throughput.json> --output <fresh-package-directory>
 ```
 
-The builder checks the current source/installed-package/candidate identity, all eight
+The builder checks the current source/installed-package/candidate identity, all twelve
 passing tests, fixture identity, original restoration handles, executed notebook
 cells, separate notebook run, relative artifact paths/hashes, full throughput
 configurations and wall-clock rates. Arbitrary state files/certificates are not in
