@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "connected-bounded-experiments": "tests/functional/test_bounded_experiments.py",
     "connected-resource-inspection": "tests/functional/test_resource_inspection.py::test_existing_executable_model_links_inspection_to_recorded_computation",
     "connected-semantic-readiness": "tests/functional/test_connected_semantics.py::test_connected_reasoner_publishes_accepted_semantic_knowledge",
     "connected-unit-contract": "tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit",
@@ -31,7 +32,7 @@ SUITES = {
     "semantic-explorer": "tests/functional/test_semantic_explorer.py",
 }
 
-CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection"}
+CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection", "connected-bounded-experiments"}
 CONNECTED_SUITES = {"connected-semantic-readiness", "connected-unit-contract", "connected-onboarding",
                     "connected-credential-renewal"} | CONNECTED_WORK_SUITES
 
@@ -53,7 +54,7 @@ def main():
     parser.add_argument("--profile", type=Path, help="Explicit trusted deployment profile for connected suites")
     parser.add_argument("--certificate", type=Path, help="Private ENGINE certificate path for connected suites; never report its contents")
     parser.add_argument("--allow-owned-work", action="store_true",
-                        help="Authorize connected suites to initialize peers and create/release their own session/context and tiny Job")
+                         help="Authorize the selected suite's documented owned work; runner suite uses up to 20 Jobs/200 cells")
     args = parser.parse_args()
     if args.state_dir is None and any(name not in CONNECTED_SUITES | {"provider-reference"} for name in args.suite):
         parser.error("Owned TEST suites require an explicit --state-dir")
