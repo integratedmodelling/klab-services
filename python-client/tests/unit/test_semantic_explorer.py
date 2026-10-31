@@ -78,6 +78,36 @@ def test_search_explicit_selection_documentation_resolution_and_safe_summaries()
             page.select("oak")
 
 
+@pytest.mark.parametrize("key", ["serviceId", "worldviewId"])
+def test_credential_bearing_knowledge_identities_are_rejected_without_echoing_them(key):
+    client, explorer, _ = setup(capabilities={**CAPABILITIES, key: "echo-reasoner-secret"})
+    with client, pytest.raises(ProtocolError) as caught:
+        explorer.resolve_concept("fixture:Allowed")
+    assert "reasoner-secret" not in str(caught.value)
+
+
+@pytest.mark.parametrize("kind", ["concept", "observable"])
+def test_credential_bearing_semantic_urns_are_rejected_without_a_display_or_request(kind):
+    payload = {**CONCEPT, "urn": "fixture:reasoner-secret"}
+    if kind == "observable":
+        payload = {"urn": payload["urn"], "semantics": CONCEPT, "artifactType": "CONCEPT"}
+    client, explorer, calls = setup(response=lambda _: payload)
+    with client, pytest.raises(ProtocolError) as caught:
+        getattr(explorer, "resolve_" + kind)("fixture:Allowed")
+    assert "reasoner-secret" not in str(caught.value)
+    assert len(calls) == 2
+
+
+def test_credential_bearing_authority_candidate_cannot_be_selected_or_reused():
+    code = "reasoner-secret"
+    page = {**PAGE, "matches": [{**MATCH, "id": code, "locator": _locator("TAXA", code)}]}
+    client, explorer, calls = setup(page=page)
+    with client, pytest.raises(ProtocolError) as caught:
+        explorer.search_authority("TAXA", "oak")
+    assert "reasoner-secret" not in str(caught.value)
+    assert not any(request.url.path.endswith("/authority/documentation") for request in calls)
+
+
 def test_fresh_resolution_hierarchy_and_directional_predicates():
     client, explorer, calls = setup()
     with client:

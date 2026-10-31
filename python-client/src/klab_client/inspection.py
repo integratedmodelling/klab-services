@@ -116,6 +116,14 @@ class ResourceInspector:
         if self._origin() != origin:
             raise ProtocolError("Resources service/scope identity changed during inspection; refresh explicitly")
 
+    def _view_origin(self, origin):
+        # Keep the original stamp for drift checks; redact only the returned view.
+        return InspectionOrigin(
+            service_url=self.client.transport.redact(origin.service_url),
+            service_id=self.client.transport.redact(origin.service_id),
+            scope=origin.scope,
+        )
+
     def _rows(self, payload, label):
         if not isinstance(payload, list) or len(payload) > self.max_items:
             raise ProtocolError(f"{label} must be an array within the item budget; no server pagination is implied")
@@ -149,9 +157,9 @@ class ResourceInspector:
             resources = freeze(self._rows(resources, "resourceUrns"), self.client.transport.redact)
         provider_metadata = {key: payload[key] for key in ("serviceId", "adapterType") if key in payload}
         return AssetInspection(
-            urn=asset.urn,
+            urn=self.client.transport.redact(asset.urn),
             knowledge_class=knowledge_class,
-            origin=origin,
+            origin=self._view_origin(origin),
             label=_optional_text(raw, "label"),
             advertised_observables=self._advertisements(payload, "observables"),
             listed_dependencies=self._advertisements(payload, "dependencies"),
@@ -201,7 +209,7 @@ class ResourceInspector:
         for row in self._rows(payload["results"], "ResourceSet results"):
             value = freeze(row, self.client.transport.redact)
             results.append(ResourceReference(
-                urn=required_text(row, "resourceUrn"),
+                urn=required_text(value, "resourceUrn"),
                 service_id=_optional_text(value, "serviceId"),
                 knowledge_class=_optional_text(value, "knowledgeClass"),
                 version=value.get("resourceVersion"),
@@ -212,8 +220,8 @@ class ResourceInspector:
             raise ProtocolError("ResourceSet services must map service IDs to URL strings")
         self._unchanged(origin)
         return ResourceResolution(
-            requested_urn=urn,
-            origin=origin,
+            requested_urn=self.client.transport.redact(urn),
+            origin=self._view_origin(origin),
             results=tuple(results),
             services=freeze(services, self.client.transport.redact),
             raw=raw,

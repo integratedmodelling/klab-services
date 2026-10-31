@@ -1,5 +1,29 @@
 # PR #99: completed feature and remaining integration gates
 
+**Latest dependent-merge status:** PR101 is merged. PR99 now targets
+`feature/python-discover-compare-explain-integration`, base58d2a0ca4. Candidate
+617e36ed8 passes1,362 offline tests, coverage/lint and a fresh actual17.26s Java
+functional test with20/20 finite cells and recorded model association. Setup and
+owned work are restored/cleaned. The user authorized merge once the contributor
+review and current-head checks pass; verify the newly published head before merge.
+See the latest section of the [review](reviews/discover-compare-explain/resource-inspector-post-integration-20261030.md).
+
+## Current status after upstream integration and recheck
+
+The [current contributor review](reviews/discover-compare-explain/resource-inspector-post-integration-20261030.md)
+supersedes the historical handoff below. Source144bcb7fd fixes credential echoes
+in inspection identities/views;1,357 offline tests, coverage/lint and one actual
+shipped functional test on October30 Java pass. The test read20/20 finite cells
+and confirmed the inspected model in accepted resolution; all owned work and the
+temporary setup were cleaned up. The one newly authorized test is consumed.
+
+Java/Python/Jenkins checks passed at integrated head2b922f1a2. Verify the new
+published fix/report head separately. Remaining merge decisions are current-head
+CI and the explicit target: merging into draft101's branch folds F2 into that
+branch, not into main. No self-approval, silent retarget or check bypass.
+
+## Historical handoff (before upstream integration)
+
 **PR #98 does not block PR #99.** The stack runs F1 #101 → F2 #99 → F3 #98.
 F3's second-identity/nonowner-denial fixture belongs to #98, not #99 acceptance.
 
