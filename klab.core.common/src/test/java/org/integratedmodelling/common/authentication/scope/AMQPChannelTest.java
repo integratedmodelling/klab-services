@@ -15,6 +15,82 @@ import org.junit.jupiter.api.Test;
 class AMQPChannelTest {
 
   @Test
+  void absentBrokersNeverConstructAConnectionFactory() {
+    try (var factories = mockConstruction(com.rabbitmq.client.ConnectionFactory.class)) {
+      for (var federation : java.util.Arrays.asList(
+          null, new Federation("none", null), new Federation("blank", " "))) {
+        var transport = new AMQPChannel(federation, "scope", mock(
+            org.integratedmodelling.klab.api.services.runtime.Channel.class), null);
+        assertFalse(transport.isOnline());
+        var agent = AMQPChannel.forAgent(federation, "agent", mock(
+            org.integratedmodelling.klab.api.services.runtime.Channel.class), null);
+        assertFalse(agent.isOnline());
+      }
+      assertTrue(factories.constructed().isEmpty());
+    }
+  }
+
+  @Test
+  void absentBrokerMeansNoMessagingOrQueues() {
+    var scope = mock(MessagingChannelImpl.class, CALLS_REAL_METHODS);
+    try (var transports = mockConstruction(AMQPChannel.class)) {
+      for (var federation : java.util.Arrays.asList(
+          null, new Federation("none", null), new Federation("blank", " "))) {
+        assertTrue(scope.setupMessaging(federation, "scope", java.util.List.of()).isEmpty());
+        assertFalse(scope.hasMessaging());
+      }
+      assertTrue(transports.constructed().isEmpty());
+    }
+  }
+
+  @Test
+  void removingBrokerDisconnectsOnlyTheTransportCreatedByThisScope() {
+    var scope = mock(MessagingChannelImpl.class, CALLS_REAL_METHODS);
+    try (var transports = mockConstruction(AMQPChannel.class)) {
+      scope.setupMessaging(new Federation("configured", "amqp://broker"), "scope", java.util.List.of());
+      var transport = transports.constructed().getFirst();
+      assertTrue(scope.setupMessaging(new Federation("none", null), "scope", java.util.List.of()).isEmpty());
+      verify(transport).disconnect();
+      verify(transport, never()).close();
+      assertFalse(scope.hasMessaging());
+    }
+  }
+
+  @Test
+  void removingBrokerOnCopiesDoesNotDisconnectTheirParentsBorrowedTransport() {
+    try (var transports = mockConstruction(AMQPChannel.class)) {
+      var parent = new TestMessagingChannel();
+      parent.setupMessaging(new Federation("configured", "amqp://broker"), "parent", java.util.List.of());
+      var copied = new TestMessagingChannel(parent);
+      var inherited = new TestMessagingChannel();
+      inherited.copyMessagingSetup(parent);
+      var transport = transports.constructed().getFirst();
+      assertTrue(copied.setupMessaging(new Federation("none", null), "copy", java.util.List.of()).isEmpty());
+      assertFalse(copied.hasMessaging());
+      assertTrue(parent.hasMessaging());
+      assertTrue(inherited.hasMessaging());
+      assertTrue(inherited.setupMessaging(new Federation("none", null), "inherited", java.util.List.of()).isEmpty());
+      assertTrue(parent.hasMessaging());
+      verify(transport, never()).disconnect();
+      verify(transport, never()).close();
+      verify(transport, times(1)).filter(any());
+    }
+  }
+
+  private static class TestMessagingChannel extends MessagingChannelImpl {
+    TestMessagingChannel() {
+      super(mock(org.integratedmodelling.klab.api.identities.Identity.class), true, true);
+    }
+
+    TestMessagingChannel(TestMessagingChannel parent) {
+      super(parent);
+    }
+
+    @Override public String getId() { return "test"; }
+    @Override public String getDispatchId() { return "test-dispatch"; }
+  }
+
+  @Test
   void failedBrokerSetupReleasesThePartiallyOpenedConnection() throws Exception {
     var connection = mock(com.rabbitmq.client.Connection.class);
     var channel = mock(com.rabbitmq.client.Channel.class);

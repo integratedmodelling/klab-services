@@ -402,6 +402,11 @@ public class RuntimeService extends BaseService
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
+      if (serviceContextScope.getConfiguration() == null
+          || serviceContextScope.getConfiguration().getPersistence() == null) {
+        throw new KlabIllegalArgumentException("Context persistence must be explicitly configured");
+      }
+
       boolean isNew = serviceContextScope.getConfiguration().getId() == null;
       String scopeId =
           isNew

@@ -115,7 +115,7 @@ public class AMQPChannel {
       boolean autoDeleteExchange,
       boolean deleteExchangeOnClose) {
 
-    this.brokerUri = federation.getBroker();
+    this.brokerUri = federation == null ? null : federation.getBroker();
     this.exchangeId = exchangeId;
     this.federation = federation;
     this.messageConsumer = messageConsumer;
@@ -123,7 +123,7 @@ public class AMQPChannel {
     this.durableExchange = durableExchange;
     this.autoDeleteExchange = autoDeleteExchange;
     this.deleteExchangeOnClose = deleteExchangeOnClose;
-    if (exchangeId == null || channel == null) {
+    if (exchangeId == null || channel == null || brokerUri == null || brokerUri.isBlank()) {
       this.online = false;
       //      Utils.DebugFile.println(
       //          "NO CHANNEL FOR "
