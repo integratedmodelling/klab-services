@@ -36,12 +36,17 @@ from klab_client.inspection import (ResourceInspector, AssetInspection, Inspecti
     AdvertisedObservable, ResourceReference, ResourceResolution)
 from klab_client.evidence import (ChartNode, ChartPort, ChartLink, FlowChartEvidence, ActuatorEvidence,
     DataflowEvidence, ActivityEvidence, ExecutionEvidence, decode_flowchart, decode_dataflow, fetch_execution_evidence)
+from klab_client.experiments import (Experiment, OwnedContextPolicy, ExperimentOutcome, ExperimentBatch,
+    ExperimentRunner, BatchInterrupted)
+from klab_client.errors import WaitCancelled
 from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError, HandleIOError,
     load_handle, restore_handle, save_handle, to_handle)
 from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
 
 __all__ = [
+    "WaitCancelled",
+    "Experiment", "OwnedContextPolicy", "ExperimentOutcome", "ExperimentBatch", "ExperimentRunner", "BatchInterrupted",
     "ChartNode", "ChartPort", "ChartLink", "FlowChartEvidence", "ActuatorEvidence", "DataflowEvidence",
     "ActivityEvidence", "ExecutionEvidence", "decode_flowchart", "decode_dataflow", "fetch_execution_evidence",
     "ResourceInspector", "AssetInspection", "InspectionOrigin", "AdvertisedObservable", "ResourceReference", "ResourceResolution",

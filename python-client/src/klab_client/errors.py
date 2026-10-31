@@ -61,5 +61,12 @@ class WaitTimeout(KlabError, TimeoutError):
         super().__init__(f"Stopped waiting for job {job.id}; computation may still be running")
 
 
+class WaitCancelled(KlabError):
+    """Local wait cancellation only; does not request or confirm server cancellation."""
+    def __init__(self, job):
+        self.job = job
+        super().__init__(f"Stopped waiting for job {job.id}; remote cancellation was not implied")
+
+
 class UnsupportedOperationError(KlabError, NotImplementedError):
     pass
