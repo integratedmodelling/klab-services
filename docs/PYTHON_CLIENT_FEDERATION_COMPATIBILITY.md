@@ -47,10 +47,19 @@ authenticated ordinary members of the same **nonlocal** federation remains
 unexecuted. The live fixture used signed ordinary users and local federation.
 The broader candidate-versus-unchanged-latest-baseline comparison was not rerun.
 
-An inherited server limitation also remains: cached `ScopeManager` entries are
-keyed by bare scope ID and do not validate the requested origin Runtime on cached
-hits. Origin-qualified registration/lookup and a two-Runtime identical-ID test
-remain required for cross-Runtime isolation; see [scope propagation work](SCOPE_PROPAGATION_TODO.md).
+The local #90 correction gates inherited bare-ID server caches: a cached context
+or session must match its recorded host Runtime, and a remote host must still be
+advertised and usable for the caller. This applies to parent-session reuse during
+cold context restoration too. A hosting Runtime may serve its own cached scopes
+without an origin header; remote hits with missing origins fail closed. ACL and
+caller-binding checks remain separate and unchanged.
+
+The cache is still keyed by bare scope ID. Two Runtimes with the same wire ID are
+**not supported simultaneously in that cache**: a wrong-origin lookup is rejected,
+not redirected or used to replace the registered scope. `ScopeRuntimeOriginTest`
+covers that rejection and warm/cold origin checks. This is not real two-user or
+multi-process acceptance; origin-qualified registration remains future work. See
+[scope propagation work](SCOPE_PROPAGATION_TODO.md).
 
 External evidence is retained under `C:\Users\lumsd\AppData\Local\Temp\opencode`:
 `federation-integration-strict-retry.json`, `pr85-federation-live-retry`,

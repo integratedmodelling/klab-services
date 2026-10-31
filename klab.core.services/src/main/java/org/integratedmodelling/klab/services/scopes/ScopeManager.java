@@ -580,6 +580,7 @@ public class ScopeManager {
           throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
               "Scope is not accessible to the requesting user");
         }
+        requireRuntimeOrigin(ret, userScope, runtimeId);
         if (ret instanceof ServiceContextScope context) {
           ret = context.forRequest(userScope);
           Logging.INSTANCE.debug(
@@ -731,6 +732,37 @@ public class ScopeManager {
     return null;
   }
 
+  /**
+   * A bare wire ID must never select a scope belonging to another Runtime. Remote cache hits
+   * require the same advertised, usable Runtime as reconstruction. Only the hosting Runtime may
+   * serve its own scopes without an origin header (ordinary direct native/client requests).
+   */
+  private void requireRuntimeOrigin(
+      ServiceUserScope managed, ServiceUserScope requester, String runtimeId) {
+    if (!(managed instanceof ContextScope) && !(managed instanceof SessionScope)) {
+      return;
+    }
+    var host = managed.getHostServiceId();
+    var local = service instanceof RuntimeService
+        && (host == null || service.serviceId().equals(host));
+    if (local && runtimeId == null) {
+      return;
+    }
+    if (host == null && local) {
+      host = service.serviceId();
+    }
+    if (host == null || !host.equals(runtimeId) || !isAvailableRuntime(requester, runtimeId)) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+          "Scope origin does not match an available Runtime for the requesting user");
+    }
+  }
+
+  private boolean isAvailableRuntime(ServiceUserScope requester, String runtimeId) {
+    return runtimeId != null && !runtimeId.isBlank()
+        && ((service instanceof RuntimeService && runtimeId.equals(service.serviceId()))
+            || findOriginatingRuntime(requester, runtimeId) != null);
+  }
+
   /** Refresh only a known, authorized Runtime; never discover a service from an arbitrary header. */
   RuntimeService findOriginatingRuntime(ServiceUserScope userScope, String runtimeId) {
     var usable = userScope.findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()));
@@ -777,7 +809,15 @@ public class ScopeManager {
         throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
             "Session is not accessible to the requesting user");
       }
+      requireRuntimeOrigin(ret, userScope, runtimeId);
       return ret.forRequest(userScope);
+    }
+
+    if (runtimeId == null && service instanceof RuntimeService) {
+      runtimeId = service.serviceId();
+    }
+    if (!isAvailableRuntime(userScope, runtimeId)) {
+      return null;
     }
 
     var federation = Klab.INSTANCE.getFederationData(userScope.getUser());

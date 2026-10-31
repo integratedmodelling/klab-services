@@ -112,6 +112,7 @@ class FederationSessionIdentityTest {
 
   @Test void authenticatedLookupAlwaysChecksTheAclBeforeBindingTheCaller() {
     var runtime = mock(RuntimeService.class);
+    when(runtime.serviceId()).thenReturn("runtime");
     var alice = user("alice", runtime, runtime);
     var bob = user("bob", runtime, runtime);
     alice.setRoles(List.of(Role.ROLE_ADMINISTRATOR));
