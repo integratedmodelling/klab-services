@@ -723,6 +723,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             KnowledgeClass.COMPONENT,
             timestamp,
             false);
+    ret.setLocal(isLocal());
     if (component != null && component.mavenCoordinates() != null) {
       ret.getMetadata()
           .put(

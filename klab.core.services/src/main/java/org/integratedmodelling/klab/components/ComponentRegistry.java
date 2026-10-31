@@ -99,7 +99,10 @@ public class ComponentRegistry {
   private MultiValuedMap<String, Extensions.ComponentDescriptor> components =
       new HashSetValuedHashMap<>();
 
-  private static Map<String, ServiceImplementation> serviceImplementations = new HashMap<>();
+  private static Map<String, ServiceImplementation> serviceImplementations = new ConcurrentHashMap<>();
+  // Caffeine weak keys use identity equality and do not retain obsolete descriptors/class loaders.
+  private static final com.github.benmanes.caffeine.cache.Cache<Extensions.FunctionDescriptor, Boolean>
+      retiredFunctionDescriptors = com.github.benmanes.caffeine.cache.Caffeine.newBuilder().weakKeys().build();
   private static final Map<Extensions.FunctionDescriptor, ServiceImplementation>
       functionImplementations = Collections.synchronizedMap(new IdentityHashMap<>());
 
@@ -203,10 +206,65 @@ public class ComponentRegistry {
     for (var component : initialComponents) {
       components.put(component.id(), component);
     }
+    publishRegistryView();
   }
 
   public MavenComponentCache getComponentCache() {
     return this.cache;
+  }
+
+
+  /** Completed descriptor/index publication. Readers never traverse a writer's mutable indexes.
+   * Replacement retains the existing two-step lifecycle: a complete removed state may be visible
+   * before the replacement is published. Discovery, constructors and downloads hold no view lock.
+   */
+  private record RegistryView(
+      Map<String, List<Extensions.ComponentDescriptor>> components,
+      Map<String, List<Extensions.ComponentDescriptor>> services,
+      Map<String, List<Extensions.ComponentDescriptor>> actors,
+      Map<String, List<Extensions.ComponentDescriptor>> authorityComponents,
+      Map<String, List<Extensions.ComponentDescriptor>> exporters,
+      Map<String, List<Adapter>> adapters,
+      Map<String, List<AuthorityRegistration>> authorities) {}
+
+  private volatile RegistryView published;
+
+  private static <T> Map<String, List<T>> snapshot(MultiValuedMap<String, T> index) {
+    var result = new HashMap<String, List<T>>();
+    index.asMap().forEach((key, values) -> result.put(key, List.copyOf(values)));
+    return Map.copyOf(result);
+  }
+
+  private static <T> List<T> lookup(Map<String, List<T>> index, String key) {
+    return index.getOrDefault(key, List.of());
+  }
+
+  private static <T> Map<String, List<T>> freeze(Map<String, List<T>> index) {
+    var result = new HashMap<String, List<T>>();
+    index.forEach((key, values) -> result.put(key, List.copyOf(values)));
+    return Map.copyOf(result);
+  }
+
+  private static Map<String, List<Extensions.ComponentDescriptor>> descriptorSnapshot(
+      MultiValuedMap<String, Extensions.ComponentDescriptor> index,
+      Map<Extensions.ComponentDescriptor, Extensions.ComponentDescriptor> copies) {
+    var result = new HashMap<String, List<Extensions.ComponentDescriptor>>();
+    index.asMap().forEach((key, values) -> result.put(key, values.stream().map(component ->
+        copies.computeIfAbsent(component, c -> new Extensions.ComponentDescriptor(
+            c.id(), c.version(), c.description(), c.sourceArchive(), c.fileHash(), c.mavenCoordinates(),
+            c.usageRights(), List.copyOf(c.libraries()), List.copyOf(c.adapters()), List.copyOf(c.authorities()),
+            freeze(c.services()), freeze(c.annotations()), freeze(c.actors()), freeze(c.exporters()),
+            freeze(c.importers()), c.sourceServiceId(), c.timestamp(), c.importType(), c.updateStatus(),
+            c.latestVersionTimestamp()))).toList()));
+    return Map.copyOf(result);
+  }
+
+  /** Called by the serialized writer only, after a complete mutation. No external calls here. */
+  private void publishRegistryView() {
+    var copies = new IdentityHashMap<Extensions.ComponentDescriptor, Extensions.ComponentDescriptor>();
+    published = new RegistryView(descriptorSnapshot(components, copies), descriptorSnapshot(serviceFinder, copies),
+        descriptorSnapshot(actorFinder, copies), descriptorSnapshot(authorityFinder, copies),
+        descriptorSnapshot(exporterFinder, copies), snapshot(adapters), snapshot(authorities));
   }
 
   private final Map<String, Integer> uiToolkitUsers = new HashMap<>();
@@ -881,6 +939,7 @@ public class ComponentRegistry {
 
       components.put(descriptor.id(), descriptor);
     }
+    publishRegistryView();
   }
 
   private void saveConfiguration() {
@@ -925,6 +984,7 @@ public class ComponentRegistry {
     removeFunctionImplementations(component.importers());
     removeComponentAdapters(component);
     removeComponentAuthorities(component);
+    publishRegistryView();
 
     return ret;
   }
@@ -933,9 +993,10 @@ public class ComponentRegistry {
     for (var descriptors : actors.values()) {
       for (var actor : descriptors) {
         actor.verbs.forEach(this::removeFunctionImplementation);
+        removeFunctionImplementation(actor.adapter);
       }
     }
-    actors.clear();
+    // Retired descriptors can still be held by readers; do not mutate their published metadata.
   }
 
   private void removeDescriptorReferences(
@@ -956,9 +1017,14 @@ public class ComponentRegistry {
   }
 
   private void removeFunctionImplementation(Extensions.FunctionDescriptor descriptor) {
-    functionImplementations.remove(descriptor);
-    if (descriptor != null && descriptor.serviceInfo != null) {
-      serviceImplementations.remove(descriptor.serviceInfo.getName());
+    if (descriptor == null) return;
+    synchronized (functionImplementations) {
+      var previous = functionImplementations.remove(descriptor);
+      retiredFunctionDescriptors.put(descriptor, Boolean.TRUE);
+      if (previous != null && descriptor.serviceInfo != null) {
+        // Another registry may already have registered the same service name.
+        serviceImplementations.remove(descriptor.serviceInfo.getName(), previous);
+      }
     }
   }
 
@@ -1048,6 +1114,11 @@ public class ComponentRegistry {
   }
 
   private void removeAdapterImplementations(Adapter adapter) {
+    adapter.getBatchAdapters().forEach(this::removeFunctionImplementation);
+    if (adapter instanceof AdapterImpl implementation) {
+      removeFunctionImplementation(implementation.initializer);
+      removeFunctionImplementation(implementation.typeAttributor);
+    }
     removeFunctionImplementation(adapter.getEncoder());
     removeFunctionImplementation(adapter.getInspector());
     removeFunctionImplementation(adapter.getContextualizer());
@@ -1063,7 +1134,7 @@ public class ComponentRegistry {
     List<Extensions.ComponentDescriptor> ret = new ArrayList<>();
     Extensions.ComponentDescriptor target = null;
     var empty = true;
-    for (var component : exporterFinder.get(mediaType)) {
+    for (var component : lookup(published.exporters(), mediaType)) {
       if (geometry != null) {
         // TODO check geometry applies; continue otherwise
       }
@@ -1074,7 +1145,7 @@ public class ComponentRegistry {
 
   public List<Extensions.ComponentDescriptor> resolveServiceCall(String name, Version version) {
     List<Extensions.ComponentDescriptor> ret = new ArrayList<>();
-    Extensions.ComponentDescriptor target = selectBestComponent(serviceFinder.get(name), version);
+    Extensions.ComponentDescriptor target = selectBestComponent(lookup(published.services(), name), version);
     if (target != null) {
       /*
       TODO add all dependencies first
@@ -1090,7 +1161,7 @@ public class ComponentRegistry {
    * fresh update status through {@link #getComponents(Scope)}.
    */
   public Collection<Extensions.ComponentDescriptor> getInstalledComponents(Scope scope) {
-    return components.values().stream()
+    return published.components().values().stream().flatMap(Collection::stream)
         .filter(/* TODO permissions: same visibility as getComponents */ c -> true)
         .toList();
   }
@@ -1111,7 +1182,7 @@ public class ComponentRegistry {
           .toList();
     }
     try {
-      return components.values().stream()
+      return getInstalledComponents(scope).stream()
           .filter(/* TODO permissions */ c -> true)
           .map(component -> computeUpdateStatus(component, scope))
           .toList();
@@ -1795,10 +1866,15 @@ public class ComponentRegistry {
   }
 
   public ServiceImplementation implementation(Extensions.FunctionDescriptor descriptor) {
-    var implementation = functionImplementations.get(descriptor);
-    return implementation == null
-        ? serviceImplementations.get(descriptor.serviceInfo.getName())
-        : implementation;
+    if (descriptor == null) return null;
+    synchronized (functionImplementations) {
+      if (retiredFunctionDescriptors.getIfPresent(descriptor) != null)
+        throw new KlabIllegalStateException("Component function descriptor has been retired; resolve it again");
+      var implementation = functionImplementations.get(descriptor);
+      return implementation == null
+          ? serviceImplementations.get(descriptor.serviceInfo.getName())
+          : implementation;
+    }
   }
 
   /**
@@ -2002,7 +2078,7 @@ public class ComponentRegistry {
    * @return
    */
   public List<Extensions.FunctionDescriptor> getFunctionDescriptor(String urn, Version version) {
-    Extensions.ComponentDescriptor target = selectBestComponent(serviceFinder.get(urn), version);
+    Extensions.ComponentDescriptor target = selectBestComponent(lookup(published.services(), urn), version);
     if (target == null) {
       return null;
     }
@@ -2031,7 +2107,7 @@ public class ComponentRegistry {
    * reflective method/class information retained by this registry.
    */
   public List<Extensions.ActorDescriptor> getActorDescriptors(String urn, Version version) {
-    Extensions.ComponentDescriptor target = selectBestComponent(actorFinder.get(urn), version);
+    Extensions.ComponentDescriptor target = selectBestComponent(lookup(published.actors(), urn), version);
     if (target == null) {
       return List.of();
     }
@@ -2236,6 +2312,7 @@ public class ComponentRegistry {
     }
 
     this.components.put(componentName, componentDescriptor);
+    publishRegistryView();
 
     saveConfiguration();
 
@@ -2613,7 +2690,6 @@ public class ComponentRegistry {
     var ret = new Extensions.FunctionDescriptor();
     ServiceImplementation implementation = new ServiceImplementation();
     functionImplementations.put(ret, implementation);
-    serviceImplementations.put(serviceInfo.getName(), implementation);
 
     ret.serviceInfo = serviceInfo;
     implementation.implementation = clss;
@@ -2719,6 +2795,8 @@ public class ComponentRegistry {
       }
     }
 
+    // Transported descriptors may resolve by name; expose only a fully initialized implementation.
+    serviceImplementations.put(serviceInfo.getName(), implementation);
     return ret;
   }
 
@@ -2748,7 +2826,7 @@ public class ComponentRegistry {
     // TODO handle permissions
 
     Adapter ret = null;
-    for (var adapter : adapters.get(urn)) {
+    for (var adapter : lookup(published.adapters(), urn)) {
       if (version == null || adapter.getVersion().compatible(version)) {
         if (ret == null || adapter.getVersion().greater(ret.getVersion())) {
           ret = adapter;
@@ -2954,8 +3032,9 @@ public class ComponentRegistry {
   /** Exact worldview selection; never substitute a compatible version or another component. */
   public org.integratedmodelling.klab.api.services.Authority getAuthority(
       org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding binding, Scope scope) {
+    var view = published;
     var matching =
-        authorities.get(binding.provider().urn()).stream()
+        lookup(view.authorities(), binding.provider().urn()).stream()
             .filter(
                 candidate ->
                     binding.componentUrn().equals(candidate.componentUrn())
@@ -2963,7 +3042,7 @@ public class ComponentRegistry {
             .toList();
     if (matching.size() != 1) return null;
     var component =
-        components.get(binding.componentUrn()).stream()
+        lookup(view.components(), binding.componentUrn()).stream()
             .filter(candidate -> binding.componentVersion().equals(candidate.version()))
             .findFirst()
             .orElse(null);
@@ -2977,7 +3056,7 @@ public class ComponentRegistry {
   public org.integratedmodelling.klab.api.services.Authority getAuthority(
       String urn, Version version, Scope scope) {
     AuthorityRegistration selected = null;
-    for (var candidate : authorities.get(urn)) {
+    for (var candidate : lookup(published.authorities(), urn)) {
       if ((version == null || candidate.componentVersion().compatible(version))
           && (selected == null
               || candidate.componentVersion().greater(selected.componentVersion()))) {
@@ -2992,7 +3071,7 @@ public class ComponentRegistry {
    * discoverable as capabilities of Reasoners explicitly configured to host their component.
    */
   public Extensions.ComponentDescriptor resolveAuthorityComponent(String urn, Version version) {
-    var component = selectBestComponent(authorityFinder.get(urn), version);
+    var component = selectBestComponent(lookup(published.authorityComponents(), urn), version);
     if (component == null) {
       return null;
     }
@@ -3011,7 +3090,7 @@ public class ComponentRegistry {
    * @return
    */
   public Extensions.ComponentDescriptor getComponent(String urn, Version version) {
-    return selectBestComponent(components.get(urn), version);
+    return selectBestComponent(lookup(published.components(), urn), version);
   }
 
   public synchronized boolean unloadComponent(String urn, Version version) {
@@ -3734,7 +3813,7 @@ public class ComponentRegistry {
     return arg;
   }
 
-  public void loadExtensions(String... packageName) {
+  public synchronized void loadExtensions(String... packageName) {
 
     var libraries = new ArrayList<Extensions.LibraryDescriptor>();
     var adapters = new ArrayList<AdapterDescriptor>();
@@ -3814,6 +3893,7 @@ public class ComponentRegistry {
     }
 
     this.components.put(Extensions.LOCAL_SERVICE_COMPONENT, localComponentDescriptor);
+    publishRegistryView();
   }
 
   private record AuthorityRegistration(
@@ -4441,6 +4521,10 @@ public class ComponentRegistry {
       var serviceInfo = new ServiceInfoImpl();
       serviceInfo.setName(functionUrn);
       ret.serviceInfo = serviceInfo;
+      // Import/export helpers discard the descriptor and retain only the schema implementation.
+      // Only retained adapter descriptors have an identity that cleanup can later retire.
+      if (!(annotation instanceof Importer) && !(annotation instanceof Exporter))
+        functionImplementations.put(ret, impl);
       return Pair.of(ret, impl);
     }
   }
