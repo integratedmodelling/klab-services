@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "date": "2026-10-31",
+  "client_candidate": "cf7a0681bbe94ca81a9a7c218ce05475db52b5ae",
+  "mode": "Metadata only; initialize=False; zero sessions, contexts or observation Jobs created",
+  "raw_inventory_sha256": "11e07371384b2a54aa070f08ff82c4790f2b30e5a52d74afb78195ee6315033a",
+  "services": {
+    "runtime": {"id": "f57bb519-19c9-4dbe-a0f5-671b665096ae", "operational": true, "components": ["internal.local.service.component"], "export_schema_classes": ["component.jar"]},
+    "reasoner": {"id": "c929ee54-15e1-4e67-aa66-fc47b9e580e2", "operational": true, "export_schema_classes": []},
+    "resources": {"id": "d07d43fe-2a4a-46d0-a46b-c0bbe1b6e6d6", "operational": true, "semantic_search_capable": true, "export_schema_classes": ["geospatial.io", "project.zip", "component.jar"]},
+    "resolver": {"id": "ba9757a1-6fe1-4b5d-be3d-3fda7e279431", "operational": true, "export_schema_classes": ["component.jar"]}
+  },
+  "resource_inventory": {"unique_model_urns": 54, "scope": "Models visible to the authenticated principal; visibility is not global completeness or executability"},
+  "findings": [
+    "Runtime did not advertise a numerical export schema in this snapshot.",
+    "Resources geospatial.io advertisement is not Runtime observation-export acceptance.",
+    "The full milestone's required native numerical-export path remains unverified; this is not proof that computation is unavailable.",
+    "No source/binary deployment attestation or paper-specific scientific model readiness was established."
+  ]
+}

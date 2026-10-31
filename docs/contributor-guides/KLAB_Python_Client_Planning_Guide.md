@@ -35,6 +35,48 @@ Evidence: fetched remote branches and inspected source/docs; no services or test
 
 These findings are recorded in `notes/python-client/python-branch-summary.md` and `python-client/docs/exports-verification.md`. A merge into the Python branch does not establish production deployment or promotion into develop.
 
+### Functional findings and public progress — 31 October 2026
+
+PR #102 remains draft/unmerged. Full scientific acceptance is incomplete.
+
+- **Hosted compatibility: Passed.** Original readiness, raw/SDK `m`, raw/SDK
+  `mm` and tiny-region checks passed (4/4) at `e9581c01bf`. The later gate requires
+  these plus eight integration cases (12 cases), but the expanded adapter was
+  not live-run. Unit metadata is not numerical conversion proof; the original
+  pinned local Java/IMOD/ODO tuple was not rerun.
+- **New bounded runner: Failed.** Tested `cf7a0681bb`, authorized ceiling 20 Jobs/
+  200 cells, no retries. The first sequential case recorded three timed-out waits
+  and one context Job failure: seven Job handles, zero processor-validated cells.
+  Parallel/sibling-failure cases were not run. Later FINISHED statuses did not
+  pass the test. All retained owned contexts/sessions were released with true
+  responses. Failure/delay root causes are not established.
+- **Capability gap:** 54 model URNs visible to the authenticated principal;
+  Resources semantic search advertised. Runtime advertised only `component.jar`
+  export schemata. Native numerical-export acceptance remains unverified; this
+  does not establish that computation is unavailable.
+- **Paper-derived backlog:** researched Sicily wildfire risk (2023), South African
+  household resource dependence (2019), and ARIES benefit-flow methodology (2014,
+  a predecessor, not asserted k.LAB v1). The first two explicitly describe k.LAB.
+  No scientific paper was reproduced. Compatible trained models, fixed resources/
+  inputs and independent references are not established. Add the first small
+  opt-in regression when these exist; no placeholder/always-skipped scientific
+  cases or Python algorithm replacements were introduced.
+- **Public reporting:** the user chose the existing portfolio progress page
+  instead of email. New demos must distinguish hosted versus controlled synthetic
+  Java runs, actual failures, revision/date, cleanup and missing acceptance.
+  Evidence-replay notebooks/videos are presentation, not new live executions;
+  the seven original videos remain explicitly historical.
+
+Evidence and future test designs:
+[paper research and findings](../../python-client/docs/paper-based-functional-testing.md),
+[runner report](../../python-client/docs/results/hosted-runner-acceptance-20261031.json),
+[capability snapshot](../../python-client/docs/results/hosted-capability-summary-20261031.json),
+[current compatibility report](../../python-client/docs/develop-worldview-compatibility-issue.md).
+Use the [CLI contribution review](KLAB_CLI_Contribution_Review.md) evidence standards.
+No Java/component/ontology/worldview/algorithm source changed. Further runs need
+a compatible fixture and a separately agreed workload; do not automatically
+repeat the failed runner or launch throughput tests.
+
 ### Delivery principle
 
 Proceed on a documented assumption when existing server behavior supports it. Choose one useful default, put unsettled policy behind a small replacement boundary, and test that the alternative can be supplied without rewriting domain workflows. Do not wait for agreement on every method signature or preference.

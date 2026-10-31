@@ -50,6 +50,25 @@ have separate gates. The original exact local Java 671a818 / IMOD 608bef / ODO 0
 tuple has not been rerun. PR #102 remains draft and must not be merged without later
 user review.
 
+### Broader functional follow-up, also 31 October
+
+The later, separately authorized bounded runner suite did **not** pass: its first
+sequential case recorded three timed-out waits and one failed context Job. Seven
+Job handles were saved; zero numerical cells were verified by the processor. The
+remaining two cases did not run after `--maxfail=1`. All retained test-owned
+contexts/sessions were subsequently released with true responses. Later FINISHED
+statuses do not retroactively pass the test. See
+[runner findings](results/hosted-runner-acceptance-20261031.json) and
+[paper-based plan](paper-based-functional-testing.md).
+
+This does not invalidate the four earlier exact hosted compatibility passes;
+their success does not certify runner/scientific acceptance. Failure root causes
+remain unverified; no Java fix or Python workaround is asserted. The
+[capability snapshot](results/hosted-capability-summary-20261031.json) also records
+the missing advertised Runtime numerical export path. No automatic computation
+retry occurred. The original SHA-pinned report URL remains immutable; use the
+current PR file or a new commit permalink for these updates.
+
 ## Historical 17 October report (retained verbatim below)
 
 **Last verified: 17 October 2026.** Python base:
