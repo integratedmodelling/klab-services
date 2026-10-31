@@ -1,5 +1,9 @@
 # Contribution review: PR100 bounded experiment runner
 
+**Historical review.** See the [31October dependent review](bounded-experiments-dependent-20261031.md)
+for the actual updated PR98 base,1,474 offline passes and shipped-but-unrun F4
+functional suite. The recommendation remains to leave100 unmerged.
+
 ## Recommendation
 
 **Needs contract/coordination evidence. Do not approve or merge yet.**
