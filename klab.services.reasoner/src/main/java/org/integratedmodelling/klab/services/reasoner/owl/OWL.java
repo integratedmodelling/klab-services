@@ -99,6 +99,13 @@ public class OWL {
 
   AuthorityDependencySupport.Cache authorityDependencyCache() { return authorityDependencyCache; }
   Object structuralReasonerIdentity() { return reasoner; }
+  private final IdentityRequirementSupport.Cache identityRequirementCache = new IdentityRequirementSupport.Cache();
+  IdentityRequirementSupport.Cache identityRequirementCache() { return identityRequirementCache; }
+  private void structuralChanged() { authorityDependencyCache.changed(); identityRequirementCache.changed(); }
+  synchronized void prepareIdentityHierarchy() {
+    requireAvailableClosure();
+    if (reasoner != null && !reasoner.getPendingChanges().isEmpty()) flush();
+  }
 
   public MonotoneRefinementSupport monotoneRefinements() { return monotoneRefinements; }
 
@@ -179,7 +186,7 @@ public class OWL {
   private synchronized void registerOwlClass(OWLClass cls, String urn) {
     if (!owlClasses.containsValue(cls)) {
       owlClasses.put(urn, cls);
-      authorityDependencyCache.changed();
+      structuralChanged();
     }
   }
 
@@ -395,6 +402,7 @@ public class OWL {
 
   public synchronized void reset() {
     authorityDependencyCache.reset();
+    identityRequirementCache.reset();
     monotoneRefinements.reset(true);
     if (reasoner != null) {
       reasoner.dispose();
@@ -646,7 +654,7 @@ public class OWL {
     if (Objects.equals(previousUrn, urn)) {
       return;
     }
-    authorityDependencyCache.changed();
+    structuralChanged();
 
     if (conceptsById.get(previousUrn) == concept) {
       OWLClass owlClass = owlClasses.remove(previousUrn);
@@ -958,7 +966,7 @@ public class OWL {
   }
 
   public void releaseOntology(Ontology ontology) {
-    authorityDependencyCache.changed();
+    structuralChanged();
     var documentedSubjects = coreAliasDocumentation.documentedSubjects(ontology);
     this.namespaces.remove(ontology.getName());
     var onto = ontologies.remove(ontology.getName());
@@ -2992,7 +3000,7 @@ public class OWL {
     if (mergedReasonerOntology != null) {
       mergedReasonerOntology.addImport(o);
       if (reasoner != null && reasonerSynchronizing) {
-        authorityDependencyCache.changed();
+        structuralChanged();
         reasoner.flush();
       }
     }
@@ -3002,7 +3010,7 @@ public class OWL {
     flushRequests++;
     if (reasoner != null && !reasonerSynchronizing && declarationStagingDepth == 0) {
       actualFlushes++;
-      authorityDependencyCache.changed();
+      structuralChanged();
       reasoner.flush();
     }
   }
@@ -3138,7 +3146,7 @@ public class OWL {
 
   public synchronized void flush() {
     if (reasoner != null) {
-      authorityDependencyCache.changed();
+      structuralChanged();
       reasoner.flush();
     }
   }

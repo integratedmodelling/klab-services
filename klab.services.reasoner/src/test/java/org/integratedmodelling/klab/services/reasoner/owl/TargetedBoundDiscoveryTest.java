@@ -170,6 +170,17 @@ class TargetedBoundDiscoveryTest {
   }
 
   static List<?> legacyBounds(OWL owl, OWLSemanticClauseSupport support, Concept concept) throws Exception {
+    // This oracle varies the DL inheritance algorithm. Asserted-index equivalence to the former
+    // manager scan is checked independently in BoundAxiomIndexTest.
+    var slotField = OWLSemanticClauseSupport.class.getDeclaredField("assertedAxioms");
+    slotField.setAccessible(true);
+    var slot = (ThreadLocal<BoundAxiomIndex>) slotField.get(support);
+    var previous = slot.get();
+    slot.set(BoundAxiomIndex.build(owl.manager, axiom -> axiom.annotations().anyMatch(a ->
+        a.getProperty().getIRI().equals(OWLSemanticClauseSupport.UNIVERSAL_BEARER)
+            && a.getValue() instanceof OWLLiteral value && value.isBoolean() && value.parseBoolean()),
+        () -> {}, () -> {}));
+    try {
     var result = new ArrayList<>();
     var visit = OWLSemanticClauseSupport.class.getDeclaredMethod("visit", OWLClassExpression.class, boolean.class, Set.class, List.class, Runnable.class);
     visit.setAccessible(true);
@@ -187,6 +198,9 @@ class TargetedBoundDiscoveryTest {
     cache.setAccessible(true);
     ((Map) cache.get(support)).put(concept.getUrn(), complete);
     return complete;
+    } finally {
+      if (previous == null) slot.remove(); else slot.set(previous);
+    }
   }
 
   static List<String> actualBounds(OWLSemanticClauseSupport support, Concept concept) throws Exception {

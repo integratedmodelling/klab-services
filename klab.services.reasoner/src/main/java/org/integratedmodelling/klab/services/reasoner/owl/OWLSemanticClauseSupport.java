@@ -14,6 +14,8 @@ import org.semanticweb.owlapi.search.EntitySearcher;
 public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   private final OWL owl;
   private final AssertedHierarchyIndex hierarchy;
+  private final ThreadLocal<BoundPropertyMemo> propertyMemos = new ThreadLocal<>();
+  private final ThreadLocal<BoundAxiomIndex> assertedAxioms = new ThreadLocal<>();
   static final Runnable NO_CHECKPOINT = () -> {};
   public static final IRI UNIVERSAL_BEARER = IRI.create("urn:klab:validation:universal-bearer");
   /** Authored bearer bounds remain distinguishable from description-derived intersections. */
@@ -340,44 +342,58 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
       return cache.computeIfAbsent(
           concept.getUrn(),
           key -> {
-            var result = new ArrayList<Bound>();
-            var root = owl.getOWLClass(concept);
-            if (root == null) throw new IllegalArgumentException("No ontology class for " + key);
-            visit(root, false, new HashSet<>(), result,checkpoint);
-            // Prove inheritance only for owners that contribute bounds. Enumerating the full
-            // hierarchy reclassifies every speculative expression added by semantic search.
-            if (owl.hasReasoner()) {
-              owl.flushReasoner();
-              if (owl.isPrecomputed(InferenceType.CLASS_HIERARCHY)) {
-                // Reuse an existing classification; targeted owner discovery is only
-                // needed when a new speculative expression has invalidated it.
-                for (var parent : owl.getSuperClasses(root, false).getFlattened())
-                  if (!parent.isOWLThing() && !parent.equals(root))
-                    visit(parent, true, new HashSet<>(), result, checkpoint);
-                for (var equivalent : owl.getEquivalentClasses(root).getEntities())
-                  if (!equivalent.isOWLThing() && !equivalent.equals(root))
-                    visit(equivalent, true, new HashSet<>(), result, checkpoint);
-              } else {
-                // Match the reasoner's import scope: an unsatisfiable root also entails
-                // subclasshood of names in unrelated manager ontologies.
-                for (var owner : owl.reasonerClassSignature()) {
-                  checkpoint.run();
-                  if (owner.isOWLThing() || owner.equals(root)) continue;
-                  var inherited = new ArrayList<Bound>();
-                  visit(owner, true, new HashSet<>(), inherited, checkpoint);
-                  if (!inherited.isEmpty()
-                      && entails(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(root, owner)))
-                    result.addAll(inherited);
+            var previous = propertyMemos.get();
+            var previousAxioms = assertedAxioms.get();
+            try (var properties = new BoundPropertyMemo(owl)) {
+              propertyMemos.set(properties);
+              assertedAxioms.set(BoundAxiomIndex.build(
+                  owl.manager, this::marked, checkpoint, properties::verifyUnchanged));
+              var result = new ArrayList<Bound>();
+              var root = owl.getOWLClass(concept);
+              if (root == null) throw new IllegalArgumentException("No ontology class for " + key);
+              visit(root, false, new HashSet<>(), result,checkpoint);
+              // Prove inheritance only for owners that contribute bounds. Enumerating the full
+              // hierarchy reclassifies every speculative expression added by semantic search.
+              if (owl.hasReasoner()) {
+                owl.flushReasoner();
+                if (owl.isPrecomputed(InferenceType.CLASS_HIERARCHY)) {
+                  // Reuse an existing classification; targeted owner discovery is only
+                  // needed when a new speculative expression has invalidated it.
+                  for (var parent : owl.getSuperClasses(root, false).getFlattened())
+                    if (!parent.isOWLThing() && !parent.equals(root))
+                      visit(parent, true, new HashSet<>(), result, checkpoint);
+                  for (var equivalent : owl.getEquivalentClasses(root).getEntities())
+                    if (!equivalent.isOWLThing() && !equivalent.equals(root))
+                      visit(equivalent, true, new HashSet<>(), result, checkpoint);
+                } else {
+                  // Match the reasoner's import scope: an unsatisfiable root also entails
+                  // subclasshood of names in unrelated manager ontologies.
+                  for (var owner : owl.reasonerClassSignature()) {
+                    checkpoint.run();
+                    if (owner.isOWLThing() || owner.equals(root)) continue;
+                    var inherited = new ArrayList<Bound>();
+                    visit(owner, true, new HashSet<>(), inherited, checkpoint);
+                    if (!inherited.isEmpty()
+                        && entails(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(root, owner)))
+                      result.addAll(inherited);
+                  }
                 }
               }
+              var computed = result.stream()
+                  .distinct()
+                  .sorted(
+                      Comparator.comparing((Bound b) -> b.role().name())
+                          .thenComparing(Bound::inherited)
+                          .thenComparing(b -> b.filler().toString()))
+                  .toList();
+              properties.verifyUnchanged();
+              return computed;
+            } finally {
+              if (previousAxioms == null) assertedAxioms.remove();
+              else assertedAxioms.set(previousAxioms);
+              if (previous == null) propertyMemos.remove();
+              else propertyMemos.set(previous);
             }
-            return result.stream()
-                .distinct()
-                .sorted(
-                    Comparator.comparing((Bound b) -> b.role().name())
-                        .thenComparing(Bound::inherited)
-                        .thenComparing(b -> b.filler().toString()))
-                .toList();
           });
     }
   }
@@ -394,14 +410,10 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     if (expression instanceof OWLClass named) {
       if (!visited.add(named)) return;
       source = named.getIRI().toString();
-      for (var ontology : owl.manager.getOntologies()) {
-        for (var axiom : ontology.getSubClassAxiomsForSubClass(named)) {
-          var parent = axiom.getSuperClass();
-          visit(parent, inherited || parent instanceof OWLClass, visited, result, source, marked(axiom),checkpoint);
-        }
-        for (var axiom : ontology.getEquivalentClassesAxioms(named))
-          for (var equivalent : axiom.getClassExpressionsMinus(named))
-            visit(equivalent, inherited || equivalent instanceof OWLClass, visited, result, source, marked(axiom),checkpoint);
+      for (var edge : assertedAxioms.get().parents(named)) {
+        var parent = edge.parent();
+        visit(parent, inherited || parent instanceof OWLClass, visited, result,
+            source, edge.semantic(), checkpoint);
       }
     } else if (expression instanceof OWLObjectIntersectionOf intersection) {
       for (var operand : intersection.getOperands())
@@ -441,10 +453,90 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
 
   private void collectSuperProperties(
       OWLObjectPropertyExpression property, Set<OWLObjectPropertyExpression> properties,Runnable checkpoint) {
+    var memo = propertyMemos.get();
+    if (memo == null) collectSuperPropertiesUncached(owl.manager, property, properties, checkpoint);
+    else memo.collect(property, properties, checkpoint);
+  }
+
+  private static void collectSuperPropertiesUncached(OWLOntologyManager manager,
+      OWLObjectPropertyExpression property, Set<OWLObjectPropertyExpression> properties, Runnable checkpoint) {
     checkpoint.run();
     if (!properties.add(property)) return;
-    EntitySearcher.getSuperProperties(property, owl.manager.ontologies())
-        .forEach(parent -> collectSuperProperties(parent, properties,checkpoint));
+    EntitySearcher.getSuperProperties(property, manager.ontologies())
+        .forEach(parent -> collectSuperPropertiesUncached(manager, parent, properties, checkpoint));
+  }
+
+  /** Asserted-property scratch space for one bounds computation, never a cross-request proof. */
+  static final class BoundPropertyMemo implements AutoCloseable {
+    private static final int CAPACITY = 512, MAX_CLOSURE_SIZE = 4096;
+    private final OWL owl;
+    private final OWLOntologyManager manager;
+    private final Object reasoner;
+    private final OWLOntology root;
+    private final Set<OWLOntology> ontologies = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final java.util.concurrent.atomic.AtomicBoolean changed = new java.util.concurrent.atomic.AtomicBoolean();
+    private final OWLOntologyChangeListener listener = changes -> changed.set(true);
+    private final Map<OWLObjectPropertyExpression, Set<OWLObjectPropertyExpression>> values =
+        new LinkedHashMap<>(32, .75f, true) {
+          @Override protected boolean removeEldestEntry(
+              Map.Entry<OWLObjectPropertyExpression, Set<OWLObjectPropertyExpression>> entry) {
+            return size() > CAPACITY;
+          }
+        };
+    private boolean closed;
+
+    BoundPropertyMemo(OWL owl) {
+      this.owl = owl;
+      this.manager = owl.manager;
+      this.reasoner = owl.structuralReasonerIdentity();
+      this.root = reasoner instanceof org.semanticweb.owlapi.reasoner.OWLReasoner dl
+          ? dl.getRootOntology() : null;
+      manager.addOntologyChangeListener(listener);
+      boolean initialized = false;
+      try {
+        ontologies.addAll(manager.getOntologies());
+        initialized = true;
+      } finally {
+        if (!initialized) manager.removeOntologyChangeListener(listener);
+      }
+    }
+
+    void collect(OWLObjectPropertyExpression property, Set<OWLObjectPropertyExpression> result,
+        Runnable checkpoint) {
+      checkpoint.run();
+      if (closed) throw new IllegalStateException("Property memo is closed");
+      var closure = values.get(property);
+      if (closure == null) {
+        // Complete each key independently: a recursive partial closure can omit an ancestor
+        // already present in its caller's visited set, especially in cyclic property graphs.
+        var complete = new HashSet<OWLObjectPropertyExpression>();
+        collectSuperPropertiesUncached(manager, property, complete, checkpoint);
+        closure = Set.copyOf(complete);
+        if (closure.size() <= MAX_CLOSURE_SIZE) values.put(property, closure);
+      }
+      result.addAll(closure);
+    }
+
+    void verifyUnchanged() {
+      var current = manager.getOntologies();
+      var backend = owl.structuralReasonerIdentity();
+      var currentRoot = backend instanceof org.semanticweb.owlapi.reasoner.OWLReasoner dl
+          ? dl.getRootOntology() : null;
+      if (changed.get() || owl.manager != manager || backend != reasoner || currentRoot != root
+          || current.size() != ontologies.size()
+          || current.stream().anyMatch(ontology -> !ontologies.contains(ontology)))
+        throw new ConcurrentModificationException("Property graph changed during bounds computation");
+    }
+
+    @Override public void close() {
+      if (closed) return;
+      try { verifyUnchanged(); }
+      finally {
+        manager.removeOntologyChangeListener(listener);
+        values.clear();
+        closed = true;
+      }
+    }
   }
 
   private boolean matchesProperty(Set<OWLObjectPropertyExpression> properties, String name) {
