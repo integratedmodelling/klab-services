@@ -151,6 +151,7 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
     for (var link : scope.getDigitalTwin().getKnowledgeGraph().getLinks(
         quality, GraphModel.Relationship.Direction.INCOMING, scope, GraphModel.Relationship.AFFECTS)) {
       if (!ProcessPlan.INFLUENCE.equals(link.properties().get(ProcessPlan.EDGE_ROLE))
+          || !(link.target() instanceof Observation affected) || affected.getId() != quality.getId()
           || !(link.source() instanceof Observation process)
           || !process.getObservable().is(SemanticType.PROCESS)
           || process.getResolvedCoverage() <= 0
@@ -167,9 +168,14 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
   private static boolean samePerspective(Observation process, Observation quality,
       org.integratedmodelling.klab.api.scope.ContextScope scope) {
     var requested = quality.getObservable().getObserverSemantics();
-    if (requested == null && scope.getObserver() != null)
-      requested = scope.getObserver().getObservable().asConcept();
     var provided = process.getObservable().getObserverSemantics();
+    if (requested == null) {
+      var observer = scope.getObserver(); // Retain normal selected-Agent access validation.
+      // The accepted INFLUENCE writer already supplies change for this absolute quality.
+      // An actual observer selection does not add an "observed as" clause to either meaning.
+      if (provided == null) return true;
+      if (observer != null) requested = observer.getObservable().asConcept();
+    }
     if (requested == null) return provided == null;
     if (provided == null) return false; // normal resolver decides whether absolute fallback wins
     var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);

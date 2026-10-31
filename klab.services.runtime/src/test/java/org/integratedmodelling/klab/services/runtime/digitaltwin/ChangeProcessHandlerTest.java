@@ -156,5 +156,98 @@ class ChangeProcessHandlerTest {
     when(f.first.submit()).thenReturn(CompletableFuture.failedFuture(new IllegalStateException("unavailable")));
     assertEquals(Consequence.Outcome.FAILED, f.evaluate().outcome());
   }
+
+  private static Fixture runningWriterWithObserver() {
+    var f = new Fixture(); f.observations.remove(f.other); f.observations.add(f.process);
+    when(f.process.getObservable().getUrn()).thenReturn("earth:Erosion");
+    when(f.quality.getObservable().getUrn()).thenReturn("geography:Elevation");
+    var observer = observation(40, SemanticType.AGENT, PHYSICAL);
+    when(f.scope.getObserver()).thenReturn(observer);
+    when(f.graph.getLinks(f.quality, GraphModel.Relationship.Direction.INCOMING, f.scope,
+        GraphModel.Relationship.AFFECTS)).thenReturn(List.of(f.writer(f.quality)));
+    return f;
+  }
+
+  @Test void acceptedAbsoluteWriterSuppliesChangeAcrossSimulationCommitsWithAndWithoutObserver() throws Exception {
+    for (boolean selected : List.of(false, true)) {
+      var f = runningWriterWithObserver();
+      if (!selected) when(f.scope.getObserver()).thenReturn(null);
+      f.commit.getAddedObservations().clear(); f.commit.getModifiedAssets().add(f.quality.getId());
+      for (int step = 1; step <= 12; step++) {
+        f.commit.setId(1000 + step);
+        var cause = new Consequence.Cause(1, "context", f.commit.getId(), 2000 + step, selected ? 40 : 0,
+            "worldview", null, "simulation-" + step, Consequence.Kind.CHANGE_PROCESS);
+        assertEquals(Consequence.Outcome.NO_ACTION,
+            new ChangeProcessHandler().evaluate(cause, f.commit, f.scope).outcome());
+      }
+      verify(f.first, never()).submit();
+      verify(f.quality.getObservable(), never()).builder(f.scope);
+      verify(f.scope, never()).getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+      verify(f.scope, atLeastOnce()).getObserver();
+    }
+  }
+
+  @Test void observerSelectionDoesNotHideMissingWriterSupportOrAnUnrelatedQuality() throws Exception {
+    for (int variant = 0; variant < 4; variant++) {
+      var f = runningWriterWithObserver();
+      if (variant == 0) f.process.setGeometry(null);
+      if (variant == 1) f.process.setGeometry(Geometry.create("T0(1){ttype=PHYSICAL,tstart=1000,tend=2000}"));
+      if (variant == 2) f.process.setResolvedCoverage(0);
+      if (variant == 3) when(f.graph.getLinks(f.quality, GraphModel.Relationship.Direction.INCOMING,
+          f.scope, GraphModel.Relationship.AFFECTS)).thenReturn(List.of(f.writer(f.other)));
+      assertEquals(Consequence.Outcome.APPLIED, f.evaluate().outcome());
+      verify(f.first).submit();
+    }
+  }
+
+  @Test void absoluteWriterDoesNotSatisfyAnExplicitQualityPerspective() throws Exception {
+    var f = runningWriterWithObserver();
+    when(f.quality.getObservable().getObserverSemantics()).thenReturn(mock(Concept.class));
+    assertEquals(Consequence.Outcome.APPLIED, f.evaluate().outcome());
+    verify(f.first).submit();
+  }
+
+  @Test void explicitWriterPerspectiveRetainsCurrentSemanticCompatibilityChecks() throws Exception {
+    for (int variant = 0; variant < 3; variant++) {
+      var f = runningWriterWithObserver();
+      var provided = mock(Concept.class); var requested = mock(Concept.class);
+      when(f.process.getObservable().getObserverSemantics()).thenReturn(provided);
+      when(f.quality.getObservable().getObserverSemantics()).thenReturn(requested);
+      var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var receipt = mock(org.integratedmodelling.klab.api.services.Reasoner.Capabilities.class);
+      when(receipt.getKnowledgeRevision()).thenReturn(7L);
+      when(f.scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+      when(reasoner.capabilities(f.scope)).thenReturn(variant == 2 ? null : receipt);
+      when(reasoner.semanticDistance(provided, requested, null, 7)).thenReturn(variant == 0 ? 0 : -1);
+      assertEquals(variant == 0 ? Consequence.Outcome.NO_ACTION : Consequence.Outcome.APPLIED,
+          f.evaluate().outcome());
+      if (variant == 0) verify(f.first, never()).submit(); else verify(f.first).submit();
+    }
+  }
+
+  @Test void inaccessibleSelectedObserverStillFailsBeforeSuppressingResolution() {
+    var f = runningWriterWithObserver();
+    when(f.scope.getObserver()).thenThrow(new IllegalStateException("Selected observer inaccessible"));
+    assertThrows(IllegalStateException.class, f::evaluate);
+    verify(f.first, never()).submit();
+  }
+
+  @Test void explicitWriterForAbsoluteQualityMustMatchSelectedObserverMeaning() throws Exception {
+    for (int variant = 0; variant < 3; variant++) {
+      var f = runningWriterWithObserver();
+      var provided = mock(Concept.class); var selectedMeaning = mock(Concept.class);
+      when(f.process.getObservable().getObserverSemantics()).thenReturn(provided);
+      when(f.scope.getObserver().getObservable().asConcept()).thenReturn(selectedMeaning);
+      var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var receipt = mock(org.integratedmodelling.klab.api.services.Reasoner.Capabilities.class);
+      when(receipt.getKnowledgeRevision()).thenReturn(7L);
+      when(f.scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+      when(reasoner.capabilities(f.scope)).thenReturn(variant == 2 ? null : receipt);
+      when(reasoner.semanticDistance(provided, selectedMeaning, null, 7)).thenReturn(variant == 0 ? 0 : -1);
+      assertEquals(variant == 0 ? Consequence.Outcome.NO_ACTION : Consequence.Outcome.APPLIED,
+          f.evaluate().outcome());
+      if (variant == 0) verify(f.first, never()).submit(); else verify(f.first).submit();
+    }
+  }
 }
 
