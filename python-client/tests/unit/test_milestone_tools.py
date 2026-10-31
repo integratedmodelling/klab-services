@@ -275,6 +275,22 @@ def test_builder_acceptance_matches_candidate_and_each_original_artifact(tmp_pat
         validate_acceptance(tmp_path / "run/acceptance.json")
 
 
+def test_builder_requires_the_historical_compatibility_regressions(tmp_path, monkeypatch):
+    from build_milestone_deliverable import validate_acceptance
+    identity = dict(candidate_sha="a" * 40, dirty=False)
+    monkeypatch.setattr(tool, "source_identity", lambda: identity)
+    root = tmp_path / "run"
+    report = acceptance_evidence(root, identity)
+    for name in ("test_connected_reasoner_publishes_accepted_semantic_knowledge",
+                 "test_connected_resolved_observable_preserves_requested_unit[m]",
+                 "test_connected_resolved_observable_preserves_requested_unit[mm]",
+                 "test_connected_tiny_terrestrial_region_completes"):
+        report["tests"].pop(name, None)
+    (root / "acceptance.json").write_text(json.dumps(report))
+    with pytest.raises(AssertionError, match="Required acceptance"):
+        validate_acceptance(root / "acceptance.json")
+
+
 @pytest.mark.parametrize("fault", ["identity", "dirty", "tests", "passed", "artifacts", "unrecognized", "batch",
                                   "restore", "notebook", "unexecuted", "version"])
 def test_fail_closed_acceptance_gates(tmp_path, monkeypatch, fault):
@@ -375,6 +391,8 @@ def test_acceptance_adapter_builds_actual_case_status_manifest(tmp_path, monkeyp
     output, report = tmp_path / "output", tmp_path / "tests.xml"
     monkeypatch.setattr(tool, "source_identity", lambda: {"candidate_sha": "fixture"})
     def run():
+        assert "milestone-compatibility-units" in sys.argv
+        assert "milestone-compatibility-compute" in sys.argv
         output.mkdir()
         report.write_text("<testsuite>" + "".join(f'<testcase name="{name}"/>' for name in REQUIRED_TESTS) + "</testsuite>")
         tool.write_json(output / "test.json", {"test": True})

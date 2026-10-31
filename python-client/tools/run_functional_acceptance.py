@@ -6,6 +6,8 @@ import subprocess
 import sys
 
 SUITES = {
+    "milestone-compatibility-units": "tests/functional/test_connected_semantics.py",
+    "milestone-compatibility-compute": "tests/functional/test_connected_workflows.py::test_connected_tiny_terrestrial_region_completes",
     "milestone-discovery": "tests/functional/test_discover_compare_explain.py::test_discovery_and_model_inspection_use_existing_java_contracts",
     "milestone-evidence": "tests/functional/test_discover_compare_explain.py::test_recorded_execution_evidence_matches_computed_observation",
     "milestone-science": "tests/functional/test_discover_compare_explain.py::test_four_experiments_preserve_scientific_meaning",
@@ -41,10 +43,11 @@ SUITES = {
 }
 
 MILESTONE_SUITES = {name for name in SUITES if name.startswith("milestone-")}
+READ_ONLY_MILESTONE_SUITES = {"milestone-discovery", "milestone-compatibility-units"}
 CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection",
-                         "connected-bounded-experiments"} | (MILESTONE_SUITES - {"milestone-discovery"})
+                         "connected-bounded-experiments"} | (MILESTONE_SUITES - READ_ONLY_MILESTONE_SUITES)
 CONNECTED_SUITES = {"connected-semantic-readiness", "connected-unit-contract", "connected-onboarding",
-                    "connected-credential-renewal", "milestone-discovery"} | CONNECTED_WORK_SUITES
+                    "connected-credential-renewal"} | READ_ONLY_MILESTONE_SUITES | CONNECTED_WORK_SUITES
 
 
 def command(suites, report=None):

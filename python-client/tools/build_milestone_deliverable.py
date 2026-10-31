@@ -15,6 +15,10 @@ from workflows import milestone
 from workflows.scientific_checks import require
 
 REQUIRED_TESTS = {
+    "test_connected_reasoner_publishes_accepted_semantic_knowledge",
+    "test_connected_resolved_observable_preserves_requested_unit[m]",
+    "test_connected_resolved_observable_preserves_requested_unit[mm]",
+    "test_connected_tiny_terrestrial_region_completes",
     "test_discovery_and_model_inspection_use_existing_java_contracts",
     "test_recorded_execution_evidence_matches_computed_observation",
     "test_four_experiments_preserve_scientific_meaning",

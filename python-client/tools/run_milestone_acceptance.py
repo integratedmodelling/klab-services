@@ -17,7 +17,8 @@ def main():
     identity = milestone.source_identity()
     fixture = milestone.load_fixture(args.milestone_fixture)
     # Selecting individual suites remains possible through the existing runner.
-    sys.argv = [sys.argv[0], "--suite", "milestone-discovery", "--suite", "milestone-evidence",
+    sys.argv = [sys.argv[0], "--suite", "milestone-compatibility-units", "--suite", "milestone-compatibility-compute",
+        "--suite", "milestone-discovery", "--suite", "milestone-evidence",
         "--suite", "milestone-science", "--suite", "milestone-parallel", "--suite", "milestone-failure",
         "--suite", "milestone-restore", "--suite", "milestone-permissions", "--suite", "milestone-notebook", *sys.argv[1:]]
     status = run()
