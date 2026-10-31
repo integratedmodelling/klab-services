@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-29",
+  "tested_revision": "b45e0b8c28c588881a708d338d3ab982a02522a6",
+  "feature": "PR98 bounded recorded execution-evidence viewer",
+  "result": "Live positive-control diagram/meaning gate passed; nonowner permission gate remains blocked",
+  "source_changes": "No application-source change; used exact existing PR98 implementation from this worktree",
+  "authorization": "Attempt 4 of latest shared five-attempt allowance; 2 observation Jobs, one owned session/context, 20 cells. Attempts1-3 used by PR99; attempt5 remains unused",
+  "deployment": {
+    "service_distribution": "202610271533",
+    "graphdb_distribution": "202610161554 plus temporarily installed published spatial plugin",
+    "staging_commit": "9d20c1c236e5a033487ee47b34cd910c3ebbbe51",
+    "imod_commit": "1328000fff63a1951465b1f7b130c0af15264c95",
+    "component_archives": "Same digest-verified published generators/geospatial archives as PR99 acceptance; no source changes",
+    "exact_source_binary_attestation": "unverified",
+    "authentication": "Origin-bound native loopback local-owner key, never persisted; no hosted operation or Hub bootstrap rerun"
+  },
+  "workflow": {
+    "model": "staging.vxii.basic.elevation-quantifier",
+    "region": "earth:Terrestrial earth:Region",
+    "observable": "geography:Elevation in m",
+    "context_id": "6e962a5e1bcc46a291bb40a7b9832498.11lmipvlb4",
+    "region_job": 4,
+    "elevation_job": 5,
+    "observation_id": 110,
+    "focus_observation_id": 106,
+    "grid": {"shape": [5, 4], "crs": "EPSG:3857", "bbox": [200000, 200500, 6000000, 6000400]},
+    "cells_read": 20,
+    "finite_valid_cells": 20,
+    "units": "m",
+    "values_as_decimal_text": ["1748.6545672298942", "1969.5340516811802", "2319.532179776654", "1641.2859036074683", "1603.4538457295948", "1689.3255112106035", "1605.5055517553662", "1537.0825626839282", "691.98119653806", "1044.1859929283016", "1587.9350385173323", "1623.855044855954", "1313.811404250054", "913.0864199920144", "728.3611274705007", "3394.2382510342536", "2281.0002349333527", "2152.217729640919", "1800.0014433804395", "1696.008506659829"],
+    "scientific_meaning": "Actual computed synthetic terrain, not measured physical elevations or independent scientific accuracy validation"
+  },
+  "recorded_evidence": {
+    "api": "fetch_execution_evidence(observation), default bounds, current scoped Activity retrieval after actual computation",
+    "new_resolver_submission_during_evidence_fetch": false,
+    "activities": [
+      {"id": 113, "type": "SUBMISSION", "outcome": "SUCCESS", "charts": [], "missing": ["im:resolution-graph", "im:dataflow-graph"]},
+      {
+        "id": 114, "type": "RESOLUTION", "outcome": "SUCCESS",
+        "chart": {"phase": "resolution plan", "nodes": 4, "ports": 0, "links": 2, "schema": "klab.resolution-graph.v1", "scope": "accepted-resolution", "resolvedCoverage": 1.0},
+        "identities": ["model: staging.vxii.basic.elevation-quantifier", "observation: geography:Elevation in m", "strategy: dependent.direct"],
+        "missing": ["im:dataflow-graph"]
+      },
+      {
+        "id": 115, "type": "MEASURE", "outcome": "SUCCESS",
+        "chart": {"phase": "contextualization plan", "nodes": 3, "ports": 0, "links": 0},
+        "identities": ["elevation: geography:Elevation in m", "klab.generators.geospatial.terrain"],
+        "missing": ["im:resolution-graph"]
+      }
+    ],
+    "summary_and_html_generated": true,
+    "partial": true,
+    "durable_root_commit": "unknown: activity completion and resolution are not durable root commit proof",
+    "limits": "Real diagrams are plans attached to scoped recorded activities, not themselves execution/root-commit proof. The numerical field was independently read within the same owned result. Missing metadata stays unavailable; no exhaustive lineage or rejected-alternative explanation"
+  },
+  "permission_acceptance": {
+    "owner_positive_control": "Passed",
+    "valid_nonowner_denial": "Blocked: no distinct authorized identity/private-context fixture provided; no impersonation or other-user operation performed",
+    "not_substituted": "No invalid-token denial, expired-context 404, mocked failure or source inspection is claimed as live nonowner isolation proof"
+  },
+  "validation_environment": "Windows Python3.12.7, C:/Users/lumsd/AppData/Local/Temp/opencode/pr99-inspector-312/Scripts/python.exe; source explicitly selected from pr98-execution-evidence/python-client/src, not editable PR99 install",
+  "validation": [
+    {"command": "python C:/Users/lumsd/AppData/Local/Temp/opencode/pr98-local-pilot.py --attempt 4", "status": "Passed", "exit": 0, "result": "Numerical field, associated native persisted diagrams, text/HTML and honest partial labels verified; cleanup confirmed"},
+    {"command": "python -m pytest tests/unit/test_execution_evidence.py -q --cov=klab_client.evidence --cov-branch --cov-report=term-missing", "status": "Passed", "exit": 0, "result": "55 tests,100% lines/branches"},
+    {"command": "python -m pytest tests/unit tests/integration -q --cov=klab_client --cov-branch --cov-report=json --tb=short", "status": "Passed", "exit": 0, "result": "1254 passed; one existing Rasterio warning"},
+    {"command": "python tools/check_feature_coverage.py coverage.json --base 1e20fc478f645b5fb5c2fd00ffd223a040ca2878 --new-module src/klab_client/semantics.py --new-module src/klab_client/_inspection.py --new-module src/klab_client/inspection.py --new-module src/klab_client/evidence.py", "status": "Passed", "exit": 0, "result": "Existing new-module100% line/branch and changed-code gates passed; initial mistyped base SHA failed before correction and was not counted as a pass"},
+    {"command": "python -m ruff check src tests examples tools --select E9,F63,F7,F82", "status": "Passed", "exit": 0},
+    {"command": "python C:/Users/lumsd/AppData/Local/Temp/opencode/pr98-local-environment.py restore", "status": "Passed", "exit": 0},
+    {"command": "git diff --check", "status": "Passed", "exit": 0}
+  ],
+  "restoration": {
+    "starting_config_catalog_paths_byte_exact": 16,
+    "runtime_resources_plugin_inventories_match_start": true,
+    "temporary_spatial_plugin_and_procedure_removed": true,
+    "configured_projects": 0,
+    "remaining_runtime_contexts": 0,
+    "owned_context_release": "confirmed",
+    "owned_session_release": "confirmed",
+    "restored_distribution": "202610161554",
+    "pids": {"graphdb": 8624, "reasoner": 45804, "resources": 20132, "resolver": 36296, "runtime": 32484},
+    "native_pid_metadata_matches_five_listeners": true,
+    "visible_service_console_windows": 0,
+    "temporary_backend_listeners_remaining": false,
+    "launches": "Headless CREATE_NO_WINDOW; unrelated terminals preserved",
+    "retained": "Fresh backups including GraphDB data, actual values/native activity snapshots/charts/HTML, sanitized service logs, inactive downloaded plugins, service index/cache data; no entire-database rollback"
+  },
+  "raw_evidence_directory": "C:/Users/lumsd/AppData/Local/Temp/opencode/pr98-local-acceptance-20261029",
+  "recommendation": "Needs contract/coordination evidence solely for remaining live permission/fixture and integration gates; do not continue claiming the numerical/recorded-diagram positive control is unverified"
+}
