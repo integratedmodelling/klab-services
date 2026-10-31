@@ -78,6 +78,19 @@ fixture preparation and cleanup are separate from its assertions.
    users' service bindings before any renewed fixture computation. The caught
    backend cause was not independently reproduced, so this remains a source-traced
    diagnosis rather than a claim that fixing one prerequisite guarantees success.
+7. **Metadata-only follow-up, still blocked.** Source inspection also found that
+   this Java build composes loopback port/path onto `ServiceStartupOptions`' host.
+   Supplying a full URL in the TEST certificate therefore advertised a duplicated
+   service origin. Correcting the external certificates to host-only values let
+   the fully certificate-backed Reasoner become operational with the public
+   providers, without changing Java or scientific source. Ordinary signed service
+   advertisements were then accepted for both test users and the internal service
+   principal. Resources still advertised `semanticSearchCapable=false` throughout
+   the bounded readiness check. No observations were submitted and no acceptance
+   assertion was relaxed. This is still not a compatible scientific fixture.
+   Final restoration reverified16 byte-exact files, all original inventories,
+   zero contexts/projects, five listener/PID matches, no visible service consoles,
+   stopped issuer and all four original scientific services operational.
 
 ## Validation actually performed
 
