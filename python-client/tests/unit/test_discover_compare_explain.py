@@ -48,6 +48,22 @@ def test_reference_sequences_are_detached_and_exact():
     assert value.values == (Decimal(0), None, Decimal(2), Decimal(3))
 
 
+def test_unrepresentable_affine_value_is_a_configuration_error():
+    with pytest.raises(ConfigurationError, match="transform"):
+        oracle(transform=(10**400, 0, 200000, 0, -100, 6000400))
+
+
+@pytest.mark.parametrize("timeout", [10**400, True, "120"], ids=["overflow", "boolean", "text"])
+def test_unrepresentable_workflow_timeout_rejects_before_factory_or_directory(tmp_path, timeout):
+    def forbidden():
+        pytest.fail("No connection is permitted for invalid input")
+    destination = tmp_path / "not-created"
+    with pytest.raises(ConfigurationError, match="timeout"):
+        flow.run_matrix(forbidden, matrix(), destination, model_urn="model",
+                        expected_node_ids=("node",), timeout=timeout)
+    assert not destination.exists()
+
+
 def dataset():
     memory = MemoryFile()
     with memory.open(driver="GTiff", width=2, height=2, count=1, dtype="float64",
@@ -114,7 +130,10 @@ def test_four_matrix_cells_require_real_definition_and_resolution_differences():
 def evidence():
     return NS(provenance=NS(observation=NS(observation_id=42), links=[NS(target=NS(id=42),
         source=NS(id=9, kind="activity", outcome="SUCCESS", activity_type="MEASURE"), relationship="MEASURED")]),
-        activities=[NS(id=9, charts=[NS(nodes=[NS(id="fixture-computation")])])],
+        activities=[NS(id=9, outcome="SUCCESS", charts=[NS(phase="contextualization plan", nodes=[NS(id="fixture-computation")])]),
+                    NS(id=8, outcome="SUCCESS", charts=[NS(phase="resolution plan", nodes=[
+                        NS(id="model", raw={"metadata": {"kind": "model", "urn": "existing.model"}}),
+                        NS(id="reference", raw={"metadata": {"kind": "observation"}})])])],
         partial=True, durable_root_commit="unknown")
 
 
@@ -129,6 +148,16 @@ def test_recorded_evidence_requires_success_effect_and_expected_nodes():
     failed.provenance.links[0].source.outcome = "FAILED"
     with pytest.raises(AssertionError):
         flow.validate_recorded_evidence(NS(id=42), failed, ("fixture-computation",))
+
+
+def test_recorded_resolution_must_include_the_inspected_model():
+    flow.validate_recorded_evidence(NS(id=42), evidence(), ("fixture-computation",), model_urn="existing.model")
+    with pytest.raises(AssertionError, match="Inspected model"):
+        flow.validate_recorded_evidence(NS(id=42), evidence(), ("fixture-computation",), model_urn="unrelated.model")
+    failed_resolution = evidence()
+    failed_resolution.activities[1].outcome = "FAILED"
+    with pytest.raises(AssertionError, match="Inspected model"):
+        flow.validate_recorded_evidence(NS(id=42), failed_resolution, ("fixture-computation",), model_urn="existing.model")
 
 
 def test_workflow_preflight_guards_do_not_call_factory(tmp_path):
@@ -237,7 +266,7 @@ def test_restore_uses_original_handles_without_submission(tmp_path, monkeypatch)
         def client(self):
             return self
     monkeypatch.setattr(flow, "Connection", Connection)
-    monkeypatch.setattr(flow, "inspect_result", lambda *args: {"raster": "verified"})
+    monkeypatch.setattr(flow, "inspect_result", lambda *args, **kwargs: {"raster": "verified"})
     batch = retained_batch()
     result = flow.restore_matrix(Connection, matrix(), batch.dumps(), tmp_path / "restored",
                                  expected_node_ids=("node",))

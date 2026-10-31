@@ -100,7 +100,7 @@ def test_partial_failure_retains_successes_and_recoverable_handles(inputs, facto
     directory.mkdir()
     def process(experiment, observation):
         return inspect_result(observation, by_name[experiment.name].oracle, directory / (experiment.name + ".tif"),
-                              fixture.expected_node_ids)
+                              fixture.expected_node_ids, model_urn=fixture.model_urn)
     with ExperimentRunner(failing_factory, workers=1, processor=process) as runner:
         batch = runner.run([c.experiment for c in fixture.cases])
     milestone.write_json(directory / "batch.json", json.loads(batch.dumps()))

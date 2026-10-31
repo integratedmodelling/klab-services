@@ -151,6 +151,7 @@ def build(acceptance_path, throughput_path, output):
             destination = output / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
+            checked_file(output, name, value)
         milestone.write_json(output / "acceptance.json", acceptance)
         milestone.write_json(output / "throughput.json", throughput)
         milestone.write_json(output / "delivery.json", {"version": 1, "status": "ready-for-review",

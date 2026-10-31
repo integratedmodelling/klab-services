@@ -69,7 +69,12 @@ def write_json(path, value):
 def _request(value):
     if not isinstance(value, dict) or not {"definition"} <= value.keys() <= {"definition", "geometry", "scenarios", "namespace", "project"}:
         raise ConfigurationError("Use an explicit definition and supported typed request fields")
-    geometry = RectangularGeometry(**value["geometry"]) if value.get("geometry") else None
+    geometry = None
+    if "geometry" in value:
+        fields = {"west", "east", "south", "north", "columns", "rows"}
+        if not isinstance(value["geometry"], dict) or set(value["geometry"]) != fields:
+            raise ConfigurationError("Fixture geometry requires all six rectangular geometry fields")
+        geometry = RectangularGeometry(**value["geometry"])
     return ObservationRequest(value["definition"], geometry=geometry,
         options=ObservationOptions(scenarios=value.get("scenarios", ()), namespace=value.get("namespace"), project=value.get("project")))
 
@@ -97,8 +102,10 @@ def load_fixture(path):
     required = {"java_checkout_sha", "jdk", "component_sha256", "worldview_revision", "service_builds"}
     if not isinstance(deployment, dict) or set(deployment) != required:
         raise ConfigurationError("Record the unchanged Java/JDK/component/worldview/service identities")
-    if (not re.fullmatch(r"[0-9a-f]{40}", deployment["java_checkout_sha"])
-            or not HEX.fullmatch(deployment["component_sha256"])
+    java_sha = deployment["java_checkout_sha"]
+    component_sha = deployment["component_sha256"]
+    if (not isinstance(java_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", java_sha)
+            or not isinstance(component_sha, str) or not HEX.fullmatch(component_sha)
             or any(not isinstance(deployment[k], str) or not deployment[k].strip() for k in ("jdk", "worldview_revision"))
             or not isinstance(deployment["service_builds"], dict)
             or set(deployment["service_builds"]) != {"reasoner", "resources", "resolver", "runtime"}
@@ -217,7 +224,8 @@ def restore_in_process(fixture_path, batch_path, directory, profile_path, certif
     batch, _ = read_json(batch_path, budget=1024 * 1024)
     factory = factory_from_paths(profile_path, certificate_path)
     started = time.perf_counter()
-    records = restore_matrix(factory, fixture.cases, json.dumps(batch), directory, expected_node_ids=fixture.expected_node_ids)
+    records = restore_matrix(factory, fixture.cases, json.dumps(batch), directory,
+                             expected_node_ids=fixture.expected_node_ids, model_urn=fixture.model_urn)
     report = {"version": 1, "run_id": uuid4().hex, "pid": os.getpid(), "identity": source_identity(),
               "fixture_sha256": fixture.sha256, "results": records, "elapsed_seconds": time.perf_counter() - started}
     write_json(Path(directory) / "restoration.json", report)

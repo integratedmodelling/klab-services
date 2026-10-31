@@ -41,6 +41,22 @@ def test_fixture_loads_typed_requests_without_network(tmp_path):
     assert len(fixture.sha256) == 64
 
 
+@pytest.mark.parametrize("geometry", [False, 0, [], "", {}])
+def test_explicit_malformed_geometry_is_not_silently_omitted(tmp_path, geometry):
+    data = fixture_data()
+    data["cases"][0]["context_request"]["geometry"] = geometry
+    with pytest.raises(ConfigurationError, match="geometry"):
+        write_fixture(tmp_path / "fixture.json", data)
+
+
+@pytest.mark.parametrize("field", ["java_checkout_sha", "component_sha256"])
+def test_nontext_deployment_digest_has_a_configuration_error(tmp_path, field):
+    data = fixture_data()
+    data["deployment"][field] = 123
+    with pytest.raises(ConfigurationError, match="provenance"):
+        write_fixture(tmp_path / "fixture.json", data)
+
+
 @pytest.mark.parametrize("field,value", [("version", 2), ("version", True), ("cases", []), ("deployment", {}),
     ("reference", {}), ("authority", {}), ("model_urn", ""), ("expected_node_ids", []), ("expected_node_ids", [None])])
 def test_fixture_missing_prerequisites_fail(tmp_path, field, value):
@@ -313,6 +329,15 @@ def test_builder_requires_verified_deployment_and_all_throughput_configurations(
     tool.write_json(tmp_path / "throughput.json", throughput)
     assert build(root / "acceptance.json", tmp_path / "throughput.json", tmp_path / "package") == 0
     assert tool.read_json(tmp_path / "package/delivery.json")[0]["status"] == "ready-for-review"
+    import build_milestone_deliverable as builder
+    original_copy = builder.shutil.copyfile
+    def corrupt_copy(source, destination):
+        original_copy(source, destination)
+        Path(destination).write_bytes(b"changed during copying")
+    with monkeypatch.context() as copying:
+        copying.setattr(builder.shutil, "copyfile", corrupt_copy)
+        assert build(root / "acceptance.json", tmp_path / "throughput.json", tmp_path / "corrupt-package") == 1
+    assert tool.read_json(tmp_path / "corrupt-package/delivery.json")[0]["status"] == "blocked"
     report, _ = tool.read_json(root / "acceptance.json")
     report["deployment_verified"] = False
     (root / "acceptance.json").write_text(json.dumps(report))

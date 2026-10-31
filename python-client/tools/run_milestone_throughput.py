@@ -45,17 +45,17 @@ class PythonMonitor:
 
 def summarize(records, elapsed):
     outcomes = [o for record in records for o in record.get("batch", {}).get("outcomes", [])]
+    processed = [result for record in records for result in record.get("processed", {}).values() if result]
     complete = [o for o in outcomes if o["state"] == "succeeded"]
     failed_batches = sum(not record.get("matrix_verified", False) for record in records)
     durations = sorted(o["elapsed"] for o in complete)
-    cells = sum(p["raster"]["verified_cells"] for record in records for p in record.get("processed", {}).values() if p)
-    exported = sum(p["exported_bytes"] for record in records for p in record.get("processed", {}).values() if p)
+    cells = sum(result["raster"]["verified_cells"] for result in processed)
+    exported = sum(result["exported_bytes"] for result in processed)
     success = len(records) == 5 and len(outcomes) == len(complete) == 20 and failed_batches == 0 and elapsed > 0
-    stage_names = {name for record in records for p in record.get("processed", {}).values() if p for name in p.get("stages_seconds", {})}
+    stage_names = {name for result in processed for name in result.get("stages_seconds", {})}
     stages = {}
     for name in sorted(stage_names):
-        values = sorted(p["stages_seconds"][name] for record in records for p in record.get("processed", {}).values()
-                        if p and name in p.get("stages_seconds", {}))
+        values = sorted(result["stages_seconds"][name] for result in processed if name in result.get("stages_seconds", {}))
         stages[name] = {"median": statistics.median(values), "p95": values[math.ceil(.95 * len(values)) - 1], "samples": len(values)}
     return {"passed": success, "attempted": len(records) * 4, "completed": len(complete),
         "failed_or_unknown": len(records) * 4 - len(complete), "failed_batches": failed_batches,
@@ -95,6 +95,24 @@ def measure(factory, fixture, output, *, workers, operation=milestone.run_case_b
     return result
 
 
+def _workload_identity(case):
+    """Scientific choices that must stay fixed when only grid resolution changes."""
+    oracle = case.oracle
+    x_size, _, west, _, y_size, north = oracle.transform
+    return {
+        "name": case.experiment.name,
+        "variation": case.experiment.variation,
+        "resolution": case.resolution,
+        "definition": case.experiment.request.observable,
+        "options": case.experiment.request.options,
+        "context": case.experiment.context_request.observable,
+        "units": oracle.units,
+        "crs": oracle.crs,
+        "dtype": oracle.dtype,
+        "extent": (west, north + y_size * oracle.height, west + x_size * oracle.width, north),
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--acceptance", required=True, type=Path)
@@ -115,15 +133,8 @@ def main():
             "Larger workload must use the same verified deployment and model")
     require(all(b.oracle.width * b.oracle.height > a.oracle.width * a.oracle.height for a, b in zip(small.cases, large.cases)),
             "Larger workload must actually contain more independently specified cells in every case")
-    def extent(oracle):
-        a, _, west, _, e, north = oracle.transform
-        return (west, north + e * oracle.height, west + a * oracle.width, north)
-    require(all((a.experiment.name, a.experiment.variation, a.resolution, a.experiment.request.observable,
-                 a.experiment.request.options, a.experiment.context_request.observable, a.oracle.units, a.oracle.crs, a.oracle.dtype,
-                 extent(a.oracle)) ==
-                (b.experiment.name, b.experiment.variation, b.resolution, b.experiment.request.observable,
-                 b.experiment.request.options, b.experiment.context_request.observable, b.oracle.units, b.oracle.crs, b.oracle.dtype,
-                 extent(b.oracle)) for a, b in zip(small.cases, large.cases)),
+    require(all(_workload_identity(small_case) == _workload_identity(large_case)
+                for small_case, large_case in zip(small.cases, large.cases)),
             "Larger-grid comparison must preserve named scientific variations, units, extent and precision")
     identity = milestone.source_identity()
     args.output.mkdir(exist_ok=False)

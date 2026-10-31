@@ -17,6 +17,15 @@ from klab_client.errors import ConfigurationError
 from .scientific_checks import require
 
 
+def _finite_number(value):
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 def _decimal(value):
     # Exact oracle strings are preferred; floats and booleans are not references.
     try:
@@ -55,7 +64,7 @@ class RasterOracle:
                 or self.width * self.height > 1_000_000):
             raise ConfigurationError("Supply bounded dimensions and explicit reference identity/metadata")
         if (not isinstance(self.transform, (tuple, list)) or len(self.transform) != 6
-                or any(type(v) not in (float, int) or not math.isfinite(v) for v in self.transform)
+                or any(not _finite_number(v) for v in self.transform)
                 or self.transform[0] <= 0 or self.transform[4] >= 0 or self.transform[1] != 0 or self.transform[3] != 0):
             raise ConfigurationError("Reference requires a finite north-up affine transform")
         if not isinstance(self.values, (tuple, list)) or len(self.values) != self.width * self.height:
@@ -79,6 +88,8 @@ def validate_raster(dataset, oracle):
     require(dataset.units == (oracle.units,), "Export measurement units differ")
     require(dataset.dtypes == (oracle.dtype,), "Export precision differs")
     values, masks = dataset.read(1), dataset.read_masks(1)
+    absolute = _decimal(oracle.absolute_tolerance)
+    relative = _decimal(oracle.relative_tolerance)
     maximum, total, valid, missing, zeros = Decimal(0), Decimal(0), 0, 0, 0
     for index, expected in enumerate(oracle.values):
         row, column = divmod(index, oracle.width)
@@ -89,7 +100,7 @@ def validate_raster(dataset, oracle):
         actual = Decimal(str(values[row, column]))
         require(actual.is_finite(), "Export contains nonfinite valid data")
         error = abs(actual - expected)
-        tolerance = max(_decimal(oracle.absolute_tolerance), abs(expected) * _decimal(oracle.relative_tolerance))
+        tolerance = max(absolute, abs(expected) * relative)
         require(error <= tolerance, "Export value differs from the independent oracle")
         maximum = max(maximum, error)
         total += actual
@@ -143,7 +154,7 @@ def validate_matrix(cases):
     return cases
 
 
-def validate_recorded_evidence(observation, evidence, expected_node_ids):
+def validate_recorded_evidence(observation, evidence, expected_node_ids, *, model_urn=None):
     """Require actual success links and fixture-specified recorded plan node identities.
 
     Recorded plan structure is not itself execution or durable-root-commit proof.
@@ -159,11 +170,24 @@ def validate_recorded_evidence(observation, evidence, expected_node_ids):
              for chart in activity.charts for node in chart.nodes}
     require(bool(expected_node_ids) and set(expected_node_ids) <= nodes,
             "Successful recorded activity lacks the expected fixture computation nodes")
+    if model_urn is not None:
+        selected_models = set()
+        for activity in evidence.activities:
+            if activity.outcome != "SUCCESS":
+                continue
+            for chart in activity.charts:
+                if chart.phase != "resolution plan":
+                    continue
+                for node in chart.nodes:
+                    metadata = node.raw.get("metadata", {})
+                    if metadata.get("kind") == "model":
+                        selected_models.add(metadata.get("urn"))
+        require(model_urn in selected_models, "Inspected model is absent from the successful recorded resolution")
     return {"successful_activity_ids": sorted(successes), "matched_node_ids": sorted(set(expected_node_ids)),
             "partial": evidence.partial, "durable_root_commit": evidence.durable_root_commit}
 
 
-def inspect_result(observation, oracle, path, expected_node_ids):
+def inspect_result(observation, oracle, path, expected_node_ids, *, model_urn=None):
     """Native export, full oracle check, analysis and recorded evidence for one result."""
     import rasterio
     stages = {}
@@ -177,6 +201,8 @@ def inspect_result(observation, oracle, path, expected_node_ids):
     stages["raster_validation"] = time.perf_counter() - started
     started = time.perf_counter()
     analysis = open_raster(artifact)
+    absolute = _decimal(oracle.absolute_tolerance)
+    relative = _decimal(oracle.relative_tolerance)
     require(str(analysis.dataset.value.dtype) == oracle.dtype, "Analysis changed precision")
     for index, expected in enumerate(oracle.values):
         row, column = divmod(index, oracle.width)
@@ -184,15 +210,16 @@ def inspect_result(observation, oracle, path, expected_node_ids):
                 "Analysis changed missingness")
         if expected is not None:
             actual = Decimal(str(analysis.dataset.value.values[row, column]))
-            require(actual.is_finite() and abs(actual - expected) <= max(_decimal(oracle.absolute_tolerance),
-                    abs(expected) * _decimal(oracle.relative_tolerance)), "Analysis changed values")
+            tolerance = max(absolute, abs(expected) * relative)
+            require(actual.is_finite() and abs(actual - expected) <= tolerance, "Analysis changed values")
         x = oracle.transform[2] + (column + .5) * oracle.transform[0]
         y = oracle.transform[5] + (row + .5) * oracle.transform[4]
         require(float(analysis.dataset.x.values[column]) == x and float(analysis.dataset.y.values[row]) == y,
                 "Analysis changed cell centers")
     stages["analysis_validation"] = time.perf_counter() - started
     started = time.perf_counter()
-    evidence = validate_recorded_evidence(observation, fetch_execution_evidence(observation), expected_node_ids)
+    evidence = validate_recorded_evidence(observation, fetch_execution_evidence(observation), expected_node_ids,
+                                          model_urn=model_urn)
     stages["recorded_evidence"] = time.perf_counter() - started
     return {"raster": raster, "evidence": evidence, "artifact_sha256": artifact.sha256,
             "exported_bytes": artifact.export.bytes_written, "stages_seconds": stages}
@@ -211,7 +238,7 @@ def run_matrix(connection_factory, cases, directory, *, model_urn, expected_node
         raise ConfigurationError("Supply independently specified recorded computation node identities")
     expected_node_ids = tuple(expected_node_ids)
     if (not callable(connection_factory) or type(workers) is not int or workers not in (1, 4)
-            or type(timeout) not in (float, int) or not math.isfinite(timeout) or timeout <= 0
+            or not _finite_number(timeout) or timeout <= 0
             or not isinstance(model_urn, str) or not model_urn.strip() or len(model_urn) > 512):
         raise ConfigurationError("Use an owned factory, model URN, workers 1 or 4 and finite positive timeout")
     if any(c.experiment.context_policy.release != "retain" for c in cases):
@@ -230,7 +257,8 @@ def run_matrix(connection_factory, cases, directory, *, model_urn, expected_node
 
     def process(experiment, observation):
         case = by_name[experiment.name]
-        return inspect_result(observation, case.oracle, directory / (experiment.name + ".tif"), expected_node_ids)
+        return inspect_result(observation, case.oracle, directory / (experiment.name + ".tif"), expected_node_ids,
+                              model_urn=model_urn)
 
     with ExperimentRunner(connection_factory, workers=workers, processor=process) as runner:
         batch = runner.run([case.experiment for case in cases], timeout=timeout)
@@ -243,7 +271,7 @@ def run_matrix(connection_factory, cases, directory, *, model_urn, expected_node
             "matrix_verified": all(outcome.state == "succeeded" for outcome in batch.outcomes)}
 
 
-def restore_matrix(connection_factory, cases, encoded_batch, directory, *, expected_node_ids):
+def restore_matrix(connection_factory, cases, encoded_batch, directory, *, expected_node_ids, model_urn=None):
     """Restore original observation handles and revalidate, never resubmit.
 
     A separate process must invoke this helper to establish the fresh-process gate.
@@ -263,6 +291,7 @@ def restore_matrix(connection_factory, cases, encoded_batch, directory, *, expec
             client = owner.client if isinstance(owner, Connection) else owner
             observation = client.restore_handle(outcome.result_handle)
             require(observation.to_handle() == outcome.result_handle, "Restoration returned replacement work")
-            record = inspect_result(observation, case.oracle, directory / (outcome.name + ".tif"), expected_node_ids)
+            record = inspect_result(observation, case.oracle, directory / (outcome.name + ".tif"), expected_node_ids,
+                                    model_urn=model_urn)
             records.append({"name": outcome.name, "observation_handle": outcome.result_handle.to_dict(), **record})
     return tuple(records)
