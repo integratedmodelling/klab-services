@@ -138,8 +138,16 @@ public class RuntimeService extends BaseService
   }
 
   public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
+    this(scope, options, RuntimeConfigurationLoader.loadForStartup(
+        BaseService.getFileInConfigurationDirectory(options, "runtime.yaml"),
+        options.isClean(), System.getProperty(RuntimeConfigurationLoader.REQUIRED_GRAPH_DATABASE_URL)));
+  }
+
+  private RuntimeService(
+      ServiceScope scope, ServiceStartupOptions options, RuntimeConfiguration configuration) {
     super(scope, Type.RUNTIME, options);
-    readConfiguration(options);
+    this.configuration = configuration;
+    super.setRuntimeLockfile(configuration.getServiceId());
     setComponentRegistry();
     ServiceConfiguration.INSTANCE.setMainService(this);
     initializeMessaging();
@@ -154,32 +162,13 @@ public class RuntimeService extends BaseService
     }
   }
 
-  private void readConfiguration(ServiceStartupOptions options) {
-    File config = BaseService.getFileInConfigurationDirectory(options, "runtime.yaml");
-    if (config.exists() && config.length() > 0 && !options.isClean()) {
-      try {
-        this.configuration = Utils.YAML.load(config, RuntimeConfiguration.class);
-      } catch (Exception e) {
-        Logging.INSTANCE.warn("Configuration file is being reset after corruption was detected");
-        Utils.Files.deleteQuietly(config);
-        this.configuration = new RuntimeConfiguration();
-        this.configuration.setServiceId(UUID.randomUUID().toString());
-        Utils.YAML.save(this.configuration, config);
-      }
-    } else {
-      // make an empty config
-      this.configuration = new RuntimeConfiguration();
-      this.configuration.setServiceId(UUID.randomUUID().toString());
-      saveConfiguration();
-    }
-    // for the local client to know when the service is off
-    super.setRuntimeLockfile(this.configuration.getServiceId());
-  }
-
   private boolean createMainKnowledgeGraph() {
     // TODO choose the DB from configuration - client or embedded server
     //    var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
-    this.knowledgeGraph = new KnowledgeGraphNeo4JClient(this.configuration.getGraphDatabaseUrl());
+    this.knowledgeGraph = RuntimeConfigurationLoader.openGraph(
+        this.configuration,
+        System.getProperty(RuntimeConfigurationLoader.REQUIRED_GRAPH_DATABASE_URL),
+        KnowledgeGraphNeo4JClient::new);
     return this.knowledgeGraph.isOnline();
   }
 
