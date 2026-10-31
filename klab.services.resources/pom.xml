@@ -59,30 +59,32 @@
             <version>${klab.version}</version>
         </dependency>
 
+        <!-- Matched language API baseline for this adapter. Floating snapshots added
+             new semantic types; upgrading those requires an explicit adapter change. -->
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.observable</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0.0-20261016.113257-72</version>
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.worldview</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0.0-20261016.113257-60</version>
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.kim</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0.0-20261016.113257-58</version>
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.observation</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0.0-20261016.113257-61</version>
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>org.integratedmodelling.languages.kactors</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0.0-20261016.113257-57</version>
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
