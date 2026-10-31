@@ -17,8 +17,13 @@ final class NamespaceModelIndex {
       List<String> disjoint,Map<String,Integer> criteria) {}
   private record Fingerprint(long timestamp, String sourceHash, long knowledgeRevision, String serviceId, String semanticFingerprint, String semanticSessionId, boolean eligible,Configuration configuration) {}
   private record Attempt(Fingerprint fingerprint, boolean retryable, long attemptedAt,
-      List<Notification> diagnostics, String admission) {}
-  private final Map<String, Attempt> attempts = new java.util.concurrent.ConcurrentHashMap<>();
+      List<Notification> diagnostics, String admission) {
+    Attempt { diagnostics=List.copyOf(diagnostics); }
+  }
+  // Only reconciliation writers use attempts. Transport reads one immutable publication and
+  // must never acquire the writer monitor: semantic admission can call back into Resources.
+  private final Map<String, Attempt> attempts = new HashMap<>();
+  private volatile Map<String, Attempt> publication = Map.of();
   private final long retryDelay;
 
   NamespaceModelIndex() { this(Duration.ofSeconds(5).toNanos()); }
@@ -62,6 +67,12 @@ final class NamespaceModelIndex {
     var sources=List.copyOf(namespaceSource.get());
     var affected=new HashSet<>(attempts.keySet());sources.forEach(source->affected.add(source.getUrn()));
     try {
+      // Withdraw claims before any semantic/callback or catalog work. Keep retry state and
+      // diagnostics, but serve authoring sources without a claim until final publication.
+      var pending=new HashMap<String,Attempt>();
+      attempts.forEach((urn,attempt)->pending.put(urn,new Attempt(attempt.fingerprint(),
+          attempt.retryable(),attempt.attemptedAt(),attempt.diagnostics(),null)));
+      publication=Map.copyOf(pending);
       var semantic=ModelValidationGate.currentSemanticSnapshot(scope);
       if(semantic==null || semantic.revision()!=knowledgeRevision)throw new ReconciliationChanged();
       var present=new HashSet<String>();
@@ -121,10 +132,12 @@ final class NamespaceModelIndex {
       }
       requireEpoch(semantic,scope);
       attempts.clear();attempts.putAll(staged);
+      publication=Map.copyOf(staged);
     }catch(RuntimeException changed) {
       // A namespace manifest may have been replaced just as the generation changed. Withdrawal
       // failure must propagate: the provider's readiness gate must not continue model queries.
       attempts.clear();
+      publication=Map.of();
       RuntimeException withdrawalFailure=null;
       for(String urn:affected)try { catalog.withholdNamespace(urn,scope); }
       catch(RuntimeException failure) {
@@ -135,26 +148,26 @@ final class NamespaceModelIndex {
     }
   }
   /** Never attach a publication claim to the workspace AST or accept an authored claim. */
-  synchronized KimNamespace forTransport(KimNamespace namespace) {
+  KimNamespace forTransport(KimNamespace namespace) {
     var copy=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
         org.integratedmodelling.klab.utilities.Utils.Json.asString(namespace),KimNamespace.class);
     copy.getMetadata().remove(org.integratedmodelling.klab.api.services.ResourcesService.NAMESPACE_ADMISSION_METADATA);
-    var attempt=attempts.get(namespace.getUrn());
-    if (attempt!=null && attempt.admission()!=null && !namespace.isInactive()
-        && !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(namespace.getNotifications())
-        && !Boolean.TRUE.equals(namespace.getMetadata().get(
+    var attempt=publication.get(copy.getUrn());
+    if (attempt!=null && attempt.admission()!=null && !copy.isInactive()
+        && !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(copy.getNotifications())
+        && !Boolean.TRUE.equals(copy.getMetadata().get(
             org.integratedmodelling.klab.api.services.ResourcesService.VALIDATION_DEFERRED_METADATA))
-        && attempt.fingerprint().timestamp()==namespace.getLastUpdateTimestamp()
-        && Objects.equals(attempt.fingerprint().configuration(),configuration(namespace))
-        && Objects.equals(attempt.fingerprint().sourceHash(),SemanticValidationRequest.sourceHash(namespace.getSourceCode())))
+        && attempt.fingerprint().timestamp()==copy.getLastUpdateTimestamp()
+        && Objects.equals(attempt.fingerprint().configuration(),configuration(copy))
+        && Objects.equals(attempt.fingerprint().sourceHash(),SemanticValidationRequest.sourceHash(copy.getSourceCode())))
       copy.getMetadata().put(org.integratedmodelling.klab.api.services.ResourcesService.NAMESPACE_ADMISSION_METADATA,
           attempt.admission());
     return copy;
   }
 
-  synchronized Map<String, List<Notification>> diagnostics() {
+  Map<String, List<Notification>> diagnostics() {
     var result = new LinkedHashMap<String, List<Notification>>();
-    attempts.forEach((urn, attempt) -> {
+    publication.forEach((urn, attempt) -> {
       if (!attempt.diagnostics().isEmpty()) result.put(urn, attempt.diagnostics());
     });
     return Collections.unmodifiableMap(result);
