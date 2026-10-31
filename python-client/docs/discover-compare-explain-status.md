@@ -5,7 +5,19 @@ delivery. F1 semantic discovery, F2 inspection, F3 execution evidence and F4 bou
 experiments have Python implementations. The F1–F4 contribution reviews distinguish
 offline evidence from missing live acceptance.
 
-## Verified checkpoint
+## Current checkpoint:31October
+
+- F1 #101 and F2 #99 are merged into milestone integration. F3 #98 and F4 #100
+  remain draft with live gates;102 now includes their latest reviewed fixes/suites.
+- PR102's simplicity/contributor pass fixes geometry/numeric/hash validation,
+  selected-model association and copied-artifact verification.1,594 offline tests,
+  existing coverage/lint, wheel/sdist and isolated core-only wheel smoke pass.
+- Sixteen relevant functional cases collect;full live acceptance has not passed.
+  No new computations or service changes were made in this102 pass.
+- The user reserves102 for later review: **do not merge**.
+- See [current review](reviews/discover-compare-explain/delivery-readability-post-integration-20261031.md).
+
+## Earlier checkpoint (historical)
 
 Each feature now has its own draft PR: F1 #101, F2 #99, F3 #98, F4 #100,
 and delivery #102. See `discover-compare-explain-pr-stack.md` for branch/base

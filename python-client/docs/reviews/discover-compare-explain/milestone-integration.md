@@ -1,5 +1,10 @@
 # Contribution review: combined discover / compare / explain milestone
 
+**Historical checkpoint.** See the [31October integrated simplicity/contributor
+review](delivery-readability-post-integration-20261031.md) for the current base,
+corrected code,1,594 offline passes and remaining live gates. The user explicitly
+prohibits merging102 even if its checks pass.
+
 ## Recommendation
 
 **Needs contract/coordination evidence.** All four feature implementations and the
