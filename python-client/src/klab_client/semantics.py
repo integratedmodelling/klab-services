@@ -127,6 +127,13 @@ class SemanticExplorer:
         return self.client.transport.request("reasoner", method, route, scope=scope_token(self.scope),
             service_id=self.client.runtime_service_id, max_response_bytes=self.max_response_bytes, **kwargs)
 
+    def _identity(self, payload, key):
+        value = required_text(payload, key)
+        # These identities may be reused in requests: never silently rewrite them.
+        if self.client.transport.redact(value) != value:
+            raise ProtocolError("Semantic identity contains configured credential material")
+        return value
+
     def _state(self):
         payload = object_payload(self._request("GET", "/public/capabilities"), "Reasoner capabilities")
         check_notifications(payload, self.client.transport.redact)
@@ -137,9 +144,9 @@ class SemanticExplorer:
             raise ProtocolError("Invalid knowledge revision")
         return KnowledgeState(
             service_url=_normalize_service_url(self.client.transport.endpoint("reasoner").url),
-            service_id=required_text(payload, "serviceId"),
+            service_id=self._identity(payload, "serviceId"),
             scope=scope_token(self.scope),
-            worldview_id=required_text(payload, "worldviewId"),
+            worldview_id=self._identity(payload, "worldviewId"),
             revision=revision if revision else None,
         )
 
@@ -164,7 +171,7 @@ class SemanticExplorer:
         label = _optional_text(semantics, "displayLabel")
         return SemanticResult(
             kind=kind,
-            urn=required_text(payload, "urn"),
+            urn=self._identity(payload, "urn"),
             label=self.client.transport.redact(label) if label else label,
             knowledge=state,
             raw=raw,
@@ -213,7 +220,7 @@ class SemanticExplorer:
         matches, seen = [], set()
         for row in rows:
             row = object_payload(row, "authority candidate")
-            code, name = required_text(row, "id"), required_text(row, "authorityName")
+            code, name = self._identity(row, "id"), self._identity(row, "authorityName")
             if name != authority or code in seen or row.get("locator") != _locator(authority, code):
                 raise ProtocolError("Authority candidate has a duplicate or mismatching canonical identity")
             seen.add(code)

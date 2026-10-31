@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "candidate_source_commit": "617e36ed8fca91c5ab9baae4bb654e99e3b9b042",
+  "base_commit": "58d2a0ca4ce8ff85235272c4221b014f1a6c3cae",
+  "installed_source_sha256": "084f6fa8d10798155fb8ed2a7ef86fb3f40e45e0a8190d9befbf4caf39bbdf79",
+  "distribution_build": "202610301844",
+  "pytest_exit": 0,
+  "functional_tests_passed": 1,
+  "functional_seconds": 17.26,
+  "request_counts": {"sessions": 1, "contexts": 1, "observation_jobs": 2},
+  "context_id": "ec7cf93931af41d2a86024b34fbc804d.1ye7mevqqk",
+  "job_ids": [4, 5],
+  "observation_id": 166,
+  "accepted_model_urns": ["staging.vxii.basic.elevation-quantifier"],
+  "resolution_activity_ids": [170],
+  "numerical_activity_ids": [171],
+  "cells_read": 20,
+  "finite_cells": 20,
+  "units": "m",
+  "verified_grid": {"shape": [5, 4], "crs": "EPSG:3857", "bbox": [200000, 200500, 6000000, 6000400]},
+  "cleanup": {"context": "confirmed", "session": "confirmed"},
+  "restoration": {
+    "configuration_files_byte_exact": 16,
+    "original_component_and_plugin_inventories_match": true,
+    "remaining_contexts": 0,
+    "remaining_projects": 0,
+    "service_pid_listener_matches": 5,
+    "visible_service_consoles": 0
+  },
+  "limits": {
+    "bootstrap": "native loopback owner; hosted Hub bootstrap not retested",
+    "scientific_accuracy": "not assessed; synthetic terrain model-association pilot",
+    "provenance": "partial; no exhaustive lineage or durable-root-commit proof",
+    "authorization": "separately renewed single test consumed; no further computation authorized"
+  }
+}

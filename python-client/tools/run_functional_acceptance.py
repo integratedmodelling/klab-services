@@ -14,6 +14,7 @@ SUITES = {
     "milestone-restore": "tests/functional/test_discover_compare_explain.py::test_fresh_process_restores_original_experiment_results",
     "milestone-permissions": "tests/functional/test_discover_compare_explain.py::test_private_experiment_evidence_and_exports_enforce_access",
     "milestone-notebook": "tests/functional/test_discover_compare_explain.py::test_milestone_notebook_executes_and_matches_evidence",
+    "connected-bounded-experiments": "tests/functional/test_bounded_experiments.py",
     "connected-resource-inspection": "tests/functional/test_resource_inspection.py::test_existing_executable_model_links_inspection_to_recorded_computation",
     "connected-semantic-readiness": "tests/functional/test_connected_semantics.py::test_connected_reasoner_publishes_accepted_semantic_knowledge",
     "connected-unit-contract": "tests/functional/test_connected_semantics.py::test_connected_resolved_observable_preserves_requested_unit",
@@ -40,7 +41,8 @@ SUITES = {
 }
 
 MILESTONE_SUITES = {name for name in SUITES if name.startswith("milestone-")}
-CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection"} | (MILESTONE_SUITES - {"milestone-discovery"})
+CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection",
+                         "connected-bounded-experiments"} | (MILESTONE_SUITES - {"milestone-discovery"})
 CONNECTED_SUITES = {"connected-semantic-readiness", "connected-unit-contract", "connected-onboarding",
                     "connected-credential-renewal", "milestone-discovery"} | CONNECTED_WORK_SUITES
 
@@ -65,7 +67,7 @@ def main():
     parser.add_argument("--output-dir", type=Path, help="Fresh external milestone output directory")
     parser.add_argument("--other-certificate", type=Path, help="Second real identity for milestone permission checks")
     parser.add_argument("--allow-owned-work", action="store_true",
-                        help="Authorize connected suites to initialize peers and create/release their own session/context and tiny Job")
+                         help="Authorize the selected suite's documented owned work; runner suite uses up to 20 Jobs/200 cells")
     args = parser.parse_args()
     milestone = any(name in MILESTONE_SUITES for name in args.suite)
     if milestone:

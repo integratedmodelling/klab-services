@@ -107,6 +107,15 @@ Missing state fails with a configuration error rather than skipping or claiming
 functional acceptance. Functional-test guardrail unit tests use mocks and are
 reported only as unit tests, never as live Java/permission evidence.
 
-**Current status:** the earlier live owner positive control passed, but this new
-two-user shipped suite has not run against an authorized retained fixture. It
-must pass before PR98 is approved/merged under the user's testing requirement.
+**Current status (31October):** the shipped two-user suite ran on the integrated
+candidate: owner/private passed, but the nonowner/shared observation query returned
+Runtime HTTP500. The private-denial assertion was not reached. Both finite20-cell
+fixtures were released and the original services/configuration restored. This is
+not a permission acceptance pass; PR98 remains unmerged.
+
+Both users also need their own authorized Java service advertisements and
+identity-compatible semantic peers. A signed credential and trusted endpoint URLs
+alone do not initialize the server-side user's service map. The suite deliberately
+does not borrow the owner's service authority. See the
+[current review](reviews/discover-compare-explain/execution-evidence-dependent-20261031.md)
+and [actual results](results/execution-evidence-two-user-20261031.json).

@@ -108,6 +108,42 @@ def test_partial_resource_resolution_does_not_make_up_provider_or_version():
     assert not result.services and result.results[0].service_id is result.results[0].version is None
 
 
+def test_asset_identity_and_origin_views_do_not_expose_echoed_credentials():
+    model = {**MODEL, "urn": "fixture.resource-secret"}
+    client, inspector, _, caps = setup(payload=lambda _: model)
+    caps["serviceId"] = "resources-resource-secret"
+    with client:
+        result = inspector.retrieve(model["urn"])
+    assert result.urn == "fixture.[REDACTED]"
+    assert result.origin.service_id == "resources-[REDACTED]"
+    for display in (repr(result), result.summary(), result._repr_html_()):
+        assert "resource-secret" not in display
+
+
+def test_resolution_identity_views_do_not_expose_echoed_credentials():
+    payload = {"results": [{"resourceUrn": "local:resource-secret"}]}
+    client, inspector, _, caps = setup(payload=lambda _: payload)
+    caps["serviceId"] = "resources-resource-secret"
+    with client:
+        result = inspector.resolve("requested-resource-secret")
+    assert result.requested_urn == "requested-[REDACTED]"
+    assert result.results[0].urn == "local:[REDACTED]"
+    assert result.origin.service_id == "resources-[REDACTED]"
+    for display in (repr(result), result.summary(), result._repr_html_()):
+        assert "resource-secret" not in display
+
+
+def test_redacted_origin_display_does_not_hide_actual_service_identity_changes():
+    caps = None
+    def payload(_):
+        caps["serviceId"] = "resources-runtime-secret"
+        return MODEL
+    client, inspector, _, caps = setup(payload=payload)
+    caps["serviceId"] = "resources-resource-secret"
+    with client, pytest.raises(ProtocolError, match="identity changed"):
+        inspector.retrieve("fixture.elevation")
+
+
 @pytest.mark.parametrize("method", ["list", "retrieve", "resolve"])
 @pytest.mark.parametrize("status,error", [(400, InvalidRequestError), (401, AuthenticationError),
     (403, AuthorizationError), (404, MissingAssetError), (422, UnsupportedOperationError), (503, ServerError)])

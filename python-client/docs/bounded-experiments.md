@@ -43,3 +43,37 @@ Offline tests exercise real thread overlap and an actual loopback HTTP server wi
 fresh-process restoration. These are not unchanged-Java scientific acceptance or
 scientific throughput measurements. See the contribution review and milestone
 status for the remaining live gates.
+
+## Shipped Java functional acceptance
+
+`connected-bounded-experiments` runs four independent20-cell experiments first
+sequentially and then with two workers. A third case verifies that an intentional
+Python processor failure after a real computed result does not discard its
+successful sibling. Worker overlap is guarded with a bounded barrier; requests and
+responses are real. Each worker has a fresh connection/session/context and a
+before-transmission limit of two observation Jobs. Each result must have the known
+5x4 EPSG:3857 grid,20 finite values in m and the selected model in recorded evidence.
+
+**Budget for the full suite: at most20 observation Jobs,10 sessions/contexts and
+200 cells.** This needs separate explicit computation authorization; none has been
+granted for PR100. It does not reuse PR98's consumed allowance.
+
+With an authorized compatible profile/certificate and an explicitly chosen existing
+elevation model, set `KLAB_EXPERIMENT_MODEL_URN` to its exact URN, then run:
+
+```sh
+python tools/run_functional_acceptance.py --suite connected-bounded-experiments --profile /approved/profile.json --certificate /private/engine.cert --allow-owned-work --report /approved/results/runner.xml
+```
+
+The profile must support ordinary-user service initialization and the selected
+model/namespace. The suite fails rather than skipping if consent or fixture settings
+are absent. Model metadata is read before computation. It writes local inspection
+manifests with result/Job IDs and checks confirmed release of known-terminal owned
+work. Unknown/ambiguous work is not automatically replayed or forcibly released;
+retain the failed test's manifest for explicit operator follow-up.
+
+**Current status:** delivered and collected, not live-executed. Offline guard tests
+are not Java acceptance. The processor-failure case does not establish remote Job
+failure, remote cancellation, restart recovery, numerical accuracy, throughput or
+the broader two-variation/two-resolution scientific matrix. Those claims remain
+unverified; PR100 and its PR98 dependency remain unmerged.

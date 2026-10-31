@@ -95,6 +95,8 @@ def decode_flowchart(payload, *, max_nodes=256, max_links=512, max_response_byte
 
     def identity(row):
         value = required_text(row, "id")
+        if redact(value) != value:
+            raise ProtocolError("FlowChart identity contains configured credential material")
         if value in ids:
             raise ProtocolError("FlowChart identities must be graph-wide unique")
         ids.add(value)
@@ -175,7 +177,7 @@ def decode_dataflow(payload, *, max_actuators=256, max_response_bytes=1024 * 102
     if type(empty) is not bool or outcome != "FAILED" and empty or outcome == "NO_MODEL" and computation:
         raise ProtocolError("Dataflow outcome/empty/computation fields contradict the Java contract")
     coverage = payload.get("resolvedCoverage")
-    if coverage is not None and (type(coverage) not in (int, float) or not math.isfinite(coverage) or not 0 <= coverage <= 1):
+    if coverage is not None and (type(coverage) not in (int, float) or not 0 <= coverage <= 1 or not math.isfinite(coverage)):
         raise ProtocolError("Resolved coverage must be a finite fraction or unavailable")
     actuators = []
 

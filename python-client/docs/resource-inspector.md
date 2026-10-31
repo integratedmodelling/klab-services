@@ -26,6 +26,10 @@ unit, version, executable status or complete dependency closure is never inferre
 `origin` records the selected Resources endpoint, its observed identity and scope;
 an observed identity change during inspection fails explicitly.
 
+Inspection views redact configured credentials even if a service echoes them in
+an asset or service identifier. Identity and drift checks still compare the
+original values before producing the redacted view.
+
 `list` is a whole-service list, bounded locally by bytes and items, not server
 pagination or a global semantic model search. Duplicate URNs remain separate
 entries. No namespace/ranking constraint forces a listed model, and inspector

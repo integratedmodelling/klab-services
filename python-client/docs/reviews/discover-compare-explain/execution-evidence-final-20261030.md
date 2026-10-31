@@ -1,5 +1,10 @@
 # Contribution review: PR98 recorded execution evidence
 
+**Historical review.** The integrated31October review, reproduced Python fixes,
+actual two-user failure and verified restoration are recorded in
+[the dependent review](execution-evidence-dependent-20261031.md). That current
+review still recommends leaving98 unmerged; the nonowner/shared gate has not passed.
+
 ## Recommendation
 
 **Needs contract/coordination evidence. Do not approve or merge yet.**
