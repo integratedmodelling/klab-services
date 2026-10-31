@@ -213,7 +213,8 @@ def run(args):
               "environment": "Owned local TEST authority and actual services; synthetic known-answer models",
               "editing": "Notebook loading trimmed; code execution and deliberate reading pauses retained",
               "notebooks": []}
-    sources = sorted((root / "examples/notebooks").glob("[0-9][0-9]_*.py"))
+    # Notebook 08 uses the milestone fixture/permission gates, not this TEST state.
+    sources = sorted((root / "examples/notebooks").glob("0[1-7]_*.py"))
     private = collect_secrets(state)
     server = None
     try:

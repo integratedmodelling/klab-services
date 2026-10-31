@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "date": "2026-10-31",
+  "tested_candidate": "e9581c01bfef3c072c52134d57e6a3e66657ed84",
+  "tested_source_sha256": "e1c1edc3e0804a30e0aac67776cbae4eb8f641046d2bf1ae6bfbcb7e47d753a0",
+  "installed_sdk_sha256": "4f4172f267f656425a15094c5695624ea7b8f9528c44683d5cda4b1b11f33045",
+  "environment": {"python": "3.12.7", "platform": "Windows11"},
+  "authentication": "Existing ENGINE certificate through its matching HTTPS Hub; no owner key, disabled TLS, or synthetic response",
+  "services": {
+    "reasoner": {"id": "c929ee54-15e1-4e67-aa66-fc47b9e580e2", "url": "https://services.integratedmodelling.org/reasoner"},
+    "resources": {"id": "d07d43fe-2a4a-46d0-a46b-c0bbe1b6e6d6", "url": "https://services.integratedmodelling.org/resources/main"},
+    "resolver": {"id": "ba9757a1-6fe1-4b5d-be3d-3fda7e279431", "url": "https://services.integratedmodelling.org/resolver"},
+    "runtime": {"id": "f57bb519-19c9-4dbe-a0f5-671b665096ae", "url": "https://services.integratedmodelling.org/runtime/main"}
+  },
+  "test_runs": [
+    {"suites": ["connected-semantic-readiness", "connected-unit-contract"], "pytest_exit": 0, "passed": 3, "failed": 0, "skipped": 0, "seconds": 9.16},
+    {"suites": ["connected-tiny-compute"], "pytest_exit": 0, "passed": 1, "failed": 0, "skipped": 0, "seconds": 103.36}
+  ],
+  "semantic_readiness": {"accepted_generation": 1, "logical_status": "VALID", "diagnostic_count": 6},
+  "observable_responses": {
+    "m": {"request": "geography:Elevation in m", "wire_urn": "geography:Elevation in m", "wire_unit_definition": "m", "sdk_unit_present": true, "canonical_redacted_response_sha256": "b08093e2f00dea173cfae2622651087d708d57df2abfba6d46cfd97dd42c42a8"},
+    "mm": {"request": "geography:Elevation in mm", "wire_urn": "geography:Elevation in mm", "wire_unit_definition": "mm", "sdk_unit_present": true, "canonical_redacted_response_sha256": "93f0e6e973c8e12702c2b0eec93191c4cc41c36455a11a5f2471275ca9134942"}
+  },
+  "owned_work": {
+    "sessions": 1, "contexts": 1, "submitted_observation_jobs": 1,
+    "requested_grid_cells": 20, "job_id": 1, "returned_observation_id": 14,
+    "session_and_context_release": "confirmed by passing fixture teardown",
+    "automatic_retry": false, "service_restart_or_admin": false
+  },
+  "evidence_sha256": {
+    "semantics-units.xml": "220a3b7a3f65827211db6c810933de59b0def4d60e3b9d5569a5d69cd7afb48c",
+    "tiny-region.xml": "92a7d664ce6da51a19072a88ffa1a0f7f43ed1d8a4ab1c27de771ebe39e5abb1",
+    "semantics-units.log": "97bf2dcc2d63b4bff9df9feee1b17592e75fee23dc34b17cbc180154cadf9482",
+    "tiny-region.log": "fcce963cce67ce4546812b7687745eae87e7ab0c3652d9ca95056c53ae82da0a"
+  },
+  "limits": {
+    "new_python_or_java_runtime_fix_required": false,
+    "deployed_binary_commit_verified": false,
+    "original_pinned_local_tuple_retested": false,
+    "numerical_m_to_mm_conversion_verified": false,
+    "twenty_numerical_cells_compared_in_region_test": false,
+    "independent_provider_accuracy_verified": false,
+    "full_milestone_accepted": false
+  }
+}

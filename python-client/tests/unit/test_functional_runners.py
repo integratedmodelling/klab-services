@@ -121,6 +121,43 @@ def test_read_only_connected_run_clears_ambient_mutation_authorization(tmp_path,
     assert captured[0]["KLAB_CONNECTED_ALLOW_OWNED_WORK"] == "0"
 
 
+def test_milestone_compatibility_units_do_not_authorize_computation(tmp_path, monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    import run_functional_acceptance as runner
+    import run_local_acceptance
+    profile, certificate, fixture = (tmp_path / name for name in ("profile.json", "private.cert", "fixture.json"))
+    for path in (profile, certificate, fixture):
+        path.write_text("offline routing input only")
+    captured = []
+    def run(arguments, **kwargs):
+        captured.append((arguments, kwargs["env"]))
+        return 0
+    monkeypatch.setattr(run_local_acceptance, "run_command", run)
+    monkeypatch.setattr(runner.subprocess, "run", lambda arguments, **kwargs:
+                        SimpleNamespace(returncode=run(arguments, **kwargs)))
+    monkeypatch.setenv("KLAB_CONNECTED_ALLOW_OWNED_WORK", "1")
+    monkeypatch.setattr(sys, "argv", ["runner", "--suite", "milestone-compatibility-units",
+        "--profile", str(profile), "--certificate", str(certificate),
+        "--milestone-fixture", str(fixture), "--output-dir", str(tmp_path / "new-output")])
+    assert runner.main() == 0
+    assert captured[0][1]["KLAB_CONNECTED_ALLOW_OWNED_WORK"] == "0"
+    assert "tests/functional/test_connected_semantics.py" in captured[0][0]
+
+
+def test_milestone_compatibility_compute_requires_explicit_consent(tmp_path, monkeypatch):
+    import sys
+    import run_functional_acceptance as runner
+    fixture = tmp_path / "fixture.json"
+    fixture.write_text("offline routing input only")
+    monkeypatch.setenv("KLAB_CONNECTED_ALLOW_OWNED_WORK", "1")
+    monkeypatch.setattr(sys, "argv", ["runner", "--suite", "milestone-compatibility-compute",
+        "--milestone-fixture", str(fixture), "--output-dir", str(tmp_path / "new-output")])
+    with pytest.raises(SystemExit) as error:
+        runner.main()
+    assert error.value.code == 2
+
+
 def test_do_not_mix_shared_deployment_and_owned_test_stack_suites(tmp_path, monkeypatch):
     import sys
     import run_functional_acceptance as runner
