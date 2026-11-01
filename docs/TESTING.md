@@ -252,6 +252,42 @@ staging testcase against its configured resources, reasoner, resolver, runtime, 
 verify the expected report, and check cleanup. UI presentation, remote transport, scheduler capture,
 and submission gating require their own integration evidence.
 
+## Python-backed NDVI integration scenario
+
+The expanded [bounded scalar prototype](PYTHON_RUNTIME_PROTOTYPE.md) includes uneven
+batches, cancellation, local measurements and an initialization rollback-gap reproduction.
+Its `PythonBatchedNdviIT` remains explicitly selected and test-scoped; registered Runtime
+execution and atomic observation publication are still outstanding.
+
+The [NDVI storage demonstration](PYTHON_NDVI_DEMO.md) is a deterministic, opt-in
+JUnit integration scenario in `klab.core.services/src/test`, using real local storage
+and a real Python subprocess. It follows the storage tests' convention of mocking
+service/persistence infrastructure while exercising real buffers and scanners.
+
+| Test layer | Cases | Entry point |
+| --- | --- | --- |
+| Python computation and protocol | NDVI values, boundary values, missing data, zero denominator, invalid reflectance, request validation | `src/test/resources/python-bridge/test_ndvi_worker.py` |
+| Java subprocess contract | Real computation, diagnostics, timeout cleanup, malformed responses, bounded pipe capture | `PythonProcessIT` |
+| Storage integration | Six-cell NDVI readback and CSV, shifted-grid rejection, invalid reflectance without partial output values | `PythonNdviDemoIT` |
+
+Paths in the table are relative to `klab.core.services`. See the
+[bridge runbook](PYTHON_BRIDGE.md) for Java 21/Python setup and combined regression commands.
+After setting `KLAB_PYTHON_EXECUTABLE`, run from the repository root:
+
+```powershell
+.\mvnw.cmd -pl klab.core.services -am '-Dtest=PythonNdviDemoIT,PythonProcessIT' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+On Unix use `./mvnw` with the same arguments. Both classes deliberately use an `IT`
+suffix and require explicit selection; ordinary Surefire discovery does not require
+Python. Explicit selection with no interpreter fails with setup instructions.
+
+This scenario verifies the local computation/storage boundary. A k.Actors acceptance
+test like the storage mediation harness below must exercise a registered computation
+through context submission. The NDVI fixture currently has no registered function or
+k.IM model; its synthetic observation descriptors do not establish digital-twin commit
+membership. Keep exact cell-value assertions in JUnit until that execution path exists.
+
 ## Default observer preparation regression tests
 
 Run the metadata, group, identity, settings-storage and observer preparation contracts with:

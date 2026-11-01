@@ -128,7 +128,7 @@ class StorageConsumerIntegrationTest {
       for(var pair:libraries.getFirst().exporters()) {
         var descriptor=pair.getSecond();
         var call=org.integratedmodelling.common.lang.ServiceCallImpl.create(descriptor.serviceInfo.getName());
-        doReturn(List.of(descriptor)).when(registry).getFunctionDescriptor(call);
+        doReturn(List.of(descriptor)).when(registry).getFunctionDescriptor(eq(call), any(org.integratedmodelling.klab.api.scope.Scope.class));
         if(registry.implementation(descriptor).method.getName().equals("failure")) {
           assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,
               ()->language.execute(call,scope(f),InputStream.class,f.storage.temporalOwner()));

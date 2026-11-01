@@ -15,3 +15,6 @@ target
 .project
 .settings
 /support/klab.support.graphdb/var/
+/.venv/
+**/__pycache__/
+**/.pytest_cache/
