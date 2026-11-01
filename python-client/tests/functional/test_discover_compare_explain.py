@@ -122,6 +122,11 @@ def test_private_experiment_evidence_and_exports_enforce_access(inputs, factory,
         original = owner.client.restore_handle(Handle.loads(json.dumps(sequential["batch"]["outcomes"][0]["result_handles"][-1])))
         positive = guest.client.create_session(name="milestone-valid-nonowner")
         try:
+            # Denial of a later query/export must not hide exposed private context
+            # or observation metadata during handle restoration.
+            with pytest.raises((AuthorizationError, MissingAssetError)):
+                guest.client.restore_handle(Handle.loads(json.dumps(
+                    sequential["batch"]["outcomes"][0]["result_handles"][-1])))
             foreign = Context(guest.client, original._context.configuration, token=original._context.get_context_id())
             inaccessible = observation_from_wire(original.raw, foreign)
             denied = paths["OUTPUT"] / "nonowner-denied.tif"
@@ -136,7 +141,8 @@ def test_private_experiment_evidence_and_exports_enforce_access(inputs, factory,
             require(not denied.exists(), "Denied export published a local file")
         finally:
             require(positive.release(), "Nonowner positive-control cleanup failed")
-    record_property("milestone_permissions", json.dumps({"distinct_principals": True, "evidence_denied": True, "export_denied": True}))
+    record_property("milestone_permissions", json.dumps({"distinct_principals": True,
+        "private_restoration_denied": True, "evidence_denied": True, "export_denied": True}))
 
 
 def test_milestone_notebook_executes_and_matches_evidence(inputs, factory):
