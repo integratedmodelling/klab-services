@@ -1,5 +1,12 @@
 # Discover / compare / explain — unreleased draft
 
+**1 November 2026 scope:** PR #102 may integrate the tooling without claiming
+scientific milestone completion. Native GeoTIFF measurement units are missing in
+the tested Java component; see [geospatial issue #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10).
+The [delivery guide](discover-compare-explain-delivery.md) records the user's scope
+decision and deferred scientific gates. Validators and readiness checks are not
+weakened. Tooling merge is not a scientific release or accepted deliverable.
+
 - Added revision-aware semantic exploration and explicit configured-authority
   candidate selection/documentation, hierarchy and semantic predicates.
 - Added bounded resource/model inspection with origin-qualified identifiers and

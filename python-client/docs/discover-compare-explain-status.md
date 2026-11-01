@@ -1,5 +1,20 @@
 # Discover / compare / explain: checkpoint and blockers
 
+## Current scope decision: 1 November 2026
+
+The user explicitly narrowed PR #102 to workflow/acceptance tooling integration,
+allowing normal merge after tooling checks and review. Scientific milestone
+completion is deferred, not passed. The older no-merge restriction and full-science
+merge prerequisites below are superseded for this tooling PR only. Historical
+observations and scientific requirements are preserved.
+
+See the [current scope and deferred gates](discover-compare-explain-delivery.md#pr-102-scope-decision-1-november-2026)
+and [revised contributor review](reviews/discover-compare-explain/tooling-scope-review-20261101.md).
+The native exporter drops band measurement units; [geospatial issue #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10)
+contains the reproduction and unchanged native artifact. No validator or readiness
+gate is relaxed. #90/#98/#100 are merged; the third #102 slice failed after two
+completed Jobs, with object release and owned-process cleanup confirmed.
+
 This feature branch is an incomplete milestone checkpoint, not accepted scientific
 delivery. F1 semantic discovery, F2 inspection, F3 execution evidence and F4 bounded
 experiments have Python implementations. The F1–F4 contribution reviews distinguish

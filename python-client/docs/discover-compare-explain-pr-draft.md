@@ -1,5 +1,14 @@
 # Prepared combined PR package — draft, not accepted delivery
 
+**Superseded PR scope, 1 November 2026:** the package below is historical. The user
+now authorizes PR #102 as tooling-only integration, targeting
+`feature/python-experiment-runner`, not full scientific completion. See the
+[current scope decision](discover-compare-explain-delivery.md#pr-102-scope-decision-1-november-2026)
+and [tooling review](reviews/discover-compare-explain/tooling-scope-review-20261101.md).
+[Geospatial issue #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10)
+tracks missing native export units. Scientific acceptance and deliverable gates
+remain intact and deferred; this document is not current merge guidance.
+
 **Current scope extension (31 October):** PR #102 also requires the four original
 hosted worldview/unit/tiny-region regressions. Those four passed in a fresh hosted
 recheck, without a Java or client runtime change. See
