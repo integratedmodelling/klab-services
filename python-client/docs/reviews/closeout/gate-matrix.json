@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "source_candidate": "e9c1230a62b1d159bb94613f8d6b105124030685",
+  "full_adapter_run_id": null,
+  "full_gate_accepted": false,
+  "status_meaning": "Current closeout execution; earlier individual live results retained separately, never promoted to a new full-adapter pass",
+  "cases": [
+    {"id": "test_connected_reasoner_publishes_accepted_semantic_knowledge", "status": "NOT RUN", "run_id": null, "last_known_status": "PASS", "last_known_candidate": "e9581c01bfef3c072c52134d57e6a3e66657ed84", "last_known_report": "../../results/hosted-worldview-compatibility-20261031.json", "last_known_run": "semantics-units.xml; sha256 220a3b7a3f65827211db6c810933de59b0def4d60e3b9d5569a5d69cd7afb48c"},
+    {"id": "test_connected_resolved_observable_preserves_requested_unit[m]", "status": "NOT RUN", "run_id": null, "last_known_status": "PASS", "last_known_candidate": "e9581c01bfef3c072c52134d57e6a3e66657ed84", "last_known_report": "../../results/hosted-worldview-compatibility-20261031.json", "last_known_run": "semantics-units.xml; sha256 220a3b7a3f65827211db6c810933de59b0def4d60e3b9d5569a5d69cd7afb48c"},
+    {"id": "test_connected_resolved_observable_preserves_requested_unit[mm]", "status": "NOT RUN", "run_id": null, "last_known_status": "PASS", "last_known_candidate": "e9581c01bfef3c072c52134d57e6a3e66657ed84", "last_known_report": "../../results/hosted-worldview-compatibility-20261031.json", "last_known_run": "semantics-units.xml; sha256 220a3b7a3f65827211db6c810933de59b0def4d60e3b9d5569a5d69cd7afb48c"},
+    {"id": "test_connected_tiny_terrestrial_region_completes", "status": "NOT RUN", "run_id": null, "last_known_status": "PASS", "last_known_candidate": "e9581c01bfef3c072c52134d57e6a3e66657ed84", "last_known_report": "../../results/hosted-worldview-compatibility-20261031.json", "last_known_run": "tiny-region.xml; sha256 92a7d664ce6da51a19072a88ffa1a0f7f43ed1d8a4ab1c27de771ebe39e5abb1"},
+    {"id": "test_discovery_and_model_inspection_use_existing_java_contracts", "status": "BLOCKED", "run_id": null, "reason": "Complete milestone fixture/deployment identity not established; separate historical F1/F2 tests are not this adapter case"},
+    {"id": "test_recorded_execution_evidence_matches_computed_observation", "status": "BLOCKED", "run_id": null, "reason": "Successful same-candidate matrix, native exports and recorded model association required"},
+    {"id": "test_four_experiments_preserve_scientific_meaning", "status": "BLOCKED", "run_id": null, "reason": "Independent scientific 2x2 fixture, deployment tuple, numerical export and workload authorization missing"},
+    {"id": "test_parallel_experiments_preserve_identity_and_results", "status": "BLOCKED", "run_id": null, "reason": "Sequential scientific reference and authorized bounded parallel work required"},
+    {"id": "test_partial_failure_retains_successes_and_recoverable_handles", "status": "BLOCKED", "run_id": null, "reason": "Compatible scientific fixture and new authorized work required"},
+    {"id": "test_fresh_process_restores_original_experiment_results", "status": "BLOCKED", "run_id": null, "reason": "Original successful matrix results not available; recomputation is not restoration"},
+    {"id": "test_private_experiment_evidence_and_exports_enforce_access", "status": "BLOCKED", "run_id": null, "reason": "Verified two-principal setup, owner positive results and native exports required; #98 shared positive also remains mandatory"},
+    {"id": "test_milestone_notebook_executes_and_matches_evidence", "status": "BLOCKED", "run_id": null, "reason": "No authorized scientific notebook run on a verified same-candidate deployment; offline replay videos do not satisfy this case"}
+  ]
+}

@@ -2,12 +2,18 @@
 
 ## Python client and contributor workflow
 
+- [Primary research-driven Python roadmap](contributor-guides/01_RESEARCH_DRIVEN_PYTHON_CLIENT_ROADMAP.md):
+  Eric's selected roadmap, preserving the full 49-entry research/capability catalog.
+- [Outstanding PR closeout spec](contributor-guides/02_OUTSTANDING_PR_CLOSEOUT_SPEC.md)
+  and [local conditional closeout handoff](../python-client/docs/reviews/closeout/CLOSEOUT_SUMMARY.md):
+  exact reviewed state and remaining gates; not merge or scientific acceptance.
+
 - [Python-client branch preview and short demos](../python-client/docs/release-preview.md):
   delivered capabilities, reliability polish, upcoming work and verification limits.
 - [Python SDK](../python-client/README.md): installation, usage and testing.
 - [Contributor guides](contributor-guides/README.md): Eric's complete planning reference,
   CLI contribution review guide and connection-layer implementation specification.
-- [Current Python planning guide](PYTHON_CLIENT_PLANNING_GUIDE.md),
+- [Earlier Python planning/implementation context](PYTHON_CLIENT_PLANNING_GUIDE.md),
   [upstream roadmap](PYTHON_CLIENT_ROADMAP.md) and
   [federation compatibility](PYTHON_CLIENT_FEDERATION_COMPATIBILITY.md).
 - [SDK reference and verification](../python-client/docs/),

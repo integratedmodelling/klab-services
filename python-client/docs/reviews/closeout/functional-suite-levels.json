@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "selector_count": 34,
+  "basis": "Source contract classification, not current passing execution; selectors may share test bodies",
+  "published_replications_accepted": 0,
+  "levels": {"2": "Service contract", "3": "Connected integration", "4": "Scientific component oracle; controlled/reference checks, not a published study", "5": "Published study replication; no selector accepted at this level"},
+  "groups": [
+    {"levels": [2], "selectors": ["milestone-compatibility-units", "connected-semantic-readiness", "connected-unit-contract", "semantic-readiness"], "oracle": "Accepted knowledge and wire/SDK semantics, not independent numerical science"},
+    {"levels": [2, 3], "selectors": ["milestone-discovery", "semantic-explorer", "connection-readiness"], "oracle": "Real discovery/identity/readiness contracts; hierarchy expectations where independently specified"},
+    {"levels": [3], "selectors": ["milestone-compatibility-compute", "connected-bounded-experiments", "connected-resource-inspection", "connected-onboarding", "connected-credential-renewal", "connected-context-recovery", "connected-tiny-compute", "connection-access", "execution-evidence", "milestone-permissions"], "oracle": "Lifecycle, permissions, finite cells and/or recorded association; not numerical accuracy"},
+    {"levels": [3, 4], "selectors": ["milestone-evidence", "milestone-science", "milestone-parallel", "milestone-failure", "milestone-restore", "milestone-notebook"], "oracle": "Requires independently specified scientific matrix/reference; current live acceptance blocked"},
+    {"levels": [3, 4], "selectors": ["develop-compatibility", "release-notebook", "scientific-analysis-provenance", "connection-onboarding", "connection-recovery", "compute-and-analyze", "resume-saved-work", "typed-compute", "geojson-export", "geotiff-export"], "oracle": "Prepared controlled Java fixture with independent value/geometry/unit/mask checks; not published research replication"},
+    {"levels": [3, 4], "selectors": ["provider-reference"], "oracle": "Provider execution; independent scientific claim requires its separately sourced reference-data case, not the range-only case"}
+  ]
+}

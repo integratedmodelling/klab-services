@@ -1,5 +1,12 @@
 # k.LAB Python client: planning guide
 
+**Current roadmap selection — 31 October 2026:** Start with
+[Eric's research-driven roadmap](contributor-guides/01_RESEARCH_DRIVEN_PYTHON_CLIENT_ROADMAP.md)
+and [outstanding PR closeout spec](contributor-guides/02_OUTSTANDING_PR_CLOSEOUT_SPEC.md).
+The earlier planning text and historical roadmap below remain context, not a
+competing current priority list. No automatic merge, closure or publication is
+authorized by the new documents.
+
 Primary planning reference, supplied by Eric on 14 October 2026 from
 `KLAB_Python_Client_Planning_Guide.md`. It supersedes routine use of the historical
 roadmap for current status/defaults, while preserving maintainer authority and

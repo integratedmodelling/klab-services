@@ -6,6 +6,8 @@ references remain recognizable. The originals outside the repository are untouch
 
 | Guide | Use |
 | --- | --- |
+| [Research-driven Python-client roadmap](01_RESEARCH_DRIVEN_PYTHON_CLIENT_ROADMAP.md) | Primary roadmap selected by Eric on 31 October 2026; preserves all 49 research/capability/project entries. |
+| [Outstanding PR closeout specification](02_OUTSTANDING_PR_CLOSEOUT_SPEC.md) | Controlled closeout of #90/#98/#100/#102; no automatic publication, merge or closure. |
 | [Complete Python client planning guide](KLAB_Python_Client_Planning_Guide.md) | Full supplied 14 October 2026 plan, including the historical roadmap. |
 | [CLI contribution review](KLAB_CLI_Contribution_Review.md) | Read-only review prompt, evidence standards and report format. |
 | [Connection-layer CLI specification](KLAB_Connection_Layer_CLI_Spec.md) | Original implementation scope, contract inventory and acceptance expectations. |
@@ -19,8 +21,11 @@ references remain recognizable. The originals outside the repository are untouch
 
 ## Which planning document should I use?
 
-Start with the [current reconciled planning guide](../PYTHON_CLIENT_PLANNING_GUIDE.md)
-for repository updates since the supplied snapshot. Use the complete supplied guide
+Start with the [research-driven roadmap](01_RESEARCH_DRIVEN_PYTHON_CLIENT_ROADMAP.md),
+selected by Eric as the primary roadmap on 31 October 2026. It and the companion
+closeout spec are imported unchanged; their own authorization limits still apply.
+The [reconciled planning guide](../PYTHON_CLIENT_PLANNING_GUIDE.md) retains earlier
+implementation context. Use the complete supplied guide
 for the original rationale and full historical roadmap; the separate
 [upstream roadmap](../PYTHON_CLIENT_ROADMAP.md) also remains in place.
 The [SDK documentation](../../python-client/docs/) records implemented contracts

@@ -2,6 +2,14 @@
 
 Prepared 14 October 2026 for Eric's future planning and CLI work.
 
+**Planning precedence update, 31 October 2026:** Eric selected
+[the research-driven roadmap](01_RESEARCH_DRIVEN_PYTHON_CLIENT_ROADMAP.md) as the
+primary roadmap. This earlier guide and its complete historical Part II remain
+intact as architectural and evidence context. Use the new roadmap together with
+[the closeout spec](02_OUTSTANDING_PR_CLOSEOUT_SPEC.md); neither authorizes a merge
+or publication automatically. The original text below is historical where it
+calls itself the primary planning reference.
+
 ## Purpose and authority
 
 Use this document as our primary planning reference in place of repeatedly consulting the original Python roadmap. It combines the full upstream roadmap with current implementation findings and a practical approach to reversible decisions. It does not replace maintainer authority, actual server contracts, or repository instructions.
