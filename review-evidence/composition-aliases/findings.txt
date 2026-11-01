@@ -1,0 +1,31 @@
+Approved authority aliases in assisted composition
+2026-10-10
+
+The authority search API already attaches published codelist aliases to canonical
+results and searches alias names without a codelist filter. The gap was between
+canonical IDENTITY selection and the composer's confirmed-token rendering/export.
+
+Changes:
+- StyledKimToken carries optional published alias declarations, empty for legacy responses.
+- Reasoner identity acceptance reads the configured published codelist ledger locally;
+  pending and rejected proposals are excluded. Canonical session tokens stay unchanged.
+- IDE defaults to the first sorted published alias and displays a preceding swap glyph.
+  Its tooltip identifies the approved name, canonical code, equivalence, and next action.
+- Toggling needs no request. Choice survives query refreshes and edits of later tokens;
+  undo/removal and session restart discard the corresponding choice.
+- Copy and Continue use the displayed spelling. Complete observables are copied with
+  the selected source declaration; their semantic object and server response stay intact.
+- Multiple aliases use the first sorted alias as the default; toggle selects it or raw code.
+
+Validation:
+- Backend focused Maven reactor: 52 tests passed.
+  SemanticSearchTransportTest (2), SemanticSearchSessionTest (37),
+  AuthorityCodelistsTest (9), AuthorityInsertionTest (1), AuthoritySearchTest (3).
+- IDE SemanticComposerTest: 48 tests passed.
+- Tests cover general and sub-authority searches, published-only alias metadata,
+  JSON compatibility, canonical insertion, choice persistence, undo, copy and export
+  for both complete and incomplete expressions, and no request on toggle.
+- git diff --check passed in both checkouts.
+
+The updated API artifact was installed into the local Maven repository for the IDE build.
+No running service or IDE was restarted; deployment/rebuild is still required.

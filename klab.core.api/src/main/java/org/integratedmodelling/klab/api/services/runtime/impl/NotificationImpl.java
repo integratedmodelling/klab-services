@@ -39,7 +39,9 @@ public class NotificationImpl implements Notification, Serializable {
 
   //    private Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
-  public static class LexicalContextImpl implements LexicalContext {
+  public static class LexicalContextImpl implements LexicalContext, Serializable {
+
+    @Serial private static final long serialVersionUID = 1L;
 
     private String documentUrn;
     private String projectUrn;

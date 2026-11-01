@@ -8,6 +8,15 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
 final class ModelVisibility {
+  /** Direct catalog consumers must honor the provider's existing indexing readiness gate. */
+  static void requireReady(org.integratedmodelling.klab.api.services.ResourcesService service,
+      org.integratedmodelling.klab.api.scope.ContextScope scope) {
+    if (service instanceof org.integratedmodelling.klab.services.resources.ResourcesProvider provider
+        && !provider.checkSemanticServices(scope)) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+          "Semantic search is not available: model indexing or reasoner availability failed");
+    }
+  }
   static boolean authorized(ModelReference model, org.integratedmodelling.klab.api.scope.ContextScope scope) {
     if (scope == null || scope.getUser() == null || model.getPermissions() == null) return false;
     // The scope overload returns immediately for public resources and bypasses explicit denials.
@@ -27,6 +36,11 @@ final class ModelVisibility {
     var scenarios = constraints(constraints, ResolutionConstraint.Type.Scenarios, String.class);
     String project = projects.isEmpty() ? null : projects.getFirst();
     String namespace = namespaces.isEmpty() ? null : namespaces.getFirst();
+    // Namespace authority is mandatory, including explicitly selected scenarios.
+    if ((model.getScope() == KlabStatement.Scope.PRIVATE
+        || model.getObservableConcept() != null
+            && model.getObservableConcept().is(SemanticType.SUBJECTIVE))
+        && (namespace == null || !namespace.equals(model.getNamespaceId()))) return false;
     boolean sameProject = project != null && Objects.equals(project, model.getProjectId());
     if (model.getScope() == KlabStatement.Scope.PROJECT_PRIVATE && !sameProject) return false;
     boolean visible = (namespace != null && namespace.equals(model.getNamespaceId()))

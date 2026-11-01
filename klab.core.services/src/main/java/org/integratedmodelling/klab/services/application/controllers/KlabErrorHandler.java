@@ -22,19 +22,19 @@ public class KlabErrorHandler {
 
   @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class)
   public ResponseEntity<ProblemDetail> handleAccessDenied(RuntimeException exception) {
-    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Asset is not accessible"));
   }
 
   @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabResourceNotFoundException.class)
   public ResponseEntity<ProblemDetail> handleMissingResource(RuntimeException exception) {
-    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Asset is absent or not accessible"));
   }
 
   @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class)
   public ResponseEntity<ProblemDetail> handleInvalidRequest(RuntimeException exception) {
-    return ResponseEntity.badRequest()
+    return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid request"));
   }
 

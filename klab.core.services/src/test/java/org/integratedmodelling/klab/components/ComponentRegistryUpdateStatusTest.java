@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Files;
@@ -29,6 +31,71 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class ComponentRegistryUpdateStatusTest {
+
+  @Test
+  void explicitDependencyCheckObtainsFreshMavenStatusFromSourceRegistry() {
+    var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    var source = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var cache = mock(MavenComponentCache.class);
+    var owner = mock(BaseService.class);
+    var installed = descriptor(Extensions.ComponentImportType.MAVEN, 1000L, 0L)
+        .withUpdateStatus(Extensions.ComponentUpdateStatus.UNKNOWN, 0L);
+    var dependency = descriptor(Extensions.ComponentImportType.DEPENDENCY, 1000L, 0L);
+    when(cache.getAvailabilityInfo("org.example", "test", "1.0.0-SNAPSHOT", "component", "kar"))
+        .thenReturn(new MavenComponentCache.Availability(
+            MavenComponentCache.Status.NEEDS_UPDATE_FROM_REMOTE_REPOSITORY, 2000L));
+    var sourceRegistry = new ComponentRegistry(owner, null, cache, List.of(installed));
+    var dependentRegistry = new ComponentRegistry(owner, null, mock(MavenComponentCache.class), List.of(dependency));
+    when(scope.findService(eq(org.integratedmodelling.klab.api.services.ResourcesService.class), any()))
+        .thenReturn(Optional.of(source));
+    when(source.query(isNull(), eq(org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.COMPONENT),
+        eq(Extensions.ComponentDescriptor.class), same(scope)))
+        .thenAnswer(invocation -> List.copyOf(sourceRegistry.getComponents(scope)));
+
+    assertEquals(Extensions.ComponentUpdateStatus.UNKNOWN,
+        sourceRegistry.getInstalledComponents(scope).iterator().next().updateStatus());
+    var result = dependentRegistry.getComponents(scope).iterator().next();
+    assertEquals(Extensions.ComponentUpdateStatus.UPDATE_AVAILABLE, result.updateStatus());
+    assertEquals(2000L, result.latestVersionTimestamp());
+    verify(source, never()).capabilities(any());
+  }
+
+  @Test
+  void cyclicExplicitListingsStopAtTheRegistryBoundary() {
+    var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    var source = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    var registry = new ComponentRegistry(mock(BaseService.class), null,
+        mock(MavenComponentCache.class), List.of(descriptor(Extensions.ComponentImportType.DEPENDENCY, 1000L, 0L)));
+    when(scope.findService(eq(org.integratedmodelling.klab.api.services.ResourcesService.class), any()))
+        .thenReturn(Optional.of(source));
+    when(source.query(isNull(), eq(org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.COMPONENT),
+        eq(Extensions.ComponentDescriptor.class), same(scope)))
+        .thenAnswer(invocation -> List.copyOf(registry.getComponents(scope)));
+    assertEquals(Extensions.ComponentUpdateStatus.UNKNOWN,
+        registry.getComponents(scope).iterator().next().updateStatus());
+    verify(source, times(1)).query(isNull(), any(), eq(Extensions.ComponentDescriptor.class), same(scope));
+    // The guard must also be cleared for the next independent check.
+    registry.getComponents(scope);
+    verify(source, times(2)).query(isNull(), any(), eq(Extensions.ComponentDescriptor.class), same(scope));
+  }
+
+  @Test
+  void capabilitiesInventoryDoesNotCheckMavenOrContactDependencyServices() {
+    var cache = mock(MavenComponentCache.class);
+    var service = mock(BaseService.class);
+    var scope = mock(Scope.class);
+    var dependency = descriptor(Extensions.ComponentImportType.DEPENDENCY, 1000L, 1000L);
+    var maven = descriptor(Extensions.ComponentImportType.MAVEN, 2000L, 2000L);
+    clearInvocations(cache, scope);
+    // Descriptors are identified by id/version. Exercise both origins independently.
+    for (var component : List.of(dependency, maven)) {
+      var registry = new ComponentRegistry(service, null, cache, List.of(component));
+      var inventory = registry.getInstalledComponents(scope);
+      assertEquals(List.of(component), inventory);
+      assertEquals(inventory, registry.getInstalledComponents(scope));
+    }
+    org.mockito.Mockito.verifyNoInteractions(cache, scope);
+  }
 
   @Test
   void dependencyUsesTheHostingServiceTimestampAndStatus() {

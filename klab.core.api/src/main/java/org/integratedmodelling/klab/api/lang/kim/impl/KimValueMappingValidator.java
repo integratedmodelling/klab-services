@@ -16,6 +16,13 @@ public final class KimValueMappingValidator {
   private KimValueMappingValidator() {}
 
   public static void validate(KimClassification classification) {
+    validateRules(classification);
+    if (classification.isDiscretization()) {
+      validateDiscretization(classification);
+    }
+  }
+
+  private static void validateRules(KimClassification classification) {
     if (classification.getClassifiers() == null || classification.getClassifiers().isEmpty()) {
       throw new KlabValidationException("A classification must contain at least one rule");
     }
@@ -24,9 +31,6 @@ public final class KimValueMappingValidator {
       if (rule.getFirst() == null || rule.getSecond() == null) {
         throw new KlabValidationException("Classification rule " + (i + 1) + " is incomplete");
       }
-    }
-    if (classification.isDiscretization()) {
-      validateDiscretization(classification);
     }
   }
 
@@ -144,7 +148,53 @@ public final class KimValueMappingValidator {
         .setLookupType(resultType == null ? Artifact.Type.VALUE : resultType);
   }
 
+  /**
+   * Validate a worldview partition against its declared applicability range. The caller must
+   * normalize compatible units first. This adds coverage checking without making ordinary
+   * classifications exclusive or exhaustive, or introducing runtime computation semantics.
+   */
+  public static void validateDiscretization(KimClassification classification, NumericRange applicability) {
+    if (classification == null || !classification.isDiscretization())
+      throw new KlabValidationException("Expected a discretization partition");
+    validateInterval(applicability);
+    validateRules(classification);
+    var ranges = new ArrayList<NumericRange>();
+    for (var range : discretizationRanges(classification)) {
+      double lower = Math.max(range.getLowerBound(), applicability.getLowerBound());
+      double upper = Math.min(range.getUpperBound(), applicability.getUpperBound());
+      boolean lowerExclusive = lower == range.getLowerBound() && range.isLowerExclusive()
+          || lower == applicability.getLowerBound() && applicability.isLowerExclusive();
+      boolean upperExclusive = upper == range.getUpperBound() && range.isUpperExclusive()
+          || upper == applicability.getUpperBound() && applicability.isUpperExclusive();
+      if (lower > upper || lower == upper && (lowerExclusive || upperExclusive)) continue;
+      ranges.add(new org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl(
+          lower, upper, lowerExclusive, upperExclusive));
+    }
+    if (ranges.isEmpty()) throw new KlabValidationException("Discretization does not cover its applicability range");
+    validateAdjacency(ranges);
+    var first = ranges.getFirst();
+    var last = ranges.getLast();
+    if (Double.compare(first.getLowerBound(), applicability.getLowerBound()) != 0
+        || Double.compare(last.getUpperBound(), applicability.getUpperBound()) != 0
+        || first.isLowerExclusive() != applicability.isLowerExclusive()
+        || last.isUpperExclusive() != applicability.isUpperExclusive())
+      throw new KlabValidationException("Discretization must cover its declared applicability range, including endpoints");
+  }
+
+  private static void validateInterval(NumericRange range) {
+    if (range == null || Double.isNaN(range.getLowerBound()) || Double.isNaN(range.getUpperBound()))
+      throw new KlabValidationException("Discretization intervals require explicit numeric endpoints");
+    if (range.getLowerBound() > range.getUpperBound()
+        || (range.getLowerBound() == range.getUpperBound()
+            && (range.isLowerExclusive() || range.isUpperExclusive())))
+      throw new KlabValidationException("Discretization intervals must be nonempty and ordered");
+  }
+
   private static void validateDiscretization(KimClassification classification) {
+    validateAdjacency(discretizationRanges(classification));
+  }
+
+  private static List<NumericRange> discretizationRanges(KimClassification classification) {
     List<NumericRange> ranges = new ArrayList<>();
     for (var rule : classification.getClassifiers()) {
       KimClassifier classifier = rule.getSecond();
@@ -152,9 +202,14 @@ public final class KimValueMappingValidator {
         throw new KlabValidationException(
             "Discretization rules must be non-negated numeric intervals");
       }
+      validateInterval(classifier.getIntervalMatch());
       ranges.add(classifier.getIntervalMatch());
     }
-    ranges.sort(Comparator.comparingDouble(NumericRange::getLowerBound));
+    return ranges;
+  }
+
+  private static void validateAdjacency(List<NumericRange> ranges) {
+    ranges.sort(Comparator.comparingDouble(NumericRange::getLowerBound).thenComparing(NumericRange::isLowerExclusive));
     for (int i = 1; i < ranges.size(); i++) {
       NumericRange previous = ranges.get(i - 1);
       NumericRange current = ranges.get(i);

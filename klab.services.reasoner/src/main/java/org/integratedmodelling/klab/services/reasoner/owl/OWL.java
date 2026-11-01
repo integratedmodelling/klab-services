@@ -93,6 +93,22 @@ public class OWL {
 
   private boolean reasonerActive;
   private boolean reasonerSynchronizing = false;
+  private int declarationStagingDepth;
+  private long reasonerCreations, flushRequests, actualFlushes, satisfiabilityQueries, entailmentQueries;
+
+  /** Private compilation suppresses partial-graph DL queries until the complete candidate exists. */
+  public synchronized AutoCloseable stageDeclarations() {
+    declarationStagingDepth++;
+    return () -> { synchronized (this) {
+      if (declarationStagingDepth <= 0) throw new IllegalStateException("Unbalanced declaration staging");
+      declarationStagingDepth--;
+    }};
+  }
+  public synchronized Map<String,Long> compilationMetrics() {
+    return Map.of("reasonerCreations",reasonerCreations,"flushRequests",flushRequests,
+        "actualFlushes",actualFlushes,"satisfiabilityQueries",satisfiabilityQueries,
+        "entailmentQueries",entailmentQueries);
+  }
   private Ontology mergedReasonerOntology;
   private OWLReasoner reasoner;
   // HermiT queries mutate tableau state. Queries, flush, creation and disposal must
@@ -114,9 +130,15 @@ public class OWL {
   private Concept nothing;
 
   private CoreOntology coreOntology;
+  private final File privateKnowledgeDirectory;
 
   public OWL(Scope scope) {
+    this(scope, null);
+  }
+
+  public OWL(Scope scope, File privateKnowledgeDirectory) {
     this.scope = scope;
+    this.privateKnowledgeDirectory = privateKnowledgeDirectory;
   }
 
   public Concept nothing(String urn, Throwable... exceptions) {
@@ -276,7 +298,30 @@ public class OWL {
 
     manager = OWLManager.createOWLOntologyManager();
     // this.loadPath = loadPath;
-    coreOntology = new CoreOntology(ServiceConfiguration.INSTANCE.getDataPath("knowledge"), this);
+    coreOntology = privateKnowledgeDirectory == null
+        ? new CoreOntology(ServiceConfiguration.INSTANCE.getDataPath("knowledge"), this)
+        : new CoreOntology(privateKnowledgeDirectory, this, false);
+    if (privateKnowledgeDirectory != null) {
+      var root = privateKnowledgeDirectory.toPath().toAbsolutePath().normalize();
+      var local = new AutoIRIMapper(privateKnowledgeDirectory, true);
+      manager.getIRIMappers().add(iri -> {
+        if ("file".equalsIgnoreCase(iri.toURI().getScheme())) {
+          if (!java.nio.file.Path.of(iri.toURI()).toAbsolutePath().normalize().startsWith(root))
+            throw new KlabValidationException("Candidate OWL import escaped its private catalog: " + iri);
+          return iri;
+        }
+        // The mapper also assigns document IRIs during creation of source/internal ontologies.
+        // Keep these generated documents local; a missing import then fails as a local file,
+        // rather than permitting an HTTP fallback. Core imports still require captured bytes.
+        if (iri.toString().startsWith(DEFAULT_ONTOLOGY_PREFIX + "/")) {
+          return IRI.create(root.resolve("generated-" + privateDocumentHash(iri) + ".owl").toUri());
+        }
+        var document = local.getDocumentIRI(iri);
+        if (document == null)
+          throw new KlabValidationException("Candidate OWL import is absent from its captured catalog: " + iri);
+        return document;
+      });
+    }
     // coreOntology.load(monitor);
     load(coreOntology.getRoot());
 
@@ -316,9 +361,10 @@ public class OWL {
     // overall),
     // monitor);
     // }
-    if (ServiceConfiguration.INSTANCE.useReasoner()) {
+    if (privateKnowledgeDirectory != null || ServiceConfiguration.INSTANCE.useReasoner()) {
       this.reasoner =
           new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
+      reasonerCreations++;
       reasonerActive = true;
     }
 
@@ -347,7 +393,21 @@ public class OWL {
     conceptsById.clear();
     classId.set(1L);
     manager = null;
+    coreAliasDocumentation.reset();
   }
+
+  private static String privateDocumentHash(IRI iri) {
+    try {
+      return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+          .digest(iri.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (java.security.NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 is unavailable", e);
+    }
+  }
+
+  private final CoreAliasDocumentation coreAliasDocumentation = new CoreAliasDocumentation(this);
+
+  public CoreAliasDocumentation coreAliasDocumentation() { return coreAliasDocumentation; }
 
   public CoreOntology getCoreOntology() {
     return this.coreOntology;
@@ -422,6 +482,8 @@ public class OWL {
       }
     }
 
+    if (result != null && CoreOntology.CORE_ONTOLOGY_NAME.equals(result.getNamespace()))
+      coreAliasDocumentation.track(result);
     return result;
   }
 
@@ -677,6 +739,9 @@ public class OWL {
 
       } catch (Exception e) {
 
+        if (privateKnowledgeDirectory != null)
+          throw new KlabValidationException("Candidate core ontology could not be loaded: " + f + ": " + e.getMessage());
+
         /*
          * everything else is probably an error
          */
@@ -861,6 +926,7 @@ public class OWL {
 
   public void releaseOntology(Ontology ontology) {
 
+    var documentedSubjects = coreAliasDocumentation.documentedSubjects(ontology);
     this.namespaces.remove(ontology.getName());
     var onto = ontologies.remove(ontology.getName());
     for (var concept : onto.getConcepts()) {
@@ -871,6 +937,7 @@ public class OWL {
     }
     iri2ns.remove(((Ontology) ontology).getPrefix());
     manager.removeOntology(((Ontology) ontology).ontology);
+    coreAliasDocumentation.refresh(documentedSubjects);
   }
 
   public void clear() {
@@ -1548,6 +1615,11 @@ public class OWL {
         LogicalConnector.UNION,
         applicables,
         ontology);
+    if (!applicables.isEmpty()) {
+      var fillers = applicables.stream().map(this::getOWLClass).collect(java.util.stream.Collectors.toSet());
+      OWLSemanticClauseSupport.markUniversalBearer(this, type, getProperty(NS.APPLIES_TO_PROPERTY),
+          fillers.size() == 1 ? fillers.iterator().next() : manager.getOWLDataFactory().getOWLObjectUnionOf(fillers), ontology);
+    }
   }
 
   public void defineRelationship(
@@ -2733,7 +2805,9 @@ public class OWL {
   }
 
   public synchronized void flushReasoner() {
-    if (reasoner != null && !reasonerSynchronizing) {
+    flushRequests++;
+    if (reasoner != null && !reasonerSynchronizing && declarationStagingDepth == 0) {
+      actualFlushes++;
       reasoner.flush();
     }
   }
@@ -3030,7 +3104,13 @@ public class OWL {
   }
 
   public synchronized boolean hasReasoner() {
-    return reasoner != null;
+    return reasoner != null && declarationStagingDepth == 0;
+  }
+
+  // Only the caller holding this monitor can pin a buffering reasoner between flushes.
+  boolean hasPinnedBufferingReasoner() {
+    return Thread.holdsLock(this) && declarationStagingDepth == 0 && reasoner != null
+        && reasoner.getBufferingMode() == org.semanticweb.owlapi.reasoner.BufferingMode.BUFFERING;
   }
 
   public synchronized NodeSet<OWLClass> getSuperClasses(OWLClassExpression arg0, boolean arg1)
@@ -3091,6 +3171,7 @@ public class OWL {
           AxiomNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    entailmentQueries++;
     return reasoner.isEntailed(arg0);
   }
 
@@ -3101,6 +3182,7 @@ public class OWL {
           AxiomNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    entailmentQueries++;
     return reasoner.isEntailed(arg0);
   }
 
@@ -3118,6 +3200,7 @@ public class OWL {
           ClassExpressionNotInProfileException,
           FreshEntitiesException,
           InconsistentOntologyException {
+    satisfiabilityQueries++;
     return reasoner.isSatisfiable(arg0);
   }
 

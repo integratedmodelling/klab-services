@@ -243,6 +243,7 @@ public class AMQPChannel {
       return true;
 
     } catch (Exception e) {
+      disconnect();
       Logging.INSTANCE.error(
           "Error connecting to AMQP broker: "
               + e.getMessage()
@@ -304,31 +305,50 @@ public class AMQPChannel {
 
   /** Closes the connection to the AMQP broker. */
   public void close() {
+    close(true);
+  }
+
+  /** Release this peer's transport without deleting the shared exchange or remote twin. */
+  public void disconnect() {
+    close(false);
+  }
+
+  private synchronized void close(boolean removeExchange) {
     if (amqpChannel != null) {
       try {
         if (consumerQueue != null) {
           amqpChannel.queueDelete(consumerQueue);
         }
-        if (deleteExchangeOnClose
+        if (removeExchange && (deleteExchangeOnClose
             || (!autoDeleteExchange
                 && klabChannel instanceof ContextScope contextScope
-                && !contextScope.getDigitalTwin().isClient())) {
+                && contextScope.getDigitalTwin() != null
+                && !contextScope.getDigitalTwin().isClient()))) {
           amqpChannel.exchangeDelete(exchangeId);
         }
-        amqpChannel.close();
-      } catch (IOException | TimeoutException e) {
+      } catch (Exception e) {
         Logging.INSTANCE.error("Error closing channel: " + e.getMessage());
+      } finally {
+        try {
+          amqpChannel.close();
+        } catch (Exception e) {
+          Logging.INSTANCE.error("Error closing AMQP channel: " + e.getMessage());
+        }
+        amqpChannel = null;
       }
     }
 
     if (connection != null) {
       try {
         connection.close();
-      } catch (IOException e) {
+      } catch (Exception e) {
         Logging.INSTANCE.error("Error closing connection: " + e.getMessage());
+      } finally {
+        connection = null;
       }
     }
 
     connected = false;
+    online = false;
   }
 }

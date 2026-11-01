@@ -13,6 +13,41 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.junit.jupiter.api.Test;
 
 class LegacyModelKboxTest {
+  @Test void sqlPrivateScopeCannotBeBypassedBySelectedScenariosOrSameProject() throws Exception {
+    var service = mock(ResourcesService.class);
+    when(service.serviceName()).thenReturn("subjective-sql-" + UUID.randomUUID());
+    when(service.serviceScope()).thenReturn(mock(ServiceScope.class));
+    var query = ModelKbox.class.getDeclaredMethod("scopeQuery", List.class, Observable.class);
+    query.setAccessible(true);
+    try (var box = ModelKbox.create(service);
+        var connection = java.sql.DriverManager.getConnection("jdbc:h2:mem:subjective-" + UUID.randomUUID());
+        var sql = connection.createStatement()) {
+      sql.execute("CREATE TABLE model(scope VARCHAR, inscenario BOOLEAN, namespaceid VARCHAR, projectid VARCHAR)");
+      for (boolean scenario : List.of(false, true)) {
+        sql.execute("DELETE FROM model");
+        sql.execute("INSERT INTO model VALUES ('PRIVATE', " + scenario + ", 'owner', 'project')");
+        for (String namespace : List.of("owner", "outside", "")) {
+          var constraints = new ArrayList<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>();
+          for (var entry : Map.of(
+              org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ResolutionNamespace, namespace,
+              org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.ResolutionProject, "project",
+              org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.Scenarios, "owner").entrySet()) {
+            if (entry.getValue().isEmpty()) continue;
+            var constraint = mock(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.class);
+            when(constraint.getType()).thenReturn(entry.getKey());
+            when(constraint.payload(String.class)).thenReturn(List.of(entry.getValue()));
+            constraints.add(constraint);
+          }
+          String filter = (String) query.invoke(box, constraints, mock(Observable.class));
+          try (var rows = sql.executeQuery("SELECT COUNT(*) FROM model WHERE " + filter)) {
+            assertTrue(rows.next());
+            assertEquals(namespace.equals("owner") ? 1 : 0, rows.getInt(1));
+          }
+        }
+      }
+    }
+  }
+
   @Test void sqlRoundTripPreservesPermissionsAndQuotedValuesAndRemovesWithoutNamespaceMarker() {
     var service = mock(ResourcesService.class);
     var scope = mock(ServiceScope.class);

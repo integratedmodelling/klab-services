@@ -15,9 +15,11 @@ import org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSuppo
  * Validation of source occurrences against a loaded knowledge snapshot; does not define ontologies.
  */
 public class DocumentSemanticValidator
-    implements KimNamespaceVisitor.Validator, KimOntologyVisitor.Validator {
+    implements KimNamespaceVisitor.Validator, KimOntologyVisitor.Validator,
+        KimObservationStrategyDocumentVisitor.Validator {
   private final ReasonerService reasoner;
   private final OWLSemanticClauseSupport clauses;
+  private final KimWorldviewValidator sourceValidator = new KimWorldviewValidator();
 
   public DocumentSemanticValidator(ReasonerService reasoner) {
     this.reasoner = reasoner;
@@ -25,6 +27,11 @@ public class DocumentSemanticValidator
   }
 
   public List<Notification> validate(KlabDocument<?> document) {
+    if (document instanceof KimObservationStrategyDocument strategies) {
+      var visitor = new KimObservationStrategyDocumentVisitor(this, null);
+      visitor.visit(strategies);
+      return visitor.getNotifications();
+    }
     if (document instanceof KimNamespace namespace) {
       var visitor = new KimNamespaceVisitor(this, null);
       visitor.visit(namespace);
@@ -111,7 +118,7 @@ public class DocumentSemanticValidator
     if (context.getDocument() instanceof KimOntology ontology
         && reference.urn().startsWith(ontology.getUrn() + ":")) {
       // The loaded OWL may contain a later (or deleted) declaration from the previous save.
-      return new KimWorldviewValidator().validateReference(reference, context);
+      return sourceValidator.validateReference(reference, context);
     }
     return List.of();
   }
@@ -270,7 +277,11 @@ public class DocumentSemanticValidator
         statement.getUrn().contains(":")
             ? statement.getUrn()
             : context.getDocument().getUrn() + ":" + statement.getUrn();
-    collect(reasoner.resolveConcept(urn), statement, context, result);
+    var concept = reasoner.resolveConcept(urn);
+    collect(concept, statement, context, result);
+    for (var message : org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
+        .unresolvedDescriptionBearers(reasoner.owl(), concept))
+      result.add(Notification.warning(message, Notification.LexicalContext.of(statement, context.getDocument())));
     return result;
   }
 

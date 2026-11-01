@@ -85,6 +85,16 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 public interface Geometry extends Serializable, Locator {
 
   /**
+   * An operation-local geometry view. Promotion, conversion and derived results must remain
+   * private: repositories must neither reuse shared mutable values nor cache these values.
+   * Keys retain their normal semantic meaning; privacy is explicit, not encoded in random keys.
+   */
+  interface LocalSnapshot extends Geometry {
+    Scale promote(org.integratedmodelling.klab.api.scope.Scope scope);
+    Geometry isolate(Geometry geometry);
+  }
+
+  /**
    * Return a plain geometry suitable for a serialized service boundary. Runtime {@link Scale} and
    * {@link Coverage} instances contain service-local state and must never be transported.
    */

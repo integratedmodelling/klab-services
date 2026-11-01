@@ -26,6 +26,7 @@ public class StyledKimToken {
     private KimStyle.Color color;
     private KimStyle.FontStyle font;
     private String description;
+    private java.util.List<String> aliases = java.util.List.of();
     private boolean needsWhitespaceBefore;
     private boolean needsWhitespaceAfter;
 
@@ -104,6 +105,12 @@ public class StyledKimToken {
 
     public String getValue() {
         return value;
+    }
+    /** Published codelist declarations equivalent to this token's canonical value. */
+    public java.util.List<String> getAliases() { return aliases; }
+
+    public void setAliases(java.util.List<String> aliases) {
+        this.aliases = aliases == null ? java.util.List.of() : java.util.List.copyOf(aliases);
     }
     public void setValue(String value) {
         this.value = value;

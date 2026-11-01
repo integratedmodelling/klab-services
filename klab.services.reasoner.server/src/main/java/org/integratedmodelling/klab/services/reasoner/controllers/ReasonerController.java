@@ -137,10 +137,7 @@ public class ReasonerController {
 
       var scope = authorization.getScope();
       if (alternative) {
-        var syntax = scope.getService(ResourcesService.class).declareConcept(definition);
-        if (syntax != null) {
-          return SemanticsBuilder.create(syntax, reasoner.klabService(), scope).buildConcept();
-        }
+        return reasoner.klabService().resolveConceptWithBuilder(definition, scope);
       }
     }
     return reasoner.klabService().resolveConcept(definition);

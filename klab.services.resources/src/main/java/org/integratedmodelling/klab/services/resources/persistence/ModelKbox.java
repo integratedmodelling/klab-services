@@ -281,6 +281,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       ContextScope context) {
 
     List<ModelReference> ret = new ArrayList<>();
+    ModelVisibility.requireReady(resourceService, context);
 
     if (!database.hasTable("model")) {
       return ret;
@@ -320,7 +321,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     final List<Long> oids = database.queryIds(query);
     for (long l : oids) {
       ModelReference model = retrieveModel(l, context);
-      if (model != null) {
+      if (model != null && ModelVisibility.accepts(model, observable, resolutionConstraints)) {
         Coverage coverage =
             resourceService.info(
                 model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, context);
@@ -426,6 +427,8 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     var scenarios = getConstraints(resolutionConstraints, ResolutionConstraint.Type.Scenarios, String.class);
     if (!scenarios.isEmpty()) visibility += " OR (" + joinStringConditions("model.namespaceid", scenarios, "OR") + ")";
     String ret = "(" + visibility + ")";
+    ret += namespace == null ? " AND model.scope <> 'PRIVATE'"
+        : " AND (model.scope <> 'PRIVATE' OR model.namespaceid = '" + Utils.Escape.forSQL(namespace) + "')";
     // Project-private models never escape their project, including explicit scenarios.
     ret += project == null ? " AND model.scope <> 'PROJECT_PRIVATE'"
         : " AND (model.scope <> 'PROJECT_PRIVATE' OR model.projectid = '" + Utils.Escape.forSQL(project) + "')";

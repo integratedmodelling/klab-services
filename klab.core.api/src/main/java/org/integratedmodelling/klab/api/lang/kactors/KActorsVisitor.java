@@ -2304,6 +2304,7 @@ public class KActorsVisitor {
     visitSemanticConcept(concept.getComparisonConcept(), context);
     visitSemanticConcept(concept.getRelationshipSource(), context);
     visitSemanticConcept(concept.getRelationshipTarget(), context);
+    for (var target : safe(concept.getAbout())) visitSemanticConcept(target, context);
     for (var nested : safe(concept.getTraits())) visitSemanticConcept(nested, context);
     for (var nested : safe(concept.getRoles())) visitSemanticConcept(nested, context);
     for (var nested : safe(concept.getOperands())) visitSemanticConcept(nested, context);

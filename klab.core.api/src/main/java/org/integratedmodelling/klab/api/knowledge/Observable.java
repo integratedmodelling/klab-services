@@ -442,6 +442,9 @@ public interface Observable extends Semantics, Resolvable {
    */
   Object getDefaultValue();
 
+  /** Typed description value, retained through transport and builder reconstruction. */
+  default Object getValue() { return null; }
+
   /**
    * What to do when resolution fails, allowing to specify default values or move on with other
    * optional actions instead of simply failing. Linked to stated metadata with stated default

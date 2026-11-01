@@ -39,8 +39,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       new LinkedHashMap<>();
   private ClientDigitalTwin digitalTwin;
   private DigitalTwin.Transaction transaction;
-  private final DigitalTwin.Configuration configuration;
-  private final Data.ShardingStrategy shardingStrategy;
+  private DigitalTwin.Configuration configuration;
+  private Data.ShardingStrategy shardingStrategy;
 
   /**
    * The default client scope has the user as the embedded agent.
@@ -59,10 +59,6 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     this.observer = configuration.getObserver();
     if (observer != null) resolutionConstraints.put(ResolutionConstraint.Type.Observer,
         ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
-    if (configuration.getUrl() == null
-        && configuration instanceof ConfigurationImpl configurationImpl) {
-      configurationImpl.setUrl(Utils.URLs.newURL(runtimeService.getUrl() + "/dt/" + getId()));
-    }
     this.name = configuration.getName();
     this.shardingStrategy = new Data.ShardingStrategy();
     this.setHostServiceId(runtimeService.serviceId());
@@ -517,12 +513,24 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   public void setFromConfiguration(DigitalTwin.Configuration configuration) {
-    if (configuration.isEmpty()) {
-      setEmpty(true);
-    } else {
-      setId(configuration.getId());
+    if (configuration == null || configuration.isEmpty()
+        || configuration.getId() == null || configuration.getId().isBlank()) {
+      throw new KlabInternalErrorException("Cannot initialize a client context without a valid runtime configuration");
     }
-    this.configuration.getNotifications().addAll(configuration.getNotifications());
+    // Keep a private authoritative descriptor: derived scopes subsequently share this snapshot.
+    this.configuration = DigitalTwin.Configuration.builder(configuration).build();
+    if (this.configuration instanceof ConfigurationImpl descriptor) {
+      descriptor.setShardingStrategy(configuration.getShardingStrategy());
+      if (descriptor.getServiceUrl() == null) descriptor.setServiceUrl(runtimeService.getUrl());
+      if (descriptor.getServiceId() == null) descriptor.setServiceId(runtimeService.serviceId());
+      if (descriptor.getUrl() == null) {
+        descriptor.setUrl(Utils.URLs.newURL(descriptor.getServiceUrl() + "/dt/" + descriptor.getId()));
+      }
+    }
+    setId(configuration.getId());
+    setEmpty(false);
+    this.name = configuration.getName();
+    this.shardingStrategy = configuration.getShardingStrategy();
     this.observer = configuration.getObserver();
     resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
     if (observer != null) resolutionConstraints.put(ResolutionConstraint.Type.Observer,

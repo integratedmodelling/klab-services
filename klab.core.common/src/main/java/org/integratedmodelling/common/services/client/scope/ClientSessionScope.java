@@ -97,12 +97,24 @@ public class ClientSessionScope extends ClientUserScope implements SessionScope 
      * that hosts it.
      */
     var ret = new ClientContextScope(this, runtime, configuration.validate(this));
-    var id = runtime.declareContextScope(ret, this, userScope);
-    if (id == null) throw new KlabResourceAccessException("Runtime returned no digital twin configuration");
-    id.getNotifications().forEach(notification -> userScope.send(notification));
-    ret.setFromConfiguration(id);
-    if (!id.isEmpty()) {
+    var result = runtime.declareContextScope(ret, this, userScope);
+    if (result != null) {
+      result.getNotifications().forEach(notification -> userScope.send(notification));
+    }
+    if (result == null || result.isEmpty() || result.getId() == null || result.getId().isBlank()) {
+      // Declaration can fail after messaging was partially established; only disconnect locally.
+      ret.closePeer();
+      var detail = result == null ? "No response" : result.getNotifications().stream()
+          .map(org.integratedmodelling.klab.api.services.runtime.Notification::getMessage)
+          .collect(java.util.stream.Collectors.joining("; "));
+      throw new KlabResourceAccessException("Digital twin creation failed: " + detail);
+    }
+    ret.setFromConfiguration(result);
+    try {
       ClientScopeManager.INSTANCE.register(ret);
+    } catch (RuntimeException failure) {
+      ret.closePeer();
+      throw failure;
     }
 
     return ret;

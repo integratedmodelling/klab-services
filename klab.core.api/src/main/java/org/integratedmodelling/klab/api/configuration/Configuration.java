@@ -77,12 +77,11 @@ public enum Configuration {
   public static final String KLAB_RELATIVE_WORK_PATH = ".klab";
 
   Configuration() {
-    setupDataPath(
-        new File(System.getProperty("user.home") + File.separator + KLAB_RELATIVE_WORK_PATH));
+    setupDataPath(DataRootBootstrap.PROCESS.claim(System.getProperties()).toFile());
   }
 
   private void setupDataPath(File dataPath) {
-    String home = System.getProperty("user.home");
+    dataPath = DataRootBootstrap.PROCESS.requireRoot(dataPath.toPath()).toFile();
     this.dataPath = dataPath;
 
     /*

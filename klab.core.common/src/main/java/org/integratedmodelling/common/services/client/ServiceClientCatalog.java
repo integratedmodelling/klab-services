@@ -30,7 +30,14 @@ public enum ServiceClientCatalog {
   private final long onlinePollCycleSeconds =
       (Integer) Setting.POLLING_INTERVAL_REMOTE.defaultValue;
   private static final int REMOTE_FAILURES_BEFORE_OFFLINE = 3;
-  private final ScheduledExecutorService pollingTasks = Executors.newScheduledThreadPool(10);
+  private final ScheduledThreadPoolExecutor pollingTasks = createPollingExecutor();
+
+  private static ScheduledThreadPoolExecutor createPollingExecutor() {
+    var executor = new ScheduledThreadPoolExecutor(10,
+        Thread.ofPlatform().daemon(true).name("klab-service-monitor-", 0).factory());
+    executor.setRemoveOnCancelPolicy(true);
+    return executor;
+  }
 
   /**
    * One of these is kept per service URL; the clients are built from it, adding the identity that
@@ -47,8 +54,12 @@ public enum ServiceClientCatalog {
     private final boolean local;
     private int consecutiveFailedPolls = 0;
     private ScheduledFuture<?> schedule;
+    private final boolean pollingEnabled;
+    private volatile boolean closed;
 
-    private final Set<BaseServiceClient> registeredClients = ConcurrentHashMap.newKeySet();
+    // Scopes own clients. Monitoring must not keep replaced clients (and their scopes) alive.
+    private final Set<BaseServiceClient> registeredClients =
+        Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
 
     public Utils.Http.Client getClient() {
       return client;
@@ -118,26 +129,28 @@ public enum ServiceClientCatalog {
       this.type = type;
       this.status = status;
       this.local = Utils.URLs.isLocalHost(url);
-      if (startPolling) {
-        Thread.ofVirtual().start(this::connect);
-      }
+      this.pollingEnabled = startPolling;
     }
 
     public void registerClient(BaseServiceClient client) {
-      registeredClients.add(client);
+      synchronized (ServiceClientCatalog.this) {
+        if (closed) throw new KlabIllegalStateException("Service monitor is closed");
+        registeredClients.add(client);
+        if (pollingEnabled && schedule == null) connect();
+      }
     }
 
     public int release(BaseServiceClient client) {
-      registeredClients.remove(client);
-      if (registeredClients.isEmpty()) {
-        close();
+      synchronized (ServiceClientCatalog.this) {
+        registeredClients.remove(client);
+        if (registeredClients.isEmpty()) close();
+        return registeredClients.size();
       }
-      return registeredClients.size();
     }
 
     void connect() {
       this.schedule =
-          pollingTasks.scheduleAtFixedRate(
+          pollingTasks.scheduleWithFixedDelay(
               this::timedTasks,
               0,
               this.local ? localPollCycleSeconds : onlinePollCycleSeconds,
@@ -145,7 +158,20 @@ public enum ServiceClientCatalog {
     }
 
     void timedTasks() {
-      refreshStatus(true);
+      synchronized (ServiceClientCatalog.this) {
+        // Accessing the weak set expunges collected clients. The scheduled task itself otherwise
+        // keeps an unused monitor, its HTTP client and its catalog entry alive indefinitely.
+        if (closed || registeredClients.isEmpty()) {
+          close();
+          return;
+        }
+      }
+      try {
+        refreshStatus(true);
+      } catch (Exception e) {
+        // An unchecked HTTP/listener failure must not suppress every subsequent scheduled poll.
+        org.integratedmodelling.common.logging.Logging.INSTANCE.warn("Service status poll failed: " + e);
+      }
     }
 
     public KlabService.ServiceStatus refreshStatus() {
@@ -174,13 +200,23 @@ public enum ServiceClientCatalog {
         if (statusHasChanged) {
           if (serverId == null && status.get().getServiceId() != null) {
             serverId = status.get().getServiceId();
-            serviceClients.put(serverId, this);
+            synchronized (ServiceClientCatalog.this) {
+              if (!closed) serviceClients.putIfAbsent(serverId, this);
+            }
           }
 
           if (notifyListeners) {
-            for (var client : registeredClients) {
+            List<BaseServiceClient> clients;
+            synchronized (registeredClients) {
+              clients = new ArrayList<>(registeredClients);
+            }
+            for (var client : clients) {
               for (var listener : client.statusListeners) {
-                listener.accept(status.get(), statusHasChanged);
+                try {
+                  listener.accept(status.get(), statusHasChanged);
+                } catch (Exception e) {
+                  org.integratedmodelling.common.logging.Logging.INSTANCE.warn("Service status listener failed: " + e);
+                }
               }
             }
           }
@@ -202,10 +238,11 @@ public enum ServiceClientCatalog {
     }
 
     private void close() {
+      closed = true;
       if (this.schedule != null) {
-        this.schedule.cancel(true);
+        this.schedule.cancel(false);
       }
-      serviceClients.remove(serverId);
+      if (serverId != null) serviceClients.remove(serverId, this);
     }
 
     public boolean isLocal() {
@@ -215,7 +252,7 @@ public enum ServiceClientCatalog {
 
   private final Map<String, ClientMonitor> serviceClients = new ConcurrentHashMap<>();
 
-  public BaseServiceClient getService(
+  public synchronized BaseServiceClient getService(
       UserScopeNotification.ServiceInfo request, KlabService ownerService, UserScope userScope) {
     if (request.getId() == null || request.getUrl() == null || request.getType() == null) {
       throw new KlabIllegalStateException("Incomplete service advertisement");

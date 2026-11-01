@@ -22,6 +22,8 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
   private static final String[] HEADERS_OF_INTEREST = {
     HttpHeaders.AUTHORIZATION,
     ServicesAPI.SCOPE_HEADER,
+    ServicesAPI.USERNAME_HEADER,
+    ServicesAPI.FEDERATION_HEADER,
     ServicesAPI.SERVER_KEY_HEADER,
     ServicesAPI.SERVICE_ID_HEADER,
     ServicesAPI.RESOLUTION_NAMESPACE_HEADER,
@@ -69,7 +71,7 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
         if (token != null && token.isAuthenticated()) {
           // Never pass an authenticated request with an unresolved explicit scope
           // to controllers: absent/inaccessible scopes are not internal failures.
-          if (req.getHeader(ServicesAPI.SCOPE_HEADER) != null && token.getScope() == null) {
+          if (requestHeaders.get(ServicesAPI.SCOPE_HEADER) != null && token.getScope() == null) {
             SecurityContextHolder.clearContext();
             res.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;

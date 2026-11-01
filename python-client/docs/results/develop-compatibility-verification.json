@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-16",
+  "status": "Blocked",
+  "passed": false,
+  "branch": "feature/python-client-develop-integration",
+  "python_parent": "188caeb47b86f2eb114cd6f557cf839df0eb10ee",
+  "develop_parent": "671a8181551a51b8a6b8080c3a13a2bf1cd0f048",
+  "uncommitted_merge": true,
+  "suite": "develop-compatibility",
+  "functional_tests": {"tests": 1, "failures": 1, "errors": 0, "skipped": 0},
+  "offline_harness_validation": {"tests": 1010, "failures": 0, "errors": 0, "skipped": 0, "lint": "Passed: E9,F63,F7,F82"},
+  "startup": "All five actual Java services exposed their public endpoints; this is not scientific readiness",
+  "readiness": {
+    "acceptedGeneration": 0,
+    "beanStatus": "VALID",
+    "logicalStatus": "UNRESOLVED",
+    "diagnostic": "CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import {odo,https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl}"
+  },
+  "baseline_comparison": {
+    "server": "Unchanged develop 671a81815; actual graphdb, Resources and Reasoner processes",
+    "same_28_worldview_source_hashes": true,
+    "same_diagnostic": true,
+    "acceptedGeneration": 0,
+    "logicalStatus": "UNRESOLVED",
+    "scope": "Reasoner readiness reproduction, not a full baseline workflow or native Java-client test",
+    "diagnostic_note": "Status was successfully captured; a subsequent supplementary worldview-text export hit a Windows encoding error, so no admin-load diagnostic is claimed"
+  },
+  "not_reached": [
+    "Scientific before/after roundtrips",
+    "Runtime-only restart",
+    "Cold private/shared/excluded context permission checks",
+    "Saved-handle and typed-observe suites after the readiness gate",
+    "Throughput repetitions"
+  ],
+  "initial_attempt": "Existing compute-and-analyze suite failed two tests at Reasoner HTTP 500: Accepted semantic knowledge is unavailable",
+  "cleanup_exit_code": 0,
+  "all_owned_service_process_exits_confirmed": true,
+  "production_deployment_modified": false,
+  "worldview_revision": "608bef150ced0a109db98a5aad64ba4461beaa54",
+  "java": "Temurin 21.0.12.1+1",
+  "python": "3.12.7",
+  "original_java_sdk_build_source_manifest_sha256_lf": "985e7eb9d7a827b158637d63e42a880d6681ed499da736b71b85344e200e4b00",
+  "functional_harness_manifest_sha256_lf": "5ed88e1d096765e73ff96807addbdd3aeb5719941ff3b8e0ac79db7a57daaee9",
+  "evidence_root": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode",
+  "evidence": {
+    "candidate": "python-develop-live2",
+    "initial_attempt": "python-develop-live1",
+    "baseline": "python-develop-baseline-live1",
+    "provenance": "python-develop-live2/verification-provenance.json"
+  },
+  "evidence_sha256": {
+    "python-develop-live2/run-report.json": "279a896c7f0d2ae7df3b2f3127819e4fb3ba8cacd5134a570317f9f16586ecb0",
+    "python-develop-live2/develop-readiness.json": "c790bb31c6b153af6599da1162a951ef150391552d29bb8245ebcfee14ae8bff",
+    "python-develop-live2/develop-compatibility.xml": "7b0cb6c55419a287c918f464232d30253ad06ab1290324058e97fa23056eb872",
+    "python-develop-baseline-live1/reasoner-status.json": "1fe56d4cfd82fb2261b4d2f0ce1191eb9cb016945a1c844c1706d1e195677d04"
+  },
+  "next_gate": "Provision the current Reasoner's required captured semantic dependencies and rerun. Do not bypass publication checks, silently substitute bundled OWL for a numbered release, or treat HTTP 200 as acceptance. Other dependencies may surface after ODO is resolved."
+}

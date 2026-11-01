@@ -1,0 +1,86 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< org.integratedmodelling:klab-ide >------------------
+[INFO] Building klab-ide 1.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ klab-ide ---
+[INFO] Copying 18 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ klab-ide ---
+[WARNING] **********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+[WARNING] * Required filename-based automodules detected: [klab.core.api-1.0.0-SNAPSHOT.jar, flexmark-util-ast-0.64.8.jar, flexmark-util-html-0.64.8.jar, flexmark-util-misc-0.64.8.jar, flexmark-util-sequence-0.64.8.jar, flexmark-0.64.8.jar, org.eclipse.lsp4j-0.14.0.jar, org.eclipse.lsp4j.jsonrpc-0.14.0.jar, klab.cli-1.0.0-SNAPSHOT.jar, klab.modeler-1.0.0-SNAPSHOT.jar, klab.core.common-1.0.0-SNAPSHOT.jar, evo-inflector-1.3.jar, jsr305-3.0.2.jar, commons-collections-3.2.2.jar, tyrus-standalone-client-2.2.0.jar]. Please don't publish this project to a public artifact repository! *
+[WARNING] **********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 157 source files with javac [debug target 21 module-path] to target\classes
+[INFO] /C:/Users/Ferd/git/klab-ide/src/main/java/org/integratedmodelling/klab/ide/components/ResourceEditor.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/Ferd/git/klab-ide/src/main/java/org/integratedmodelling/klab/ide/components/ResourceEditor.java: Recompile with -Xlint:deprecation for details.
+[INFO] /C:/Users/Ferd/git/klab-ide/src/main/java/org/integratedmodelling/klab/ide/KlabIDEController.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/Ferd/git/klab-ide/src/main/java/org/integratedmodelling/klab/ide/KlabIDEController.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- dependency:3.6.1:build-classpath (generate-classpath) @ klab-ide ---
+[INFO] Skipped writing classpath file 'C:\Users\Ferd\git\klab-ide\target\classpath.txt'.  No changes found.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ klab-ide ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ klab-ide ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 52 source files with javac [debug target 21 module-path] to target\test-classes
+[INFO] /C:/Users/Ferd/git/klab-ide/src/test/java/org/integratedmodelling/klab/ide/components/SemanticComposerTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /C:/Users/Ferd/git/klab-ide/src/test/java/org/integratedmodelling/klab/ide/components/SemanticComposerTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ klab-ide ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.integratedmodelling.klab.ide.components.SemanticComposerTest
+Oct 10, 2026 11:15:09 AM org.integratedmodelling.klab.ide.components.SemanticComposer timedOut
+WARNING: Semantic search timeout: mode=TOKEN, request=2, session=42, proposals=0, selected=null, queryLength=5, elapsedMs=518, workerDone=false
+Oct 10, 2026 11:15:11 AM org.integratedmodelling.klab.ide.components.SemanticComposer failed
+WARNING: Semantic search failed: mode=SELECT, request=2, session=42, proposals=1, selected=test:Tree, queryLength=0
+java.lang.IllegalStateException: Suggestions failed after edit
+	at org.integratedmodelling.klab.ide@1.0.0-SNAPSHOT/org.integratedmodelling.klab.ide.components.SemanticComposerTest.lambda$editCommittedBeforeFailedResponseCanStillBeUndone$139(SemanticComposerTest.java:537)
+	at org.integratedmodelling.klab.ide@1.0.0-SNAPSHOT/org.integratedmodelling.klab.ide.components.SemanticComposerTest$FakeSearch.lambda$reasoner$6(SemanticComposerTest.java:1374)
+	at jdk.proxy2/jdk.proxy2.$Proxy9.semanticSearch(Unknown Source)
+	at org.integratedmodelling.klab.ide@1.0.0-SNAPSHOT/org.integratedmodelling.klab.ide.components.SemanticComposer.lambda$send$29(SemanticComposer.java:509)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+Oct 10, 2026 11:15:14 AM org.integratedmodelling.klab.ide.components.SemanticComposer timedOut
+WARNING: Semantic search timeout: mode=SELECT, request=2, session=42, proposals=1, selected=test:Tree, queryLength=0, elapsedMs=510, workerDone=false
+Oct 10, 2026 11:15:20 AM org.integratedmodelling.klab.ide.components.SemanticComposer received
+WARNING: Unconfirmed authority insertion: mode=IDENTITY, request=2, session=42, proposals=1, selected=null, queryLength=2, previousTokens=1, returnedTokens=1, errors=0
+Oct 10, 2026 11:15:21 AM org.integratedmodelling.klab.ide.components.SemanticComposer received
+WARNING: Unconfirmed authority insertion: mode=IDENTITY, request=2, session=42, proposals=1, selected=null, queryLength=2, previousTokens=1, returnedTokens=0, errors=1
+Oct 10, 2026 11:15:21 AM org.integratedmodelling.klab.ide.components.SemanticComposer failed
+WARNING: Semantic search failed: mode=TOKEN, request=2, session=42, proposals=0, selected=null, queryLength=4
+java.lang.IllegalStateException: Connection interrupted
+	at org.integratedmodelling.klab.ide@1.0.0-SNAPSHOT/org.integratedmodelling.klab.ide.components.SemanticComposerTest.lambda$transportFailureRetainsExpressionAndBackspaceCanRecover$130(SemanticComposerTest.java:516)
+	at org.integratedmodelling.klab.ide@1.0.0-SNAPSHOT/org.integratedmodelling.klab.ide.components.SemanticComposerTest$FakeSearch.lambda$reasoner$6(SemanticComposerTest.java:1357)
+	at jdk.proxy2/jdk.proxy2.$Proxy9.semanticSearch(Unknown Source)
+	at org.integratedmodelling.klab.ide@1.0.0-SNAPSHOT/org.integratedmodelling.klab.ide.components.SemanticComposer.lambda$send$29(SemanticComposer.java:509)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+[INFO] Tests run: 46, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 29.99 s -- in org.integratedmodelling.klab.ide.components.SemanticComposerTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 46, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:12 min
+[INFO] Finished at: 2026-10-10T11:15:28+01:00
+[INFO] ------------------------------------------------------------------------

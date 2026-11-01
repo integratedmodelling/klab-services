@@ -63,7 +63,17 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
   @Override
   protected ReasonerService createPrimaryService(
       ServiceScope serviceScope, ServiceStartupOptions options) {
-    return new ReasonerService(serviceScope, options);
+    var service = new ReasonerService(serviceScope, options);
+    try {
+      service.enableCandidatePublication(
+          org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.fromLocalCatalog(
+              org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE.getDataPath("semantic-candidates").toPath(),
+              org.integratedmodelling.klab.configuration.ServiceConfiguration.INSTANCE.getDataPath("knowledge").toPath(),
+              org.integratedmodelling.klab.services.base.BaseService.getConfigurationDirectory(options).toPath()));
+    } catch (Exception failure) {
+      throw new IllegalStateException("Cannot capture local semantic dependencies", failure);
+    }
+    return service;
   }
 
   public static void main(String[] args) {

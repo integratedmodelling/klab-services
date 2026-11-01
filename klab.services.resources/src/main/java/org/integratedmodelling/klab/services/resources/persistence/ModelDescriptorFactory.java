@@ -51,6 +51,13 @@ final class ModelDescriptorFactory {
             .resolveObservable(model.getObservables().getFirst().getUrn());
 
     ret.addAll(getModelDescriptors(model, monitor));
+    // Resolve every output and dependency before assigning any descriptor's visibility.
+    boolean subjective = java.util.stream.Stream.concat(
+        model.getObservables().stream(), model.getDependencies().stream()).anyMatch(o -> {
+          if (org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.isSubjective(o)) return true;
+          var resolved = monitor.getService(Reasoner.class).resolveObservable(o.getUrn());
+          return resolved != null && resolved.is(SemanticType.SUBJECTIVE);
+        });
 
     if (!ret.isEmpty()) {
 
@@ -106,6 +113,10 @@ final class ModelDescriptorFactory {
       }
     }
 
+    if (subjective) {
+      for (var descriptor : ret) descriptor.setScope(
+          org.integratedmodelling.klab.api.lang.kim.KlabStatement.Scope.PRIVATE);
+    }
     return ret;
   }
 

@@ -18,6 +18,16 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 import org.junit.jupiter.api.Test;
 
 class SemanticSearchTransportTest {
+  @Test void tokenAliasesRoundTripAndLegacyTokensDefaultToNoAliases() throws Exception {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var token = new StyledKimToken(); token.setValue("TAXA:123");
+    token.setAliases(List.of("taxonomy.species:Oak"));
+    var restored = mapper.readValue(mapper.writeValueAsBytes(token), StyledKimToken.class);
+    assertEquals("TAXA:123", restored.getValue());
+    assertEquals(List.of("taxonomy.species:Oak"), restored.getAliases());
+    assertTrue(mapper.readValue("{\"value\":\"TAXA:123\"}", StyledKimToken.class).getAliases().isEmpty());
+    assertTrue(mapper.readValue("{\"value\":\"TAXA:123\",\"aliases\":null}", StyledKimToken.class).getAliases().isEmpty());
+  }
   @Test void semanticSearchPostsJsonAndPreservesProposalAndObservableData() throws Exception {
     var mapper = JacksonConfiguration.newObjectMapper();
     var concept = new ConceptImpl(); concept.setUrn("test:Height"); concept.setName("Height");

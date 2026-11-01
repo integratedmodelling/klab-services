@@ -105,7 +105,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
   }
 
   public CoverageImpl(Scale original, double initialCoverage) {
-    super(original.getExtents().stream().map(e -> e.collapsed()).collect(Collectors.toList()));
+    super(original.getExtents().stream().map(CoverageImpl::collapseExtent).collect(Collectors.toList()));
     this.coverage = initialCoverage;
     if (original.isUniversal()) {
       this.coverage = 1;
@@ -116,7 +116,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
       this.extents = new Extent[0];
     } else {
       for (Extent<?> extent : extents) {
-        coverages.add(Pair.of(initialCoverage > 0 ? extent.collapsed() : null, initialCoverage));
+        coverages.add(Pair.of(initialCoverage > 0 ? collapseExtent(extent) : null, initialCoverage));
       }
     }
   }
@@ -304,12 +304,34 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
       for (int i = 0; i < coverageImpl.coverages.size(); i++) {
         if (coverageEntryType(coverageImpl, i) == type) {
           Extent<?> current = coverageImpl.coverages.get(i).getFirst();
-          return current == null ? null : current.collapsed();
+          return collapseExtent(current);
         }
       }
     }
     Extent<?> extent = coverage.extent(type);
-    return extent == null ? null : extent.collapsed();
+    return collapseExtent(extent);
+  }
+
+  /** Preserve generic provenance that TimeImpl.collapsed otherwise converts to PHYSICAL.
+   * Keep the ordinary collapsed copy and multiplicity; never mutate the caller's time. */
+  private static Extent<?> collapseExtent(Extent<?> extent) {
+    if (extent == null) return null;
+    Extent<?> collapsed = extent.collapsed();
+    if (restoresGenericEpochKind(extent)
+        && collapsed instanceof org.integratedmodelling.klab.runtime.scale.time.TimeImpl owned
+        && collapsed != extent) {
+      owned.setExtentType(((Time) extent).getTimeType());
+    }
+    return collapsed;
+  }
+
+  private static boolean restoresGenericEpochKind(Extent<?> extent) {
+    return extent != null
+        && extent.getClass() == org.integratedmodelling.klab.runtime.scale.time.TimeImpl.class
+        && extent instanceof Time time && time.getTimeType() != Time.Type.PHYSICAL && time.isGeneric()
+        && time.getStart() != null && time.getEnd() != null
+        && time.getStart().getMilliseconds() == 0 && time.getEnd().getMilliseconds() > 0
+        && time.getEnd().getMilliseconds() != Long.MAX_VALUE;
   }
 
   @Override
@@ -365,7 +387,9 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 
     Extent<?> orig = extent(type);
 
-    if (orig instanceof Time time && time.is(Time.Type.INITIALIZATION)) {
+    // Only adapter-restored initialization previously followed the PHYSICAL merge path.
+    if (orig instanceof Time time && time.is(Time.Type.INITIALIZATION)
+        && !restoresGenericEpochKind(orig)) {
       return Pair.of(orig, 1.0);
     } else if (other instanceof Time time && time.isGeneric()) {
       return Pair.of(orig, 1.0);

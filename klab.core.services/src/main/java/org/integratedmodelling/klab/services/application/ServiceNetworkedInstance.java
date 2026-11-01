@@ -174,6 +174,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
   public static boolean start(
       Class<? extends ServiceNetworkedInstance<?>> cls, ServiceStartupOptions options) {
 
+    options.prepareDataRoot();
     File logDirectory = BaseService.getConfigurationSubdirectory(options, "logs");
     File logFile =
         new File(

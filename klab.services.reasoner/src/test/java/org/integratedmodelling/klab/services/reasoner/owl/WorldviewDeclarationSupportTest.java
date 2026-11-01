@@ -21,6 +21,7 @@ class WorldviewDeclarationSupportTest {
     declare(ontology, "Predicate", SemanticType.PREDICATE);
     declare(ontology, "Process", SemanticType.PROCESS);
     for (var type : KimConceptStatement.DescriptionType.values()) {
+      if (type == KimConceptStatement.DescriptionType.DISCRETIZES) continue;
       String source = type == KimConceptStatement.DescriptionType.CLASSIFIES ? "Predicate"
           : type == KimConceptStatement.DescriptionType.DISCRETIZES ? "Order" : "Quality";
       var statement = new KimConceptStatementImpl();
@@ -74,6 +75,39 @@ class WorldviewDeclarationSupportTest {
     assertRestriction(
         owl, ontology, ontology.getConcept("Creator"), "creates", ontology.getConcept("Entity"));
   }
+  @Test void domainsDescribeConfigurationsWithoutBorrowingTheirBearersOrAddingDlCalls() {
+    var owl=org.mockito.Mockito.spy(owl());var ontology=owl.requireOntology("audit");
+    declare(ontology,"Domain",SemanticType.DOMAIN,SemanticType.PREDICATE);
+    declare(ontology,"System",SemanticType.CONFIGURATION);
+    declare(ontology,"Bearer",SemanticType.SUBJECT,SemanticType.COUNTABLE,SemanticType.OBSERVABLE);
+    owl.restrictSome(ontology.getConcept("System"),owl.getProperty("odo:isInherentTo"),ontology.getConcept("Bearer"),ontology);
+    var empty=new KimConceptStatementImpl();
+    WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),empty,v->owl.getConcept(v.getName()));
+    long calls=org.mockito.Mockito.mockingDetails(owl).getInvocations().stream().filter(i->Set.of("flushReasoner","isEntailed").contains(i.getMethod().getName())).count();
+    org.mockito.Mockito.clearInvocations(owl);
+    var statement=new KimConceptStatementImpl();statement.getObservablesDescribed().add(new PairImpl<>(syntax("System"),KimConceptStatement.DescriptionType.DESCRIBES));
+    WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),statement,v->owl.getConcept(v.getName()));
+    assertRestriction(owl,ontology,ontology.getConcept("Domain"),"describes",ontology.getConcept("System"));
+    assertEquals(calls,org.mockito.Mockito.mockingDetails(owl).getInvocations().stream().filter(i->Set.of("flushReasoner","isEntailed").contains(i.getMethod().getName())).count());
+    var f=owl.manager.getOWLDataFactory();var owner=owl.getOWLClass(ontology.getConcept("Domain"));
+    for(var axiom:ontology.getOWLOntology().getSubClassAxiomsForSubClass(owner))
+      if(axiom.getSuperClass() instanceof OWLObjectSomeValuesFrom some)
+        assertNotEquals(owl.getProperty("odo:isInherentTo").getOWLEntity(),some.getProperty());
+    assertFalse(ontology.getOWLOntology().containsAxiom(f.getOWLSubClassOfAxiom(owner,f.getOWLObjectSomeValuesFrom(owl.getProperty("odo:describesQuality").getOWLEntity().asOWLObjectProperty(),owl.getOWLClass(ontology.getConcept("System"))))));
+  }
+  @Test void configurationDescriptionsAcceptQualityAndRejectMissingPropertyBeforeWrites() {
+    var owl=owl();var ontology=owl.requireOntology("audit");
+    declare(ontology,"Quality",SemanticType.QUALITY,SemanticType.OBSERVABLE);
+    declare(ontology,"Domain",SemanticType.DOMAIN,SemanticType.PREDICATE);
+    declare(ontology,"System",SemanticType.CONFIGURATION);
+    var statement=new KimConceptStatementImpl();statement.getObservablesDescribed().add(new PairImpl<>(syntax("System"),KimConceptStatement.DescriptionType.DESCRIBES));
+    long before=ontology.getOWLOntology().getAxiomCount();
+    assertDoesNotThrow(()->WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Quality"),statement,v->owl.getConcept(v.getName())));
+    before=ontology.getOWLOntology().getAxiomCount();
+    var odo=owl.requireOntology("odo");odo.opropertyIDs.remove("describes");odo.propertyIDs.remove("describes");
+    assertThrows(KlabValidationException.class,()->WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),statement,v->owl.getConcept(v.getName())));
+    assertEquals(before,ontology.getOWLOntology().getAxiomCount());
+  }
   private OWL owl() {
     var scope = (org.integratedmodelling.klab.api.scope.Scope) java.lang.reflect.Proxy.newProxyInstance(
         getClass().getClassLoader(), new Class<?>[]{org.integratedmodelling.klab.api.scope.Scope.class},
@@ -81,15 +115,18 @@ class WorldviewDeclarationSupportTest {
     var owl = new OWL(scope); owl.manager = OWLManager.createOWLOntologyManager();
     var properties = new ArrayList<Axiom>();
     for (String name : List.of("affects", "creates", "requiresIdentity", "requiresRealm", "requiresExtent",
-        "requiresAttribute", "impliesObservable", "emergesFrom", "describesQuality", "increasesWith",
+        "requiresAttribute", "impliesObservable", "emergesFrom", "describes", "describesQuality", "increasesWith",
         "decreasesWith", "marksQuality", "classifiesQuality", "discretizesQuality", "impliesSource",
-        "impliesDestination", "appliesTo")) properties.add(Axiom.ObjectPropertyAssertion(name));
+        "impliesDestination", "appliesTo", "isInherentTo", "describesConfiguration")) properties.add(Axiom.ObjectPropertyAssertion(name));
     owl.requireOntology("odo").define(properties);
     return owl;
   }
   private KimConcept syntax(String name) { var value = new KimConceptImpl(); value.setName("audit:" + name); return value; }
   private void declare(Ontology ontology, String name, SemanticType... types) {
-    ontology.define(List.of(Axiom.ClassAssertion(name, EnumSet.copyOf(List.of(types)))));
+    var flags = EnumSet.copyOf(List.of(types));
+    if (flags.contains(SemanticType.QUALITY) || flags.contains(SemanticType.CONFIGURATION))
+      flags.add(SemanticType.OBSERVABLE);
+    ontology.define(List.of(Axiom.ClassAssertion(name, flags)));
   }
   private void assertRestriction(OWL owl, Ontology ontology, Concept owner, String property, Concept target) {
     var f = owl.manager.getOWLDataFactory();
@@ -150,7 +187,11 @@ class WorldviewDeclarationSupportTest {
     reloadManager.createOntology(owl.getOntology("odo").getOWLOntology().getAxioms(),
         owl.getOntology("odo").getOWLOntology().getOntologyID().getOntologyIRI().orElseThrow());
     var reloaded=reloadManager.loadOntologyFromOntologyDocument(new java.io.ByteArrayInputStream(bytes.toByteArray()));
-    assertTrue(reloaded.containsAxiom(axiom));
+    // Serialization may merge the plain axiom and its provenance-annotated copy.
+    assertTrue(reloaded.axioms().anyMatch(a -> a.getAxiomWithoutAnnotations().equals(axiom)));
+    assertTrue(reloaded.axioms().filter(a -> a.getAxiomWithoutAnnotations().equals(axiom))
+        .flatMap(org.semanticweb.owlapi.model.OWLAxiom::annotations)
+        .anyMatch(a -> a.getProperty().getIRI().equals(OWLSemanticClauseSupport.UNIVERSAL_BEARER)));
   }
   @Test void linksSpecializeInheritedEndpointsAndDisjointPredicatesAreExcluded() {
     var owl=owl(); var ontology=owl.requireOntology("audit");

@@ -230,6 +230,12 @@ public class ServiceStartupOptions implements StartupOptions {
     return dataDir;
   }
 
+  /** Call before settings, logging, authentication, or service construction can write to disk. */
+  public void prepareDataRoot() {
+    dataDir = org.integratedmodelling.klab.api.configuration.DataRootBootstrap.PROCESS
+        .prepare(System.getProperties(), dataDir == null ? null : dataDir.toPath()).toFile();
+  }
+
   @Override
   public int getPort() {
     // TODO use default from service type

@@ -27,6 +27,11 @@ class ProvisionalObservationScopeTest {
     var session = new ServiceSessionScope(new ServiceUserScope(user, runtime));
     var context = new ServiceContextScope(session,
         DigitalTwin.Configuration.builder().id("test.context").name("test").build(), user);
+    var twin = mock(DigitalTwin.class);
+    when(twin.getKnowledgeGraph()).thenReturn(
+        mock(org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j.class));
+    when(twin.getOptions()).thenReturn(context.getConfiguration());
+    context.setDigitalTwin(twin);
     var root = mock(DigitalTwin.Transaction.class);
     var child = mock(DigitalTwin.Transaction.class);
     when(root.getId()).thenReturn("root");

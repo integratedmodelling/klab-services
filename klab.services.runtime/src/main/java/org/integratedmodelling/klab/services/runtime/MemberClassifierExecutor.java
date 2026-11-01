@@ -136,8 +136,13 @@ public final class MemberClassifierExecutor {
     Objects.requireNonNull(support, "Missing classified support");
     Objects.requireNonNull(event, "Missing event");
     var pending = new ArrayList<PendingAttribution>();
-    for (var member :
+    for (var candidate :
         SemanticUpdateTargets.bind(actuator.getTargetBindings().getFirst(), completedMembers)) {
+      var member = candidate;
+      if (scope instanceof org.integratedmodelling.klab.services.scopes.ServiceContextScope serviceScope
+          && serviceScope.getCurrentTransaction() != null)
+        member = serviceScope.getCurrentTransaction().readObservation(candidate);
+      var classifiedMember = member;
       var key =
           new Invocation(
               member.getId() > 0,
@@ -150,7 +155,7 @@ public final class MemberClassifierExecutor {
               ignored -> {
                 var result = new CompletableFuture<Optional<PendingAttribution>>();
                 try {
-                  result.complete(invoke(member, support, event, scope));
+                  result.complete(invoke(classifiedMember, support, event, scope));
                 } catch (Throwable failure) {
                   result.completeExceptionally(failure);
                 }

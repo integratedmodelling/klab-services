@@ -2,6 +2,15 @@
 
 ## Status and scope
 
+**Integration update, 16 October 2026:** the new local
+`feature/python-client-develop-integration` branch reconciles Python-client
+`188caeb47` with develop `671a81815`, preserving develop's explicit shared-session
+policy and request-local identity handling. See the
+[current integration record](PYTHON_CLIENT_DEVELOP_INTEGRATION.md). The source
+chain below describes the older isolated Python branch, not a newly reproduced
+failure on the combined candidate. Native two-user/restart acceptance and the
+other promotion gates remain required.
+
 **Open source-level compatibility concern, identified 7 October 2026.** The
 existing Java default-session contract and the managed-session authorization
 introduced by PR 84 appear inconsistent for two distinct legitimate users in

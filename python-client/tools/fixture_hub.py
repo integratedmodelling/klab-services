@@ -35,11 +35,14 @@ def token(key, user, roles=("ROLE_USER",), lifetime=3600):
     return message.decode() + "." + b64(key.sign(message, padding.PKCS1v15(), hashes.SHA256()))
 
 
-def prepare(state, worldview, server_repo=None):
+def prepare(state, worldview, server_repo=None, semantic_catalog=None):
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=worldview, capture_output=True, text=True, check=True).stdout.strip()
     expected_revision = "608bef150ced0a109db98a5aad64ba4461beaa54"
     if revision != expected_revision:
         raise RuntimeError("Worldview revision differs from the fixture's pinned compatibility contract")
+    if semantic_catalog is not None:
+        from semantic_dependencies import validate_catalog
+        validate_catalog(semantic_catalog)
     server_root = Path(server_repo).resolve() if server_repo is not None else Path(__file__).resolve().parents[2]
     fixture_classes = server_root / "klab.services.runtime/target/test-classes"
     if not (fixture_classes / "org/integratedmodelling/klab/services/runtime/testing/FixtureControls.class").is_file():
@@ -97,6 +100,9 @@ def prepare(state, worldview, server_repo=None):
               "workspaces": {"test-fixtures": list(projects)}, "projectConfiguration": projects}
     # JSON is valid YAML and uses the existing ResourcesConfiguration contract.
     (state / "home/.klab/services/resources/resources.yaml").write_text(json.dumps(config, indent=2))
+    if semantic_catalog is not None:
+        from semantic_dependencies import stage
+        stage(semantic_catalog, state)
     issue(state, key)
     print("Prepared isolated TEST certificates, signed user credentials and deterministic model; secrets not printed")
 
@@ -179,11 +185,12 @@ if __name__ == "__main__":
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--worldview", type=Path)
     parser.add_argument("--server-repo", type=Path, help="Explicit compiled server checkout for Runtime test controls")
+    parser.add_argument("--semantic-catalog", type=Path, help="Explicit verified local ODO capture for current Reasoner publication")
     args = parser.parse_args()
     if args.action == "prepare":
         if not args.worldview or not (args.worldview / "META-INF/manifest.json").is_file():
             parser.error("prepare requires an existing --worldview project")
-        prepare(args.state_dir.resolve(), args.worldview, args.server_repo)
+        prepare(args.state_dir.resolve(), args.worldview, args.server_repo, args.semantic_catalog)
     elif args.action == "issue":
         key = serialization.load_pem_private_key((args.state_dir / "fixture-authority.pem").read_bytes(), password=None)
         issue(args.state_dir, key)

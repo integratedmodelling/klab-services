@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.resources.lang;
+package org.integratedmodelling.klab.runtime.language;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -49,8 +49,8 @@ import org.integratedmodelling.languages.RangeLiteral;
 import org.integratedmodelling.languages.api.*;
 
 /** Adapter to substitute the current ones, based on older k.IM grammars. */
-public enum LanguageAdapter {
-  INSTANCE;
+public class LanguageAdapter {
+  public static final LanguageAdapter INSTANCE = new LanguageAdapter();
 
   private static final Pattern STATIC_ACTION_PATTERN =
       Pattern.compile("^\\s*static\\s+action\\b", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
@@ -281,13 +281,15 @@ public enum LanguageAdapter {
     }
     ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
-    if (semantics.isLeafDeclaration() && semantics.getUnaryOperator() == null) {
+    if (semantics.getHeadExpression() != null) {
+      ret.setObservable(adaptSemantics(semantics.getHeadExpression(), namespace, projectName, documentClass));
+    } else if (semantics.isLeafDeclaration() && semantics.getUnaryOperator() == null) {
       ret.setName(semantics.getObservable().concept().toString());
       ret.setNegated(semantics.isNegated() || semantics.getObservable().negated());
       retainReferenceFlags(ret, semantics.getObservable());
     } else {
       if (semantics.getType().is(SemanticSyntax.TypeCategory.VALID)) {
-        ret.setObservable(adaptSemantics(semantics.getObservable(), documentClass));
+        ret.setObservable(adaptSemantics(semantics.getObservable(), semantics, documentClass));
       } else {
         ret.setObservable(KimConceptImpl.nothing());
         //        ret.setCodeName("invalid_concept");
@@ -297,7 +299,7 @@ public enum LanguageAdapter {
         // categorized as an observable there and as a predicate in the service API).
         // A head reference must never also qualify itself.
         if (java.util.Objects.equals(cr, semantics.getObservable())) continue;
-        var trait = adaptSemantics(cr, documentClass);
+        var trait = adaptSemantics(cr, semantics, documentClass);
         if (trait.is(SemanticType.ROLE)) {
           ret.getRoles().add(trait);
         } else if (trait.is(SemanticType.PREDICATE)) {
@@ -351,6 +353,10 @@ public enum LanguageAdapter {
     SemanticSyntax.BinaryOperator logicalOperator = null;
 
     for (var restriction : semantics.getRestrictions()) {
+      if (restriction.getFirst() == SemanticSyntax.BinaryOperator.ABOUT
+          && (restriction.getSecond().size() != 1 || restriction.getThird())) {
+        throw new IllegalArgumentException("ABOUT requires one target per clause; repeat about for independent targets");
+      }
 
       boolean collective = restriction.getThird();
       var operand =
@@ -369,6 +375,7 @@ public enum LanguageAdapter {
 
       if (operand != null) {
         switch (restriction.getFirst()) {
+          case ABOUT -> ret.getAbout().add(operand);
           case OF -> ret.setInherent(operand);
           case FOR -> ret.setGoal(operand);
           case WITH -> ret.setCompresent(operand);
@@ -416,6 +423,12 @@ public enum LanguageAdapter {
       ret.getOperands().addAll(logicalOperands);
     }
 
+    // Description values participate even where value-operator execution is not implemented.
+    for (var valueOperator : semantics.getValueOperators()) {
+      var value = adaptValue(valueOperator.getSecond(), namespace, projectName, documentClass);
+      ret.getValueOperators().add(org.integratedmodelling.klab.api.collections.Pair.of(
+          adaptValueOperator(valueOperator.getFirst()), value));
+    }
     applyExpressionStatus(ret);
     ret.finalizeDefinition();
 
@@ -866,6 +879,11 @@ public enum LanguageAdapter {
       }
     }
 
+    if (Stream.concat(ret.getObservables().stream(), ret.getDependencies().stream())
+        .anyMatch(org.integratedmodelling.klab.api.lang.kim.ExpressionStatus::isSubjective)) {
+      ret.setScope(KlabStatement.Scope.PRIVATE);
+    }
+
     var modelDescriptionType =
         mainObservable == null || mainObservable.getSemantics().is(SemanticType.NOTHING)
             ? "inactive"
@@ -1188,8 +1206,15 @@ public enum LanguageAdapter {
   //    }
 
   private KimConcept adaptSemantics(
-      SemanticSyntax.ConceptData observable, KlabAsset.KnowledgeClass documentClass) {
+      SemanticSyntax.ConceptData observable,
+      SemanticSyntax source,
+      KlabAsset.KnowledgeClass documentClass) {
     KimConceptImpl ret = new KimConceptImpl();
+    // ConceptData carries a resolved descriptor, not source coordinates. Keep the
+    // parsed token's span on its generated references as well as its wrapper so
+    // an old descriptor cannot bypass source-based declaration-order validation.
+    ret.setOffsetInDocument(source.getCodeOffset());
+    ret.setLength(source.getCodeLength());
     ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
     ret.setName(ret.getUrn());
     ret.setType(adaptSemanticType(observable.concept().mainType()));
@@ -1204,6 +1229,7 @@ public enum LanguageAdapter {
   }
 
   private void retainReferenceFlags(KimConceptImpl target, SemanticSyntax.ConceptData reference) {
+    target.setDeclaredSubjective(reference.concept().isSubjective());
     if (reference.concept().isSubjective()) target.getType().add(SemanticType.SUBJECTIVE);
     if (reference.concept().isSealed()) target.getType().add(SemanticType.SEALED);
     if (reference.concept().isAbstract()) {
@@ -1224,9 +1250,24 @@ public enum LanguageAdapter {
   }
 
   private void applyExpressionStatus(KimConceptImpl target) {
+    if (target.getDeclaredSubjective() == null) {
+      target.setDeclaredSubjective(target.getObservable() == null && target.is(SemanticType.SUBJECTIVE));
+    }
     var status = org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.evaluate(target);
     target.getType().removeAll(EnumSet.of(SemanticType.ABSTRACT, SemanticType.SUBJECTIVE));
     target.getType().addAll(status);
+  }
+
+  private org.integratedmodelling.klab.api.lang.ValueOperator adaptValueOperator(SemanticSyntax.ValueOperator operator) {
+    return org.integratedmodelling.klab.api.lang.ValueOperator.valueOf(switch (operator) {
+      case GT -> "GREATER";
+      case GE -> "GREATEREQUAL";
+      case LT -> "LESS";
+      case LE -> "LESSEQUAL";
+      case EQUALS -> "SAMEAS";
+      case NOT_EQUAL -> "NOTEQUAL";
+      default -> operator.name();
+    });
   }
 
   private Set<SemanticType> adaptSemanticType(SemanticSyntax.Type type) {

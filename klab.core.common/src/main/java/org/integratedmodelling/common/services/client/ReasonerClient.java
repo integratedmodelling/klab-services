@@ -131,6 +131,11 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     return client.withScope(scope).postRequired(ServicesAPI.REASONER.CONFIGURE_AUTHORITY, request, String.class);
   }
 
+  @Override public Concept resolveAuthorityHierarchy(String authority, String identity, Scope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.REASONER.AUTHORITY_HIERARCHY,
+        new org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityHierarchyRequest(authority, identity), Concept.class);
+  }
+
   @Override
   public org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse searchAuthority(
       org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {

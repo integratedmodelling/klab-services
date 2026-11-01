@@ -1,0 +1,45 @@
+Identity insertion latency and timeout recovery — 2026-10-10
+
+Live service evidence (unmodified running service):
+- Already-warm Aspirin CID:2244: 1.898 seconds client / 1.701 seconds server, 29 next suggestions.
+- Cold Ibuprofen CID:3672: 40.003 seconds client / 39.983 seconds server, 29 next suggestions.
+- Stack sampled during the cold insertion shows AuthorityIdentityResolver.collect ->
+  PubChemAuthority.resolveIdentity -> ChebiClient.validateHierarchy -> HTTP wait.
+  This is before next-proposal generation. Finding/documenting one identity does not
+  materialize every ancestor needed by the Reasoner.
+
+Provider changes (klab.authority.pubchem):
+- Hydrate independent ChEBI hierarchy records with at most four in-flight requests.
+- Reuse complete validated term representations from OLS parent responses. Partial
+  records still require a canonical lookup. Cache expiry follows the source response.
+- Retain full graph validation, cycle/depth/size limits, and existing HTTP pacing/retries.
+- OLS parent payload completeness was inspected directly against the live official API.
+
+Isolated live Aspirin comparison:
+- Original: 22.692 seconds; parallel hydration alone: 21.683 seconds.
+- Final (also reusing full parent records): 11.964 seconds.
+- Each run uses a fresh provider configuration and no warmed process cache.
+- All 40 nodes and their parent edges are identical between original and final runs.
+- GIF downloads disabled in both comparison runs. These measure provider traversal,
+  not full IDE/Reasoner insertion; network variance applies. Running services were not restarted.
+- The remaining cold lookup is still network-bound. A universal sub-second result is not claimed.
+
+IDE changes (klab-ide):
+- Keep query, authority table, selection and documentation when insertion begins or times out.
+- An identity timeout retains the initialized semantic session; it no longer cancels it.
+- Disable selection/export while outcome is uncertain. Retry sends a query of existing
+  session state, not another IDENTITY edit. A confirmed late insertion is adopted and
+  its original query cleared only if the user has not edited it in the meantime.
+- If the insertion did not commit, keep the original search ready for selection without
+  requiring a second network search or clearing the input.
+
+Validation:
+- IDE SemanticComposerTest: 49 passed, including both committed/uncommitted timeout outcomes.
+- Provider: 25 passed; 2 separately opt-in live smoke tests skipped. Explicit live comparison above.
+- Provider regression includes bounded concurrency, shared ancestor reuse, warm cache,
+  complete versus partial parent records, and existing invalid/cyclic hierarchy rejection.
+- git diff --check passed in both changed repositories.
+
+Deployment: rebuild/redeploy the PubChem authority component and restart/reload its host;
+rebuild/restart the IDE. No running user service was restarted. Only probe sessions created
+for these measurements were released.

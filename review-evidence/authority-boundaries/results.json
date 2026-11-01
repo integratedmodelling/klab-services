@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-10",
+  "services_tests_passed": 83,
+  "contract_tests_passed": 2,
+  "pubchem_fixture_tests_passed": 26,
+  "taxa_fixture_tests_passed": 14,
+  "live_tests_passed": 1,
+  "live_aspirin_cold_seconds": 1.918,
+  "live_aspirin_warm_seconds": 0.006,
+  "measurement_scope": "Isolated PubChem provider, COMPOUND boundary configured; not end-to-end IDE latency",
+  "deployment": "Source implemented and tested. Running services and worldview configuration unchanged."
+}

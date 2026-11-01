@@ -25,6 +25,32 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class SemanticBuilderControllerTest {
+  @Test void missingResourcesReturnHttp200WithSourceBoundAnnotations() throws Exception {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var service = mock(ReasonerService.class);
+    when(service.validateDocument(any(), any())).thenCallRealMethod();
+    var server = mock(ReasonerServer.class); when(server.klabService()).thenReturn(service);
+    var controller = new ReasonerController(); ReflectionTestUtils.setField(controller, "reasoner", server);
+    var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class))
+        .thenThrow(new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
+            "No suitable service for request of ResourcesService"));
+    var authorization = mock(EngineAuthorization.class); when(authorization.getScope()).thenReturn(scope);
+    var mvc = MockMvcBuilders.standaloneSetup(controller)
+        .setMessageConverters(new MappingJackson2HttpMessageConverter(mapper)).build();
+    var document = new org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl();
+    document.setUrn("imod"); document.setSourceCode("ontology imod");
+    var request = SemanticValidationRequest.of(document, "saved");
+    var result = mvc.perform(post(ServicesAPI.REASONER.VALIDATE_DOCUMENT).principal(authorization)
+        .contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(request)))
+        .andExpect(status().isOk()).andReturn();
+    var response = mapper.readValue(result.getResponse().getContentAsString(), SemanticValidationResponse.class);
+    assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
+    assertFalse(response.valid());
+    assertEquals("imod", response.getNotifications().getFirst().getLexicalContext().getDocumentUrn());
+    assertTrue(response.getNotifications().getFirst().getMessage().contains("No suitable service"));
+  }
+
   @Test void routesSemanticValidationAndRequiresAuthorization() throws Exception {
     var mapper = JacksonConfiguration.newObjectMapper();
     var service = mock(ReasonerService.class);

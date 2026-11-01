@@ -17,11 +17,16 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
  * A singleton used to keep track of scopes that were created within an instance. Differently from
  * the scope manager at service side, this only manages Session and Context scopes, from different
  * runtimes. User scopes are always obtained by authentication on the client side.
+ *
+ * <p>Wire IDs remain runtime-owned. Local keys include the hosting runtime and caller so shared
+ * session IDs cannot alias between users or runtimes. Creation and reconnection publish initialized
+ * peers through {@link #register(ClientSessionScope)}; failed and derived scopes are never published.
  */
 public enum ClientScopeManager {
   INSTANCE;
 
-  private Map<String, ClientSessionScope> scopes = new ConcurrentHashMap<>();
+  private record ScopeKey(String runtimeId, String scopeId, String username) {}
+  private final Map<ScopeKey, ClientSessionScope> scopes = new ConcurrentHashMap<>();
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
   /**
@@ -33,11 +38,24 @@ public enum ClientScopeManager {
    * @param <T>
    */
   public <T extends SessionScope> T getScope(String scopeId, Class<T> scopeClass) {
-    if (scopes.containsKey(scopeId)
-        && scopeClass.isAssignableFrom(scopes.get(scopeId).getClass())) {
-      return (T) scopes.get(scopeId);
+    var matches = scopes.values().stream()
+        .filter(s -> Objects.equals(scopeId, s.getId()) && scopeClass.isInstance(s)).toList();
+    if (matches.size() > 1) {
+      throw new KlabIllegalStateException("Scope ID is ambiguous across runtimes or users: " + scopeId);
     }
-    return null;
+    return matches.isEmpty() ? null : scopeClass.cast(matches.getFirst());
+  }
+
+  public <T extends SessionScope> T getScope(String runtimeId, String scopeId, Class<T> scopeClass) {
+    var matches = scopes.values().stream().filter(s -> Objects.equals(runtimeId, s.getHostServiceId())
+        && Objects.equals(scopeId, s.getId()) && scopeClass.isInstance(s)).toList();
+    if (matches.size() > 1) throw new KlabIllegalStateException("Scope ID is ambiguous across users: " + scopeId);
+    return matches.isEmpty() ? null : scopeClass.cast(matches.getFirst());
+  }
+
+  public <T extends SessionScope> T getScope(String runtimeId, String scopeId, String username, Class<T> scopeClass) {
+    var scope = scopes.get(new ScopeKey(runtimeId, scopeId, username));
+    return scopeClass.isInstance(scope) ? scopeClass.cast(scope) : null;
   }
 
   /**
@@ -61,13 +79,10 @@ public enum ClientScopeManager {
       throw new KlabIllegalStateException("Cannot connect to remote scope: missing scope ID");
     }
 
-    if (scopes.containsKey(configuration.getId())
-        && scopes.get(configuration.getId()) instanceof ContextScope) {
-      return (ContextScope) scopes.get(configuration.getId());
-    }
+    var service = findService(configuration, requestingScope);
+    var existing = getScope(service.serviceId(), configuration.getId(), requestingScope.getUser().getUsername(), ClientContextScope.class);
+    if (existing != null) return existing;
     if (createIfMissing) {
-
-      var service = findService(configuration, requestingScope);
 
       /* issue a CONNECT call to the service to ensure we have rights and the scope exists. */
       if (!service.status().isOperational()) {
@@ -87,12 +102,15 @@ public enum ClientScopeManager {
   private RuntimeService findService(
       DigitalTwin.Configuration configuration, UserScope requestingScope) {
     for (var runtime : requestingScope.getServices(RuntimeService.class)) {
-      if (runtime.getUrl().toString().equals(configuration.getServiceUrl().toString())) {
+      if ((configuration.getServiceId() != null
+          && Objects.equals(runtime.serviceId(), configuration.getServiceId()))
+          || (configuration.getServiceId() == null && configuration.getServiceUrl() != null
+          && runtime.getUrl().toString().equals(configuration.getServiceUrl().toString()))) {
         return runtime;
       }
     }
 
-    throw new KlabIllegalStateException("IMPLEMENT SERVICE INSTANTIATION");
+    throw new KlabIllegalStateException("No available runtime matches digital twin " + configuration.getId());
     //    var newRuntime =
     //        ServiceClientCatalog.INSTANCE.getService(
     //            configuration.getUrl(), requestingScope.getIdentity(), SettingsImpl.forEngine());
@@ -105,11 +123,19 @@ public enum ClientScopeManager {
     //    return newRuntime;
   }
 
-  public void register(ClientSessionScope ret) {
-    scopes.put(ret.getId(), ret);
+  public synchronized void register(ClientSessionScope ret) {
+    if (ret.isEmpty() || ret.getId() == null || ret.getId().isBlank()
+        || ret.getHostServiceId() == null) {
+      throw new KlabIllegalStateException("Cannot register an uninitialized client scope");
+    }
+    var key = new ScopeKey(ret.getHostServiceId(), ret.getId(), ret.getUser().getUsername());
+    var existing = scopes.get(key);
+    if (existing != null && existing != ret) {
+      throw new KlabIllegalStateException("A client peer is already registered for " + ret.getId());
+    }
+    if (existing == ret) return;
     if (ret instanceof ClientContextScope contextScope) {
       contextScope.createDigitalTwin(ret.getId());
-
       var engine = contextScope.getEngine();
       if (!engine.getSettings().get(Setting.DO_NOT_CREATE_A_DEFAULT_OBSERVER, Boolean.class)) {
         /*
@@ -119,10 +145,12 @@ public enum ClientScopeManager {
         scheduler.schedule(contextScope::resolveDefaultObserver, 1, TimeUnit.SECONDS);
       }
     }
+    scopes.put(key, ret);
   }
 
   public void unregister(ClientSessionScope clientSessionScope) {
-    scopes.remove(clientSessionScope.getId());
+    scopes.remove(new ScopeKey(clientSessionScope.getHostServiceId(), clientSessionScope.getId(),
+        clientSessionScope.getUser() == null ? null : clientSessionScope.getUser().getUsername()), clientSessionScope);
   }
 
   /** Disconnect this client; remote twins are governed by the runtime's persistence policy. */

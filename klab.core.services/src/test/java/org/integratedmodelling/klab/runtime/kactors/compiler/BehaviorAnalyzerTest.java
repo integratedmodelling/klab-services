@@ -57,7 +57,7 @@ import org.integratedmodelling.klab.runtime.kactors.ScriptBase;
 import org.integratedmodelling.klab.runtime.kactors.TestCaseBase;
 import org.junit.jupiter.api.Test;
 
-class BehaviorAnalyzerTest {
+public class BehaviorAnalyzerTest {
 
   @Test
   void awaitedSupplierAssignmentsDoNotLeaveAnUncompletedActionFuture() {
@@ -2493,18 +2493,23 @@ class BehaviorAnalyzerTest {
 
   public static class JavaStaticityActor {
     @Verb(name = "floating", executionType = Verb.Type.FUNCTION)
-    public static Object[] floating(double primitiveDouble, Double boxedDouble,
-        float primitiveFloat, Float boxedFloat) {
+    public static Object[] floating(
+        @Verb.Argument(description = "Primitive double") double primitiveDouble,
+        @Verb.Argument(description = "Boxed double") Double boxedDouble,
+        @Verb.Argument(description = "Primitive float") float primitiveFloat,
+        @Verb.Argument(description = "Boxed float") Float boxedFloat) {
       return new Object[] {primitiveDouble, boxedDouble, primitiveFloat, boxedFloat};
     }
 
     @Verb(name = "integer", executionType = Verb.Type.FUNCTION)
-    public static int integer(int value) {
+    public static int integer(
+        @Verb.Argument(description = "Primitive integer literal within range") int value) {
       return value;
     }
 
     @Verb(name = "integer", executionType = Verb.Type.FUNCTION)
-    public static Integer integer(Integer value) {
+    public static Integer integer(
+        @Verb.Argument(description = "Boxed integer literal within range") Integer value) {
       return value;
     }
 

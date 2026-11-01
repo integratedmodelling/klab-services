@@ -1,0 +1,16 @@
+# Private semantic factory and leased-reader checkpoint
+
+Base: approved hard bean gate e65a01d7f3c9cb268e9963ee139cde86ab96752f.
+Branch: codex/candidate-publication-slice, isolated task-2 worktree.
+
+This checkpoint invokes the real ReasonerService.loadKnowledge compiler inside an owned private actor, with a fresh OWL manager, buffering HermiT reasoner, index, caches, strategies, source resolver, scope, dependency directory and executor. Normal deployment construction, global main-service registration, settings files, secrets, discovery and extension loading are bypassed. The approved loadKnowledge/updateKnowledge/prepared-input bodies are unchanged from the base.
+
+Factory capture copies and bean-validates the complete worldview. Build copies again, checks source hashes/order, captured core bytes revision and the explicitly supported semantic-defaults-v1 configuration, and runs the same approved bean gate before actor construction. Declared OWL alias/import IRIs must match unique captured RDF/XML ontology/version identities. Unknown catalog imports, vocabulary/authority providers and strategy extensions requiring a component catalog return UNRESOLVED. It never substitutes the bundled OWL for a requested numbered release. Tests use an explicitly captured classpath fixture; deployment integration must supply odo-im numbered-release bytes.
+
+Ontology and strategy semantic expressions receive DocumentSemanticValidator traversal. A final flush/consistency check includes expressions materialized by validation. Failed/unresolved/stale candidates do not replace accepted state. AcceptedSemanticReadSession pins one complete actor, serializes its supported read operations, rebinds Concept DTOs by identity, returns owned DTOs, and rejects missing/NOTHING identity bindings. Old actors retire after their final lease closes.
+
+Validation: 25 focused tests pass (14 coordinator lifecycle tests and 11 production factory/session tests) against local c8 runtime jars with changed approved-base status/gate/cache classes compiled ahead of them. javac succeeds; git diff --check succeeds. No Maven install, live service restart, active checkout edits or worldview edits. Duplicate JAI registry warnings arise from the existing expanded runtime classpath; test exit status is 0.
+
+Independent review found and corrected unchecked config/order, retained caller source trees, missing strategy traversal, early constructor cleanup, bottom-concept rebinding and ambiguous catalog identities.
+
+Remaining integration work: production load/update scheduling after the approved prepared-source gate, all semantic controller/API routing, builder/search-session lifetime leases, full context-scope read routing, and owned provider/component/parser snapshots. Only typed resolveConcept/satisfiable/is/parents read-session operations are provided here. Production endpoints and deployment actor still use existing synchronous paths. This is an isolated compiler+publication+leased-reader checkpoint, not a deployed end-to-end background validation fix. Wiring of owned loadKnowledge/updateKnowledge regions must be coordinated with integration owner. No live launch or full-worldview performance claim is made.

@@ -56,6 +56,7 @@ public enum GeometryRepository {
   }
 
   public Scale scale(Geometry geometry) {
+    if (geometry instanceof Geometry.LocalSnapshot local) return local.promote(null);
     if (geometry == null) {
       return null;
     }
@@ -66,6 +67,7 @@ public enum GeometryRepository {
   }
 
   public Scale scale(Geometry geometry, Scope scope) {
+    if (geometry instanceof Geometry.LocalSnapshot local) return local.promote(scope);
     if (geometry == null) {
       return null;
     }
@@ -76,6 +78,7 @@ public enum GeometryRepository {
   }
 
   public Geometry geometry(Geometry geometry) {
+    if (geometry instanceof Geometry.LocalSnapshot) return geometry.as(Geometry.class);
     if (geometry == null) {
       return null;
     }
@@ -131,6 +134,15 @@ public enum GeometryRepository {
       return null;
     }
 
+    if (geometry instanceof Geometry.LocalSnapshot || geometry1 instanceof Geometry.LocalSnapshot) {
+      var local = geometry instanceof Geometry.LocalSnapshot snapshot
+          ? snapshot : (Geometry.LocalSnapshot) geometry1;
+      var first = scale(local.isolate(geometry));
+      var second = scale(local.isolate(geometry1));
+      var merged = local.isolate(first.merge(second, how));
+      return Scale.class.isAssignableFrom(geometryClass)
+          ? (T) scale(merged) : merged.as(geometryClass);
+    }
     var scale1 = scale(geometry);
     var scale2 = scale(geometry1);
     var key = mergeKey(scale1, scale2, how);
@@ -150,6 +162,7 @@ public enum GeometryRepository {
   }
 
   public void put(Geometry geometry, Scale scale) {
+    if (geometry instanceof Geometry.LocalSnapshot || scale instanceof Geometry.LocalSnapshot) return;
     var cached = canonicalPair(scale);
     cache.put(geometry.key(), cached);
     cache.put(cached.getFirst().key(), cached);

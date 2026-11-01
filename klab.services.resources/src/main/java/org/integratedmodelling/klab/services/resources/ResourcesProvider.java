@@ -70,7 +70,7 @@ import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
+import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.lang.ConceptCodelistBuilder;
 import org.integratedmodelling.klab.services.resources.persistence.ModelCatalog;
 import org.integratedmodelling.klab.services.resources.persistence.ModelCatalogs;
@@ -1171,7 +1171,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
     ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
     ret.getServiceNotifications().addAll(serviceNotifications());
-    ret.getComponents().addAll(getComponentRegistry().getComponents(scope));
+    ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
 
     // TODO Must reflect the scope
     // permissions and roles! User must be in ADMIN group or be configured to access

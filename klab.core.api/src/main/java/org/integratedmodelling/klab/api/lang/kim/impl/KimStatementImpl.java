@@ -25,10 +25,11 @@ public abstract class KimStatementImpl extends KimAssetImpl implements KlabState
 
   protected KimStatementImpl(KimStatementImpl other) {
     super(other);
-    this.metadata = other.metadata;
+    this.metadata = KimSyntaxCopy.copy(other.metadata);
     this.namespace = other.namespace;
     this.scope = other.scope;
-    this.notifications.addAll(other.notifications);
+    this.notifications.addAll(KimSyntaxCopy.copy(other.notifications));
+    this.documentClass = other.documentClass;
   }
 
   @Override

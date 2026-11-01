@@ -119,6 +119,7 @@ public abstract class BaseService implements KlabService {
   protected BaseService(
       ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
 
+    options.prepareDataRoot();
     this.type = serviceType;
     settings = SettingsImpl.forService(this, serviceType);
     emailManager = new EmailManager(settings);
@@ -157,6 +158,23 @@ public abstract class BaseService implements KlabService {
             return Utils.Time.formatDuration(getBootTime(), System.currentTimeMillis());
           }
         });
+  }
+
+  /** Deployment-free semantic execution: no persisted settings, secret, registry or main service. */
+  protected BaseService(ServiceScope scope, KlabService.Type serviceType,
+      Settings privateSettings, URL displayUrl) {
+    this.type = Objects.requireNonNull(serviceType);
+    this.serviceScope = Objects.requireNonNull(scope);
+    this.startupOptions = ServiceStartupOptions.defaultOptions(serviceType);
+    this.settings = Objects.requireNonNull(privateSettings);
+    this.settingsForSlaveServices = privateSettings;
+    this.emailManager = new EmailManager(privateSettings);
+    this.url = Objects.requireNonNull(displayUrl);
+  }
+
+  /** Only for a deployment-free instance; do not run deployment shutdown on its borrowed inputs. */
+  protected void closeSemanticExecutor() {
+    schedule.shutdown();
   }
 
   protected void setComponentRegistry() {

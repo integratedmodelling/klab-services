@@ -25,6 +25,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--java", type=Path, required=True)
     parser.add_argument("--worldview", type=Path, required=True)
+    parser.add_argument("--semantic-catalog", type=Path, help="Verified pinned semantic dependency catalog; never a remote fallback")
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--duration", type=float, default=15)
     parser.add_argument("--samples", type=int, default=8)
@@ -69,7 +70,8 @@ def main():
             run("build-webui", mvn + ["-pl", "klab.core.services", "-Pwebui", "-DskipTests", "process-resources"], root)
             run("build-classpaths", mvn + ["-pl", modules, "dependency:build-classpath", "-DincludeScope=runtime",
                                            "-Dmdep.outputFile=target/local-stack-classpath.txt"], root)
-        run("prepare", [sys.executable, "tools/fixture_hub.py", "prepare", "--state-dir", str(state), "--worldview", str(args.worldview.resolve())])
+        run("prepare", [sys.executable, "tools/fixture_hub.py", "prepare", "--state-dir", str(state), "--worldview", str(args.worldview.resolve()),
+            *(["--semantic-catalog", str(args.semantic_catalog.resolve())] if args.semantic_catalog else [])])
         with (state / "authority.log").open("wb") as log:
             hub = subprocess.Popen([sys.executable, "tools/fixture_hub.py", "serve", "--state-dir", str(state)],
                                    cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT)
@@ -88,6 +90,8 @@ def main():
                 raise RuntimeError("TEST authority listener did not start")
         started = True
         run("start", [sys.executable, "tools/local_stack.py", "start", "--java", str(args.java.resolve()), "--state-dir", str(state)])
+        run("develop-compatibility", [sys.executable, "tools/run_functional_acceptance.py", "--suite", "develop-compatibility",
+            "--state-dir", str(state), "--report", str(state / "develop-compatibility.xml")])
         run("acceptance", [sys.executable, "tools/run_functional_acceptance.py", "--suite", "compute-and-analyze",
             "--state-dir", str(state), "--report", str(state / "acceptance.xml")])
         if args.saved_handles:
@@ -96,10 +100,6 @@ def main():
         if args.typed_observe:
             run("typed-observe", [sys.executable, "tools/run_functional_acceptance.py", "--suite", "typed-compute",
                 "--state-dir", str(state), "--report", str(state / "typed-observe.xml")])
-        run("cold-prepare", [sys.executable, "tools/cold_context_check.py", "prepare", "--state-dir", str(state)])
-        run("restart-runtime-stop", [sys.executable, "tools/local_stack.py", "stop", "--only", "runtime", "--state-dir", str(state)])
-        run("restart-runtime-start", [sys.executable, "tools/local_stack.py", "start", "--only", "runtime", "--java", str(args.java.resolve()), "--state-dir", str(state)])
-        run("cold-check", [sys.executable, "tools/cold_context_check.py", "check", "--state-dir", str(state)])
         for concurrency in (1, 2, 4):
             run(f"full-c{concurrency}", [sys.executable, "tools/run_workflow_throughput.py", "--workflow", "compute-and-analyze", "--fixture-config", str(state / "scientist.json"),
                 "--samples", str(args.samples), "--concurrency", str(concurrency), "--duration", str(args.duration),

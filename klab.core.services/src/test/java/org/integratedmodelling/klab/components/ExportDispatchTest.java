@@ -25,6 +25,8 @@ class ExportDispatchTest {
     var scope = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
     var localResources = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
     var remoteResources = mock(org.integratedmodelling.klab.api.services.ResourcesService.class);
+    when(localResources.serviceId()).thenReturn("local-resources");
+    when(remoteResources.serviceId()).thenReturn("remote-resources");
     var resources = new org.integratedmodelling.common.services.client.ResourcesMerger(scope);
     var runtime = mock(org.integratedmodelling.klab.api.services.KlabService.class);
     var capabilities = mock(org.integratedmodelling.klab.api.services.KlabService.ServiceCapabilities.class);
@@ -37,12 +39,17 @@ class ExportDispatchTest {
         .getServices(org.integratedmodelling.klab.api.services.ResourcesService.class);
     var result = new org.integratedmodelling.klab.api.services.resources.ResourceSet();
     result.setEmpty(false);
+    var component = new org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource();
+    component.setServiceId("remote-resources");
+    component.setResourceUrn("test.png.component");
+    component.setKnowledgeClass(KlabAsset.KnowledgeClass.COMPONENT);
+    result.getResults().add(component);
     when(localResources.resolve("export-schema:image/png", KlabAsset.KnowledgeClass.INFORMATION, scope))
         .thenReturn(org.integratedmodelling.klab.api.services.resources.ResourceSet.empty(
             org.integratedmodelling.klab.api.services.runtime.Notification.error("Not available locally")));
     when(remoteResources.resolve("export-schema:image/png", KlabAsset.KnowledgeClass.INFORMATION, scope))
         .thenReturn(result);
-    when(runtime.loadResources(result, scope)).thenAnswer(invocation -> {
+    when(runtime.loadResources(any(org.integratedmodelling.klab.api.services.resources.ResourceSet.class), same(scope))).thenAnswer(invocation -> {
       exports.put("test", List.of(org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.create(
           "test.png", org.integratedmodelling.klab.api.services.resources.ResourceTransport.Schema.Type.PROPERTIES,
           KlabAsset.KnowledgeClass.OBSERVATION, "PNG").mediaType("image/png")));
@@ -51,7 +58,16 @@ class ExportDispatchTest {
     var found = org.integratedmodelling.klab.api.services.resources.ResourceTransport.INSTANCE.findExportSchemata(
         KlabAsset.KnowledgeClass.OBSERVATION, "image/png", null, runtime, scope);
     assertEquals("test.png", found.getFirst().getSchemaId());
-    verify(runtime).loadResources(result, scope);
+    var loaded = org.mockito.ArgumentCaptor.forClass(org.integratedmodelling.klab.api.services.resources.ResourceSet.class);
+    verify(runtime).loadResources(loaded.capture(), same(scope));
+    assertFalse(loaded.getValue().isEmpty());
+    assertEquals(1, loaded.getValue().getResults().size());
+    var loadedComponent = loaded.getValue().getResults().iterator().next();
+    assertEquals("remote-resources", loadedComponent.getServiceId());
+    assertEquals("test.png.component", loadedComponent.getResourceUrn());
+    assertEquals(KlabAsset.KnowledgeClass.COMPONENT, loadedComponent.getKnowledgeClass());
+    verify(localResources).resolve("export-schema:image/png", KlabAsset.KnowledgeClass.INFORMATION, scope);
+    verify(remoteResources).resolve("export-schema:image/png", KlabAsset.KnowledgeClass.INFORMATION, scope);
     verify(runtime, times(2)).capabilities(scope);
   }
   @Library(name="test.png.dispatch", description="Export dispatch regression")
@@ -79,7 +95,8 @@ class ExportDispatchTest {
     assertEquals(2, descriptors.size());
     assertNotEquals(registry.implementation(descriptors.get(0)).method, registry.implementation(descriptors.get(1)).method);
     var call = ServiceCallImpl.create("test.png.dispatch.png", "MEDIA_TYPE", "image/png");
-    doReturn(descriptors).when(registry).getFunctionDescriptor(call);
+    var scope = mock(Scope.class);
+    doReturn(descriptors).when(registry).getFunctionDescriptor(call, scope);
     var language = new LanguageService();
     var field = LanguageService.class.getDeclaredField("componentRegistry");
     field.setAccessible(true);
@@ -92,9 +109,9 @@ class ExportDispatchTest {
     var restored = mapper.readValue(mapper.writeValueAsString(remote), Observation.class);
     var scanner = mock(Storage.FloatScanner.class);
     when(scanner.get()).thenReturn(0f);
-    assertEquals("ffe8e6b5:123", language.execute(call, mock(Scope.class), String.class,
+    assertEquals("ffe8e6b5:123", language.execute(call, scope, String.class,
         restored, scanner, Parameters.create("viewportX", 123)));
-    assertEquals("keyed:456", language.execute(call, mock(Scope.class), String.class,
+    assertEquals("keyed:456", language.execute(call, scope, String.class,
         restored, mock(Storage.KeyScanner.class), Parameters.create("viewportX", 456)));
   }
 }

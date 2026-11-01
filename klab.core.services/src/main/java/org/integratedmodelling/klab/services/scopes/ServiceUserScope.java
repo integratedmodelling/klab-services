@@ -4,12 +4,12 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ResourcesMerger;
+import org.integratedmodelling.common.services.client.ServiceClientCatalog;
+import org.integratedmodelling.klab.api.services.runtime.objects.UserScopeNotification;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -57,7 +57,9 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
   private Collection<Role> roles;
   private String id;
   private boolean local;
-  private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+  // Cache topology, never a request's credential-bearing clients, on the managed user scope.
+  private ServiceUserScope advertisementOwner = this;
+  private volatile UserScopeNotification advertisement;
   private boolean messagingChecked = false;
   private JobManager jobManager;
   private boolean empty;
@@ -149,6 +151,64 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     return jobManager;
   }
 
+  /** Keep trusted membership and resources, but use this request's credential and roles. */
+  public ServiceUserScope forAuthorization(org.integratedmodelling.klab.services.application.security.EngineAuthorization authorization) {
+    if (!Objects.equals(user.getUsername(), authorization.getUsername())) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Credential and user scope differ");
+    }
+    var identity = new org.integratedmodelling.common.authentication.UserIdentityImpl();
+    identity.setUsername(user.getUsername());
+    identity.setId(authorization.getToken());
+    identity.setAuthenticated(authorization.isAuthenticated());
+    identity.setAnonymous(user.isAnonymous());
+    identity.setOnline(user.isOnline());
+    identity.setEmailAddress(user.getEmailAddress());
+    identity.setIdentityType(user.getIdentityType());
+    identity.setFirstName(user.getFirstName());
+    identity.setLastName(user.getLastName());
+    identity.setInitials(user.getInitials());
+    identity.setAffiliation(user.getAffiliation());
+    identity.setComment(user.getComment());
+    identity.setServerUrl(user.getServerURL());
+    identity.setLastLogin(user.getLastLogin());
+    identity.getGroups().addAll(user.getGroups());
+    identity.getData().putAll(user.getData());
+    var ret = new ServiceUserScope(identity, service);
+    ret.setId(getId());
+    ret.setHostServiceId(getHostServiceId());
+    ret.data.putAll(data);
+    ret.jobManager = jobManager;
+    ret.advertisementOwner = advertisementOwner;
+    var topology = advertisementOwner.advertisement;
+    if (topology == null) {
+      ret.copyServicesFrom(this);
+    } else {
+      ret.installAdvertisement(topology);
+    }
+    ret.copyMessagingSetup(this);
+    ret.setRoles(List.copyOf(authorization.getRoles()));
+    ret.setLocal(authorization.isLocal());
+    ret.setPermissions(authorization.isLocal()
+        || authorization.getRoles().contains(Role.ROLE_ADMINISTRATOR)
+        || authorization.getRoles().contains(Role.ROLE_SYSTEM)
+        ? EnumSet.allOf(CRUDOperation.class) : EnumSet.of(CRUDOperation.READ));
+    return ret;
+  }
+
+  /** Request-local copies must use the caller's authority and job ownership. */
+  protected void useRequestAuthority(ServiceUserScope requester) {
+    setIdentity(requester.getUser());
+    setUser(requester.getUser());
+    setRoles(List.copyOf(requester.getRoles()));
+    setPermissions(requester.getPermissions());
+    setLocal(requester.isLocal());
+    this.jobManager = requester.jobManager;
+    copyServicesFrom(requester);
+    if (getHostServiceId() != null && getType() != Type.USER) {
+      serviceList(KlabService.Type.RUNTIME).removeIf(s -> !getHostServiceId().equals(s.serviceId()));
+    }
+  }
+
   @Override
   public ContextScope connect(URL digitalTwinURL) {
     // TODO connect to a scope on a runtime. Unless the runtime is local, we should produce a
@@ -224,7 +284,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     var scope = scopeManager == null ? null : scopeManager.getScope(scopeId, SessionScope.class);
 
     if (scope != null) {
-      return scope;
+      if (!(scope instanceof ServiceSessionScope session) || !ScopeManager.allowsManagedScope(session, this)) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Session is not accessible to the requesting user");
+      }
+      return session.forRequest(this);
     }
 
     final var ret = new ServiceSessionScope(this);
@@ -299,6 +362,10 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     }
     this.data.clear();
     setStatus(Status.EMPTY);
+  }
+
+  void releaseLocalResources() {
+    disconnectMessaging();
   }
 
   public Collection<Role> getRoles() {
@@ -427,6 +494,33 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl
     //  if necessary
 //    Logging.INSTANCE.info("Services for " + user.getUsername() + " validated");
     return true;
+  }
+
+  /** Publish a complete topology snapshot for subsequent requests, after validating its clients. */
+  public void advertiseServices(UserScopeNotification notification) {
+    var snapshot = notification.copy();
+    installAdvertisement(snapshot);
+    // Only a fresh advertisement may seed monitor status. Replaying a cached "online" status on
+    // every request would continually undo a monitor's later offline result.
+    snapshot.getServices().forEach(info -> info.setStatus(null));
+    advertisementOwner.advertisement = snapshot;
+  }
+
+  private void installAdvertisement(UserScopeNotification snapshot) {
+    Map<KlabService.Type, List<KlabService>> replacement = new ConcurrentHashMap<>();
+    for (var info : snapshot.getServices()) {
+      var client = Objects.equals(service.serviceId(), info.getId())
+          ? service : ServiceClientCatalog.INSTANCE.getService(info, service, this);
+      var clients = replacement.computeIfAbsent(KlabService.Type.classify(client),
+          key -> new CopyOnWriteArrayList<>());
+      clients.removeIf(existing -> sameService(existing, client));
+      clients.add(client);
+    }
+    serviceMap = replacement;
+    resourcesMerger = null;
+    if (snapshot.isLocalFederation()) {
+      user.getData().put(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.local());
+    }
   }
 
   public void addService(KlabService klabService) {

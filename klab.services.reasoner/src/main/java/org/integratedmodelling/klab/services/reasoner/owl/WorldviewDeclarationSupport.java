@@ -8,7 +8,25 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 
 /** Translation of declaration clauses whose OWL contract is an existential restriction. */
 public final class WorldviewDeclarationSupport {
+  static final org.semanticweb.owlapi.model.IRI VALUE_SOURCE =
+      org.semanticweb.owlapi.model.IRI.create("urn:klab:validation:description-value-source");
+  static final org.semanticweb.owlapi.model.IRI VALUE_STATUS =
+      org.semanticweb.owlapi.model.IRI.create("urn:klab:validation:description-value-status");
+
   private WorldviewDeclarationSupport() {}
+
+  public static boolean hasDeferredValue(KimConceptStatement statement) {
+    return statement.getDescriptionValue() != null && !statement.getDescriptionValue().isBlank();
+  }
+
+  public static boolean hasDeferredValues(KimOntology ontology) {
+    return ontology.getStatements().stream().anyMatch(WorldviewDeclarationSupport::hasDeferredValues);
+  }
+
+  private static boolean hasDeferredValues(KimConceptStatement statement) {
+    return hasDeferredValue(statement)
+        || statement.getChildren().stream().anyMatch(WorldviewDeclarationSupport::hasDeferredValues);
+  }
 
   public static void compile(
       OWL owl,
@@ -16,8 +34,33 @@ public final class WorldviewDeclarationSupport {
       Concept owner,
       KimConceptStatement statement,
       Function<KimConcept, Concept> resolve) {
+    compile(owl,ontology,owner,statement,resolve,false);
+  }
+
+  public static void compileAuthored(OWL owl, Ontology ontology, Concept owner,
+      KimConceptStatement statement, Function<KimConcept, Concept> resolve) {
+    compile(owl,ontology,owner,statement,resolve,true);
+  }
+
+  private static void compile(OWL owl, Ontology ontology, Concept owner,
+      KimConceptStatement statement, Function<KimConcept, Concept> resolve, boolean staged) {
     // Resolve and validate all operands before writing any of these restrictions.
+    // Legal source-language values must not become invalid merely because this transport still
+    // carries raw text. Preserve them explicitly as unresolved authoring evidence, not validated
+    // value restrictions or computations. Typed normalization remains a separate missing stage.
+    if (statement.getObservablesDescribed().stream()
+        .anyMatch(d -> d.getSecond() == KimConceptStatement.DescriptionType.DISCRETIZES))
+      throw new KlabValidationException("DISCRETIZATION_PARTITION_UNSUPPORTED: discretizes requires "
+          + "an applicability range and numeric categories with explicit endpoint ownership to "
+          + "validate nonoverlap, contiguity and complete coverage");
+    var described = new ArrayList<Concept>();
+    var independentlyCheckedDescriptions = new ArrayList<Concept>();
+    var authoredBearer = statement.getDeclaredInherent() == null ? null
+        : require(resolve, statement.getDeclaredInherent(), SemanticType.OBSERVABLE);
     var restrictions = new LinkedHashMap<String, List<Concept>>();
+    var interpretations = WorldviewDomainSupport.interpretations(owl, owner, statement, resolve, !staged);
+    if (!interpretations.isEmpty()) restrictions.put("odo:interpretsPhysicalDomain", interpretations);
+    if (!staged) WorldviewDomainSupport.validateGrounding(owl, owner, statement);
     if (!statement.getQualitiesAffected().isEmpty()
         && !(owner.is(SemanticType.PROCESS) || owner.is(SemanticType.EVENT)))
       throw new KlabValidationException("affects requires a process or event source");
@@ -94,21 +137,29 @@ public final class WorldviewDeclarationSupport {
       if (!validOwner) throw new KlabValidationException("Invalid source for " + description.getSecond());
       String property =
           switch (description.getSecond()) {
-            case DESCRIBES -> "odo:describesQuality";
+            case DESCRIBES -> "odo:describes";
             case INCREASES_WITH -> "odo:increasesWith";
             case DECREASES_WITH -> "odo:decreasesWith";
             case MARKS -> "odo:marksQuality";
             case CLASSIFIES -> "odo:classifiesQuality";
             case DISCRETIZES -> "odo:discretizesQuality";
           };
-      add(
-          restrictions,
-          property,
-          List.of(description.getFirst()),
-          description.getSecond() == KimConceptStatement.DescriptionType.MARKS ? SemanticType.PRESENCE
-              : description.getSecond() == KimConceptStatement.DescriptionType.DISCRETIZES ? SemanticType.QUANTIFIABLE
-              : SemanticType.QUALITY,
-          resolve);
+      // Plain describes admits any Observable. Specialized clauses retain their bounds;
+      // neither relation asserts values, computations, or particular bearer identity.
+      var target = description.getSecond() == KimConceptStatement.DescriptionType.DESCRIBES
+          ? requireObservableDescription(resolve, description.getFirst())
+          : require(resolve, description.getFirst(),
+          description.getSecond() == KimConceptStatement.DescriptionType.MARKS
+              ? SemanticType.PRESENCE
+              : description.getSecond() == KimConceptStatement.DescriptionType.DISCRETIZES
+                  ? SemanticType.QUANTIFIABLE : SemanticType.QUALITY);
+      // Domain -> Configuration validates the target independently, without
+      // transferring the configuration's bearer constraints to a Domain.
+      if (description.getSecond() == KimConceptStatement.DescriptionType.DESCRIBES
+          && owner.is(SemanticType.DOMAIN) && target.is(SemanticType.CONFIGURATION))
+        independentlyCheckedDescriptions.add(target);
+      else described.add(target);
+      restrictions.computeIfAbsent(property, key -> new ArrayList<>()).add(target);
     }
     for (var link : statement.getSubjectsLinked()) {
       if (!owner.is(SemanticType.RELATIONSHIP))
@@ -132,11 +183,27 @@ public final class WorldviewDeclarationSupport {
       if (!inheritedDomain.applicableTo(owner, applicable))
         throw new KlabValidationException(
             "applies to must specialize every inherited applicability domain");
+    // Staging validates the complete bearer conjunction once, after closure.
+    // Local authored bounds are seeds in that closure, not partially reconciled OWL.
+    var bearerAxioms = staged ? List.<org.semanticweb.owlapi.model.OWLAxiom>of()
+        : DescriptionBearerSupport.prepare(owl, owner, authoredBearer,
+            described, applicables, independentlyCheckedDescriptions);
+    var propertyNames = new LinkedHashSet<>(restrictions.keySet());
+    propertyNames.addAll(inverseRestrictions.keySet());
+    if (!applicables.isEmpty()) propertyNames.add("odo:appliesTo");
+    for (var name : propertyNames)
+      if (owl.getProperty(name) == null)
+        throw new KlabValidationException("Missing ontology property " + name);
+    // Commit only after every clause has passed validation and property preflight.
     for (var entry : restrictions.entrySet()) {
       var property = owl.getProperty(entry.getKey());
       if (property == null)
         throw new KlabValidationException("Missing ontology property " + entry.getKey());
-      for (var target : entry.getValue()) owl.restrictSome(owner, property, target, ontology);
+      for (var target : entry.getValue()) {
+        owl.restrictSome(owner, property, target, ontology);
+        if (entry.getKey().equals("odo:interpretsPhysicalDomain"))
+          WorldviewDomainSupport.markInterpretation(owl, ontology, owner, target);
+      }
     }
     for (var entry : inverseRestrictions.entrySet()) {
       var property = owl.getProperty(entry.getKey());
@@ -145,6 +212,29 @@ public final class WorldviewDeclarationSupport {
       for (var source : entry.getValue()) owl.restrictSome(source, property, owner, ontology);
     }
     if (!applicables.isEmpty()) owl.setApplicableObservables(owner, applicables, ontology);
+    owl.manager.addAxioms(ontology.getOWLOntology(), new LinkedHashSet<>(bearerAxioms));
+    if (hasDeferredValue(statement)) {
+      var factory = owl.manager.getOWLDataFactory();
+      var source = owl.getOWLClass(owner).getIRI();
+      owl.manager.addAxiom(ontology.getOWLOntology(), factory.getOWLAnnotationAssertionAxiom(
+          factory.getOWLAnnotationProperty(VALUE_SOURCE), source,
+          factory.getOWLLiteral(statement.getDescriptionValue())));
+      owl.manager.addAxiom(ontology.getOWLOntology(), factory.getOWLAnnotationAssertionAxiom(
+          factory.getOWLAnnotationProperty(VALUE_STATUS), source, factory.getOWLLiteral("UNRESOLVED")));
+    }
+  }
+
+  /** Unsettled bearer contributions are durable evidence, not successful alignment. */
+  public static List<String> unresolvedDescriptionBearers(OWL owl, Concept owner) {
+    if (owl == null || owl.manager == null || owner == null || owner.getUrn() == null) return List.of();
+    var type = owl.getOWLClass(owner);
+    if (type == null) return List.of();
+    return owl.manager.ontologies().flatMap(o -> o.getAnnotationAssertionAxioms(type.getIRI()).stream())
+        .filter(a -> a.getProperty().getIRI().equals(DescriptionBearerSupport.TARGET_STATUS))
+        .map(a -> a.getValue()).filter(org.semanticweb.owlapi.model.OWLLiteral.class::isInstance)
+        .map(org.semanticweb.owlapi.model.OWLLiteral.class::cast).map(v -> v.getLiteral())
+        .filter(v -> v.contains("UNRESOLVED")).distinct().sorted()
+        .map(v -> "DESCRIPTION_BEARER_UNRESOLVED: " + owner.getUrn() + " describes " + v).toList();
   }
 
   private static void add(
@@ -157,6 +247,23 @@ public final class WorldviewDeclarationSupport {
       var targets = restrictions.computeIfAbsent(property, key -> new ArrayList<>());
       for (var operand : operands) targets.add(require(resolve, operand, expected));
     }
+  }
+
+  /** Observable subtype flags need not carry the redundant OBSERVABLE bit. */
+  static boolean isObservableDescriptionTarget(Concept concept) {
+    return concept != null && !concept.is(SemanticType.NOTHING)
+        && (concept.is(SemanticType.OBSERVABLE) || concept.is(SemanticType.CONFIGURATION)
+            || concept.is(SemanticType.EXTENT)
+            || SemanticType.BASE_OBSERVABLE_TYPES.stream().anyMatch(concept::is));
+  }
+
+  private static Concept requireObservableDescription(
+      Function<KimConcept, Concept> resolve, KimConcept syntax) {
+    var concept = syntax == null ? null : resolve.apply(syntax);
+    if (!isObservableDescriptionTarget(concept))
+      throw new KlabValidationException("Expected a resolved OBSERVABLE target: "
+          + (syntax == null ? "missing operand" : syntax.getUrn()));
+    return concept;
   }
 
   private static Concept require(

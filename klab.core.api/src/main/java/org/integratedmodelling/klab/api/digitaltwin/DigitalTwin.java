@@ -91,6 +91,9 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     String getOwner();
 
+    /** Host-issued parent policy; null denotes a private or legacy parent session. */
+    default String getSessionFederationId() { return null; }
+
     /**
      * Access rights define who can access the digital twin and the modality of the access.
      * Individual observations should also allow distinct levels of access within the scope of the
@@ -273,6 +276,17 @@ public interface DigitalTwin extends RuntimeAsset {
     String getId();
 
     void registerExecutors();
+
+    /**
+     * Read an observation through this attempt's tentative semantic updates. The returned view
+     * is not evidence of classification completion and must not escape as committed knowledge.
+     * Implementations must isolate mutable observation state and must not expose a writable
+     * alias of the committed observation or staged write set. Unsupported implementations fail
+     * explicitly instead of returning the supplied mutable object.
+     */
+    default Observation readObservation(Observation observation) {
+      throw new UnsupportedOperationException("Detached transaction reads are unavailable");
+    }
 
     /** Transaction-local executor, including parent/child activities. */
     default Executor getExecutor(Observation observation) {
