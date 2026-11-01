@@ -41,6 +41,8 @@ def checked_file(root, relative, expected_hash):
 
 
 def allowed_artifact(name):
+    if name == "deployment.json":
+        return True
     if name in ("notebook/executed.ipynb", "notebook/notebook.html", "notebook/notebook-run.json"):
         return True
     return bool(re.fullmatch(r"(?:notebook/)?(?:sequential|parallel|partial|restored)/(?:batch\.json|run\.json|restoration\.json|[A-Za-z][A-Za-z0-9_-]{0,79}\.tif)", name))
@@ -134,7 +136,11 @@ def build(acceptance_path, throughput_path, output):
     try:
         acceptance = validate_acceptance(acceptance_path, require_clean=True)
         require(acceptance.get("deployment_verified") is True,
-                "Running Java/component/worldview provenance has not been independently verified")
+                 "Running Java/component/worldview provenance has not been independently verified")
+        from workflows.deployment import validate_recorded_launch
+        require("deployment.json" in acceptance["artifacts"], "Verified deployment report is missing")
+        deployment, _ = milestone.read_json(Path(acceptance_path).parent / "deployment.json")
+        validate_recorded_launch(deployment, acceptance["deployment"])
         throughput, _ = milestone.read_json(throughput_path)
         require(throughput.get("kind") == "milestone-throughput" and throughput.get("passed") is True
                 and throughput["identity"] == acceptance["identity"]

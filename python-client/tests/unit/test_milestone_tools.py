@@ -240,6 +240,10 @@ def acceptance_evidence(directory, identity):
     from build_milestone_deliverable import REQUIRED_TESTS
     directory.mkdir()
     files = {
+        "deployment.json": dict(version=1, kind="verified-owned-local-launch", deployment=fixture_data()["deployment"],
+            evidence_sha256="a" * 64, input_identity_sha256="b" * 64, input_files=20,
+            services={name: dict(id=name, url="http://127.0.0.1/" + name, pid=100, created=1.0)
+                      for name in ("reasoner", "resources", "resolver", "runtime")}),
         "sequential/run.json": dict(identity=identity, fixture_sha256="a" * 64, matrix_verified=True,
             run_id="sequential", batch=dict(outcomes=[dict(result_handles=[dict(id=i)]) for i in range(4)])),
         "parallel/run.json": dict(identity=identity, fixture_sha256="a" * 64, matrix_verified=True,
@@ -258,7 +262,7 @@ def acceptance_evidence(directory, identity):
     (directory / "notebook/notebook.html").write_text("<html>synthetic validator input</html>")
     hashes["notebook/notebook.html"] = tool.digest((directory / "notebook/notebook.html").read_bytes())
     report = dict(version=1, kind="milestone-acceptance", identity=identity, fixture_sha256="a" * 64,
-                  run_id="acceptance", passed=True, deployment_verified=True,
+                  run_id="acceptance", passed=True, deployment_verified=True, deployment=fixture_data()["deployment"],
                   tests={name: "passed" for name in REQUIRED_TESTS}, artifacts=hashes)
     tool.write_json(directory / "acceptance.json", report)
     return report
@@ -383,7 +387,8 @@ def test_restore_helpers_never_resubmit_and_bind_child_identity(tmp_path, monkey
     assert tool.launch_restore(fixture_path, batch_path, tmp_path / "child", "profile", "certificate")["pid"] != os.getpid()
 
 
-def test_acceptance_adapter_builds_actual_case_status_manifest(tmp_path, monkeypatch):
+@pytest.mark.parametrize("verified", [False, True])
+def test_acceptance_adapter_builds_actual_case_status_manifest(tmp_path, monkeypatch, verified):
     import run_milestone_acceptance as adapter
     from build_milestone_deliverable import REQUIRED_TESTS
     fixture_path = tmp_path / "fixture.json"
@@ -399,12 +404,41 @@ def test_acceptance_adapter_builds_actual_case_status_manifest(tmp_path, monkeyp
         (output / "private.cert").write_text("must never be included")
         return 0
     monkeypatch.setattr(adapter, "run", run)
-    monkeypatch.setattr(sys, "argv", ["adapter", "--report", str(report), "--output-dir", str(output),
-                                     "--milestone-fixture", str(fixture_path)])
+    calls = []
+    from workflows import deployment
+    def verify(*args):
+        calls.append(args)
+        return {"synthetic_unit_test_only": True}
+    monkeypatch.setattr(deployment, "verify_local_launch", verify)
+    arguments = ["adapter", "--report", str(report), "--output-dir", str(output), "--milestone-fixture", str(fixture_path)]
+    if verified:
+        arguments.extend(["--deployment-evidence", str(tmp_path / "private-launch.json"), "--profile", "profile.json"])
+    monkeypatch.setattr(sys, "argv", arguments)
     assert adapter.main() == 0
     manifest, _ = tool.read_json(output / "acceptance.json")
-    assert manifest["passed"] and manifest["deployment_verified"] is False
+    assert manifest["passed"] and manifest["deployment_verified"] is verified
+    assert len(calls) == (2 if verified else 0)
+    assert ("deployment.json" in manifest["artifacts"]) is verified
+    assert "--deployment-evidence" not in sys.argv
     assert "private.cert" not in manifest["artifacts"]
+
+
+def test_acceptance_rejects_a_changed_deployment_without_claiming_a_pass(tmp_path, monkeypatch):
+    import run_milestone_acceptance as adapter
+    from workflows import deployment
+    fixture = tmp_path / "fixture.json"
+    write_fixture(fixture)
+    monkeypatch.setattr(tool, "source_identity", lambda: {})
+    snapshots = iter([{"synthetic_generation": 1}, {"synthetic_generation": 2}])
+    monkeypatch.setattr(deployment, "verify_local_launch", lambda *args: next(snapshots))
+    monkeypatch.setattr(adapter, "run", lambda: 0)
+    output = tmp_path / "output"
+    monkeypatch.setattr(sys, "argv", ["adapter", "--report", str(tmp_path / "tests.xml"),
+        "--output-dir", str(output), "--milestone-fixture", str(fixture),
+        "--deployment-evidence", "private-launch.json", "--profile", "profile.json"])
+    with pytest.raises(ValueError, match="Deployment changed"):
+        adapter.main()
+    assert not (output / "acceptance.json").exists()
 
 
 def test_throughput_adapter_requires_explicit_work_authorization(monkeypatch):

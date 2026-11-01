@@ -34,12 +34,29 @@ strings/integers or null for missing cells. See the shared workflow document.
 No supported live fixture is bundled: unit-test fixture dictionaries are synthetic
 validator inputs, not scientific Java results or deployment configuration.
 
-**Declared deployment identities are not runtime attestation.** The adapter writes
-`deployment_verified=false`. The builder intentionally refuses PR-ready delivery
-until running binary/component/worldview evidence is independently established.
-There is no CLI switch to relabel declared identities as verified. Resolving this
-attestation boundary is a remaining contract/integration dependency; do not edit
-the boolean merely to pass the gate.
+**Declared deployment identities are not runtime attestation.** Without checked
+evidence the adapter still writes `deployment_verified=false` and the builder
+refuses readiness. An explicitly owned **local** deployment may supply
+`--deployment-evidence <private-launch.json>` to the acceptance adapter. This is
+not a trust-me flag: `workflows/deployment.py` rechecks the live process birth,
+executable and private argument-file bindings; every classpath file/class; exact
+JDK release; staged worldview bytes against the clean pinned source revision;
+served project files/configuration; installed component bytes; ordered classpath
+build identities; trusted loopback URLs and actual advertised service IDs.
+Checks run before and after acceptance and must produce identical snapshots.
+Private paths/arguments are excluded from the hash-bound public `deployment.json`.
+The builder requires that report and its artifact hash, not just a true boolean.
+
+The private launch manifest has version1, kind `owned-local-launch`, the exact
+fixture `deployment`, Java `checkout`, `worldview` checkout/staged roots,
+`resources_configuration`, pinned `files` (role/path/sha256), and four `services`
+(id/url/pid/created/executable/arguments/classpath). It is emitted by the reviewed
+isolated launch harness after imports/index readiness. Service-build identifiers
+are `classpath-sha256:<digest>` and JDK is the exact release-file JAVA_VERSION.
+Only `[local]` installations need psutil. This verifies operator-reviewed local
+evidence, not remote/hostile-author cryptographic attestation or scientific accuracy.
+No service is imported, restarted or modified by the verifier. Arbitrary declared
+identities or a manually flipped boolean must not be used to pass delivery.
 
 ## Named functional acceptance
 
