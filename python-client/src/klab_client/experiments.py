@@ -126,7 +126,11 @@ class ExperimentBatch:
     def loads(cls, encoded, *, max_bytes=1024 * 1024):
         """Read an inspection manifest only; no network, ownership, resubmission or Job continuation."""
         bounds(max_bytes, 16 * 1024 * 1024, "Batch manifest byte budget")
-        if not isinstance(encoded, str) or len(encoded.encode("utf-8")) > max_bytes:
+        try:
+            valid_size = isinstance(encoded, str) and len(encoded.encode("utf-8")) <= max_bytes
+        except UnicodeEncodeError:
+            valid_size = False
+        if not valid_size:
             raise InvalidRequestError("Manifest must be bounded UTF-8 JSON text")
         try:
             data = json.loads(encoded, object_pairs_hook=_unique, parse_constant=_invalid_constant)
@@ -187,7 +191,7 @@ class ExperimentBatch:
                     or result.counts != data["counts"]):
                 raise ValueError()
             return result
-        except (ValueError, TypeError, KeyError, OverflowError, KlabError):
+        except (ValueError, TypeError, KeyError, OverflowError, RecursionError, KlabError):
             raise InvalidRequestError("Invalid or unsupported experiment manifest; no remote work was restored") from None
 
 
