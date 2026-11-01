@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "scope": "Offline algorithm-equivalence cases, not observed Cantabrian data or a Java-service acceptance fixture",
+  "basis": {
+    "independent_implementation": "Puerto Codigo/Plant2_Crec.R: Rg2 attenuation and FR saturation; Rgmax column of input/ZB3_ComFisio.txt",
+    "puerto_record": "6786419",
+    "puerto_sha256": "4b1aff4c5b8ba3be9b2568ed79098c176850dc1be5570816e00d27848adccad9",
+    "pal_record": "7533051",
+    "threshold": 25,
+    "interpretation": "Source math uses daily radiation and a 0-1 limiting fraction; modern observable mediation remains unapproved"
+  },
+  "absolute_arithmetic_tolerance": 1e-12,
+  "cases": [
+    {"id": "zero", "rg": 0, "same_class": true, "expected_rg2": 0, "expected_fr": 0},
+    {"id": "unshaded_below_threshold", "rg": 20, "same_class": true, "expected_rg2": 20, "expected_fr": 0.8},
+    {"id": "shaded_below_threshold", "rg": 20, "same_class": false, "expected_rg2": 4, "expected_fr": 0.16},
+    {"id": "unshaded_at_threshold", "rg": 25, "same_class": true, "expected_rg2": 25, "expected_fr": 1},
+    {"id": "shaded_at_threshold", "rg": 125, "same_class": false, "expected_rg2": 25, "expected_fr": 1},
+    {"id": "unshaded_above_threshold", "rg": 150, "same_class": true, "expected_rg2": 150, "expected_fr": 1},
+    {"id": "shaded_above_threshold", "rg": 150, "same_class": false, "expected_rg2": 30, "expected_fr": 1},
+    {"id": "shaded_twenty_percent", "rg": 25, "same_class": false, "expected_rg2": 5, "expected_fr": 0.2}
+  ],
+  "not_established": ["Nodata propagation", "Actual semantic concept equality", "Resource classification and resampling", "Worldview compatibility", "Daily versus monthly mediation", "Live Java-service execution", "Radiation field accuracy", "P4 reproduction"]
+}

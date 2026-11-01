@@ -1,0 +1,196 @@
+{
+  "version": 1,
+  "scope": "Syntax and offline algorithm equivalence only; no semantic binding or k.LAB execution",
+  "adaptation": {
+    "version": 1,
+    "status": "SYNTAX_ONLY_NOT_REGISTERABLE",
+    "archive_record": "7533051",
+    "archive_sha256": "6503feeb0dc743601fe3e3205c879354801fc21353913fd06b9ae4ff1443d872",
+    "original_members": {
+      "src/ecology/grassland/lf/radiation.kim": "871a7d87990fd2381e9d1c731f68cb4ce49c9e21f33c7201999a031d64b20707",
+      "src/ecology/grassland/livestock/tables.kim": "a3a01dbcbf95b519c02f31f58b0f66e2ceb5e635fed5860dbe602a4ffc63df1f"
+    },
+    "included_models": [
+      "rgc_max",
+      "rg2",
+      "fr"
+    ],
+    "excluded": [
+      "ftrh",
+      "all lookup tables except T_RC_MAX",
+      "data/observer namespace"
+    ],
+    "changes": [
+      "Normalize source line endings to LF",
+      "Extract explicitly labelled three-model Radiation subset",
+      "Spell five MJ/m^2 units as MJ/(m*m)",
+      "Remove grammar-only 'of' after one percentage keyword; numerical scale remains unresolved",
+      "Preserve three model descriptions verbatim as comments; live documentation parity not claimed",
+      "Extract T_RC_MAX; change only its table delimiters from {{...}} to ===...==="
+    ],
+    "equations_unchanged": [
+      "[(com == com2) ? rg : (rg * 0.2)]",
+      "[(rg2 > rgc_max) ? 1 : (rg2 / rgc_max)]"
+    ],
+    "outputs": {
+      "src/ecology/grassland/lf/radiation.kim": "bbb38f1a436c6b0f27b20ab504054cf315c3016d1c65afd694b5a46454fab9b6",
+      "src/ecology/grassland/livestock/tables.kim": "4fce9c408d3679297e96681cf8ff80136af1093604792f4bb0533cd437571279"
+    },
+    "ontology_mapping": "BLOCKED_NOT_APPLIED",
+    "resource_binding": "BLOCKED_NOT_APPLIED",
+    "time_unit_semantics": "BLOCKED_NOT_APPROVED",
+    "java_scientific_execution": "NOT_RUN",
+    "scientific_acceptance": false,
+    "bundle_sha256": "8d5072273766edbe05503e53f38c55b964a5a630d024be93218803072a1e1ef0"
+  },
+  "parsers": {
+    "pinned": [
+      {
+        "path": "positive-control",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "src/ecology/grassland/lf/radiation.kim",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "src/ecology/grassland/livestock/tables.kim",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      }
+    ],
+    "current-local": [
+      {
+        "path": "positive-control",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "src/ecology/grassland/lf/radiation.kim",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "src/ecology/grassland/livestock/tables.kim",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      }
+    ]
+  },
+  "expression": {
+    "status": "PASS_EXPRESSION_EQUIVALENCE_ONLY",
+    "original_cases": 8,
+    "adapted_cases": 8,
+    "original_values": [
+      {
+        "id": "zero",
+        "rg2": 0.0,
+        "fr": 0.0
+      },
+      {
+        "id": "unshaded_below_threshold",
+        "rg2": 20.0,
+        "fr": 0.8
+      },
+      {
+        "id": "shaded_below_threshold",
+        "rg2": 4.0,
+        "fr": 0.16
+      },
+      {
+        "id": "unshaded_at_threshold",
+        "rg2": 25.0,
+        "fr": 1.0
+      },
+      {
+        "id": "shaded_at_threshold",
+        "rg2": 25.0,
+        "fr": 1.0
+      },
+      {
+        "id": "unshaded_above_threshold",
+        "rg2": 150.0,
+        "fr": 1
+      },
+      {
+        "id": "shaded_above_threshold",
+        "rg2": 30.0,
+        "fr": 1
+      },
+      {
+        "id": "shaded_twenty_percent",
+        "rg2": 5.0,
+        "fr": 0.2
+      }
+    ],
+    "adapted_values": [
+      {
+        "id": "zero",
+        "rg2": 0.0,
+        "fr": 0.0
+      },
+      {
+        "id": "unshaded_below_threshold",
+        "rg2": 20.0,
+        "fr": 0.8
+      },
+      {
+        "id": "shaded_below_threshold",
+        "rg2": 4.0,
+        "fr": 0.16
+      },
+      {
+        "id": "unshaded_at_threshold",
+        "rg2": 25.0,
+        "fr": 1.0
+      },
+      {
+        "id": "shaded_at_threshold",
+        "rg2": 25.0,
+        "fr": 1.0
+      },
+      {
+        "id": "unshaded_above_threshold",
+        "rg2": 150.0,
+        "fr": 1
+      },
+      {
+        "id": "shaded_above_threshold",
+        "rg2": 30.0,
+        "fr": 1
+      },
+      {
+        "id": "shaded_twenty_percent",
+        "rg2": 5.0,
+        "fr": 0.2
+      }
+    ],
+    "groovy_version": "4.0.25",
+    "rejected_mutations": [
+      "attenuation",
+      "saturation"
+    ],
+    "scientific_acceptance": false,
+    "live_services": "NOT_RUN",
+    "limits": [
+      "Nodata propagation",
+      "Actual semantic concept equality",
+      "Resource classification and resampling",
+      "Worldview compatibility",
+      "Daily versus monthly mediation",
+      "Live Java-service execution",
+      "Radiation field accuracy",
+      "P4 reproduction"
+    ]
+  },
+  "probe_sha256": "cf9412266c5c6f252a848385b92f89662f4bf6dc7082efde1ee4554efc0029e2",
+  "oracle_sha256": "8bfd25919f244435be55f05c812aedf2e6e48c3f046d8c550f4cd348c26220c3"
+}

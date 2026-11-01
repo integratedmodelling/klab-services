@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "scope": "Source recovery only; no service import or scientific accuracy acceptance",
+  "source_repository": "integratedmodelling/im.alice.spain",
+  "source_commit": "054d1a79286d708ce2a04e94d0530d5eebcec404",
+  "repository_entries_inspected": 187,
+  "resource_urns": [
+    "local:amarquez:im.alice.spain:com2_50m_wgs84",
+    "local:amarquez:im.alice.spain:com_50m_wgs84",
+    "local:srwohl:im.alice.spain:im-alice-spain.spain_solar_radiation_may_2018"
+  ],
+  "vegetation_files": [
+    {
+      "url": "https://api.bitbucket.org/2.0/repositories/integratedmodelling/im.alice.spain/src/054d1a79286d708ce2a04e94d0530d5eebcec404/resources/com2_50m_wgs84.v0.0.1/com2_50m_wgs84.tif",
+      "commit": "054d1a79286d708ce2a04e94d0530d5eebcec404",
+      "urn": "local:amarquez:im.alice.spain:com2_50m_wgs84",
+      "bytes": 505099,
+      "sha256": "e40797bc0f59ba04fc4111fbab653c5077c70e42adbbc6a8049c03b36f0cf9c5",
+      "metadata": {
+        "shape": [
+          850,
+          1391
+        ],
+        "crs": "EPSG:4326",
+        "bounds": [
+          -4.036576994,
+          43.028543326,
+          -3.264154554,
+          43.500548412
+        ],
+        "transform": [
+          0.0005553001006470163,
+          0.0,
+          -4.036576994,
+          0.0,
+          -0.000555300101176474,
+          43.500548412,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "dtype": [
+          "float32"
+        ],
+        "nodata": -3.3999999521443642e+38,
+        "units": [
+          null
+        ]
+      },
+      "license": "UNKNOWN; no redistribution approved",
+      "paper_run_identity": "NOT ATTESTED"
+    },
+    {
+      "url": "https://api.bitbucket.org/2.0/repositories/integratedmodelling/im.alice.spain/src/054d1a79286d708ce2a04e94d0530d5eebcec404/resources/com_50m_wgs84.v0.0.1/com_50m_wgs84.tif",
+      "commit": "054d1a79286d708ce2a04e94d0530d5eebcec404",
+      "urn": "local:amarquez:im.alice.spain:com_50m_wgs84",
+      "bytes": 4736687,
+      "sha256": "468bab1d7690047a8d390616384623ac9a994a6dd4419e4869fb9816aad4ddf7",
+      "metadata": {
+        "shape": [
+          850,
+          1391
+        ],
+        "crs": "EPSG:4326",
+        "bounds": [
+          -4.036576993634295,
+          43.02854332632149,
+          -3.2641545533559113,
+          43.50054841204157
+        ],
+        "transform": [
+          0.0005553001008471487,
+          0.0,
+          -4.036576993634295,
+          0.0,
+          -0.0005553001008471487,
+          43.50054841204157,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "dtype": [
+          "float32"
+        ],
+        "nodata": -3.3999999521443642e+38,
+        "units": [
+          null
+        ]
+      },
+      "license": "UNKNOWN; no redistribution approved",
+      "paper_run_identity": "NOT ATTESTED"
+    }
+  ],
+  "category_audit": [
+    {
+      "file": "com_50m_wgs84.tif",
+      "valid_pixels": 369850,
+      "missing_pixels": 812500,
+      "unique_count": 10,
+      "unique_values": [
+        4.0,
+        7.0,
+        12.0,
+        15.0,
+        21.0,
+        27.0,
+        28.0,
+        36.0,
+        37.0,
+        41.0
+      ],
+      "fractional_valid_pixels": 0,
+      "scope": "Original recovered numeric category codes; no resampling or classification performed"
+    },
+    {
+      "file": "com2_50m_wgs84.tif",
+      "valid_pixels": 369850,
+      "missing_pixels": 812500,
+      "unique_count": 9,
+      "unique_values": [
+        4.0,
+        7.0,
+        12.0,
+        15.0,
+        27.0,
+        28.0,
+        36.0,
+        37.0,
+        41.0
+      ],
+      "fractional_valid_pixels": 0,
+      "scope": "Original recovered numeric category codes; no resampling or classification performed"
+    }
+  ],
+  "radiation_descriptor": {
+    "urn": "local:srwohl:im.alice.spain:im-alice-spain.spain_solar_radiation_may_2018",
+    "version": "0.0.1",
+    "adapterType": "wcs",
+    "localPath": "im.alice.spain/resources/im-alice-spain.spain_solar_radiation_may_2018",
+    "geometry": "S2(2782,1700){bbox=[-4.036576993634296 -3.263929378881776 43.02829774897448 43.50054841109954],proj=EPSG:4326}",
+    "projectName": "im.alice.spain",
+    "localName": "im-alice-spain.spain_solar_radiation_may_2018",
+    "type": "NUMBER",
+    "resourceTimestamp": 1587390973265,
+    "metadata": {},
+    "parameters": {
+      "wcsIdentifier": "im-alice-spain__spain_solar_radiation_may_2018",
+      "serviceUrl": "https://integratedmodelling.org/dev-geoserver/ows",
+      "nodata": "-3.4E38",
+      "wcsVersion": "2.0.1"
+    },
+    "localPaths": [],
+    "history": [],
+    "notifications": [],
+    "attributes": [],
+    "spatialExtent": {
+      "east": -3.263929378881776,
+      "west": -4.036576993634296,
+      "north": 43.50054841109954,
+      "south": 43.02829774897448,
+      "gridResolution": null,
+      "gridUnit": null
+    },
+    "dependencies": null,
+    "outputs": null,
+    "exportFormats": {}
+  },
+  "wcs_probe": {
+    "requests": [
+      "GetCapabilities",
+      "DescribeCoverage"
+    ],
+    "version": "2.0.1",
+    "http_status": 200,
+    "final_url": "https://klab.integratedmodelling.org/",
+    "content_type": "text/html; charset=UTF-8",
+    "body_sha256": {
+      "GetCapabilities": "c8ee2da44f9adc8625ad2a83c7b3ef007bfb737caff0214f1bcfa34caecc4eef",
+      "DescribeCoverage": "c8ee2da44f9adc8625ad2a83c7b3ef007bfb737caff0214f1bcfa34caecc4eef"
+    },
+    "result": "FAIL_CONTRACT_HTML_NOT_COVERAGE",
+    "data_retrieved": false
+  },
+  "legacy_worldview": {
+    "repository": "integratedmodelling/im",
+    "commit": "b15c8fe7c9c2aaedc1ea3c83e67f7e18716f91a3",
+    "commit_date": "2026-09-22T10:19:42+00:00",
+    "files": [
+      {
+        "path": "src/im.kim",
+        "bytes": 50935,
+        "sha256": "b01a7d2eb84f8570ae5d78c8bf3d14dc491816fa71e8ea19265a8519d81ad15c",
+        "error": null
+      },
+      {
+        "path": "src/biology.kim",
+        "bytes": 4648,
+        "sha256": "039cc8bf0b40a5cb6e371821fcf000ed6b02adc16ab6f2c4c0638634705817f5",
+        "error": null
+      },
+      {
+        "path": "src/ecology.kim",
+        "bytes": 19936,
+        "sha256": "f82fedef1fc73257ed81e13720af1e52bb5c9e3f1f57a5ffb6a2178838337e50",
+        "error": null
+      },
+      {
+        "path": "src/landcover.kim",
+        "bytes": 80028,
+        "sha256": "21d3344b392d154f82f3f538774e047c80f0b66aee57aea7b28b38e30362c78d",
+        "error": null
+      },
+      {
+        "path": "src/earth/incubation.kim",
+        "bytes": 1086,
+        "sha256": "271e7d39d38aac703161098ed0e655bbe7c1fa38430efaf0a2cedda77b65df64",
+        "error": null
+      },
+      {
+        "path": "src/ecology/incubation.kim",
+        "bytes": 15442,
+        "sha256": "fc627728e154e8e1aef080f7559de77c459345aa58ffaac70976236a171d9814",
+        "error": null
+      },
+      {
+        "path": "src/biology/nomenclature.kim",
+        "bytes": 4617,
+        "sha256": "522e0a607da0f2fd15f1fcfe7720a0ae9cc34133b098ee3c8796b7ad4e0e26cb",
+        "error": null
+      }
+    ],
+    "modern_mapping": "NOT_APPROVED_NOT_APPLIED"
+  },
+  "redistribution_status": "UNKNOWN terms; raster/legacy source bytes remain external and unpublished"
+}
