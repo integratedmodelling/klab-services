@@ -4,6 +4,61 @@ This tooling is implemented, not scientifically accepted. All actual services,
 scientific references and separately authenticated identities must be provided.
 No tool imports projects, applies component patches or restarts shared services.
 
+## PR #102 scope decision (1 November 2026)
+
+At the user's explicit direction, PR #102 is narrowed to **workflow and acceptance
+tooling integration**, not completion of the scientific milestone. Merging the
+tooling does not certify a scientific run, produce an accepted deliverable, or
+establish native exporter compatibility. The original requirements below are
+preserved as the future scientific acceptance contract, not silently removed.
+
+Merge criteria for this bounded contribution are the existing offline tests and
+coverage gates, lint, packaging, hosted checks, contributor review, and disclosure
+of the failed live evidence. No runtime validator, test assertion, coverage gate,
+throughput prerequisite or deliverable-readiness requirement is relaxed. No Java,
+ontology, component-source or scientific-algorithm change is included.
+
+### Demonstrated limitation and retained evidence
+
+[Geospatial issue #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10)
+contains exact versions, reproduction steps, source/bytecode findings and the
+unchanged native TIFF embedded with its SHA-256. With Java `a0a013a188fb752907f2d143a61b86f4a9cb0a0b`,
+geospatial build `1.0-20261025.094856-223` and Python `ced45f176`, the third bounded
+slice completed two observation Jobs in one context. Observation units were `m`;
+the native GeoTIFF band units were absent. The strict unit assertion failed.
+The 5 x 4 grid, CRS, transform and all 20 constant values matched independent
+expectations, but that is not a passing scientific/export workflow. Object releases
+were confirmed; all 13 recorded owned JVM identities were absent after cleanup,
+with no private helpers or changes to original service listeners.
+
+The candidate fixture also incorrectly declared `float64`, although the native
+exporter specifies TYPE_FLOAT and produced `float32`. That is a separate reference
+declaration error to correct from the exporter contract, not an exporter defect or
+permission to infer missing units from the requested unit. Earlier attempts stopped
+before scientific submissions on two harness declaration errors (exact JDK release
+and complete launch classpath); both were diagnosed, corrected and preserved.
+
+### Deferred scientific completion (not satisfied by merging #102)
+
+- Obtain an unchanged compatible exporter artifact with native measurement units,
+  or separately authorize/review an upstream component correction. Pin its identity.
+- Correct reference precision from the exporter contract and complete independent
+  fixture fidelity, including nonuniform orientation, missing cells and valid zero;
+  constant data do not prove these properties or real-terrain accuracy.
+- Pass the complete two-variation/two-resolution sequential and parallel matrices,
+  recorded evidence, partial-failure and strengthened two-user permission checks.
+- Restore original results in a fresh process and execute the full scientific
+  notebook; neither is claimed complete by the failed slice.
+- Only after correctness passes, run bounded throughput and validate the complete
+  deliverable with the unchanged fail-closed builder.
+
+Until those gates pass, the scientific milestone and its deliverable remain
+incomplete even if this tooling PR is merged. Missing prerequisites must fail;
+do not mark them passed, convert them to skips, fabricate metadata, or replay an
+ambiguous write. The upstream issue fixes only one prerequisite, not all deferred
+work. Further live attempts require a diagnosed prerequisite change and bounded
+authorization; no fourth attempt was launched for this scope decision.
+
 ## Independent fixture contract
 
 Pass a UTF-8 JSON file to `--milestone-fixture`. Duplicate fields, nonfinite JSON,

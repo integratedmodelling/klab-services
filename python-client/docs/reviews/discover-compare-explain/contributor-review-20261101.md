@@ -2,6 +2,13 @@
 
 ## Recommendation
 
+**Scope update, 1 November 2026:** the user explicitly authorized reducing PR #102
+to workflow/acceptance tooling integration while deferring scientific completion.
+The recommendation and findings below describe the original full-milestone review
+and are preserved as history. They are not a claim that the original gates passed.
+See the revised review at `tooling-scope-review-20261101.md` and the scope decision
+in `../../discover-compare-explain-delivery.md` for the current merge boundary.
+
 **Needs fixes and live validation.** The accepted-base candidate has useful
 workflow infrastructure and passing offline checks, but the deployment gate has
 no verification implementation and the original combined scientific journey has
