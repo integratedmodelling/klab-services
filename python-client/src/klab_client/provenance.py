@@ -1,9 +1,9 @@
 """Bounded read-only recorded neighborhoods, never a complete or revision-pinned lineage graph."""
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from types import MappingProxyType
 from typing import Mapping
 
+from ._inspection import freeze as _freeze
 from .client import scope_token
 from .errors import InvalidRequestError, MissingAssetError, ProtocolError, UnsupportedOperationError
 from .exports import _context
@@ -59,16 +59,6 @@ class ProvenanceView:
     next_offset: int | None
     partial: bool = True
     consistency: str = "unknown: no shared export/provenance revision contract"
-
-
-def _freeze(value, redact):
-    if isinstance(value, dict):
-        return MappingProxyType({key: _freeze(item, redact) for key, item in value.items()
-            if key.lower().replace("_", "-") not in {
-                "authorization", "token", "access-token", "credential", "password", "server-key", "certificate"}})
-    if isinstance(value, list):
-        return tuple(_freeze(item, redact) for item in value)
-    return redact(value) if isinstance(value, str) else value
 
 
 def _node(payload, redact):

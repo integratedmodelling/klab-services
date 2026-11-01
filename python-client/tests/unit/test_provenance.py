@@ -11,7 +11,7 @@ from klab_client import Client, Context, fetch_provenance
 from klab_client.dto import observation_from_wire
 from klab_client.errors import (AuthorizationError, AuthenticationError, InvalidRequestError,
     MissingAssetError, ProtocolError, ServerError, UnsupportedOperationError)
-from klab_client.provenance import CLASSES, RELATIONSHIPS, _node
+from klab_client.provenance import CLASSES, RELATIONSHIPS, _freeze, _node
 
 OBS = "org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl"
 ACT = "org.integratedmodelling.klab.api.provenance.impl.ActivityImpl"
@@ -99,6 +99,55 @@ def test_unknown_harmless_fields_deeply_frozen_and_secrets_removed():
     assert "token" not in props and props["future"][0]["value"] == "[REDACTED]" and props["count"] == 3
     with pytest.raises(TypeError):
         props["future"][0]["value"] = "other"
+
+
+@pytest.mark.parametrize("field", [
+    "authorization", "token", "access-token", "accessToken", "access_key", "accessKey",
+    "api-key", "apiKey", "credential", "password", "server-key", "serverKey",
+    "private-key", "privateKey", "secret", "certificate",
+])
+def test_node_and_link_properties_share_the_inspection_sensitive_field_policy(field):
+    canary = "unconfigured-provenance-canary"
+    row = link(properties={"nested": [{field: canary, "safe": "issued-secret", "count": 3}]})
+    row["source"]["metadata"] = {field: canary, "safe": "issued-secret"}
+    client, observation, _ = setup([row])
+    with client:
+        edge = fetch_provenance(observation).links[0]
+    assert canary not in repr(edge.source.raw) and canary not in repr(edge.properties)
+    assert edge.source.raw["metadata"]["safe"] == "[REDACTED]"
+    assert edge.properties["nested"][0] == {"safe": "[REDACTED]", "count": 3}
+
+
+def test_credential_key_collision_is_rejected_without_rewriting_or_echoing():
+    row = link(properties={"nested": [{"issued-secret": 1, "[REDACTED]": 2}]})
+    client, observation, _ = setup([row])
+    with client, pytest.raises(ProtocolError, match="credential") as caught:
+        fetch_provenance(observation)
+    assert "issued-secret" not in str(caught.value)
+
+
+@pytest.mark.parametrize("projection,levels", [("node", 31), ("properties", 32)])
+def test_provenance_raw_depth_boundary_includes_endpoint_wrapper(projection, levels):
+    def project(nesting):
+        metadata = 1
+        for _ in range(nesting):
+            metadata = {"nested": metadata}
+        if projection == "node":
+            return _node({**link()["source"], "metadata": metadata}, lambda value: value).raw
+        return _freeze(metadata, lambda value: value)
+    assert project(levels)
+    with pytest.raises(ProtocolError, match="nesting"):
+        project(levels + 1)
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), object()])
+@pytest.mark.parametrize("projection", ["node", "properties"])
+def test_provenance_raw_rejects_nonfinite_and_non_json_values(projection, value):
+    with pytest.raises(ProtocolError, match="finite JSON"):
+        if projection == "node":
+            _node({**link()["source"], "metadata": {"nested": [value]}}, lambda value: value)
+        else:
+            _freeze({"nested": [value]}, lambda value: value)
 
 
 @pytest.mark.parametrize("kwargs", [{"limit": 0}, {"limit": 129}, {"limit": True}, {"offset": -1}, {"offset": True},

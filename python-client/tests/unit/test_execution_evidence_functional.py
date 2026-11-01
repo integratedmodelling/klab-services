@@ -73,3 +73,12 @@ def test_unexpected_private_access_fails_the_live_test(functional_module, monkey
     prepared, _, _, _ = prepare_clients(functional_module, monkeypatch, private_allowed=True)
     with pytest.raises(pytest.fail.Exception, match="DID NOT RAISE"):
         functional_module.test_valid_nonowner_reads_shared_work_but_cannot_read_private_evidence(prepared)
+
+
+def test_evidence_denial_cannot_hide_successful_private_restoration(functional_module, monkeypatch):
+    prepared, _, _, _ = prepare_clients(functional_module, monkeypatch, private_allowed=True)
+    def denied_evidence(observation):
+        raise AuthorizationError("offline evidence denied after private metadata was exposed")
+    monkeypatch.setattr(functional_module, "fetch_execution_evidence", denied_evidence)
+    with pytest.raises(pytest.fail.Exception, match="DID NOT RAISE"):
+        functional_module.test_valid_nonowner_reads_shared_work_but_cannot_read_private_evidence(prepared)

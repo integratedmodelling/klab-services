@@ -246,6 +246,55 @@ def test_direct_metadata_and_both_diagrams_are_preserved():
     assert len(result.activities[0].charts) == 2 and not result.activities[0].missing
 
 
+@pytest.mark.parametrize("field", ["apiKey", "privateKey", "secret", "accessKey", "accessToken", "serverKey"])
+def test_every_activity_and_chart_raw_projection_filters_sensitive_fields(field):
+    canary = "unconfigured-metadata-canary"
+    chart = deepcopy(CHART)
+    chart["metadata"][field] = canary
+    chart["root"].setdefault("metadata", {})[field] = canary
+    chart["root"]["ports"][0]["metadata"] = {field: canary}
+    chart["root"]["edges"][0]["metadata"] = {field: canary}
+    metadata = {field: canary, "im:dataflow-graph": chart}
+    client, observation, _ = setup(rows=[activity(metadata=metadata)],
+                                   links=[{**link(), "source": activity(metadata=metadata)}])
+    with client:
+        result = fetch_execution_evidence(observation)
+    recorded = result.activities[0]
+    diagram = recorded.charts[0]
+    projections = [recorded.raw, result.provenance.links[0].source.raw, diagram.raw]
+    projections += [node.raw for node in diagram.nodes] + [port.raw for port in diagram.ports]
+    projections += [edge.raw for edge in diagram.links]
+    assert all(canary not in repr(raw) for raw in projections)
+    assert recorded.raw["metadata"]["im:dataflow-graph"]["metadata"]["activeNode"] == "model"
+
+
+@pytest.mark.parametrize("decoder,payload", [(decode_flowchart, CHART), (decode_dataflow, DATAFLOW)])
+def test_decoder_metadata_keys_cannot_contain_configured_credentials(decoder, payload):
+    payload = deepcopy(payload)
+    payload["metadata"] = {"nested": [{"key-issued-secret-suffix": "harmless"}]}
+    with pytest.raises(ProtocolError, match="credential") as caught:
+        decoder(payload, redact=lambda value: value.replace("issued-secret", "[REDACTED]"))
+    assert "issued-secret" not in str(caught.value)
+
+
+@pytest.mark.parametrize("location", ["activity", "diagram", "provenance"])
+def test_fetched_raw_metadata_keys_cannot_contain_configured_credentials(location):
+    chart = deepcopy(CHART)
+    metadata = {"im:dataflow-graph": chart}
+    row = activity(metadata=metadata)
+    edge = link()
+    if location == "activity":
+        metadata["nested"] = [{"issued-secret-key": "harmless"}]
+    elif location == "diagram":
+        chart["metadata"]["issued-secret-key"] = "harmless"
+    else:
+        edge["properties"] = {"nested": [{"issued-secret-key": "harmless"}]}
+    client, observation, _ = setup(rows=[row], links=[edge])
+    with client, pytest.raises(ProtocolError, match="credential") as caught:
+        fetch_execution_evidence(observation)
+    assert "issued-secret" not in str(caught.value)
+
+
 def test_conflicting_link_activity_identity_fails():
     other = deepcopy(link())
     other["source"]["urn"] = "another-activity"

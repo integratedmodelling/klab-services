@@ -85,8 +85,9 @@ def test_valid_nonowner_reads_shared_work_but_cannot_read_private_evidence(recor
         # Successful shared data/evidence reads prove this is a valid credential
         # and supported endpoint, not an invalid-token or unavailable-service test.
         verify_recorded_result(nonowner, handles["shared_observation"], fixture)
+        # Private observation metadata itself must be inaccessible. A later
+        # evidence failure cannot rescue a successful private restoration.
         with pytest.raises((AuthorizationError, MissingAssetError)):
-            private = nonowner.restore_handle(handles["private_observation"])
-            fetch_execution_evidence(private)
+            nonowner.restore_handle(handles["private_observation"])
         # The owner still sees the same live fixture after the denial.
         verify_recorded_result(owner, handles["private_observation"], fixture)

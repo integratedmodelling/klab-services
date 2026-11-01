@@ -33,6 +33,13 @@ bounded tree; connectivity can contain cycles/self-links/disconnected nodes.
 No HTML/script/provider link or computation is executed. Plain summaries and escaped
 notebook tables are projections of the same decoded immutable data.
 
+Activity, provenance and diagram raw projections share the same sensitive-field
+filter (including API/private keys and secrets). String values redact credentials
+known to the transport. Mapping keys containing configured credential material
+reject with a sanitized protocol error; keys are not rewritten because that could
+collide or change identity/connectivity. This is not a claim to identify arbitrary
+unknown secrets hidden in otherwise harmless fields.
+
 `decode_dataflow` projects a received Java Dataflow into `DataflowEvidence`, retaining
 the explicit `RESOLVED`, `NO_MODEL` or `FAILED` outcome and supplied coverage,
 requirements, actuator occurrences, call/strategy identities and diagnostics.
@@ -96,7 +103,9 @@ recorded diagrams. They must belong to distinct contexts on the selected Runtime
 
 - The owner can read the private result and its evidence.
 - The second authenticated user can read the shared result and its evidence, but
-  cannot read the private result/evidence.
+  cannot restore private observation metadata at all. The denial assertion covers
+  restoration itself; a later evidence-fetch denial cannot mask exposed private
+  metadata. No private numerical/evidence read is attempted after denied restoration.
 - The owner must still read the private result after the denial. A deleted fixture
   or invalid credential is not accepted as a successful isolation check.
 
