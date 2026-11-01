@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "candidate_source_commit": "e77c26456ce3d6bd67aa8a339a8b86f913baaafd",
+  "base_commit": "0d17032ca5083cb4a354a1509af12d5d36a52dd9",
+  "installed_source_sha256": "c7ee5c383360b4c36125c424c07c2e22d48b718ae9f452e58038d904818150ae",
+  "distribution_build": "202610301844",
+  "python": "3.12.7",
+  "functional_suite": "tests/functional/test_execution_evidence.py",
+  "pytest_exit": 1,
+  "tests_passed": 1,
+  "tests_failed": 1,
+  "seconds": 1.52,
+  "owner_private_data_and_recorded_diagrams": "passed",
+  "nonowner_shared_positive": "failed during handle restoration: Runtime query HTTP500 EXECUTION_FAILED",
+  "nonowner_private_denial": "not reached; no permission acceptance claimed",
+  "fixture_preparation": {
+    "signed_test_users": ["python-scientist", "other-scientist"],
+    "semantic_services": "native local bootstrap using the signed TEST owner",
+    "runtime": "certificate-backed TEST JWT validation; no owner/admin key on scientist Runtime requests",
+    "sessions": 1,
+    "contexts": 2,
+    "observation_jobs": [1, 2, 3, 4],
+    "shared_observation_id": 187,
+    "private_observation_id": 205,
+    "shared_context": "13ea524fff104e4088b2b7c02a095539.1zu8u8fx14",
+    "private_context": "13ea524fff104e4088b2b7c02a095539.1zuf1nlfko",
+    "cells_per_result": 20,
+    "finite_cells_total": 40,
+    "units": "m",
+    "model": "staging.vxii.basic.elevation-quantifier",
+    "contextualizer": "klab.generators.geospatial.terrain"
+  },
+  "earlier_attempt": {
+    "observation_jobs": 1,
+    "result": "region resolution failed; no numerical result; released/restored",
+    "test_owner_bootstrap": "rejected timestamp format; native fallback detected and corrected before fresh attempt"
+  },
+  "authorization": "Explicitly renewed fresh attempt consumed: four new Jobs, five overall. No automatic recomputation or further numerical authorization.",
+  "restoration": {
+    "owned_context_and_session_releases": "all confirmed",
+    "configuration_files_byte_exact": 16,
+    "original_component_and_plugin_inventories_match": true,
+    "remaining_contexts": 0,
+    "remaining_projects": 0,
+    "service_listener_pid_matches": 5,
+    "visible_service_consoles": 0,
+    "test_issuer_stopped": true
+  },
+  "diagnosis": "The second user was not given a Java service advertisement. Current Java request scopes use the requesting user's service map and observation queries resolve observables through its Reasoner. This is a source-traced fixture prerequisite, not a reproduced root-cause exception or established production Java defect. Native semantic peers also need compatible second-user authentication before any rerun.",
+  "acceptance": "blocked; PR98 must remain unmerged"
+}

@@ -70,6 +70,11 @@ Model/resource inspection: `ResourceInspector`, `AssetInspection`,
 `InspectionOrigin`, `AdvertisedObservable`, `ResourceReference`,
 `ResourceResolution`. See [bounded advertisements and routing limits](resource-inspector.md).
 
+Execution evidence: `decode_dataflow`, `decode_flowchart`, `fetch_execution_evidence`,
+`DataflowEvidence`, `ActuatorEvidence`, `FlowChartEvidence`, `ChartNode`, `ChartPort`,
+`ChartLink`, `ActivityEvidence`, `ExecutionEvidence`. See
+[plan-versus-execution and partial-evidence contracts](execution-evidence.md).
+
 `DeploymentProfile`, `ConnectionIdentity`, `ServiceReference`, `CatalogEntry`,
 `ServiceCatalog`, `CredentialGrant`, `CredentialProvider`, `IssuedTokenProvider`,
 `HubCertificateProvider`, `SelectionPolicy`, `Connection` and `connect` are public.

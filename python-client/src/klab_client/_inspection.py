@@ -26,6 +26,10 @@ def freeze(value, redact=lambda value: value, depth=0):
     if isinstance(value, dict):
         if any(not isinstance(key, str) for key in value):
             raise ProtocolError("Inspection objects require text keys")
+        if any(redact(key) != key for key in value):
+            # Rewriting keys can collapse distinct entries or alter graph metadata.
+            # Reject without including the key or credential in the exception.
+            raise ProtocolError("Metadata keys must not contain configured credential material")
         return MappingProxyType({key: freeze(item, redact, depth + 1) for key, item in value.items()
             if key.lower().replace("_", "-") not in {
                 "authorization", "token", "access-token", "accesstoken", "access-key", "accesskey", "api-key", "apikey",
