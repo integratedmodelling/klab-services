@@ -6,6 +6,16 @@ import subprocess
 import sys
 
 SUITES = {
+    "milestone-compatibility-units": "tests/functional/test_connected_semantics.py",
+    "milestone-compatibility-compute": "tests/functional/test_connected_workflows.py::test_connected_tiny_terrestrial_region_completes",
+    "milestone-discovery": "tests/functional/test_discover_compare_explain.py::test_discovery_and_model_inspection_use_existing_java_contracts",
+    "milestone-evidence": "tests/functional/test_discover_compare_explain.py::test_recorded_execution_evidence_matches_computed_observation",
+    "milestone-science": "tests/functional/test_discover_compare_explain.py::test_four_experiments_preserve_scientific_meaning",
+    "milestone-parallel": "tests/functional/test_discover_compare_explain.py::test_parallel_experiments_preserve_identity_and_results",
+    "milestone-failure": "tests/functional/test_discover_compare_explain.py::test_partial_failure_retains_successes_and_recoverable_handles",
+    "milestone-restore": "tests/functional/test_discover_compare_explain.py::test_fresh_process_restores_original_experiment_results",
+    "milestone-permissions": "tests/functional/test_discover_compare_explain.py::test_private_experiment_evidence_and_exports_enforce_access",
+    "milestone-notebook": "tests/functional/test_discover_compare_explain.py::test_milestone_notebook_executes_and_matches_evidence",
     "connected-bounded-experiments": "tests/functional/test_bounded_experiments.py",
     "connected-resource-inspection": "tests/functional/test_resource_inspection.py::test_existing_executable_model_links_inspection_to_recorded_computation",
     "connected-semantic-readiness": "tests/functional/test_connected_semantics.py::test_connected_reasoner_publishes_accepted_semantic_knowledge",
@@ -32,9 +42,12 @@ SUITES = {
     "semantic-explorer": "tests/functional/test_semantic_explorer.py",
 }
 
-CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection", "connected-bounded-experiments"}
+MILESTONE_SUITES = {name for name in SUITES if name.startswith("milestone-")}
+READ_ONLY_MILESTONE_SUITES = {"milestone-discovery", "milestone-compatibility-units"}
+CONNECTED_WORK_SUITES = {"connected-context-recovery", "connected-tiny-compute", "connected-resource-inspection",
+                         "connected-bounded-experiments"} | (MILESTONE_SUITES - READ_ONLY_MILESTONE_SUITES)
 CONNECTED_SUITES = {"connected-semantic-readiness", "connected-unit-contract", "connected-onboarding",
-                    "connected-credential-renewal"} | CONNECTED_WORK_SUITES
+                    "connected-credential-renewal"} | READ_ONLY_MILESTONE_SUITES | CONNECTED_WORK_SUITES
 
 
 def command(suites, report=None):
@@ -53,9 +66,20 @@ def main():
     parser.add_argument("--report", type=Path, help="JUnit XML destination")
     parser.add_argument("--profile", type=Path, help="Explicit trusted deployment profile for connected suites")
     parser.add_argument("--certificate", type=Path, help="Private ENGINE certificate path for connected suites; never report its contents")
+    parser.add_argument("--milestone-fixture", type=Path, help="Independent four-cell fixture with deployment provenance")
+    parser.add_argument("--output-dir", type=Path, help="Fresh external milestone output directory")
+    parser.add_argument("--other-certificate", type=Path, help="Second real identity for milestone permission checks")
     parser.add_argument("--allow-owned-work", action="store_true",
                          help="Authorize the selected suite's documented owned work; runner suite uses up to 20 Jobs/200 cells")
     args = parser.parse_args()
+    milestone = any(name in MILESTONE_SUITES for name in args.suite)
+    if milestone:
+        if not args.milestone_fixture or not args.milestone_fixture.is_file() or not args.output_dir or args.output_dir.exists():
+            parser.error("Milestone suites require an existing --milestone-fixture and fresh --output-dir")
+    elif args.milestone_fixture or args.output_dir or args.other_certificate:
+        parser.error("Milestone input options only apply to milestone suites")
+    if "milestone-permissions" in args.suite and (not args.other_certificate or not args.other_certificate.is_file()):
+        parser.error("Milestone permissions require an existing --other-certificate")
     if args.state_dir is None and any(name not in CONNECTED_SUITES | {"provider-reference"} for name in args.suite):
         parser.error("Owned TEST suites require an explicit --state-dir")
     connected = any(name in CONNECTED_SUITES for name in args.suite)
@@ -77,6 +101,15 @@ def main():
     if args.report is not None and (not args.report.parent.is_dir() or args.report.exists()):
         parser.error("Report needs an existing parent and a fresh destination")
     env = dict(os.environ)
+    for name in ("FIXTURE", "PROFILE", "CERTIFICATE", "OTHER_CERTIFICATE", "OUTPUT"):
+        env.pop("KLAB_MILESTONE_" + name, None)
+    if milestone:
+        env.update(KLAB_MILESTONE_FIXTURE=str(args.milestone_fixture.resolve()),
+                   KLAB_MILESTONE_OUTPUT=str(args.output_dir.resolve()),
+                   KLAB_MILESTONE_PROFILE=str(args.profile.resolve()) if args.profile else "",
+                   KLAB_MILESTONE_CERTIFICATE=str(args.certificate.resolve()) if args.certificate else "")
+        if args.other_certificate:
+            env["KLAB_MILESTONE_OTHER_CERTIFICATE"] = str(args.other_certificate.resolve())
     if connected:
         env["KLAB_CONNECTED_PROFILE"] = str(args.profile.resolve())
         env["KLAB_CONNECTED_CERTIFICATE"] = str(args.certificate.resolve())

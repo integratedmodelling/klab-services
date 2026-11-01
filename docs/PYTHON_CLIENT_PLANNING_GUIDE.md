@@ -25,6 +25,25 @@ New upstream changes must be reconciled rather than silently discarded.
 
 ## Completion targets
 
+### Discover / compare / explain implementation checkpoint — 28 October 2026
+
+The isolated `feature/python-discover-compare-explain` milestone implements semantic
+exploration, bounded resource/model inspection, recorded execution-evidence views
+and independent bounded experiments, each with a contribution-guide assessment.
+Shared matrix validators, named real-Java suites, a separate-process restoration
+adapter, notebook source/executor, measured-throughput wrapper and fail-closed
+delivery builder are now implemented. This is **not completed scientific acceptance**.
+
+Hosted authenticated semantic readiness and raw/SDK metre/millimetre contracts now
+pass. Actual computation, fixture/component/build attestation, four-cell independent
+scientific acceptance, two-user permission acceptance, real executed scientific
+notebook and measured throughput remain unverified. The local IDE still has no
+adopted worldview/accepted Reasoner generation. Unit/local-kernel smoke results are
+not substitutes. Follow the [current milestone status](../python-client/docs/discover-compare-explain-status.md)
+and [delivery contracts](../python-client/docs/discover-compare-explain-delivery.md).
+
+The historical roadmap and earlier checkpoint statements below remain historical.
+
 1. **Dependable scientific client:** authenticate, find usable services, submit work,
    retrieve meaningful results, inspect provenance and reconnect later.
 2. **Full remote user client:** additionally cover implemented Engine/Modeler semantics,

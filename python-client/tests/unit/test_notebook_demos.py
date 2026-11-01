@@ -36,7 +36,9 @@ def test_invalid_python_rejected_before_service_work(tmp_path):
 
 def test_all_seven_walkthroughs_have_executable_code_and_no_placeholders():
     root = Path(__file__).parents[2] / "examples/notebooks"
-    paths = sorted(root.glob("[0-9][0-9]_*.py"))
+    # The original release walkthrough uses its owned TEST-state setup. Milestone
+    # notebook 08 has a separate explicit fixture/deployment runner and tests.
+    paths = sorted(root.glob("0[1-7]_*.py"))
     assert len(paths) == 7
     for path in paths:
         cells = read_cells(path)

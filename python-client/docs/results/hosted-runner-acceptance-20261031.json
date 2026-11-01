@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "date": "2026-10-31",
+  "tested_candidate": "cf7a0681bbe94ca81a9a7c218ce05475db52b5ae",
+  "suite": "connected-bounded-experiments",
+  "environment": "Existing hosted HTTPS Java services; ENGINE certificate through matching Hub",
+  "runtime_service_id": "f57bb519-19c9-4dbe-a0f5-671b665096ae",
+  "model_urn": "staging.vxii.basic.elevation-quantifier",
+  "authorization": {"maximum_jobs": 20, "maximum_numerical_cells": 200, "automatic_retry": false},
+  "pytest": {"collected": 3, "executed": 1, "failed": 1, "not_run_after_maxfail": 2, "seconds": 378.99, "exit_code": 1},
+  "batch": {
+    "workers": 1,
+    "experiments": 4,
+    "elapsed_seconds": 369.73399999999674,
+    "counts": {"job_failed": 1, "wait_timed_out": 3},
+    "recorded_job_handles": 7,
+    "context_result_handles": 3,
+    "numerical_result_handles": 0,
+    "processor_verified_numerical_cells": 0,
+    "wait_timeout_seconds_per_experiment": 120,
+    "outcomes": [
+      {"name": "run-0", "state": "wait_timed_out", "stage": "experiment", "job_ids": [1, 2], "context_observation_id": 25, "original_release": "retained"},
+      {"name": "run-1", "state": "wait_timed_out", "stage": "experiment", "job_ids": [3, 4], "context_observation_id": 36, "original_release": "retained"},
+      {"name": "run-2", "state": "job_failed", "stage": "context_observation", "job_ids": [5], "error_type": "JobFailedError", "original_release": "confirmed"},
+      {"name": "run-3", "state": "wait_timed_out", "stage": "experiment", "job_ids": [6, 7], "context_observation_id": 49, "original_release": "retained"}
+    ]
+  },
+  "assertion": "Expected two Job handles and two result handles per experiment; timed-out and failed experiments did not meet that acceptance expectation",
+  "raw_evidence_sha256": {
+    "runner.xml": "dbc4843fd7255c502f0fe8670c983ec06908a0dcd283a38ffbdd00cadecb6e9f",
+    "batch.json": "8558de8b4dc2ecfadd429360b8a5257695055aa934312cc79d815dedb08acf16",
+    "runner-owned-cleanup.json": "94286dc4b134c0ef178da813d3e0433d40fd08dbcac9c7b58da5ae88dcc5a57f"
+  },
+  "followup": {
+    "computation_retry": false,
+    "late_status_reads": "All six Jobs belonging to the three retained contexts reported FINISHED at final cleanup; no late numerical results were fetched or validated",
+    "retained_context_releases": [true, true, true],
+    "retained_session_releases": [true, true, true],
+    "failed_experiment_release": "Already confirmed by runner",
+    "preliminary_cleanup_error": "External cleanup helper omitted required ContextScopeImpl user_id; corrected before releases",
+    "scope": "Only handles recorded in this test's batch; no unrelated scopes or service administration"
+  },
+  "limits": [
+    "The root cause of the context Job failure and numerical waiting delay is not established.",
+    "FINISHED at later cleanup is not proof of correct numerical values or a passing runner test.",
+    "The two-worker and sibling-processing-failure cases did not run.",
+    "No full milestone, scientific accuracy or throughput acceptance is claimed.",
+    "No further computation or automatic rerun was performed."
+  ]
+}

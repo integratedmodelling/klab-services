@@ -62,6 +62,12 @@ UI emulation and Java API parity. These are explicit boundaries, not empty succe
 
 ## Connection orchestration
 
+Bounded experiments: `Experiment`, `OwnedContextPolicy`, `ExperimentRunner`,
+`ExperimentOutcome`, `ExperimentBatch`, `BatchInterrupted`, `WaitCancelled`.
+See [ownership and cancellation semantics](bounded-experiments.md).
+The [milestone delivery tools](discover-compare-explain-delivery.md) are shared
+repository acceptance/notebook helpers, not extra APIs shipped in the SDK wheel.
+
 Semantic exploration: `SemanticExplorer`, `SemanticResult`, `KnowledgeState`,
 `AuthorityCandidate`, `AuthoritySearch`, `StaleKnowledgeError`. See
 [semantic exploration and its acceptance boundary](semantic-explorer.md).
