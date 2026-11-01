@@ -17,7 +17,7 @@ from .dto import (check_notifications, configuration_to_wire, decode_cell, objec
                   observation_from_wire, observation_to_wire, required_text)
 from .errors import (ConfigurationError, InvalidRequestError, JobCancelledError, JobFailedError,
                      JobUnavailableError, ProtocolError, ServerError, TransportError,
-                     UnsupportedOperationError, WaitTimeout)
+                      UnsupportedOperationError, WaitTimeout, WaitCancelled)
 from .transport import Endpoint, Transport, _normalize_service_url
 from .requests import ContextOptions, ObservationOptions, ObservationRequest
 
@@ -98,13 +98,17 @@ class Job:
         self.cancellation_requested = self.cancellation_requested or accepted
         return accepted
 
-    def result(self, timeout: float | None = None) -> ObservationImpl | dict[str, Any]:
+    def result(self, timeout: float | None = None, *, _cancelled=None) -> ObservationImpl | dict[str, Any]:
         """Await and retrieve actual result; timeout preserves this resumable handle."""
         if timeout is not None and (not math.isfinite(timeout) or timeout < 0):
             raise InvalidRequestError("Wait timeout must be finite and nonnegative")
+        if _cancelled is not None and not callable(_cancelled):
+            raise InvalidRequestError("Internal local cancellation control must be callable")
         deadline = time.monotonic() + timeout if timeout is not None else None
 
         def remaining():
+            if _cancelled is not None and _cancelled():
+                raise WaitCancelled(self)
             if deadline is None:
                 return None
             value = deadline - time.monotonic()
