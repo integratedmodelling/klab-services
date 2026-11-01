@@ -8,6 +8,37 @@ import org.junit.jupiter.api.Test;
 
 class ScopeAdvertisementsTest {
   @Test
+  void rejectedDispatchCanBeRetried() {
+    var client = mock(BaseServiceClient.class);
+    when(client.serviceId()).thenReturn("resolver");
+    when(client.notifyScope(any())).thenReturn(true);
+    var attempts = new java.util.concurrent.atomic.AtomicInteger();
+    var advertisements = new ScopeAdvertisements(task -> {
+      if (attempts.getAndIncrement() == 0) throw new java.util.concurrent.RejectedExecutionException();
+      task.run();
+    });
+    advertisements.submit(client, new UserScopeNotification());
+    advertisements.deliverPending();
+    advertisements.deliverPending();
+    verify(client).notifyScope(any());
+  }
+
+  @Test
+  void closeDiscardsQueuedWorkAndRejectsLaterSubmissions() {
+    var client = mock(BaseServiceClient.class);
+    when(client.serviceId()).thenReturn("resolver");
+    var tasks = new ArrayList<Runnable>();
+    var advertisements = new ScopeAdvertisements(tasks::add);
+    advertisements.submit(client, new UserScopeNotification());
+    advertisements.deliverPending();
+    advertisements.close();
+    tasks.removeFirst().run();
+    advertisements.submit(client, new UserScopeNotification());
+    advertisements.deliverPending();
+    org.junit.jupiter.api.Assertions.assertTrue(tasks.isEmpty());
+    verify(client, never()).notifyScope(any());
+  }
+  @Test
   void retriesFailureWithoutAnotherStatusChangeAndStopsAfterAcknowledgement() {
     var client = mock(BaseServiceClient.class);
     when(client.serviceId()).thenReturn("resolver");

@@ -38,6 +38,11 @@ class RuntimeContextAuthorizationTest {
     when(user.getGroups()).thenReturn(List.of(group));
     var requester = mock(UserScope.class);
     when(requester.getUser()).thenReturn(user);
-    assertEquals(expected ? configuration : null, runtime.getConfiguration("s.c", requester));
+    if (expected) {
+      assertSame(configuration, runtime.getConfiguration("s.c", requester));
+    } else {
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class,
+          () -> runtime.getConfiguration("s.c", requester));
+    }
   }
 }

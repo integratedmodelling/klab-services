@@ -11,6 +11,90 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 class TokenAuthorizationFilterTest {
+  @Test void absentCredentialStillContinuesToPublicRouting() throws Exception {
+    var manager = mock(ServiceAuthorizationManager.class);
+    var filter = new TokenAuthorizationFilter(mock(AuthenticationManager.class), manager);
+    var request = mock(HttpServletRequest.class);
+    var response = mock(HttpServletResponse.class);
+    var chain = mock(FilterChain.class);
+    filter.doFilterInternal(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verifyNoInteractions(manager, response);
+  }
+
+  @Test void unexpectedValidationFailureClearsPrincipalAndDoesNotExposeItsMessage() throws Exception {
+    var manager = mock(ServiceAuthorizationManager.class);
+    var filter = new TokenAuthorizationFilter(mock(AuthenticationManager.class), manager);
+    var request = mock(HttpServletRequest.class);
+    var response = mock(HttpServletResponse.class);
+    var chain = mock(FilterChain.class);
+    when(request.getHeader("Authorization")).thenReturn("Bearer fixture-credential");
+    when(manager.validateToken(anyString(), anyMap())).thenThrow(new IllegalStateException("PRIVATE_CREDENTIAL_MARKER"));
+    SecurityContextHolder.getContext().setAuthentication(mock(EngineAuthorization.class));
+    var failure = org.junit.jupiter.api.Assertions.assertThrows(jakarta.servlet.ServletException.class,
+        () -> filter.doFilterInternal(request, response, chain));
+    org.junit.jupiter.api.Assertions.assertEquals("Credential validation unavailable", failure.getMessage());
+    org.junit.jupiter.api.Assertions.assertNull(failure.getCause());
+    org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+    verifyNoInteractions(chain, response);
+  }
+
+  @Test void invalidLegacyCredentialIs403AndCannotReuseAnEarlierPrincipal() throws Exception {
+    var manager = mock(ServiceAuthorizationManager.class);
+    var filter = new TokenAuthorizationFilter(mock(AuthenticationManager.class), manager);
+    var request = mock(HttpServletRequest.class);
+    var response = mock(HttpServletResponse.class);
+    var chain = mock(FilterChain.class);
+    when(request.getHeader("Authorization")).thenReturn("Bearer invalid-fixture-credential");
+    SecurityContextHolder.getContext().setAuthentication(mock(EngineAuthorization.class));
+    filter.doFilterInternal(request, response, chain);
+    verify(response).setStatus(403);
+    verifyNoInteractions(chain);
+    org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+  }
+
+  @Test void explicitAnonymousCredentialStillReachesPublicRoutingWithoutAnInheritedPrincipal() throws Exception {
+    var manager = mock(ServiceAuthorizationManager.class);
+    var filter = new TokenAuthorizationFilter(mock(AuthenticationManager.class), manager);
+    var request = mock(HttpServletRequest.class);
+    var response = mock(HttpServletResponse.class);
+    var chain = mock(FilterChain.class);
+    when(request.getHeader("Authorization")).thenReturn(org.integratedmodelling.klab.api.ServicesAPI.ANONYMOUS_TOKEN);
+    SecurityContextHolder.getContext().setAuthentication(mock(EngineAuthorization.class));
+    filter.doFilterInternal(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verifyNoInteractions(response);
+    org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+  }
+
+  @Test void missingExplicitScopeIs404AndNeverReachesTheController() throws Exception {
+    var manager = mock(ServiceAuthorizationManager.class);
+    var filter = new TokenAuthorizationFilter(mock(AuthenticationManager.class), manager);
+    var request = mock(HttpServletRequest.class);
+    var response = mock(HttpServletResponse.class);
+    var chain = mock(FilterChain.class);
+    when(request.getHeader("Authorization")).thenReturn("Bearer verified-bob");
+    when(request.getHeader(org.integratedmodelling.klab.api.ServicesAPI.SCOPE_HEADER)).thenReturn("session.missing");
+    var authorization = new EngineAuthorization("hub", "bob", "verified-bob", java.util.Map.of(), java.util.List.of(), java.util.List.of(Role.ROLE_USER));
+    authorization.setAuthenticated(true);
+    when(manager.validateToken(eq("verified-bob"), anyMap())).thenReturn(authorization);
+    filter.doFilterInternal(request, response, chain);
+    verify(response).setStatus(404);
+    verifyNoInteractions(chain);
+  }
+  @Test void identityAssertionDenialIs403AndNeverReachesTheController() throws Exception {
+    var manager = mock(ServiceAuthorizationManager.class);
+    var filter = new TokenAuthorizationFilter(mock(AuthenticationManager.class), manager);
+    var request = mock(HttpServletRequest.class);
+    var response = mock(HttpServletResponse.class);
+    var chain = mock(FilterChain.class);
+    when(request.getHeader("Authorization")).thenReturn("Bearer verified-bob");
+    when(manager.validateToken(eq("verified-bob"), anyMap())).thenThrow(
+        new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("identity mismatch"));
+    filter.doFilterInternal(request, response, chain);
+    verify(response).setStatus(403);
+    verifyNoInteractions(chain);
+  }
   @AfterEach void clearContext() { SecurityContextHolder.clearContext(); }
 
   @Test void keycloakExchangeBypassesLegacyJwtValidation() throws Exception {

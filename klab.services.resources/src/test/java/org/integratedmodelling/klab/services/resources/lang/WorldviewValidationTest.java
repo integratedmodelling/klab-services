@@ -82,8 +82,8 @@ class WorldviewValidationTest {
     warm.addNamespace(imported);
     var text = prefix + "thing Earlier is test:Later; thing Later;";
     // Even a bean parsed against stale descriptors must fail the independent order check.
-    var stale = adapt(text, warm);
-    validate(stale);
+    var stale = adaptExpectingUnknownConcept(text, warm, "test:Later");
+    validateIndependently(stale);
     var issue = stale.getNotifications().stream().filter(n -> n.getMessage().contains("before its declaration"))
         .findFirst().orElseThrow();
     assertEquals(text.indexOf("test:Later"), issue.getLexicalContext().getOffsetInDocument());
@@ -96,8 +96,9 @@ class WorldviewValidationTest {
       var backward = adapt(prefix + "thing Later; thing Earlier is test:Later;", isolated);
       validate(backward);
       assertTrue(backward.getNotifications().isEmpty());
-      var deleted = adapt(prefix + "thing Earlier is test:Later;", warm.withoutNamespace("test"));
-      validate(deleted);
+      var deleted = adaptExpectingUnknownConcept(
+          prefix + "thing Earlier is test:Later;", warm.withoutNamespace("test"), "test:Later");
+      validateIndependently(deleted);
       assertTrue(deleted.getNotifications().stream().anyMatch(n -> n.getMessage().contains("Undefined concept: test:Later")));
     }
     assertEquals(org.integratedmodelling.languages.api.SemanticSyntax.Type.SUBJECT,
@@ -220,18 +221,45 @@ class WorldviewValidationTest {
     method.invoke(null, ontology, resolver);
   }
 
+  // Production skips semantic validation after parser errors. These negative fixtures
+  // deliberately check both layers, without discarding the expected parser diagnostic.
+  private void validateIndependently(org.integratedmodelling.klab.api.lang.kim.KimOntology ontology) {
+    org.integratedmodelling.klab.runtime.language.KimObservableVisitor.Resolver resolver = (urn, type, context) -> null;
+    var visitor = new org.integratedmodelling.klab.runtime.language.KimOntologyVisitor(null, resolver);
+    visitor.visit(ontology);
+    ontology.getNotifications().addAll(visitor.getNotifications());
+  }
+
   private org.integratedmodelling.klab.api.lang.kim.KimOntology adapt(String text) {
     return adapt(text, new BasicObservableValidationScope());
   }
 
   private org.integratedmodelling.klab.api.lang.kim.KimOntology adapt(String text, BasicObservableValidationScope scope) {
+    return adapt(text, scope, null);
+  }
+
+  private org.integratedmodelling.klab.api.lang.kim.KimOntology adaptExpectingUnknownConcept(
+      String text, BasicObservableValidationScope scope, String concept) {
+    var ontology = adapt(text, scope, "Unknown concept: " + concept);
+    assertTrue(ontology.getNotifications().stream()
+        .anyMatch(n -> n.getMessage().equals("Unknown concept: " + concept)));
+    return ontology;
+  }
+
+  private org.integratedmodelling.klab.api.lang.kim.KimOntology adapt(
+      String text, BasicObservableValidationScope scope, String expectedParserError) {
     var parser = new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration().getInstance(IParser.class);
     var parsed = parser.parse(new StringReader(text));
     assertFalse(parsed.hasSyntaxErrors());
+    var diagnostics = new java.util.ArrayList<org.integratedmodelling.klab.api.services.runtime.Notification>();
     var bean = new OntologySyntaxImpl((Ontology) parsed.getRootASTElement(), scope) {
       @Override protected void logWarning(ParsedObject t, EObject o, EStructuralFeature f, String m) {}
-      @Override protected void logError(ParsedObject t, EObject o, EStructuralFeature f, String m) { fail(m); }
+      @Override protected void logError(ParsedObject t, EObject o, EStructuralFeature f, String m) {
+        if (expectedParserError == null) fail(m);
+        assertEquals(expectedParserError, m);
+        diagnostics.add(org.integratedmodelling.klab.api.services.runtime.Notification.error(m));
+      }
     };
-    return LanguageAdapter.INSTANCE.adaptOntology(bean, "project", List.of(), 0L);
+    return LanguageAdapter.INSTANCE.adaptOntology(bean, "project", diagnostics, 0L);
   }
 }

@@ -55,19 +55,7 @@ public class KlabScopeController {
    */
   public boolean setupUserScope(
       ServiceUserScope userScope, UserScopeNotification request, KlabService ownerService) {
-    if (request.isLocalFederation()) {
-      userScope
-          .getUser()
-          .getData()
-          .put(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.local());
-    }
-    for (var serviceInfo : request.getServices()) {
-      var service =
-          Objects.equals(ownerService.serviceId(), serviceInfo.getId())
-              ? ownerService
-              : ServiceClientCatalog.INSTANCE.getService(serviceInfo, ownerService, userScope);
-      userScope.addService(service);
-    }
+    userScope.advertiseServices(request);
     return userScope.validateServices();
   }
 }

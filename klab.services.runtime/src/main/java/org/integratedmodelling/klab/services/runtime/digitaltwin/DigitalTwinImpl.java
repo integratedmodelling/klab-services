@@ -1241,12 +1241,12 @@ public class DigitalTwinImpl implements DigitalTwin {
 
   @Override
   public Provenance getProvenanceGraph(ContextScope context) {
-    return new ProvenanceGraph(this.knowledgeGraph, this.rootScope);
+    return new ProvenanceGraph(this.knowledgeGraph, context == null ? this.rootScope : context.getRootContextScope());
   }
 
   @Override
   public Dataflow getDataflowGraph(ContextScope context) {
-    return new DataflowGraph(this.knowledgeGraph, this.rootScope);
+    return new DataflowGraph(this.knowledgeGraph, context == null ? this.rootScope : context.getRootContextScope());
   }
 
   public KnowledgeGraph.Commit getCommit(long id) {

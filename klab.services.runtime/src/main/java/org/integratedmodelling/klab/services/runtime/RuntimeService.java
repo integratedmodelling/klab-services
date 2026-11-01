@@ -138,8 +138,16 @@ public class RuntimeService extends BaseService
   }
 
   public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
+    this(scope, options, RuntimeConfigurationLoader.loadForStartup(
+        BaseService.getFileInConfigurationDirectory(options, "runtime.yaml"),
+        options.isClean(), System.getProperty(RuntimeConfigurationLoader.REQUIRED_GRAPH_DATABASE_URL)));
+  }
+
+  private RuntimeService(
+      ServiceScope scope, ServiceStartupOptions options, RuntimeConfiguration configuration) {
     super(scope, Type.RUNTIME, options);
-    readConfiguration(options);
+    this.configuration = configuration;
+    super.setRuntimeLockfile(configuration.getServiceId());
     setComponentRegistry();
     ServiceConfiguration.INSTANCE.setMainService(this);
     initializeMessaging();
@@ -154,32 +162,13 @@ public class RuntimeService extends BaseService
     }
   }
 
-  private void readConfiguration(ServiceStartupOptions options) {
-    File config = BaseService.getFileInConfigurationDirectory(options, "runtime.yaml");
-    if (config.exists() && config.length() > 0 && !options.isClean()) {
-      try {
-        this.configuration = Utils.YAML.load(config, RuntimeConfiguration.class);
-      } catch (Exception e) {
-        Logging.INSTANCE.warn("Configuration file is being reset after corruption was detected");
-        Utils.Files.deleteQuietly(config);
-        this.configuration = new RuntimeConfiguration();
-        this.configuration.setServiceId(UUID.randomUUID().toString());
-        Utils.YAML.save(this.configuration, config);
-      }
-    } else {
-      // make an empty config
-      this.configuration = new RuntimeConfiguration();
-      this.configuration.setServiceId(UUID.randomUUID().toString());
-      saveConfiguration();
-    }
-    // for the local client to know when the service is off
-    super.setRuntimeLockfile(this.configuration.getServiceId());
-  }
-
   private boolean createMainKnowledgeGraph() {
     // TODO choose the DB from configuration - client or embedded server
     //    var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
-    this.knowledgeGraph = new KnowledgeGraphNeo4JClient(this.configuration.getGraphDatabaseUrl());
+    this.knowledgeGraph = RuntimeConfigurationLoader.openGraph(
+        this.configuration,
+        System.getProperty(RuntimeConfigurationLoader.REQUIRED_GRAPH_DATABASE_URL),
+        KnowledgeGraphNeo4JClient::new);
     return this.knowledgeGraph.isOnline();
   }
 
@@ -413,6 +402,11 @@ public class RuntimeService extends BaseService
 
     if (contextScope instanceof ServiceContextScope serviceContextScope) {
 
+      if (serviceContextScope.getConfiguration() == null
+          || serviceContextScope.getConfiguration().getPersistence() == null) {
+        throw new KlabIllegalArgumentException("Context persistence must be explicitly configured");
+      }
+
       boolean isNew = serviceContextScope.getConfiguration().getId() == null;
       String scopeId =
           isNew
@@ -420,7 +414,17 @@ public class RuntimeService extends BaseService
               : serviceContextScope.getConfiguration().getId();
 
       if (serviceContextScope.getConfiguration() instanceof ConfigurationImpl configurationImpl) {
+        if (isNew) {
+          configurationImpl.setOwner(userScope.getUser().getUsername());
+          var parent = sessionScope instanceof ServiceSessionScope s ? s : null;
+          var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
+          configurationImpl.setSessionFederationId(parent != null
+              && org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(parent, userScope)
+              && federation != null ? federation.getId() : null);
+        }
         configurationImpl.setServiceId(serviceId());
+        configurationImpl.setServiceUrl(getUrl());
+        configurationImpl.setUrl(Utils.URLs.newURL(getUrl() + "/dt/" + scopeId));
         if (configurationImpl.getOwner() == null) {
           configurationImpl.setOwner(userScope.getUser().getUsername());
         }
@@ -2705,21 +2709,17 @@ public class RuntimeService extends BaseService
     if (configuration == null || configuration.getId() == null || userScope == null) {
       throw new org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException("Context connection requires an identity and context ID");
     }
+    configuration = getConfiguration(configuration.getId(), userScope);
+    if (configuration == null) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceNotFoundException("Context is absent or not accessible");
+    }
     var scope = getScopeManager().getScope(configuration.getId(), ContextScope.class);
-    if (scope != null && getConfiguration(configuration.getId(), userScope) == null) {
-      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context is not accessible to the requesting user");
-    }
     if (scope == null) {
-      // Context enumeration/federation membership is not authority. Check the
-      // persisted owner and ACL by ID before reconstructing any mutable scope.
-      var persisted = knowledgeGraph.getAuthorizedConfiguration(configuration.getId(), userScope);
-      if (persisted == null) {
-        throw new org.integratedmodelling.klab.api.exceptions.KlabResourceNotFoundException("Context is absent or not accessible");
-      }
-      scope = reconstructContext(persisted, userScope);
+      // getConfiguration checked persisted owner/ACL before mutable reconstruction.
+      scope = reconstructContext(configuration, userScope);
     }
-    return scope instanceof ServiceContextScope serviceScope
-        ? prepareObserverConnection(serviceScope, userScope) : scope;
+    return scope instanceof ServiceContextScope serviceScope && userScope instanceof ServiceUserScope requester
+        ? prepareObserverConnection(serviceScope.forRequest(requester), userScope) : scope;
   }
 
   private ServiceContextScope prepareObserverConnection(ServiceContextScope shared, UserScope userScope) {
@@ -2760,10 +2760,17 @@ public class RuntimeService extends BaseService
 
   @Override
   public DigitalTwin.Configuration getConfiguration(String scopeId, UserScope scope) {
+    if (scope == null || scope.getUser() == null
+        || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) return null;
     var contextScope = getScopeManager().getScope(scopeId, ContextScope.class);
-    if (contextScope == null || scope == null || scope.getUser() == null
-        || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) {
-      return null;
+    if (contextScope == null) {
+      var persisted = knowledgeGraph.getAuthorizedConfiguration(scopeId, scope);
+      if (persisted instanceof ConfigurationImpl configuration) {
+        configuration.setServiceId(serviceId());
+        configuration.setServiceUrl(getUrl());
+        configuration.setUrl(Utils.URLs.newURL(getUrl() + "/dt/" + scopeId));
+      }
+      return persisted;
     }
 
     var configuration = contextScope.getConfiguration();
@@ -2781,7 +2788,7 @@ public class RuntimeService extends BaseService
             + requestingUser.getUsername()
             + " is not authorized to retrieve configuration for context "
             + scopeId);
-    return null;
+    throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context is not accessible to the requesting user");
   }
 
   private ContextScope reconstructContext(
@@ -2824,6 +2831,9 @@ public class RuntimeService extends BaseService
         serviceSession.getData().put(org.integratedmodelling.klab.services.scopes.ScopeManager.PERSISTED_SESSION_OWNER,
             configuration.getOwner());
         serviceSession.setHostServiceId(serviceId());
+        if (configuration.getSessionFederationId() != null) {
+          serviceSession.getData().put(org.integratedmodelling.klab.services.scopes.ScopeManager.SESSION_FEDERATION, configuration.getSessionFederationId());
+        }
         for (var service : userScope.getServices(KlabService.class)) {
           serviceSession.addService(service);
         }
@@ -2855,7 +2865,8 @@ public class RuntimeService extends BaseService
               + session.getClass().getName());
       return null;
     }
-    var ret = new ServiceContextScope(serviceSessionScope, configuration, userScope.getUser());
+    var requester = (ServiceUserScope) userScope;
+    var ret = new ServiceContextScope(serviceSessionScope.forRequest(requester), configuration, userScope.getUser());
     if (!userScope.getUser().getUsername().equals(ret.getUser().getUsername())) {
       ret = ret.withIdentity(userScope.getIdentity());
     }
@@ -2867,8 +2878,14 @@ public class RuntimeService extends BaseService
 
   @Override
   public boolean releaseSession(SessionScope scope) {
+    if (!(scope instanceof ServiceSessionScope requester)) return false;
+    var registered = getScopeManager().getScope(scope.getId(), ServiceSessionScope.class);
+    if (registered == null
+        || !org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(registered, requester)
+        || (org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(registered)
+            && !requester.getRoles().contains(org.integratedmodelling.klab.services.application.security.Role.ROLE_ADMINISTRATOR))) return false;
     try {
-      scope.close();
+      registered.close();
       return true;
     } catch (Throwable t) {
       // shut up

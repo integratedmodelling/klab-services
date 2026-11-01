@@ -26,6 +26,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   private boolean sender;
   private boolean receiver;
   private AMQPChannel amqpChannel = null;
+  private boolean ownsMessagingChannel;
 
   //  private static final Map<String, Map<String, List<Consumer<Message>>>> queueConsumers =
   //      new HashMap<>();
@@ -47,6 +48,7 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
 
   protected void copyMessagingSetup(MessagingChannelImpl parent) {
     this.amqpChannel = parent.amqpChannel;
+    this.ownsMessagingChannel = false;
     copyListeners(parent);
   }
 
@@ -80,6 +82,12 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
     }
   }
 
+  protected void disconnectMessaging() {
+    if (this.amqpChannel != null) {
+      this.amqpChannel.disconnect();
+    }
+  }
+
   /**
    * Sets up messaging by establishing an AMQP channel and configuring it for the specified queues.
    * This method ensures the messaging system is properly initialized and ready for operation.
@@ -93,12 +101,21 @@ public abstract class MessagingChannelImpl extends ChannelImpl implements Messag
   public Collection<Message.Queue> setupMessaging(
       Federation federation, String ownId, Collection<Message.Queue> queues) {
 
+    if (federation == null || federation.getBroker() == null || federation.getBroker().isBlank()) {
+      // Request-local copies borrow their parent's transport: detach without touching it.
+      if (this.ownsMessagingChannel) disconnectMessaging();
+      this.amqpChannel = null;
+      this.ownsMessagingChannel = false;
+      return EnumSet.noneOf(Message.Queue.class);
+    }
+
     this.amqpChannel =
         new AMQPChannel(
             federation,
             scopeExchangeId(this, federation, ownId),
             this,
-            this.receiver ? this::messageHandler : null);
+             this.receiver ? this::messageHandler : null);
+    this.ownsMessagingChannel = true;
 
     return setupQueues(queues);
   }

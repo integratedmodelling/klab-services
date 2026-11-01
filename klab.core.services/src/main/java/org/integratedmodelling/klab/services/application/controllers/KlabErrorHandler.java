@@ -23,6 +23,7 @@ public class KlabErrorHandler {
   @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class)
   public ResponseEntity<ProblemDetail> handleAccessDenied(RuntimeException exception) {
     return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Asset is not accessible"));
   }
 

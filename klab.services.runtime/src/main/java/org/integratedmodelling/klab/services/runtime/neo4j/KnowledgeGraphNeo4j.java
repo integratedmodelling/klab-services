@@ -842,6 +842,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         }
       }
 
+      if (newContext && configuration.getSessionFederationId() != null) {
+        transaction.run("MATCH (c:" + GraphModel.Labels.CONTEXT + " {"
+            + GraphModel.Fields.ID + ": $id}) SET c.sessionFederationId = $federation",
+            Map.of("id", configuration.getId(), "federation", configuration.getSessionFederationId())).consume();
+      }
       if (newContext && configuration.getGridUrn() != null) {
         var grid = configuration.getGridDefinition() == null
             ? org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.resolve(configuration.getGridUrn(), scope)
@@ -2864,6 +2869,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               .serviceId(serviceId)
               .owner(context.get(GraphModel.Fields.USER).toString())
               .accessRights(persistedContextRights(context))
+              .sessionFederationId(Objects.toString(context.get("sessionFederationId"), null))
               .description(context.get(GraphModel.Fields.DESCRIPTION).toString())
               .serverUrl(scope.getService(RuntimeService.class).getUrl())
               .persistence(
@@ -2931,17 +2937,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         + GraphModel.Fields.ID + ": $contextId}) RETURN c", Map.of("contextId", contextId), requester),
         Map.class, requester);
     for (var row : rows) {
-      if (!authorizesPersistedContext(row, requester)) return null;
-      var runtime = requester.getService(RuntimeService.class);
-      return DigitalTwin.Configuration.builder()
-          .id(contextId).name(row.get(GraphModel.Fields.NAME).toString())
+      if (!authorizesPersistedContext(row, requester)) {
+        throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context is not accessible to the requesting user");
+      }
+      return DigitalTwin.Configuration.builder().id(contextId)
+          .name(Objects.toString(row.get(GraphModel.Fields.NAME), contextId))
           .owner(row.get(GraphModel.Fields.USER).toString()).accessRights(persistedContextRights(row))
-          .serviceId(serviceId).serverUrl(runtime.getUrl())
+          .sessionFederationId(Objects.toString(row.get("sessionFederationId"), null))
+          .serviceId(serviceId)
           .description(Objects.toString(row.get(GraphModel.Fields.DESCRIPTION), ""))
           .persistence(Persistence.valueOf(row.get(GraphModel.Fields.EXPIRATION).toString()))
-          .worldviewCommitment(row.get("worldviewCommitment") == null ? null
-              : Utils.Json.parseObject(row.get("worldviewCommitment").toString(),
-                  org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
+          .worldviewCommitment(row.get("worldviewCommitment") == null ? null : Utils.Json.parseObject(row.get("worldviewCommitment").toString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
+          .gridAlignment(row.get("gridAlignment") == null ? null : Utils.Json.parseObject(row.get("gridAlignment").toString(), org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
           .build().validate(requester);
     }
     return null;

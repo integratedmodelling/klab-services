@@ -22,6 +22,8 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
   private static final String[] HEADERS_OF_INTEREST = {
     HttpHeaders.AUTHORIZATION,
     ServicesAPI.SCOPE_HEADER,
+    ServicesAPI.USERNAME_HEADER,
+    ServicesAPI.FEDERATION_HEADER,
     ServicesAPI.SERVER_KEY_HEADER,
     ServicesAPI.SERVICE_ID_HEADER,
     ServicesAPI.RESOLUTION_NAMESPACE_HEADER,
@@ -69,7 +71,7 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
         if (token != null && token.isAuthenticated()) {
           // Never pass an authenticated request with an unresolved explicit scope
           // to controllers: absent/inaccessible scopes are not internal failures.
-          if (req.getHeader(ServicesAPI.SCOPE_HEADER) != null && token.getScope() == null) {
+          if (requestHeaders.get(ServicesAPI.SCOPE_HEADER) != null && token.getScope() == null) {
             SecurityContextHolder.clearContext();
             res.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
@@ -80,14 +82,26 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
           res.setHeader("Cache-Control", "no-store");
           res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
           return;
+        } else {
+          SecurityContextHolder.clearContext();
+          // An explicit invalid credential must not inherit an earlier principal or
+          // silently reach a public controller as though no credential was supplied.
+          if (!ServicesAPI.ANONYMOUS_TOKEN.equals(tokenString)) {
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+          }
         }
       } catch (org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException denied) {
         SecurityContextHolder.clearContext();
         res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       } catch (Throwable e) {
-        logger.error("Failed to extract JWT token: ", e);
-        throw e;
+        SecurityContextHolder.clearContext();
+        logger.error("Credential validation failed (" + e.getClass().getSimpleName() + ")");
+        if (e instanceof Error fatal) throw fatal;
+        // Keep unexpected failures distinct from permission denials without returning
+        // arbitrary verifier messages or sensitive causes to error handlers.
+        throw new ServletException("Credential validation unavailable");
       }
     }
     chain.doFilter(req, res);

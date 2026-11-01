@@ -10,6 +10,36 @@ import org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingS
 import org.junit.jupiter.api.Test;
 
 class WorldviewLoadingSupportTest {
+  @Test void updatedAuthorityDeclarationsReplaceStartupSnapshotWithoutReorderingOntologies() {
+    var worldview = new org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl();
+    var root = new KimOntologyImpl(); root.setUrn("imod");
+    var old = new KimOntologyImpl(); old.setUrn("life");
+    var previous = new KimConceptStatementImpl();
+    previous.setUrn("TaxonomicIdentity");
+    previous.setAuthorityRequired("TAXA");
+    previous.setAuthorityParameters(java.util.Map.of("urn", "test.authority", "codelists",
+        java.util.Map.of("species", "old.species")));
+    old.getStatements().add(previous);
+    worldview.setOntologies(List.of(root, old));
+    var saved = new KimOntologyImpl(); saved.setUrn("life");
+    var declaration = new KimConceptStatementImpl();
+    declaration.setUrn("TaxonomicIdentity");
+    declaration.setAuthorityRequired("TAXA");
+    declaration.setAuthorityParameters(java.util.Map.of("urn", "test.authority", "codelists",
+        java.util.Map.of("species", "taxonomy.species")));
+    saved.getStatements().add(declaration);
+    WorldviewLoadingSupport.replaceOntology(worldview, saved);
+    assertEquals(List.of(root, saved), worldview.getOntologies());
+    assertSame(declaration, worldview.allConceptStatements().stream()
+        .filter(s -> "TAXA".equals(s.getAuthorityRequired())).findFirst().orElseThrow());
+    var removed = new KimOntologyImpl(); removed.setUrn("life");
+    WorldviewLoadingSupport.replaceOntology(worldview, removed);
+    assertTrue(worldview.allConceptStatements().isEmpty());
+    var added = new KimOntologyImpl(); added.setUrn("chemistry");
+    WorldviewLoadingSupport.replaceOntology(worldview, added);
+    assertEquals(List.of(root, removed, added), worldview.getOntologies());
+  }
+
   @Test void warningsDoNotBlockLoadingAndLocalErrorsRemainEditable() {
     var worldview = mock(Worldview.class);
     var root = new KimOntologyImpl(); root.setUrn("imod");
