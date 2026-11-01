@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "observed_date": "2026-11-01",
+  "scope": "Compact public input retrieval facts and native-center QA; not model output, approved resampling, original-study identity or scientific acceptance",
+  "scientific_acceptance": false,
+  "raw_payloads_in_repository": false,
+  "source_project": "integratedmodelling/im.alice.spain",
+  "source_descriptor_revision": "054d1a79286d708ce2a04e94d0530d5eebcec404",
+  "coverage_id": "im-alice-spain__spain_solar_radiation_may_2018",
+  "service_url": "https://integratedmodelling.org/geoserver/im-alice-spain/wcs",
+  "request_parameters": {"service": "WCS", "version": "2.0.1", "request": "GetCoverage", "format": "image/tiff"},
+  "request_recipe": "Use coverageId as recorded and repeated subset parameters Lat(south,north) and Long(west,east), with each requested_bbox below; no scale/resampling request. Preserve the response and verify its hash before analysis.",
+  "mutable_endpoint_warning": "A later response need not have these bytes. A mismatching hash is a changed/unverified input, not permission to overwrite the recorded identity.",
+  "source_unit_time": "UNCONFIRMED: WCS range metadata advertises radiance; TIFF units are absent. Scenarios declare interpretations separately.",
+  "redistribution": "No raster payload publication authorized; metadata facts are retained here, source payload rights/version still require confirmation.",
+  "patches": [
+    {
+      "id": "equal_patch",
+      "requested_bbox": [-3.76, 43.35, -3.75, 43.36],
+      "http_status": 200,
+      "content_type": "image/tiff",
+      "bytes": 16820,
+      "sha256": "6c5ebdbdf584ae743f71de7da77fa3d1174d8ad9ce5249004ac82ab439b0c2f3",
+      "shape": [36, 36],
+      "bounds": [-3.7600563237480187, 43.35007230359114, -3.750061600740081, 43.360067026599076],
+      "transform": [0.0002776311946649371, 0, -3.7600563237480187, 0, -0.0002776311946649371, 43.360067026599076],
+      "crs": "EPSG:4326",
+      "dtype": "float32",
+      "nodata": -3.3999999521443642e38,
+      "tiff_units": null,
+      "raw_valid_pixels": 1296,
+      "raw_missing_pixels": 0,
+      "raw_valid_zero_pixels": 0,
+      "main_center_input_qa": {"centers": 324, "joint_valid": 288, "equal": 288, "different": 0, "missing": 36},
+      "raw_main_overstory_pair_counts": {"37/37": 283, "27/27": 2, "41/41": 3}
+    },
+    {
+      "id": "mixed_patch",
+      "requested_bbox": [-3.670, 43.482, -3.664, 43.488],
+      "http_status": 200,
+      "content_type": "image/tiff",
+      "bytes": 4532,
+      "sha256": "f10c8851df183043a5a16028299fb59f77f56ad46ecffdb1c3a654d7d46fa7e6",
+      "shape": [22, 22],
+      "bounds": [-3.670103816676579, 43.48194712105699, -3.66399593039395, 43.48805500733962],
+      "transform": [0.0002776311946649371, 0, -3.670103816676579, 0, -0.0002776311946649371, 43.48805500733962],
+      "crs": "EPSG:4326",
+      "dtype": "float32",
+      "nodata": -3.3999999521443642e38,
+      "tiff_units": null,
+      "raw_valid_pixels": 484,
+      "raw_missing_pixels": 0,
+      "raw_valid_zero_pixels": 100,
+      "main_center_input_qa": {"centers": 121, "joint_valid": 47, "equal": 44, "different": 3, "missing": 74},
+      "raw_main_overstory_pair_counts": {"27/27": 2, "37/37": 28, "41/41": 14, "21/7": 3}
+    }
+  ],
+  "qa_method": "For each original main-vegetation cell center within the radiation crop, inspect that main cell and containing overstory/radiation cells; count shared availability and raw code equality only. This is not a scientific interpolation or computed Radiation output.",
+  "qa_source_inputs": [
+    {"name": "com_50m_wgs84.tif", "url": "https://api.bitbucket.org/2.0/repositories/integratedmodelling/im.alice.spain/src/054d1a79286d708ce2a04e94d0530d5eebcec404/resources/com_50m_wgs84.v0.0.1/com_50m_wgs84.tif", "bytes": 4736687, "sha256": "468bab1d7690047a8d390616384623ac9a994a6dd4419e4869fb9816aad4ddf7"},
+    {"name": "com2_50m_wgs84.tif", "url": "https://api.bitbucket.org/2.0/repositories/integratedmodelling/im.alice.spain/src/054d1a79286d708ce2a04e94d0530d5eebcec404/resources/com2_50m_wgs84.v0.0.1/com2_50m_wgs84.tif", "bytes": 505099, "sha256": "e40797bc0f59ba04fc4111fbab653c5077c70e42adbbc6a8049c03b36f0cf9c5"}
+  ]
+}

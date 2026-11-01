@@ -96,6 +96,9 @@ def test_no_automatic_authoring_write_replay_or_publication_authority():
     assert item["runtime_gates"]["java_changes"] == "NOT_AUTHORIZED"
     assert item["runtime_gates"]["automatic_ambiguous_write_replay"] is False
     assert item["runtime_gates"]["maximum_workers_first_attempt"] == 1
+    assert item["runtime_gates"]["maximum_contexts"] == 4
+    assert item["runtime_gates"]["maximum_requested_output_jobs"] == 12
+    assert item["runtime_gates"]["maximum_requested_output_jobs"] == 3 * item["runtime_gates"]["maximum_contexts"]
     assert item["runtime_gates"]["maximum_context_observation_jobs"] == item["runtime_gates"]["maximum_contexts"]
     assert item["runtime_gates"]["maximum_total_jobs"] == (
         item["runtime_gates"]["maximum_requested_output_jobs"]
@@ -113,3 +116,21 @@ def test_demo_disclosure_and_original_study_acceptance_remain_separate():
     assert item["presentation"]["record_actual_notebook_execution"] is True
     assert item["presentation"]["reuse_synthetic_demo_footage_as_pal"] is False
     assert item["presentation"]["executed_notebook_requires_matching_run_evidence"] is True
+
+
+def test_portable_receipts_match_frozen_input_identity_and_qa_scope():
+    item = contract()["inputs"]
+    receipt = json.loads((RESEARCH / "assumed-input-receipts.json").read_text(encoding="utf-8"))
+    assert receipt["scientific_acceptance"] is False and receipt["raw_payloads_in_repository"] is False
+    assert receipt["observed_date"] == "2026-11-01"
+    assert receipt["coverage_id"] == item["radiation_coverage"]
+    assert receipt["service_url"] == item["production_endpoint"]
+    assert len(receipt["patches"]) == len(item["patches"]) == 2
+    for actual, expected in zip(receipt["patches"], item["patches"]):
+        assert actual["id"] == expected["id"]
+        assert actual["sha256"] == expected["radiation_sha256"]
+        assert actual["shape"] == expected["native_shape"]
+        assert actual["main_center_input_qa"] == expected["main_center_input_qa"]
+        assert actual["tiff_units"] is None
+        assert actual["nodata"] == item["native_radiation_nodata"]
+        assert actual["bytes"] > 0 and actual["dtype"] == "float32" and actual["crs"] == "EPSG:4326"

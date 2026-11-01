@@ -210,6 +210,10 @@ this different operational-legend scope.
 
 External new-input evidence:
 `C:/Users/lumsd/AppData/Local/Temp/opencode/pal-assumed-demo-evidence-20261101/`.
+Portable compact retrieval facts, hashes, query recipe, actual grids and input-QA
+method/counts: [assumed-input-receipts.json](assumed-input-receipts.json).
+These metadata facts do not include the raster payloads or establish redistribution
+rights, immutable server hosting or a numerical reference result.
 Prior review/retry inputs and failures remain unchanged. Contract tests verify
 the specification; they must never be reported as a completed client demo,
 Java-backed adapted experiment, validated ecological prediction or full-study reproduction.
