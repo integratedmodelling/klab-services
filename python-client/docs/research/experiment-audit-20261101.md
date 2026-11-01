@@ -127,7 +127,7 @@ Every row is scientifically **BLOCKED**, not REPRODUCED.
 | C11 | Automatic model selection | REFERENCE_GAP | Existing Java engineering/test evidence is not the requested real same-observable/different-place scientific fixture. Modern demos parse, but no paired original geographic model selection plus numerical oracle recovered. Do not count synthetic fixture classifications as scientific reproduction. [E4,E8] |
 | C12 | Stochastic SPAN / uncertainty | ARTIFACT_GAP | Original SPAN implementation, supported current-Java component, fixed network/seed/distribution and uncertainty reference absent. Toy generated flow network would be a new test, not original replication. [E1,E3] |
 | C13 | Scale sensitivity | REFERENCE_GAP | Prior constant elevation fixture is explicitly synthetic and failed native-export validation; not an ecological scale experiment. Need authentic fixed source/grid, two approved scales, aggregation rules and independently calculated results. Native export units defect remains. [E8] |
-| C14 | Ecosystem/land-cover extent | SOURCE_FAIL | Exact SEEA tables fail parsing; modern class crosswalk and supported static report compiler unverified. Real CCI crop and independent km² oracle available; inconsistent WCS radiance unit metadata retained. Best-known bounded repair scope, not current-Java success. [E9] |
+| C14 | Ecosystem/land-cover extent | CONTRACT_BLOCKED | Original sources fail. Follow-up syntax-only static subset now parses under both tuples, but current standard builder excludes table definitions and scope getReport() returns null. New upstream CORINE binding does not establish CCI2020 mapping. Real crop/km² oracle available; metadata defect retained. Java/component repair or an existing alternative compiler must be demonstrated. [E9,E10] |
 | C15 | Forest condition accounts | SOURCE_FAIL | Entire recovered PEOPLE-EA active source bundle fails parsing. Need reference thresholds/normalization, masks and independently reproduced indicators/index; an average of arbitrary layers is not the original condition account. [E4] |
 | C16 | Physical service accounts | CONTRACT_GAP | SEEA legacy reporting path, service models, spatial/year aggregation and units unresolved. No original table/reference fixture beyond prepared raw land-cover areas. Need compatible service computation and table contract. [E9] |
 | C17 | Monetary service accounts | ARTIFACT_GAP | Valuation coefficients, currency/base year, beneficiaries and original tables absent; same SEEA reporting gap. Carbon price × arbitrary stock is not a verified monetary service account. [E3,E9] |
@@ -155,8 +155,9 @@ Every row is scientifically **BLOCKED**, not REPRODUCED.
 1. **C14: single-year land-cover extent subset.** Strongest already recovered real
    data plus independent numerical oracle; avoids full IUCN classifier and dynamics.
    Exact blockers: approved classification/authority bindings, modern static-table
-   path, metadata/permission contracts. Investigate these before authorizing a
-   migration; they could require Java/component work. Cannot call Python areas
+   path, metadata/permission contracts. Follow-up E10 demonstrates missing table
+   handling in the inspected standard Java path; an alternative existing compiler
+   or separately scoped Java/component work is required. Cannot call Python areas
    a Java-produced SEEA account.
 2. **R14: narrow adapted PaL Radiation.** More traceable than unrecovered studies:
    source transformation and equation checks already reviewed. Still missing
@@ -232,6 +233,9 @@ Compact source/diagnostic summaries accompany this report, without raw third-par
   synthetic fixture is preserved, not promoted. Native TIFF units defect remains upstream issue #10.
 - **E9** External `seea-extent-evidence-20261101/README.md`, pinned source manifests,
   parser reports, real crop receipt, raw-class area oracle and verification manifest.
+- **E10** [SEEA static-table second attempt](seea-static-extent-attempt-20261101.md)
+  and external `seea-extent-attempt-2-20261101/`: narrow syntax success, current
+  source contract barriers, failed semantic probe and newer CORINE-worldview evidence.
 
 Initial official-page output hit Windows console encoding after saving complete
 JSON; later display used escaped JSON. Initial code search referenced a nonexistent
