@@ -84,9 +84,32 @@ separate. These are recommendations, not approval or evidence those steps ran.
 
 ## Prepared PR description — not published
 
+### Final publication-instruction addendum
+
+The same separate reviewer subsequently checked candidate
+`eb8c71587099ec8ed1a82aa3c03ec3b31195a236` against the original base, including the
+incremental user-requested publication gate. Recommendation remains **Ready for
+maintainer review — specification only**, with no new mandatory/important issue.
+
+The exact destination is
+`https://eric-resume.up.railway.app/python-client-progress/`. Conditional future
+publication is distinguished from current readiness; `publication_authorized_now`,
+`ready_now`, and `website_changed` remain false. Eight gates cover actual execution,
+independent validation, matching assets, truthful claims, review, privacy, rights
+and public-delivery verification. No raw-payload permission was inferred.
+
+Reviewer independently reran **10 focused tests, 0.04s, exit 0**, and the
+base-to-candidate whitespace check passed. Producer logs were inspected, not
+independently rerun: **1708 passed, one warning, 44.19s; lint passed**. Working tree
+stayed clean. No website query/deployment, service, source edit or remote mutation
+occurred. This establishes specification consistency, not a scientific result,
+finished demo/video or fulfilled publication gate.
+
+### Prepared description
+
 Specify a user-selected PaL Radiation programme preserving archived operational
 categories and equations while exposing uncertain radiation support as two
 conditional hypotheses. Add bounded-workload and scientific/demo acceptance
-contracts, portable input receipts and nine specification tests. No runnable
+contracts, portable input receipts and ten specification tests. No runnable
 scenario bindings, live results, notebooks or videos are included. Original-product
 interpretation and full-study reproduction remain unconfirmed.
