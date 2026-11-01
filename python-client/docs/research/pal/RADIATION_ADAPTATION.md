@@ -1,5 +1,10 @@
 # Adapted PaL Radiation pilot - implementation checkpoint
 
+**Later retry:** [Production coverage recovery and remaining semantic/unit gates](RADIATION_RETRY_20261101.md).
+The old development-endpoint failures below remain historical facts. A later
+bounded read retrieved the named coverage from a production endpoint; this does
+not establish original-run identity, approved units/time or Java execution.
+
 ## Status: syntax adapter implemented; authentic scientific execution BLOCKED
 
 User authorized a narrowly scoped adapted Radiation pilot on 1 November 2026,

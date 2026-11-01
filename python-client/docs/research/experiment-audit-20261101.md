@@ -103,7 +103,7 @@ Every row is scientifically **BLOCKED**, not REPRODUCED.
 | R11 | Hotspot methods comparison 2016 | ARTIFACT_GAP | Publication lead verified; original service surfaces, hotspot definitions, thresholds/ranks and reference overlaps absent. A new threshold over arbitrary layers would not reproduce the comparison. [E3] |
 | R12 | Trentino livestock/payments 2015 | ARTIFACT_GAP | Publication lead verified; farm/land-management inputs, payment rules, scenarios and service reference grids absent. PaL is not established as this study's model. Need original policy/scientific bundle. [E3] |
 | R13 | Italian service changes 2022 | ARTIFACT_GAP | Official publication lead and relevant ISPRA repo exist, but source inspection was rate-limited. Historical input versions, change/valuation rules and published numerical outputs still unverified; Crossref lookup also limited. [E2,E3,E6] |
-| R14 | Cantabrian Puerto/PaL 2023 | SOURCE_FAIL | Reviewed syntax-only Radiation derivative parses, unchanged PaL does not. Modern scientific mappings/time support/import unresolved. Original R site environment/data and S12 plot alignment absent; full-growth nonsemantic models rejected by adapter. Original vegetation rasters and independent arithmetic cases recovered, not a reproduction. [E7] |
+| R14 | Cantabrian Puerto/PaL 2023 | SEMANTIC_CONTRACT_GAP | Reviewed narrow derivative parses, unchanged PaL does not. Retry recovered named radiation coverage from production WCS, but original-run identity and unit/time meaning remain unverified;18of19narrow reference names lack direct matches in newest inspected worldview. Original R site data/S12 alignment and full-growth Java limitations remain separate. Not a reproduction. [E7,E11] |
 | R15 | Urban heat resilience 2024 | ARTIFACT_GAP | DOI 10.1016/j.scitotenv.2024.171215 identified against official PII. Exact heat-supply/demand, health/exposure data, original model revision and output reference not recovered. Article date does not establish modern Java compatibility. [E3,E6] |
 | R16 | Urban cooling / UGBI 2025 | ARTIFACT_GAP | DOI 10.1016/j.ufug.2024.128660 identified against official PII. Need original twelve-city predictors, fitted relationships, climate scenarios, model resource and cooling reference. No exact modern compatible source bundle yet. [E3,E6] |
 | R17 | Tidal marsh adaptation 2024 | ARTIFACT_GAP | Official source describes hybrid process-based/ML model and eco-geomorphic feedbacks; exact trained model, elevation/tidal inputs, dynamic-state rules and scenarios absent. Marine repo inspection limited; no verified Java coupling. [E2,E3] |
@@ -161,7 +161,9 @@ Every row is scientifically **BLOCKED**, not REPRODUCED.
    a Java-produced SEEA account.
 2. **R14: narrow adapted PaL Radiation.** More traceable than unrecovered studies:
    source transformation and equation checks already reviewed. Still missing
-   approved scientific mappings/time support and authoritative radiation payload.
+   approved scientific mappings/time support and authoritative product interpretation.
+   E11 retrieved a real crop of the named radiation coverage from production WCS;
+   original-run byte identity and physical/temporal meaning are not established.
    Full vegetation/R/P4 is much larger and is NOT this option.
 3. **C03: bounded carbon stock model family.** Smaller numerical structure than
    flow models; parameter/input and semantic scope still substantially unverified.
@@ -236,6 +238,10 @@ Compact source/diagnostic summaries accompany this report, without raw third-par
 - **E10** [SEEA static-table second attempt](seea-static-extent-attempt-20261101.md)
   and external `seea-extent-attempt-2-20261101/`: narrow syntax success, current
   source contract barriers, failed semantic probe and newer CORINE-worldview evidence.
+- **E11** [PaL Radiation retry](pal/RADIATION_RETRY_20261101.md) and external
+  `pal-radiation-retry-20261101/`: named production coverage crop recovered,
+  newest-worldview source check, preserved unit/time uncertainties and fresh
+  unchanged-subset parser/arithmetic rechecks. No scientific Job or ontology mapping.
 
 Initial official-page output hit Windows console encoding after saving complete
 JSON; later display used escaped JSON. Initial code search referenced a nonexistent
