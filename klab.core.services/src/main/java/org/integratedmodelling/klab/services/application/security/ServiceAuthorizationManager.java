@@ -55,7 +55,7 @@ public class ServiceAuthorizationManager {
   private static final String JWT_CLAIM_KEY_ROLES = "roles";
   private JwtConsumer preValidationExtractor;
   private Map<String, JwtConsumer> jwksVerifiers = new HashMap<>();
-  private int wtfErrors;
+  private int rejectedCredentials;
   private String authenticatingHub;
   private String nodeName;
   private String hubName;
@@ -193,12 +193,7 @@ public class ServiceAuthorizationManager {
             .setSkipSignatureVerification()
             .build();
 
-    JwtConsumer jwtVerifier =
-        new JwtConsumerBuilder()
-            .setSkipDefaultAudienceValidation()
-            .setAllowedClockSkewInSeconds(ALLOWED_CLOCK_SKEW_MS / 1000)
-            .setVerificationKey(publicKey)
-            .build();
+    JwtConsumer jwtVerifier = engineTokenVerifier(publicKey, response.getAuthenticatingHub());
 
     jwksVerifiers.put(response.getAuthenticatingHub(), jwtVerifier);
 
@@ -236,6 +231,25 @@ public class ServiceAuthorizationManager {
     ret.setAuthenticatingHub(certificate.getProperty(KlabCertificate.KEY_PARTNER_HUB));
     ((ServiceStartupOptions) options).updateOptionsFromCertificate(certificate);
     return Pair.of(ret, response.getServices());
+  }
+
+  /** Verify the legacy engine credential's signature, issuer and required recipient. */
+  static JwtConsumer engineTokenVerifier(PublicKey publicKey, String issuer) {
+    return new JwtConsumerBuilder()
+        .setExpectedIssuer(issuer)
+        .setExpectedAudience(ENGINE_AUDIENCE)
+        .setRequireSubject()
+        .setRequireExpirationTime()
+        .setAllowedClockSkewInSeconds(ALLOWED_CLOCK_SKEW_MS / 1000)
+        .setVerificationKey(publicKey)
+        .build();
+  }
+
+  private void recordRejectedCredential(Exception failure) {
+    if ((rejectedCredentials++ % 100) == 0) {
+      // Verifier exception messages can contain credentials or their claim payloads.
+      Logging.INSTANCE.warn("Rejected legacy service credential (" + failure.getClass().getSimpleName() + ")");
+    }
   }
 
   /**
@@ -313,30 +327,16 @@ public class ServiceAuthorizationManager {
         JwtConsumer jwtVerifier = jwksVerifiers.get(hubId);
 
         if (jwtVerifier == null) {
-          String msg =
-              String.format(
-                  "Couldn't find JWT verifier for partnerId %s. I only know " + "about " + "%s.",
-                  hubId, jwksVerifiers.keySet());
-          Exception e = new KlabAuthorizationException(msg);
-          Logging.INSTANCE.error(msg, e);
-          // throw e;
+          Logging.INSTANCE.warn("Rejected legacy service credential: issuer is not trusted");
         } else {
 
           JwtClaims claims = jwtVerifier.processToClaims(token);
           String username = claims.getSubject();
+          if (username == null || username.isBlank()) {
+            throw new KlabAuthorizationException("Credential subject is required");
+          }
           List<String> groupStrings = claims.getStringListClaimValue(JWT_CLAIM_KEY_PERMISSIONS);
           List<String> roleStrings = claims.getStringListClaimValue(JWT_CLAIM_KEY_ROLES);
-
-          // didn't throw an exception, so token is valid. Update the result and validate
-          // claims. This is an engine-only entry point so the role is obvious.
-          ret =
-              new EngineAuthorization(
-                  hubId,
-                  username,
-                  token,
-                  requestHeaders,
-                  List.of(), // FIXME check: why no groups are used or passed from groupStrings?
-                  Collections.unmodifiableList(filterRoles(roleStrings)));
 
           /*
            * Audience (aud) - The "aud" (audience) claim identifies the recipients that
@@ -346,7 +346,7 @@ public class ServiceAuthorizationManager {
            * when this claim is present, then the JWT must be rejected.
            */
           if (!claims.getAudience().contains(ENGINE_AUDIENCE)) {
-            // TODO
+            throw new KlabAuthorizationException("Credential is not intended for the engine audience");
           }
 
           /*
@@ -361,26 +361,26 @@ public class ServiceAuthorizationManager {
                 "user " + username + " is using an expired " + "authorization");
           }
 
-          long issuedAtUtcMs = claims.getIssuedAt().getValueInMillis();
+          var issuedAtClaim = claims.getIssuedAt();
+          if (issuedAtClaim == null) {
+            throw new KlabAuthorizationException("Credential issue time is required");
+          }
+          long issuedAtUtcMs = issuedAtClaim.getValueInMillis();
           Instant issuedAt = Instant.ofEpochMilli(issuedAtUtcMs);
+          // Do not retain the claimed identity/roles if any credential check fails.
+          ret = new EngineAuthorization(hubId, username, token, requestHeaders, List.of(),
+              Collections.unmodifiableList(filterRoles(roleStrings)));
           ret.setIssuedAt(issuedAt);
           //            result.getGroups().addAll(filterGroups(groupStrings));
           ret.setAuthenticated(true);
         }
 
       } catch (MalformedClaimException | InvalidJwtException e) {
-        // TODO see if we should reauthenticate and if so, try that before throwing an
-        // authorization exception
-        if ((wtfErrors % 100) == 0) {
-          Logging.INSTANCE.error("WTF (" + wtfErrors + " errors)", e);
-        }
-        wtfErrors++;
+        ret = null;
+        recordRejectedCredential(e);
       } catch (Exception e) {
-        // it was a JWT token, but some other exception happened.
-        if ((wtfErrors % 100) == 0) {
-          Logging.INSTANCE.error("WTF (" + wtfErrors + " errors)", e);
-        }
-        wtfErrors++;
+        ret = null;
+        recordRejectedCredential(e);
       }
     }
 

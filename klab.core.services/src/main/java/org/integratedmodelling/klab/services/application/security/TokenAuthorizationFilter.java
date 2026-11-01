@@ -82,14 +82,26 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
           res.setHeader("Cache-Control", "no-store");
           res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
           return;
+        } else {
+          SecurityContextHolder.clearContext();
+          // An explicit invalid credential must not inherit an earlier principal or
+          // silently reach a public controller as though no credential was supplied.
+          if (!ServicesAPI.ANONYMOUS_TOKEN.equals(tokenString)) {
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+          }
         }
       } catch (org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException denied) {
         SecurityContextHolder.clearContext();
         res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return;
       } catch (Throwable e) {
-        logger.error("Failed to extract JWT token: ", e);
-        throw e;
+        SecurityContextHolder.clearContext();
+        logger.error("Credential validation failed (" + e.getClass().getSimpleName() + ")");
+        if (e instanceof Error fatal) throw fatal;
+        // Keep unexpected failures distinct from permission denials without returning
+        // arbitrary verifier messages or sensitive causes to error handlers.
+        throw new ServletException("Credential validation unavailable");
       }
     }
     chain.doFilter(req, res);
