@@ -113,3 +113,24 @@ conditional hypotheses. Add bounded-workload and scientific/demo acceptance
 contracts, portable input receipts and ten specification tests. No runnable
 scenario bindings, live results, notebooks or videos are included. Original-product
 interpretation and full-study reproduction remain unconfirmed.
+
+## Saved functional-prerequisite test review
+
+At user request the executed real-input QA was saved as an opt-in test, rather
+than misrepresented as an unperformed Java scientific experiment. The same
+separate read-only reviewer inspected exact delta
+`33c3e1b861134ec2cb4341260bc6b79747806130..6cbf335b553a740bf233a1d1864738bbd8c6bfd4`:
+`tests/functional/test_pal_real_input_prerequisites.py` and
+`docs/research/pal/FUNCTIONAL_TEST.md` under `python-client`.
+
+Recommendation: **Ready for maintainer review — input prerequisites only**.
+No mandatory findings. Reviewer independently reran both cases: **2 passed in
+0.39s**, exit 0, using pinned private inputs, explicit current source imports,
+disabled bytecode/cache and external basetemp. Delta whitespace check passed;
+working tree remained clean. No network, service, download or scientific
+submission occurs. Missing fixtures/dependencies fail explicitly. Hash mismatches
+are rejected before raster interpretation; deliberate corruption was not tested.
+Producer additionally ran **1708 offline tests, one warning, 43.62s**, and lint;
+reviewer did not rerun those. The tests do not validate client lifecycle, Java
+fields, scientific assumptions, full-study reproduction or videos. User authorized
+commit/push; reviewer made no remote changes or broader authorization decisions.
