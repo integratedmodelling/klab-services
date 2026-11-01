@@ -226,6 +226,11 @@ public enum Setting {
       "Use short floats to save space instead of doubles, at the expense of precision",
       Boolean.class,
       Boolean.FALSE),
+  DISABLE_CONSEQUENCE_ENGINE(
+          Page.RUNTIME,
+          "Disable automatic resolution of consequences such as change, role implications, configuration emergence and role conferral",
+          Boolean.class,
+          Boolean.FALSE),
   PARALLELIZE_OBSERVATIONS(
       Page.RUNTIME,
       "Honor configured parallelism strategy and splits when processing quality observations with multiple states",
