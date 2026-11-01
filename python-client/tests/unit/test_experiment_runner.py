@@ -509,3 +509,13 @@ def test_native_job_local_cancel_checks_boundaries_and_retains_job(monkeypatch):
         with pytest.raises(WaitCancelled):
             NATIVE_RESULT(job, timeout=10, _cancelled=lambda: bool(calls))
         assert len(calls) == 1 and "/status/" in calls[0].url.path
+
+
+def test_manifest_rejects_deep_json_with_the_public_validation_error():
+    with pytest.raises(InvalidRequestError):
+        ExperimentBatch.loads("[" * 10000 + "0" + "]" * 10000)
+
+
+def test_manifest_rejects_invalid_utf8_with_the_public_validation_error():
+    with pytest.raises(InvalidRequestError, match="UTF-8"):
+        ExperimentBatch.loads("\ud800")
