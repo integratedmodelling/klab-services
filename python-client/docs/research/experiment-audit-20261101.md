@@ -242,6 +242,11 @@ Compact source/diagnostic summaries accompany this report, without raw third-par
   `pal-radiation-retry-20261101/`: named production coverage crop recovered,
   newest-worldview source check, preserved unit/time uncertainties and fresh
   unchanged-subset parser/arithmetic rechecks. No scientific Job or ontology mapping.
+- **E12** [PaL scientific review proposal](pal/RADIATION_SCIENTIFIC_REVIEW.md),
+  unsent producer questions and external `pal-radiation-review-package-20261101/`:
+  publisher/legacy taxonomy discrepancy, rank-aware candidate COL reconciliation,
+  input missingness/branch-coverage QA and proposed bounded acceptance gates.
+  Proposal-only, not outreach, ontology implementation or scientific acceptance.
 
 Initial official-page output hit Windows console encoding after saving complete
 JSON; later display used escaped JSON. Initial code search referenced a nonexistent

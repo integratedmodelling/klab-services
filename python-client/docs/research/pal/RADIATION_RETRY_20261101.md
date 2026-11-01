@@ -1,5 +1,9 @@
 # PaL Radiation retry: production coverage recovered
 
+**Next review package:** [Scientific compatibility proposal](RADIATION_SCIENTIFIC_REVIEW.md)
+and [unsent producer questions](radiation-producer-questions.md). These record
+taxonomy conflicts and concrete input/mask coverage gates; no mappings are applied.
+
 ## Outcome
 
 **Radiation data access improved; scientific bindings still block Java execution.**
