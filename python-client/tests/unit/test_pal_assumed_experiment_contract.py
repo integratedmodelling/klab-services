@@ -89,7 +89,7 @@ def test_actual_input_qa_does_not_masquerade_as_result_or_mask_acceptance():
     assert item["native_radiation_nodata"] < -1e30
 
 
-def test_no_automatic_authoring_write_replay_or_publication_authority():
+def test_no_automatic_authoring_write_replay_or_premature_publication():
     item = contract()
     assert item["runtime_gates"]["project_local_operational_definitions"] == "NOT_AUTHORED_OR_ADMITTED"
     assert item["runtime_gates"]["shared_worldview_changes"] == "NOT_AUTHORIZED"
@@ -104,7 +104,7 @@ def test_no_automatic_authoring_write_replay_or_publication_authority():
         item["runtime_gates"]["maximum_requested_output_jobs"]
         + item["runtime_gates"]["maximum_context_observation_jobs"]
     ) == 16
-    assert item["presentation"]["publication_authorized"] is False
+    assert item["presentation"]["publication_authorized_now"] is False
 
 
 def test_demo_disclosure_and_original_study_acceptance_remain_separate():
@@ -134,3 +134,16 @@ def test_portable_receipts_match_frozen_input_identity_and_qa_scope():
         assert actual["tiff_units"] is None
         assert actual["nodata"] == item["native_radiation_nodata"]
         assert actual["bytes"] > 0 and actual["dtype"] == "float32" and actual["crs"] == "EPSG:4326"
+
+
+def test_future_site_publication_request_does_not_authorize_unfinished_claims():
+    item = contract()["publication"]
+    assert item["destination"] == "https://eric-resume.up.railway.app/python-client-progress/"
+    assert item["authorization"] == "CONDITIONAL_ON_DEMONSTRABLE_FINISHED_WORK"
+    assert item["ready_now"] is item["website_changed"] is False
+    assert item["gate_evidence_status"] == "NOT_COMPLETE"
+    assert item["unfinished_material_must_not_be_presented_as_finished"] is True
+    assert item["raw_third_party_payload_publication_implied"] is False
+    assert len(item["required_gates"]) == len(set(item["required_gates"])) == 8
+    assert "actual_java_results_for_declared_scenarios" in item["required_gates"]
+    assert "accurate_adapted_versus_original_full_study_claims" in item["required_gates"]

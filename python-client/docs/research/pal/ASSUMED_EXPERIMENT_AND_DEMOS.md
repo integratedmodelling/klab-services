@@ -10,8 +10,10 @@ the entire published study has already been reproduced.
 Machine-readable contract: [assumed-experiment.json](assumed-experiment.json).
 **Current state: SPECIFIED, NOT EXECUTED. No new video has been recorded.**
 The contract's tests validate specification integrity, not a scientific run or a
-runtime-enforced video-publication policy. No Java/shared-worldview change, remote
-publication or producer contact is implied by choosing this direction.
+runtime-enforced video-publication policy. No Java/shared-worldview change or
+producer contact is implied. The user subsequently requested publication at the
+existing progress-page URL **when demonstrable and finished**; that conditional
+request is recorded below and does not make today's unfinished work publishable.
 
 ## Faithfulness: separate the claims instead of abandoning the goal
 
@@ -172,8 +174,24 @@ Python, actual output and brief domain explanation—not test counts as the stor
 Every video and notebook needs: run/scenario label, exact source/evidence identity,
 scope/assumptions card, source attribution, no credentials/private configs, actual
 execution, assertions, and decoded/readable output verification. Cuts for loading
-are labelled; no timing/performance claim from edited footage. Publication remains
-separate authorization, including third-party data rights.
+are labelled; no timing/performance claim from edited footage. Third-party payload
+publication rights remain a separate check from the user's site-publication request.
+
+### Agreed publication destination and completion gate
+
+Publish the finished experiment, executed notebooks, demonstrations and videos to:
+**https://eric-resume.up.railway.app/python-client-progress/**.
+This is the user's conditional destination request, not permission to deploy this
+unfinished specification or to mark unexecuted stages complete.
+
+Before deployment, bind the website text/assets to actual accepted run evidence;
+complete independent numerical/grid/unit/mask checks, read-only review, privacy
+and attribution/data-rights checks; and verify the public page, notebook downloads
+and video playback. Preserve accurate adapted-versus-original/full-study claims
+and disclose remaining stages. Do not overwrite unrelated portfolio work, replace
+failure evidence with a success narrative, expose credentials/private handles, or
+reuse old synthetic footage as PaL. No website files or deployments were changed
+in this pass. Publication evidence is not complete and the contract says not ready.
 
 ## Full-experiment roadmap remains visible
 
