@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "base_sha": "6bcee78ee268fe321d2b417ee4403b8abfefa0b9",
+  "archives": [
+    {
+      "name": "puerto",
+      "record": "6786419",
+      "size": 612570,
+      "url": "https://zenodo.org/api/records/6786419/files/jbusque/puerto-v1.0.zip/content",
+      "md5": "4f2f1e85249a677016b8b1e4618a1097",
+      "sha256": "4b1aff4c5b8ba3be9b2568ed79098c176850dc1be5570816e00d27848adccad9",
+      "zenodo_license": {
+        "id": "apgl-v3"
+      },
+      "archive_license_text": "GNU Affero General Public License, version 3",
+      "redistribution_review": "Dataset-specific terms not established; no archive/data publication authorized"
+    },
+    {
+      "name": "pal",
+      "record": "7533051",
+      "size": 4704395,
+      "url": "https://zenodo.org/api/records/7533051/files/amarqueztorres/im.ecology.grassland.livestock-0.1.1.zip/content",
+      "md5": "94152225a4e6cf5824c62ab9d8dee1e9",
+      "sha256": "6503feeb0dc743601fe3e3205c879354801fc21353913fd06b9ae4ff1443d872",
+      "zenodo_license": {
+        "id": "other-open"
+      },
+      "archive_license_text": "GNU Affero General Public License, version 3",
+      "redistribution_review": "Dataset-specific terms not established; no archive/data publication authorized"
+    }
+  ],
+  "supplement": {
+    "url": "https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0281348.s015&type=supplementary",
+    "bytes": 2101111,
+    "sha256": "3089114b43a942123cc156438470b4338920573ab8078834e355e3b3b119b066",
+    "numeric_reference_table": "S12 Table",
+    "rows": 140,
+    "units": "g/m^2",
+    "plot_polygon_mapping": "UNKNOWN",
+    "temporal_alignment": "UNKNOWN"
+  },
+  "scientific_acceptance": false
+}
