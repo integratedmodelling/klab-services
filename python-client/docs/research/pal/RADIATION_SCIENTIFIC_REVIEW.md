@@ -1,5 +1,10 @@
 # PaL Radiation: scientific compatibility proposal
 
+**Subsequent user decision:** proceed with the combined operational-legend and
+explicit-assumption approach in [the adapted experiment/demo specification](ASSUMED_EXPERIMENT_AND_DEMOS.md).
+This narrows the next experiment's claim; it does not approve the biological or
+taxonomic equivalences below or settle the original producer questions.
+
 ## Status and authority
 
 **PROPOSAL ONLY — NOT APPROVED, NOT IMPLEMENTED, NOT A SCIENTIFIC PASS.**

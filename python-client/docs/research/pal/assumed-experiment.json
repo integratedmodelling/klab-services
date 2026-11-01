@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "experiment_id": "pal-radiation-operational-legend-v1",
+  "status": "SPECIFIED_NOT_EXECUTED",
+  "scope": "Adapted three-model Radiation experiment using real inputs, original operational legend and explicit interpretation assumptions; not full-study reproduction",
+  "scientific_acceptance": false,
+  "full_study_reproduction": false,
+  "live_java_jobs": 0,
+  "video_status": "PLANNED_NOT_RECORDED",
+  "originals": {
+    "pal_record": "7533051",
+    "pal_sha256": "6503feeb0dc743601fe3e3205c879354801fc21353913fd06b9ae4ff1443d872",
+    "puerto_record": "6786419",
+    "puerto_sha256": "4b1aff4c5b8ba3be9b2568ed79098c176850dc1be5570816e00d27848adccad9",
+    "reviewed_subset_sha256": "8d5072273766edbe05503e53f38c55b964a5a630d024be93218803072a1e1ef0",
+    "included_models": ["rgc_max", "rg2", "fr"],
+    "excluded_from_this_milestone": ["ftrh", "vegetation growth dynamics", "livestock and nitrogen cycle", "Puerto execution", "P4 comparison"]
+  },
+  "legend": {
+    "meaning": "Original operational vegetation-legend entries, not assertions of observed species or accepted TAXA identities",
+    "equality": "Exact legend-entry identity; never ancestor, descendant, fuzzy-name or taxonomic equivalence",
+    "unknown_code_policy": "Reject or explicitly mask under the preapproved missingness contract; never invent an other category",
+    "taxonomic_equivalences_applied": false,
+    "entries": [
+      {"code": 4, "original_label": "Calluna", "taxonomic_interpretation": "UNCONFIRMED"},
+      {"code": 7, "original_label": "FestucaRubra", "taxonomic_interpretation": "CONFLICT_RETAINED_FESTUCA_VERSUS_AGROSTIS"},
+      {"code": 12, "original_label": "Helictotrichon", "taxonomic_interpretation": "UNCONFIRMED"},
+      {"code": 15, "original_label": "Phragmites", "taxonomic_interpretation": "UNCONFIRMED"},
+      {"code": 21, "original_label": "Polypodiopsida", "taxonomic_interpretation": "UNCONFIRMED"},
+      {"code": 27, "original_label": "Senecio", "taxonomic_interpretation": "UNCONFIRMED"},
+      {"code": 28, "original_label": "UlexGallii", "taxonomic_interpretation": "UNCONFIRMED"},
+      {"code": 36, "original_label": "Carex", "taxonomic_interpretation": "UNCONFIRMED"},
+      {"code": 37, "original_label": "Gramineae", "taxonomic_interpretation": "UNCONFIRMED"},
+      {"code": 41, "original_label": "UlexEuropaeus", "taxonomic_interpretation": "UNCONFIRMED"}
+    ],
+    "overstory_codes": [4, 7, 12, 15, 27, 28, 36, 37, 41]
+  },
+  "calculation": {
+    "equations": ["[(com == com2) ? rg : (rg * 0.2)]", "[(rg2 > rgc_max) ? 1 : (rg2 / rgc_max)]"],
+    "threshold": {"value": 25, "applies_to": "Each original main-legend entry", "unit": "MJ/m2", "temporal_support": "Representative day, ASSUMED for this adapted scenario"},
+    "limiting_factor": {"stored_range": [0, 1], "unit": "dimensionless", "scale_to_percent": false},
+    "original_equations_changed": false,
+    "input_interpretation_is_additional_adaptation": true
+  },
+  "scenarios": [
+    {
+      "id": "assumed_daily_mean",
+      "label": "ASSUMPTION A: served values are MJ/m2 per representative day, mean May 2018",
+      "raw_support": "representative_daily_mean",
+      "raw_unit": "MJ/m2",
+      "raw_to_daily_factor": {"numerator": 1, "denominator": 1},
+      "threshold_daily_value": 25,
+      "interpretation_confirmed": false,
+      "registered": false,
+      "request": null
+    },
+    {
+      "id": "assumed_monthly_total",
+      "label": "ASSUMPTION B: served values are May 2018 totals in MJ/m2; divide by 31 for a representative day",
+      "raw_support": "calendar_month_total",
+      "raw_unit": "MJ/m2",
+      "raw_to_daily_factor": {"numerator": 1, "denominator": 31},
+      "threshold_daily_value": 25,
+      "interpretation_confirmed": false,
+      "registered": false,
+      "request": null
+    }
+  ],
+  "scenario_comparison": {
+    "meaning": "Sensitivity to the physical interpretation of an uncertain input, not validation of either interpretation",
+    "not_a_pure_unit_conversion": true,
+    "hold_daily_threshold_fixed": true,
+    "raw_data_must_not_be_rewritten": true,
+    "radiance_conversion": "NOT_ATTEMPTED: W.m-2.Sr-1 requires information not established here",
+    "scenario_labels_alone_do_not_change_java_computation": true
+  },
+  "inputs": {
+    "main_vegetation_sha256": "468bab1d7690047a8d390616384623ac9a994a6dd4419e4869fb9816aad4ddf7",
+    "overstory_sha256": "e40797bc0f59ba04fc4111fbab653c5077c70e42adbbc6a8049c03b36f0cf9c5",
+    "radiation_coverage": "im-alice-spain__spain_solar_radiation_may_2018",
+    "production_endpoint": "https://integratedmodelling.org/geoserver/im-alice-spain/wcs",
+    "product_unit_time_identity": "UNCONFIRMED; metadata inconsistency retained",
+    "native_radiation_nodata": -3.3999999521443642e38,
+    "zero_is_not_nodata": true,
+    "payloads_external_not_published": true,
+    "patches": [
+      {"id": "equal_patch", "radiation_sha256": "6c5ebdbdf584ae743f71de7da77fa3d1174d8ad9ce5249004ac82ab439b0c2f3", "native_shape": [36, 36], "main_center_input_qa": {"centers": 324, "joint_valid": 288, "equal": 288, "different": 0, "missing": 36}, "scope": "Input QA, not approved resampling or computed output"},
+      {"id": "mixed_patch", "radiation_sha256": "f10c8851df183043a5a16028299fb59f77f56ad46ecffdb1c3a654d7d46fa7e6", "native_shape": [22, 22], "main_center_input_qa": {"centers": 121, "joint_valid": 47, "equal": 44, "different": 3, "missing": 74}, "raw_radiation_zero_pixels": 100, "joint_valid_radiation_zero_centers": 0, "scope": "Input QA, not approved resampling or computed output"}
+    ]
+  },
+  "runtime_gates": {
+    "project_local_operational_definitions": "NOT_AUTHORED_OR_ADMITTED",
+    "shared_worldview_changes": "NOT_AUTHORIZED",
+    "java_changes": "NOT_AUTHORIZED",
+    "target_grid_and_interpolation": "REQUIRES_FROZEN_CONTRACT_AND_INDEPENDENT_REFERENCE",
+    "missingness": "REQUIRES_FROZEN_POLICY; no missing-as-zero or null-equality shortcut",
+    "resource_binding_and_permissions": "UNVERIFIED",
+    "independent_java_field_comparison": "NOT_RUN",
+    "native_export_units": "UPSTREAM_ISSUE_10_UNRESOLVED",
+    "maximum_workers_first_attempt": 1,
+    "maximum_contexts": 4,
+    "maximum_requested_output_jobs": 12,
+    "maximum_context_observation_jobs": 4,
+    "maximum_total_jobs": 16,
+    "automatic_ambiguous_write_replay": false
+  },
+  "claim_levels": {
+    "source_equation_fidelity": "REVIEWED_AND_OFFLINE_CHECKED_ONLY",
+    "assumed_scenario_execution": "NOT_RUN",
+    "real_input_field_numerical_fidelity": "NOT_VALIDATED",
+    "original_product_interpretation": "UNCONFIRMED",
+    "ecological_prediction_accuracy": "NOT_EVALUATED",
+    "full_published_study_reproduction": "BLOCKED_NOT_DEMONSTRATED"
+  },
+  "presentation": {
+    "working_title": "PaL Radiation: real inputs, archived equations, explicit assumptions",
+    "required_visible_label": "Adapted PaL Radiation experiment — assumed radiation support; not full-study reproduction",
+    "record_actual_notebook_execution": true,
+    "reuse_synthetic_demo_footage_as_pal": false,
+    "publication_authorized": false,
+    "executed_notebook_requires_matching_run_evidence": true,
+    "full_study_fidelity_claim_requires_separate_acceptance": true
+  }
+}

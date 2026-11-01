@@ -247,6 +247,10 @@ Compact source/diagnostic summaries accompany this report, without raw third-par
   publisher/legacy taxonomy discrepancy, rank-aware candidate COL reconciliation,
   input missingness/branch-coverage QA and proposed bounded acceptance gates.
   Proposal-only, not outreach, ontology implementation or scientific acceptance.
+- **E13** [Combined assumption-explicit experiment/demo specification](pal/ASSUMED_EXPERIMENT_AND_DEMOS.md)
+  and `pal/assumed-experiment.json`: user-selected operational legend plus two
+  physical-interpretation hypotheses; real mixed-class crop/input QA; specification
+  tests and claim-level gates. Not a live Java run, completed video or full-study reproduction.
 
 Initial official-page output hit Windows console encoding after saving complete
 JSON; later display used escaped JSON. Initial code search referenced a nonexistent
