@@ -40,14 +40,38 @@ The first test placement failed compilation because it referenced a package-priv
 scope admission helper from another package. The test moved to the matching package;
 the helper's product visibility was not widened and the failed log is retained.
 
-The initial offline tests do not reproduce the live failure and do not justify a
-speculative product change. A bounded inference-only service probe is in progress,
-using the actual declared `/api/v1/observationStrategies` contract, served semantic
-metadata and uncommitted focus snapshots. Its setup allows one disposable context;
-its scientific submit budget is zero and there are no observe/submit call sites.
+Three additional native OWL diagnostic cases pass: a concrete declaration can have
+an effectively abstract dependent expression when its identity requirements remain
+unfulfilled; an explicit eligible bearer discharges the synthetic requirement;
+a plain bearer supplies no invented identity evidence. These exercise the existing
+rules, not permission to change them. All five diagnostic tests pass locally.
+
+An offline read of the unchanged compatibility worldview confirms that Elevation
+is declared concrete, has parent `physical:Height of earth:Location`, and Height
+requires an Areal or Volumetric identity. Native adaptation preserves the concrete
+Elevation declaration. This alone cannot establish what a served query should
+return or whether contextual inference correctly discharges that requirement.
+
+The first service probe captured an ABSTRACT flag on served Elevation, then stopped
+before inference because the private harness did not allow the strategy POST. Its
+failure is preserved, not treated as an endpoint rejection. Zero scientific Jobs
+and observation registrations occurred. Context/session release, empty-context
+listing, publisher socket absence and HTTP closure passed. All14 recorded JVM
+identities were independently absent afterward, with no matching visible windows.
+
+No current result reproduces a proven non-scientific defect or justifies a speculative
+product change. A fresh inference-only service probe, after correcting the exact
+private endpoint allowlist, is in progress. It uses the actual declared
+`/api/v1/observationStrategies` contract, served semantic metadata and uncommitted
+focus snapshots. Its setup allows one disposable context; its scientific submit
+budget is zero and there are no observe/submit call sites. This is not a Job retry.
 This prerequisite changes no product code;75Reasoner and10Resolver main Java source
 files match the unchanged diagnostic backend. Test infrastructure
 uses the separately verified draft117 cleanup, not a deployment or merge.
+
+Initial PR head b63c3bd13 passed the general build, both offline diagnostic jobs and
+Jenkins. The expanded five-case suite still requires final-head CI. Passing tests
+are software diagnostics, not scientific or notification acceptance.
 
 ## Gates before any fix or merge
 

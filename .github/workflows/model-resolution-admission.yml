@@ -2,9 +2,9 @@ name: Model resolution admission diagnostics
 
 on:
   push:
-    paths: ['klab.services.resources/src/test/java/org/integratedmodelling/klab/services/scopes/ModelResolutionAdmission*Test.java', '.github/workflows/model-resolution-admission.yml']
+    paths: ['klab.services.resources/src/test/java/org/integratedmodelling/klab/services/scopes/ModelResolutionAdmission*Test.java', 'klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/reasoner/owl/ModelResolutionAdmission*Test.java', '.github/workflows/model-resolution-admission.yml']
   pull_request:
-    paths: ['klab.services.resources/src/test/java/org/integratedmodelling/klab/services/scopes/ModelResolutionAdmission*Test.java', '.github/workflows/model-resolution-admission.yml']
+    paths: ['klab.services.resources/src/test/java/org/integratedmodelling/klab/services/scopes/ModelResolutionAdmission*Test.java', 'klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/reasoner/owl/ModelResolutionAdmission*Test.java', '.github/workflows/model-resolution-admission.yml']
 
 permissions:
   contents: read
@@ -21,4 +21,4 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Native strategy guard and focus DTO diagnostics, not Job acceptance
-        run: ./mvnw -B -pl klab.services.resources -am -Dtest='ModelResolutionAdmission*Test' -Dsurefire.failIfNoSpecifiedTests=false test
+        run: ./mvnw -B -pl klab.services.resources,klab.services.runtime -am -Dtest='ModelResolutionAdmission*Test' -Dsurefire.failIfNoSpecifiedTests=false test
