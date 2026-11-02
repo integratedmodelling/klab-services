@@ -69,14 +69,32 @@ all14 recorded JVM identities were independently absent. A PID reused by an
 unrelated process was preserved; all3,905 attested backend input hashes matched.
 
 No current result reproduces a proven non-scientific defect or justifies a speculative
-product change. A bounded control comparison is in progress: the original Elevation
-query, concrete Aspect quality, and a read-only explicitly qualified Elevation query.
-Each is tested unfocused and with a snapshot focus (maximum six inference requests).
+product change. The third bounded control comparison completed with six successful
+inference requests and zero observation registrations/scientific submissions:
+
+| Served query | Observable/concept abstractness | Unfocused strategies | Snapshot-focused strategies |
+| --- | --- | --- | --- |
+| `geography:Elevation in m` | both true | none | none |
+| `geography:Aspect` | both false | none | `dependent.direct` |
+| `geography:Elevation of (earth:Terrestrial earth:Region) in m` | both false | none | `dependent.direct` |
+
+The concrete control and explicitly qualified query demonstrate working focus
+transport and strategy selection on the same endpoint/backend. Original Elevation
+has an effectively abstract expression; the observed rejection is consistent with
+the existing `abstract = false` pattern and `request.fully_specified` guard. This
+locates a query-specific admission boundary but does **not** prove a defect in those
+rules, the correctness of their scientific meaning, the original Job's complete
+failure chain, model discoverability, numerical execution or notification delivery.
+
+Context/session/list/socket/HTTP cleanup passed. All14 recorded JVM identities were
+independently absent, no matching owned visible windows remained, and all3,905
+attested backend input hashes were unchanged. No unrelated service/window was touched.
+
 An alternative query is **not** a substitute for the fixed acceptance question or
-permission to change fixture/model/oracle bytes. The probe uses the actual declared
+permission to change fixture/model/oracle bytes. The probe used the actual declared
 `/api/v1/observationStrategies` contract, served semantic metadata and uncommitted
 focus snapshots. Its setup allows one disposable context; its scientific submit
-budget is zero and there are no observe/submit call sites. This is not a Job retry.
+budget was zero and there were no observe/submit call sites. This was not a Job retry.
 This prerequisite changes no product code;75Reasoner and10Resolver main Java source
 files match the unchanged diagnostic backend. Test infrastructure
 uses the separately verified draft117 cleanup, not a deployment or merge.
@@ -87,6 +105,11 @@ are software diagnostics, not scientific or notification acceptance.
 
 ## Gates before any fix or merge
 
+- The authorized non-scientific diagnosis has found no justified product fix.
+  Keep this PR diagnostic-only/draft. A semantic/query-contract decision is now
+  needed before changing the acceptance query or any semantics. No such change,
+  alternate-query acceptance substitution, new scientific run or merge is authorized
+  by these passing probes. No additional fixture services remain running.
 - Establish a reproducible failing non-scientific admission/transport boundary;
   preserve failed, passing and UNKNOWN evidence rather than weakening semantics.
 - Only then add the smallest authorized correction and before/after regression.

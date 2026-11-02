@@ -31,12 +31,39 @@
     "mutation_journal_sha256": "6fdd389b5c5b58a7dc2dddd9ab5de443a210d0c1b8e96927588e27235915548c"
   },
   "third_service_probe": {
-    "status": "RUNNING",
+    "status": "DIAGNOSTIC_CAPTURED_NOT_GENUINE_JOB_ACCEPTANCE",
     "maximum_inference_requests": 6,
     "scientific_submission_budget": 0,
     "purpose": "ORIGINAL_QUERY_VS_CONCRETE_QUALITY_CONTROL_VS_EXPLICIT_BEARER_READ_ONLY_DIAGNOSTIC",
-    "alternative_query_is_not_acceptance_substitution": true
+    "alternative_query_is_not_acceptance_substitution": true,
+    "inference_requests_completed": 6,
+    "original_elevation": {
+      "observable_and_concept_abstract": true,
+      "unfocused_strategies": [],
+      "snapshot_focused_strategies": []
+    },
+    "aspect_control": {
+      "observable_and_concept_abstract": false,
+      "unfocused_strategies": [],
+      "snapshot_focused_strategies": ["dependent.direct"]
+    },
+    "explicit_bearer_elevation_diagnostic": {
+      "definition": "geography:Elevation of (earth:Terrestrial earth:Region) in m",
+      "observable_and_concept_abstract": false,
+      "unfocused_strategies": [],
+      "snapshot_focused_strategies": ["dependent.direct"]
+    },
+    "owned_context_session_socket_http_cleanup": "PASS",
+    "recorded_jvm_identities_independently_absent": 14,
+    "visible_windows_for_live_recorded_owned_identities": 0,
+    "unchanged_attested_backend_launch_inputs": 3905,
+    "supervisor_result_sha256": "9590c5558095a8590e94429ac5860d9c29c5e558308012dde055e82ec01a6729",
+    "detailed_result_sha256": "ac2e5320dc644ab9b732e2999e82aae1fc2d0f8c123064acda3f759a44e643dd",
+    "mutation_journal_sha256": "6fdd389b5c5b58a7dc2dddd9ab5de443a210d0c1b8e96927588e27235915548c"
   },
+  "admission_boundary_observed": "ORIGINAL_QUERY_EFFECTIVELY_ABSTRACT_REJECTION_CONSISTENT_WITH_EXISTING_GUARDS",
+  "non_scientific_product_defect_proven": false,
+  "next_scope_decision": "SEMANTIC_QUERY_CONTRACT_REVIEW_BEFORE_ANY_ACCEPTANCE_QUERY_OR_SEMANTIC_CHANGE",
   "genuine_numerical_readback": "NOT_VERIFIED",
   "automatic_hook_activity_delivery": "NOT_VERIFIED",
   "draft117_118_108_acceptance": "BLOCKED"
