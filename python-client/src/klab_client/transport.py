@@ -38,10 +38,10 @@ class Endpoint:
             raise ConfigurationError("Issued credential must be nonblank and single-line")
 
 
-class Transport:
-    def __init__(self, endpoints: dict[str, Endpoint], *, timeout: float = 30,
-                 poll_interval: float = .5, verify: bool | str = True,
-                 http_transport: httpx.BaseTransport | None = None):
+class _TransportPolicy:
+    """Shared configuration, credential redaction and wire-response interpretation."""
+
+    def __init__(self, endpoints, *, timeout=30, poll_interval=.5):
         if not all(math.isfinite(v) and v > 0 for v in (timeout, poll_interval)):
             raise ConfigurationError("Timeout and polling interval must be finite and positive")
         self.endpoints = dict(endpoints)
@@ -49,8 +49,6 @@ class Transport:
         self.poll_interval = poll_interval
         self.credential_resolver = None
         self.sensitive_values = ()
-        self._http = httpx.Client(timeout=timeout, verify=verify, transport=http_transport,
-                                  follow_redirects=False, trust_env=False)
 
     def redact(self, text: str) -> str:
         for value in self.sensitive_values:
@@ -73,28 +71,62 @@ class Transport:
             return self.credential_resolver(service, endpoint.url, deadline)
         return endpoint.credential
 
-    def request(self, service: str, method: str, route: str, *, scope: str | None = None,
-                service_id: str | None = None, json=None, text: str | None = None,
-                params=None, response: str = "json", ambiguous: bool = False,
-                 timeout: float | None = None, deadline: float | None = None,
-                 max_response_bytes: int | None = None):
+    def _headers(self, route, *, response="json", scope=None, service_id=None,
+                 text=None, max_response_bytes=None):
         if max_response_bytes is not None and (type(max_response_bytes) is not int or max_response_bytes <= 0):
             raise InvalidRequestError("Response byte budget must be a positive integer")
-        endpoint = self.endpoint(service)
         if not route.startswith("/") or ".." in route or route.startswith("//"):
             raise InvalidRequestError("Route must be a service-relative absolute path")
         headers = {"Accept": "text/plain, application/json;q=0.9" if response == "text" else "application/json"}
         if max_response_bytes is not None:
             headers["Accept-Encoding"] = "identity"
-        credential = self._credential(service, endpoint, deadline)
-        if credential:
-            headers["Authorization"] = credential
         if scope:
             headers["klab-scope"] = scope
         if service_id:
             headers["klab-service"] = service_id
         if text is not None:
             headers["Content-Type"] = "text/plain"
+        return headers
+
+    def _response(self, result, service, method, route, *, response="json", ambiguous=False):
+        if not 200 <= result.status_code < 300:
+            if ambiguous and result.status_code >= 500:
+                raise SubmissionOutcomeUnknown(f"{service} {method} HTTP {result.status_code}; "
+                    "server outcome unknown; inspect remote state before retrying: "
+                    + self.redact(result.text)[:2000])
+            error = {401: AuthenticationError, 403: AuthorizationError, 400: InvalidRequestError,
+                     404: MissingAssetError, 422: InvalidRequestError}.get(result.status_code, ServerError)
+            failure = error(f"{service} {method} HTTP {result.status_code}: "
+                            + self.redact(result.text)[:2000])
+            failure.status_code = result.status_code
+            raise failure
+        if response == "text":
+            return result.text
+        try:
+            return result.json()
+        except ValueError:
+            raise ProtocolError(f"{service} returned invalid JSON for {route}") from None
+
+
+class Transport(_TransportPolicy):
+    def __init__(self, endpoints: dict[str, Endpoint], *, timeout: float = 30,
+                 poll_interval: float = .5, verify: bool | str = True,
+                 http_transport: httpx.BaseTransport | None = None):
+        super().__init__(endpoints, timeout=timeout, poll_interval=poll_interval)
+        self._http = httpx.Client(timeout=timeout, verify=verify, transport=http_transport,
+                                  follow_redirects=False, trust_env=False)
+
+    def request(self, service: str, method: str, route: str, *, scope: str | None = None,
+                service_id: str | None = None, json=None, text: str | None = None,
+                params=None, response: str = "json", ambiguous: bool = False,
+                 timeout: float | None = None, deadline: float | None = None,
+                 max_response_bytes: int | None = None):
+        endpoint = self.endpoint(service)
+        headers = self._headers(route, response=response, scope=scope, service_id=service_id,
+                                text=text, max_response_bytes=max_response_bytes)
+        credential = self._credential(service, endpoint, deadline)
+        if credential:
+            headers["Authorization"] = credential
         try:
             if deadline is not None and time.monotonic() >= deadline:
                 raise TransportError("Request waiting deadline expired")
@@ -125,23 +157,7 @@ class Transport:
                         + ("; server outcome unknown; inspect remote state before retrying" if ambiguous else "")) from None
         except (ValueError, TypeError):
             raise InvalidRequestError("Request cannot be serialized as the checked transport DTO") from None
-        if not 200 <= result.status_code < 300:
-            if ambiguous and result.status_code >= 500:
-                raise SubmissionOutcomeUnknown(f"{service} {method} HTTP {result.status_code}; "
-                    "server outcome unknown; inspect remote state before retrying: "
-                    + self.redact(result.text)[:2000])
-            error = {401: AuthenticationError, 403: AuthorizationError, 400: InvalidRequestError,
-                     404: MissingAssetError, 422: InvalidRequestError}.get(result.status_code, ServerError)
-            failure = error(f"{service} {method} HTTP {result.status_code}: "
-                            + self.redact(result.text)[:2000])
-            failure.status_code = result.status_code
-            raise failure
-        if response == "text":
-            return result.text
-        try:
-            return result.json()
-        except ValueError:
-            raise ProtocolError(f"{service} returned invalid JSON for {route}") from None
+        return self._response(result, service, method, route, response=response, ambiguous=ambiguous)
 
     @contextmanager
     def stream(self, service, route, *, media_type, scope=None, service_id=None):

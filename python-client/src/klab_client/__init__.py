@@ -20,6 +20,7 @@ from klab_client.api.services import (
     RuntimeServiceImpl,
 )
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData
+from klab_client.async_client import AsyncClient, AsyncContext, AsyncSession, AsyncJob
 from klab_client.transport import Endpoint
 from klab_client.connection import Connection, SelectionPolicy, connect
 from klab_client.connection_models import (DeploymentProfile, ConnectionIdentity, ServiceReference,
@@ -45,6 +46,7 @@ from klab_client.requests import (ContextOptions, GridOptions, ObservationOption
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
 
 __all__ = [
+    "AsyncClient", "AsyncContext", "AsyncSession", "AsyncJob",
     "WaitCancelled",
     "Experiment", "OwnedContextPolicy", "ExperimentOutcome", "ExperimentBatch", "ExperimentRunner", "BatchInterrupted",
     "ChartNode", "ChartPort", "ChartLink", "FlowChartEvidence", "ActuatorEvidence", "DataflowEvidence",

@@ -1,5 +1,12 @@
 # Existing public scaffold method inventory
 
+**Bounded native async observation:** `AsyncClient`, `AsyncSession`, `AsyncContext`
+and `AsyncJob` expose the bounded observation workflow in
+[`native-async.md`](native-async.md). The historical APIs below remain synchronous;
+async file export, connection orchestration and saved-handle restoration are not
+claimed. Controlled real-Java acceptance and its limits are recorded with the
+feature; this is not full-roadmap or published-experiment acceptance.
+
 The four ABCs and their `*Impl` classes have the same operation status. Service
 implementations use a configured Client; no local fake success remains. Full
 routes, identity and DTO sources are in [contracts.md](contracts.md).

@@ -78,9 +78,13 @@ class Job:
 
     def status(self, *, timeout: float | None = None, _deadline: float | None = None) -> JobStatus:
         """Poll the server state; EMPTY is unavailable, not successful cancellation."""
-        payload = object_payload(self.client.transport.request(
+        payload = self.client.transport.request(
             self.service, "GET", f"/jobs/status/{self.id}", scope=scope_token(self.scope),
-            service_id=self.client.runtime_service_id, timeout=timeout, deadline=_deadline), "job status")
+            service_id=self.client.runtime_service_id, timeout=timeout, deadline=_deadline)
+        return self._decode_status(payload)
+
+    def _decode_status(self, payload):
+        payload = object_payload(payload, "job status")
         state = payload.get("status")
         if state not in {"WAITING", "STARTED", "CHANGED", "FINISHED", "ABORTED", "INTERRUPTED", "EMPTY"}:
             raise ProtocolError(f"Job {self.id} returned an unknown/null status")
@@ -88,6 +92,25 @@ class Job:
         if trace is not None and not isinstance(trace, str):
             raise ProtocolError("Job stackTrace must be text or null")
         return JobStatus(state, self.client.transport.redact(trace) if trace else None)
+
+    def _finished(self, status):
+        if status.status == "ABORTED":
+            raise JobFailedError(self.id, status.stack_trace or "Server computation failed")
+        if status.status == "INTERRUPTED":
+            raise JobCancelledError(self.id, "Server confirmed interruption")
+        if status.status == "EMPTY":
+            raise JobUnavailableError(self.id, "Job unavailable or expired; this is not confirmed cancellation")
+        return status.status == "FINISHED"
+
+    def _decode_result(self, payload):
+        payload = object_payload(payload, "job result")
+        try:
+            check_notifications(payload, self.client.transport.redact)
+        except ServerError as error:
+            raise JobFailedError(self.id, str(error)) from None
+        if payload.get("empty"):
+            raise JobFailedError(self.id, "Server returned an empty scientific result")
+        return self._decoder(payload) if self._decoder else payload
 
     def cancel(self) -> bool:
         accepted = self.client.transport.request(self.service, "GET", f"/jobs/cancel/{self.id}",
@@ -119,27 +142,14 @@ class Job:
         while True:
             try:
                 status = self.status(timeout=remaining(), _deadline=deadline)
-                if status.status == "FINISHED":
+                if self._finished(status):
                     payload = self.client.transport.request(
                         self.service, "GET", f"/jobs/retrieve/{self.id}",
                         scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
                         timeout=remaining(), deadline=deadline)
-                    payload = object_payload(payload, "job result")
-                    try:
-                        check_notifications(payload, self.client.transport.redact)
-                    except ServerError as error:
-                        raise JobFailedError(self.id, str(error)) from None
-                    if payload.get("empty"):
-                        raise JobFailedError(self.id, "Server returned an empty scientific result")
-                    result = self._decoder(payload) if self._decoder else payload
+                    result = self._decode_result(payload)
                     remaining()
                     return result
-                if status.status == "ABORTED":
-                    raise JobFailedError(self.id, status.stack_trace or "Server computation failed")
-                if status.status == "INTERRUPTED":
-                    raise JobCancelledError(self.id, "Server confirmed interruption")
-                if status.status == "EMPTY":
-                    raise JobUnavailableError(self.id, "Job unavailable or expired; this is not confirmed cancellation")
             except TransportError:
                 if deadline is not None and time.monotonic() >= deadline:
                     raise WaitTimeout(self) from None
@@ -169,15 +179,17 @@ class Session(SessionScopeImpl):
     def create_context(self, *, configuration: dict[str, Any] | None = None, name: str = "Python context",
                        options: ContextOptions | None = None) -> Context:
         """Create a remote context; default ONE_OFF is disposable on explicit release."""
+        request = self._context_request(configuration, name, options)
+        payload = self.client.transport.request(
+            "runtime", "POST", "/createContext", scope=self.id, json=request, ambiguous=True)
+        return self.client._context(payload, owned=True)
+
+    def _context_request(self, configuration, name, options):
         if options is not None:
             if not isinstance(options, ContextOptions) or configuration is not None or name != "Python context":
                 raise InvalidRequestError("Use ContextOptions or raw configuration/name, not both")
             configuration = options.to_wire()
-        payload = self.client.transport.request(
-            "runtime", "POST", "/createContext", scope=self.id,
-            json=self.client._scope_request({"name": name, "persistence": "ONE_OFF", **(configuration or {})}),
-            ambiguous=True)
-        return self.client._context(payload, owned=True)
+        return self.client._scope_request({"name": name, "persistence": "ONE_OFF", **(configuration or {})})
 
     def release(self) -> bool:
         """Explicitly close the remote session and its owned scopes."""
@@ -234,6 +246,14 @@ class Context(ContextScopeImpl):
         return self.client.runtime.release_context(self)
 
     def fetch_data(self, observation, offsets, *, curve, slice, semantics):
+        offsets, slice = self._read_spec(observation, offsets, curve, slice, semantics)
+        texts = tuple(self.client.transport.request(
+            "runtime", "POST", "/api/v1/observation/value", scope=scope_token(self),
+            json={"sourceId": observation.id, "slice": slice, "curve": curve, "geometry": None,
+                  "semantics": semantics, "offset": offset, "rate": None}, response="text") for offset in offsets)
+        return self._decode_read(observation, offsets, curve, slice, semantics, texts)
+
+    def _read_spec(self, observation, offsets, curve, slice, semantics):
         bound = observation._context
         if bound is None or bound.id != self.id:
             raise InvalidRequestError("Scientific reads require an observation bound to this runtime and context")
@@ -271,19 +291,19 @@ class Context(ContextScopeImpl):
                 not isinstance(semantics.get(k), str) for k in
                 ("observable", "unit", "range", "currency", "contextualDimensions"))):
             raise InvalidRequestError("Semantics requires explicit observable/unit/range/currency/contextualDimensions strings")
-        texts = tuple(self.client.transport.request(
-            "runtime", "POST", "/api/v1/observation/value", scope=scope_token(self),
-            json={"sourceId": source_id, "slice": slice, "curve": curve, "geometry": None,
-                  "semantics": semantics, "offset": offset, "rate": None}, response="text") for offset in offsets)
+        return offsets, slice
+
+    def _decode_read(self, observation, offsets, curve, slice, semantics, texts):
         artifact_type = observation.observable.raw.get("artifactType")
         values = tuple(decode_cell(text, artifact_type) for text in texts)
-        return ScientificData(source_id, semantics["observable"] if semantics else observation.observable.raw["urn"],
+        return ScientificData(observation.id, semantics["observable"] if semantics else observation.observable.raw["urn"],
                                semantics.get("unit") if semantics else observation.units,
                               observation.geometry, offsets, curve, slice, values, texts,
                               observation.observable.raw["urn"], observation.units)
 
 
 class Client:
+    _context_type = Context
     def __init__(self, runtime_url: str, credential: str | None = None, *,
                  reasoner: Endpoint | None = None, resources: Endpoint | None = None,
                  resolver: Endpoint | None = None, agent_name: str | None = None,
@@ -365,7 +385,7 @@ class Client:
         check_notifications(payload, self.transport.redact)
         if payload.get("empty"):
             raise ProtocolError("Server returned an empty context configuration")
-        return Context(self, payload, owned=owned)
+        return self._context_type(self, payload, owned=owned)
 
     def attach_context(self, id: str, *, configuration: dict[str, Any] | None = None) -> Context:
         """Attach to an authorized persisted/existing context without taking ownership."""
@@ -394,6 +414,15 @@ class Client:
             raise InvalidRequestError("Source context has a different known Runtime identity")
 
     def _submit(self, observation, scope, constraints=(), *, service="runtime", decoder=None, result_kind=None):
+        context, envelope = self._submission(observation, scope, constraints, service)
+        id = self.transport.request(service, "POST", "/api/v1/submit" if service == "runtime" else "/api/v1/resolve",
+                                     json=envelope, scope=scope_token(scope), service_id=self.runtime_service_id,
+                                     ambiguous=True)
+        return Job(self, id, context, service=service,
+                    decoder=decoder or (lambda p: observation_from_wire(p, context)),
+                    result_kind="observation" if decoder is None else result_kind)
+
+    def _submission(self, observation, scope, constraints, service):
         if service == "runtime" and not self.agent_name:
             raise ConfigurationError("Set agent_name/KLAB_AGENT_NAME to the authorized user's existing provenance agent name")
         token = scope_token(scope)
@@ -401,17 +430,12 @@ class Client:
             raise InvalidRequestError("Observation submission requires a context scope")
         if isinstance(scope, Context):
             self._validate_context_binding(scope)
-            context = Context(self, scope.configuration, owned=scope.owned, token=token)
+            context = self._context_type(self, scope.configuration, owned=scope.owned, token=token)
         else:
-            context = Context(self, {"id": ".".join(token.split("#")[0].split(".")[:2])}, token=token)
+            context = self._context_type(self, {"id": ".".join(token.split("#")[0].split(".")[:2])}, token=token)
         envelope = {"observation": observation_to_wire(observation),
                     "agentName": self.agent_name, "resolutionConstraints": list(constraints)}
-        id = self.transport.request(service, "POST", "/api/v1/submit" if service == "runtime" else "/api/v1/resolve",
-                                    json=envelope, scope=scope_token(scope), service_id=self.runtime_service_id,
-                                    ambiguous=True)
-        return Job(self, id, context, service=service,
-                    decoder=decoder or (lambda p: observation_from_wire(p, context)),
-                    result_kind="observation" if decoder is None else result_kind)
+        return context, envelope
 
     def restore_handle(self, reference, *, allow_relocation=False):
         """Explicit capability verification/attach; never submit or create replacement work."""
