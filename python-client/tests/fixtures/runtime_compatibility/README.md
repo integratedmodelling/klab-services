@@ -71,10 +71,19 @@ Exit3 means failure/UNKNOWN; retain the original and any partial output.
    original/v1/v2 comparison confirms original FAIL/FAIL, v1 PASS/FAIL and v2
    PASS/PASS for declaration/capture identity respectively. All three owned JVMs
    exited; none of this is operational admission.
-4. **Operational acceptance:** registered provider descriptors, actual Reasoner
-   operational status, real Runtime-created Jobs, unchanged numerical readback,
-   context isolation and independent cleanup are still required. Offline PASS is
-   explicitly not an operational claim.
+4. **Operational acceptance:** v2 live attempt5 passed the all-services-operational,
+   semantic-search and two ordinary-user readiness gates. It created two contexts
+   and obtained two observation Job submission receipts. This is **not successful
+   scientific execution**: Resolver logged region `NO_MODEL` and elevation `FAILED`;
+   no numerical readback or genuine activity-delivery acceptance was recorded.
+   Resources also logged a Jackson model-transport serialization failure, whose
+   exact offending field remains unproven. A final publisher-socket cleanup
+   assertion masked the original exception. Both context releases and session
+   release returned true and the context list was empty, but publisher socket
+   absence failed. All14 recorded JVM identities are independently absent, with no
+   corresponding visible windows. Failed live evidence/receipts remain retained;
+   no automatic mutation replay occurred. Actual queue/socket cleanup, numerical
+   execution and notification delivery remain acceptance gates; no merge.
 
 Compile the validator against source-matched Resources service classes and that
 service's declared runtime dependency closure; do not mix historical snapshot

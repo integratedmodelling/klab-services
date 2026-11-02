@@ -1,7 +1,46 @@
 {
-  "status": "OFFLINE_COMPATIBILITY_PASS_OPERATIONAL_ACCEPTANCE_PENDING",
+  "status": "OFFLINE_COMPATIBILITY_PASS_LIVE_READINESS_PASS_JOB_AND_CLEANUP_ACCEPTANCE_FAIL",
   "scope": "Authorized synthetic fixture compatibility only; no production worldview or algorithm changes",
   "current_contract_version": 2,
+  "current_executable_candidate": "a12c2b9653c4112bfa0053ec32363f8109221b4f",
+  "current_software_checks": {
+    "offline_python_tests_passed": 2074,
+    "coverage_gates_passed": 7,
+    "lint": "PASS",
+    "wheel_and_sdist": "PASS",
+    "sdist_preparation_tool_contract_and_java_validator_payload": "PASS",
+    "empty_inventory_and_changed_core_negative_probes": "REJECTED_WITHOUT_SUCCESS_RESULT",
+    "negative_probe_JVMs_absent": 2,
+    "review": "author-conducted, not independent maintainer approval"
+  },
+  "preserved_live_attempt5": {
+    "status": "FAIL",
+    "readiness_status": "PASS",
+    "all_services_operational_and_semantic_search_capability_observed": true,
+    "ordinary_users_verified": 2,
+    "administrative_component_import_jobs_confirmed": 6,
+    "owned_resources_restarts": 1,
+    "contexts_confirmed": 2,
+    "observation_submission_receipts_confirmed": [1, 2],
+    "legacy_summary_observation_jobs_field": 0,
+    "summary_field_limit": "Do not interpret the legacy zero field as zero submissions: the mutation journal and HTTP events confirm two accepted submit receipts and retrieve calls",
+    "resolver_logged_outcomes": {"region": "NO_MODEL", "elevation": "FAILED"},
+    "numeric_readback": "NOT_VERIFIED",
+    "genuine_runtime_activity_delivery": "NOT_VERIFIED",
+    "context_release_receipts": [true, true],
+    "session_release_receipt": true,
+    "runtime_context_list_after_release": "EMPTY",
+    "publisher_socket_absence_after_context_release": "FAIL",
+    "masking_limit": "The final cleanup assertion replaced an earlier exception; exact primary exception was not retained and must not be guessed",
+    "resources_log_observation": "HttpMessageNotWritableException caused by JsonMappingException in existing PolymorphicSerializer; exact offending field/root cause remains unproven",
+    "automatic_mutation_replays": 0,
+    "recorded_owned_JVMs_independently_absent": 14,
+    "visible_windows_for_recorded_PIDs": 0,
+    "unrelated_services_or_windows_changed": false,
+    "raw_result_sha256": "e1b0e77be3841a5f34c2da11d0a7a2af09ac8144e21cc7f552df23fe58c8a1f6",
+    "raw_events_sha256": "326865132d08692190c1eca0c804a5b759b0592fe28d8191ec70cf76cc1143d5",
+    "mutation_journal_sha256": "22350e38a3e9cb78cae9ca1709bb505f53077ee00a23f7e24cf502950f67f272"
+  },
   "v2_byte_preparation": {
     "files": 243,
     "changed_files": 4,
@@ -75,9 +114,11 @@
     "compile_correction": "Use current native LanguageAdapter/WorldviewValidationScope package and fully qualify notifications hidden by inherited syntax types; no platform implementation edits"
   },
   "remaining": [
-    "Full Python offline regression, coverage gates, lint/build and hosted final-head checks",
-    "Operational provider/worldview admission and genuine two-Job numerical and notification acceptance in fresh owned services",
-    "Independent owned scope/queue/socket/process cleanup and local review before normal merge"
+    "Hosted final-head checks and evidence reconciliation; software implementation is not acceptance completion",
+    "Read-only reproduction of Resources model transport serialization failure; separate authorization required for a new platform transport prerequisite PR",
+    "Correct product publisher lifecycle within authorized draft117 and retain both primary and cleanup failures in any future harness",
+    "Only after identified corrections and review: fresh bounded genuine-Job numerical and notification acceptance, with no replay of attempt5 submissions",
+    "Independent live queue/socket cleanup acceptance remains failed or unverified despite all recorded processes now being absent; no merge"
   ],
   "nonclaims": [
     "Not a scientific correction or migration of shared Decision, social, stream or network concepts",
