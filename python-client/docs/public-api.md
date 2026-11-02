@@ -69,6 +69,11 @@ UI emulation and Java API parity. These are explicit boundaries, not empty succe
 
 ## Connection orchestration
 
+Typed recorded graph pages: `GraphBrowser` and `GraphPage`, reusing immutable
+provenance node/link DTOs. Explicit synchronous one-hop pages with membership
+checks, no automatic crawling or revision consistency. See
+[graph-browsing.md](graph-browsing.md) for supported classes and acceptance limits.
+
 Indexed tabular views: `ScientificDataOrigin`, `to_dataframe` and
 `ScientificData.to_dataframe`, with optional `[tabular]` dependencies. New indexed
 reads retain declared primitive/contextualization and origin metadata; unknown
