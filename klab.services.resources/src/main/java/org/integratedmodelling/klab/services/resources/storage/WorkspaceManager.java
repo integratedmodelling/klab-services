@@ -614,7 +614,7 @@ public class WorkspaceManager {
    * @param projectName
    * @return
    */
-  public ResourceSet createProject(String projectName, String workspaceName, UserScope userScope) {
+  public synchronized ResourceSet createProject(String projectName, String workspaceName, UserScope userScope) {
 
     File workspace = BaseService.getConfigurationSubdirectory(startupOptions, "workspaces");
     File projectHome = new File(workspace + File.separator + projectName);
@@ -688,7 +688,7 @@ public class WorkspaceManager {
     return null;
   }
 
-  public void notifyNewWorkspace(ResourceInfo resourceInfo) {
+  public synchronized void notifyNewWorkspace(ResourceInfo resourceInfo) {
     var workspace = new WorkspaceImpl();
     workspace.setUrn(resourceInfo.getUrn());
     workspace.setPrivileges(resourceInfo.getRights());
@@ -696,6 +696,42 @@ public class WorkspaceManager {
     this.workspaces.put(resourceInfo.getUrn(), workspace);
     this.configuration.getWorkspaces().put(resourceInfo.getUrn(), new LinkedHashSet<>());
     this.saveConfiguration();
+  }
+
+  /** Remove descriptor metadata only. Never deletes project files or cascades into a workspace.
+   * Configuration and catalog are separate stores: compensate ordinary failures and propagate
+   * any uncertainty; this is not a cross-store crash-atomic transaction or a replay guarantee. */
+  public synchronized boolean removeEmptyWorkspace(String urn) {
+    if (urn == null || Workspace.EXTERNAL_WORKSPACE_URN.equals(urn)) return false;
+    var workspace = workspaces.get(urn);
+    var members = configuration.getWorkspaces().get(urn);
+    var info = resourcesKbox.getStatus(urn, null);
+    if (workspace == null || members == null || !members.isEmpty() || !workspace.getProjects().isEmpty()
+        || info == null || info.getKnowledgeClass() != KlabAsset.KnowledgeClass.WORKSPACE
+        || projectDescriptors.values().stream().anyMatch(project -> Objects.equals(project.workspace, urn))) return false;
+    try {
+      if (!resourcesKbox.deleteMetadata(urn)) return false;
+      configuration.getWorkspaces().remove(urn);
+      workspaces.remove(urn);
+      saveConfiguration();
+      return true;
+    } catch (RuntimeException failure) {
+      configuration.getWorkspaces().put(urn, members);
+      workspaces.put(urn, workspace);
+      try {
+        if (!resourcesKbox.putStatus(info)) {
+          failure.addSuppressed(new IllegalStateException("Workspace catalog restoration failed"));
+        }
+      } catch (RuntimeException restore) {
+        if (restore != failure) failure.addSuppressed(restore);
+      }
+      try {
+        saveConfiguration();
+      } catch (RuntimeException restore) {
+        if (restore != failure) failure.addSuppressed(restore);
+      }
+      throw failure;
+    }
   }
 
   public List<String> dependents(String namespaceId) {
@@ -4156,7 +4192,7 @@ public class WorkspaceManager {
     return this.observableParser.parseObservable(observableDefinition);
   }
 
-  public boolean removeProject(String projectName) {
+  public synchronized boolean removeProject(String projectName) {
     ResourcesConfiguration.ProjectConfiguration configuration =
         this.configuration.getProjectConfiguration().get(projectName);
     var project = this.projectDescriptors.remove(projectName);
@@ -4367,7 +4403,7 @@ public class WorkspaceManager {
     }
   }
 
-  public WorkspaceImpl getWorkspace(String workspaceName) {
+  public synchronized WorkspaceImpl getWorkspace(String workspaceName) {
     var info = resourcesKbox.getStatus(workspaceName, null);
     if (info != null && info.getKnowledgeClass() == KlabAsset.KnowledgeClass.WORKSPACE) {
       refreshWorkspaceSettings(info);
@@ -4375,7 +4411,7 @@ public class WorkspaceManager {
     return updateStatus(this.workspaces.get(workspaceName));
   }
 
-  public Collection<Workspace> getWorkspaces() {
+  public synchronized Collection<Workspace> getWorkspaces() {
     List<Workspace> ret = new ArrayList<>();
     for (var wsId : configuration.getWorkspaces().keySet()) {
       var workspace = getWorkspace(wsId);
@@ -4526,7 +4562,7 @@ public class WorkspaceManager {
     return _worldview;
   }
 
-  private void saveConfiguration() {
+  void saveConfiguration() {
     File config = BaseService.getFileInConfigurationDirectory(startupOptions, "resources.yaml");
     org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
   }

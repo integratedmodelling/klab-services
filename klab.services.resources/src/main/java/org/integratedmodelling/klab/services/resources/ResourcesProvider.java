@@ -33,6 +33,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -969,7 +970,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return collectProject(project, CRUDOperation.CREATE, workspaceName, scope);
   }
 
-  public boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
+  public synchronized boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
     if (scope == null || scope.getUser() == null || scope.getUser().isAnonymous()
         || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) return false;
     /*
@@ -1002,7 +1003,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return true;
   }
 
-  public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
+  public synchronized ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
     if (scope == null || !isAllowed(CRUDOperation.CREATE, scope) && !isAllowed(CRUDOperation.ADMINISTER, scope))
       throw new KlabResourceAccessException("Creating projects requires CREATE");
 
@@ -1145,25 +1146,31 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         ResourceSet.empty(Notification.info("Project " + projectName + " was not deleted")));
   }
 
-  public List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {
-    Workspace workspace = workspaceManager.getWorkspace(workspaceName);
-    if (workspace == null) {
+  public synchronized List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {
+    var info = resourcesKbox.getStatus(workspaceName, null);
+    if (info == null) {
       return List.of(
           ResourceSet.empty(Notification.info("Workspace " + workspaceName + " was not deleted")));
     }
-    List<ResourceSet> changes = new ArrayList<>();
-    for (Project project : workspace.getProjects()) {
-      changes.addAll(deleteProject(project.getUrn(), scope));
+    if (!mayDeleteWorkspace(info, scope)) {
+      throw new KlabAuthorizationException("Workspace deletion requires its owner or administrator with DELETE permission");
+    }
+    // Deliberately do not cascade: a failed workspace deletion must not erase a prefix of projects.
+    if (!workspaceManager.removeEmptyWorkspace(workspaceName)) {
+      return List.of(ResourceSet.empty(Notification.error("Workspace was not deleted: it must be a consistent, empty local workspace")));
     }
     invalidateCaches();
-    // TODO RESOURCES-CRUD WorkspaceManager needs an atomic removeWorkspace operation that updates
-    // its in-memory index, persisted configuration and ResourceInfo catalog. Until then report the
-    // partial project deletion explicitly instead of claiming the workspace itself was removed.
-    changes.add(
-        ResourceSet.empty(
-            Notification.error(
-                "TO BE IMPLEMENTED: removal of workspace descriptor " + workspaceName)));
-    return changes;
+    return List.of(workspaceChange(workspaceName, CRUDOperation.DELETE));
+  }
+
+  boolean mayDeleteWorkspace(ResourceInfo info, UserScope scope) {
+    boolean administrator = scope != null && isAllowed(CRUDOperation.ADMINISTER, scope);
+    return allowsWorkspaceDelete(info, scope,
+        scope != null && isAllowed(CRUDOperation.DELETE, scope), administrator);
+  }
+
+  static boolean allowsWorkspaceDelete(ResourceInfo info, UserScope scope, boolean delete, boolean administrator) {
+    return (delete || administrator) && allowsWorkspaceEdit(info, scope, administrator);
   }
 
   public Collection<Workspace> listWorkspaces() {
