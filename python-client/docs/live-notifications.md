@@ -33,6 +33,8 @@ with ActivityNotifications(context, broker, timeout=5, max_events=128) as events
   `allow_insecure_loopback=True` and localhost/a literal loopback address.
 - The Runtime context's exact exchange must exist. Declaration is **passive**;
   this API never creates, modifies or deletes the shared exchange or remote scope.
+  Its type is explicitly `fanout`: Qpid checks type even on passive declaration;
+  Pika's default `direct` is incompatible with the actual Java publisher path.
 - HTTP context access is not broker authorization. The operator must provision ACLs
   that allow reading/binding only approved exchanges, deny publishing to receivers,
   and restrict temporary queue ownership. A client cannot retrofit those policies

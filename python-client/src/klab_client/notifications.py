@@ -140,7 +140,7 @@ class ActivityNotifications:
             self._connection = pika.BlockingConnection(parameters)
             self._channel = self._connection.channel()
             # Inspect only; never create/alter/delete the Runtime's shared exchange.
-            self._channel.exchange_declare(exchange=self.context.id, passive=True)
+            self._channel.exchange_declare(exchange=self.context.id, exchange_type="fanout", passive=True)
             declared = self._channel.queue_declare(queue="", durable=False, exclusive=True, auto_delete=True,
                 arguments={"qpid.max_count": self.max_queue_messages,
                            "qpid.max_size": min(self.max_total_bytes, self.max_queue_messages * self.max_message_bytes),

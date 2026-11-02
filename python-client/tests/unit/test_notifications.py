@@ -109,7 +109,7 @@ def test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints(setup):
     assert [name for name, _ in driver.calls].count("ack") == 2
     args = dict(driver.calls)
     assert args["connect"]["connection_attempts"] == 1 and args["connect"]["credentials"] == ("fixture-reader", "broker-secret")
-    assert args["exchange"] == {"exchange": "s.c", "passive": True}
+    assert args["exchange"] == {"exchange": "s.c", "exchange_type": "fanout", "passive": True}
     assert args["declare"]["exclusive"] and not args["declare"]["durable"]
     assert args["declare"]["arguments"]["qpid.policy_type"] == "reject"
     assert args["qos"] == {"prefetch_count": 1}
