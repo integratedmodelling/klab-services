@@ -21,4 +21,4 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Test source-matched scope and notification routing regressions
-        run: ./mvnw -B -pl klab.services.runtime -am -Dtest=ContextActivityHintScopeTest,ContextActivityNotificationsTest -Dsurefire.failIfNoSpecifiedTests=false test
+        run: ./mvnw -B -pl klab.services.runtime -am -Pnotification-coverage -Dtest=ContextActivityHintScopeTest,ContextActivityNotificationsTest -Dsurefire.failIfNoSpecifiedTests=false verify

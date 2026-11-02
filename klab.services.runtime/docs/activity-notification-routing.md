@@ -5,8 +5,10 @@ This opt-in prerequisite adds a **separate sender-only connection** for root-con
 Runtime's existing user/session/context federation messaging, widen its broker
 permissions, add an HTTP endpoint, or change a running deployment.
 
-Implementation and acceptance are separate. Source compilation passed; regression
-and actual Job/broker acceptance are in progress. **Do not treat this guide as a
+Implementation and acceptance are separate. Source compilation and43 focused
+regressions pass; the new publisher helper and transport worker have100% unexcluded
+line/branch coverage. Enforced coverage-profile packaging, broader regressions and
+actual Job/broker acceptance are in progress. **Do not treat this guide as a
 completed deployment or merge approval.** Python notification PR108 remains draft.
 
 ## Operator contract

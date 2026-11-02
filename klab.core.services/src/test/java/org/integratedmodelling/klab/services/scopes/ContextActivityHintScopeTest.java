@@ -44,4 +44,18 @@ class ContextActivityHintScopeTest {
     try { root.close(); } catch (RuntimeException expected) {}
     verify(sink).close();
   }
+
+  @Test void additionalHintSinkDoesNotReplaceTheInheritedFederationChannel() throws Exception {
+    var root = scope();
+    var channel = mock(org.integratedmodelling.common.authentication.scope.AMQPChannel.class);
+    var field = org.integratedmodelling.common.authentication.scope.MessagingChannelImpl.class.getDeclaredField("amqpChannel");
+    field.setAccessible(true); field.set(root, channel);
+    var sink = mock(ServiceContextScope.ActivityNotificationSink.class); root.installActivityNotifications(sink);
+    var derived = new ServiceContextScope(root);
+    assertSame(channel, field.get(root)); assertSame(channel, field.get(derived));
+    derived.send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, new ActivityImpl());
+    verify(sink).accept(any(Message.class));
+    assertSame(channel, field.get(root)); assertSame(channel, field.get(derived));
+    verify(channel, never()).close(); verify(channel, never()).disconnect();
+  }
 }
