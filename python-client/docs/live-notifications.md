@@ -120,7 +120,22 @@ Runtime publisher URI or change existing local/guest federation defaults. Curren
 receiver changes require exact-context host selection and add explicit handling
 of Pika's connection-level access-denied exception;76 focused mocked cases pass
 with100% unexcluded lines/branches. Actual receiver/native Java and Runtime activity,
-TLS, overflow and disconnect/cleanup integration remain required before merge.
+TLS, overflow and disconnect/cleanup integration were subsequently verified in
+owned fixtures: see [current isolated acceptance](results/notifications-isolated-20261102.json).
+Native Java `AMQPChannel`/`Message` started/finished hints, duplicates, Python
+authorization denial, malformed/oversized rejection, event-budget closure,
+independent queue absence and terminal broker loss pass. A separate real TLS socket
+fixture verifies trusted delivery, untrusted-chain and hostname rejection, cleanup,
+and one-message queue overflow rejection with broker reply506. An initial failed
+overflow-signaling fixture is retained. Continuity/overflow remain `UNKNOWN`.
+
+The current candidate also passes2117 offline tests, all seven coverage gates,
+lint and wheel/sdist builds. These are not Runtime acceptance. The inspected
+Runtime path copies parent messaging setup into contexts and initializes session
+messaging from a federation-wide broker URI, rather than selecting a separately
+approved per-context publisher origin. A separately scoped Runtime-routing
+prerequisite and actual Runtime activity/Job acceptance are still required; do not
+widen the broker policy or inject a fixture channel and call that path verified.
 
 Need an owned ACL-controlled actual Qpid broker plus pinned Java publisher/Runtime
 evidence, correct/wrong principals and contexts, publish denial, socket disconnect,
