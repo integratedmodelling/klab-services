@@ -1,0 +1,57 @@
+{
+  "status": "OFFLINE_COMPATIBILITY_PASS_OPERATIONAL_ACCEPTANCE_PENDING",
+  "scope": "Authorized synthetic fixture compatibility only; no production worldview or algorithm changes",
+  "byte_preparation": {
+    "files": 243,
+    "changed_files": 3,
+    "replacement_spans": 4,
+    "unchanged_files": 240,
+    "input_tree_sha256": "b93b26962aa533659c2bb7dc3d365e7bd2cf32bb2cf99662772aad506ab0dd5f",
+    "output_tree_sha256": "ed1be5381317f2ceeb93f8dd0e5e20ce21577c28cfe43fff60d44cd56bc0db57",
+    "receipt_sha256": "c1403af4b1408fcfe39017120458830d436bbb665536e60fe383edc696b8bc49",
+    "original_source_and_all_oracle_model_bytes_preserved": true,
+    "semantic_admission_from_byte_hashes": "UNKNOWN"
+  },
+  "software_tests": {
+    "python_focused_cases_passed": 33,
+    "tool_unexcluded_line_branch_coverage_percent": 100,
+    "native_source_cases_passed": 21,
+    "new_native_original_variant_pairs": 4,
+    "native_parser_or_validator_implementation_changed": false
+  },
+  "offline_native_comparison": {
+    "backend_executable_source_candidate": "3d876834073ac26567b25e91867e5ed5166445b6",
+    "original": {
+      "exit": 3,
+      "declaration_validation": "FAIL",
+      "distinct_diagnostics": 4,
+      "error_occurrences_across_document_and_registry_checks": 7,
+      "raw_result_sha256": "a1a0c5a437bbdcecd7441e45844125624063464763a30d837d1162952bc61724"
+    },
+    "variant": {
+      "exit": 0,
+      "declaration_validation": "PASS",
+      "ontologies": 26,
+      "strategies": 2,
+      "namespaces": 3,
+      "error_diagnostics": 0,
+      "raw_result_sha256": "ce8216ab000c42016d34d7d6534611b9539f7df20850328b7fedff777b80653b"
+    },
+    "runtime_operational": "UNKNOWN",
+    "services_started": 0,
+    "scientific_jobs": 0,
+    "both_owned_validator_JVMs_absent": true,
+    "initial_old_API_helper_compile_failure_preserved": true,
+    "compile_correction": "Use current native LanguageAdapter/WorldviewValidationScope package and fully qualify notifications hidden by inherited syntax types; no platform implementation edits"
+  },
+  "remaining": [
+    "Full Python offline regression, coverage gates, lint/build and hosted final-head checks",
+    "Operational provider/worldview admission and genuine two-Job numerical and notification acceptance in fresh owned services",
+    "Independent owned scope/queue/socket/process cleanup and local review before normal merge"
+  ],
+  "nonclaims": [
+    "Not a scientific correction or migration of shared Decision, social, stream or network concepts",
+    "Not original-study reproduction, taxonomy resolution, provider accuracy, raster redistribution or deployment authorization",
+    "Byte and offline declaration PASS do not complete Runtime operational or genuine Job acceptance"
+  ]
+}

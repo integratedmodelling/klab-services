@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "scope": "synthetic-fixture-only; not production worldview migration or scientific reproduction",
+  "input_files": 243,
+  "input_bytes": 3832217,
+  "input_tree_sha256": "b93b26962aa533659c2bb7dc3d365e7bd2cf32bb2cf99662772aad506ab0dd5f",
+  "oracle": {
+    "calculation": "100 + 93/4 metres",
+    "expected_decimal": "123.25",
+    "cells": 20,
+    "missing_cells": 0,
+    "reference_provenance_commit": "cd09ab1da1580b7e3c39987b9d3b1e26d1ac60b3",
+    "unchanged_files": {
+      "python.fixture/META-INF/manifest.json": "97c34e1fb49c0ef35084cb047542f5857c072d013a1a84828c437d3ab52ffd02",
+      "python.fixture/src/python.fixture.kim": "9bc51d4fa89c20136fe6b0951a4840120dce0da948156a08203868fb1b92db70",
+      "python.fixture/src/python.lexical.kim": "eabc48ece18ee9d463734514e64cd66e58bf0adaab2bff18f8de6cde2217d194",
+      "python.fixture/src/python.scenario.kim": "1eefb808116d3b1db866211bd2279ab07c97b0eef1d310442a3bf8c4afeb0859"
+    }
+  },
+  "changes": [
+    {
+      "path": "imod/src/agency.kwv",
+      "input_sha256": "d78b3a5e23d4dd89332caefdd2ece331ef08c2040297e4e5d267d958fe713866",
+      "output_sha256": "6c5c0028fb7197b9c89009692319c85155c97014d5f72fdcab3e434477680aa7",
+      "reason": "Fixture-only choice: a process depends on an agent; do not encode cross-family observational containment. Not a scientific correction to the shared Decision concept.",
+      "replacements": [
+        {"old": "is agency:Intentional physical:Activity within imod:Agent", "new": "is agency:Intentional physical:Activity of imod:Agent"}
+      ]
+    },
+    {
+      "path": "imod/src/life.kwv",
+      "input_sha256": "c300ba98a7f39363abb209c1d41c466b5c9170a1664fd30cc79e335fa354274e",
+      "output_sha256": "6e10df93ef6838d9948c2259172429d787cede4c38c7c636f896c45ca8d76a1d",
+      "reason": "Fixture-only explicit STRUCTURAL/BOND axes. This synthetic choice is not evidence that every real social connection is symmetric.",
+      "replacements": [
+        {"old": "structural relationship SocialConnection;", "new": "structural bond SocialConnection;"}
+      ]
+    },
+    {
+      "path": "imod/src/earth.kwv",
+      "input_sha256": "f11d7c19969c38d61c007d90f211f41693e4d790f1c54177f22f2fcd6fb5d032",
+      "output_sha256": "a05fef9cd32d1d0c6dda48f56576b3309891d3a01810179aac2e6dc163b207e5",
+      "reason": "Fixture-only FUNCTIONAL/DIRECTED axes and unambiguous configuration-parent clause order, as already exercised by native parser regression tests. No numerical model or interpolation change.",
+      "replacements": [
+        {"old": "functional relationship StreamConnection", "new": "functional directed relationship StreamConnection"},
+        {"old": "\tapplies to earth:Region\r\n\tis imod:Network of earth:StreamConnection;", "new": "\tis imod:Network of earth:StreamConnection\r\n\tapplies to earth:Region;"}
+      ]
+    }
+  ]
+}

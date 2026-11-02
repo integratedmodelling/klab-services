@@ -1,0 +1,39 @@
+name: Synthetic Runtime fixture native semantic checks
+
+on:
+  push:
+    paths: ['python-client/tests/fixtures/runtime_compatibility/**', 'klab.services.resources/src/test/java/**/RuntimeFixtureCompatibilitySourceTest.java', '.github/workflows/runtime-fixture.yml']
+  pull_request:
+    paths: ['python-client/tests/fixtures/runtime_compatibility/**', 'klab.services.resources/src/test/java/**/RuntimeFixtureCompatibilitySourceTest.java', '.github/workflows/runtime-fixture.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  native-fixture-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Keep original declaration negatives and verify explicit synthetic variants
+        run: ./mvnw -B -pl klab.services.resources -am -Dtest=RuntimeFixtureCompatibilitySourceTest,RelationshipAxesSourceTest,ObservationalContainmentSourceTest -Dsurefire.failIfNoSpecifiedTests=false test
+      - name: Resolve the declared offline validator dependencies
+        run: ./mvnw -B -pl klab.services.resources -am org.apache.maven.plugins:maven-dependency-plugin:3.6.0:build-classpath -DincludeScope=runtime -Dmdep.outputFile=target/fixture-validation-classpath.txt
+      - name: Compile the read-only full-fixture native validator
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          modules = ['klab.core.api', 'klab.core.common', 'klab.core.services', 'klab.services.reasoner', 'klab.services.resolver', 'klab.services.resources']
+          cp = os.pathsep.join(str(Path(module) / 'target/classes') for module in modules)
+          cp += os.pathsep + Path('klab.services.resources/target/fixture-validation-classpath.txt').read_text().strip()
+          output = Path('klab.services.resources/target/fixture-validator-classes')
+          output.mkdir()
+          subprocess.run(['javac', '-proc:none', '-cp', cp, '-d', str(output), 'python-client/tests/fixtures/runtime_compatibility/ValidateRuntimeFixture.java'], check=True)
+          PY
