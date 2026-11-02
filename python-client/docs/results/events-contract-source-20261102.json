@@ -1,0 +1,32 @@
+{
+  "kind": "general-context-events-source-audit",
+  "status": "BLOCKED",
+  "source_commit": "bb4f62ce01bb41d93f506ee34c19687b401d8640",
+  "hash_encoding": "SHA-256 of UTF-8 source bytes with CRLF normalized to LF",
+  "implementation_complete": false,
+  "acceptance_complete": false,
+  "live_event_run": false,
+  "production_changes": false,
+  "files": [
+    {"path": "klab.core.common/src/main/java/org/integratedmodelling/common/authentication/scope/AMQPChannel.java", "sha256": "10f04435932ddc7c6810a5efcb8cbbeb57031fffbda7594cfde89fad1d8e0ebf"},
+    {"path": "klab.core.services/src/main/java/org/integratedmodelling/klab/services/application/controllers/WebsocketsBus.java", "sha256": "7a1e1bcee29369927521b6abad04fa0f62b93545b765fe89db585fe56fea3f9f"},
+    {"path": "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DigitalTwinImpl.java", "sha256": "bde86df6603dcc000e0a850bb3d806b62d07ad11653d31271371074b06e46bda"},
+    {"path": "klab.services.runtime.server/src/main/java/org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController.java", "sha256": "eef2aeb0faed9f3e9f8ce79c40a09125a1138024affd7dc25fd6b259aade0537"},
+    {"path": "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/digitaltwin/ClientKnowledgeGraph.java", "sha256": "235c2323440b4d2448a01f9e9c99a0a372959df4bc8725fafc4b6502d20a0ecb"},
+    {"path": "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/runtime/Message.java", "sha256": "46e1b52f1bb2b351f8e5e510de328bf6141c0decae20ee32a12e49d2f32dab48"},
+    {"path": "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/neo4j/Neo4jQueryCompiler.java", "sha256": "9053d0bd289900fed137ae8218bdcf7fcdfccf60a66c121a6361ff022be0183d"},
+    {"path": "docs/DISTRIBUTED_TWINS.md", "sha256": "32b67671a0c5942ab464d7ea7a94794ec888b60203da2214e7a336358d572d6c"}
+  ],
+  "observations": [
+    "General AMQP receiver declares transient queue and uses auto acknowledgement",
+    "Memory STOMP broker configuration is not a durable context replay contract",
+    "Commit descriptor cache is bounded to 200 entries and ten minutes since access",
+    "Authenticated commit lookup retrieves one cache entry, not a general replay feed",
+    "Deterministic graph-page ordering is not snapshot-watermark consistency"
+  ],
+  "decision_required": [
+    "Approve narrower best-effort live-notification scope with loss/reconnect limits and safe broker authentication",
+    "Or authorize separately specified production replay, snapshot/watermark and lifecycle contracts",
+    "Or explicitly defer events and authorize a sequencing exception"
+  ]
+}
