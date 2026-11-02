@@ -97,10 +97,11 @@ def _prepare(source, destination, contract):
     output = _collect(destination, len(files))
     if output != files or _collect(source, len(original)) != original:
         raise ValueError("Fixture bytes changed during preparation; output is not accepted")
-    receipt = {"kind": "synthetic-runtime-fixture-byte-preservation", "version": 1,
+    receipt = {"kind": "synthetic-runtime-fixture-byte-preservation", "version": contract["version"],
         "status": "PREPARED_NOT_SEMANTICALLY_ADMITTED", "input_tree_sha256": _tree_hash(original),
         "output_tree_sha256": _tree_hash(output), "files": len(files), "changed_files": changed,
         "unchanged_files": len(files) - len(changed), "oracle": contract["oracle"],
+        "required_backend_core": contract["backend_core_ontology"],
         "source_unchanged": True, "services_started": 0, "scientific_jobs": 0,
         "production_worldview_migration": False, "semantic_admission": "UNKNOWN"}
     with (destination / RECEIPT).open("x", encoding="utf-8") as stream:

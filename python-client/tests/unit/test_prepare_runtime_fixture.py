@@ -29,7 +29,8 @@ def fixture(tmp_path):
         changes.append({"path": name, "input_sha256": module._sha(files[name]),
                         "output_sha256": module._sha(files[name].replace(old.encode(), new.encode())),
                         "replacements": [{"old": old, "new": new}]})
-    contract = {"input_files": len(files), "input_bytes": sum(map(len, files.values())),
+    contract = {"version": 2, "backend_core_ontology": {"version_iri": "fixture-core", "sha256": "fixture-hash"},
+                "input_files": len(files), "input_bytes": sum(map(len, files.values())),
                 "input_tree_sha256": module._tree_hash(files), "changes": changes,
                 "oracle": {"expected_decimal": "123.25", "cells": 20,
                            "unchanged_files": {"python.fixture/model.kim": module._sha(files["python.fixture/model.kim"])}}}
@@ -52,11 +53,14 @@ def test_new_copy_preserves_sources_and_oracle_and_never_claims_admission(fixtur
         module._prepare(source, destination, contract)
 
 
-def test_default_contract_has_only_three_files_four_edits_and_frozen_oracle():
+def test_default_contract_has_only_four_files_five_edits_and_frozen_oracle():
     contract = json.loads(module.CONTRACT.read_text())
     assert contract["input_files"] == 243 and contract["input_bytes"] == 3832217
-    assert len(contract["changes"]) == 3
-    assert sum(len(c["replacements"]) for c in contract["changes"]) == 4
+    assert contract["version"] == 2
+    assert len(contract["changes"]) == 4
+    assert sum(len(c["replacements"]) for c in contract["changes"]) == 5
+    assert contract["backend_core_ontology"]["version_iri"] == "http://integratedmodelling.org/odo/0.2.0"
+    assert contract["backend_core_ontology"]["sha256"] == "496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57"
     assert contract["oracle"]["calculation"] == "100 + 93/4 metres"
     assert contract["oracle"]["expected_decimal"] == "123.25"
     assert contract["oracle"]["cells"] == 20 and contract["oracle"]["missing_cells"] == 0

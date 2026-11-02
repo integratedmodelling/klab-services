@@ -5,3 +5,4 @@ recursive-include examples *.py
 include examples/hosted-deployment.json
 recursive-include tools *.py
 recursive-include tests *.py *.json *.md
+recursive-include tests/fixtures/runtime_compatibility *.java

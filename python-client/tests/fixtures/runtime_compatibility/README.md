@@ -5,7 +5,7 @@ correction, an original-study reproduction, or permission to bypass semantic
 admission. The original frozen fixture and its failed evidence remain untouched.
 Full Reasoner admission and genuine Runtime Jobs remain acceptance gates.
 
-## Four explicit fixture choices
+## Five explicit fixture choices (contract v2)
 
 | Source | Synthetic variant | Limit of interpretation |
 | --- | --- | --- |
@@ -13,17 +13,18 @@ Full Reasoner admission and genuine Runtime Jobs remain acceptance gates.
 | Structural SocialConnection with no orientation | Explicit structural bond | Chooses symmetry for this synthetic fixture only; no claim about all real social connections. |
 | Functional StreamConnection with no orientation | Explicit functional directed relationship | Selects the independent orientation axis; no flow/data algorithm changes. |
 | Configuration applicability preceding a parent expression with `of` | Parent/emergence expression first, applicability second | Matches the existing native parser's explicit configuration form; does not hide invalid inherency. |
+| Legacy ODO0.1.1 release locator | Actual captured `http://integratedmodelling.org/odo/0.2.0` version IRI | Pins the unchanged bundled bytes (`496bc663...bcf2a57`); no download, replacement, publication claim or relabeling of legacy bytes. |
 
-The native source regressions keep all four original negatives rejected and check
+The native source regressions keep all four original declaration negatives rejected and check
 the explicit variants using the existing parser/adapter/declaration registry.
 No validator, diagnostic severity, platform code or scientific algorithm is edited.
 
 ## Byte-preservation contract
 
 `contract.json` pins the entire243-file/3,832,217-byte frozen project tree, all
-three edited preimages/postimages, and exactly four replacement spans. The tool
+four edited preimages/postimages, and exactly five replacement spans. The tool
 copies into a **new directory outside Git workspaces**, changes only those spans,
-and checks both the original and copied bytes. The other240 files stay identical.
+and checks both the original and copied bytes. The other239 files stay identical.
 It refuses unknown inputs, links/junctions, overlapping paths, existing outputs,
 ambiguous substitutions and model/oracle drift. I/O failures preserve any partial
 output for diagnosis; there is no automatic rollback, overwrite or retry.
@@ -50,18 +51,26 @@ Exit3 means failure/UNKNOWN; retain the original and any partial output.
 ## Validation boundaries
 
 1. **Software checks:**33 Python cases pass with100% unexcluded tool line/branch
-   coverage. The21 selected native source cases pass, including four new original/
-   variant pairs. Dedicated CI retains those negatives and compiles the validator.
-2. **Prepared bytes:** the real frozen tree was copied with3 edited files and240
-   unchanged files; model/oracle hashes were preserved. This is not admission.
+   coverage. The22 selected native source cases pass, including four original/
+   variant declaration pairs and captured core identity verification. Dedicated CI
+   retains those negatives and compiles the validator.
+2. **Prepared bytes:** v2 copies the real frozen tree with4 edited files and239
+   unchanged files; model/oracle hashes are preserved. V1's3-file/240-unchanged
+   declaration-only copy and receipt remain retained. Neither is admission.
 3. **Offline native validation:** `ValidateRuntimeFixture.java` reuses native
    dependency-ordered parsing, LanguageAdapter, semantic visitors, strategy/model
    validation and the whole-worldview declaration registry. It writes a new result
    outside the input tree. It never turns errors into warnings or filters failed
-   declarations. The real original fails with four distinct diagnostics (seven
+   declarations. The initial comparison found four distinct diagnostics (seven
    occurrences across document and registry checks); the variant passes all26
    ontologies,2 strategies and3 namespaces with zero error diagnostics. Both owned
-   validator JVMs exited. This remains offline declaration evidence, not admission.
+   validator JVMs exited. The operational v1 run then correctly rejected the legacy
+   ODO import identity against the captured0.2.0 catalog; it submitted no contexts
+   or scientific Jobs. V2 additionally checks the actual bundled core hash/version
+   and the complete26/2/3 inventory. It rejects empty/partial fixtures. The stronger
+   original/v1/v2 comparison confirms original FAIL/FAIL, v1 PASS/FAIL and v2
+   PASS/PASS for declaration/capture identity respectively. All three owned JVMs
+   exited; none of this is operational admission.
 4. **Operational acceptance:** registered provider descriptors, actual Reasoner
    operational status, real Runtime-created Jobs, unchanged numerical readback,
    context isolation and independent cleanup are still required. Offline PASS is

@@ -1,6 +1,36 @@
 {
   "status": "OFFLINE_COMPATIBILITY_PASS_OPERATIONAL_ACCEPTANCE_PENDING",
   "scope": "Authorized synthetic fixture compatibility only; no production worldview or algorithm changes",
+  "current_contract_version": 2,
+  "v2_byte_preparation": {
+    "files": 243,
+    "changed_files": 4,
+    "replacement_spans": 5,
+    "unchanged_files": 239,
+    "output_tree_sha256": "a73095486ff1d76a06eec80bda79f00c35ae0f1d4ffa6ada78472c475f49e09c",
+    "receipt_sha256": "2220323af52cd8b0a8cc21448d4775014aca632ca033ad1bce5ce9ae8e26c311",
+    "original_and_oracle_model_bytes_preserved": true,
+    "core_bytes_changed": false,
+    "core_identity": "http://integratedmodelling.org/odo/0.2.0",
+    "core_sha256": "496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57"
+  },
+  "v2_offline_native_comparison": {
+    "original": {"exit": 3, "declaration": "FAIL", "capture_identity": "FAIL", "raw_result_sha256": "01c30e1c5712b3c7cd67197e6cffcf44b85525e830dd2b1d058a580d2566b1e6"},
+    "declaration_only_v1": {"exit": 3, "declaration": "PASS", "capture_identity": "FAIL", "raw_result_sha256": "78414baacc963b4575b430fa8e6979b53b871fa188da59dce4e4de5d94ffc983"},
+    "variant_v2": {"exit": 0, "declaration": "PASS", "capture_identity": "PASS", "raw_result_sha256": "8d53b339ac29af6d0992bcf5b72874afa45f7a11a9df3efcd7b9ef9baacc0e30"},
+    "each_inventory": {"ontologies": 26, "strategies": 2, "namespaces": 3},
+    "all_three_owned_JVMs_absent": true,
+    "runtime_operational": "UNKNOWN"
+  },
+  "preserved_live_attempt4": {
+    "status": "FAIL",
+    "blocker": "CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import; legacy ODO0.1.1 locator does not identify captured ODO0.2.0 bytes",
+    "administrative_component_import_jobs_confirmed": 6,
+    "contexts": 0,
+    "scientific_jobs": 0,
+    "recorded_owned_JVMs_absent": 13,
+    "admission_guard_bypassed": false
+  },
   "byte_preparation": {
     "files": 243,
     "changed_files": 3,
@@ -15,7 +45,7 @@
   "software_tests": {
     "python_focused_cases_passed": 33,
     "tool_unexcluded_line_branch_coverage_percent": 100,
-    "native_source_cases_passed": 21,
+    "native_source_cases_passed": 22,
     "new_native_original_variant_pairs": 4,
     "native_parser_or_validator_implementation_changed": false
   },

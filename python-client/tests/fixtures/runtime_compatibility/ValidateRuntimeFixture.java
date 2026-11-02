@@ -24,6 +24,8 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
  * declaration checks, and accepts only read-only input and a new result file.
  */
 public class ValidateRuntimeFixture {
+  private static final String CORE_IRI = "http://integratedmodelling.org/odo/0.2.0";
+  private static final String CORE_SHA256 = "496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57";
   public static void main(String[] args) throws Exception {
     if (args.length != 2) throw new IllegalArgumentException("Require fixture projects and a new result file");
     var projects = Path.of(args[0]).toAbsolutePath().normalize();
@@ -33,6 +35,12 @@ public class ValidateRuntimeFixture {
         || Files.exists(output, LinkOption.NOFOLLOW_LINKS)
         || output.startsWith(projects) || !output.getParent().toRealPath().equals(output.getParent()))
       throw new IllegalArgumentException("Require direct input, separate private output, and no overwrite");
+    for (var project : List.of("imod", "python.fixture", "klab.staging.vxii"))
+      if (!Files.isRegularFile(projects.resolve(project).resolve("META-INF/manifest.json"), LinkOption.NOFOLLOW_LINKS))
+        throw new IllegalArgumentException("Require the complete three-project fixture inventory");
+    var core = org.integratedmodelling.klab.services.reasoner.internal.CoreOntologyCatalog.bundledOdo();
+    var coreHash = HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(core));
+    if (!CORE_SHA256.equals(coreHash)) throw new IllegalStateException("Captured core bytes differ from the synthetic fixture contract");
     org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
     var parser = new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration().getInstance(IParser.class);
     var storage = new FileProjectStorage(projects.resolve("imod").toFile(), "imod", null);
@@ -44,6 +52,7 @@ public class ValidateRuntimeFixture {
       if (syntax.putIfAbsent(document.getNamespace().getName(), document) != null)
         throw new IllegalStateException("Duplicate fixture ontology");
     }
+    if (syntax.size() != 26) throw new IllegalStateException("Require all26 fixture ontologies");
     var graph = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
     for (var name : syntax.keySet()) {
       graph.addVertex(name);
@@ -104,6 +113,16 @@ public class ValidateRuntimeFixture {
       rows.add(Map.of("ontology", name, "errors", errors(adapted), "required_authorities", requirements(adapted)));
     }
     var declarationErrors = new WorldviewDeclarationRegistry(ontologies.values()).errors().stream().map(Notification::getMessage).toList();
+    var coreImportErrors = new ArrayList<String>();
+    int odoImports = 0;
+    for (var ontology : ontologies.values()) for (var imported : ontology.getOwlImports()) {
+      if ("odo".equals(imported.getFirst())) {
+        odoImports++;
+        if (!CORE_IRI.equals(imported.getSecond())) coreImportErrors.add(
+            "FIXTURE_CORE_IDENTITY_MISMATCH: import must name the actual captured ODO0.2.0 version IRI; no legacy-byte relabeling");
+      }
+    }
+    if (odoImports != 1) coreImportErrors.add("FIXTURE_CORE_IDENTITY_MISSING_OR_DUPLICATE");
     var strategyRows = new ArrayList<Map<String, Object>>();
     var strategyParser = new ObservationStandaloneSetup().createInjectorAndDoEMFRegistration().getInstance(IParser.class);
     for (var url : storage.listResources(ProjectStorage.ResourceType.STRATEGY)) {
@@ -126,6 +145,8 @@ public class ValidateRuntimeFixture {
       if (parsed.hasSyntaxErrors()) throw new IllegalStateException("Namespace syntax is invalid");
       var model = (org.integratedmodelling.languages.kim.Model) parsed.getRootASTElement(); models.put(model.getNamespace().getName(), model);
     }
+    if (strategyRows.size() != 2 || !models.keySet().equals(Set.of("python.fixture", "python.lexical", "python.scenario")))
+      throw new IllegalStateException("Require both strategies and all three frozen numerical fixture namespaces");
     var modelGraph = new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
     for (var name : models.keySet()) {
       modelGraph.addVertex(name);
@@ -150,12 +171,17 @@ public class ValidateRuntimeFixture {
     boolean passed = declarationErrors.isEmpty() && rows.stream().allMatch(r -> ((List<?>) r.get("errors")).isEmpty())
         && strategyRows.stream().allMatch(r -> ((List<?>) r.get("errors")).isEmpty())
         && modelRows.stream().allMatch(r -> ((List<?>) r.get("errors")).isEmpty());
-    var result = Map.of("mode", "OFFLINE NATIVE PARSER/ADAPTER/VISITOR/DECLARATION VALIDATION",
-        "declaration_validation", passed ? "PASS" : "FAIL", "runtime_operational", "UNKNOWN",
-        "ontologies", rows, "strategies", strategyRows, "namespaces", modelRows,
-        "declaration_errors", declarationErrors, "services_started", 0, "scientific_jobs", 0);
+    var result = new LinkedHashMap<String, Object>();
+    result.put("mode", "OFFLINE NATIVE PARSER/ADAPTER/VISITOR/DECLARATION/CAPTURE VALIDATION");
+    result.put("declaration_validation", passed ? "PASS" : "FAIL");
+    result.put("capture_identity_validation", coreImportErrors.isEmpty() ? "PASS" : "FAIL");
+    result.put("captured_core", Map.of("version_iri", CORE_IRI, "sha256", coreHash));
+    result.put("runtime_operational", "UNKNOWN"); result.put("ontologies", rows);
+    result.put("strategies", strategyRows); result.put("namespaces", modelRows);
+    result.put("declaration_errors", declarationErrors); result.put("core_import_errors", coreImportErrors);
+    result.put("services_started", 0); result.put("scientific_jobs", 0);
     Files.write(output, new ObjectMapper().writeValueAsBytes(result), StandardOpenOption.CREATE_NEW);
-    System.exit(passed ? 0 : 3);
+    System.exit(passed && coreImportErrors.isEmpty() ? 0 : 3);
   }
   static List<String> errors(KlabDocument<?> document) {
     return document.getNotifications().stream().filter(n -> n.getLevel().severity >= Notification.Level.Error.severity)

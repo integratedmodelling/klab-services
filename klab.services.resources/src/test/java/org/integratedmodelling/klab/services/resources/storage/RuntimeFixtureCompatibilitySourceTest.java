@@ -80,4 +80,25 @@ class RuntimeFixtureCompatibilitySourceTest {
     assertEquals("imod:StreamConnection", network.getEmergenceTriggers().getFirst().getUrn());
     assertNull(network.getAppliesTo().getFirst().getTarget().getInherent());
   }
+
+  @Test void fixtureCoreImportNamesTheActualCapturedVersionWithoutReplacingOwlBytes() throws Exception {
+    var core = org.integratedmodelling.klab.services.reasoner.internal.CoreOntologyCatalog.bundledOdo();
+    var digest = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(core));
+    assertEquals("496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57", digest);
+    var manager = org.semanticweb.owlapi.apibinding.OWLManager.createOWLOntologyManager();
+    var captured = manager.loadOntologyFromOntologyDocument(new java.io.ByteArrayInputStream(core));
+    var capturedVersion = captured.getOntologyID().getVersionIRI().orElseThrow().toString();
+    assertEquals("http://integratedmodelling.org/odo/0.2.0", capturedVersion);
+    var legacy = "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.1/odo.owl";
+    assertNotEquals(legacy, capturedVersion);
+    for (var locator : List.of(legacy, capturedVersion)) {
+      var source = "ontology imod version 1.0 in domain root with core \"" + locator + "\" as odo;\n"
+          + ROOT.substring(ROOT.indexOf('\n') + 1);
+      var workspace = WorkspaceDomainIngestionTest.manager(Files.createDirectories(directory.resolve(locator.equals(legacy) ? "core-original" : "core-variant")), Map.of("imod", source));
+      var parsed = workspace.getOntologies(false).iterator().next();
+      assertEquals("odo", parsed.getOwlImports().getFirst().getFirst());
+      assertEquals(locator, parsed.getOwlImports().getFirst().getSecond());
+    }
+    assertArrayEquals(core, org.integratedmodelling.klab.services.reasoner.internal.CoreOntologyCatalog.bundledOdo());
+  }
 }
