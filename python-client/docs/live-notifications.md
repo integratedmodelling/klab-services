@@ -1,8 +1,12 @@
 # Bounded live activity notifications (PR #108 — draft)
 
 The user explicitly selected best-effort notifications, not durable recovery.
-Implementation and 71 mocked source-derived tests exist; **actual broker/Java
-acceptance is pending. Do not merge or count this roadmap feature complete yet.**
+Implementation and 71 mocked source-derived tests exist; **actual acceptance is
+BLOCKED/FAIL. Do not merge or count this roadmap feature complete yet.**
+The owned broker did not satisfy the mandatory negative context-binding policy
+test. Wrong-password and wrong-principal rejection alone do not establish context
+isolation. Root cause is under investigation; no production vulnerability is
+claimed. See [sanitized facts](results/notifications-controlled-20261102.json).
 
 Install `klab-python-client[events]`. Only synchronous root `Context` objects with
 a known Runtime identity and Qpid Broker-J AMQP 0-9-1 are admitted initially.
@@ -92,6 +96,13 @@ claimed. The original [durable recovery audit](events-reconnect-contract.md) sta
 an unfinished roadmap gate.
 
 ## Pending acceptance
+
+Current candidate `772e564ec12d00d6499499f51287fa71818678e2` includes the real
+Qpid passive-fanout fix. All 71 focused tests and hosted Python3.11–3.13, core-only,
+build and Jenkins checks pass. Initial full software run passed2112 tests, seven
+coverage gates, lint/build and an isolated core-only installed-wheel check. The
+seven recorded owned broker JVM identities are independently absent; failed
+private fixtures remain preserved. Software success does not waive live failures.
 
 Need an owned ACL-controlled actual Qpid broker plus pinned Java publisher/Runtime
 evidence, correct/wrong principals and contexts, publish denial, socket disconnect,

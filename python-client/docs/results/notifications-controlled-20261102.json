@@ -1,0 +1,61 @@
+{
+  "kind": "sanitized-owned-live-notification-acceptance",
+  "status": "BLOCKED",
+  "live_acceptance": "FAIL",
+  "python_candidate": "772e564ec12d00d6499499f51287fa71818678e2",
+  "initial_software_candidate": "2791a0f3e8bf364f624275bacd9997e022896f3c",
+  "approved_scope": "best-effort ActivityStarted/ActivityFinished hints, not durable recovery",
+  "broker": "owned loopback Qpid Broker-J 9.2.0 with fixture-only ACL plugin and random distinct accounts",
+  "pika": "1.4.4",
+  "software_tests": {
+    "focused_mocked": 71,
+    "new_module_unexcluded_line_and_branch_percent": 100,
+    "initial_full_offline": 2112,
+    "historical_and_new_module_coverage_gates": 7,
+    "initial_lint_wheel_sdist": "PASS",
+    "initial_core_only_installed_wheel": "PASS",
+    "fanout_fix_focused_rerun": "71 PASS",
+    "fanout_fix_hosted_python_3_11_to_3_13_core_build_jenkins": "PASS"
+  },
+  "verified_live_facts": {
+    "broker_listener_owned": true,
+    "wrong_password_rejected": true,
+    "wrong_principal_rejected": true,
+    "required_wrong_context_binding_denial": false,
+    "mandatory_security_gate_waived": false,
+    "native_java_activity_roundtrip": null,
+    "runtime_job_activity_acceptance": null,
+    "live_tls_acceptance": null,
+    "live_queue_overflow_acceptance": null,
+    "live_publish_denial_acceptance": null,
+    "independent_owned_queue_cleanup_acceptance": null
+  },
+  "failure_history": [
+    "Initial offline environment lacked Rasterio; collection failed. Original designated scientific environment rerun passed.",
+    "First Java fixture compilation failed on ambiguous null constructor; fixed with explicit Identity type. No broker launched.",
+    "Second fixture stopped on psutil ownership API mismatch; owned broker stopped. Fixed fixture compatibility without removing ownership check.",
+    "Passive exchange type was implicitly direct; real Qpid rejected native fanout. SDK now explicitly requests fanout without creating or modifying exchange.",
+    "Owned broker's required cross-context binding denial did not hold, including a fixture with an explicit deny rule. Cause remains under investigation; this is not a confirmed production vulnerability.",
+    "Diagnostic continuation retained failed security gate and stopped on uncertain cleanup of a refused connection before native publications. Not counted as acceptance."
+  ],
+  "cleanup": {
+    "owned_broker_jvm_identities_recorded": 7,
+    "all_owned_broker_jvm_identities_independently_absent": true,
+    "agent_created_console_windows": 0,
+    "failed_private_fixture_state_preserved": true,
+    "shared_services_changed": false,
+    "scientific_jobs": 0,
+    "vendor_contact_or_security_issue_publication": false
+  },
+  "raw_private_evidence_sha256": {
+    "latest_result": "9ca9a4b3b27a4b359b752f620ec7906d607ec2f79af3825c535713a24eda645e",
+    "driver_replies": "4b5b5d58a790836c16aa1b44d7bc5e1c00634b205dc627b41117e8244011a92f",
+    "observed_bindings": "7823f9c8e6c49747cc77ba9b26a4c1e8e56bdbfb839a27003acab6b0826b244a",
+    "explicit_deny_fixture_result": "62d7e5395e4ce9192c2f7b760f9ee1dd6aaad37e86b07943109d0bf10c2cdeb8"
+  },
+  "unblock": [
+    "Establish a real broker policy/configuration that rejects the negative context subscription; privately review policy and pinned broker behavior before claiming any production defect.",
+    "Obtain separate authorization before changing bundled broker/platform dependencies or authentication behavior; no deployment change is implied.",
+    "Complete actual Java/Runtime activity, TLS, publisher-denial, queue-limit, disconnect and independent cleanup gates, then final package/review/CI."
+  ]
+}
