@@ -21,6 +21,7 @@ from klab_client.api.services import (
 )
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData, ScientificDataOrigin
 from klab_client.tables import to_dataframe
+from klab_client.graph import GraphBrowser, GraphPage
 from klab_client.async_client import AsyncClient, AsyncContext, AsyncSession, AsyncJob
 from klab_client.transport import Endpoint
 from klab_client.connection import Connection, SelectionPolicy, connect
@@ -47,6 +48,7 @@ from klab_client.requests import (ContextOptions, GridOptions, ObservationOption
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
 
 __all__ = [
+    "GraphBrowser", "GraphPage",
     "ScientificDataOrigin", "to_dataframe",
     "AsyncClient", "AsyncContext", "AsyncSession", "AsyncJob",
     "WaitCancelled",
