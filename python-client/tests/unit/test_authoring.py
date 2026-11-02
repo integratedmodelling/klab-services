@@ -95,6 +95,7 @@ def test_invalid_or_secret_source_is_never_transmitted(kind, source, error):
 
 @pytest.mark.parametrize("change,error", [({"@CLASS": "wrong"}, ProtocolError),
     ({"sourceCode": "changed"}, ProtocolError), ({"urn": ""}, ProtocolError),
+    ({"urn": "../outside"}, ProtocolError),
     ({"metadata": {"value": "resources-secret"}}, InvalidRequestError),
     ({"notifications": [{"level": "Error", "message": "invalid"}]}, ServerError)])
 def test_invalid_parser_responses_never_produce_authorable_source(change, error):
@@ -138,6 +139,10 @@ def test_foreign_or_forged_receipts_cannot_select_existing_project_for_creation(
             first.create_document(replace(parsed, service_id="foreign"), project, allow_write=True)
         with pytest.raises(InvalidRequestError):
             first.create_document(replace(parsed, raw={"urn": "different"}), project, allow_write=True)
+        raw = dict(parsed.raw)
+        raw["urn"] = "../outside"
+        with pytest.raises(InvalidRequestError):
+            first.create_document(replace(parsed, urn="../outside", raw=raw), project, allow_write=True)
 
 
 @pytest.mark.parametrize("metadata,error", [({"im:authoring-source-id": "other"}, UnsupportedOperationError),

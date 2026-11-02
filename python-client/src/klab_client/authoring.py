@@ -90,6 +90,8 @@ class Authoring:
         if kind == "SCRIPT" and payload.get("behaviorType") != "SCRIPT":
             raise ProtocolError("SCRIPT parsing returned a different behavior kind")
         urn = required_text(payload, "urn")
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*", urn):
+            raise ProtocolError("Parser returned an unsafe source URN")
         self._safe(payload)
         return ParsedSource(kind, urn, url, identity, freeze(payload, self.client.transport.redact))
 
@@ -159,7 +161,9 @@ class Authoring:
             raise InvalidRequestError("Parsed source belongs to a different Resources identity")
         payload = object_payload(_plain(parsed.raw), "parsed authoring source")
         if (payload.get("urn") != parsed.urn or payload.get("@CLASS") != DOCUMENTS[parsed.kind]
-                or not isinstance(payload.get("sourceCode"), str)):
+                or not isinstance(payload.get("sourceCode"), str)
+                or not isinstance(parsed.urn, str)
+                or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*", parsed.urn)):
             raise InvalidRequestError("Parsed source identity is inconsistent")
         metadata = payload.get("metadata") or {}
         if not isinstance(metadata, dict) or any(not isinstance(key, str) for key in metadata):

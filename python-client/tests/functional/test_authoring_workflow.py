@@ -17,10 +17,11 @@ def test_real_java_owned_add_only_source_round_trip(functional_state, record_pro
         raise ConfigurationError("Authoring acceptance requires explicit owned-work authorization")
     config = json.loads((functional_state / "scientist.json").read_text())
     suffix = uuid4().hex[:12]
+    source_suffix = suffix.translate(str.maketrans("0123456789", "ghijklmnop"))
     workspace_name, project_name = "python-owned-" + suffix, "python-owned-project-" + suffix
-    namespace = "python.owned.n" + suffix
+    namespace = "python.owned.n" + source_suffix
     source = "namespace " + namespace + ";\n"
-    script_urn = "python.owned.s" + suffix
+    script_urn = "python.owned.s" + source_suffix
     script_source = 'script ' + script_urn + '\n    "Owned ADD-only authoring fixture"\n    version 1.0\n\naction main:\n    return true\n'
     report = {"scientific_reproduction": False, "workspace_deleted": False, "project_deleted": False}
     with Client(config["urls"]["runtime"], config["token"], agent_name=config["username"],
