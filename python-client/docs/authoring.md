@@ -1,10 +1,12 @@
 # Explicit ADD-only source authoring
 
-**BLOCKED: implementation exists, but live cleanup acceptance failed. Do not use
-on retained deployments or merge PR #110 as complete.** This is a bounded
+**Controlled namespace-only acceptance passed on the rebuilt backend tuple below;
+this is not permission to write to retained deployments.** This is a bounded
 extension of the existing Resources API, not the complete editing/publishing SDK.
 Only synchronous Client, NAMESPACE source, and new workspace/project/
-document creation are admitted. No production Java/worldview change or parser port.
+document creation are admitted. No running deployment/worldview change or parser port.
+Server prerequisites merged separately in PRs #114 and #115. Final client-head
+checks are still required before PR #110 can merge.
 
 ```python
 from klab_client import Authoring, Client
@@ -19,10 +21,11 @@ with Client.from_env() as client:
 ```
 
 Each operation is explicit. Closing Python only closes local HTTP: **the assets
-remain on the service**. In the pinned Java build, project deletion was verified,
-but workspace descriptor removal explicitly reports unimplemented. No general
-workspace cleanup is claimed; acceptance needs a server fix or explicitly agreed
-existing-owned-workspace workflow. There is no automatic rollback/deletion hidden
+remain on the service**. The old fixture reported workspace deletion unimplemented;
+the rebuilt candidate including the separate empty-workspace deletion fix verified
+project/workspace cleanup and read-only restart persistence. That server operation
+refuses nonempty workspaces and never cascades. No general cleanup across arbitrary
+server versions is claimed. There is no automatic rollback/deletion hidden
 in a context manager, and no remote resource upload/import here.
 
 The caller must have user authorization plus CREATE/project privileges
@@ -78,8 +81,15 @@ script is silently written. ONTOLOGY and other document types remain unsupported
 Mocked source-derived cases establish request/response and failure contracts only.
 The opt-in `test_authoring_workflow.py` requires explicit authorization, creates a
 fresh uniquely named workspace/project and source documents, re-retrieves exact
-source, and checks known-owned cleanup. Four real Java attempts are preserved:
-namespace round-trip succeeded on the operator fixture, but workspace cleanup is
-unimplemented. Overall status stays FAIL/BLOCKED. See
-[facts](results/authoring-controlled-20261102.json) and [review](reviews/authoring.md).
+source, and checks known-owned cleanup. Four original failed Java attempts remain
+unchanged in [historical facts](results/authoring-controlled-20261102.json).
+Fresh Resources-only acceptance passed with Java
+`84afa1a4165faaa424cd58efeaad45370e021242` and Python
+`852ae9b25d9a7d31bb8a01f96a3fa53dbe50391e`: exact namespace source, invalid-source
+rejection, three confirmed creations, matching DELETE descriptors plus separate
+listings, then read-only restart absence. Distinct signed fixture administrator,
+not ordinary remote-user write acceptance. Both owned JVM identities and hub
+threads stopped; backend fingerprints unchanged. The two earlier rebuilt-server
+startup failures occurred before writes and remain preserved as failures.
+See [current facts](results/authoring-rebuilt-20261102.json) and [review](reviews/authoring.md).
 No preserved scientific project was modified; no scientific reproduction is claimed.

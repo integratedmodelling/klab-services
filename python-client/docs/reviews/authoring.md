@@ -1,11 +1,12 @@
-# Authoring review: do not merge yet
+# Authoring review: bounded acceptance passed, final integration checks pending
 
-**Keep PR #110 draft.** This is an author-conducted read-only review, not independent
-approval. Namespace-only ADD implementation is software-tested, but overall
-acceptance is BLOCKED. Full editing/history/conflict/publishing remains outside scope.
+**Keep PR #110 draft until final-head checks pass.** This is an
+author-conducted review, not independent approval. Namespace-only ADD now has a
+fresh controlled acceptance pass on the rebuilt backend. Full editing/history/
+conflict/publishing remains outside scope.
 
-Integration base: `8b675ac30f5c37ab44eaf6cce211a5c98321f4db`. Latest real-Java
-executable: `00672db8fe3d8180bb5ce2cfe8a69b274af2b992`. Java fixture binary tuple:
+Original integration base: `8b675ac30f5c37ab44eaf6cce211a5c98321f4db`. Last failed
+old-tuple Python executable: `00672db8fe3d8180bb5ce2cfe8a69b274af2b992`. Old Java tuple:
 `a0a013a188fb752907f2d143a61b86f4a9cb0a0b`, not blanket upstream compatibility.
 
 ## Checked implementation
@@ -18,8 +19,8 @@ coordinates are checked separately from its returned bare URN. No overwrite,
 admin-lock elevation, publication, automatic rollback or mutation replay exists.
 Receipts are not permissions, leases or history. Other source kinds fail before I/O.
 
-Local software checks: 46 focused cases; 2041 offline tests, one existing Rasterio
-warning, 71.42s; new module 100% unexcluded lines/branches; all existing gates,
+Local software checks: 46 focused cases; final rerun 2041 offline tests, one existing
+Rasterio warning, 61.08s; new module 100% unexcluded lines/branches; all existing gates,
 lint and wheel/sdist pass. Installed-core checks cover consent/receipts/URN safety
 without optional scientific dependencies. These do not establish Java acceptance.
 
@@ -45,12 +46,35 @@ service/worldview/scientific project was edited. Residual metadata/uncertain sta
 remain in stopped private fixtures, not erased. No agent or scientific Job ran.
 Facts/hashes: [authoring-controlled-20261102.json](../results/authoring-controlled-20261102.json).
 
-## Required next decision
+## Rebuilt acceptance and remaining merge gates
 
-Do not merge under green offline/hosted checks, remove cleanup assertions or repeat
-unchanged fixtures to seek a pass. Authorize a minimal server workspace-descriptor
-removal fix with tests, or explicitly scope an existing-owned-workspace workflow
-with verified identity/ownership and no new unremovable descriptor. An arbitrary
-workspace string or silent relaxation of parent checks is not a safe substitute.
+User authorized separate workspace-deletion and duplicate-handler fixes. PR115
+merged normally at `91319acead67d43a154b0018b7dcf28e1d238d21`; PR114 contains
+empty-only owner/admin+DELETE checks and catalog/config/index removal, with no
+cascade and no crash-atomicity claim. Fifteen new deletion tests pass. Six broader
+authoring-source failures reproduce exactly on clean integration base and remain
+preserved, not silently repaired or ignored as successful tests.
+
+Fresh actual Resources-only acceptance uses Python
+`852ae9b25d9a7d31bb8a01f96a3fa53dbe50391e` and rebuilt Java
+`84afa1a4165faaa424cd58efeaad45370e021242`. Exact namespace source, invalid-source
+rejection, three matching CREATE receipts, project/workspace matching DELETE
+receipts and independent lists pass. Separate read-only restart confirms deleted
+assets remain absent and workspace YAML membership is absent, with zero mutation
+requests. Both owned JVM identities independently absent, hub threads stopped;
+class/dependency fingerprints unchanged. No cleanup assertions were weakened.
+The two preliminary rebuilt-server starts failed before writes (real Web UI assets
+missing, then existing duplicate handler mapping); both remain preserved.
+
+Latest facts/hashes: [authoring-rebuilt-20261102.json](../results/authoring-rebuilt-20261102.json).
+PR114 merged normally at `67be84be9ff248c4e25b97816448bd303a28e3fd`.
+Final software rerun: 2041 offline tests pass; all six historical/new-module coverage
+gates, lint, wheel/sdist build pass. A fresh isolated core-only wheel installation
+passes imports without scientific dependencies plus consent, three CREATE receipts
+and exact-source mocked checks. Python source/tests/workflow are unchanged from
+the live-accepted candidate; only integration prerequisites and evidence docs changed.
+Before merge require final hosted CI. The accepted tuple is not blanket compatibility with
+old binaries or all deployments. The fixture uses a distinct signed administrator;
+ordinary-user write support and two-user privacy are not established.
 SCRIPT fidelity, ordinary-user CREATE and history/conflict remain separate gates.
 No maintainer approval or assignment is implied by this report.
