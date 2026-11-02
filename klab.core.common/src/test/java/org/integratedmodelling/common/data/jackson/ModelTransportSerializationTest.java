@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.FilterOutputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -73,12 +74,13 @@ class ModelTransportSerializationTest {
 
   @Test void actualOutputFailuresRemainFailuresRatherThanTruncatedSuccess() {
     var mapper = JacksonConfiguration.newObjectMapper();
-    var output = new ByteArrayOutputStream() {
-      @Override public synchronized void write(byte[] body, int offset, int length) {
-        throw new IllegalStateException("controlled write failure");
+    var output = new OutputStream() {
+      @Override public void write(int value) throws IOException {
+        throw new IOException("controlled write failure");
       }
     };
-    assertThrows(Exception.class, () -> mapper.writeValue(output, namespace()));
+    var failure = assertThrows(IOException.class, () -> mapper.writeValue(output, namespace()));
+    assertTrue(failure.getMessage().contains("controlled write failure"));
   }
 
   @Test void nativeModelResponseCompletesAcrossLoopbackWithBoundedFlushes() throws Exception {

@@ -38,8 +38,10 @@ failures and receipts must remain preserved; no automatic mutation replay.
 Resources logged `HttpMessageNotWritableException`/`JsonMappingException` with a
 `ClientAbortException`/I/O cause. That is **not proof of a bad model field**.
 Offline native parsing/adaptation/semantic visiting serializes all fixture models,
-all three namespaces and the ontology collection successfully. A fresh real-service
-read-only probe also passed all8 selected reads (model, three namespaces, ontology,
+all three namespaces and the ontology collection successfully. Baseline and fixed
+class-provenance-verified runs produce byte-identical hashes for all11 native
+model/document/collection records. A fresh real-service read-only probe against
+the unchanged **pre-fix** backend also passed all8 selected reads (model, three namespaces, ontology,
 and model/namespace/ontology lists), with0 sessions,0 contexts and0 scientific Jobs.
 Its14 recorded JVM identities are independently absent, with no corresponding
 visible windows; unrelated services/terminals were untouched.
@@ -68,3 +70,11 @@ Run with the existing domain serialization guard tests:
 The dedicated workflow runs this same set. General build, final-head CI and local
 review are additional gates; author-conducted local review is not independent
 maintainer approval.
+
+Current local evidence:70 selected tests pass (including all5 new cases), and both
+changed statements have zero missed instructions. The broader candidate run has
+322 tests/1 failure versus clean base317 tests/the same1 failure:
+`QuietHttpPostTest.requiredCommandsStillReportHttpStatusAndStructuredErrorDetails`,
+same assertion type and message. This is retained, not repaired or waived. The
+18-module package build passes with tests skipped in that separate packaging pass;
+the focused tests are run independently. No complete-repository green test claim.

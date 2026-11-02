@@ -1,5 +1,5 @@
 {
-  "status": "BOUNDED_SERIALIZATION_TESTS_PASS_FINAL_PACKAGE_CI_REVIEW_PENDING",
+  "status": "BOUNDED_SERIALIZATION_TESTS_VERIFY_PACKAGE_AND_LOCAL_REVIEW_PASS_FINAL_CI_PENDING",
   "base": "474d2706498e66df8104f701ae408095da5feaeb",
   "scope": "Authorized separate transport prerequisite; active-provider field serialization and primitive class tag only",
   "scientific_worldview_dependency_or_deployment_changes": false,
@@ -16,7 +16,14 @@
     "partial_correction_failures_preserved": true,
     "class_tag_path_also_corrected": true,
     "wire_comparison_requires_verified_class_provenance": true,
-    "initial_comparison_without_corrected_class_loading_not_accepted": true
+    "initial_comparison_without_corrected_class_loading_not_accepted": true,
+    "native_source_wire_comparison": {
+      "records": 11,
+      "scope": "Six fixture models, three namespaces, namespace collection and ontology collection",
+      "every_baseline_and_fixed_record_byte_hash_identical": true,
+      "record_log_sha256_each": "a5cefbfc3dd5127d8e9cf23b1f351343bfb56e0ce9ad73914aa66b04bffa4dc0",
+      "model_expressions_executed": false
+    }
   },
   "verified_tests": {
     "focused_native_tests_passed": 70,
@@ -26,7 +33,15 @@
     "actual_output_failure_still_propagates": "PASS",
     "existing_proxy_local_view_reflection_and_domain_serialization_guards": "PASS",
     "both_changed_serialization_statements_have_no_missed_instructions": true,
-    "entire_serializer_100_percent_claim": false
+    "entire_serializer_100_percent_claim": false,
+    "final_strengthened_IO_regression_verify": "PASS",
+    "author_conducted_local_review": "PASS_NOT_INDEPENDENT_MAINTAINER_APPROVAL"
+  },
+  "general_package": {"modules_passed": 18, "tests_skipped_in_package_pass": true, "deployment_performed": false},
+  "packaged_class_matching": {
+    "JacksonConfiguration.class_sha256": "7050ea9c4b4f437f06a2005a59d34adecc73687146fb2e746609fb19d6e88306",
+    "PolymorphicSerializer.class_sha256": "d50eec55864135358f178e92def8f77e7f889c45b7a8b9e7733b6f560f2c8ecc",
+    "source_matched_compiled_bytes_equal_packaged_bytes": true
   },
   "broader_comparison": {
     "candidate": {"tests": 322, "failures": 1, "errors": 0},
@@ -45,6 +60,7 @@
     "model_field_defect_not_proven": true,
     "offline_native_models_namespaces_and_ontology_collection_serialize": "PASS",
     "fresh_native_service_read_only_probe": {
+      "backend": "unchanged pre-fix candidate, not post-fix full-service acceptance",
       "readiness": "PASS",
       "selected_reads_passed": 8,
       "model_list_count": 31,
@@ -62,8 +78,7 @@
     "draft118_117_108_acceptance": "INCOMPLETE"
   },
   "remaining": [
-    "General package and packaged class check",
-    "Final-head dedicated coverage CI, general build and local review",
+    "Final-head dedicated coverage CI and general build",
     "Normal merge of only the reproduced bounded defect when accepted; not a merger of blocked drafts or a deployment"
   ]
 }
