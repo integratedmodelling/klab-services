@@ -25,7 +25,32 @@
     "all_pinned_inputs_unchanged": true,
     "test_assertions_or_sources_modified": false
   },
-  "existing_source_fact_and_bearer_regressions": "RUNNING",
+  "first_existing_regression_launch": {
+    "bearer_rule_cases_passed": 23,
+    "subtype_case_errors": 2,
+    "missing_test_property": "klab.test.core.directory",
+    "source_fact_test_reached": false,
+    "failed_log_preserved": true,
+    "product_changes": false
+  },
+  "corrected_existing_source_fact_and_bearer_regressions": {
+    "status": "PASS",
+    "source_fact_cases": 1,
+    "identity_requirement_cases": 14,
+    "bearer_requirement_cases": 9,
+    "subtype_cases": 2,
+    "total": 26,
+    "failures_errors_skips": 0,
+    "all_217_pinned_inputs_unchanged": true,
+    "failed_subset_test_waived_or_reclassified": false
+  },
+  "evidence_sha256": {
+    "existing_bearer_contract_baseline_log": "15fd765e087d2e3ca72e3691c7921952a5235d31f3ed77d837e612ab03849038",
+    "failed_subset_report": "8132a6a8a9ef9835a37e2dae55052536367013b28ef2dc3368442123b2340738",
+    "first_regression_launch_log": "63b7870eee450e3b59f4fdc9e1d57ebdd6d9e18ef910ec7a1ced13f9152286e1",
+    "corrected_regression_log": "ca528ecd7209a0ad1bba3cc46bac8234c1b4aaeefc3b45cc0fd039438db2e12e",
+    "input_hash_manifest": "48713eef60f9e0870d8f041058889eb616da633a5902731f05d274f1fc3505f8"
+  },
   "review_acceptance": "INCOMPLETE",
   "genuine_numerical_or_notification_acceptance": "NOT_VERIFIED",
   "next_evidence_gate": "COMPLETE_NON_WAIVED_TEST_ONLY_SOURCE_CLOSURE",

@@ -88,6 +88,15 @@ not a reproduced product semantic/cache/transport defect. The original failed
 report and log remain retained. All217 pinned input files were unchanged.
 A dependency subset is not whole-worldview admission.
 
+Source inspection narrows this extraction issue: the omitted names are declared
+under the preserved `imod` source and are referenced by ontology-level `in domain`
+expressions (for example economics/sociology/valuation use Anthroposphere,
+genetics/ecology use Biosphere, infrastructure uses Technosphere). The existing
+`selectSourceClosure` helper seeds roots and follows statement references, while
+retaining ontology objects and their domain metadata. It does not separately seed
+each retained ontology's domain expression. That is a test-only completeness gap
+to investigate; no missing source declaration or need to remove a domain follows.
+
 Reproduction, with explicit operator-owned paths:
 
 ```text
@@ -102,10 +111,17 @@ The command above is shown across lines for readability; supply it as one comman
 or use the shell's continuation syntax. The harness pins source/core hashes before
 testing and checks them afterward. No HTTP services or scientific Jobs were launched.
 
-The unchanged source-fact method and existing `IdentityRequirementSupportTest`,
-`BearerIdentityRequirementTest` and `SubtypeInherencyRegressionTest` are being run
-separately. Passing those would verify their bounded rules/source facts, not repair
-or waive the failed selected-closure test.
+The first separate regression command passed23 bearer-rule cases, but two subtype
+cases errored because the command omitted their required `klab.test.core.directory`.
+The Resources/source-fact test was not reached. That failed launch is retained;
+no product code or assertion changed. A corrected command with the same captured
+core passed26 cases: the unchanged source-fact method and existing
+`IdentityRequirementSupportTest`, `BearerIdentityRequirementTest` and
+`SubtypeInherencyRegressionTest` separately (1 source-fact,14 identity,9 bearer and2
+subtype cases; no failures/errors/skips). All217 pinned inputs remained unchanged.
+Those passes verify bounded rules/source facts, not repair or waive the failed
+selected-closure test. This PR remains documentation/evidence only, with no changes
+to production code, tests, dependency policy or fixture inputs.
 
 ## Decision gates
 
