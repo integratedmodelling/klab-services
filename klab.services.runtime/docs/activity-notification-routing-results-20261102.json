@@ -1,0 +1,56 @@
+{
+  "status": "INCOMPLETE_GENUINE_RUNTIME_JOB_ACCEPTANCE",
+  "pr": 117,
+  "executable_candidate": "3d876834073ac26567b25e91867e5ed5166445b6",
+  "integration_base": "474d2706498e66df8104f701ae408095da5feaeb",
+  "focused_regressions": {
+    "tests": 43,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "unexcluded_publisher_helper_and_worker_line_branch_coverage_percent": 100,
+    "coverage_profile_verify_and_source_matched_reactor_packaging": "PASS"
+  },
+  "selected_broader_regressions": {
+    "patched": {"tests": 94, "passed": 88, "errors": 6},
+    "clean_integration_base": {"tests": 51, "passed": 45, "errors": 6},
+    "same_six_class_method_exception_type_and_message": true,
+    "message": "No suitable service for request of Reasoner",
+    "baseline_errors_waived_or_repaired": false,
+    "scope": "Selected scope/submission/cancellation/consequence tests only, not the entire Java repository suite",
+    "comparison_sha256": "bc5f141a856877fce97f79b331c52421f266ff1d777996bcbf5189a0f99b6fd3"
+  },
+  "configured_product_transport_preflight": {
+    "status": "PASS",
+    "actual_qpid_socket_to_python_receiver": true,
+    "configured_product_helper_and_sender_worker_used": true,
+    "started_finished_snapshots_remain_immutable": true,
+    "private_activity_description_omitted": true,
+    "wrong_owner_route_refused": true,
+    "publisher_exit_and_receiver_cleanup": true,
+    "hand_created_activity_inputs": true,
+    "genuine_Runtime_Job": false,
+    "raw_result_sha256": "4a42518528a7c4ce83a8e0c9492c3d00a9edb91adab8a3ed5939cccc9b6a1ff3",
+    "initial_failed_result_sha256": "1452dafc52d41ac138ae8b6f0fb2f6d5530025923582ba46ae81f4166ac50fdd",
+    "initial_fixture_failure": "Both hints arrived; assertion expected an explicit null outcome in the started payload. Native PolymorphicSerializer intentionally omits null fields. Fresh fixture asserted native omission without changing product code."
+  },
+  "cleanup_and_scope": {
+    "both_transport_preflight_runs_recorded_JVM_identities_independently_absent": true,
+    "profile_passwords_absent_from_checked_logs": true,
+    "created_console_windows": 0,
+    "running_deployment_changes": false,
+    "scientific_jobs_submitted_so_far": 0,
+    "OS_trust_store_changes": false
+  },
+  "remaining": [
+    "Fresh source-matched four-service/graph fixture build and attested dependency closure",
+    "Genuine Runtime-created Job/activity delivered through automatic product context hook, not a manually installed fixture channel",
+    "Real broker isolation and independent owned resource/process cleanup for that Job run",
+    "Final-head CI, evidence review and ordinary merge only after bounded acceptance passes"
+  ],
+  "nonclaims": [
+    "PR117 and Python PR108 remain draft; transport preflight does not establish Runtime Job acceptance.",
+    "No original-study reproduction, model/data changes, automatic mutation replay, default guest broker migration or package publication.",
+    "Author-conducted local review is not independent maintainer approval."
+  ]
+}

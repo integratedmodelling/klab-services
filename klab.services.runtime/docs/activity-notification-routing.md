@@ -7,8 +7,14 @@ permissions, add an HTTP endpoint, or change a running deployment.
 
 Implementation and acceptance are separate. Source compilation and43 focused
 regressions pass; the new publisher helper and transport worker have100% unexcluded
-line/branch coverage. Enforced coverage-profile packaging, broader regressions and
-actual Job/broker acceptance are in progress. **Do not treat this guide as a
+line/branch coverage. Enforced coverage-profile packaging passes. The selected
+broader run has88 passes/six errors versus45 passes/the same six errors on clean
+integration base; those baseline failures are retained, not waived or repaired.
+A real Qpid/Python transport preflight passes immutable snapshots, wrong-owner
+refusal, description omission and cleanup, but uses hand-created Activity inputs.
+Actual Runtime Job acceptance is still outstanding. See
+[sanitized evidence and hashes](activity-notification-routing-results-20261102.json).
+**Do not treat this guide as a
 completed deployment or merge approval.** Python notification PR108 remains draft.
 
 ## Operator contract
