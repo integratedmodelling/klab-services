@@ -1,0 +1,40 @@
+name: Native model transport serialization
+
+on:
+  push:
+    paths: ['klab.core.common/src/main/java/org/integratedmodelling/common/data/jackson/**', 'klab.core.common/src/test/java/org/integratedmodelling/common/data/jackson/**', '.github/workflows/model-transport.yml']
+  pull_request:
+    paths: ['klab.core.common/src/main/java/org/integratedmodelling/common/data/jackson/**', 'klab.core.common/src/test/java/org/integratedmodelling/common/data/jackson/**', '.github/workflows/model-transport.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  native-model-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Native model streaming, real loopback, and serialization boundary regressions
+        run: ./mvnw -B -pl klab.core.common -am -Dtest='org.integratedmodelling.common.data.jackson.*Test,SerializationTests,DataflowSerializationTest' -Dsurefire.failIfNoSpecifiedTests=false org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent test org.jacoco:jacoco-maven-plugin:0.8.12:report
+      - name: Require coverage of both corrected serialization paths
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          source = Path('klab.core.common/src/main/java/org/integratedmodelling/common/data/jackson/JacksonConfiguration.java').read_text().splitlines()
+          needles = ['gen.writeStringField(CLASS_FIELD', 'serializers.defaultSerializeField(field.getName()']
+          report = ET.parse('klab.core.common/target/site/jacoco/jacoco.xml').getroot()
+          coverage = report.find(".//package[@name='org/integratedmodelling/common/data/jackson']/sourcefile[@name='JacksonConfiguration.java']")
+          assert coverage is not None
+          for needle in needles:
+              lines = [i for i, text in enumerate(source, 1) if needle in text]
+              assert len(lines) == 1
+              line = coverage.find(f"line[@nr='{lines[0]}']")
+              assert line is not None and int(line.get('ci')) > 0 and int(line.get('mi')) == 0
+          PY
