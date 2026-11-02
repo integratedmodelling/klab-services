@@ -23,4 +23,4 @@ jobs:
       - name: Install source-matched local broker prerequisites
         run: ./mvnw -B -pl klab.core.common -am -Dmaven.test.skip=true install
       - name: Test strict profile validation and actual isolated broker authorization
-        run: ./mvnw -B -f support/klab.amqp.server/pom.xml test
+        run: ./mvnw -B -f support/klab.amqp.server/pom.xml test jacoco:report jacoco:check

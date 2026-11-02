@@ -99,7 +99,7 @@ Run with Java21:
 
 ```text
 ./mvnw -pl klab.core.common -am -Dmaven.test.skip=true install
-./mvnw -f support/klab.amqp.server/pom.xml test
+./mvnw -f support/klab.amqp.server/pom.xml test jacoco:report jacoco:check
 ```
 
 The module's tests validate input and start an actual isolated Qpid broker with
@@ -110,10 +110,12 @@ retention of the shared per-context exchanges. Arbitrary connection errors do no
 count as broker permission denial. The dedicated workflow runs these tests; the
 repository's ordinary skip-tests build alone is not acceptance.
 
-Initial standalone socket probes of the virtual-host boundary passed with
-Qpid9.2.0, both file-backed and inline configuration. Packaged profile, CLI,
-source-matched prerequisite build and final CI are still under verification; do
-not merge as a completed prerequisite until those gates pass. Earlier failed
+Standalone socket probes of the virtual-host boundary passed with Qpid9.2.0, both
+file-backed and inline configuration. The module run passes38 tests with no skips,
+including actual two-context authorization and independent cleanup. The new profile
+compiler has100% line/branch coverage with enforced checks, and a plain module JAR
+build passes. CLI startup, source-matched CI prerequisite build and final hosted
+checks remain under verification; do not merge until those gates pass. Earlier failed
 attempts remain preserved privately. This profile neither repairs all broker
 policies nor establishes Python/Runtime activity, TLS, replay or scientific
 acceptance. No vendor contact or running deployment change is included.

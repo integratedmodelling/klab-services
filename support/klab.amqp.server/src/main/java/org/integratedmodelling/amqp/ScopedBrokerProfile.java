@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -22,10 +23,17 @@ final class ScopedBrokerProfile {
 
     private ScopedBrokerProfile() {}
 
+    @FunctionalInterface
+    interface ProfileSource { InputStream open(Path file) throws IOException; }
+
     static String load(Path file) {
+        return load(file, Files::newInputStream);
+    }
+
+    static String load(Path file, ProfileSource source) {
         try {
             if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) throw invalid();
-            try (var input = Files.newInputStream(file)) {
+            try (var input = source.open(file)) {
                 return compile(input.readNBytes(MAX_BYTES + 1));
             }
         } catch (IOException failure) {

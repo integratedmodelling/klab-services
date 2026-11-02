@@ -155,4 +155,27 @@ class ScopedBrokerProfileTest {
         var before = profile.deepCopy();
         assertNotNull(compile(profile)); assertEquals(before, profile);
     }
+
+    @Test void ioFailureIsSanitizedWithoutClaimingAConfigurationWasLoaded() throws Exception {
+        var file = directory.resolve("private-source.json"); Files.write(file, JSON.writeValueAsBytes(profile(18197)));
+        var error = assertThrows(IllegalArgumentException.class, () -> ScopedBrokerProfile.load(file,
+                ignored -> { throw new java.io.IOException("private credential diagnostic"); }));
+        assertFalse(error.getMessage().contains("credential diagnostic")); assertNull(error.getCause());
+    }
+
+    @Test void sameSizedUnknownFieldsAndInternalNullGuardsRemainFailClosed() throws Exception {
+        var profile = profile(18197); profile.remove("port"); profile.put("unknownPort", 18197);
+        assertThrows(IllegalArgumentException.class, () -> compile(profile));
+        // Defensive private guards are retained even where checked public callers currently
+        // make null impossible. Test them rather than removing safeguards for coverage.
+        var fields = ScopedBrokerProfile.class.getDeclaredMethod("fields", com.fasterxml.jackson.databind.JsonNode.class, String[].class);
+        fields.setAccessible(true);
+        var failure = assertThrows(java.lang.reflect.InvocationTargetException.class,
+                () -> fields.invoke(null, null, new String[] {"field"}));
+        assertInstanceOf(IllegalArgumentException.class, failure.getCause());
+        var value = ScopedBrokerProfile.class.getDeclaredMethod("value", com.fasterxml.jackson.databind.JsonNode.class);
+        value.setAccessible(true);
+        failure = assertThrows(java.lang.reflect.InvocationTargetException.class, () -> value.invoke(null, new Object[] {null}));
+        assertInstanceOf(IllegalArgumentException.class, failure.getCause());
+    }
 }
