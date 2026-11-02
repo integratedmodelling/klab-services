@@ -143,6 +143,7 @@ public class RuntimeService extends BaseService
 
   private final ShardExecution shardExecution = new ShardExecution(
       () -> settings().get(Setting.MAX_CONCURRENT_SHARD_TASKS, Integer.class));
+  private final ContextActivityNotifications activityNotifications;
 
   ShardExecution shardExecution() {
     return shardExecution;
@@ -151,6 +152,7 @@ public class RuntimeService extends BaseService
   public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.RUNTIME, options);
     readConfiguration(options);
+    activityNotifications = ContextActivityNotifications.configured(serviceId());
     setComponentRegistry();
     ServiceConfiguration.INSTANCE.setMainService(this);
     initializeMessaging();
@@ -342,6 +344,7 @@ public class RuntimeService extends BaseService
 
   @Override
   public boolean shutdown() {
+    activityNotifications.close();
     shardExecution.close();
 
     /** Close every scope that's scheduled for closing at service shutdown */
@@ -451,19 +454,31 @@ public class RuntimeService extends BaseService
       }
 
       serviceContextScope.setId(scopeId);
+      installActivityNotifications(serviceContextScope);
 
       /*
        * this may take a while and it's done within a response. We should either spawn a thread (but then wait for the
        * DT in subsequent calls) or make the context creation call asynchronous.
        */
-      serviceContextScope.setDigitalTwin(
-          new DigitalTwinImpl(
-              this, serviceContextScope, scopeId, userScope, getMainKnowledgeGraph()));
-      getScopeManager().registerScope(serviceContextScope);
+      try {
+        serviceContextScope.setDigitalTwin(
+            new DigitalTwinImpl(
+                this, serviceContextScope, scopeId, userScope, getMainKnowledgeGraph()));
+        getScopeManager().registerScope(serviceContextScope);
 
-      return observerConnection(serviceContextScope, userScope).getConfiguration();
+        return observerConnection(serviceContextScope, userScope).getConfiguration();
+      } catch (RuntimeException | Error failure) {
+        activityNotifications.closeContext(scopeId);
+        throw failure;
+      }
     }
     throw new KlabIllegalArgumentException("unexpected scope class");
+  }
+
+  private void installActivityNotifications(ServiceContextScope context) {
+    var configuration = context.getConfiguration();
+    var sink = activityNotifications.forContext(context.getId(), configuration.getOwner());
+    if (sink != null) context.installActivityNotifications(sink);
   }
 
   private Agent getAgent(ContextScope scope) {
