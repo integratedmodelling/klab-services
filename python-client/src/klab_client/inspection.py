@@ -92,6 +92,8 @@ class ResourceInspector:
     """
 
     def __init__(self, client, scope=None, *, max_items=100, max_response_bytes=1024 * 1024):
+        from ._inspection import require_sync
+        require_sync(client)
         self.client, self.scope = client, scope
         self.max_items = bounds(max_items, 1000, "Inspection item budget")
         self.max_response_bytes = bounds(max_response_bytes, 16 * 1024 * 1024, "Response byte budget")

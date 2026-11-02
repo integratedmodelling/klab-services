@@ -18,8 +18,11 @@ from .transport import _TransportPolicy
 
 class AsyncTransport(_TransportPolicy):
     def __init__(self, endpoints, *, timeout=30, poll_interval=.5, verify=True,
-                 http_transport=None):
+                 http_transport=None, max_concurrency=8):
         super().__init__(endpoints, timeout=timeout, poll_interval=poll_interval)
+        if type(max_concurrency) is not int or max_concurrency <= 0:
+            raise ConfigurationError("Async concurrency must be a positive integer")
+        self._slots = asyncio.BoundedSemaphore(max_concurrency)
         self._http = httpx.AsyncClient(timeout=timeout, verify=verify, transport=http_transport,
                                        follow_redirects=False, trust_env=False)
 
@@ -32,7 +35,19 @@ class AsyncTransport(_TransportPolicy):
             raise ConfigurationError("Async transport requires a native async credential resolver")
         return await resolver(service, endpoint.url, deadline)
 
-    async def request(self, service, method, route, *, scope=None, service_id=None,
+    async def request(self, *args, **kwargs):
+        deadline = kwargs.get("deadline")
+        try:
+            async with asyncio.timeout(None if deadline is None else max(0, deadline - time.monotonic())):
+                await self._slots.acquire()
+        except TimeoutError:
+            raise TransportError("Request waiting deadline expired before acquiring an HTTP slot") from None
+        try:
+            return await self._request(*args, **kwargs)
+        finally:
+            self._slots.release()
+
+    async def _request(self, service, method, route, *, scope=None, service_id=None,
                       json=None, text=None, params=None, response="json", ambiguous=False,
                       timeout=None, deadline=None, max_response_bytes=None):
         endpoint = self.endpoint(service)
@@ -84,6 +99,12 @@ class AsyncTransport(_TransportPolicy):
 
     @asynccontextmanager
     async def stream(self, service, route, *, media_type, scope=None, service_id=None):
+        async with self._slots:
+            async with self._stream(service, route, media_type=media_type, scope=scope, service_id=service_id) as response:
+                yield response
+
+    @asynccontextmanager
+    async def _stream(self, service, route, *, media_type, scope=None, service_id=None):
         """Origin-bound unread GET response; caller owns bounded async iteration."""
         endpoint = self.endpoint(service)
         headers = self._headers(route, scope=scope, service_id=service_id)

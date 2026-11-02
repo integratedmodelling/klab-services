@@ -6,10 +6,10 @@ Roadmap feature branch: `feature/python-native-async`, based on the normal PR #1
 merge `e01908d718fc0beb20192f74cb6dfcd57dcff682` into
 `feature/python-experiment-runner`.
 
-**IN PROGRESS — not a completed public AsyncClient or accepted async scientific
-workflow.** The first pass adds the private `_async_transport.AsyncTransport`
-foundation and shares existing transport wire policies. It is not exported as a
-finished user API. Do not merge the feature merely because transport tests pass.
+**IN PROGRESS — public workflow implemented, real-service acceptance pending.**
+`AsyncClient`, `AsyncSession`, `AsyncContext` and `AsyncJob` are exported from
+`klab_client`. They support the bounded observation workflow described below;
+transport tests alone are not sufficient to merge the feature.
 
 The preceding PaL contribution was merged as pinned real-input prerequisites,
 not a completed Java-backed Radiation experiment or published-study reproduction.
@@ -28,14 +28,54 @@ Native asynchronous observation workflows over existing endpoints:
   worker-thread facade, hidden loop or `asyncio.run` inside a library method.
 - Local async context exit closes transport only. Cancelling a local await does
   not cancel Java work, dispose a twin or grant disposal authority.
-- Explicit concurrency bounds and no replay of ambiguous submissions. Cancellation
+- Explicit HTTP concurrency bounds (default eight, configurable positive integer)
+  and no replay of ambiguous submissions. Cancellation
   while a mutation request is in flight must preserve an unknown-outcome warning.
 
 The ordinary sync client stays synchronous. Events/durable replay, live graph
 caching, new chunk protocols, authoring and worker execution are later feature PRs.
 Transport streaming alone is not a completed native file-export or async scientific
 adapter workflow. Async connection orchestration/credential persistence and saved
-handle restoration need explicit scope and acceptance before being advertised.
+handle restoration are outside this first async observation release; their methods
+fail explicitly where present. Use a separate synchronous Client for supported
+sync export/restore operations; do not pass AsyncClient to synchronous inspection,
+provenance or ExperimentRunner helpers. No synchronous network callback is invoked
+implicitly on the event-loop thread. Existing offline Handle serialization can
+record a known AsyncJob/AsyncContext after service identity has been established.
+
+## Public use
+
+```python
+from klab_client import AsyncClient, ObservationRequest
+
+async def observe_existing_context(context_id, definition):
+    # Explicit configured origins and issued credentials from documented env vars.
+    async with AsyncClient.from_env() as client:
+        await client.runtime.capabilities()
+        context = await client.attach_context(context_id)
+        job = await context.observe(ObservationRequest(definition))
+        result = await job.result(timeout=120)
+        return result.id  # Async exit closes local HTTP only, not the user's twin.
+```
+
+In a notebook, `await observe_existing_context(...)` directly. A script can use
+`asyncio.run` at its entry point, not inside a library method or nested notebook
+loop. `examples/async_observe.py` requires explicit authorization before submitting
+an observation into an existing permitted context.
+
+`context.job(id)` and `context.within(observation)` are local operations, not
+coroutines. Await `create_session`, `create_context`, `attach_context`, `observe`,
+`submit`, `status`, `result`/`wait`, `cancel`, `release` and `aclose`. A bound result
+uses the same ObservationImpl DTO; `await result.fetch_data(...)` delegates to its
+async context. Point reads retain the 1–256-offset contract, explicit curves/time
+slices and checked scalar decoding. They are not a bulk/lazy array implementation.
+
+Use one client per event loop. The transport bounds total in-flight requests and
+open streams per client, including permit waiting in the request's total deadline.
+Cancelling an await while queued sends nothing and returns its permit correctly.
+Callers own tasks created with `asyncio.create_task`/`gather`; cancelling one result
+wait does not cancel a sibling or issue a server cancellation. Explicit `job.cancel`
+reports acceptance only, while `job.status` distinguishes the resulting state.
 
 ## Transport decisions in this pass
 
@@ -103,9 +143,9 @@ Reproduce the transport tests from `python-client`:
 python -m pytest tests/unit/test_async_transport.py tests/integration/test_async_transport_http.py -q
 ```
 
-Public async scope/job/typed-request APIs, shared Job state-machine factoring,
-scientific point readback, user examples, final coverage and real-service acceptance
-are not implemented/complete in this transport foundation pass. Keep the PR draft
+Public async scope/job/typed-request APIs, shared Job state decoding/validation,
+scientific point readback and an example are implemented in the follow-up pass.
+Final regression/coverage and real-service acceptance are still pending. Keep the PR draft
 until its agreed feature scope and evidence satisfy the gates above. Start the
 next roadmap feature only after this feature is reviewed and merged, or explicitly
 record it blocked and obtain direction on any proposed change of sequence.

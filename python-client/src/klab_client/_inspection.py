@@ -1,9 +1,15 @@
 """Small bounded, immutable, secret-redacted read-only DTO projections."""
 from html import escape
+import inspect
 import math
 from types import MappingProxyType
 
-from .errors import InvalidRequestError, ProtocolError
+from .errors import InvalidRequestError, ProtocolError, UnsupportedOperationError
+
+
+def require_sync(client):
+    if inspect.iscoroutinefunction(getattr(getattr(client, "transport", None), "request", None)):
+        raise UnsupportedOperationError("This inspection helper is synchronous; await AsyncClient service methods directly")
 
 
 def bounds(limit, maximum, label):

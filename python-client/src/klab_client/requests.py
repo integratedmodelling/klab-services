@@ -312,9 +312,9 @@ class ObservationRequest:
         return observation_to_wire(values)
 
 
-def observe(context, request, options=None):
-    """Resolve only when requested, then submit once through the existing Job path."""
-    from .client import Context, scope_token
+def _prepare_observe(context, request, options=None):
+    """Pure scope/request validation shared by sync and native async workflows."""
+    from .client import scope_token
     if isinstance(request, ObservationRequest):
         if options is not None:
             raise InvalidRequestError("Request already carries its options")
@@ -342,6 +342,13 @@ def observe(context, request, options=None):
         if marker and int(existing) != observers[0]:
             raise InvalidRequestError("Observer option conflicts with the existing scope selection")
         token = base + f"#{observers[0]}"
+    return request, token, constraints
+
+
+def observe(context, request, options=None):
+    """Resolve only when requested, then submit once through the existing Job path."""
+    from .client import Context, scope_token
+    request, token, constraints = _prepare_observe(context, request, options)
     resolved = context.client.reasoner.resolve_observable(request.observable) if request._observable_wire is None else None
     selected = context if token == scope_token(context) else Context(
         context.client, context.configuration, owned=context.owned, token=token)

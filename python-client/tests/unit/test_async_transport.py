@@ -246,10 +246,10 @@ def test_deadline_checks_also_cover_immediately_ready_awaitables(phase, monkeypa
             return httpx.Response(200, stream=Bytes([] if phase == "empty" else [b"{}"]))
         async with transport(handler) as client:
             if phase == "success":
-                assert await client.request("runtime", "POST", "/write", deadline=100, ambiguous=True) == {}
+                assert await client._request("runtime", "POST", "/write", deadline=100, ambiguous=True) == {}
             else:
                 with pytest.raises(TransportError if phase == "credentials" else SubmissionOutcomeUnknown):
-                    await client.request("runtime", "POST", "/write", deadline=100, ambiguous=True)
+                    await client._request("runtime", "POST", "/write", deadline=100, ambiguous=True)
             assert len(calls) == (0 if phase == "credentials" else 1)
     asyncio.run(scenario())
 
@@ -274,4 +274,43 @@ def test_async_close_failure_preserves_the_primary_error(consumer_error):
                         pass
         finally:
             await original_close()
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("limit", [0, -1, True, 1.5])
+def test_invalid_concurrency_does_not_construct_http_client(limit):
+    with pytest.raises(ConfigurationError):
+        AsyncTransport({}, max_concurrency=limit)
+
+
+def test_queued_deadline_and_cancellation_never_send_or_take_another_slot():
+    async def scenario():
+        entered, release = asyncio.Event(), asyncio.Event()
+        calls = []
+        async def handler(request):
+            path = request.url.path.removeprefix("/runtime")
+            calls.append(path)
+            if path == "/first":
+                entered.set()
+                await release.wait()
+            return httpx.Response(200, json={})
+        async with transport(handler, max_concurrency=1) as client:
+            first = asyncio.create_task(client.request("runtime", "GET", "/first"))
+            await asyncio.wait_for(entered.wait(), 1)
+            with pytest.raises(TransportError, match="HTTP slot"):
+                await client.request("runtime", "POST", "/never-sent", ambiguous=True, deadline=time.monotonic() + .01)
+            queued = asyncio.create_task(client.request("runtime", "POST", "/cancelled-before-send", ambiguous=True))
+            await asyncio.sleep(0)
+            queued.cancel()
+            with pytest.raises(asyncio.CancelledError) as caught:
+                await queued
+            assert not getattr(caught.value, "__notes__", [])
+            assert calls == ["/first"]
+            release.set()
+            assert await first == {}
+            async with client.stream("runtime", "/stream", media_type="image/tiff"):
+                with pytest.raises(TransportError, match="HTTP slot"):
+                    await client.request("runtime", "GET", "/stream-slot-not-free", deadline=time.monotonic() + .01)
+            assert await client.request("runtime", "GET", "/last") == {}
+            assert calls == ["/first", "/stream", "/last"]
     asyncio.run(scenario())
