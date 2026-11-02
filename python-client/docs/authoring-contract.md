@@ -1,9 +1,11 @@
 # Authoring/import/publishing: partial server support and blocked full contract
 
-**BLOCKED for the full roadmap feature; not implemented as a Python write API.**
+**Full roadmap contract remains incomplete; bounded ADD-only implementation is in progress.**
 Source base: `bb4f62ce01bb41d93f506ee34c19687b401d8640`. The user authorized moving
-past blockers and circling back. This draft evidence PR must not be merged or
-counted as complete authoring support.
+past blockers and circling back, then authorized returning to authoring. The
+following audit preserves the broader missing contracts. `authoring.md` describes
+the narrowly implemented source-parse/ADD workflow and its separate acceptance
+gates; it must not be counted as complete editing/publishing support.
 
 ## Supported paths found in current source
 
@@ -61,7 +63,7 @@ denial, lock contention/loss, restart, publication denial and unknown write
 outcomes, with verified cleanup only of newly owned assets. No automatic retry
 after ambiguous mutation; original scientific-source preservation is mandatory.
 
-This source audit changed no Java/worldview/resource and launched no services.
-There was no new live authoring test and no authoring acceptance pass. Existing
-client regression results are not a substitute. Keep the draft open and move to
-behavior/agent lifecycle verification under the user's sequencing exception.
+The original source audit changed no Java/worldview/resource and launched no
+services; it was not live authoring acceptance. The follow-up ADD-only feature
+does not remove any history/conflict/publishing gate above. Require its genuine
+owned-fixture acceptance and final CI before merging that bounded implementation.
