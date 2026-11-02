@@ -7,6 +7,38 @@ import org.springframework.http.MediaType;
 import org.springframework.web.server.ResponseStatusException;
 
 class KlabErrorHandlerTest {
+  @Test void springRegistersUniqueSpecificHandlersAndRetainsFallback() {
+    var resolver = new org.springframework.web.method.annotation.ExceptionHandlerMethodResolver(KlabErrorHandler.class);
+    assertEquals("handleAuthorizationException", resolver.resolveMethodByExceptionType(
+        org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class).getName());
+    assertEquals("handleMissingResource", resolver.resolveMethodByExceptionType(
+        org.integratedmodelling.klab.api.exceptions.KlabResourceNotFoundException.class).getName());
+    assertEquals("handleInvalidRequest", resolver.resolveMethodByExceptionType(
+        org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException.class).getName());
+    assertEquals("handleDefaultException", resolver.resolveMethodByExceptionType(IllegalStateException.class).getName());
+  }
+
+  @org.springframework.web.bind.annotation.RestController
+  static class DeniedController {
+    @org.springframework.web.bind.annotation.GetMapping("/denied")
+    public void denied() {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("SECRET_ASSET_IDENTITY");
+    }
+  }
+
+  @Test void registeredAdviceReturnsForbiddenProblemWithoutLeakingIdentity() throws Exception {
+    var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+        .standaloneSetup(new DeniedController()).setControllerAdvice(new KlabErrorHandler()).build();
+    var response = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+        .get("/denied")).andReturn().getResponse();
+    assertEquals(403, response.getStatus());
+    assertEquals("application/problem+json", response.getContentType());
+    var body = new com.fasterxml.jackson.databind.ObjectMapper().readTree(response.getContentAsString());
+    assertEquals(403, body.get("status").asInt());
+    assertEquals("Access denied", body.get("detail").asText());
+    assertFalse(response.getContentAsString().contains("SECRET_ASSET_IDENTITY"));
+  }
+
   @Test void serverUnhandledFailureLogsSafeStackAndKeepsErrorResponse() {
     var logging = org.integratedmodelling.common.logging.Logging.INSTANCE;
     var previous = logging.getErrorWriter();
