@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "klab-python-client"
 version = "0.1.0"
-description = "Synchronous Python client for k.LAB scientific services"
+description = "Python client for k.LAB scientific services with bounded native async observation workflows"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{name = "k.LAB"}]

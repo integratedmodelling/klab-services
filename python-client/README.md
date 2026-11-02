@@ -6,6 +6,9 @@ For development planning and CLI review, see the
 [contributor guides](../docs/contributor-guides/README.md) and the
 [current reconciled planning guide](../docs/PYTHON_CLIENT_PLANNING_GUIDE.md).
 
+See the [support matrix and release-evidence policy](docs/support-and-release.md)
+for verified environments, bounded features and remaining acceptance gates.
+
 Optional [scientific analysis and recorded provenance](docs/scientific-analysis.md)
 open native rasters as labeled xarray values plus validity and inspect bounded,
 read-only partial neighborhoods without claiming revision-consistent snapshots.
