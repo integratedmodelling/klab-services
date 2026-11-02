@@ -20,7 +20,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 @ControllerAdvice
 public class KlabErrorHandler {
 
-  @ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class)
+  // Retained for direct Java callers; only the typed handler below is registered with Spring.
   public ResponseEntity<ProblemDetail> handleAccessDenied(RuntimeException exception) {
     return ResponseEntity.status(HttpStatus.FORBIDDEN)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Asset is not accessible"));
