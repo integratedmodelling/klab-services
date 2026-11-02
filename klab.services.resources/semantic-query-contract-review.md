@@ -1,6 +1,7 @@
 # Semantic/query-contract review: preserved Elevation acceptance
 
-Status: read-only review in progress, based on integration `5785c1baa`.
+Status: bounded read-only evidence captured; semantic acceptance remains unresolved.
+Based on integration `5785c1baa`.
 No product code, scientific query, model, worldview, algorithm, oracle or deployment
 changes are included. This review is separate from diagnostic PR120 and does not
 approve merging the blocked notification/fixture PRs108/117/118.
@@ -123,18 +124,80 @@ Those passes verify bounded rules/source facts, not repair or waive the failed
 selected-closure test. This PR remains documentation/evidence only, with no changes
 to production code, tests, dependency policy or fixture inputs.
 
+## Private domain-aware diagnostic arms
+
+Two private offline diagnostic arms reused the existing native parser, clause-
+preserving extractor and no-authority-waiver check without editing the original
+test. The first seeded the retained ontology-domain references; the second also
+retained the exact Terrain and Aspect declaration trees and their dependencies.
+Both used the current Maven test classpath, pinned source/core bytes and fresh
+private semantic state. Two earlier helper compilation failures (wrong import,
+then querying type flags on Observable instead of its semantics) are retained as
+diagnostic setup failures, not product failures. No public API was widened.
+
+Both completed bean capture and compilation with `VALID` status, were OWL-consistent
+and had no unsatisfiable named classes. **Neither was a clean semantic-acceptance
+pass**: five compiler diagnostics remain in each result:
+
+- Fundamental-type warnings for the Quality, Time and Space core aliases.
+- `DESCRIPTION_BEARER_UNRESOLVED` for Physical/PhysicalSystem.
+- `DESCRIPTION_BEARER_UNRESOLVED` for Period/Frequency.
+
+The first three are emitted by `CoreOntology.validateRootDomain` as warnings, not
+an OWL inconsistency result. Keep their exact wording and distinguish them from
+the separate `isConsistent()` result; do not suppress or reinterpret them as passes.
+
+In both arms, native proof reported a satisfiable effective Elevation bearer but
+no Areal evidence and no entailment of Height's `(Areal or Volumetric)` requirement.
+The recorded Elevation bearer constraints named Location. Canonical Elevation was
+not authored abstract, while a fresh effective projection was abstract. The second
+arm also recorded initial atomic resolution as abstract. A stale cached flag alone
+therefore does not explain this subset result. No general cache defect is proved.
+
+The supplementary Terrain/Aspect arm returned:
+
+| Query in the same snapshot-focused scope | Effective status | Strategies |
+| --- | --- | --- |
+| Original `geography:Elevation in m` | abstract | none |
+| `geography:Aspect` | concrete | `dependent.direct` |
+| Explicit-bearer Elevation diagnostic | concrete | `dependent.direct` |
+| Authored-abstract `physical:Height in m` | abstract | none |
+
+In the first, smaller arm, Aspect was absent from the selected declarations and
+resolved to Nothing. That is retained as a subset limit, not an Aspect product
+failure. The supplementary arm establishes the concrete Aspect control.
+
+Source inspection also distinguishes the preserved Terrain `emerges from` clause
+from the description-derived evidence claimed for the older named source revision:
+`ReasonerService.registerEmergent` records trigger descriptors; that method does
+not add an Elevation-describes-Terrain bearer axiom. This is a boundary observation,
+not permission to add such an axiom or alter the worldview's scientific meaning.
+
+Both arms preserved all217 source/core inputs and all9,828 current test-classpath
+input hashes. Their two recorded JVM identities were independently absent afterward,
+with no corresponding live-owned visible windows or unrelated process/window
+changes. No HTTP services, model evaluations or scientific Jobs were launched.
+
+These private subsets corroborate PR120's served query-specific rejection. They do
+not prove whole-worldview completeness, select a model, establish correct scientific
+meaning, repair all compiler diagnostics or reproduce the original Job's complete
+failure chain. The original fixed query and failed receipts remain unchanged.
+
 ## Decision gates
 
 1. Compare actual native closure evidence with the existing pinned-source contract.
    Missing evidence remains unresolved; an inconsistent closure is not a proof.
-   First obtain a complete test-only source dependency closure while preserving
-   all retained clauses and refusing authority waivers; preserve the original failed
-   extraction rather than editing assertions or source declarations to pass.
+   Domain-aware extraction and unchanged Terrain/Aspect controls are now captured;
+   preserve the original failed extraction. Whole-worldview completeness and the
+   five compiler diagnostics remain outside a clean acceptance claim.
 2. If a non-scientific admission/cache/transport defect is reproduced, document its
    exact boundary and regression before proposing a separately scoped fix.
 3. If the source cannot prove the obligation, preserve the failed original request.
    Obtain a separate explicit decision before any query/model/worldview/semantic
    change; do not add a bearer, relabel abstractness or disable guards automatically.
+   A separately authorized synthetic notification fixture could use an explicitly
+   declared bearer, but must be labelled a new contract/variant, never a passing
+   rerun or reproduction of the original question. It has not been implemented.
 4. Any later genuine numerical/notification acceptance still needs its own reviewed
    correction, current source-matched artifacts, bounded fresh-run authorization
    and independent cleanup. Successful strategy inference alone is insufficient.
