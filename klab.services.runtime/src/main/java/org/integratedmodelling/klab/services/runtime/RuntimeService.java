@@ -3680,8 +3680,16 @@ public class RuntimeService extends BaseService
 
   @Override
   public boolean releaseContext(ContextScope scope) {
+    if (!(scope instanceof ServiceContextScope requester)) return false;
+    var contextId = requester.getId();
+    if (contextId == null || contextId.isBlank()) return false;
+    var registered = getScopeManager().getScope(contextId, ServiceContextScope.class);
+    if (registered == null
+        || !org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(registered, requester)) return false;
     try {
-      scope.close();
+      // Request-derived scopes share the twin and hint sink but do not own the sink.
+      // Only the registered root can close both before removing its catalog entry.
+      registered.close();
       return true;
     } catch (Throwable t) {
       // shut up

@@ -21,4 +21,15 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Test source-matched scope and notification routing regressions
-        run: ./mvnw -B -pl klab.services.runtime -am -Pnotification-coverage -Dtest=ContextActivityHintScopeTest,ContextActivityNotificationsTest -Dsurefire.failIfNoSpecifiedTests=false verify
+        run: ./mvnw -B -pl klab.services.runtime -am -Pnotification-coverage -Dtest=ContextActivityHintScopeTest,ContextActivityNotificationsTest,RuntimeContextReleaseTest -Dsurefire.failIfNoSpecifiedTests=false verify
+      - name: Require complete canonical context-release method coverage
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          report = ET.parse('klab.services.runtime/target/site/jacoco/jacoco.xml').getroot()
+          method = report.find(".//class[@name='org/integratedmodelling/klab/services/runtime/RuntimeService']/method[@name='releaseContext']")
+          assert method is not None
+          for kind in ['LINE', 'BRANCH']:
+              count = method.find(f"counter[@type='{kind}']")
+              assert count is not None and int(count.get('covered')) > 0 and int(count.get('missed')) == 0
+          PY

@@ -5,7 +5,7 @@ This opt-in prerequisite adds a **separate sender-only connection** for root-con
 Runtime's existing user/session/context federation messaging, widen its broker
 permissions, add an HTTP endpoint, or change a running deployment.
 
-Implementation and acceptance are separate. Source compilation and43 focused
+Implementation and acceptance are separate. In the original executable pass, source compilation and43 focused
 regressions pass; the new publisher helper and transport worker have100% unexcluded
 line/branch coverage. Enforced coverage-profile packaging passes. The selected
 broader run has88 passes/six errors versus45 passes/the same six errors on clean
@@ -15,17 +15,18 @@ refusal, description omission and cleanup, but uses hand-created Activity inputs
 The13-module source-matched service/graph build passes;3898 launch files are
 attested and2612 compiled classes match packaged JARs. Actual broker ingress
 rejection of a body over1MiB (reply311) before Python admission and wrong-password
-handling also pass. **Actual Runtime Job acceptance remains blocked**: the unchanged
-frozen worldview does not pass current declaration-clause/relationship-axis and
-inherency validation, so the fresh full fixture never reaches operational Reasoner
-status. Six owned component imports are confirmed; no contexts or scientific Jobs
-were submitted. The186 Reasoner classes match clean integration base exactly;
+handling also pass. The original full attempt3 stopped because the unchanged
+frozen worldview failed declaration-clause/relationship-axis and inherency
+validation before Reasoner became operational. Six owned component imports were
+confirmed; that attempt submitted no contexts or scientific Jobs. The186 Reasoner
+classes matched clean integration base exactly;
 this is not a claim that a complete baseline live semantic run was performed.
 Two earlier harness failures are preserved. All33 recorded full-fixture/diagnostic/
-wire-probe JVM identities are independently absent, and launch inputs remain
-unchanged. No semantic admission bypass or scientific-source edit was made. A
-compatible synthetic-fixture decision and its review are needed before a fresh
-genuine-Job run. See
+wire-probe JVM identities were independently absent at that milestone, and its
+launch inputs were unchanged. Later authorized synthetic-fixture v2 passed
+readiness and reached Job submission, but failed genuine numerical/activity and
+publisher socket acceptance; see the canonical-release follow-up below. Historical
+launch manifests are not current build attestations. See
 [sanitized evidence and hashes](activity-notification-routing-results-20261102.json).
 **Do not treat this guide as a
 completed deployment or merge approval.** Python notification PR108 remains draft.
@@ -115,3 +116,33 @@ management and a deployed broker's policy require their own verification.
 
 No real scientific reproduction, production model/data mapping, durable recovery,
 agent control, package publication or running deployment changes are included.
+## Canonical context release follow-up
+
+The live attempt5 passed service/semantic readiness and obtained two context and
+two observation Job receipts, but Resolver logged region `NO_MODEL`/elevation
+`FAILED`. Numerical readback and real activity delivery were not verified. Context
+and session release returned true and context listing was empty, yet publisher
+socket absence failed. A final cleanup assertion masked the earlier exception.
+Those receipts and failed evidence remain retained; no automatic mutation replay.
+
+The controlled service-method regression now reproduces the publisher ownership
+mistake: request-derived scopes share the sink but do not own its close. Runtime
+context release must look up the registered root, apply the existing context ACL,
+and close that root rather than the request copy. Missing registration, foreign
+scope types and denied ACLs fail closed. An explicit allowed-user ACL remains
+admitted. The root closes its sink even if twin disposal throws. These are direct
+service-method tests, not a claim of HTTP authorization bypass.
+
+Ten new cases pass, with every line/branch of `releaseContext` covered; the existing
+43 routing cases and five merged119 transport cases also pass reactor verify.
+The initial test fixture's missing mock service ID failed before reaching the
+product; its log and the corrected fixture's four pre-fix failures are preserved.
+Five separate offline harness cases verify primary/cleanup exception preservation
+without exposing private messages or performing any scientific operations.
+
+This closes a software regression, **not live acceptance**. A source-matched build
+and fresh launch manifest, genuine successful Jobs/unchanged oracle readback,
+activity delivery, broker isolation, and independent live queue/socket cleanup
+are still required before merging117/118/108. The merged119 flush-ownership fix is
+not proof of the primary cause of the earlier numerical Job failure. The original
+failed sources, frozen original fixture and numerical oracle stay unchanged.

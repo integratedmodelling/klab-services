@@ -1,8 +1,59 @@
 {
-  "status": "BLOCKED_FROZEN_FIXTURE_SEMANTIC_ADMISSION",
+  "status": "CANONICAL_RELEASE_SOFTWARE_PASS_GENUINE_JOB_AND_LIVE_CLEANUP_ACCEPTANCE_PENDING",
   "pr": 117,
   "executable_candidate": "3d876834073ac26567b25e91867e5ed5166445b6",
   "integration_base": "474d2706498e66df8104f701ae408095da5feaeb",
+  "historical_evidence_scope": "The original executable/base, 43-case coverage, 13-module build and initial three attempts below remain historical evidence, not current release-fix launch attestation",
+  "merged_transport_prerequisite": {"pr": 119, "merge_commit": "5785c1baab02e319125e963ac349d25b9b4c7d6a", "original_job_failure_proven_fixed": false},
+  "canonical_release_fix": {
+    "cause_reproduced_in_service_method": "Request-derived ServiceContextScope shares the hint sink but does not own its closure; releaseContext previously closed the copy rather than the registered root",
+    "boundary_limit": "Direct service-method negative fixtures are not a claim of bypassing HTTP authentication/authorization",
+    "first_test_fixture_errors": 6,
+    "first_fixture_correction": "Stub the mock Runtime service ID; preserve the initial fixture error log",
+    "corrected_fixture_pre_fix_tests": 6,
+    "corrected_fixture_pre_fix_failures": 4,
+    "new_cases_passed_after_fix": 10,
+    "routing_cases_passed": 53,
+    "merged_transport_cases_also_passed": 5,
+    "source_matched_reactor_verify": "PASS",
+    "releaseContext_method_covered_lines": 10,
+    "releaseContext_method_covered_branches": 10,
+    "releaseContext_method_missed_lines_and_branches": 0,
+    "canonical_root_registration_and_existing_context_ACL_required": true,
+    "explicit_ACL_allowed_requester_still_accepted": true,
+    "root_sink_closed_on_twin_disposal_failure": true,
+    "no_fallback_or_replay_against_request_copy": true,
+    "live_publisher_socket_cleanup_after_fix": "NOT_YET_VERIFIED"
+  },
+  "failed_attempts_4_and_5": {
+    "attempt4": {"status": "FAIL_UNCAPTURED_LEGACY_ODO_IMPORT", "contexts": 0, "scientific_jobs": 0, "recorded_JVMs_independently_absent": 13},
+    "attempt5": {
+      "status": "FAIL",
+      "readiness_status": "PASS",
+      "confirmed_contexts": 2,
+      "confirmed_observation_submission_receipts": [1, 2],
+      "legacy_summary_observation_jobs_field": 0,
+      "summary_limit": "The zero summary field is not zero submissions: journal/HTTP events confirm receipts and retrieves",
+      "resolver_outcomes": {"region": "NO_MODEL", "elevation": "FAILED"},
+      "numerical_readback_and_activity_delivery": "NOT_VERIFIED",
+      "context_and_session_release_receipts": true,
+      "runtime_context_list_after_release": "EMPTY",
+      "publisher_socket_absence_after_release": "FAIL",
+      "primary_exception_masked_by_final_cleanup_assertion": true,
+      "recorded_JVMs_independently_absent": 14,
+      "corresponding_visible_windows": 0,
+      "automatic_mutation_replays": 0
+    },
+    "fixture_compatibility_variant": "Authorized separate draft118 v2 preserves original frozen sources and model/oracle bytes; no production worldview or semantic gate changes"
+  },
+  "failure_preservation_harness": {
+    "offline_cases_passed": 5,
+    "primary_exception_identity_preserved_even_when_cleanup_fails": true,
+    "cleanup_alone_failure_still_fails_acceptance": true,
+    "cleanup_attempted_once": true,
+    "private_exception_messages_not_written": true,
+    "scientific_jobs_submitted_by_harness_tests": 0
+  },
   "focused_regressions": {
     "tests": 43,
     "failures": 0,
@@ -39,7 +90,7 @@
     "profile_passwords_absent_from_checked_logs": true,
     "created_console_windows": 0,
     "running_deployment_changes": false,
-    "scientific_jobs_submitted_so_far": 0,
+    "scientific_jobs_in_original_transport_preflight_scope": 0,
     "OS_trust_store_changes": false
   },
   "source_matched_service_build": {
@@ -100,7 +151,9 @@
     "unrelated_services_or_terminals_touched": false
   },
   "remaining": [
-    "Explicit decision on a separately reviewed compatible synthetic scientific fixture; preserve historical frozen sources and do not modify shared/production worldview or bypass admission",
+     "Source-matched rebuild and new launch attestation for merged119 and canonical root-release correction; historical manifests must not be reused as current proof",
+     "Use separately authorized draft118 v2 fixture without production/shared worldview edits; preserve original failed sources and fixed numerical oracle",
+     "Capture primary and cleanup failures separately before any fresh bounded genuine-Job acceptance; do not replay attempt5 mutations",
     "Genuine Runtime-created Job/activity delivered through automatic product context hook, not a manually installed fixture channel",
     "Real broker isolation and independent owned resource/process cleanup for that Job run",
     "Final-head CI, evidence review and ordinary merge only after bounded acceptance passes"
