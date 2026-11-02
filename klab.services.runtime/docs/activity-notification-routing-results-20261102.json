@@ -1,5 +1,5 @@
 {
-  "status": "GENUINE_ELEVATION_JOB_FAILED_HTTP_RELEASE_FOLLOWUP_UNDER_VERIFICATION",
+  "status": "CONTEXT_ONLY_HTTP_CLEANUP_PASS_GENUINE_ELEVATION_JOB_ACCEPTANCE_BLOCKED",
   "pr": 117,
   "executable_candidate": "3d876834073ac26567b25e91867e5ed5166445b6",
   "integration_base": "474d2706498e66df8104f701ae408095da5feaeb",
@@ -23,7 +23,7 @@
     "explicit_ACL_allowed_requester_still_accepted": true,
     "root_sink_closed_on_twin_disposal_failure": true,
     "no_fallback_or_replay_against_request_copy": true,
-    "live_publisher_socket_cleanup_after_fix": "NOT_YET_VERIFIED"
+    "live_publisher_socket_cleanup_after_fix": "PASS_CONTEXT_ONLY_LIFECYCLE7_NOT_GENUINE_JOB_ACCEPTANCE"
   },
   "failed_attempts_4_and_5": {
     "attempt4": {"status": "FAIL_UNCAPTURED_LEGACY_ODO_IMPORT", "contexts": 0, "scientific_jobs": 0, "recorded_JVMs_independently_absent": 13},
@@ -55,7 +55,7 @@
     "scientific_jobs_submitted_by_harness_tests": 0
   },
   "current_source_matched_rebuild": {
-    "candidate": "0dfc56397fd75a930724bee1cea60b3fa733e64c",
+    "candidate": "649b2af727c41a7e53776452a397d7472a6abd7e",
     "modules": 13,
     "existing_webui_profile": "PASS",
     "current_declared_closure_files_attested": 3905,
@@ -63,7 +63,7 @@
     "legacy_named_harness_classpath_files_exactly_equal_fresh_canonical_closures": 7,
     "historical_dependency_closures_merged": false,
     "accepted_authoring_dependency_witness_unchanged": true,
-    "head_CI_build_routing_transport_and_Jenkins": "PASS"
+    "head_CI_build_routing_and_Jenkins": "PASS"
   },
   "preserved_live_attempt6": {
     "status": "FAIL",
@@ -95,8 +95,35 @@
     "controller_closeContext_covered_lines": 5,
     "controller_closeContext_covered_branches": 4,
     "controller_and_product_release_methods_missed_lines_and_branches": 0,
-    "next_live_probe": "Fresh context lifecycle only; scientific submit budget zero; do not rerun failed elevation Jobs unchanged",
+    "next_live_probe": "Completed as lifecycle7 below; no scientific Jobs submitted and no elevation retry",
     "lifecycle_probe_static_preflight": "PASS: source compiles, zero observe call sites and enforced submit budget zero"
+  },
+  "configured_context_only_lifecycle7": {
+    "status": "PASS",
+    "source_candidate": "649b2af727c41a7e53776452a397d7472a6abd7e",
+    "mode": "CONFIGURED_CONTEXT_LIFECYCLE_ONLY",
+    "readiness_status": "PASS",
+    "contexts": 2,
+    "actual_configured_product_context_exchange_creation_and_reader_attachment": true,
+    "both_receiver_closures": "PASS",
+    "both_independent_queue_absence_checks": "PASS",
+    "both_context_releases": "PASS",
+    "session_release": "PASS",
+    "runtime_context_list_empty": "PASS",
+    "runtime_publisher_socket_absence_after_release": "PASS",
+    "HTTP_client_close": "PASS",
+    "scientific_submit_budget": 0,
+    "observation_submission_attempts": 0,
+    "genuine_Runtime_Job_acceptance": false,
+    "automatic_mutation_replays": 0,
+    "all_14_recorded_owned_JVM_identities_independently_absent": true,
+    "corresponding_visible_windows": 0,
+    "all_3905_launch_input_hashes_still_match": true,
+    "unrelated_services_or_windows_changed": false,
+    "raw_result_sha256": "2729950ba810e7733bdcbeec6d6af41d5b7a1e53ed98dd27659c7a42c0fbe9e4",
+    "detailed_lifecycle_result_sha256": "0127c551c2a5d425cd7e03b8a12b67ba1231f1f6be2526f337269679ca8e42ed",
+    "mutation_journal_sha256": "7cab18b9a1c444bc37df0a0e0b5e99ba7eb939fa7e7460ae8556db1a50d4c18b",
+    "limit": "Proves configured root-context HTTP lifecycle cleanup, not successful numerical execution or actual Activity delivery from genuine Jobs"
   },
   "focused_regressions": {
     "tests": 43,
@@ -195,10 +222,8 @@
     "unrelated_services_or_terminals_touched": false
   },
   "remaining": [
-     "Source-matched rebuild and new launch attestation for merged119 and canonical root-release correction; historical manifests must not be reused as current proof",
-     "Use separately authorized draft118 v2 fixture without production/shared worldview edits; preserve original failed sources and fixed numerical oracle",
-     "Preserve attempt6 primary JobFailedError and separate publisher socket cleanup failure; diagnose model resolution without replaying failed Jobs",
-     "Verify HTTP delegation and real context-only queue/socket cleanup with a zero scientific-Job budget before any further genuine-Job run",
+     "Separate model-resolution prerequisite decision: reproduce the elevation admission/resolution failure without scientific writes, then seek narrowly scoped correction and regression evidence; no algorithm, shared-worldview or oracle edits",
+     "Preserve failed attempts and separately authorized draft118 v2 fixture sources; do not rerun failed elevation Jobs unchanged",
     "Genuine Runtime-created Job/activity delivered through automatic product context hook, not a manually installed fixture channel",
     "Real broker isolation and independent owned resource/process cleanup for that Job run",
     "Final-head CI, evidence review and ordinary merge only after bounded acceptance passes"

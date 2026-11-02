@@ -164,7 +164,13 @@ of six new controller regression cases fail before correction. The route is now
 delegated to `RuntimeService.releaseContext`, retaining its
 principal/context checks and returning the actual product result. All64 focused
 reactor cases pass, including six controller cases; both release methods have no
-missed lines or branches. Real **context-only** queue/socket acceptance remains pending; the scientific submit
-budget for that next lifecycle probe is zero. The failed elevation Jobs will not
+missed lines or branches. Real **context-only** queue/socket acceptance now passes
+in lifecycle7: two receivers and two independently checked queues are gone; both
+contexts and the session release successfully; context listing is empty; Runtime
+publisher sockets are absent after release. The source-matched13-module build
+passes, all3905 launch inputs still match, and all14 recorded JVM identities are
+independently absent with no corresponding visible windows. The lifecycle probe
+enforced a zero scientific submit budget and submitted no observation Jobs. It
+does not establish genuine Activity delivery or numerical execution. Failed elevation Jobs will not
 be rerun unchanged, and neither the transport nor service-method fixes are claimed
 to resolve the scientific result failure.
