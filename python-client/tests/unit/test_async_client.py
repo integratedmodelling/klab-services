@@ -147,6 +147,18 @@ def test_cancel_acceptance_does_not_claim_interruption(accepted):
     asyncio.run(scenario())
 
 
+def test_zero_wait_timeout_preserves_known_job_without_any_http():
+    async def scenario():
+        async def handler(request):
+            pytest.fail("An expired local wait must not poll, cancel or submit")
+        async with client(handler) as api:
+            job = AsyncContext(api, {"id": "s.c"}).job(7)
+            with pytest.raises(WaitTimeout) as caught:
+                await job.result(0)
+            assert caught.value.job is job
+    asyncio.run(scenario())
+
+
 @pytest.mark.parametrize("payload", [{"empty": True}, {"notifications": [{"level": "Error", "message": "failure"}]}])
 def test_failed_result_notifications_stay_failures(payload):
     async def scenario():
