@@ -74,6 +74,8 @@ class GraphBrowser:
                 or len(set(relationships)) != len(relationships)):
             raise InvalidRequestError("Graph relationships must be a nonempty unique supported selection")
         if isinstance(anchor, ObservationImpl):
+            if anchor.metadata.get("im:storage-binding-source"):
+                raise UnsupportedOperationError("Detached mediated views require a native graph identity contract")
             if anchor._context is None or anchor._context.client is not self.client or anchor._context.id != self.context.id:
                 raise InvalidRequestError("Graph observation belongs to a different client/context")
             descriptor = {"@CLASS": next(key for key, kind in CLASSES.items() if kind == "observation"),

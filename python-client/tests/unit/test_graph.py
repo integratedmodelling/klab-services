@@ -89,6 +89,14 @@ def test_properties_are_redacted_before_exposing_them():
     assert "token" not in props and props["info"] == "[REDACTED]"
 
 
+def test_detached_mediated_view_is_not_a_native_graph_anchor():
+    api, ctx, obs, calls = setup()
+    obs.metadata["im:storage-binding-source"] = "native-source"
+    with api, pytest.raises(UnsupportedOperationError):
+        GraphBrowser(ctx).neighbors(obs)
+    assert not calls
+
+
 @pytest.mark.parametrize("changes", [{"max_links": 0}, {"max_links": True}, {"max_links": 129},
     {"max_response_bytes": 0}, {"max_response_bytes": True}, {"max_response_bytes": 16777217}])
 def test_bad_budgets_send_nothing(changes):
