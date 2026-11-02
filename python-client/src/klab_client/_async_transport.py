@@ -13,7 +13,7 @@ import httpx
 from .errors import (AuthenticationError, AuthorizationError, ConfigurationError,
                      InvalidRequestError, MissingAssetError, ProtocolError,
                      ServerError, SubmissionOutcomeUnknown, TransportError)
-from .transport import _TransportPolicy
+from .transport import Endpoint, _TransportPolicy
 
 
 class AsyncTransport(_TransportPolicy):
@@ -33,7 +33,12 @@ class AsyncTransport(_TransportPolicy):
         if not (inspect.iscoroutinefunction(resolver)
                 or inspect.iscoroutinefunction(getattr(resolver, "__call__", None))):
             raise ConfigurationError("Async transport requires a native async credential resolver")
-        return await resolver(service, endpoint.url, deadline)
+        credential = await resolver(service, endpoint.url, deadline)
+        if credential is not None and not isinstance(credential, str):
+            raise ConfigurationError("Async credentials must be issued text or None")
+        Endpoint(endpoint.url, credential)  # Same credential validation as explicit endpoints.
+        self.sensitive_values = tuple(dict.fromkeys((*self.sensitive_values, credential)))
+        return credential
 
     async def request(self, *args, **kwargs):
         deadline = kwargs.get("deadline")

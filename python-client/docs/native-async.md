@@ -99,6 +99,10 @@ reports acceptance only, while `job.status` distinguishes the resulting state.
 - Async transport accepts issued endpoint credentials or native async resolver
   callbacks. A synchronous resolver is rejected before invocation rather than
   possibly performing blocking authentication inside a notebook event loop.
+- Async scope/Job/service constructors reject a synchronous client before any
+  operation can accidentally block the event loop or send a mutation. Rotated
+  callback credentials use the same validation as Endpoint credentials and join
+  the redaction set before a response or error body can be interpreted.
 
 ## Acceptance before the feature merges
 
@@ -136,6 +140,22 @@ reports acceptance only, while `job.status` distinguishes the resulting state.
   been substituted for local results or vice versa.
 - **Not run:** real k.LAB async observation/scientific readback, because the public
   async workflow is not implemented in this pass. No scientific acceptance claimed.
+
+### Public-workflow follow-up (supersedes the first-pass implementation state)
+
+The public observation workflow is now implemented. Focused parity/security tests
+cover native scopes/jobs, known-Job resume, sibling wait isolation, synchronous
+client rejection, rotated credential redaction and exact sync/async typed-request
+wire equality. A deterministic zero-timeout case covers the already-expired wait
+without relying on scheduler speed; earlier CI exposed that timing-dependent
+coverage gap and the failed CI record is preserved.
+
+The first isolated real-Java attempt passed two-user/service readiness but failed
+before creating any scientific context/Job: its external allowlist omitted the
+test's exact read-only MODEL retrieval prerequisite. All thirteen recorded owned
+JVM identities were absent after cleanup. That attempt remains FAIL, not a scientific
+pass. A separately bounded fresh attempt is prepared with precisely that one
+prerequisite read added; no extra mutation budget or original fixture change.
 
 Reproduce the transport tests from `python-client`:
 

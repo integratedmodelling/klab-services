@@ -4,6 +4,7 @@ Objects and pure validators are shared with the sync client. All remote I/O is
 awaited; no background loop, thread facade, automatic replay or remote disposal.
 """
 import asyncio
+import inspect
 import math
 import time
 import uuid
@@ -22,7 +23,16 @@ from .requests import _prepare_observe
 from .transport import Endpoint
 
 
+def _require_async(client):
+    if not inspect.iscoroutinefunction(getattr(getattr(client, "transport", None), "request", None)):
+        raise ConfigurationError("Async scopes, jobs and services require a native async client")
+
+
 class AsyncJob(Job):
+    def __init__(self, client, *args, **kwargs):
+        _require_async(client)
+        super().__init__(client, *args, **kwargs)
+
     async def status(self, *, timeout=None, _deadline=None):
         payload = await self.client.transport.request(self.service, "GET", f"/jobs/status/{self.id}",
             scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
@@ -77,6 +87,10 @@ class AsyncJob(Job):
 
 
 class AsyncSession(Session):
+    def __init__(self, client, id):
+        _require_async(client)
+        super().__init__(client, id)
+
     async def create_context(self, *, configuration=None, name="Python context", options=None):
         payload = await self.client.transport.request("runtime", "POST", "/createContext", scope=self.id,
             json=self._context_request(configuration, name, options), ambiguous=True)
@@ -87,6 +101,10 @@ class AsyncSession(Session):
 
 
 class AsyncContext(Context):
+    def __init__(self, client, configuration, *, owned=False, token=None):
+        _require_async(client)
+        super().__init__(client, configuration, owned=owned, token=token)
+
     def within(self, observation):
         view = super().within(observation)
         return AsyncContext(self.client, view.configuration, owned=view.owned, token=scope_token(view))
@@ -119,6 +137,10 @@ class AsyncContext(Context):
 
 
 class _AsyncService(_RemoteService):
+    def __init__(self, client):
+        _require_async(client)
+        super().__init__(client)
+
     async def _request(self, method, route, scope=None, **kwargs):
         return await self.client.transport.request(self.service, method, route,
             scope=scope_token(scope), service_id=self.client.runtime_service_id, **kwargs)

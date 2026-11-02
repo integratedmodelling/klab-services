@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from klab_client import Client, ContextOptions, ObservationOptions, ObservationRequest, ResourceInspector, SemanticExplorer
-from klab_client.async_client import AsyncClient, AsyncContext, AsyncJob
+from klab_client.async_client import AsyncClient, AsyncContext, AsyncJob, AsyncSession, AsyncReasoner
 from klab_client.dto import observable_from_wire, observation_from_wire
 from klab_client.errors import (ConfigurationError, InvalidRequestError, JobCancelledError,
                                JobFailedError, JobUnavailableError, MissingAssetError,
@@ -323,4 +323,64 @@ def test_identity_semantic_and_submission_failures(mode):
                 with pytest.raises(ConfigurationError if mode == "missing_agent" else SubmissionOutcomeUnknown):
                     await context.submit(raw)
                 assert len(calls) == (0 if mode == "missing_agent" else 1)
+    asyncio.run(scenario())
+
+
+def test_sync_clients_cannot_accidentally_send_inside_async_objects():
+    def forbidden(request):
+        pytest.fail("Mixing clients must fail before any I/O")
+    with Client("https://runtime.invalid", http_transport=httpx.MockTransport(forbidden)) as sync:
+        for construct in (lambda: AsyncContext(sync, {"id": "s.c"}), lambda: AsyncSession(sync, "s"),
+                          lambda: AsyncJob(sync, 1, "s.c"), lambda: AsyncReasoner(sync)):
+            with pytest.raises(ConfigurationError):
+                construct()
+
+
+@pytest.mark.parametrize("resolved", [False, True])
+@pytest.mark.parametrize("observer", [None, 9])
+def test_async_typed_request_wire_matches_existing_sync_facade(resolved, observer):
+    from klab_client import Context
+    wire = observation()
+    records = []
+    def handler(request):
+        records.append((request.url.path, request.headers.get("klab-scope"), request.headers.get("klab-service"),
+                        request.content))
+        if request.url.path.endswith("/resolve/observable"):
+            return httpx.Response(200, json=wire["observable"])
+        return httpx.Response(200, json=7)
+    request = ObservationRequest(observable_from_wire(wire["observable"]) if resolved else "geography:Elevation in m",
+                                 options=ObservationOptions(observer=observer))
+    with Client("https://runtime.invalid", "runtime-secret", agent_name="scientist", runtime_service_id="runtime-id",
+                reasoner=Endpoint("https://reasoner.invalid", "reasoner-secret"), http_transport=httpx.MockTransport(handler)) as sync:
+        Context(sync, {"id": "s.c"}).within(8).observe(request)
+    expected = records[:]
+    records.clear()
+    async def scenario():
+        async with client(handler) as api:
+            job = await AsyncContext(api, {"id": "s.c"}).within(8).observe(request)
+            assert isinstance(job, AsyncJob)
+    asyncio.run(scenario())
+    assert records == expected
+
+
+def test_cancelling_one_async_wait_leaves_sibling_job_usable():
+    async def scenario():
+        entered = asyncio.Event()
+        calls = []
+        async def handler(request):
+            calls.append(request.url.path)
+            if request.url.path == "/jobs/status/1":
+                entered.set()
+                await asyncio.Event().wait()
+            return httpx.Response(200, json={"status": "FINISHED"} if "status" in request.url.path else observation())
+        async with client(handler, max_concurrency=2) as api:
+            context = AsyncContext(api, {"id": "s.c"})
+            first = asyncio.create_task(context.job(1).result())
+            await asyncio.wait_for(entered.wait(), 1)
+            second = asyncio.create_task(context.job(2).result(timeout=1))
+            first.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await first
+            assert (await second).id == 42
+            assert not any("/cancel/" in path or "release" in path for path in calls)
     asyncio.run(scenario())

@@ -314,3 +314,30 @@ def test_queued_deadline_and_cancellation_never_send_or_take_another_slot():
             assert await client.request("runtime", "GET", "/last") == {}
             assert calls == ["/first", "/stream", "/last"]
     asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("credential", [None, "fresh-secret", 123, "", "bad\r\nheader"])
+def test_resolved_credentials_are_validated_and_redacted_before_error_reporting(credential):
+    async def scenario():
+        calls = []
+        async def handler(request):
+            calls.append(request)
+            if credential is None:
+                assert "Authorization" not in request.headers
+            else:
+                assert request.headers["Authorization"] == credential
+            return httpx.Response(403, text="fresh-secret private-key")
+        async def resolve(*args):
+            return credential
+        async with transport(handler) as api:
+            api.credential_resolver = resolve
+            if credential in (None, "fresh-secret"):
+                with pytest.raises(AuthorizationError) as caught:
+                    await api.request("runtime", "GET", "/read")
+                assert "fresh-secret" not in str(caught.value) if credential else "private-key" not in str(caught.value)
+                assert len(calls) == 1
+            else:
+                with pytest.raises(ConfigurationError):
+                    await api.request("runtime", "POST", "/not-sent", ambiguous=True)
+                assert calls == []
+    asyncio.run(scenario())
