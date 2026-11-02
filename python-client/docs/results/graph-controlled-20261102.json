@@ -1,0 +1,41 @@
+{
+  "kind": "sanitized-typed-graph-controlled-acceptance",
+  "status": "PASS",
+  "python_candidate": "f1cc60a84458f58ce4b059472a9146cb5106dc85",
+  "java_binary_candidate": "a0a013a188fb752907f2d143a61b86f4a9cb0a0b",
+  "scope": "Recorded graph navigation on an isolated controlled Java fixture, not PaL, complete lineage or snapshot consistency",
+  "scientific_reproduction": false,
+  "scientific_accuracy_claim": false,
+  "shared_services_changed": false,
+  "session_count": 1,
+  "context_count": 1,
+  "observation_jobs": 2,
+  "membership_requests": 2,
+  "link_requests": 2,
+  "graph_navigation_verified": true,
+  "activity_type": "MEASURE",
+  "activity_outcome": "SUCCESS",
+  "root_commit_proof_claim": false,
+  "session_released": true,
+  "context_released": true,
+  "recorded_owned_jvm_identities": 13,
+  "all_recorded_owned_jvms_absent_after_cleanup": true,
+  "supervisor_timed_out": false,
+  "cleanup_errors": [],
+  "raw_evidence_sha256": {
+    "fixture-result": "7d53e297dfd229ce21d35ef6a94202a7dcb7ed5bc32d1421f0c6796b8183e873",
+    "functional-junit": "56ea1f80b4223f7edfc9325e5503727811582d863720a01eecc523a4fa3b6f14",
+    "supervisor-result": "1a4fa19616409c77491a5e275112965a58a62503a013b960ffba01fe758d6fbc"
+  },
+  "previous_attempts": [
+    {"status": "FAIL", "reason": "Clean-source gate detected uncommitted safety review fix before launching services", "contexts": 0, "observation_jobs": 0, "recorded_owned_jvms": 0},
+    {"status": "FAIL", "reason": "Navigation of a returned activity failed on nested frozen metadata", "contexts": 1, "observation_jobs": 2, "session_released": true, "context_released": true, "owned_cleanup_confirmed": true}
+  ],
+  "limitations": [
+    "No revision-consistent pagination, complete lineage, root-commit proof or broad scientific validity claim",
+    "Controlled MEASURED-link navigation only; no live acceptance of every supported relationship/node class or two-user graph privacy",
+    "No async graph browser, automatic crawl, arbitrary query text or graph mutation",
+    "Pinned Java binary tuple is not presumed equivalent to every current upstream build",
+    "Private credentials, launch arguments and raw context identities are not redistributed"
+  ]
+}

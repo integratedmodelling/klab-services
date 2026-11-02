@@ -52,3 +52,10 @@ Source authority: `KnowledgeGraphQuery` typed wire DTO and
 enums. Tests of DTOs and mocked responses establish client contracts, not deployed
 server compatibility. Any genuine Java acceptance must be reported separately with
 its pinned build, owned lifecycle and outcome. No graph page is PaL reproduction.
+
+The controlled Java run now passes observation → MEASURE activity → observation
+navigation with fresh membership checks, both scope releases and owned JVM cleanup.
+See [sanitized acceptance facts](results/graph-controlled-20261102.json) and the
+[author review](reviews/graph-browsing.md). Earlier failed attempts are preserved.
+This is not live acceptance of every supported node/relationship or a claim of
+complete lineage, root-commit proof, privacy testing or snapshot pagination.
