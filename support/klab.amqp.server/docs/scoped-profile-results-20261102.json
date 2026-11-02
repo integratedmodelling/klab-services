@@ -1,0 +1,66 @@
+{
+  "kind": "sanitized-owned-scoped-broker-profile-acceptance",
+  "status": "CONTROLLED_PROFILE_PASS",
+  "scope": "opt-in loopback-only explicit per-context virtual-host provisioning",
+  "prerequisite_pr": 116,
+  "source_and_cli_candidate": "21dea66433cd78fc87aa32f81dcec3f6c4a52f6c",
+  "code_and_test_candidate": "9b1b3eae85b9a0333b14b04cd576e5241d5ff0d0",
+  "later_candidate_delta": "standalone product-plugin repository declaration only, no Java source/test change",
+  "broker_version": "9.2.0",
+  "tests": {
+    "module_cases": 38,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "profile_compiler_lines": {"covered": 77, "missed": 0},
+    "profile_compiler_branches": {"covered": 78, "missed": 0},
+    "profile_compiler_coverage_enforced": true,
+    "plain_module_jar_built": true
+  },
+  "actual_qpid_socket_regression": {
+    "two_independent_context_deliveries": true,
+    "all_four_cross_context_reader_publisher_connection_denials": true,
+    "reader_publication_denied": true,
+    "owned_queue_absence_independently_inspected_through_broker_model": true,
+    "shared_per_context_exchanges_retained": true,
+    "permission_denials_distinguished_from_arbitrary_socket_errors": true
+  },
+  "packaged_main": {
+    "missing_private_work_directory_fails_closed": true,
+    "invalid_private_profile_fails_closed": true,
+    "only_owned_amqp_listener_no_http_shutdown_listener": true,
+    "two_context_delivery_and_delete_acknowledgements": true,
+    "all_four_cross_context_connection_denials": true,
+    "reader_publication_denied": true,
+    "no_profile_secrets_or_data_urls_in_captured_logs": true,
+    "artifact_and_attested_core_classes_unchanged": true,
+    "jar_sha256": "da5e829120c61245e2e22c09670682ed0f7df12cacbeb1786f38af11fccdb4dd"
+  },
+  "cleanup": {
+    "independently_absent_recorded_probe_and_cli_jvm_identities": 13,
+    "created_console_windows": 0,
+    "failed_private_fixtures_preserved": true,
+    "deployment_changes": false,
+    "runtime_or_scientific_jobs": 0,
+    "vendor_contact_or_security_issue_publication": false
+  },
+  "preserved_failures": [
+    "Initial module test compilation used an unavailable SystemLauncher getter; changed tests to its supported listener callback and retained independent queue inspection.",
+    "Callback-based broker inspection initially erased the generic Broker type; corrected the test type without removing assertions.",
+    "First clean hosted test could not resolve the standalone product plugin; added the same approved snapshot source used by the reactor, rather than skipping broker tests.",
+    "First packaged-main smoke passed fail-closed/listener checks but its Pika publisher helper rejected confirmation mode before publishing; the finite helper now uses broker transactions. The production Python receiver API was not changed."
+  ],
+  "raw_private_evidence_sha256": {
+    "packaged_cli_result": "38bb739f3ff9b8f6707f4c348c6c57af590761d8204c92fac7fd550fc9da7f98",
+    "profile_coverage_summary": "157b2c6c536e271415ec67b46e98cf1ddc5d848136b89b8902d5b14ae8c1450d",
+    "jacoco_report": "b14e1d0a6405f03343f100707596d81b6c97b3cc38d3d76c2748f7858022f307"
+  },
+  "remaining_merge_gates": ["final-head dedicated scoped-broker CI, normal build/Jenkins and local diff review"],
+  "nonclaims": [
+    "No existing guest/shared-host deployment is automatically secured or migrated.",
+    "No automatic Runtime publisher/federation URI provisioning or HTTP credential conversion.",
+    "No complete broker security clearance, per-principal resource quota or remote/TLS deployment acceptance.",
+    "No PR108 Runtime activity, TLS socket, overflow, full subscription lifecycle, replay or scientific acceptance.",
+    "Local author-conducted review is not independent maintainer approval."
+  ]
+}
