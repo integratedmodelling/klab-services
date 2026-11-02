@@ -142,5 +142,15 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <!-- This module is standalone (not parented by the reactor POM). Match the
+         reactor's product-plugin source so clean CI does not rely on a warm cache. -->
+    <pluginRepositories>
+        <pluginRepository>
+            <id>central-portal-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases><enabled>false</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+    </pluginRepositories>
 
 </project>
