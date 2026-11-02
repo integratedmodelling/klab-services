@@ -1,0 +1,34 @@
+{
+  "scope": "READ_ONLY_SEMANTIC_QUERY_CONTRACT_REVIEW",
+  "source_base": "5785c1baab02e319125e963ac349d25b9b4c7d6a",
+  "product_changes": false,
+  "acceptance_query_changes": false,
+  "worldview_model_oracle_algorithm_changes": false,
+  "scientific_jobs": 0,
+  "http_services_launched": 0,
+  "prior_diagnostic_pr": 120,
+  "prior_diagnostic_final_ci": "PASS",
+  "prior_diagnostic_offline_cases": 7,
+  "existing_subset_test": {
+    "method": "StrawmanBearerSourceAcceptanceTest#actualDeclarationSubsetEligibilityAndStrategies",
+    "outcome": "FAIL",
+    "failure_stage": "BEAN_CAPTURE_BEFORE_SEMANTIC_COMPILATION",
+    "expected_bean_status": "VALID",
+    "actual_bean_status": "INVALID",
+    "undefined_selected_closure_references": [
+      "imod:Anthroposphere", "imod:Biosphere", "imod:Technosphere"
+    ],
+    "whole_fixture_missing_concepts_proven": false,
+    "elevation_eligibility_assertions_reached": false,
+    "scientific_failure_or_product_defect_proven": false,
+    "pinned_input_files": 217,
+    "all_pinned_inputs_unchanged": true,
+    "test_assertions_or_sources_modified": false
+  },
+  "existing_source_fact_and_bearer_regressions": "RUNNING",
+  "review_acceptance": "INCOMPLETE",
+  "genuine_numerical_or_notification_acceptance": "NOT_VERIFIED",
+  "next_evidence_gate": "COMPLETE_NON_WAIVED_TEST_ONLY_SOURCE_CLOSURE",
+  "semantic_query_changes_authorized_by_this_review": false,
+  "publication_authorized": false
+}
