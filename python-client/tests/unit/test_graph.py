@@ -97,6 +97,29 @@ def test_detached_mediated_view_is_not_a_native_graph_anchor():
     assert not calls
 
 
+def test_returned_node_with_nested_immutable_metadata_can_be_navigated_again():
+    activity = {**link()["source"], "metadata": {"future": [{"values": [1, None, False]}]}}
+    api, ctx, obs, calls = setup(rows=[link(source=activity)], membership=None)
+    with api:
+        browser = GraphBrowser(ctx)
+        page = browser.neighbors(obs)
+        node = page.links[0].source
+        assert node.raw["metadata"]["future"][0]["values"] == (1, None, False)
+        with pytest.raises(TypeError):
+            node.raw["metadata"]["future"][0]["changed"] = True
+        refreshed = browser.neighbors(node)
+        assert refreshed.anchor.id == node.id and len(calls) == 4
+
+
+def test_malformed_user_authored_raw_node_is_rejected_before_request():
+    api, ctx, _, calls = setup()
+    with api:
+        node = replace(_node(link()["source"], api.transport.redact), raw=None)
+        with pytest.raises(ProtocolError):
+            GraphBrowser(ctx).neighbors(node)
+    assert not calls
+
+
 @pytest.mark.parametrize("changes", [{"max_links": 0}, {"max_links": True}, {"max_links": 129},
     {"max_response_bytes": 0}, {"max_response_bytes": True}, {"max_response_bytes": 16777217}])
 def test_bad_budgets_send_nothing(changes):

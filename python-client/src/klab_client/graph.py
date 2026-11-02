@@ -8,6 +8,7 @@ from .errors import InvalidRequestError, MissingAssetError, ProtocolError, Unsup
 from .handles import Handle, to_handle
 from .provenance import CLASSES, RELATIONSHIPS, ProvenanceLink, ProvenanceNode, _node
 from ._inspection import freeze
+from .evidence import _plain
 
 GRAPH_RELATIONSHIPS = RELATIONSHIPS + ("HAS_CHILD", "HAS_MEMBER", "HAS_ACTIVITY", "TRIGGERED")
 
@@ -81,7 +82,7 @@ class GraphBrowser:
             descriptor = {"@CLASS": next(key for key, kind in CLASSES.items() if kind == "observation"),
                           "id": anchor.id, "urn": anchor.urn}
         elif isinstance(anchor, ProvenanceNode):
-            descriptor = dict(anchor.raw)
+            descriptor = _plain(anchor.raw)
             checked = _node(descriptor, self.client.transport.redact)
             if (checked.id, checked.kind, checked.urn) != (anchor.id, anchor.kind, anchor.urn):
                 raise InvalidRequestError("Graph node fields disagree with their source descriptor")
