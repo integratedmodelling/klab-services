@@ -1,5 +1,10 @@
 # Existing public scaffold method inventory
 
+**Native async work is in progress:** the private transport foundation in
+[`native-async.md`](native-async.md) is not a completed/exported `AsyncClient`.
+The public APIs listed here remain synchronous. Async feature acceptance and a
+separate PR are required before that distinction changes.
+
 The four ABCs and their `*Impl` classes have the same operation status. Service
 implementations use a configured Client; no local fake success remains. Full
 routes, identity and DTO sources are in [contracts.md](contracts.md).
