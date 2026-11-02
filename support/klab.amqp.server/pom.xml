@@ -16,10 +16,45 @@
         <klab.version>1.0.0-SNAPSHOT</klab.version>
         <googleJibVersion>3.3.1</googleJibVersion>
         <maven.deploy.skip>true</maven.deploy.skip>
+        <qpid.version>9.2.0</qpid.version>
+        <argLine></argLine>
     </properties>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <argLine>@{argLine} -Xms64m -Xmx512m</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution><goals><goal>prepare-agent</goal></goals></execution>
+                </executions>
+                <configuration>
+                    <rules>
+                        <rule>
+                            <element>CLASS</element>
+                            <includes><include>org.integratedmodelling.amqp.ScopedBrokerProfile</include></includes>
+                            <limits>
+                                <limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>1.00</minimum></limit>
+                                <limit><counter>BRANCH</counter><value>COVEREDRATIO</value><minimum>1.00</minimum></limit>
+                            </limits>
+                        </rule>
+                    </rules>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
@@ -76,25 +111,46 @@
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker-core</artifactId>
-            <version>9.2.0</version>
+            <version>${qpid.version}</version>
         </dependency>
         <!-- AMQP protocol support is modular. Here we show support for 0-8/0-9 and 1.0. Support for 0-10 is excluded. -->
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker-plugins-amqp-0-8-protocol</artifactId>
-            <version>9.2.0</version>
+            <version>${qpid.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker-plugins-amqp-1-0-protocol</artifactId>
-            <version>9.2.0</version>
+            <version>${qpid.version}</version>
         </dependency>
         <!-- If a different store type is required it needs to be included here -->
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker-plugins-memory-store</artifactId>
-            <version>9.2.0</version>
+            <version>${qpid.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-plugins-access-control</artifactId>
+            <version>${qpid.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
+    <!-- This module is standalone (not parented by the reactor POM). Match the
+         reactor's product-plugin source so clean CI does not rely on a warm cache. -->
+    <pluginRepositories>
+        <pluginRepository>
+            <id>central-portal-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases><enabled>false</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+    </pluginRepositories>
 
 </project>
