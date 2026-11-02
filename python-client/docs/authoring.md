@@ -2,7 +2,7 @@
 
 **Implementation in progress; live acceptance pending.** This is a bounded
 extension of the existing Resources API, not the complete editing/publishing SDK.
-Only synchronous Client, NAMESPACE and SCRIPT source, and new workspace/project/
+Only synchronous Client, NAMESPACE source, and new workspace/project/
 document creation are admitted. No production Java/worldview change or parser port.
 
 ```python
@@ -64,9 +64,11 @@ secretly acquire locks or claim that a lock is a revisioned write transaction.
   assume source or private asset identifiers are safe to publish.
 
 Default service permissions/privacy are server-owned. This API makes no untested
-two-user privacy guarantee and never assigns remote publication rights. SCRIPT
-creation stores source only: it does not instantiate or run an agent. ONTOLOGY and
-other document types remain unsupported here to avoid inferring wider contracts.
+two-user privacy guarantee and never assigns remote publication rights. SCRIPT is
+blocked after the genuine Java response failed class/source fidelity validation.
+The inspected Java behavior adapter uses `syntax.encode()` for sourceCode; exact
+original-script preservation must be established separately. No reconstructed
+script is silently written. ONTOLOGY and other document types remain unsupported.
 
 ## Acceptance
 

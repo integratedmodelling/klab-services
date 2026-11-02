@@ -17,7 +17,6 @@ from .evidence import _plain
 
 DOCUMENTS = {
     "NAMESPACE": "org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl",
-    "SCRIPT": "org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl",
 }
 COLLECTIONS = ("results", "namespaces", "ontologies", "behaviors", "resources", "observationStrategies", "projects")
 
@@ -76,7 +75,7 @@ class Authoring:
 
     def parse(self, source, *, kind="NAMESPACE"):
         if not isinstance(kind, str) or kind not in DOCUMENTS:
-            raise UnsupportedOperationError("Source authoring admits only NAMESPACE and SCRIPT in this release")
+            raise UnsupportedOperationError("Source authoring currently admits only NAMESPACE; other source-fidelity contracts remain unverified")
         if not isinstance(source, str) or not source.strip() or len(source.encode("utf-8")) > self.max_source_bytes:
             raise InvalidRequestError("Source must be nonblank text within the configured UTF-8 byte budget")
         self._safe(source)
@@ -87,8 +86,6 @@ class Authoring:
         check_notifications(payload, self.client.transport.redact)
         if payload.get("@CLASS") != DOCUMENTS[kind] or payload.get("sourceCode") != source:
             raise ProtocolError("Parser must return the admitted class and exact unchanged source")
-        if kind == "SCRIPT" and payload.get("behaviorType") != "SCRIPT":
-            raise ProtocolError("SCRIPT parsing returned a different behavior kind")
         urn = required_text(payload, "urn")
         if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*", urn):
             raise ProtocolError("Parser returned an unsafe source URN")

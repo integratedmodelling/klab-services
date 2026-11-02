@@ -39,7 +39,7 @@ def setup(*, parse=None, write=None, write_status=200, transport_error=False):
     return client, calls
 
 
-@pytest.mark.parametrize("kind", ["NAMESPACE", "SCRIPT"])
+@pytest.mark.parametrize("kind", ["NAMESPACE"])
 def test_explicit_add_only_flow_retains_exact_source_and_confirmation(kind):
     api, calls = setup()
     with api:
@@ -105,11 +105,11 @@ def test_invalid_parser_responses_never_produce_authorable_source(change, error)
         Authoring(api).parse(SOURCE)
 
 
-def test_script_parser_must_confirm_script_kind():
-    api, _ = setup(parse={"@CLASS": DOCUMENTS["SCRIPT"], "urn": "python.authoring", "sourceCode": SOURCE,
-                          "behaviorType": "BEHAVIOR"})
-    with api, pytest.raises(ProtocolError):
+def test_script_authoring_is_blocked_until_its_exact_source_contract_is_verified():
+    api, calls = setup()
+    with api, pytest.raises(UnsupportedOperationError):
         Authoring(api).parse(SOURCE, kind="SCRIPT")
+    assert not calls
 
 
 @pytest.mark.parametrize("name", ["../foreign", ".", "..", "/foreign", "bad name", "", "1invalid"])
