@@ -22,8 +22,14 @@ remain on the service**. Use the project's existing authorized administrative/UI
 workflow to manage/delete them. There is no automatic rollback or deletion method
 hidden in a context manager, and there is no remote resource upload/import here.
 
-The caller must have ordinary user authorization plus CREATE/project privileges
-on the explicitly configured Resources service. Project-lock HTTP routes are
+The caller must have user authorization plus CREATE/project privileges
+on the explicitly configured Resources service. In the pinned Java ScopeManager,
+ordinary remote principals receive READ only; local/admin/system scopes receive
+the broader mask. Do not assume changing an issued token's arbitrary permission
+claims upgrades an already-cached scope. The owned write fixture therefore needs
+a distinct explicitly provisioned operator identity; success there is not ordinary
+remote-user write acceptance. This Python helper never provisions/elevates roles.
+Project-lock HTTP routes are
 administrator-only in the inspected server. This helper does not elevate roles,
 secretly acquire locks or claim that a lock is a revisioned write transaction.
 

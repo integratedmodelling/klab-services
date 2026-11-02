@@ -23,7 +23,8 @@ def test_real_java_owned_add_only_source_round_trip(functional_state, record_pro
     source = "namespace " + namespace + ";\n"
     script_urn = "python.owned.s" + source_suffix
     script_source = 'script ' + script_urn + '\n    "Owned ADD-only authoring fixture"\n    version 1.0\n\naction main:\n    return true\n'
-    report = {"scientific_reproduction": False, "workspace_deleted": False, "project_deleted": False}
+    report = {"scientific_reproduction": False, "workspace_deleted": False, "project_deleted": False,
+              "fixture_principal_role": config.get("fixture_principal_role", "unspecified")}
     with Client(config["urls"]["runtime"], config["token"], agent_name=config["username"],
             resources=Endpoint(config["urls"]["resources"], config["token"]), timeout=15) as api:
         author = Authoring(api)
