@@ -10,7 +10,7 @@ import os
 
 import pytest
 
-from klab_client import AsyncClient, Endpoint, ObservationRequest
+from klab_client import AsyncClient, Endpoint, ObservationRequest, ObservationOptions
 from klab_client.experiment import rectangle_geometry, verify_grid
 from klab_client.errors import ConfigurationError
 
@@ -40,11 +40,16 @@ def test_real_java_async_observe_readback_local_wait_and_explicit_cancel(functio
                 advertised = await owner.resources.retrieve(oracle["model_urn"], "MODEL")
                 assert advertised.urn == oracle["model_urn"]
                 session = await owner.create_session(name="Native async controlled acceptance")
-                context = await session.create_context()
-                region_job = await context.observe(ObservationRequest("geography:Region", geometry=rectangle_geometry()))
+                context = await session.create_context(configuration={"persistence": "EXPLICIT_ACTION",
+                    "accessRights": {"public": False, "allowedUsers": [config["username"]], "excludedUsers": [],
+                                     "allowedGroups": [], "excludedGroups": []}})
+                assert context.configuration.get("owner") == config["username"]
+                assert context.configuration.get("accessRights", {}).get("public") is False
+                region_job = await context.observe(ObservationRequest("earth:Terrestrial earth:Region", geometry=rectangle_geometry()))
                 region = await region_job.result(timeout=120)
                 verify_grid(region)
-                job = await context.within(region).observe(ObservationRequest("geography:Elevation in m"))
+                job = await context.within(region).observe(ObservationRequest("geography:Elevation in m",
+                    options=ObservationOptions(namespace="python.fixture")))
                 entered = asyncio.Event()
                 async def entered_status(request):
                     if request.url.path.endswith(f"/jobs/status/{job.id}"):

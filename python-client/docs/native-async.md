@@ -157,6 +157,15 @@ JVM identities were absent after cleanup. That attempt remains FAIL, not a scien
 pass. A separately bounded fresh attempt is prepared with precisely that one
 prerequisite read added; no extra mutation budget or original fixture change.
 
+The second attempt reached one private owned context but still submitted zero
+scientific Jobs: the functional test requested `geography:Region`, which does not
+resolve in the pinned worldview. The strict Reasoner check correctly rejected it.
+Both owned scope releases were confirmed and all thirteen recorded JVMs were
+absent after cleanup. The test is corrected to the fixture's established
+`earth:Terrestrial earth:Region`, explicit private persistence and `python.fixture`
+namespace ranking. No ontology edit, guessed semantic alias or relaxed validator
+was used. This failure also remains FAIL in the record.
+
 Reproduce the transport tests from `python-client`:
 
 ```text
