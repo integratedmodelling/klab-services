@@ -69,6 +69,11 @@ UI emulation and Java API parity. These are explicit boundaries, not empty succe
 
 ## Connection orchestration
 
+Indexed tabular views: `ScientificDataOrigin`, `to_dataframe` and
+`ScientificData.to_dataframe`, with optional `[tabular]` dependencies. New indexed
+reads retain declared primitive/contextualization and origin metadata; unknown
+fields remain unknown. See [precision, masks, metadata and categorical limits](scientific-tables.md).
+
 Bounded experiments: `Experiment`, `OwnedContextPolicy`, `ExperimentRunner`,
 `ExperimentOutcome`, `ExperimentBatch`, `BatchInterrupted`, `WaitCancelled`.
 See [ownership and cancellation semantics](bounded-experiments.md).

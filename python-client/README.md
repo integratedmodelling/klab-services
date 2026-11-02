@@ -10,12 +10,17 @@ Optional [scientific analysis and recorded provenance](docs/scientific-analysis.
 open native rasters as labeled xarray values plus validity and inspect bounded,
 read-only partial neighborhoods without claiming revision-consistent snapshots.
 
+Optional [indexed scientific pandas views](docs/scientific-tables.md) preserve
+scalar precision, explicit null flags, requested offsets and descriptive read
+origin without guessing coordinates, unit conversions or categorical dictionaries.
+
 Native observation exports can be streamed to files through existing advertised
 exporters, with bounded download memory and atomic publication. See
 [streamed export usage, file policy and live acceptance](docs/stream-exports.md).
 
 `klab-python-client` imports as `klab_client`, requires Python 3.11+, and provides
-a synchronous API for scripts/notebooks. The verified local workflow authenticates
+synchronous APIs and a [bounded native async observation workflow](docs/native-async.md)
+for scripts/notebooks. The verified local workflow authenticates
 a signed user, creates a context, runs a model, reads actual scientific values,
 reattaches, and explicitly releases test-owned state. The local authority and
 datasets are test fixtures; production onboarding and real-provider accuracy
@@ -26,7 +31,7 @@ remain deployment-specific.
 ```sh
 python -m pip install /path/to/python-client
 # Developers, from python-client/:
-python -m pip install '.[dev,local,analysis]'
+python -m pip install '.[dev,local,analysis,tabular]'
 python -m pytest -q
 python -m build
 ```
@@ -35,7 +40,7 @@ PowerShell uses the same commands through a virtual environment:
 
 ```powershell
 py -3.11 -m venv .venv
-& .\.venv\Scripts\python.exe -m pip install ".[dev,local,analysis]"
+& .\.venv\Scripts\python.exe -m pip install ".[dev,local,analysis,tabular]"
 & .\.venv\Scripts\python.exe -m pytest -q
 ```
 

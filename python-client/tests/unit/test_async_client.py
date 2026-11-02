@@ -126,7 +126,7 @@ def test_wait_boundaries_retain_handle_and_never_cancel_or_replay(kind):
                 assert (await job.result(1)).id == 42
             else:
                 with pytest.raises(TransportError if kind == "network" else WaitTimeout) as caught:
-                    await job.result(.015)
+                    await job.result(None if kind == "network" else .015)
                 if kind != "network":
                     assert caught.value.job is job
             assert not any("submit" in route or "cancel" in route or "release" in route for route in calls)
