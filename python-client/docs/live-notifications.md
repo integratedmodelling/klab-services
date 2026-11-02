@@ -3,10 +3,11 @@
 The user explicitly selected best-effort notifications, not durable recovery.
 Implementation and 71 mocked source-derived tests exist; **actual acceptance is
 BLOCKED/FAIL. Do not merge or count this roadmap feature complete yet.**
-The owned broker did not satisfy the mandatory negative context-binding policy
-test. Wrong-password and wrong-principal rejection alone do not establish context
-isolation. Root cause is under investigation; no production vulnerability is
-claimed. See [sanitized facts](results/notifications-controlled-20261102.json).
+The original shared-host broker attempt did not satisfy the mandatory context
+isolation test. Those failures remain in [historical facts](results/notifications-controlled-20261102.json).
+The separate per-context virtual-host profile now merged in PR #116 establishes
+that provisioning boundary, not complete Python/Runtime notification acceptance.
+Current receiver integration with that profile is under verification.
 
 Install `klab-python-client[events]`. Only synchronous root `Context` objects with
 a known Runtime identity and Qpid Broker-J AMQP 0-9-1 are admitted initially.
@@ -19,7 +20,7 @@ from klab_client import ActivityNotifications, NotificationBroker
 # `context` is an already-authorized synchronous root Context. The operator must
 # independently provision this broker account and its exact-context exchange ACL.
 broker = NotificationBroker(
-    "amqps://broker.example/%2F", username=broker_user, password=broker_password,
+    "amqps://broker.example/s.a", username=broker_user, password=broker_password,
 )
 with ActivityNotifications(context, broker, timeout=5, max_events=128) as events:
     event = events.read()  # one immutable activity hint, or None on timeout
@@ -39,10 +40,17 @@ with ActivityNotifications(context, broker, timeout=5, max_events=128) as events
   this API never creates, modifies or deletes the shared exchange or remote scope.
   Its type is explicitly `fanout`: Qpid checks type even on passive declaration;
   Pika's default `direct` is incompatible with the actual Java publisher path.
+- Require a separately provisioned virtual host whose exact name is the root
+  context ID. The example assumes `context.id == "s.a"`. Default/shared `/`
+  virtual hosts and wrong-context paths are refused before connection. Use the
+  [explicit isolated broker profile](../../support/klab.amqp.server/README.md) or a
+  separately verified equivalent; a guessed exchange name is not access control.
 - HTTP context access is not broker authorization. The operator must provision ACLs
   that allow reading/binding only approved exchanges, deny publishing to receivers,
   and restrict temporary queue ownership. A client cannot retrofit those policies
   from an HTTP token or prove event authenticity merely from an envelope field.
+  Connection-level virtual-host denial is reported as authorization denial, not
+  confused with a bad password or an unknown transport failure.
 - Only root context subscriptions are supported. Messages with valid focus paths
   under that root can be admitted; this is NOT observation-focus privacy filtering.
   Root context, Runtime binding and broker configuration drift terminate use.
@@ -97,12 +105,22 @@ an unfinished roadmap gate.
 
 ## Pending acceptance
 
-Current candidate `772e564ec12d00d6499499f51287fa71818678e2` includes the real
+Historical candidate `772e564ec12d00d6499499f51287fa71818678e2` includes the real
 Qpid passive-fanout fix. All 71 focused tests and hosted Python3.11–3.13, core-only,
 build and Jenkins checks pass. Initial full software run passed2112 tests, seven
 coverage gates, lint/build and an isolated core-only installed-wheel check. The
 seven recorded owned broker JVM identities are independently absent; failed
 private fixtures remain preserved. Software success does not waive live failures.
+
+PR #116 merged normally at `474d2706498e66df8104f701ae408095da5feaeb`: its38
+module cases, compiler100% coverage, source-matched dedicated CI and packaged-main
+checks verify two independent hosts, four cross-context denials, reader publish
+denial and owned queue cleanup. That profile does not automatically configure a
+Runtime publisher URI or change existing local/guest federation defaults. Current
+receiver changes require exact-context host selection and add explicit handling
+of Pika's connection-level access-denied exception;76 focused mocked cases pass
+with100% unexcluded lines/branches. Actual receiver/native Java and Runtime activity,
+TLS, overflow and disconnect/cleanup integration remain required before merge.
 
 Need an owned ACL-controlled actual Qpid broker plus pinned Java publisher/Runtime
 evidence, correct/wrong principals and contexts, publish denial, socket disconnect,

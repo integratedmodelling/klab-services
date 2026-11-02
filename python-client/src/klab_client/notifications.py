@@ -109,6 +109,9 @@ class ActivityNotifications:
         self._configured_broker = broker
         if any(context.client.transport.redact(value) != value for value in (broker.url, broker.username, broker.password)):
             raise ConfigurationError("Broker configuration must not reuse configured HTTP credential material")
+        path = urlsplit(broker.url).path
+        if not path.startswith("/") or unquote(path[1:]) != context.id:
+            raise InvalidRequestError("Notifications require an explicitly provisioned virtual host matching the exact root context; no shared/default host")
         self.state = "NEW"
         self.cleanup_confirmed = None
         self.received = self.received_bytes = 0
@@ -132,7 +135,7 @@ class ActivityNotifications:
         try:
             options = None if parsed.scheme == "amqp" else pika.SSLOptions(ssl.create_default_context(), parsed.hostname)
             parameters = pika.ConnectionParameters(host=parsed.hostname, port=parsed.port or (5671 if options else 5672),
-                virtual_host=unquote(parsed.path[1:]) if parsed.path not in ("", "/") else "/",
+                virtual_host=unquote(parsed.path[1:]),
                 credentials=pika.PlainCredentials(self.broker.username, self.broker.password),
                 ssl_options=options, connection_attempts=1, retry_delay=0, heartbeat=30,
                 socket_timeout=self.timeout, stack_timeout=self.timeout + 1,
@@ -156,7 +159,8 @@ class ActivityNotifications:
             self.state = "DISCONNECTED"
             if isinstance(error, pika.exceptions.ProbableAuthenticationError):
                 raise AuthenticationError("Broker authentication failed; no retry") from None
-            if getattr(error, "reply_code", None) == 403:
+            if isinstance(error, pika.exceptions.ProbableAccessDeniedError) or getattr(error, "reply_code", None) == 403:
+                self.state = "ACCESS_DENIED"
                 raise AuthorizationError("Broker denied subscription; HTTP authorization does not grant broker access") from None
             raise TransportError("Broker subscription failed; no credential diagnostics or automatic retry") from None
         except BaseException:

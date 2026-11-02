@@ -14,7 +14,7 @@ from klab_client.errors import (AuthenticationError, AuthorizationError, Configu
 
 
 def broker(**kw):
-    return NotificationBroker(**dict(url="amqp://127.0.0.1:18197/%2F", username="fixture-reader",
+    return NotificationBroker(**dict(url="amqp://127.0.0.1:18197/s.c", username="fixture-reader",
         password="broker-secret", allow_insecure_loopback=True, **kw))
 
 
@@ -28,11 +28,14 @@ class Driver:
     class AuthError(Exception):
         pass
 
+    class AccessError(Exception):
+        pass
+
     def __init__(self, deliveries=(), fault=None):
         self.calls = []
         self.deliveries = deliveries
         self.fault = fault
-        self.exceptions = NS(ProbableAuthenticationError=self.AuthError)
+        self.exceptions = NS(ProbableAuthenticationError=self.AuthError, ProbableAccessDeniedError=self.AccessError)
 
     def _call(self, name, **kw):
         self.calls.append((name, kw))
@@ -120,10 +123,10 @@ def test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints(setup):
 
 
 def test_tls_origin_and_virtual_host_are_explicit_without_http_credentials(setup):
-    stream, driver = setup(settings=replace(broker(), url="amqps://broker.example/%2F"))
+    stream, driver = setup(settings=replace(broker(), url="amqps://broker.example/s.c"))
     stream.open(); stream.close()
     params = dict(driver.calls)["connect"]
-    assert params["host"] == "broker.example" and params["port"] == 5671 and params["virtual_host"] == "/"
+    assert params["host"] == "broker.example" and params["port"] == 5671 and params["virtual_host"] == "s.c"
     context, host = params["ssl_options"]
     assert context.check_hostname and host == "broker.example" and context.verify_mode == module.ssl.CERT_REQUIRED
 
@@ -222,6 +225,10 @@ def test_authentication_and_authorization_are_distinct_from_disconnect(setup):
     with pytest.raises(AuthenticationError): stream.open()
     stream, _ = setup(fault=("bind", type("Denied", (Exception,), {"reply_code": 403})()))
     with pytest.raises(AuthorizationError): stream.open()
+    assert stream.state == "ACCESS_DENIED"
+    stream, _ = setup(fault=("connect", Driver.AccessError("private-vhost-detail")))
+    with pytest.raises(AuthorizationError): stream.open()
+    assert stream.state == "ACCESS_DENIED"
 
 
 @pytest.mark.parametrize("fault", [ConnectionError("secret"), StopIteration()])
@@ -298,3 +305,16 @@ def test_broker_revocation_and_clean_exit_failure_remain_visible(setup):
     stream, _ = setup(fault=("delete", OSError("private")))
     with pytest.raises(TransportError, match="cleanup"):
         with stream: pass
+
+
+@pytest.mark.parametrize("url", ["amqps://broker.invalid", "amqps://broker.invalid/", "amqps://broker.invalid/%2F", "amqps://broker.invalid/s.other"])
+def test_shared_default_or_wrong_context_vhost_is_rejected_before_io(setup, url):
+    stream, _ = setup()
+    with pytest.raises(InvalidRequestError, match="exact root context"):
+        ActivityNotifications(stream.context, replace(stream.broker, url=url))
+
+
+def test_percent_encoded_exact_vhost_preserves_identity(setup):
+    stream, driver = setup(settings=replace(broker(), url="amqps://broker.invalid/s%2Ec"))
+    stream.open(); stream.close()
+    assert dict(driver.calls)["connect"]["virtual_host"] == "s.c"
