@@ -127,13 +127,13 @@ class AsyncContext(Context):
         return await self.client.runtime.release_context(self)
 
     async def fetch_data(self, observation, offsets, *, curve="UNSPECIFIED", slice=None, semantics=None):
-        offsets, slice = self._read_spec(observation, offsets, curve, slice, semantics)
+        offsets, slice, origin = self._read_spec(observation, offsets, curve, slice, semantics)
         texts = []
         for offset in offsets:
             texts.append(await self.client.transport.request("runtime", "POST", "/api/v1/observation/value",
                 scope=scope_token(self), json={"sourceId": observation.id, "slice": slice, "curve": curve,
                 "geometry": None, "semantics": semantics, "offset": offset, "rate": None}, response="text"))
-        return self._decode_read(observation, offsets, curve, slice, semantics, tuple(texts))
+        return self._decode_read(observation, offsets, curve, slice, semantics, tuple(texts), origin)
 
 
 class _AsyncService(_RemoteService):

@@ -49,6 +49,28 @@ class JobStatus:
 
 
 @dataclass(frozen=True)
+class ScientificDataOrigin:
+    """Configured read origin, not credentials, authorization or a revision lease."""
+    runtime_url: str
+    context_id: str
+    scope: str
+    runtime_id: str | None = None
+
+    def __post_init__(self):
+        if not isinstance(self.runtime_url, str) or not isinstance(self.scope, str):
+            raise InvalidRequestError("Scientific origin URL and scope must be explicit text")
+        Endpoint(self.runtime_url)
+        token = scope_token(self.scope)
+        if (not isinstance(self.context_id, str)
+                or len(self.context_id.split(".")) != 2
+                or ".".join(token.split("#")[0].split(".")[:2]) != self.context_id):
+            raise InvalidRequestError("Scientific origin requires the exact root context and selected scope")
+        if self.runtime_id is not None and (not isinstance(self.runtime_id, str) or not self.runtime_id.strip()):
+            raise InvalidRequestError("Scientific origin Runtime identity must be nonblank text or unknown")
+        object.__setattr__(self, "runtime_url", _normalize_service_url(self.runtime_url))
+
+
+@dataclass(frozen=True)
 class ScientificData:
     """Explicit indexed cells; no guessed array dimensions or coordinates."""
     observation_id: int
@@ -62,6 +84,14 @@ class ScientificData:
     text: tuple[str, ...]
     source_observable: str | None = None
     source_units: str | None = None
+    origin: ScientificDataOrigin | None = None
+    artifact_type: str | None = None
+    contextualization: str | None = None
+
+    def to_dataframe(self, *, max_rows=256, max_metadata_bytes=1024 * 1024):
+        """Optional local table view; no network, reshaping or scientific conversion."""
+        from .tables import to_dataframe
+        return to_dataframe(self, max_rows=max_rows, max_metadata_bytes=max_metadata_bytes)
 
 
 class Job:
@@ -246,12 +276,12 @@ class Context(ContextScopeImpl):
         return self.client.runtime.release_context(self)
 
     def fetch_data(self, observation, offsets, *, curve, slice, semantics):
-        offsets, slice = self._read_spec(observation, offsets, curve, slice, semantics)
+        offsets, slice, origin = self._read_spec(observation, offsets, curve, slice, semantics)
         texts = tuple(self.client.transport.request(
             "runtime", "POST", "/api/v1/observation/value", scope=scope_token(self),
             json={"sourceId": observation.id, "slice": slice, "curve": curve, "geometry": None,
                   "semantics": semantics, "offset": offset, "rate": None}, response="text") for offset in offsets)
-        return self._decode_read(observation, offsets, curve, slice, semantics, texts)
+        return self._decode_read(observation, offsets, curve, slice, semantics, texts, origin)
 
     def _read_spec(self, observation, offsets, curve, slice, semantics):
         bound = observation._context
@@ -291,15 +321,26 @@ class Context(ContextScopeImpl):
                 not isinstance(semantics.get(k), str) for k in
                 ("observable", "unit", "range", "currency", "contextualDimensions"))):
             raise InvalidRequestError("Semantics requires explicit observable/unit/range/currency/contextualDimensions strings")
-        return offsets, slice
+        return offsets, slice, self._read_origin()
 
-    def _decode_read(self, observation, offsets, curve, slice, semantics, texts):
+    def _read_origin(self):
+        origin = ScientificDataOrigin(self.client.transport.endpoint("runtime").url,
+            self.id, scope_token(self), self.client._known_runtime_identity(self.configuration))
+        if any(self.client.transport.redact(value) != value for value in
+               (origin.runtime_url, origin.context_id, origin.scope, origin.runtime_id) if value is not None):
+            raise ProtocolError("Scientific read origin must not contain configured credential material")
+        return origin
+
+    def _decode_read(self, observation, offsets, curve, slice, semantics, texts, origin):
+        if self._read_origin() != origin:
+            raise ProtocolError("Scientific read origin changed during indexed retrieval")
         artifact_type = observation.observable.raw.get("artifactType")
         values = tuple(decode_cell(text, artifact_type) for text in texts)
         return ScientificData(observation.id, semantics["observable"] if semantics else observation.observable.raw["urn"],
                                semantics.get("unit") if semantics else observation.units,
                               observation.geometry, offsets, curve, slice, values, texts,
-                              observation.observable.raw["urn"], observation.units)
+                              observation.observable.raw["urn"], observation.units, origin, artifact_type,
+                              observation.observable.raw.get("contextualization"))
 
 
 class Client:
