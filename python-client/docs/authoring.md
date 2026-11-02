@@ -1,6 +1,7 @@
 # Explicit ADD-only source authoring
 
-**Implementation in progress; live acceptance pending.** This is a bounded
+**BLOCKED: implementation exists, but live cleanup acceptance failed. Do not use
+on retained deployments or merge PR #110 as complete.** This is a bounded
 extension of the existing Resources API, not the complete editing/publishing SDK.
 Only synchronous Client, NAMESPACE source, and new workspace/project/
 document creation are admitted. No production Java/worldview change or parser port.
@@ -18,9 +19,11 @@ with Client.from_env() as client:
 ```
 
 Each operation is explicit. Closing Python only closes local HTTP: **the assets
-remain on the service**. Use the project's existing authorized administrative/UI
-workflow to manage/delete them. There is no automatic rollback or deletion method
-hidden in a context manager, and there is no remote resource upload/import here.
+remain on the service**. In the pinned Java build, project deletion was verified,
+but workspace descriptor removal explicitly reports unimplemented. No general
+workspace cleanup is claimed; acceptance needs a server fix or explicitly agreed
+existing-owned-workspace workflow. There is no automatic rollback/deletion hidden
+in a context manager, and no remote resource upload/import here.
 
 The caller must have user authorization plus CREATE/project privileges
 on the explicitly configured Resources service. In the pinned Java ScopeManager,
@@ -75,6 +78,8 @@ script is silently written. ONTOLOGY and other document types remain unsupported
 Mocked source-derived cases establish request/response and failure contracts only.
 The opt-in `test_authoring_workflow.py` requires explicit authorization, creates a
 fresh uniquely named workspace/project and source documents, re-retrieves exact
-source, and checks known-owned cleanup. It must run against real pinned Java
-services before this feature is accepted. No preserved scientific project is
-modified, and no authoring test result is scientific reproduction evidence.
+source, and checks known-owned cleanup. Four real Java attempts are preserved:
+namespace round-trip succeeded on the operator fixture, but workspace cleanup is
+unimplemented. Overall status stays FAIL/BLOCKED. See
+[facts](results/authoring-controlled-20261102.json) and [review](reviews/authoring.md).
+No preserved scientific project was modified; no scientific reproduction is claimed.
