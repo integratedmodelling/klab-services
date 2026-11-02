@@ -1,0 +1,43 @@
+{
+  "scope": "NON_SCIENTIFIC_ADMISSION_OR_TRANSPORT_DIAGNOSIS_ONLY",
+  "product_fix_included": false,
+  "root_cause_proven": false,
+  "scientific_jobs_submitted": 0,
+  "observation_registration_requests": 0,
+  "oracle_or_worldview_or_algorithm_changes": false,
+  "publication_authorized": false,
+  "offline_diagnostic_tests_verified": 7,
+  "additional_envelope_and_abstract_transport_cases": "PASS",
+  "first_service_probe": {
+    "outcome": "STOPPED_BEFORE_INFERENCE_BY_PRIVATE_HARNESS_ALLOWLIST",
+    "endpoint_rejection_proven": false,
+    "owned_context_session_socket_cleanup": "PASS",
+    "recorded_jvm_identities_independently_absent": 14
+  },
+  "second_service_probe": {
+    "supervisor": "PASS",
+    "diagnostic_outcome": "CAPTURED_NOT_GENUINE_JOB_ACCEPTANCE",
+    "unfocused_elevation_strategies": [],
+    "uncommitted_region_focus_elevation_strategies": [],
+    "served_elevation_concept_types_include_ABSTRACT": true,
+    "owned_contexts_created": 1,
+    "owned_context_session_socket_http_cleanup": "PASS",
+    "recorded_jvm_identities_independently_absent": 14,
+    "unrelated_process_reusing_recorded_PID": "PRESERVED",
+    "visible_windows_for_live_recorded_owned_identities": 0,
+    "unchanged_attested_backend_launch_inputs": 3905,
+    "supervisor_result_sha256": "e1c62d249edeb08c1d23e1c4b5f2dbba0d73bf4be6715815ed6fe328ce18de53",
+    "detailed_result_sha256": "ed843b025f3234fd445299d0422b7b6701e8d3c4fea78af36fb1c327a9fd9717",
+    "mutation_journal_sha256": "6fdd389b5c5b58a7dc2dddd9ab5de443a210d0c1b8e96927588e27235915548c"
+  },
+  "third_service_probe": {
+    "status": "RUNNING",
+    "maximum_inference_requests": 6,
+    "scientific_submission_budget": 0,
+    "purpose": "ORIGINAL_QUERY_VS_CONCRETE_QUALITY_CONTROL_VS_EXPLICIT_BEARER_READ_ONLY_DIAGNOSTIC",
+    "alternative_query_is_not_acceptance_substitution": true
+  },
+  "genuine_numerical_readback": "NOT_VERIFIED",
+  "automatic_hook_activity_delivery": "NOT_VERIFIED",
+  "draft117_118_108_acceptance": "BLOCKED"
+}

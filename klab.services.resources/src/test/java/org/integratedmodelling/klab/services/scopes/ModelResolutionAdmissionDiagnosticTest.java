@@ -102,4 +102,31 @@ class ModelResolutionAdmissionDiagnosticTest {
     assertEquals(10, focused.getContextObservation().getId());
     assertEquals(1, selector().computeMatchingStrategies(transportedRequest, focused, true).size());
   }
+
+  @Test void unresolvedSnapshotEnvelopeRetainsFocusWithoutRegisteringAnObservation() throws Exception {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var snapshot = region(); snapshot.setId(-2);
+    var request = new org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest();
+    request.setObservation(quality());
+    request.setResolutionConstraints(List.of(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+        org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.UnresolvedContextObservation, snapshot)));
+    var decoded = mapper.readValue(mapper.writeValueAsBytes(request), request.getClass());
+    var original = root();
+    var focused = original.withResolutionConstraints(decoded.getResolutionConstraints().toArray(
+        new org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint[0]));
+    assertEquals(-2, focused.getContextObservation().getId());
+    assertNull(original.getContextObservation());
+    assertEquals(1, selector().computeMatchingStrategies(decoded.getObservation(), focused, true).size());
+  }
+
+  @Test void focusDoesNotSilentlyConcretizeAnAbstractRequestOnTransport() throws Exception {
+    var observation = quality();
+    ((ObservableImpl) observation.getObservable()).setAbstract(true);
+    ((ConceptImpl) observation.getObservable().getSemantics()).setAbstract(true);
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var decoded = mapper.readValue(mapper.writeValueAsBytes(observation), Observation.class);
+    assertTrue(decoded.getObservable().isAbstract());
+    assertTrue(decoded.getObservable().getSemantics().isAbstract());
+    assertTrue(selector().computeMatchingStrategies(decoded, root().within(region()), true).isEmpty());
+  }
 }

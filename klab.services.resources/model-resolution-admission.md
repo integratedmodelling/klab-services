@@ -44,7 +44,9 @@ Three additional native OWL diagnostic cases pass: a concrete declaration can ha
 an effectively abstract dependent expression when its identity requirements remain
 unfulfilled; an explicit eligible bearer discharges the synthetic requirement;
 a plain bearer supplies no invented identity evidence. These exercise the existing
-rules, not permission to change them. All five diagnostic tests pass locally.
+rules, not permission to change them. Two more cases verify that a typed unresolved
+snapshot envelope retains focus without registration and that transport plus focus
+does not silently concretize an abstract request. All seven tests pass locally.
 
 An offline read of the unchanged compatibility worldview confirms that Elevation
 is declared concrete, has parent `physical:Height of earth:Location`, and Height
@@ -59,9 +61,19 @@ and observation registrations occurred. Context/session release, empty-context
 listing, publisher socket absence and HTTP closure passed. All14 recorded JVM
 identities were independently absent afterward, with no matching visible windows.
 
+The second inference-only probe, after correcting the exact private endpoint
+allowlist, completed successfully. It returned **no Elevation strategies** both
+unfocused and with the uncommitted Region focus. No observation registrations or
+scientific Jobs occurred. All context/session/list/socket/HTTP cleanup passed;
+all14 recorded JVM identities were independently absent. A PID reused by an
+unrelated process was preserved; all3,905 attested backend input hashes matched.
+
 No current result reproduces a proven non-scientific defect or justifies a speculative
-product change. A fresh inference-only service probe, after correcting the exact
-private endpoint allowlist, is in progress. It uses the actual declared
+product change. A bounded control comparison is in progress: the original Elevation
+query, concrete Aspect quality, and a read-only explicitly qualified Elevation query.
+Each is tested unfocused and with a snapshot focus (maximum six inference requests).
+An alternative query is **not** a substitute for the fixed acceptance question or
+permission to change fixture/model/oracle bytes. The probe uses the actual declared
 `/api/v1/observationStrategies` contract, served semantic metadata and uncommitted
 focus snapshots. Its setup allows one disposable context; its scientific submit
 budget is zero and there are no observe/submit call sites. This is not a Job retry.
@@ -69,8 +81,8 @@ This prerequisite changes no product code;75Reasoner and10Resolver main Java sou
 files match the unchanged diagnostic backend. Test infrastructure
 uses the separately verified draft117 cleanup, not a deployment or merge.
 
-Initial PR head b63c3bd13 passed the general build, both offline diagnostic jobs and
-Jenkins. The expanded five-case suite still requires final-head CI. Passing tests
+PR heads b63c3bd13 and ac2ab0e88 passed the general build, both offline diagnostic
+jobs and Jenkins. The expanded seven-case suite still requires final-head CI. Passing tests
 are software diagnostics, not scientific or notification acceptance.
 
 ## Gates before any fix or merge
