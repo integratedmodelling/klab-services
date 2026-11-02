@@ -1,5 +1,10 @@
 # Events/reconnect: source audit and blocked acceptance gate
 
+**Historical durable-recovery audit.** The user subsequently approved a separate
+bounded best-effort activity-notification scope for PR #108; see
+[live-notifications.md](live-notifications.md). That implementation does not satisfy
+or waive the recovery contracts below. Its controlled live acceptance is pending.
+
 **BLOCKED / NOT IMPLEMENTED.** This is a contract audit for the next sequential
 feature after PR #107, not an event SDK, scientific acceptance result or completed
 roadmap item. No new public placeholder method, transport or production Java

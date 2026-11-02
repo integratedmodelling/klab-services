@@ -47,8 +47,10 @@ from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError,
     load_handle, restore_handle, save_handle, to_handle)
 from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
+from klab_client.notifications import ActivityNotifications, ActivityNotification, NotificationBroker
 
 __all__ = [
+    "ActivityNotifications", "ActivityNotification", "NotificationBroker",
     "Authoring", "AuthoringReceipt", "ParsedSource",
     "GraphBrowser", "GraphPage",
     "ScientificDataOrigin", "to_dataframe",
