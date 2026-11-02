@@ -1,5 +1,5 @@
 {
-  "status": "INCOMPLETE_GENUINE_RUNTIME_JOB_ACCEPTANCE",
+  "status": "BLOCKED_FROZEN_FIXTURE_SEMANTIC_ADMISSION",
   "pr": 117,
   "executable_candidate": "3d876834073ac26567b25e91867e5ed5166445b6",
   "integration_base": "474d2706498e66df8104f701ae408095da5feaeb",
@@ -42,8 +42,65 @@
     "scientific_jobs_submitted_so_far": 0,
     "OS_trust_store_changes": false
   },
+  "source_matched_service_build": {
+    "modules_packaged_with_existing_webui_profile": 13,
+    "launch_input_files_attested_and_unchanged": 3898,
+    "compiled_classes_matched_to_packaged_jars": 2612,
+    "dependency_policy": "Current declared Maven runtime closures and source-matched reactor classes only; historical closure merge refused",
+    "accepted_PR110_PR114_dependency_fingerprint_unchanged": "ba32fa65974f2ea01d064401200081a5b2ae23ccd9e104646dcdc11dd5896829",
+    "existing_frontend_advisories_not_upgraded": {"low": 1, "high": 2}
+  },
+  "full_service_attempts": [
+    {
+      "status": "FAIL_BEFORE_SERVICE_STARTUP",
+      "cause": "Offline typed validator used standalone core closure without SnakeYAML; changed only harness to use each service's actual closure",
+      "contexts": 0,
+      "scientific_jobs": 0,
+      "raw_result_sha256": "cf94e953bfa285234127f5814b26620537042e2b82448d5765bce9098d5ae2af"
+    },
+    {
+      "status": "FAIL_BEFORE_IMPORTS_OR_SCIENTIFIC_WORK",
+      "cause": "Windows asyncio Popen subclass imported after existing JVM ownership tracker wrapped subprocess.Popen; reproduced offline and fixed harness import order",
+      "contexts": 0,
+      "scientific_jobs": 0,
+      "raw_result_sha256": "f11fa3c46e4bf9150b7e196d3c111c7fa29c84c5f32c4a4ecf2a185b23f689da"
+    },
+    {
+      "status": "FAIL_SEMANTIC_ADMISSION",
+      "confirmed_owned_component_import_receipts": 6,
+      "contexts": 0,
+      "scientific_jobs": 0,
+      "reasoner_never_operational": true,
+      "unresolved_declarations": [
+        "DECLARATION_CLAUSE_TYPE_INVALID: agency:Decision observational containment",
+        "RELATIONSHIP_AXES_UNRESOLVED: life:SocialConnection orientation",
+        "RELATIONSHIP_AXES_UNRESOLVED: earth:StreamConnection orientation",
+        "INHERENCY_HEAD_INDEPENDENT: earth:Region of earth:StreamConnection is imod:Network"
+      ],
+      "reasoner_compiled_classes_identical_to_clean_integration_base": 186,
+      "baseline_full_live_semantic_test_claimed": false,
+      "frozen_worldview_modified_or_semantic_gate_bypassed": false,
+      "raw_result_sha256": "5f46a8c52cfaead20418afbcd1fdc7e69658325acbdbc58cf9f6ae5bf3019813"
+    }
+  ],
+  "independent_ingress_memory_prerequisite": {
+    "status": "PASS",
+    "actual_broker_rejects_over_one_MiB_before_python_body_admission": true,
+    "broker_CONTENT_TOO_LARGE_reply": 311,
+    "real_python_wrong_password_authentication_error": true,
+    "receiver_admitted_bytes": 0,
+    "receiver_cleanup_confirmed": true,
+    "raw_result_sha256": "d22255ae2ccf9f39fd9e467324d3db7c3b66b14b8811b1f74144783f8ac68198"
+  },
+  "latest_independent_cleanup": {
+    "all_recorded_full_fixture_diagnostic_and_wire_probe_jvm_identities_absent": true,
+    "distinct_pid_creation_identities": 33,
+    "source_matched_launch_input_files_unchanged": 3898,
+    "created_console_windows": 0,
+    "unrelated_services_or_terminals_touched": false
+  },
   "remaining": [
-    "Fresh source-matched four-service/graph fixture build and attested dependency closure",
+    "Explicit decision on a separately reviewed compatible synthetic scientific fixture; preserve historical frozen sources and do not modify shared/production worldview or bypass admission",
     "Genuine Runtime-created Job/activity delivered through automatic product context hook, not a manually installed fixture channel",
     "Real broker isolation and independent owned resource/process cleanup for that Job run",
     "Final-head CI, evidence review and ordinary merge only after bounded acceptance passes"

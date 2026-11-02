@@ -12,7 +12,20 @@ broader run has88 passes/six errors versus45 passes/the same six errors on clean
 integration base; those baseline failures are retained, not waived or repaired.
 A real Qpid/Python transport preflight passes immutable snapshots, wrong-owner
 refusal, description omission and cleanup, but uses hand-created Activity inputs.
-Actual Runtime Job acceptance is still outstanding. See
+The13-module source-matched service/graph build passes;3898 launch files are
+attested and2612 compiled classes match packaged JARs. Actual broker ingress
+rejection of a body over1MiB (reply311) before Python admission and wrong-password
+handling also pass. **Actual Runtime Job acceptance remains blocked**: the unchanged
+frozen worldview does not pass current declaration-clause/relationship-axis and
+inherency validation, so the fresh full fixture never reaches operational Reasoner
+status. Six owned component imports are confirmed; no contexts or scientific Jobs
+were submitted. The186 Reasoner classes match clean integration base exactly;
+this is not a claim that a complete baseline live semantic run was performed.
+Two earlier harness failures are preserved. All33 recorded full-fixture/diagnostic/
+wire-probe JVM identities are independently absent, and launch inputs remain
+unchanged. No semantic admission bypass or scientific-source edit was made. A
+compatible synthetic-fixture decision and its review are needed before a fresh
+genuine-Job run. See
 [sanitized evidence and hashes](activity-notification-routing-results-20261102.json).
 **Do not treat this guide as a
 completed deployment or merge approval.** Python notification PR108 remains draft.
