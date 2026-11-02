@@ -1,0 +1,42 @@
+{
+  "kind": "sanitized-owned-namespace-authoring-acceptance",
+  "status": "BLOCKED",
+  "functional_test_status": "FAIL",
+  "acceptance_complete": false,
+  "python_candidate": "00672db8fe3d8180bb5ce2cfe8a69b274af2b992",
+  "java_binary_candidate": "a0a013a188fb752907f2d143a61b86f4a9cb0a0b",
+  "fixture_principal_role": "fixture-administrator",
+  "ordinary_remote_write_acceptance": false,
+  "scientific_reproduction": false,
+  "shared_services_changed": false,
+  "observation_jobs": 0,
+  "confirmed_creations_in_latest_attempt": 3,
+  "namespace_exact_source_round_trip_verified": true,
+  "invalid_namespace_rejection_verified": true,
+  "project_delete_descriptor_and_post_delete_listing_verified": true,
+  "workspace_descriptor_deleted": false,
+  "workspace_delete_diagnostic_template": "TO BE IMPLEMENTED: removal of workspace descriptor <owned-name>",
+  "script_exact_source_echo": false,
+  "script_supported": false,
+  "script_execution_attempted": false,
+  "all_owned_jvms_absent_after_each_attempt": true,
+  "recorded_jvm_identities_per_attempt": 13,
+  "offline_fixture_state_retained_for_inspection": true,
+  "automatic_write_retries": 0,
+  "latest_raw_evidence_sha256": {
+    "fixture-result": "38acb8c9b47fcfb4f7ef2e6d834788daf74268055f92c4ee18226d96cf26b1aa",
+    "functional-junit": "74ac71c5f0454c6f22d01674aee35845c6465ad114de77f7059ffceb22afbd26",
+    "supervisor-result": "55eeb7ded822f7a0b32937ad07333756c10ed139e0c6d03bdeec5f60791c1d54"
+  },
+  "attempts": [
+    {"status": "FAIL", "create_attempts": 0, "reason": "Generated numeric namespace suffix rejected by real grammar", "fixture_result_sha256": "96fd4a7b433e120a24816fe20af4b8c85d5734f1566070371e09b9a740bffa86"},
+    {"status": "FAIL", "create_attempts": 2, "confirmed_creations": 1, "reason": "Ordinary remote principal confirmed workspace ADD; project ADD returned HTTP 500 and remained unknown. No dependent delete or replay. Pinned source grants ordinary remote scopes READ only; exact server exception not captured", "fixture_result_sha256": "2cb290f3dc8c154868e1343c71fff789f26e0be1e5c83ae074c6edee4ddde1dd"},
+    {"status": "FAIL", "create_attempts": 3, "confirmed_creations": 3, "reason": "Operator namespace round trip succeeded; script failed fidelity check; cleanup retrieve was malformed after project DELETE acknowledgement", "fixture_result_sha256": "835fd463e14e467b75bf6ba8f3506877663c8d26c1037fcf8a630d4ec54b8ccd"},
+    {"status": "FAIL", "create_attempts": 3, "confirmed_creations": 3, "reason": "Namespace round trip and project deletion verified; workspace deletion explicitly unimplemented", "fixture_result_sha256": "38acb8c9b47fcfb4f7ef2e6d834788daf74268055f92c4ee18226d96cf26b1aa"}
+  ],
+  "unblock_requires": [
+    "Authorized server workspace-descriptor removal fix, or explicitly scoped existing-owned-workspace workflow with verified ownership",
+    "Separate exact original SCRIPT source contract before admitting script authoring",
+    "Explicit CREATE provisioning for ordinary remote-user support claims"
+  ]
+}
