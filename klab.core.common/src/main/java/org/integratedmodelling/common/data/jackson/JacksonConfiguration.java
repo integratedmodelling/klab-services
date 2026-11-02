@@ -186,7 +186,7 @@ public class JacksonConfiguration {
         }
       }
       gen.writeStartObject();
-      gen.writeObjectField(CLASS_FIELD, value.getClass().getName());
+      gen.writeStringField(CLASS_FIELD, value.getClass().getName());
       for (Field field : getAllFields(value.getClass())) {
         field.setAccessible(true); // You might want to set modifier to public first.
         final Object fieldValue;
@@ -206,7 +206,10 @@ public class JacksonConfiguration {
           // object in the generator. Continuing would corrupt its context and replace the useful
           // cause with errors such as "Current context not Object but Array".
           try {
-            gen.writeObjectField(field.getName(), fieldValue);
+            // Stay in the active provider: the generator's ObjectCodec path re-enters
+            // ObjectMapper.writeValue and flushes the transport once per nested field,
+            // even when the outer writer disables FLUSH_AFTER_WRITE_VALUE.
+            serializers.defaultSerializeField(field.getName(), fieldValue, gen);
           } catch (IOException e) {
             throw JsonMappingException.wrapWithPath(e, value, field.getName());
           }

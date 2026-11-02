@@ -1,0 +1,69 @@
+{
+  "status": "BOUNDED_SERIALIZATION_TESTS_PASS_FINAL_PACKAGE_CI_REVIEW_PENDING",
+  "base": "474d2706498e66df8104f701ae408095da5feaeb",
+  "scope": "Authorized separate transport prerequisite; active-provider field serialization and primitive class tag only",
+  "scientific_worldview_dependency_or_deployment_changes": false,
+  "reproduced_defect": {
+    "fixture": "Synthetic native KimNamespaceImpl containing 20 empty native KimModelImpl declarations; no model expression execution",
+    "baseline_flushes": 380,
+    "fixed_flushes": 0,
+    "wire_bytes_each": 9361,
+    "baseline_and_fixed_wire_sha256": "4c0eead169c2a118acdbb092fe2ada4ec216e09acbc519ff542552eb67b110fc",
+    "baseline_caller_disabled_flushes": 380,
+    "baseline_controlled_output_failure": "JsonMappingException wrapping IOException on unexpected nested flush",
+    "baseline_test_results": {"tests": 4, "failures": 2, "errors": 1},
+    "partial_provider_only_correction_flushes": 42,
+    "partial_correction_failures_preserved": true,
+    "class_tag_path_also_corrected": true,
+    "wire_comparison_requires_verified_class_provenance": true,
+    "initial_comparison_without_corrected_class_loading_not_accepted": true
+  },
+  "verified_tests": {
+    "focused_native_tests_passed": 70,
+    "new_cases": 5,
+    "real_ephemeral_loopback_response": "PASS",
+    "caller_controlled_flush_policy": "PASS",
+    "actual_output_failure_still_propagates": "PASS",
+    "existing_proxy_local_view_reflection_and_domain_serialization_guards": "PASS",
+    "both_changed_serialization_statements_have_no_missed_instructions": true,
+    "entire_serializer_100_percent_claim": false
+  },
+  "broader_comparison": {
+    "candidate": {"tests": 322, "failures": 1, "errors": 0},
+    "clean_base": {"tests": 317, "failures": 1, "errors": 0},
+    "failure_class": "org.integratedmodelling.common.utils.QuietHttpPostTest",
+    "failure_method": "requiredCommandsStillReportHttpStatusAndStructuredErrorDetails",
+    "failure_type": "org.opentest4j.AssertionFailedError",
+    "failure_message": "expected: <true> but was: <false>",
+    "class_method_type_message_match": true,
+    "failure_retained_not_repaired_or_waived": true
+  },
+  "original_job_failure_nonclaim": {
+    "attempt": 5,
+    "original_primary_exception_masked_by_cleanup_assertion": true,
+    "resources_exception_chain_includes_client_abort": true,
+    "model_field_defect_not_proven": true,
+    "offline_native_models_namespaces_and_ontology_collection_serialize": "PASS",
+    "fresh_native_service_read_only_probe": {
+      "readiness": "PASS",
+      "selected_reads_passed": 8,
+      "model_list_count": 31,
+      "namespace_list_count": 15,
+      "ontology_list_count": 26,
+      "sessions": 0,
+      "contexts": 0,
+      "scientific_jobs": 0,
+      "automatic_mutation_replays": 0,
+      "recorded_owned_JVMs_independently_absent": 14,
+      "corresponding_visible_windows": 0,
+      "unrelated_processes_or_windows_changed": false
+    },
+    "original_job_numerical_activity_and_socket_acceptance_fixed": "NOT_ESTABLISHED",
+    "draft118_117_108_acceptance": "INCOMPLETE"
+  },
+  "remaining": [
+    "General package and packaged class check",
+    "Final-head dedicated coverage CI, general build and local review",
+    "Normal merge of only the reproduced bounded defect when accepted; not a merger of blocked drafts or a deployment"
+  ]
+}
