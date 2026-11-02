@@ -1,0 +1,44 @@
+{
+  "kind": "sanitized-native-async-controlled-acceptance",
+  "status": "PASS",
+  "python_candidate": "e83e9b61a0b930de54371d669cdef4ec1029ca3e",
+  "java_binary_candidate": "a0a013a188fb752907f2d143a61b86f4a9cb0a0b",
+  "scope": "Synthetic known-answer client workflow on an isolated owned Java fixture, not PaL or real-provider reproduction",
+  "scientific_reproduction": false,
+  "scientific_accuracy_claim": false,
+  "shared_services_changed": false,
+  "session_count": 1,
+  "context_count": 1,
+  "observation_jobs": 2,
+  "model_urn": "python.fixture.elevation-quantifier",
+  "region_definition": "earth:Terrestrial earth:Region",
+  "reference": {"calculation": "100 + 93/4 metres", "expected_decimal": "123.25", "cells": 20},
+  "values_verified": true,
+  "local_wait_cancelled": true,
+  "original_job_resumed": true,
+  "explicit_cancel_requests": 1,
+  "explicit_cancel_accepted": false,
+  "status_after_cancel": "FINISHED",
+  "cancellation_limit": "Completed-Job cancellation race, not proof of interrupting a running simulation",
+  "session_released": true,
+  "context_released": true,
+  "recorded_owned_jvm_identities": 13,
+  "all_recorded_owned_jvms_absent_after_cleanup": true,
+  "supervisor_timed_out": false,
+  "cleanup_errors": [],
+  "raw_evidence_sha256": {
+    "fixture-result": "be34a5f5dcf16cebebab4a274428743c08095b8bb08a133e499943c831516edf",
+    "functional-junit": "3c87c9901a2901954422e7b3d7d2f477b1c1b8dfc131ec6834092a6ad3f53fa7",
+    "supervisor-result": "5a3a1b81b76cf4137d0e113ecef4a32cbb09516d1dee0074446d2422b86b2e6b"
+  },
+  "previous_attempts": [
+    {"status": "FAIL", "reason": "External guard omitted the exact read-only model prerequisite", "contexts": 0, "observation_jobs": 0, "owned_cleanup_confirmed": true},
+    {"status": "FAIL", "reason": "Functional test used geography:Region, absent in the pinned worldview", "contexts": 1, "observation_jobs": 0, "session_released": true, "context_released": true, "owned_cleanup_confirmed": true}
+  ],
+  "limitations": [
+    "No real-provider, nonuniform-field, missing-cell or valid-zero live acceptance in this constant fixture",
+    "No claim of binary equivalence with every current upstream Java source revision",
+    "No async file export, saved-handle restoration, Connection/Hub orchestration or durable graph/event recovery",
+    "Private logs, credentials, JVM arguments and handle identities are not redistributed"
+  ]
+}

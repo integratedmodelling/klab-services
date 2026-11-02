@@ -6,10 +6,11 @@ Roadmap feature branch: `feature/python-native-async`, based on the normal PR #1
 merge `e01908d718fc0beb20192f74cb6dfcd57dcff682` into
 `feature/python-experiment-runner`.
 
-**IN PROGRESS — public workflow implemented, real-service acceptance pending.**
+**IMPLEMENTED — bounded public workflow and controlled real-service acceptance pass.**
 `AsyncClient`, `AsyncSession`, `AsyncContext` and `AsyncJob` are exported from
 `klab_client`. They support the bounded observation workflow described below;
-transport tests alone are not sufficient to merge the feature.
+transport tests alone are not sufficient to merge the feature. Final-head CI and
+the normal contribution-review/merge workflow remain required.
 
 The preceding PaL contribution was merged as pinned real-input prerequisites,
 not a completed Java-backed Radiation experiment or published-study reproduction.
@@ -174,7 +175,17 @@ python -m pytest tests/unit/test_async_transport.py tests/integration/test_async
 
 Public async scope/job/typed-request APIs, shared Job state decoding/validation,
 scientific point readback and an example are implemented in the follow-up pass.
-Final regression/coverage and real-service acceptance are still pending. Keep the PR draft
-until its agreed feature scope and evidence satisfy the gates above. Start the
-next roadmap feature only after this feature is reviewed and merged, or explicitly
-record it blocked and obtain direction on any proposed change of sequence.
+The final executable candidate passes 1817 offline tests, existing and new 100%
+coverage gates, lint, packaging and a fresh core-only wheel check. Its third fresh
+isolated Java run passes the actual shipped functional test: one context, two Jobs,
+20 controlled values, cancellation of a local wait and resume of the original Job,
+with both scope releases confirmed and all thirteen owned JVM identities absent.
+The explicit cancellation of a completed Job returned false and FINISHED; this
+does not establish interruption of a running simulation.
+
+See [sanitized acceptance facts](results/native-async-controlled-20261102.json)
+and [the author read-only review and limits](reviews/native-async.md). No independent
+third-party approval is implied. The two earlier failed attempts remain failed.
+Before merge, require final-head CI and verify that documentation closeout has not
+changed the live-tested executable tree. Start the next roadmap feature only after
+normal merge, or explicitly record a real blocker and change of sequence.
