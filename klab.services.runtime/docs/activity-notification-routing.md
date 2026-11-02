@@ -146,3 +146,25 @@ activity delivery, broker isolation, and independent live queue/socket cleanup
 are still required before merging117/118/108. The merged119 flush-ownership fix is
 not proof of the primary cause of the earlier numerical Job failure. The original
 failed sources, frozen original fixture and numerical oracle stay unchanged.
+
+### Attempt6 and the HTTP-path gap
+
+The fresh source-matched attempt6 retained the primary failure correctly:
+`JobFailedError` decoding the elevation result's error notification. Region result
+retrieval/grid checking succeeded, but numerical readback and actual activity
+delivery were not verified. Wrong-context reader denial, receiver closure,
+independent receiver queue absence, both context releases, session release and
+empty context listing passed; publisher socket absence still failed. All14
+recorded JVM identities are independently absent, with no corresponding visible
+windows and no mutation replay.
+
+The existing HTTP `closeContext` controller still directly closed its authorized
+request scope, bypassing the newly corrected canonical service lifecycle. Three
+of six new controller regression cases fail before correction. The route is now
+delegated to `RuntimeService.releaseContext`, retaining its
+principal/context checks and returning the actual product result. All64 focused
+reactor cases pass, including six controller cases; both release methods have no
+missed lines or branches. Real **context-only** queue/socket acceptance remains pending; the scientific submit
+budget for that next lifecycle probe is zero. The failed elevation Jobs will not
+be rerun unchanged, and neither the transport nor service-method fixes are claimed
+to resolve the scientific result failure.

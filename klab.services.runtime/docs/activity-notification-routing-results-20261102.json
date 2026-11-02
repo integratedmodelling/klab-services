@@ -1,5 +1,5 @@
 {
-  "status": "CANONICAL_RELEASE_SOFTWARE_PASS_GENUINE_JOB_AND_LIVE_CLEANUP_ACCEPTANCE_PENDING",
+  "status": "GENUINE_ELEVATION_JOB_FAILED_HTTP_RELEASE_FOLLOWUP_UNDER_VERIFICATION",
   "pr": 117,
   "executable_candidate": "3d876834073ac26567b25e91867e5ed5166445b6",
   "integration_base": "474d2706498e66df8104f701ae408095da5feaeb",
@@ -53,6 +53,50 @@
     "cleanup_attempted_once": true,
     "private_exception_messages_not_written": true,
     "scientific_jobs_submitted_by_harness_tests": 0
+  },
+  "current_source_matched_rebuild": {
+    "candidate": "0dfc56397fd75a930724bee1cea60b3fa733e64c",
+    "modules": 13,
+    "existing_webui_profile": "PASS",
+    "current_declared_closure_files_attested": 3905,
+    "compiled_classes_equal_packaged_classes": 2612,
+    "legacy_named_harness_classpath_files_exactly_equal_fresh_canonical_closures": 7,
+    "historical_dependency_closures_merged": false,
+    "accepted_authoring_dependency_witness_unchanged": true,
+    "head_CI_build_routing_transport_and_Jenkins": "PASS"
+  },
+  "preserved_live_attempt6": {
+    "status": "FAIL",
+    "readiness_status": "PASS",
+    "contexts": 2,
+    "confirmed_observation_submission_receipts": [1, 2],
+    "region_result": "RETRIEVED_AND_GRID_CHECKED",
+    "elevation_result": "JobFailedError in result notification decoding; FAILED_UNCLASSIFIED",
+    "primary_failure_preserved_separately_from_cleanup": true,
+    "numerical_readback_and_genuine_activity_delivery": "NOT_VERIFIED",
+    "wrong_context_reader_denied": true,
+    "receiver_cleanup_and_independent_queue_absence": "PASS",
+    "context_and_session_release_receipts_and_empty_context_list": "PASS",
+    "publisher_socket_absence_after_release": "FAIL",
+    "all_14_recorded_owned_JVM_identities_independently_absent": true,
+    "corresponding_visible_windows": 0,
+    "automatic_mutation_replays": 0,
+    "raw_result_sha256": "240d4c5ef77bb49064f671dc5d7c8393dc43ea537a3d8b8f2d81937e827b34ef",
+    "detailed_primary_and_cleanup_result_sha256": "b5ae63728c0aff716a5a2121aff3e14819b8ef3c6ddfba48652c6a9638584bed"
+  },
+  "http_release_followup": {
+    "identified_gap": "Existing releaseContext HTTP controller directly closed the authorized request copy instead of calling RuntimeService.releaseContext; the corrected canonical service method was not on the live HTTP release path",
+    "controller_pre_fix_tests": 6,
+    "controller_pre_fix_failures": 3,
+    "correction": "Delegate the unchanged authenticated route to the product canonical release method and return its actual result",
+    "verification": "PASS",
+    "controller_cases_passed": 6,
+    "focused_reactor_cases_passed_including_routing_and_merged_transport": 64,
+    "controller_closeContext_covered_lines": 5,
+    "controller_closeContext_covered_branches": 4,
+    "controller_and_product_release_methods_missed_lines_and_branches": 0,
+    "next_live_probe": "Fresh context lifecycle only; scientific submit budget zero; do not rerun failed elevation Jobs unchanged",
+    "lifecycle_probe_static_preflight": "PASS: source compiles, zero observe call sites and enforced submit budget zero"
   },
   "focused_regressions": {
     "tests": 43,
@@ -153,7 +197,8 @@
   "remaining": [
      "Source-matched rebuild and new launch attestation for merged119 and canonical root-release correction; historical manifests must not be reused as current proof",
      "Use separately authorized draft118 v2 fixture without production/shared worldview edits; preserve original failed sources and fixed numerical oracle",
-     "Capture primary and cleanup failures separately before any fresh bounded genuine-Job acceptance; do not replay attempt5 mutations",
+     "Preserve attempt6 primary JobFailedError and separate publisher socket cleanup failure; diagnose model resolution without replaying failed Jobs",
+     "Verify HTTP delegation and real context-only queue/socket cleanup with a zero scientific-Job budget before any further genuine-Job run",
     "Genuine Runtime-created Job/activity delivered through automatic product context hook, not a manually installed fixture channel",
     "Real broker isolation and independent owned resource/process cleanup for that Job run",
     "Final-head CI, evidence review and ordinary merge only after bounded acceptance passes"
