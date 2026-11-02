@@ -1,0 +1,209 @@
+{
+  "record": "6786419",
+  "archive_sha256": "4b1aff4c5b8ba3be9b2568ed79098c176850dc1be5570816e00d27848adccad9",
+  "archive_bytes": 612570,
+  "members": [
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/.Rhistory",
+      "size": 277,
+      "sha256": "a616cce206bca9e6281f03dbfc833419fa619da48dcc99568fd504c67c4b4a22"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/CorrerPuerto.R",
+      "size": 2097,
+      "sha256": "5493ca392936b90473f4d48ba7a3a9eb6df3de3a06891baaa15b148d974f0c98"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/Plant.R",
+      "size": 1357,
+      "sha256": "8c8cda136de62db2bcca676eac953cd7ce7da7e37bf3db21c98e666f6b9fe0d7"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/Plant1_Comun.R",
+      "size": 11116,
+      "sha256": "3a87fb56f88451780ec1c9f9667195f64214bc4a7c9868822723790a66e1681b"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/Plant2_Crec.R",
+      "size": 29887,
+      "sha256": "44d7bf66982f87e5251af83711f073db53625e3544a5293976e4b16df9bcce1b"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/PuertoClima.R",
+      "size": 7831,
+      "sha256": "a49b2569e783042739e13a07581b62d55907e439d4f5e76f5ddd8b7d09c6e135"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/PuertoRadiacion.R",
+      "size": 4971,
+      "sha256": "8fd13fcfc1da6990f8668a3327d6c3964c5c933dab1daa405018089e777557b0"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/PuertoRadiacion2.R",
+      "size": 3314,
+      "sha256": "a8cb20fe1f5dcdbcd2457dbfd9303b8c23f017941f7c732ffd2ec5f33100017f"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/PuertoSuelo.R",
+      "size": 2800,
+      "sha256": "85d21f2d7833ac536db2e430b77fa7e61df03fd0a9422b0e41db0fbd4a477a07"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Codigo/fechas.Rdata",
+      "size": 66315,
+      "sha256": "1e6cb53ae3ee42f586f859b27e77512cac58c607342a6dd901fe0705bda59093"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Funciones/FuncModAnimal.R",
+      "size": 2271,
+      "sha256": "3644432556f43691f89173f53222ba6baa311c3b67a5a5c98287f04c6d17b4f1"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Funciones/FuncModPlanta.R",
+      "size": 3679,
+      "sha256": "26e526a92e256ed5a4c7aacf7bfb96077821a117852c38d2e3608bf6a2cc3e96"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Funciones/Funct10at1.R",
+      "size": 2841,
+      "sha256": "e74c6ae6ea2dfd6eb845efe358a28808b8c7e5a5b5d91b5b5b4cc795c6fb1c6d"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Funciones/Parametros.R",
+      "size": 2277,
+      "sha256": "6de5ae040338cedc9e75443300f39a8231dddcb45d19c0cea74f8360e520962f"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/Funciones/fmultiplot.R",
+      "size": 1527,
+      "sha256": "c7c68c93110b1d812319b4058891580da74d4c4e5ef70267c628d19560849c0f"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/LICENSE",
+      "size": 34523,
+      "sha256": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/README.md",
+      "size": 4427,
+      "sha256": "dbf842c0542730b0da0dd3dfe38c67dee25c4c7ec3e54b3091ba7c1b7913f280"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/A0_Reba\u00f1os.txt",
+      "size": 143,
+      "sha256": "fceb671bc8ef30bcb274442c2b6477909656e61d950319d0efca96697e74b406"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/A0b_Gestantes.txt",
+      "size": 298227,
+      "sha256": "24de21a095cb9336e871e8ab11389f6d8a65142a788f78623e8f17f450ad244c"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/A1_Numeros.txt",
+      "size": 985940,
+      "sha256": "4ada05c75be500467971d554bdc3bde06f5795f72dbb0a0ad088054d4b02e553"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/A1b_Inicio.txt",
+      "size": 6611,
+      "sha256": "25e3ee24665abc84dc359eb7415d94b072d3af91078e41c72de4f65d0d572d4d"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/A2_Alcances.txt",
+      "size": 1024185,
+      "sha256": "3353fef712133c4cb099ebf799ed3027ec7decb223d262e75f91173492152f95"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/D1_Manchas.txt",
+      "size": 2916,
+      "sha256": "0e1c592d296bbf2df438c9072f8f97a816546ecc6a7da92d6ca201ee12268869"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/D2_ManchasCom.txt",
+      "size": 5944,
+      "sha256": "3a2dd32896af3204e70080f46572b3e0fd426badd12541792aa9199345198d9e"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/D2b_Accion.txt",
+      "size": 30,
+      "sha256": "b07f1c8b4a1c148c686314e7f754701be63d103dc2acd37f4c06639ca5e47a8f"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/Z1_SuelosText.txt",
+      "size": 71,
+      "sha256": "ae26f8d6f1bcb5dec84859c1c9dddec62589574f438799a35a984a1f9a920f7c"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZA4_Especies.txt",
+      "size": 277,
+      "sha256": "4401b7617fb70eec0fb82f631348ee49494b0731b3728147d0a57399a66451e0"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZA4_GanadoCategoria.txt",
+      "size": 59,
+      "sha256": "e6a3461f1490130afbf25df26bc5c933ac633252f9779afc4a603d649431bad7"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZA4_GanadoRazas.txt",
+      "size": 198,
+      "sha256": "cf2c78c450d3d528d8da123be4261868261a71284dbdc31010ce20d7e92388e3"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZA6_Necesidades.txt",
+      "size": 4046,
+      "sha256": "eabd5b1cf7af8fa83e699f65ef87027b9d15d46ac8d26864f8e0153b02bbee25"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZB2_Pastos.txt",
+      "size": 371,
+      "sha256": "ee93b15563bbb6609fdad3a4f32f444f0238bc90a335f89fc48b375daf909f51"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZB3_ComFisio.txt",
+      "size": 11457,
+      "sha256": "dfdf8a71e386866ba4ce59481cbea55b7515bc3120e8bc97a6b49a7dc0d74bce"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZBA_ValorPastoral.txt",
+      "size": 6557,
+      "sha256": "0b0436aa3d1369ec52d51525212d9eef5f0a0b9dcf9148545fac2de53598d9cf"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZB_Pastos.txt",
+      "size": 2496,
+      "sha256": "d0e5dfe9f4bd2f0b2d19766dc39e0a6fe4286bb6723eece349e497003b10c998"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/ZC_Actpot.txt",
+      "size": 3387,
+      "sha256": "572f468a043cb2ae7c29f0826f3424d37945a5aa7b808db172d629af08c5ade3"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/teselas.dbf",
+      "size": 46705,
+      "sha256": "88715e7b16f4f30cb856fa98f138db5d8d3ca15cb09000235fdac138ccae2f6e"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/teselas.prj",
+      "size": 393,
+      "sha256": "45bb4e50d6458324cd89be2b9de22dcda8a1e2ac57c97513deba0b812918cc7c"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/teselas.qpj",
+      "size": 618,
+      "sha256": "38c004bd2c7e21bc63e6da24ba42566199ba53192cba2195b1251f7372f4f9a4"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/teselas.shp",
+      "size": 149756,
+      "sha256": "069f1fcdeaa57ad54fcfda2e3a0d6423d009dde3978b79b5403b44b276502238"
+    },
+    {
+      "path": "jbusque-puerto-b2139dc/input/teselas.shx",
+      "size": 1220,
+      "sha256": "0f4331886a5e4b49cb5c7d40c265006430bef5a7da514c32ae1855ce1cceebd5"
+    }
+  ],
+  "research_code_executed": false,
+  "scientific_acceptance": false
+}

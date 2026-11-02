@@ -1,0 +1,4878 @@
+[
+  {
+    "parser_set": "pinned",
+    "exit_code": 0,
+    "results": [
+      {
+        "path": "positive-control",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/data/spain.kim",
+        "syntax_errors": [
+          {
+            "line": 3,
+            "length": 7,
+            "message": "missing EOF at 'observe'",
+            "offset": 45
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/moisture.kim",
+        "syntax_errors": [
+          {
+            "line": 9,
+            "length": 115,
+            "message": "mismatched input '\"Proportion of the biov (living biomass) reference below which Kc (Crop Coefficient) is minimum and constant (ek0)\"' expecting ';'",
+            "offset": 328
+          },
+          {
+            "line": 14,
+            "length": 117,
+            "message": "mismatched input '\"Proportion of the biov (living biomass) reference at which kc (Crop Coefficient) = kcmax (Maximum Crop coefficient)\"' expecting ';'",
+            "offset": 571
+          },
+          {
+            "line": 19,
+            "length": 41,
+            "message": "mismatched input '\"Biomass when Kc (crop coefficient) is 1\"' expecting ';'",
+            "offset": 817
+          },
+          {
+            "line": 24,
+            "length": 39,
+            "message": "mismatched input '\"Minimum and constant Crop Coefficient\"' expecting ';'",
+            "offset": 983
+          },
+          {
+            "line": 29,
+            "length": 91,
+            "message": "mismatched input '\"Definition of the function slope between Kc (Crop coefficient) and biov (living biomass) \"' expecting ';'",
+            "offset": 1148
+          },
+          {
+            "line": 35,
+            "length": 42,
+            "message": "mismatched input '\"Root depth when there are no limitations\"' expecting ';'",
+            "offset": 1445
+          },
+          {
+            "line": 40,
+            "length": 143,
+            "message": "mismatched input '\"Average fraction of total available soil watervolume that can be\\r\\ndepleted from the root zone before moisture stress (reduction in ET) occurs\"' expecting ';'",
+            "offset": 1663
+          },
+          {
+            "line": 54,
+            "length": 3,
+            "message": "no viable alternative at input 'ek0'",
+            "offset": 2081
+          },
+          {
+            "line": 55,
+            "length": 3,
+            "message": "no viable alternative at input 'ek1'",
+            "offset": 2089
+          },
+          {
+            "line": 56,
+            "length": 4,
+            "message": "no viable alternative at input 'epr0'",
+            "offset": 2097
+          },
+          {
+            "line": 57,
+            "length": 4,
+            "message": "no viable alternative at input 'epr1'",
+            "offset": 2106
+          },
+          {
+            "line": 62,
+            "length": 3,
+            "message": "no viable alternative at input 'ek0'",
+            "offset": 2193
+          },
+          {
+            "line": 63,
+            "length": 3,
+            "message": "no viable alternative at input 'ek1'",
+            "offset": 2201
+          },
+          {
+            "line": 64,
+            "length": 4,
+            "message": "no viable alternative at input 'epr0'",
+            "offset": 2209
+          },
+          {
+            "line": 65,
+            "length": 4,
+            "message": "no viable alternative at input 'epr1'",
+            "offset": 2218
+          },
+          {
+            "line": 66,
+            "length": 5,
+            "message": "no viable alternative at input 'ebiom'",
+            "offset": 2227
+          },
+          {
+            "line": 69,
+            "length": 1,
+            "message": "mismatched input '1' expecting RULE_EXPR",
+            "offset": 2352
+          },
+          {
+            "line": 73,
+            "length": 65,
+            "message": "mismatched input '\"Properties of plants used in predicting evapotranspiration (ET)\"' expecting ';'",
+            "offset": 2432
+          },
+          {
+            "line": 94,
+            "length": 31,
+            "message": "mismatched input '\"Reference evapotranspiration \"' expecting ';'",
+            "offset": 2906
+          },
+          {
+            "line": 104,
+            "length": 36,
+            "message": "mismatched input '\"Root depth considering limitations\"' expecting ';'",
+            "offset": 3255
+          },
+          {
+            "line": 113,
+            "length": 59,
+            "message": "mismatched input '\"Proportion of soil watervolume content available to roots\"' expecting ';'",
+            "offset": 3565
+          },
+          {
+            "line": 121,
+            "length": 69,
+            "message": "mismatched input '\"The moisture equivalent as a measure of the field capacity of soils\"' expecting ';'",
+            "offset": 3858
+          },
+          {
+            "line": 129,
+            "length": 1,
+            "message": "no viable alternative at input '3'",
+            "offset": 4153
+          },
+          {
+            "line": 139,
+            "length": 55,
+            "message": "mismatched input '\"Potential available soil watervolume in the root zone\"' expecting ';'",
+            "offset": 4564
+          },
+          {
+            "line": 148,
+            "length": 251,
+            "message": "mismatched input '\"Representation of the environmental demand for evapotranspiration and represents the evapotranspiration \\r\\nrate of a short green crop (grass), completely shading the ground, of uniform height and with adequate watervolume \\r\\nstatus in the soil profile\"' expecting ';'",
+            "offset": 4938
+          },
+          {
+            "line": 157,
+            "length": 57,
+            "message": "mismatched input '\"The readily available soil watervolume in the root zone\"' expecting ';'",
+            "offset": 5411
+          },
+          {
+            "line": 167,
+            "length": 19,
+            "message": "mismatched input '\"Initial depletion\"' expecting ';'",
+            "offset": 5744
+          },
+          {
+            "line": 179,
+            "length": 106,
+            "message": "mismatched input '\"Volume of watervolume in the root zone caused by the limits on root zone depletion by evapotranspiration\"' expecting ';'",
+            "offset": 6045
+          },
+          {
+            "line": 203,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 6922
+          },
+          {
+            "line": 204,
+            "length": 168,
+            "message": "mismatched input '\"Coefficient that calculates vegetation watervolume stress through soil moisture and vegetation characteristics. Range from 0 (maximum limitation) to 1 (no limitation)\"' expecting ';'",
+            "offset": 7009
+          },
+          {
+            "line": 214,
+            "length": 116,
+            "message": "mismatched input '\"Adjustment of Potential AvailableWaterCapacity for different PotentialEvapotranspiredWaterVolume and Soil Moisture\"' expecting ';'",
+            "offset": 7533
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/radiation.kim",
+        "syntax_errors": [
+          {
+            "line": 9,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 309
+          },
+          {
+            "line": 21,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 724
+          },
+          {
+            "line": 34,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 1327
+          },
+          {
+            "line": 35,
+            "length": 121,
+            "message": "mismatched input ''Percentage of radiation that limits vegetation growth. 0: No growth (maximum limiting), 1: Maximum growth (no limiting)'' expecting ';'",
+            "offset": 1405
+          },
+          {
+            "line": 45,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 1894
+          },
+          {
+            "line": 47,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 2012
+          },
+          {
+            "line": 48,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 2112
+          },
+          {
+            "line": 49,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 2204
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/temp.kim",
+        "syntax_errors": [
+          {
+            "line": 9,
+            "length": 48,
+            "message": "mismatched input '\"Minimum temperature limiting vegetation growth\"' expecting ';'",
+            "offset": 367
+          },
+          {
+            "line": 15,
+            "length": 48,
+            "message": "mismatched input '\"Minimum temperature limiting vegetation growth\"' expecting ';'",
+            "offset": 659
+          },
+          {
+            "line": 21,
+            "length": 43,
+            "message": "mismatched input '\"Optimum temperature for vegetation growth\"' expecting ';'",
+            "offset": 949
+          },
+          {
+            "line": 26,
+            "length": 107,
+            "message": "mismatched input '\"Vertical vegetation stratum coded as 1: ground layer; 2: shrubs layer; 3: midstory layer; 4: canopy layer\"' expecting ';'",
+            "offset": 1167
+          },
+          {
+            "line": 40,
+            "length": 65,
+            "message": "mismatched input '\"Mean atmospheric temperature for vegetation in snowy conditions\"' expecting ';'",
+            "offset": 1636
+          },
+          {
+            "line": 47,
+            "length": 68,
+            "message": "mismatched input '\"Minimum atmospheric temperature for vegetation in snowy conditions\"' expecting ';'",
+            "offset": 1923
+          },
+          {
+            "line": 56,
+            "length": 43,
+            "message": "mismatched input '\"Vegetation temperature under woody plants\"' expecting ';'",
+            "offset": 2254
+          },
+          {
+            "line": 76,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 3027
+          },
+          {
+            "line": 77,
+            "length": 121,
+            "message": "mismatched input '\"Limitation of plant growth because of temperature effect. Range from 0 (maximum limitation) to 1 (no growth limitation)\"' expecting ';'",
+            "offset": 3113
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/litterfall.kim",
+        "syntax_errors": [
+          {
+            "line": 8,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 321
+          },
+          {
+            "line": 14,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 616
+          },
+          {
+            "line": 20,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 885
+          },
+          {
+            "line": 25,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 1070
+          },
+          {
+            "line": 25,
+            "length": 3,
+            "message": "no viable alternative at input 'not'",
+            "offset": 1117
+          },
+          {
+            "line": 30,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 1365
+          },
+          {
+            "line": 30,
+            "length": 3,
+            "message": "no viable alternative at input 'not'",
+            "offset": 1412
+          },
+          {
+            "line": 40,
+            "length": 49,
+            "message": "mismatched input ''Living standing biomass remaining after harvest'' expecting ';'",
+            "offset": 1772
+          },
+          {
+            "line": 45,
+            "length": 47,
+            "message": "mismatched input ''Standing dead biomass remaining after harvest'' expecting ';'",
+            "offset": 1871
+          },
+          {
+            "line": 49,
+            "length": 25,
+            "message": "mismatched input ''Rate of root litterfall'' expecting ';'",
+            "offset": 1948
+          },
+          {
+            "line": 52,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 2009
+          },
+          {
+            "line": 52,
+            "length": 22,
+            "message": "no viable alternative at input 'agriculture:Harvesting'",
+            "offset": 2068
+          },
+          {
+            "line": 56,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 2193
+          },
+          {
+            "line": 56,
+            "length": 22,
+            "message": "no viable alternative at input 'agriculture:Harvesting'",
+            "offset": 2256
+          },
+          {
+            "line": 60,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 2379
+          },
+          {
+            "line": 60,
+            "length": 10,
+            "message": "no viable alternative at input 'im:Maximum'",
+            "offset": 2412
+          },
+          {
+            "line": 64,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 2567
+          },
+          {
+            "line": 64,
+            "length": 10,
+            "message": "no viable alternative at input 'im:Minimum'",
+            "offset": 2600
+          },
+          {
+            "line": 76,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 2978
+          },
+          {
+            "line": 89,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 3470
+          },
+          {
+            "line": 105,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 3991
+          },
+          {
+            "line": 136,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 5912
+          },
+          {
+            "line": 149,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 6219
+          },
+          {
+            "line": 170,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 7474
+          },
+          {
+            "line": 182,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 8045
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestock/tables.kim",
+        "syntax_errors": [
+          {
+            "line": 9,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 94
+          },
+          {
+            "line": 11,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 228
+          },
+          {
+            "line": 24,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 636
+          },
+          {
+            "line": 26,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 769
+          },
+          {
+            "line": 39,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 1172
+          },
+          {
+            "line": 41,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 1309
+          },
+          {
+            "line": 54,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 1719
+          },
+          {
+            "line": 56,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 1852
+          },
+          {
+            "line": 69,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 2259
+          },
+          {
+            "line": 71,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 2391
+          },
+          {
+            "line": 84,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 2798
+          },
+          {
+            "line": 86,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 2935
+          },
+          {
+            "line": 99,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 3338
+          },
+          {
+            "line": 101,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 3465
+          },
+          {
+            "line": 119,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 3895
+          },
+          {
+            "line": 121,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 4026
+          },
+          {
+            "line": 139,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 4447
+          },
+          {
+            "line": 141,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 4583
+          },
+          {
+            "line": 154,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 4972
+          },
+          {
+            "line": 156,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 5103
+          },
+          {
+            "line": 169,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 5500
+          },
+          {
+            "line": 171,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 5631
+          },
+          {
+            "line": 184,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 6026
+          },
+          {
+            "line": 205,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 6919
+          },
+          {
+            "line": 207,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 7062
+          },
+          {
+            "line": 220,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 7470
+          },
+          {
+            "line": 222,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 7613
+          },
+          {
+            "line": 235,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 8026
+          },
+          {
+            "line": 237,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 8170
+          },
+          {
+            "line": 250,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 8582
+          },
+          {
+            "line": 252,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 8719
+          },
+          {
+            "line": 265,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 9144
+          },
+          {
+            "line": 267,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 9281
+          },
+          {
+            "line": 285,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 9740
+          },
+          {
+            "line": 287,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 9861
+          },
+          {
+            "line": 305,
+            "length": 4,
+            "message": "no viable alternative at input 'com2'",
+            "offset": 10311
+          },
+          {
+            "line": 307,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 10432
+          },
+          {
+            "line": 320,
+            "length": 4,
+            "message": "no viable alternative at input 'com2'",
+            "offset": 10853
+          },
+          {
+            "line": 322,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 10970
+          },
+          {
+            "line": 335,
+            "length": 4,
+            "message": "no viable alternative at input 'com2'",
+            "offset": 11384
+          },
+          {
+            "line": 337,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 11545
+          },
+          {
+            "line": 350,
+            "length": 4,
+            "message": "no viable alternative at input 'com2'",
+            "offset": 11958
+          },
+          {
+            "line": 352,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 12119
+          },
+          {
+            "line": 370,
+            "length": 4,
+            "message": "no viable alternative at input 'com2'",
+            "offset": 12561
+          },
+          {
+            "line": 372,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 12677
+          },
+          {
+            "line": 385,
+            "length": 4,
+            "message": "no viable alternative at input 'com2'",
+            "offset": 13107
+          },
+          {
+            "line": 387,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 13225
+          },
+          {
+            "line": 400,
+            "length": 4,
+            "message": "no viable alternative at input 'com2'",
+            "offset": 13658
+          },
+          {
+            "line": 402,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 13778
+          },
+          {
+            "line": 415,
+            "length": 4,
+            "message": "no viable alternative at input 'com2'",
+            "offset": 14217
+          },
+          {
+            "line": 417,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 14336
+          },
+          {
+            "line": 435,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 14796
+          },
+          {
+            "line": 437,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 14935
+          },
+          {
+            "line": 450,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 15361
+          },
+          {
+            "line": 452,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 15493
+          },
+          {
+            "line": 465,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 15909
+          },
+          {
+            "line": 467,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 16042
+          },
+          {
+            "line": 480,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 16457
+          },
+          {
+            "line": 482,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 16587
+          },
+          {
+            "line": 495,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 16984
+          },
+          {
+            "line": 497,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 17116
+          },
+          {
+            "line": 510,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 17533
+          },
+          {
+            "line": 512,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 17668
+          },
+          {
+            "line": 525,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 18103
+          },
+          {
+            "line": 527,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 18239
+          },
+          {
+            "line": 540,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 18671
+          },
+          {
+            "line": 542,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 18809
+          },
+          {
+            "line": 555,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 19270
+          },
+          {
+            "line": 557,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 19403
+          },
+          {
+            "line": 570,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 19819
+          },
+          {
+            "line": 572,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 19954
+          },
+          {
+            "line": 585,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 20389
+          },
+          {
+            "line": 587,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 20522
+          },
+          {
+            "line": 605,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 20970
+          },
+          {
+            "line": 607,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 21105
+          },
+          {
+            "line": 620,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 21517
+          },
+          {
+            "line": 622,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 21659
+          },
+          {
+            "line": 635,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 22095
+          },
+          {
+            "line": 637,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 22235
+          },
+          {
+            "line": 650,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 22671
+          },
+          {
+            "line": 652,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 22809
+          },
+          {
+            "line": 665,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 23215
+          },
+          {
+            "line": 667,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 23351
+          },
+          {
+            "line": 680,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 23752
+          },
+          {
+            "line": 682,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 23892
+          },
+          {
+            "line": 695,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 24312
+          },
+          {
+            "line": 697,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 24449
+          },
+          {
+            "line": 710,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 24850
+          },
+          {
+            "line": 712,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 24994
+          },
+          {
+            "line": 730,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 25434
+          },
+          {
+            "line": 732,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 25560
+          },
+          {
+            "line": 745,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 25945
+          },
+          {
+            "line": 747,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 26081
+          },
+          {
+            "line": 760,
+            "length": 3,
+            "message": "no viable alternative at input 'com'",
+            "offset": 26508
+          },
+          {
+            "line": 762,
+            "length": 1,
+            "message": "mismatched input ',' expecting 'to'",
+            "offset": 26648
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockexcretion.kim",
+        "syntax_errors": [
+          {
+            "line": 8,
+            "length": 69,
+            "message": "mismatched input ''Probability of manure left in a plant community compared to its use'' expecting ';'",
+            "offset": 280
+          },
+          {
+            "line": 16,
+            "length": 34,
+            "message": "mismatched input ''Coefficient of energy metabolism'' expecting ';'",
+            "offset": 581
+          },
+          {
+            "line": 26,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 933
+          },
+          {
+            "line": 35,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 1611
+          },
+          {
+            "line": 49,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 2348
+          },
+          {
+            "line": 60,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 3229
+          },
+          {
+            "line": 71,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 4041
+          },
+          {
+            "line": 79,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 4406
+          },
+          {
+            "line": 87,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 4721
+          },
+          {
+            "line": 87,
+            "length": 21,
+            "message": "no viable alternative at input 'agriculture:Livestock'",
+            "offset": 4754
+          },
+          {
+            "line": 90,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 4952
+          },
+          {
+            "line": 95,
+            "length": 62,
+            "message": "mismatched input ''Nitrogen AboveGroundBiomass caused by Livestock Solid Manure'' expecting ';'",
+            "offset": 5324
+          },
+          {
+            "line": 104,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 6202
+          },
+          {
+            "line": 112,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 6570
+          },
+          {
+            "line": 112,
+            "length": 14,
+            "message": "no viable alternative at input 'physical:Solid'",
+            "offset": 6595
+          },
+          {
+            "line": 115,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 6814
+          },
+          {
+            "line": 121,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 7251
+          },
+          {
+            "line": 137,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 7965
+          },
+          {
+            "line": 148,
+            "length": 81,
+            "message": "mismatched input ''Nitrogen concentration of liquid manure caused by aboveground biomass ingestion'' expecting ';'",
+            "offset": 8675
+          },
+          {
+            "line": 158,
+            "length": 101,
+            "message": "mismatched input ''Nitrogen concentration of liquid manure caused by total of non living aboveground biomass ingestion'' expecting ';'",
+            "offset": 9396
+          },
+          {
+            "line": 169,
+            "length": 101,
+            "message": "mismatched input ''Nitrogen concentration of liquid manure caused by total of non living aboveground biomass ingestion'' expecting ';'",
+            "offset": 10262
+          },
+          {
+            "line": 180,
+            "length": 90,
+            "message": "mismatched input ''Nitrogen concentration of liquid manure caused by total of aboveground biomass ingestion'' expecting ';'",
+            "offset": 11081
+          },
+          {
+            "line": 192,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 12102
+          },
+          {
+            "line": 192,
+            "length": 15,
+            "message": "no viable alternative at input 'physical:Liquid'",
+            "offset": 12127
+          },
+          {
+            "line": 195,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 12361
+          },
+          {
+            "line": 201,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 12822
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockingestion.kim",
+        "syntax_errors": [
+          {
+            "line": 8,
+            "length": 72,
+            "message": "mismatched input ''Probability of accessibility and livestock movement through vegetation'' expecting ';'",
+            "offset": 265
+          },
+          {
+            "line": 14,
+            "length": 72,
+            "message": "mismatched input ''Probability of accessibility and livestock movement through vegetation'' expecting ';'",
+            "offset": 497
+          },
+          {
+            "line": 21,
+            "length": 10,
+            "message": "mismatched input 'proportion' expecting ';'",
+            "offset": 839
+          },
+          {
+            "line": 25,
+            "length": 10,
+            "message": "mismatched input 'proportion' expecting ';'",
+            "offset": 1084
+          },
+          {
+            "line": 30,
+            "length": 48,
+            "message": "mismatched input ''Amount of aerial biomass that prevents grazing'' expecting ';'",
+            "offset": 1367
+          },
+          {
+            "line": 34,
+            "length": 46,
+            "message": "mismatched input ''Amount of aerial biomass that allows grazing'' expecting ';'",
+            "offset": 1449
+          },
+          {
+            "line": 38,
+            "length": 48,
+            "message": "mismatched input ''Amount of aerial biomass that prevents grazing'' expecting ';'",
+            "offset": 1530
+          },
+          {
+            "line": 42,
+            "length": 46,
+            "message": "mismatched input ''Amount of aerial biomass that allows grazing'' expecting ';'",
+            "offset": 1612
+          },
+          {
+            "line": 46,
+            "length": 19,
+            "message": "mismatched input ''Maximum ingestion'' expecting ';'",
+            "offset": 1693
+          },
+          {
+            "line": 50,
+            "length": 19,
+            "message": "mismatched input ''Maximum ingestion'' expecting ';'",
+            "offset": 1752
+          },
+          {
+            "line": 54,
+            "length": 126,
+            "message": "mismatched input ''Parameter that indicates the slope when the function of the model \"proportion of Cattle IngestedFood caused by Slope\" is 0.5'' expecting ';'",
+            "offset": 1801
+          },
+          {
+            "line": 58,
+            "length": 134,
+            "message": "mismatched input ''Parameter indicating the decrease in the \"proportion of feed intake by livestock caused by the slope\" model when the slope increases'' expecting ';'",
+            "offset": 1957
+          },
+          {
+            "line": 62,
+            "length": 50,
+            "message": "mismatched input ''Amount of biomass below which there is no intake'' expecting ';'",
+            "offset": 2121
+          },
+          {
+            "line": 66,
+            "length": 45,
+            "message": "mismatched input ''Body condition at minimal potential intake '' expecting ';'",
+            "offset": 2272
+          },
+          {
+            "line": 70,
+            "length": 45,
+            "message": "mismatched input ''Body condition at minimal potential intake '' expecting ';'",
+            "offset": 2412
+          },
+          {
+            "line": 74,
+            "length": 49,
+            "message": "mismatched input ''Proportion of potential intake to \u00ef\u00bf\u00bdccimn\u00ef\u00bf\u00bd model'' expecting ';'",
+            "offset": 2539
+          },
+          {
+            "line": 80,
+            "length": 52,
+            "message": "mismatched input ''Function to calculate the livestock body condition'' expecting ';'",
+            "offset": 2778
+          },
+          {
+            "line": 90,
+            "length": 52,
+            "message": "mismatched input ''Function to calculate the livestock body condition'' expecting ';'",
+            "offset": 3085
+          },
+          {
+            "line": 106,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 3628
+          },
+          {
+            "line": 121,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 4666
+          },
+          {
+            "line": 139,
+            "length": 84,
+            "message": "mismatched input '\"Maximum proportion of (0-1) a type of grass can be part of the animal's daily diet\"' expecting ';'",
+            "offset": 5643
+          },
+          {
+            "line": 145,
+            "length": 84,
+            "message": "mismatched input '\"Maximum proportion of (0-1) a type of grass can be part of the animal's daily diet\"' expecting ';'",
+            "offset": 5893
+          },
+          {
+            "line": 154,
+            "length": 60,
+            "message": "mismatched input ''Level of shrub intake with minimal livestock accessibility'' expecting ';'",
+            "offset": 6161
+          },
+          {
+            "line": 158,
+            "length": 60,
+            "message": "mismatched input ''Level of shrub intake with maximal livestock accessibility'' expecting ';'",
+            "offset": 6250
+          },
+          {
+            "line": 162,
+            "length": 36,
+            "message": "mismatched input ''Minimum accessibility of livestock'' expecting ';'",
+            "offset": 6343
+          },
+          {
+            "line": 165,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 6412
+          },
+          {
+            "line": 166,
+            "length": 114,
+            "message": "mismatched input ''Level of livestock accessibility due to the proportion of shrubs (0: no shrubs, 1: maximum proportion of shrubs)'' expecting ';'",
+            "offset": 6503
+          },
+          {
+            "line": 171,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 6685
+          },
+          {
+            "line": 172,
+            "length": 114,
+            "message": "mismatched input ''Level of livestock accessibility due to the proportion of shrubs (0: no shrubs, 1: maximum proportion of shrubs)'' expecting ';'",
+            "offset": 6785
+          },
+          {
+            "line": 177,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 6965
+          },
+          {
+            "line": 178,
+            "length": 101,
+            "message": "mismatched input ''Difficulty of livestock access due to excess shrub growth (0: not accessible; 1 : fully accessible)'' expecting ';'",
+            "offset": 7076
+          },
+          {
+            "line": 186,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 7407
+          },
+          {
+            "line": 187,
+            "length": 101,
+            "message": "mismatched input ''Difficulty of livestock access due to excess shrub growth (0: not accessible; 1 : fully accessible)'' expecting ';'",
+            "offset": 7528
+          },
+          {
+            "line": 199,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 7935
+          },
+          {
+            "line": 207,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 8236
+          },
+          {
+            "line": 208,
+            "length": 43,
+            "message": "mismatched input ''Proportion of living above ground biomass'' expecting ';'",
+            "offset": 8306
+          },
+          {
+            "line": 219,
+            "length": 84,
+            "message": "mismatched input ''Coefficient (0-1) of regulation of livestock intake according to available biomass'' expecting ';'",
+            "offset": 8584
+          },
+          {
+            "line": 234,
+            "length": 84,
+            "message": "mismatched input ''Coefficient (0-1) of regulation of livestock intake according to available biomass'' expecting ';'",
+            "offset": 8960
+          },
+          {
+            "line": 254,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 9391
+          },
+          {
+            "line": 255,
+            "length": 58,
+            "message": "mismatched input ''Coefficient (0-1) of grazing capacity according to slope'' expecting ';'",
+            "offset": 9486
+          },
+          {
+            "line": 263,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 9759
+          },
+          {
+            "line": 264,
+            "length": 58,
+            "message": "mismatched input ''Coefficient (0-1) of grazing capacity according to slope'' expecting ';'",
+            "offset": 9864
+          },
+          {
+            "line": 272,
+            "length": 113,
+            "message": "mismatched input ''Coefficient (0-1) indicating the livestock ability to select the living against the dead part of the vegetation'' expecting ';'",
+            "offset": 10118
+          },
+          {
+            "line": 283,
+            "length": 89,
+            "message": "mismatched input ''Dimensionless index allowing estimation of pasture quality according to its composition'' expecting ';'",
+            "offset": 10593
+          },
+          {
+            "line": 296,
+            "length": 89,
+            "message": "mismatched input ''Dimensionless index allowing estimation of pasture quality according to its composition'' expecting ';'",
+            "offset": 11236
+          },
+          {
+            "line": 311,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 11894
+          },
+          {
+            "line": 312,
+            "length": 81,
+            "message": "mismatched input ''Estimates the proportion of grazing if there were no overlap with others\u00ef\u00bf\u00bd herds'' expecting ';'",
+            "offset": 11966
+          },
+          {
+            "line": 317,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 12172
+          },
+          {
+            "line": 318,
+            "length": 81,
+            "message": "mismatched input ''Estimates the proportion of grazing if there were no overlap with others\u00ef\u00bf\u00bd herds'' expecting ';'",
+            "offset": 12255
+          },
+          {
+            "line": 328,
+            "length": 48,
+            "message": "mismatched input ''Potential ingestion without biomass limitation'' expecting ';'",
+            "offset": 12628
+          },
+          {
+            "line": 337,
+            "length": 48,
+            "message": "mismatched input ''Potential ingestion without biomass limitation'' expecting ';'",
+            "offset": 12979
+          },
+          {
+            "line": 349,
+            "length": 82,
+            "message": "mismatched input ''Potential of total grazing proportion of a given pasture corresponding to a herd'' expecting ';'",
+            "offset": 13238
+          },
+          {
+            "line": 357,
+            "length": 82,
+            "message": "mismatched input ''Potential of total grazing proportion of a given pasture corresponding to a herd'' expecting ';'",
+            "offset": 13545
+          },
+          {
+            "line": 366,
+            "length": 69,
+            "message": "mismatched input ''Potential of total intake proportion corresponding to type of grass'' expecting ';'",
+            "offset": 13862
+          },
+          {
+            "line": 373,
+            "length": 69,
+            "message": "mismatched input ''Potential of total intake proportion corresponding to type of grass'' expecting ';'",
+            "offset": 14029
+          },
+          {
+            "line": 382,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 14211
+          },
+          {
+            "line": 382,
+            "length": 18,
+            "message": "no viable alternative at input 'agriculture:Cattle'",
+            "offset": 14244
+          },
+          {
+            "line": 385,
+            "length": 11,
+            "message": "no viable alternative at input 'cirhift01_c'",
+            "offset": 14399
+          },
+          {
+            "line": 386,
+            "length": 4,
+            "message": "no viable alternative at input 'ch_c'",
+            "offset": 14415
+          },
+          {
+            "line": 389,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 14499
+          },
+          {
+            "line": 389,
+            "length": 28,
+            "message": "no viable alternative at input 'agriculture.incubation:Mares'",
+            "offset": 14532
+          },
+          {
+            "line": 392,
+            "length": 11,
+            "message": "no viable alternative at input 'cirhift01_m'",
+            "offset": 14697
+          },
+          {
+            "line": 393,
+            "length": 4,
+            "message": "no viable alternative at input 'ch_m'",
+            "offset": 14713
+          },
+          {
+            "line": 400,
+            "length": 67,
+            "message": "mismatched input ''Amount of above ground biomass ingested by each type of livestock'' expecting ';'",
+            "offset": 14925
+          },
+          {
+            "line": 409,
+            "length": 67,
+            "message": "mismatched input ''Amount of above ground biomass ingested by each type of livestock'' expecting ';'",
+            "offset": 15426
+          },
+          {
+            "line": 418,
+            "length": 39,
+            "message": "mismatched input ''Function to calculate ingestion model'' expecting ';'",
+            "offset": 15835
+          },
+          {
+            "line": 429,
+            "length": 64,
+            "message": "mismatched input ''Living above ground biomass ingested by each type of livestock'' expecting ';'",
+            "offset": 16545
+          },
+          {
+            "line": 437,
+            "length": 64,
+            "message": "mismatched input ''Living above ground biomass ingested by each type of livestock'' expecting ';'",
+            "offset": 16924
+          },
+          {
+            "line": 445,
+            "length": 51,
+            "message": "mismatched input ''Living above ground biomass ingested by livestock'' expecting ';'",
+            "offset": 17300
+          },
+          {
+            "line": 453,
+            "length": 68,
+            "message": "mismatched input ''Non-living above ground biomass ingested by each type of livestock'' expecting ';'",
+            "offset": 17821
+          },
+          {
+            "line": 460,
+            "length": 68,
+            "message": "mismatched input ''Non-living above ground biomass ingested by each type of livestock'' expecting ';'",
+            "offset": 18317
+          },
+          {
+            "line": 468,
+            "length": 55,
+            "message": "mismatched input ''Non-living above ground biomass ingested by livestock'' expecting ';'",
+            "offset": 18838
+          },
+          {
+            "line": 475,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 19268
+          },
+          {
+            "line": 475,
+            "length": 28,
+            "message": "no viable alternative at input 'biology.incubation:Ingestion'",
+            "offset": 19327
+          },
+          {
+            "line": 496,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 19933
+          },
+          {
+            "line": 496,
+            "length": 28,
+            "message": "no viable alternative at input 'biology.incubation:Ingestion'",
+            "offset": 19996
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockmass.kim",
+        "syntax_errors": [
+          {
+            "line": 6,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 157
+          },
+          {
+            "line": 6,
+            "length": 18,
+            "message": "no viable alternative at input 'agriculture:Cattle'",
+            "offset": 216
+          },
+          {
+            "line": 12,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 482
+          },
+          {
+            "line": 12,
+            "length": 28,
+            "message": "no viable alternative at input 'agriculture.incubation:Mares'",
+            "offset": 541
+          },
+          {
+            "line": 18,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 818
+          },
+          {
+            "line": 18,
+            "length": 18,
+            "message": "no viable alternative at input 'agriculture:Cattle'",
+            "offset": 881
+          },
+          {
+            "line": 24,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 1151
+          },
+          {
+            "line": 24,
+            "length": 28,
+            "message": "no viable alternative at input 'agriculture.incubation:Mares'",
+            "offset": 1214
+          },
+          {
+            "line": 33,
+            "length": 20,
+            "message": "mismatched input ''Gross energy value'' expecting ';'",
+            "offset": 1598
+          },
+          {
+            "line": 37,
+            "length": 40,
+            "message": "mismatched input ''Efficiency of energy use for lactation'' expecting ';'",
+            "offset": 1651
+          },
+          {
+            "line": 41,
+            "length": 72,
+            "message": "mismatched input ''Efficiency of metabolizable energy used for food supplies mobilization'' expecting ';'",
+            "offset": 1729
+          },
+          {
+            "line": 45,
+            "length": 42,
+            "message": "mismatched input ''Energy value of mobilizing body reserves'' expecting ';'",
+            "offset": 1838
+          },
+          {
+            "line": 49,
+            "length": 47,
+            "message": "mismatched input ''Energy needed to increase 1 kg of body weight'' expecting ';'",
+            "offset": 1913
+          },
+          {
+            "line": 53,
+            "length": 34,
+            "message": "mismatched input ''Energy efficiency to gain weight'' expecting ';'",
+            "offset": 1991
+          },
+          {
+            "line": 57,
+            "length": 2,
+            "message": "mismatched input '''' expecting ';'",
+            "offset": 2058
+          },
+          {
+            "line": 60,
+            "length": 3,
+            "message": "mismatched input '500' expecting RULE_EXPR",
+            "offset": 2100
+          },
+          {
+            "line": 63,
+            "length": 59,
+            "message": "mismatched input ''Metabolism energy efficiency for maintenance and mobility'' expecting ';'",
+            "offset": 2122
+          },
+          {
+            "line": 67,
+            "length": 59,
+            "message": "mismatched input ''Metabolism energy efficiency for maintenance and mobility'' expecting ';'",
+            "offset": 2213
+          },
+          {
+            "line": 71,
+            "length": 46,
+            "message": "mismatched input ''Metabolism energy efficiency for gain weight'' expecting ';'",
+            "offset": 2304
+          },
+          {
+            "line": 75,
+            "length": 46,
+            "message": "mismatched input ''Metabolism energy efficiency for gain weight'' expecting ';'",
+            "offset": 2384
+          },
+          {
+            "line": 79,
+            "length": 27,
+            "message": "mismatched input ''Livestock energy movement'' expecting ';'",
+            "offset": 2461
+          },
+          {
+            "line": 83,
+            "length": 27,
+            "message": "mismatched input ''Livestock energy mobility'' expecting ';'",
+            "offset": 2521
+          },
+          {
+            "line": 87,
+            "length": 27,
+            "message": "mismatched input ''Livestock energy movement'' expecting ';'",
+            "offset": 2581
+          },
+          {
+            "line": 91,
+            "length": 27,
+            "message": "mismatched input ''Livestock energy mobility'' expecting ';'",
+            "offset": 2641
+          },
+          {
+            "line": 99,
+            "length": 16,
+            "message": "mismatched input ''Body Condition'' expecting ';'",
+            "offset": 2889
+          },
+          {
+            "line": 108,
+            "length": 16,
+            "message": "mismatched input ''Body Condition'' expecting ';'",
+            "offset": 3189
+          },
+          {
+            "line": 136,
+            "length": 44,
+            "message": "mismatched input ''Livestock movement and displacement energy'' expecting ';'",
+            "offset": 3989
+          },
+          {
+            "line": 146,
+            "length": 44,
+            "message": "mismatched input ''Livestock movement and displacement energy'' expecting ';'",
+            "offset": 4286
+          },
+          {
+            "line": 156,
+            "length": 48,
+            "message": "mismatched input ''Metabolisation of ingested energy in livestock'' expecting ';'",
+            "offset": 4592
+          },
+          {
+            "line": 167,
+            "length": 48,
+            "message": "mismatched input ''Metabolisation of ingested energy in livestock'' expecting ';'",
+            "offset": 5381
+          },
+          {
+            "line": 178,
+            "length": 56,
+            "message": "mismatched input ''Ingested energy that implies movement and displacement'' expecting ';'",
+            "offset": 6224
+          },
+          {
+            "line": 191,
+            "length": 56,
+            "message": "mismatched input ''Ingested energy that implies movement and displacement'' expecting ';'",
+            "offset": 7105
+          },
+          {
+            "line": 204,
+            "length": 47,
+            "message": "mismatched input ''Ingested energy that implies change of weight'' expecting ';'",
+            "offset": 7988
+          },
+          {
+            "line": 216,
+            "length": 47,
+            "message": "mismatched input ''Ingested energy that implies change of weight'' expecting ';'",
+            "offset": 8828
+          },
+          {
+            "line": 234,
+            "length": 43,
+            "message": "mismatched input ''Balance between ingested energy and needs'' expecting ';'",
+            "offset": 9765
+          },
+          {
+            "line": 244,
+            "length": 43,
+            "message": "mismatched input ''Balance between ingested energy and needs'' expecting ';'",
+            "offset": 10284
+          },
+          {
+            "line": 255,
+            "length": 18,
+            "message": "mismatched input ''Change of weight'' expecting ';'",
+            "offset": 10860
+          },
+          {
+            "line": 271,
+            "length": 18,
+            "message": "mismatched input ''Change of weight'' expecting ';'",
+            "offset": 11522
+          },
+          {
+            "line": 294,
+            "length": 13,
+            "message": "mismatched input ''Body weight'' expecting ';'",
+            "offset": 12464
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/nitrogen.kim",
+        "syntax_errors": [
+          {
+            "line": 7,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 329
+          },
+          {
+            "line": 7,
+            "length": 25,
+            "message": "no viable alternative at input 'biology.incubation:Living'",
+            "offset": 354
+          },
+          {
+            "line": 13,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 697
+          },
+          {
+            "line": 19,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 1026
+          },
+          {
+            "line": 25,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 1345
+          },
+          {
+            "line": 31,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 1620
+          },
+          {
+            "line": 37,
+            "length": 68,
+            "message": "mismatched input ''Maximum proportion of litterfall nitrogen in active organic matter'' expecting ';'",
+            "offset": 1807
+          },
+          {
+            "line": 42,
+            "length": 69,
+            "message": "mismatched input ''Maximum proportion of litterfall nitrogen in passive organic matter'' expecting ';'",
+            "offset": 2005
+          },
+          {
+            "line": 47,
+            "length": 70,
+            "message": "mismatched input ''Maximum proportion of nitrogen from passive to active organic matter'' expecting ';'",
+            "offset": 2204
+          },
+          {
+            "line": 52,
+            "length": 58,
+            "message": "mismatched input ''Maximum proportion of nitrogen from solid manure to soil'' expecting ';'",
+            "offset": 2403
+          },
+          {
+            "line": 57,
+            "length": 66,
+            "message": "mismatched input ''Maximum proportion of organic nitrogen in mineralization process'' expecting ';'",
+            "offset": 2590
+          },
+          {
+            "line": 61,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 2786
+          },
+          {
+            "line": 61,
+            "length": 29,
+            "message": "no viable alternative at input 'ecology.incubation:Resorption'",
+            "offset": 2819
+          },
+          {
+            "line": 68,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 3143
+          },
+          {
+            "line": 68,
+            "length": 35,
+            "message": "no viable alternative at input 'chemistry.incubation:Volatilization'",
+            "offset": 3168
+          },
+          {
+            "line": 70,
+            "length": 1,
+            "message": "mismatched input '0' expecting RULE_EXPR",
+            "offset": 3271
+          },
+          {
+            "line": 73,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 3386
+          },
+          {
+            "line": 78,
+            "length": 88,
+            "message": "mismatched input ''Nitrogen mass decomposition ratio between the aerial part and the root vegetation part'' expecting ';'",
+            "offset": 3493
+          },
+          {
+            "line": 84,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 3802
+          },
+          {
+            "line": 94,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 4428
+          },
+          {
+            "line": 122,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 6351
+          },
+          {
+            "line": 137,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 6904
+          },
+          {
+            "line": 153,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 7893
+          },
+          {
+            "line": 174,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 8926
+          },
+          {
+            "line": 184,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 9547
+          },
+          {
+            "line": 194,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 10153
+          },
+          {
+            "line": 210,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 10816
+          },
+          {
+            "line": 220,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 11443
+          },
+          {
+            "line": 230,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 12081
+          },
+          {
+            "line": 246,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 12761
+          },
+          {
+            "line": 259,
+            "length": 23,
+            "message": "mismatched input ''Nitrification process'' expecting ';'",
+            "offset": 13479
+          },
+          {
+            "line": 273,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 14032
+          },
+          {
+            "line": 284,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 14781
+          },
+          {
+            "line": 294,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 15450
+          },
+          {
+            "line": 306,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 15929
+          },
+          {
+            "line": 326,
+            "length": 24,
+            "message": "mismatched input ''Mineralization process'' expecting ';'",
+            "offset": 17075
+          },
+          {
+            "line": 335,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 17547
+          },
+          {
+            "line": 357,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 18948
+          },
+          {
+            "line": 370,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 19510
+          },
+          {
+            "line": 398,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 20831
+          },
+          {
+            "line": 399,
+            "length": 54,
+            "message": "mismatched input ''Range of nitrogen mass that limits vegetation growth'' expecting ';'",
+            "offset": 20907
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/senescence.kim",
+        "syntax_errors": [
+          {
+            "line": 7,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 292
+          },
+          {
+            "line": 8,
+            "length": 48,
+            "message": "mismatched input ''Level of moisture (fh) with minimum senescence'' expecting ';'",
+            "offset": 385
+          },
+          {
+            "line": 13,
+            "length": 52,
+            "message": "mismatched input ''Maximum proportion of leaves dying due to moisture'' expecting ';'",
+            "offset": 554
+          },
+          {
+            "line": 18,
+            "length": 64,
+            "message": "mismatched input ''Proportion of minimum leave senescence caused by soil moisture'' expecting ';'",
+            "offset": 731
+          },
+          {
+            "line": 24,
+            "length": 54,
+            "message": "mismatched input ''Atmospheric temperature producing maximum senescence'' expecting ';'",
+            "offset": 1014
+          },
+          {
+            "line": 30,
+            "length": 54,
+            "message": "mismatched input ''Atmospheric temperature producing minimum senescence'' expecting ';'",
+            "offset": 1287
+          },
+          {
+            "line": 35,
+            "length": 55,
+            "message": "mismatched input ''Maximum proportion of leaves dying due to temperature'' expecting ';'",
+            "offset": 1464
+          },
+          {
+            "line": 40,
+            "length": 40,
+            "message": "mismatched input ''Temperature causing minimal senescence'' expecting ';'",
+            "offset": 1645
+          },
+          {
+            "line": 45,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 1895
+          },
+          {
+            "line": 54,
+            "length": 51,
+            "message": "mismatched input ''Proportion of leave senescence caused by moisture'' expecting ';'",
+            "offset": 2272
+          },
+          {
+            "line": 67,
+            "length": 48,
+            "message": "mismatched input ''Proportion of senescence caused by temperature'' expecting ';'",
+            "offset": 2776
+          },
+          {
+            "line": 80,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 3297
+          },
+          {
+            "line": 81,
+            "length": 68,
+            "message": "mismatched input ''Maximum proportion of senescence caused by temperature or moisture'' expecting ';'",
+            "offset": 3400
+          },
+          {
+            "line": 93,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 3829
+          },
+          {
+            "line": 112,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 4720
+          },
+          {
+            "line": 128,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 5288
+          },
+          {
+            "line": 137,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 5688
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/vegetationgrowth.kim",
+        "syntax_errors": [
+          {
+            "line": 8,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 316
+          },
+          {
+            "line": 13,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 507
+          },
+          {
+            "line": 13,
+            "length": 10,
+            "message": "no viable alternative at input 'im:Balance'",
+            "offset": 533
+          },
+          {
+            "line": 20,
+            "length": 88,
+            "message": "mismatched input ''Growing degree days (GDD) accumulated, a commonly used measure of thermal accumulation'' expecting ';'",
+            "offset": 843
+          },
+          {
+            "line": 28,
+            "length": 68,
+            "message": "mismatched input ''Accumulated temperature necessary to complete a phenological state'' expecting ';'",
+            "offset": 1259
+          },
+          {
+            "line": 36,
+            "length": 34,
+            "message": "mismatched input ''Phenological state of vegetation'' expecting ';'",
+            "offset": 1575
+          },
+          {
+            "line": 49,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 2015
+          },
+          {
+            "line": 58,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 2454
+          },
+          {
+            "line": 74,
+            "length": 37,
+            "message": "mismatched input ''Function to compute compa and compr'' expecting ';'",
+            "offset": 2884
+          },
+          {
+            "line": 86,
+            "length": 92,
+            "message": "mismatched input ''Function that sums nres (nitrogen causing vegetation growth) and mnim (inorganic nitrogen)'' expecting ';'",
+            "offset": 3278
+          },
+          {
+            "line": 93,
+            "length": 79,
+            "message": "mismatched input ''The remainder of net primary production is used for aerial vegetation growth.'' expecting ';'",
+            "offset": 3682
+          },
+          {
+            "line": 101,
+            "length": 62,
+            "message": "mismatched input ''The remainder of net primary production used for root growth'' expecting ';'",
+            "offset": 3949
+          },
+          {
+            "line": 109,
+            "length": 35,
+            "message": "mismatched input ''Function to calculate comphechoa1'' expecting ';'",
+            "offset": 4125
+          },
+          {
+            "line": 118,
+            "length": 70,
+            "message": "mismatched input ''Normalised concentration of nitrogen in the aerial part of the plant'' expecting ';'",
+            "offset": 4591
+          },
+          {
+            "line": 126,
+            "length": 36,
+            "message": "mismatched input ''Function to calculate comphechoar1'' expecting ';'",
+            "offset": 4862
+          },
+          {
+            "line": 135,
+            "length": 68,
+            "message": "mismatched input ''Normalised concentration of nitrogen in the root part of the plant'' expecting ';'",
+            "offset": 5301
+          },
+          {
+            "line": 147,
+            "length": 28,
+            "message": "mismatched input ''Function to calculate adic'' expecting ';'",
+            "offset": 5593
+          },
+          {
+            "line": 156,
+            "length": 2,
+            "message": "no viable alternative at input 'of'",
+            "offset": 6056
+          },
+          {
+            "line": 157,
+            "length": 70,
+            "message": "mismatched input ''Proportion of the remainder nitrogen causing extra vegetation growth'' expecting ';'",
+            "offset": 6122
+          },
+          {
+            "line": 169,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 6892
+          },
+          {
+            "line": 180,
+            "length": 1,
+            "message": "no viable alternative at input '2'",
+            "offset": 7411
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/tests/timedresources.kim",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      }
+    ],
+    "probe_sha256": "34f26f594a4bde3f76224cc296936a9b85b59538dca5a524ab393434b5138fdc",
+    "log_sha256": "2189ba2e2b26a619b3732ee2c06cd942eb368772e04875748299ad58075e1dc8"
+  },
+  {
+    "parser_set": "current-local",
+    "exit_code": 0,
+    "results": [
+      {
+        "path": "positive-control",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/data/spain.kim",
+        "syntax_errors": [
+          {
+            "line": 3,
+            "offset": 45,
+            "message": "missing EOF at 'observe'",
+            "length": 7
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/moisture.kim",
+        "syntax_errors": [
+          {
+            "line": 9,
+            "offset": 328,
+            "message": "mismatched input '\"Proportion of the biov (living biomass) reference below which Kc (Crop Coefficient) is minimum and constant (ek0)\"' expecting ';'",
+            "length": 115
+          },
+          {
+            "line": 14,
+            "offset": 571,
+            "message": "mismatched input '\"Proportion of the biov (living biomass) reference at which kc (Crop Coefficient) = kcmax (Maximum Crop coefficient)\"' expecting ';'",
+            "length": 117
+          },
+          {
+            "line": 19,
+            "offset": 817,
+            "message": "mismatched input '\"Biomass when Kc (crop coefficient) is 1\"' expecting ';'",
+            "length": 41
+          },
+          {
+            "line": 24,
+            "offset": 983,
+            "message": "mismatched input '\"Minimum and constant Crop Coefficient\"' expecting ';'",
+            "length": 39
+          },
+          {
+            "line": 29,
+            "offset": 1148,
+            "message": "mismatched input '\"Definition of the function slope between Kc (Crop coefficient) and biov (living biomass) \"' expecting ';'",
+            "length": 91
+          },
+          {
+            "line": 35,
+            "offset": 1445,
+            "message": "mismatched input '\"Root depth when there are no limitations\"' expecting ';'",
+            "length": 42
+          },
+          {
+            "line": 40,
+            "offset": 1663,
+            "message": "mismatched input '\"Average fraction of total available soil watervolume that can be\\r\\ndepleted from the root zone before moisture stress (reduction in ET) occurs\"' expecting ';'",
+            "length": 143
+          },
+          {
+            "line": 54,
+            "offset": 2081,
+            "message": "no viable alternative at input 'ek0'",
+            "length": 3
+          },
+          {
+            "line": 55,
+            "offset": 2089,
+            "message": "no viable alternative at input 'ek1'",
+            "length": 3
+          },
+          {
+            "line": 56,
+            "offset": 2097,
+            "message": "no viable alternative at input 'epr0'",
+            "length": 4
+          },
+          {
+            "line": 57,
+            "offset": 2106,
+            "message": "no viable alternative at input 'epr1'",
+            "length": 4
+          },
+          {
+            "line": 62,
+            "offset": 2193,
+            "message": "no viable alternative at input 'ek0'",
+            "length": 3
+          },
+          {
+            "line": 63,
+            "offset": 2201,
+            "message": "no viable alternative at input 'ek1'",
+            "length": 3
+          },
+          {
+            "line": 64,
+            "offset": 2209,
+            "message": "no viable alternative at input 'epr0'",
+            "length": 4
+          },
+          {
+            "line": 65,
+            "offset": 2218,
+            "message": "no viable alternative at input 'epr1'",
+            "length": 4
+          },
+          {
+            "line": 66,
+            "offset": 2227,
+            "message": "no viable alternative at input 'ebiom'",
+            "length": 5
+          },
+          {
+            "line": 69,
+            "offset": 2352,
+            "message": "mismatched input '1' expecting RULE_EXPR",
+            "length": 1
+          },
+          {
+            "line": 73,
+            "offset": 2432,
+            "message": "mismatched input '\"Properties of plants used in predicting evapotranspiration (ET)\"' expecting ';'",
+            "length": 65
+          },
+          {
+            "line": 94,
+            "offset": 2906,
+            "message": "mismatched input '\"Reference evapotranspiration \"' expecting ';'",
+            "length": 31
+          },
+          {
+            "line": 104,
+            "offset": 3255,
+            "message": "mismatched input '\"Root depth considering limitations\"' expecting ';'",
+            "length": 36
+          },
+          {
+            "line": 113,
+            "offset": 3565,
+            "message": "mismatched input '\"Proportion of soil watervolume content available to roots\"' expecting ';'",
+            "length": 59
+          },
+          {
+            "line": 121,
+            "offset": 3858,
+            "message": "mismatched input '\"The moisture equivalent as a measure of the field capacity of soils\"' expecting ';'",
+            "length": 69
+          },
+          {
+            "line": 129,
+            "offset": 4153,
+            "message": "no viable alternative at input '3'",
+            "length": 1
+          },
+          {
+            "line": 139,
+            "offset": 4564,
+            "message": "mismatched input '\"Potential available soil watervolume in the root zone\"' expecting ';'",
+            "length": 55
+          },
+          {
+            "line": 148,
+            "offset": 4938,
+            "message": "mismatched input '\"Representation of the environmental demand for evapotranspiration and represents the evapotranspiration \\r\\nrate of a short green crop (grass), completely shading the ground, of uniform height and with adequate watervolume \\r\\nstatus in the soil profile\"' expecting ';'",
+            "length": 251
+          },
+          {
+            "line": 157,
+            "offset": 5411,
+            "message": "mismatched input '\"The readily available soil watervolume in the root zone\"' expecting ';'",
+            "length": 57
+          },
+          {
+            "line": 167,
+            "offset": 5744,
+            "message": "mismatched input '\"Initial depletion\"' expecting ';'",
+            "length": 19
+          },
+          {
+            "line": 179,
+            "offset": 6045,
+            "message": "mismatched input '\"Volume of watervolume in the root zone caused by the limits on root zone depletion by evapotranspiration\"' expecting ';'",
+            "length": 106
+          },
+          {
+            "line": 203,
+            "offset": 6922,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 204,
+            "offset": 7009,
+            "message": "mismatched input '\"Coefficient that calculates vegetation watervolume stress through soil moisture and vegetation characteristics. Range from 0 (maximum limitation) to 1 (no limitation)\"' expecting ';'",
+            "length": 168
+          },
+          {
+            "line": 214,
+            "offset": 7533,
+            "message": "mismatched input '\"Adjustment of Potential AvailableWaterCapacity for different PotentialEvapotranspiredWaterVolume and Soil Moisture\"' expecting ';'",
+            "length": 116
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/radiation.kim",
+        "syntax_errors": [
+          {
+            "line": 9,
+            "offset": 309,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 21,
+            "offset": 724,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 34,
+            "offset": 1327,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 35,
+            "offset": 1405,
+            "message": "mismatched input ''Percentage of radiation that limits vegetation growth. 0: No growth (maximum limiting), 1: Maximum growth (no limiting)'' expecting ';'",
+            "length": 121
+          },
+          {
+            "line": 45,
+            "offset": 1894,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 47,
+            "offset": 2012,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 48,
+            "offset": 2112,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 49,
+            "offset": 2204,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/temp.kim",
+        "syntax_errors": [
+          {
+            "line": 9,
+            "offset": 367,
+            "message": "mismatched input '\"Minimum temperature limiting vegetation growth\"' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 15,
+            "offset": 659,
+            "message": "mismatched input '\"Minimum temperature limiting vegetation growth\"' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 21,
+            "offset": 949,
+            "message": "mismatched input '\"Optimum temperature for vegetation growth\"' expecting ';'",
+            "length": 43
+          },
+          {
+            "line": 26,
+            "offset": 1167,
+            "message": "mismatched input '\"Vertical vegetation stratum coded as 1: ground layer; 2: shrubs layer; 3: midstory layer; 4: canopy layer\"' expecting ';'",
+            "length": 107
+          },
+          {
+            "line": 40,
+            "offset": 1636,
+            "message": "mismatched input '\"Mean atmospheric temperature for vegetation in snowy conditions\"' expecting ';'",
+            "length": 65
+          },
+          {
+            "line": 47,
+            "offset": 1923,
+            "message": "mismatched input '\"Minimum atmospheric temperature for vegetation in snowy conditions\"' expecting ';'",
+            "length": 68
+          },
+          {
+            "line": 56,
+            "offset": 2254,
+            "message": "mismatched input '\"Vegetation temperature under woody plants\"' expecting ';'",
+            "length": 43
+          },
+          {
+            "line": 76,
+            "offset": 3027,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 77,
+            "offset": 3113,
+            "message": "mismatched input '\"Limitation of plant growth because of temperature effect. Range from 0 (maximum limitation) to 1 (no growth limitation)\"' expecting ';'",
+            "length": 121
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/litterfall.kim",
+        "syntax_errors": [
+          {
+            "line": 8,
+            "offset": 321,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 14,
+            "offset": 616,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 20,
+            "offset": 885,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 25,
+            "offset": 1070,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 25,
+            "offset": 1117,
+            "message": "no viable alternative at input 'not'",
+            "length": 3
+          },
+          {
+            "line": 30,
+            "offset": 1365,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 30,
+            "offset": 1412,
+            "message": "no viable alternative at input 'not'",
+            "length": 3
+          },
+          {
+            "line": 40,
+            "offset": 1772,
+            "message": "mismatched input ''Living standing biomass remaining after harvest'' expecting ';'",
+            "length": 49
+          },
+          {
+            "line": 45,
+            "offset": 1871,
+            "message": "mismatched input ''Standing dead biomass remaining after harvest'' expecting ';'",
+            "length": 47
+          },
+          {
+            "line": 49,
+            "offset": 1948,
+            "message": "mismatched input ''Rate of root litterfall'' expecting ';'",
+            "length": 25
+          },
+          {
+            "line": 52,
+            "offset": 2009,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 52,
+            "offset": 2068,
+            "message": "no viable alternative at input 'agriculture:Harvesting'",
+            "length": 22
+          },
+          {
+            "line": 56,
+            "offset": 2193,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 56,
+            "offset": 2256,
+            "message": "no viable alternative at input 'agriculture:Harvesting'",
+            "length": 22
+          },
+          {
+            "line": 60,
+            "offset": 2379,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 60,
+            "offset": 2412,
+            "message": "no viable alternative at input 'im:Maximum'",
+            "length": 10
+          },
+          {
+            "line": 64,
+            "offset": 2567,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 64,
+            "offset": 2600,
+            "message": "no viable alternative at input 'im:Minimum'",
+            "length": 10
+          },
+          {
+            "line": 76,
+            "offset": 2978,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 89,
+            "offset": 3470,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 105,
+            "offset": 3991,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 136,
+            "offset": 5912,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 149,
+            "offset": 6219,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 170,
+            "offset": 7474,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 182,
+            "offset": 8045,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestock/tables.kim",
+        "syntax_errors": [
+          {
+            "line": 9,
+            "offset": 94,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 11,
+            "offset": 228,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 24,
+            "offset": 636,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 26,
+            "offset": 769,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 39,
+            "offset": 1172,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 41,
+            "offset": 1309,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 54,
+            "offset": 1719,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 56,
+            "offset": 1852,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 69,
+            "offset": 2259,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 71,
+            "offset": 2391,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 84,
+            "offset": 2798,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 86,
+            "offset": 2935,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 99,
+            "offset": 3338,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 101,
+            "offset": 3465,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 119,
+            "offset": 3895,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 121,
+            "offset": 4026,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 139,
+            "offset": 4447,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 141,
+            "offset": 4583,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 154,
+            "offset": 4972,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 156,
+            "offset": 5103,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 169,
+            "offset": 5500,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 171,
+            "offset": 5631,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 184,
+            "offset": 6026,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 205,
+            "offset": 6919,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 207,
+            "offset": 7062,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 220,
+            "offset": 7470,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 222,
+            "offset": 7613,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 235,
+            "offset": 8026,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 237,
+            "offset": 8170,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 250,
+            "offset": 8582,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 252,
+            "offset": 8719,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 265,
+            "offset": 9144,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 267,
+            "offset": 9281,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 285,
+            "offset": 9740,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 287,
+            "offset": 9861,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 305,
+            "offset": 10311,
+            "message": "no viable alternative at input 'com2'",
+            "length": 4
+          },
+          {
+            "line": 307,
+            "offset": 10432,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 320,
+            "offset": 10853,
+            "message": "no viable alternative at input 'com2'",
+            "length": 4
+          },
+          {
+            "line": 322,
+            "offset": 10970,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 335,
+            "offset": 11384,
+            "message": "no viable alternative at input 'com2'",
+            "length": 4
+          },
+          {
+            "line": 337,
+            "offset": 11545,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 350,
+            "offset": 11958,
+            "message": "no viable alternative at input 'com2'",
+            "length": 4
+          },
+          {
+            "line": 352,
+            "offset": 12119,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 370,
+            "offset": 12561,
+            "message": "no viable alternative at input 'com2'",
+            "length": 4
+          },
+          {
+            "line": 372,
+            "offset": 12677,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 385,
+            "offset": 13107,
+            "message": "no viable alternative at input 'com2'",
+            "length": 4
+          },
+          {
+            "line": 387,
+            "offset": 13225,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 400,
+            "offset": 13658,
+            "message": "no viable alternative at input 'com2'",
+            "length": 4
+          },
+          {
+            "line": 402,
+            "offset": 13778,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 415,
+            "offset": 14217,
+            "message": "no viable alternative at input 'com2'",
+            "length": 4
+          },
+          {
+            "line": 417,
+            "offset": 14336,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 435,
+            "offset": 14796,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 437,
+            "offset": 14935,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 450,
+            "offset": 15361,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 452,
+            "offset": 15493,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 465,
+            "offset": 15909,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 467,
+            "offset": 16042,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 480,
+            "offset": 16457,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 482,
+            "offset": 16587,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 495,
+            "offset": 16984,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 497,
+            "offset": 17116,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 510,
+            "offset": 17533,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 512,
+            "offset": 17668,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 525,
+            "offset": 18103,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 527,
+            "offset": 18239,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 540,
+            "offset": 18671,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 542,
+            "offset": 18809,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 555,
+            "offset": 19270,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 557,
+            "offset": 19403,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 570,
+            "offset": 19819,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 572,
+            "offset": 19954,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 585,
+            "offset": 20389,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 587,
+            "offset": 20522,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 605,
+            "offset": 20970,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 607,
+            "offset": 21105,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 620,
+            "offset": 21517,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 622,
+            "offset": 21659,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 635,
+            "offset": 22095,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 637,
+            "offset": 22235,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 650,
+            "offset": 22671,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 652,
+            "offset": 22809,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 665,
+            "offset": 23215,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 667,
+            "offset": 23351,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 680,
+            "offset": 23752,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 682,
+            "offset": 23892,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 695,
+            "offset": 24312,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 697,
+            "offset": 24449,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 710,
+            "offset": 24850,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 712,
+            "offset": 24994,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 730,
+            "offset": 25434,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 732,
+            "offset": 25560,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 745,
+            "offset": 25945,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 747,
+            "offset": 26081,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          },
+          {
+            "line": 760,
+            "offset": 26508,
+            "message": "no viable alternative at input 'com'",
+            "length": 3
+          },
+          {
+            "line": 762,
+            "offset": 26648,
+            "message": "mismatched input ',' expecting 'to'",
+            "length": 1
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockexcretion.kim",
+        "syntax_errors": [
+          {
+            "line": 8,
+            "offset": 280,
+            "message": "mismatched input ''Probability of manure left in a plant community compared to its use'' expecting ';'",
+            "length": 69
+          },
+          {
+            "line": 16,
+            "offset": 581,
+            "message": "mismatched input ''Coefficient of energy metabolism'' expecting ';'",
+            "length": 34
+          },
+          {
+            "line": 26,
+            "offset": 933,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 35,
+            "offset": 1611,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 49,
+            "offset": 2348,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 60,
+            "offset": 3229,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 71,
+            "offset": 4041,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 79,
+            "offset": 4406,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 87,
+            "offset": 4721,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 87,
+            "offset": 4754,
+            "message": "no viable alternative at input 'agriculture:Livestock'",
+            "length": 21
+          },
+          {
+            "line": 90,
+            "offset": 4952,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 95,
+            "offset": 5324,
+            "message": "mismatched input ''Nitrogen AboveGroundBiomass caused by Livestock Solid Manure'' expecting ';'",
+            "length": 62
+          },
+          {
+            "line": 104,
+            "offset": 6202,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 112,
+            "offset": 6570,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 112,
+            "offset": 6595,
+            "message": "no viable alternative at input 'physical:Solid'",
+            "length": 14
+          },
+          {
+            "line": 115,
+            "offset": 6814,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 121,
+            "offset": 7251,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 137,
+            "offset": 7965,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 148,
+            "offset": 8675,
+            "message": "mismatched input ''Nitrogen concentration of liquid manure caused by aboveground biomass ingestion'' expecting ';'",
+            "length": 81
+          },
+          {
+            "line": 158,
+            "offset": 9396,
+            "message": "mismatched input ''Nitrogen concentration of liquid manure caused by total of non living aboveground biomass ingestion'' expecting ';'",
+            "length": 101
+          },
+          {
+            "line": 169,
+            "offset": 10262,
+            "message": "mismatched input ''Nitrogen concentration of liquid manure caused by total of non living aboveground biomass ingestion'' expecting ';'",
+            "length": 101
+          },
+          {
+            "line": 180,
+            "offset": 11081,
+            "message": "mismatched input ''Nitrogen concentration of liquid manure caused by total of aboveground biomass ingestion'' expecting ';'",
+            "length": 90
+          },
+          {
+            "line": 192,
+            "offset": 12102,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 192,
+            "offset": 12127,
+            "message": "no viable alternative at input 'physical:Liquid'",
+            "length": 15
+          },
+          {
+            "line": 195,
+            "offset": 12361,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 201,
+            "offset": 12822,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockingestion.kim",
+        "syntax_errors": [
+          {
+            "line": 8,
+            "offset": 265,
+            "message": "mismatched input ''Probability of accessibility and livestock movement through vegetation'' expecting ';'",
+            "length": 72
+          },
+          {
+            "line": 14,
+            "offset": 497,
+            "message": "mismatched input ''Probability of accessibility and livestock movement through vegetation'' expecting ';'",
+            "length": 72
+          },
+          {
+            "line": 21,
+            "offset": 839,
+            "message": "mismatched input 'proportion' expecting ';'",
+            "length": 10
+          },
+          {
+            "line": 25,
+            "offset": 1084,
+            "message": "mismatched input 'proportion' expecting ';'",
+            "length": 10
+          },
+          {
+            "line": 30,
+            "offset": 1367,
+            "message": "mismatched input ''Amount of aerial biomass that prevents grazing'' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 34,
+            "offset": 1449,
+            "message": "mismatched input ''Amount of aerial biomass that allows grazing'' expecting ';'",
+            "length": 46
+          },
+          {
+            "line": 38,
+            "offset": 1530,
+            "message": "mismatched input ''Amount of aerial biomass that prevents grazing'' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 42,
+            "offset": 1612,
+            "message": "mismatched input ''Amount of aerial biomass that allows grazing'' expecting ';'",
+            "length": 46
+          },
+          {
+            "line": 46,
+            "offset": 1693,
+            "message": "mismatched input ''Maximum ingestion'' expecting ';'",
+            "length": 19
+          },
+          {
+            "line": 50,
+            "offset": 1752,
+            "message": "mismatched input ''Maximum ingestion'' expecting ';'",
+            "length": 19
+          },
+          {
+            "line": 54,
+            "offset": 1801,
+            "message": "mismatched input ''Parameter that indicates the slope when the function of the model \"proportion of Cattle IngestedFood caused by Slope\" is 0.5'' expecting ';'",
+            "length": 126
+          },
+          {
+            "line": 58,
+            "offset": 1957,
+            "message": "mismatched input ''Parameter indicating the decrease in the \"proportion of feed intake by livestock caused by the slope\" model when the slope increases'' expecting ';'",
+            "length": 134
+          },
+          {
+            "line": 62,
+            "offset": 2121,
+            "message": "mismatched input ''Amount of biomass below which there is no intake'' expecting ';'",
+            "length": 50
+          },
+          {
+            "line": 66,
+            "offset": 2272,
+            "message": "mismatched input ''Body condition at minimal potential intake '' expecting ';'",
+            "length": 45
+          },
+          {
+            "line": 70,
+            "offset": 2412,
+            "message": "mismatched input ''Body condition at minimal potential intake '' expecting ';'",
+            "length": 45
+          },
+          {
+            "line": 74,
+            "offset": 2539,
+            "message": "mismatched input ''Proportion of potential intake to \u00ef\u00bf\u00bdccimn\u00ef\u00bf\u00bd model'' expecting ';'",
+            "length": 49
+          },
+          {
+            "line": 80,
+            "offset": 2778,
+            "message": "mismatched input ''Function to calculate the livestock body condition'' expecting ';'",
+            "length": 52
+          },
+          {
+            "line": 90,
+            "offset": 3085,
+            "message": "mismatched input ''Function to calculate the livestock body condition'' expecting ';'",
+            "length": 52
+          },
+          {
+            "line": 106,
+            "offset": 3628,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 121,
+            "offset": 4666,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 139,
+            "offset": 5643,
+            "message": "mismatched input '\"Maximum proportion of (0-1) a type of grass can be part of the animal's daily diet\"' expecting ';'",
+            "length": 84
+          },
+          {
+            "line": 145,
+            "offset": 5893,
+            "message": "mismatched input '\"Maximum proportion of (0-1) a type of grass can be part of the animal's daily diet\"' expecting ';'",
+            "length": 84
+          },
+          {
+            "line": 154,
+            "offset": 6161,
+            "message": "mismatched input ''Level of shrub intake with minimal livestock accessibility'' expecting ';'",
+            "length": 60
+          },
+          {
+            "line": 158,
+            "offset": 6250,
+            "message": "mismatched input ''Level of shrub intake with maximal livestock accessibility'' expecting ';'",
+            "length": 60
+          },
+          {
+            "line": 162,
+            "offset": 6343,
+            "message": "mismatched input ''Minimum accessibility of livestock'' expecting ';'",
+            "length": 36
+          },
+          {
+            "line": 165,
+            "offset": 6412,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 166,
+            "offset": 6503,
+            "message": "mismatched input ''Level of livestock accessibility due to the proportion of shrubs (0: no shrubs, 1: maximum proportion of shrubs)'' expecting ';'",
+            "length": 114
+          },
+          {
+            "line": 171,
+            "offset": 6685,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 172,
+            "offset": 6785,
+            "message": "mismatched input ''Level of livestock accessibility due to the proportion of shrubs (0: no shrubs, 1: maximum proportion of shrubs)'' expecting ';'",
+            "length": 114
+          },
+          {
+            "line": 177,
+            "offset": 6965,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 178,
+            "offset": 7076,
+            "message": "mismatched input ''Difficulty of livestock access due to excess shrub growth (0: not accessible; 1 : fully accessible)'' expecting ';'",
+            "length": 101
+          },
+          {
+            "line": 186,
+            "offset": 7407,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 187,
+            "offset": 7528,
+            "message": "mismatched input ''Difficulty of livestock access due to excess shrub growth (0: not accessible; 1 : fully accessible)'' expecting ';'",
+            "length": 101
+          },
+          {
+            "line": 199,
+            "offset": 7935,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 207,
+            "offset": 8236,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 208,
+            "offset": 8306,
+            "message": "mismatched input ''Proportion of living above ground biomass'' expecting ';'",
+            "length": 43
+          },
+          {
+            "line": 219,
+            "offset": 8584,
+            "message": "mismatched input ''Coefficient (0-1) of regulation of livestock intake according to available biomass'' expecting ';'",
+            "length": 84
+          },
+          {
+            "line": 234,
+            "offset": 8960,
+            "message": "mismatched input ''Coefficient (0-1) of regulation of livestock intake according to available biomass'' expecting ';'",
+            "length": 84
+          },
+          {
+            "line": 254,
+            "offset": 9391,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 255,
+            "offset": 9486,
+            "message": "mismatched input ''Coefficient (0-1) of grazing capacity according to slope'' expecting ';'",
+            "length": 58
+          },
+          {
+            "line": 263,
+            "offset": 9759,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 264,
+            "offset": 9864,
+            "message": "mismatched input ''Coefficient (0-1) of grazing capacity according to slope'' expecting ';'",
+            "length": 58
+          },
+          {
+            "line": 272,
+            "offset": 10118,
+            "message": "mismatched input ''Coefficient (0-1) indicating the livestock ability to select the living against the dead part of the vegetation'' expecting ';'",
+            "length": 113
+          },
+          {
+            "line": 283,
+            "offset": 10593,
+            "message": "mismatched input ''Dimensionless index allowing estimation of pasture quality according to its composition'' expecting ';'",
+            "length": 89
+          },
+          {
+            "line": 296,
+            "offset": 11236,
+            "message": "mismatched input ''Dimensionless index allowing estimation of pasture quality according to its composition'' expecting ';'",
+            "length": 89
+          },
+          {
+            "line": 311,
+            "offset": 11894,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 312,
+            "offset": 11966,
+            "message": "mismatched input ''Estimates the proportion of grazing if there were no overlap with others\u00ef\u00bf\u00bd herds'' expecting ';'",
+            "length": 81
+          },
+          {
+            "line": 317,
+            "offset": 12172,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 318,
+            "offset": 12255,
+            "message": "mismatched input ''Estimates the proportion of grazing if there were no overlap with others\u00ef\u00bf\u00bd herds'' expecting ';'",
+            "length": 81
+          },
+          {
+            "line": 328,
+            "offset": 12628,
+            "message": "mismatched input ''Potential ingestion without biomass limitation'' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 337,
+            "offset": 12979,
+            "message": "mismatched input ''Potential ingestion without biomass limitation'' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 349,
+            "offset": 13238,
+            "message": "mismatched input ''Potential of total grazing proportion of a given pasture corresponding to a herd'' expecting ';'",
+            "length": 82
+          },
+          {
+            "line": 357,
+            "offset": 13545,
+            "message": "mismatched input ''Potential of total grazing proportion of a given pasture corresponding to a herd'' expecting ';'",
+            "length": 82
+          },
+          {
+            "line": 366,
+            "offset": 13862,
+            "message": "mismatched input ''Potential of total intake proportion corresponding to type of grass'' expecting ';'",
+            "length": 69
+          },
+          {
+            "line": 373,
+            "offset": 14029,
+            "message": "mismatched input ''Potential of total intake proportion corresponding to type of grass'' expecting ';'",
+            "length": 69
+          },
+          {
+            "line": 382,
+            "offset": 14211,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 382,
+            "offset": 14244,
+            "message": "no viable alternative at input 'agriculture:Cattle'",
+            "length": 18
+          },
+          {
+            "line": 385,
+            "offset": 14399,
+            "message": "no viable alternative at input 'cirhift01_c'",
+            "length": 11
+          },
+          {
+            "line": 386,
+            "offset": 14415,
+            "message": "no viable alternative at input 'ch_c'",
+            "length": 4
+          },
+          {
+            "line": 389,
+            "offset": 14499,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 389,
+            "offset": 14532,
+            "message": "no viable alternative at input 'agriculture.incubation:Mares'",
+            "length": 28
+          },
+          {
+            "line": 392,
+            "offset": 14697,
+            "message": "no viable alternative at input 'cirhift01_m'",
+            "length": 11
+          },
+          {
+            "line": 393,
+            "offset": 14713,
+            "message": "no viable alternative at input 'ch_m'",
+            "length": 4
+          },
+          {
+            "line": 400,
+            "offset": 14925,
+            "message": "mismatched input ''Amount of above ground biomass ingested by each type of livestock'' expecting ';'",
+            "length": 67
+          },
+          {
+            "line": 409,
+            "offset": 15426,
+            "message": "mismatched input ''Amount of above ground biomass ingested by each type of livestock'' expecting ';'",
+            "length": 67
+          },
+          {
+            "line": 418,
+            "offset": 15835,
+            "message": "mismatched input ''Function to calculate ingestion model'' expecting ';'",
+            "length": 39
+          },
+          {
+            "line": 429,
+            "offset": 16545,
+            "message": "mismatched input ''Living above ground biomass ingested by each type of livestock'' expecting ';'",
+            "length": 64
+          },
+          {
+            "line": 437,
+            "offset": 16924,
+            "message": "mismatched input ''Living above ground biomass ingested by each type of livestock'' expecting ';'",
+            "length": 64
+          },
+          {
+            "line": 445,
+            "offset": 17300,
+            "message": "mismatched input ''Living above ground biomass ingested by livestock'' expecting ';'",
+            "length": 51
+          },
+          {
+            "line": 453,
+            "offset": 17821,
+            "message": "mismatched input ''Non-living above ground biomass ingested by each type of livestock'' expecting ';'",
+            "length": 68
+          },
+          {
+            "line": 460,
+            "offset": 18317,
+            "message": "mismatched input ''Non-living above ground biomass ingested by each type of livestock'' expecting ';'",
+            "length": 68
+          },
+          {
+            "line": 468,
+            "offset": 18838,
+            "message": "mismatched input ''Non-living above ground biomass ingested by livestock'' expecting ';'",
+            "length": 55
+          },
+          {
+            "line": 475,
+            "offset": 19268,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 475,
+            "offset": 19327,
+            "message": "no viable alternative at input 'biology.incubation:Ingestion'",
+            "length": 28
+          },
+          {
+            "line": 496,
+            "offset": 19933,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 496,
+            "offset": 19996,
+            "message": "no viable alternative at input 'biology.incubation:Ingestion'",
+            "length": 28
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockmass.kim",
+        "syntax_errors": [
+          {
+            "line": 6,
+            "offset": 157,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 6,
+            "offset": 216,
+            "message": "no viable alternative at input 'agriculture:Cattle'",
+            "length": 18
+          },
+          {
+            "line": 12,
+            "offset": 482,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 12,
+            "offset": 541,
+            "message": "no viable alternative at input 'agriculture.incubation:Mares'",
+            "length": 28
+          },
+          {
+            "line": 18,
+            "offset": 818,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 18,
+            "offset": 881,
+            "message": "no viable alternative at input 'agriculture:Cattle'",
+            "length": 18
+          },
+          {
+            "line": 24,
+            "offset": 1151,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 24,
+            "offset": 1214,
+            "message": "no viable alternative at input 'agriculture.incubation:Mares'",
+            "length": 28
+          },
+          {
+            "line": 33,
+            "offset": 1598,
+            "message": "mismatched input ''Gross energy value'' expecting ';'",
+            "length": 20
+          },
+          {
+            "line": 37,
+            "offset": 1651,
+            "message": "mismatched input ''Efficiency of energy use for lactation'' expecting ';'",
+            "length": 40
+          },
+          {
+            "line": 41,
+            "offset": 1729,
+            "message": "mismatched input ''Efficiency of metabolizable energy used for food supplies mobilization'' expecting ';'",
+            "length": 72
+          },
+          {
+            "line": 45,
+            "offset": 1838,
+            "message": "mismatched input ''Energy value of mobilizing body reserves'' expecting ';'",
+            "length": 42
+          },
+          {
+            "line": 49,
+            "offset": 1913,
+            "message": "mismatched input ''Energy needed to increase 1 kg of body weight'' expecting ';'",
+            "length": 47
+          },
+          {
+            "line": 53,
+            "offset": 1991,
+            "message": "mismatched input ''Energy efficiency to gain weight'' expecting ';'",
+            "length": 34
+          },
+          {
+            "line": 57,
+            "offset": 2058,
+            "message": "mismatched input '''' expecting ';'",
+            "length": 2
+          },
+          {
+            "line": 60,
+            "offset": 2100,
+            "message": "mismatched input '500' expecting RULE_EXPR",
+            "length": 3
+          },
+          {
+            "line": 63,
+            "offset": 2122,
+            "message": "mismatched input ''Metabolism energy efficiency for maintenance and mobility'' expecting ';'",
+            "length": 59
+          },
+          {
+            "line": 67,
+            "offset": 2213,
+            "message": "mismatched input ''Metabolism energy efficiency for maintenance and mobility'' expecting ';'",
+            "length": 59
+          },
+          {
+            "line": 71,
+            "offset": 2304,
+            "message": "mismatched input ''Metabolism energy efficiency for gain weight'' expecting ';'",
+            "length": 46
+          },
+          {
+            "line": 75,
+            "offset": 2384,
+            "message": "mismatched input ''Metabolism energy efficiency for gain weight'' expecting ';'",
+            "length": 46
+          },
+          {
+            "line": 79,
+            "offset": 2461,
+            "message": "mismatched input ''Livestock energy movement'' expecting ';'",
+            "length": 27
+          },
+          {
+            "line": 83,
+            "offset": 2521,
+            "message": "mismatched input ''Livestock energy mobility'' expecting ';'",
+            "length": 27
+          },
+          {
+            "line": 87,
+            "offset": 2581,
+            "message": "mismatched input ''Livestock energy movement'' expecting ';'",
+            "length": 27
+          },
+          {
+            "line": 91,
+            "offset": 2641,
+            "message": "mismatched input ''Livestock energy mobility'' expecting ';'",
+            "length": 27
+          },
+          {
+            "line": 99,
+            "offset": 2889,
+            "message": "mismatched input ''Body Condition'' expecting ';'",
+            "length": 16
+          },
+          {
+            "line": 108,
+            "offset": 3189,
+            "message": "mismatched input ''Body Condition'' expecting ';'",
+            "length": 16
+          },
+          {
+            "line": 136,
+            "offset": 3989,
+            "message": "mismatched input ''Livestock movement and displacement energy'' expecting ';'",
+            "length": 44
+          },
+          {
+            "line": 146,
+            "offset": 4286,
+            "message": "mismatched input ''Livestock movement and displacement energy'' expecting ';'",
+            "length": 44
+          },
+          {
+            "line": 156,
+            "offset": 4592,
+            "message": "mismatched input ''Metabolisation of ingested energy in livestock'' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 167,
+            "offset": 5381,
+            "message": "mismatched input ''Metabolisation of ingested energy in livestock'' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 178,
+            "offset": 6224,
+            "message": "mismatched input ''Ingested energy that implies movement and displacement'' expecting ';'",
+            "length": 56
+          },
+          {
+            "line": 191,
+            "offset": 7105,
+            "message": "mismatched input ''Ingested energy that implies movement and displacement'' expecting ';'",
+            "length": 56
+          },
+          {
+            "line": 204,
+            "offset": 7988,
+            "message": "mismatched input ''Ingested energy that implies change of weight'' expecting ';'",
+            "length": 47
+          },
+          {
+            "line": 216,
+            "offset": 8828,
+            "message": "mismatched input ''Ingested energy that implies change of weight'' expecting ';'",
+            "length": 47
+          },
+          {
+            "line": 234,
+            "offset": 9765,
+            "message": "mismatched input ''Balance between ingested energy and needs'' expecting ';'",
+            "length": 43
+          },
+          {
+            "line": 244,
+            "offset": 10284,
+            "message": "mismatched input ''Balance between ingested energy and needs'' expecting ';'",
+            "length": 43
+          },
+          {
+            "line": 255,
+            "offset": 10860,
+            "message": "mismatched input ''Change of weight'' expecting ';'",
+            "length": 18
+          },
+          {
+            "line": 271,
+            "offset": 11522,
+            "message": "mismatched input ''Change of weight'' expecting ';'",
+            "length": 18
+          },
+          {
+            "line": 294,
+            "offset": 12464,
+            "message": "mismatched input ''Body weight'' expecting ';'",
+            "length": 13
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/nitrogen.kim",
+        "syntax_errors": [
+          {
+            "line": 7,
+            "offset": 329,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 7,
+            "offset": 354,
+            "message": "no viable alternative at input 'biology.incubation:Living'",
+            "length": 25
+          },
+          {
+            "line": 13,
+            "offset": 697,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 19,
+            "offset": 1026,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 25,
+            "offset": 1345,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 31,
+            "offset": 1620,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 37,
+            "offset": 1807,
+            "message": "mismatched input ''Maximum proportion of litterfall nitrogen in active organic matter'' expecting ';'",
+            "length": 68
+          },
+          {
+            "line": 42,
+            "offset": 2005,
+            "message": "mismatched input ''Maximum proportion of litterfall nitrogen in passive organic matter'' expecting ';'",
+            "length": 69
+          },
+          {
+            "line": 47,
+            "offset": 2204,
+            "message": "mismatched input ''Maximum proportion of nitrogen from passive to active organic matter'' expecting ';'",
+            "length": 70
+          },
+          {
+            "line": 52,
+            "offset": 2403,
+            "message": "mismatched input ''Maximum proportion of nitrogen from solid manure to soil'' expecting ';'",
+            "length": 58
+          },
+          {
+            "line": 57,
+            "offset": 2590,
+            "message": "mismatched input ''Maximum proportion of organic nitrogen in mineralization process'' expecting ';'",
+            "length": 66
+          },
+          {
+            "line": 61,
+            "offset": 2786,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 61,
+            "offset": 2819,
+            "message": "no viable alternative at input 'ecology.incubation:Resorption'",
+            "length": 29
+          },
+          {
+            "line": 68,
+            "offset": 3143,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 68,
+            "offset": 3168,
+            "message": "no viable alternative at input 'chemistry.incubation:Volatilization'",
+            "length": 35
+          },
+          {
+            "line": 70,
+            "offset": 3271,
+            "message": "mismatched input '0' expecting RULE_EXPR",
+            "length": 1
+          },
+          {
+            "line": 73,
+            "offset": 3386,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 78,
+            "offset": 3493,
+            "message": "mismatched input ''Nitrogen mass decomposition ratio between the aerial part and the root vegetation part'' expecting ';'",
+            "length": 88
+          },
+          {
+            "line": 84,
+            "offset": 3802,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 94,
+            "offset": 4428,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 122,
+            "offset": 6351,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 137,
+            "offset": 6904,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 153,
+            "offset": 7893,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 174,
+            "offset": 8926,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 184,
+            "offset": 9547,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 194,
+            "offset": 10153,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 210,
+            "offset": 10816,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 220,
+            "offset": 11443,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 230,
+            "offset": 12081,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 246,
+            "offset": 12761,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 259,
+            "offset": 13479,
+            "message": "mismatched input ''Nitrification process'' expecting ';'",
+            "length": 23
+          },
+          {
+            "line": 273,
+            "offset": 14032,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 284,
+            "offset": 14781,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 294,
+            "offset": 15450,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 306,
+            "offset": 15929,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 326,
+            "offset": 17075,
+            "message": "mismatched input ''Mineralization process'' expecting ';'",
+            "length": 24
+          },
+          {
+            "line": 335,
+            "offset": 17547,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 357,
+            "offset": 18948,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 370,
+            "offset": 19510,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 398,
+            "offset": 20831,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 399,
+            "offset": 20907,
+            "message": "mismatched input ''Range of nitrogen mass that limits vegetation growth'' expecting ';'",
+            "length": 54
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/senescence.kim",
+        "syntax_errors": [
+          {
+            "line": 7,
+            "offset": 292,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 8,
+            "offset": 385,
+            "message": "mismatched input ''Level of moisture (fh) with minimum senescence'' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 13,
+            "offset": 554,
+            "message": "mismatched input ''Maximum proportion of leaves dying due to moisture'' expecting ';'",
+            "length": 52
+          },
+          {
+            "line": 18,
+            "offset": 731,
+            "message": "mismatched input ''Proportion of minimum leave senescence caused by soil moisture'' expecting ';'",
+            "length": 64
+          },
+          {
+            "line": 24,
+            "offset": 1014,
+            "message": "mismatched input ''Atmospheric temperature producing maximum senescence'' expecting ';'",
+            "length": 54
+          },
+          {
+            "line": 30,
+            "offset": 1287,
+            "message": "mismatched input ''Atmospheric temperature producing minimum senescence'' expecting ';'",
+            "length": 54
+          },
+          {
+            "line": 35,
+            "offset": 1464,
+            "message": "mismatched input ''Maximum proportion of leaves dying due to temperature'' expecting ';'",
+            "length": 55
+          },
+          {
+            "line": 40,
+            "offset": 1645,
+            "message": "mismatched input ''Temperature causing minimal senescence'' expecting ';'",
+            "length": 40
+          },
+          {
+            "line": 45,
+            "offset": 1895,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 54,
+            "offset": 2272,
+            "message": "mismatched input ''Proportion of leave senescence caused by moisture'' expecting ';'",
+            "length": 51
+          },
+          {
+            "line": 67,
+            "offset": 2776,
+            "message": "mismatched input ''Proportion of senescence caused by temperature'' expecting ';'",
+            "length": 48
+          },
+          {
+            "line": 80,
+            "offset": 3297,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 81,
+            "offset": 3400,
+            "message": "mismatched input ''Maximum proportion of senescence caused by temperature or moisture'' expecting ';'",
+            "length": 68
+          },
+          {
+            "line": 93,
+            "offset": 3829,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 112,
+            "offset": 4720,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 128,
+            "offset": 5288,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 137,
+            "offset": 5688,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/vegetationgrowth.kim",
+        "syntax_errors": [
+          {
+            "line": 8,
+            "offset": 316,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 13,
+            "offset": 507,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 13,
+            "offset": 533,
+            "message": "no viable alternative at input 'im:Balance'",
+            "length": 10
+          },
+          {
+            "line": 20,
+            "offset": 843,
+            "message": "mismatched input ''Growing degree days (GDD) accumulated, a commonly used measure of thermal accumulation'' expecting ';'",
+            "length": 88
+          },
+          {
+            "line": 28,
+            "offset": 1259,
+            "message": "mismatched input ''Accumulated temperature necessary to complete a phenological state'' expecting ';'",
+            "length": 68
+          },
+          {
+            "line": 36,
+            "offset": 1575,
+            "message": "mismatched input ''Phenological state of vegetation'' expecting ';'",
+            "length": 34
+          },
+          {
+            "line": 49,
+            "offset": 2015,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 58,
+            "offset": 2454,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 74,
+            "offset": 2884,
+            "message": "mismatched input ''Function to compute compa and compr'' expecting ';'",
+            "length": 37
+          },
+          {
+            "line": 86,
+            "offset": 3278,
+            "message": "mismatched input ''Function that sums nres (nitrogen causing vegetation growth) and mnim (inorganic nitrogen)'' expecting ';'",
+            "length": 92
+          },
+          {
+            "line": 93,
+            "offset": 3682,
+            "message": "mismatched input ''The remainder of net primary production is used for aerial vegetation growth.'' expecting ';'",
+            "length": 79
+          },
+          {
+            "line": 101,
+            "offset": 3949,
+            "message": "mismatched input ''The remainder of net primary production used for root growth'' expecting ';'",
+            "length": 62
+          },
+          {
+            "line": 109,
+            "offset": 4125,
+            "message": "mismatched input ''Function to calculate comphechoa1'' expecting ';'",
+            "length": 35
+          },
+          {
+            "line": 118,
+            "offset": 4591,
+            "message": "mismatched input ''Normalised concentration of nitrogen in the aerial part of the plant'' expecting ';'",
+            "length": 70
+          },
+          {
+            "line": 126,
+            "offset": 4862,
+            "message": "mismatched input ''Function to calculate comphechoar1'' expecting ';'",
+            "length": 36
+          },
+          {
+            "line": 135,
+            "offset": 5301,
+            "message": "mismatched input ''Normalised concentration of nitrogen in the root part of the plant'' expecting ';'",
+            "length": 68
+          },
+          {
+            "line": 147,
+            "offset": 5593,
+            "message": "mismatched input ''Function to calculate adic'' expecting ';'",
+            "length": 28
+          },
+          {
+            "line": 156,
+            "offset": 6056,
+            "message": "no viable alternative at input 'of'",
+            "length": 2
+          },
+          {
+            "line": 157,
+            "offset": 6122,
+            "message": "mismatched input ''Proportion of the remainder nitrogen causing extra vegetation growth'' expecting ';'",
+            "length": 70
+          },
+          {
+            "line": 169,
+            "offset": 6892,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          },
+          {
+            "line": 180,
+            "offset": 7411,
+            "message": "no viable alternative at input '2'",
+            "length": 1
+          }
+        ],
+        "has_syntax_errors": true,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      },
+      {
+        "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/tests/timedresources.kim",
+        "syntax_errors": [],
+        "has_syntax_errors": false,
+        "ast_class": "org.integratedmodelling.languages.kim.impl.ModelImpl"
+      }
+    ],
+    "probe_sha256": "34f26f594a4bde3f76224cc296936a9b85b59538dca5a524ab393434b5138fdc",
+    "log_sha256": "2189ba2e2b26a619b3732ee2c06cd942eb368772e04875748299ad58075e1dc8"
+  }
+]

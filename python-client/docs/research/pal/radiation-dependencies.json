@@ -1,0 +1,91 @@
+{
+  "source_member": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/radiation.kim",
+  "source_sha256": "871a7d87990fd2381e9d1c731f68cb4ce49c9e21f33c7201999a031d64b20707",
+  "namespace": "ecology.grassland.lf.radiation",
+  "model_names": [
+    "rgc_max",
+    "rg2",
+    "fr",
+    "ftrh"
+  ],
+  "source_graph": {
+    "rgc_max": [
+      "com",
+      "T_RC_MAX"
+    ],
+    "rg2": [
+      "rg",
+      "com",
+      "com2"
+    ],
+    "fr": [
+      "rg2",
+      "rgc_max"
+    ],
+    "ftrh": [
+      "ft",
+      "fr",
+      "fh"
+    ]
+  },
+  "graph_scope": "Manually inspected source names; not Java-selected dependency graph",
+  "active_data_namespace_urns": [
+    "local:srwohl:im.alice.spain:im-alice-spain.spain_solar_radiation_may_2018",
+    "local:amarquez:im.alice.spain:com_50m_wgs84",
+    "local:amarquez:im.alice.spain:com2_50m_wgs84",
+    "local:amarquez:im.alice.spain:cantabria_cattle_per_hectare",
+    "local:amarquez:im.alice.spain:cantabria_mares_per_hectare"
+  ],
+  "bundled_resource_descriptors": [
+    {
+      "urn": "local:amarquez:im.ecology.grassland.livestock:meanprec_05_2010_2011_2012",
+      "adapter": "raster",
+      "geometry": "S2(79,54){bbox=[-1.805 -1.0150000000000001 48.195 48.73500000000001],proj=EPSG:4326}"
+    },
+    {
+      "urn": "local:amarquez:im.ecology.grassland.livestock:meanprec_05_2070",
+      "adapter": "raster",
+      "geometry": "S2(88,64){bbox=[-1.7249999999999999 -0.8450000000000001 48.114999999999995 48.755],proj=EPSG:4326}"
+    },
+    {
+      "urn": "local:amarquez:im.ecology.grassland.livestock:meantemp_05_2010_2011_2012",
+      "adapter": "raster",
+      "geometry": "S2(79,54){bbox=[-1.805 -1.0150000000000001 48.195 48.73500000000001],proj=EPSG:4326}"
+    },
+    {
+      "urn": "local:amarquez:im.ecology.grassland.livestock:meantemp_may2012",
+      "adapter": "raster",
+      "geometry": "S2(79,54){bbox=[-1.805 -1.0150000000000001 48.195 48.735],proj=EPSG:4326}"
+    },
+    {
+      "urn": "local:amarquez:im.ecology.grassland.livestock:mintemp_05_2010_2011_2012",
+      "adapter": "raster",
+      "geometry": "S2(79,54){bbox=[-1.805 -1.0150000000000001 48.195 48.73500000000001],proj=EPSG:4326}"
+    },
+    {
+      "urn": "local:amarquez:im.ecology.grassland.livestock:mintemp_may2012",
+      "adapter": "raster",
+      "geometry": "S2(79,54){bbox=[-1.805 -1.0150000000000001 48.195 48.735],proj=EPSG:4326}"
+    },
+    {
+      "urn": "local:amarquez:im.ecology.grassland.livestock:prec_may2012",
+      "adapter": "raster",
+      "geometry": "S2(79,54){bbox=[-1.805 -1.0150000000000001 48.195 48.735],proj=EPSG:4326}"
+    },
+    {
+      "urn": "local:amarquez:im.ecology.grassland.livestock:up_spain_simply",
+      "adapter": "vector",
+      "geometry": "#s2(233){bbox=[-4.021239850615833 -3.296028348313493 43.038716940834895 43.437248032715786],proj=EPSG:4326}"
+    }
+  ],
+  "missing_active_urns_from_descriptors": [
+    "local:srwohl:im.alice.spain:im-alice-spain.spain_solar_radiation_may_2018",
+    "local:amarquez:im.alice.spain:com_50m_wgs84",
+    "local:amarquez:im.alice.spain:com2_50m_wgs84",
+    "local:amarquez:im.alice.spain:cantabria_cattle_per_hectare",
+    "local:amarquez:im.alice.spain:cantabria_mares_per_hectare"
+  ],
+  "first_request_candidate": "earth:SolarRadiation for ecology:Vegetation in MJ/m^2",
+  "runtime_model_urns": "UNKNOWN",
+  "scenario": "UNKNOWN; paper and archive defaults differ"
+}

@@ -1,0 +1,1726 @@
+{
+  "jdk": "openjdk version \"21.0.12.1\" 2026-08-18 LTS\r\nOpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)\r\nOpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)\r\n",
+  "java_sha256": "82051fdab26319d77d20cc0065045d05ec00b3e3d05f44935d7c06b96b621d55",
+  "pinned_jar_identities": [
+    {
+      "name": "spring-boot-starter-logging-3.4.4.jar",
+      "sha256": "1fcd1236a38b5eebc357527c058070669272b7b60c8394f887db882b4b47a240"
+    },
+    {
+      "name": "logback-classic-1.5.18.jar",
+      "sha256": "3e1533d0321f8815eef46750aee0111b41554f9a4644c3c4d2d404744b09f60f"
+    },
+    {
+      "name": "logback-core-1.5.18.jar",
+      "sha256": "85139e7b57b464f8e5e36326dd81317648bed199ccc4f98cd42585f8d7571027"
+    },
+    {
+      "name": "slf4j-api-2.0.17.jar",
+      "sha256": "7b751d952061954d5abfed7181c1f645d336091b679891591d63329c622eb832"
+    },
+    {
+      "name": "log4j-to-slf4j-2.24.3.jar",
+      "sha256": "c7f2b0c612a4eb05b1587d1c880eb4cf5f4f53850676a8ede8da2b8fabb4f73f"
+    },
+    {
+      "name": "log4j-api-2.24.3.jar",
+      "sha256": "5b4a0a0cd0e751ded431c162442bdbdd53328d1f8bb2bae5fc1bbeee0f66d80f"
+    },
+    {
+      "name": "jul-to-slf4j-2.0.17.jar",
+      "sha256": "a7afcd23b9cfd1475e55c94f943b808c5922035e7e2c2a5c65a487a4106bc538"
+    },
+    {
+      "name": "klab.core.api-1.0.0-SNAPSHOT.jar",
+      "sha256": "578b215adf400b9858676d4eb5a1a28a62181391b1b7b21b5bf61d4e113868d7"
+    },
+    {
+      "name": "klab.core.services-1.0.0-SNAPSHOT.jar",
+      "sha256": "b7efb501053ec158b07aaa7d97cb82a09ccbdbd8ba932302c727af409090ed97"
+    },
+    {
+      "name": "spring-boot-starter-mail-3.4.4.jar",
+      "sha256": "a1cc327471ef16c96c3b76fdc0408dede73da3bbeb37d00b2a56598e32bddd61"
+    },
+    {
+      "name": "spring-boot-starter-3.4.4.jar",
+      "sha256": "2fcdc0037fd1c0acebb4b1ef700818c97d8457fabc6d5bebc3878f584c1c727f"
+    },
+    {
+      "name": "spring-boot-3.4.4.jar",
+      "sha256": "f134d42d19c1f707408e2ce6ace8d5887a9e7c3e50a351a75ada80afbbd6ecaf"
+    },
+    {
+      "name": "spring-boot-autoconfigure-3.4.4.jar",
+      "sha256": "04a3b4f7c4e0ab39fb8b4dd77a2092ed5c036961133d278060af14455dc55d39"
+    },
+    {
+      "name": "spring-core-6.2.5.jar",
+      "sha256": "4cee02cf2d0227c1f1bfb97c2edc29d3af83b93c83d08b38e5987c3fa0fe4f1e"
+    },
+    {
+      "name": "spring-jcl-6.2.5.jar",
+      "sha256": "4f93915fab10c14df3b90054cfd5d1c01a29def59b6e25c0f33d9eac4ffec079"
+    },
+    {
+      "name": "spring-context-support-6.2.5.jar",
+      "sha256": "93f2de3b6236dd82ea52f3f184c1c3bd49496162d87f06ddbc426058905fcda7"
+    },
+    {
+      "name": "spring-beans-6.2.5.jar",
+      "sha256": "63f7ff64a72187d71c402f8c77c5fe6ba9d38e03465e4f9a601c3522265051d4"
+    },
+    {
+      "name": "spring-context-6.2.5.jar",
+      "sha256": "21941e0c9f23310c78403f35a624b27f3a1301f1ccf5de250d7478956e7bab51"
+    },
+    {
+      "name": "jakarta.mail-2.0.3.jar",
+      "sha256": "efb946424933806bc6f8136752d22fdb3ba887ea0527ff849c474e51f7b3715e"
+    },
+    {
+      "name": "angus-activation-2.0.2.jar",
+      "sha256": "6dd3bcffc22bce83b07376a0e2e094e4964a3195d4118fb43e380ef35436cc1e"
+    },
+    {
+      "name": "caffeine-3.2.4.jar",
+      "sha256": "9d9d2cfd681fd9272ded3d27c9930db12f89f732345975aa113ebc223bbf1224"
+    },
+    {
+      "name": "jspecify-1.0.0.jar",
+      "sha256": "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab"
+    },
+    {
+      "name": "error_prone_annotations-2.49.0.jar",
+      "sha256": "3b1003e51b8ae56fdbd7c71073e81d1683b97e6c4dff5a9151164d59b769d13c"
+    },
+    {
+      "name": "org.eclipse.elk.graph.json-0.12.0.jar",
+      "sha256": "fe1112edc97b3b59f0001103e4779b805d266837abbb2f681586b8b76fec5a26"
+    },
+    {
+      "name": "guava-33.3.0-jre.jar",
+      "sha256": "dfadc3bce3101eff1452aae47d7c833fee443b47bdf9ef13311b6c7cab663ddf"
+    },
+    {
+      "name": "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+      "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99"
+    },
+    {
+      "name": "jsr305-3.0.2.jar",
+      "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7"
+    },
+    {
+      "name": "checker-qual-3.43.0.jar",
+      "sha256": "3fbc2e98f05854c3df16df9abaa955b91b15b3ecac33623208ed6424640ef0f6"
+    },
+    {
+      "name": "j2objc-annotations-3.0.0.jar",
+      "sha256": "88241573467ddca44ffd4d74aa04c2bbfd11bf7c17e0c342c94c9de7a70a7c64"
+    },
+    {
+      "name": "gson-2.8.9.jar",
+      "sha256": "d3999291855de495c94c743761b8ab5176cfeabe281a5ab0d8e8d45326fd703e"
+    },
+    {
+      "name": "org.eclipse.elk.core-0.12.0.jar",
+      "sha256": "d56dc3cc650c1f346675f2180e64efed458d264ae221ec677e60f6edc7526502"
+    },
+    {
+      "name": "org.eclipse.elk.graph-0.12.0.jar",
+      "sha256": "44b0263d6206ab9c2d6a96e8db596a89c934f1223fabd2f209ada1b7300222eb"
+    },
+    {
+      "name": "org.eclipse.xtext.xbase.lib-2.36.0.jar",
+      "sha256": "e94d17a7e8f2f27c4f9cceabca5f639e1d83214c38cb964f3a9c974c05297c5f"
+    },
+    {
+      "name": "org.eclipse.xtend.lib-2.36.0.jar",
+      "sha256": "ac53dfb1a9bc49500350d8d2d0f7b6d7c733bde58eb504f5c441140aade98675"
+    },
+    {
+      "name": "org.eclipse.xtend.lib.macro-2.36.0.jar",
+      "sha256": "be6b0addefc8c1a93c7eb690a6367c2ba3bcc29c7f14518a30baeaa1c2d89acd"
+    },
+    {
+      "name": "org.eclipse.elk.alg.layered-0.12.0.jar",
+      "sha256": "11774d76e4855f181335ba61c268e9b7434f2ddf5c6b87e82dd1dc51d6e6821d"
+    },
+    {
+      "name": "org.eclipse.elk.alg.common-0.12.0.jar",
+      "sha256": "e7fe9dd838f2ab33b30e4da639ba710c44c8734e9c25b06d715a91a7880e6172"
+    },
+    {
+      "name": "nitrite-4.3.0.jar",
+      "sha256": "6849079711f75ec2826005a011432287524b1d78a0b15a79987e5c957e989c34"
+    },
+    {
+      "name": "jasypt-1.9.3.jar",
+      "sha256": "f481fbb8dd8ce754bfde7552af4fcbe8c5e303d53663bb3d8ce9d4338e0e55aa"
+    },
+    {
+      "name": "commons-codec-1.17.0.jar",
+      "sha256": "f700de80ac270d0344fdea7468201d8b9c805e5c648331c3619f2ee067ccfc59"
+    },
+    {
+      "name": "nitrite-jackson-mapper-4.3.0.jar",
+      "sha256": "8b292d05a31002caca3f79ef1b29c4494c4805bba831f7f0287340c445f3d6fe"
+    },
+    {
+      "name": "jackson-databind-2.19.0.jar",
+      "sha256": "ceda311f476c3b18e1d2b240c94e2dcb9c8d44e70f8afa9facab88bac4ddc03a"
+    },
+    {
+      "name": "jackson-annotations-2.19.0.jar",
+      "sha256": "ead60e9cac0e42b57092b9e2d087ff43536e9477d4486ba393037a8cc156cda7"
+    },
+    {
+      "name": "nitrite-rocksdb-adapter-4.3.0.jar",
+      "sha256": "ebe91f329719068410ac1cc0402c10f945100bae36d0be91e9736008faf9b554"
+    },
+    {
+      "name": "rocksdbjni-9.2.1.jar",
+      "sha256": "24b34e0f76c913a7b4750528e37ddc14397fa2e00c0ad373e1d1e1ae3a6f2b52"
+    },
+    {
+      "name": "kryo5-5.5.0.jar",
+      "sha256": "5dab506f91ab06adad1acb5fe904e587c2781593a7930f003e84f6597622f3b2"
+    },
+    {
+      "name": "nitrite-spatial-4.3.0.jar",
+      "sha256": "652f01b32dfcb80384c8945bb04d0168de98a9a617be1818f94329e42d33c61b"
+    },
+    {
+      "name": "jts-core-1.20.0.jar",
+      "sha256": "6a783d8f9dba3d3cf7265435f134402f63c05838aa6cbcc4297ad3a5b2842baf"
+    },
+    {
+      "name": "zip4j-2.11.5.jar",
+      "sha256": "fee9a941f286166d4a19719d818f20e9f3addb3cbd7291c08b67f0e0ce75a9fd"
+    },
+    {
+      "name": "javapoet-0.17.0.jar",
+      "sha256": "83aae6bfd9b23a37a59328693a7bbc08a49913769a59d625bc4e4154bd83a184"
+    },
+    {
+      "name": "klab.core.common-1.0.0-SNAPSHOT.jar",
+      "sha256": "2bd3cb69c1f6c0e3a7170490aac5bdba2464f87c5847dc56b8e52288fd00693e"
+    },
+    {
+      "name": "json-path-2.9.0.jar",
+      "sha256": "11a9ee6f88bb31f1450108d1cf6441377dec84aca075eb6bb2343be157575bea"
+    },
+    {
+      "name": "json-smart-2.5.0.jar",
+      "sha256": "432b9e545848c4141b80717b26e367f83bf33f19250a228ce75da6e967da2bc7"
+    },
+    {
+      "name": "accessors-smart-2.5.0.jar",
+      "sha256": "12314fc6881d66a413fd66370787adba16e504fbf7e138690b0f3952e3fbd321"
+    },
+    {
+      "name": "flexmark-all-0.64.8.jar",
+      "sha256": "4b89d89af1251cb404e5f025714b3d52f60fb090fe546057e4640c7f30c05726"
+    },
+    {
+      "name": "flexmark-0.64.8.jar",
+      "sha256": "3133878d108f0e1964d7d427f379a7433e1b71a45f9f3c1fab7ed0ac0301d3b0"
+    },
+    {
+      "name": "flexmark-ext-abbreviation-0.64.8.jar",
+      "sha256": "4f5d2dbac5775dcd32c1a6324618687883f0b287b3e243b836c7e8560be0bbea"
+    },
+    {
+      "name": "flexmark-util-0.64.8.jar",
+      "sha256": "1e24c891dac9532bb722be7122c7026fb47868c3de36c02400eed8e9ad535727"
+    },
+    {
+      "name": "flexmark-ext-admonition-0.64.8.jar",
+      "sha256": "a6823ea45a5810ac1e97f545bdec83710797e6fcf6ca4eeefbe930e57a9a043d"
+    },
+    {
+      "name": "flexmark-ext-anchorlink-0.64.8.jar",
+      "sha256": "36d6849df8548a71b0f87eb97d3690864b960a8e4979fedf865418c8903453a6"
+    },
+    {
+      "name": "flexmark-ext-aside-0.64.8.jar",
+      "sha256": "feba989fc8207b3d67df517feaedadb2496c35d45827b3f0ab6b49d887743884"
+    },
+    {
+      "name": "flexmark-ext-attributes-0.64.8.jar",
+      "sha256": "4db42f300ec5490ff79e7d4e44000088e08d83d14096e7b3a9fd63119589ed77"
+    },
+    {
+      "name": "flexmark-ext-autolink-0.64.8.jar",
+      "sha256": "4850d6f895ec3f2932635829d74ff9a2fb00918965bb91c000ab497d603e11b8"
+    },
+    {
+      "name": "autolink-0.6.0.jar",
+      "sha256": "a80be030f6386f18111cad9161c0b6983157352a1b59a59e6002172f0d321c04"
+    },
+    {
+      "name": "flexmark-ext-definition-0.64.8.jar",
+      "sha256": "d8dac5e0732c405702c932b3c495a0fc413224335333ce6009d830734e31e0e6"
+    },
+    {
+      "name": "flexmark-ext-emoji-0.64.8.jar",
+      "sha256": "012d2db51463afd84702627e493fedce42eb7deb1bae309ddcefd181ab283cbe"
+    },
+    {
+      "name": "flexmark-ext-enumerated-reference-0.64.8.jar",
+      "sha256": "e2f858bedf356e24db9d31c15cc57a2b14071074a850f8bbfdd8c632acf05942"
+    },
+    {
+      "name": "flexmark-ext-escaped-character-0.64.8.jar",
+      "sha256": "01009a3473c007bddecfe3cd3979282117b82d49812dcf347cebfcee47023712"
+    },
+    {
+      "name": "flexmark-ext-footnotes-0.64.8.jar",
+      "sha256": "ae5244254e270ae6479803870fa791fe0ae12be242f72e47979412a8ae16df06"
+    },
+    {
+      "name": "flexmark-ext-gfm-issues-0.64.8.jar",
+      "sha256": "0c332dcbeb703179dc88df368cdb71b3a5f486ceb62488cf8a816f7bebe71558"
+    },
+    {
+      "name": "flexmark-ext-gfm-strikethrough-0.64.8.jar",
+      "sha256": "fc6cad026fbd036b3ffd0448264360a5f1b572756ef3427ff022715b7fc5f1c3"
+    },
+    {
+      "name": "flexmark-ext-gfm-tasklist-0.64.8.jar",
+      "sha256": "c86754ba8f0ffe997fa448da2a6ab2cfdbea9b381884cfed6f74bf513b77f5a9"
+    },
+    {
+      "name": "flexmark-ext-gfm-users-0.64.8.jar",
+      "sha256": "996f2e361c5918a5724a66766fe803a14c397aa9f7d0f75220ec1b9cae0b0c06"
+    },
+    {
+      "name": "flexmark-ext-gitlab-0.64.8.jar",
+      "sha256": "36dbd3e3253bc16f09c9773bb4c9b4e3476769c0f53430380b12ac1a47d59983"
+    },
+    {
+      "name": "flexmark-ext-jekyll-front-matter-0.64.8.jar",
+      "sha256": "b11e4e61dbd4cb3e37ae325b2f9cd16dbf78f86bfd623d952bf0dfd6d685c46a"
+    },
+    {
+      "name": "flexmark-ext-jekyll-tag-0.64.8.jar",
+      "sha256": "234de845decddf253f7bebd5400e0c6c130ea5f89887c0f71958e033bcdc233e"
+    },
+    {
+      "name": "flexmark-ext-media-tags-0.64.8.jar",
+      "sha256": "8f2e41be52f9633aeaf36ce8d0ed222e6cc37ad9e0e6c943a0d304b2d071f600"
+    },
+    {
+      "name": "flexmark-ext-resizable-image-0.64.8.jar",
+      "sha256": "e3af2fd6d82e4cd5adf66a1b5cd68ae0c2cef7c7bccb2f2010c2eabe88eafbee"
+    },
+    {
+      "name": "flexmark-ext-macros-0.64.8.jar",
+      "sha256": "bc846058d8a2bd66e7c4193fde8e194db089761e2534ce017ae99ac271fc8d3e"
+    },
+    {
+      "name": "flexmark-ext-ins-0.64.8.jar",
+      "sha256": "5b61b83c31cb0bd3273cbf12aed3887b63b8bdc6dfa17b03ecf479cf1ce176bd"
+    },
+    {
+      "name": "flexmark-ext-xwiki-macros-0.64.8.jar",
+      "sha256": "f986ce5aed53fa8db20fdf2a98e36aa5cafefb496516c8c031b84bfb081a5672"
+    },
+    {
+      "name": "flexmark-ext-superscript-0.64.8.jar",
+      "sha256": "457933324d1ca9f283bc15a1842777c6df0385f318fcceade4de41621395e402"
+    },
+    {
+      "name": "flexmark-ext-tables-0.64.8.jar",
+      "sha256": "cdf82d26e112e96ade7e370138aeb16920b7e2d411d20c6c15cb1acfacd1ef1f"
+    },
+    {
+      "name": "flexmark-ext-toc-0.64.8.jar",
+      "sha256": "bf54f1bb7bca720341db0e322691725ab8e022b2ca269ad1e4f3705c16d37911"
+    },
+    {
+      "name": "flexmark-ext-typographic-0.64.8.jar",
+      "sha256": "61561a811c716843fee3cb7f18f00783c3a01c30a6ce653446738bcc900aeb13"
+    },
+    {
+      "name": "flexmark-ext-wikilink-0.64.8.jar",
+      "sha256": "f32ef779eefb4c3b80d5bebf3c4b7ad7206fc46e083a5901cf51db7b4535ff79"
+    },
+    {
+      "name": "flexmark-ext-yaml-front-matter-0.64.8.jar",
+      "sha256": "6c60b85db4cc851301c1a52d712dc0909c5d2da9bd17ebae4d97a3a03afe22ee"
+    },
+    {
+      "name": "flexmark-ext-youtube-embedded-0.64.8.jar",
+      "sha256": "6fe195afee752df502ad4295ab0c4ec8ed79f5b0fdc5ff85b98c8bc512f0f11a"
+    },
+    {
+      "name": "flexmark-html2md-converter-0.64.8.jar",
+      "sha256": "3f24a90a8fedd6708f06be72bbc9f5f5211abc49c35ee95918ce7b0b41651e62"
+    },
+    {
+      "name": "jsoup-1.15.4.jar",
+      "sha256": "006830d0797710408de5589c18d864343c0ef1a3a0c603c9cb138c943b67d9a4"
+    },
+    {
+      "name": "flexmark-jira-converter-0.64.8.jar",
+      "sha256": "ccc1c3a9659a104b75a53a2321e9c1d4cedb05acd867d4366d8b8e1647bd37dd"
+    },
+    {
+      "name": "flexmark-pdf-converter-0.64.8.jar",
+      "sha256": "2efacba4c37d4736f00fc35cd5685f8f00b83db9b3c80ca5602eda2fb9d2511c"
+    },
+    {
+      "name": "openhtmltopdf-core-1.0.10.jar",
+      "sha256": "3e6fd2250d833d500b7cd48b7a896700d0c33bd9f77a219e820493b01566eda3"
+    },
+    {
+      "name": "openhtmltopdf-pdfbox-1.0.10.jar",
+      "sha256": "7de90df1b3ecf84e6f0daf808d724c11142007a2f22bff1936479bf17251d31a"
+    },
+    {
+      "name": "pdfbox-2.0.24.jar",
+      "sha256": "3c2c0553ec0e7533c490b4c952e1af113621de5275af6e380e11d0d9a0a4f3d6"
+    },
+    {
+      "name": "fontbox-2.0.24.jar",
+      "sha256": "2e8c0a569a90b04734fbc0c805d77f4ec03f98c11f5705055ccd7718c1953d68"
+    },
+    {
+      "name": "xmpbox-2.0.24.jar",
+      "sha256": "27383df2285b9e228c39f2c755adeebbef774793d33c4f20f0dc99e9ebaaf673"
+    },
+    {
+      "name": "graphics2d-0.32.jar",
+      "sha256": "37f8f387395f96c214ac44f7475c7a2e1f832dfc1de289a3610e0ffbf728f679"
+    },
+    {
+      "name": "openhtmltopdf-rtl-support-1.0.10.jar",
+      "sha256": "5675c0b56d613b15446f9d0922d89781af48f05331326a87bdb3d1775c703215"
+    },
+    {
+      "name": "flexmark-profile-pegdown-0.64.8.jar",
+      "sha256": "1ef21e536299c25c040f26ff9b229fdeef24c3661c6c371bc2b9462227652426"
+    },
+    {
+      "name": "flexmark-util-ast-0.64.8.jar",
+      "sha256": "a5342f644c6a5f37d502f225c3a0cb699c263621c82e720d9c08eba5a9f3b8d3"
+    },
+    {
+      "name": "annotations-24.0.1.jar",
+      "sha256": "61666dbce7e42e6c85b43c04fcfb8293a21dcb55b3c80e869270ce42c01a6b35"
+    },
+    {
+      "name": "flexmark-util-builder-0.64.8.jar",
+      "sha256": "afb9c88d9f652451e75f1ab069ad7ddd791d712eb211c51d8d2a83494240875d"
+    },
+    {
+      "name": "flexmark-util-collection-0.64.8.jar",
+      "sha256": "031ff01408d0f54c6235db18d451dc6e6b15b859b0ec1e40ff3429a82375082a"
+    },
+    {
+      "name": "flexmark-util-data-0.64.8.jar",
+      "sha256": "83ceb5989ab0205054bf1b42446f55cb6da14c10aa7c2bda05d6a2504670f353"
+    },
+    {
+      "name": "flexmark-util-dependency-0.64.8.jar",
+      "sha256": "e41adb5e8144699b61b78d50eb004eeb7de84f90c4c63626609e6cee5ea28b42"
+    },
+    {
+      "name": "flexmark-util-format-0.64.8.jar",
+      "sha256": "6c9ac87686474edf0117b3f838d9dcb3b965fa72be4998d2177b598013679f73"
+    },
+    {
+      "name": "flexmark-util-html-0.64.8.jar",
+      "sha256": "5b19e6506aff7913c74ad725af7c2b8a9f23958e6324bf0710c5a645a4663017"
+    },
+    {
+      "name": "flexmark-util-misc-0.64.8.jar",
+      "sha256": "74472ca81a9080e51ea1a4f11c270898e3d6c242c92275fab47eb993806c8f2b"
+    },
+    {
+      "name": "flexmark-util-options-0.64.8.jar",
+      "sha256": "2489f41e9caf1d9f8061833b311b25403925cbb631fff2b8c069192804d6fc88"
+    },
+    {
+      "name": "flexmark-util-sequence-0.64.8.jar",
+      "sha256": "6e22976fe4e9b8de94fd529991ecb2d79cc482aad94985367470a93be1d82631"
+    },
+    {
+      "name": "flexmark-util-visitor-0.64.8.jar",
+      "sha256": "d9b3002a833a078c45e139568b306dab0ac117ff9046c6a1f9e180c0154563fc"
+    },
+    {
+      "name": "flexmark-youtrack-converter-0.64.8.jar",
+      "sha256": "06e556491d36876c1d7eb66b1300263a4e774c1541b9cffc6946f541df38a9b6"
+    },
+    {
+      "name": "evo-inflector-1.3.jar",
+      "sha256": "ac0192fd110a0363732b17ea94fd1ce8cfd85790c8e1551e14f866908b5d80e1"
+    },
+    {
+      "name": "colormap-0.9.511.jar",
+      "sha256": "587a2abec44fa2771d8c576f142118f0f060994cb04d82ba6788d270cef2fa28"
+    },
+    {
+      "name": "java-uuid-generator-5.1.0.jar",
+      "sha256": "ef66f9c90fb18b4b9f2b1c0cc01b686a3c2dbd07384874533caa5f4556e24a43"
+    },
+    {
+      "name": "ehcache-3.11.1-jakarta.jar",
+      "sha256": "2fcafd8c450135d507470a02a3077f28d51e6ef347f2a85ac9b4e23f4bc6e6b1"
+    },
+    {
+      "name": "cache-api-1.1.0.jar",
+      "sha256": "6c980ad1ae4a6dda3bdb62986c3ef5b41ccf766e12353587ee4e4307e27e155a"
+    },
+    {
+      "name": "jaxb-runtime-2.3.9.jar",
+      "sha256": "ba88e5bde7c0d878c3e1f2ec2fcabaf51d201eaf93b3bb9cfecfc1f11b2304d4"
+    },
+    {
+      "name": "txw2-2.3.9.jar",
+      "sha256": "973018b87af911ecf6e6d861dd0d6a477e4d8ae6a883ec5d073d3df1330b87f0"
+    },
+    {
+      "name": "istack-commons-runtime-3.0.12.jar",
+      "sha256": "27d85fc134c9271d5c79d3300fc4669668f017e72409727c428f54f2417f04cd"
+    },
+    {
+      "name": "jakarta.activation-1.2.2.jar",
+      "sha256": "02156773e4ae9d048d14a56ad35d644bee9f1052a791d072df3ded3c656e6e1a"
+    },
+    {
+      "name": "jte-3.2.1.jar",
+      "sha256": "38b39f60bb0e43e3a24ddd3cdbe598404e3a1137c1b1d7910012ae40bcb9b34a"
+    },
+    {
+      "name": "jte-runtime-3.2.1.jar",
+      "sha256": "211674a5e6d03318d04413963e6fef0701afca69c94df24231e2306be93d144f"
+    },
+    {
+      "name": "jte-extension-api-3.2.1.jar",
+      "sha256": "2511e17fa506618a67e836bfd014f2e7001f75b68fd84d2413183237889bfae7"
+    },
+    {
+      "name": "args4j-2.37.jar",
+      "sha256": "5a13b0f7ff519183e55b8f453b8faaa23b92ccf0443f1fac515fedf2246bdc18"
+    },
+    {
+      "name": "jgraphx-4.2.2.jar",
+      "sha256": "8030369bdcaf8f46545c317ae84cd2bc832da54fdb615e48b0a8862280882a82"
+    },
+    {
+      "name": "avro-1.12.1.jar",
+      "sha256": "72600f057bfbe2efe35fa55433e7756d45667dc938934be38a6e2be368aca237"
+    },
+    {
+      "name": "tika-core-3.0.0.jar",
+      "sha256": "e2d0b0b3f83ccb805251c7276346927b622ed36b24a5d56bff13bd9a2e73009e"
+    },
+    {
+      "name": "jgrapht-core-1.5.2.jar",
+      "sha256": "dfa596e9f0d0838f1b5e81dd0cd60e3a76c2c290ac25a0a029ffde58cf5e4c14"
+    },
+    {
+      "name": "jheaps-0.14.jar",
+      "sha256": "49a9898da3758659388f1333c53ccadb6fbd142a7d18aa7b1a33577090684279"
+    },
+    {
+      "name": "apfloat-1.10.1.jar",
+      "sha256": "a1480f560f37355f6c0458c523bda46658da4cd3e23cc64e309fedcd7b0782ba"
+    },
+    {
+      "name": "jsch-0.2.21.jar",
+      "sha256": "2330df0841be84eefa7c6ba4b5a2c98faa153855c80a5af418fdedacc2a4bc5b"
+    },
+    {
+      "name": "amqp-client-5.21.0.jar",
+      "sha256": "ff0286ffa02a97e94a91728c4db79bc8d4b91a3479849f443a87e4e8ecb9de74"
+    },
+    {
+      "name": "indriya-2.2.jar",
+      "sha256": "5b61eafd63fd235898dea0e5e614e9636c9d7783705a0c9f1794dd07e3a84b35"
+    },
+    {
+      "name": "uom-lib-common-2.2.jar",
+      "sha256": "a01ece1c236b7b15a431b0383bdddf06dc6d7a85290e9a62b63904e1e4e0dc0d"
+    },
+    {
+      "name": "apiguardian-api-1.1.2.jar",
+      "sha256": "b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38"
+    },
+    {
+      "name": "javassist-3.30.2-GA.jar",
+      "sha256": "eba37290994b5e4868f3af98ff113f6244a6b099385d9ad46881307d3cb01aaf"
+    },
+    {
+      "name": "commons-lang3-3.17.0.jar",
+      "sha256": "6ee731df5c8e5a2976a1ca023b6bb320ea8d3539fbe64c8a1d5cb765127c33b4"
+    },
+    {
+      "name": "commons-cli-1.11.0.jar",
+      "sha256": "8f7f8605d68e15bf32db61ec94eac6fdafc51b1bdbe1e0e0802b57d23f387792"
+    },
+    {
+      "name": "commons-io-2.21.0.jar",
+      "sha256": "7d643a2afea8b058b762aa6fb90e5b256f6c729739f8b3784c3370ddc609e88d"
+    },
+    {
+      "name": "jackson-module-parameter-names-2.19.0.jar",
+      "sha256": "a2ad4f099694b4a7a4a9daaf737e6289cd3d310a438460acaa79bbe4d45bb4bb"
+    },
+    {
+      "name": "classgraph-4.8.162.jar",
+      "sha256": "ea30b2d5e29e89d52706bcecf7a6ae3b44682d4a1566a5f22b9453f9be2a970c"
+    },
+    {
+      "name": "reflections-0.10.2.jar",
+      "sha256": "938a2d08fe54050d7610b944d8ddc3a09355710d9e6be0aac838dbc04e9a2825"
+    },
+    {
+      "name": "jackson-core-2.19.0.jar",
+      "sha256": "da8e859bac94874528116a25f20c68560e4287acbf27628711b8a4f96b028430"
+    },
+    {
+      "name": "tyrus-standalone-client-2.2.0.jar",
+      "sha256": "80ab3928b590c1df34a5c07487956316272337eb332853f3ad83c769c23f6528"
+    },
+    {
+      "name": "jackson-datatype-jdk8-2.19.0.jar",
+      "sha256": "04f1a3f9da8155995dd00098d6847cdb9b7af67f4a3028c94031eff017c8e3e5"
+    },
+    {
+      "name": "jackson-datatype-jsr310-2.19.0.jar",
+      "sha256": "0ee97bf32936349d6a4cf6d8428533bf4a4b5b3e7e55fd9a4f19508ce062a775"
+    },
+    {
+      "name": "failsafe-3.3.2.jar",
+      "sha256": "2c5dc879a6dac7ea3a7b29d795e27bd49b8e7908b05c2f3e56053c19d79850f5"
+    },
+    {
+      "name": "httpclient-4.5.14.jar",
+      "sha256": "c8bc7e1c51a6d4ce72f40d2ebbabf1c4b68bfe76e732104b04381b493478e9d6"
+    },
+    {
+      "name": "httpcore-4.4.16.jar",
+      "sha256": "6c9b3dd142a09dc468e23ad39aad6f75a0f2b85125104469f026e52a474e464f"
+    },
+    {
+      "name": "httpmime-4.5.14.jar",
+      "sha256": "d401243d5c6eae928a37121b6e819158c8c32ea0584793e7285bb489ab2a3d17"
+    },
+    {
+      "name": "commons-exec-1.4.0.jar",
+      "sha256": "f51cf8bee467efe2be76e46fc08078d96afa280a794283364291beda892a67ef"
+    },
+    {
+      "name": "spring-web-6.2.5.jar",
+      "sha256": "85f0c1acaf033a5f7abdcaf348f1dd2cebe1f77687ee77f05e8cb66bfbc6fecf"
+    },
+    {
+      "name": "commons-math3-3.6.1.jar",
+      "sha256": "1e56d7b058d28b65abd256b8458e3885b674c1d588fa43cd7d1cbb9c7ef2b308"
+    },
+    {
+      "name": "groovy-all-4.0.25.pom",
+      "sha256": "e77677b631f5dd2a4a5a0ba369585901ca629f8f2e17d03c57b6932094e6db50"
+    },
+    {
+      "name": "groovy-4.0.25.jar",
+      "sha256": "235f0452ba5eed7c6677aafb7b8d642e259fc2057a753ae6b1bd4a6203eada1a"
+    },
+    {
+      "name": "groovy-ant-4.0.25.jar",
+      "sha256": "98672e4fb57d224077b319a44b8a8dc555d8ab6ef3ae3263c94ba67c2cb2ca05"
+    },
+    {
+      "name": "ant-1.10.15.jar",
+      "sha256": "763acda4a69588c9ea8817a952851ff0c2fc4bffa1d081c2565dc407f29d5794"
+    },
+    {
+      "name": "ant-junit-1.10.15.jar",
+      "sha256": "9a455eeb4bedc1d8bcd4b8099d4b1f18f1bf1bc977cd6e389a106fe0cf366711"
+    },
+    {
+      "name": "ant-launcher-1.10.15.jar",
+      "sha256": "5c8551990307a032336d98ddaed549a39a689f07d4d4c6b950601bf22b3d6a1b"
+    },
+    {
+      "name": "ant-antlr-1.10.15.jar",
+      "sha256": "619e361609d446fe6ab67d1d45b8656e68644cbd7c45bbed5c2c8816408d8dd5"
+    },
+    {
+      "name": "groovy-cli-picocli-4.0.25.jar",
+      "sha256": "318ccc0eb0114c999c6e1e34e7907be5ab51deb0aa5cf286d5024d599804e0bb"
+    },
+    {
+      "name": "picocli-4.7.6.jar",
+      "sha256": "ed441183f309b93f104ca9e071e314a4062a893184e18a3c7ad72ec9cba12ba0"
+    },
+    {
+      "name": "groovy-console-4.0.25.jar",
+      "sha256": "5ee77e7d263b19f573b92d46ac7bed8924399d450f24f4ccc8f4a864bcc9c5de"
+    },
+    {
+      "name": "javaparser-core-3.26.3.jar",
+      "sha256": "a24c4fa7799ffe0c7a9af11d4eecd757098ed4498f86067bf28b46b2bfea1833"
+    },
+    {
+      "name": "asm-util-9.7.1.jar",
+      "sha256": "f885be71b5c90556f5f1ad1c4f9276b29b96057c497d46666fe4ddbec3cb43c6"
+    },
+    {
+      "name": "asm-tree-9.7.1.jar",
+      "sha256": "9929881f59eb6b840e86d54570c77b59ce721d104e6dfd7a40978991c2d3b41f"
+    },
+    {
+      "name": "asm-analysis-9.7.1.jar",
+      "sha256": "85b29371884ba31bb76edf22323c2c24e172c3267a67152eba3d1ccc2e041ef2"
+    },
+    {
+      "name": "ivy-2.5.3.jar",
+      "sha256": "9502aa5aabf0b1484924a13ef4b5d24f121f7f91aab6768f11cc9d0906c0803b"
+    },
+    {
+      "name": "org.abego.treelayout.core-1.0.3.jar",
+      "sha256": "fa5e31395c39c2e7d46aca0f81f72060931607b2fa41bd36038eb2cb6fb93326"
+    },
+    {
+      "name": "groovy-datetime-4.0.25.jar",
+      "sha256": "839c3404978df24d6feee59968cc4fd8892cba42bc529c08b43b6de4e19e75ba"
+    },
+    {
+      "name": "groovy-docgenerator-4.0.25.jar",
+      "sha256": "b1848be42b5c6b3bfd6097dbc9043406cea5167f14d971c65c70ed5454b9549c"
+    },
+    {
+      "name": "qdox-1.12.1.jar",
+      "sha256": "21fba22f830e9268f07cf4ab2d99e8181abbdcb0cb91ee0228eb3cb918dcdd1d"
+    },
+    {
+      "name": "groovy-groovydoc-4.0.25.jar",
+      "sha256": "b4eb2a8640dbcc2aeb4ee272ed9ed67ec2d912dd91be0778b2382c07bf364743"
+    },
+    {
+      "name": "groovy-groovysh-4.0.25.jar",
+      "sha256": "1e4257c6310f0334d04e214575f8ef835705ac6acbf0c24805be389d8f37779a"
+    },
+    {
+      "name": "jline-2.14.6.jar",
+      "sha256": "97d1acaac82409be42e622d7a54d3ae9d08517e8aefdea3d2ba9791150c2f02d"
+    },
+    {
+      "name": "groovy-jmx-4.0.25.jar",
+      "sha256": "e9721a49e02a2ce11e7b7325667d0be9b62a00030612f867119db37b8ab5d8ae"
+    },
+    {
+      "name": "groovy-json-4.0.25.jar",
+      "sha256": "18e3fe9179ce942b976ea4cb45f62fb0492f49e6e7cb3466db1442f7bd3a33f0"
+    },
+    {
+      "name": "groovy-jsr223-4.0.25.jar",
+      "sha256": "29ebf32cf370c6036880aabbd84bc85b78468f1d6a16e6c6da509d90c9bdad90"
+    },
+    {
+      "name": "groovy-macro-4.0.25.jar",
+      "sha256": "235b9606c21afb7b22a808f77f407cd9963786ee3202586947da1cda53d29edb"
+    },
+    {
+      "name": "groovy-nio-4.0.25.jar",
+      "sha256": "82b472bfcc35c1456eb755e22fb1a63021a6f38c398f01cc55ff5fc428178569"
+    },
+    {
+      "name": "groovy-servlet-4.0.25.jar",
+      "sha256": "de7f2596b98e72a275571da75db1ec1d81f5d126a4502af972a21b6f8b020914"
+    },
+    {
+      "name": "groovy-sql-4.0.25.jar",
+      "sha256": "a155f30409c3715af465abbeab486aac1756612eef4198468356690d1624b47a"
+    },
+    {
+      "name": "groovy-swing-4.0.25.jar",
+      "sha256": "19f3a1aced77fc5f2db06d43d3b49924a81d432500e78c7e6639343d51c66fa2"
+    },
+    {
+      "name": "groovy-templates-4.0.25.jar",
+      "sha256": "e4d8c2aa60fcf54309449ea38295361cec8e159bd9d6fb4b61fcd80c686b65dd"
+    },
+    {
+      "name": "groovy-test-4.0.25.jar",
+      "sha256": "26882d3317e7352a2536d82c4ef73655e5f162401d9795f22dbe2af568686ba2"
+    },
+    {
+      "name": "junit-4.13.2.jar",
+      "sha256": "8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3"
+    },
+    {
+      "name": "hamcrest-core-1.3.jar",
+      "sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9"
+    },
+    {
+      "name": "groovy-test-junit5-4.0.25.jar",
+      "sha256": "e328f5bea92879987b6964e05f929204999fc39f4eef61cd0ebe995306ff2387"
+    },
+    {
+      "name": "junit-jupiter-api-5.11.4.jar",
+      "sha256": "ab83ef9e51ac4597d59d26b4b58812129550e2f579a404c8af7d09f5ce5b4293"
+    },
+    {
+      "name": "opentest4j-1.3.0.jar",
+      "sha256": "48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b"
+    },
+    {
+      "name": "junit-platform-launcher-1.11.4.jar",
+      "sha256": "d7430bd029e7fcced53ee445e4d2d1a8a1e043ea4c4df43b6335a857f79761ae"
+    },
+    {
+      "name": "junit-platform-engine-1.11.4.jar",
+      "sha256": "b1dd998f64f9acadc15966d9cd3d08074662677b3e390f0a38fcbf0bb4c72330"
+    },
+    {
+      "name": "junit-platform-commons-1.11.4.jar",
+      "sha256": "9edd969b0d0670c54105bc91ae79bd1c6f503e12115faba82073b84c86bbc334"
+    },
+    {
+      "name": "junit-jupiter-engine-5.11.4.jar",
+      "sha256": "cdf8ac59f3fad774ca738ad03890950eeb91833ef0e8908753177edd26f1581c"
+    },
+    {
+      "name": "groovy-xml-4.0.25.jar",
+      "sha256": "bf92175117b2f4a9bac4a04368449d5962e18102e117b34840c0b5e15814d786"
+    },
+    {
+      "name": "groovy-yaml-4.0.25.jar",
+      "sha256": "50665ac3452468d5d12a1d42b1e1ef2c92b7e8cdc11dd540663e95df4a1ba27a"
+    },
+    {
+      "name": "h2gis-1.5.0.jar",
+      "sha256": "4f07f39f3ce1b7b32cb3410278cf160b886f4f13905b0a3bbaa03678d2e1d5b2"
+    },
+    {
+      "name": "commons-compress-1.18.jar",
+      "sha256": "5f2df1e467825e4cac5996d44890c4201c000b43c0b23cffc0782d28a0beb9b0"
+    },
+    {
+      "name": "cts-1.5.2.jar",
+      "sha256": "72f8b1fbb59fe777dd1cbd618d39e22ab28436fa0843979c6120bd6cd5833e0e"
+    },
+    {
+      "name": "h2-1.4.197.jar",
+      "sha256": "37f5216e14af2772930dff9b8734353f0a80e89ba3f33e065441de6537c5e842"
+    },
+    {
+      "name": "h2gis-api-1.5.0.jar",
+      "sha256": "1cbae20ce1be158cee5ef1310373f2a2702c7f1b2b6a74380a9b47ea3a315d19"
+    },
+    {
+      "name": "h2gis-utilities-1.5.0.jar",
+      "sha256": "0b9a7c048ee2f607b00cb0749f554cc0b13c2a0c3d51180297b2d28ad03ee8e6"
+    },
+    {
+      "name": "poly2tri-core-0.1.2.jar",
+      "sha256": "b2e4335ffe86c7ef82a8ab07afd98b3ed19e06c97e3d2c3f4c11afbb50cd144b"
+    },
+    {
+      "name": "ojalgo-53.2.0.jar",
+      "sha256": "115bfc323280190ccfe4b19528a95f1c0b6c1124c2b1b57e70acf2c589d48d40"
+    },
+    {
+      "name": "commons-collections-3.2.2.jar",
+      "sha256": "eeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8"
+    },
+    {
+      "name": "lucene-core-9.11.1.jar",
+      "sha256": "cb7a9b121bce4ce054ab690ab43ac13ee11ae516d6cef67650130066beee7c9b"
+    },
+    {
+      "name": "lucene-suggest-9.11.1.jar",
+      "sha256": "ce03d7178182694a14ed0433cff532a44b3647cec8d9c1ac541afe7887972105"
+    },
+    {
+      "name": "lucene-analysis-common-9.11.1.jar",
+      "sha256": "8dfda34e75bc53906a611bae1b5870b38fd5aa3779a390565da40aa71e98d5d9"
+    },
+    {
+      "name": "lucene-queryparser-9.11.1.jar",
+      "sha256": "63e3f7d0cd7a08975d0cba31d2898de7fa00dc9f3677e37820f4413824538898"
+    },
+    {
+      "name": "lucene-queries-9.11.1.jar",
+      "sha256": "b3787d26fcadf362f3be77aa4da42ad41e1cf5bf49f040eee731ea95d28acd5a"
+    },
+    {
+      "name": "lucene-sandbox-9.11.1.jar",
+      "sha256": "a1a9118709d5cc52ca160f439c32280f3ba54ec3ba6e3a0db0c1a73a3d790fdb"
+    },
+    {
+      "name": "dynahist-1.4.jar",
+      "sha256": "5fbe387439eee3d2227ffc921c42f7bef7706778a69f9a02f23856ba57a0bee1"
+    },
+    {
+      "name": "org.eclipse.jgit-6.8.0.202311291450-r.jar",
+      "sha256": "b0ca6129b0614f5f90e9456c51bcfe141483248aec6a2cc2a7816f638bb04abf"
+    },
+    {
+      "name": "JavaEWAH-1.2.3.jar",
+      "sha256": "d65226949713c4c61a784f41c51167e7b0316f93764398ebba9e4336b3d954c2"
+    },
+    {
+      "name": "groovy-3.0.23.jar",
+      "sha256": "ecf081f7e30cf37beda1a702390dd22124013e4c9307117dd107806c112ab9f7"
+    },
+    {
+      "name": "javax.annotation-api-1.3.2.jar",
+      "sha256": "e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b"
+    },
+    {
+      "name": "springdoc-openapi-starter-webmvc-ui-2.8.6.jar",
+      "sha256": "4de3bc68bba1fa996d968d175bf6c8123e4d10fa3af116de8120570f282fbef1"
+    },
+    {
+      "name": "springdoc-openapi-starter-webmvc-api-2.8.6.jar",
+      "sha256": "6714c09f292d74dcdff35f2a9ee261ea7b7e436694bd0a6173f3945650461fe3"
+    },
+    {
+      "name": "springdoc-openapi-starter-common-2.8.6.jar",
+      "sha256": "4c9adb97fd28e515e5552a0020fc186c3e621b274ea322cd2fae3de17ba07ff6"
+    },
+    {
+      "name": "swagger-core-jakarta-2.2.29.jar",
+      "sha256": "596ab82f63e52bc28e9dbdb6b77601b00e993bf56f4cc84ef9eaf3aebd9e62ee"
+    },
+    {
+      "name": "swagger-annotations-jakarta-2.2.29.jar",
+      "sha256": "072183671b2b0e56be89f289c1694edd0d47774d1424a62c203b2f367aa1fcf8"
+    },
+    {
+      "name": "swagger-models-jakarta-2.2.29.jar",
+      "sha256": "80dc2e9786bd40406bc6c9028f40136dd3a8aaddc28385992ed9d2b0cc12c707"
+    },
+    {
+      "name": "jakarta.validation-api-3.0.2.jar",
+      "sha256": "291c25e6910cc6a7ebd96d4c6baebf6d7c37676c5482c2d96146e901b62c1fc9"
+    },
+    {
+      "name": "swagger-ui-5.20.1.jar",
+      "sha256": "a7ec9a798cd3403cec152f10fb99c0921b92ba1860011e24f22dd426f0b01dc4"
+    },
+    {
+      "name": "webjars-locator-lite-1.0.1.jar",
+      "sha256": "a216c101379f6654bd65e50bf2c9d8a3575bc7d6e8de2898286ac49c56d9ae99"
+    },
+    {
+      "name": "jakarta.xml.bind-api-4.0.2.jar",
+      "sha256": "0d6bcfe47763e85047acf7c398336dc84ff85ebcad0a7cb6f3b9d3e981245406"
+    },
+    {
+      "name": "jakarta.activation-api-2.1.3.jar",
+      "sha256": "01b176d718a169263e78290691fc479977186bcc6b333487325084d6586f4627"
+    },
+    {
+      "name": "therapi-runtime-javadoc-0.13.0.jar",
+      "sha256": "97edbf71a29e7db75f1fab2195f3b8c6238b6bc7a2ed9206308562ea6ff72db6"
+    },
+    {
+      "name": "spring-boot-starter-security-3.4.4.jar",
+      "sha256": "796452c20a9a0b46ed721d6f32fd35daf84074e8e345cec8318ad1217d08e7f1"
+    },
+    {
+      "name": "spring-aop-6.2.5.jar",
+      "sha256": "dfde58e5b277e12e464d5f0d7d60c49ce10c96da94aa32a196a8711467af7dd8"
+    },
+    {
+      "name": "spring-security-config-6.4.4.jar",
+      "sha256": "f13f2365b4af41b33e40af657014db773de858d84c74f34c9ada471c96f9c169"
+    },
+    {
+      "name": "spring-security-core-6.4.4.jar",
+      "sha256": "d9f7ca559ecadc0700555fc16cbd4c8bdfbbedd2474f5fd1f0c429bed946658d"
+    },
+    {
+      "name": "spring-security-crypto-6.4.4.jar",
+      "sha256": "62b3424be620e457146a51a3da9aa878ee9874667cd2498d73085a8394d36940"
+    },
+    {
+      "name": "spring-security-web-6.4.4.jar",
+      "sha256": "7705eec34c86607d3e2c81965d20584fa46819baf311aa3e9381deebbeceb9a4"
+    },
+    {
+      "name": "spring-expression-6.2.5.jar",
+      "sha256": "ec76c41d4e45779b48ae10020322b32ecb2e2f4f2d930b0d93844a44490d76c5"
+    },
+    {
+      "name": "spring-boot-starter-websocket-3.4.4.jar",
+      "sha256": "f59787c23432a0da9b85e53bb38a642f889776a3089b5fb25760da30153ce454"
+    },
+    {
+      "name": "spring-messaging-6.2.5.jar",
+      "sha256": "2a65fc326132475e7e4b0ca4be0df9f66cb3fc619cef0ab2f74be783215c8e79"
+    },
+    {
+      "name": "spring-websocket-6.2.5.jar",
+      "sha256": "8c803486c98075c1b32590193ab5a499a65d6a4afc39333c4e8678f7914dc26e"
+    },
+    {
+      "name": "spring-boot-starter-web-3.4.4.jar",
+      "sha256": "c628b8d0d7c830c7ea3bc125950e11332b7ce3779ebd6d655f183e456ffe4481"
+    },
+    {
+      "name": "spring-boot-starter-json-3.4.4.jar",
+      "sha256": "c92ddd6f7d109a517391a59c0d9d4f0256d5c5ba8db5d1af4710e0ca17fdf2c2"
+    },
+    {
+      "name": "spring-webmvc-6.2.5.jar",
+      "sha256": "b8d281aedf1e9cbf73bb2c6cf72d3eaf811f9298b2dc5017e9c40b3cb9284b46"
+    },
+    {
+      "name": "spring-boot-starter-actuator-3.4.4.jar",
+      "sha256": "738e74d67afbeb229ead61d3e233477ee9b45f007789079a5afd7f839ba417cf"
+    },
+    {
+      "name": "spring-boot-actuator-autoconfigure-3.4.4.jar",
+      "sha256": "bed2fa189789b95d511ce1838dff9c041a34c93dac6f903c3a86959db033b7ac"
+    },
+    {
+      "name": "spring-boot-actuator-3.4.4.jar",
+      "sha256": "94c1c6c9af96d4d2ca4af55b80c778b9750fcc63a378893f5873122b3b9c0dfc"
+    },
+    {
+      "name": "micrometer-observation-1.14.5.jar",
+      "sha256": "7cfbf714abdf3779c820ff19712199ac9bae03d2f0e809ba8e74c3663c12128a"
+    },
+    {
+      "name": "micrometer-commons-1.14.5.jar",
+      "sha256": "e98485ffecb7d8cc9af47cfe627ea8bf3897915dd0f34b3e3a190d6896875b4b"
+    },
+    {
+      "name": "micrometer-jakarta9-1.14.5.jar",
+      "sha256": "08c0e061df58583ae11b4b0ec664f0205e43dbb16ccd41571cf068269823803a"
+    },
+    {
+      "name": "micrometer-core-1.14.5.jar",
+      "sha256": "7c0c55ef7fe1bef5b89453655e768ee05fd35b381bd67f9d42cfe48362174ca5"
+    },
+    {
+      "name": "HdrHistogram-2.2.2.jar",
+      "sha256": "22d1d4316c4ec13a68b559e98c8256d69071593731da96136640f864fa14fad8"
+    },
+    {
+      "name": "LatencyUtils-2.0.3.jar",
+      "sha256": "a32a9ffa06b2f4e01c5360f8f9df7bc5d9454a5d373cd8f361347fa5a57165ec"
+    },
+    {
+      "name": "gt-referencing-34.4.jar",
+      "sha256": "13387f9823cab7088154b7c6b6d7b6bc29f79b1cc04aad4691b45701f558aef4"
+    },
+    {
+      "name": "ejml-ddense-0.41.jar",
+      "sha256": "355347e9cac7e96d5d724d331a9b04bb14a8a02e1d111f1ac51c79f25d937123"
+    },
+    {
+      "name": "ejml-core-0.41.jar",
+      "sha256": "8d36469e8414d79c875defc0af3b980525d384761c9471d15a4f365b936dd1d5"
+    },
+    {
+      "name": "commons-pool-1.5.4.jar",
+      "sha256": "22095672ac3ad6503e42ec6d4cbc330cd1318040223f6c5d9605473b6d2aa0fd"
+    },
+    {
+      "name": "gt-metadata-34.4.jar",
+      "sha256": "ff5e8619ba0be684ed6dd19f2ee7a0f440f67d796930287621244923fed9783a"
+    },
+    {
+      "name": "gt-api-34.4.jar",
+      "sha256": "27494ac52c381be0c13a6587a25c0fa2f57776f1c979866d5c05f947b5a8e499"
+    },
+    {
+      "name": "systems-common-2.1.jar",
+      "sha256": "b3cc1f3e604dcd18d3bba266db5fd01744bbd6b02f147377d4016585ba375cff"
+    },
+    {
+      "name": "si-quantity-2.1.jar",
+      "sha256": "2cdcfd3e5395db5576f5efc0f224b5bbd0731f3ec7552afee6ee7b63a4f65820"
+    },
+    {
+      "name": "si-units-2.1.jar",
+      "sha256": "491ed9956ddf4b2e30180b087e1f6fb51debccb6d46785ae0d52026342013c51"
+    },
+    {
+      "name": "net.opengis.ows-34.4.jar",
+      "sha256": "1f0b60d8759fa63918bc4362b89ec87ff116ed53048bd994ef47258e39e34551"
+    },
+    {
+      "name": "org.w3.xlink-34.4.jar",
+      "sha256": "478ccf4deecc7a9e49db673de4a1876cc8fb35152298c524a5991e9ecf7a2e82"
+    },
+    {
+      "name": "unit-api-2.2.jar",
+      "sha256": "667487e1ee57298cdc767885f00b86c899b2fe7e72dc00b6560a6aa64f2bc9c4"
+    },
+    {
+      "name": "jgridshift-core-1.3.jar",
+      "sha256": "303eb6a6f6f87369f6b9e3dcacefd6f9b0ad55920cd65a7f162ab9a23401c722"
+    },
+    {
+      "name": "GeographicLib-Java-1.49.jar",
+      "sha256": "78c292f7e6910d51a15fc9088c301fac3b4c0a43ac5ae17499f5763b4dd9aca8"
+    },
+    {
+      "name": "imagen-core-0.9.1.jar",
+      "sha256": "4f1a8aa346ff2d2460b0372fd47b536a295543aa921e311f4e74bbf2e169ba48"
+    },
+    {
+      "name": "gt-epsg-hsql-34.4.jar",
+      "sha256": "eff616277d873687a309043ed21342c5e2e6f9fe6fb9d8f8c93dcbc6ccbfeeb6"
+    },
+    {
+      "name": "hsqldb-2.7.2.jar",
+      "sha256": "aa455133e664f6a7e6f30cd0cd4f8ad83dfbd94eb717c438548e446784614a92"
+    },
+    {
+      "name": "gt-geojson-34.4.jar",
+      "sha256": "36319d180862cf1cb77f92ad806c85b2e7d03fc1f0499a691536fe6dcb1db025"
+    },
+    {
+      "name": "gt-main-34.4.jar",
+      "sha256": "ebcdfca099193fe505cc74c1546814ca3a7f2d5b4d88c5aa912c68699ec0c403"
+    },
+    {
+      "name": "gt-http-34.4.jar",
+      "sha256": "828433ae389760e36b818c203610794329b2d69f1a47d73ea5388c5dda8ada40"
+    },
+    {
+      "name": "commons-text-1.13.0.jar",
+      "sha256": "1e323a501127df78ed0987f345d69d65d0ea7fa3d4fb5b3f84aaeba3a8b20f38"
+    },
+    {
+      "name": "re2j-1.8.jar",
+      "sha256": "7b52c72156dd7f98b3237a5b35c1d34fba381b21048c89208913ad80a45dfbd7"
+    },
+    {
+      "name": "utilities-0.9.1.jar",
+      "sha256": "29db1c076961bcd67f797d8375b22cdffb8c7bba0e9243639bc33edee50ed4cc"
+    },
+    {
+      "name": "json-simple-1.1.1.jar",
+      "sha256": "4e69696892b88b41c55d49ab2fdcc21eead92bf54acc588c0050596c3b75199c"
+    },
+    {
+      "name": "gt-shapefile-34.4.jar",
+      "sha256": "5b66ac764742d1e0e85d7b1e16d31e6a0d9a582f79e018f68dfcaf47b6882fe4"
+    },
+    {
+      "name": "gt-geotiff-34.4.jar",
+      "sha256": "b649fbdd3f5e4f0f5986a255752aabadd53e7d4186bab9dcc76161d429fcb773"
+    },
+    {
+      "name": "gt-coverage-34.4.jar",
+      "sha256": "a149262bfa6b6d8b5dacc01fbb4666184a969d61a03143f35f08055586d43e6a"
+    },
+    {
+      "name": "affine-0.9.1.jar",
+      "sha256": "ea17734a50db1d2b4c2fd3c072dd93a30b4d5edcdc77da82ed9a14f3fedfa30b"
+    },
+    {
+      "name": "algebra-0.9.1.jar",
+      "sha256": "6bf8ff9556c7ef16dad6da59005f0161a8fd6d6b88a0704afafef017ced056bb"
+    },
+    {
+      "name": "bandmerge-0.9.1.jar",
+      "sha256": "27301747560ffb1418eeb27d097ef7039ea1e2fe4b6ecf6826cbe5fcec478a85"
+    },
+    {
+      "name": "bandselect-0.9.1.jar",
+      "sha256": "6c496c88b5d293a04beb96e4cfa8172da87c12235e452a6f0c5d7af503f8d40d"
+    },
+    {
+      "name": "bandcombine-0.9.1.jar",
+      "sha256": "97828f8eee97319c10d45e4aa9b3eb6a90690d85e86c7b1e42f483f0e582f566"
+    },
+    {
+      "name": "border-0.9.1.jar",
+      "sha256": "4d35b6ac3f345e32cc202ebc0f28d3c2fcc03c376f4d21f553e706f4d30b5c1c"
+    },
+    {
+      "name": "buffer-0.9.1.jar",
+      "sha256": "c89ab4ffd23d48e511a455a0a8ec5581d029e90bb8007be040d7f6fcacdbb80d"
+    },
+    {
+      "name": "crop-0.9.1.jar",
+      "sha256": "8beb2df31ddee38ee77cf8871fc4b964f4969ea1cb0c3d934f2c0d2b3b451b10"
+    },
+    {
+      "name": "iterators-0.9.1.jar",
+      "sha256": "ba0a3bf97f28410d33f7991f4327b7447184a10bda7275c85b5146446a9de4d7"
+    },
+    {
+      "name": "lookup-0.9.1.jar",
+      "sha256": "f8f29026ca6825215a174bf546020af63ed8a8528c8bc9b6093c466f58a2440f"
+    },
+    {
+      "name": "mosaic-0.9.1.jar",
+      "sha256": "d2c3444ab90415ec544b2a9c25d0e5ac967864437d0c2d9da44662e95206c5b0"
+    },
+    {
+      "name": "nullop-0.9.1.jar",
+      "sha256": "8f808fd67929e0a428112f234bfa2cfe403c1633961734a6e11b237fddd088b5"
+    },
+    {
+      "name": "rescale-0.9.1.jar",
+      "sha256": "30b6ef4bdf18478b1f7ce2d6119995407890f40836a0a7e5e068411ab5952ca3"
+    },
+    {
+      "name": "scale-0.9.1.jar",
+      "sha256": "66bf20efc61f75f0907a5d883a275ba10f6afa8c7fbae2c8629182e56a7cdc30"
+    },
+    {
+      "name": "scale2-0.9.1.jar",
+      "sha256": "51426197a136ad3c72a1821b927c2cf3c86304668a527636726d31b3126b77f4"
+    },
+    {
+      "name": "bigint-0.7.1.jar",
+      "sha256": "aae42edfa250950238c856ca4c723bdf116b1ae61115708a36da12af444a8824"
+    },
+    {
+      "name": "translate-0.9.1.jar",
+      "sha256": "13f22977814da3b1f903435e80fa3dfc404e79c2e377beac72ce621f1eb9bb2d"
+    },
+    {
+      "name": "warp-0.9.1.jar",
+      "sha256": "7d36d1a17389dacd460788ea3b5f63757c5acb7ae2f9da94c7f8a5f3d17e3651"
+    },
+    {
+      "name": "zonal-0.9.1.jar",
+      "sha256": "a7c487f10c2c61d42272eec4cdd039eeda3bbd4aa2950766b7f086d0f67481f5"
+    },
+    {
+      "name": "binarize-0.9.1.jar",
+      "sha256": "4aefc9d63390ab367d4ca87fe78c52e7a5462a28c5dfe10ba2d1416c1a6b9d9d"
+    },
+    {
+      "name": "format-0.9.1.jar",
+      "sha256": "d1d8d0808906014294f4956a76cd60c42a67f347465c8282a049cbba62c0f955"
+    },
+    {
+      "name": "colorconvert-0.9.1.jar",
+      "sha256": "c447f7745619981c21f4a11602f10af217c85738492ff74afe329442e07045cd"
+    },
+    {
+      "name": "errordiffusion-0.9.1.jar",
+      "sha256": "122ac072a375962b0ae3796eb31364fc4e0b1da1c6d42d26fe134159ac025443"
+    },
+    {
+      "name": "orderdither-0.9.1.jar",
+      "sha256": "a8bf7c0e8c3b79ddcc5d93b365f9e5160f0864191702ba7a0c5fb3fdfc196574"
+    },
+    {
+      "name": "colorindexer-0.9.1.jar",
+      "sha256": "5263fcb581f9b76ae88c596d63ab932d6c7439524000d12e127e768f3c6b5760"
+    },
+    {
+      "name": "imagefunction-0.9.1.jar",
+      "sha256": "4384858d8d90f734f261eb4709b717761883ea1bb8cbc244315a2b560b7808a4"
+    },
+    {
+      "name": "piecewise-0.9.1.jar",
+      "sha256": "16b1b54a91a4591569dc7982301dc91b2e718d4c4fedd1d18eb345c346e26bc1"
+    },
+    {
+      "name": "classifier-0.9.1.jar",
+      "sha256": "1925850ad983c9ada3218307367b8776724b817d1af9a1c1b142357fd925fb1f"
+    },
+    {
+      "name": "rlookup-0.9.1.jar",
+      "sha256": "121100161fb0f3640e040b43fb5aa0868d22aec27900a19547a85be70a9077e7"
+    },
+    {
+      "name": "vectorbin-0.9.1.jar",
+      "sha256": "40254421d6aadb6d3adad3e205b1616980c562338cb43c0a124e4366bb704087"
+    },
+    {
+      "name": "shadedrelief-0.9.1.jar",
+      "sha256": "a0746f65fe17b3fd1a94154877458a59728f8a0dfd90e77ca6c4d4d843436c57"
+    },
+    {
+      "name": "imageread-0.9.1.jar",
+      "sha256": "54c5b41513cb0d2b7dca735569536bd8f384fbfc2645241081b31f2d4849a66d"
+    },
+    {
+      "name": "convolve-0.9.1.jar",
+      "sha256": "473ac7079441f5414613ecf47a408d64432195b1a4c0fcd4ea77003e026bdd74"
+    },
+    {
+      "name": "imageio-ext-tiff-2.0.2.jar",
+      "sha256": "b9854c0cd634f54597bef5feb9df2596657fc56005ccc5e17542574baabd5c7a"
+    },
+    {
+      "name": "imageio-ext-utilities-2.0.2.jar",
+      "sha256": "d53fcd3c48c5193b49c12f6881fef69c218fce3c59bada405edf4c54bb4ce0d9"
+    },
+    {
+      "name": "rendered-image-browser-0.9.1.jar",
+      "sha256": "53f15c24e4bb3a7d54bb1768d27a4ea5971535650493f3c5ddab7bf52972f6b9"
+    },
+    {
+      "name": "imageio-ext-geocore-2.0.2.jar",
+      "sha256": "0d625c5326683baae6510acac76d34a127fa652509751895ba1a1f0ae0831932"
+    },
+    {
+      "name": "imageio-ext-streams-2.0.2.jar",
+      "sha256": "be86358d95c4e91b10242b0db71ccf1f0fa4fa0fe58a5a9274d1b5115cc68440"
+    },
+    {
+      "name": "jaxb-api-2.4.0-b180830.0359.jar",
+      "sha256": "56b9e9702753763007435162ea788055efcfefc86ab920f032c0411dc547b836"
+    },
+    {
+      "name": "javax.activation-api-1.2.0.jar",
+      "sha256": "43fdef0b5b6ceb31b0424b208b930c74ab58fac2ceeb7b3f6fd3aeb8b5ca4393"
+    },
+    {
+      "name": "aircompressor-2.0.3.jar",
+      "sha256": "b86bb66f610079e0bf790d62e2ff68853eb0dc4748a6d68ae28bce92b68094aa"
+    },
+    {
+      "name": "imageio-ext-cog-reader-2.0.2.jar",
+      "sha256": "875f1962f5b665f53e106241602ed6aedf03346237266bf8b0f1c8dc80048fe0"
+    },
+    {
+      "name": "imageio-ext-cog-commons-2.0.2.jar",
+      "sha256": "706f89d570e7145572c032a3e60e0e36b3afcf04795fc341e230f68108d7fcef"
+    },
+    {
+      "name": "imageio-ext-cog-streams-2.0.2.jar",
+      "sha256": "6030606b550d7c9e3fbba6aa7f723aa58c9b27c30a1e2017e14453fbd58564f5"
+    },
+    {
+      "name": "ehcache-3.4.0.jar",
+      "sha256": "2b35b0824139f856947b605b489cf4297ff092c04eafce84183afc1301011748"
+    },
+    {
+      "name": "gt-epsg-extension-34.4.jar",
+      "sha256": "fa171188c8339466f97eda1626d09b0d7d5abe5755fb35d8f5ee21d9dd99e840"
+    },
+    {
+      "name": "gt-brewer-34.4.jar",
+      "sha256": "8fb95328a1ef0bf68287fd652b3f79dd0a6f8e3f5ff89e1c39b51cec61755ccb"
+    },
+    {
+      "name": "gt-cql-34.4.jar",
+      "sha256": "ba6bcb26683b2bc11726db9c6ff91a35367ddc48a089e6e1c0fadd39ea472def"
+    },
+    {
+      "name": "gt-xml-34.4.jar",
+      "sha256": "d214c74d1d10e0d4411b1fb1b338aaefd0087a09c3ad350b55dd07995cbbdb42"
+    },
+    {
+      "name": "commons-collections4-4.4.jar",
+      "sha256": "1df8b9430b5c8ed143d7815e403e33ef5371b2400aadbe9bda0883762e0846d1"
+    },
+    {
+      "name": "xml-commons-resolver-1.2.jar",
+      "sha256": "47dcde8986019314ef78ae7280a94973a21d2ed95075a40a000b42da956429e1"
+    },
+    {
+      "name": "gt-process-34.4.jar",
+      "sha256": "31100c19b79c0100d133f0dbbbc1dc751cb172433445b8e54115bf398f00d44b"
+    },
+    {
+      "name": "stats-0.9.1.jar",
+      "sha256": "1b1aeefeca8aaa9181bb0cc3825f33f8bd21bc9f78e02a56851eb3afc47069e9"
+    },
+    {
+      "name": "gt-process-raster-34.4.jar",
+      "sha256": "fe965861ec0a5d2cc7a397608be5120eda890ada7f01d682a4d021fc2680942b"
+    },
+    {
+      "name": "gt-render-34.4.jar",
+      "sha256": "7a30baf4167d2ba93093f1ea7a0b32a4344dc06ae33aea402bc0b714718cea0f"
+    },
+    {
+      "name": "disruptor-1.2.15.jar",
+      "sha256": "bd3154a3fb41594b02950ad52bcd9b775a45577bd4d6ef1bee66ea6885c9f39e"
+    },
+    {
+      "name": "contour-0.9.1.jar",
+      "sha256": "80f57931241c96696e084ca69a4b7f1a981b2287084b21f82bee4aaaebd0fede"
+    },
+    {
+      "name": "vectorize-0.9.1.jar",
+      "sha256": "f4c1adeac0c9e2ef321707fe2bc9dd5194cc17367f8383c7047a1389b8fd4a30"
+    },
+    {
+      "name": "jiffle-op-0.9.1.jar",
+      "sha256": "a769f6614e35b4af87b66c7f788b8148bf8c5614f72cd00f55a5ec5289420664"
+    },
+    {
+      "name": "jiffle-language-0.9.1.jar",
+      "sha256": "5ef446479f83146474a6c7dbc514c264d114c9d8e16e4ea8c87a11876e6962a5"
+    },
+    {
+      "name": "janino-3.0.8.jar",
+      "sha256": "d05d1b45bd70851cbede4ffc371b21ead998776cf2ffcd69d0aec3aa0b112a19"
+    },
+    {
+      "name": "commons-compiler-3.0.8.jar",
+      "sha256": "7e173c8524423bd46fa7012d066ffbf1e8389caaf3786b33bb726f18b398f70b"
+    },
+    {
+      "name": "classbreaks-0.9.1.jar",
+      "sha256": "29522bf84dd63134db0420a8fa05e80e2c30120cd5252c55f5c57cc5b546eccf"
+    },
+    {
+      "name": "gt-process-feature-34.4.jar",
+      "sha256": "56dce6199480ed5da8a75614acf2618a1c72e55e76c738446596bfe82ee6bbf5"
+    },
+    {
+      "name": "gt-grid-34.4.jar",
+      "sha256": "c4b9cd2e1d30a033fc69f2c0554955cd2ab3b0d5269e93a1b0b83c40053550e6"
+    },
+    {
+      "name": "gt-jdbc-postgis-34.4.jar",
+      "sha256": "e833970e80f7784c9cdc28a898e1330d2308d71b6c821e277c92e8dda4f038ea"
+    },
+    {
+      "name": "postgresql-42.7.11.jar",
+      "sha256": "1981b31d3993c58702783c1cddf10a34e48c1f413d70ff1cb6def0a143484647"
+    },
+    {
+      "name": "gt-jdbc-34.4.jar",
+      "sha256": "b9171f232f5dbfa8f5ebb1efb1ae3015e4d72b562fd8b21cc967aeeeda2cc5a2"
+    },
+    {
+      "name": "commons-dbcp-1.4.jar",
+      "sha256": "a6e2d83551d0e5b59aa942359f3010d35e79365e6552ad3dbaa6776e4851e4f6"
+    },
+    {
+      "name": "gt-geojson-core-34.4.jar",
+      "sha256": "4ceca979c3c21df6f6c048a913185a83272fd357bb4fb06dee7c0d3889f6c31d"
+    },
+    {
+      "name": "jose4j-0.9.6.jar",
+      "sha256": "7314af50cde9c99e8eaf43eee617a23edcc6bb43036221064355094999d837ef"
+    },
+    {
+      "name": "bcprov-jdk15on-1.70.jar",
+      "sha256": "8f3c20e3e2d565d26f33e8d4857a37d0d7f8ac39b62a7026496fcab1bdac30d4"
+    },
+    {
+      "name": "bcpkix-jdk15on-1.70.jar",
+      "sha256": "e5b9cb821df57f70b0593358e89c0e8d7266515da9d088af6c646f63d433c07c"
+    },
+    {
+      "name": "bcutil-jdk15on-1.70.jar",
+      "sha256": "52dc5551b0257666526c5095424567fed7dc7b00d2b1ba7bd52298411112b1d0"
+    },
+    {
+      "name": "tomcat-embed-core-10.1.39.jar",
+      "sha256": "1a488786e23293aef05c12c14d375b6649e85a312f8d1db23d9274196b7b0eb5"
+    },
+    {
+      "name": "tomcat-annotations-api-10.1.39.jar",
+      "sha256": "922a886d5424c30636e7416ad9d337c4878fe3643eaa2f6fa2258d3790cb826e"
+    },
+    {
+      "name": "eclipse-collections-11.1.0.jar",
+      "sha256": "8881749de791c28c6ccea621314a3a154cfe76ef77c30054b6e714c3dc76969d"
+    },
+    {
+      "name": "eclipse-collections-api-12.0.0.M3.jar",
+      "sha256": "269d732394d3fe9e6f1fcebcb8b945e785257d4700dd229bd70625536cff418b"
+    },
+    {
+      "name": "spring-boot-starter-tomcat-3.4.4.jar",
+      "sha256": "fdae817f961cfc561af6f305895a2d334a3986bd4544d469e26a321814edff54"
+    },
+    {
+      "name": "jakarta.annotation-api-2.1.1.jar",
+      "sha256": "5f65fdaf424eee2b55e1d882ba9bb376be93fb09b37b808be6e22e8851c909fe"
+    },
+    {
+      "name": "tomcat-embed-el-10.1.39.jar",
+      "sha256": "de993a5a8af0b6ca6473ba59b95026d7ded93de3a1683d9fb7753b7b76d38ee7"
+    },
+    {
+      "name": "tomcat-embed-websocket-10.1.39.jar",
+      "sha256": "3b4fb77c4df8c523ec631a817936c4dff152386d4451090f03cb18425bfd8aaf"
+    },
+    {
+      "name": "pf4j-3.13.0.jar",
+      "sha256": "6fe38b99480242f868355f4802480851a37c24c5eb7b785da1b06b823418af58"
+    },
+    {
+      "name": "java-semver-0.10.2.jar",
+      "sha256": "a8e32e17575d0188c1f3e2e57bb95db09793883c8853fde828b63ecb1f99a63a"
+    },
+    {
+      "name": "reactor-core-3.8.2.jar",
+      "sha256": "e800681657a370c6416ae66b3060bf2fe87d3a3107bd7ce932acac0c2e002d97"
+    },
+    {
+      "name": "reactive-streams-1.0.4.jar",
+      "sha256": "f75ca597789b3dac58f61857b9ac2e1034a68fa672db35055a8fb4509e325f28"
+    },
+    {
+      "name": "klab.services.resources-1.0.0-SNAPSHOT.jar",
+      "sha256": "ef29b120c0f6e39db8f8c1a60a062714d071acbaf16067888f0ea9aa45e1f3dc"
+    },
+    {
+      "name": "mongodb-driver-sync-4.9.1.jar",
+      "sha256": "5fce5410136ae808ee5ba5c9eb175cb85b10c01b1e6630ada6601cfa39eb08bb"
+    },
+    {
+      "name": "bson-4.9.1.jar",
+      "sha256": "459a5e205fa996a55f5f52a36d5bf03745c531a0d6c60fe3d1cf24ca1035f65c"
+    },
+    {
+      "name": "mongodb-driver-core-4.9.1.jar",
+      "sha256": "f82bf397cd831c77711371cbdb197821924d4911d7b7d0ffe65ababfa3439714"
+    },
+    {
+      "name": "bson-record-codec-4.9.1.jar",
+      "sha256": "080c602225e0d9c20cfe0ef21ac135974f152268cf27056d5d9037aa8d8754f5"
+    },
+    {
+      "name": "json-schema-validator-2.0.4.jar",
+      "sha256": "4856729c8f38ffba02380b0895b7e98a511f6e68a1fb6424782f3e6549dbba07"
+    },
+    {
+      "name": "itu-1.14.0.jar",
+      "sha256": "5cf40ab0cc77828ab2b875b1f3ecd71c8295d7721933476abc2e08fddcea164a"
+    },
+    {
+      "name": "org.integratedmodelling.languages.observable-1.0.0-SNAPSHOT.jar",
+      "sha256": "0a0703361aaeb2af7b2c6660f675434e7d4554af447f57c930a294ff25ad7051"
+    },
+    {
+      "name": "failureaccess-1.0.1.jar",
+      "sha256": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26"
+    },
+    {
+      "name": "guice-7.0.0.jar",
+      "sha256": "de5b0e359bd7b03ca42806b368846efd95484380fe05ae2a4ea71bc338c59c00"
+    },
+    {
+      "name": "aopalliance-1.0.jar",
+      "sha256": "0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08"
+    },
+    {
+      "name": "jakarta.inject-api-2.0.1.jar",
+      "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c"
+    },
+    {
+      "name": "icu4j-73.2.jar",
+      "sha256": "29280822f4b0796acef1f79b90b1d0c1edd86c10e876a848e04b8a6298a16bf9"
+    },
+    {
+      "name": "jna-platform-5.13.0.jar",
+      "sha256": "474d7b88f6e97009b6ec1d98c3024dd95c23187c65dabfbc35331bcac3d173dd"
+    },
+    {
+      "name": "jna-5.13.0.jar",
+      "sha256": "66d4f819a062a51a1d5627bffc23fac55d1677f0e0a1feba144aabdd670a64bb"
+    },
+    {
+      "name": "org.apache.felix.gogo.command-1.1.2.jar",
+      "sha256": "cc9cb7205ff0be5149bc3b5355ce0e5ba4ab182b5bb8a1e96b91252f31a3d324"
+    },
+    {
+      "name": "org.apache.felix.gogo.runtime-1.1.6.jar",
+      "sha256": "270be725262d10902929320178ebfdcfd7fcec05bd8d59796e83353c08d4af20"
+    },
+    {
+      "name": "org.apache.felix.gogo.shell-1.1.4.jar",
+      "sha256": "68ea9d25cc8184cd39c34ebcf84e62c57377ae24b0923b75c2b12216492b53a1"
+    },
+    {
+      "name": "org.apache.felix.scr-2.2.6.jar",
+      "sha256": "24c0b2d8081cbc9624e60a1c19f1dd0d104e014cdba4038d9b1aed0ab63721c6"
+    },
+    {
+      "name": "animal-sniffer-annotations-1.9.jar",
+      "sha256": "cd96feeb47f34b2559704715db7b179a03a3721f9dc4092c345c718e29b42de4"
+    },
+    {
+      "name": "org.osgi.service.component-1.5.1.jar",
+      "sha256": "0653852deab5c6f6e9c84e3aa8f72e72b9ce7dfaf7a6431f3d80f6f9d7a433ad"
+    },
+    {
+      "name": "osgi.annotation-8.1.0.jar",
+      "sha256": "68afeb86a5322675d4dfe3df5863c7d8a37b34c18e3a8e41553f1ab3ac15d78f"
+    },
+    {
+      "name": "org.osgi.namespace.extender-1.0.1.jar",
+      "sha256": "93d798bde7fa760961408c8a10a965ca7ba1dbf98a3a706c86d8290f528ad519"
+    },
+    {
+      "name": "org.osgi.util.promise-1.3.0.jar",
+      "sha256": "7053c57e7d7d88fec6b90979a3af125e1d2bb847268a328a2f1ed65ad0a4c185"
+    },
+    {
+      "name": "org.osgi.service.event-1.4.1.jar",
+      "sha256": "9f11c68980dbd931850f3f27fc7c35e1d710ecc728fe872bd6d786cd7e4b7b5e"
+    },
+    {
+      "name": "org.osgi.namespace.implementation-1.0.0.jar",
+      "sha256": "b858305e5e5aa683b8366297ddbb2e11f88fc2af4a00c96fa722cda525bb8b34"
+    },
+    {
+      "name": "org.osgi.service.prefs-1.1.2.jar",
+      "sha256": "43c7c870710e363405d422da653cce0d798a4537f76e4930f79bceadd3a55345"
+    },
+    {
+      "name": "org.osgi.util.function-1.2.0.jar",
+      "sha256": "208819c7c71690c15a6bb8b187474e7f9d0147946b680182a62b9f222ae014ec"
+    },
+    {
+      "name": "org.osgi.util.measurement-1.0.2.jar",
+      "sha256": "48b9f38674c04f9386cd87ec8ed5718138381b14fe5a6d3e156f86a092e0c222"
+    },
+    {
+      "name": "org.osgi.util.position-1.0.1.jar",
+      "sha256": "02b7f6900efd470b612ecd755971164e1e6c5cf98f587c201d0da3bbc9cb5f3a"
+    },
+    {
+      "name": "org.osgi.util.xml-1.0.2.jar",
+      "sha256": "d28c9a8a747d39de73805dc91f840f99a8a177ae2f85f6052a532a204f6f7538"
+    },
+    {
+      "name": "org.osgi.service.cm-1.6.1.jar",
+      "sha256": "529da7b6806af4d788acc0aef0079c9c920f6cb1d2679c8f392ca552fb2e1d35"
+    },
+    {
+      "name": "org.osgi.service.device-1.1.1.jar",
+      "sha256": "c1763296d98638b4e78519209de71681568d2afbcd31119d33da2c16358beb25"
+    },
+    {
+      "name": "org.osgi.service.metatype-1.4.1.jar",
+      "sha256": "83d9cc2b62500d2e438be91c157659c2d693a262cfd14eb9b916286ca627ed00"
+    },
+    {
+      "name": "org.osgi.service.provisioning-1.2.0.jar",
+      "sha256": "59bf433907fe38b46acac4b771a8ffd3a4d693248bbd205968129d25c1a7d019"
+    },
+    {
+      "name": "org.osgi.service.upnp-1.2.1.jar",
+      "sha256": "f76ddece1420351cbbe6e19e17b00fb3b4b1633c3e4afdcbe9d0b8b2db4bdd7f"
+    },
+    {
+      "name": "org.osgi.service.useradmin-1.1.1.jar",
+      "sha256": "e9af5301dbc71f548c8f9b85fdd4a8532fc1290f5388867b94da57657298f8b1"
+    },
+    {
+      "name": "org.osgi.service.wireadmin-1.0.2.jar",
+      "sha256": "e78911f12f8823e24a3dde68ba16502a7dd7f4c630386215b0ac7c2ede25b9a7"
+    },
+    {
+      "name": "asm-9.5.jar",
+      "sha256": "b62e84b5980729751b0458c534cf1366f727542bb8d158621335682a460f0353"
+    },
+    {
+      "name": "org.integratedmodelling.languages.worldview-1.0.0-SNAPSHOT.jar",
+      "sha256": "6247d7efa520d71bbbd4bce075e9f7b5fe49d334b33b2dd5fa83fc276f038ce8"
+    },
+    {
+      "name": "org.integratedmodelling.languages.kim-1.0.0-SNAPSHOT.jar",
+      "sha256": "77bdeccc45db8faa1e83ab9a5c6fc6a300ea71c3eeac9d9fa4d31af9830e015d"
+    },
+    {
+      "name": "org.integratedmodelling.languages.observation-1.0.0-SNAPSHOT.jar",
+      "sha256": "2c4335799dcd252b384961d16c4730506b3d8bcb24ad399108d363779f4042b6"
+    },
+    {
+      "name": "org.integratedmodelling.languages.kactors-1.0.0-SNAPSHOT.jar",
+      "sha256": "daa48f5296bd635eaded7e02ff5ea12fb5f1f4bc19da6836ef5e352b489cea7d"
+    },
+    {
+      "name": "jackson-dataformat-yaml-2.19.0.jar",
+      "sha256": "46e54dcbd39d4d12cda18ec9276e7b888e08fc765ea0c77e71662306f0d4abc4"
+    },
+    {
+      "name": "snakeyaml-2.4.jar",
+      "sha256": "ef779af5d29a9dde8cc70ce0341f5c6f7735e23edff9685ceaa9d35359b7bb7f"
+    },
+    {
+      "name": "org.eclipse.xtext-2.27.0.jar",
+      "sha256": "ab67c11f22b7a327810535557a2bb1477a1c5a3695d72d0439005b018ae435ae"
+    },
+    {
+      "name": "reload4j-1.2.19.jar",
+      "sha256": "fa07aa7adedf2a65eb09007443bb60b51c725b1b5b88e481e00c529ff2d3b5b5"
+    },
+    {
+      "name": "org.eclipse.equinox.common-3.13.0.jar",
+      "sha256": "eee0463ec7908633e192f0bde8009fbc4425f2b7156ce738bb354795f77a1010"
+    },
+    {
+      "name": "org.eclipse.osgi-3.16.0.jar",
+      "sha256": "f97bb05c1683dc0862f3f1a9ff63788eec77882c4149c8a583f99ae4b0aa739f"
+    },
+    {
+      "name": "org.eclipse.emf.common-2.17.0.jar",
+      "sha256": "5b8aa3fd7ef54ac695aa73c6bfea299a9be2cf7472ed6b8a9fa84dfd000bdcb3"
+    },
+    {
+      "name": "org.eclipse.emf.ecore.xmi-2.16.0.jar",
+      "sha256": "d8da1146cd83675f5d5417fdd91fc89f2af4b43e4a30110661326994dc71176d"
+    },
+    {
+      "name": "antlr-runtime-3.2.jar",
+      "sha256": "6d9f997202cc02d4d4fa3d4e84e6d2d3de3a1b1f951e9a1a83b40d0279a50389"
+    },
+    {
+      "name": "org.eclipse.xtext.util-2.27.0.jar",
+      "sha256": "0c606645ebaa724766fedcc9024ca35722a59366dc9ee5f825a7ada2b207c69c"
+    },
+    {
+      "name": "org.eclipse.emf.ecore-2.20.0.jar",
+      "sha256": "9ee539a3c50ef3cfcbaa3a85f34f041eea682ad459d3e956df7769f6b2991b36"
+    },
+    {
+      "name": "org.eclipse.xtext.ide-2.27.0.jar",
+      "sha256": "1525b6ba81bcc85658b630aea5a67d477c9ff922c416d9ff4564b65bd2cf7303"
+    },
+    {
+      "name": "org.eclipse.emf.ecore.change-2.14.0.jar",
+      "sha256": "32c7237f90e1c14b765903d02f5a50f1e88d4b9b53641c224a51d877a36835f8"
+    },
+    {
+      "name": "org.eclipse.lsp4j-0.14.0.jar",
+      "sha256": "b72403bca5e19db09ecb53bf9ac8deb97ede7ad394a0b8b77dec034296ae0166"
+    },
+    {
+      "name": "org.eclipse.lsp4j.generator-0.14.0.jar",
+      "sha256": "6bda8ef54aaadab9e9edf99d8aefcaeeafb9e625b04f0fbd183dd3c20ba1f257"
+    },
+    {
+      "name": "org.eclipse.lsp4j.jsonrpc-0.14.0.jar",
+      "sha256": "8e870a44d3ca0741a51874a00e7c015feaf6b516c03ed57276a70ae758828f2e"
+    }
+  ],
+  "current_language_replacements": [
+    {
+      "name": "org.integratedmodelling.languages.observable-1.0.0-SNAPSHOT.jar",
+      "sha256": "4b89ef600e5d620eaf18553170d11b49f5dd78f93914402d3901e4832f5edcf1"
+    },
+    {
+      "name": "org.integratedmodelling.languages.worldview-1.0.0-SNAPSHOT.jar",
+      "sha256": "b0305ad5e8b27dc6aa56a1dd192ba46677d2152b0ba22dd8880545e373af9455"
+    },
+    {
+      "name": "org.integratedmodelling.languages.kim-1.0.0-SNAPSHOT.jar",
+      "sha256": "01f8ae62dcb520cadf64931eff1cfc7cdb5db087b9f5daedae2d80bd0a7d8d38"
+    },
+    {
+      "name": "org.integratedmodelling.languages.observation-1.0.0-SNAPSHOT.jar",
+      "sha256": "08d77c85a4d945fe5a13496265d33e444b46d2b6854aec632dd60b540685b408"
+    },
+    {
+      "name": "org.integratedmodelling.languages.kactors-1.0.0-SNAPSHOT.jar",
+      "sha256": "d727472c78a08c41909204ea8373734c5e4918a2c7dbf90d4e984cbbc7d4971b"
+    }
+  ],
+  "scope": "Standalone parser only; not deployment or scientific acceptance",
+  "probe_sha256": "34f26f594a4bde3f76224cc296936a9b85b59538dca5a524ab393434b5138fdc"
+}

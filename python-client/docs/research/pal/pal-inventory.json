@@ -1,0 +1,249 @@
+{
+  "record": "7533051",
+  "archive_sha256": "6503feeb0dc743601fe3e3205c879354801fc21353913fd06b9ae4ff1443d872",
+  "archive_bytes": 4704395,
+  "members": [
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/.project",
+      "size": 694,
+      "sha256": "3cefe489fa9a7f9a78c151b830291b4755b85d648e193a0fc60bd18b2aea3a10"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/LICENSE",
+      "size": 34523,
+      "sha256": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/META-INF/klab.properties",
+      "size": 22,
+      "sha256": "4f93f7bb655e29c7b952b23a97e6e06fb37f6130412ae1b96ee09f1a409924ec"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/README.md",
+      "size": 113,
+      "sha256": "4d901f1230766a90f8b770e81725fe261015674062be2dfbff9e212b18963ce1"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/docs/documentation.json",
+      "size": 3,
+      "sha256": "8eb95bcbc154530931e15fc418c8b1fe991095671409552099ea1aa596999ede"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/docs/grassland/atmospherictemperature/documentation.json",
+      "size": 2541,
+      "sha256": "403e3abed1b32cea8727b14ac36d9691f5fc13a65edd961d849d0d3e446cbd35"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/docs/grassland/documentation.json",
+      "size": 3,
+      "sha256": "257c1be96ae69f4b01c2c69bdb6d78605f59175819fb007d0bf245bf48444c4a"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/docs/grassland/moisture/documentation.json",
+      "size": 2383,
+      "sha256": "6a6f194dce4abd9b7054fbd328a678aa374e4f520ce3399f25ceb05da82ca566"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/docs/grassland/nitrogen/documentation.json",
+      "size": 4068,
+      "sha256": "d3d6c363fba8600675ca818fc9ce0398ace4e241d72ed623228de3c328df5a03"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/docs/grassland/radiation/documentation.json",
+      "size": 2414,
+      "sha256": "8f7774d45c9e81340beb0c74c0cdc8b655348bf3deabbc8f3b5730a0bef1653b"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/docs/grassland/vegetationgrowth/documentation.json",
+      "size": 3138,
+      "sha256": "1cce709208a14c406f82e57e18df56f9dec5cd8b3a4478316e693d80a748071a"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/docs/references.json",
+      "size": 3235,
+      "sha256": "4cb4fb36c8770f3a86b5886ed1f01ce7990d588afcd5a139ca850dc801198de9"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/readme_run_PaL.txt",
+      "size": 579,
+      "sha256": "501f0a6ec4272faa1d1fcb785a600d096d92ce43889da8028dd853e963be0291"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/meanprec_05_2010_2011_2012.v0.0.1/meanprec_05_2010_2011_2012.tif",
+      "size": 6774,
+      "sha256": "2942149396742f1055f7d5f8119f91bc66ed9dcb1d85f9b4633ac277e7fbd19a"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/meanprec_05_2010_2011_2012.v0.0.1/resource.json",
+      "size": 1073,
+      "sha256": "dd954e85f87db65eb57dd921f74a916818e1617978726a5b614e2dfdb748b2a1"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/meanprec_05_2070.v0.0.1/meanprec_05_2070.tif",
+      "size": 7019,
+      "sha256": "31c432e951e29993b2b405c089b5ba54e78479a47748de8e85442731c0adba59"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/meanprec_05_2070.v0.0.1/resource.json",
+      "size": 1051,
+      "sha256": "42b456e0a70e7b546762c02b0fd57545a29a2dfb17649008ae381e14583b561e"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/meantemp_05_2010_2011_2012.v0.0.1/meantemp_05_2010_2011_2012.tif",
+      "size": 6564,
+      "sha256": "88f1b4ef0859f251b594361e4bbaf0c3fe058b257e8f53f4f12611790d2e8072"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/meantemp_05_2010_2011_2012.v0.0.1/resource.json",
+      "size": 1073,
+      "sha256": "7635e0b734ed4b2a6f8b0b8c5a6e2e396e493daf8d3a91f5f295ffab22920f7f"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/meantemp_may2012.v0.0.1/meantemp_may2012.tif",
+      "size": 17491,
+      "sha256": "12b1439472d34affba577d2f14ac0af482ba9b0e07fea0c4352b0cd0a5cddba5"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/meantemp_may2012.v0.0.1/resource.json",
+      "size": 1016,
+      "sha256": "69fe9d35d93f53c6f469380132caa59eb38968343c5ae1eb5d52ff7427ab8ab7"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/mintemp_05_2010_2011_2012.v0.0.1/mintemp_05_2010_2011_2012.tif",
+      "size": 6468,
+      "sha256": "081a5cbeb48c40d2352255976059e6f4473354413036e2e18078a5df5311dbf1"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/mintemp_05_2010_2011_2012.v0.0.1/resource.json",
+      "size": 1068,
+      "sha256": "c3c676cfeb9281150f147e3ba90c68bf819146d2d11b074ee84122d32e967436"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/mintemp_may2012.v0.0.1/mintemp_may2012.tif",
+      "size": 17491,
+      "sha256": "4bbdb59154cd9e298f7200ce1f7eb1892ab38e402dab89c58687841f2f195cf3"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/mintemp_may2012.v0.0.1/resource.json",
+      "size": 1011,
+      "sha256": "93b91fc6e8fa6b7add6ce73268c6460a0c484378d11382b9c245fedea385d085"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/prec_may2012.v0.0.1/prec_may2012.tif",
+      "size": 17491,
+      "sha256": "efc119b4700a6395a36ef63b438e98299811e5e35231547e5072292d17c7b137"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/prec_may2012.v0.0.1/resource.json",
+      "size": 996,
+      "sha256": "217ed58e5847d9d357ca0dd17ac1bfeb6e2b7456d711f6dba794cc83fe4c4ae5"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/resources.json",
+      "size": 3,
+      "sha256": "8eb95bcbc154530931e15fc418c8b1fe991095671409552099ea1aa596999ede"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/up_spain_simply.v0.0.1/resource.json",
+      "size": 1764,
+      "sha256": "abb474480200ab72002fbfc702a0078f685e44156556d9ac70221b5f1ae0a945"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/up_spain_simply.v0.0.1/up_spain_simply.dbf",
+      "size": 56283,
+      "sha256": "f4859db72399e037cf14b02752508046e9f489e7af660459028f1aec6e760947"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/up_spain_simply.v0.0.1/up_spain_simply.prj",
+      "size": 143,
+      "sha256": "98aaf3d1c0ecadf1a424a4536de261c3daf4e373697cb86c40c43b989daf52eb"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/up_spain_simply.v0.0.1/up_spain_simply.qix",
+      "size": 2752,
+      "sha256": "da50dc70e105a368fca51172faff62678b27c03c1834bd26a2ecf0ed58fb96f5"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/up_spain_simply.v0.0.1/up_spain_simply.shp",
+      "size": 4819320,
+      "sha256": "eb7b5bee1a5320eef0173925cf5cf3f23f7772f0de37d8d1ccc35cbfe1b9e67d"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/up_spain_simply.v0.0.1/up_spain_simply.shx",
+      "size": 1964,
+      "sha256": "b65b4551da5de1275e4f09fe7450cd4ad56ff37ed133d14f7bc73d078a912b9f"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/resources/veg_50m_wgs84_adaptPUERTO.v0.0.1/veg_50m_wgs84_adaptPUERTO.tif",
+      "size": 1320574,
+      "sha256": "db6116a1ca0c7f09038e94f2d064411c699ab09999b40a4569a846d6d048b438"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/data/spain.kim",
+      "size": 184143,
+      "sha256": "ff9e52085e1bc95491445726d1c206f8736b373881759680e0df7d2c2bc2af1e"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/moisture.kim",
+      "size": 8124,
+      "sha256": "24c0fcbfb8da6491f3324e46ad2ab36c9efe3db80f07553feb4b09e0e8f00c9c"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/radiation.kim",
+      "size": 2334,
+      "sha256": "871a7d87990fd2381e9d1c731f68cb4ce49c9e21f33c7201999a031d64b20707"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/lf/temp.kim",
+      "size": 3852,
+      "sha256": "63adcc7981482f00c4ab09fbdc86a029d466796c986b34b2ed1f4622ab53786e"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/litterfall.kim",
+      "size": 8498,
+      "sha256": "ba4be432e1847accc4f05462041618d9d0c78d1d3d58156c65fbc67060f9f94c"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestock/tables.kim",
+      "size": 27052,
+      "sha256": "a3a01dbcbf95b519c02f31f58b0f66e2ceb5e635fed5860dbe602a4ffc63df1f"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockexcretion.kim",
+      "size": 13276,
+      "sha256": "3de335be9c145ec5f6dae1529917e85068f3972bde24a365ac0354ce4e8f7ee6"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockingestion.kim",
+      "size": 20745,
+      "sha256": "5b2be7fac29db0f83b58ade584d04f2a48d4b844b6013b897c24fc26a7e47a59"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/livestockmass.kim",
+      "size": 12677,
+      "sha256": "18d11dca6d3bbc32fcf4a22f4bf3227dc832ff1fc5d02d139a907a7e805c2f88"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/nitrogen.kim",
+      "size": 21569,
+      "sha256": "960910fcddbbc063f42409fe5f830881f2c0a35c9b8825ee39b036540e3d4395"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/senescence.kim",
+      "size": 5986,
+      "sha256": "a3c2c279bd5414553865f4c711b9643db54c8e79ce8f9560e9170b75735dd0dd"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/src/ecology/grassland/vegetationgrowth.kim",
+      "size": 7829,
+      "sha256": "f9f03e651eb76bca26e21c00ebe830567bc2f95833cf9fd603131fda37f5aa9d"
+    },
+    {
+      "path": "amarqueztorres-im.ecology.grassland.livestock-575f36d/tests/timedresources.kim",
+      "size": 1424,
+      "sha256": "6ac793ba9d5f456772c0b7c57c9ef4deec41bc694b794878acc61ce7959f3d28"
+    }
+  ],
+  "research_code_executed": false,
+  "scientific_acceptance": false
+}
