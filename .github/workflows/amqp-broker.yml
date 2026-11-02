@@ -1,0 +1,26 @@
+name: Scoped broker profile checks
+
+on:
+  push:
+    paths: ['support/klab.amqp.server/**', '.github/workflows/amqp-broker.yml']
+  pull_request:
+    paths: ['support/klab.amqp.server/**', '.github/workflows/amqp-broker.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  scoped-broker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Install source-matched local broker prerequisites
+        run: ./mvnw -B -pl klab.core.common -am -Dmaven.test.skip=true install
+      - name: Test strict profile validation and actual isolated broker authorization
+        run: ./mvnw -B -f support/klab.amqp.server/pom.xml test
