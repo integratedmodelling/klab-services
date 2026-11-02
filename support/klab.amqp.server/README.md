@@ -114,8 +114,13 @@ Standalone socket probes of the virtual-host boundary passed with Qpid9.2.0, bot
 file-backed and inline configuration. The module run passes38 tests with no skips,
 including actual two-context authorization and independent cleanup. The new profile
 compiler has100% line/branch coverage with enforced checks, and a plain module JAR
-build passes. CLI startup, source-matched CI prerequisite build and final hosted
-checks remain under verification; do not merge until those gates pass. Earlier failed
+build passes. Packaged-main acceptance passed at
+`21dea66433cd78fc87aa32f81dcec3f6c4a52f6c`: missing-work/invalid-profile fail closed,
+only the owned AMQP port listens, both contexts receive hints, all cross-context
+connections and reader publishing are denied, secrets/data URLs stay out of logs,
+and all13 recorded probe/CLI JVM identities are independently absent. Artifact/core
+fingerprints stay unchanged. See [sanitized facts and hashes](docs/scoped-profile-results-20261102.json).
+Final-head hosted checks and review are merge requirements. Earlier failed
 attempts remain preserved privately. This profile neither repairs all broker
 policies nor establishes Python/Runtime activity, TLS, replay or scientific
 acceptance. No vendor contact or running deployment change is included.
