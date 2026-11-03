@@ -66,4 +66,42 @@ class RemoteObservationCurrentnessTest {
     when(remote.getAsset(-42L, RuntimeAsset.class, root)).thenReturn(null);
     assertFalse(graph.isObservationCurrent(prospective, root));
   }
+
+  @Test void actualHttpFailureRejectsCachedObservationAndPreservesRequestScope() throws Exception {
+    var root = scope("context");
+    when(root.getHostServiceId()).thenReturn("runtime");
+    when(root.getObserverId()).thenReturn(null);
+    var receivedScope = new java.util.concurrent.atomic.AtomicReference<String>();
+    var receivedPath = new java.util.concurrent.atomic.AtomicReference<String>();
+    var server = com.sun.net.httpserver.HttpServer.create(
+        new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext("/", exchange -> {
+      receivedScope.set(exchange.getRequestHeaders().getFirst(
+          org.integratedmodelling.klab.api.ServicesAPI.SCOPE_HEADER));
+      receivedPath.set(exchange.getRequestURI().getPath());
+      exchange.sendResponseHeaders(503, -1);
+      exchange.close();
+    });
+    server.start();
+    try (var http = org.integratedmodelling.common.utils.Utils.Http.getClient(
+        "http://127.0.0.1:" + server.getAddress().getPort(), null)) {
+      var remote = mock(RuntimeClient.class);
+      var field = org.integratedmodelling.common.services.client.BaseServiceClient.class
+          .getDeclaredField("client");
+      field.setAccessible(true);
+      field.set(remote, http);
+      when(remote.getAsset(42L, RuntimeAsset.class, root)).thenCallRealMethod();
+      var graph = new ClientKnowledgeGraph(root, remote);
+      var cached = observation(42);
+      graph.ingestObserver(cached);
+      // The maintained HTTP GET reports errors to the scope and returns null.
+      // Neither that unavailable result nor the cache can certify currentness.
+      assertFalse(graph.isObservationCurrent(cached, root));
+      assertEquals("context", receivedScope.get());
+      assertEquals(org.integratedmodelling.klab.api.ServicesAPI.RUNTIME
+          .RETRIEVE_KNOWLEDGE_GRAPH_ASSET.replace("{id}", "42"), receivedPath.get());
+    } finally {
+      server.stop(0);
+    }
+  }
 }
