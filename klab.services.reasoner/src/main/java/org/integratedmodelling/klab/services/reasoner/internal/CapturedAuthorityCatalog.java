@@ -522,6 +522,9 @@ public final class CapturedAuthorityCatalog {
     }
     @Override public synchronized String configure(ConfigurationRequest request) {
       if (!AuthorityBindings.providerRequest(original).equals(request)) throw unresolved("provider parameters changed since capture: " + original.name());
+      // A configured snapshot must prove it can restore before a candidate can publish its handle.
+      // SnapshottingAuthority.restoreConfiguration is offline; other providers remain lazy.
+      if (configuredSnapshots.containsKey(original.name())) live();
       bridge.configured = "snapshot:" + revision + ":" + original.name();
       return bridge.configured;
     }
