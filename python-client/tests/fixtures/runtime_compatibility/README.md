@@ -3,7 +3,9 @@
 This is a **test-only recipe**, not a shared-worldview migration, a scientific
 correction, an original-study reproduction, or permission to bypass semantic
 admission. The original frozen fixture and its failed evidence remain untouched.
-Full Reasoner admission and genuine Runtime Jobs remain acceptance gates.
+Full Reasoner admission and genuine Runtime Jobs are required acceptance gates.
+The opt-in v3 variant now passes those bounded checks; original/v2 failed evidence
+and their distinct acceptance limits remain preserved below.
 
 ## Five explicit fixture choices (contract v2)
 
@@ -148,6 +150,36 @@ failure alone is not a demonstrated explanation for the differing Job outcomes.
 The publication trigger and full cross-service failure chain are still under
 investigation using offline/read-only diagnostics. No guard is weakened, candidate
 publication frozen, service dependency changed or failed scientific Job replayed.
+
+## Final bounded v3 acceptance
+
+After merged generation-restoration PR122, executable Runtime candidate
+`ca9297335d28cfdf76132ecd8f049ac2f3d4adca` passes181 integrated tests, enforced
+publisher100% line/branch coverage and13-module verification/packaging. Its2,612
+compiled classes match packaged JARs and seven classpaths use current declared
+Maven closures, not mixed historical dependency sets.
+
+Fresh bounded run18 passes source preflight and both explicit controlled Jobs.
+All20 independently read cells equal123.25 metres. Configured actual Runtime and
+ServiceContextScope hooks deliver12 persisted activity hints with six paired
+start/finish IDs and a successful finish. No fixture channel or hand-created Activity
+is injected. The wrong-context reader is denied; the second context receives no
+hints. The append-only hint journal and aggregate JSON match exactly.
+
+Receivers/queues/contexts, session, context listing, publisher sockets and HTTP client
+pass cleanup. All14 recorded JVM identities are independently absent;3,898 launch
+hashes,1,154 source hashes and all fixture-launch hashes remain unchanged. No matching
+owned visible window remains and unrelated services/windows are untouched. Two
+submission receipts are authoritative despite the inherited outer zero counter.
+
+Result SHA-256: `2642ce271831b39f540eb081584f4515bd9a97ed575d53cb2ecc0aaf68de7956`.
+Hint-journal SHA-256: `cba2eeb9755be57fbdf8c115acc537f157ef3b6770a864af1cce96fbc9598ce7`.
+
+This completes bounded new synthetic-v3 acceptance, not original bare-query
+acceptance or study reproduction. Prior failures, original/v2 bytes, the exact
+numerical expression and independent oracle remain preserved. Notification
+continuity/upstream overflow remain UNKNOWN. Final documentation-head CI/review
+and merge remain required; no durable recovery, deployment or publication is implied.
 
 ## Validation boundaries
 
