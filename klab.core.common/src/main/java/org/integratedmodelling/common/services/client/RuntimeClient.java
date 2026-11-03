@@ -369,12 +369,22 @@ public class RuntimeClient extends BaseServiceClient
     if (descriptor != null) descriptor.getNotifications().forEach(userScope::send);
     if (descriptor != null && !descriptor.isEmpty() && descriptor.getId() != null
         && !descriptor.getId().isBlank()
+        && Objects.equals(configuration.getId(), descriptor.getId())
+        && Objects.equals(serviceId(), descriptor.getServiceId())
         && !Utils.Notifications.hasErrors(descriptor.getNotifications())) {
 
-      var sessionId = Utils.Paths.getLeading(configuration.getId(), '.');
-      var sessionScope = ClientScopeManager.INSTANCE.getScope(serviceId(), sessionId, userScope.getUser().getUsername(), ClientSessionScope.class);
-      if (sessionScope == null) {
-        sessionScope = (ClientSessionScope) userScope.getUserSession(this);
+      var sessionId = Utils.Paths.getLeading(descriptor.getId(), '.');
+      ClientSessionScope sessionScope;
+      synchronized (ClientScopeManager.INSTANCE) {
+        sessionScope = ClientScopeManager.INSTANCE.getScope(
+            serviceId(), sessionId, userScope.getUser().getUsername(), ClientSessionScope.class);
+        if (sessionScope == null) {
+          // This is only a local peer of the authorized descriptor's parent, not a new remote
+          // session or a grant of authority over that parent. Never create the caller's default.
+          sessionScope = new ClientSessionScope((ClientUserScope) userScope, sessionId, this)
+              .withId(sessionId);
+          ClientScopeManager.INSTANCE.register(sessionScope);
+        }
       }
 
       // Reconnect adopts the same authoritative descriptor as creation.
