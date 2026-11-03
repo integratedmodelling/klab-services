@@ -20,7 +20,7 @@ jobs:
           cache: maven
       - run: chmod +x mvnw
       - name: Scope origin, request authority, ACL and context lifecycle regressions
-        run: ./mvnw -B -pl klab.core.services -am -Dtest=CachedScopeRuntimeOriginTest,ScopeManagerTest,ServiceSessionScopeTest,ManagedScopeAccessTest,UserScopeAdvertisementTest,CollectiveSelectionScopeLookupTest,ContextActivityHintScopeTest -Dsurefire.failIfNoSpecifiedTests=false -Djacoco.append=false org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent test org.jacoco:jacoco-maven-plugin:0.8.12:report
+        run: ./mvnw -B -pl klab.core.services -am -Dtest=LocalRuntimeColdScopeTest,CachedScopeRuntimeOriginTest,ScopeManagerTest,ServiceSessionScopeTest,ManagedScopeAccessTest,UserScopeAdvertisementTest,CollectiveSelectionScopeLookupTest,ContextActivityHintScopeTest -Dsurefire.failIfNoSpecifiedTests=false -Djacoco.append=false org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent test org.jacoco:jacoco-maven-plugin:0.8.12:report
       - name: Require all changed executable lines, branches and new helper counters
         shell: python
         run: |
