@@ -1346,13 +1346,13 @@ public class DigitalTwinImpl implements DigitalTwin {
               || view.owner != root
               || !(view.source instanceof Observation original)) return Optional.empty();
           observation = original;
-          // An owned read view may wrap our private attribution/configuration replacement.
-          // Recover its exact canonical birth, never a caller-supplied same-ID copy.
-          for (var asset : graph.vertexSet()) {
-            if (asset instanceof Observation canonical && staged(asset) == original) {
-              observation = canonical;
-              break;
-            }
+        }
+        // Owned views and transaction links can expose our private staged replacement.
+        // Recover only that exact object, never a caller-supplied same-ID copy.
+        for (var asset : graph.vertexSet()) {
+          if (asset instanceof Observation canonical && staged(asset) == observation) {
+            observation = canonical;
+            break;
           }
         }
         if (inoperativeObservations.contains(observation.getId())) return Optional.of(false);
