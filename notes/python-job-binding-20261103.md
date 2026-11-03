@@ -2,10 +2,22 @@
 
 Base: `e09a7de7cac6b48526fd8b7ac72879abb36a77a3` (merged #132).
 Independent slice; does not depend on unmerged agent/graph/documentation PRs.
+Current branch includes the separately reviewed fixture-order prerequisite
+PR140@28fb28bb4 and PR139 now targets that branch. This is local branch
+composition, not a GitHub PR merge. Retest after composition: **2392tests and
+all14declared gates PASS**, including both forced fixture traversal orders,
+coverage, lint and packaging. Logs: `with140-gates.json`, `with140-*.log`.
+
+Initial push CI41674217767 failed the existing filesystem-order-dependent fixture
+test in all Python versions; initial PR CI41674284333 passed. Raw failed push
+logs are retained and were not waived/relabelled green. PR140 reproduces the
+failure deterministically before fixing sorted copy order. Full Java
+CI41674217777 also fails the same EXTENT/ATTRIBUTE compile errors (raw verified);
+Jenkins says “This commit cannot be built”, cause not independently established.
 No Java or scientific implementation is changed. Review is author-conducted,
 not independent maintainer approval. No merge or complete roadmap acceptance.
 
-Final local verification: **183 new tests / 2,391 full offline tests PASS**,
+Initial-head local verification: **183 new tests / 2,391 full offline tests PASS**,
 all14 declared Python gates (10 coverage gates), lint and wheel/sdist PASS.
 New guard:43 executable lines /8 branch outcomes at unexcluded100%, with
 changed-code coverage gates also passing for Job/AsyncJob/handle code. Both
