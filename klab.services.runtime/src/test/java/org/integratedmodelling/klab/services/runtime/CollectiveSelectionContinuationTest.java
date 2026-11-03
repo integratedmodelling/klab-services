@@ -145,6 +145,17 @@ class CollectiveSelectionContinuationTest {
     assertEquals(List.of(q.beech, q.young), q.reasoner.directTraits(q.f.root.readObservation(selectedMember).getObservable()));
   }
 
+  @Test void currentnessRetainsOwnedAttributedBirthButRejectsTransportedCopies() throws Exception {
+    attributeAge();
+    var view=q.f.root.readObservation(selectedMember);
+    assertEquals(java.util.Optional.of(true),q.f.root.currentStatusFor(view));
+    assertTrue(q.f.root.currentStatusFor(Observation.forTransport(view)).isEmpty());
+    var foreign=new CollectiveCompletionQueryTest();foreign.setup();
+    assertTrue(foreign.root.currentStatusFor(view).isEmpty());
+    q.f.root.fail(new IllegalStateException("rollback"));
+    assertEquals(java.util.Optional.of(false),q.f.root.currentStatusFor(view));
+  }
+
   @Test void liveSelectedInputCannotSilentlyAcceptNewMembersDuringItsConsumingAttempt() {
     var resolved = SelectedModelClassifierContinuation.resume(q.f.runtime, parent("selected"), q.f.scope, new ArrayList<>()).join();
     var view = resolved.getComputation().getFirst().getChildren().getFirst().getObservation();
