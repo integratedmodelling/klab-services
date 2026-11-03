@@ -30,7 +30,24 @@ zero misses, without exclusions. The13-module webui/service/graph package build 
 seven fresh declared runtime dependency closures pass; packaging explicitly skips
 tests after the verified suite and is not another full-suite result.
 
-Source-matched bounded HTTP acceptance, final CI and review remain required.
+Fresh source-matched HTTP run22 passes both context and session sequences:
+matching origin200, wrong origin403, matching origin200. This shows denial does
+not evict or poison the accepted cached scope. It creates exactly one owned session
+and context with two confirmed mutation receipts and zero scientific Job submissions.
+Context/session release, Runtime empty-context listing, publisher socket absence
+and HTTP cleanup all pass. All14 JVM identities are independently absent;3,898
+launch hashes,1,154 main-source hashes and all fixture/SDK launch hashes match.
+No matching owned visible windows remain; unrelated processes/windows are untouched.
+Launch attestation matches2,612 compiled classes to packaged JARs and uses seven
+fresh current Maven closures. Executable candidate: `949b977382d1a9f6047bce9baacc28d7761f1032`.
+
+Served result SHA-256:
+`269a4f76b169fc6336ed30ef11453e329929f26b70e52438b58f4162f833ca6e`.
+Mutation-journal SHA-256:
+`6fdd389b5c5b58a7dc2dddd9ab5de443a210d0c1b8e96927588e27235915548c`.
+
+Final documentation-head CI and review remain required. Review is author/agent-
+conducted, not independent maintainer approval. See [sanitized results](cached-scope-runtime-origin-results-20261103.json).
 Two mocked Runtime identities are not two deployed
 Runtimes. Issue89's nonlocal memberships/native-client/restart/ACL/scale gates and
 issue124's composition/migration contracts remain open. No scientific Job, model,
