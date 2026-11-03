@@ -23,6 +23,9 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.junit.jupiter.api.Test;
 
 class ReferenceParentValidationTest {
+  @org.junit.jupiter.api.BeforeAll static void configure() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+  }
   private static ObservationImpl observation(long id, String urn, SemanticType type) {
     var concept = new ConceptImpl(); concept.setUrn(urn); concept.setType(EnumSet.of(type));
     var observable = new ObservableImpl(); observable.setSemantics(concept); observable.setUrn(urn);
@@ -41,6 +44,7 @@ class ReferenceParentValidationTest {
       var twin = mock(DigitalTwin.class); when(scope.getDigitalTwin()).thenReturn(twin);
       when(twin.getKnowledgeGraph()).thenReturn(graph);
       when(graph.getAsset(4416, scope, Observation.class)).thenReturn(existing);
+      when(graph.isObservationCurrent(same(existing),same(scope))).thenReturn(true);
       when(scope.getService(Reasoner.class)).thenReturn(reasoner);
       var receipt = mock(Reasoner.Capabilities.class); when(receipt.getKnowledgeRevision()).thenReturn(7L);
       when(reasoner.capabilities(scope)).thenReturn(receipt);
@@ -52,6 +56,7 @@ class ReferenceParentValidationTest {
     }
     ObservationImpl focus(long id) {
       var focus = observation(id, "earth:Region", SemanticType.SUBJECT);
+      when(graph.isObservationCurrent(same(focus),same(scope))).thenReturn(true);
       when(scope.getContextObservation()).thenReturn(focus); when(scope.getObservation(id)).thenReturn(focus);
       return focus;
     }
