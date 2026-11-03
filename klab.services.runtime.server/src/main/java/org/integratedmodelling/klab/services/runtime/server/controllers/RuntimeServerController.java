@@ -731,10 +731,13 @@ public class RuntimeServerController {
               "Prospective observation is not registered in this transaction");
         return Observation.forTransport(observation);
       }
-      return contextScope
-          .getDigitalTwin()
-          .getKnowledgeGraph()
-          .getAsset(id, contextScope, RuntimeAsset.class);
+      var graph = contextScope.getDigitalTwin().getKnowledgeGraph();
+      var asset = graph.getAsset(id, contextScope, RuntimeAsset.class);
+      // A cached representation is not proof of current lifecycle status or context ownership.
+      return asset instanceof Observation observation
+              && !graph.isObservationCurrent(observation, contextScope)
+          ? null
+          : asset;
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

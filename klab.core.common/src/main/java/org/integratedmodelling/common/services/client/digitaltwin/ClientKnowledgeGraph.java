@@ -628,6 +628,16 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         : observation;
   }
 
+  /** Revalidate lifecycle through the authorized Runtime, never through the local asset cache. */
+  @Override
+  public boolean isObservationCurrent(Observation observation, ContextScope requestScope) {
+    if (observation == null
+        || requestScope == null
+        || scope.getId() == null
+        || !Objects.equals(scope.getId(), requestScope.getId())) return false;
+    return getObservationForAdmission(observation.getId(), requestScope) != null;
+  }
+
   private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {
     if (!isAddressableAssetId(id)) {
       return null;
