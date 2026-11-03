@@ -212,3 +212,111 @@ def test_script_entry_failure_is_unknown_not_acceptance(fixture, monkeypatch, ca
         runpy.run_path(module.__file__, run_name="__main__")
     assert failure.value.code == 3
     assert "UNKNOWN" in capsys.readouterr().out
+
+
+def execution_plan(fixture, monkeypatch):
+    source, destination, contract, files = fixture
+    base = source.parent / "base-contract.json"
+    base.write_text(json.dumps(contract))
+    name = "python.fixture/model.kim"
+    output = files[name].replace(b"model Elevation in m", b"model Elevation of Region in m")
+    variant = {"version": 3, "base_contract_sha256": module._sha(base.read_bytes()),
+               "request_definition": "Elevation of Region in m", "original_acceptance": "PRESERVED_FAILED_NOT_REPLACED",
+               "model": {"path": name, "input_sha256": module._sha(files[name]), "output_sha256": module._sha(output),
+                         "constant_expression": "[100 + 93/4]", "replacements": [
+                             {"old": "model Elevation in m", "new": "model Elevation of Region in m"}]}}
+    plan = source.parent / "execution-contract.json"
+    plan.write_text(json.dumps(variant))
+    monkeypatch.setattr(module, "CONTRACT", base)
+    monkeypatch.setattr(module, "EXECUTION_CONTRACT", plan)
+    return source, destination, contract, files, plan, variant, output
+
+
+def test_execution_contract_is_opt_in_preserves_original_and_prior_v2(fixture, monkeypatch):
+    source, destination, contract, files, _, variant, output = execution_plan(fixture, monkeypatch)
+    previous = destination.with_name("previous-v2")
+    old_receipt = module.prepare(source, previous)
+    receipt = module.prepare_execution(source, destination)
+    assert old_receipt["version"] == 2 and receipt["version"] == 3
+    assert (previous / "python.fixture/model.kim").read_bytes() == files["python.fixture/model.kim"]
+    assert (destination / "python.fixture/model.kim").read_bytes() == output
+    assert module._collect(source, len(files)) == files
+    assert receipt["execution_contract"] == variant
+    assert receipt["oracle"]["expected_decimal"] == contract["oracle"]["expected_decimal"]
+    assert receipt["oracle"]["derived_model"]["constant_expression"] == "[100 + 93/4]"
+    assert receipt["status"] == "PREPARED_NOT_SEMANTICALLY_ADMITTED"
+    assert receipt["semantic_admission"] == "UNKNOWN"
+    assert not receipt["original_acceptance_replaced"]
+    assert receipt["services_started"] == receipt["scientific_jobs"] == 0
+    with pytest.raises(ValueError, match="must be new"):
+        module.prepare_execution(source, destination)
+
+
+@pytest.mark.parametrize("kind", ["base-hash", "base-version", "variant-version", "model-hash"])
+def test_execution_contract_refuses_unpinned_derivation_before_output(fixture, monkeypatch, kind):
+    source, destination, _, _, plan, variant, _ = execution_plan(fixture, monkeypatch)
+    if kind == "base-hash":
+        variant["base_contract_sha256"] = "bad"
+    elif kind == "base-version":
+        body = json.loads(module.CONTRACT.read_text()); body["version"] = 1
+        module.CONTRACT.write_text(json.dumps(body))
+        variant["base_contract_sha256"] = module._sha(module.CONTRACT.read_bytes())
+    elif kind == "variant-version":
+        variant["version"] = 2
+    else:
+        variant["model"]["input_sha256"] = "bad"
+    plan.write_text(json.dumps(variant))
+    with pytest.raises(ValueError):
+        module.prepare_execution(source, destination)
+    assert not destination.exists()
+
+
+@pytest.mark.parametrize("kind", ["changed-expression", "missing-expression", "empty-expression", "derived-preimage", "derived-postimage", "not-derived"])
+def test_derived_model_cannot_relabel_a_changed_numerical_oracle(fixture, kind):
+    source, destination, contract, files = fixture
+    name = "python.fixture/model.kim"
+    output = files[name].replace(b"model Elevation in m", b"model Elevation of Region in m")
+    if kind == "changed-expression":
+        output = output.replace(b"100 + 93/4", b"100 + 20")
+    contract["changes"].append({"path": name, "input_sha256": module._sha(files[name]), "output_sha256": module._sha(output),
+                                "replacements": [{"old": files[name].decode(), "new": output.decode()}]})
+    contract["oracle"]["unchanged_files"] = {}
+    derived = {"path": name, "input_sha256": module._sha(files[name]), "output_sha256": module._sha(output),
+               "constant_expression": "[100 + 93/4]"}
+    if kind == "missing-expression":
+        derived["constant_expression"] = "absent"
+    elif kind == "empty-expression":
+        derived["constant_expression"] = ""
+    elif kind == "derived-preimage":
+        derived["input_sha256"] = "bad"
+    elif kind == "derived-postimage":
+        derived["output_sha256"] = "bad"
+    elif kind == "not-derived":
+        contract["changes"].pop()
+    contract["oracle"]["derived_model"] = derived
+    with pytest.raises(ValueError, match="exact numerical expression"):
+        module._prepare(source, destination, contract)
+    assert not destination.exists()
+    assert module._collect(source, len(files)) == files
+
+
+def test_execution_cli_requires_explicit_flag(fixture, monkeypatch, capsys):
+    source, destination, _, _, _, _, output = execution_plan(fixture, monkeypatch)
+    assert module.main([str(source), str(destination), "--explicit-bearer"]) == 0
+    receipt = json.loads(capsys.readouterr().out)
+    assert receipt["version"] == 3 and not receipt["original_acceptance_replaced"]
+    assert (destination / "python.fixture/model.kim").read_bytes() == output
+
+
+def test_checked_in_execution_contract_is_a_separate_exact_v2_derivation():
+    base = json.loads(module.CONTRACT.read_text())
+    variant = json.loads(module.EXECUTION_CONTRACT.read_text())
+    assert module._sha(module.CONTRACT.read_bytes()) == variant["base_contract_sha256"]
+    assert base["version"] == 2 and variant["version"] == 3
+    assert variant["original_acceptance"] == "PRESERVED_FAILED_NOT_REPLACED"
+    assert base["oracle"]["unchanged_files"][variant["model"]["path"]] == variant["model"]["input_sha256"]
+    assert variant["model"]["constant_expression"] == "[100 + 23.25]"
+    assert len(variant["model"]["replacements"]) == 1
+    edit = variant["model"]["replacements"][0]
+    assert edit["old"].replace("geography:Elevation", "geography:Elevation of (earth:Terrestrial earth:Region)") == edit["new"]
+    assert variant["request_definition"] == "geography:Elevation of (earth:Terrestrial earth:Region) in m"

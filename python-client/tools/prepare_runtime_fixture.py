@@ -10,6 +10,7 @@ import os
 from pathlib import Path, PurePosixPath
 
 CONTRACT = Path(__file__).resolve().parents[1] / "tests/fixtures/runtime_compatibility/contract.json"
+EXECUTION_CONTRACT = CONTRACT.with_name("execution-contract-v3.json")
 RECEIPT = "fixture-compatibility-receipt.json"
 MAX_BYTES = 16 * 1024 * 1024
 
@@ -87,6 +88,15 @@ def _prepare(source, destination, contract):
         _safe_name(name)
         if name in changed or _sha(files[name]) != expected:
             raise ValueError("Numerical oracle/model inputs must remain byte-identical")
+    derived = contract["oracle"].get("derived_model")
+    if derived is not None:
+        name = derived["path"]
+        _safe_name(name)
+        expression = derived["constant_expression"].encode()
+        if (name not in changed or not expression or _sha(original[name]) != derived["input_sha256"]
+                or _sha(files[name]) != derived["output_sha256"]
+                or original[name].count(expression) != 1 or files[name].count(expression) != 1):
+            raise ValueError("Derived synthetic model must retain the exact numerical expression")
     destination.mkdir()
     # Do not delete or roll back partially written outputs on I/O failure.
     for name, body in files.items():
@@ -104,6 +114,9 @@ def _prepare(source, destination, contract):
         "required_backend_core": contract["backend_core_ontology"],
         "source_unchanged": True, "services_started": 0, "scientific_jobs": 0,
         "production_worldview_migration": False, "semantic_admission": "UNKNOWN"}
+    if "execution_contract" in contract:
+        receipt["execution_contract"] = contract["execution_contract"]
+        receipt["original_acceptance_replaced"] = False
     with (destination / RECEIPT).open("x", encoding="utf-8") as stream:
         json.dump(receipt, stream, indent=2)
     return receipt
@@ -114,13 +127,34 @@ def prepare(source, destination):
     return _prepare(source, destination, json.loads(CONTRACT.read_text(encoding="utf-8")))
 
 
+def prepare_execution(source, destination):
+    """Opt in to a new synthetic contract; never overwrite the original or v2 output."""
+    base = CONTRACT.read_bytes()
+    variant = json.loads(EXECUTION_CONTRACT.read_text(encoding="utf-8"))
+    contract = json.loads(base)
+    if (variant["version"] != 3 or contract["version"] != 2
+            or _sha(base) != variant["base_contract_sha256"]):
+        raise ValueError("Execution variant requires the exact pinned v2 base contract")
+    model = variant["model"]
+    expected = contract["oracle"]["unchanged_files"].pop(model["path"])
+    if expected != model["input_sha256"]:
+        raise ValueError("Execution variant model differs from the frozen source")
+    contract["changes"].append({key: model[key] for key in ("path", "input_sha256", "output_sha256", "replacements")})
+    contract["oracle"]["derived_model"] = {key: model[key] for key in ("path", "input_sha256", "output_sha256", "constant_expression")}
+    contract["version"] = variant["version"]
+    contract["execution_contract"] = variant
+    return _prepare(source, destination, contract)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("destination", type=Path)
+    parser.add_argument("--explicit-bearer", action="store_true",
+                        help="Opt in to the separately labelled v3 synthetic execution contract")
     args = parser.parse_args(argv)
     try:
-        receipt = prepare(args.source, args.destination)
+        receipt = (prepare_execution if args.explicit_bearer else prepare)(args.source, args.destination)
     except (OSError, ValueError, KeyError):
         print("UNKNOWN: fixture preparation failed; preserve original and any partial output")
         return 3

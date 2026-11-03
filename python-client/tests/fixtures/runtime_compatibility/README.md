@@ -19,7 +19,7 @@ The native source regressions keep all four original declaration negatives rejec
 the explicit variants using the existing parser/adapter/declaration registry.
 No validator, diagnostic severity, platform code or scientific algorithm is edited.
 
-## Byte-preservation contract
+## Byte-preservation contract (v2, unchanged default)
 
 `contract.json` pins the entire243-file/3,832,217-byte frozen project tree, all
 four edited preimages/postimages, and exactly five replacement spans. The tool
@@ -47,6 +47,68 @@ platform permissions. No credentials are read or issued, no service or Job start
 and no network call is made. The receipt says
 `PREPARED_NOT_SEMANTICALLY_ADMITTED` and `semantic_admission: UNKNOWN` intentionally.
 Exit3 means failure/UNKNOWN; retain the original and any partial output.
+
+## Opt-in explicit-bearer execution variant (v3)
+
+The subsequent native/source-service audit reproduced a separate v2 blocker:
+the original constant Elevation model parses, but authoring and executable source
+validation reject its primary with `MODEL_OUTPUT_UNRESOLVED`. The production
+source-publication and selected-model preparation gates reject it too. A complete
+client request alone cannot conceal that source rejection. These failures remain
+retained in PR120/121; no validator is relaxed and no original model is overwritten.
+
+`execution-contract-v3.json` pins the exact unchanged v2 contract and opts into a
+**new synthetic execution contract**. In a fresh copy only, it changes:
+
+```text
+model geography:Elevation in m set to [100 + 23.25];
+```
+
+to:
+
+```text
+model geography:Elevation of (earth:Terrestrial earth:Region) in m set to [100 + 23.25];
+```
+
+The matching request definition is explicitly recorded in the new contract. This
+is not labelled as passing the original unqualified query or reproducing a study.
+The generated model identity also differs; old Job/model/handle identities must not
+be reused or relabelled. Original/v1/v2 sources, receipts and failures stay intact.
+
+The numerical expression, independent123.25-metre/20-cell reference, manifest and
+other fixture namespaces remain unchanged. The original model's byte hash remains
+the input preimage; the derived model gets its own separate postimage hash, never
+a claim of byte identity. The tool verifies that exact numerical expression in
+both preimage and postimage before writing. There are5 changed files/6 pinned
+replacement spans and238 identical files relative to the frozen original tree.
+The v3 output-tree SHA-256 is
+`0c83bf62d2ae1764e9225a7152f6808b30b9d2a132c9b92106d71c951cea7995`.
+
+V2 remains the default API/CLI behavior. Opt in explicitly:
+
+```text
+python python-client/tools/prepare_runtime_fixture.py FROZEN_PROJECTS NEW_PRIVATE_V3_PROJECTS --explicit-bearer
+```
+
+The same fresh-path/no-links/no-overwrite/source-preservation rules apply. The
+receipt remains `PREPARED_NOT_SEMANTICALLY_ADMITTED` with semantic admission UNKNOWN,
+records the new execution contract and states `original_acceptance_replaced:false`.
+No source is published, no expression evaluated and no services or Jobs launched.
+
+Current v3 software checks:46 focused tests,100% unexcluded preparation-tool line/
+branch coverage,2,087 offline tests,seven coverage gates,lint and wheel/sdist build
+pass. The sdist contains exact v2/v3 contracts, tool and native validator; all32 wheel
+source modules match and development fixtures/tools stay out of the core wheel.
+Native full-inventory declaration/core-identity validation passes26 ontologies,
+two strategies and three namespaces. None is numerical or notification acceptance.
+
+The native in-process source/preparation comparison also accepts the exploratory
+explicit-bearer model without evaluating it;37 related native regression cases pass
+under PR120. Five compiler diagnostics from the separate private OWL subset remain
+preserved. A real-service v3 source/admission preflight must pass before any fresh
+bounded execution. V3 operational admission, numerical readback and automatic-hook
+activity delivery remain unverified at this checkpoint; no merge or reproduction
+claim follows from the preparation/parse passes.
 
 ## Validation boundaries
 
