@@ -101,7 +101,7 @@ uses the separately verified draft117 cleanup, not a deployment or merge.
 
 PR heads b63c3bd13, ac2ab0e88 and69ef3f62e passed the general build, both offline
 diagnostic jobs and Jenkins. Three more self-contained native parser/compiler/source
-admission cases pass locally, bringing this suite to ten. They reproduce rejection
+admission cases passed locally, bringing that revision to ten. They reproduce rejection
 of an incomplete concrete model primary in authoring and executable-with-Region
 modes, with a lexical `MODEL_OUTPUT_UNRESOLVED` diagnostic. A separate in-memory
 explicit-bearer source snapshot passes those same validators while preserving the
@@ -121,8 +121,41 @@ gates: an explicit complete request cannot hide invalid original source; the sep
 explicit-bearer snapshot receives a preparation receipt without expression execution
 or executable hash changes. Together with14 existing ModelValidationGate,12 namespace
 index and1 source-boolean tests,37 cases pass locally with no failures/errors/skips.
-The dedicated CI job includes all37 cases and requires final-head verification. Passing tests
+That revision passed the general build, both diagnostic jobs and Jenkins at eec3803f3.
+The subsequent expanded suite is described below. Passing tests
 are software diagnostics, not scientific or notification acceptance.
+
+## Subsequent v3 execution and generation controls
+
+PR118's separately labelled opt-in explicit-bearer fixture passes actual served
+source admission. It does not replace the original failed request or fixture.
+Bounded run13 retrieved both controlled Job results and verified20 cells at123.25m,
+but failed while persisting nested frozen activity payloads. Its failed status,
+writer source and cleanup evidence remain preserved. A strict private writer fix
+passes28 offline cases without changing scientific request/readback calls.
+
+Fresh bounded run14 passes source admission but the Elevation Job fails before
+that writer is reached. Both submissions are confirmed, not zero despite the old
+outer counter. All cleanup steps and independent14-JVM absence/3,905-input checks
+pass. The native Reasoner failure maps to `AcceptedSemanticRuntime.invoke:406`,
+the guard rejecting an accepted-generation change during `resolving` evaluation.
+The preceding authority-bootstrap failure also occurs in run13 and is not alone
+proof of the differing Job outcomes. The live publication trigger and complete
+cross-service failure chain are unproven.
+
+Three deterministic offline generation controls now pass: stable resolving returns
+once; publishing a replacement during evaluation rejects the old result without
+automatically invoking the next actor; a rejected candidate alone does not change
+the accepted generation or reject a valid old result. The old actor stays leased
+until the in-flight call exits. These tests retain the production guard; they are
+not a fix or reconstruction of the live publication trigger. The13 diagnostics plus
+54 related source/gate/preflight/observer cases (67 total) pass locally with no
+failures/errors/skips. Expanded final-head CI remains required.
+
+A fresh served read-only diagnostic enables the existing lossy candidate trace and
+bounds native resolving to eight calls, with zero sessions, contexts, publications
+or scientific Jobs. It is intended to capture generation/publication transitions,
+not retry run14 or establish numerical/activity acceptance.
 
 ## Gates before any fix or merge
 
