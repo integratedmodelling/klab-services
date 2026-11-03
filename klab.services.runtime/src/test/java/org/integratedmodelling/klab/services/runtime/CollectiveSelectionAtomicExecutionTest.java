@@ -35,9 +35,11 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
   boolean failAge;
   Observation received;
   ComponentRegistry registry;
+  org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles cycles;
+  org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles.Admission admission;
   org.mockito.MockedStatic<SemanticExecutionFootprints> fixtureFootprint;
 
-  @AfterEach public void close() { if (fixtureFootprint != null) fixtureFootprint.close(); }
+  @AfterEach public void close() { if(admission!=null)admission.close(); if(cycles!=null)cycles.close(); if (fixtureFootprint != null) fixtureFootprint.close(); }
 
   public Concept classify(Observable directive, Observation member, ContextScope scope, ServiceCall call) {
     calls.add(call.getUrn());
@@ -54,6 +56,34 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
 
   @BeforeEach void setup() throws Exception {
     q.setup();
+    doReturn("atomic-fixture-runtime").when(q.f.runtime).serviceId();
+    doReturn(mock(org.integratedmodelling.klab.api.configuration.Settings.class)).when(q.f.runtime).settings();
+    var user=mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);
+    when(user.getUsername()).thenReturn("atomic-fixture-user");when(q.f.scope.getUser()).thenReturn(user);
+    when(q.f.scope.withCycleSubscriberCancellation(any())).thenReturn(q.f.scope);
+    when(q.f.scope.withCancellation(any())).thenReturn(q.f.scope);
+    when(q.f.scope.withoutConsequenceSubmissionAdmission()).thenReturn(q.f.scope);
+    org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.transparentCycleOverlay(q.f.scope);
+    when(q.f.scope.withResolutionCycle(any(),any())).thenAnswer(call -> {
+      doReturn(call.getArgument(0)).when(q.f.scope).getResolutionCycle();
+      doReturn(call.getArgument(1)).when(q.f.scope).getResolutionCycleBinding();
+      return q.f.scope;
+    });
+    when(q.f.scope.getServices(Reasoner.class)).thenReturn(List.of(q.reasoner));
+    when(q.reasoner.beginSemanticCycleResult(anyString(),anyString(),anyString(),any())).thenAnswer(call ->
+        new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult(
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult.Status.BOUND,
+            new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding(
+                org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding.VERSION,
+                q.capabilities.getServiceId(),q.capabilities.getSemanticSessionId(),q.capabilities.getKnowledgeRevision(),
+                q.capabilities.getSemanticContentFingerprint(),"fixture-lease-"+call.getArgument(2)),null));
+    when(q.reasoner.bindSemanticCycle(any(),anyString(),anyString(),anyString(),any())).thenReturn(q.reasoner);
+    cycles=new org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles(q.f.runtime,q.f.scope.getId());
+    when(q.f.twin.getResolutionCycles()).thenReturn(cycles);
+    // Admit the root before exposing its causal transaction, as normal submission does.
+    when(q.f.scope.getCurrentTransaction()).thenReturn(null);
+    admission=cycles.admit(q.f.scope,true).join();
+    when(q.f.scope.getCurrentTransaction()).thenReturn(q.f.root);
     q.traits.put(q.qualified.getSemantics().getUrn(), List.of(q.beech, q.mature));
     registry = mock(ComponentRegistry.class);
     doReturn(registry).when(q.f.runtime).getComponentRegistry();
@@ -61,6 +91,8 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
     doNothing().when(q.f.runtime).characterizePending(anyList(), any());
     doReturn(q.f.cohort).when(q.f.runtime).getCohortFor(any(), any(), eq(false));
     when(q.f.graph.dataflow()).thenReturn(RuntimeAsset.DATAFLOW_ASSET);
+    // Compiled collective consumers reuse the fixture's existing cohort.
+    doReturn(q.f.cohort).when(q.f.runtime).getCohortFor(any(),any(),eq(true));
     // The query-only persistence fixture did not allocate identities for compiled Actuators.
     // A real compiled classification plan persists these alongside its observations/activities.
     var ids = new java.util.concurrent.atomic.AtomicLong(2000);
