@@ -985,12 +985,22 @@ class SemanticEnvironmentFactoryTest {
             .getOWLOntologyManager().ontologies().count(),"Locality analysis must not create documents in the accepted catalog manager");
       }
 
-      var witnessRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+      var aliasRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
           "deployment",1,fingerprint,List.of("w:Thing"));
+      var aliasWitness=first.<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness>invoke(
+          "semanticDependencies",new Class<?>[]{org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class,
+              org.integratedmodelling.klab.api.scope.Scope.class},new Object[]{aliasRequest,null});
+      assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN,
+          aliasWitness.status(), "An authored alias is not a canonical proof obligation");
+      org.integratedmodelling.klab.api.knowledge.Concept canonical=first.invoke(
+          "resolveConcept",new Class<?>[]{String.class},new Object[]{"w:Thing"});
+      assertNotNull(canonical);
+      var witnessRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+          "deployment",1,fingerprint,List.of(canonical.getUrn()));
       var witness=first.<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness>invoke(
           "semanticDependencies",new Class<?>[]{org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class,
               org.integratedmodelling.klab.api.scope.Scope.class},new Object[]{witnessRequest,null});
-      assertTrue(witness.completeAt(System.currentTimeMillis()));assertEquals(witnessRequest.inputHash(),witness.inputHash());
+      assertTrue(witness.completeAt(System.currentTimeMillis()), witness.toString());assertEquals(witnessRequest.inputHash(),witness.inputHash());
 
 
       var source=new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();source.setUrn("source");source.setSourceCode("model numeric");
