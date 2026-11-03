@@ -54,6 +54,8 @@ jobs:
         working-directory: python-client
       - name: Source-only agent preview coverage
         run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agents.py
+      - name: Agent status payload coverage
+        run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agent_status.py
         working-directory: python-client
       - name: Synthetic Runtime fixture byte-preservation coverage
         run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module tools/prepare_runtime_fixture.py
