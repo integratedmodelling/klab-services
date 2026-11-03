@@ -257,6 +257,17 @@ public enum Setting {
       "Execute to remove one or more components from the service",
       Map.class,
       Map.of("component", String.class, "result", Boolean.class)),
+  /**
+   * Resources administrator action, invoked with an empty map. Returns a map containing a boolean
+   * {@code result} and per-project ResourceSet lists under {@code projects}. Discards local commits
+   * and uncommitted/untracked files, preserves the selected branch, and never pushes to origin.
+   */
+  RESET_ALL_GIT_PROJECTS(
+      Page.RESOURCES,
+      "Discard local commits and working changes in all managed Git projects and update the current branches from origin",
+      Map.class,
+      Map.of("result", Boolean.class),
+      EnumSet.of(KlabService.Type.RESOURCES)),
   UPDATE_COMPONENT(
       Page.SERVICES,
       "Update an installed component from the highest-priority available source",

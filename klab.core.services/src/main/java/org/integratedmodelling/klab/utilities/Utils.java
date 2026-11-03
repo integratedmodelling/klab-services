@@ -2441,13 +2441,63 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     }
 
     /**
-     * Perform a hard reset, bringing the current repository to the last commit.
+     * Discard local commits and working changes, reset to the current branch on origin, then
+     * fetch/merge again. Fetch and validate the origin branch before discarding local work.
      *
      * @param localRepository
      * @return Modifications record. Empty notifications means all OK. May have no errors but
      *     warnings, no info. Use {@link Notifications#hasErrors(Collection)} on the notifications
      *     element to check.
      */
+    public static Modifications resetToOriginAndFetch(File localRepository, Scope scope) {
+      Modifications ret = new Modifications();
+      ret.setRepositoryName(Files.getFileBaseName(localRepository));
+      try (var repo = openRepository(localRepository);
+          var git = new org.eclipse.jgit.api.Git(repo)) {
+        String branch = repo.getFullBranch();
+        if (branch == null || !branch.startsWith("refs/heads/")) {
+          throw new IOException("Cannot reset a repository with a detached or unborn HEAD");
+        }
+        // Fetch before discarding anything, so an unavailable origin leaves local work intact.
+        fetchOrigin(git, scope, ret);
+        String target = "refs/remotes/origin/" + branch.substring("refs/heads/".length());
+        if (repo.resolve(target + "^{commit}") == null) {
+          throw new IOException("No origin commit for current branch " + branch);
+        }
+        ObjectId oldTree = repo.resolve("HEAD^{tree}");
+        var status = git.status().call();
+        compileResetModifications(status, ret);
+        for (var path : status.getConflicting()) ret.addModifiedPath(path);
+        git.reset().setMode(ResetCommand.ResetType.HARD).setRef(target).call();
+        for (var path : git.clean().setForce(true).setCleanDirectories(true).setIgnore(true).call()) {
+          ret.addRemovedPath(path);
+        }
+        var pulled = fetchAndMerge(localRepository, scope);
+        ret.getNotifications().addAll(pulled.getNotifications());
+        compileDiff(repo, git, oldTree, ret);
+        // A path may be affected by both the reset and the pull. Report its final state once.
+        var paths = new TreeSet<String>();
+        paths.addAll(ret.getAddedPaths());
+        paths.addAll(ret.getModifiedPaths());
+        paths.addAll(ret.getRemovedPaths());
+        for (var path : paths) {
+          if (new File(localRepository, path).exists()) {
+            ret.getRemovedPaths().remove(path);
+            if (ret.getAddedPaths().contains(path)) ret.getModifiedPaths().remove(path);
+            else ret.addModifiedPath(path);
+          } else {
+            ret.getAddedPaths().remove(path);
+            ret.getModifiedPaths().remove(path);
+            ret.addRemovedPath(path);
+          }
+        }
+      } catch (Exception e) {
+        ret.getNotifications().add(Notification.error(e));
+      }
+      return ret;
+    }
+
+    /** Discard uncommitted changes while retaining the current local HEAD. */
     public static Modifications hardReset(File localRepository) {
 
       Modifications ret = new Modifications();

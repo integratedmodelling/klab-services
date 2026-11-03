@@ -21,6 +21,8 @@ import org.integratedmodelling.common.data.SerializingDataBuilder;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -153,6 +155,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             scope, getStartupOptions(), this, this.resourcesKbox, this::resolveRemoteProject);
     this.resourceManager = new ResourceManager(this.resourcesKbox, this);
     this.workflowManager = new WorkflowManager(this.resourcesKbox);
+    ((SettingsImpl) settings())
+        .setExecutionHandler(
+            Setting.RESET_ALL_GIT_PROJECTS,
+            request -> workspaceManager.resetAllGitProjects());
 
     setComponentRegistry();
     workflowManager.setBehaviorBridge(

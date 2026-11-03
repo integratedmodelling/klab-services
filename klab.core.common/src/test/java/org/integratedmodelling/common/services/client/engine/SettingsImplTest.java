@@ -20,6 +20,16 @@ class SettingsImplTest {
   @TempDir Path temporaryDirectory;
 
   @Test
+  void resetAllGitProjectsIsAnActionOnlyForResourcesServices() {
+    var action = Setting.RESET_ALL_GIT_PROJECTS;
+    assertEquals(Map.class, action.valueClass);
+    for (var type : org.integratedmodelling.klab.api.services.KlabService.Type.values()) {
+      assertEquals(type == org.integratedmodelling.klab.api.services.KlabService.Type.RESOURCES,
+          action.appliesTo(type));
+    }
+  }
+
+  @Test
   void persistsEmailConfigurationAndRejectsInvalidSmtpSettings() throws Exception {
     var file = Files.createFile(temporaryDirectory.resolve("email.properties")).toFile();
     var settings = new SettingsImpl(file);
