@@ -30,6 +30,7 @@ class PreparedConfigurationInputChangeTest {
  }
  void run(boolean initial,boolean dependencyFails,boolean resolverRoot) throws Exception {
   var f=new ScientificRootCompletionTest().new Fixture(true);
+  f.nativeGraph.existing.add(f.target.getId());
   var scope=f.nativeGraph.scope;var transaction=scope.getCurrentTransaction();
   var cycles=mock(ResolutionCycles.class);var admission=mock(ResolutionCycles.Admission.class);
   when(f.nativeGraph.twin.getResolutionCycles()).thenReturn(cycles);when(cycles.require(scope)).thenReturn(scope);
