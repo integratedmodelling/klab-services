@@ -1,13 +1,14 @@
-# Bounded live activity notifications (PR #108 — draft)
+# Bounded live activity notifications
 
-The user explicitly selected best-effort notifications, not durable recovery.
-Implementation and 71 mocked source-derived tests exist; **actual acceptance is
-BLOCKED/FAIL. Do not merge or count this roadmap feature complete yet.**
+The selected scope is best-effort notifications, not durable recovery. Bounded
+actual Runtime/numerical/activity acceptance now passes with the explicit synthetic
+v3 fixture and merged generation correction; final integration/package/CI gates
+remain before PR108 merge. This does not replace failed original-query acceptance.
 The original shared-host broker attempt did not satisfy the mandatory context
 isolation test. Those failures remain in [historical facts](results/notifications-controlled-20261102.json).
 The separate per-context virtual-host profile now merged in PR #116 establishes
 that provisioning boundary, not complete Python/Runtime notification acceptance.
-Current receiver integration with that profile is under verification.
+Current receiver integration with that profile passes the bounded checks below.
 
 Install `klab-python-client[events]`. Only synchronous root `Context` objects with
 a known Runtime identity and Qpid Broker-J AMQP 0-9-1 are admitted initially.
@@ -103,7 +104,7 @@ Job cancellation, agent control, ordinary-user privacy or scientific validity is
 claimed. The original [durable recovery audit](events-reconnect-contract.md) stays
 an unfinished roadmap gate.
 
-## Pending acceptance
+## Historical development and transport acceptance
 
 Historical candidate `772e564ec12d00d6499499f51287fa71818678e2` includes the real
 Qpid passive-fanout fix. All 71 focused tests and hosted Python3.11–3.13, core-only,
@@ -144,3 +145,31 @@ and independent queue/process cleanup checks. A Java Message/AMQP publisher fixt
 alone is transport compatibility, not a genuine Runtime activity/Job acceptance.
 TLS policy has software tests; real TLS verification needs its own controlled
 certificate/socket evidence before any deployed TLS acceptance claim.
+
+## Genuine Runtime acceptance and final integration
+
+Fresh bounded run18 uses the actual configured Runtime/ServiceContextScope hooks,
+not injected Activities or a fixture channel. Runtime executable
+`ca9297335d28cfdf76132ecd8f049ac2f3d4adca` includes merged generation-restoration
+PR122;181 integrated tests, enforced100% publisher line/branch coverage,13-module
+verification and current declared dependency closures pass. All2,612 compiled
+classes match packaged JARs. The Python receiver source is the same implementation
+used by this run; integration adds accepted prerequisites, not a new receiver path.
+
+Two explicit controlled Jobs return results; all20 cells independently read back as
+123.25 metres. Twelve activity hints persist with six paired start/finish IDs and
+a successful finish. The wrong-context reader is denied; the second context receives
+no hints. Journal and aggregate JSON agree exactly. No mutation is automatically
+replayed. Two submission receipts take precedence over the old outer zero counter.
+
+Receivers, their queues, contexts, session, context listing, publisher sockets and
+HTTP client all pass cleanup. All14 recorded JVM identities are independently absent;
+3,898 launch hashes,1,154 source hashes and fixture launch hashes remain unchanged.
+No matching owned visible windows remain; unrelated services/windows are untouched.
+See [sanitized genuine Runtime evidence](results/notifications-runtime-20261103.json).
+
+Continuity/upstream overflow remain UNKNOWN; this is not durable replay/resync,
+observation-focus privacy, production TLS deployment or study reproduction. Original
+and v2 source/model/oracle bytes and failed evidence remain preserved. The v3 model
+is an explicitly labelled different synthetic contract, never a passing original
+bare query. Final merged-prerequisite offline/package/CI checks remain required.
