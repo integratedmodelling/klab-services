@@ -2,6 +2,10 @@
 
 ## Current handoffs — 3 November 2026
 
+See the [criterion-by-criterion acceptance map](PYTHON_CLIENT_ACCEPTANCE_MAP.md)
+for all structured phase/release acceptance items, remaining internal work and
+explicit tracking gaps. It is not a declaration of full-roadmap completion.
+
 The assessment below is the historical roadmap, not a completion checklist. Merged
 bounded features do not establish full-roadmap completion or external-only blockers.
 Current agent-ready issue handoffs: [#89 integration/acceptance](../notes/issue-89-agent-handoff.md)
