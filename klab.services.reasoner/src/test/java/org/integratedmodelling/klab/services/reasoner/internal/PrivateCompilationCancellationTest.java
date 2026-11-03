@@ -49,6 +49,10 @@ class PrivateCompilationCancellationTest {
     return new ReasonerService(scope,Files.createDirectories(assets.resolve("knowledge")),assets,CapturedAuthorityCatalog.empty());
   }
   private void minimalOwl(OWL owl) throws Exception {
+    // Construction mocking bypasses OWL's field initializer; retain the real helper lifecycle.
+    var constructor=MonotoneRefinementSupport.class.getDeclaredConstructor(OWL.class);
+    constructor.setAccessible(true);
+    when(owl.monotoneRefinements()).thenReturn(constructor.newInstance(owl));
     when(owl.compilationMetrics()).thenReturn(metrics());
     var inherent=mock(org.integratedmodelling.klab.services.reasoner.owl.Property.class);
     when(inherent.getOWLEntity()).thenReturn(org.semanticweb.owlapi.apibinding.OWLManager.getOWLDataFactory()
