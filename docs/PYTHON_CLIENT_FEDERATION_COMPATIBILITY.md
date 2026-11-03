@@ -1,6 +1,16 @@
 # Python client integration: federation-session compatibility
 
-## Status and scope
+## Current status — 3 November 2026
+
+#90, #128, #131 and #132 are merged. Controlled nonlocal native membership and
+single-Runtime graph-retaining restart/cleanup have passed in both creation orders;
+this is not two-deployment or full rollout acceptance. Issue #89 remains open for
+the explicitly unverified gates. Use the [current reproducible handoff](../notes/issue-89-agent-handoff.md)
+for exact revisions, commands, repaired-defect repros and the newly repeated
+language-SNAPSHOT compilation failure. Do not treat the historical diagnosis below
+as the current implementation or PR state.
+
+## Historical status and scope — 7 October 2026
 
 **Open source-level compatibility concern, identified 7 October 2026.** The
 existing Java default-session contract and the managed-session authorization
