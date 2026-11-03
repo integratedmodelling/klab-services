@@ -17,11 +17,12 @@ jobs:
           java-version: '21'
           cache: maven
       - run: chmod +x mvnw
-      - run: ./mvnw -B -pl klab.core.common -am -Dtest=AgentStatusWireTest,AgentInstantiationRequestSerializationTest,AgentEventBusTest -Dsurefire.failIfNoSpecifiedTests=false test
+      - run: ./mvnw -B -pl klab.core.common -am -Dtest=AgentStatusWireTest,AgentMessagingWireTest,AgentInstantiationRequestSerializationTest,AgentEventBusTest -Dsurefire.failIfNoSpecifiedTests=false test
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: agent-status-wire
           path: |
             klab.core.common/target/agent-status-wire-actual.json
+            klab.core.common/target/agent-messaging-wire-actual.json
             klab.core.common/target/surefire-reports/
