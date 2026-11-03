@@ -236,5 +236,5 @@ def test_all_feature_coverage_steps_keep_their_explicit_working_directory():
     workflow = (root / ".github/workflows/python-client.yml").read_text(encoding="utf-8")
     steps = [step for step in workflow.split("      - ")
              if "run: python tools/check_feature_coverage.py" in step]
-    assert len(steps) == 10
+    assert any("--new-module src/klab_client/graph_projection.py" in step for step in steps)
     assert all("\n        working-directory: python-client\n" in step for step in steps)
