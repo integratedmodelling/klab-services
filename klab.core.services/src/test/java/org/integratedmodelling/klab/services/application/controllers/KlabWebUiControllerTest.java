@@ -73,7 +73,7 @@ class KlabWebUiControllerTest {
         .thenReturn(Optional.of(new ComponentRegistry.WebUiResource(source, "catalog.js")));
 
     var response =
-        new KlabWebUiController(instance)
+        new KlabWebUiController(instance, "<html></html>")
             .componentModule("test.component", "1.0.0", "/catalog.js");
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
