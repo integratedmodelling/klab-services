@@ -599,6 +599,7 @@ public class ScopeManager {
 
       var ret = scopes.get(scopeId);
       if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
+        requireCachedRuntimeOrigin(ret, runtimeId);
         if (!allowsManagedScope(ret, userScope)) {
           throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
               "Scope is not accessible to the requesting user");
@@ -795,6 +796,16 @@ public class ScopeManager {
     return getOrCreateSessionScope(sessionId, authorization, userScope, runtimeId, false);
   }
 
+  /** An explicit Runtime origin cannot select a cached session or context from another host. */
+  private static void requireCachedRuntimeOrigin(ServiceUserScope scope, String runtimeId) {
+    if (runtimeId != null
+        && scope instanceof ServiceSessionScope
+        && (runtimeId.isBlank() || !runtimeId.equals(scope.getHostServiceId()))) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+          "Cached scope does not belong to the requested Runtime");
+    }
+  }
+
   private ServiceSessionScope getOrCreateSessionScope(
       String sessionId,
       EngineAuthorization authorization,
@@ -804,6 +815,7 @@ public class ScopeManager {
 
     var ret = getScope(sessionId, ServiceSessionScope.class);
     if (ret != null) {
+      requireCachedRuntimeOrigin(ret, runtimeId);
       if (!verifiedByHostRuntime && !allowsManagedScope(ret, userScope)) {
         throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
             "Session is not accessible to the requesting user");

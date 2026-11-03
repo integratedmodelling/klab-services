@@ -1,0 +1,41 @@
+name: Cached scope Runtime origin
+
+on:
+  push:
+    paths: ['klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ScopeManager.java', 'klab.core.services/src/test/java/org/integratedmodelling/klab/services/scopes/**', '.github/workflows/cached-scope-runtime-origin.yml']
+  pull_request:
+    paths: ['klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ScopeManager.java', 'klab.core.services/src/test/java/org/integratedmodelling/klab/services/scopes/**', '.github/workflows/cached-scope-runtime-origin.yml']
+
+jobs:
+  cached-origin-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: chmod +x mvnw
+      - name: Scope origin, request authority, ACL and context lifecycle regressions
+        run: ./mvnw -B -pl klab.core.services -am -Dtest=CachedScopeRuntimeOriginTest,ScopeManagerTest,ServiceSessionScopeTest,ManagedScopeAccessTest,UserScopeAdvertisementTest,CollectiveSelectionScopeLookupTest,ContextActivityHintScopeTest -Dsurefire.failIfNoSpecifiedTests=false -Djacoco.append=false org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent test org.jacoco:jacoco-maven-plugin:0.8.12:report
+      - name: Require all changed executable lines, branches and new helper counters
+        shell: python
+        run: |
+          import re, subprocess, xml.etree.ElementTree as ET
+          path = 'klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ScopeManager.java'
+          diff = subprocess.check_output(['git', 'diff', '--unified=0', '19668515a7307aec4b1e671207f5b2d595572a14', 'HEAD', '--', path], text=True)
+          changed = set()
+          for start, count in re.findall(r'^@@ .*? \+(\d+)(?:,(\d+))? @@', diff, re.M):
+              changed.update(range(int(start), int(start) + int(count or 1)))
+          root = ET.parse('klab.core.services/target/site/jacoco/jacoco.xml').getroot()
+          package = next(p for p in root.findall('package') if p.get('name') == 'org/integratedmodelling/klab/services/scopes')
+          source = next(p for p in package.findall('sourcefile') if p.get('name') == 'ScopeManager.java')
+          lines = [row for row in source.findall('line') if int(row.get('nr')) in changed]
+          assert lines and all(int(row.get('ci')) > 0 and int(row.get('mb')) == 0 for row in lines)
+          cls = next(c for c in package.findall('class') if c.get('name').endswith('/ScopeManager'))
+          helper = next(m for m in cls.findall('method') if m.get('name') == 'requireCachedRuntimeOrigin')
+          assert all(int(counter.get('missed')) == 0 for counter in helper.findall('counter'))
+          print('All changed lines/branches and new helper counters covered, without exclusions')
