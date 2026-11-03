@@ -933,6 +933,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     private final Queue<Throwable> failures;
     private final Graph<RuntimeAsset, RelationshipEdge> graph;
     private final Map<Observation, Executor> contextualizers;
+    private final Map<Observation, Actuator> inputPlans;
     private TransactionImpl parent; // null in the root activity
     private org.integratedmodelling.klab.api.data.TemporalWriteSet temporalWrites;
     private final List<
@@ -1603,6 +1604,23 @@ public class DigitalTwinImpl implements DigitalTwin {
       return contextualizers.get(observation);
     }
 
+    @Override
+    public Actuator getInputPlan(Observation observation) {
+      synchronized (graph) {
+        if (rootAttempt().attemptState == AttemptState.FAILED) return null;
+        var executor = getExecutor(observation);
+        return executor == null ? inputPlans.get(observation) : executor.getActuator();
+      }
+    }
+
+    /** Retain compiled bindings for INIT validation without inventing executable work. */
+    public void registerInputPlan(Observation observation, Actuator plan) {
+      synchronized (graph) {
+        requireOpen();
+        inputPlans.put(observation, plan);
+      }
+    }
+
     /** Claim a single semantic writer in this transaction and the committed graph. */
     /**
      * Exact portable collective-input association; existing consumers retain their normal plan and
@@ -1636,6 +1654,10 @@ public class DigitalTwinImpl implements DigitalTwin {
               org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY,
               reductionJson);
         graph.addEdge(cohort, consumer, edge);
+        if (producer != null)
+          edge.properties.put(
+              org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.COLLECTIVE_SOURCE_OBSERVATION,
+              producer.getId());
         if (producer != null)
           beforeCommitActions.add(
               () -> {
@@ -1783,6 +1805,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         schedulerJournal.clear();
         journalFactories.clear();
         contextualizers.clear();
+        inputPlans.clear();
       }
     }
 
@@ -1912,6 +1935,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.added = new HashSet<>();
       this.failures = new ConcurrentLinkedQueue<>();
       this.contextualizers = new ConcurrentHashMap<>();
+      this.inputPlans = new ConcurrentHashMap<>();
       this.cohortGeometries = new HashMap<>();
       boolean activityLinked = false;
 
@@ -1989,6 +2013,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.failures = parent.failures;
       this.cohortGeometries = parent.cohortGeometries;
       this.contextualizers = parent.contextualizers;
+      this.inputPlans = parent.inputPlans;
       this.beforeCommitActions = parent.beforeCommitActions;
       this.consequenceCommitAdmissions = parent.consequenceCommitAdmissions;
       this.consequenceReadGuards = parent.consequenceReadGuards;

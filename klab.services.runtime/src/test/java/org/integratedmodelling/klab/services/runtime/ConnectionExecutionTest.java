@@ -137,6 +137,9 @@ class ConnectionExecutionTest {
     when(scope.getDigitalTwin()).thenReturn(twin);
     var parent = mock(DigitalTwin.Transaction.class);
     var child = mock(DigitalTwin.Transaction.class);
+    var graph = mock(org.integratedmodelling.klab.api.data.KnowledgeGraph.class);
+    when(twin.getKnowledgeGraph()).thenReturn(graph);
+    when(graph.isObservationCurrent(any(), eq(scope))).thenReturn(true);
     when(scope.getCurrentTransaction()).thenReturn(child);
     when(child.getParent()).thenReturn(parent);
     var transactionView = point.copyForAttribution(point.getObservable());
@@ -169,6 +172,9 @@ class ConnectionExecutionTest {
         org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET);
     var child = parent.getChild(Activity.of(Activity.Type.CLASSIFICATION), scope);
     when(scope.getCurrentTransaction()).thenReturn(child);
+    var graph = mock(org.integratedmodelling.klab.api.data.KnowledgeGraph.class);
+    when(twin.getKnowledgeGraph()).thenReturn(graph);
+    when(graph.isObservationCurrent(any(), eq(scope))).thenReturn(true);
     var cohort = mock(org.integratedmodelling.klab.api.knowledge.Cohort.class);
     when(cohort.getId()).thenReturn(-100L);
     parent.link(cohort, inside, GraphModel.Relationship.HAS_MEMBER);

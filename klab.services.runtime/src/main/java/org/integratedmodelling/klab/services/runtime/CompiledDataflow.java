@@ -2184,9 +2184,14 @@ public class CompiledDataflow {
       }
       if ((actuator.getExecutionRole() == Actuator.ExecutionRole.INITIALIZATION
               || actuator.getExecutionRole() == Actuator.ExecutionRole.EVENT)
-          && (!actuator.getComputation().isEmpty() || collectiveReduction(actuator) != null)
+          && (!actuator.getComputation().isEmpty()
+              || collectiveReduction(actuator) != null
+              || !actuator.getChildren().isEmpty())
           && snapshotSupported(actuator)) {
         var observation = actuatorObservations.get(actuator);
+        // INIT runs before durable IDs and portable snapshots exist. Dependency-only explainers
+        // still need their exact compiled inputs, even though they have no executable operation.
+        transaction.registerInputPlan(observation, actuator);
         var previous = observation.getMetadata().get(Scheduler.PLAN_METADATA_KEY);
         transaction.update(observation);
         transaction.afterRollback(

@@ -12,7 +12,11 @@ public class ProspectiveFocusTransportTest {
   var runtime=mock(RuntimeService.class);when(runtime.serviceId()).thenReturn("runtime");var runtimeRoot=root(runtime,user);
   var tx=mock(DigitalTwin.Transaction.class,withSettings().extraInterfaces(org.integratedmodelling.klab.runtime.lifecycle.CycleScopedTransaction.class));when(tx.getId()).thenReturn("owned-transaction");when(tx.assets()).thenReturn(List.of());runtimeRoot.registerTransaction(tx);
   long allocated=runtimeRoot.getNextObservationId();assertTrue(allocated<Observation.UNASSIGNED_ID);var prospective=observation(allocated);prospective.setGeometry(new org.integratedmodelling.klab.runtime.scale.ScaleImpl(org.integratedmodelling.klab.api.geometry.Geometry.UNIVERSAL));runtimeRoot.withTransaction(tx).registerProvisionalObservation(prospective);
-  assertSame(prospective,runtimeRoot.withTransaction(tx).getObservation(allocated));assertNull(runtimeRoot.getObservation(allocated));
+  var runtimeGraph=mock(org.integratedmodelling.klab.api.data.KnowledgeGraph.class);
+  var runtimeTwin=mock(DigitalTwin.class);when(runtimeTwin.getKnowledgeGraph()).thenReturn(runtimeGraph);
+  var runtimeTwinField=ServiceContextScope.class.getDeclaredField("digitalTwin");runtimeTwinField.setAccessible(true);runtimeTwinField.set(runtimeRoot,runtimeTwin);
+  assertNull(runtimeRoot.withTransaction(tx).getObservation(allocated),"Planning ownership is not operative lifecycle status");
+  assertSame(prospective,runtimeRoot.withTransaction(tx).getObservationForAdmission(allocated));assertNull(runtimeRoot.getObservationForAdmission(allocated));
   assertNull(runtimeRoot.withTransaction(tx).getObservation(Observation.UNASSIGNED_ID));assertEquals(0,Observation.QUERY_ID); // QUERY is not an owned transient ID (<-1).
   var cycle=new ResolutionCycleBinding(1,"cycle","context","runtime",true,new SemanticCycleBinding(SemanticCycleBinding.VERSION,"reasoner","session",1,"fingerprint","lease"));
   var owned=runtimeRoot.withResolutionCycleBinding(cycle);when(((org.integratedmodelling.klab.runtime.lifecycle.CycleScopedTransaction)tx).executionScope()).thenReturn(owned);
@@ -22,11 +26,11 @@ public class ProspectiveFocusTransportTest {
   var remote=mock(RuntimeClient.class);var remoteGraph=new org.integratedmodelling.common.services.client.digitaltwin.ClientKnowledgeGraph(receivingRoot,remote);var remoteTwin=mock(DigitalTwin.class);when(remoteTwin.getKnowledgeGraph()).thenReturn(remoteGraph);
   var twinField=ServiceContextScope.class.getDeclaredField("digitalTwin");twinField.setAccessible(true);twinField.set(receivingRoot,remoteTwin);
   var controller=new org.integratedmodelling.klab.services.runtime.server.controllers.RuntimeServerController();
-  when(remote.getAsset(anyLong(),eq(org.integratedmodelling.klab.api.data.RuntimeAsset.class),any(Scope.class))).thenAnswer(call->{
-   ContextScope lookup=call.getArgument(2);assertNull(lookup.getContextObservation(),"Lookup must not recursively carry the prospective focus header");
+  when(remote.getObservationForAdmission(anyLong(),any(ContextScope.class))).thenAnswer(call->{
+   ContextScope lookup=call.getArgument(1);assertNull(lookup.getContextObservation(),"Lookup must not recursively carry the prospective focus header");
    var local=owned.withResolutionCycleBinding(lookup.getResolutionCycleBinding()).withTransaction(runtimeRoot.getTransaction(lookup.getTransactionId()));
    var authorization=new org.integratedmodelling.klab.services.application.security.EngineAuthorization("hub","alice","credential",Map.of(),List.of(),List.of());authorization.setScope(local);authorization.setAuthenticated(true);
-   return controller.retrieveAsset(call.getArgument(0),authorization);
+   return controller.retrieveObservationForAdmission(call.getArgument(0),authorization);
   });
   var failure=new AtomicReference<Throwable>();var restored=new AtomicReference<ContextScope>();var headers=new AtomicReference<Map<String,String>>();var mapper=JacksonConfiguration.newObjectMapper();
   var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);server.createContext(ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE,exchange->{
@@ -41,30 +45,39 @@ public class ProspectiveFocusTransportTest {
   try(var http=Utils.Http.getClient("http://127.0.0.1:"+server.getAddress().getPort(),null)) {
    var request=new SemanticCycleRequest("runtime","context","cycle",cycle.semanticBinding());var pinned=SemanticCycleFacade.create(mock(Reasoner.class),request,outbound,(invocation,scope)->http.withScope(scope).postRequired(ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE,invocation,SemanticCycleResult.class));
    pinned.capabilities(outbound);assertNull(failure.get(),()->String.valueOf(failure.get()));assertEquals(Long.toString(allocated),headers.get().get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER));assertEquals(tx.getId(),headers.get().get(ServicesAPI.TRANSACTION_ID_HEADER));
-   System.out.println("FOCUS origin="+allocated+" header="+headers.get().get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)+" runtimeOwned="+runtimeRoot.withTransaction(tx).getObservation(allocated).getId()+" reasonerRestored="+(restored.get().getContextObservation()==null?"null":restored.get().getContextObservation().getId()));
+   System.out.println("FOCUS origin="+allocated+" header="+headers.get().get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER)+" runtimeOwned="+runtimeRoot.withTransaction(tx).getObservationForAdmission(allocated).getId()+" reasonerRestored="+(restored.get().getContextObservation()==null?"null":restored.get().getContextObservation().getId()));
    assertEquals(allocated,restored.get().getContextObservation()==null?null:restored.get().getContextObservation().getId());
    assertEquals(cycle,restored.get().getResolutionCycleBinding());assertEquals(tx.getId(),restored.get().getTransactionId());
-   assertSame(prospective,owned.withTransaction(tx).getObservation(allocated),"Canonical owned planning object remains unchanged");
+   assertSame(prospective,owned.withTransaction(tx).getObservationForAdmission(allocated),"Canonical owned planning object remains unchanged");
+   assertNull(owned.withTransaction(tx).getObservation(allocated),"Admission must not make the candidate operative");
+   assertTrue(tx.assets().isEmpty(),"Admission must not stage the candidate for commit");
+   var runtimeManager=new ScopeManager(runtime);
+   try {
+    var focused=runtimeManager.contextualizeScope(owned,ContextScope.parseScopeId("context"),Map.of(ServicesAPI.TRANSACTION_ID_HEADER,tx.getId(),ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,Long.toString(allocated)));
+    assertSame(prospective,focused.getContextObservation(),"Runtime must restore the same owned planning focus");
+   } finally {runtimeManager.shutdown();}
    assertNotSame(prospective,restored.get().getContextObservation(),"Remote focus is a detached portable observation");
    for(long invalid:List.of(Observation.UNASSIGNED_ID,Observation.QUERY_ID))assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->manager.contextualizeScope(receivingRoot,ContextScope.parseScopeId("context"),Map.of(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,Long.toString(invalid))));
    assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->manager.contextualizeScope(receivingRoot,ContextScope.parseScopeId("context"),Map.of(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,Long.toString(allocated))));
-   verify(remote,times(1)).getAsset(eq(allocated),eq(org.integratedmodelling.klab.api.data.RuntimeAsset.class),any(Scope.class));
+   verify(remote,times(1)).getObservationForAdmission(eq(allocated),any(ContextScope.class));
    java.util.function.Function<ServiceContextScope,org.integratedmodelling.klab.services.application.security.EngineAuthorization> authorize=value->{var auth=new org.integratedmodelling.klab.services.application.security.EngineAuthorization("hub","alice","credential",Map.of(),List.of(),List.of());auth.setScope(value);auth.setAuthenticated(true);return auth;};
    var local=owned.withTransaction(tx);
-   var unauthenticated=authorize.apply(local);unauthenticated.setAuthenticated(false);assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveAsset(allocated,unauthenticated));
-   var wrongPrincipal=new org.integratedmodelling.klab.services.application.security.EngineAuthorization("hub","bob","credential",Map.of(),List.of(),List.of());wrongPrincipal.setScope(local);wrongPrincipal.setAuthenticated(true);assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveAsset(allocated,wrongPrincipal));
-   var portable=(Observation)controller.retrieveAsset(allocated,authorize.apply(local));assertEquals(allocated,portable.getId());assertFalse(portable.getGeometry() instanceof org.integratedmodelling.klab.api.knowledge.observation.scale.Scale);
-   assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveAsset(allocated,authorize.apply(owned)));
-   assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveAsset(allocated-100,authorize.apply(local)));
+   assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,
+       ()->controller.retrieveAsset(allocated,authorize.apply(local)),"Ordinary asset reads must not certify a planning candidate as current");
+   var unauthenticated=authorize.apply(local);unauthenticated.setAuthenticated(false);assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveObservationForAdmission(allocated,unauthenticated));
+   var wrongPrincipal=new org.integratedmodelling.klab.services.application.security.EngineAuthorization("hub","bob","credential",Map.of(),List.of(),List.of());wrongPrincipal.setScope(local);wrongPrincipal.setAuthenticated(true);assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveObservationForAdmission(allocated,wrongPrincipal));
+   var portable=(Observation)controller.retrieveObservationForAdmission(allocated,authorize.apply(local));assertEquals(allocated,portable.getId());assertFalse(portable.getGeometry() instanceof org.integratedmodelling.klab.api.knowledge.observation.scale.Scale);
+   assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveObservationForAdmission(allocated,authorize.apply(owned)));
+   assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveObservationForAdmission(allocated-100,authorize.apply(local)));
    var foreignUser=spy(local);var bob=mock(UserIdentity.class);when(bob.getUsername()).thenReturn("bob");doReturn(bob).when(foreignUser).getUser();
    var foreignContext=spy(local);doReturn("other-context").when(foreignContext).getId();
    var foreignObserver=spy(local);doReturn(11L).when(foreignObserver).getObserverId();
    var foreignCycle=local.withResolutionCycleBinding(new ResolutionCycleBinding(1,"other-cycle","context","runtime",true,cycle.semanticBinding()));
-   for(var bad:List.of(foreignUser,foreignContext,foreignObserver,foreignCycle))assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveAsset(allocated,authorize.apply(bad)));
+   for(var bad:List.of(foreignUser,foreignContext,foreignObserver,foreignCycle))assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveObservationForAdmission(allocated,authorize.apply(bad)));
    var other=mock(DigitalTwin.Transaction.class,withSettings().extraInterfaces(org.integratedmodelling.klab.runtime.lifecycle.CycleScopedTransaction.class));when(other.getId()).thenReturn("other-transaction");when(other.assets()).thenReturn(List.of());when(((org.integratedmodelling.klab.runtime.lifecycle.CycleScopedTransaction)other).executionScope()).thenReturn(owned);runtimeRoot.registerTransaction(other);
-   assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveAsset(allocated,authorize.apply(owned.withTransaction(other))));
-   when(tx.isFailed()).thenReturn(true);assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveAsset(allocated,authorize.apply(local)));when(tx.isFailed()).thenReturn(false);
-   runtimeRoot.unregisterTransaction(tx);assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveAsset(allocated,authorize.apply(local)));
+   assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveObservationForAdmission(allocated,authorize.apply(owned.withTransaction(other))));
+   when(tx.isFailed()).thenReturn(true);assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveObservationForAdmission(allocated,authorize.apply(local)));when(tx.isFailed()).thenReturn(false);
+   runtimeRoot.unregisterTransaction(tx);assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,()->controller.retrieveObservationForAdmission(allocated,authorize.apply(local)));
    System.out.println("PASS owned transient portable-focus transport; missing/wrong/failed/closedTX, unownedID, foreignuser/context/cycle/observer andsentinels rejected");
   }finally{server.stop(0);manager.shutdown();}
  }

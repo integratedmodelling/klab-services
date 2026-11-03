@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -312,6 +313,12 @@ public interface DigitalTwin extends RuntimeAsset {
     /** Transaction-local executor, including parent/child activities. */
     default Executor getExecutor(Observation observation) {
       return null;
+    }
+
+    /** Actual input bindings, including dependency-only consumers that have no executor. */
+    default Actuator getInputPlan(Observation observation) {
+      var executor = getExecutor(observation);
+      return executor == null ? null : executor.getActuator();
     }
 
     /** Run after asset IDs are assigned, before updates and the atomic graph commit. */
