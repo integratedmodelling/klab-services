@@ -97,8 +97,8 @@ class ModelResolutionAdmissionGenerationTest {
     }
   }
 
-  @Test void restoringTheAcceptedSelectionAfterRejectionCurrentlyPublishesAnotherGeneration() throws Exception {
-    // Characterization, not desired-behavior acceptance: reconstruct only the observed A/B/A keys.
+  @Test void restoringTheExactAcceptedSelectionAfterRejectionRetainsItsGeneration() throws Exception {
+    // PR120 preserved the old republication behavior; the lifecycle correction now retains A.
     var first = mock(SemanticEnvironment.class); var restored = mock(SemanticEnvironment.class);
     var current = new AtomicReference<>(first);
     var factory = AcceptedSemanticObserverScopeTest.factory(current);
@@ -128,10 +128,11 @@ class ModelResolutionAdmissionGenerationTest {
       assertEquals(sources, runtime.status().acceptedSources());
       current.set(restored);
       runtime.submit(acceptedSource, owner); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
-      assertEquals(accepted + 1, runtime.status().acceptedGeneration(),
-          "Current behavior republishes A after rejected B even though A was never retired by B");
+      assertEquals(accepted, runtime.status().acceptedGeneration(),
+          "Exact accepted A must survive rejected B without republication or replay");
       assertEquals(sources, runtime.status().acceptedSources());
-      assertEquals(3, builds.get());
+      assertEquals(2, builds.get());
+      verify(restored, never()).close();
     }
   }
 }
