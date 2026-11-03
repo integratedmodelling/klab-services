@@ -102,6 +102,6 @@ def test_each_feature_coverage_step_declares_its_checkout_working_directory():
     workflow = (ROOT / ".github/workflows/python-client.yml").read_text(encoding="utf-8")
     steps = workflow.split("      - ")
     coverage_steps = [step for step in steps if "run: python tools/check_feature_coverage.py" in step]
-    assert len(coverage_steps) == 10
+    assert len(coverage_steps) == 11
     for step in coverage_steps:
         assert "\n        working-directory: python-client\n" in step

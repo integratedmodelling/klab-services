@@ -25,6 +25,7 @@ from klab_client.graph import GraphBrowser, GraphPage
 from klab_client.authoring import Authoring, AuthoringReceipt, ParsedSource
 from klab_client.agents import AgentPreviews, AgentSourcePreview
 from klab_client.agent_status import AgentStatusSnapshot, decode_agent_status
+from klab_client.agent_control import AgentControlBinding, AgentControlJournal, AgentControlView
 from klab_client.async_client import AsyncClient, AsyncContext, AsyncSession, AsyncJob
 from klab_client.transport import Endpoint
 from klab_client.connection import Connection, SelectionPolicy, connect
@@ -56,6 +57,7 @@ __all__ = [
     "Authoring", "AuthoringReceipt", "ParsedSource",
     "AgentPreviews", "AgentSourcePreview",
     "AgentStatusSnapshot", "decode_agent_status",
+    "AgentControlBinding", "AgentControlJournal", "AgentControlView",
     "GraphBrowser", "GraphPage",
     "ScientificDataOrigin", "to_dataframe",
     "AsyncClient", "AsyncContext", "AsyncSession", "AsyncJob",
