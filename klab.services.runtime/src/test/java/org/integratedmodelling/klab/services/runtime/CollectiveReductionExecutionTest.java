@@ -68,6 +68,7 @@ class CollectiveReductionExecutionTest {
     var member=new ObservationImpl();member.setId(id);member.setUrn("member:"+id);
     var observable=new ObservableImpl();observable.setSemantics(base);observable.setUrn(base.getUrn());
     member.setObservable(observable);member.setGeometry(f.producer.getGeometry());
+    f.existing.add(id);
     f.root.link(f.cohort,member,GraphModel.Relationship.HAS_MEMBER);
     var creator=Activity.of(Activity.Type.INSTANTIATION);
     org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(creator,null);
