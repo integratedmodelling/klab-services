@@ -148,12 +148,21 @@ class CollectiveSelectionContinuationTest {
   @Test void currentnessRetainsOwnedAttributedBirthButRejectsTransportedCopies() throws Exception {
     attributeAge();
     var view=q.f.root.readObservation(selectedMember);
+    var linked=q.f.root.outgoing(q.f.cohort).stream()
+        .map(link->link.target()).filter(Observation.class::isInstance)
+        .map(Observation.class::cast).filter(member->member.getId()==selectedMember.getId())
+        .findFirst().orElseThrow();
+    assertNotSame(selectedMember,linked);
+    assertEquals(java.util.Optional.of(true),q.f.root.currentStatusFor(linked));
+    assertTrue(q.f.root.currentStatusFor(Observation.forTransport(linked)).isEmpty());
     assertEquals(java.util.Optional.of(true),q.f.root.currentStatusFor(view));
     assertTrue(q.f.root.currentStatusFor(Observation.forTransport(view)).isEmpty());
     var foreign=new CollectiveCompletionQueryTest();foreign.setup();
     assertTrue(foreign.root.currentStatusFor(view).isEmpty());
+    assertTrue(foreign.root.currentStatusFor(linked).isEmpty());
     q.f.root.fail(new IllegalStateException("rollback"));
     assertEquals(java.util.Optional.of(false),q.f.root.currentStatusFor(view));
+    assertEquals(java.util.Optional.of(false),q.f.root.currentStatusFor(linked));
   }
 
   @Test void liveSelectedInputCannotSilentlyAcceptNewMembersDuringItsConsumingAttempt() {
