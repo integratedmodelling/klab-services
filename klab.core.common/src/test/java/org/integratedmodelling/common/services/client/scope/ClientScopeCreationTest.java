@@ -145,8 +145,8 @@ class ClientScopeCreationTest {
   @Test void reconnectRegistersOnePeerAndSubsequentConnectionsDoNotRepeatHttp() throws Exception {
     var user = user();
     var runtime = runtime("reconnect-runtime");
-    var session = new ClientSessionScope(user, "test", runtime).withId("scope-test");
-    doReturn(session).when(user).getUserSession(runtime);
+    doThrow(new AssertionError("Reconnection must not create a default session"))
+        .when(user).getUserSession(runtime);
     doCallRealMethod().when(runtime).connectContext(any(), any());
     var descriptor = DigitalTwin.Configuration.builder().id("scope-test.reconnected")
         .name("reconnected").persistence(Persistence.EXPLICIT_ACTION)
@@ -176,7 +176,10 @@ class ClientScopeCreationTest {
       assertEquals(1, requests.get());
       assertEquals(descriptor.getId(), context.getConfiguration().getId());
     } finally {
-      if (context != null) context.closePeer();
+      if (context != null) {
+        var parent = (ClientSessionScope) context.getParentScope();
+        context.closePeer(); parent.closePeer();
+      }
       server.stop(0);
     }
   }

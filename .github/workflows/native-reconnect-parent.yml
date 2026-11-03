@@ -1,0 +1,35 @@
+name: Native reconnect parent
+on:
+  push:
+    paths: ['klab.core.common/src/main/java/org/integratedmodelling/common/services/client/RuntimeClient.java', 'klab.core.common/src/test/java/org/integratedmodelling/common/services/client/scope/**', '.github/workflows/native-reconnect-parent.yml']
+  pull_request:
+    paths: ['klab.core.common/src/main/java/org/integratedmodelling/common/services/client/RuntimeClient.java', 'klab.core.common/src/test/java/org/integratedmodelling/common/services/client/scope/**', '.github/workflows/native-reconnect-parent.yml']
+jobs:
+  reconnect-parent-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: chmod +x mvnw
+      - run: ./mvnw -B -pl klab.core.common -am -Dtest=NativeReconnectParentTest,ClientScopeCreationTest,ClientScopeShutdownTest,RuntimeObserverSettingsTest,ScopeAdvertisementsTest,FederatedIdentityTransportTest,RelationshipScopeTransportTest -Dsurefire.failIfNoSpecifiedTests=false -Djacoco.append=false org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent test org.jacoco:jacoco-maven-plugin:0.8.12:report
+      - name: All changed executable lines and branches without exclusions
+        shell: python
+        run: |
+          import re, subprocess, xml.etree.ElementTree as ET
+          path = 'klab.core.common/src/main/java/org/integratedmodelling/common/services/client/RuntimeClient.java'
+          diff = subprocess.check_output(['git', 'diff', '--unified=0', '94447b8d8ce8328754c78c0875d2aed6ce495b4e', 'HEAD', '--', path], text=True)
+          changed = set()
+          for start, count in re.findall(r'^@@ .*? \+(\d+)(?:,(\d+))? @@', diff, re.M):
+              changed.update(range(int(start), int(start) + int(count or 1)))
+          root = ET.parse('klab.core.common/target/site/jacoco/jacoco.xml').getroot()
+          package = next(p for p in root.findall('package') if p.get('name') == 'org/integratedmodelling/common/services/client')
+          source = next(p for p in package.findall('sourcefile') if p.get('name') == 'RuntimeClient.java')
+          lines = [line for line in source.findall('line') if int(line.get('nr')) in changed]
+          assert lines and all(int(line.get('ci')) > 0 and int(line.get('mb')) == 0 for line in lines)
+          print('All changed lines and branches covered without exclusions')
