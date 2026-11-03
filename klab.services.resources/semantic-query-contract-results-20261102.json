@@ -150,7 +150,31 @@
     "mutation_journal_sha256": "f9f10724fd31366b7117a4f0f3d79de18be975be73cc2a5666092ddbfeaa4129"
   },
   "fixture_source_compatibility_failure_reproduced_on_full_service": true,
-  "next_evidence_gate": "OPT_IN_VERSIONED_FIXTURE_MIGRATION_AND_ADMISSION_PREFLIGHT_BEFORE_EXECUTION",
+  "read_only_generation_probe_15": {
+    "status": "DIAGNOSTIC_CAPTURED_NOT_JOB_OR_NOTIFICATION_ACCEPTANCE",
+    "native_resolving_calls": 8,
+    "failed_calls": 1,
+    "successful_later_calls": 7,
+    "accepted_revision_transition": [1, 2],
+    "semantic_content_fingerprint_unchanged": true,
+    "server_guard_frame": "AcceptedSemanticRuntime.invoke:406",
+    "preflight_key_sequence": "A/B/A",
+    "only_changed_preflight_field": "FIELD_SELECTION",
+    "candidate_outcomes": ["VALID", "FAILED", "VALID"],
+    "accepted_revisions_after_candidates": [1, 1, 2],
+    "final_authority_bootstrap_exact_success_cache_hit": true,
+    "provider_selection_unavailability_cause_proven": false,
+    "sessions_contexts_scientific_jobs": 0,
+    "cleanup": "PASS",
+    "recorded_jvm_identities_independently_absent": 14,
+    "backend_hashes_unchanged": 3905,
+    "fixture_launch_hashes_unchanged": true,
+    "deduplicated_trace_records": 374,
+    "trace_is_lossless": false,
+    "detailed_result_sha256": "61a7503f15e4f453af08d6b6af8ad4072bfd1efb7100067a5439774a2e84c52e",
+    "reasoner_log_sha256": "9c90edbb3b6d2d6302fd171e3beb1d054e12eac4e5d09b9568e10b4812f82857"
+  },
+  "next_evidence_gate": "OFFLINE_ACCEPTED_SELECTION_RESTORATION_AND_PUBLICATION_PROVENANCE_DIAGNOSIS",
   "semantic_query_changes_authorized_by_this_review": false,
   "publication_authorized": false
 }

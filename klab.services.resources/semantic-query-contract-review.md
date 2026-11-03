@@ -253,6 +253,70 @@ must pass before a fresh bounded execution. No shared worldview, scientific algo
 or admission guard is changed. This is continuing technical work within the existing
 scope, not an established external or routine-authorization blocker.
 
+## V3 operational follow-through and generation evidence
+
+The separately labelled opt-in v3 synthetic contract in PR118 now passes actual
+served source admission. Its copied model explicitly supplies the existing
+Terrestrial Region bearer while preserving the exact numerical expression and
+independent20-cell123.25m reference. The original/v2 source and failed acceptance
+remain unchanged; this is not successful execution of the original bare query.
+
+Read-only preflight12 retrieved the exact new source with an admission receipt.
+Both authoring/executable checks were source-complete without notifications; the
+namespace-wide opaque-expression footprint remained incomplete, not an execution
+certificate. Zero sessions/contexts/Jobs were created. All14 JVM identities and
+3,905 backend hashes were independently verified after cleanup.
+
+Bounded run13 retrieved both controlled Job results and verified20 cells at123.25m,
+but retained FAIL because activity-evidence output could not serialize a nested
+frozen payload. Its writer source and result are preserved. Twenty-eight offline
+tests verify a strict private evidence-writer correction without changing the
+scientific request/readback calls. Fresh run14 then failed the Elevation Job before
+that writer was reached, despite successful source preflight. Both runs confirm
+two submissions each; the outer legacy zero observation counter is not authoritative.
+All recorded cleanup steps passed,14 owned identities per run were independently
+absent,3,905 backend hashes matched, and no live matching owned windows remained.
+
+Run14's native Reasoner stack frame maps to `AcceptedSemanticRuntime.invoke:406`,
+the rejection guard for accepted-generation change during `resolving` evaluation.
+The preceding authority-bootstrap failure also occurs in run13, so it alone is
+not proof of the differing Job outcomes. Three new deterministic generation
+controls pass in PR120: stable resolving returns once; accepted replacement during
+evaluation rejects the old result without replay; a rejected candidate alone does
+not replace the accepted generation. The in-flight actor remains leased until exit.
+All67 focused diagnostic/related cases pass locally. No production guard is changed.
+
+These controls explain the observed guard, not the live publication trigger or
+the entire cross-service Job failure chain. A fresh bounded read-only probe uses
+the existing opt-in lossy candidate trace and at most eight native resolving calls,
+with zero sessions/contexts/publications/scientific Jobs. No further scientific
+submission is planned without an identified/reviewed correction. PRs remain draft;
+numerical partial success is not complete automatic-hook notification acceptance.
+
+The read-only probe15 completed and reproduced a native resolving failure with
+accepted revision1 before and2 afterward, with the same semantic-content fingerprint.
+Seven subsequent calls returned10 concepts each on revision2. The server stack
+again maps to the generation-change guard. Its first client failure is a
+`RuntimeError` from the private response-status guard, not a transported Job failure;
+there were no scientific submissions.
+
+The deduplicated candidate trace records preflight keys A/B/A. Only the provider
+selection field changes: source/order/dependency/configuration/catalog/binding/owner
+hashes remain identical. The corresponding candidate outcomes are VALID/FAILED/VALID,
+with accepted revisions1/1/2. The final build uses the exact earlier successful
+authority-bootstrap cache entry. This directly reproduces generation churn after
+an unavailable selection reverts to its earlier key; it does not identify why the
+provider selection became unavailable or prove the full historical Job failure chain.
+The trace is opt-in and lossy; duplicate console/log records were removed by their
+exact trace text, not counted as independent publications.
+
+Probe15 created zero sessions/contexts/Jobs. Runtime list/HTTP cleanup passed;
+all14 recorded JVM identities were independently absent,3,905 backend hashes and
+all fixture launch hashes matched, and no matching live owned visible windows
+remained. PR118@659e7007b and PR120@67a279831 final CI passed. A fourth offline
+generation characterization is now testing the exact A/B/A restoration sequence;
+no production correction is yet included or accepted.
+
 ## Decision gates
 
 1. Compare actual native closure evidence with the existing pinned-source contract.
