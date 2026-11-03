@@ -18,6 +18,8 @@ class AgentSourcePreview:
     """Generated source is not compiled Java, an executing agent or scientific evidence."""
     behavior_urn: str
     source_sha256: str
+    parser_source_sha256: str
+    parser_edge_whitespace_trimmed: bool
     java_code: str = field(repr=False)
     resources_url: str
     resources_id: str
@@ -28,7 +30,7 @@ class AgentSourcePreview:
 
 
 class AgentPreviews:
-    """Translate exact server-parsed BEHAVIOR source with fixed nonexecution options.
+    """Translate server-parsed BEHAVIOR source with fixed nonexecution options.
 
     No DTO intake, execution flags, custom messages, lifecycle controls, background
     workers, broker credentials or automatic request replay are exposed.
@@ -78,8 +80,10 @@ class AgentPreviews:
                                                max_response_bytes=self.max_response_bytes)
         parsed = object_payload(parsed, "parsed behavior")
         check_notifications(parsed, self.client.transport.redact)
-        if parsed.get("@CLASS") != BEHAVIOR_CLASS or parsed.get("sourceCode") != source:
-            raise ProtocolError("Behavior parser must return the admitted class and exact unchanged source")
+        parser_source = parsed.get("sourceCode")
+        if (parsed.get("@CLASS") != BEHAVIOR_CLASS or not isinstance(parser_source, str)
+                or parser_source not in (source, source.strip(" \t\r\n"))):
+            raise ProtocolError("Behavior parser must preserve source except explicitly reported outer space/tab/newline trimming")
         if parsed.get("behaviorType") != "BEHAVIOR":
             raise UnsupportedOperationError("Source preview currently admits only BEHAVIOR, not executable scripts/apps/tasks or components")
         urn = required_text(parsed, "urn")
@@ -103,5 +107,7 @@ class AgentPreviews:
         code = required_text(result, "javaCode")
         self._safe(result)
         self._identity()
-        return AgentSourcePreview(urn, hashlib.sha256(source.encode("utf-8")).hexdigest(), code,
+        return AgentSourcePreview(urn, hashlib.sha256(source.encode("utf-8")).hexdigest(),
+                                  hashlib.sha256(parser_source.encode("utf-8")).hexdigest(),
+                                  parser_source != source, code,
                                   *binding, freeze(result, self.client.transport.redact))

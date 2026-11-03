@@ -56,6 +56,7 @@ def test_source_only_preview_has_fixed_nonexecution_flags_and_frozen_evidence():
         result = AgentPreviews(api).preview(SOURCE)
     assert result.behavior_urn == "python.preview"
     assert result.source_sha256 == hashlib.sha256(SOURCE.encode()).hexdigest()
+    assert result.parser_source_sha256 == result.source_sha256 and not result.parser_edge_whitespace_trimmed
     assert result.resources_id == "resources-id" and result.runtime_id == "runtime-id"
     assert result.resources_url == "https://resources.invalid" and result.runtime_url == "https://runtime.invalid"
     assert result.execution == "NOT_STARTED_NOT_REGISTERED_NOT_JAVA_COMPILED"
@@ -72,6 +73,20 @@ def test_source_only_preview_has_fixed_nonexecution_flags_and_frozen_evidence():
         "doNotBindSession": True, "doNotBindObservation": True, "observationId": -1}
     assert body["behavior"]["sourceCode"] == SOURCE
     assert not hasattr(result, "start") and not hasattr(result, "stop")
+
+
+def test_server_outer_whitespace_trimming_is_reported_without_rewriting_input():
+    source = " \t\n" + SOURCE
+    parsed_source = source.strip(" \t\r\n")
+    api, calls = setup(parsed_change={"sourceCode": parsed_source})
+    with api:
+        result = AgentPreviews(api).preview(source)
+    assert result.parser_edge_whitespace_trimmed
+    assert result.source_sha256 == hashlib.sha256(source.encode()).hexdigest()
+    assert result.parser_source_sha256 == hashlib.sha256(parsed_source.encode()).hexdigest()
+    posts = [call for call in calls if call.method == "POST"]
+    assert posts[0].content == source.encode()
+    assert json.loads(posts[1].content)["behavior"]["sourceCode"] == parsed_source
 
 
 @pytest.mark.parametrize("options", [{"max_source_bytes": 0}, {"max_source_bytes": True},
@@ -121,7 +136,9 @@ def test_payload_budget_checked_before_io():
 
 
 @pytest.mark.parametrize("change,error", [({"@CLASS": "other"}, ProtocolError),
-    ({"sourceCode": "altered"}, ProtocolError), ({"behaviorType": "SCRIPT"}, UnsupportedOperationError),
+    ({"sourceCode": "altered"}, ProtocolError), ({"sourceCode": None}, ProtocolError),
+    ({"sourceCode": SOURCE.replace("print", "return").strip()}, ProtocolError),
+    ({"behaviorType": "SCRIPT"}, UnsupportedOperationError),
     ({"serviceId": "other"}, ProtocolError), ({"urn": ""}, ProtocolError),
     ({"notifications": [{"message": "bad behavior", "level": "ERROR"}]}, ServerError),
     ({"extra": "runtime-secret"}, InvalidRequestError)])
