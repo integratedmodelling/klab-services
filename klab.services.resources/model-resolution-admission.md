@@ -152,10 +152,29 @@ not a fix or reconstruction of the live publication trigger. The13 diagnostics p
 54 related source/gate/preflight/observer cases (67 total) pass locally with no
 failures/errors/skips. Expanded final-head CI remains required.
 
-A fresh served read-only diagnostic enables the existing lossy candidate trace and
-bounds native resolving to eight calls, with zero sessions, contexts, publications
-or scientific Jobs. It is intended to capture generation/publication transitions,
-not retry run14 or establish numerical/activity acceptance.
+Read-only probe15 completed eight native resolving calls with zero sessions,
+contexts, publications or scientific Jobs. The first request failed through the
+private HTTP-status guard while accepted revision changed1to2; the semantic-content
+fingerprint stayed identical. The native server frame again maps to the generation
+guard. Seven subsequent calls returned10 concepts each on revision2.
+
+The deduplicated existing lossy candidate trace records preflight keys A/B/A.
+Only FIELD_SELECTION changes; source/order/dependency/configuration/catalog/binding/
+owner hashes are identical. Candidate outcomes VALID/FAILED/VALID retain accepted
+revisions1/1/2. The last build uses the earlier exact-success authority-bootstrap
+cache entry. This reproduces selection-restoration publication churn without a
+scientific Job, but does not establish the cause of provider-selection unavailability
+or the entire historical Job failure chain. Console/log duplicates are not separate
+publications. All14 recorded JVM identities were independently absent; all3,905
+backend and fixture launch hashes matched, with no live matching owned windows.
+
+A fourth offline generation characterization passes the A/B/A sequence: rejected B
+does not retire accepted A, yet restoring A currently builds/publishes another actor
+and increments the accepted revision. It characterizes current behavior, not desired
+acceptance or a fix. The expanded14 diagnostics plus54 related cases (68 total)
+pass locally without failures/errors/skips. Final-head CI is required. The previous
+67-case revision67a279831 passed both diagnostic jobs, general build and Jenkins.
+Production code/guards remain unchanged; no automatic replay is introduced.
 
 ## Gates before any fix or merge
 

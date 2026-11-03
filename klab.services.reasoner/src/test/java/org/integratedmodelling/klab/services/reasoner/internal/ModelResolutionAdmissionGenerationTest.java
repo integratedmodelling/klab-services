@@ -96,4 +96,42 @@ class ModelResolutionAdmissionGenerationTest {
       verify(actor, times(1)).resolving(request);
     }
   }
+
+  @Test void restoringTheAcceptedSelectionAfterRejectionCurrentlyPublishesAnotherGeneration() throws Exception {
+    // Characterization, not desired-behavior acceptance: reconstruct only the observed A/B/A keys.
+    var first = mock(SemanticEnvironment.class); var restored = mock(SemanticEnvironment.class);
+    var current = new AtomicReference<>(first);
+    var factory = AcceptedSemanticObserverScopeTest.factory(current);
+    var builds = new java.util.concurrent.atomic.AtomicInteger();
+    var selectionKey = org.integratedmodelling.klab.components.AuthorityComponentResolver.SELECTION_METADATA;
+    when(factory.build(any(), any())).thenAnswer(call -> {
+      builds.incrementAndGet();
+      CandidatePublicationCoordinator.Input<org.integratedmodelling.klab.api.knowledge.Worldview> input = call.getArgument(0);
+      return "unavailable-selection".equals(input.payload().getMetadata().get(selectionKey))
+          ? new CandidatePublicationCoordinator.Result<>(null, CandidatePublicationCoordinator.LogicalStatus.FAILED,
+              true, List.of("controlled provider selection unavailable"))
+          : new CandidatePublicationCoordinator.Result<>(current.get(), CandidatePublicationCoordinator.LogicalStatus.VALID,
+              true, List.of());
+    });
+    var acceptedSource = AcceptedSemanticObserverScopeTest.world();
+    acceptedSource.getMetadata().put(selectionKey, "available-selection");
+    var unavailableSource = AcceptedSemanticObserverScopeTest.world();
+    unavailableSource.getMetadata().put(selectionKey, "unavailable-selection");
+    var owner = mock(org.integratedmodelling.klab.api.scope.ServiceScope.class);
+    try (var runtime = new AcceptedSemanticRuntime(factory)) {
+      runtime.submit(acceptedSource, owner); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      long accepted = runtime.status().acceptedGeneration();
+      var sources = runtime.status().acceptedSources();
+      runtime.submit(unavailableSource, owner); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.FAILED, runtime.status().logicalStatus());
+      assertEquals(accepted, runtime.status().acceptedGeneration());
+      assertEquals(sources, runtime.status().acceptedSources());
+      current.set(restored);
+      runtime.submit(acceptedSource, owner); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertEquals(accepted + 1, runtime.status().acceptedGeneration(),
+          "Current behavior republishes A after rejected B even though A was never retired by B");
+      assertEquals(sources, runtime.status().acceptedSources());
+      assertEquals(3, builds.get());
+    }
+  }
 }
