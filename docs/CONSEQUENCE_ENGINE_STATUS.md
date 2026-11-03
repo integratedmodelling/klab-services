@@ -4,6 +4,10 @@ This is a publication checkpoint, not a claim that the complete consequence engi
 passed a production suite. The implementation contract is in [CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md).
 No new general resolver-reuse policy, named-event generation or termination semantics is included.
 
+The [admission follow-up audit](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md) records five additional
+findings and a staged repair plan. Its controlled probes and failing baseline are separate from
+the historical acceptance results below; the audit does not implement the proposed repairs.
+
 ## Verified results
 
 | Scenario | Evidence and boundary |

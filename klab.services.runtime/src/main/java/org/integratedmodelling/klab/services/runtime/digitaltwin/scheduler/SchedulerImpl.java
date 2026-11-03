@@ -994,7 +994,8 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         continue;
 
       if (affecting.source() instanceof org.integratedmodelling.klab.api.knowledge.Cohort cohort) {
-        var plan = transactionExecutor == null ? null : transactionExecutor.getActuator();
+        var plan = scope.getCurrentTransaction() == null
+            ? null : scope.getCurrentTransaction().getInputPlan(observation);
         if (plan == null) {
           var encoded = observation.getMetadata().get(PLAN_METADATA_KEY);
           if (encoded == null)

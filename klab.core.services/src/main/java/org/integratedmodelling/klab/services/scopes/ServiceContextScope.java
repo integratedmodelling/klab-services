@@ -508,8 +508,19 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         : null;
   }
 
-  /** Capture a new request's persisted focus; later reads retain that captured scope snapshot. */
-  Observation getObservationForAdmission(long id) {
+  /**
+   * Retrieve a focus for request admission. A registered planning candidate is owned by its
+   * active root transaction but is not yet an operative observation or a staged graph birth.
+   * Keep this lookup separate from getObservation/isObservationCurrent: admission grants neither
+   * execution nor persistence. HTTP callers must also validate the transaction's scope owner.
+   */
+  public Observation getObservationForAdmission(long id) {
+    if (id < Observation.UNASSIGNED_ID && currentTransaction != null) {
+      if (currentTransaction.isFailed()
+          || transactions.get(currentTransaction.getId()) != currentTransaction) return null;
+      var provisional = provisionalObservations.get(rootTransactionId(currentTransaction));
+      if (provisional != null && provisional.containsKey(id)) return provisional.get(id);
+    }
     if (currentTransaction == null
         && digitalTwin != null
         && digitalTwin.getKnowledgeGraph()

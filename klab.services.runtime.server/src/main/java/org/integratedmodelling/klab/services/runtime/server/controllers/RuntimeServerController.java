@@ -697,6 +697,16 @@ public class RuntimeServerController {
   @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_ASSET)
   public @ResponseBody RuntimeAsset retrieveAsset(
       @PathVariable(name = "id") long id, Principal principal) {
+    return retrieveAsset(id, principal, false);
+  }
+
+  @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_OBSERVATION_FOR_ADMISSION)
+  public @ResponseBody RuntimeAsset retrieveObservationForAdmission(
+      @PathVariable(name = "id") long id, Principal principal) {
+    return retrieveAsset(id, principal, true);
+  }
+
+  private RuntimeAsset retrieveAsset(long id, Principal principal, boolean forAdmission) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
       if (id < Observation.UNASSIGNED_ID) {
@@ -725,7 +735,8 @@ public class RuntimeServerController {
             || !java.util.Objects.equals(owner.getObserverId(), local.getObserverId()))
           throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
               "Prospective observation differs from its transaction owner");
-        var observation = local.getObservation(id);
+        var observation = forAdmission
+            ? local.getObservationForAdmission(id) : local.getObservation(id);
         if (observation == null || observation.getId() != id)
           throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
               "Prospective observation is not registered in this transaction");

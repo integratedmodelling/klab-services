@@ -76,4 +76,43 @@ class SchedulerCurrentValidityTest {
   } finally {transaction.fail(new java.util.concurrent.CancellationException("fixture cleanup"));}
  }
 
+ @Test void registeredPlanningFocusIsAdmissibleWithoutBecomingAStagedBirth() throws Exception {
+  var user=mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);
+  when(user.getUsername()).thenReturn("anonymous");
+  when(user.getData()).thenReturn(org.integratedmodelling.klab.api.collections.Parameters.create());
+  var scope=new ServiceContextScope(new org.integratedmodelling.klab.services.scopes.ServiceSessionScope(
+      new org.integratedmodelling.klab.services.scopes.ServiceUserScope(user,
+          mock(org.integratedmodelling.klab.api.services.RuntimeService.class))),
+      DigitalTwin.Configuration.builder().id("context").name("Planning test").build(),user);
+  scope.setId("context");
+  var twin=mock(DigitalTwinImpl.class);var graph=mock(KnowledgeGraph.class);
+  when(twin.getKnowledgeGraph()).thenReturn(graph);
+  var field=ServiceContextScope.class.getDeclaredField("digitalTwin");
+  field.setAccessible(true);field.set(scope,twin);
+  var transaction=twin.new TransactionImpl(org.integratedmodelling.klab.api.provenance.Activity.of(
+      org.integratedmodelling.klab.api.provenance.Activity.Type.SUBMISSION),scope,RuntimeAsset.PROVENANCE_ASSET);
+  scope.registerTransaction(transaction);
+  var owned=scope.withTransaction(transaction);
+  var candidate=new ObservationImpl();candidate.setId(scope.getNextObservationId());
+  owned.registerProvisionalObservation(candidate);
+  try {
+   assertTrue(transaction.currentStatusFor(candidate).isEmpty(),"Registration is not a staged birth");
+   assertSame(candidate,owned.getObservationForAdmission(candidate.getId()));
+   assertNull(owned.getObservation(candidate.getId()),"Lifecycle rejection still applies to operative reads");
+   assertTrue(transaction.assets().stream().noneMatch(asset->asset==candidate));
+   var child=transaction.getChild(org.integratedmodelling.klab.api.provenance.Activity.of(
+       org.integratedmodelling.klab.api.provenance.Activity.Type.RESOLUTION),scope);
+   scope.registerTransaction(child);
+   assertSame(candidate,scope.withTransaction(child).getObservationForAdmission(candidate.getId()),
+       "Child attempts share only their root's provisional registry");
+   assertNull(scope.getObservationForAdmission(candidate.getId()));
+   transaction.fail(new java.util.concurrent.CancellationException("fixture cleanup"));
+   assertNull(owned.getObservationForAdmission(candidate.getId()));
+  } finally {
+   transaction.fail(new java.util.concurrent.CancellationException("fixture cleanup"));
+   scope.unregisterTransaction(transaction);
+  }
+  assertNull(owned.getObservationForAdmission(candidate.getId()));
+ }
+
 }

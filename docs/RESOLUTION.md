@@ -1,5 +1,8 @@
 # Observation resolution in k.LAB
 
+For the admission stages, receipt meanings, transaction ownership, and HTTP focus restoration,
+see [model and observation admission](ADMISSION.md).
+
 ## Bounded contextual admission and collective reduction
 
 Observational containment permits a contextual request; it does not discover members or

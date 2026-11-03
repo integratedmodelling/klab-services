@@ -479,6 +479,9 @@ public interface ServicesAPI {
      */
     String RETRIEVE_KNOWLEDGE_GRAPH_ASSET = API_BASE + "/asset/{id}";
 
+    /** Transaction-owned planning focus; grants no operative lifecycle status. */
+    String RETRIEVE_OBSERVATION_FOR_ADMISSION = API_BASE + "/asset/{id}/admission";
+
     /** Retrieve a knowledge-graph asset whose stable identity is a URN rather than a numeric ID. */
     String RETRIEVE_KNOWLEDGE_GRAPH_ASSET_BY_URN = API_BASE + "/asset/urn";
 

@@ -11,6 +11,9 @@ for exact verified scenarios, controlled-only coverage, unsupported cases and re
 blockers. Parsing, OWL declarations and a successful helper test alone do not prove a
 Runtime consequence or scientific model executed.
 
+The [admission follow-up audit and staged repair prompts](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
+cover CHANGE repetition, recomputation evidence, birth identities and nested cancellation.
+
 Here, a **commit** means an observation/knowledge transaction commit in a digital
 twin, not a Git commit. Consequences operate on observations and their scientific
 meaning, not source-control changes.

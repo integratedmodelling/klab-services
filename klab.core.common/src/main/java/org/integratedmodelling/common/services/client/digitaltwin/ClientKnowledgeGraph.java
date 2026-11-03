@@ -615,11 +615,17 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
    * No graph monitor is held across the Runtime callback and no cached planning object is mutated.
    */
   public Observation getObservationForAdmission(long id, ContextScope requestScope) {
+    return authorizedObservation(id, requestScope, true);
+  }
+
+  private Observation authorizedObservation(long id, ContextScope requestScope, boolean forAdmission) {
     if (id <= 0
         && (id >= Observation.UNASSIGNED_ID
             || requestScope.getTransactionId() == null
             || requestScope.getTransactionId().isBlank())) return null;
-    var asset = runtimeClient.getAsset(id, RuntimeAsset.class, requestScope);
+    var asset = forAdmission && id < Observation.UNASSIGNED_ID
+        ? runtimeClient.getObservationForAdmission(id, requestScope)
+        : runtimeClient.getAsset(id, RuntimeAsset.class, requestScope);
     if (asset == null) return null;
     if (!(asset instanceof Observation observation) || observation.getId() != id)
       throw new IllegalStateException("Runtime returned a different scope observation");
@@ -635,7 +641,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
         || requestScope == null
         || scope.getId() == null
         || !Objects.equals(scope.getId(), requestScope.getId())) return false;
-    return getObservationForAdmission(observation.getId(), requestScope) != null;
+    return authorizedObservation(observation.getId(), requestScope, false) != null;
   }
 
   private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {

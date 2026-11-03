@@ -3679,7 +3679,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           .values()
           .forEach(p -> errors.addAll(BeanIngestionPreflight.errors(p.notifications())));
       if (!errors.isEmpty())
-        return rejectBeanUpdate(changes, affectedKnowledge, List.copyOf(errors));
+        return rejectBeanUpdate(changes, affectedKnowledge, BeanIngestionPreflight.distinctOccurrences(errors));
     } catch (Exception e) {
       return rejectBeanUpdate(
           changes,
@@ -4812,6 +4812,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
     compilationCheckpoint(cancellation, CandidateTrace.Phase.DECLARATION_REGISTRY);
     var metricsBeforeStaging = owl.compilationMetrics();
+    record PendingEmergence(Concept owner, List<Concept> triggers, Scope scope,
+        KimConceptStatement statement) {}
+    var pendingEmergence = new ArrayList<PendingEmergence>();
     try (var deferred = owl.stageDeclarations()) {
       // Typed names are actual source declarations, private to this candidate actor.
       compilationCheckpoint(cancellation, CandidateTrace.Phase.NAMED_DECLARATIONS);
@@ -4907,8 +4910,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                   new org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging
                       .Entry(ontology, entry.ontology(), owner, entry.statement(), resolve, scope));
               if (!entry.statement().getEmergenceTriggers().isEmpty())
-                registerEmergent(
-                    owner, entry.statement().getEmergenceTriggers().stream().map(resolve).toList());
+                pendingEmergence.add(new PendingEmergence(owner,
+                    entry.statement().getEmergenceTriggers().stream().map(resolve).toList(),
+                    scope, entry.statement()));
               if (org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
                   .hasDeferredValue(entry.statement()))
                 scope.warn(
@@ -4985,6 +4989,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     } catch (RuntimeException unsupported) {
       consequenceRuleIndexFailure =
           "Consequence declarations unavailable: " + unsupported.getMessage();
+    }
+    // IntelligentMap indexes semantic closure: query only after all declarations and derived
+    // clauses are installed and the OWL staging lease has closed.
+    for (var pending : pendingEmergence) {
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.ONTOLOGY_REGISTER);
+      try {
+        registerEmergent(pending.owner(), pending.triggers());
+      } catch (RuntimeException error) {
+        pending.scope().error(error, pending.statement());
+      }
     }
   }
 

@@ -482,7 +482,7 @@ public class ScopeManager {
         var contextObservationId =
             parseHeaderLong(
                 requestHeaders, ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER, serviceContextScope);
-        var ctx = ret.getObservation(contextObservationId);
+        var ctx = ret.getObservationForAdmission(contextObservationId);
         if (ctx != null) {
           ret = ret.within(ctx);
           Logging.INSTANCE.debug(
