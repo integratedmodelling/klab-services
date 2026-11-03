@@ -35,3 +35,23 @@ Fresh graph-retaining restart acceptance in both creation orders, independent
 cleanup and final CI/review remain pending. No credential, membership,
 scientific-algorithm or dependency rule changes.
 This does not establish two deployed Runtime or complete issue89 acceptance.
+
+## Preserved follow-up failure
+
+Run29 confirms the cold-owner request correction: all four native probes and all
+four owner/Runtime/nonlocal-group descriptor checks pass, as does ordinary-member
+session-release denial. Overall it still FAILS: the cold context's disposal returns
+HTTP200/false, three earlier releases confirm and session disposal is withheld.
+All19 recorded JVM identities are independently absent; all launch/source/fixture
+hashes match. The stopped isolated graph and unconfirmed disposal remain retained,
+never replayed. Empty live-context listing is not persisted-disposal evidence.
+Result SHA-256: `65527ed46548d6edd93694e232dc30372afc42ecc73a30d2a20045f845291f85`.
+
+Executable8232a8d9f CI passes but is insufficient for acceptance. A narrowly bounded
+diagnostic now logs disposal exception type and at most eight stack locations,
+without exception messages, context payloads or credentials. Release still returns
+false on failure and never retries. The51 scope tests plus10 root-release tests,
+changed-code coverage in both modules, exception-message exclusion and13-module
+packaging pass. A fresh isolated diagnostic run remains pending.
+The disposal cause remains unproven; do not
+merge or relabel restart acceptance complete.

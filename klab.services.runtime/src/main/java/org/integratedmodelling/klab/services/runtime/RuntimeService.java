@@ -3692,7 +3692,9 @@ public class RuntimeService extends BaseService
       registered.close();
       return true;
     } catch (Throwable t) {
-      // shut up
+      // Retain a bounded failure location, never exception messages or context/credential payloads.
+      Logging.INSTANCE.warn("Context disposal failed: " + t.getClass().getName() + " at "
+          + Arrays.stream(t.getStackTrace()).limit(8).map(StackTraceElement::toString).toList());
     }
     return false;
   }
