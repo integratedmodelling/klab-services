@@ -29,6 +29,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   public String semanticSessionId() {return semanticSessionId;}
   private String rejectedKey;
   private String submittedKey;
+  // Identity-keyed immutable inputs, not semantic-content equivalence. At most accepted + latest.
+  private final Map<CandidatePublicationCoordinator.Input<Worldview>, String> preflightKeys = new IdentityHashMap<>();
   private long submittedRetryAfter;
 
   private boolean suppressSubmitted(String key) {
@@ -91,6 +93,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       synchronized (lifecycle) { return !closed; }
     }
     synchronized (lifecycle) {
+      if (acceptedInputFor(key) != null && !coordinator.currentIsAccepted()) return true;
       if (suppressSubmitted(key)) return false;
       return !closed && (!Objects.equals(key, rejectedKey) || retryClock.getAsLong() - retryAfter >= 0);
     }
@@ -103,8 +106,18 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     var owned = BeanIngestionPreflight.snapshot(refreshAuthoritySelection(snapshot, scope));
     var key = preflightKey(owned, scope);
     synchronized (lifecycle) {
-      if (closed || suppressSubmitted(key)
-          || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))
+      boolean restorationDenied = false;
+      if (!closed) {
+        var accepted = acceptedInputFor(key);
+        if (accepted != null && coordinator.restoreAccepted(accepted,
+            () -> key.equals(preflightKey(owned, scope)))) {
+          clearRejected(); submittedKey = key; submittedSources = accepted.sourceHashes();
+          return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), false);
+        }
+        restorationDenied = accepted != null;
+      }
+      if (closed || (!restorationDenied && (suppressSubmitted(key)
+          || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))))
         return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), false);
       traceInput(owned, scope, key);
       if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.PREFLIGHT_ALLOWED, coordinator.status().inputGeneration(),
@@ -139,6 +152,9 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       clearRejected(); submittedKey = attempt.key();
       submittedRetryAfter = retryClock.getAsLong() + Duration.ofSeconds(60).toNanos();
       submittedSources = input.sourceHashes();
+      var accepted = coordinator.acceptedInput();
+      preflightKeys.keySet().removeIf(previous -> previous != accepted);
+      preflightKeys.put(input, attempt.key());
       long generation = coordinator.submit(input);
       if (CandidateTrace.enabled()) CandidateTrace.emit(CandidateTrace.Event.SUBMITTED, generation, generation, -1,
           attempt.key(), CandidateTrace.digest(input.dependencyRevision()), CandidateTrace.Reason.NONE);
@@ -150,6 +166,12 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     return !closed && attempt != null && attempt.retry()
         && coordinator.status().inputGeneration() == attempt.generation()
         && attempt.key().equals(preflightKey(attempt.snapshot(), scope));
+  }
+
+  /** Must be called under lifecycle; no proof is inferred for unscoped/unknown submissions. */
+  private CandidatePublicationCoordinator.Input<Worldview> acceptedInputFor(String key) {
+    var input = coordinator.acceptedInput();
+    return input != null && key.equals(preflightKeys.get(input)) ? input : null;
   }
 
   private void traceInput(Worldview snapshot, Scope scope, String key) {
@@ -229,7 +251,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         -1, -1, null, null, reason);
     invalidate();
   }
-  public void invalidate() { synchronized (lifecycle) { if (!closed) { clearRejected(); submittedKey=null; factory.invalidateBootstrap(); coordinator.invalidate(); } } }
+  public void invalidate() { synchronized (lifecycle) { if (!closed) { clearRejected(); submittedKey=null; preflightKeys.clear(); factory.invalidateBootstrap(); coordinator.invalidate(); } } }
   public void rejectPreflight(List<org.integratedmodelling.klab.api.services.runtime.Notification> failures) {
     synchronized (lifecycle) {
       if (closed) return;
@@ -715,7 +737,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   @Override public void close() {
     synchronized (lifecycle) {
       if (closed) return;
-      closed = true; searches.invalidateAll(); searches.cleanUp();
+      closed = true; preflightKeys.clear(); searches.invalidateAll(); searches.cleanUp();
     }
     coordinator.close();
     factory.invalidateBootstrap();
