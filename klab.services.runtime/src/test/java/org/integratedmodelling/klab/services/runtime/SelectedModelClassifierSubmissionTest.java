@@ -148,6 +148,7 @@ class SelectedModelClassifierSubmissionTest {
     final ObservationImpl region=new ObservationImpl();
     final ServiceContextScope scope;
     final SchedulerImpl scheduler;
+    org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles cycles;
     final Classifier classifier=new Classifier();
     org.integratedmodelling.klab.runtime.kactors.TestCaseBase.TestCaseScope gatedOwner;
     final KimObservableImpl output,input,original;
@@ -219,6 +220,18 @@ class SelectedModelClassifierSubmissionTest {
       base.setId(base.getConfiguration().getId());
       base.setDigitalTwin(twin);base.addService(runtime);base.addService(reasoner);base.addService(resolver);base.addService(resources);
       scope=((ServiceContextScope)base.within(region)).withCancellation(cancelled::get);
+      // The fixture's semantic actor is fixed; cycle admission/ownership still use the real registry.
+      doAnswer(invocation -> new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult.Status.BOUND,
+          new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding(
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding.VERSION,
+              commitment.getServiceId(),commitment.getSemanticSessionId(),commitment.getKnowledgeRevision(),
+              commitment.getSemanticContentFingerprint(),"fixture-lease-"+invocation.getArgument(2)),null))
+          .when(reasoner).beginSemanticCycleResult(anyString(),anyString(),anyString(),any());
+      doReturn(reasoner).when(reasoner).bindSemanticCycle(any(),anyString(),anyString(),anyString(),any());
+      doNothing().when(reasoner).releaseSemanticCycle(any(),anyString(),anyString(),anyString(),any());
+      cycles=new org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles(runtime,scope.getId());
+      when(twin.getResolutionCycles()).thenReturn(cycles);
       scope.getData().put("__RESOLUTION_GRAPH__",ResolutionGraph.create(scope));
       when(twin.getKnowledgeGraph()).thenReturn(graph);when(twin.getOptions()).thenReturn(scope.getConfiguration());when(twin.getStorageManager()).thenReturn(storage);
       field(twin,DigitalTwinImpl.class,"knowledgeGraph",graph);field(twin,DigitalTwinImpl.class,"commitCache",com.google.common.cache.CacheBuilder.newBuilder().build());
@@ -227,6 +240,15 @@ class SelectedModelClassifierSubmissionTest {
       when(graph.nextKey()).thenAnswer(i->ids.incrementAndGet());when(graph.createTransaction(any())).thenReturn(nativeTx);
       when(graph.dataflow()).thenReturn(RuntimeAsset.DATAFLOW_ASSET);var klab=mock(org.integratedmodelling.klab.api.provenance.Agent.class);when(klab.getId()).thenReturn(3L);when(klab.getName()).thenReturn("k.LAB");when(graph.klab()).thenReturn(klab);
       when(graph.getAsset(anyLong(),any(),eq(Observation.class))).thenAnswer(i->durable.get(i.getArgument(0)));
+      when(graph.isObservationCurrent(any(),any())).thenAnswer(i -> {
+        Observation observation=i.getArgument(0);ContextScope requested=i.getArgument(1);
+        if(observation==null||requested==null||!Objects.equals(scope.getId(),requested.getId()))return false;
+        if(requested.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction) {
+          var pending=transaction.currentStatusFor(observation);
+          if(pending.isPresent())return pending.get();
+        }
+        return durable.containsKey(observation.getId());
+      });
       var cohortQuery=mock(KnowledgeGraph.Query.class,RETURNS_SELF);when(cohortQuery.run(any())).thenReturn(List.of(cohort));when(graph.query(eq(Cohort.class),any())).thenReturn(cohortQuery);
       var observationQuery=mock(KnowledgeGraph.Query.class,RETURNS_SELF);when(observationQuery.run(any())).thenReturn(List.of());when(graph.query(eq(Observation.class),any())).thenReturn(observationQuery);
       // No historical contextualization activities are supplied by this persistence fixture.
@@ -422,7 +444,12 @@ class SelectedModelClassifierSubmissionTest {
     List<String> failures(){try{var field=DigitalTwinImpl.TransactionImpl.class.getDeclaredField("failures");field.setAccessible(true);var result=new ArrayList<String>();for(var attempt:attempts)for(var failure:(Collection<Throwable>)field.get(attempt))result.add(failure.getMessage());return result;}catch(Exception failure){throw new IllegalStateException(failure);}}
     List<String> failureCauses(){try{var field=DigitalTwinImpl.TransactionImpl.class.getDeclaredField("failures");field.setAccessible(true);var result=new ArrayList<String>();for(var attempt:attempts)for(var failure:(Collection<Throwable>)field.get(attempt))for(var cause=failure;cause!=null;cause=cause.getCause())result.add(cause.getMessage());return result;}catch(Exception failure){throw new IllegalStateException(failure);}}
     CompletableFuture<Observation> submit(){var o=new ObservationImpl();o.setObservable(reasoner.declareObservable(output));o.setGeometry(geometry);return runtime.submit(o,scope);}
-    public void close(){resolverExecutor.shutdownNow();scheduler.close();for(var store:stores.values())store.close(null);semantic.close();runtime.shardExecution().close();}
+    void contextId(String id) {
+      cycles.close();scope.setId(id);
+      cycles=new org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles(runtime,id);
+      when(twin.getResolutionCycles()).thenReturn(cycles);
+    }
+    public void close(){cycles.close();resolverExecutor.shutdownNow();scheduler.close();for(var store:stores.values())store.close(null);semantic.close();runtime.shardExecution().close();}
   }
   static StorageManagerImpl diskStorage(ServiceContextScope scope,java.nio.file.Path path,String workspace)throws Exception {
     var constructor=StorageManagerImpl.class.getDeclaredConstructor(ServiceContextScope.class,File.class,File.class);constructor.setAccessible(true);
@@ -439,7 +466,7 @@ class SelectedModelClassifierSubmissionTest {
   @Test void ordinaryCartesianSubmissionCommitsNativeRootAndColdReopensNumericStorage()throws Exception {
     var path=java.nio.file.Files.createTempDirectory("klab-native-root-");
     try(var f=new Fixture(true);var backend=new org.integratedmodelling.klab.services.runtime.neo4j.NativeFamilyRecovery()) {
-      f.cartesian();f.remember(f.observable(f.semantic.register(f.semantic.named("Region"))));f.scope.setId("automatic-native-root");f.region.getMetadata().put("fixture.crop","Wheat");f.region.getMetadata().put("fixture.season","Warm");
+      f.cartesian();f.remember(f.observable(f.semantic.register(f.semantic.named("Region"))));f.contextId("automatic-native-root");f.region.getMetadata().put("fixture.crop","Wheat");f.region.getMetadata().put("fixture.season","Warm");
       // This parser transport retains the compound member syntax that production Resources parses.
       for(var crop:List.of("Wheat","Maize"))for(var season:List.of("Warm","Cool")) {
         var member=f.semantic.named("Region");member.getTraits().add(f.semantic.named(crop));member.getTraits().add(f.semantic.named(season));
@@ -494,7 +521,7 @@ class SelectedModelClassifierSubmissionTest {
   void actualSubmissionCommitsSelectedAgentAndColdRecoveryRetainsItsIdentity()throws Exception {
     var path=java.nio.file.Files.createTempDirectory("klab-observer-commit-");
     try(var f=new Fixture(true);var backend=new org.integratedmodelling.klab.services.runtime.neo4j.NativeFamilyRecovery()) {
-      f.scope.setId("observer-native-root");
+      f.contextId("observer-native-root");
       var parent=(KimModel)f.sources.values().stream().filter(ns->ns.getSourceCode().equals("parent")).findFirst().orElseThrow().getStatements().getFirst();
       parent.getDependencies().clear();parent.getContextualization().clear();parent.getContextualization().add(f.expression("11"));
       var observerSyntax=f.semantic.observerVocabulary();f.remember(observerSyntax);

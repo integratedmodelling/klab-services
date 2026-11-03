@@ -89,6 +89,7 @@ public final class NativeFamilyRecovery implements AutoCloseable {
     var scope=mock(ServiceContextScope.class,CALLS_REAL_METHODS);var twin=mock(DigitalTwin.class);var storage=mock(StorageManager.class);
     when(storage.finalizeStorage(anyLong(),anyLong())).thenReturn(true);when(twin.getStorageManager()).thenReturn(storage);when(twin.getKnowledgeGraph()).thenReturn(graph);
     doReturn(twin).when(scope).getDigitalTwin();doReturn(null).when(scope).getCurrentTransaction();doReturn(false).when(scope).isInterrupted();
+    doReturn(contextId).when(scope).getId();
     doReturn(original.getService(Reasoner.class)).when(scope).getService(Reasoner.class);
     doReturn(original.getService(RuntimeService.class)).when(scope).getService(RuntimeService.class);
     doAnswer(i->graph.getAsset(i.getArgument(0,Long.class).longValue(),scope,Observation.class)).when(scope).getObservation(anyLong());return scope;
