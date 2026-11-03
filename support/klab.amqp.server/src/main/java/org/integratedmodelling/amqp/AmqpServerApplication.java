@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -30,11 +31,17 @@ public class AmqpServerApplication {
     }
 
     public void run() {
+        boolean scoped = System.getProperty(ScopedBrokerProfile.PROPERTY) != null;
         try {
             startBroker();
-            startShutdownService();
-            
-            Logging.INSTANCE.info("AMQP Server is running. Use http://localhost:" + SHUTDOWN_PORT + "/shutdown to stop.");
+            if (scoped) {
+                // Scoped mode exposes no unauthenticated HTTP management/shutdown listener.
+                Runtime.getRuntime().addShutdownHook(new Thread(this::stopBroker, "scoped-broker-shutdown"));
+                Logging.INSTANCE.info("Scoped loopback broker running; shutdown is controlled by its owning process");
+            } else {
+                startShutdownService();
+                Logging.INSTANCE.info("AMQP Server is running. Use http://localhost:" + SHUTDOWN_PORT + "/shutdown to stop.");
+            }
             
             // Wait until shutdown is triggered
             shutdownLatch.await();
@@ -43,21 +50,37 @@ public class AmqpServerApplication {
             Logging.INSTANCE.info("AMQP Server stopped.");
             System.exit(0);
         } catch (Exception e) {
-            Logging.INSTANCE.error("Error running AMQP Server: " + e.getMessage());
+            if (scoped) {
+                try { stopBroker(); } catch (Exception cleanup) {
+                    Logging.INSTANCE.error("Scoped broker shutdown was not confirmed");
+                }
+            }
+            Logging.INSTANCE.error(scoped ? "Scoped broker startup failed; profile content is not logged"
+                    : "Error running AMQP Server: " + e.getMessage());
             System.exit(1);
         }
     }
 
     private void startBroker() throws Exception {
         Map<String, Object> attributes = new HashMap<>();
-        URL initialConfig = getClass().getClassLoader().getResource(EMBEDDED_BROKER_CONFIGURATION);
-        if (initialConfig == null) {
-            throw new IllegalStateException("Configuration file " + EMBEDDED_BROKER_CONFIGURATION + " not found");
+        String profile = System.getProperty(ScopedBrokerProfile.PROPERTY);
+        String initialLocation;
+        if (profile != null) {
+            if (System.getProperty("QPID_WORK") == null || System.getProperty("QPID_WORK").isBlank()) {
+                throw new IllegalArgumentException("Scoped broker requires an explicit private QPID_WORK directory");
+            }
+            initialLocation = ScopedBrokerProfile.load(Path.of(profile));
+        } else {
+            URL initialConfig = getClass().getClassLoader().getResource(EMBEDDED_BROKER_CONFIGURATION);
+            if (initialConfig == null) {
+                throw new IllegalStateException("Configuration file " + EMBEDDED_BROKER_CONFIGURATION + " not found");
+            }
+            initialLocation = initialConfig.toExternalForm();
         }
         
         attributes.put("type", "Memory");
         attributes.put("startupLoggedToSystemOut", true);
-        attributes.put("initialConfigurationLocation", initialConfig.toExternalForm());
+        attributes.put("initialConfigurationLocation", initialLocation);
         
         if (System.getProperty("QPID_WORK") == null) {
             System.setProperty("QPID_WORK", Configuration.INSTANCE.getDataPath("broker").toString());

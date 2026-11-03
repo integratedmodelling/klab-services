@@ -1,0 +1,24 @@
+name: Model resolution admission diagnostics
+
+on:
+  push:
+    paths: ['klab.services.*/src/test/java/**/ModelResolutionAdmission*Test.java', 'klab.services.resources/model-resolution-admission*', '.github/workflows/model-resolution-admission.yml']
+  pull_request:
+    paths: ['klab.services.*/src/test/java/**/ModelResolutionAdmission*Test.java', 'klab.services.resources/model-resolution-admission*', '.github/workflows/model-resolution-admission.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  offline-admission-diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Native strategy, focus and source admission diagnostics, not Job acceptance
+        run: ./mvnw -B -pl klab.services.resources,klab.services.runtime -am -Dtest='ModelResolutionAdmission*Test,AcceptedSemanticObserverScopeTest,AcceptedSemanticRuntimePreflightTest,ModelValidationGateTest,NamespaceModelIndexTest,SourceIdentityBooleanCompilationTest' -Dsurefire.failIfNoSpecifiedTests=false test

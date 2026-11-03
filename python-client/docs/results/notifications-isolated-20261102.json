@@ -1,0 +1,65 @@
+{
+  "status": "BLOCKED_RUNTIME_ACCEPTANCE",
+  "python_candidate": "97ec867b895aa6aebc6d783fd14936617a18231d",
+  "broker_prerequisite_merge": "474d2706498e66df8104f701ae408095da5feaeb",
+  "software": {
+    "offline_tests_passed": 2117,
+    "focused_notification_tests_passed": 76,
+    "notification_unexcluded_line_branch_coverage_percent": 100,
+    "coverage_gates_passed": 7,
+    "lint_passed": true,
+    "wheel_and_sdist_built": true
+  },
+  "owned_native_java_wire_fixture": {
+    "status": "PASS",
+    "actual_AMQPChannel_and_Message_serialization": true,
+    "python_started_finished_delivery": true,
+    "repeated_ids_delivered_as_hints": true,
+    "python_cross_context_authorization_denial": true,
+    "independent_receiver_queue_absence": true,
+    "event_budget_terminates_receiver": true,
+    "malformed_and_oversized_delivery_rejected": true,
+    "broker_disconnect_terminal_no_automatic_reconnect": true,
+    "native_publication_calls": 3,
+    "genuine_Runtime_job": false,
+    "raw_result_sha256": "dadcec29d2e3ef694bc108a8cea96680d3f71edecad53e672d82fd253045b30f"
+  },
+  "owned_tls_and_overflow_fixture": {
+    "status": "PASS",
+    "real_Qpid_SSL_listener": true,
+    "untrusted_certificate_rejected": true,
+    "trusted_certificate_wrong_hostname_rejected": true,
+    "verified_TLS_socket_delivery_and_cleanup": true,
+    "one_message_queue_overflow_rejected": true,
+    "overflow_broker_reply_code": 506,
+    "receiver_continuity_and_upstream_overflow": "UNKNOWN",
+    "private_fixture_CA_only_no_OS_trust_change": true,
+    "raw_result_sha256": "2157381241e9f8ae4d0716743756257cf88ab6d2aec80587a53063694ba3d1b0",
+    "initial_failed_result_preserved_sha256": "9f9e0557d24be7a8553b0608db87d0a128721d917212530141e1d3e2a8bb7efd",
+    "initial_failure": "TLS checks passed; overflow fixture expected immediate exception without mandatory publication/return handling. Revised finite fixture explicitly handles mandatory returns and broker close codes; broker subsequently returned506. No receiver gate removed."
+  },
+  "remaining_Runtime_prerequisite": {
+    "state": "SEPARATE_SCOPE_REQUIRED",
+    "source_paths": [
+      "klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ServiceContextScope.java: constructor copies parent messaging setup",
+      "klab.core.common/src/main/java/org/integratedmodelling/common/authentication/scope/MessagingChannelImpl.java: copyMessagingSetup shares parent AMQPChannel",
+      "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/RuntimeService.java: session.setupMessaging uses federation broker URI",
+      "klab.core.api/src/main/java/org/integratedmodelling/klab/api/identities/Federation.java: one broker URI, local default points to legacy local broker"
+    ],
+    "missing_contract": "Operator-approved exact-context publisher origin selection, lifecycle and credential separation without changing session/federation channels or exposing broker credentials over HTTP",
+    "not_attempted": "No injected replacement Runtime channel, expanded broker ACL, deployment mutation or fake Job event was used to manufacture acceptance"
+  },
+  "cleanup": {
+    "all_recorded_new_native_and_TLS_fixture_JVM_identities_independently_absent": true,
+    "profile_secrets_absent_from_checked_broker_logs": true,
+    "created_console_windows": 0,
+    "production_deployment_changes": false,
+    "scientific_jobs": 0
+  },
+  "nonclaims": [
+    "Not genuine Runtime Activity/Job acceptance; PR108 remains draft and must not merge.",
+    "Not durable replay, gap-free synchronization, broker security clearance or production TLS deployment acceptance.",
+    "Earlier shared-host failures remain preserved in notifications-controlled-20261102.json.",
+    "Final source/package/core-wheel/hosted CI checks must be repeated after any implementation changes."
+  ]
+}

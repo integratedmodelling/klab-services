@@ -1,1 +1,3 @@
 klab.services.reasoner/src/main/resources/knowledge/odo.owl text eol=lf
+python-client/tests/fixtures/runtime_compatibility/contract.json text eol=lf
+python-client/tests/fixtures/runtime_compatibility/execution-contract-v3.json text eol=lf

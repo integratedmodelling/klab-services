@@ -1,0 +1,45 @@
+{
+  "kind": "sanitized-rebuilt-owned-namespace-authoring-acceptance",
+  "status": "PASS",
+  "scope": "synchronous namespace-only ADD and known-owned project/workspace cleanup",
+  "python_candidate": "852ae9b25d9a7d31bb8a01f96a3fa53dbe50391e",
+  "java_candidate": "84afa1a4165faaa424cd58efeaad45370e021242",
+  "server_prerequisites": [114, 115],
+  "fixture_principal_role": "distinct-signed-fixture-administrator",
+  "ordinary_remote_write_acceptance": false,
+  "namespace_exact_source_round_trip_verified": true,
+  "invalid_namespace_rejection_verified": true,
+  "confirmed_creations": 3,
+  "project_delete_descriptor_and_post_delete_listing_verified": true,
+  "workspace_delete_descriptor_and_post_delete_listing_verified": true,
+  "read_only_restart_project_and_workspace_absence_verified": true,
+  "persisted_yaml_workspace_absence_verified": true,
+  "restart_mutation_requests": 0,
+  "all_two_owned_jvm_identities_independently_absent": true,
+  "owned_hub_threads_stopped": true,
+  "agent_created_console_windows": 0,
+  "backend_classes_and_dependencies_unchanged_during_runs": true,
+  "automatic_write_retries": 0,
+  "script_supported": false,
+  "scientific_reproduction": false,
+  "observation_jobs": 0,
+  "shared_services_changed": false,
+  "previous_failures_preserved": "authoring-controlled-20261102.json",
+  "additional_rebuilt_startup_failures_before_writes": [
+    "Missing real Web UI assets: fixed by building checkout Maven webui profile",
+    "Existing duplicate Spring handler mapping: fixed in separately authorized PR115"
+  ],
+  "raw_evidence_sha256": {
+    "lifecycle-result": "26c7aa54820e4749db41cf19e14f0bb5a87f58abc0365d139f20adb2afb37ec6",
+    "backend-input-fingerprints": "9cff8e689f4ac6d386a58ab2b26229482483366416817c6fa7601862d8740867",
+    "functional-junit": "dc6f1f80693ed7acf826f66848d6ce9c3ae821f667af73a357f761fbd4b7ec1c",
+    "mutation-journal": "15cafc8bb674770ce842f8061e2c0719c7a5f82a82a845208ff14177f67e5096",
+    "read-only-restart": "b3dc4e6f68cb0dce6520f87da81a2b307b80593af1283f13e17ccd09f31569cd"
+  },
+  "remaining_nonclaims": [
+    "SCRIPT fidelity, ontology authoring, UPDATE/MERGE, history/conflict and publication",
+    "Ordinary remote CREATE provisioning or privacy acceptance",
+    "Cross-store crash-atomicity, distributed locking or mutation replay",
+    "Independent maintainer approval, blanket backend compatibility or scientific validity"
+  ]
+}

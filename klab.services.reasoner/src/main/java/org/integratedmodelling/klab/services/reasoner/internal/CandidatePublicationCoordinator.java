@@ -81,11 +81,13 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
     final S state;
     final Input<I> input;
     final long generation;
+    final List<String> diagnostics;
     int readers;
     boolean retired;
     boolean disposed;
-    Slot(S state, Input<I> input, long generation) {
+    Slot(S state, Input<I> input, long generation, List<String> diagnostics) {
       this.state = state; this.input = input; this.generation = generation;
+      this.diagnostics = List.copyOf(diagnostics);
     }
   }
 
@@ -218,6 +220,38 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
     diagnostics = List.copyOf(failures); notifyAll();
   }
 
+  /** Immutable input identity only; callers must not infer reuse from source/content hashes alone. */
+  synchronized Input<I> acceptedInput() { return closed || accepted == null ? null : accepted.input; }
+
+  synchronized boolean currentIsAccepted() {
+    return !closed && accepted != null && currentInput == accepted.input && logicalStatus == LogicalStatus.VALID;
+  }
+
+  /**
+   * Reconcile a freshly checked exact admission identity with the still-live accepted slot.
+   * The publication guard runs outside the monitor, then the exact slot/input is rechecked.
+   * Superseded builders are cancelled; accepted revision, leases and actor are unchanged.
+   */
+  boolean restoreAccepted(Input<I> expected, java.util.function.BooleanSupplier admissionCurrent) {
+    synchronized (this) {
+      if (closed || accepted == null || expected == null || accepted.input != expected) return false;
+    }
+    if (!guard.current(expected) || !admissionCurrent.getAsBoolean()) return false;
+    synchronized (this) {
+      // Once admitted, only close() can clear accepted, and it sets closed first.
+      if (closed || accepted.input != expected) return false;
+      if (currentInput == expected && logicalStatus == LogicalStatus.VALID) return true;
+      generation++;
+      pending = null;
+      currentInput = expected;
+      latestBeanStatus = expected.beanStatus();
+      logicalStatus = LogicalStatus.VALID;
+      diagnostics = accepted.diagnostics;
+      notifyAll();
+      return true;
+    }
+  }
+
   public synchronized Status status() {
     return new Status(generation, acceptedGeneration,
         latestBeanStatus, logicalStatus,
@@ -300,7 +334,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
               } else {
                 var previous = accepted;
                 acceptedGeneration++;
-                accepted = new Slot(result.state(), job.input(), acceptedGeneration);
+                accepted = new Slot(result.state(), job.input(), acceptedGeneration, result.diagnostics());
                 publishedStates.add(new IdentityReference<>(result.state(), identityQueue));
                 discard = null;
                 logicalStatus = LogicalStatus.VALID; diagnostics = result.diagnostics();

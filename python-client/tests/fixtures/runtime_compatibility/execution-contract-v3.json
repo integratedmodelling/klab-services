@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "scope": "opt-in synthetic known-answer execution variant; not original-query acceptance or scientific reproduction",
+  "base_contract_sha256": "74db7df10a2b9eb5c77c44a5e2c11862c1ef407e91a70838764488c50ff1efb6",
+  "request_definition": "geography:Elevation of (earth:Terrestrial earth:Region) in m",
+  "original_acceptance": "PRESERVED_FAILED_NOT_REPLACED",
+  "model": {
+    "path": "python.fixture/src/python.fixture.kim",
+    "input_sha256": "9bc51d4fa89c20136fe6b0951a4840120dce0da948156a08203868fb1b92db70",
+    "output_sha256": "04c3f69e58fc48f734043d84d5ace49a58f8d5a9ce176a53fc83525111f423d8",
+    "constant_expression": "[100 + 23.25]",
+    "replacements": [
+      {
+        "old": "model geography:Elevation in m set to [100 + 23.25];",
+        "new": "model geography:Elevation of (earth:Terrestrial earth:Region) in m set to [100 + 23.25];"
+      }
+    ]
+  }
+}

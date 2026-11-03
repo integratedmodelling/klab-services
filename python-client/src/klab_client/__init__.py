@@ -22,6 +22,7 @@ from klab_client.api.services import (
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData, ScientificDataOrigin
 from klab_client.tables import to_dataframe
 from klab_client.graph import GraphBrowser, GraphPage
+from klab_client.authoring import Authoring, AuthoringReceipt, ParsedSource
 from klab_client.async_client import AsyncClient, AsyncContext, AsyncSession, AsyncJob
 from klab_client.transport import Endpoint
 from klab_client.connection import Connection, SelectionPolicy, connect
@@ -46,8 +47,11 @@ from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError,
     load_handle, restore_handle, save_handle, to_handle)
 from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
+from klab_client.notifications import ActivityNotifications, ActivityNotification, NotificationBroker
 
 __all__ = [
+    "ActivityNotifications", "ActivityNotification", "NotificationBroker",
+    "Authoring", "AuthoringReceipt", "ParsedSource",
     "GraphBrowser", "GraphPage",
     "ScientificDataOrigin", "to_dataframe",
     "AsyncClient", "AsyncContext", "AsyncSession", "AsyncJob",

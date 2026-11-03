@@ -96,6 +96,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private java.util.concurrent.atomic.AtomicReference<String> consequenceFailure =
       new java.util.concurrent.atomic.AtomicReference<>();
   private volatile boolean consequenceErrors;
+  /** Separate optional hint publisher; never replaces the inherited messaging channel. */
+  public interface ActivityNotificationSink extends java.util.function.Consumer<Message>, AutoCloseable {
+    @Override void close();
+  }
+  private ActivityNotificationSink activityNotifications;
+  private boolean ownsActivityNotifications;
+
+  public void installActivityNotifications(ActivityNotificationSink sink) {
+    if (activityNotifications != null) throw new IllegalStateException("Activity hint route already installed");
+    activityNotifications = java.util.Objects.requireNonNull(sink);
+    ownsActivityNotifications = true;
+  }
   private java.util.concurrent.atomic.AtomicReference<String> consequenceWarning =
       new java.util.concurrent.atomic.AtomicReference<>();
 
@@ -124,6 +136,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.consequenceFailure = parent.consequenceFailure;
     this.consequenceErrors = parent.consequenceErrors;
     this.consequenceWarning = parent.consequenceWarning;
+    this.activityNotifications = parent.activityNotifications;
     copyMessagingSetup(parent);
   }
 
@@ -183,7 +196,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return message;
       }
     }
-    return super.send(arguments);
+    var message = super.send(arguments);
+    if (activityNotifications != null
+        && message.getMessageClass() == Message.MessageClass.DigitalTwin
+        && (message.getMessageType() == Message.MessageType.ActivityStarted
+            || message.getMessageType() == Message.MessageType.ActivityFinished)) {
+      try { activityNotifications.accept(message); }
+      catch (RuntimeException ignored) { /* Best-effort hints cannot fail an observation. */ }
+    }
+    return message;
   }
 
   /** Derive a request-local cancellation signal, inherited by its execution scopes only. */
@@ -992,12 +1013,25 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     try {
       if (digitalTwin != null && digitalTwin.isClient()) digitalTwin.dispose();
     } finally {
-      super.releaseLocalResources();
+      try { closeActivityNotifications(); }
+      finally { super.releaseLocalResources(); }
     }
   }
 
   @Override
   public void close() {
+    try { closeContextResources(); }
+    finally { closeActivityNotifications(); }
+  }
+
+  private synchronized void closeActivityNotifications() {
+    if (ownsActivityNotifications && activityNotifications != null) {
+      ownsActivityNotifications = false;
+      try { activityNotifications.close(); } catch (RuntimeException ignored) {}
+    }
+  }
+
+  private void closeContextResources() {
 
     send(Message.MessageType.ContextClosed, Message.MessageClass.DigitalTwin, this.configuration);
 
