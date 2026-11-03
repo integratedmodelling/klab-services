@@ -45,3 +45,23 @@ def test_all_relative_evidence_links_exist_and_original_map_pointer_resolves():
             if not target.startswith(("https://", "http://", "#")):
                 assert (path.parent / target.split("#", 1)[0]).resolve().is_file(), target
     assert "PYTHON_CLIENT_ACCEPTANCE_MAP.md" in SOURCE.read_text(encoding="utf-8")
+
+
+def test_later_implementation_pass_does_not_erase_external_or_internal_limits():
+    text = MAP.read_text(encoding="utf-8")
+    assert all(f"/pull/{number}" in text for number in (138, 139, 140, 141))
+    assert "actual native AMQP adapter" in text
+    assert "not managed Runtime acceptance" in text
+    assert "not manager generation" in text
+    assert "not parser or semantic acceptance" in text
+    assert "first push CI **failed**" in text
+    assert "Every item remains draft/unmerged" in text
+
+
+def test_later_combined_result_keeps_earlier_map_snapshot_and_tree_distinct():
+    text = MAP.read_text(encoding="utf-8")
+    assert "2758offline tests,19Python gates" in text
+    assert "6cc3b1fd71ec7b2d02ec9b44b0a056f1c577679f" in text
+    assert "af8ddbb8f6c01a429f1b5003e895045efa416995" in text
+    assert "not part of that recorded tree" in text
+    assert "README's adjacent feature-link conflict" in text
