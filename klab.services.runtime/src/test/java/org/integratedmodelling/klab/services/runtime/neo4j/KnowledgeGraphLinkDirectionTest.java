@@ -54,7 +54,7 @@ class KnowledgeGraphLinkDirectionTest {
                   }
                   throw new AssertionError("Unexpected scope call: " + method);
                 });
-    var graph = new LinkResultGraph(opposite);
+    var graph = new LinkResultGraph(selected, opposite, scope);
     var links = graph.getLinks(selected, direction, scope, GraphModel.Relationship.AFFECTS);
 
     assertEquals(1, links.size());
@@ -69,11 +69,22 @@ class KnowledgeGraphLinkDirectionTest {
 
   private static class LinkResultGraph extends KnowledgeGraphNeo4j {
     private final RuntimeAsset opposite;
+    private final RuntimeAsset selected;
+    private final ContextScope owner;
     private String queryText;
     private long selectedId;
 
-    LinkResultGraph(RuntimeAsset opposite) {
+    LinkResultGraph(RuntimeAsset selected, RuntimeAsset opposite, ContextScope owner) {
+      this.selected = selected;
       this.opposite = opposite;
+      this.owner = owner;
+    }
+
+    @Override
+    public boolean isObservationCurrent(
+        org.integratedmodelling.klab.api.knowledge.observation.Observation observation,
+        ContextScope scope) {
+      return scope == owner && (observation == selected || observation == opposite);
     }
 
     @Override
