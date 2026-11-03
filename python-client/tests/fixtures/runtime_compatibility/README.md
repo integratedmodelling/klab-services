@@ -110,6 +110,45 @@ bounded execution. V3 operational admission, numerical readback and automatic-ho
 activity delivery remain unverified at this checkpoint; no merge or reproduction
 claim follows from the preparation/parse passes.
 
+### Subsequent served admission and bounded execution evidence
+
+The corrected real-service v3 preflight passed: the exact derived source was
+retrieved with an admission receipt, and both native validation modes returned
+source-complete results without notifications. It created no sessions, contexts or
+Jobs. All14 recorded JVM identities were independently absent afterward and3,905
+backend input hashes matched. The earlier preflight failure at the obsolete model
+identity remains retained; no failed directory was reused.
+
+Bounded run13 then retrieved both region and Elevation Job results and verified all
+20 cells equal123.25 metres. It nevertheless remains **FAIL**: persisting the received
+activity evidence raised TypeError on a nested frozen payload. This does not count
+as completed notification acceptance. All owned receiver/queue/context/session/list/
+publisher-socket/HTTP cleanup steps passed, all14 recorded JVM identities were
+independently absent and3,905 backend hashes matched. Two confirmed submission
+receipts take precedence over the legacy outer report's zero observation counter.
+
+The original failed writer source was preserved with its launch hash before the
+private harness correction. Twenty-eight offline cases reproduce the writer failure,
+verify strict recursive JSON projection without opaque-value stringification,
+preserve separate primary/cleanup failures, and confirm scientific request/readback
+calls are unchanged. Received hints are now flushed/fsynced individually before
+aggregate evidence output. No draft is merged on the strength of run13's partial success.
+
+Fresh bounded run14 also remains **FAIL**. Source preflight passed, the region Job
+returned a result, but the Elevation Job failed before readback/activity persistence
+with `JobFailedError`. The corrected evidence writer was not reached. Both explicit
+submissions are confirmed. All owned cleanup steps passed; all14 recorded JVM
+identities were independently absent,3,905 backend hashes and all fixture launch
+hashes matched, and no matching owned visible windows remained.
+
+The Reasoner exception maps to `AcceptedSemanticRuntime.invoke:406`, the fail-closed
+guard for an accepted-generation change during evaluation of `resolving`. The
+authority-bootstrap failure preceding it also occurs in run13, so that bootstrap
+failure alone is not a demonstrated explanation for the differing Job outcomes.
+The publication trigger and full cross-service failure chain are still under
+investigation using offline/read-only diagnostics. No guard is weakened, candidate
+publication frozen, service dependency changed or failed scientific Job replayed.
+
 ## Validation boundaries
 
 1. **Software checks:**33 Python cases pass with100% unexcluded tool line/branch
