@@ -1,0 +1,28 @@
+{
+  "scope": "EXACT_ACCEPTED_ADMISSION_INPUT_RESTORATION_NOT_SEMANTIC_HASH_REUSE",
+  "baseline_expected_failure": "expected accepted generation1 but got2 after A/B/A",
+  "focused_positive_tests": 79,
+  "new_restoration_and_coordinator_tests": 15,
+  "changed_executable_lines_covered": "39/39",
+  "changed_line_branch_outcomes_covered": "62/62",
+  "new_helpers_unexcluded_instruction_line_branch_coverage": "100%",
+  "service_graph_package_modules": 13,
+  "package_build": "PASS_AFTER_TESTS_WITH_EXPLICIT_SKIP_TESTS",
+  "broader_candidate_run": {"tests": 86, "passed": 83, "failures": 1, "errors": 2},
+  "clean_base_publication_comparison": {
+    "base": "5785c1baab02e319125e963ac349d25b9b4c7d6a",
+    "tests": 8,
+    "passed": 5,
+    "identical_failure_signatures": 3,
+    "waived_deleted_or_fixed": false
+  },
+  "generation_change_guard_weakened": false,
+  "scientific_request_replay_added": false,
+  "semantic_rules_or_algorithms_changed": false,
+  "dependencies_or_authentication_changed": false,
+  "all_original_fixture_and_failure_evidence_preserved": true,
+  "services_started": 0,
+  "scientific_jobs_submitted": 0,
+  "source_matched_live_verification": "NOT_RUN",
+  "implementation_acceptance": "INCOMPLETE_PENDING_INTEGRATION_LIVE_AND_FINAL_CI"
+}

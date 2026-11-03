@@ -1,0 +1,66 @@
+name: Exact semantic generation restoration
+
+on:
+  push:
+    paths:
+      - 'klab.services.reasoner/src/main/java/**/AcceptedSemanticRuntime.java'
+      - 'klab.services.reasoner/src/main/java/**/CandidatePublicationCoordinator.java'
+      - 'klab.services.reasoner/src/test/java/**/AcceptedSemantic*Test.java'
+      - 'klab.services.reasoner/src/test/java/**/Candidate*Test.java'
+      - 'klab.services.reasoner/semantic-generation-restoration*'
+      - '.github/workflows/semantic-generation-restoration.yml'
+  pull_request:
+    paths:
+      - 'klab.services.reasoner/src/main/java/**/AcceptedSemanticRuntime.java'
+      - 'klab.services.reasoner/src/main/java/**/CandidatePublicationCoordinator.java'
+      - 'klab.services.reasoner/src/test/java/**/AcceptedSemantic*Test.java'
+      - 'klab.services.reasoner/src/test/java/**/Candidate*Test.java'
+      - 'klab.services.reasoner/semantic-generation-restoration*'
+      - '.github/workflows/semantic-generation-restoration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-restoration-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Source, publication, ownership and lease regressions (no scientific Jobs)
+        run: ./mvnw -B -pl klab.services.reasoner -am -Dtest='AcceptedSemantic*Test,Candidate*Test,CapabilitiesPublicationTest' -Dsurefire.failIfNoSpecifiedTests=false -Djacoco.append=false org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent test org.jacoco:jacoco-maven-plugin:0.8.12:report
+      - name: Require all changed lines/branches and new helper methods (no exclusions)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, xml.etree.ElementTree as ET
+          root = ET.parse('klab.services.reasoner/target/site/jacoco/jacoco.xml').getroot()
+          package = next(p for p in root.findall('package') if p.get('name') == 'org/integratedmodelling/klab/services/reasoner/internal')
+          helpers = {'acceptedInput', 'currentIsAccepted', 'restoreAccepted', 'acceptedInputFor'}
+          found = set()
+          for name in ('AcceptedSemanticRuntime', 'CandidatePublicationCoordinator'):
+              path = 'klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/' + name + '.java'
+              diff = subprocess.check_output(['git', 'diff', '--unified=0', '5785c1baab02e319125e963ac349d25b9b4c7d6a', 'HEAD', '--', path], text=True)
+              changed = set()
+              for start, count in re.findall(r'^@@ .*? \+(\d+)(?:,(\d+))? @@', diff, re.M):
+                  changed.update(range(int(start), int(start) + int(count or 1)))
+              source = next(s for s in package.findall('sourcefile') if s.get('name') == name + '.java')
+              lines = [l for l in source.findall('line') if int(l.get('nr')) in changed]
+              assert lines and all(int(l.get('ci')) > 0 and int(l.get('mb')) == 0 for l in lines), name
+              for cls in package.findall('class'):
+                  if cls.get('sourcefilename') != name + '.java':
+                      continue
+                  for method in cls.findall('method'):
+                      if method.get('name') in helpers:
+                          found.add(method.get('name'))
+                          assert all(int(c.get('missed')) == 0 for c in method.findall('counter')), method.attrib
+          assert found == helpers
+          print('Changed executable lines/branches and all new helpers: 100%, no exclusions')
+          PY
