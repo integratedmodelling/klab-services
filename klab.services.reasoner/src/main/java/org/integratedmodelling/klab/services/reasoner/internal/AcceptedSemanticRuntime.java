@@ -1315,6 +1315,14 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       return org.integratedmodelling.klab.api.collections.Pair.of(
           bind(pair.getFirst(), actor), bind(pair.getSecond(), actor));
     if (value instanceof Optional<?> optional) return optional.map(item -> bind(item, actor));
+    // Annotations implement Map, but observation getters and Jackson transport require Annotation.
+    // Copy through the configured polymorphic reader before binding semantic parameter values.
+    if (value instanceof org.integratedmodelling.klab.api.lang.Annotation annotation) {
+      var result = JacksonConfiguration.newObjectMapper()
+          .convertValue(annotation, org.integratedmodelling.klab.api.lang.Annotation.class);
+      annotation.forEach((key, item) -> result.put(key, bind(item, actor)));
+      return result;
+    }
     // Observation getters declare Metadata, not Map: retain its contract when binding a proxy.
     if (value instanceof org.integratedmodelling.klab.api.data.Metadata metadata) {
       var result = org.integratedmodelling.klab.api.data.Metadata.create();

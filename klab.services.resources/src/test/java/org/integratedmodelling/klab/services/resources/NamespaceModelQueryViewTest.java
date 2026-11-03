@@ -24,6 +24,22 @@ class NamespaceModelQueryViewTest {
         .when(f.reasoner).validateDocument(any(),any());return f;
   }
   static ModelValidationGate.SemanticSnapshot selected(long revision) {return new ModelValidationGate.SemanticSnapshot("reasoner",revision,RECIPE,"session");}
+  @Test void initialReaderWaitsWithoutBlockingReconciliationAndTimeoutIsExplicit() throws Exception {
+    var f=fixture();var source=f.source("source");var index=new NamespaceModelIndex(5);
+    assertTrue(assertThrows(RuntimeException.class,()->index.awaitInitialPublication(java.time.Duration.ZERO))
+        .getMessage().contains("INITIAL_CATALOG_TIMEOUT"));
+    try(var executor=Executors.newSingleThreadExecutor()) {
+      var started=new CountDownLatch(1);
+      var reader=executor.submit(()->{
+        started.countDown();index.awaitInitialPublication(java.time.Duration.ofSeconds(5));
+        return index.queryView(List.of(source),selected(7));
+      });
+      assertTrue(started.await(2,TimeUnit.SECONDS));assertFalse(reader.isDone());
+      index.reconcile(List.of(source),mock(ModelCatalog.class),f.scope,7,0);
+      assertNotNull(reader.get(2,TimeUnit.SECONDS));
+      assertDoesNotThrow(()->index.awaitInitialPublication(java.time.Duration.ZERO));
+    }
+  }
   @Test void unchangedReceiptWithdrawalDoesNotInvalidateStableCatalogButActualReplacementDoes() {
     var f=fixture();var source=f.source("source");var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
     index.reconcile(List.of(source),catalog,f.scope,7,0);var original=index.queryView(List.of(source),selected(7));
@@ -60,6 +76,28 @@ class NamespaceModelQueryViewTest {
     var f=fixture();var source=f.source("source");f.invalid.add("source");var index=new NamespaceModelIndex(5);
     index.reconcile(List.of(source),mock(ModelCatalog.class),f.scope,7,0);
     assertThrows(RuntimeException.class,()->index.queryView(List.of(source),selected(6)));
+  }
+  @Test void retryingUnchangedWithheldNamespaceKeepsCompletedCatalogAvailable() {
+    var f=fixture();var admitted=f.source("admitted");var rejected=f.source("rejected");
+    f.statuses.put("rejected",SemanticValidationResponse.Status.UNAVAILABLE);
+    var sources=List.<KimNamespace>of(admitted,rejected);
+    var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
+    index.reconcile(sources,catalog,f.scope,7,0);
+    var captured=index.queryView(sources,selected(7));
+    clearInvocations(catalog);
+    // Readers may enter while a retry does semantic/callback work, before it completes.
+    var validation=mockingDetails(f.reasoner).getStubbings().stream()
+        .filter(s->s.getInvocation().getMethod().getName().equals("validateDocument"))
+        .reduce((first,last)->last).orElseThrow();
+    doAnswer(call->{
+      index.requireQueryView(captured,sources,selected(7));
+      return validation.answer(call);
+    }).when(f.reasoner).validateDocument(any(),any());
+    index.reconcile(sources,catalog,f.scope,7,10);
+    index.requireQueryView(captured,sources,selected(7));
+    verify(catalog,never()).withholdNamespace(anyString(),any());
+    verify(catalog,never()).replaceNamespace(any(),any());
+    assertFalse(index.diagnostics().get("rejected").isEmpty());
   }
   @Test void providerBoundReadinessUsesOnlyPinnedActorAndNeverReconcilesThroughCurrentActor() throws Exception {
     var f=fixture();var source=f.source("source");var index=new NamespaceModelIndex(5);
