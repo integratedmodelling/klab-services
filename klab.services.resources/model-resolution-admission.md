@@ -99,17 +99,34 @@ This prerequisite changes no product code;75Reasoner and10Resolver main Java sou
 files match the unchanged diagnostic backend. Test infrastructure
 uses the separately verified draft117 cleanup, not a deployment or merge.
 
-PR heads b63c3bd13 and ac2ab0e88 passed the general build, both offline diagnostic
-jobs and Jenkins. The expanded seven-case suite still requires final-head CI. Passing tests
+PR heads b63c3bd13, ac2ab0e88 and69ef3f62e passed the general build, both offline
+diagnostic jobs and Jenkins. Two more self-contained native parser/compiler/source
+admission cases pass locally, bringing this suite to nine. They reproduce rejection
+of an incomplete concrete model primary in authoring and executable-with-Region
+modes, with a lexical `MODEL_OUTPUT_UNRESOLVED` diagnostic. A separate in-memory
+explicit-bearer source snapshot passes those same validators while preserving the
+exact constant expression and leaving the original source/request incomplete.
+No expression is evaluated and no original fixture is changed by those tests.
+
+The actual preserved `python.fixture` namespace also parses without diagnostics
+but receives that same source-validation error at offset95,length24 in both modes.
+The exploratory in-memory source adds only an explicit Terrestrial Region bearer;
+its native authoring/executable validation produces no diagnostics. This is not an
+accepted replacement for the original fixture. Model publication/discovery and
+numerical execution remain unverified. The full service validation entry and catalog
+admission are being investigated before any new scientific submission.
+
+The expanded nine-case suite requires final-head CI. Passing tests
 are software diagnostics, not scientific or notification acceptance.
 
 ## Gates before any fix or merge
 
 - The authorized non-scientific diagnosis has found no justified product fix.
-  Keep this PR diagnostic-only/draft. A semantic/query-contract decision is now
-  needed before changing the acceptance query or any semantics. No such change,
-  alternate-query acceptance substitution, new scientific run or merge is authorized
-  by these passing probes. No additional fixture services remain running.
+  Keep this PR diagnostic-only/draft. Technical investigation continues through
+  source validation and model admission; an external or authorization blocker has
+  not been established. Do not silently replace the original acceptance request
+  or infer permission to change scientific semantics from passing diagnostics.
+  No additional fixture services remain running.
 - Establish a reproducible failing non-scientific admission/transport boundary;
   preserve failed, passing and UNKNOWN evidence rather than weakening semantics.
 - Only then add the smallest authorized correction and before/after regression.
