@@ -100,8 +100,8 @@ files match the unchanged diagnostic backend. Test infrastructure
 uses the separately verified draft117 cleanup, not a deployment or merge.
 
 PR heads b63c3bd13, ac2ab0e88 and69ef3f62e passed the general build, both offline
-diagnostic jobs and Jenkins. Two more self-contained native parser/compiler/source
-admission cases pass locally, bringing this suite to nine. They reproduce rejection
+diagnostic jobs and Jenkins. Three more self-contained native parser/compiler/source
+admission cases pass locally, bringing this suite to ten. They reproduce rejection
 of an incomplete concrete model primary in authoring and executable-with-Region
 modes, with a lexical `MODEL_OUTPUT_UNRESOLVED` diagnostic. A separate in-memory
 explicit-bearer source snapshot passes those same validators while preserving the
@@ -116,7 +116,12 @@ accepted replacement for the original fixture. Model publication/discovery and
 numerical execution remain unverified. The full service validation entry and catalog
 admission are being investigated before any new scientific submission.
 
-The expanded nine-case suite requires final-head CI. Passing tests
+The third case exercises the actual source-publication and selected-model preparation
+gates: an explicit complete request cannot hide invalid original source; the separate
+explicit-bearer snapshot receives a preparation receipt without expression execution
+or executable hash changes. Together with14 existing ModelValidationGate,12 namespace
+index and1 source-boolean tests,37 cases pass locally with no failures/errors/skips.
+The dedicated CI job includes all37 cases and requires final-head verification. Passing tests
 are software diagnostics, not scientific or notification acceptance.
 
 ## Gates before any fix or merge
