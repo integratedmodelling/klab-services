@@ -23,6 +23,7 @@ from klab_client.client import Client, Context, Session, Job, JobStatus, Scienti
 from klab_client.tables import to_dataframe
 from klab_client.graph import GraphBrowser, GraphPage
 from klab_client.authoring import Authoring, AuthoringReceipt, ParsedSource
+from klab_client.source_previews import SourcePreview, SourcePreviews
 from klab_client.agents import AgentPreviews, AgentSourcePreview
 from klab_client.async_client import AsyncClient, AsyncContext, AsyncSession, AsyncJob
 from klab_client.transport import Endpoint
@@ -53,6 +54,7 @@ from klab_client.notifications import ActivityNotifications, ActivityNotificatio
 __all__ = [
     "ActivityNotifications", "ActivityNotification", "NotificationBroker",
     "Authoring", "AuthoringReceipt", "ParsedSource",
+    "SourcePreview", "SourcePreviews",
     "AgentPreviews", "AgentSourcePreview",
     "GraphBrowser", "GraphPage",
     "ScientificDataOrigin", "to_dataframe",
