@@ -2,6 +2,9 @@
   "scope": "EXACT_ACCEPTED_ADMISSION_INPUT_RESTORATION_NOT_SEMANTIC_HASH_REUSE",
   "baseline_expected_failure": "expected accepted generation1 but got2 after A/B/A",
   "focused_positive_tests": 79,
+  "integrated_diagnostic_restoration_tests": 120,
+  "executable_candidate": "b5049c7949e38528a92e88d22387da3ba59004ac",
+  "executable_candidate_ci": "ALL_PASS",
   "new_restoration_and_coordinator_tests": 15,
   "changed_executable_lines_covered": "39/39",
   "changed_line_branch_outcomes_covered": "62/62",
@@ -21,8 +24,39 @@
   "semantic_rules_or_algorithms_changed": false,
   "dependencies_or_authentication_changed": false,
   "all_original_fixture_and_failure_evidence_preserved": true,
-  "services_started": 0,
+  "read_only_live_16": {
+    "status": "PRESERVED_SETUP_FAILURE_MISSING_DASHBOARD_ASSET",
+    "sessions_contexts_jobs_component_imports": 0,
+    "setup_jvm_identities_independently_absent": 2,
+    "correction": "EXISTING_PINNED_WEBUI_PROFILE_NO_DEPENDENCY_UPGRADES"
+  },
+  "source_matched_launch": {
+    "packaged_class_bytes_matched": 2607,
+    "declared_maven_classpaths": 7,
+    "launch_input_hashes": 3891,
+    "main_source_hashes": 1153,
+    "historical_dependency_closures_merged": false
+  },
+  "read_only_live_17": {
+    "status": "READ_ONLY_RESTORATION_PASS",
+    "native_resolving_calls": 8,
+    "all_calls_returned": true,
+    "concepts_per_call": 10,
+    "accepted_revisions": [1],
+    "failed_replacement_candidate_observed": true,
+    "final_input_generation": 9,
+    "final_bean_and_logical_status": "VALID",
+    "second_accepted_publication": false,
+    "sessions_contexts_publications_scientific_jobs": 0,
+    "runtime_context_list_and_http_cleanup": "PASS",
+    "owned_jvm_identities_independently_absent": 14,
+    "all_launch_source_fixture_hashes_unchanged": true,
+    "live_matching_owned_visible_windows": 0,
+    "unrelated_processes_windows_touched": false,
+    "verification_sha256": "f3a3560879250232727d3a8015c922c5ddf3073fcbf35ec4ffba619b077ce3cd",
+    "reasoner_log_sha256": "1c6d52d389aa2b5a9e86c5498c5a62ee03bfa87d074926931ca6a322904f89c0"
+  },
   "scientific_jobs_submitted": 0,
-  "source_matched_live_verification": "NOT_RUN",
-  "implementation_acceptance": "INCOMPLETE_PENDING_INTEGRATION_LIVE_AND_FINAL_CI"
+  "source_matched_live_verification": "PASS_READ_ONLY_NOT_NUMERICAL_OR_ACTIVITY_ACCEPTANCE",
+  "implementation_acceptance": "BOUNDED_OFFLINE_AND_READ_ONLY_COMPLETE_PENDING_FINAL_DOCS_CI_AND_MERGE"
 }

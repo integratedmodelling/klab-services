@@ -70,7 +70,40 @@ instruction/line/branch coverage for all four new helpers. The13-module service/
 package build passes. Packaging used explicit `skipTests` after the verified test run;
 it is not an additional full test-suite pass.
 
-Implementation remains unaccepted. Integration with the completed diagnostic PRs,
-source-matched read-only service verification and final CI remain required before merge or use
-in a later bounded scientific acceptance run.
-Existing PR108/117/118/120/121 acceptance limits are not changed by this work.
+## Integrated and real-service closeout
+
+Executable candidate `b5049c7949e38528a92e88d22387da3ba59004ac` integrates the now-merged
+PR120/121 diagnostics. Its old A/B/A characterization is updated to require exact
+restoration without republication. All120 integrated diagnostics/restoration/gate/
+index cases pass. General build, both diagnostic jobs, both restoration jobs with
+coverage gates, and Jenkins pass for that executable head.
+
+The first live setup (run16) stopped before services/imports/sessions/contexts/Jobs
+because the fresh core JAR lacked the dashboard bundle required by the unchanged
+harness. Its KeyError, manifest and independently absent two setup JVMs are retained.
+The existing pinned `webui` profile (`npm ci`, no upgrades) builds the required
+dashboard. Fresh launch attestation matches2,607 compiled classes to packaged JARs,
+seven current declared Maven closures,3,891 launch inputs and1,153 main sources.
+Historical dependency closures are not merged and frontend advisories are not fixed.
+
+Fresh read-only run17 passes all eight native resolving calls,10 concepts each,
+with accepted revision1 throughout. The trace contains a successful candidate and
+a later failed provider-selection candidate. Final status is bean/logical VALID,
+accepted revision1 and input generation9, without a second accepted publication.
+This verifies restoration under the reproduced transition, not merely a quiet run.
+Runtime context listing/HTTP cleanup pass. All14 JVM identities are independently
+absent; all3,891 launch hashes,1,153 source hashes and fixture launch hashes match.
+No matching owned visible windows remain; unrelated processes/windows are untouched.
+There are zero sessions, contexts, publication requests or scientific Jobs.
+
+Verification result SHA-256:
+`f3a3560879250232727d3a8015c922c5ddf3073fcbf35ec4ffba619b077ce3cd`.
+Native Reasoner log SHA-256:
+`1c6d52d389aa2b5a9e86c5498c5a62ee03bfa87d074926931ca6a322904f89c0`.
+
+The bounded lifecycle implementation and offline/read-only acceptance are complete;
+final documentation-head CI and merge review remain. This is author/agent-conducted
+review, not independent maintainer approval. It does not establish numerical or
+automatic-hook activity acceptance for PR108/117/118, repair the original bare
+Elevation query, or claim scientific reproduction. Those runs remain preserved;
+the next work is integration into PR117 and its separately bounded acceptance.
