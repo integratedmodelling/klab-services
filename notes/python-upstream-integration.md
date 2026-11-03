@@ -3,7 +3,7 @@
 Candidate parents: Python integration `e09a7de7cac6b48526fd8b7ac72879abb36a77a3`
 and upstream `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920`.
 The current candidate integrates merged stabilization PRs #143, #146 and
-#148–#154 through develop `e6b3a643977fa624c2c7842dd18a2ac9acdc4402`.
+#148–#163 through develop `3a438cf3845fbba8ca1323f61c9206b9e048426d`.
 This candidate is not release acceptance. No scientific input is migrated.
 
 ## Resources follow-up (2026-11-03)
@@ -39,8 +39,28 @@ actual `5c020dac9bd9d1cd4f9673b8075cf08f75ecc7194c74378bdb8f0498110ddba3`.
 The original oracle remains unchanged. See
 `C:/Users/lumsd/AppData/Local/Temp/opencode/resources-integrated-configured-20261103.log`;
 reports are preserved in `resources-integrated-evidence-20261103` alongside it.
-The full Reasoner test-class selection is now running with the same configured
-input paths and normal failure handling (`reasoner-integrated-configured-20261103.log`).
+The first configured integrated Reasoner selection ran 815 tests: 12 failures,
+five errors, 11 skips (`reasoner-integrated-configured-20261103.log`). Reports are
+preserved in `reasoner-integrated-evidence-20261103`.
+
+PRs #155–#163 subsequently merged after both head CI checks passed. Besides fixture
+initialization/caller-contract corrections, production changes deduplicate update
+diagnostics by source occurrence (#156), restore configured authority snapshots
+before issuing handles (#158), and defer emergence closure indexing until declaration
+staging closes (#162). Original rejection, cancellation, zero-staging-query and
+restart identity gates remain. Canonical-proof fixture correction #163 explicitly
+asserts UNKNOWN for the authored alias before proving its resolved canonical concept.
+
+The develop-based full Reasoner selection on #163 head passed: 794 tests, zero
+failures/errors, 11 skips (`reasoner-final-followup-20261103.log`; reports in
+`reasoner-final-evidence-20261103`). It excludes Python-integration-only tests;
+the count must not be presented as directly equal to the earlier integrated run.
+
+All these changes are now merged into this candidate, including upstream
+`d263b30d1` planning-admission retrieval and scoped-observation handling. A normal
+reactor run through `klab.services.runtime.server -am` with both input paths is
+running (`runtime-integrated-reactor-20261103.log`), covering integrated Reasoner,
+Resolver and Runtime dependencies without failure-ignore or test-selection bypasses.
 This does not establish complete Java-suite, live-stack, or original-study acceptance.
 
 ## Why integrate upstream
