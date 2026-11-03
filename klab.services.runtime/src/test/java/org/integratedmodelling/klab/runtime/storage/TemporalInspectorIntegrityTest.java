@@ -321,15 +321,15 @@ class TemporalInspectorIntegrityTest {
   @Test void nonfiniteInitialEvidenceAndChangedMissingnessAreRejected() throws Exception {
     try (var f = registered("elevation - 10", false)) {
       assertTrue(relative(f, -10));
-      var initial = (StorageImpl.BaseScanner) f.store(f.quality)
-          .scan(Scheduler.Event.initialization(), f.layout, Storage.DoubleScanner.class, false).getFirst();
-      f.store(f.quality).finalizeRun(initial);
-      // Deliberately corrupt the native INIT buffer, preserving the committed event descriptors.
-      initial.data.set(0, Double.POSITIVE_INFINITY);
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException.class,
+          () -> f.store(f.quality).scan(
+              Scheduler.Event.initialization(), f.layout, Storage.DoubleScanner.class, false));
+      // Fault injection uses the fixture's retained buffer; the production API must not reopen INIT.
+      f.initialBuffer.set(0, Double.POSITIVE_INFINITY);
       assertFalse(relative(f, -10));
-      initial.data.set(0, Double.NaN);
+      f.initialBuffer.set(0, Double.NaN);
       assertFalse(relative(f, -10), "Missingness must agree at each position");
-      initial.data.set(0, 100.0);
+      f.initialBuffer.set(0, 100.0);
       assertTrue(relative(f, -10));
     }
   }
