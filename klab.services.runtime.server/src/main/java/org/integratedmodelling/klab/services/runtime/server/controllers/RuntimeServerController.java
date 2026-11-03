@@ -980,8 +980,7 @@ public class RuntimeServerController {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
       if (contextScope != null) {
-        contextScope.close();
-        return true;
+        return runtimeService.klabService().releaseContext(contextScope);
       }
     }
     return false;

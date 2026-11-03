@@ -1,0 +1,128 @@
+{
+  "status": "OFFLINE_COMPATIBILITY_PASS_LIVE_READINESS_PASS_JOB_AND_CLEANUP_ACCEPTANCE_FAIL",
+  "scope": "Authorized synthetic fixture compatibility only; no production worldview or algorithm changes",
+  "current_contract_version": 2,
+  "current_executable_candidate": "a12c2b9653c4112bfa0053ec32363f8109221b4f",
+  "current_software_checks": {
+    "offline_python_tests_passed": 2074,
+    "coverage_gates_passed": 7,
+    "lint": "PASS",
+    "wheel_and_sdist": "PASS",
+    "sdist_preparation_tool_contract_and_java_validator_payload": "PASS",
+    "empty_inventory_and_changed_core_negative_probes": "REJECTED_WITHOUT_SUCCESS_RESULT",
+    "negative_probe_JVMs_absent": 2,
+    "review": "author-conducted, not independent maintainer approval"
+  },
+  "preserved_live_attempt5": {
+    "status": "FAIL",
+    "readiness_status": "PASS",
+    "all_services_operational_and_semantic_search_capability_observed": true,
+    "ordinary_users_verified": 2,
+    "administrative_component_import_jobs_confirmed": 6,
+    "owned_resources_restarts": 1,
+    "contexts_confirmed": 2,
+    "observation_submission_receipts_confirmed": [1, 2],
+    "legacy_summary_observation_jobs_field": 0,
+    "summary_field_limit": "Do not interpret the legacy zero field as zero submissions: the mutation journal and HTTP events confirm two accepted submit receipts and retrieve calls",
+    "resolver_logged_outcomes": {"region": "NO_MODEL", "elevation": "FAILED"},
+    "numeric_readback": "NOT_VERIFIED",
+    "genuine_runtime_activity_delivery": "NOT_VERIFIED",
+    "context_release_receipts": [true, true],
+    "session_release_receipt": true,
+    "runtime_context_list_after_release": "EMPTY",
+    "publisher_socket_absence_after_context_release": "FAIL",
+    "masking_limit": "The final cleanup assertion replaced an earlier exception; exact primary exception was not retained and must not be guessed",
+    "resources_log_observation": "HttpMessageNotWritableException caused by JsonMappingException in existing PolymorphicSerializer; exact offending field/root cause remains unproven",
+    "automatic_mutation_replays": 0,
+    "recorded_owned_JVMs_independently_absent": 14,
+    "visible_windows_for_recorded_PIDs": 0,
+    "unrelated_services_or_windows_changed": false,
+    "raw_result_sha256": "e1b0e77be3841a5f34c2da11d0a7a2af09ac8144e21cc7f552df23fe58c8a1f6",
+    "raw_events_sha256": "326865132d08692190c1eca0c804a5b759b0592fe28d8191ec70cf76cc1143d5",
+    "mutation_journal_sha256": "22350e38a3e9cb78cae9ca1709bb505f53077ee00a23f7e24cf502950f67f272"
+  },
+  "v2_byte_preparation": {
+    "files": 243,
+    "changed_files": 4,
+    "replacement_spans": 5,
+    "unchanged_files": 239,
+    "output_tree_sha256": "a73095486ff1d76a06eec80bda79f00c35ae0f1d4ffa6ada78472c475f49e09c",
+    "receipt_sha256": "2220323af52cd8b0a8cc21448d4775014aca632ca033ad1bce5ce9ae8e26c311",
+    "original_and_oracle_model_bytes_preserved": true,
+    "core_bytes_changed": false,
+    "core_identity": "http://integratedmodelling.org/odo/0.2.0",
+    "core_sha256": "496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57"
+  },
+  "v2_offline_native_comparison": {
+    "original": {"exit": 3, "declaration": "FAIL", "capture_identity": "FAIL", "raw_result_sha256": "01c30e1c5712b3c7cd67197e6cffcf44b85525e830dd2b1d058a580d2566b1e6"},
+    "declaration_only_v1": {"exit": 3, "declaration": "PASS", "capture_identity": "FAIL", "raw_result_sha256": "78414baacc963b4575b430fa8e6979b53b871fa188da59dce4e4de5d94ffc983"},
+    "variant_v2": {"exit": 0, "declaration": "PASS", "capture_identity": "PASS", "raw_result_sha256": "8d53b339ac29af6d0992bcf5b72874afa45f7a11a9df3efcd7b9ef9baacc0e30"},
+    "each_inventory": {"ontologies": 26, "strategies": 2, "namespaces": 3},
+    "all_three_owned_JVMs_absent": true,
+    "runtime_operational": "UNKNOWN"
+  },
+  "preserved_live_attempt4": {
+    "status": "FAIL",
+    "blocker": "CANDIDATE_ISOLATION_UNSUPPORTED: uncaptured OWL import; legacy ODO0.1.1 locator does not identify captured ODO0.2.0 bytes",
+    "administrative_component_import_jobs_confirmed": 6,
+    "contexts": 0,
+    "scientific_jobs": 0,
+    "recorded_owned_JVMs_absent": 13,
+    "admission_guard_bypassed": false
+  },
+  "byte_preparation": {
+    "files": 243,
+    "changed_files": 3,
+    "replacement_spans": 4,
+    "unchanged_files": 240,
+    "input_tree_sha256": "b93b26962aa533659c2bb7dc3d365e7bd2cf32bb2cf99662772aad506ab0dd5f",
+    "output_tree_sha256": "ed1be5381317f2ceeb93f8dd0e5e20ce21577c28cfe43fff60d44cd56bc0db57",
+    "receipt_sha256": "c1403af4b1408fcfe39017120458830d436bbb665536e60fe383edc696b8bc49",
+    "original_source_and_all_oracle_model_bytes_preserved": true,
+    "semantic_admission_from_byte_hashes": "UNKNOWN"
+  },
+  "software_tests": {
+    "python_focused_cases_passed": 33,
+    "tool_unexcluded_line_branch_coverage_percent": 100,
+    "native_source_cases_passed": 22,
+    "new_native_original_variant_pairs": 4,
+    "native_parser_or_validator_implementation_changed": false
+  },
+  "offline_native_comparison": {
+    "backend_executable_source_candidate": "3d876834073ac26567b25e91867e5ed5166445b6",
+    "original": {
+      "exit": 3,
+      "declaration_validation": "FAIL",
+      "distinct_diagnostics": 4,
+      "error_occurrences_across_document_and_registry_checks": 7,
+      "raw_result_sha256": "a1a0c5a437bbdcecd7441e45844125624063464763a30d837d1162952bc61724"
+    },
+    "variant": {
+      "exit": 0,
+      "declaration_validation": "PASS",
+      "ontologies": 26,
+      "strategies": 2,
+      "namespaces": 3,
+      "error_diagnostics": 0,
+      "raw_result_sha256": "ce8216ab000c42016d34d7d6534611b9539f7df20850328b7fedff777b80653b"
+    },
+    "runtime_operational": "UNKNOWN",
+    "services_started": 0,
+    "scientific_jobs": 0,
+    "both_owned_validator_JVMs_absent": true,
+    "initial_old_API_helper_compile_failure_preserved": true,
+    "compile_correction": "Use current native LanguageAdapter/WorldviewValidationScope package and fully qualify notifications hidden by inherited syntax types; no platform implementation edits"
+  },
+  "remaining": [
+    "Hosted final-head checks and evidence reconciliation; software implementation is not acceptance completion",
+    "Read-only reproduction of Resources model transport serialization failure; separate authorization required for a new platform transport prerequisite PR",
+    "Correct product publisher lifecycle within authorized draft117 and retain both primary and cleanup failures in any future harness",
+    "Only after identified corrections and review: fresh bounded genuine-Job numerical and notification acceptance, with no replay of attempt5 submissions",
+    "Independent live queue/socket cleanup acceptance remains failed or unverified despite all recorded processes now being absent; no merge"
+  ],
+  "nonclaims": [
+    "Not a scientific correction or migration of shared Decision, social, stream or network concepts",
+    "Not original-study reproduction, taxonomy resolution, provider accuracy, raster redistribution or deployment authorization",
+    "Byte and offline declaration PASS do not complete Runtime operational or genuine Job acceptance"
+  ]
+}

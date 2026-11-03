@@ -1,0 +1,38 @@
+name: Runtime activity notification routing checks
+
+on:
+  push:
+    paths: ['klab.services.runtime/**', 'klab.services.runtime.server/**', 'klab.core.services/**', '.github/workflows/runtime-notifications.yml']
+  pull_request:
+    paths: ['klab.services.runtime/**', 'klab.services.runtime.server/**', 'klab.core.services/**', '.github/workflows/runtime-notifications.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  routing-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Test source-matched scope and notification routing regressions
+        run: ./mvnw -B -pl klab.services.runtime.server -am -Pnotification-coverage -Dtest=ContextActivityHintScopeTest,ContextActivityNotificationsTest,RuntimeContextReleaseTest,RuntimeContextReleaseControllerTest -Dsurefire.failIfNoSpecifiedTests=false org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent verify org.jacoco:jacoco-maven-plugin:0.8.12:report
+      - name: Require complete canonical context-release method coverage
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          for module, cls, name in [
+              ('klab.services.runtime', 'org/integratedmodelling/klab/services/runtime/RuntimeService', 'releaseContext'),
+              ('klab.services.runtime.server', 'org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController', 'closeContext')]:
+              report = ET.parse(f'{module}/target/site/jacoco/jacoco.xml').getroot()
+              method = report.find(f".//class[@name='{cls}']/method[@name='{name}']")
+              assert method is not None
+              for kind in ['LINE', 'BRANCH']:
+                  count = method.find(f"counter[@type='{kind}']")
+                  assert count is not None and int(count.get('covered')) > 0 and int(count.get('missed')) == 0
+          PY
