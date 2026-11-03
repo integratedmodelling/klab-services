@@ -2,6 +2,8 @@
 
 Candidate parents: Python integration `e09a7de7cac6b48526fd8b7ac72879abb36a77a3`
 and upstream `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920`.
+The current candidate also integrates merged stabilization PRs #143, #146 and
+#148 through develop `d914a6c5f28d498a8eba38cb8661e4abeb7deb2f`.
 This candidate is not release acceptance. No scientific input is migrated.
 
 ## Why integrate upstream
@@ -51,20 +53,48 @@ Temurin 21.0.12.1 / Maven 3.9.5, Windows:
 Issue #142 is closed by test-only [PR #143](https://github.com/integratedmodelling/klab-services/pull/143),
 merged to `develop` as `4bca4fe14fb07cca5a373cc1064b36973bfd8805` after
 489 API/common tests and both GitHub Actions and Jenkins checks passed.
-The correction honors `8c675521a`'s explicit status-only error contract. It has
-not yet been incorporated in this in-progress merge candidate.
+The correction honors `8c675521a`'s explicit status-only error contract and is
+now incorporated in the candidate.
 
 Four additional core-service failures reproduce in the upstream control checkout
 with only #143's unrelated test correction:
 
 - [#144](https://github.com/integratedmodelling/klab-services/issues/144): remote
-  `ClientKnowledgeGraph` inherits an unsupported observation-currentness default
-  now called by `ServiceContextScope.getObservation`. This requires a supported
-  remote lifecycle contract, not bypassing currentness checks.
+  `ClientKnowledgeGraph` inherited an unsupported observation-currentness default
+  called by `ServiceContextScope.getObservation`. Merged PR #148 implements an
+  uncached authorized read and a paired server-side native currentness check on
+  the existing numeric asset endpoint. 45 selected tests passed plus one added
+  real HTTP503 regression (four client currentness tests passed after addition).
+  GitHub Actions and Jenkins passed on final head `578c6556f`. Deployed acceptance
+  is still outstanding and older Runtime compatibility is unverified; #144 stays
+  open. HTTP failures report to scope and return null, rejecting currentness;
+  this boolean API does not distinguish absence from unavailability.
 - [#145](https://github.com/integratedmodelling/klab-services/issues/145): authority
   selection fixture, optional Web UI asset dependency, and a commented-out stop
-  invocation in the shutdown test. The issue records reproduction and source
-  diagnosis; those corrections are not yet implemented.
+  invocation in the shutdown test. Merged PR #146 fixes all three; 28 clean
+  selected tests and GitHub build passed. The authority defect was a missing
+  published registry view after direct writer injection, not missing selection.
+
+Combined candidate `20a1beb8f5d8cc3f89809d6d514f35a3abed6dda` passes **103**
+selected tests covering these unblockers, native cessation/membership, identity,
+scope caches and forced reload/restoration. No failures/errors/skips were ignored.
+The full API/common/core-services reactor passed: **1,697 tests, zero
+failures/errors, two skips** (144 API, 364 common, 1,189 core services), with
+normal failure handling. Log: `upstream-integrated-core-full-20261103.log`.
+
+The temporal numeric fixture's missing currentness behavior is now diagnosed:
+its graph mock defaulted to false for every registered observation. A local
+correction models its committed inventory and delegates pending state to the
+actual transaction, rejecting foreign scopes and unknown observations. All 16
+temporal tests pass, including a new absent-process/no-write regression, without
+changing any original numerical, rollback or restart assertions.
+
+Broader verification exposed an inspector test trying to reopen immutable INIT
+storage merely to inject corruption. It now verifies that reopening is rejected
+and injects the same nonfinite/missingness corruption through a retained fixture
+buffer. **33 tests pass** across temporal execution, inspector integrity, native
+constant initialization and process-birth accounting. This test-only correction
+is pending separate delivery; it is not a full-runtime acceptance claim.
 
 A new forced-reload/restoration interaction regression in
 `AcceptedSemanticRestorationTest` passes: 18 tests across that class and
@@ -77,7 +107,13 @@ mode and is not acceptance. Raw module summaries and copied XML reports agree.
 The immutable local evidence directory is
 `upstream-integration-inventory-evidence-20261103` beside this worktree;
 `upstream-integration-diagnostic-inventory-20261103.log` retains the complete run.
-The upstream control comparison is still outstanding. In particular, failures in
+The control comparison is recorded in
+[#147](https://github.com/integratedmodelling/klab-services/issues/147):
+4,171 control tests, 160 failures, 132 errors, 32 skips. There are 291 identical
+failing test identities. Candidate-only failures were the HTTP expectation
+(now fixed) and pinned ODO hash. Control-only failure was the shared-scope-cache
+mock's missing currentness behavior, already corrected in this candidate.
+Parity with failing upstream is not acceptance. In particular, failures in
 temporal execution, classification, semantic admission and pinned fixture hashes
 must not be dismissed as stale mocks without reproducing and diagnosing them.
 
