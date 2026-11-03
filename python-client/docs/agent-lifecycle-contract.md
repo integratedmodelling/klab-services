@@ -1,4 +1,8 @@
-# Python behavior/agent lifecycle: transport gate
+# Python behavior/agent lifecycle: historical transport audit
+
+Current PR111 development implements only the separately labelled
+[source-only preview](agent-source-preview.md). The following original audit is
+retained; full lifecycle remains incomplete, never inferred from source translation.
 
 **BLOCKED full lifecycle; not implemented or accepted.** Audit source base
 `bb4f62ce01bb41d93f506ee34c19687b401d8640`, under the user's explicit instruction
