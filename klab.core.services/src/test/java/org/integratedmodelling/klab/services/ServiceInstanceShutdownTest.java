@@ -19,7 +19,7 @@ class ServiceInstanceShutdownTest {
   void stopBeforeServiceCreationClosesMaintenanceScheduler() {
     var instance =
         mock(ServiceInstance.class, withSettings().useConstructor().defaultAnswer(CALLS_REAL_METHODS));
-//    assertDoesNotThrow(instance::stop);
+    instance.stop();
     assertTrue(instance.scheduler.isShutdown());
   }
 
