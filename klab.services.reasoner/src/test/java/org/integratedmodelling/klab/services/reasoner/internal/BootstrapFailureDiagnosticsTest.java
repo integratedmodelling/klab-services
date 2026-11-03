@@ -16,6 +16,15 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.junit.jupiter.api.Test;
 
 class BootstrapFailureDiagnosticsTest {
+  @Test void providerSummaryKeepsStatusButRemovesCredentialsConfigurationAndBodies() {
+    var summary = AuthorityIdentityResolver.providerMessage(
+        "HTTP 429 at https://example.org/path?token=hidden Bearer access-token password=hidden private-value body={secret}",
+        java.util.Map.of("nested", java.util.Map.of("key", "private-value")));
+    assertTrue(summary.contains("HTTP 429"));
+    for (var secret : java.util.List.of("https://", "access-token", "hidden", "private-value", "{secret}"))
+      assertFalse(summary.contains(secret), summary);
+    assertTrue(AuthorityIdentityResolver.providerMessage("x".repeat(2000), java.util.Map.of()).length() <= 403);
+  }
   @Test void serverLoggerReceivesThrowableOverloadWithRedactedOriginalTypeAndCause() {
     var logger=mock(org.slf4j.Logger.class);
     var original=new IllegalStateException("SECRET",new IOException("SECRET cause"));

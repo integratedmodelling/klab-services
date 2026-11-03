@@ -239,7 +239,8 @@ class AcceptedSemanticRuntimePreflightTest {
       assertTrue(runtime.shouldRetryPreflight(source,scope));
       var retry=runtime.beginPreflight(source,scope);
       assertTrue(retry.retry());
-      verify(factory).invalidateBootstrap();
+      verify(factory).retryBootstrapFailures();
+      verify(factory, never()).invalidateBootstrap();
       assertTrue(runtime.submit(source,retry,scope));
       assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
       verify(factory,times(2)).capture(any(),same(scope));

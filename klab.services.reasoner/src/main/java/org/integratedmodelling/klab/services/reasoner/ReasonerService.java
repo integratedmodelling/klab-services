@@ -388,7 +388,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           "Semantic boundaries must match the worldview configuration");
     var provider =
         authorityBootstrapActor
-            ? getComponentRegistry().getAuthority(selected, scope)
+            ? capturedAuthorities.supports(selected)
+                ? capturedAuthorities.provider(selected, request, semanticAssets, () -> true)
+                : getComponentRegistry().getAuthority(selected, scope)
             : semanticOnly
                 ? capturedAuthorities.provider(
                     selected,
@@ -1425,6 +1427,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public Map<String, Long> successfulAuthorityConfigurations() {
     return authorityBindings.codelistRevisions();
+  }
+
+  public Set<String> activeAuthorityCacheFingerprints() {
+    if (!authorityBootstrapActor) throw new IllegalStateException("Not a bootstrap actor");
+    return authorityBindings.snapshot().stream().map(binding -> binding.id().substring(binding.id().lastIndexOf(':') + 1))
+        .filter(value -> value.matches("[a-f0-9]{64}")).collect(java.util.stream.Collectors.toUnmodifiableSet());
   }
 
   public Map<String, org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot>
@@ -4585,6 +4593,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private void installAlias(KimConceptStatement concept, Ontology ontology, Scope monitor) {
+    try {
+      installAliasInternal(concept, ontology, monitor);
+    } catch (org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver.LookupFailure failure) {
+      failure.atDeclaration(concept.getNamespace() + ":" + concept.getUrn());
+      var document = worldview == null ? null : worldview.getOntologies().stream()
+          .filter(candidate -> candidate.getUrn().equals(concept.getNamespace())).findFirst().orElse(null);
+      monitor.error(document == null ? Notification.error(failure.diagnostic())
+          : Notification.error(failure.diagnostic(), Notification.LexicalContext.of(concept, document)));
+      throw failure;
+    }
+  }
+
+  private void installAliasInternal(KimConceptStatement concept, Ontology ontology, Scope monitor) {
     /*
      * can only have 'is' or 'equals' X; for core concepts 'is' means 'equals', and we use the
      * statement to establish the semantic type.

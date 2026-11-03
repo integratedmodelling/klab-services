@@ -46,7 +46,7 @@ public final class AuthorityBindings {
     if (capabilities != null && capabilities.getWorldview() != null
         && !request.worldview().equals(capabilities.getWorldview()))
       throw new KlabValidationException("Authority is incompatible with worldview " + request.worldview());
-    Authority hosted = cacheRoot == null ? provider : new CachedAuthority(provider, cacheRoot);
+    Authority hosted = cacheRoot == null ? provider : new CachedAuthority(provider, cacheRoot, true);
     String id = hosted.configure(cacheRoot == null ? providerRequest(request) : request);
     if (id == null || id.isBlank())
       throw new KlabValidationException("Authority returned an empty configuration ID: " + request.name());

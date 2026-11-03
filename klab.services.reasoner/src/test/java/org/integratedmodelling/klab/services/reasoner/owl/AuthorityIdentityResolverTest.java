@@ -15,6 +15,25 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class AuthorityIdentityResolverTest {
+  @Test void lookupFailureNamesAuthoredIdentityWithoutProviderSecrets() {
+    var owl = new TestOWL();
+    var provider = mock(Authority.class);
+    var request = new Authority.ConfigurationRequest("wv", "TAXA", "bio:Root", Map.of("urn", "test"));
+    when(provider.configure(request)).thenReturn("bridge");
+    when(provider.resolveIdentity("bridge", "unseen")).thenThrow(new IllegalStateException("HTTP 429 token=private-token"));
+    var bindings = new AuthorityBindings(); bindings.configure(request, provider);
+    var resolver = new AuthorityIdentityResolver(owl, bindings);
+    var failure = assertThrows(AuthorityIdentityResolver.LookupFailure.class,
+        () -> resolver.resolve("TAXA", "unseen"));
+    failure.atDeclaration("society:Human");
+    assertTrue(failure.getMessage().contains("society:Human -> TAXA:unseen"));
+    assertFalse(failure.getMessage().contains("private-token"));
+    assertTrue(failure.getMessage().contains("HTTP 429"));
+    assertInstanceOf(IllegalStateException.class, failure.getCause());
+    doReturn(null).when(provider).resolveIdentity("bridge", "unseen");
+    assertTrue(assertThrows(AuthorityIdentityResolver.LookupFailure.class,
+        () -> resolver.resolve("TAXA", "unseen")).getMessage().contains("provider returned no identity"));
+  }
   @Test void mappedBoundaryDefersAndLaterEnrichesTheSameConceptWithoutLosingItOnFailure() {
     var owl = new TestOWL();
     var roots = owl.requireOntology("biology");

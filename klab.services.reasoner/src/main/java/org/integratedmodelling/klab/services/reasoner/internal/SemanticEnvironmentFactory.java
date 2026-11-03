@@ -56,6 +56,7 @@ public final class SemanticEnvironmentFactory
     return context!=null && context.key().equals(AuthorityBootstrap.key(input.payload(),context.owner()));
   }
   void invalidateBootstrap() { if (bootstrap != null) bootstrap.invalidate(); bootstrapInputs.clear(); }
+  void retryBootstrapFailures() { if (bootstrap != null) bootstrap.retryFailures(); }
   public CandidatePublicationCoordinator.Input<Worldview> capture(Worldview source, org.integratedmodelling.klab.api.scope.Scope owner) {
     var input = capture(source);
     if (bootstrap == null || source.getAuthorityBindings().isEmpty()) return input;
@@ -293,7 +294,13 @@ public final class SemanticEnvironmentFactory
       captured = isolated.capture(owned);
     }
     cancellation.checkpoint();
-    var result = isolated.buildCaptured(captured, cancellation);
+    CandidatePublicationCoordinator.Result<SemanticEnvironment> result;
+    try {
+      result = isolated.buildCaptured(captured, cancellation);
+    } catch (AuthorityIdentityResolver.LookupFailure missing) {
+      bootstrap.incompleteCapture(context.key());
+      throw missing;
+    }
     try {
       cancellation.checkpoint();
       // Re-resolve exact metadata after compilation too; no publication of stale rights/artifacts.

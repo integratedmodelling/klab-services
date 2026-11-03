@@ -349,7 +349,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             Objects.equals(key, submittedKey)
                 ? CandidateTrace.Reason.SAME_KEY_RETRY
                 : CandidateTrace.Reason.NEW_KEY);
-      if (Objects.equals(key, submittedKey)) factory.invalidateBootstrap();
+      if (Objects.equals(key, submittedKey)) factory.retryBootstrapFailures();
       coordinator.invalidate();
       return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), true);
     }

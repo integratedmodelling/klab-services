@@ -12,6 +12,25 @@ import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 
 /** Lazy, rooted materialization. Validate the complete provider graph before adding axioms. */
 public final class AuthorityIdentityResolver {
+  /** Authored identity/declaration and bounded provider diagnostics; never configuration values. */
+  public static final class LookupFailure extends KlabValidationException {
+    private final String authority;
+    private final String code;
+    private String declaration;
+    public LookupFailure(String authority, String code, String reason) {
+      super(reason);
+      this.authority = authority;
+      this.code = code;
+    }
+    public void atDeclaration(String urn) { if (declaration == null) declaration = urn; }
+    public String diagnostic() {
+      String reference = org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(authority, code);
+      if (reference.length() > 256) reference = authority + ":sha256:" + CachedAuthority.digest(code);
+      return "AUTHORITY_IDENTITY_LOOKUP_FAILED: " + (declaration == null ? "" : declaration + " -> ")
+          + reference + " (" + super.getMessage() + ")";
+    }
+    @Override public String getMessage() { return diagnostic(); }
+  }
   private final OWL owl;
   private final AuthorityBindings bindings;
   private final Map<AuthorityBindings.Binding, Map<String, Concept>> resolved = new IdentityHashMap<>();
@@ -221,11 +240,24 @@ public final class AuthorityIdentityResolver {
       known.put(id, root);
       return;
     }
-    var identity = fullHierarchy ? binding.provider().resolveIdentity(binding.id(), id, Authority.ResolutionMode.FULL_HIERARCHY)
-        : binding.provider().resolveIdentity(binding.id(), id);
+    Authority.Identity identity;
+    try {
+      identity = fullHierarchy ? binding.provider().resolveIdentity(binding.id(), id, Authority.ResolutionMode.FULL_HIERARCHY)
+          : binding.provider().resolveIdentity(binding.id(), id);
+    } catch (RuntimeException failure) {
+      var diagnostic = new LookupFailure(binding.request().name(), id,
+          "provider=" + binding.provider().getUrn() + ", mode=" + (fullHierarchy ? "FULL_HIERARCHY" : "CONFIGURED")
+              + ", exception=" + exceptionSummary(failure, binding.request().parameters()));
+      diagnostic.initCause(failure);
+      throw diagnostic;
+    }
     if (identity == null || (identity.getNotifications() != null && identity.getNotifications().stream()
         .anyMatch(n -> n.getLevel() == Notification.Level.Error)))
-      throw new KlabValidationException("Authority could not resolve identity " + id);
+      throw new LookupFailure(binding.request().name(), id,
+          "provider=" + binding.provider().getUrn() + ", mode=" + (fullHierarchy ? "FULL_HIERARCHY" : "CONFIGURED")
+              + (identity == null ? ", provider returned no identity" : ", errors="
+                  + identity.getNotifications().stream().filter(n -> n.getLevel() == Notification.Level.Error)
+                      .limit(3).map(n -> providerMessage(n.getMessage(), binding.request().parameters())).toList()));
     if (fullHierarchy && identity.getHierarchyStatus() == Authority.HierarchyStatus.DEFERRED)
       throw new KlabValidationException("Authority did not provide complete ancestry");
     if (identity.getConceptName() == null || !identity.getConceptName().matches("[A-Za-z_][A-Za-z0-9_]*"))
@@ -252,6 +284,35 @@ public final class AuthorityIdentityResolver {
     // a mapped boundary. Do not mark the leaf complete above a silently deferred branch.
     boolean fullParents = fullHierarchy || !binding.request().semanticBoundaries().isEmpty();
     for (var parent : parents(identity)) collect(binding, parent, graph, known, incomplete, fullParents);
+  }
+
+  static String providerMessage(String message, Map<String, Object> parameters) {
+    if (message == null || message.isBlank()) return "no diagnostic message";
+    // Provider messages may contain endpoint queries, authorization headers or echoed bodies.
+    String safe = message.replaceAll("(?is)\\b(?:response\\s+)?body\\s*[:=].*", "body=[redacted]")
+        .replaceAll("(?i)https?://[^\\s<>\\\"]+", "[endpoint]")
+        .replaceAll("(?i)\\bBearer\\s+\\S+", "Bearer [redacted]")
+        .replaceAll("(?i)\\b(?:authorization|password|token|secret|api[-_]?key)\\s*[:=]\\s*[^\\s,;]+", "credential=[redacted]");
+    var values = new ArrayList<String>();
+    collectParameterValues(parameters, values);
+    for (var value : values.stream().filter(v -> v.length() > 2).sorted(Comparator.comparingInt(String::length).reversed()).toList())
+      safe = safe.replace(value, "[configuration value]");
+    safe = safe.replaceAll("[\\p{Cntrl}\\s]+", " ").trim();
+    return safe.length() > 400 ? safe.substring(0, 400) + "..." : safe;
+  }
+
+  private static String exceptionSummary(Throwable failure, Map<String, Object> parameters) {
+    var seen = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
+    var parts = new ArrayList<String>();
+    for (var current = failure; current != null && seen.add(current) && parts.size() < 4; current = current.getCause())
+      parts.add(current.getClass().getSimpleName() + ": " + providerMessage(current.getMessage(), parameters));
+    return String.join(" caused by ", parts);
+  }
+
+  private static void collectParameterValues(Object value, List<String> values) {
+    if (value instanceof String text) values.add(text);
+    else if (value instanceof Map<?, ?> map) map.values().forEach(v -> collectParameterValues(v, values));
+    else if (value instanceof Collection<?> collection) collection.forEach(v -> collectParameterValues(v, values));
   }
 
   private List<String> parents(Authority.Identity identity) {
