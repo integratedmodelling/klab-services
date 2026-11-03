@@ -89,6 +89,8 @@ class SemanticSearchAvailabilityTest {
     when(scope.getServices(Reasoner.class)).thenReturn(List.of(reasoner));
     when(reasoner.status().isOperational()).thenReturn(true);
     when(workspace.getNamespaces()).thenThrow(new IllegalStateException("index failure"));
+    // Catalog publication also checks the selected Reasoner's live semantic snapshot.
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     doCallRealMethod().when(provider).checkSemanticServices(scope);
     doCallRealMethod().when(provider).resolveModels(null, null, null, List.of(), scope);
     doCallRealMethod().when(provider).resolveModels(null, null, null, List.of(), scope,
@@ -107,6 +109,12 @@ class SemanticSearchAvailabilityTest {
     assertFalse(provider.checkSemanticServices(scope));
     assertFalse(available.get());
     doReturn(capabilities).when(reasoner).capabilities(scope);
+    assertTrue(provider.checkSemanticServices(scope));
+    when(scope.getService(Reasoner.class)).thenReturn(null);
+    assertFalse(provider.checkSemanticServices(scope),
+        "An operational advertised Reasoner is not a selected semantic snapshot");
+    assertFalse(available.get());
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
     assertTrue(provider.checkSemanticServices(scope));
   }
 }
