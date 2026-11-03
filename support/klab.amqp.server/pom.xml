@@ -142,6 +142,21 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <profiles>
+        <profile>
+            <id>agent-wire-logging</id>
+            <dependencies>
+                <!-- Opt-in test diagnostics, matching Qpid9.2.0's SLF4J API version.
+                     Never a production broker dependency or authentication change. -->
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                    <version>2.0.11</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
     <!-- This module is standalone (not parented by the reactor POM). Match the
          reactor's product-plugin source so clean CI does not rely on a warm cache. -->
     <pluginRepositories>
