@@ -31,8 +31,16 @@ The test selectors are `ContainedTierZeroAcceptanceTest` and
 `ClassificationSourceAcceptanceTest`, using `-pl klab.services.resources -am`
 and `-Dsurefire.failIfNoSpecifiedTests=false test` with normal failure handling.
 
-The integrated full Resources selection with both configured paths is running;
-see `C:/Users/lumsd/AppData/Local/Temp/opencode/resources-integrated-configured-20261103.log`.
+The integrated full Resources selection with both configured paths ran 472 tests:
+one failure, zero errors, eight skips. The only failure is
+`RuntimeFixtureCompatibilitySourceTest.fixtureCoreImportNamesTheActualCapturedVersionWithoutReplacingOwlBytes`:
+expected ODO SHA256 `496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57`,
+actual `5c020dac9bd9d1cd4f9673b8075cf08f75ecc7194c74378bdb8f0498110ddba3`.
+The original oracle remains unchanged. See
+`C:/Users/lumsd/AppData/Local/Temp/opencode/resources-integrated-configured-20261103.log`;
+reports are preserved in `resources-integrated-evidence-20261103` alongside it.
+The full Reasoner test-class selection is now running with the same configured
+input paths and normal failure handling (`reasoner-integrated-configured-20261103.log`).
 This does not establish complete Java-suite, live-stack, or original-study acceptance.
 
 ## Why integrate upstream
