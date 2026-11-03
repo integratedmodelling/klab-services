@@ -28,7 +28,34 @@ exclusions. The13-module webui/service/graph package and seven fresh current Mav
 closures pass. Test fixtures intentionally lack a usable broker; their AMQP error
 logs are not messaging acceptance. Packaging skips tests after the verified suite.
 
-Fresh native membership runs with explicit local-parent assertions, complete
-registered-session inventory, independent cleanup, final CI and review remain
-pending. Do not merge or call issue89 complete based on local tests alone. Broader
-restart, two-deployed-Runtime and other issue89 gates remain separately unfinished.
+## Genuine native acceptance
+
+Fresh run26 (Alice-first) and run27 (Bob-first) pass against executable candidate
+`27399f00c88c358de0cff4fcc0c2e4f528942fb0`. Each uses four separate native Java
+processes, including a second process for the first username and a public outsider
+reconnect. Each verifies four positive native API reads, five explicit HTTP403
+denials, matching caller/owner/Runtime/group descriptors and forbidden ordinary
+shared-session disposal. Every positive reconnect additionally asserts the exact
+descriptor parent, Runtime and requester. Full Runtime registration-log inventories
+show only the single expected nonlocal session; no auxiliary default session exists.
+
+In each run four contexts and the single session have confirmed releases, Runtime
+context listing is empty, all18 JVM identities are independently absent,3,898 launch
+hashes/1,154 main-source hashes and all fixture/client hashes remain unchanged.
+No matching owned visible windows remain; unrelated processes/windows are untouched.
+Launch attestation matches2,612 compiled classes to packaged JARs and seven current
+declared closures. There are zero scientific Jobs and no automatic mutation replay.
+Privileged final disposal of the shared session is a cleanup operation, not an
+ordinary-member capability. Failed runs23/24/25 and stopped isolated state remain
+preserved; later success does not establish historical auxiliary-session disposal.
+
+Run26 result SHA-256:
+`bcdf6cbb70fc90e4a3e794b5cff9652e325c2edbfc3d11bd2fd15c89af11f3e7`.
+Run27 result SHA-256:
+`b71b3df0082d2dd88304a06e14dea4cab35d703a44576a519665df185de3ed30`.
+
+Final documentation-head CI and merge review remain pending. Review is author/
+agent-conducted, not independent maintainer approval. These are membership and
+native reconnect acceptance, not scientific, graph-retaining restart or two-deployed-
+Runtime acceptance. Broader issue89 gates remain unfinished. See
+[sanitized results](native-reconnect-parent-results-20261103.json).

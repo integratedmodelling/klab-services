@@ -1,0 +1,28 @@
+{
+  "status": "PASS_BOUNDED_NATIVE_RECONNECT_PARENT_AND_MEMBERSHIP",
+  "executable_candidate": "27399f00c88c358de0cff4fcc0c2e4f528942fb0",
+  "unchanged_baseline_regressions": {"tests": 2, "failures": 2, "signatures": ["wrong caller-default parent", "unexpected getUserSession call"]},
+  "focused_tests": 37,
+  "new_reconnect_tests": 10,
+  "changed_executable_lines_covered": "10/10",
+  "changed_branch_outcomes_covered": "6/6",
+  "coverage_exclusions_added": false,
+  "package_modules": 13,
+  "compiled_class_bytes_matched_to_jars": 2612,
+  "fresh_current_declared_classpaths": 7,
+  "fresh_acceptance": [
+    {"run": 26, "creation_order": "Alice first", "native_processes": 4, "positive_native_reads": 4, "explicit_denials_http403": 5, "exact_parent_runtime_and_caller": "PASS", "registered_sessions": 1, "auxiliary_sessions": 0, "contexts_released": 4, "sessions_released": 1, "all18_jvm_identities_independently_absent": true, "launch_hashes_unchanged": 3898, "source_hashes_unchanged": 1154, "fixture_client_hashes_unchanged": true, "result_sha256": "bcdf6cbb70fc90e4a3e794b5cff9652e325c2edbfc3d11bd2fd15c89af11f3e7"},
+    {"run": 27, "creation_order": "Bob first", "native_processes": 4, "positive_native_reads": 4, "explicit_denials_http403": 5, "exact_parent_runtime_and_caller": "PASS", "registered_sessions": 1, "auxiliary_sessions": 0, "contexts_released": 4, "sessions_released": 1, "all18_jvm_identities_independently_absent": true, "launch_hashes_unchanged": 3898, "source_hashes_unchanged": 1154, "fixture_client_hashes_unchanged": true, "result_sha256": "b71b3df0082d2dd88304a06e14dea4cab35d703a44576a519665df185de3ed30"}
+  ],
+  "runtime_empty_context_listing_and_cleanup": "PASS_BOTH_RUNS",
+  "live_matching_owned_visible_windows": 0,
+  "unrelated_processes_windows_touched": false,
+  "scientific_jobs": 0,
+  "automatic_mutation_replay": false,
+  "authentication_membership_acl_dependency_rules_changed": false,
+  "local_parent_is_remote_session_ownership_proof": false,
+  "historical_run24_25_overall": "FAIL_RETAINED_AUXILIARY_SESSION_DISPOSAL_UNCONFIRMED",
+  "graph_retaining_restart_and_two_deployed_runtimes": "NOT_ACCEPTED",
+  "broader_issue89": "INCOMPLETE",
+  "final_documentation_ci_and_merge_review": "PENDING"
+}
