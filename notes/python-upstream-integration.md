@@ -81,6 +81,18 @@ The upstream control comparison is still outstanding. In particular, failures in
 temporal execution, classification, semantic admission and pinned fixture hashes
 must not be dismissed as stale mocks without reproducing and diagnosing them.
 
+The pinned core-ontology failure has a verified explanation: upstream
+`0e77650ab` added nine lines defining `odo:impliesPredicate` to
+`klab.services.reasoner/src/main/resources/knowledge/odo.owl`. Its source and
+compiled-resource SHA256 both equal
+`5c020dac9bd9d1cd4f9673b8075cf08f75ecc7194c74378bdb8f0498110ddba3`, versus
+the captured fixture's
+`496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57`.
+Index and working tree both use LF under an explicit `eol=lf` attribute.
+This is an ontology-source change, not checkout corruption. The old fixture/hash
+assertion remains preserved; a new versioned compatibility fixture needs explicit
+semantic-impact verification before adoption. See issue #89's follow-up evidence.
+
 Reproduce from this candidate checkout; Windows uses `mvnw.cmd`, and PowerShell
 requires quotes around each complete `-D...` argument:
 
