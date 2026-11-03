@@ -326,16 +326,25 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   }
 
   public PreflightAttempt beginPreflight(Worldview snapshot, Scope scope) {
+    return beginPreflight(snapshot, scope, false);
+  }
+
+  /** Explicit administrator reloads bypass unchanged-input suppression and failure backoff. */
+  public PreflightAttempt beginPreflight(Worldview snapshot, Scope scope, boolean force) {
     synchronized (lifecycle) {
       if (closed)
         return new PreflightAttempt(null, "", coordinator.status().inputGeneration(), false);
+      if (force) {
+        coordinator.invalidate();
+        factory.invalidateBootstrap();
+      }
     }
     var owned = BeanIngestionPreflight.snapshot(refreshAuthoritySelection(snapshot, scope));
     var key = preflightKey(owned, scope);
     synchronized (lifecycle) {
       if (closed
-          || suppressSubmitted(key)
-          || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))
+          || (!force && (suppressSubmitted(key)
+              || (Objects.equals(key, rejectedKey) && retryClock.getAsLong() - retryAfter < 0))))
         return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), false);
       traceInput(owned, scope, key);
       if (CandidateTrace.enabled())
@@ -349,7 +358,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             Objects.equals(key, submittedKey)
                 ? CandidateTrace.Reason.SAME_KEY_RETRY
                 : CandidateTrace.Reason.NEW_KEY);
-      if (Objects.equals(key, submittedKey)) factory.retryBootstrapFailures();
+      if (force || Objects.equals(key, submittedKey)) factory.retryBootstrapFailures();
       coordinator.invalidate();
       return new PreflightAttempt(owned, key, coordinator.status().inputGeneration(), true);
     }
@@ -385,8 +394,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   }
 
   public boolean submit(Worldview snapshot, PreflightAttempt attempt, Scope scope) {
+    return submitGeneration(snapshot, attempt, scope) >= 0;
+  }
+
+  /** Return the exact input receipt, or -1 when preflight was superseded. */
+  public long submitGeneration(Worldview snapshot, PreflightAttempt attempt, Scope scope) {
     synchronized (lifecycle) {
-      if (closed) return false;
+      if (closed) return -1;
     }
     var input =
         factory.authorityBootstrapEnabled()
@@ -394,7 +408,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             : factory.capture(snapshot);
     synchronized (lifecycle) {
       if (!current(attempt, scope) || !attempt.key().equals(preflightKey(snapshot, scope)))
-        return false;
+        return -1;
       clearRejected();
       submittedKey = attempt.key();
       submittedRetryAfter = retryClock.getAsLong() + Duration.ofSeconds(60).toNanos();
@@ -409,7 +423,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             attempt.key(),
             CandidateTrace.digest(input.dependencyRevision()),
             CandidateTrace.Reason.NONE);
-      return true;
+      return generation;
     }
   }
 
@@ -624,6 +638,11 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
 
   public boolean awaitIdle(Duration timeout) throws InterruptedException {
     return coordinator.awaitIdle(timeout);
+  }
+
+  public CandidatePublicationCoordinator.Status awaitGeneration(long generation, Duration timeout)
+      throws InterruptedException {
+    return coordinator.awaitGeneration(generation, timeout);
   }
 
   public CandidatePublicationCoordinator<Worldview, SemanticEnvironment>.Lease lease() {

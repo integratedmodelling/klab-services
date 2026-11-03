@@ -24,6 +24,8 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
@@ -1314,6 +1316,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     getComponentRegistry()
         .initializeComponents(getConfigurationSubdirectory(options, "components"));
     ServiceConfiguration.INSTANCE.setMainService(this);
+    ((SettingsImpl) settings())
+        .setExecutionHandler(Setting.RELOAD_WORLDVIEW, request -> reloadWorldview());
   }
 
   void initializeAuthorityIdentityResolver() {
@@ -1547,7 +1551,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    *
    * @return
    */
-  boolean checkWorldview() {
+  synchronized boolean checkWorldview() {
 
     boolean candidatePublication = candidateRuntime != null && !semanticOnly;
     if (knowledgeReady && !candidatePublication) {
@@ -1558,10 +1562,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (candidatePublication) setOperational(ret);
     // Prefer local authoring sources, while allowing certificate-advertised remote sources
     // when no local worldview is available. Never replace an unchanged local selection remotely.
-    var sources =
-        serviceScope().getServices(ResourcesService.class).stream()
-            .sorted(Comparator.comparing(resources -> !Utils.URLs.isLocalHost(resources.getUrl())))
-            .toList();
+    var sources = worldviewSources();
     for (var resources : sources) {
 
       if (resources.status().isAvailable()
@@ -1632,6 +1633,78 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
     }
     return ret;
+  }
+
+  private List<ResourcesService> worldviewSources() {
+    return serviceScope().getServices(ResourcesService.class).stream()
+        .sorted(Comparator.comparing(resources -> !Utils.URLs.isLocalHost(resources.getUrl())))
+        .toList();
+  }
+
+  /** Rediscover using the service's authority, then report the outcome of this exact reload. */
+  public Map<String, Object> reloadWorldview() {
+    List<Notification> notifications = new ArrayList<>();
+    boolean success = false;
+    try {
+      long generation;
+      long[] submittedGeneration = {-1};
+      AcceptedSemanticRuntime runtime;
+      // Serialize discovery/preflight with scheduler ingestion, but never hold the service monitor
+      // while a private candidate compiles or synchronizes authorities.
+      synchronized (this) {
+        runtime = candidateRuntime != null && !semanticOnly ? candidateRuntime : null;
+        try (var collector = new IngestionNotifications(serviceScope(), notifications)) {
+          Worldview discovered = null;
+          for (var resources : worldviewSources()) {
+            if (resources.status().isAvailable()
+                && resources.capabilities(serviceScope()).isWorldviewProvider()) {
+              discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
+              if (discovered != null) break;
+            }
+          }
+          if (discovered == null) {
+            notifications.add(Notification.error("No worldview is available from Resources services"));
+            return Map.of("result", false, "notifications", List.copyOf(notifications));
+          }
+          var loaded = loadKnowledgeEntry(discovered, serviceScope(), NO_COMPILATION_CANCELLATION,
+              true, receipt -> submittedGeneration[0] = receipt);
+          notifications.addAll(loaded.getNotifications());
+          for (var resource : Utils.Collections.join(
+              loaded.getNamespaces(), loaded.getBehaviors(), loaded.getResources(),
+              loaded.getResults(), loaded.getOntologies(), loaded.getObservationStrategies()))
+            notifications.addAll(resource.getNotifications());
+          success = !Utils.Resources.hasErrors(loaded);
+        }
+        generation = submittedGeneration[0];
+      }
+      if (runtime != null && generation < 0) {
+        success = false;
+        if (!Utils.Notifications.hasErrors(notifications))
+          notifications.add(Notification.error("Worldview reload was not submitted or was superseded"));
+      } else if (runtime != null) {
+        var status = runtime.awaitGeneration(generation, Duration.ofMinutes(5));
+        success &= status.inputGeneration() == generation
+            && status.logicalStatus() == CandidatePublicationCoordinator.LogicalStatus.VALID;
+        if (status.inputGeneration() != generation)
+          notifications.add(Notification.error("Worldview reload was superseded by a newer input"));
+        else if (status.logicalStatus() == CandidatePublicationCoordinator.LogicalStatus.PENDING)
+          notifications.add(Notification.error("Worldview reload timed out waiting for validation and authority synchronization"));
+        else if (status.logicalStatus() != CandidatePublicationCoordinator.LogicalStatus.VALID)
+          notifications.add(Notification.error(AcceptedSemanticRuntime.validationReason(status)));
+        else
+          notifications.add(Notification.info(AcceptedSemanticRuntime.validationReason(status)));
+        setOperational(status.acceptedGeneration() > 0);
+      }
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      success = false;
+      notifications.add(Notification.error("Interrupted while waiting for worldview reload"));
+    } catch (RuntimeException failure) {
+      success = false;
+      notifications.add(Notification.error("Worldview reload failed: " + failure.getMessage()));
+    }
+    success &= !Utils.Notifications.hasErrors(notifications);
+    return Map.of("result", success, "notifications", List.copyOf(notifications));
   }
 
   @Override
@@ -3285,6 +3358,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   private ResourceSet loadKnowledgeEntry(
       Worldview worldview, Scope scope, CandidatePublicationCoordinator.Cancellation cancellation) {
+    return loadKnowledgeEntry(worldview, scope, cancellation, false, receipt -> {});
+  }
+
+  ResourceSet loadKnowledgeEntry(
+      Worldview worldview, Scope scope, CandidatePublicationCoordinator.Cancellation cancellation,
+      boolean force, java.util.function.LongConsumer submittedGeneration) {
     if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled())
       org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
           org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.LOAD_REQUEST,
@@ -3326,12 +3405,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         && worldview != null
         && !worldview.getOntologies().isEmpty()) {
       try {
-        attempt = candidateRuntime.beginPreflight(worldview, scope);
+        attempt = force
+            ? candidateRuntime.beginPreflight(worldview, scope, true)
+            : candidateRuntime.beginPreflight(worldview, scope);
       } catch (RuntimeException failure) {
         candidateRuntime.invalidate(
             org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason
                 .PREFLIGHT_EXCEPTION);
-        return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable"));
+        return ResourceSet.empty(Notification.error(
+            "Authoritative bean preflight unavailable: " + failure.getMessage()));
       }
       if (!attempt.retry()) return ResourceSet.empty();
       worldview = attempt.snapshot();
@@ -3344,7 +3426,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // Ingestion also runs before user scopes exist. Collect on the supplied channel and always
     // detach the listener, so startup errors survive in the ontology validation diagnostics.
     try (var collector = new IngestionNotifications(scope, notifications)) {
-      return loadKnowledge(worldview, scope, notifications, attempt, cancellation);
+      var result = loadKnowledge(worldview, scope, notifications, attempt, cancellation,
+          submittedGeneration);
+      if (force) {
+        // Lexical grouping omits global diagnostics (for example OWL inconsistency).
+        notifications.stream().filter(n -> n.getLexicalContext() == null)
+            .filter(n -> !result.getNotifications().contains(n))
+            .forEach(result.getNotifications()::add);
+      }
+      return result;
     } finally {
       if (candidateRuntime == null || semanticOnly) {
         if (semanticValidationState.loading())
@@ -3361,7 +3451,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime
               .PreflightAttempt
           attempt,
-      CandidatePublicationCoordinator.Cancellation cancellation) {
+      CandidatePublicationCoordinator.Cancellation cancellation,
+      java.util.function.LongConsumer submittedGeneration) {
     compilationCheckpoint(cancellation, CandidateTrace.Phase.INPUT_PREFLIGHT);
     try (var phase = CandidateTrace.phase(CandidateTrace.Phase.INPUT_PREFLIGHT, null)) {
       // Freeze and validate authoritative semantic beans before initialization or any OWL write.
@@ -3400,8 +3491,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
     }
     if (candidateRuntime != null && !semanticOnly) {
-      if (!candidateRuntime.submit(worldview, attempt, scope))
+      long generation = candidateRuntime.submitGeneration(worldview, attempt, scope);
+      if (generation < 0)
         return ResourceSet.empty(Notification.info("Stale worldview submission discarded"));
+      submittedGeneration.accept(generation);
       this.worldview = BeanIngestionPreflight.snapshot(worldview);
       var status = candidateRuntime.status();
       setOperational(status.acceptedGeneration() > 0);

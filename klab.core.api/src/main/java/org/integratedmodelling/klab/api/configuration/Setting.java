@@ -268,6 +268,18 @@ public enum Setting {
       Map.class,
       Map.of("result", Boolean.class),
       EnumSet.of(KlabService.Type.RESOURCES)),
+  /**
+   * Reasoner administrator action, invoked with an empty map. Repeats service-owned worldview
+   * discovery and waits up to five minutes for validation, ingestion and authority synchronization.
+   * Returns a boolean {@code result} and structured {@code notifications}, including failures,
+   * timeout or supersession. A prior accepted generation may remain available after failure.
+   */
+  RELOAD_WORLDVIEW(
+      Page.REASONER,
+      "Rediscover and reload the worldview, reporting validation, ingestion and authority synchronization errors",
+      Map.class,
+      Map.of("result", Boolean.class),
+      EnumSet.of(KlabService.Type.REASONER)),
   UPDATE_COMPONENT(
       Page.SERVICES,
       "Update an installed component from the highest-priority available source",

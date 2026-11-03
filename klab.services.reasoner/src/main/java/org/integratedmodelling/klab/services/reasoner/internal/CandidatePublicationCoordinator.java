@@ -374,6 +374,19 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
     return identities.contains(new IdentityReference<>(state, null));
   }
 
+  /** Wait only for the requested input; a superseding submission must not certify its caller. */
+  public synchronized Status awaitGeneration(long requestedGeneration, Duration timeout)
+      throws InterruptedException {
+    long start = System.nanoTime();
+    long remaining = timeout.toNanos();
+    while (generation == requestedGeneration && logicalStatus == LogicalStatus.PENDING) {
+      if (remaining <= 0) break;
+      wait(remaining / 1_000_000, (int) (remaining % 1_000_000));
+      remaining = timeout.toNanos() - (System.nanoTime() - start);
+    }
+    return status();
+  }
+
   public synchronized boolean awaitIdle(Duration timeout) throws InterruptedException {
     long remaining = timeout.toNanos();
     long start = System.nanoTime();
