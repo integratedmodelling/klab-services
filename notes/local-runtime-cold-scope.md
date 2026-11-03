@@ -52,6 +52,23 @@ diagnostic now logs disposal exception type and at most eight stack locations,
 without exception messages, context payloads or credentials. Release still returns
 false on failure and never retries. The51 scope tests plus10 root-release tests,
 changed-code coverage in both modules, exception-message exclusion and13-module
-packaging pass. A fresh isolated diagnostic run remains pending.
-The disposal cause remains unproven; do not
-merge or relabel restart acceptance complete.
+packaging pass. At that stage a fresh diagnostic run was required to establish the
+cause; those checks alone did not authorize merge or restart acceptance.
+
+Run31 then identifies the disposal failure: `KlabServiceAccessException` from
+`ServiceUserScope.getService` at `ServiceContextScope.closeContextResources:1061`.
+The cold reconstructed root has no Runtime service for its final manager release.
+A focused pre-correction regression reproduces exactly that exception after twin
+disposal. Run31's false release and withheld session disposal remain preserved,
+with all19 JVM identities absent and launch/source/fixture hashes unchanged.
+Its result SHA-256 is `b015088475dcba90cc62f64e9e062118c5faad56d9100a16accb30a0bd45576c`.
+
+The root is now bound to the exact local host after copying parent services, only
+when the resolved originating Runtime is the local service itself. This is a
+lifecycle binding on the registered root, not a user advertisement, remote discovery
+or grant of caller authority. Remote-origin paths remain unchanged. The52 scope
+tests plus10 release tests now pass; all six changed executable lines and six
+branch outcomes across both modules are covered without exclusions. Exception-
+message exclusion and13-module packaging pass. A fixture-status omission in the
+first binding-candidate test remains preserved separately. Fresh full restart
+acceptance and independent cleanup in both orders remain required before merge.

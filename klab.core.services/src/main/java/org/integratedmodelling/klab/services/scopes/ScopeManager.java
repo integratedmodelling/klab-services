@@ -692,6 +692,10 @@ public class ScopeManager {
             for (var service : sessionScope.getServices(KlabService.class)) {
               ret.addService(service);
             }
+            // The registered local root owns disposal even when this caller advertised no services.
+            if (originalService == service) {
+              ret.addService(service);
+            }
             ret.setId(scopeId);
             ret.setHostServiceId(runtimeId);
             service.declareContextScope((ContextScope) ret, sessionScope, userScope);

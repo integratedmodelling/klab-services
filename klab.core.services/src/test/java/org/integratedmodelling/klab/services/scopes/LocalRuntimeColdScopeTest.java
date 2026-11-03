@@ -103,9 +103,35 @@ class LocalRuntimeColdScopeTest {
     verify(advertised, never()).getConfiguration(any(), any());
   }
 
+  @Test
+  void coldRegisteredRootRetainsItsExactLocalHostForDisposal() {
+    var fixture = fixture();
+    var descriptor = DigitalTwin.Configuration.builder().id("session.private")
+        .name("persisted private context").owner("cold.owner")
+        .accessRights(ResourcePrivileges.create("cold.owner")).serviceId("runtime-self").build();
+    when(fixture.runtime.getConfiguration(eq(descriptor.getId()), any())).thenReturn(descriptor);
+    var twin = mock(DigitalTwin.class);
+    doAnswer(call -> {
+      var root = (ServiceContextScope) call.getArgument(0);
+      root.setDigitalTwin(twin);
+      fixture.manager.registerScope(root);
+      return descriptor;
+    }).when(fixture.runtime).declareContextScope(any(), any(), any());
+    assertNotNull(fixture.manager.getScope(fixture.authorization, ContextScope.class,
+        descriptor.getId(), "runtime-self"));
+    var root = fixture.manager.getScope(descriptor.getId(), ServiceContextScope.class);
+    assertNotNull(root);
+    assertDoesNotThrow(root::close);
+    verify(twin).dispose();
+    assertSame(fixture.runtime, root.getService(RuntimeService.class));
+  }
+
   private Fixture fixture() {
     var runtime = mock(RuntimeService.class);
     when(runtime.serviceId()).thenReturn("runtime-self");
+    var status = mock(org.integratedmodelling.klab.api.services.KlabService.ServiceStatus.class);
+    when(status.isOperational()).thenReturn(true);
+    when(runtime.status()).thenReturn(status);
     var identity = mock(UserIdentity.class);
     when(identity.getUsername()).thenReturn("cold.owner");
     when(identity.getData()).thenReturn(Parameters.create());
