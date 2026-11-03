@@ -89,8 +89,9 @@ public class LanguageAdapter {
     ret.setCurrency(observableSyntax.getCurrency());
     ret.setOptional(observableSyntax.isOptional());
     if (observableSyntax.getObserverSemantics() != null) {
-      ret.setObserverSemantics(adaptSemantics(
-          observableSyntax.getObserverSemantics(), namespace, projectName, documentClass));
+      ret.setObserverSemantics(
+          adaptSemantics(
+              observableSyntax.getObserverSemantics(), namespace, projectName, documentClass));
     }
     if (observableSyntax.getRange() != null && observableSyntax.getRange().size() == 2) {
       ret.setRange(
@@ -217,20 +218,21 @@ public class LanguageAdapter {
       SemanticSyntax syntax, String namespace, String projectName) {
     var tokens = new ArrayList<KimConceptImpl>();
     for (var token : syntax) {
-      var adapted = adaptSemanticToken(
-          token, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY);
+      var adapted =
+          adaptSemanticToken(token, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY);
       // Other modifiers retain their existing scope and adapter semantics.
       if (token.getUnaryOperator() == null
-          && token.getRestrictions().stream().allMatch(restriction ->
-              restriction.getFirst() == SemanticSyntax.BinaryOperator.OR
-                  || restriction.getFirst() == SemanticSyntax.BinaryOperator.AND)
+          && token.getRestrictions().stream()
+              .allMatch(restriction ->
+                  restriction.getFirst() == SemanticSyntax.BinaryOperator.OR
+                      || restriction.getFirst() == SemanticSyntax.BinaryOperator.AND)
           && !token.getRestrictions().isEmpty()) {
         adapted.getOperands().clear();
         adapted.setExpressionType(KimConcept.Expression.SINGLETON);
         adapted.getType().removeAll(EnumSet.of(SemanticType.UNION, SemanticType.INTERSECTION));
         if (token.getHeadExpression() != null) {
-          adapted.setObservable(adaptIdentityRequirement(
-              token.getHeadExpression(), namespace, projectName));
+          adapted.setObservable(
+              adaptIdentityRequirement(token.getHeadExpression(), namespace, projectName));
         }
         adapted.resetDefinition();
         // The language parser appends outer logical clauses after a parenthesized
@@ -248,8 +250,8 @@ public class LanguageAdapter {
           wrapper.setType(new java.util.HashSet<>(adapted.getType()));
           wrapper.getType().removeAll(EnumSet.of(SemanticType.UNION, SemanticType.INTERSECTION));
           boolean union = restriction.getFirst() == SemanticSyntax.BinaryOperator.OR;
-          wrapper.setExpressionType(union
-              ? KimConcept.Expression.UNION : KimConcept.Expression.INTERSECTION);
+          wrapper.setExpressionType(
+              union ? KimConcept.Expression.UNION : KimConcept.Expression.INTERSECTION);
           wrapper.getType().add(union ? SemanticType.UNION : SemanticType.INTERSECTION);
           wrapper.getOperands().add(adaptSemanticSequence(operands));
           wrapper.finalizeDefinition();
@@ -342,7 +344,8 @@ public class LanguageAdapter {
     ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
     if (semantics.getHeadExpression() != null) {
-      ret.setObservable(adaptSemantics(semantics.getHeadExpression(), namespace, projectName, documentClass));
+      ret.setObservable(
+          adaptSemantics(semantics.getHeadExpression(), namespace, projectName, documentClass));
     } else if (semantics.isLeafDeclaration() && semantics.getUnaryOperator() == null) {
       ret.setName(semantics.getObservable().concept().toString());
       ret.setNegated(semantics.isNegated() || semantics.getObservable().negated());
@@ -415,7 +418,8 @@ public class LanguageAdapter {
     for (var restriction : semantics.getRestrictions()) {
       if (restriction.getFirst() == SemanticSyntax.BinaryOperator.ABOUT
           && (restriction.getSecond().size() != 1 || restriction.getThird())) {
-        throw new IllegalArgumentException("ABOUT requires one target per clause; repeat about for independent targets");
+        throw new IllegalArgumentException(
+            "ABOUT requires one target per clause; repeat about for independent targets");
       }
 
       boolean collective = restriction.getThird();
@@ -486,8 +490,10 @@ public class LanguageAdapter {
     // Description values participate even where value-operator execution is not implemented.
     for (var valueOperator : semantics.getValueOperators()) {
       var value = adaptValue(valueOperator.getSecond(), namespace, projectName, documentClass);
-      ret.getValueOperators().add(org.integratedmodelling.klab.api.collections.Pair.of(
-          adaptValueOperator(valueOperator.getFirst()), value));
+      ret.getValueOperators()
+          .add(
+              org.integratedmodelling.klab.api.collections.Pair.of(
+                  adaptValueOperator(valueOperator.getFirst()), value));
     }
     applyExpressionStatus(ret);
     ret.finalizeDefinition();
@@ -516,7 +522,8 @@ public class LanguageAdapter {
     // Register table definitions before adapting models so forward references are deterministic.
     var namedTables = new LinkedHashMap<String, KimLookupTable>();
     for (var statement : namespace.getStatements()) {
-      if (statement instanceof DefineSyntax define && define.getValue() instanceof ValueMappingSyntax) {
+      if (statement instanceof DefineSyntax define
+          && define.getValue() instanceof ValueMappingSyntax) {
         var adapted = (KimSymbolDefinition) adaptDefine(define, ret);
         if (adapted.getValue() instanceof KimLookupTable table) {
           namedTables.put(define.getName(), table);
@@ -958,18 +965,21 @@ public class LanguageAdapter {
         if (contextualizable.getTarget() != null) {
           target =
               Stream.concat(ret.getObservables().stream(), ret.getDependencies().stream())
-                  .filter(
-                      observable ->
-                          contextualizable.getTarget().equals(observable.getFormalName())
-                              || contextualizable.getTarget().equals(observable.getCodeName()))
+                  .filter(observable ->
+                      contextualizable.getTarget().equals(observable.getFormalName())
+                          || contextualizable.getTarget().equals(observable.getCodeName()))
                   .findFirst()
                   .orElse(null);
         }
         ((ContextualizableImpl) adapted).setTarget(target);
-        if(ConfigurationTerminationValidation.termination(adapted)
-            &&ConfigurationTerminationValidation.configuration(target))
-          namespace.getNotifications().add(Notification.error(ConfigurationTerminationValidation.UNSUPPORTED,
-              Notification.LexicalContext.of(adapted,namespace)));
+        if (ConfigurationTerminationValidation.termination(adapted)
+            && ConfigurationTerminationValidation.configuration(target))
+          namespace
+              .getNotifications()
+              .add(
+                  Notification.error(
+                      ConfigurationTerminationValidation.UNSUPPORTED,
+                      Notification.LexicalContext.of(adapted, namespace)));
         ret.getContextualization().add(adapted);
       } catch (KlabIllegalArgumentException e) {
         var notification = Notification.error(ret, e.getMessage());
@@ -1000,8 +1010,8 @@ public class LanguageAdapter {
     ret.setNamespace(namespace.getUrn());
     ret.setTargetId(contextualizable.getTarget());
     // Retain source phases for validators without activating previously unimplemented triggers.
-    ConfigurationTerminationValidation.authoredPhases(ret,
-        contextualizable.getTriggers().stream().map(Enum::name).toList());
+    ConfigurationTerminationValidation.authoredPhases(
+        ret, contextualizable.getTriggers().stream().map(Enum::name).toList());
 
     if (contextualizable.getContextualizable() instanceof FunctionCallSyntax functionCallSyntax) {
       ret.setServiceCall(
@@ -1020,13 +1030,13 @@ public class LanguageAdapter {
       if (contextualizable.isIntegration()) {
         ret.setAction(Contextualizable.Action.INTEGRATE);
       } // TODO the rest - set to, do. May be unnecessary if validated properly
-    } else if (contextualizable.getContextualizable()
-        instanceof ValueMappingSyntax mappingSyntax) {
+    } else if (contextualizable.getContextualizable() instanceof ValueMappingSyntax mappingSyntax) {
       switch (mappingSyntax.getKind()) {
         case CLASSIFICATION, DISCRETIZATION ->
             ret.setClassification(adaptClassification(mappingSyntax, namespace));
         case ACCORDING_TO -> ret.setAccordingTo(mappingSyntax.getReference());
-        case LOOKUP, TWO_WAY_LOOKUP -> ret.setLookupTable(adaptLookupTable(mappingSyntax, namespace));
+        case LOOKUP, TWO_WAY_LOOKUP ->
+            ret.setLookupTable(adaptLookupTable(mappingSyntax, namespace));
         case NAMED_LOOKUP -> {
           var template = namedTables.get(mappingSyntax.getReference());
           if (template == null) {
@@ -1054,8 +1064,7 @@ public class LanguageAdapter {
     return ret;
   }
 
-  private KimClassification adaptClassification(
-      ValueMappingSyntax syntax, KimNamespace namespace) {
+  private KimClassification adaptClassification(ValueMappingSyntax syntax, KimNamespace namespace) {
     var ret = new KimClassificationImpl();
     ret.setDiscretization(syntax.getKind() == ValueMappingSyntax.Kind.DISCRETIZATION);
     var classifiers = new ArrayList<PairImpl<KimConcept, KimClassifier>>();
@@ -1224,7 +1233,9 @@ public class LanguageAdapter {
         target.setNumberMatch(value);
         target.setNegated(!target.isNegated());
       }
-      default -> throw new KlabIllegalArgumentException("Unsupported classifier operator " + syntax.getOperator());
+      default ->
+          throw new KlabIllegalArgumentException(
+              "Unsupported classifier operator " + syntax.getOperator());
     }
   }
 
@@ -1249,7 +1260,8 @@ public class LanguageAdapter {
     if (classifier.getBooleanMatch() != null) {
       return org.integratedmodelling.klab.api.knowledge.Artifact.Type.BOOLEAN;
     }
-    if (classifier.getNumberMatch() != null || classifier.getIntervalMatch() != null
+    if (classifier.getNumberMatch() != null
+        || classifier.getIntervalMatch() != null
         || classifier.getQuantityMatch() != null) {
       return org.integratedmodelling.klab.api.knowledge.Artifact.Type.NUMBER;
     }
@@ -1322,23 +1334,26 @@ public class LanguageAdapter {
 
   private void applyExpressionStatus(KimConceptImpl target) {
     if (target.getDeclaredSubjective() == null) {
-      target.setDeclaredSubjective(target.getObservable() == null && target.is(SemanticType.SUBJECTIVE));
+      target.setDeclaredSubjective(
+          target.getObservable() == null && target.is(SemanticType.SUBJECTIVE));
     }
     var status = org.integratedmodelling.klab.api.lang.kim.ExpressionStatus.evaluate(target);
     target.getType().removeAll(EnumSet.of(SemanticType.ABSTRACT, SemanticType.SUBJECTIVE));
     target.getType().addAll(status);
   }
 
-  private org.integratedmodelling.klab.api.lang.ValueOperator adaptValueOperator(SemanticSyntax.ValueOperator operator) {
-    return org.integratedmodelling.klab.api.lang.ValueOperator.valueOf(switch (operator) {
-      case GT -> "GREATER";
-      case GE -> "GREATEREQUAL";
-      case LT -> "LESS";
-      case LE -> "LESSEQUAL";
-      case EQUALS -> "SAMEAS";
-      case NOT_EQUAL -> "NOTEQUAL";
-      default -> operator.name();
-    });
+  private org.integratedmodelling.klab.api.lang.ValueOperator adaptValueOperator(
+      SemanticSyntax.ValueOperator operator) {
+    return org.integratedmodelling.klab.api.lang.ValueOperator.valueOf(
+        switch (operator) {
+          case GT -> "GREATER";
+          case GE -> "GREATEREQUAL";
+          case LT -> "LESS";
+          case LE -> "LESSEQUAL";
+          case EQUALS -> "SAMEAS";
+          case NOT_EQUAL -> "NOTEQUAL";
+          default -> operator.name();
+        });
   }
 
   private Set<SemanticType> adaptSemanticType(SemanticSyntax.Type type) {
@@ -1370,7 +1385,9 @@ public class LanguageAdapter {
                   SemanticType.QUALITY,
                   SemanticType.AREA);
           case ATTRIBUTE -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE);
-          case RELATIONSHIP -> EnumSet.of(SemanticType.OBSERVABLE,SemanticType.COUNTABLE,SemanticType.RELATIONSHIP);
+          case RELATIONSHIP ->
+              EnumSet.of(
+                  SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.RELATIONSHIP);
           case BOND ->
               EnumSet.of(
                   SemanticType.OBSERVABLE,
@@ -1628,12 +1645,10 @@ public class LanguageAdapter {
             null);
     visitor.visit(ret);
     visitor.getReferences().stream()
-        .filter(
-            ref ->
-                ref.knowledgeClass() == KlabAsset.KnowledgeClass.CONCEPT && ref.urn().contains(":"))
-        .forEach(
-            ref ->
-                ret.getReferencedNamespaces().add(ref.urn().substring(0, ref.urn().indexOf(':'))));
+        .filter(ref ->
+            ref.knowledgeClass() == KlabAsset.KnowledgeClass.CONCEPT && ref.urn().contains(":"))
+        .forEach(ref ->
+            ret.getReferencedNamespaces().add(ref.urn().substring(0, ref.urn().indexOf(':'))));
     return ret;
   }
 
@@ -1776,16 +1791,15 @@ public class LanguageAdapter {
     ret.getMetadata().put(Metadata.DC_COMMENT, ontology.getDescription());
     ontology
         .getMetadata()
-        .forEach(
-            (key, value) ->
-                ret.getMetadata()
-                    .put(
-                        key.toString(),
-                        adaptValue(
-                            value,
-                            ontology.getName(),
-                            projectName,
-                            KlabAsset.KnowledgeClass.ONTOLOGY)));
+        .forEach((key, value) ->
+            ret.getMetadata()
+                .put(
+                    key.toString(),
+                    adaptValue(
+                        value,
+                        ontology.getName(),
+                        projectName,
+                        KlabAsset.KnowledgeClass.ONTOLOGY)));
     ret.setVersion(Version.create(ontology.getVersion()));
     ret.setProjectName(projectName);
     ret.setLastUpdateTimestamp(timestamp);
@@ -1811,24 +1825,35 @@ public class LanguageAdapter {
 
     // Local language headers may predate canonical core-alias refinement. Reconcile the owned
     // adapted declarations and atomic parent references after all aliases are available.
-    var refinedScope=new WorldviewValidationScope();refinedScope.addNamespace(ret);
-    java.util.function.Consumer<KimConceptStatement> refine=new java.util.function.Consumer<>() {
-      @Override public void accept(KimConceptStatement statement) {
-        if(statement.isGenericQuality() && statement.getUpperConceptDefined()==null) {
-          var kind=refinedScope.getConceptDescriptor(statement.getNamespace()+":"+statement.getUrn()).mainType();
-          var refined=CoreAliasTypeSupport.forSyntaxType(kind,statement.getType());
-          statement.getType().clear();statement.getType().addAll(refined);
-          var parent=statement.getDeclaredParent();
-          if(parent!=null && parent.getSemanticModifier()==null && parent.getName()!=null) {
-            var name=parent.getName();if(!name.contains(":"))name=statement.getNamespace()+":"+name;
-            var parentKind=refinedScope.getConceptDescriptor(name).mainType();
-            var parentTypes=CoreAliasTypeSupport.forSyntaxType(parentKind,parent.getType());
-            parent.getType().clear();parent.getType().addAll(parentTypes);
+    var refinedScope = new WorldviewValidationScope();
+    refinedScope.addNamespace(ret);
+    java.util.function.Consumer<KimConceptStatement> refine =
+        new java.util.function.Consumer<>() {
+          @Override
+          public void accept(KimConceptStatement statement) {
+            if (statement.isGenericQuality() && statement.getUpperConceptDefined() == null) {
+              var kind =
+                  refinedScope
+                      .getConceptDescriptor(statement.getNamespace() + ":" + statement.getUrn())
+                      .mainType();
+              var refined = CoreAliasTypeSupport.forSyntaxType(kind, statement.getType());
+              statement.getType().clear();
+              statement.getType().addAll(refined);
+              var parent = statement.getDeclaredParent();
+              if (parent != null
+                  && parent.getSemanticModifier() == null
+                  && parent.getName() != null) {
+                var name = parent.getName();
+                if (!name.contains(":")) name = statement.getNamespace() + ":" + name;
+                var parentKind = refinedScope.getConceptDescriptor(name).mainType();
+                var parentTypes = CoreAliasTypeSupport.forSyntaxType(parentKind, parent.getType());
+                parent.getType().clear();
+                parent.getType().addAll(parentTypes);
+              }
+            }
+            statement.getChildren().forEach(this);
           }
-        }
-        statement.getChildren().forEach(this);
-      }
-    };
+        };
     ret.getStatements().forEach(refine);
 
     ret.getNotifications().addAll(notifications);
@@ -1878,13 +1903,19 @@ public class LanguageAdapter {
     ret.setDeprecation(definition.getDeprecation());
     ret.setDeprecated(definition.getDeprecation() != null);
     ret.setProjectName(projectName);
-    var declaredType=definition.getDeclaredType();
-    if(definition.isCoreDeclaration() && definition.getDeclaredParent()!=null)
-      declaredType=CoreAliasTypeSupport.syntaxType(definition.getDeclaredParent().encode(),declaredType);
+    var declaredType = definition.getDeclaredType();
+    if (definition.isCoreDeclaration() && definition.getDeclaredParent() != null)
+      declaredType =
+          CoreAliasTypeSupport.syntaxType(definition.getDeclaredParent().encode(), declaredType);
     ret.setType(adaptSemanticType(declaredType));
-    ret.setDeclaredRelationshipNature(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.valueOf(definition.getDeclaredRelationshipNature().name()));
-    ret.setDeclaredRelationshipOrientation(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.valueOf(definition.getDeclaredRelationshipOrientation().name()));
-    if(ret.getType().contains(SemanticType.RELATIONSHIP)) RelationshipDeclarationSupport.authored(ret).apply(ret.getType());
+    ret.setDeclaredRelationshipNature(
+        org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.valueOf(
+            definition.getDeclaredRelationshipNature().name()));
+    ret.setDeclaredRelationshipOrientation(
+        org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.valueOf(
+            definition.getDeclaredRelationshipOrientation().name()));
+    if (ret.getType().contains(SemanticType.RELATIONSHIP))
+      RelationshipDeclarationSupport.authored(ret).apply(ret.getType());
     ret.setGenericQuality(definition.isGenericQuality());
     ret.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
     for (var annotation : definition.getAnnotations()) {
@@ -1945,17 +1976,22 @@ public class LanguageAdapter {
     java.util.function.Function<SemanticSyntax, KimConcept> adapt =
         value -> adaptSemantics(value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY);
     for (var rule : definition.getConsequenceRules()) {
-      var source=rule.source();
-      var recipient=rule.recipient();
-      ret.getConsequenceRules().add(new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule(
-          org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Kind.valueOf(rule.kind().name()),
-          adapt.apply(rule.target()),
-          new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Recipient(
-              org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.RecipientKind.valueOf(recipient.kind().name()),
-              recipient.expression()==null?null:adapt.apply(recipient.expression())),
-          rule.secondaryInherency()==null?null:adapt.apply(rule.secondaryInherency()),
-          rule.within()==null?null:adapt.apply(rule.within()),
-          new KimConceptStatement.DeclarationClause(source.kind(),source.text(),source.offset(),source.length())));
+      var source = rule.source();
+      var recipient = rule.recipient();
+      ret.getConsequenceRules()
+          .add(
+              new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule(
+                  org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Kind.valueOf(
+                      rule.kind().name()),
+                  adapt.apply(rule.target()),
+                  new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Recipient(
+                      org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.RecipientKind
+                          .valueOf(recipient.kind().name()),
+                      recipient.expression() == null ? null : adapt.apply(recipient.expression())),
+                  rule.secondaryInherency() == null ? null : adapt.apply(rule.secondaryInherency()),
+                  rule.within() == null ? null : adapt.apply(rule.within()),
+                  new KimConceptStatement.DeclarationClause(
+                      source.kind(), source.text(), source.offset(), source.length())));
     }
     if (definition.getDeclaredInherent() != null)
       ret.setDeclaredInherent(adapt.apply(definition.getDeclaredInherent()));
@@ -1975,30 +2011,31 @@ public class LanguageAdapter {
       self.setProjectName(projectName);
       self.setDocumentClass(KlabAsset.KnowledgeClass.ONTOLOGY);
       self.setType(EnumSet.copyOf(ret.getType()));
-      definition.getObservationallyContained().forEach(value ->
-          ret.getObservationalContainments().add(
-              new KimConceptStatement.ObservationalContainment(self, adapt.apply(value))));
-      definition.getObservationalContainers().forEach(value ->
-          ret.getObservationalContainments().add(
-              new KimConceptStatement.ObservationalContainment(adapt.apply(value), self)));
+      definition
+          .getObservationallyContained()
+          .forEach(value ->
+              ret.getObservationalContainments()
+                  .add(new KimConceptStatement.ObservationalContainment(self, adapt.apply(value))));
+      definition
+          .getObservationalContainers()
+          .forEach(value ->
+              ret.getObservationalContainments()
+                  .add(new KimConceptStatement.ObservationalContainment(adapt.apply(value), self)));
     }
     definition
         .getMetadata()
-        .forEach(
-            (key, value) ->
-                ret.getMetadata()
-                    .put(
-                        key.toString(),
-                        adaptValue(
-                            value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY)));
+        .forEach((key, value) ->
+            ret.getMetadata()
+                .put(
+                    key.toString(),
+                    adaptValue(value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY)));
     definition
         .getAppliesTo()
-        .forEach(
-            value ->
-                ret.getAppliesTo()
-                    .add(
-                        new org.integratedmodelling.klab.api.lang.kim.impl.ApplicableConceptImpl(
-                            null, adapt.apply(value))));
+        .forEach(value ->
+            ret.getAppliesTo()
+                .add(
+                    new org.integratedmodelling.klab.api.lang.kim.impl.ApplicableConceptImpl(
+                        null, adapt.apply(value))));
     if (!definition.getRelationshipSources().isEmpty()
         || !definition.getRelationshipTargets().isEmpty()) {
       if (definition.getRelationshipSources().size() != 1
@@ -2015,13 +2052,12 @@ public class LanguageAdapter {
         ret.setAuthorityRequired(requirement.authority());
         requirement
             .parameters()
-            .forEach(
-                (key, value) ->
-                    ret.getAuthorityParameters()
-                        .put(
-                            key.toString(),
-                            adaptValue(
-                                value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY)));
+            .forEach((key, value) ->
+                ret.getAuthorityParameters()
+                    .put(
+                        key.toString(),
+                        adaptValue(
+                            value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY)));
       } else {
         var targets =
             switch (requirement.type()) {
@@ -2029,10 +2065,13 @@ public class LanguageAdapter {
               case REALM -> ret.getRequiredRealms();
               default -> throw new IllegalArgumentException("Unexpected requirement");
             };
-        requirement.targets().forEach(value -> targets.add(
-            requirement.type() == ConceptDeclarationSyntax.RequiresType.IDENTITY
-                ? adaptIdentityRequirement(value, namespace, projectName)
-                : adapt.apply(value)));
+        requirement
+            .targets()
+            .forEach(value ->
+                targets.add(
+                    requirement.type() == ConceptDeclarationSyntax.RequiresType.IDENTITY
+                        ? adaptIdentityRequirement(value, namespace, projectName)
+                        : adapt.apply(value)));
       }
     }
     for (var description : definition.getDescribes()) {
@@ -2058,27 +2097,40 @@ public class LanguageAdapter {
     // Declaration shorthand shares the canonical trigger list with emerges from.
     // Lift only this declaration's qualified head; nested referenced expressions retain scope.
     var parentHead = ret.getDeclaredParent();
-    while (parentHead != null && parentHead.getSemanticModifier() == null
+    while (parentHead != null
+        && parentHead.getSemanticModifier() == null
         && parentHead.getOperands().isEmpty()
-        && parentHead.getObservable() != null && parentHead.getInherent() == null)
-      parentHead = parentHead.getObservable();
-    if (!ret.isAlias() && parentHead != null && parentHead.getSemanticModifier() == null
+        && parentHead.getObservable() != null
+        && parentHead.getInherent() == null) parentHead = parentHead.getObservable();
+    if (!ret.isAlias()
+        && parentHead != null
+        && parentHead.getSemanticModifier() == null
         && parentHead.getOperands().isEmpty()
-        && parentHead.is(SemanticType.CONFIGURATION) && parentHead.getInherent() != null) {
+        && parentHead.is(SemanticType.CONFIGURATION)
+        && parentHead.getInherent() != null) {
       ret.getEmergenceTriggers().add(parentHead.getInherent());
-      var source=ret.getDeclarationClauses().stream().filter(c->"isClause".equals(c.kind()))
-          .findFirst().orElseThrow(()->new IllegalArgumentException(
-              "Configuration emergence shorthand requires authored source provenance"));
-      ret.getConsequenceRules().add(new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule(
-          org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Kind.EMERGES_FROM,
-          parentHead.getInherent(),
-          org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Recipient.implicit(),
-          null,null,source));
+      var source =
+          ret.getDeclarationClauses().stream()
+              .filter(c -> "isClause".equals(c.kind()))
+              .findFirst()
+              .orElseThrow(() ->
+                  new IllegalArgumentException(
+                      "Configuration emergence shorthand requires authored source provenance"));
+      ret.getConsequenceRules()
+          .add(
+              new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule(
+                  org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Kind.EMERGES_FROM,
+                  parentHead.getInherent(),
+                  org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Recipient.implicit(),
+                  null,
+                  null,
+                  source));
       ((KimConceptImpl) parentHead).setInherent(null);
       ((KimConceptImpl) parentHead).resetDefinition();
       if (ret.getDeclaredParent() instanceof KimConceptImpl root) root.resetDefinition();
     }
-    ret.getConsequenceRules().sort(java.util.Comparator.comparingInt(rule->rule.source().offset()));
+    ret.getConsequenceRules()
+        .sort(java.util.Comparator.comparingInt(rule -> rule.source().offset()));
     definition.getImplies().stream()
         .filter(value -> value.getContextualization() == null)
         .forEach(value -> ret.getImpliedObservables().add(adapt.apply(value)));
@@ -2138,10 +2190,9 @@ public class LanguageAdapter {
 
     ret.setAnnotations(
         syntax.getAnnotations().stream()
-            .map(
-                annotation ->
-                    adaptAnnotation(
-                        annotation, behaviorUrn, projectName, KlabAsset.KnowledgeClass.BEHAVIOR))
+            .map(annotation ->
+                adaptAnnotation(
+                    annotation, behaviorUrn, projectName, KlabAsset.KnowledgeClass.BEHAVIOR))
             .toList());
 
     for (var imp : syntax.getImports()) {
@@ -2186,17 +2237,16 @@ public class LanguageAdapter {
     ret.getArguments()
         .addAll(
             action.getArgumentNames().stream()
-                .map(
-                    argument ->
-                        new KActorsActionImpl.ArgumentImpl(
-                            argument.getFirst(),
-                            argument.getSecond() == null
-                                ? null
-                                : adaptAnnotation(
-                                    argument.getSecond(),
-                                    namespace,
-                                    projectName,
-                                    KlabAsset.KnowledgeClass.BEHAVIOR)))
+                .map(argument ->
+                    new KActorsActionImpl.ArgumentImpl(
+                        argument.getFirst(),
+                        argument.getSecond() == null
+                            ? null
+                            : adaptAnnotation(
+                                argument.getSecond(),
+                                namespace,
+                                projectName,
+                                KlabAsset.KnowledgeClass.BEHAVIOR)))
                 .toList());
     // ActionSyntax currently exposes the action source but not the grammar's `static` attribute.
     // Preserve the semantic contract until that syntax-bean accessor is available.
@@ -2222,10 +2272,9 @@ public class LanguageAdapter {
     ret.setDeprecated(syntax.getDeprecation() != null);
     ret.setAnnotations(
         syntax.getAnnotations().stream()
-            .map(
-                annotation ->
-                    adaptAnnotation(
-                        annotation, namespace, projectName, KlabAsset.KnowledgeClass.BEHAVIOR))
+            .map(annotation ->
+                adaptAnnotation(
+                    annotation, namespace, projectName, KlabAsset.KnowledgeClass.BEHAVIOR))
             .toList());
     if (ret instanceof KimStatementImpl statement) {
       statement.setNamespace(namespace);
@@ -2282,14 +2331,13 @@ public class LanguageAdapter {
     final var metadata = Metadata.create();
     statement
         .getTrailingMetadata()
-        .forEach(
-            (key, value) ->
-                metadata.put(
-                    key,
-                    value instanceof ValueSyntax syntax
-                        ? adaptKActorsValue(
-                            syntax, behavior.getUrn(), behavior.getProjectName(), notifications)
-                        : value));
+        .forEach((key, value) ->
+            metadata.put(
+                key,
+                value instanceof ValueSyntax syntax
+                    ? adaptKActorsValue(
+                        syntax, behavior.getUrn(), behavior.getProjectName(), notifications)
+                    : value));
     implementation.setMetadata(metadata);
 
     return ret;
@@ -2401,23 +2449,21 @@ public class LanguageAdapter {
         adaptActionStatement(thenBranch.getStatement(), behavior, action, notifications));
     ret.setElseIfs(
         ifStatement.getElseIfBranches().stream()
-            .map(
-                branch ->
-                    Pair.of(
-                        Triple.of(
-                            (branch.getCondition() == null
-                                ? null
-                                : adaptKActorsValue(
-                                    branch.getCondition(),
-                                    behavior.getUrn(),
-                                    behavior.getProjectName(),
-                                    notifications)),
-                            (branch.getFunction() == null
-                                ? null
-                                : adaptVerb(branch.getFunction(), behavior, action, notifications)),
-                            branch.getCastToBehavior()),
-                        adaptActionStatement(
-                            branch.getStatement(), behavior, action, notifications)))
+            .map(branch ->
+                Pair.of(
+                    Triple.of(
+                        (branch.getCondition() == null
+                            ? null
+                            : adaptKActorsValue(
+                                branch.getCondition(),
+                                behavior.getUrn(),
+                                behavior.getProjectName(),
+                                notifications)),
+                        (branch.getFunction() == null
+                            ? null
+                            : adaptVerb(branch.getFunction(), behavior, action, notifications)),
+                        branch.getCastToBehavior()),
+                    adaptActionStatement(branch.getStatement(), behavior, action, notifications)))
             .toList());
     ret.setElseBody(
         ifStatement.getElseStatement() == null
@@ -2564,39 +2610,38 @@ public class LanguageAdapter {
     ret.setArguments(arguments);
     ret.setAssertions(
         assertion.getAssertions().stream()
-            .map(
-                syntax -> {
-                  var adapted = new KActorsStatementImpl.AssertImpl.AssertionImpl();
-                  setParsingData(syntax, adapted, behavior.getUrn(), behavior.getProjectName());
-                  adapted.setExpression(
-                      syntax.getExpression() == null
-                          ? null
-                          : adaptKActorsValue(
-                              syntax.getExpression(),
-                              behavior.getUrn(),
-                              behavior.getProjectName(),
-                              notifications));
-                  adapted.setCalls(
-                      syntax.getMethodCall() == null
-                          ? List.of()
-                          : List.of(
-                              adaptVerb(syntax.getMethodCall(), behavior, action, notifications)));
-                  if (syntax.getExpectedValue() != null) {
-                    adapted.setValue(
-                        adaptKActorsValue(
-                            syntax.getExpectedValue(),
-                            behavior.getUrn(),
-                            behavior.getProjectName(),
-                            notifications));
-                  } else if (syntax.isOk()) {
-                    var ok = new KActorsValueImpl();
-                    ok.setType(ValueType.BOOLEAN);
-                    ok.setStatedValue(Boolean.TRUE);
-                    adapted.setValue(ok);
-                  }
-                  adapted.setSourceCode(syntax.encode());
-                  return adapted;
-                })
+            .map(syntax -> {
+              var adapted = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+              setParsingData(syntax, adapted, behavior.getUrn(), behavior.getProjectName());
+              adapted.setExpression(
+                  syntax.getExpression() == null
+                      ? null
+                      : adaptKActorsValue(
+                          syntax.getExpression(),
+                          behavior.getUrn(),
+                          behavior.getProjectName(),
+                          notifications));
+              adapted.setCalls(
+                  syntax.getMethodCall() == null
+                      ? List.of()
+                      : List.of(
+                          adaptVerb(syntax.getMethodCall(), behavior, action, notifications)));
+              if (syntax.getExpectedValue() != null) {
+                adapted.setValue(
+                    adaptKActorsValue(
+                        syntax.getExpectedValue(),
+                        behavior.getUrn(),
+                        behavior.getProjectName(),
+                        notifications));
+              } else if (syntax.isOk()) {
+                var ok = new KActorsValueImpl();
+                ok.setType(ValueType.BOOLEAN);
+                ok.setStatedValue(Boolean.TRUE);
+                adapted.setValue(ok);
+              }
+              adapted.setSourceCode(syntax.encode());
+              return adapted;
+            })
             .map(KActorsStatement.Assert.Assertion.class::cast)
             .toList());
     return ret;
@@ -2729,20 +2774,19 @@ public class LanguageAdapter {
       KActorsAction action,
       List<Notification> notifications) {
     return arguments.entrySet().stream()
-        .map(
-            entry ->
-                new AbstractMap.SimpleEntry<>(
-                    entry.getKey(),
-                    entry.getKey() != null && entry.getKey().startsWith("+")
-                        ? Boolean.TRUE
-                        : entry.getKey() != null && entry.getKey().startsWith("!")
-                            ? Boolean.FALSE
-                            : adaptArgument(
-                                entry.getValue().getFirst(),
-                                entry.getValue().getSecond(),
-                                behavior,
-                                action,
-                                notifications)))
+        .map(entry ->
+            new AbstractMap.SimpleEntry<>(
+                entry.getKey(),
+                entry.getKey() != null && entry.getKey().startsWith("+")
+                    ? Boolean.TRUE
+                    : entry.getKey() != null && entry.getKey().startsWith("!")
+                        ? Boolean.FALSE
+                        : adaptArgument(
+                            entry.getValue().getFirst(),
+                            entry.getValue().getSecond(),
+                            behavior,
+                            action,
+                            notifications)))
         .collect(
             Collectors.toMap(
                 Map.Entry::getKey,

@@ -6,10 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
-
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.services.Service;
-import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.context.SecurityContextHolder;

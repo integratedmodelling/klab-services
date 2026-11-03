@@ -154,8 +154,8 @@ public class StorageImpl implements Storage {
    */
   private NavigableMap<ComparableLongList, List<Shard>> shards = new ConcurrentSkipListMap<>();
   private final Map<String, List<Shard>> temporalShards = new LinkedHashMap<>();
-  private StateRevisionHistory stateHistory = new StateRevisionHistory(1,List.of());
-  private final Map<String,List<Shard>> stateShards = new LinkedHashMap<>();
+  private StateRevisionHistory stateHistory = new StateRevisionHistory(1, List.of());
+  private final Map<String, List<Shard>> stateShards = new LinkedHashMap<>();
   private TemporalHistory history = new TemporalHistory(1, List.of());
 
   /**
@@ -186,12 +186,13 @@ public class StorageImpl implements Storage {
       var encodedHistory = observation.getMetadata().get(TemporalHistory.KEY);
       if (encodedHistory != null)
         history = Utils.Json.parseObject(encodedHistory.toString(), TemporalHistory.class);
-      var encodedState=observation.getMetadata().get(StateRevisionHistory.KEY);
-      if(encodedState!=null)stateHistory=Utils.Json.parseObject(encodedState.toString(),StateRevisionHistory.class);
-      var stateByUrn=new HashMap<String,String>();
-      for(var revision:stateHistory.revisions()){
-        stateShards.put(revision.id(),new ArrayList<>());
-        for(var urn:revision.shards())stateByUrn.put(urn,revision.id());
+      var encodedState = observation.getMetadata().get(StateRevisionHistory.KEY);
+      if (encodedState != null)
+        stateHistory = Utils.Json.parseObject(encodedState.toString(), StateRevisionHistory.class);
+      var stateByUrn = new HashMap<String, String>();
+      for (var revision : stateHistory.revisions()) {
+        stateShards.put(revision.id(), new ArrayList<>());
+        for (var urn : revision.shards()) stateByUrn.put(urn, revision.id());
       }
       var versionByUrn = new HashMap<String, String>();
       for (var revision : history.revisions()) {
@@ -211,7 +212,10 @@ public class StorageImpl implements Storage {
               "Cannot reconstruct storage without shard geometry: " + shard.getUrn());
         }
         readableShards.add(shard.getUrn());
-        if(stateByUrn.containsKey(shard.getUrn())) {stateShards.get(stateByUrn.get(shard.getUrn())).add(shard);continue;}
+        if (stateByUrn.containsKey(shard.getUrn())) {
+          stateShards.get(stateByUrn.get(shard.getUrn())).add(shard);
+          continue;
+        }
         if (versionByUrn.containsKey(shard.getUrn())) {
           temporalShards.get(versionByUrn.get(shard.getUrn())).add(shard);
           continue;
@@ -232,10 +236,11 @@ public class StorageImpl implements Storage {
                 .toList();
         shards.computeIfAbsent(new ComparableLongList(key), k -> new ArrayList<>()).add(shard);
       }
-      for(var revision:stateHistory.revisions()) {
-        var group=stateShards.get(revision.id());
-        if(group.size()!=revision.shards().size()||group.isEmpty())throw new KlabIllegalStateException("Missing committed state data for "+revision.id());
-        validateRestoredShards(group,nativeShardingStrategy.getDataType());
+      for (var revision : stateHistory.revisions()) {
+        var group = stateShards.get(revision.id());
+        if (group.size() != revision.shards().size() || group.isEmpty())
+          throw new KlabIllegalStateException("Missing committed state data for " + revision.id());
+        validateRestoredShards(group, nativeShardingStrategy.getDataType());
       }
       for (var group : shards.values()) {
         validateRestoredShards(group, nativeShardingStrategy.getDataType());
@@ -322,9 +327,12 @@ public class StorageImpl implements Storage {
 
   private List<Shard> getNativeShards(Scheduler.Event event, boolean create) {
 
-    if(!event.hasTime()) {
-      if(create)throw new KlabIllegalStateException("Current-state writes require a transaction-owned write set");
-      var exact=stateShards.get(event.toKey());return exact==null?stateBaseline():List.copyOf(exact);
+    if (!event.hasTime()) {
+      if (create)
+        throw new KlabIllegalStateException(
+            "Current-state writes require a transaction-owned write set");
+      var exact = stateShards.get(event.toKey());
+      return exact == null ? stateBaseline() : List.copyOf(exact);
     }
     if (event.getType() != Scheduler.Event.Type.INITIALIZATION) {
       if (create)
@@ -346,8 +354,10 @@ public class StorageImpl implements Storage {
       return baseline;
     }
 
-    if(!stateHistory.revisions().isEmpty()){
-      if(create)throw new KlabIllegalStateException("Current-state revisions are immutable; use an input-revision transaction");
+    if (!stateHistory.revisions().isEmpty()) {
+      if (create)
+        throw new KlabIllegalStateException(
+            "Current-state revisions are immutable; use an input-revision transaction");
       return stateBaseline();
     }
     var time = event.getTime();
@@ -467,12 +477,16 @@ public class StorageImpl implements Storage {
     return getNativeScanner(shard, immutable, false);
   }
 
-  /** Publishing any revision freezes both the new version and its original initialization baseline. */
+  /**
+   * Publishing any revision freezes both the new version and its original initialization baseline.
+   */
   private boolean frozenShard(Shard shard) {
-    return history.revisions().stream().anyMatch(r->r.shards().contains(shard.getUrn()))
-        ||stateHistory.revisions().stream().anyMatch(r->r.shards().contains(shard.getUrn()))
-        ||((!history.revisions().isEmpty()||!stateHistory.revisions().isEmpty())
-          &&shards.values().stream().flatMap(Collection::stream).anyMatch(s->s.getUrn().equals(shard.getUrn())));
+    return history.revisions().stream().anyMatch(r -> r.shards().contains(shard.getUrn()))
+        || stateHistory.revisions().stream().anyMatch(r -> r.shards().contains(shard.getUrn()))
+        || ((!history.revisions().isEmpty() || !stateHistory.revisions().isEmpty())
+            && shards.values().stream()
+                .flatMap(Collection::stream)
+                .anyMatch(s -> s.getUrn().equals(shard.getUrn())));
   }
 
   /** Shard descriptors may inherit the owner's CRS. Resolve no spatial objects until requested. */
@@ -486,7 +500,8 @@ public class StorageImpl implements Storage {
 
     synchronized (scanLock) {
       assertOpen();
-      if (resetForWrite && frozenShard(shard))throw new KlabIllegalStateException("Committed state baseline is immutable");
+      if (resetForWrite && frozenShard(shard))
+        throw new KlabIllegalStateException("Committed state baseline is immutable");
       if (resetForWrite) assertUnleased();
       if (getNativeType() == Type.KEYED) storageManager.currentWorldview();
 
@@ -522,7 +537,7 @@ public class StorageImpl implements Storage {
       ((BaseScanner) scanner).inheritedProjection = observationProjection();
       // A scanner acquired before publication must lose its write authority at publication too.
       // Typed add methods check this under the same scanLock used by revision publication.
-      ((BaseScanner) scanner).writeAuthority = ()->!frozenShard(shard);
+      ((BaseScanner) scanner).writeAuthority = () -> !frozenShard(shard);
       var support = coverageSupport();
       return support == null
           ? scanner
@@ -954,7 +969,8 @@ public class StorageImpl implements Storage {
 
   /** Select a stable causal baseline; equal-time revisions remain independently addressable. */
   synchronized List<Shard> temporalBaseline(Scheduler.Event event, boolean ephemeral) {
-    if(!stateHistory.revisions().isEmpty())throw new KlabIllegalStateException("Untimed state has no temporal baseline");
+    if (!stateHistory.revisions().isEmpty())
+      throw new KlabIllegalStateException("Untimed state has no temporal baseline");
     TemporalHistory.Revision selected = null;
     long start = event.getTime().getStart().getMilliseconds();
     long end = event.getTime().getEnd().getMilliseconds();
@@ -977,10 +993,13 @@ public class StorageImpl implements Storage {
 
   /** Latest committed untimed value, with immutable previous versions retained separately. */
   synchronized List<Shard> stateBaseline() {
-    if(!stateHistory.revisions().isEmpty())return List.copyOf(stateShards.get(stateHistory.revisions().getLast().id()));
-    if(!history.revisions().isEmpty())throw new KlabIllegalStateException("A temporal value cannot be read as untimed state");
-    if(shards.size()>1)throw new KlabIllegalStateException("Untimed state has ambiguous native groups");
-    return shards.isEmpty()?List.of():List.copyOf(shards.firstEntry().getValue());
+    if (!stateHistory.revisions().isEmpty())
+      return List.copyOf(stateShards.get(stateHistory.revisions().getLast().id()));
+    if (!history.revisions().isEmpty())
+      throw new KlabIllegalStateException("A temporal value cannot be read as untimed state");
+    if (shards.size() > 1)
+      throw new KlabIllegalStateException("Untimed state has ambiguous native groups");
+    return shards.isEmpty() ? List.of() : List.copyOf(shards.firstEntry().getValue());
   }
 
   Object nativeValue(Shard shard, long index) {
@@ -1009,23 +1028,31 @@ public class StorageImpl implements Storage {
       List<Geometry> layout,
       java.util.function.BiFunction<Integer, Long, Object> value,
       org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction transaction) {
-    if(!event.hasTime())throw new IllegalArgumentException("Temporal state needs modeled time");
-    stageVersion(event,support,layout,value,transaction,true);
+    if (!event.hasTime()) throw new IllegalArgumentException("Temporal state needs modeled time");
+    stageVersion(event, support, layout, value, transaction, true);
   }
 
-  void stageState(Scheduler.Event event,Geometry support,List<Geometry> layout,
-      java.util.function.BiFunction<Integer,Long,Object> value,
+  void stageState(
+      Scheduler.Event event,
+      Geometry support,
+      List<Geometry> layout,
+      java.util.function.BiFunction<Integer, Long, Object> value,
       org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction transaction) {
-    if(event.hasTime()||event.getType()!=Scheduler.Event.Type.INPUT_CHANGE)throw new IllegalArgumentException("Untimed state needs an input revision");
-    stageVersion(event,support,layout,value,transaction,false);
+    if (event.hasTime() || event.getType() != Scheduler.Event.Type.INPUT_CHANGE)
+      throw new IllegalArgumentException("Untimed state needs an input revision");
+    stageVersion(event, support, layout, value, transaction, false);
   }
 
-  private void stageVersion(Scheduler.Event event,Geometry support,List<Geometry> layout,
-      java.util.function.BiFunction<Integer,Long,Object> value,
-      org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction transaction,boolean timed) {
-    if(history.revisions().stream().anyMatch(r->r.event().equals(event.toKey()))
-        ||stateHistory.revisions().stream().anyMatch(r->r.id().equals(event.toKey())))
-      throw new KlabIllegalStateException("State revision already committed: "+event.toKey());
+  private void stageVersion(
+      Scheduler.Event event,
+      Geometry support,
+      List<Geometry> layout,
+      java.util.function.BiFunction<Integer, Long, Object> value,
+      org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction transaction,
+      boolean timed) {
+    if (history.revisions().stream().anyMatch(r -> r.event().equals(event.toKey()))
+        || stateHistory.revisions().stream().anyMatch(r -> r.id().equals(event.toKey())))
+      throw new KlabIllegalStateException("State revision already committed: " + event.toKey());
     var pending = new ArrayList<Shard>();
     var buffers = new ArrayList<ShardStorage>();
     transaction.afterRollback(
@@ -1048,7 +1075,7 @@ public class StorageImpl implements Storage {
               nativeShardingStrategy,
               partition,
               layout.size(),
-              timed?event.getTime().getEnd().getMilliseconds():0L,
+              timed ? event.getTime().getEnd().getMilliseconds() : 0L,
               scope.getConfiguration().getPersistence(),
               getNativeType());
       var buffer = new ShardStorage(shard, storageManager, true);
@@ -1068,34 +1095,43 @@ public class StorageImpl implements Storage {
       shard.setHistogram(Utils.Data.adaptHistogram(buffer.histogram, buffer.coveredSize()));
       if (getNativeType() == Type.KEYED) finalizeKeyed(shard, buffer.data);
       storageManager.persistTemporalShard(shard, buffer.data);
-      if(timed)transaction.link(
-          observation,
-          shard,
-          GraphModel.Relationship.HAS_DATA,
-          "eventId",
-          event.toKey(),
-          "start",
-          event.getTime().getStart().getMilliseconds(),
-          "end",
-          event.getTime().getEnd().getMilliseconds());
-      else transaction.link(observation,shard,GraphModel.Relationship.HAS_DATA,"stateRevision",event.toKey());
+      if (timed)
+        transaction.link(
+            observation,
+            shard,
+            GraphModel.Relationship.HAS_DATA,
+            "eventId",
+            event.toKey(),
+            "start",
+            event.getTime().getStart().getMilliseconds(),
+            "end",
+            event.getTime().getEnd().getMilliseconds());
+      else
+        transaction.link(
+            observation, shard, GraphModel.Relationship.HAS_DATA, "stateRevision", event.toKey());
     }
     var revisions = new ArrayList<>(history.revisions());
-    if(timed)revisions.add(
-        new TemporalHistory.Revision(
-            event.toKey(),
-            event.getTime().getStart().getMilliseconds(),
-            event.getTime().getEnd().getMilliseconds(),
-            Geometry.forTransport(support).encode(),
-            pending.stream().map(Shard::getUrn).toList()));
+    if (timed)
+      revisions.add(
+          new TemporalHistory.Revision(
+              event.toKey(),
+              event.getTime().getStart().getMilliseconds(),
+              event.getTime().getEnd().getMilliseconds(),
+              Geometry.forTransport(support).encode(),
+              pending.stream().map(Shard::getUrn).toList()));
     var next = new TemporalHistory(1, revisions);
-    var states=new ArrayList<>(stateHistory.revisions());
-    if(!timed)states.add(new StateRevisionHistory.Revision(event.toKey(),states.isEmpty()?null:states.getLast().id(),
-        Geometry.forTransport(support).encode(),pending.stream().map(Shard::getUrn).toList()));
-    var nextState=new StateRevisionHistory(1,states);
-    var historyKey=timed?TemporalHistory.KEY:StateRevisionHistory.KEY;
+    var states = new ArrayList<>(stateHistory.revisions());
+    if (!timed)
+      states.add(
+          new StateRevisionHistory.Revision(
+              event.toKey(),
+              states.isEmpty() ? null : states.getLast().id(),
+              Geometry.forTransport(support).encode(),
+              pending.stream().map(Shard::getUrn).toList()));
+    var nextState = new StateRevisionHistory(1, states);
+    var historyKey = timed ? TemporalHistory.KEY : StateRevisionHistory.KEY;
     var previous = observation.getMetadata().get(historyKey);
-    observation.getMetadata().put(historyKey, Utils.Json.asString(timed?next:nextState));
+    observation.getMetadata().put(historyKey, Utils.Json.asString(timed ? next : nextState));
     if (observation
         instanceof
         org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl concrete) {
@@ -1114,7 +1150,7 @@ public class StorageImpl implements Storage {
       }
       if (aggregate != null)
         updatedHistograms.put(
-            timed?event.getTime().getEnd().getMilliseconds():0L,
+            timed ? event.getTime().getEnd().getMilliseconds() : 0L,
             Utils.Data.adaptHistogram(aggregate, count));
       concrete.setHistograms(updatedHistograms);
       transaction.afterRollback(() -> concrete.setHistograms(oldHistograms));
@@ -1128,8 +1164,13 @@ public class StorageImpl implements Storage {
     transaction.afterCommit(
         () -> {
           synchronized (scanLock) {
-            if(timed){history=next;temporalShards.put(event.toKey(),List.copyOf(pending));}
-            else {stateHistory=nextState;stateShards.put(event.toKey(),List.copyOf(pending));}
+            if (timed) {
+              history = next;
+              temporalShards.put(event.toKey(), List.copyOf(pending));
+            } else {
+              stateHistory = nextState;
+              stateShards.put(event.toKey(), List.copyOf(pending));
+            }
             for (var buffer : buffers) {
               shardStorage.put(buffer.shard.getUrn(), buffer);
               readableShards.add(buffer.shard.getUrn());
@@ -1156,7 +1197,7 @@ public class StorageImpl implements Storage {
 
   /** Timestamp summaries use the last committed revision; history retains every event identity. */
   private List<Shard> histogramShards() {
-    if(!stateHistory.revisions().isEmpty())return stateBaseline();
+    if (!stateHistory.revisions().isEmpty()) return stateBaseline();
     var selected = new TreeMap<Long, List<Shard>>();
     for (var shard : allShards()) {
       selected.computeIfAbsent(shard.getTimestamp(), ignored -> new ArrayList<>()).add(shard);
@@ -1388,7 +1429,7 @@ public class StorageImpl implements Storage {
     protected final BufferArray data;
     protected final com.dynatrace.dynahist.Histogram histogram;
     protected final boolean readOnly;
-    private java.util.function.BooleanSupplier writeAuthority = ()->true;
+    private java.util.function.BooleanSupplier writeAuthority = () -> true;
     protected long index = 0L;
     private SpatialCoverage spatial;
     private String inheritedProjection;
@@ -1450,7 +1491,10 @@ public class StorageImpl implements Storage {
       if (spatial == null)
         spatial =
             new SpatialCoverage(
-                shard.getGeometry().encode(), inheritedProjection, shard.getShardingStrategy().getCurve(), null);
+                shard.getGeometry().encode(),
+                inheritedProjection,
+                shard.getShardingStrategy().getCurve(),
+                null);
       return spatial;
     }
 
@@ -1471,7 +1515,8 @@ public class StorageImpl implements Storage {
 
     protected void assertWritable() {
       if (readOnly || !writeAuthority.getAsBoolean()) {
-        throw new KlabIllegalStateException("Cannot write through a read-only or frozen storage scanner");
+        throw new KlabIllegalStateException(
+            "Cannot write through a read-only or frozen storage scanner");
       }
     }
   }

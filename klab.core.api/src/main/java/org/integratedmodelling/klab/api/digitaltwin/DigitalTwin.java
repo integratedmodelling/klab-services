@@ -33,13 +33,24 @@ public interface DigitalTwin extends RuntimeAsset {
    */
   interface Configuration {
     /** URN of the single k.IM define grid instruction requested for this twin. */
-    default String getGridUrn() { return null; }
-    /** Immutable inline grid instructions, or null for a named definition. */
-    default java.util.Map<String, Object> getGridDefinition() { return null; }
-    /** Frozen lattice restored from the Context node, never recomputed on resume. */
-    default GridAlignment getGridAlignment() { return null; }
+    default String getGridUrn() {
+      return null;
+    }
 
-    default org.integratedmodelling.klab.api.knowledge.WorldviewCommitment getWorldviewCommitment() { return null; }
+    /** Immutable inline grid instructions, or null for a named definition. */
+    default java.util.Map<String, Object> getGridDefinition() {
+      return null;
+    }
+
+    /** Frozen lattice restored from the Context node, never recomputed on resume. */
+    default GridAlignment getGridAlignment() {
+      return null;
+    }
+
+    default org.integratedmodelling.klab.api.knowledge.WorldviewCommitment
+        getWorldviewCommitment() {
+      return null;
+    }
 
     /**
      * The URL does not need to be filled in if the configuration is passed to a {@link
@@ -92,7 +103,9 @@ public interface DigitalTwin extends RuntimeAsset {
     String getOwner();
 
     /** Host-issued parent policy; null denotes a private or legacy parent session. */
-    default String getSessionFederationId() { return null; }
+    default String getSessionFederationId() {
+      return null;
+    }
 
     /**
      * Access rights define who can access the digital twin and the modality of the access.
@@ -138,7 +151,6 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return
      */
     String getId();
-
 
     /**
      * This is used to flag a failure in the creation of a digital twin or the connection. If true,
@@ -258,7 +270,10 @@ public interface DigitalTwin extends RuntimeAsset {
   interface CommittedMembershipChange {}
 
   interface Transaction {
-    default org.integratedmodelling.klab.api.data.TemporalWriteSet getTemporalWrites() { return null; }
+    default org.integratedmodelling.klab.api.data.TemporalWriteSet getTemporalWrites() {
+      return null;
+    }
+
     default void setTemporalWrites(org.integratedmodelling.klab.api.data.TemporalWriteSet writes) {
       throw new UnsupportedOperationException("Transactional temporal storage is unavailable");
     }
@@ -281,14 +296,14 @@ public interface DigitalTwin extends RuntimeAsset {
     void registerExecutors();
 
     /**
-     * Read an observation through this attempt's tentative semantic updates. The returned view
-     * is not evidence of classification completion and must not escape as committed knowledge.
-     * Implementations must isolate mutable observation state and must not expose a writable
-     * alias of the committed observation or staged write set. Unsupported implementations fail
-     * explicitly instead of returning the supplied mutable object.
-     * Returned values may be in-process {@link org.integratedmodelling.klab.api.data.LocalView}
-     * instances. Use {@link Observation#forTransport(Observation)} before serializing a read;
-     * the view itself is deliberately rejected at JSON boundaries.
+     * Read an observation through this attempt's tentative semantic updates. The returned view is
+     * not evidence of classification completion and must not escape as committed knowledge.
+     * Implementations must isolate mutable observation state and must not expose a writable alias
+     * of the committed observation or staged write set. Unsupported implementations fail explicitly
+     * instead of returning the supplied mutable object. Returned values may be in-process {@link
+     * org.integratedmodelling.klab.api.data.LocalView} instances. Use {@link
+     * Observation#forTransport(Observation)} before serializing a read; the view itself is
+     * deliberately rejected at JSON boundaries.
      */
     default Observation readObservation(Observation observation) {
       throw new UnsupportedOperationException("Detached transaction reads are unavailable");
@@ -407,13 +422,14 @@ public interface DigitalTwin extends RuntimeAsset {
     Transaction getParent();
 
     /**
-     * Whether this attempt tree has failed. Completed child work is not reusable after
-     * any sibling or root failure. Implementations with an attempt state should expose it here.
+     * Whether this attempt tree has failed. Completed child work is not reusable after any sibling
+     * or root failure. Implementations with an attempt state should expose it here.
      */
     default boolean isFailed() {
       var activity = getActivity();
-      return activity != null && (activity.getOutcome() == Activity.Outcome.FAILURE
-          || activity.getOutcome() == Activity.Outcome.INTERNAL_FAILURE)
+      return activity != null
+              && (activity.getOutcome() == Activity.Outcome.FAILURE
+                  || activity.getOutcome() == Activity.Outcome.INTERNAL_FAILURE)
           || getParent() != null && getParent().isFailed();
     }
 
@@ -433,8 +449,13 @@ public interface DigitalTwin extends RuntimeAsset {
      */
     Collection<RuntimeAsset> assets();
 
-    /** Sources whose CURRENT EMERGED_FROM set is replaced by this attempt, not a historical deletion. */
-    default java.util.Set<Long> configurationParticipantReplacements() { return java.util.Set.of(); }
+    /**
+     * Sources whose CURRENT EMERGED_FROM set is replaced by this attempt, not a historical
+     * deletion.
+     */
+    default java.util.Set<Long> configurationParticipantReplacements() {
+      return java.util.Set.of();
+    }
 
     Collection<KnowledgeGraph.Link> incoming(RuntimeAsset asset);
 

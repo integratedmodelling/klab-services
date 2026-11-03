@@ -10,7 +10,10 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
  */
 public interface ServicesAPI {
 
-  /** POST source content; Accept selects the output media type, assetClass optionally selects a semantic bean. */
+  /**
+   * POST source content; Accept selects the output media type, assetClass optionally selects a
+   * semantic bean.
+   */
   String ADAPT = "/api/v1/adapt";
 
   String API_BASE = "/api/v1";
@@ -56,6 +59,7 @@ public interface ServicesAPI {
 
   /** Base64-encoded UTF-8 consequence cause, scoped to this request's authorized context. */
   String CONSEQUENCE_HEADER = "klab-consequence";
+
   String RESOLUTION_CYCLE_HEADER = "klab-resolution-cycle";
   String CONTEXT_OBSERVATION_ID_HEADER = "klab-context-observation";
   String SOURCE_OBSERVATION_ID_HEADER = "klab-source-observation";
@@ -167,8 +171,10 @@ public interface ServicesAPI {
     String CREDENTIAL_SCHEMAS = "/credentials/schemata";
     String SETTINGS = "/settings";
     String SET = "/set/{setting}";
+
     /** Submit component maintenance jobs; bodies contain component and optional version. */
     String UPDATE_COMPONENT = "/components/update";
+
     String REMOVE_COMPONENT = "/components/remove";
   }
 
@@ -251,10 +257,16 @@ public interface ServicesAPI {
 
     String CONFIGURE_AUTHORITY = API_BASE + "/authority/configure";
 
-    /** Authenticated GET with authority and identity; returns media types mapped to remote-client URLs. */
+    /**
+     * Authenticated GET with authority and identity; returns media types mapped to remote-client
+     * URLs.
+     */
     String AUTHORITY_DOCUMENTATION = API_BASE + "/authority/documentation";
 
-    /** Authenticated GET with authority, identity and mediaType; serves local identity documentation. */
+    /**
+     * Authenticated GET with authority, identity and mediaType; serves local identity
+     * documentation.
+     */
     String AUTHORITY_DOCUMENTATION_CONTENT = AUTHORITY_DOCUMENTATION + "/content";
 
     /**
@@ -272,6 +284,7 @@ public interface ServicesAPI {
      * @produces {@link Observable}
      */
     String RESOLVE_OBSERVABLE = API_BASE + "/resolve/observable";
+
     String DECLARE_OBSERVABLE = API_BASE + "/declare/observable";
 
     String SEMANTIC_SEARCH = API_BASE + "/semanticSearch";
@@ -312,6 +325,7 @@ public interface ServicesAPI {
     String SPLIT_OPERATORS = API_BASE + "/splitOperators";
 
     String DISTANCE = API_BASE + "/distance";
+
     /** Revision-bound matching requires explicit server support; never falls back to DISTANCE. */
     String VALIDATED_DISTANCE = DISTANCE + "/validated";
 
@@ -444,6 +458,7 @@ public interface ServicesAPI {
      * org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.
      */
     String SUBMIT_OBSERVATION = API_BASE + "/submit";
+
     String MEMBER_QUALITIES = API_BASE + "/memberQualities";
     String MEMBER_QUALITY_CONSUMER = API_BASE + "/memberQualities/consumer";
     String MEMBER_QUALITY_INPUTS = API_BASE + "/memberQualities/consumer/inputs";
@@ -533,11 +548,13 @@ public interface ServicesAPI {
     String RESOLVE = API_BASE + "/resolve/{knowledgeClass}/{urn}";
 
     String DELETE = API_BASE + "/delete/{knowledgeClass}/{urn}";
+
     /** Query coordinates support qualified URNs without encoded slashes in path segments. */
     String DELETE_QUERY = API_BASE + "/delete/{knowledgeClass}";
 
     /** PUT endpoint to ingest an asset for addition, update or replacement */
     String SUBMIT = API_BASE + "/submit/{knowledgeClass}/{submissionMode}/{urn}";
+
     String SUBMIT_QUERY = API_BASE + "/submit/{knowledgeClass}/{submissionMode}";
 
     /**
@@ -551,6 +568,7 @@ public interface ServicesAPI {
      * URN.
      */
     String RETRIEVE = API_BASE + "/retrieve/{knowledgeClass}/{urn}";
+
     String RETRIEVE_QUERY = API_BASE + "/retrieve/{knowledgeClass}";
 
     String RESOLVE_URN = "/resolve/{urn}";

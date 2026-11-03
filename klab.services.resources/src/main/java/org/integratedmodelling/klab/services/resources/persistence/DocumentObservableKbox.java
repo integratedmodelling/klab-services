@@ -3,32 +3,52 @@ package org.integratedmodelling.klab.services.resources.persistence;
 import java.util.*;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /** Independent document-backed semantic dictionary. No H2 database is constructed. */
 public class DocumentObservableKbox implements AutoCloseable {
   protected final ResourcesService resourceService;
   protected final KboxDocumentStore documents;
+
   public DocumentObservableKbox(ResourcesService service, KboxDocumentStore documents) {
     this.resourceService = Objects.requireNonNull(service);
     this.documents = Objects.requireNonNull(documents);
   }
-  protected Reasoner reasoner() { return resourceService.serviceScope().getService(Reasoner.class); }
-  protected Reasoner reasoner(Scope request) { return request==null?reasoner():request.getService(Reasoner.class); }
+
+  protected Reasoner reasoner() {
+    return resourceService.serviceScope().getService(Reasoner.class);
+  }
+
+  protected Reasoner reasoner(Scope request) {
+    return request == null ? reasoner() : request.getService(Reasoner.class);
+  }
+
   public long getConceptId(Concept concept) {
     var document = documents.get("concept:" + concept.getUrn());
     return document == null ? -1 : ((Number) document.get("id")).longValue();
   }
+
   public long requireConceptId(Concept concept, Channel monitor) {
     String key = "concept:" + concept.getUrn();
     var document = documents.get(key);
     var core = reasoner().coreObservable(concept);
     String coreUrn = core == null ? "" : core.getUrn();
-    if (document == null) document = documents.insertIfAbsent(key,
-        Map.of("kind", "concept", "definition", concept.getUrn(), "core", coreUrn, "id", documents.nextId()));
+    if (document == null)
+      document =
+          documents.insertIfAbsent(
+              key,
+              Map.of(
+                  "kind",
+                  "concept",
+                  "definition",
+                  concept.getUrn(),
+                  "core",
+                  coreUrn,
+                  "id",
+                  documents.nextId()));
     if (core != null && !coreUrn.equals(document.get("core"))) {
       document = new HashMap<>(document);
       document.put("core", coreUrn);
@@ -51,34 +71,51 @@ public class DocumentObservableKbox implements AutoCloseable {
   public String getTypeDefinition(long id) {
     return documents.find("id", List.of(id)).stream()
         .filter(d -> "concept".equals(d.get("kind")))
-        .map(d -> (String) d.get("definition")).findFirst().orElse(null);
+        .map(d -> (String) d.get("definition"))
+        .findFirst()
+        .orElse(null);
   }
+
   public Observable getType(long id) {
     var definition = getTypeDefinition(id);
     return definition == null ? null : reasoner().resolveObservable(definition);
   }
+
   public List<String> getKnownDefinitions() {
     return documents.find("kind", List.of("concept")).stream()
-        .map(d -> (String) d.get("definition")).sorted().toList();
+        .map(d -> (String) d.get("definition"))
+        .sorted()
+        .toList();
   }
+
   public Set<Long> getCompatibleTypeIds(Observable observable, Concept context) {
     return getTypeIds(observable, context, true);
   }
+
   /** Coarse enumeration only: validate each model source before computing semantic distance. */
   public Set<Long> getCandidateTypeIds(Observable observable) {
     return getTypeIds(observable, null, false);
   }
-  protected Set<Long> getCandidateTypeIds(Observable observable,Scope request) {
-    if(request==null)return getCandidateTypeIds(observable);
-    var selected=reasoner(request);
-    boolean frozen=request instanceof org.integratedmodelling.klab.api.scope.ContextScope context
-        &&context.getResolutionCycleBinding()!=null;
-    return getTypeIds(observable,null,false,selected,!frozen&&selected==reasoner());
+
+  protected Set<Long> getCandidateTypeIds(Observable observable, Scope request) {
+    if (request == null) return getCandidateTypeIds(observable);
+    var selected = reasoner(request);
+    boolean frozen =
+        request instanceof org.integratedmodelling.klab.api.scope.ContextScope context
+            && context.getResolutionCycleBinding() != null;
+    return getTypeIds(observable, null, false, selected, !frozen && selected == reasoner());
   }
+
   private Set<Long> getTypeIds(Observable observable, Concept context, boolean match) {
-    return getTypeIds(observable,context,match,reasoner(),true);
+    return getTypeIds(observable, context, match, reasoner(), true);
   }
-  private Set<Long> getTypeIds(Observable observable,Concept context,boolean match,Reasoner reasoner,boolean maintainIndex) {
+
+  private Set<Long> getTypeIds(
+      Observable observable,
+      Concept context,
+      boolean match,
+      Reasoner reasoner,
+      boolean maintainIndex) {
     var core = reasoner.coreObservable(observable);
     Set<Long> result = new HashSet<>();
     if (core == null) return result;
@@ -89,7 +126,9 @@ public class DocumentObservableKbox implements AutoCloseable {
       if (observable.getSpecializedComponents() != null) {
         for (var pair : observable.getSpecializedComponents()) {
           String urn = pair.getSecond().getUrn();
-          replacement = replacement.replace(pair.getFirst().getUrn(), urn.contains(" ") ? "(" + urn + ")" : urn);
+          replacement =
+              replacement.replace(
+                  pair.getFirst().getUrn(), urn.contains(" ") ? "(" + urn + ")" : urn);
         }
         var resolved = reasoner.resolveConcept(replacement);
         if (resolved != null) heads.add(resolved.getUrn());
@@ -103,12 +142,18 @@ public class DocumentObservableKbox implements AutoCloseable {
       var candidate = reasoner.resolveConcept((String) document.get("definition"));
       if (candidate == null) continue;
       var candidateCore = reasoner.coreObservable(candidate);
-      if (maintainIndex&&candidateCore != null && "".equals(document.get("core"))) requireConceptId(candidate, resourceService.serviceScope());
-      if (candidateCore != null && heads.contains(candidateCore.getUrn())
+      if (maintainIndex && candidateCore != null && "".equals(document.get("core")))
+        requireConceptId(candidate, resourceService.serviceScope());
+      if (candidateCore != null
+          && heads.contains(candidateCore.getUrn())
           && (!match || reasoner.semanticDistance(candidate, observable, context) >= 0))
         result.add(((Number) document.get("id")).longValue());
     }
     return result;
   }
-  @Override public void close() { documents.close(); }
+
+  @Override
+  public void close() {
+    documents.close();
+  }
 }

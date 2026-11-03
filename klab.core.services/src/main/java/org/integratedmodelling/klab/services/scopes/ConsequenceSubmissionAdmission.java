@@ -8,7 +8,8 @@ public interface ConsequenceSubmissionAdmission {
   void bind(DigitalTwin.Transaction transaction, ServiceContextScope execution);
 
   /** Exact original directive check before any runtime-owned consequence operation. */
-  default void requireTarget(org.integratedmodelling.klab.api.knowledge.Observable requested,
+  default void requireTarget(
+      org.integratedmodelling.klab.api.knowledge.Observable requested,
       ServiceContextScope execution) {
     throw new IllegalStateException("Consequence target authority is unavailable");
   }
@@ -30,5 +31,7 @@ public interface ConsequenceSubmissionAdmission {
   default void committed(long commitId) {}
 
   /** Exact source/rule accounting after bind; absent attached accounting stays UNKNOWN. */
-  default org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding semanticEvidence(){return null;}
+  default org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding semanticEvidence() {
+    return null;
+  }
 }

@@ -35,10 +35,10 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
  */
 public interface KnowledgeGraph {
   /** Atomically bind the root context; reject any existing incompatible commitment. */
-  default void bindWorldview(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment commitment) {
+  default void bindWorldview(
+      org.integratedmodelling.klab.api.knowledge.WorldviewCommitment commitment) {
     throw new UnsupportedOperationException("Root worldview commitment is not supported");
   }
-
 
   /**
    * Each transaction produces a commit that details the changes made in the transaction. These are
@@ -108,10 +108,16 @@ public interface KnowledgeGraph {
      */
     Set<Long> getDeletedAssets();
 
-    /** Immutable modeled-cessation/deactivation beforeimages; portable data never grants authority. */
-    default java.util.List<ObservationCessation> getObservationCessations(){return java.util.List.of();}
-    default java.util.List<CohortMembershipChange> getCohortMembershipChanges(){return java.util.List.of();}
+    /**
+     * Immutable modeled-cessation/deactivation beforeimages; portable data never grants authority.
+     */
+    default java.util.List<ObservationCessation> getObservationCessations() {
+      return java.util.List.of();
+    }
 
+    default java.util.List<CohortMembershipChange> getCohortMembershipChanges() {
+      return java.util.List.of();
+    }
 
     /**
      * Inoperative agents will lose causal links to their processes
@@ -161,41 +167,48 @@ public interface KnowledgeGraph {
 
   /**
    * A mutable, typed runtime-graph query. With no anchor, searches the owning context for all
-   * assets of the requested type. Results are distinct assets, not paths. Use {@link GraphModel.Fields}
-   * constants for properties and {@link GraphModel.Relationship} for edges. Values are bound
-   * parameters and retain their JSON scalar types.
+   * assets of the requested type. Results are distinct assets, not paths. Use {@link
+   * GraphModel.Fields} constants for properties and {@link GraphModel.Relationship} for edges.
+   * Values are bound parameters and retain their JSON scalar types.
    *
    * <p>Example: {@code graph.query(Observation.class, scope).source(parent)
-   * .along(GraphModel.Relationship.HAS_CHILD).hops(1, 4)
-   * .where(GraphModel.Fields.SIZE, Operator.GE, 10L)
-   * .order(Order.descending(GraphModel.Fields.SIZE)).limit(20).run(scope)}.
+   * .along(GraphModel.Relationship.HAS_CHILD).hops(1, 4) .where(GraphModel.Fields.SIZE,
+   * Operator.GE, 10L) .order(Order.descending(GraphModel.Fields.SIZE)).limit(20).run(scope)}.
    *
    * <p>AND, OR and NOT operate within the same context and result type. Apply ordering and
-   * pagination to the combined query, not its children. No matches returns an empty list;
-   * invalid, unsupported, unavailable or failed queries throw {@link QueryException}.
-   * Neo4j bounds traversal at 64 hops and query trees at 128 nodes; pagination is deterministic
-   * only while the graph is unchanged. Geometry descriptors, projections and aggregates are
-   * not runtime-asset query results.
+   * pagination to the combined query, not its children. No matches returns an empty list; invalid,
+   * unsupported, unavailable or failed queries throw {@link QueryException}. Neo4j bounds traversal
+   * at 64 hops and query trees at 128 nodes; pagination is deterministic only while the graph is
+   * unchanged. Geometry descriptors, projections and aggregates are not runtime-asset query
+   * results.
    *
    * @param <T>
    */
   interface Query<T extends RuntimeAsset> {
 
-    enum SortDirection { ASC, DESC }
+    enum SortDirection {
+      ASC,
+      DESC
+    }
 
     record Order(String field, SortDirection direction) {
-      public static Order ascending(String field) { return new Order(field, SortDirection.ASC); }
-      public static Order descending(String field) { return new Order(field, SortDirection.DESC); }
+      public static Order ascending(String field) {
+        return new Order(field, SortDirection.ASC);
+      }
+
+      public static Order descending(String field) {
+        return new Order(field, SortDirection.DESC);
+      }
     }
 
     /** Typed, JSON-serializable property predicate. Values are parameters, never query source. */
     record Criterion(String field, Operator operator, Object argument) {}
 
     /**
-     * EQUALS accepts null to match property absence. LT/LE/GT/GE compare typed properties;
-     * combine comparisons for ranges. LIKE is case-sensitive with SQL-style % and _ wildcards.
-     * BEFORE/AFTER compare epoch milliseconds or ISO-8601 instant strings strictly.
-     * INTERSECT/COVERS/NEAREST currently throw UNSUPPORTED_QUERY pending a geometry/CRS contract.
+     * EQUALS accepts null to match property absence. LT/LE/GT/GE compare typed properties; combine
+     * comparisons for ranges. LIKE is case-sensitive with SQL-style % and _ wildcards. BEFORE/AFTER
+     * compare epoch milliseconds or ISO-8601 instant strings strictly. INTERSECT/COVERS/NEAREST
+     * currently throw UNSUPPORTED_QUERY pending a geometry/CRS contract.
      */
     enum Operator {
       EQUALS,
@@ -233,8 +246,8 @@ public interface KnowledgeGraph {
     Query<T> along(GraphModel.Relationship relationship, Object... parameters);
 
     /**
-     * Find directed relationships between the endpoints. Requires {@link Link} results and
-     * exactly one hop. Preserves properties and orientation; parallel links remain separate.
+     * Find directed relationships between the endpoints. Requires {@link Link} results and exactly
+     * one hop. Preserves properties and orientation; parallel links remain separate.
      *
      * @param source
      * @param target
@@ -278,290 +291,530 @@ public interface KnowledgeGraph {
 
   /**
    * Query failures are never represented as an empty result list. The HTTP endpoint maps
-   * INVALID_QUERY to 400, UNSUPPORTED_QUERY to 422, ACCESS_DENIED to 403,
-   * BACKEND_UNAVAILABLE to 503 and EXECUTION_FAILED to 500, with a ProblemDetail code property.
+   * INVALID_QUERY to 400, UNSUPPORTED_QUERY to 422, ACCESS_DENIED to 403, BACKEND_UNAVAILABLE to
+   * 503 and EXECUTION_FAILED to 500, with a ProblemDetail code property.
    */
   class QueryException extends RuntimeException {
-    public enum Code { INVALID_QUERY, UNSUPPORTED_QUERY, ACCESS_DENIED, BACKEND_UNAVAILABLE, EXECUTION_FAILED }
+    public enum Code {
+      INVALID_QUERY,
+      UNSUPPORTED_QUERY,
+      ACCESS_DENIED,
+      BACKEND_UNAVAILABLE,
+      EXECUTION_FAILED
+    }
+
     private final Code code;
-    public QueryException(Code code, String message) { super(message); this.code = code; }
-    public QueryException(Code code, String message, Throwable cause) { super(message, cause); this.code = code; }
-    public Code getCode() { return code; }
+
+    public QueryException(Code code, String message) {
+      super(message);
+      this.code = code;
+    }
+
+    public QueryException(Code code, String message, Throwable cause) {
+      super(message, cause);
+      this.code = code;
+    }
+
+    public Code getCode() {
+      return code;
+    }
   }
 
-  /** Immutable raw persisted input read set; private to one live Runtime request, never a cache version. */
-  record ClassificationMemberSnapshot(long id, String observable, String geometry, long semanticRevision,
-      java.util.Map<String,Object> properties, String perceivedGeometry) implements java.io.Serializable {
-    public ClassificationMemberSnapshot { properties=freezeClassificationProperties(properties); }
-    public ClassificationMemberSnapshot(long id,String observable,String geometry,long revision) {
-      this(id,observable,geometry,revision,java.util.Map.of(),null);
+  /**
+   * Immutable raw persisted input read set; private to one live Runtime request, never a cache
+   * version.
+   */
+  record ClassificationMemberSnapshot(
+      long id,
+      String observable,
+      String geometry,
+      long semanticRevision,
+      java.util.Map<String, Object> properties,
+      String perceivedGeometry)
+      implements java.io.Serializable {
+    public ClassificationMemberSnapshot {
+      properties = freezeClassificationProperties(properties);
     }
+
+    public ClassificationMemberSnapshot(
+        long id, String observable, String geometry, long revision) {
+      this(id, observable, geometry, revision, java.util.Map.of(), null);
+    }
+
     /** Fresh native values for materialization; mutation cannot alter the captured read set. */
-    public java.util.Map<String,Object> nativeProperties() {
-      var result=new java.util.LinkedHashMap<String,Object>();
-      properties.forEach((key,value)->result.put(key,restoreClassificationValue(value)));
+    public java.util.Map<String, Object> nativeProperties() {
+      var result = new java.util.LinkedHashMap<String, Object>();
+      properties.forEach((key, value) -> result.put(key, restoreClassificationValue(value)));
       return result;
     }
   }
+
   /** Neo4j binary properties need value equality without retaining a mutable byte array. */
   record ClassificationBinaryValue(String base64) implements java.io.Serializable {
-    public ClassificationBinaryValue { java.util.Objects.requireNonNull(base64); }
+    public ClassificationBinaryValue {
+      java.util.Objects.requireNonNull(base64);
+    }
   }
-  private static java.util.Map<String,Object> freezeClassificationProperties(java.util.Map<String,Object> values) {
-    var result=new java.util.LinkedHashMap<String,Object>();
-    values.forEach((key,value)->result.put(key,freezeClassificationValue(value)));
+
+  private static java.util.Map<String, Object> freezeClassificationProperties(
+      java.util.Map<String, Object> values) {
+    var result = new java.util.LinkedHashMap<String, Object>();
+    values.forEach((key, value) -> result.put(key, freezeClassificationValue(value)));
     return java.util.Collections.unmodifiableMap(result);
   }
+
   private static Object freezeClassificationValue(Object value) {
-    if(value==null || value instanceof String || value instanceof Number || value instanceof Boolean) return value;
-    if(value instanceof ClassificationBinaryValue) return value;
-    if(value instanceof byte[] bytes) return new ClassificationBinaryValue(java.util.Base64.getEncoder().encodeToString(bytes));
-    if(value instanceof java.util.List<?> list) return list.stream().map(KnowledgeGraph::freezeClassificationValue).toList();
-    throw new IllegalArgumentException("Unsupported native observation property "+value.getClass());
+    if (value == null
+        || value instanceof String
+        || value instanceof Number
+        || value instanceof Boolean) return value;
+    if (value instanceof ClassificationBinaryValue) return value;
+    if (value instanceof byte[] bytes)
+      return new ClassificationBinaryValue(java.util.Base64.getEncoder().encodeToString(bytes));
+    if (value instanceof java.util.List<?> list)
+      return list.stream().map(KnowledgeGraph::freezeClassificationValue).toList();
+    throw new IllegalArgumentException(
+        "Unsupported native observation property " + value.getClass());
   }
+
   private static Object restoreClassificationValue(Object value) {
-    if(value instanceof ClassificationBinaryValue binary) return java.util.Base64.getDecoder().decode(binary.base64());
-    if(value instanceof java.util.List<?> list) return list.stream().map(KnowledgeGraph::restoreClassificationValue).toList();
+    if (value instanceof ClassificationBinaryValue binary)
+      return java.util.Base64.getDecoder().decode(binary.base64());
+    if (value instanceof java.util.List<?> list)
+      return list.stream().map(KnowledgeGraph::restoreClassificationValue).toList();
     return value;
   }
 
-  record ClassificationReadSet(String contextId, long cohortId, String cohortObservable, java.util.List<ClassificationMemberSnapshot> members)
+  record ClassificationReadSet(
+      String contextId,
+      long cohortId,
+      String cohortObservable,
+      java.util.List<ClassificationMemberSnapshot> members)
       implements java.io.Serializable {
-    public ClassificationReadSet { members = java.util.List.copyOf(members); }
-    public ClassificationReadSet(String contextId,long cohortId,java.util.List<ClassificationMemberSnapshot> members) {
-      this(contextId,cohortId,null,members);
+    public ClassificationReadSet {
+      members = java.util.List.copyOf(members);
+    }
+
+    public ClassificationReadSet(
+        String contextId, long cohortId, java.util.List<ClassificationMemberSnapshot> members) {
+      this(contextId, cohortId, null, members);
     }
   }
 
   /** Context-local property-indexed role supports; matching row absence is part of the proof. */
-  record RoleSupportCatalogue(String contextId,java.util.List<Long> sourceIds,
-      java.util.List<ConsequenceEdgeSnapshot> matches,ConsequenceReadSet inputs) implements java.io.Serializable {
-    public RoleSupportCatalogue {sourceIds=sourceIds.stream().distinct().sorted().toList();matches=java.util.List.copyOf(matches);
-      if(contextId==null||sourceIds.stream().anyMatch(id->id<=0)||inputs==null||!contextId.equals(inputs.contextId())||!inputs.assetIds().containsAll(sourceIds))throw new IllegalArgumentException("Owned durable role support source catalogue required");}
+  record RoleSupportCatalogue(
+      String contextId,
+      java.util.List<Long> sourceIds,
+      java.util.List<ConsequenceEdgeSnapshot> matches,
+      ConsequenceReadSet inputs)
+      implements java.io.Serializable {
+    public RoleSupportCatalogue {
+      sourceIds = sourceIds.stream().distinct().sorted().toList();
+      matches = java.util.List.copyOf(matches);
+      if (contextId == null
+          || sourceIds.stream().anyMatch(id -> id <= 0)
+          || inputs == null
+          || !contextId.equals(inputs.contextId())
+          || !inputs.assetIds().containsAll(sourceIds))
+        throw new IllegalArgumentException("Owned durable role support source catalogue required");
+    }
   }
 
   /** Native current-state marker. Ordinary writes cannot author or clear this lifecycle field. */
   String CURRENT_PROPERTY = "klabCurrent";
+
   String MEMBERSHIP_REVISION_PROPERTY = "klabMembershipRevision";
 
-  /** Native transaction-owned admission handle; portable receipts cannot implement its authority. */
+  /**
+   * Native transaction-owned admission handle; portable receipts cannot implement its authority.
+   */
   interface CessationPublication {}
 
   /** Immutable beforeimage of a modeled cessation; receipt data is not execution authority. */
-  record ObservationCessation(long observationId,long commitId,long activityId,String support,
-      String scientificEvidence,ConsequenceReadSet before) implements java.io.Serializable {
+  record ObservationCessation(
+      long observationId,
+      long commitId,
+      long activityId,
+      String support,
+      String scientificEvidence,
+      ConsequenceReadSet before)
+      implements java.io.Serializable {
     public ObservationCessation {
-      if(observationId<=0||commitId<=0||activityId<=0||support==null||scientificEvidence==null||scientificEvidence.isBlank()||before==null
-          ||before.assets().stream().noneMatch(a->a.id()==observationId&&a.labels().contains(GraphModel.Labels.OBSERVATION)))
-        throw new IllegalArgumentException("Committed modeled cessation requires a captured durable target and source proof");
-    }
-  }
-  /** Complete current membership transition; raw after-readset also guards retained ceased members. */
-  record CohortMembershipChange(String contextId,long cohortId,String observable,long beforeRevision,
-      long afterRevision,java.util.List<Long> beforeMembers,java.util.List<Long> afterMembers,String support,
-      ConsequenceReadSet afterReadSet) implements java.io.Serializable {
-    public CohortMembershipChange {
-      if(contextId==null||cohortId<=0||observable==null||beforeRevision<0||afterRevision<=beforeRevision||support==null||afterReadSet==null||!contextId.equals(afterReadSet.contextId()))
-        throw new IllegalArgumentException("Exact committed cohort membership transition required");
-      beforeMembers=beforeMembers.stream().distinct().sorted().toList();afterMembers=afterMembers.stream().distinct().sorted().toList();
+      if (observationId <= 0
+          || commitId <= 0
+          || activityId <= 0
+          || support == null
+          || scientificEvidence == null
+          || scientificEvidence.isBlank()
+          || before == null
+          || before.assets().stream()
+              .noneMatch(
+                  a ->
+                      a.id() == observationId
+                          && a.labels().contains(GraphModel.Labels.OBSERVATION)))
+        throw new IllegalArgumentException(
+            "Committed modeled cessation requires a captured durable target and source proof");
     }
   }
 
-  /** Exact structural neighborhood requested by consequence evidence, never an implicit graph scan. */
-  record ConsequenceEdgeSelection(long assetId, GraphModel.Relationship relationship,
-      GraphModel.Relationship.Direction direction) implements java.io.Serializable {
-    public ConsequenceEdgeSelection {
-      if(assetId<=0)throw new IllegalArgumentException("Consequence guards require durable asset IDs");
-      java.util.Objects.requireNonNull(relationship);java.util.Objects.requireNonNull(direction);
-      if(!supports(relationship))
-        throw new IllegalArgumentException("Not a supported consequence structural edge: "+relationship);
+  /**
+   * Complete current membership transition; raw after-readset also guards retained ceased members.
+   */
+  record CohortMembershipChange(
+      String contextId,
+      long cohortId,
+      String observable,
+      long beforeRevision,
+      long afterRevision,
+      java.util.List<Long> beforeMembers,
+      java.util.List<Long> afterMembers,
+      String support,
+      ConsequenceReadSet afterReadSet)
+      implements java.io.Serializable {
+    public CohortMembershipChange {
+      if (contextId == null
+          || cohortId <= 0
+          || observable == null
+          || beforeRevision < 0
+          || afterRevision <= beforeRevision
+          || support == null
+          || afterReadSet == null
+          || !contextId.equals(afterReadSet.contextId()))
+        throw new IllegalArgumentException("Exact committed cohort membership transition required");
+      beforeMembers = beforeMembers.stream().distinct().sorted().toList();
+      afterMembers = afterMembers.stream().distinct().sorted().toList();
     }
+  }
+
+  /**
+   * Exact structural neighborhood requested by consequence evidence, never an implicit graph scan.
+   */
+  record ConsequenceEdgeSelection(
+      long assetId,
+      GraphModel.Relationship relationship,
+      GraphModel.Relationship.Direction direction)
+      implements java.io.Serializable {
+    public ConsequenceEdgeSelection {
+      if (assetId <= 0)
+        throw new IllegalArgumentException("Consequence guards require durable asset IDs");
+      java.util.Objects.requireNonNull(relationship);
+      java.util.Objects.requireNonNull(direction);
+      if (!supports(relationship))
+        throw new IllegalArgumentException(
+            "Not a supported consequence structural edge: " + relationship);
+    }
+
     public static boolean supports(GraphModel.Relationship relationship) {
-      return java.util.Set.of(GraphModel.Relationship.HAS_CHILD,GraphModel.Relationship.HAS_MEMBER,
-          GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE,GraphModel.Relationship.HAS_RELATIONSHIP_TARGET,
-          GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT,GraphModel.Relationship.AFFECTS,
-          GraphModel.Relationship.EMERGED_FROM,GraphModel.Relationship.CONTRIBUTED_TO,GraphModel.Relationship.CREATED,
-          GraphModel.Relationship.INSTANTIATED,GraphModel.Relationship.CONNECTED,GraphModel.Relationship.CLASSIFIED,GraphModel.Relationship.CHARACTERIZED).contains(relationship) || GraphModel.Relationship.CONTEXTUALIZATION_EFFECTS.contains(relationship);
+      return java.util.Set.of(
+                  GraphModel.Relationship.HAS_CHILD,
+                  GraphModel.Relationship.HAS_MEMBER,
+                  GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE,
+                  GraphModel.Relationship.HAS_RELATIONSHIP_TARGET,
+                  GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT,
+                  GraphModel.Relationship.AFFECTS,
+                  GraphModel.Relationship.EMERGED_FROM,
+                  GraphModel.Relationship.CONTRIBUTED_TO,
+                  GraphModel.Relationship.CREATED,
+                  GraphModel.Relationship.INSTANTIATED,
+                  GraphModel.Relationship.CONNECTED,
+                  GraphModel.Relationship.CLASSIFIED,
+                  GraphModel.Relationship.CHARACTERIZED)
+              .contains(relationship)
+          || GraphModel.Relationship.CONTEXTUALIZATION_EFFECTS.contains(relationship);
     }
   }
 
   /** Native identity distinguishes replacement nodes even when their public IDs/payloads match. */
-  record ConsequenceAssetSnapshot(long id,String elementId,java.util.List<String> labels,
-      java.util.Map<String,Object> properties,String geometry,String perceivedGeometry)
+  record ConsequenceAssetSnapshot(
+      long id,
+      String elementId,
+      java.util.List<String> labels,
+      java.util.Map<String, Object> properties,
+      String geometry,
+      String perceivedGeometry)
       implements java.io.Serializable {
     public ConsequenceAssetSnapshot {
-      if(id<=0)throw new IllegalArgumentException("Consequence guards require durable asset IDs");
-      java.util.Objects.requireNonNull(elementId);labels=labels.stream().sorted().toList();
-      properties=freezeConsequenceProperties(properties);
+      if (id <= 0)
+        throw new IllegalArgumentException("Consequence guards require durable asset IDs");
+      java.util.Objects.requireNonNull(elementId);
+      labels = labels.stream().sorted().toList();
+      properties = freezeConsequenceProperties(properties);
     }
-    public java.util.Map<String,Object> nativeProperties() {
-      var restored=new java.util.LinkedHashMap<String,Object>();
-      properties.forEach((key,value)->restored.put(key,restoreClassificationValue(value)));
+
+    public java.util.Map<String, Object> nativeProperties() {
+      var restored = new java.util.LinkedHashMap<String, Object>();
+      properties.forEach((key, value) -> restored.put(key, restoreClassificationValue(value)));
       return restored;
     }
   }
 
   /** Endpoints include Context's string ID as well as durable numeric Observation/Cohort IDs. */
-  record ConsequenceAssetRef(String elementId,Object id,java.util.List<String> labels)
+  record ConsequenceAssetRef(String elementId, Object id, java.util.List<String> labels)
       implements java.io.Serializable {
     public ConsequenceAssetRef {
       java.util.Objects.requireNonNull(elementId);
-      if(id instanceof Byte || id instanceof Short || id instanceof Integer || id instanceof Long)
-        id=((Number)id).longValue();
-      else if(!(id instanceof String))
+      if (id instanceof Byte || id instanceof Short || id instanceof Integer || id instanceof Long)
+        id = ((Number) id).longValue();
+      else if (!(id instanceof String))
         throw new IllegalArgumentException("Consequence edge endpoint requires a native asset ID");
-      labels=labels.stream().sorted().toList();
+      labels = labels.stream().sorted().toList();
     }
   }
 
-  record ConsequenceEdgeSnapshot(String elementId,ConsequenceAssetRef source,
-      ConsequenceAssetRef target,GraphModel.Relationship relationship,
-      java.util.Map<String,Object> properties) implements java.io.Serializable {
+  record ConsequenceEdgeSnapshot(
+      String elementId,
+      ConsequenceAssetRef source,
+      ConsequenceAssetRef target,
+      GraphModel.Relationship relationship,
+      java.util.Map<String, Object> properties)
+      implements java.io.Serializable {
     public ConsequenceEdgeSnapshot {
-      java.util.Objects.requireNonNull(elementId);java.util.Objects.requireNonNull(source);
-      java.util.Objects.requireNonNull(target);java.util.Objects.requireNonNull(relationship);
-      properties=freezeConsequenceProperties(properties);
+      java.util.Objects.requireNonNull(elementId);
+      java.util.Objects.requireNonNull(source);
+      java.util.Objects.requireNonNull(target);
+      java.util.Objects.requireNonNull(relationship);
+      properties = freezeConsequenceProperties(properties);
     }
   }
 
   /** Private live-attempt evidence; semantic rule authority/epoch is a separate proof. */
-  record ConsequenceReadSet(String contextId,java.util.List<ConsequenceAssetSnapshot> assets,
-      java.util.List<ConsequenceEdgeSelection> selections,java.util.List<ConsequenceEdgeSnapshot> edges)
+  record ConsequenceReadSet(
+      String contextId,
+      java.util.List<ConsequenceAssetSnapshot> assets,
+      java.util.List<ConsequenceEdgeSelection> selections,
+      java.util.List<ConsequenceEdgeSnapshot> edges)
       implements java.io.Serializable {
     public ConsequenceReadSet {
       java.util.Objects.requireNonNull(contextId);
-      assets=java.util.List.copyOf(assets);selections=java.util.List.copyOf(selections);
-      edges=java.util.List.copyOf(edges);
-      var ids=assets.stream().map(ConsequenceAssetSnapshot::id).toList();
-      if(new java.util.HashSet<>(ids).size()!=ids.size())throw new IllegalArgumentException("Duplicate consequence input");
-      if(selections.stream().anyMatch(selection->!ids.contains(selection.assetId())))
+      assets = java.util.List.copyOf(assets);
+      selections = java.util.List.copyOf(selections);
+      edges = java.util.List.copyOf(edges);
+      var ids = assets.stream().map(ConsequenceAssetSnapshot::id).toList();
+      if (new java.util.HashSet<>(ids).size() != ids.size())
+        throw new IllegalArgumentException("Duplicate consequence input");
+      if (selections.stream().anyMatch(selection -> !ids.contains(selection.assetId())))
         throw new IllegalArgumentException("Structural selections must anchor a captured input");
     }
-    public java.util.List<Long> assetIds() { return assets.stream().map(ConsequenceAssetSnapshot::id).toList(); }
+
+    public java.util.List<Long> assetIds() {
+      return assets.stream().map(ConsequenceAssetSnapshot::id).toList();
+    }
   }
 
-  /** Exact string-keyed context catalogue, separate from positive-ID observation guards.
-   * Cohort snapshots are headers (geometry is not an ingredient support claim). */
-  record ContextCohortCatalogue(String contextId,String elementId,long revision,
-      java.util.List<ConsequenceAssetSnapshot> cohorts,java.util.List<ConsequenceEdgeSnapshot> edges)
+  /**
+   * Exact string-keyed context catalogue, separate from positive-ID observation guards. Cohort
+   * snapshots are headers (geometry is not an ingredient support claim).
+   */
+  record ContextCohortCatalogue(
+      String contextId,
+      String elementId,
+      long revision,
+      java.util.List<ConsequenceAssetSnapshot> cohorts,
+      java.util.List<ConsequenceEdgeSnapshot> edges)
       implements java.io.Serializable {
     public ContextCohortCatalogue {
-      if(contextId==null||contextId.isBlank()||elementId==null||elementId.isBlank()||revision<0)throw new IllegalArgumentException("Durable context catalogue identity required");
-      cohorts=java.util.List.copyOf(cohorts);edges=java.util.List.copyOf(edges);
-      var ids=cohorts.stream().map(ConsequenceAssetSnapshot::id).toList();
-      if(new java.util.HashSet<>(ids).size()!=ids.size()||cohorts.stream().anyMatch(c->!c.labels().contains(GraphModel.Labels.COHORT)))throw new IllegalArgumentException("Exact distinct cohort headers required");
-      var seen=new java.util.HashSet<Long>();
-      for(var edge:edges) {
-        if(edge.relationship()!=GraphModel.Relationship.HAS_CHILD||!contextId.equals(edge.source().id())||!elementId.equals(edge.source().elementId())
-            ||!(edge.target().id() instanceof Number id)||cohorts.stream().noneMatch(c->c.id()==id.longValue()&&c.elementId().equals(edge.target().elementId())))
-          throw new IllegalArgumentException("Catalogue edge has another native context/cohort identity");
-        seen.add(((Number)edge.target().id()).longValue());
+      if (contextId == null
+          || contextId.isBlank()
+          || elementId == null
+          || elementId.isBlank()
+          || revision < 0)
+        throw new IllegalArgumentException("Durable context catalogue identity required");
+      cohorts = java.util.List.copyOf(cohorts);
+      edges = java.util.List.copyOf(edges);
+      var ids = cohorts.stream().map(ConsequenceAssetSnapshot::id).toList();
+      if (new java.util.HashSet<>(ids).size() != ids.size()
+          || cohorts.stream().anyMatch(c -> !c.labels().contains(GraphModel.Labels.COHORT)))
+        throw new IllegalArgumentException("Exact distinct cohort headers required");
+      var seen = new java.util.HashSet<Long>();
+      for (var edge : edges) {
+        if (edge.relationship() != GraphModel.Relationship.HAS_CHILD
+            || !contextId.equals(edge.source().id())
+            || !elementId.equals(edge.source().elementId())
+            || !(edge.target().id() instanceof Number id)
+            || cohorts.stream()
+                .noneMatch(
+                    c ->
+                        c.id() == id.longValue()
+                            && c.elementId().equals(edge.target().elementId())))
+          throw new IllegalArgumentException(
+              "Catalogue edge has another native context/cohort identity");
+        seen.add(((Number) edge.target().id()).longValue());
       }
-      if(!seen.equals(new java.util.HashSet<>(ids)))throw new IllegalArgumentException("Catalogue header/edge sets differ");
+      if (!seen.equals(new java.util.HashSet<>(ids)))
+        throw new IllegalArgumentException("Catalogue header/edge sets differ");
     }
-    public java.util.List<Long> cohortIds(){return cohorts.stream().map(ConsequenceAssetSnapshot::id).toList();}
+
+    public java.util.List<Long> cohortIds() {
+      return cohorts.stream().map(ConsequenceAssetSnapshot::id).toList();
+    }
   }
 
-  private static java.util.Map<String,Object> freezeConsequenceProperties(java.util.Map<String,Object> values) {
-    var result=new java.util.LinkedHashMap<String,Object>();
-    values.forEach((key,value)->result.put(key,freezeConsequenceValue(value)));
+  private static java.util.Map<String, Object> freezeConsequenceProperties(
+      java.util.Map<String, Object> values) {
+    var result = new java.util.LinkedHashMap<String, Object>();
+    values.forEach((key, value) -> result.put(key, freezeConsequenceValue(value)));
     return java.util.Collections.unmodifiableMap(result);
   }
+
   private static Object freezeConsequenceValue(Object value) {
-    if(value==null || value instanceof String || value instanceof Boolean
-        || value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long
-        || value instanceof Float || value instanceof Double || value instanceof java.math.BigInteger
-        || value instanceof java.math.BigDecimal || value instanceof ClassificationBinaryValue)return value;
-    if(value instanceof byte[] bytes)return new ClassificationBinaryValue(java.util.Base64.getEncoder().encodeToString(bytes));
-    if(value instanceof java.util.List<?> list)return list.stream().map(KnowledgeGraph::freezeConsequenceValue).toList();
-    throw new IllegalArgumentException("Unsupported native consequence property "+value.getClass());
+    if (value == null
+        || value instanceof String
+        || value instanceof Boolean
+        || value instanceof Byte
+        || value instanceof Short
+        || value instanceof Integer
+        || value instanceof Long
+        || value instanceof Float
+        || value instanceof Double
+        || value instanceof java.math.BigInteger
+        || value instanceof java.math.BigDecimal
+        || value instanceof ClassificationBinaryValue) return value;
+    if (value instanceof byte[] bytes)
+      return new ClassificationBinaryValue(java.util.Base64.getEncoder().encodeToString(bytes));
+    if (value instanceof java.util.List<?> list)
+      return list.stream().map(KnowledgeGraph::freezeConsequenceValue).toList();
+    throw new IllegalArgumentException(
+        "Unsupported native consequence property " + value.getClass());
   }
 
-  /** Materialize only the captured native properties; this must not fetch a newer geometry/state. */
-  default Observation materializeClassificationMember(ClassificationMemberSnapshot snapshot, ContextScope scope) {
+  /**
+   * Materialize only the captured native properties; this must not fetch a newer geometry/state.
+   */
+  default Observation materializeClassificationMember(
+      ClassificationMemberSnapshot snapshot, ContextScope scope) {
     throw new UnsupportedOperationException("Captured observation materialization is unavailable");
   }
 
-  /** Decode only captured native values, never refresh observation payload/support from storage.
-   * The supplied scope must provide the caller's bound semantic cycle for meaning decoding. */
-  default Observation materializeConsequenceObservation(ConsequenceAssetSnapshot snapshot,ContextScope scope) {
-    throw new UnsupportedOperationException("Captured consequence observation materialization is unavailable");
+  /**
+   * Decode only captured native values, never refresh observation payload/support from storage. The
+   * supplied scope must provide the caller's bound semantic cycle for meaning decoding.
+   */
+  default Observation materializeConsequenceObservation(
+      ConsequenceAssetSnapshot snapshot, ContextScope scope) {
+    throw new UnsupportedOperationException(
+        "Captured consequence observation materialization is unavailable");
   }
 
-  /** One transaction-owned configuration replacement; semantic/source authority remains the
-   * server's admission responsibility. Native batches validate all inputs before any mutation. */
-  /** Immutable committed configuration beforeimages in publication order. No execution authority
-   * is granted by these diagnostic JSON values; unsupported remote backends fail explicitly. */
-  default java.util.List<String> getConfigurationHistory(Observation configuration,ContextScope scope) {
+  /**
+   * One transaction-owned configuration replacement; semantic/source authority remains the server's
+   * admission responsibility. Native batches validate all inputs before any mutation.
+   */
+  /**
+   * Immutable committed configuration beforeimages in publication order. No execution authority is
+   * granted by these diagnostic JSON values; unsupported remote backends fail explicitly.
+   */
+  default java.util.List<String> getConfigurationHistory(
+      Observation configuration, ContextScope scope) {
     throw new UnsupportedOperationException("Committed configuration history is unavailable");
   }
 
-  record ConfigurationUpdate(Observation replacement,ConsequenceReadSet expected,
-      java.util.List<Long> participants,long revision,String historyJson) {
-    public ConfigurationUpdate {java.util.Objects.requireNonNull(replacement);java.util.Objects.requireNonNull(expected);
-      participants=java.util.List.copyOf(participants);java.util.Objects.requireNonNull(historyJson);}
+  record ConfigurationUpdate(
+      Observation replacement,
+      ConsequenceReadSet expected,
+      java.util.List<Long> participants,
+      long revision,
+      String historyJson) {
+    public ConfigurationUpdate {
+      java.util.Objects.requireNonNull(replacement);
+      java.util.Objects.requireNonNull(expected);
+      participants = java.util.List.copyOf(participants);
+      java.util.Objects.requireNonNull(historyJson);
+    }
   }
 
   interface Transaction extends Closeable {
     /** Capture only requested authorized durable assets and exact selected structural edge sets. */
-    /** Provisional catalogue capture holds only the native owning context lock, not header
-     * locks. Final consumers lock the complete positive union once, then validate this proof. */
+    /**
+     * Provisional catalogue capture holds only the native owning context lock, not header locks.
+     * Final consumers lock the complete positive union once, then validate this proof.
+     */
     default ContextCohortCatalogue captureContextCohortCatalogue() {
       throw new UnsupportedOperationException("Native context catalogue capture unavailable");
     }
+
     default void validateContextCohortCatalogue(ContextCohortCatalogue expected) {
       throw new UnsupportedOperationException("Native context catalogue guard unavailable");
     }
 
-    default ConsequenceReadSet captureConsequenceInputs(java.util.Collection<Long> ids,
-        java.util.Collection<ConsequenceEdgeSelection> selections) {
+    default ConsequenceReadSet captureConsequenceInputs(
+        java.util.Collection<Long> ids, java.util.Collection<ConsequenceEdgeSelection> selections) {
       throw new UnsupportedOperationException("Consequence input snapshots are unavailable");
     }
 
-    /** Lock the union of read/write Observation, Cohort and raw Activity proof IDs in ascending order. */
+    /**
+     * Lock the union of read/write Observation, Cohort and raw Activity proof IDs in ascending
+     * order.
+     */
     default void lockConsequenceInputs(java.util.Collection<Long> ids) {
       throw new UnsupportedOperationException("Consequence input locks are unavailable");
     }
 
-    /** Validate the original native read set on the committing transaction before any root writes. */
+    /**
+     * Validate the original native read set on the committing transaction before any root writes.
+     */
     default void validateConsequenceInputs(ConsequenceReadSet expected) {
       throw new UnsupportedOperationException("Consequence snapshot validation is unavailable");
     }
-    /** Same-identity configuration update. Validate the original full input/participant read set,
+
+    /**
+     * Same-identity configuration update. Validate the original full input/participant read set,
      * replace current EMERGED_FROM/support links, and append immutable serialized revision history
-     * atomically. The original read set must select this configuration's outgoing EMERGED_FROM. */
-    default void updateConfiguration(Observation replacement,ConsequenceReadSet expected,
-        java.util.List<Long> participants,long revision,String historyJson) {
-      throw new UnsupportedOperationException("Atomic configuration revision publication is unavailable");
+     * atomically. The original read set must select this configuration's outgoing EMERGED_FROM.
+     */
+    default void updateConfiguration(
+        Observation replacement,
+        ConsequenceReadSet expected,
+        java.util.List<Long> participants,
+        long revision,
+        String historyJson) {
+      throw new UnsupportedOperationException(
+          "Atomic configuration revision publication is unavailable");
     }
 
     /** Validate all original readsets before this transaction stages any model graph mutations. */
-    default CessationPublication prepareCessations(java.util.List<ObservationCessation> cessations) {
+    default CessationPublication prepareCessations(
+        java.util.List<ObservationCessation> cessations) {
       throw new UnsupportedOperationException("Modeled cessation preparation is unavailable");
     }
-    /** Publish only this native transaction's prepared handle, after its ordinary model mutations. */
-    default java.util.List<CohortMembershipChange> publishCessations(CessationPublication prepared) {
+
+    /**
+     * Publish only this native transaction's prepared handle, after its ordinary model mutations.
+     */
+    default java.util.List<CohortMembershipChange> publishCessations(
+        CessationPublication prepared) {
       throw new UnsupportedOperationException("Modeled cessation publication is unavailable");
     }
 
-    /** Provisional capture under the actual context lock; caller later locks complete returned IDs. */
+    /**
+     * Provisional capture under the actual context lock; caller later locks complete returned IDs.
+     */
     default RoleSupportCatalogue captureRoleSupportCatalogue(java.util.Collection<Long> sourceIds) {
       throw new UnsupportedOperationException("Source role-support catalogue unavailable");
     }
-    /** Validate exact row absence and full recipient/source/activity payloads under final union locks. */
+
+    /**
+     * Validate exact row absence and full recipient/source/activity payloads under final union
+     * locks.
+     */
     default void validateRoleSupportCatalogue(RoleSupportCatalogue expected) {
-      throw new UnsupportedOperationException("Source role-support catalogue validation unavailable");
+      throw new UnsupportedOperationException(
+          "Source role-support catalogue validation unavailable");
     }
 
-    /** Internal native operation; caller must supply server-admitted modeled execution authority.
-     * All beforeimages are validated before any mutation; no nodes, edges or provenance are deleted. */
-    default java.util.List<CohortMembershipChange> ceaseObservations(java.util.List<ObservationCessation> cessations) {
+    /**
+     * Internal native operation; caller must supply server-admitted modeled execution authority.
+     * All beforeimages are validated before any mutation; no nodes, edges or provenance are
+     * deleted.
+     */
+    default java.util.List<CohortMembershipChange> ceaseObservations(
+        java.util.List<ObservationCessation> cessations) {
       throw new UnsupportedOperationException("Modeled cessation is unavailable");
     }
 
     /** Validate every original input before mutating any distinct configuration in one batch. */
     default void updateConfigurations(java.util.List<ConfigurationUpdate> updates) {
-      throw new UnsupportedOperationException("Atomic configuration batch publication is unavailable");
+      throw new UnsupportedOperationException(
+          "Atomic configuration batch publication is unavailable");
     }
 
     /** Coherent raw membership/input read under native context/member locks. */
@@ -569,12 +822,18 @@ public interface KnowledgeGraph {
       throw new UnsupportedOperationException("Classification snapshots are unavailable");
     }
 
-    /** Acquire the union of existing guarded/read and write observation IDs once, in ascending order. */
+    /**
+     * Acquire the union of existing guarded/read and write observation IDs once, in ascending
+     * order.
+     */
     default void lockClassificationInputs(java.util.Collection<Long> ids) {
       throw new UnsupportedOperationException("Classification read locks are unavailable");
     }
 
-    /** Compare on this same native transaction before root writes, including reused read-only inputs. */
+    /**
+     * Compare on this same native transaction before root writes, including reused read-only
+     * inputs.
+     */
     default void validateClassificationMembers(ClassificationReadSet expected) {
       throw new UnsupportedOperationException("Classification snapshot validation is unavailable");
     }
@@ -597,7 +856,8 @@ public interface KnowledgeGraph {
     }
 
     /** Compare the persisted perception with expectedGeometry, then replace space only. */
-    default void replacePerceivedSpace(Observation observer, String expectedGeometry, Geometry space) {
+    default void replacePerceivedSpace(
+        Observation observer, String expectedGeometry, Geometry space) {
       throw new UnsupportedOperationException("Observer geometry editing is unavailable");
     }
 
@@ -606,20 +866,26 @@ public interface KnowledgeGraph {
       throw new UnsupportedOperationException("Explicit-agent promotion is not supported");
     }
 
-    /** Lock and compare the persisted observable before replacing semantics in this transaction.
-     * Implementations must fail the transaction on a stale baseline or missing observation. */
+    /**
+     * Lock and compare the persisted observable before replacing semantics in this transaction.
+     * Implementations must fail the transaction on a stale baseline or missing observation.
+     */
     default void updateSemantics(Observation observation, String expectedObservable) {
       throw new UnsupportedOperationException("Atomic semantic updates are not supported");
     }
 
-    /** Semantic update plus exactly this root attempt's nonnegative HAS_CHILD increments.
-     * The increment must be atomic with semantic comparison and must not replace other payload.
-     * Graphs without this bookkeeping support must fail instead of discarding a nonzero delta. */
-    default void updateSemantics(Observation observation,String expectedObservable,int ownedChildDelta) {
-      if(ownedChildDelta!=0)throw new UnsupportedOperationException("Atomic semantic child bookkeeping is not supported");
-      updateSemantics(observation,expectedObservable);
+    /**
+     * Semantic update plus exactly this root attempt's nonnegative HAS_CHILD increments. The
+     * increment must be atomic with semantic comparison and must not replace other payload. Graphs
+     * without this bookkeeping support must fail instead of discarding a nonzero delta.
+     */
+    default void updateSemantics(
+        Observation observation, String expectedObservable, int ownedChildDelta) {
+      if (ownedChildDelta != 0)
+        throw new UnsupportedOperationException(
+            "Atomic semantic child bookkeeping is not supported");
+      updateSemantics(observation, expectedObservable);
     }
-
 
     /**
      * Link the two passed assets.
@@ -660,9 +926,12 @@ public interface KnowledgeGraph {
    */
   Transaction createTransaction(ContextScope scope);
 
-  /** Local cache generation, advanced after committed semantic updates; not a persisted revision. */
-  default long getSemanticRevision() { return 0; }
-
+  /**
+   * Local cache generation, advanced after committed semantic updates; not a persisted revision.
+   */
+  default long getSemanticRevision() {
+    return 0;
+  }
 
   /**
    * Obtain a query for an object of a specific type, to be specified and then run to obtain the
@@ -774,17 +1043,19 @@ public interface KnowledgeGraph {
    */
   <T extends RuntimeAsset> T getAsset(long id, Scope scope, Class<T> resultClass);
 
-  /** Authoritative operative-state check, including only a trusted owning transaction's new assets.
-   * Missing current status is never supplied by caller-authored metadata. */
-  default boolean isObservationCurrent(Observation observation,ContextScope scope) {
-    throw new UnsupportedOperationException("Authoritative observation lifecycle status is unavailable");
+  /**
+   * Authoritative operative-state check, including only a trusted owning transaction's new assets.
+   * Missing current status is never supplied by caller-authored metadata.
+   */
+  default boolean isObservationCurrent(Observation observation, ContextScope scope) {
+    throw new UnsupportedOperationException(
+        "Authoritative observation lifecycle status is unavailable");
   }
 
   /** Explicit immutable past access. This never makes an inoperative observation current again. */
-  default java.util.List<ObservationCessation> getObservationHistory(long id,ContextScope scope) {
+  default java.util.List<ObservationCessation> getObservationHistory(long id, ContextScope scope) {
     throw new UnsupportedOperationException("Observation lifecycle history is unavailable");
   }
-
 
   /**
    * Directly retrieve a committed asset by its canonical URN. Unlike numeric-ID parsing this also

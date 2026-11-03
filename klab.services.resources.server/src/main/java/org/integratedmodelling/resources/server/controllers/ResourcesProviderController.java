@@ -63,7 +63,8 @@ public class ResourcesProviderController {
       @RequestBody com.fasterxml.jackson.databind.JsonNode body,
       Principal principal) {
     if (!(principal instanceof EngineAuthorization authorization)
-        || !(authorization.getScope() instanceof org.integratedmodelling.klab.api.scope.ContextScope scope)
+        || !(authorization.getScope()
+            instanceof org.integratedmodelling.klab.api.scope.ContextScope scope)
         || scope.getResolutionCycleBinding() == null
         || scope.getResolutionCycleBinding().semanticBinding() == null) {
       throw new org.springframework.web.server.ResponseStatusException(
@@ -71,18 +72,23 @@ public class ResourcesProviderController {
     }
     org.integratedmodelling.klab.api.collections.Parameters<String> query;
     try {
-      Object decoded=MODEL_QUERY_MAPPER.treeToValue(body,org.integratedmodelling.klab.api.collections.Parameters.class);
+      Object decoded =
+          MODEL_QUERY_MAPPER.treeToValue(
+              body, org.integratedmodelling.klab.api.collections.Parameters.class);
       if (!(decoded instanceof org.integratedmodelling.klab.api.collections.Parameters<?>))
         throw new IllegalArgumentException("Expected typed query parameters");
-      query=(org.integratedmodelling.klab.api.collections.Parameters<String>)decoded;
+      query = (org.integratedmodelling.klab.api.collections.Parameters<String>) decoded;
     } catch (java.io.IOException | IllegalArgumentException invalid) {
       throw new org.springframework.web.server.ResponseStatusException(
-          org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid model query parameters", invalid);
+          org.springframework.http.HttpStatus.BAD_REQUEST,
+          "Invalid model query parameters",
+          invalid);
     }
     if (knowledgeClass != KlabAsset.KnowledgeClass.MODEL
         || !ResourceSet.class.getName().equals(infoClass)
         || query == null
-        || !(query.get("observable") instanceof org.integratedmodelling.klab.api.knowledge.Observable)
+        || !(query.get("observable")
+            instanceof org.integratedmodelling.klab.api.knowledge.Observable)
         || !(query.get("geometry") instanceof Geometry)) {
       throw new org.springframework.web.server.ResponseStatusException(
           org.springframework.http.HttpStatus.BAD_REQUEST, "A model discovery query is required");
@@ -542,8 +548,7 @@ public class ResourcesProviderController {
         && authorization.getScope() instanceof UserScope userScope) {
       return resourcesServer
           .klabService()
-          .markPublished(
-              urn, serviceId, publication.get("authoritativeResourceUrn"), userScope);
+          .markPublished(urn, serviceId, publication.get("authoritativeResourceUrn"), userScope);
     }
     return false;
   }

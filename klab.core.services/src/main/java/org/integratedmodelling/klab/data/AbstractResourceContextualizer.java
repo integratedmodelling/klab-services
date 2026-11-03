@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.data;
 
 import java.util.*;
-import java.util.concurrent.Callable;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -47,7 +46,10 @@ public abstract class AbstractResourceContextualizer {
   }
 
   /** Internal invocation support; the producer observation retains its declared geometry. */
-  public boolean contextualize(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope,
+  public boolean contextualize(
+      Storage.Scanner scanner,
+      Scheduler.Event event,
+      ContextScope scope,
       RuntimeService.ContextualizationScope contextualizationScope,
       org.integratedmodelling.klab.api.geometry.Geometry invocationGeometry) {
 
@@ -83,7 +85,9 @@ public abstract class AbstractResourceContextualizer {
       if (observable.is(SemanticType.COUNTABLE)) {
         var objects = builder.getObjects();
         // Cumulative member counts are owned by transactional HAS_CHILD registration.
-        contextualizationScope.getOutcomes().addAll(objects.stream().map(Data.Builder::getObservation).toList());
+        contextualizationScope
+            .getOutcomes()
+            .addAll(objects.stream().map(Data.Builder::getObservation).toList());
       }
 
       return true;
@@ -115,7 +119,10 @@ public abstract class AbstractResourceContextualizer {
    * @return TODO CHECK this shouldn't need to return Data in all situations, just when remote, so
    *     absorb into the specific API
    */
-  protected Data.Builder getData(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope,
+  protected Data.Builder getData(
+      Storage.Scanner scanner,
+      Scheduler.Event event,
+      ContextScope scope,
       org.integratedmodelling.klab.api.geometry.Geometry invocationGeometry) {
     return getData(scanner, event, scope);
   }

@@ -1,9 +1,8 @@
 package org.integratedmodelling.klab.api.data;
 
-import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
-
 import java.io.Serializable;
 import java.util.List;
+import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 
 /** Histogram object for transport. TODO manage categories, legends, basic statistics etc. */
 public interface Histogram extends Serializable {
@@ -45,8 +44,10 @@ public interface Histogram extends Serializable {
 
   List<Bin> getBins();
 
-  /** Detach an already stable histogram view for transport or persistence. All public values,
-   * including bin statistics and missing counts, are copied; no native view is unwrapped. */
+  /**
+   * Detach an already stable histogram view for transport or persistence. All public values,
+   * including bin statistics and missing counts, are copied; no native view is unwrapped.
+   */
   static Histogram forTransport(Histogram source) {
     if (source == null) return null;
     var result = new HistogramImpl();

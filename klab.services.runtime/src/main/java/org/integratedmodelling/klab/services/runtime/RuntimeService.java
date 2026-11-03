@@ -42,7 +42,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ServiceInfo;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -86,9 +85,13 @@ public class RuntimeService extends BaseService
         org.integratedmodelling.klab.api.services.RuntimeService.Testing {
 
   @Override
-  public CompletableFuture<org.integratedmodelling.klab.api.services.RuntimeService.OperationReceipt>
-      applyForTesting(org.integratedmodelling.klab.api.knowledge.Observable directive,
-          Geometry support, ContextScope scope, org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope caller) {
+  public CompletableFuture<
+          org.integratedmodelling.klab.api.services.RuntimeService.OperationReceipt>
+      applyForTesting(
+          org.integratedmodelling.klab.api.knowledge.Observable directive,
+          Geometry support,
+          ContextScope scope,
+          org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope caller) {
     return TestingSemanticOperation.apply(this, directive, support, scope, caller);
   }
 
@@ -103,8 +106,15 @@ public class RuntimeService extends BaseService
   private final ConcurrentMap<SubmissionIdentity, CompletableFuture<Observation>>
       inFlightSubmissions = new ConcurrentHashMap<>();
 
-  private record SubmissionIdentity(String contextId, String cycleId, String cohortUrn, String observationUrn,
-      long observerId, String observerMeaning, long observerSemanticRevision, String observableUrn) {}
+  private record SubmissionIdentity(
+      String contextId,
+      String cycleId,
+      String cohortUrn,
+      String observationUrn,
+      long observerId,
+      String observerMeaning,
+      long observerSemanticRevision,
+      String observableUrn) {}
 
   /**
    * We keep identification strategies for each concept encountered. The base one is implemented for
@@ -141,8 +151,8 @@ public class RuntimeService extends BaseService
         }
       };
 
-  private final ShardExecution shardExecution = new ShardExecution(
-      () -> settings().get(Setting.MAX_CONCURRENT_SHARD_TASKS, Integer.class));
+  private final ShardExecution shardExecution =
+      new ShardExecution(() -> settings().get(Setting.MAX_CONCURRENT_SHARD_TASKS, Integer.class));
 
   ShardExecution shardExecution() {
     return shardExecution;
@@ -260,7 +270,8 @@ public class RuntimeService extends BaseService
       try {
         checkForOrphanContext(context);
       } catch (RuntimeException e) {
-        Logging.INSTANCE.error("Context maintenance failed for " + context.getConfiguration().getId(), e);
+        Logging.INSTANCE.error(
+            "Context maintenance failed for " + context.getConfiguration().getId(), e);
       }
     }
     //    }
@@ -335,7 +346,6 @@ public class RuntimeService extends BaseService
                 + context.getConfiguration().getId()
                 + " due to inactivity");
         existingScope.reinitialize();
-
       }
     }
   }
@@ -435,9 +445,13 @@ public class RuntimeService extends BaseService
           configurationImpl.setOwner(userScope.getUser().getUsername());
           var parent = sessionScope instanceof ServiceSessionScope s ? s : null;
           var federation = Klab.INSTANCE.getFederationData(userScope.getUser());
-          configurationImpl.setSessionFederationId(parent != null
-              && org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(parent, userScope)
-              && federation != null ? federation.getId() : null);
+          configurationImpl.setSessionFederationId(
+              parent != null
+                      && org.integratedmodelling.klab.services.scopes.ScopeManager
+                          .isSharedDefaultSession(parent, userScope)
+                      && federation != null
+                  ? federation.getId()
+                  : null);
         }
         configurationImpl.setServiceId(serviceId());
         configurationImpl.setServiceUrl(getUrl());
@@ -526,43 +540,58 @@ public class RuntimeService extends BaseService
    */
   @Override
   public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
-    return withinResolutionCycle(submitted, scope,
+    return withinResolutionCycle(
+        submitted,
+        scope,
         admitted -> submitWithObserver(submitted, observerSubmissionScope(submitted, admitted)));
   }
 
   /** Root admission precedes observer preparation; causal children inherit their existing cycle. */
-  CompletableFuture<Observation> withinResolutionCycle(Observation submitted, ContextScope scope,
+  CompletableFuture<Observation> withinResolutionCycle(
+      Observation submitted,
+      ContextScope scope,
       java.util.function.Function<ContextScope, CompletableFuture<Observation>> operation) {
     if (!(scope instanceof ServiceContextScope context)
         || !(scope.getDigitalTwin() instanceof DigitalTwinImpl twin))
-      return CompletableFuture.failedFuture(new IllegalArgumentException("Runtime submissions require a local digital twin"));
-    boolean semanticWork = !submitted.isEmpty() && submitted.getId() <= 0
-        && submitted.getId() != Observation.QUERY_ID;
+      return CompletableFuture.failedFuture(
+          new IllegalArgumentException("Runtime submissions require a local digital twin"));
+    boolean semanticWork =
+        !submitted.isEmpty() && submitted.getId() <= 0 && submitted.getId() != Observation.QUERY_ID;
     return twin.getResolutionCycles().submit(context, semanticWork, operation::apply);
   }
 
-  /** Only user root submissions can trigger automatic preparation, after their constraints arrive. */
+  /**
+   * Only user root submissions can trigger automatic preparation, after their constraints arrive.
+   */
   private ContextScope observerSubmissionScope(Observation submitted, ContextScope scope) {
     if (!(scope instanceof ServiceContextScope context)
-        || !org.integratedmodelling.klab.runtime.DefaultObserverPreparation.shouldPrepare(submitted, context))
-      return scope;
+        || !org.integratedmodelling.klab.runtime.DefaultObserverPreparation.shouldPrepare(
+            submitted, context)) return scope;
     return prepareObserverConnection(context, context);
   }
 
-  private CompletableFuture<Observation> submitWithObserver(Observation submitted, ContextScope scope) {
+  private CompletableFuture<Observation> submitWithObserver(
+      Observation submitted, ContextScope scope) {
 
-    if (scope instanceof ServiceContextScope context && context.getConsequenceCause() != null
-        && context.getTransactionId() == null && submitted.getId() <= 0
-        && submitted instanceof ObservationImpl mutable && submitted.getObservable() != null
+    if (scope instanceof ServiceContextScope context
+        && context.getConsequenceCause() != null
+        && context.getTransactionId() == null
+        && submitted.getId() <= 0
+        && submitted instanceof ObservationImpl mutable
+        && submitted.getObservable() != null
         && !submitted.getObservable().isOptional()) {
-      mutable.setObservable(submitted.getObservable().builder(scope).optional(true).buildObservable());
+      mutable.setObservable(
+          submitted.getObservable().builder(scope).optional(true).buildObservable());
     }
 
     // Keep the stable catalog identity while naming a new default observer after its user.
     if (submitted instanceof ObservationImpl mutable
-        && submitted.getId() <= 0 && submitted.getId() != Observation.QUERY_ID
-        && Boolean.TRUE.equals(submitted.getMetadata().get(
-            org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC))
+        && submitted.getId() <= 0
+        && submitted.getId() != Observation.QUERY_ID
+        && Boolean.TRUE.equals(
+            submitted
+                .getMetadata()
+                .get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC))
         && org.integratedmodelling.klab.api.knowledge.DefaultObserver.identity(scope.getUser())
             .equals(submitted.getUrn())) {
       mutable.setName(scope.getUser().getUsername());
@@ -572,18 +601,33 @@ public class RuntimeService extends BaseService
       mutable.setGeometry(ContextScope.getResolutionGeometry(effectiveScope));
     }
     alignObservation(submitted, effectiveScope);
-    boolean explicitAgent = submitted.getObservable() != null && submitted.getObservable().is(SemanticType.AGENT)
-        && scope.getCurrentTransaction() == null && submitted.getId() != Observation.QUERY_ID
-        && (submitted.getId() > 0 || !Boolean.TRUE.equals(submitted.getMetadata().get(
-            org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC)));
+    boolean explicitAgent =
+        submitted.getObservable() != null
+            && submitted.getObservable().is(SemanticType.AGENT)
+            && scope.getCurrentTransaction() == null
+            && submitted.getId() != Observation.QUERY_ID
+            && (submitted.getId() > 0
+                || !Boolean.TRUE.equals(
+                    submitted
+                        .getMetadata()
+                        .get(
+                            org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC)));
     if (explicitAgent && submitted.getId() <= 0) {
-      submitted.getMetadata().put(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT, true);
+      submitted
+          .getMetadata()
+          .put(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT, true);
     }
 
     if (submitted.getId() > 0 || submitted.isEmpty()) {
-      return CompletableFuture.completedFuture(submissionOutcome("runtime.preassignedOrEmpty", submitted, scope,
-          submitted.isEmpty() ? submitted
-          : recordExistingPerception(submitted, effectiveScope, explicitAgent), null));
+      return CompletableFuture.completedFuture(
+          submissionOutcome(
+              "runtime.preassignedOrEmpty",
+              submitted,
+              scope,
+              submitted.isEmpty()
+                  ? submitted
+                  : recordExistingPerception(submitted, effectiveScope, explicitAgent),
+              null));
     }
 
     if (submitted.getId() == Observation.QUERY_ID) {
@@ -593,12 +637,16 @@ public class RuntimeService extends BaseService
         // shared empty sentinel before changing its ID.
         var empty = (ObservationImpl) Observation.forTransport(result);
         empty.setId(Observation.QUERY_ID);
-        return CompletableFuture.completedFuture(submissionOutcome(
-            "runtime.queryEmpty", submitted, scope, empty, null));
+        return CompletableFuture.completedFuture(
+            submissionOutcome("runtime.queryEmpty", submitted, scope, empty, null));
       }
-      return CompletableFuture.completedFuture(submissionOutcome(
-          "runtime.queryReturned", submitted, scope,
-          recordExistingPerception(result, effectiveScope, false, true), null));
+      return CompletableFuture.completedFuture(
+          submissionOutcome(
+              "runtime.queryReturned",
+              submitted,
+              scope,
+              recordExistingPerception(result, effectiveScope, false, true),
+              null));
     }
 
     var submissionScope = submissionScope(submitted, scope);
@@ -610,23 +658,34 @@ public class RuntimeService extends BaseService
       // Expose the request's own future as a cooperative signal to all derived execution scopes.
       var result = new CompletableFuture<Observation>();
       var requestScope = serviceScope.withCancellation(result::isCancelled);
-      submitInternal(submitted, requestScope).thenApply(observation -> {
-        checkSubmissionCancellation(requestScope);
-        return observation != submitted
-            ? recordExistingPerception(observation, requestScope, explicitAgent) : observation;
-      }).whenComplete((observation, failure) -> {
-        if (failure != null) result.completeExceptionally(failure);
-        else result.complete(observation);
-      });
+      submitInternal(submitted, requestScope)
+          .thenApply(
+              observation -> {
+                checkSubmissionCancellation(requestScope);
+                return observation != submitted
+                    ? recordExistingPerception(observation, requestScope, explicitAgent)
+                    : observation;
+              })
+          .whenComplete(
+              (observation, failure) -> {
+                if (failure != null) result.completeExceptionally(failure);
+                else result.complete(observation);
+              });
       return result;
     }
     // Coalesced work is shared: cancelling one subscriber must only detach that subscriber.
-    var future = submissionIdentity == null
-        ? submitInternal(submitted, submissionScope)
-        : coalesce(inFlightSubmissions, submissionIdentity,
-            () -> submitInternal(submitted, submissionScope));
-    return future.thenApply(result -> result != submitted
-        ? recordExistingPerception(result, submissionScope, explicitAgent) : result);
+    var future =
+        submissionIdentity == null
+            ? submitInternal(submitted, submissionScope)
+            : coalesce(
+                inFlightSubmissions,
+                submissionIdentity,
+                () -> submitInternal(submitted, submissionScope));
+    return future.thenApply(
+        result ->
+            result != submitted
+                ? recordExistingPerception(result, submissionScope, explicitAgent)
+                : result);
   }
 
   @Override
@@ -637,8 +696,14 @@ public class RuntimeService extends BaseService
     if (!(scope instanceof ServiceContextScope context)
         || !(scope.getDigitalTwin() instanceof DigitalTwinImpl twin))
       throw new IllegalArgumentException("Perception edits require a local digital twin");
-    return twin.getResolutionCycles().submit(context, false,
-        admitted -> CompletableFuture.completedFuture(updateObserverGeometryWithinCycle(update, admitted))).join();
+    return twin.getResolutionCycles()
+        .submit(
+            context,
+            false,
+            admitted ->
+                CompletableFuture.completedFuture(
+                    updateObserverGeometryWithinCycle(update, admitted)))
+        .join();
   }
 
   private Observation updateObserverGeometryWithinCycle(
@@ -649,31 +714,54 @@ public class RuntimeService extends BaseService
     }
     var graph = scope.getDigitalTwin().getKnowledgeGraph();
     var observer = graph.getAsset(update.getObserverId(), scope, Observation.class);
-    var spatial = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
-        update.getWest(), update.getSouth(), update.getEast(), update.getNorth(),
-        org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection.of("EPSG:4326"));
+    var spatial =
+        org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+            update.getWest(),
+            update.getSouth(),
+            update.getEast(),
+            update.getNorth(),
+            org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection.of(
+                "EPSG:4326"));
     try (var transaction = graph.createTransaction(scope)) {
-      transaction.replacePerceivedSpace(observer, update.getExpectedGeometry(), Geometry.create(spatial.encode()));
+      transaction.replacePerceivedSpace(
+          observer, update.getExpectedGeometry(), Geometry.create(spatial.encode()));
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
       throw new KlabIllegalStateException(e);
     }
     var refreshed = graph.getAsset(update.getObserverId(), scope, Observation.class);
-    scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverGeometryChanged,
+    scope.send(
+        Message.MessageClass.DigitalTwin,
+        Message.MessageType.ObserverGeometryChanged,
         Observation.forTransport(refreshed));
     return refreshed;
   }
 
   @Override
-  public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
-      long observerId, ContextScope scope) {
+  public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView
+      getObserverGeometry(long observerId, ContextScope scope) {
     var graph = scope.getDigitalTwin().getKnowledgeGraph();
-    boolean member = graph.getLinks(RuntimeAsset.CONTEXT_ASSET,
-        GraphModel.Relationship.Direction.OUTGOING, scope, GraphModel.Relationship.HAS_CHILD).stream()
-        .map(link -> link.target()).filter(org.integratedmodelling.klab.api.knowledge.Cohort.class::isInstance)
-        .anyMatch(cohort -> graph.getLinks(cohort, GraphModel.Relationship.Direction.OUTGOING,
-            scope, GraphModel.Relationship.HAS_MEMBER).stream().anyMatch(link -> link.target().getId() == observerId));
+    boolean member =
+        graph
+            .getLinks(
+                RuntimeAsset.CONTEXT_ASSET,
+                GraphModel.Relationship.Direction.OUTGOING,
+                scope,
+                GraphModel.Relationship.HAS_CHILD)
+            .stream()
+            .map(link -> link.target())
+            .filter(org.integratedmodelling.klab.api.knowledge.Cohort.class::isInstance)
+            .anyMatch(
+                cohort ->
+                    graph
+                        .getLinks(
+                            cohort,
+                            GraphModel.Relationship.Direction.OUTGOING,
+                            scope,
+                            GraphModel.Relationship.HAS_MEMBER)
+                        .stream()
+                        .anyMatch(link -> link.target().getId() == observerId));
     if (!member) throw new IllegalArgumentException("Agent is not in this twin");
     var observer = graph.getAsset(observerId, scope, Observation.class);
     if (observer == null || !observer.getObservable().is(SemanticType.AGENT)) {
@@ -682,7 +770,8 @@ public class RuntimeService extends BaseService
     var view = new org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView();
     view.setObserver(Observation.forTransport(observer));
     view.setOccupiedGeoJson(observerGeoJson(observer.getGeometry()));
-    view.setPerceivedGeoJson(observerGeoJson(observer.geometry(Observation.GeometryRelationship.PERCEIVES)));
+    view.setPerceivedGeoJson(
+        observerGeoJson(observer.geometry(Observation.GeometryRelationship.PERCEIVES)));
     return view;
   }
 
@@ -690,30 +779,49 @@ public class RuntimeService extends BaseService
     if (geometry == null || geometry.isUniversal() || geometry.isEmpty()) return null;
     var space = GeometryRepository.INSTANCE.scale(geometry).getSpace();
     if (space == null || space.getGeometricShape() == null) return null;
-    var shape = space.getGeometricShape().transform(
-        org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection.of("EPSG:4326"));
-    return org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.promote(shape).asGeoJSONString();
+    var shape =
+        space
+            .getGeometricShape()
+            .transform(
+                org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection.of(
+                    "EPSG:4326"));
+    return org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.promote(shape)
+        .asGeoJSONString();
   }
 
-  /** Reused/query observations do not open an observation transaction, but still record perception. */
-  private Observation recordExistingPerception(Observation result, ContextScope scope, boolean explicitAgent) {
+  /**
+   * Reused/query observations do not open an observation transaction, but still record perception.
+   */
+  private Observation recordExistingPerception(
+      Observation result, ContextScope scope, boolean explicitAgent) {
     return recordExistingPerception(result, scope, explicitAgent, false);
   }
 
   private Observation recordExistingPerception(
       Observation result, ContextScope scope, boolean explicitAgent, boolean readOnly) {
     if (result == null || result.isEmpty()) return result;
-    var causalAdmission = scope instanceof ServiceContextScope execution
-        ? execution.getConsequenceSubmissionAdmission() : null;
+    var causalAdmission =
+        scope instanceof ServiceContextScope execution
+            ? execution.getConsequenceSubmissionAdmission()
+            : null;
     boolean nested = readOnly || scope.getCurrentTransaction() != null;
     if (nested && causalAdmission == null) return result;
     // Semantic and source preparation must precede native transaction creation/locking. Default
     // admission is fail-closed; even a read-only existing answer needs its native source fence.
-    var existingGuard = causalAdmission == null ? null : Objects.requireNonNull(
-        causalAdmission.prepareExisting(result, (ServiceContextScope) scope),
-        "Existing-result causal admission returned no guard");
-    boolean promote = !nested && explicitAgent && result.getId() > 0
-        && !Boolean.TRUE.equals(result.getMetadata().get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT));
+    var existingGuard =
+        causalAdmission == null
+            ? null
+            : Objects.requireNonNull(
+                causalAdmission.prepareExisting(result, (ServiceContextScope) scope),
+                "Existing-result causal admission returned no guard");
+    boolean promote =
+        !nested
+            && explicitAgent
+            && result.getId() > 0
+            && !Boolean.TRUE.equals(
+                result
+                    .getMetadata()
+                    .get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT));
     var activeObserver = nested ? null : scope.getObserver();
     boolean perceive = activeObserver != null && result.getGeometry() != null;
     if (existingGuard == null && !promote && !perceive) return result;
@@ -725,8 +833,10 @@ public class RuntimeService extends BaseService
         if (perceive) transaction.perceive(activeObserver, result.getGeometry());
       } catch (RuntimeException | Error failure) {
         try {
-          transaction.fail(failure instanceof Exception exception ? exception
-              : new IllegalStateException("Existing-result native admission failed", failure));
+          transaction.fail(
+              failure instanceof Exception exception
+                  ? exception
+                  : new IllegalStateException("Existing-result native admission failed", failure));
         } catch (RuntimeException | Error cleanupFailure) {
           if (cleanupFailure != failure) failure.addSuppressed(cleanupFailure);
         }
@@ -737,11 +847,16 @@ public class RuntimeService extends BaseService
     }
     if (promote) {
       result = graph.getAsset(result.getId(), scope, Observation.class);
-      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverResolved, Observation.forTransport(result));
+      scope.send(
+          Message.MessageClass.DigitalTwin,
+          Message.MessageType.ObserverResolved,
+          Observation.forTransport(result));
     }
     if (perceive) {
       var refreshed = graph.getAsset(activeObserver.getId(), scope, Observation.class);
-      scope.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverGeometryChanged,
+      scope.send(
+          Message.MessageClass.DigitalTwin,
+          Message.MessageType.ObserverGeometryChanged,
           Observation.forTransport(refreshed));
     }
     return result;
@@ -757,7 +872,8 @@ public class RuntimeService extends BaseService
         && serviceScope.getConsequenceCause() == null
         && serviceScope.getActivity() == null
         && scope.getContextObservation() != null
-        && SemanticType.isEnumerableSubstantial(submitted.getObservable().getSemantics().getType())) {
+        && SemanticType.isEnumerableSubstantial(
+            submitted.getObservable().getSemantics().getType())) {
       // A qualified collective selection binds native discovery and its family updates to this
       // focus. It is a virtual result, not a new independent substantial whose bearer is reset.
       // Eligibility uses the same complete admission as planning; geometry inherited later by
@@ -773,9 +889,10 @@ public class RuntimeService extends BaseService
           }
         }
         if (CollectiveSelectionExecution.candidate(selectionRequest, serviceScope)) return scope;
-        if (CollectiveSelectionBinding.hasSelectionSemantics(submitted.getObservable(), serviceScope,
-            serviceScope.getService(Reasoner.class)))
-          throw new IllegalArgumentException("Collective selection requires valid support, focus, observer and semantic admission");
+        if (CollectiveSelectionBinding.hasSelectionSemantics(
+            submitted.getObservable(), serviceScope, serviceScope.getService(Reasoner.class)))
+          throw new IllegalArgumentException(
+              "Collective selection requires valid support, focus, observer and semantic admission");
       }
       return serviceScope.within(null);
     }
@@ -784,10 +901,12 @@ public class RuntimeService extends BaseService
 
   private CompletableFuture<Observation> submitInternal(Observation submitted, ContextScope scope) {
 
-    if (ConnectionSupport.isIndividual(submitted) && submitted.getId() <= 0
+    if (ConnectionSupport.isIndividual(submitted)
+        && submitted.getId() <= 0
         && submitted.getId() != Observation.QUERY_ID) {
       var participants = ConnectionSupport.participants(submitted, scope);
-      if (scope.getSourceObservation() == null || scope.getTargetObservation() == null
+      if (scope.getSourceObservation() == null
+          || scope.getTargetObservation() == null
           || scope.getSourceObservation().getId() != participants.get(0).getId()
           || scope.getTargetObservation().getId() != participants.get(1).getId()) {
         return submitInternal(submitted, scope.between(participants.get(0), participants.get(1)));
@@ -807,12 +926,15 @@ public class RuntimeService extends BaseService
               ? scope.getContextObservation().getGeometry()
               : submitted.getGeometry();
       if (requested != null) {
-        var existingCoverage = org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(existing, requested);
+        var existingCoverage =
+            org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(existing, requested);
         if (existingCoverage != null && existingCoverage.isComplete()) {
-          if (submitted.getObservable().is(SemanticType.QUALITY) || submitted.getObservable().is(SemanticType.PROCESS))
-            org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(existing, requested, scope);
-          return CompletableFuture.completedFuture(submissionOutcome(
-              "runtime.existingCoverage", submitted, scope, existing, null));
+          if (submitted.getObservable().is(SemanticType.QUALITY)
+              || submitted.getObservable().is(SemanticType.PROCESS))
+            org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(
+                existing, requested, scope);
+          return CompletableFuture.completedFuture(
+              submissionOutcome("runtime.existingCoverage", submitted, scope, existing, null));
         }
       }
     }
@@ -825,8 +947,8 @@ public class RuntimeService extends BaseService
      * sufficient indication that submission is already complete.
      */
     if (observation != submitted || observation.getId() > 0 || observation.isEmpty()) {
-      return CompletableFuture.completedFuture(submissionOutcome(
-          "runtime.registerTerminal", submitted, scope, observation, null));
+      return CompletableFuture.completedFuture(
+          submissionOutcome("runtime.registerTerminal", submitted, scope, observation, null));
     }
 
     if (scope instanceof ServiceContextScope serviceContextScope) {
@@ -852,8 +974,13 @@ public class RuntimeService extends BaseService
       if (observation.getObservable().is(SemanticType.QUALITY)
           && scope.getContextObservation() == null) {
         return CompletableFuture.completedFuture(
-            submissionOutcome("runtime.qualityWithoutContext", submitted, scope, Observation.empty(
-                Notification.error("Cannot observe a quality without a context observation")), null));
+            submissionOutcome(
+                "runtime.qualityWithoutContext",
+                submitted,
+                scope,
+                Observation.empty(
+                    Notification.error("Cannot observe a quality without a context observation")),
+                null));
       }
 
       /* Dependents are the only situation when we accept an observation w/o geometry */
@@ -869,11 +996,12 @@ public class RuntimeService extends BaseService
           // FIXME no - this should run a query over the cohort and if needed, resolve the
           //  unaddressed coverage. If the observation has id == 0, it is a query and it can
           //  use the overall covered geometry of the cohort if the geometry is not there.
-          observation1.setGeometry(scope.getObserver().geometry(Observation.GeometryRelationship.PERCEIVES));
+          observation1.setGeometry(
+              scope.getObserver().geometry(Observation.GeometryRelationship.PERCEIVES));
         }
       }
 
-      alignObservation(observation,scope);
+      alignObservation(observation, scope);
 
       // sanitize whatever geometry we have before any use is made of it. TODO add a flag or
       // something to
@@ -917,22 +1045,32 @@ public class RuntimeService extends BaseService
                       scope);
           if (requirements == null || requirements.isEmpty()) {
             return CompletableFuture.completedFuture(
-                submissionOutcome("runtime.adapterInvisible", submitted, scope, Observation.empty(
-                    Notification.error(
-                        "Adapter '"
-                            + contextualizationData.getAdapterId()
-                            + "' referenced in submission is not visible to the digital twin runtime")), null));
+                submissionOutcome(
+                    "runtime.adapterInvisible",
+                    submitted,
+                    scope,
+                    Observation.empty(
+                        Notification.error(
+                            "Adapter '"
+                                + contextualizationData.getAdapterId()
+                                + "' referenced in submission is not visible to the digital twin runtime")),
+                    null));
           }
           if (!ingestResources(
               requirements,
               scope,
               settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class))) {
             return CompletableFuture.completedFuture(
-                submissionOutcome("runtime.adapterInaccessible", submitted, scope, Observation.empty(
-                    Notification.error(
-                        "Adapter '"
-                            + contextualizationData.getAdapterId()
-                            + "' referenced in submission is not accessible to the digital twin runtime")), null));
+                submissionOutcome(
+                    "runtime.adapterInaccessible",
+                    submitted,
+                    scope,
+                    Observation.empty(
+                        Notification.error(
+                            "Adapter '"
+                                + contextualizationData.getAdapterId()
+                                + "' referenced in submission is not accessible to the digital twin runtime")),
+                    null));
           }
 
           if (settings.get(Setting.LOAD_REMOTE_RUNTIME_COMPONENTS, Boolean.class)) {
@@ -941,11 +1079,16 @@ public class RuntimeService extends BaseService
                     .getAdapter(contextualizationData.getAdapterId(), Version.ANY_VERSION, scope);
             if (adapter == null || !adapter.isEmbeddable()) {
               return CompletableFuture.completedFuture(
-                  submissionOutcome("runtime.adapterNotEmbeddable", submitted, scope, Observation.empty(
-                      Notification.error(
-                          "Adapter '"
-                              + contextualizationData.getAdapterId()
-                              + "' referenced in submission is unavailable or not embeddable into to the digital twin runtime")), null));
+                  submissionOutcome(
+                      "runtime.adapterNotEmbeddable",
+                      submitted,
+                      scope,
+                      Observation.empty(
+                          Notification.error(
+                              "Adapter '"
+                                  + contextualizationData.getAdapterId()
+                                  + "' referenced in submission is unavailable or not embeddable into to the digital twin runtime")),
+                      null));
             }
           }
         }
@@ -971,39 +1114,50 @@ public class RuntimeService extends BaseService
           serviceContextScope.getConsequenceCause() != null
               ? scope.getDigitalTwin().getKnowledgeGraph().klab()
               : agent == null
-              ? null
-              : serviceContextScope
-                  .getDigitalTwin()
-                  .getKnowledgeGraph()
-                  .requireAgent(agent.getName());
+                  ? null
+                  : serviceContextScope
+                      .getDigitalTwin()
+                      .getKnowledgeGraph()
+                      .requireAgent(agent.getName());
 
       var submission =
           Activity.of(
               serviceContextScope.getConsequenceCause() == null
-                  ? Activity.Type.SUBMISSION : Activity.Type.CONSEQUENCE_SUBMISSION,
+                  ? Activity.Type.SUBMISSION
+                  : Activity.Type.CONSEQUENCE_SUBMISSION,
               this,
               observation,
               scope,
               serviceContextScope.getActivity(),
               observation + " submitted");
-      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(submission,scope.getObserver());
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(
+          submission, scope.getObserver());
 
-      boolean selectionTarget = CollectiveSelectionExecution.candidate(observation, serviceContextScope);
-      boolean dependentTarget = observation.getObservable().is(SemanticType.QUALITY)
-          || observation.getObservable().is(SemanticType.PROCESS)
-          || selectionTarget;
+      boolean selectionTarget =
+          CollectiveSelectionExecution.candidate(observation, serviceContextScope);
+      boolean dependentTarget =
+          observation.getObservable().is(SemanticType.QUALITY)
+              || observation.getObservable().is(SemanticType.PROCESS)
+              || selectionTarget;
       // A dependent may resolve to existing knowledge after specific-model attempts. Do not
       // stage a new target until that distinction is known (children share the atomic graph).
-      var submissionScope = serviceContextScope.executing(submission, isRoot ? storedAgent : null,
-          dependentTarget ? null : observation);
+      var submissionScope =
+          serviceContextScope.executing(
+              submission, isRoot ? storedAgent : null, dependentTarget ? null : observation);
       if (serviceContextScope.getConsequenceSubmissionAdmission() != null) {
         try {
-          serviceContextScope.getConsequenceSubmissionAdmission().bind(
-              submissionScope.getCurrentTransaction(), submissionScope);
+          serviceContextScope
+              .getConsequenceSubmissionAdmission()
+              .bind(submissionScope.getCurrentTransaction(), submissionScope);
         } catch (RuntimeException invalidSource) {
           submissionScope.fail(invalidSource);
-          return CompletableFuture.completedFuture(submissionOutcome("runtime.consequenceAdmissionFailed",
-              submitted, scope, Observation.empty(Notification.error(invalidSource.getMessage(), invalidSource)), invalidSource));
+          return CompletableFuture.completedFuture(
+              submissionOutcome(
+                  "runtime.consequenceAdmissionFailed",
+                  submitted,
+                  scope,
+                  Observation.empty(Notification.error(invalidSource.getMessage(), invalidSource)),
+                  invalidSource));
         }
       }
       org.integratedmodelling.klab.runtime.ObserverSemanticUse.start(submissionScope);
@@ -1023,40 +1177,43 @@ public class RuntimeService extends BaseService
               : observation.getObservable();
       var cohort = getCohortFor(cohortSemantics, submissionScope, true);
 
-      Runnable stageNewObservation = () -> {
-      var transaction = submissionScope.getCurrentTransaction();
-      var collective = observation.getObservable().getSemantics().isCollective();
-      if (cohort == null || collective || scope.getContextObservation() != null) {
-        transaction.link(
-            submissionParent(scope),
-            observation,
-            GraphModel.Relationship.HAS_CHILD);
-      }
+      Runnable stageNewObservation =
+          () -> {
+            var transaction = submissionScope.getCurrentTransaction();
+            var collective = observation.getObservable().getSemantics().isCollective();
+            if (cohort == null || collective || scope.getContextObservation() != null) {
+              transaction.link(
+                  submissionParent(scope), observation, GraphModel.Relationship.HAS_CHILD);
+            }
 
-      if (cohort != null && collective) {
-        transaction.link(observation, cohort, GraphModel.Relationship.CONTRIBUTED_TO);
-        /* include the observation's geometry in the cohort's, flagging any changes. We don't do this
-        with individually created instances as those are not "observed"  in the proper sense and their
-        inclusion will be delegated to the identification strategy.
-         */
-        transaction.checkCohortGeometry(cohort, observation.getGeometry());
-      }
+            if (cohort != null && collective) {
+              transaction.link(observation, cohort, GraphModel.Relationship.CONTRIBUTED_TO);
+              /* include the observation's geometry in the cohort's, flagging any changes. We don't do this
+              with individually created instances as those are not "observed"  in the proper sense and their
+              inclusion will be delegated to the identification strategy.
+               */
+              transaction.checkCohortGeometry(cohort, observation.getGeometry());
+            }
 
-      if (cohort != null && !collective && observation.getObservable().is(SemanticType.COUNTABLE)) {
-        transaction.link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
-      }
+            if (cohort != null
+                && !collective
+                && observation.getObservable().is(SemanticType.COUNTABLE)) {
+              transaction.link(cohort, observation, GraphModel.Relationship.HAS_MEMBER);
+            }
 
-      if (ConnectionSupport.isIndividual(observation)) {
-        ConnectionSupport.link(observation, submissionScope);
-      }
+            if (ConnectionSupport.isIndividual(observation)) {
+              ConnectionSupport.link(observation, submissionScope);
+            }
 
-      submissionScope
-          .getCurrentTransaction()
-          .link(submission, observation, GraphModel.Relationship.CREATED);
+            submissionScope
+                .getCurrentTransaction()
+                .link(submission, observation, GraphModel.Relationship.CREATED);
 
-        if (dependentTarget && isRoot && transaction instanceof DigitalTwinImpl.TransactionImpl nativeTransaction)
-          nativeTransaction.setTarget(observation);
-      };
+            if (dependentTarget
+                && isRoot
+                && transaction instanceof DigitalTwinImpl.TransactionImpl nativeTransaction)
+              nativeTransaction.setTarget(observation);
+          };
       if (!dependentTarget) stageNewObservation.run();
 
       if (scope.getContextObservation() != null) {
@@ -1074,14 +1231,14 @@ public class RuntimeService extends BaseService
       // keep the k.LAB ownership for the resolution only if we're the root action.
       // FIXME the observer should take care of this but for now the k.LAB actor isn't considered
       var resolutionBase =
-          submissionScope
-              .executing(
-                  resolution,
-                  isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null,
-                  observation);
+          submissionScope.executing(
+              resolution,
+              isRoot ? scope.getDigitalTwin().getKnowledgeGraph().klab() : null,
+              observation);
       // Selection binds discovery and its family operations to the submitted native focus.
       // Its virtual result must not silently turn into an unrestricted root cohort query.
-      var resolutionScope = selectionTarget ? resolutionBase : resolutionBase.contextualizeFor(observation);
+      var resolutionScope =
+          selectionTarget ? resolutionBase : resolutionBase.contextualizeFor(observation);
 
       /*
        * Save the resolution constraints in the metadata for debugging and provenance. This includes
@@ -1093,7 +1250,7 @@ public class RuntimeService extends BaseService
 
       // Remote generation/source checks run outside native transaction commit locks. Local
       // exact member/result read-set guards remain on that commit transaction.
-      var classifierValidationChecks=new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
+      var classifierValidationChecks = new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
       var selectionFinalizers = new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
       return (predefinedContextualization != null
               ? createPredefinedDataflow(predefinedContextualization, observation, scope)
@@ -1108,31 +1265,48 @@ public class RuntimeService extends BaseService
                 ret.getNotifications().add(Notification.error(t.getMessage(), t));
                 return ret;
               })
-          .thenCompose(dataflow -> SelectedModelClassifierContinuation.resume(this,dataflow,resolutionScope,classifierValidationChecks,selectionFinalizers))
+          .thenCompose(
+              dataflow ->
+                  SelectedModelClassifierContinuation.resume(
+                      this,
+                      dataflow,
+                      resolutionScope,
+                      classifierValidationChecks,
+                      selectionFinalizers))
           /* then compile the dataflow */
           .thenApply(
               dataflow -> {
                 checkSubmissionCancellation(resolutionScope);
                 classifierValidationChecks.forEach(Runnable::run);
-                resolution.getMetadata().put("resolutionOutcome", dataflow.getResolutionOutcome().name());
+                resolution
+                    .getMetadata()
+                    .put("resolutionOutcome", dataflow.getResolutionOutcome().name());
                 observation.getNotifications().addAll(dataflow.getNotifications());
                 if (observation instanceof ObservationImpl observationImpl
                     && dataflow instanceof DataflowImpl dataflowImpl) {
                   observationImpl.setResolvedCoverage(dataflowImpl.getResolvedCoverage());
                 }
-                var rejectionOrigin = dataflow.isEmpty() ? "runtime.emptyDataflow"
-                    : "runtime.compileFailed";
+                var rejectionOrigin =
+                    dataflow.isEmpty() ? "runtime.emptyDataflow" : "runtime.compileFailed";
                 if (!dataflow.isEmpty()) {
                   if (dataflow.getCollectiveSelection() != null) {
-                    var selected = CollectiveSelectionExecution.execute(this, dataflow, observation,
-                        resolutionScope, classifierValidationChecks);
+                    var selected =
+                        CollectiveSelectionExecution.execute(
+                            this,
+                            dataflow,
+                            observation,
+                            resolutionScope,
+                            classifierValidationChecks);
                     selectionFinalizers.forEach(Runnable::run);
                     classifierValidationChecks.forEach(Runnable::run);
                     if (resolutionScope.commit() < 0)
                       throw new IllegalStateException("Selection resolution transaction failed");
                     return new SubmissionResolution(selected, true);
                   }
-                  var reused = dependentTarget ? referenceResult(dataflow, observation, resolutionScope) : null;
+                  var reused =
+                      dependentTarget
+                          ? referenceResult(dataflow, observation, resolutionScope)
+                          : null;
                   if (reused != null) {
                     rejectionOrigin = "runtime.referenceResolutionCommitFailed";
                     // A receipt, not CREATED: no new target or executor enters the shared graph.
@@ -1143,26 +1317,36 @@ public class RuntimeService extends BaseService
                   } else {
                     if (dependentTarget) stageNewObservation.run();
                     if (compile(observation, dataflow, resolutionScope)) {
-                    rejectionOrigin = "runtime.resolutionCommitFailed";
-                    checkSubmissionCancellation(resolutionScope);
-                    attachResolutionDiagnostics(dataflow, resolution);
-                    if (resolutionScope.commit() >= 0) {
-                      if (predefinedContextualization != null) {
-                        publishContextualization(observation, resolutionScope);
+                      rejectionOrigin = "runtime.resolutionCommitFailed";
+                      checkSubmissionCancellation(resolutionScope);
+                      attachResolutionDiagnostics(dataflow, resolution);
+                      if (resolutionScope.commit() >= 0) {
+                        if (predefinedContextualization != null) {
+                          publishContextualization(observation, resolutionScope);
+                        }
+                        return new SubmissionResolution(observation, false);
                       }
-                      return new SubmissionResolution(observation, false);
                     }
-                  }
                   }
                 }
                 submissionOutcome("runtime.resolutionDetails", submitted, scope, observation, null);
                 resolutionScope.fail();
-                return new SubmissionResolution(submissionOutcome(rejectionOrigin, submitted, scope, org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.terminal(Observation.empty(
-                    Notification.error(
-                        "Resolution of "
-                            + observation.getObservable().getUrn()
-                            + " failed: empty dataflow")), dataflow.isEmpty() ? dataflow.getResolutionOutcome()
-                            : Dataflow.ResolutionOutcome.FAILED), null), false);
+                return new SubmissionResolution(
+                    submissionOutcome(
+                        rejectionOrigin,
+                        submitted,
+                        scope,
+                        org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.terminal(
+                            Observation.empty(
+                                Notification.error(
+                                    "Resolution of "
+                                        + observation.getObservable().getUrn()
+                                        + " failed: empty dataflow")),
+                            dataflow.isEmpty()
+                                ? dataflow.getResolutionOutcome()
+                                : Dataflow.ResolutionOutcome.FAILED),
+                        null),
+                    false);
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
@@ -1173,10 +1357,15 @@ public class RuntimeService extends BaseService
                   classifierValidationChecks.forEach(Runnable::run);
                   submission.getMetadata().put("reusedObservationId", o.getId());
                   submission.getMetadata().put("reusedObservationUrn", o.getUrn());
-                  return submissionScope.commit() >= 0 ? submissionOutcome(
-                      "runtime.referenceCompleted", submitted, scope, o, null)
-                      : submissionOutcome("runtime.referenceCommitFailed", submitted, scope,
-                          Observation.empty(Notification.error("Reference submission commit failed")), null);
+                  return submissionScope.commit() >= 0
+                      ? submissionOutcome("runtime.referenceCompleted", submitted, scope, o, null)
+                      : submissionOutcome(
+                          "runtime.referenceCommitFailed",
+                          submitted,
+                          scope,
+                          Observation.empty(
+                              Notification.error("Reference submission commit failed")),
+                          null);
                 }
 
                 // FIXME this comes from the original submission while the executors and storage
@@ -1194,7 +1383,8 @@ public class RuntimeService extends BaseService
                             Notification.error(
                                 "Contextualization of " + o.getObservable().getUrn() + " failed"));
                     failed.getNotifications().addAll(o.getNotifications());
-                    return submissionOutcome("runtime.contextualizationFailed", submitted, scope, failed, null);
+                    return submissionOutcome(
+                        "runtime.contextualizationFailed", submitted, scope, failed, null);
                   }
 
                   // TODO add more info about the contextualization to the action's metadata
@@ -1208,7 +1398,8 @@ public class RuntimeService extends BaseService
                             Notification.error(
                                 "Commit of " + o.getObservable().getUrn() + " failed"));
                     failed.getNotifications().addAll(o.getNotifications());
-                    return submissionOutcome("runtime.commitFailed", submitted, scope, failed, null);
+                    return submissionOutcome(
+                        "runtime.commitFailed", submitted, scope, failed, null);
                   }
                   if (commitId > 0) {
                     o.getMetadata().put(Metadata.IM_COMMIT_ID, commitId);
@@ -1231,8 +1422,12 @@ public class RuntimeService extends BaseService
           .exceptionally(
               t -> {
                 submissionScope.fail(t);
-                return submissionOutcome("runtime.exception", submitted, scope,
-                    Observation.empty(Notification.error(t.getMessage(), t)), t);
+                return submissionOutcome(
+                    "runtime.exception",
+                    submitted,
+                    scope,
+                    Observation.empty(Notification.error(t.getMessage(), t)),
+                    t);
               });
     }
     throw new KlabInternalErrorException(
@@ -1241,41 +1436,68 @@ public class RuntimeService extends BaseService
 
   private record SubmissionResolution(Observation observation, boolean reused) {}
 
-  private Observation submissionOutcome(String origin, Observation request, ContextScope scope,
-      Observation result, Throwable failure) {
-    if (result != null && result.isEmpty()
-        && !origin.equals("runtime.queryEmpty") && !origin.equals("runtime.preassignedOrEmpty")
+  private Observation submissionOutcome(
+      String origin,
+      Observation request,
+      ContextScope scope,
+      Observation result,
+      Throwable failure) {
+    if (result != null
+        && result.isEmpty()
+        && !origin.equals("runtime.queryEmpty")
+        && !origin.equals("runtime.preassignedOrEmpty")
         && org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.read(result).isEmpty())
-      result = org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.terminal(
-          result, Dataflow.ResolutionOutcome.FAILED);
+      result =
+          org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.terminal(
+              result, Dataflow.ResolutionOutcome.FAILED);
     return org.integratedmodelling.common.runtime.SubmissionDiagnostics.result(
         origin, scope, request, result, null, failure);
   }
 
   /** Terminal reference answers bypass creation/storage/execution and retain the source ID. */
-  private Observation referenceResult(Dataflow dataflow, Observation requested, ContextScope scope) {
-    if (dataflow.getComputation().size() != 1 || !(dataflow instanceof DataflowImpl resolved)
-        || !Coverage.create(GeometryRepository.INSTANCE.scale(requested.getGeometry(), scope),
-            resolved.getResolvedCoverage()).isComplete()) return null;
+  private Observation referenceResult(
+      Dataflow dataflow, Observation requested, ContextScope scope) {
+    if (dataflow.getComputation().size() != 1
+        || !(dataflow instanceof DataflowImpl resolved)
+        || !Coverage.create(
+                GeometryRepository.INSTANCE.scale(requested.getGeometry(), scope),
+                resolved.getResolvedCoverage())
+            .isComplete()) return null;
     var root = dataflow.getComputation().getFirst();
-    if (root.getActuatorType() != Actuator.Type.REFERENCE || root.getId() <= 0
-        || root.getObservation() == null || root.getObservation().getId() != root.getId()) return null;
-    var existing = scope.getDigitalTwin().getKnowledgeGraph().getAsset(root.getId(), scope, Observation.class);
-    if (existing == null || existing.isEmpty() || existing.getId() != root.getId()
-        || !scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(existing,scope)
+    if (root.getActuatorType() != Actuator.Type.REFERENCE
+        || root.getId() <= 0
+        || root.getObservation() == null
+        || root.getObservation().getId() != root.getId()) return null;
+    var existing =
+        scope.getDigitalTwin().getKnowledgeGraph().getAsset(root.getId(), scope, Observation.class);
+    if (existing == null
+        || existing.isEmpty()
+        || existing.getId() != root.getId()
+        || !scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(existing, scope)
         || existing.getParentId() != referenceParent(requested, scope)
-        || !Objects.equals(existing.getObservable().asConcept().getUrn(), requested.getObservable().asConcept().getUrn())
+        || !Objects.equals(
+            existing.getObservable().asConcept().getUrn(),
+            requested.getObservable().asConcept().getUrn())
         || org.integratedmodelling.klab.runtime.ObserverResolution.preference(
-            existing.getObservable(), requested.getObservable(), scope) < 0)
+                existing.getObservable(), requested.getObservable(), scope)
+            < 0)
       throw new IllegalStateException("Reference answer is no longer compatible or accessible");
-    var actualCoverage = org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(existing, requested.getGeometry());
+    var actualCoverage =
+        org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(
+            existing, requested.getGeometry());
     if (actualCoverage == null || !actualCoverage.isComplete())
       throw new IllegalStateException("Reference answer does not cover the requested support");
     var reasoner = scope.getService(Reasoner.class);
     var capabilities = reasoner == null ? null : reasoner.capabilities(scope);
-    if (capabilities == null || reasoner.semanticDistance(existing.getObservable(), requested.getObservable(),
-        null, capabilities.getKnowledgeRevision()) < 0)
-      throw new IllegalStateException("Reference answer has no current compatible semantic receipt");
+    if (capabilities == null
+        || reasoner.semanticDistance(
+                existing.getObservable(),
+                requested.getObservable(),
+                null,
+                capabilities.getKnowledgeRevision())
+            < 0)
+      throw new IllegalStateException(
+          "Reference answer has no current compatible semantic receipt");
     org.integratedmodelling.klab.runtime.storage.StorageReads.validateSpatialReuse(
         existing, requested.getGeometry(), scope);
     return existing;
@@ -1292,10 +1514,14 @@ public class RuntimeService extends BaseService
     var parent = submissionParent(scope);
     if (parent instanceof Observation context) {
       var id = context.getId();
-      var accessible = id == Observation.UNASSIGNED_ID || id == Observation.QUERY_ID
-          ? null : scope.getObservation(id);
-      if (accessible == null || accessible.isEmpty() || accessible.getId() != id
-          || !scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(accessible,scope))
+      var accessible =
+          id == Observation.UNASSIGNED_ID || id == Observation.QUERY_ID
+              ? null
+              : scope.getObservation(id);
+      if (accessible == null
+          || accessible.isEmpty()
+          || accessible.getId() != id
+          || !scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(accessible, scope))
         throw new IllegalStateException("Reference answer is no longer compatible or accessible");
     }
     if (requested.getParentId() != Observation.UNASSIGNED_ID
@@ -1315,15 +1541,25 @@ public class RuntimeService extends BaseService
     var cohortSemantics =
         scope.getService(Reasoner.class).baseSubstantialType(observable.getSemantics(), scope);
     var selectedObserver = scope.getObserver();
-    var observerMeaning = selectedObserver == null || selectedObserver.getObservable() == null
-        ? null : selectedObserver.getObservable().getUrn();
-    long observerRevision = selectedObserver == null || scope.getDigitalTwin() == null
-        ? 0 : scope.getDigitalTwin().getKnowledgeGraph().getSemanticRevision();
+    var observerMeaning =
+        selectedObserver == null || selectedObserver.getObservable() == null
+            ? null
+            : selectedObserver.getObservable().getUrn();
+    long observerRevision =
+        selectedObserver == null || scope.getDigitalTwin() == null
+            ? 0
+            : scope.getDigitalTwin().getKnowledgeGraph().getSemanticRevision();
     return new SubmissionIdentity(
-        scope.getId(), scope.getResolutionCycleBinding() == null ? null
+        scope.getId(),
+        scope.getResolutionCycleBinding() == null
+            ? null
             : scope.getResolutionCycleBinding().cycleId(),
-        cohortSemantics.getUrn(), ObservationImpl.logicalUrn(observation.getUrn()),
-        selectedObserver == null ? 0L : selectedObserver.getId(), observerMeaning, observerRevision, observable.getUrn());
+        cohortSemantics.getUrn(),
+        ObservationImpl.logicalUrn(observation.getUrn()),
+        selectedObserver == null ? 0L : selectedObserver.getId(),
+        observerMeaning,
+        observerRevision,
+        observable.getUrn());
   }
 
   private static void checkSubmissionCancellation(ContextScope scope) {
@@ -1382,33 +1618,52 @@ public class RuntimeService extends BaseService
       var result = qualityQueryResult(source, query, geometry);
       var storage = scope.getDigitalTwin().getStorageManager().getStorage(source);
       var layout = storage.getNativeShardingStrategy();
-      // Validate coverage and semantics immediately; selecting a later revision belongs to each read.
-      storage.plan(org.integratedmodelling.klab.runtime.storage.StorageReads.request(
-          result, Scheduler.Event.initialization(), layout, List.of(), Storage.Scanner.class));
+      // Validate coverage and semantics immediately; selecting a later revision belongs to each
+      // read.
+      storage.plan(
+          org.integratedmodelling.klab.runtime.storage.StorageReads.request(
+              result, Scheduler.Event.initialization(), layout, List.of(), Storage.Scanner.class));
       return result;
     }
     var semantics = query.getObservable().getSemantics();
     if (SemanticType.isEnumerableSubstantial(semantics.getType()) && semantics.isCollective()) {
-      var selectionAdmission = query.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding.DATA_KEY);
+      var selectionAdmission =
+          query
+              .getMetadata()
+              .get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding.DATA_KEY);
       if (selectionAdmission != null) {
-        var binding = Utils.Json.parseObject(selectionAdmission.toString(),
-            org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding.class);
-        var selectedTarget = scope.getService(Reasoner.class).resolveObservable(binding.requested());
+        var binding =
+            Utils.Json.parseObject(
+                selectionAdmission.toString(),
+                org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding.class);
+        var selectedTarget =
+            scope.getService(Reasoner.class).resolveObservable(binding.requested());
         binding.require(scope, selectedTarget, Geometry.create(binding.support()));
         if (!Objects.equals(binding.nativeMembers(), query.getObservable().getUrn()))
           throw new IllegalArgumentException("Selection native query differs from its admission");
         return queryCollective(query, serviceScope, null, null, binding);
       }
-      if (query.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY) != null)
-        return CollectiveSelectionExecution.query(this, query, serviceScope);
-      var encoded = query.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY);
+      if (query
+              .getMetadata()
+              .get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY)
+          != null) return CollectiveSelectionExecution.query(this, query, serviceScope);
+      var encoded =
+          query
+              .getMetadata()
+              .get(org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.DATA_KEY);
       if (encoded != null) {
-        var reduction = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(encoded.toString(),
-            org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.class);
-        var target = scope.getService(Reasoner.class).resolveObservable(reduction.context().childObservable());
+        var reduction =
+            org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+                encoded.toString(),
+                org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding.class);
+        var target =
+            scope
+                .getService(Reasoner.class)
+                .resolveObservable(reduction.context().childObservable());
         reduction.require(scope, target, query.getGeometry());
         if (!java.util.Objects.equals(reduction.operand(), query.getObservable().getUrn()))
-          throw new IllegalStateException("Collective query operand differs from reduction binding");
+          throw new IllegalStateException(
+              "Collective query operand differs from reduction binding");
         return queryCollective(query, serviceScope, reduction);
       }
       var direct = queryCollective(query, serviceScope);
@@ -1429,9 +1684,12 @@ public class RuntimeService extends BaseService
     }
     if (observable.is(SemanticType.QUALITY)) {
       var existing = scope.getContextObservation() == null ? null : scope.getObservation(submitted);
-      return existing != null && existing.getId() > 0
-          && !org.integratedmodelling.klab.runtime.ObserverResolution.deferred(existing, observable, scope)
-          ? existing : null;
+      return existing != null
+              && existing.getId() > 0
+              && !org.integratedmodelling.klab.runtime.ObserverResolution.deferred(
+                  existing, observable, scope)
+          ? existing
+          : null;
     }
     if (!(SemanticType.isEnumerableSubstantial(observable.getSemantics().getType())
         && observable.getSemantics().isCollective())) {
@@ -1448,110 +1706,171 @@ public class RuntimeService extends BaseService
     if (!collective.getObservable().getSemantics().isCollective()) return List.of(collective);
     if (!(scope instanceof ServiceContextScope serviceScope))
       throw new IllegalArgumentException("Member enumeration requires a runtime context");
-    if (collective.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY) != null) {
+    if (collective
+            .getMetadata()
+            .get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY)
+        != null) {
       var checked = CollectiveSelectionExecution.query(this, collective, serviceScope);
-      if (checked.isEmpty()) throw new IllegalStateException("Selection view no longer has complete native support");
-      var proof = Utils.Json.parseObject(checked.getMetadata().get(
-          org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY).toString(),
-          org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.class);
-      return proof.selectedIds().stream().map(id -> {
-        var member = serviceScope.getCurrentTransaction() == null ? serviceScope.getObservation(id)
-            : serviceScope.getCurrentTransaction().readObservation(serviceScope.getObservation(id));
-        if (member == null || member.isEmpty()) throw new IllegalStateException("Selection member unavailable");
-        return member;
-      }).toList();
+      if (checked.isEmpty())
+        throw new IllegalStateException("Selection view no longer has complete native support");
+      var proof =
+          Utils.Json.parseObject(
+              checked
+                  .getMetadata()
+                  .get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY)
+                  .toString(),
+              org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.class);
+      return proof.selectedIds().stream()
+          .map(
+              id -> {
+                var member =
+                    serviceScope.getCurrentTransaction() == null
+                        ? serviceScope.getObservation(id)
+                        : serviceScope
+                            .getCurrentTransaction()
+                            .readObservation(serviceScope.getObservation(id));
+                if (member == null || member.isEmpty())
+                  throw new IllegalStateException("Selection member unavailable");
+                return member;
+              })
+          .toList();
     }
     var semantics = collective.getObservable().getSemantics().singular();
     var reasoner = scope.getService(Reasoner.class);
     return classificationMembers(collective, collective.getGeometry(), serviceScope).stream()
-        .filter(member -> member.getObservable().getSemantics().equals(semantics)
-            || reasoner.is(member.getObservable(), semantics)).toList();
+        .filter(
+            member ->
+                member.getObservable().getSemantics().equals(semantics)
+                    || reasoner.is(member.getObservable(), semantics))
+        .toList();
   }
 
   @Override
-  public CompletableFuture<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
-      resolveMemberQualities(org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+  public CompletableFuture<
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberQualities(
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
           ContextScope scope) {
-    var task=new MemberQualityTask<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>();
+    var task =
+        new MemberQualityTask<
+            org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>();
     try {
-      MemberQualityResolution.preflight(request,scope);
+      MemberQualityResolution.preflight(request, scope);
       if (!(scope instanceof ServiceContextScope serviceScope))
-        throw new IllegalArgumentException("Member qualities require an authorized runtime context");
-      var reasoner=scope.getService(Reasoner.class);
-      var members=reasoner.resolveObservable(request.members());
-      if (members==null || !members.getSemantics().isCollective())
+        throw new IllegalArgumentException(
+            "Member qualities require an authorized runtime context");
+      var reasoner = scope.getService(Reasoner.class);
+      var members = reasoner.resolveObservable(request.members());
+      if (members == null || !members.getSemantics().isCollective())
         throw new IllegalArgumentException("Member discovery requires collective semantics");
-      var discoveryBuilder=new Observation.NaiveBuilder(members,scope);
+      var discoveryBuilder = new Observation.NaiveBuilder(members, scope);
       discoveryBuilder.geometry(scope.getContextObservation().getGeometry());
-      var discovery=discoveryBuilder.make();
+      var discovery = discoveryBuilder.make();
       // Independent discovery may execute at the cohort root. The invocation and its witness
       // remain the caller's container, rather than being replaced by that execution scope.
-      var effective=scope;
+      var effective = scope;
       // Ordinary submit retains discovery-model precedence and actual execution provenance.
-      var discoveryTask=submit(discovery,effective);task.active(discoveryTask);
-      discoveryTask.whenComplete((resolved,error)->{
-        if(task.isDone())return;
-        if(error!=null) { task.completeExceptionally(error);return; }
-        try {
-        task.requireActive();
-        if (resolved==null || resolved.isEmpty())
-          throw new IllegalStateException("Member discovery failed");
-        MemberQualityResolution.resolve(this,request,effective,(observable,view)->{
-          var queryBuilder=new Observation.NaiveBuilder(observable,effective);
-          queryBuilder.geometry(effective.getContextObservation().getGeometry());queryBuilder.query();
-          var query=queryBuilder.make();
-          return queryCollective(query,(ServiceContextScope)effective,null,view);
-        },task);
-        } catch(Exception failure) {task.completeExceptionally(failure);}
-      });
-    } catch(Exception failure) {task.completeExceptionally(failure);}
+      var discoveryTask = submit(discovery, effective);
+      task.active(discoveryTask);
+      discoveryTask.whenComplete(
+          (resolved, error) -> {
+            if (task.isDone()) return;
+            if (error != null) {
+              task.completeExceptionally(error);
+              return;
+            }
+            try {
+              task.requireActive();
+              if (resolved == null || resolved.isEmpty())
+                throw new IllegalStateException("Member discovery failed");
+              MemberQualityResolution.resolve(
+                  this,
+                  request,
+                  effective,
+                  (observable, view) -> {
+                    var queryBuilder = new Observation.NaiveBuilder(observable, effective);
+                    queryBuilder.geometry(effective.getContextObservation().getGeometry());
+                    queryBuilder.query();
+                    var query = queryBuilder.make();
+                    return queryCollective(query, (ServiceContextScope) effective, null, view);
+                  },
+                  task);
+            } catch (Exception failure) {
+              task.completeExceptionally(failure);
+            }
+          });
+    } catch (Exception failure) {
+      task.completeExceptionally(failure);
+    }
     return task;
   }
 
-  @Override public boolean supportsMemberQualityInput(ServiceCall call,String port,ContextScope scope) {
-    if(scope==null || scope.isInterrupted() || scope.getContextObservation()==null)return false;
-    return MemberQualityConsumerSupport.supports(getComponentRegistry(),call,port);
+  @Override
+  public boolean supportsMemberQualityInput(ServiceCall call, String port, ContextScope scope) {
+    if (scope == null || scope.isInterrupted() || scope.getContextObservation() == null)
+      return false;
+    return MemberQualityConsumerSupport.supports(getComponentRegistry(), call, port);
   }
 
-  @Override public org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
-      inspectMemberQualityInputs(ServiceCall call,Scope scope) {
-    if(scope==null || scope.isInterrupted() || call==null)
-      return org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.unavailable();
-    // Core functors use their existing fixed Observation/scalar IR and have no collection-input ABI.
-    if(org.integratedmodelling.klab.api.services.RuntimeService.CoreFunctor.classify(call)!=null)
-      return org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.known(java.util.Set.of());
-    return MemberQualityConsumerSupport.inspect(getComponentRegistry(),call);
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
+      inspectMemberQualityInputs(ServiceCall call, Scope scope) {
+    if (scope == null || scope.isInterrupted() || call == null)
+      return org.integratedmodelling.klab.api.services.runtime.objects
+          .MemberQualityConsumerInspection.unavailable();
+    // Core functors use their existing fixed Observation/scalar IR and have no collection-input
+    // ABI.
+    if (org.integratedmodelling.klab.api.services.RuntimeService.CoreFunctor.classify(call) != null)
+      return org.integratedmodelling.klab.api.services.runtime.objects
+          .MemberQualityConsumerInspection.known(java.util.Set.of());
+    return MemberQualityConsumerSupport.inspect(getComponentRegistry(), call);
   }
 
   /** Enumerate the completed member binding, including transaction-local instantiations. */
-  /** Bounded explicit prerequisite entry point; does not admit or bind generic parent-model fanout. */
-  public java.util.concurrent.CompletionStage<ClassifierDependencyContinuation.Outcome> resolveClassifiedDependencies(
-      org.integratedmodelling.klab.api.lang.kim.DependencyExpansion.Prepared prepared,
-      Map<org.integratedmodelling.klab.api.lang.kim.DependencyExpansion.RequestIdentity, ClassifierDependencyContinuation.Prerequisite> prerequisites,
-      Geometry support, org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event event,
-      ServiceContextScope scope) {
-    return ClassifierDependencyContinuation.resolve(this,prepared,prerequisites,support,event,scope);
+  /**
+   * Bounded explicit prerequisite entry point; does not admit or bind generic parent-model fanout.
+   */
+  public java.util.concurrent.CompletionStage<ClassifierDependencyContinuation.Outcome>
+      resolveClassifiedDependencies(
+          org.integratedmodelling.klab.api.lang.kim.DependencyExpansion.Prepared prepared,
+          Map<
+                  org.integratedmodelling.klab.api.lang.kim.DependencyExpansion.RequestIdentity,
+                  ClassifierDependencyContinuation.Prerequisite>
+              prerequisites,
+          Geometry support,
+          org.integratedmodelling.klab.api.digitaltwin.Scheduler.Event event,
+          ServiceContextScope scope) {
+    return ClassifierDependencyContinuation.resolve(
+        this, prepared, prerequisites, support, event, scope);
   }
 
   /** Satisfaction requires affirmative discovery and a read set stable through root commit. */
-  void captureSelectionBaseline(org.integratedmodelling.klab.api.knowledge.Observable nativeMembers,
+  void captureSelectionBaseline(
+      org.integratedmodelling.klab.api.knowledge.Observable nativeMembers,
       ServiceContextScope scope) {
     if (!(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction))
       throw new IllegalStateException("Selection baseline requires a native attempt");
     var cohort = getCohortFor(nativeMembers.getSemantics().singular(), scope, false);
-    if (cohort == null || cohort.getId() <= 0 || transaction.hasClassificationBaseline(cohort.getId())) return;
+    if (cohort == null
+        || cohort.getId() <= 0
+        || transaction.hasClassificationBaseline(cohort.getId())) return;
     var graph = scope.getDigitalTwin().getKnowledgeGraph();
     KnowledgeGraph.ClassificationReadSet read;
-    try (var capture = graph.createTransaction(scope)) { read = capture.captureClassificationMembers(cohort.getId()); }
-    catch (java.io.IOException failure) { throw new IllegalStateException("Cannot capture selection baseline", failure); }
+    try (var capture = graph.createTransaction(scope)) {
+      read = capture.captureClassificationMembers(cohort.getId());
+    } catch (java.io.IOException failure) {
+      throw new IllegalStateException("Cannot capture selection baseline", failure);
+    }
     if (!Objects.equals(read.cohortObservable(), cohort.getObservable().getUrn()))
       throw new IllegalStateException("Selection cohort changed during baseline capture");
     var members = new ArrayList<Observation>();
     for (var snapshot : read.members()) {
       var member = graph.materializeClassificationMember(snapshot, scope);
-      if (member == null || member.getId() != snapshot.id()
+      if (member == null
+          || member.getId() != snapshot.id()
           || !Objects.equals(member.getObservable().getUrn(), snapshot.observable())
-          || !Objects.equals(GeometryRepository.INSTANCE.sanitize(member.getGeometry()).encode(),
+          || !Objects.equals(
+              GeometryRepository.INSTANCE.sanitize(member.getGeometry()).encode(),
               GeometryRepository.INSTANCE.sanitize(Geometry.create(snapshot.geometry())).encode()))
         throw new IllegalStateException("Selection baseline materialization changed");
       members.add(member);
@@ -1559,25 +1878,35 @@ public class RuntimeService extends BaseService
     transaction.guardClassificationBaseline(read, members);
   }
 
-  List<Observation> classificationMembersForCheck(Observation producer, Geometry requested, ServiceContextScope scope) {
+  List<Observation> classificationMembersForCheck(
+      Observation producer, Geometry requested, ServiceContextScope scope) {
     if (!(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction))
       throw new IllegalStateException("Classification satisfaction requires a live local attempt");
     // Direct operation dependencies can classify a different cohort from their enclosing
-    // selection. Pin its native payload before even completion/source inspection, including no-op checks.
+    // selection. Pin its native payload before even completion/source inspection, including no-op
+    // checks.
     captureSelectionBaseline(producer.getObservable(), scope);
     // Reuse the read-only query's completion/provenance rules, including completed empty cohorts.
-    var request = new Observation.NaiveBuilder(producer.getObservable(), scope).geometry(requested).query().build();
+    var request =
+        new Observation.NaiveBuilder(producer.getObservable(), scope)
+            .geometry(requested)
+            .query()
+            .build();
     var cohort = getCohortFor(producer.getObservable().getSemantics().singular(), scope, false);
     if (cohort == null) throw new IllegalStateException("Completed producer has no cohort");
     // Bracket completion proof and member capture with actual contributor snapshots.
-    var sources=new LinkedHashMap<Long,Observation>();
-    var sourceStates=new LinkedHashMap<Long,DigitalTwinImpl.TransactionImpl.ClassificationOverlay>();
-    for(var contribution:findCollectiveContributors(request,cohort,scope,null,null)) {
-      var source=contribution.observation();sources.put(source.getId(),source);
-      sourceStates.put(source.getId(),transaction.classificationOverlay(cohort,source));
+    var sources = new LinkedHashMap<Long, Observation>();
+    var sourceStates =
+        new LinkedHashMap<Long, DigitalTwinImpl.TransactionImpl.ClassificationOverlay>();
+    for (var contribution : findCollectiveContributors(request, cohort, scope, null, null)) {
+      var source = contribution.observation();
+      sources.put(source.getId(), source);
+      sourceStates.put(source.getId(), transaction.classificationOverlay(cohort, source));
     }
     var completed = query(request, scope);
-    if (completed == null || completed.isEmpty() || completed.getGeometry() == null
+    if (completed == null
+        || completed.isEmpty()
+        || completed.getGeometry() == null
         || coverage(requested, completed.getGeometry()) < 1.0 - 1.0e-9)
       throw new IllegalStateException("Classification member discovery is incomplete or unknown");
     // Internal collective views bind a semantic domain and support, not one durable storage owner.
@@ -1591,17 +1920,24 @@ public class RuntimeService extends BaseService
       KnowledgeGraph.ClassificationReadSet read;
       try (var nativeTransaction = graph.createTransaction(scope)) {
         read = nativeTransaction.captureClassificationMembers(cohort.getId());
-      } catch (java.io.IOException failure) { throw new IllegalStateException("Cannot capture classification inputs", failure); }
+      } catch (java.io.IOException failure) {
+        throw new IllegalStateException("Cannot capture classification inputs", failure);
+      }
       if (!Objects.equals(read.cohortObservable(), cohort.getObservable().getUrn()))
         throw new IllegalStateException("Classification cohort meaning changed");
       for (var snapshot : read.members()) {
         var member = graph.materializeClassificationMember(snapshot, scope);
-        if (member == null || member.getId() != snapshot.id()
+        if (member == null
+            || member.getId() != snapshot.id()
             || !Objects.equals(member.getObservable().getUrn(), snapshot.observable())
             || snapshot.geometry() == null
-            || !Objects.equals(GeometryRepository.INSTANCE.sanitize(member.getGeometry()).encode(),
-                GeometryRepository.INSTANCE.sanitize(Geometry.create(snapshot.geometry())).encode()))
-          throw new IllegalStateException("Captured classification member is unavailable or changed");
+            || !Objects.equals(
+                GeometryRepository.INSTANCE.sanitize(member.getGeometry()).encode(),
+                GeometryRepository.INSTANCE
+                    .sanitize(Geometry.create(snapshot.geometry()))
+                    .encode()))
+          throw new IllegalStateException(
+              "Captured classification member is unavailable or changed");
         persisted.add(member);
       }
       transaction.guardClassificationReadSet(read);
@@ -1612,21 +1948,30 @@ public class RuntimeService extends BaseService
     var overlay = transaction.classificationOverlay(cohort, producer, persisted);
     transaction.guardClassificationOverlay(cohort, producer, persisted, overlay.state());
     // A composed view is not an execution witness: certify the contributors used by its proof.
-    var sourceIds=completed.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS);
-    if(!(sourceIds instanceof List<?> ids) || ids.isEmpty())
+    var sourceIds = completed.getMetadata().get(Metadata.IM_QUERY_SOURCE_IDS);
+    if (!(sourceIds instanceof List<?> ids) || ids.isEmpty())
       throw new IllegalStateException("Completed cohort has no producer witnesses");
-    for(var id:ids) {
-      var source=sources.get(id);var captured=sourceStates.get(id);
-      if(source==null || captured==null
-          || !captured.state().equals(transaction.classificationOverlay(cohort,source).state()))
-        throw new IllegalStateException("Classification completion evidence changed while captured");
-      transaction.guardClassificationOverlay(cohort,source,List.of(),captured.state());
+    for (var id : ids) {
+      var source = sources.get(id);
+      var captured = sourceStates.get(id);
+      if (source == null
+          || captured == null
+          || !captured.state().equals(transaction.classificationOverlay(cohort, source).state()))
+        throw new IllegalStateException(
+            "Classification completion evidence changed while captured");
+      transaction.guardClassificationOverlay(cohort, source, List.of(), captured.state());
     }
-    return overlay.members().stream().filter(member->scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(member,scope)).filter(member -> hasMemberSupport(intersection(member.getGeometry(), requested)))
-        .filter(member -> nativeMemberMatches(member, producer, scope)).toList();
+    return overlay.members().stream()
+        .filter(
+            member ->
+                scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(member, scope))
+        .filter(member -> hasMemberSupport(intersection(member.getGeometry(), requested)))
+        .filter(member -> nativeMemberMatches(member, producer, scope))
+        .toList();
   }
 
-  List<Observation> classificationMembers(Observation producer, Geometry requested, ServiceContextScope scope) {
+  List<Observation> classificationMembers(
+      Observation producer, Geometry requested, ServiceContextScope scope) {
     // Capture before graph/cache member reads, even if every member already has its family.
     // The outer selection's native baseline cannot guard an independent prerequisite cohort.
     if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl)
@@ -1636,48 +1981,65 @@ public class RuntimeService extends BaseService
     var members = new LinkedHashMap<String, Observation>();
     var graph = scope.getDigitalTwin().getKnowledgeGraph();
     if (cohort.getId() > 0) {
-      for (var member : graph.query(Observation.class, scope).source(cohort)
-          .along(GraphModel.Relationship.HAS_MEMBER).run(scope)) members.put(querySourceKey(member), member);
+      for (var member :
+          graph
+              .query(Observation.class, scope)
+              .source(cohort)
+              .along(GraphModel.Relationship.HAS_MEMBER)
+              .run(scope)) members.put(querySourceKey(member), member);
     }
     // A contextualizer runs in a child transaction; completed prerequisites have merged
     // their members into its ancestors but may not yet have reached the persistent graph.
     var transactions = new ArrayList<DigitalTwin.Transaction>();
-    for (var transaction = scope.getCurrentTransaction(); transaction != null;
+    for (var transaction = scope.getCurrentTransaction();
+        transaction != null;
         transaction = transaction.getParent()) transactions.add(transaction);
     Collections.reverse(transactions);
     for (var transaction : transactions) {
       for (var link : transaction.outgoing(cohort)) {
-        if (link.type() == GraphModel.Relationship.HAS_MEMBER && link.target() instanceof Observation member)
+        if (link.type() == GraphModel.Relationship.HAS_MEMBER
+            && link.target() instanceof Observation member)
           members.put(querySourceKey(member), member);
       }
     }
     var support = intersection(producer.getGeometry(), requested);
     if (coverage(requested, support) < 1.0 - 1.0e-9) {
-      var request = new Observation.NaiveBuilder(producer.getObservable(), scope).geometry(requested).query().build();
+      var request =
+          new Observation.NaiveBuilder(producer.getObservable(), scope)
+              .geometry(requested)
+              .query()
+              .build();
       var complete = completedCohortReference(request, scope);
       support = complete.getGeometry();
     }
     if (!hasMemberSupport(support)) throw new IllegalStateException("Missing member support");
     var ret = new ArrayList<Observation>();
     for (var candidate : members.values()) {
-      if(!graph.isObservationCurrent(candidate,scope))continue;
-      var member = scope.getCurrentTransaction() == null ? candidate
-          : scope.getCurrentTransaction().readObservation(candidate);
+      if (!graph.isObservationCurrent(candidate, scope)) continue;
+      var member =
+          scope.getCurrentTransaction() == null
+              ? candidate
+              : scope.getCurrentTransaction().readObservation(candidate);
       var overlap = intersection(member.getGeometry(), support);
-      if (hasMemberSupport(overlap) && nativeMemberMatches(member, producer, scope)) ret.add(member);
+      if (hasMemberSupport(overlap) && nativeMemberMatches(member, producer, scope))
+        ret.add(member);
     }
     return ret;
   }
 
   /** Cohort identity alone does not prove a retained inherency, role or other native clause. */
-  private static boolean nativeMemberMatches(Observation member, Observation producer, ContextScope scope) {
+  private static boolean nativeMemberMatches(
+      Observation member, Observation producer, ContextScope scope) {
     var actual = member.getObservable().getSemantics();
     var requested = producer.getObservable().getSemantics().singular();
-    if (!actual.equals(requested) && !scope.getService(Reasoner.class).is(actual, requested)) return false;
+    if (!actual.equals(requested) && !scope.getService(Reasoner.class).is(actual, requested))
+      return false;
     if (member.getObservable().getObserverSemantics() != null
         || producer.getObservable().getObserverSemantics() != null) {
       var expected = producer.getObservable().builder(scope).collective(false).buildObservable();
-      return org.integratedmodelling.klab.runtime.ObserverResolution.preference(member.getObservable(), expected, scope) >= 0;
+      return org.integratedmodelling.klab.runtime.ObserverResolution.preference(
+              member.getObservable(), expected, scope)
+          >= 0;
     }
     return true;
   }
@@ -1686,7 +2048,8 @@ public class RuntimeService extends BaseService
     if (geometry == null || geometry.isEmpty() || geometry.size() == 0) return false;
     // Portable geometry cardinality does not describe emptiness of its encoded spatial shape.
     var scale = GeometryRepository.INSTANCE.scale(geometry);
-    return scale != null && scale.size() > 0
+    return scale != null
+        && scale.size() > 0
         && scale.getExtents().stream().noneMatch(Extent::isEmpty);
   }
 
@@ -1694,24 +2057,32 @@ public class RuntimeService extends BaseService
     return queryCollective(query, scope, null);
   }
 
-  Observation queryCollective(Observation query, ServiceContextScope scope,
+  Observation queryCollective(
+      Observation query,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction) {
-    return queryCollective(query,scope,reduction,null);
+    return queryCollective(query, scope, reduction, null);
   }
 
-  Observation queryCollective(Observation query, ServiceContextScope scope,
+  Observation queryCollective(
+      Observation query,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
-      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection
+          memberView) {
     return queryCollective(query, scope, reduction, memberView, null);
   }
 
-  Observation queryCollective(Observation query, ServiceContextScope scope,
+  Observation queryCollective(
+      Observation query,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
       org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection) {
 
     if (scope.getCurrentTransaction() != null && scope.getCurrentTransaction().isFailed())
-      return Observation.empty(Notification.error("Cannot query completed discovery from a failed attempt"));
+      return Observation.empty(
+          Notification.error("Cannot query completed discovery from a failed attempt"));
 
     var cohort = getCohortFor(query.getObservable().getSemantics().singular(), scope, false);
     if (cohort == null) {
@@ -1719,15 +2090,21 @@ public class RuntimeService extends BaseService
           Notification.info("No cohort exists for " + query.getObservable().getUrn()));
     }
 
-    List<Object> completionChecks=selection==null?null:new ArrayList<>();
-    var contributors = findCollectiveContributors(query, cohort, scope, reduction, memberView, selection,completionChecks);
+    List<Object> completionChecks = selection == null ? null : new ArrayList<>();
+    var contributors =
+        findCollectiveContributors(
+            query, cohort, scope, reduction, memberView, selection, completionChecks);
     if (contributors.isEmpty()) {
       return Observation.empty(
           Notification.info(
               "No collective observation contributes to the cohort for "
                   + query.getObservable().getUrn()
-                   + (selection==null?"":"; proofs="+nativeProofDiagnostics(cohort,scope,selection)
-                      +"; completionChecks="+Utils.Json.asString(completionChecks))));
+                  + (selection == null
+                      ? ""
+                      : "; proofs="
+                          + nativeProofDiagnostics(cohort, scope, selection)
+                          + "; completionChecks="
+                          + Utils.Json.asString(completionChecks))));
     }
 
     // A single Geometry cannot represent every union of discovery supports. Time union
@@ -1738,9 +2115,12 @@ public class RuntimeService extends BaseService
     Geometry actualGeometry = null;
     double collectiveCoverage = -1;
     for (var contributor : contributors) {
-      if (requestedGeometry != null && !sameSupportDimensions(requestedGeometry, contributor.support())) continue;
-      var fragment = requestedGeometry == null ? contributor.support()
-          : intersection(requestedGeometry, contributor.support());
+      if (requestedGeometry != null
+          && !sameSupportDimensions(requestedGeometry, contributor.support())) continue;
+      var fragment =
+          requestedGeometry == null
+              ? contributor.support()
+              : intersection(requestedGeometry, contributor.support());
       if (!hasMemberSupport(fragment)) continue;
       double supported = requestedGeometry == null ? 1 : coverage(requestedGeometry, fragment);
       if (supported > collectiveCoverage) {
@@ -1756,30 +2136,46 @@ public class RuntimeService extends BaseService
                   + query.getObservable().getUrn()));
     }
 
-    List<CollectiveContribution> composition = requestedGeometry != null && collectiveCoverage < 1.0 - 1.0e-9
-        ? completeContributions(requestedGeometry, contributors) : List.of();
-    if (!composition.isEmpty()) { actualGeometry = requestedGeometry; collectiveCoverage = 1.0; }
+    List<CollectiveContribution> composition =
+        requestedGeometry != null && collectiveCoverage < 1.0 - 1.0e-9
+            ? completeContributions(requestedGeometry, contributors)
+            : List.of();
+    if (!composition.isEmpty()) {
+      actualGeometry = requestedGeometry;
+      collectiveCoverage = 1.0;
+    }
     if (requestedGeometry == null) requestedGeometry = actualGeometry;
     var result = queryResult(query, actualGeometry, requestedGeometry, collectiveCoverage);
     result.setChildrenCount(selected.observation().getChildrenCount());
     result.getMetadata().put(Metadata.IM_QUERY_COHORT_ID, cohort.getId());
-    result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, composition.isEmpty()
-        ? List.of(selected.observation().getId())
-        : composition.stream().map(c -> c.observation().getId()).distinct().toList());
-    if (!composition.isEmpty()) result.setChildrenCount(classificationMembers(result, requestedGeometry, scope).size());
+    result
+        .getMetadata()
+        .put(
+            Metadata.IM_QUERY_SOURCE_IDS,
+            composition.isEmpty()
+                ? List.of(selected.observation().getId())
+                : composition.stream().map(c -> c.observation().getId()).distinct().toList());
+    if (!composition.isEmpty())
+      result.setChildrenCount(classificationMembers(result, requestedGeometry, scope).size());
     var semanticSources = new SemanticExecutionEvidence.Collector();
     for (var contribution : composition.isEmpty() ? List.of(selected) : composition)
       semanticSources.inherit(contribution.semanticEvidence(), scope);
     var semanticSourceProof = semanticSources.finish(scope);
-    result.getMetadata().put(SemanticExecutionEvidence.DATA_KEY, Utils.Json.asString(semanticSourceProof));
+    result
+        .getMetadata()
+        .put(SemanticExecutionEvidence.DATA_KEY, Utils.Json.asString(semanticSourceProof));
     if (collectiveCoverage < 1.0 - 1.0e-9) {
-      String warning = "Collective query result covers "
-          + String.format(Locale.ROOT, "%.2f%%", collectiveCoverage * 100.0)
-          + " of the requested geometry";
+      String warning =
+          "Collective query result covers "
+              + String.format(Locale.ROOT, "%.2f%%", collectiveCoverage * 100.0)
+              + " of the requested geometry";
       // queryResult preserves the consumed query's notifications. Replay of the same fragment
       // must preserve its warning, including timestamp, rather than mutate that input payload.
-      if (result.getNotifications().stream().noneMatch(note ->
-          note.getLevel() == Notification.Level.Warning && warning.equals(note.getMessage())))
+      if (result.getNotifications().stream()
+          .noneMatch(
+              note ->
+                  note.getLevel() == Notification.Level.Warning
+                      && warning.equals(note.getMessage())))
         result.getNotifications().add(Notification.warning(warning));
     }
     SemanticExecutionEvidence.issue(result, semanticSourceProof, scope);
@@ -1789,19 +2185,23 @@ public class RuntimeService extends BaseService
   /** Native completion query only: never invokes resolution, allocation or contextualization. */
   Observation completedCohortReference(Observation request, ServiceContextScope scope) {
     var result = queryCollective(request, scope);
-    if (result == null || result.isEmpty() || result.getGeometry() == null
+    if (result == null
+        || result.isEmpty()
+        || result.getGeometry() == null
         || coverage(request.getGeometry(), result.getGeometry()) < 1.0 - 1.0e-9)
-      throw new IllegalStateException("Native cohort discovery is not complete over the requested support");
+      throw new IllegalStateException(
+          "Native cohort discovery is not complete over the requested support");
     return result;
   }
 
   /**
    * Compose only a support that the existing native fragment-cover proof can certify. In
-   * particular, a bounding union of diagonal space/time fragments is not sufficient evidence.
-   * Null denotes unavailable representation/proof, rather than successfully empty support.
+   * particular, a bounding union of diagonal space/time fragments is not sufficient evidence. Null
+   * denotes unavailable representation/proof, rather than successfully empty support.
    */
   public static Geometry exactConfigurationSupport(List<Geometry> fragments) {
-    if (fragments == null || fragments.isEmpty()
+    if (fragments == null
+        || fragments.isEmpty()
         || fragments.stream().anyMatch(g -> g == null || !hasMemberSupport(g))) return null;
     var first = fragments.getFirst();
     if (fragments.stream().anyMatch(g -> !sameSupportDimensions(first, g))) return null;
@@ -1812,7 +2212,8 @@ public class RuntimeService extends BaseService
       if (!hasMemberSupport(union)) return null;
       var candidate = union;
       if (fragments.stream().anyMatch(g -> candidate.encode().equals(g.encode()))) return candidate;
-      var supplied = fragments.stream().map(g -> new CollectiveContribution(null, g, null)).toList();
+      var supplied =
+          fragments.stream().map(g -> new CollectiveContribution(null, g, null)).toList();
       return completeContributions(candidate, supplied).isEmpty() ? null : candidate;
     } catch (RuntimeException unsupported) {
       return null;
@@ -1821,56 +2222,125 @@ public class RuntimeService extends BaseService
 
   /** A positional native cover, not a ratio of the sizes of unrelated extents. */
   static boolean configurationSupportCovered(Geometry requested, Collection<Geometry> completed) {
-    if(requested==null || completed==null || completed.isEmpty()
-        || completed.stream().anyMatch(actual->actual==null || !hasMemberSupport(actual))) return false;
+    if (requested == null
+        || completed == null
+        || completed.isEmpty()
+        || completed.stream().anyMatch(actual -> actual == null || !hasMemberSupport(actual)))
+      return false;
     try {
-      if(completed.stream().anyMatch(actual->requested.encode().equals(actual.encode()))) return true;
-      return !completeContributions(requested,completed.stream()
-          .map(actual->new CollectiveContribution(null,actual,null)).toList()).isEmpty();
-    } catch(RuntimeException unsupported) {return false;}
+      if (completed.stream().anyMatch(actual -> requested.encode().equals(actual.encode())))
+        return true;
+      return !completeContributions(
+              requested,
+              completed.stream()
+                  .map(actual -> new CollectiveContribution(null, actual, null))
+                  .toList())
+          .isEmpty();
+    } catch (RuntimeException unsupported) {
+      return false;
+    }
   }
 
-  private record CollectiveContribution(Observation observation, Geometry support, org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding semanticEvidence) {}
+  private record CollectiveContribution(
+      Observation observation,
+      Geometry support,
+      org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding semanticEvidence) {}
 
   /** Failure diagnostics only: no matching/revalidation RPC and no credentials or source code. */
-  private String nativeProofDiagnostics(Cohort cohort,ServiceContextScope scope,
-      CollectiveSelectionBinding selection) {
-    var producers=new LinkedHashMap<Object,Observation>();
-    for(var tx=scope.getCurrentTransaction();tx!=null;tx=tx.getParent())
-      for(var link:tx.incoming(cohort))if(link.type()==GraphModel.Relationship.CONTRIBUTED_TO
-          && link.source() instanceof Observation producer)producers.put(querySourceKey(producer),producer);
-    if(cohort.getId()>0)for(var producer:scope.getDigitalTwin().getKnowledgeGraph().query(Observation.class,scope)
-        .target(cohort).along(GraphModel.Relationship.CONTRIBUTED_TO).run(scope))
-      producers.put(querySourceKey(producer),producer);
-    var rows=new ArrayList<Object>();
-    for(var producer:producers.values())for(var activity:SemanticExecutionEvidence.sourceActivities(producer,scope)) {
-      var metadata=activity.getMetadata();var evidence=SemanticExecutionEvidence.decode(activity);
-      var context=metadata.get(COLLECTIVE_CONTEXT);
-      var recorded=context instanceof String text?Utils.Json.parseObject(text,CollectiveSelectionBinding.Context.class):null;
-      rows.add(SemanticExecutionEvidence.diagnostic("producer",producer.getId(),"activity",activity.getId(),
-          "type",activity.getType(),"outcome",activity.getOutcome(),"context",recorded,
-          "contextMatches",Objects.equals(recorded,selection.context()),
-          "observer",metadata.get(Metadata.IM_OBSERVER_SELECTION_ID),"expectedObserver",selection.observerId(),
-          "observerClass",metadata.get(COLLECTIVE_OBSERVER_CLASS),"expectedObserverClass",selection.observerClass(),
-          "reasoner",metadata.get(COLLECTIVE_REASONER),"revision",metadata.get(COLLECTIVE_REVISION),
-          "fingerprint",metadata.get(COLLECTIVE_FINGERPRINT),"session",metadata.get(COLLECTIVE_SESSION),
-          "support",metadata.get(Metadata.IM_EXECUTION_GEOMETRY),"executionEvidence",evidence));
-    }
+  private String nativeProofDiagnostics(
+      Cohort cohort, ServiceContextScope scope, CollectiveSelectionBinding selection) {
+    var producers = new LinkedHashMap<Object, Observation>();
+    for (var tx = scope.getCurrentTransaction(); tx != null; tx = tx.getParent())
+      for (var link : tx.incoming(cohort))
+        if (link.type() == GraphModel.Relationship.CONTRIBUTED_TO
+            && link.source() instanceof Observation producer)
+          producers.put(querySourceKey(producer), producer);
+    if (cohort.getId() > 0)
+      for (var producer :
+          scope
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .query(Observation.class, scope)
+              .target(cohort)
+              .along(GraphModel.Relationship.CONTRIBUTED_TO)
+              .run(scope)) producers.put(querySourceKey(producer), producer);
+    var rows = new ArrayList<Object>();
+    for (var producer : producers.values())
+      for (var activity : SemanticExecutionEvidence.sourceActivities(producer, scope)) {
+        var metadata = activity.getMetadata();
+        var evidence = SemanticExecutionEvidence.decode(activity);
+        var context = metadata.get(COLLECTIVE_CONTEXT);
+        var recorded =
+            context instanceof String text
+                ? Utils.Json.parseObject(text, CollectiveSelectionBinding.Context.class)
+                : null;
+        rows.add(
+            SemanticExecutionEvidence.diagnostic(
+                "producer",
+                producer.getId(),
+                "activity",
+                activity.getId(),
+                "type",
+                activity.getType(),
+                "outcome",
+                activity.getOutcome(),
+                "context",
+                recorded,
+                "contextMatches",
+                Objects.equals(recorded, selection.context()),
+                "observer",
+                metadata.get(Metadata.IM_OBSERVER_SELECTION_ID),
+                "expectedObserver",
+                selection.observerId(),
+                "observerClass",
+                metadata.get(COLLECTIVE_OBSERVER_CLASS),
+                "expectedObserverClass",
+                selection.observerClass(),
+                "reasoner",
+                metadata.get(COLLECTIVE_REASONER),
+                "revision",
+                metadata.get(COLLECTIVE_REVISION),
+                "fingerprint",
+                metadata.get(COLLECTIVE_FINGERPRINT),
+                "session",
+                metadata.get(COLLECTIVE_SESSION),
+                "support",
+                metadata.get(Metadata.IM_EXECUTION_GEOMETRY),
+                "executionEvidence",
+                evidence));
+      }
     return Utils.Json.asString(rows);
   }
 
-  /** Prove a full slab cover; never turn diagonal space/time fragments into their Cartesian hull. */
-  private static List<CollectiveContribution> completeContributions(Geometry requested, List<CollectiveContribution> supplied) {
+  /**
+   * Prove a full slab cover; never turn diagonal space/time fragments into their Cartesian hull.
+   */
+  private static List<CollectiveContribution> completeContributions(
+      Geometry requested, List<CollectiveContribution> supplied) {
     var target = GeometryRepository.INSTANCE.scale(requested);
     for (var axis : List.of(Geometry.Dimension.Type.SPACE, Geometry.Dimension.Type.TIME)) {
       if (target.extent(axis) == null) continue;
-      var eligible = supplied.stream().filter(c -> sameSupportDimensions(requested,c.support()))
-          .map(c -> new CollectiveContribution(c.observation(),intersection(requested,c.support()),c.semanticEvidence()))
-          .filter(c -> hasMemberSupport(c.support()))
-          .filter(c -> coverage(target.without(axis),GeometryRepository.INSTANCE.scale(c.support()).without(axis)) >= 1.0 - 1.0e-9)
-          .toList();
+      var eligible =
+          supplied.stream()
+              .filter(c -> sameSupportDimensions(requested, c.support()))
+              .map(
+                  c ->
+                      new CollectiveContribution(
+                          c.observation(),
+                          intersection(requested, c.support()),
+                          c.semanticEvidence()))
+              .filter(c -> hasMemberSupport(c.support()))
+              .filter(
+                  c ->
+                      coverage(
+                              target.without(axis),
+                              GeometryRepository.INSTANCE.scale(c.support()).without(axis))
+                          >= 1.0 - 1.0e-9)
+              .toList();
       if (eligible.isEmpty()) continue;
-      if (axis == Geometry.Dimension.Type.SPACE && target.getSpace() != null && target.getSpace().getGeometricShape() != null) {
+      if (axis == Geometry.Dimension.Type.SPACE
+          && target.getSpace() != null
+          && target.getSpace().getGeometricShape() != null) {
         var remaining = target.getSpace().getGeometricShape();
         try {
           for (var contribution : eligible) {
@@ -1879,48 +2349,63 @@ public class RuntimeService extends BaseService
             remaining = remaining.difference(space.getGeometricShape());
             if (remaining.isEmpty()) return eligible;
           }
-        } catch (RuntimeException unsupported) { /* No proof: retain a single supported fragment. */ }
-      } else if (axis == Geometry.Dimension.Type.TIME && target.getTime() != null
-          && target.getTime().getStart() != null && target.getTime().getEnd() != null) {
-        long start=target.getTime().getStart().getMilliseconds(), end=target.getTime().getEnd().getMilliseconds();
-        var intervals=new ArrayList<long[]>();
-        for(var contribution:eligible) {
-          var time=GeometryRepository.INSTANCE.scale(contribution.support()).getTime();
-          if(time!=null && time.getStart()!=null && time.getEnd()!=null)
-            intervals.add(new long[]{time.getStart().getMilliseconds(),time.getEnd().getMilliseconds()});
+        } catch (RuntimeException unsupported) {
+          /* No proof: retain a single supported fragment. */
+        }
+      } else if (axis == Geometry.Dimension.Type.TIME
+          && target.getTime() != null
+          && target.getTime().getStart() != null
+          && target.getTime().getEnd() != null) {
+        long start = target.getTime().getStart().getMilliseconds(),
+            end = target.getTime().getEnd().getMilliseconds();
+        var intervals = new ArrayList<long[]>();
+        for (var contribution : eligible) {
+          var time = GeometryRepository.INSTANCE.scale(contribution.support()).getTime();
+          if (time != null && time.getStart() != null && time.getEnd() != null)
+            intervals.add(
+                new long[] {time.getStart().getMilliseconds(), time.getEnd().getMilliseconds()});
         }
         intervals.sort(java.util.Comparator.comparingLong(interval -> interval[0]));
-        long cursor=start;
-        for(var interval:intervals) {
-          if(interval[0]>cursor)break;
-          cursor=Math.max(cursor,interval[1]);if(end>start && cursor>=end)return eligible;
+        long cursor = start;
+        for (var interval : intervals) {
+          if (interval[0] > cursor) break;
+          cursor = Math.max(cursor, interval[1]);
+          if (end > start && cursor >= end) return eligible;
         }
       }
     }
     return List.of();
   }
 
-
   private List<CollectiveContribution> findCollectiveContributors(
-      Observation query, Cohort cohort, ServiceContextScope scope,
+      Observation query,
+      Cohort cohort,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
-      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection
+          memberView) {
     return findCollectiveContributors(query, cohort, scope, reduction, memberView, null);
   }
 
   private List<CollectiveContribution> findCollectiveContributors(
-      Observation query, Cohort cohort, ServiceContextScope scope,
+      Observation query,
+      Cohort cohort,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
       org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection) {
 
-    return findCollectiveContributors(query,cohort,scope,reduction,memberView,selection,null);
+    return findCollectiveContributors(query, cohort, scope, reduction, memberView, selection, null);
   }
 
-  private List<CollectiveContribution> findCollectiveContributors(Observation query,Cohort cohort,ServiceContextScope scope,
+  private List<CollectiveContribution> findCollectiveContributors(
+      Observation query,
+      Cohort cohort,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
-      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection,List<Object> completionChecks) {
+      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection,
+      List<Object> completionChecks) {
     var ret = new LinkedHashMap<String, Observation>();
     var observableUrn = query.getObservable().getUrn();
     var transaction = scope.getCurrentTransaction();
@@ -1945,9 +2430,18 @@ public class RuntimeService extends BaseService
           .run(scope)
           .forEach(o -> ret.put(querySourceKey(o), o));
     }
-    return ret.values().stream().flatMap(producer -> completedCollectiveEvidence(producer, scope, reduction, memberView, selection,completionChecks).stream()
-            .map(proof -> new CollectiveContribution(producer, proof.support(), proof.semanticEvidence())))
-        .filter(contribution -> hasMemberSupport(contribution.support())).toList();
+    return ret.values().stream()
+        .flatMap(
+            producer ->
+                completedCollectiveEvidence(
+                        producer, scope, reduction, memberView, selection, completionChecks)
+                    .stream()
+                    .map(
+                        proof ->
+                            new CollectiveContribution(
+                                producer, proof.support(), proof.semanticEvidence())))
+        .filter(contribution -> hasMemberSupport(contribution.support()))
+        .toList();
   }
 
   /** Existing execution provenance is completion evidence; a contribution link alone is not. */
@@ -1955,45 +2449,71 @@ public class RuntimeService extends BaseService
     return !completedCollectiveGeometries(producer, scope).isEmpty();
   }
 
-  private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope) {
+  private static List<Geometry> completedCollectiveGeometries(
+      Observation producer, ServiceContextScope scope) {
     return completedCollectiveGeometries(producer, scope, null);
   }
 
-  private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope,
+  private static List<Geometry> completedCollectiveGeometries(
+      Observation producer,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction) {
-    return completedCollectiveGeometries(producer,scope,reduction,null);
+    return completedCollectiveGeometries(producer, scope, reduction, null);
   }
 
-  private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope,
+  private static List<Geometry> completedCollectiveGeometries(
+      Observation producer,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
-      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView) {
+      org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection
+          memberView) {
     return completedCollectiveGeometries(producer, scope, reduction, memberView, null);
   }
 
-  private static List<Geometry> completedCollectiveGeometries(Observation producer, ServiceContextScope scope,
+  private static List<Geometry> completedCollectiveGeometries(
+      Observation producer,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
       org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection) {
     return completedCollectiveEvidence(producer, scope, reduction, memberView, selection).stream()
-        .map(CollectiveCompletionEvidence::support).toList();
+        .map(CollectiveCompletionEvidence::support)
+        .toList();
   }
 
-  private record CollectiveCompletionEvidence(Geometry support,
+  private record CollectiveCompletionEvidence(
+      Geometry support,
       org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding semanticEvidence) {}
 
-  private static List<CollectiveCompletionEvidence> completedCollectiveEvidence(Observation producer, ServiceContextScope scope,
+  private static List<CollectiveCompletionEvidence> completedCollectiveEvidence(
+      Observation producer,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
       org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection) {
-    return completedCollectiveEvidence(producer,scope,reduction,memberView,selection,null);
+    return completedCollectiveEvidence(producer, scope, reduction, memberView, selection, null);
   }
 
-  private static List<CollectiveCompletionEvidence> completedCollectiveEvidence(Observation producer,ServiceContextScope scope,
+  private static List<CollectiveCompletionEvidence> completedCollectiveEvidence(
+      Observation producer,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
       org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection memberView,
-      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection,List<Object> checks) {
-    var diagnostic=checks==null?null:SemanticExecutionEvidence.diagnostic("producer",producer.getId(),"meaning",producer.getObservable().getUrn(),"gate","contextualization","contextualization",producer.getObservable().getContextualization());
-    if(checks!=null)checks.add(diagnostic);
+      org.integratedmodelling.klab.api.knowledge.CollectiveSelectionBinding selection,
+      List<Object> checks) {
+    var diagnostic =
+        checks == null
+            ? null
+            : SemanticExecutionEvidence.diagnostic(
+                "producer",
+                producer.getId(),
+                "meaning",
+                producer.getObservable().getUrn(),
+                "gate",
+                "contextualization",
+                "contextualization",
+                producer.getObservable().getContextualization());
+    if (checks != null) checks.add(diagnostic);
     var contextualization = producer.getObservable().getContextualization();
     if (contextualization != Contextualization.INSTANTIATION
         && contextualization != Contextualization.CONNECTION) return List.of();
@@ -2001,55 +2521,129 @@ public class RuntimeService extends BaseService
     var type = Activity.Type.forContextualization(contextualization);
     var activities = new ArrayList<Activity>();
     var currentActivities = Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
-    for (var transaction = scope.getCurrentTransaction(); transaction != null;
+    for (var transaction = scope.getCurrentTransaction();
+        transaction != null;
         transaction = transaction.getParent()) {
-      if (transaction.isFailed()) { if(diagnostic!=null)diagnostic.put("gate","failedTransaction"); return List.of(); }
-      transaction.incoming(producer).stream().filter(link -> link.type() == effect)
-          .map(KnowledgeGraph.Link::source).filter(Activity.class::isInstance)
-          .map(Activity.class::cast).forEach(activity -> { activities.add(activity);
-            if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl nativeAttempt
-                && nativeAttempt.ownsExecutionActivity(activity)) currentActivities.add(activity); });
+      if (transaction.isFailed()) {
+        if (diagnostic != null) diagnostic.put("gate", "failedTransaction");
+        return List.of();
+      }
+      transaction.incoming(producer).stream()
+          .filter(link -> link.type() == effect)
+          .map(KnowledgeGraph.Link::source)
+          .filter(Activity.class::isInstance)
+          .map(Activity.class::cast)
+          .forEach(
+              activity -> {
+                activities.add(activity);
+                if (scope.getCurrentTransaction()
+                        instanceof DigitalTwinImpl.TransactionImpl nativeAttempt
+                    && nativeAttempt.ownsExecutionActivity(activity))
+                  currentActivities.add(activity);
+              });
     }
     // Positive IDs/commit metadata can already have been assigned before a failed durable close.
     // Read the successful typed activity from the committed graph, never from those fields alone.
-    if (producer.getId() > 0) scope.getDigitalTwin().getKnowledgeGraph()
-        .query(Activity.class, scope).target(producer).along(effect).run(scope).stream()
-        .filter(activity -> activity.getId() > 0).forEach(activities::add);
+    if (producer.getId() > 0)
+      scope
+          .getDigitalTwin()
+          .getKnowledgeGraph()
+          .query(Activity.class, scope)
+          .target(producer)
+          .along(effect)
+          .run(scope)
+          .stream()
+          .filter(activity -> activity.getId() > 0)
+          .forEach(activities::add);
     var support = new ArrayList<CollectiveCompletionEvidence>();
-    if(diagnostic!=null){diagnostic.put("gate","activities");diagnostic.put("activityCount",activities.size());}
+    if (diagnostic != null) {
+      diagnostic.put("gate", "activities");
+      diagnostic.put("activityCount", activities.size());
+    }
     for (var activity : activities) {
-      var row=checks==null?null:SemanticExecutionEvidence.diagnostic("producer",producer.getId(),"activity",activity.getId(),"gate","activityTypeAndOutcome","expectedType",type,"actualType",activity.getType(),"outcome",activity.getOutcome(),"currentExecution",currentActivities.contains(activity));
-      if(checks!=null)checks.add(row);
+      var row =
+          checks == null
+              ? null
+              : SemanticExecutionEvidence.diagnostic(
+                  "producer",
+                  producer.getId(),
+                  "activity",
+                  activity.getId(),
+                  "gate",
+                  "activityTypeAndOutcome",
+                  "expectedType",
+                  type,
+                  "actualType",
+                  activity.getType(),
+                  "outcome",
+                  activity.getOutcome(),
+                  "currentExecution",
+                  currentActivities.contains(activity));
+      if (checks != null) checks.add(row);
       if (activity.getType() != type || activity.getOutcome() != Activity.Outcome.SUCCESS) continue;
-      if(row!=null)row.put("gate","reductionAdmission");
-      if (reduction != null && !reductionActivityMatches(activity, reduction, currentActivities.contains(activity), scope)) continue;
-      if(row!=null)row.put("gate","selectionAdmission");
-      if (selection != null && !CollectiveSelectionExecution.activityMatches(activity, selection, currentActivities.contains(activity), scope,row)) continue;
+      if (row != null) row.put("gate", "reductionAdmission");
+      if (reduction != null
+          && !reductionActivityMatches(
+              activity, reduction, currentActivities.contains(activity), scope)) continue;
+      if (row != null) row.put("gate", "selectionAdmission");
+      if (selection != null
+          && !CollectiveSelectionExecution.activityMatches(
+              activity, selection, currentActivities.contains(activity), scope, row)) continue;
       if (memberView != null) {
-        if(row!=null)row.put("gate","memberViewAdmission");
-        MemberQualityResolution.requireScope(memberView,scope);
-        var witness=memberView.getRequest().container();
-        var selected=activity.getMetadata().get(Metadata.IM_OBSERVER_SELECTION_ID);
-        if (!SemanticEvidence.matches(activity, witness.reasonerId(), witness.knowledgeRevision(),
-            witness.semanticFingerprint(), witness.semanticSessionId(), currentActivities.contains(activity), scope)
+        if (row != null) row.put("gate", "memberViewAdmission");
+        MemberQualityResolution.requireScope(memberView, scope);
+        var witness = memberView.getRequest().container();
+        var selected = activity.getMetadata().get(Metadata.IM_OBSERVER_SELECTION_ID);
+        if (!SemanticEvidence.matches(
+                activity,
+                witness.reasonerId(),
+                witness.knowledgeRevision(),
+                witness.semanticFingerprint(),
+                witness.semanticSessionId(),
+                currentActivities.contains(activity),
+                scope)
             || !(selected instanceof Number id)
-            || id.longValue()!=(memberView.getObserverId()==null?0:memberView.getObserverId())) continue;
+            || id.longValue()
+                != (memberView.getObserverId() == null ? 0 : memberView.getObserverId())) continue;
       }
       var encoded = activity.getMetadata().get(Metadata.IM_EXECUTION_GEOMETRY);
-      if(row!=null){row.put("gate","executionGeometry");row.put("recordedSupport",encoded);row.put("producerSupport",(producer.getGeometry()==null?null:Geometry.forTransport(producer.getGeometry()).encode()));}
+      if (row != null) {
+        row.put("gate", "executionGeometry");
+        row.put("recordedSupport", encoded);
+        row.put(
+            "producerSupport",
+            (producer.getGeometry() == null
+                ? null
+                : Geometry.forTransport(producer.getGeometry()).encode()));
+      }
       if (!(encoded instanceof String text) || text.isBlank()) continue;
       try {
         var invocation = Geometry.create(text);
-        boolean dimensions=sameSupportDimensions(producer.getGeometry(), invocation);
-        if(row!=null){row.put("gate","supportDimensions");row.put("sameDimensions",dimensions);}
+        boolean dimensions = sameSupportDimensions(producer.getGeometry(), invocation);
+        if (row != null) {
+          row.put("gate", "supportDimensions");
+          row.put("sameDimensions", dimensions);
+        }
         if (!dimensions) continue;
         var contribution = intersection(producer.getGeometry(), invocation);
-        boolean nonempty=hasMemberSupport(contribution);
-        if(row!=null){row.put("gate","supportIntersection");row.put("hasMemberSupport",nonempty);row.put("contribution",contribution==null?null:Geometry.forTransport(contribution).encode());}
-        if (nonempty) support.add(new CollectiveCompletionEvidence(contribution, SemanticExecutionEvidence.decode(activity)));
-        if(row!=null)row.put("accepted",nonempty);
+        boolean nonempty = hasMemberSupport(contribution);
+        if (row != null) {
+          row.put("gate", "supportIntersection");
+          row.put("hasMemberSupport", nonempty);
+          row.put(
+              "contribution",
+              contribution == null ? null : Geometry.forTransport(contribution).encode());
+        }
+        if (nonempty)
+          support.add(
+              new CollectiveCompletionEvidence(
+                  contribution, SemanticExecutionEvidence.decode(activity)));
+        if (row != null) row.put("accepted", nonempty);
       } catch (IllegalArgumentException | KlabIllegalArgumentException invalidSupport) {
-        if(row!=null){row.put("gate","invalidSupport");row.put("supportFailure",invalidSupport.getMessage());}
+        if (row != null) {
+          row.put("gate", "invalidSupport");
+          row.put("supportFailure", invalidSupport.getMessage());
+        }
         // Legacy or malformed provenance does not establish discovery support.
       }
     }
@@ -2066,49 +2660,82 @@ public class RuntimeService extends BaseService
   static void recordCollectiveSemanticRevision(Activity activity, ServiceContextScope scope) {
     var reasoner = scope.getService(Reasoner.class);
     var capabilities = reasoner == null ? null : reasoner.capabilities(scope);
-    if (capabilities instanceof Reasoner.Capabilities semantic && semantic.getKnowledgeRevision() >= 0) {
+    if (capabilities instanceof Reasoner.Capabilities semantic
+        && semantic.getKnowledgeRevision() >= 0) {
       activity.getMetadata().put(COLLECTIVE_REASONER, semantic.getServiceId());
       activity.getMetadata().put(COLLECTIVE_REVISION, semantic.getKnowledgeRevision());
       activity.getMetadata().put(COLLECTIVE_FINGERPRINT, semantic.getSemanticContentFingerprint());
       activity.getMetadata().put(COLLECTIVE_SESSION, semantic.getSemanticSessionId());
     }
-    Runnable context = () -> activity.getMetadata().put(COLLECTIVE_CONTEXT,
-        Utils.Json.asString(CollectiveSelectionExecution.projectedContext(scope)));
+    Runnable context =
+        () ->
+            activity
+                .getMetadata()
+                .put(
+                    COLLECTIVE_CONTEXT,
+                    Utils.Json.asString(CollectiveSelectionExecution.projectedContext(scope)));
     // Provisional completion is scoped by the immutable admitted input, even if an earlier
     // prerequisite has already staged attribution. Publish the final projected context only
     // at the root commit, alongside the attributed observations and returned view receipts.
-    activity.getMetadata().put(COLLECTIVE_CONTEXT,
-        Utils.Json.asString(CollectiveSelectionBinding.context(scope)));
+    activity
+        .getMetadata()
+        .put(COLLECTIVE_CONTEXT, Utils.Json.asString(CollectiveSelectionBinding.context(scope)));
     var observer = scope.getObserver();
-    activity.getMetadata().put(COLLECTIVE_OBSERVER_CLASS,
-        observer == null || observer.getObservable() == null ? null : observer.getObservable().getSemantics().getUrn());
+    activity
+        .getMetadata()
+        .put(
+            COLLECTIVE_OBSERVER_CLASS,
+            observer == null || observer.getObservable() == null
+                ? null
+                : observer.getObservable().getSemantics().getUrn());
     if (scope.getCurrentTransaction() != null) {
       scope.getCurrentTransaction().update(activity);
       scope.getCurrentTransaction().beforeCommit(context);
     } else context.run();
   }
 
-  private static boolean reductionActivityMatches(Activity activity,
-      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction, boolean currentExecution, ServiceContextScope scope) {
+  private static boolean reductionActivityMatches(
+      Activity activity,
+      org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction,
+      boolean currentExecution,
+      ServiceContextScope scope) {
     var observer = activity.getMetadata().get(Metadata.IM_OBSERVER_SELECTION_ID);
-    return SemanticEvidence.matches(activity, reduction.context().reasonerId(),
-        reduction.context().knowledgeRevision(), reduction.context().semanticFingerprint(),
-        reduction.context().semanticSessionId(), currentExecution, scope)
-        && observer instanceof Number id && id.longValue() == (reduction.observerId() == null ? 0 : reduction.observerId());
+    return SemanticEvidence.matches(
+            activity,
+            reduction.context().reasonerId(),
+            reduction.context().knowledgeRevision(),
+            reduction.context().semanticFingerprint(),
+            reduction.context().semanticSessionId(),
+            currentExecution,
+            scope)
+        && observer instanceof Number id
+        && id.longValue() == (reduction.observerId() == null ? 0 : reduction.observerId());
   }
 
-  void requireReductionMemberObserver(Observation member, ServiceContextScope scope,
+  void requireReductionMemberObserver(
+      Observation member,
+      ServiceContextScope scope,
       org.integratedmodelling.klab.api.knowledge.CollectiveReductionBinding reduction) {
     var operand = scope.getService(Reasoner.class).resolveObservable(reduction.operand());
-    var requested = org.integratedmodelling.common.knowledge.ObservableImpl.promote(operand.asConcept().singular(), scope);
-    if (org.integratedmodelling.klab.runtime.ObserverResolution.preference(member.getObservable(), requested, scope) < 0)
-      throw new IllegalStateException("Collective member perspective is not eligible; a whole-support reduction cannot be certified");
+    var requested =
+        org.integratedmodelling.common.knowledge.ObservableImpl.promote(
+            operand.asConcept().singular(), scope);
+    if (org.integratedmodelling.klab.runtime.ObserverResolution.preference(
+            member.getObservable(), requested, scope)
+        < 0)
+      throw new IllegalStateException(
+          "Collective member perspective is not eligible; a whole-support reduction cannot be certified");
   }
 
   static boolean sameSupportDimensions(Geometry first, Geometry second) {
     if (first == null || second == null) return false;
-    return first.getDimensions().stream().map(Geometry.Dimension::getType).collect(java.util.stream.Collectors.toSet())
-        .equals(second.getDimensions().stream().map(Geometry.Dimension::getType).collect(java.util.stream.Collectors.toSet()));
+    return first.getDimensions().stream()
+        .map(Geometry.Dimension::getType)
+        .collect(java.util.stream.Collectors.toSet())
+        .equals(
+            second.getDimensions().stream()
+                .map(Geometry.Dimension::getType)
+                .collect(java.util.stream.Collectors.toSet()));
   }
 
   private String querySourceKey(Observation observation) {
@@ -2169,29 +2796,45 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public String readValue(org.integratedmodelling.klab.api.data.StorageScan.Point point, ContextScope scope) {
+  public String readValue(
+      org.integratedmodelling.klab.api.data.StorageScan.Point point, ContextScope scope) {
     return org.integratedmodelling.klab.runtime.storage.StorageReads.text(point, scope);
   }
 
-  static ObservationImpl qualityQueryResult(Observation source, Observation query, Geometry geometry) {
-    if (source.getId() <= 0) throw new IllegalArgumentException("Quality query source must be committed");
+  static ObservationImpl qualityQueryResult(
+      Observation source, Observation query, Geometry geometry) {
+    if (source.getId() <= 0)
+      throw new IllegalArgumentException("Quality query source must be committed");
     var result = queryResult(source, geometry, geometry, 1.0);
     result.setObservable(query.getObservable());
     result.mergeAnnotations(query);
     // Source histograms describe native values and support, not a mediated consumer view.
     result.setHistograms(Map.of());
     result.getMetadata().remove(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE);
-    if (query.getMetadata().containsKey(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE))
-      result.getMetadata().put(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE,
-          query.getMetadata().get(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE));
+    if (query
+        .getMetadata()
+        .containsKey(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE))
+      result
+          .getMetadata()
+          .put(
+              org.integratedmodelling.klab.runtime.storage.StorageReads.RATE,
+              query
+                  .getMetadata()
+                  .get(org.integratedmodelling.klab.runtime.storage.StorageReads.RATE));
     if (source.getContextualizationData() != null) {
       var original = source.getContextualizationData();
       var copy = new ObservationImpl.ContextualizationDataImpl();
-      copy.setAdapterId(original.getAdapterId()); copy.setServiceId(original.getServiceId());
-      copy.setServiceUrl(original.getServiceUrl()); copy.setPersistent(original.isPersistent());
-      copy.setParameters(org.integratedmodelling.klab.api.collections.Parameters.create(original.getParameters()));
+      copy.setAdapterId(original.getAdapterId());
+      copy.setServiceId(original.getServiceId());
+      copy.setServiceUrl(original.getServiceUrl());
+      copy.setPersistent(original.isPersistent());
+      copy.setParameters(
+          org.integratedmodelling.klab.api.collections.Parameters.create(original.getParameters()));
       if (original.getNativeShardingStrategy() != null)
-        copy.setNativeShardingStrategy(org.integratedmodelling.klab.api.data.StorageScan.Layout.of(original.getNativeShardingStrategy()).strategy());
+        copy.setNativeShardingStrategy(
+            org.integratedmodelling.klab.api.data.StorageScan.Layout.of(
+                    original.getNativeShardingStrategy())
+                .strategy());
       result.setContextualizationData(copy);
     }
     result.getMetadata().put(Metadata.IM_QUERY_SOURCE_IDS, List.of(source.getId()));
@@ -2200,15 +2843,15 @@ public class RuntimeService extends BaseService
 
   @Override
   public InputStream exportObservation(
-      Observation observation, String mediaType,
+      Observation observation,
+      String mediaType,
       Parameters<String> parameters,
       ContextScope scope) {
-    if (observation == null || observation.isEmpty()
-        || observation.getId() < Observation.QUERY_ID)
+    if (observation == null || observation.isEmpty() || observation.getId() < Observation.QUERY_ID)
       throw new IllegalArgumentException("An existing observation or query result is required");
     if (observation.getId() > 0)
-      return exportAsset(observation.getUrn(), KlabAsset.KnowledgeClass.OBSERVATION,
-          mediaType, parameters, scope);
+      return exportAsset(
+          observation.getUrn(), KlabAsset.KnowledgeClass.OBSERVATION, mediaType, parameters, scope);
     // Revalidate through the read-only query path. Never trust a client-supplied storage owner,
     // contextualization parameters or source IDs, and never resolve missing coverage.
     var view = query(observation, scope);
@@ -2216,8 +2859,8 @@ public class RuntimeService extends BaseService
     // An open card must not silently switch to a different source after focus or graph changes.
     if (!querySourceIds(observation).equals(querySourceIds(view)))
       throw new IllegalArgumentException("Query sources changed; submit the query again");
-    return exportResolvedAsset(view, view.getUrn(), KlabAsset.KnowledgeClass.OBSERVATION,
-        mediaType, parameters, scope);
+    return exportResolvedAsset(
+        view, view.getUrn(), KlabAsset.KnowledgeClass.OBSERVATION, mediaType, parameters, scope);
   }
 
   private static Set<Long> querySourceIds(Observation observation) {
@@ -2358,7 +3001,10 @@ public class RuntimeService extends BaseService
     return null;
   }
 
-  /** Called after local compilation, before commit emits ActivityFinished. Do not copy arbitrary metadata. */
+  /**
+   * Called after local compilation, before commit emits ActivityFinished. Do not copy arbitrary
+   * metadata.
+   */
   static void attachResolutionDiagnostics(Dataflow dataflow, Activity resolution) {
     if (dataflow.getMetadata() == null || resolution.getType() != Activity.Type.RESOLUTION) return;
     var value = dataflow.getMetadata().get(Metadata.IM_RESOLUTION_GRAPH);
@@ -2369,42 +3015,71 @@ public class RuntimeService extends BaseService
   }
 
   @Override
-  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(String definitionUrn, ContextScope scope) {
-    if (definitionUrn == null || definitionUrn.isBlank()) throw new IllegalArgumentException("Missing grid definition URN");
-    if (!(scope instanceof ServiceContextScope context)) throw new IllegalArgumentException("Grid configuration requires a runtime context");
+  public org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(
+      String definitionUrn, ContextScope scope) {
+    if (definitionUrn == null || definitionUrn.isBlank())
+      throw new IllegalArgumentException("Missing grid definition URN");
+    if (!(scope instanceof ServiceContextScope context))
+      throw new IllegalArgumentException("Grid configuration requires a runtime context");
     synchronized (context.getData()) {
       var existing = context.getConfiguration().getGridAlignment();
       if (existing != null) {
-        if (!existing.definitionUrn().equals(definitionUrn)) throw new IllegalStateException("A digital twin supports only one grid instruction");
+        if (!existing.definitionUrn().equals(definitionUrn))
+          throw new IllegalStateException("A digital twin supports only one grid instruction");
         return existing;
       }
-      if (Boolean.TRUE.equals(context.getData().get("klab.grid.observationsStarted"))) throw new IllegalStateException("Install a grid before making observations");
-      var grid = org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.resolve(definitionUrn, context);
-      grid = ((KnowledgeGraphNeo4j)context.getDigitalTwin().getKnowledgeGraph()).installGrid(grid);
-      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getConfiguration()).setGridAlignment(grid);
-      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getDigitalTwin().getOptions()).setGridAlignment(grid);
-      context.getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY, grid);
+      if (Boolean.TRUE.equals(context.getData().get("klab.grid.observationsStarted")))
+        throw new IllegalStateException("Install a grid before making observations");
+      var grid =
+          org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.resolve(
+              definitionUrn, context);
+      grid = ((KnowledgeGraphNeo4j) context.getDigitalTwin().getKnowledgeGraph()).installGrid(grid);
+      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)
+              context.getConfiguration())
+          .setGridAlignment(grid);
+      ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)
+              context.getDigitalTwin().getOptions())
+          .setGridAlignment(grid);
+      context
+          .getData()
+          .put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY, grid);
       for (String warning : grid.emittedWarnings()) context.warn(warning);
       return grid;
     }
   }
 
   private void alignObservation(Observation observation, ContextScope scope) {
-    if (observation.getId()>0 || observation.getId()==Observation.QUERY_ID || observation.isEmpty()) return;
-    if (scope instanceof ServiceContextScope context && observation instanceof ObservationImpl mutable) {
+    if (observation.getId() > 0
+        || observation.getId() == Observation.QUERY_ID
+        || observation.isEmpty()) return;
+    if (scope instanceof ServiceContextScope context
+        && observation instanceof ObservationImpl mutable) {
       // The implicit user agent has no spatial cells; allow installing a grid in a fresh IDE twin.
-      if (Boolean.TRUE.equals(observation.getMetadata().get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC))
-          && observation.getGeometry()!=null && observation.getGeometry().isUniversal()) return;
+      if (Boolean.TRUE.equals(
+              observation
+                  .getMetadata()
+                  .get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.AUTOMATIC))
+          && observation.getGeometry() != null
+          && observation.getGeometry().isUniversal()) return;
       synchronized (context.getData()) {
         if (!Boolean.TRUE.equals(context.getData().get("klab.grid.observationsStarted"))) {
-          var grid=((KnowledgeGraphNeo4j)context.getDigitalTwin().getKnowledgeGraph()).sealGrid();
-          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getConfiguration()).setGridAlignment(grid);
-          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)context.getDigitalTwin().getOptions()).setGridAlignment(grid);
-          if (grid!=null) context.getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,grid);
-          context.getData().put("klab.grid.observationsStarted",true);
+          var grid =
+              ((KnowledgeGraphNeo4j) context.getDigitalTwin().getKnowledgeGraph()).sealGrid();
+          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)
+                  context.getConfiguration())
+              .setGridAlignment(grid);
+          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)
+                  context.getDigitalTwin().getOptions())
+              .setGridAlignment(grid);
+          if (grid != null)
+            context
+                .getData()
+                .put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY, grid);
+          context.getData().put("klab.grid.observationsStarted", true);
         }
-        mutable.setGeometry(org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.alignGeometry(
-            observation.getGeometry(), context.getConfiguration().getGridAlignment()));
+        mutable.setGeometry(
+            org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.alignGeometry(
+                observation.getGeometry(), context.getConfiguration().getGridAlignment()));
       }
     }
   }
@@ -2415,7 +3090,8 @@ public class RuntimeService extends BaseService
     if (observation.getObservable() != null
         && observation.getObservable().getContextualization() != null
         && observation.getObservable().getContextualization().modifiesExistingObservations()) {
-      throw new IllegalArgumentException("Semantic-update directives are Dataflow operations, not observations");
+      throw new IllegalArgumentException(
+          "Semantic-update directives are Dataflow operations, not observations");
     }
     if (observation.getId() == Observation.QUERY_ID
         || observation.getId() > 0
@@ -2719,15 +3395,19 @@ public class RuntimeService extends BaseService
   }
 
   /** A detected root-level configuration has its own catalogue; dependent configurations do not. */
-  public Cohort getConfigurationCohortFor(Semantics observable, ContextScope scope,
-      boolean addCohortIfMissing) {
-    if (observable == null || !observable.is(SemanticType.CONFIGURATION)
+  public Cohort getConfigurationCohortFor(
+      Semantics observable, ContextScope scope, boolean addCohortIfMissing) {
+    if (observable == null
+        || !observable.is(SemanticType.CONFIGURATION)
         || observable.asConcept().isCollective())
       throw new IllegalArgumentException("A singular configuration meaning is required");
     return cohortFor(observable, scope, addCohortIfMissing, true);
   }
 
-  private Cohort cohortFor(Semantics observable, ContextScope scope, boolean addCohortIfMissing,
+  private Cohort cohortFor(
+      Semantics observable,
+      ContextScope scope,
+      boolean addCohortIfMissing,
       boolean configurationRoot) {
 
     var needsCohort = configurationRoot || requiresCohort(observable);
@@ -2735,11 +3415,14 @@ public class RuntimeService extends BaseService
     if (needsCohort) {
 
       var reasoner = scope.getService(Reasoner.class);
-      var cohortObservable = configurationRoot ? observable.asConcept()
-          : reasoner.baseSubstantialType(observable, scope);
+      var cohortObservable =
+          configurationRoot
+              ? observable.asConcept()
+              : reasoner.baseSubstantialType(observable, scope);
       if (cohortObservable == null
           || cohortObservable.is(SemanticType.NOTHING)
-          || !configurationRoot && !SemanticType.isEnumerableSubstantial(cohortObservable.getType())) {
+          || !configurationRoot
+              && !SemanticType.isEnumerableSubstantial(cohortObservable.getType())) {
         Logging.INSTANCE.warn(
             "Reasoner returned an invalid base substantial type for cohort {}; using the original semantics",
             observable.getUrn());
@@ -2751,7 +3434,8 @@ public class RuntimeService extends BaseService
       var canonicalCohortObservable = cohortObservable;
 
       // local uncommitted
-      for (var transaction = scope.getCurrentTransaction(); transaction != null;
+      for (var transaction = scope.getCurrentTransaction();
+          transaction != null;
           transaction = transaction.getParent()) {
         var existing =
             transaction.assets().stream()
@@ -2918,25 +3602,30 @@ public class RuntimeService extends BaseService
     return CompletableFuture.completedFuture(ret);
   }
 
-  /** Internal semantic-update path: never registers a characterization directive as an observation. */
-  public Dataflow.ResolutionOutcome characterizeConsequence(Observation recipient,
-      org.integratedmodelling.klab.api.knowledge.Observable requested, ServiceContextScope admitted)
+  /**
+   * Internal semantic-update path: never registers a characterization directive as an observation.
+   */
+  public Dataflow.ResolutionOutcome characterizeConsequence(
+      Observation recipient,
+      org.integratedmodelling.klab.api.knowledge.Observable requested,
+      ServiceContextScope admitted)
       throws InterruptedException {
-    return ConsequenceCharacterizationLifecycle.run(this,recipient,requested,admitted);
+    return ConsequenceCharacterizationLifecycle.run(this, recipient, requested, admitted);
   }
 
-  void characterizePending(List<MemberClassifierExecutor.PendingAttribution> pending,
-      ServiceContextScope scope) {
+  void characterizePending(
+      List<MemberClassifierExecutor.PendingAttribution> pending, ServiceContextScope scope) {
     CharacterizationLifecycle.run(pending, scope, this);
   }
 
-  void executeCharacterization(Dataflow plan, Observation member, Scheduler.Event event,
-      ServiceContextScope scope) {
+  void executeCharacterization(
+      Dataflow plan, Observation member, Scheduler.Event event, ServiceContextScope scope) {
     for (var node : plan.getComputation()) {
       if (node.getContextualization() != Contextualization.CHARACTERIZATION
           || node.getActuatorType() != Actuator.Type.UPDATE
           || node.getTargetBindings().size() != 1
-          || node.getTargetBindings().getFirst().getKind() != Actuator.TargetBinding.Kind.OBSERVATION
+          || node.getTargetBindings().getFirst().getKind()
+              != Actuator.TargetBinding.Kind.OBSERVATION
           || node.getTargetBindings().getFirst().getTarget() == null
           || node.getTargetBindings().getFirst().getTarget().getId() != member.getId())
         throw new IllegalArgumentException("Characterization requires an UPDATE root");
@@ -2950,48 +3639,67 @@ public class RuntimeService extends BaseService
     }
   }
 
-  Observation executeClassifierProducer(Actuator plan, Geometry support, ServiceContextScope parent) {
+  Observation executeClassifierProducer(
+      Actuator plan, Geometry support, ServiceContextScope parent) {
     return executeClassifierProducer(plan, support, parent, false);
   }
 
   /** Verified selection discovery can contribute a distinct fragment of the same producer. */
-  Observation executeSelectionProducer(Actuator plan, Geometry support, ServiceContextScope parent) {
+  Observation executeSelectionProducer(
+      Actuator plan, Geometry support, ServiceContextScope parent) {
     return executeClassifierProducer(plan, support, parent, true);
   }
 
-  private Observation executeClassifierProducer(Actuator plan, Geometry support,
-      ServiceContextScope parent, boolean selectionFragment) {
+  private Observation executeClassifierProducer(
+      Actuator plan, Geometry support, ServiceContextScope parent, boolean selectionFragment) {
     checkSubmissionCancellation(parent);
-    if(plan.getActuatorType()==Actuator.Type.REFERENCE)
-      throw new UnsupportedOperationException("Persistent producer reuse needs a completion certificate");
-    if(plan.getExecutionRole()!=Actuator.ExecutionRole.INITIALIZATION || plan.getObservation()==null)
-      throw new UnsupportedOperationException("Classifier member producer must be an INIT observation");
-    var producer=register(plan.getObservation(),parent);
+    if (plan.getActuatorType() == Actuator.Type.REFERENCE)
+      throw new UnsupportedOperationException(
+          "Persistent producer reuse needs a completion certificate");
+    if (plan.getExecutionRole() != Actuator.ExecutionRole.INITIALIZATION
+        || plan.getObservation() == null)
+      throw new UnsupportedOperationException(
+          "Classifier member producer must be an INIT observation");
+    var producer = register(plan.getObservation(), parent);
     if (producer instanceof ObservationImpl mutable)
-      mutable.setParentId(parent.getContextObservation() == null ? 0 : parent.getContextObservation().getId());
-    ((org.integratedmodelling.common.runtime.ActuatorImpl)plan).setObservation(producer);
-    ((org.integratedmodelling.common.runtime.ActuatorImpl)plan).setId(producer.getId());
-    var activity=Activity.of(Activity.Type.RESOLUTION,parent.getActivity(),"Classifier member producer plan");
-    var execution=parent.executing(activity,null,producer);
-    var tx=execution.getCurrentTransaction();
-    var cohort=getCohortFor(producer.getObservable().getSemantics().singular(),execution,true);
-    if(cohort==null || !producer.getObservable().getSemantics().isCollective())
+      mutable.setParentId(
+          parent.getContextObservation() == null ? 0 : parent.getContextObservation().getId());
+    ((org.integratedmodelling.common.runtime.ActuatorImpl) plan).setObservation(producer);
+    ((org.integratedmodelling.common.runtime.ActuatorImpl) plan).setId(producer.getId());
+    var activity =
+        Activity.of(
+            Activity.Type.RESOLUTION, parent.getActivity(), "Classifier member producer plan");
+    var execution = parent.executing(activity, null, producer);
+    var tx = execution.getCurrentTransaction();
+    var cohort = getCohortFor(producer.getObservable().getSemantics().singular(), execution, true);
+    if (cohort == null || !producer.getObservable().getSemantics().isCollective())
       throw new IllegalArgumentException("Classifier requires a collective native producer");
     captureSelectionBaseline(producer.getObservable(), execution);
-    tx.link(parent.getContextObservation() == null ? RuntimeAsset.CONTEXT_ASSET : parent.getContextObservation(),
-        producer, GraphModel.Relationship.HAS_CHILD);
-    tx.link(producer,cohort,GraphModel.Relationship.CONTRIBUTED_TO);
-    tx.checkCohortGeometry(cohort,producer.getGeometry());
-    var dataflow=new org.integratedmodelling.common.runtime.DataflowImpl();dataflow.setCoverage(support);
+    tx.link(
+        parent.getContextObservation() == null
+            ? RuntimeAsset.CONTEXT_ASSET
+            : parent.getContextObservation(),
+        producer,
+        GraphModel.Relationship.HAS_CHILD);
+    tx.link(producer, cohort, GraphModel.Relationship.CONTRIBUTED_TO);
+    tx.checkCohortGeometry(cohort, producer.getGeometry());
+    var dataflow = new org.integratedmodelling.common.runtime.DataflowImpl();
+    dataflow.setCoverage(support);
     dataflow.getComputation().add(plan);
-    if(!compile(producer,dataflow,execution) || execution.commit()<0)
+    if (!compile(producer, dataflow, execution) || execution.commit() < 0)
       throw new IllegalStateException("Classifier producer compilation failed");
     parent.getCurrentTransaction().registerExecutors();
     var scheduler = parent.getDigitalTwin().getScheduler();
-    boolean success = selectionFragment
-        ? scheduler instanceof org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.SchedulerImpl nativeScheduler
-            && nativeScheduler.executeCollectiveContribution(producer, support, parent)
-        : scheduler.executeDependency(producer, support, Scheduler.Event.initialization(), parent);
+    boolean success =
+        selectionFragment
+            ? scheduler
+                    instanceof
+                    org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler
+                            .SchedulerImpl
+                        nativeScheduler
+                && nativeScheduler.executeCollectiveContribution(producer, support, parent)
+            : scheduler.executeDependency(
+                producer, support, Scheduler.Event.initialization(), parent);
     if (!success) throw new IllegalStateException("Classifier member producer execution failed");
     checkSubmissionCancellation(parent);
     return producer;
@@ -3001,70 +3709,113 @@ public class RuntimeService extends BaseService
   public void installConsequenceHandlers(
       org.integratedmodelling.klab.services.runtime.digitaltwin.ConsequenceEngine engine,
       org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles cycles) {
-    Objects.requireNonNull(engine); Objects.requireNonNull(cycles);
-    var configurations = new org.integratedmodelling.klab.services.runtime.digitaltwin.DefaultConfigurationBackend(
-        this, cycles::require, this::completeConfigurationDetection);
-    var roles = new org.integratedmodelling.klab.services.runtime.digitaltwin.DefaultRoleConsequenceRuntime(
-        this, cycles::require, null);
-    engine.register(org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION, configurations);
-    engine.register(org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.ROLE_CONFERRAL,
+    Objects.requireNonNull(engine);
+    Objects.requireNonNull(cycles);
+    var configurations =
+        new org.integratedmodelling.klab.services.runtime.digitaltwin.DefaultConfigurationBackend(
+            this, cycles::require, this::completeConfigurationDetection);
+    var roles =
+        new org.integratedmodelling.klab.services.runtime.digitaltwin.DefaultRoleConsequenceRuntime(
+            this, cycles::require, null);
+    engine.register(
+        org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION,
+        configurations);
+    engine.register(
+        org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.ROLE_CONFERRAL,
         new org.integratedmodelling.klab.services.runtime.digitaltwin.RoleConferralHandler(roles));
-    engine.register(org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.ROLE_IMPLICATION,
-        new org.integratedmodelling.klab.services.runtime.digitaltwin.RoleImplicationHandler(roles));
+    engine.register(
+        org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.ROLE_IMPLICATION,
+        new org.integratedmodelling.klab.services.runtime.digitaltwin.RoleImplicationHandler(
+            roles));
   }
 
-  /** Private completion capability supplied to this Runtime's concrete detector, not an API
+  /**
+   * Private completion capability supplied to this Runtime's concrete detector, not an API
    * accepting a caller's assertion that a semantic request accounts for an execution. The fixed
    * detector has captured and guarded every consumed native input, inherited actual source-model
-   * and attribution closure, and admitted the authored rule before reaching this continuation. */
-  private void completeConfigurationDetection(DigitalTwinImpl.TransactionImpl transaction,
+   * and attribution closure, and admitted the authored rule before reaching this continuation.
+   */
+  private void completeConfigurationDetection(
+      DigitalTwinImpl.TransactionImpl transaction,
       List<Observation> configurations,
-      List<org.integratedmodelling.klab.services.runtime.digitaltwin.GuardedConfigurationPublisher.Prepared> prepared,
-      List<org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime.Update> updates,
-      List<org.integratedmodelling.klab.services.runtime.digitaltwin.GuardedConfigurationPublisher.Birth> births,
+      List<
+              org.integratedmodelling.klab.services.runtime.digitaltwin
+                  .GuardedConfigurationPublisher.Prepared>
+          prepared,
+      List<
+              org.integratedmodelling.klab.services.runtime.digitaltwin
+                  .ConfigurationConsequenceRuntime.Update>
+          updates,
+      List<
+              org.integratedmodelling.klab.services.runtime.digitaltwin
+                  .GuardedConfigurationPublisher.Birth>
+          births,
       ServiceContextScope requested) {
     if (!(requested.getDigitalTwin() instanceof DigitalTwinImpl twin))
       throw new SecurityException("Configuration completion requires its local twin");
     var execution = twin.getResolutionCycles().require(requested);
     var cause = execution.getConsequenceCause();
     var activity = transaction.getActivity();
-    if (execution.getCurrentTransaction() != transaction || transaction.isFailed()
-        || cause == null || cause.kind() != org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION
-        || activity == null || activity.getType() != Activity.Type.DETECTION
+    if (execution.getCurrentTransaction() != transaction
+        || transaction.isFailed()
+        || cause == null
+        || cause.kind()
+            != org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION
+        || activity == null
+        || activity.getType() != Activity.Type.DETECTION
         || !transaction.ownsExecutionActivity(activity)
-        || configurations.isEmpty() || configurations.size() != prepared.size()
+        || configurations.isEmpty()
+        || configurations.size() != prepared.size()
         || configurations.size() != updates.size() + births.size())
       throw new SecurityException("Configuration completion is not the owned detection attempt");
     var collector = new SemanticExecutionEvidence.Collector();
     collector.scope(execution);
     var identities = new HashSet<Long>();
     for (int n = 0; n < configurations.size(); n++) {
-      var target = configurations.get(n); var preparation = prepared.get(n);
-      if (!identities.add(target.getId()) || !(preparation.receipt() instanceof ConfigurationPreparation receipt))
+      var target = configurations.get(n);
+      var preparation = prepared.get(n);
+      if (!identities.add(target.getId())
+          || !(preparation.receipt() instanceof ConfigurationPreparation receipt))
         throw new SecurityException("Configuration preparation receipt missing or duplicated");
       receipt.require(this, target, execution);
       if (!preparation.status().name().equals(receipt.status().name())
           || receipt.status() == ConfigurationPreparation.Status.DEFERRED)
         throw new SecurityException("Configuration explanation has not completed admission");
       if (receipt.status() == ConfigurationPreparation.Status.READY) {
-        if (preparation.support() == null || !preparation.support().encode().equals(receipt.support().encode()))
+        if (preparation.support() == null
+            || !preparation.support().encode().equals(receipt.support().encode()))
           throw new SecurityException("Configuration explanation support differs from preparation");
         receipt.requireScientificCompletion(target, execution);
-        if(receipt.initialCharacterization()) {
-          target.getMetadata().put(CONFIGURATION_SCIENTIFIC_INITIALIZED,CONFIGURATION_INITIALIZATION_VERSION);
+        if (receipt.initialCharacterization()) {
+          target
+              .getMetadata()
+              .put(CONFIGURATION_SCIENTIFIC_INITIALIZED, CONFIGURATION_INITIALIZATION_VERSION);
           transaction.update(target);
         }
       }
       collector.observation(transaction.readObservation(target));
     }
-    var authorities = new ArrayList<org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime.AuthorityReceipt>();
+    var authorities =
+        new ArrayList<
+            org.integratedmodelling.klab.services.runtime.digitaltwin
+                .ConfigurationConsequenceRuntime.AuthorityReceipt>();
     updates.forEach(update -> authorities.addAll(update.authorities()));
     births.forEach(birth -> authorities.addAll(birth.authorities()));
-    if (authorities.isEmpty()) throw new SecurityException("Configuration source accounting is absent");
+    if (authorities.isEmpty())
+      throw new SecurityException("Configuration source accounting is absent");
     for (var authority : authorities) {
-      if (authority instanceof org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime.SourceReceipt source)
-        accountConfigurationInputs(collector, source.admissionRequest(), source.admissionWitness(), execution);
-      else if (authority instanceof org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime.AffectsReceipt affected)
+      if (authority
+          instanceof
+          org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime
+                  .SourceReceipt
+              source)
+        accountConfigurationInputs(
+            collector, source.admissionRequest(), source.admissionWitness(), execution);
+      else if (authority
+          instanceof
+          org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime
+                  .AffectsReceipt
+              affected)
         accountConfigurationInputs(collector, affected.request(), affected.witness(), execution);
       else throw new SecurityException("Unknown configuration accounting authority");
     }
@@ -3073,277 +3824,465 @@ public class RuntimeService extends BaseService
     var evidence = collector.finish(execution);
     if (!evidence.complete() || !SemanticExecutionEvidence.completeWitness(evidence.witness()))
       throw new IllegalStateException("Configuration detection execution accounting is incomplete");
-    activity.getMetadata().put(org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding.DATA_KEY,
-        Utils.Json.asString(evidence));
+    activity
+        .getMetadata()
+        .put(
+            org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding.DATA_KEY,
+            Utils.Json.asString(evidence));
     transaction.update(activity);
   }
 
-  private void accountConfigurationInputs(SemanticExecutionEvidence.Collector collector,
+  private void accountConfigurationInputs(
+      SemanticExecutionEvidence.Collector collector,
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request,
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness previous,
       ServiceContextScope scope) {
     var cycle = Objects.requireNonNull(scope.getResolutionCycleBinding()).semanticBinding();
-    if (cycle == null || request == null || previous == null || request.obligations().isEmpty()
+    if (cycle == null
+        || request == null
+        || previous == null
+        || request.obligations().isEmpty()
         || !Objects.equals(request.expectedServiceId(), cycle.reasonerServiceId())
         || request.expectedKnowledgeRevision() != cycle.knowledgeRevision()
         || !Objects.equals(request.expectedBaseFingerprint(), cycle.semanticFingerprint())
         || !request.inputHash().equals(previous.inputHash()))
-      throw new SecurityException("Configuration input accounting belongs to another semantic view");
+      throw new SecurityException(
+          "Configuration input accounting belongs to another semantic view");
     var current = scope.getService(Reasoner.class).semanticDependencies(request, scope);
     if (!SemanticExecutionEvidence.completeWitness(current)
         || !Objects.equals(current.serviceId(), request.expectedServiceId())
         || current.knowledgeRevision() != request.expectedKnowledgeRevision()
         || !Objects.equals(current.baseFingerprint(), request.expectedBaseFingerprint())
         || !request.inputHash().equals(current.inputHash())
-        || !org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.revalidates(previous, current))
-      throw new IllegalStateException("Configuration original input/model accounting no longer validates");
+        || !org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+            .revalidates(previous, current))
+      throw new IllegalStateException(
+          "Configuration original input/model accounting no longer validates");
     request.obligations().forEach(collector::term);
   }
 
-
   public static final String CONFIGURATION_EXPLANATION_METADATA = "klab.configuration.explanation";
-  private static final String CONFIGURATION_SCIENTIFIC_INITIALIZED = "klab.configuration.scientificInitialization";
-  private static final String CONFIGURATION_INITIALIZATION_VERSION = "configuration-scientific-initialization-v1";
+  private static final String CONFIGURATION_SCIENTIFIC_INITIALIZED =
+      "klab.configuration.scientificInitialization";
+  private static final String CONFIGURATION_INITIALIZATION_VERSION =
+      "configuration-scientific-initialization-v1";
 
   /** Server-minted preparation result; a missing executor is never a no-model receipt. */
   public static final class ConfigurationPreparation {
-    public enum Status { READY, NO_MODEL, DEFERRED }
+    public enum Status {
+      READY,
+      NO_MODEL,
+      DEFERRED
+    }
+
     private final RuntimeService issuer;
     private final long target;
-    private final org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding cycle;
-    private final org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective perspective;
+    private final org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding
+        cycle;
+    private final org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective
+        perspective;
     private final Status status;
     private final String support;
     private final String provenance;
     private final List<CompiledDataflow> scientificCompilations;
     private final ServiceContextScope scientificScope;
-    private final org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective scientificPerspective;
+    private final org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective
+        scientificPerspective;
     private final boolean initialCharacterization;
-    private final java.util.concurrent.atomic.AtomicReference<String> executedSupport=new java.util.concurrent.atomic.AtomicReference<>();
-    private final java.util.concurrent.atomic.AtomicBoolean rootInvoked=new java.util.concurrent.atomic.AtomicBoolean();
+    private final java.util.concurrent.atomic.AtomicReference<String> executedSupport =
+        new java.util.concurrent.atomic.AtomicReference<>();
+    private final java.util.concurrent.atomic.AtomicBoolean rootInvoked =
+        new java.util.concurrent.atomic.AtomicBoolean();
     private volatile boolean executionAuthorized;
-    private ConfigurationPreparation(RuntimeService issuer, Observation target, ServiceContextScope scope,
-        Status status, Geometry support, String provenance) {
-      this(issuer,target,scope,status,support,provenance,List.of(),scope,false);
+
+    private ConfigurationPreparation(
+        RuntimeService issuer,
+        Observation target,
+        ServiceContextScope scope,
+        Status status,
+        Geometry support,
+        String provenance) {
+      this(issuer, target, scope, status, support, provenance, List.of(), scope, false);
     }
-    private ConfigurationPreparation(RuntimeService issuer, Observation target, ServiceContextScope scope,
-        Status status, Geometry support, String provenance, List<CompiledDataflow> compiled,
-        ServiceContextScope scientificScope,boolean initialCharacterization) {
-      this.scientificCompilations=List.copyOf(compiled);
-      this.scientificScope=scientificScope;
-      this.scientificPerspective=org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective.capture(scientificScope);
-      this.initialCharacterization=initialCharacterization;
-      this.issuer=issuer;this.target=target.getId();this.cycle=scope.getResolutionCycleBinding();
-      this.perspective=org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective.capture(scope);
-      this.status=status;this.support=support==null?null:support.encode();this.provenance=provenance;
+
+    private ConfigurationPreparation(
+        RuntimeService issuer,
+        Observation target,
+        ServiceContextScope scope,
+        Status status,
+        Geometry support,
+        String provenance,
+        List<CompiledDataflow> compiled,
+        ServiceContextScope scientificScope,
+        boolean initialCharacterization) {
+      this.scientificCompilations = List.copyOf(compiled);
+      this.scientificScope = scientificScope;
+      this.scientificPerspective =
+          org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective
+              .capture(scientificScope);
+      this.initialCharacterization = initialCharacterization;
+      this.issuer = issuer;
+      this.target = target.getId();
+      this.cycle = scope.getResolutionCycleBinding();
+      this.perspective =
+          org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective
+              .capture(scope);
+      this.status = status;
+      this.support = support == null ? null : support.encode();
+      this.provenance = provenance;
     }
-    public Status status() { return status; }
-    public Geometry support() { return support==null?null:Geometry.create(support); }
-    public String provenance() { return provenance; }
-    private void requireScientificCompletion(Observation observation, ServiceContextScope execution) {
-      require(issuer,observation,execution);
-      if(status!=Status.READY || scientificCompilations.isEmpty())
+
+    public Status status() {
+      return status;
+    }
+
+    public Geometry support() {
+      return support == null ? null : Geometry.create(support);
+    }
+
+    public String provenance() {
+      return provenance;
+    }
+
+    private void requireScientificCompletion(
+        Observation observation, ServiceContextScope execution) {
+      require(issuer, observation, execution);
+      if (status != Status.READY || scientificCompilations.isEmpty())
         throw new IllegalStateException("Configuration has no prepared scientific execution");
-      var completed=new ArrayList<Geometry>();
-      for(var compiled:scientificCompilations)
-        completed.add(compiled.scientificRootCompletionSupport(observation,scientificScope)
-            .orElseThrow(()->new IllegalStateException("Prepared configuration model did not complete its real execution")));
-      var expected=executedSupport.get();
-      if(expected==null || !configurationSupportCovered(Geometry.create(expected),completed))
-        throw new IllegalStateException("Configuration explanatory execution does not cover its admitted support");
+      var completed = new ArrayList<Geometry>();
+      for (var compiled : scientificCompilations)
+        completed.add(
+            compiled
+                .scientificRootCompletionSupport(observation, scientificScope)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Prepared configuration model did not complete its real execution")));
+      var expected = executedSupport.get();
+      if (expected == null || !configurationSupportCovered(Geometry.create(expected), completed))
+        throw new IllegalStateException(
+            "Configuration explanatory execution does not cover its admitted support");
     }
-    public boolean initialCharacterization() { return initialCharacterization; }
-    /** Scheduler-only opaque execution capability. The admitted compiler may have a no-op root,
-     * so a per-actuator transaction executor is not a substitute for this exact prepared plan.
-     * Scheduler retains its ordinary prerequisite traversal before invoking this root. */
-    public boolean executePreparedRoot(Observation observation,ServiceContextScope execution,
-        Geometry actual,Scheduler.Event event) {
-      if(status!=Status.READY || scientificCompilations.size()!=1)
+
+    public boolean initialCharacterization() {
+      return initialCharacterization;
+    }
+
+    /**
+     * Scheduler-only opaque execution capability. The admitted compiler may have a no-op root, so a
+     * per-actuator transaction executor is not a substitute for this exact prepared plan. Scheduler
+     * retains its ordinary prerequisite traversal before invoking this root.
+     */
+    public boolean executePreparedRoot(
+        Observation observation,
+        ServiceContextScope execution,
+        Geometry actual,
+        Scheduler.Event event) {
+      if (status != Status.READY || scientificCompilations.size() != 1)
         throw new SecurityException("Configuration has no single prepared scientific root");
-      var recorded=executedSupport.get();
-      if(recorded==null || actual==null || !recorded.equals(actual.encode()))
-        throw new SecurityException("Configuration root has no recorded Scheduler invocation support");
-      recordExecutionSupport(observation,execution,actual,event);
-      if(!rootInvoked.compareAndSet(false,true))
+      var recorded = executedSupport.get();
+      if (recorded == null || actual == null || !recorded.equals(actual.encode()))
+        throw new SecurityException(
+            "Configuration root has no recorded Scheduler invocation support");
+      recordExecutionSupport(observation, execution, actual, event);
+      if (!rootInvoked.compareAndSet(false, true))
         throw new SecurityException("Configuration prepared scientific root was already invoked");
-      return scientificCompilations.getFirst().executeRoot(actual,event,execution);
+      return scientificCompilations.getFirst().executeRoot(actual, event, execution);
     }
-    /** This private preparation capability keeps legitimate transaction-local targets out of the
-     * ordinary persisted-observation recovery path; it never changes global negative-ID rules. */
-    public ServiceContextScope executionScope(Observation observation,ServiceContextScope origin) {
-      require(issuer,observation,origin);
-      if(status!=Status.READY || !(origin.getDigitalTwin() instanceof DigitalTwinImpl twin)
-          || origin.getCurrentTransaction()==null || origin.getCurrentTransaction().isFailed()
-          || scientificScope.getCurrentTransaction()!=origin.getCurrentTransaction())
-        throw new SecurityException("Configuration execution is outside its prepared live transaction");
-      var admitted=twin.getResolutionCycles().require(scientificScope);
-      executionAuthorized=true;return admitted;
+
+    /**
+     * This private preparation capability keeps legitimate transaction-local targets out of the
+     * ordinary persisted-observation recovery path; it never changes global negative-ID rules.
+     */
+    public ServiceContextScope executionScope(Observation observation, ServiceContextScope origin) {
+      require(issuer, observation, origin);
+      if (status != Status.READY
+          || !(origin.getDigitalTwin() instanceof DigitalTwinImpl twin)
+          || origin.getCurrentTransaction() == null
+          || origin.getCurrentTransaction().isFailed()
+          || scientificScope.getCurrentTransaction() != origin.getCurrentTransaction())
+        throw new SecurityException(
+            "Configuration execution is outside its prepared live transaction");
+      var admitted = twin.getResolutionCycles().require(scientificScope);
+      executionAuthorized = true;
+      return admitted;
     }
-    /** Called by Scheduler immediately before invocation, under its clock monitor. No semantic or
-     * asset refresh occurs here: executionScope has already validated the private capability. */
-    public void recordExecutionSupport(Observation observation,ServiceContextScope execution,
-        Geometry actual,Scheduler.Event event) {
-      var focus=execution.getContextObservation();
-      var identity=new org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective(
-          execution.getId(),execution.getObserverId()==null?0:execution.getObserverId(),focus==null?0:focus.getId());
-      if(!executionAuthorized || observation==null || observation.getId()!=target
-          || !cycle.equals(execution.getResolutionCycleBinding()) || !scientificPerspective.equals(identity)
-          || execution.getCurrentTransaction()==null || execution.getCurrentTransaction().isFailed()
-          || scientificScope.getCurrentTransaction()!=execution.getCurrentTransaction() || event==null
-          || initialCharacterization!=(event.getType()==Scheduler.Event.Type.INITIALIZATION)
-          || !initialCharacterization && event.getType()!=Scheduler.Event.Type.INPUT_CHANGE)
-        throw new SecurityException("Configuration invocation differs from its private preparation");
-      if(event.getType()==Scheduler.Event.Type.INPUT_CHANGE) {
-        var current=execution.getDigitalTwin().getScheduler().currentModeledInstant();
-        if(event.hasTime()!=current.isPresent() || event.hasTime()
-            &&(event.getTime().getStart().getMilliseconds()!=current.getAsLong()
-                || event.getTime().getEnd().getMilliseconds()!=current.getAsLong()))
+
+    /**
+     * Called by Scheduler immediately before invocation, under its clock monitor. No semantic or
+     * asset refresh occurs here: executionScope has already validated the private capability.
+     */
+    public void recordExecutionSupport(
+        Observation observation,
+        ServiceContextScope execution,
+        Geometry actual,
+        Scheduler.Event event) {
+      var focus = execution.getContextObservation();
+      var identity =
+          new org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective(
+              execution.getId(),
+              execution.getObserverId() == null ? 0 : execution.getObserverId(),
+              focus == null ? 0 : focus.getId());
+      if (!executionAuthorized
+          || observation == null
+          || observation.getId() != target
+          || !cycle.equals(execution.getResolutionCycleBinding())
+          || !scientificPerspective.equals(identity)
+          || execution.getCurrentTransaction() == null
+          || execution.getCurrentTransaction().isFailed()
+          || scientificScope.getCurrentTransaction() != execution.getCurrentTransaction()
+          || event == null
+          || initialCharacterization != (event.getType() == Scheduler.Event.Type.INITIALIZATION)
+          || !initialCharacterization && event.getType() != Scheduler.Event.Type.INPUT_CHANGE)
+        throw new SecurityException(
+            "Configuration invocation differs from its private preparation");
+      if (event.getType() == Scheduler.Event.Type.INPUT_CHANGE) {
+        var current = execution.getDigitalTwin().getScheduler().currentModeledInstant();
+        if (event.hasTime() != current.isPresent()
+            || event.hasTime()
+                && (event.getTime().getStart().getMilliseconds() != current.getAsLong()
+                    || event.getTime().getEnd().getMilliseconds() != current.getAsLong()))
           throw new SecurityException("Configuration invocation does not use current modeled time");
       }
-      var expected=TemporalGeometry.localize(support(),event);
-      if(actual==null || !expected.encode().equals(actual.encode()))
-        throw new SecurityException("Configuration invocation support differs from admitted localization");
-      var previous=executedSupport.get();
-      if(previous==null)executedSupport.compareAndSet(null,expected.encode());
-      if(!expected.encode().equals(executedSupport.get()))
-        throw new SecurityException("Configuration preparation cannot authorize another invocation support");
+      var expected = TemporalGeometry.localize(support(), event);
+      if (actual == null || !expected.encode().equals(actual.encode()))
+        throw new SecurityException(
+            "Configuration invocation support differs from admitted localization");
+      var previous = executedSupport.get();
+      if (previous == null) executedSupport.compareAndSet(null, expected.encode());
+      if (!expected.encode().equals(executedSupport.get()))
+        throw new SecurityException(
+            "Configuration preparation cannot authorize another invocation support");
     }
-    public void require(RuntimeService runtime, Observation observation, ServiceContextScope scope) {
-      if(issuer!=runtime || observation==null || target!=observation.getId()
+
+    public void require(
+        RuntimeService runtime, Observation observation, ServiceContextScope scope) {
+      if (issuer != runtime
+          || observation == null
+          || target != observation.getId()
           || !cycle.equals(scope.getResolutionCycleBinding())
-          || !perspective.equals(org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective.capture(scope)))
-        throw new SecurityException("Configuration explanation receipt has another issuer or target cycle");
+          || !perspective.equals(
+              org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective
+                  .capture(scope)))
+        throw new SecurityException(
+            "Configuration explanation receipt has another issuer or target cycle");
     }
   }
 
   /**
    * Prepare an explanation in the caller's guarded DETECTION transaction. Detection has already
-   * established existence; it must not serve as its own model. Model selection and compilation
-   * use the ordinary resolver, source admission and classifier continuation. Execution belongs to
+   * established existence; it must not serve as its own model. Model selection and compilation use
+   * the ordinary resolver, source admission and classifier continuation. Execution belongs to
    * Scheduler's input-revision path, so this method neither initializes nor commits the twin.
    */
-  public ConfigurationPreparation prepareConfigurationExplanation(Observation configuration,
-      ServiceContextScope execution) throws Exception {
-    if(!(execution.getDigitalTwin() instanceof DigitalTwinImpl twin)
-        || !(execution.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction)
-        || execution.getConsequenceCause()==null
-        || execution.getConsequenceCause().kind()!=org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION
-        || configuration==null || configuration.getObservable()==null
+  public ConfigurationPreparation prepareConfigurationExplanation(
+      Observation configuration, ServiceContextScope execution) throws Exception {
+    if (!(execution.getDigitalTwin() instanceof DigitalTwinImpl twin)
+        || !(execution.getCurrentTransaction()
+            instanceof DigitalTwinImpl.TransactionImpl transaction)
+        || execution.getConsequenceCause() == null
+        || execution.getConsequenceCause().kind()
+            != org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION
+        || configuration == null
+        || configuration.getObservable() == null
         || !configuration.getObservable().is(SemanticType.CONFIGURATION)
-        || configuration.getId()==Observation.UNASSIGNED_ID || configuration.getId()==Observation.QUERY_ID)
-      throw new IllegalArgumentException("Configuration explanation requires its guarded detection transaction");
-    var scope=twin.getResolutionCycles().require(execution);
-    var initialized=configuration.getMetadata().get(CONFIGURATION_SCIENTIFIC_INITIALIZED);
-    if(initialized!=null && !CONFIGURATION_INITIALIZATION_VERSION.equals(initialized))
-      throw new IllegalStateException("Configuration scientific initialization receipt is malformed");
-    boolean initialCharacterization=initialized==null;
-    var modelScope=configurationModelScope(configuration,scope,transaction);
-    var binding=scope.getResolutionCycleBinding();
-    if(binding.semanticBinding()==null)
-      return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.DEFERRED,
-          null,"Retained semantic view is unavailable");
+        || configuration.getId() == Observation.UNASSIGNED_ID
+        || configuration.getId() == Observation.QUERY_ID)
+      throw new IllegalArgumentException(
+          "Configuration explanation requires its guarded detection transaction");
+    var scope = twin.getResolutionCycles().require(execution);
+    var initialized = configuration.getMetadata().get(CONFIGURATION_SCIENTIFIC_INITIALIZED);
+    if (initialized != null && !CONFIGURATION_INITIALIZATION_VERSION.equals(initialized))
+      throw new IllegalStateException(
+          "Configuration scientific initialization receipt is malformed");
+    boolean initialCharacterization = initialized == null;
+    var modelScope = configurationModelScope(configuration, scope, transaction);
+    var binding = scope.getResolutionCycleBinding();
+    if (binding.semanticBinding() == null)
+      return new ConfigurationPreparation(
+          this,
+          configuration,
+          scope,
+          ConfigurationPreparation.Status.DEFERRED,
+          null,
+          "Retained semantic view is unavailable");
     checkSubmissionCancellation(scope);
     // Native existence and persisted coverage-only plans are not scientific source admission.
     // Even an existing executor must pass ordinary model resolution in this admitted cycle.
-    var request=(ObservationImpl)Observation.forTransport(configuration);
+    var request = (ObservationImpl) Observation.forTransport(configuration);
     // Optional explanatory discovery is the exact-target request purpose below. Rebuilding
     // this native observable as optional would change its URN and invalidate executable binding.
-    var requested=(ServiceContextScope)modelScope.withResolutionConstraints(ResolutionConstraint.of(
-        ResolutionConstraint.Type.ConfigurationExplanation,configuration.getId()));
-    var checks=new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
-    var finalizers=new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
-    var future=requested.getService(Resolver.class).resolve(request,requested)
-        .thenCompose(flow->SelectedModelClassifierContinuation.resume(this,flow,requested,checks,finalizers));
+    var requested =
+        (ServiceContextScope)
+            modelScope.withResolutionConstraints(
+                ResolutionConstraint.of(
+                    ResolutionConstraint.Type.ConfigurationExplanation, configuration.getId()));
+    var checks = new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
+    var finalizers = new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
+    var future =
+        requested
+            .getService(Resolver.class)
+            .resolve(request, requested)
+            .thenCompose(
+                flow ->
+                    SelectedModelClassifierContinuation.resume(
+                        this, flow, requested, checks, finalizers));
     Dataflow dataflow;
-    boolean interrupted=false;
+    boolean interrupted = false;
     try {
-      for(;;)try {dataflow=future.get(100,java.util.concurrent.TimeUnit.MILLISECONDS);break;}
-      catch(java.util.concurrent.TimeoutException waiting) {if(scope.isInterrupted())interrupted=true;}
-      catch(InterruptedException cancellation) {interrupted=true;}
-    } finally {if(interrupted)Thread.currentThread().interrupt();}
-    if(interrupted)throw new InterruptedException("Configuration explanation cancelled after resolver drained");
-    checkSubmissionCancellation(requested);checks.forEach(Runnable::run);
-    if(dataflow==null || Utils.Notifications.hasErrors(dataflow.getNotifications()))
+      for (; ; )
+        try {
+          dataflow = future.get(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+          break;
+        } catch (java.util.concurrent.TimeoutException waiting) {
+          if (scope.isInterrupted()) interrupted = true;
+        } catch (InterruptedException cancellation) {
+          interrupted = true;
+        }
+    } finally {
+      if (interrupted) Thread.currentThread().interrupt();
+    }
+    if (interrupted)
+      throw new InterruptedException("Configuration explanation cancelled after resolver drained");
+    checkSubmissionCancellation(requested);
+    checks.forEach(Runnable::run);
+    if (dataflow == null || Utils.Notifications.hasErrors(dataflow.getNotifications()))
       throw new IllegalStateException("Configuration explanation resolution failed");
-    var outcome=dataflow.getResolutionOutcome();
-    var receiptData=new LinkedHashMap<String,Object>();
-    receiptData.put("outcome",outcome.name());receiptData.put("cycle",binding);
-    receiptData.put("configuration",configuration.getId());
-    receiptData.put("requirements",dataflow.getRequirements());receiptData.put("metadata",dataflow.getMetadata());
-    var provenance=Utils.Json.asString(receiptData);
-    if(dataflow.isEmpty()) {
-      if(outcome==Dataflow.ResolutionOutcome.NO_MODEL) {
-        configuration.getMetadata().put(CONFIGURATION_EXPLANATION_METADATA,provenance);
+    var outcome = dataflow.getResolutionOutcome();
+    var receiptData = new LinkedHashMap<String, Object>();
+    receiptData.put("outcome", outcome.name());
+    receiptData.put("cycle", binding);
+    receiptData.put("configuration", configuration.getId());
+    receiptData.put("requirements", dataflow.getRequirements());
+    receiptData.put("metadata", dataflow.getMetadata());
+    var provenance = Utils.Json.asString(receiptData);
+    if (dataflow.isEmpty()) {
+      if (outcome == Dataflow.ResolutionOutcome.NO_MODEL) {
+        configuration.getMetadata().put(CONFIGURATION_EXPLANATION_METADATA, provenance);
         transaction.update(configuration);
-        return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.NO_MODEL,
-            configuration.getGeometry(),provenance);
+        return new ConfigurationPreparation(
+            this,
+            configuration,
+            scope,
+            ConfigurationPreparation.Status.NO_MODEL,
+            configuration.getGeometry(),
+            provenance);
       }
-      if(outcome==Dataflow.ResolutionOutcome.DEFERRED)
-        return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.DEFERRED,
-            null,provenance);
-      throw new IllegalStateException("Configuration explanation has no completed model resolution");
+      if (outcome == Dataflow.ResolutionOutcome.DEFERRED)
+        return new ConfigurationPreparation(
+            this, configuration, scope, ConfigurationPreparation.Status.DEFERRED, null, provenance);
+      throw new IllegalStateException(
+          "Configuration explanation has no completed model resolution");
     }
     // The existing transaction initializer stores one root executor per target. Until a real
     // source-model aggregate is supported, never report a composed explanation READY after only
     // its last root could run. This limitation is specific to automatic configuration explanation.
-    if(dataflow.getComputation().size()!=1)
-      return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.DEFERRED,
-          null,"Multiple configuration explanation roots require aggregate execution");
-    var scientificCompilations=new ArrayList<CompiledDataflow>();
-    traceConfigurationRoot(configuration,dataflow.getComputation().getFirst(),requested);
-    if(outcome!=Dataflow.ResolutionOutcome.RESOLVED || !compile(configuration,dataflow,requested,scientificCompilations))
+    if (dataflow.getComputation().size() != 1)
+      return new ConfigurationPreparation(
+          this,
+          configuration,
+          scope,
+          ConfigurationPreparation.Status.DEFERRED,
+          null,
+          "Multiple configuration explanation roots require aggregate execution");
+    var scientificCompilations = new ArrayList<CompiledDataflow>();
+    traceConfigurationRoot(configuration, dataflow.getComputation().getFirst(), requested);
+    if (outcome != Dataflow.ResolutionOutcome.RESOLVED
+        || !compile(configuration, dataflow, requested, scientificCompilations))
       throw new IllegalStateException("Configuration explanation did not compile completely");
-    checks.forEach(Runnable::run);finalizers.forEach(Runnable::run);
+    checks.forEach(Runnable::run);
+    finalizers.forEach(Runnable::run);
     transaction.registerExecutors();
-    configuration.getMetadata().put(CONFIGURATION_EXPLANATION_METADATA,provenance);
+    configuration.getMetadata().put(CONFIGURATION_EXPLANATION_METADATA, provenance);
     transaction.update(configuration);
-    var support=dataflow.getCoverage()==null?configuration.getGeometry():dataflow.getCoverage();
-    return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.READY,
-        support,provenance,scientificCompilations,requested,initialCharacterization);
+    var support =
+        dataflow.getCoverage() == null ? configuration.getGeometry() : dataflow.getCoverage();
+    return new ConfigurationPreparation(
+        this,
+        configuration,
+        scope,
+        ConfigurationPreparation.Status.READY,
+        support,
+        provenance,
+        scientificCompilations,
+        requested,
+        initialCharacterization);
   }
 
-  private static void traceConfigurationRoot(Observation bound,Actuator plan,ServiceContextScope scope) {
-    if(!Boolean.getBoolean("klab.consequences.trace"))return;
+  private static void traceConfigurationRoot(
+      Observation bound, Actuator plan, ServiceContextScope scope) {
+    if (!Boolean.getBoolean("klab.consequences.trace")) return;
     try {
-      var trace=new LinkedHashMap<String,Object>();trace.put("context",scope.getId());trace.put("actuatorId",plan.getId());
-      for(var item:Map.of("bound",bound,"declared",plan.getObservation()).entrySet()) {
-        var observation=item.getValue();var fields=new LinkedHashMap<String,Object>();
-        fields.put("id",observation.getId());fields.put("parent",observation.getParentId());
-        fields.put("urn",observation.getObservable()==null?null:observation.getObservable().getUrn());
-        fields.put("optional",observation.getObservable()==null?null:observation.getObservable().isOptional());
-        fields.put("support",observation.getGeometry()==null?null:Geometry.forTransport(observation.getGeometry()).encode());
-        trace.put(item.getKey(),fields);
+      var trace = new LinkedHashMap<String, Object>();
+      trace.put("context", scope.getId());
+      trace.put("actuatorId", plan.getId());
+      for (var item : Map.of("bound", bound, "declared", plan.getObservation()).entrySet()) {
+        var observation = item.getValue();
+        var fields = new LinkedHashMap<String, Object>();
+        fields.put("id", observation.getId());
+        fields.put("parent", observation.getParentId());
+        fields.put(
+            "urn",
+            observation.getObservable() == null ? null : observation.getObservable().getUrn());
+        fields.put(
+            "optional",
+            observation.getObservable() == null ? null : observation.getObservable().isOptional());
+        fields.put(
+            "support",
+            observation.getGeometry() == null
+                ? null
+                : Geometry.forTransport(observation.getGeometry()).encode());
+        trace.put(item.getKey(), fields);
       }
-      Logging.INSTANCE.info("CONFIGURATION_EXECUTABLE_ROOT "+Utils.Json.asString(trace));
-    }catch(RuntimeException unavailable){/* Diagnostics never replace the strict compiler guard. */}
+      Logging.INSTANCE.info("CONFIGURATION_EXECUTABLE_ROOT " + Utils.Json.asString(trace));
+    } catch (RuntimeException unavailable) {
+      /* Diagnostics never replace the strict compiler guard. */
+    }
   }
 
-  private ServiceContextScope configurationModelScope(Observation target,ServiceContextScope origin,
-      DigitalTwinImpl.TransactionImpl transaction) {
-    var placements=new LinkedHashMap<String,KnowledgeGraph.Link>();
-    for(var link:transaction.incoming(target))
-      if(link.type()==GraphModel.Relationship.HAS_CHILD || link.type()==GraphModel.Relationship.HAS_MEMBER)
-        placements.put(link.type()+":"+link.source().getId(),link);
-    if(target.getId()>0 && origin.getDigitalTwin().getKnowledgeGraph()!=null)
-      for(var link:origin.getDigitalTwin().getKnowledgeGraph().getLinks(target,
-          GraphModel.Relationship.Direction.INCOMING,origin,GraphModel.Relationship.HAS_CHILD,GraphModel.Relationship.HAS_MEMBER))
-        placements.putIfAbsent(link.type()+":"+link.source().getId(),link);
-    if(placements.size()!=1)throw new IllegalStateException("Configuration explanation requires one actual native placement");
-    var placement=placements.values().iterator().next();
-    if(placement.type()==GraphModel.Relationship.HAS_MEMBER && placement.source() instanceof Cohort)return origin;
-    if(placement.type()!=GraphModel.Relationship.HAS_CHILD || !(placement.source() instanceof Observation bearer)
-        || bearer.getId()<=0 || bearer.getObservable()==null
+  private ServiceContextScope configurationModelScope(
+      Observation target, ServiceContextScope origin, DigitalTwinImpl.TransactionImpl transaction) {
+    var placements = new LinkedHashMap<String, KnowledgeGraph.Link>();
+    for (var link : transaction.incoming(target))
+      if (link.type() == GraphModel.Relationship.HAS_CHILD
+          || link.type() == GraphModel.Relationship.HAS_MEMBER)
+        placements.put(link.type() + ":" + link.source().getId(), link);
+    if (target.getId() > 0 && origin.getDigitalTwin().getKnowledgeGraph() != null)
+      for (var link :
+          origin
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .getLinks(
+                  target,
+                  GraphModel.Relationship.Direction.INCOMING,
+                  origin,
+                  GraphModel.Relationship.HAS_CHILD,
+                  GraphModel.Relationship.HAS_MEMBER))
+        placements.putIfAbsent(link.type() + ":" + link.source().getId(), link);
+    if (placements.size() != 1)
+      throw new IllegalStateException(
+          "Configuration explanation requires one actual native placement");
+    var placement = placements.values().iterator().next();
+    if (placement.type() == GraphModel.Relationship.HAS_MEMBER
+        && placement.source() instanceof Cohort) return origin;
+    if (placement.type() != GraphModel.Relationship.HAS_CHILD
+        || !(placement.source() instanceof Observation bearer)
+        || bearer.getId() <= 0
+        || bearer.getObservable() == null
         || !SemanticType.isEnumerableSubstantial(bearer.getObservable().getSemantics().getType()))
       throw new IllegalStateException("Configuration explanation has no actual substantial bearer");
-    return origin.getContextObservation()==bearer?origin:origin.within(bearer);
+    return origin.getContextObservation() == bearer ? origin : origin.within(bearer);
   }
 
   private boolean compile(
       Observation rootObservation, Dataflow dataflow, ServiceContextScope scope) {
-    return compile(rootObservation,dataflow,scope,null);
+    return compile(rootObservation, dataflow, scope, null);
   }
 
-  private boolean compile(Observation rootObservation, Dataflow dataflow, ServiceContextScope scope,
+  private boolean compile(
+      Observation rootObservation,
+      Dataflow dataflow,
+      ServiceContextScope scope,
       List<CompiledDataflow> compiledOutput) {
 
     scope
@@ -3358,7 +4297,7 @@ public class RuntimeService extends BaseService
     if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence = new CompiledDataflow(this, rootObservation, scope, dataflow);
-        if(compiledOutput!=null)executionSequence.enableScientificConfigurationAccounting();
+        if (compiledOutput != null) executionSequence.enableScientificConfigurationAccounting();
         if (!executionSequence.compile(rootActuator)) {
           scope
               .getCurrentTransaction()
@@ -3378,7 +4317,7 @@ public class RuntimeService extends BaseService
                           + rootObservation));
           return false;
         }
-        if(compiledOutput!=null)compiledOutput.add(executionSequence);
+        if (compiledOutput != null) compiledOutput.add(executionSequence);
       }
 
       return true;
@@ -3513,8 +4452,7 @@ public class RuntimeService extends BaseService
         if (resolution.getResults().stream()
             .noneMatch(
                 resource ->
-                    resource.getKnowledgeClass()
-                            == KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION
+                    resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.SERVICE_IMPLEMENTATION
                         && contextualizable
                             .getServiceCall()
                             .getUrn()
@@ -3568,9 +4506,11 @@ public class RuntimeService extends BaseService
                 getComponentRegistry()
                     .getAdapter(resolvedUrn.getCatalog(), resolvedUrn.getVersion(), scope);
             if (installedAdapter == null) {
-              scope.send(Notification.info(
-                  "Discovering component for universal resource adapter '"
-                      + resolvedUrn.getCatalog() + "'"));
+              scope.send(
+                  Notification.info(
+                      "Discovering component for universal resource adapter '"
+                          + resolvedUrn.getCatalog()
+                          + "'"));
               adapterRequirements =
                   resourcesService.resolve(
                       Version.isAny(resolvedUrn.getVersion())
@@ -3608,9 +4548,11 @@ public class RuntimeService extends BaseService
                       ? syntheticResource
                       : Utils.Resources.merge(adapterRequirements, syntheticResource);
               if (adapterRequirements != null) {
-                scope.send(Notification.info(
-                    "Installed component for universal resource adapter '"
-                        + resolvedUrn.getCatalog() + "'"));
+                scope.send(
+                    Notification.info(
+                        "Installed component for universal resource adapter '"
+                            + resolvedUrn.getCatalog()
+                            + "'"));
               }
             }
           }
@@ -3628,8 +4570,7 @@ public class RuntimeService extends BaseService
                     .filter(
                         resource ->
                             resource.getKnowledgeClass() == KlabAsset.KnowledgeClass.RESOURCE
-                                && Objects.equals(
-                                    resource.getResourceUrn(), resolvedUrn.getUrn()))
+                                && Objects.equals(resource.getResourceUrn(), resolvedUrn.getUrn()))
                     .findFirst()
                     .orElse(null);
             var universalProvider =
@@ -3783,9 +4724,13 @@ public class RuntimeService extends BaseService
     return ret;
   }
 
-  /** Called only with a private actual-compiled-execution capability; no remote mutation endpoint. */
-  public void stageModeledCessations(CompiledDataflow.ModeledCessationAuthority authority,ServiceContextScope execution) {
-    org.integratedmodelling.klab.services.runtime.digitaltwin.ModeledCessations.stage(authority,execution);
+  /**
+   * Called only with a private actual-compiled-execution capability; no remote mutation endpoint.
+   */
+  public void stageModeledCessations(
+      CompiledDataflow.ModeledCessationAuthority authority, ServiceContextScope execution) {
+    org.integratedmodelling.klab.services.runtime.digitaltwin.ModeledCessations.stage(
+        authority, execution);
   }
 
   @Override
@@ -3817,17 +4762,25 @@ public class RuntimeService extends BaseService
           // Validate the complete batch before opening any child resolutions.
           for (var child : scope.getOutcomes()) EventSupport.validate(child, scope.getEvent());
           if (contextScope.getCurrentTransaction() != null
-              && scope.getTarget() instanceof org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl collective) {
+              && scope.getTarget()
+                  instanceof
+                  org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl
+                      collective) {
             int previousCount = collective.getChildrenCount();
-            contextScope.getCurrentTransaction().afterRollback(() -> collective.setChildrenCount(previousCount));
+            contextScope
+                .getCurrentTransaction()
+                .afterRollback(() -> collective.setChildrenCount(previousCount));
           }
           for (var child : scope.getOutcomes()) {
-            child.getMetadata().put(org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.PENDING, true);
+            child
+                .getMetadata()
+                .put(org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.PENDING, true);
           }
         }
         for (var child : scope.getOutcomes()) {
-          var memberScope = instantiationScope.withResolutionConstraints(
-              scope.getResolutionConstraints(child).toArray(ResolutionConstraint[]::new));
+          var memberScope =
+              instantiationScope.withResolutionConstraints(
+                  scope.getResolutionConstraints(child).toArray(ResolutionConstraint[]::new));
           // Retain collective registration and all unrelated constraints, replacing lexical scope
           // with the producing instantiation model's namespace/project for this member only.
           tasks.add(
@@ -3840,17 +4793,23 @@ public class RuntimeService extends BaseService
           == Contextualization.CONNECTION) {
         // Validate the entire result before starting any acknowledgements. Each result is an
         // observation in a cohort, never a graph edge directly connecting the two participants.
-        var participants = scope.getOutcomes().stream()
-            .map(child -> ConnectionSupport.participants(child, contextScope)).toList();
+        var participants =
+            scope.getOutcomes().stream()
+                .map(child -> ConnectionSupport.participants(child, contextScope))
+                .toList();
         var collectiveScope = contextScope.within(scope.getTarget());
         for (int i = 0; i < scope.getOutcomes().size(); i++) {
           var child = scope.getOutcomes().get(i);
           var endpoints = participants.get(i);
-          var memberScope = collectiveScope.between(endpoints.get(0), endpoints.get(1))
-              .withResolutionConstraints(
-                  scope.getResolutionConstraints(child).toArray(ResolutionConstraint[]::new));
-          tasks.add(memberScope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
-              .submit(child, memberScope));
+          var memberScope =
+              collectiveScope
+                  .between(endpoints.get(0), endpoints.get(1))
+                  .withResolutionConstraints(
+                      scope.getResolutionConstraints(child).toArray(ResolutionConstraint[]::new));
+          tasks.add(
+              memberScope
+                  .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
+                  .submit(child, memberScope));
         }
       } else if (scope.getTarget().getObservable().is(SemanticType.QUALITY)
           && scope.getEvent().getType() == Scheduler.Event.Type.INITIALIZATION) {
@@ -3985,48 +4944,65 @@ public class RuntimeService extends BaseService
     if (scope == null) {
       scope = reconstructContext(configuration, userScope);
     }
-    return scope instanceof ServiceContextScope serviceScope && userScope instanceof ServiceUserScope requester
-        ? observerConnection(serviceScope.forRequest(requester), userScope) : scope;
+    return scope instanceof ServiceContextScope serviceScope
+            && userScope instanceof ServiceUserScope requester
+        ? observerConnection(serviceScope.forRequest(requester), userScope)
+        : scope;
   }
 
   private ServiceContextScope observerConnection(ServiceContextScope shared, UserScope userScope) {
     // Opening a twin cannot honor per-submission opt-outs. Defer preparation until root submit.
-    return shared.within(null).withObserver(null).withIdentity(userScope.getUser())
+    return shared
+        .within(null)
+        .withObserver(null)
+        .withIdentity(userScope.getUser())
         .forObserverConnection(null);
   }
 
-  private ServiceContextScope prepareObserverConnection(ServiceContextScope shared, UserScope userScope) {
+  private ServiceContextScope prepareObserverConnection(
+      ServiceContextScope shared, UserScope userScope) {
     var connection = shared.within(null).withObserver(null).withIdentity(userScope.getUser());
     try {
       org.integratedmodelling.klab.api.knowledge.Worldview worldview = null;
       for (var resources : userScope.getServices(ResourcesService.class)) {
         try {
-          var available = resources.list(org.integratedmodelling.klab.api.knowledge.Worldview.class, userScope);
+          var available =
+              resources.list(org.integratedmodelling.klab.api.knowledge.Worldview.class, userScope);
           if (available != null && !available.isEmpty()) {
             worldview = available.getFirst();
             break;
           }
         } catch (RuntimeException unavailable) {
-          userScope.warn("Cannot retrieve observer defaults from resources service " + resources.serviceId());
+          userScope.warn(
+              "Cannot retrieve observer defaults from resources service " + resources.serviceId());
         }
       }
-      var observer = org.integratedmodelling.klab.runtime.DefaultObserverPreparation
-          .prepare(worldview, connection, Geometry.UNIVERSAL).join();
+      var observer =
+          org.integratedmodelling.klab.runtime.DefaultObserverPreparation.prepare(
+                  worldview, connection, Geometry.UNIVERSAL)
+              .join();
       if (observer != null && observer.isEmpty()) {
-        throw new IllegalStateException("Default observer resolution returned an empty observation: "
-            + observer.getNotifications().stream().map(Notification::getMessage)
-                .collect(java.util.stream.Collectors.joining("; ")));
+        throw new IllegalStateException(
+            "Default observer resolution returned an empty observation: "
+                + observer.getNotifications().stream()
+                    .map(Notification::getMessage)
+                    .collect(java.util.stream.Collectors.joining("; ")));
       }
       if (observer != null && !observer.isEmpty()) {
-        connection.send(Message.MessageClass.DigitalTwin, Message.MessageType.ObserverResolved,
+        connection.send(
+            Message.MessageClass.DigitalTwin,
+            Message.MessageType.ObserverResolved,
             Observation.forTransport(observer));
       }
       return connection.forObserverConnection(observer);
     } catch (RuntimeException failure) {
       userScope.warn("Default observer could not be prepared: " + failure.getMessage());
       var ret = connection.forObserverConnection(null);
-      ret.getConfiguration().getNotifications().add(Notification.warning(
-          "Default observer could not be prepared: " + failure.getMessage()));
+      ret.getConfiguration()
+          .getNotifications()
+          .add(
+              Notification.warning(
+                  "Default observer could not be prepared: " + failure.getMessage()));
       return ret;
     }
   }
@@ -4050,7 +5026,9 @@ public class RuntimeService extends BaseService
     var owner = configuration.getOwner();
     var accessRights = configuration.getAccessRights();
     if ((owner != null && owner.equals(requestingUser.getUsername()))
-        || (accessRights != null && accessRights.checkAuthorization(requestingUser.getUsername(), requestingUser.getGroups()))) {
+        || (accessRights != null
+            && accessRights.checkAuthorization(
+                requestingUser.getUsername(), requestingUser.getGroups()))) {
       return configuration;
     }
 
@@ -4059,7 +5037,8 @@ public class RuntimeService extends BaseService
             + requestingUser.getUsername()
             + " is not authorized to retrieve configuration for context "
             + scopeId);
-    throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context is not accessible to the requesting user");
+    throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+        "Context is not accessible to the requesting user");
   }
 
   private ContextScope reconstructContext(
@@ -4098,9 +5077,17 @@ public class RuntimeService extends BaseService
         serviceSession.setId(sessionId);
         serviceSession.setName(sessionId);
         serviceSession.setHostServiceId(serviceId());
-        serviceSession.getData().put(org.integratedmodelling.klab.services.scopes.ScopeManager.PERSISTED_SESSION_OWNER, configuration.getOwner());
+        serviceSession
+            .getData()
+            .put(
+                org.integratedmodelling.klab.services.scopes.ScopeManager.PERSISTED_SESSION_OWNER,
+                configuration.getOwner());
         if (configuration.getSessionFederationId() != null) {
-          serviceSession.getData().put(org.integratedmodelling.klab.services.scopes.ScopeManager.SESSION_FEDERATION, configuration.getSessionFederationId());
+          serviceSession
+              .getData()
+              .put(
+                  org.integratedmodelling.klab.services.scopes.ScopeManager.SESSION_FEDERATION,
+                  configuration.getSessionFederationId());
         }
         for (var service : userScope.getServices(KlabService.class)) {
           serviceSession.addService(service);
@@ -4134,7 +5121,9 @@ public class RuntimeService extends BaseService
       return null;
     }
     var requester = (ServiceUserScope) userScope;
-    var ret = new ServiceContextScope(serviceSessionScope.forRequest(requester), configuration, userScope.getUser());
+    var ret =
+        new ServiceContextScope(
+            serviceSessionScope.forRequest(requester), configuration, userScope.getUser());
     if (!userScope.getUser().getUsername().equals(ret.getUser().getUsername())) {
       ret = ret.withIdentity(userScope.getIdentity());
     }
@@ -4149,9 +5138,15 @@ public class RuntimeService extends BaseService
     if (!(scope instanceof ServiceSessionScope requester)) return false;
     var registered = getScopeManager().getScope(scope.getId(), ServiceSessionScope.class);
     if (registered == null
-        || !org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(registered, requester)
-        || (org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(registered)
-            && !requester.getRoles().contains(org.integratedmodelling.klab.services.application.security.Role.ROLE_ADMINISTRATOR))) return false;
+        || !org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(
+            registered, requester)
+        || (org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(
+                registered)
+            && !requester
+                .getRoles()
+                .contains(
+                    org.integratedmodelling.klab.services.application.security.Role
+                        .ROLE_ADMINISTRATOR))) return false;
     try {
       registered.close();
       return true;
@@ -4175,13 +5170,17 @@ public class RuntimeService extends BaseService
   @Override
   public <T extends RuntimeAsset> List<T> queryKnowledgeGraph(
       KnowledgeGraph.Query<T> knowledgeGraphQuery, Scope scope) {
-    if(scope==null) throw new KnowledgeGraph.QueryException(
-        KnowledgeGraph.QueryException.Code.BACKEND_UNAVAILABLE,"Context is unavailable; reconnect the digital twin or retry after initialization");
+    if (scope == null)
+      throw new KnowledgeGraph.QueryException(
+          KnowledgeGraph.QueryException.Code.BACKEND_UNAVAILABLE,
+          "Context is unavailable; reconnect the digital twin or retry after initialization");
     if (scope instanceof ContextScope contextScope) {
-      var twin=contextScope.getDigitalTwin();
-      var knowledgeGraph = twin==null ? null : twin.getKnowledgeGraph();
-      if(knowledgeGraph==null) throw new KnowledgeGraph.QueryException(
-          KnowledgeGraph.QueryException.Code.BACKEND_UNAVAILABLE,"Knowledge graph is not ready for context "+contextScope.getId());
+      var twin = contextScope.getDigitalTwin();
+      var knowledgeGraph = twin == null ? null : twin.getKnowledgeGraph();
+      if (knowledgeGraph == null)
+        throw new KnowledgeGraph.QueryException(
+            KnowledgeGraph.QueryException.Code.BACKEND_UNAVAILABLE,
+            "Knowledge graph is not ready for context " + contextScope.getId());
       if (knowledgeGraphQuery instanceof KnowledgeGraphQuery<T> qc) {
         if (qc.getResultType() == null) {
           throw new KnowledgeGraph.QueryException(

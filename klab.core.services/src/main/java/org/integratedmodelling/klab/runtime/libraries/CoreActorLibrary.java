@@ -10,15 +10,15 @@ import org.integratedmodelling.klab.api.actors.RuntimeAgent;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Constant;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -69,8 +69,16 @@ public class CoreActorLibrary {
     private static Widget widget(
         String type, RuntimeAgent.Scope scope, Metadata metadata, Object label, boolean emitter) {
       var cursor = cursor(scope);
-      Object id = cursor.model().widget(
-          cursor, type, (String) metadata.get("tag"), metadata, label, emitter ? scope : null);
+      Object id =
+          cursor
+              .model()
+              .widget(
+                  cursor,
+                  type,
+                  (String) metadata.get("tag"),
+                  metadata,
+                  label,
+                  emitter ? scope : null);
       return new Widget(cursor.model(), id == null ? null : id.toString());
     }
 
@@ -79,19 +87,27 @@ public class CoreActorLibrary {
       return widget("text", scope, metadata, text, false);
     }
 
-    @Verb(name = "progress", producesAgent = "core.widget", description = "Present completion progress")
+    @Verb(
+        name = "progress",
+        producesAgent = "core.widget",
+        description = "Present completion progress")
     public static Widget progress(RuntimeAgent.Scope scope, Metadata metadata, Number value) {
       return widget("progress", scope, metadata, value, false);
     }
 
-    @Verb(name = "button", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Emit button clicks")
+    @Verb(
+        name = "button",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Emit button clicks")
     public static Widget button(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("button", scope, metadata, label, true);
     }
 
     @Verb(
         name = "checkbox",
-        executionType = Verb.Type.EMITTER, returnsHandle = "core.widget",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
         description = "Emit boolean changes")
     public static Widget checkbox(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("checkbox", scope, metadata, label, true);
@@ -99,20 +115,26 @@ public class CoreActorLibrary {
 
     @Verb(
         name = "input",
-        executionType = Verb.Type.EMITTER, returnsHandle = "core.widget",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
         description = "Emit committed text changes")
     public static Widget input(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("input", scope, metadata, label, true);
     }
 
-    @Verb(name = "number", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Emit numeric changes")
+    @Verb(
+        name = "number",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Emit numeric changes")
     public static Widget number(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("number", scope, metadata, label, true);
     }
 
     @Verb(
         name = "select",
-        executionType = Verb.Type.EMITTER, returnsHandle = "core.widget",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
         description = "Emit selected option IDs")
     public static Widget select(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("select", scope, metadata, label, true);
@@ -133,7 +155,10 @@ public class CoreActorLibrary {
       return widget("icon", scope, metadata, label, false);
     }
 
-    @Verb(name = "separator", producesAgent = "core.widget", description = "Present separator widget")
+    @Verb(
+        name = "separator",
+        producesAgent = "core.widget",
+        description = "Present separator widget")
     public static Widget separator(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("separator", scope, metadata, label, false);
     }
@@ -148,130 +173,229 @@ public class CoreActorLibrary {
       return widget("spinner", scope, metadata, label, false);
     }
 
-    @Verb(name = "iconbutton", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present iconbutton widget")
+    @Verb(
+        name = "iconbutton",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present iconbutton widget")
     public static Widget iconbutton(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("iconbutton", scope, metadata, label, true);
     }
 
-    @Verb(name = "link", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present link widget")
+    @Verb(
+        name = "link",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present link widget")
     public static Widget link(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("link", scope, metadata, label, true);
     }
 
-    @Verb(name = "switch", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present switch widget")
+    @Verb(
+        name = "switch",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present switch widget")
     public static Widget toggle(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("switch", scope, metadata, label, true);
     }
 
-    @Verb(name = "radio", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present radio widget")
+    @Verb(
+        name = "radio",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present radio widget")
     public static Widget radio(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("radio", scope, metadata, label, true);
     }
 
-    @Verb(name = "multiselect", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present multiselect widget")
+    @Verb(
+        name = "multiselect",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present multiselect widget")
     public static Widget multiselect(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("multiselect", scope, metadata, label, true);
     }
 
-    @Verb(name = "textarea", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present textarea widget")
+    @Verb(
+        name = "textarea",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present textarea widget")
     public static Widget textarea(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("textarea", scope, metadata, label, true);
     }
 
-    @Verb(name = "slider", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present slider widget")
+    @Verb(
+        name = "slider",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present slider widget")
     public static Widget slider(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("slider", scope, metadata, label, true);
     }
 
-    @Verb(name = "range", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present range widget")
+    @Verb(
+        name = "range",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present range widget")
     public static Widget range(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("range", scope, metadata, label, true);
     }
 
-    @Verb(name = "date", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present date widget")
+    @Verb(
+        name = "date",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present date widget")
     public static Widget date(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("date", scope, metadata, label, true);
     }
 
-    @Verb(name = "time", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present time widget")
+    @Verb(
+        name = "time",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present time widget")
     public static Widget time(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("time", scope, metadata, label, true);
     }
 
-    @Verb(name = "color", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present color widget")
+    @Verb(
+        name = "color",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present color widget")
     public static Widget color(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("color", scope, metadata, label, true);
     }
 
-    @Verb(name = "submit", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present submit widget")
+    @Verb(
+        name = "submit",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present submit widget")
     public static Widget submit(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("submit", scope, metadata, label, true);
     }
 
-    @Verb(name = "reset", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present reset widget")
+    @Verb(
+        name = "reset",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present reset widget")
     public static Widget reset(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("reset", scope, metadata, label, true);
     }
 
-    @Verb(name = "list", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present list widget")
+    @Verb(
+        name = "list",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present list widget")
     public static Widget list(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("list", scope, metadata, label, true);
     }
 
-    @Verb(name = "table", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present table widget")
+    @Verb(
+        name = "table",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present table widget")
     public static Widget table(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("table", scope, metadata, label, true);
     }
 
-    @Verb(name = "tree", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present tree widget")
+    @Verb(
+        name = "tree",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present tree widget")
     public static Widget tree(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("tree", scope, metadata, label, true);
     }
 
-    @Verb(name = "tabs", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present tabs widget")
+    @Verb(
+        name = "tabs",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present tabs widget")
     public static Widget tabs(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("tabs", scope, metadata, label, true);
     }
 
-    @Verb(name = "stepper", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present stepper widget")
+    @Verb(
+        name = "stepper",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present stepper widget")
     public static Widget stepper(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("stepper", scope, metadata, label, true);
     }
 
-    @Verb(name = "pagination", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present pagination widget")
+    @Verb(
+        name = "pagination",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present pagination widget")
     public static Widget pagination(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("pagination", scope, metadata, label, true);
     }
 
-    @Verb(name = "breadcrumbs", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present breadcrumbs widget")
+    @Verb(
+        name = "breadcrumbs",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present breadcrumbs widget")
     public static Widget breadcrumbs(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("breadcrumbs", scope, metadata, label, true);
     }
 
-    @Verb(name = "upload", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present upload widget")
+    @Verb(
+        name = "upload",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present upload widget")
     public static Widget upload(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("upload", scope, metadata, label, true);
     }
 
-    @Verb(name = "download", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present download widget")
+    @Verb(
+        name = "download",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present download widget")
     public static Widget download(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("download", scope, metadata, label, true);
     }
 
-    @Verb(name = "audio", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present audio widget")
+    @Verb(
+        name = "audio",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present audio widget")
     public static Widget audio(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("audio", scope, metadata, label, true);
     }
 
-    @Verb(name = "video", executionType = Verb.Type.EMITTER, returnsHandle = "core.widget", description = "Present video widget")
+    @Verb(
+        name = "video",
+        executionType = Verb.Type.EMITTER,
+        returnsHandle = "core.widget",
+        description = "Present video widget")
     public static Widget video(RuntimeAgent.Scope scope, Metadata metadata, String label) {
       return widget("video", scope, metadata, label, true);
     }
 
     @Verb(name = "file", description = "Create an instance-owned bounded file handle")
-    public static Object file(RuntimeAgent.Scope scope, String name, String content, String mediaType) {
-      return cursor(scope).model().createFile(null, name, mediaType,
-          content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    public static Object file(
+        RuntimeAgent.Scope scope, String name, String content, String mediaType) {
+      return cursor(scope)
+          .model()
+          .createFile(
+              null, name, mediaType, content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     @Verb(name = "readfile", description = "Read an instance-owned file handle as bytes")
@@ -279,7 +403,10 @@ public class CoreActorLibrary {
       return cursor(scope).model().file(handle).bytes().clone();
     }
 
-    @Verb(name = "widget", producesAgent = "core.widget", description = "Get a handle to a tagged widget or container")
+    @Verb(
+        name = "widget",
+        producesAgent = "core.widget",
+        description = "Get a handle to a tagged widget or container")
     public static Widget reference(RuntimeAgent.Scope scope, String tag) {
       var cursor = cursor(scope);
       Object id = cursor.model().control(cursor, "reference", tag, null);
@@ -367,7 +494,8 @@ public class CoreActorLibrary {
     private final org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model;
     private final String id;
 
-    private Widget(org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model, String id) {
+    private Widget(
+        org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model, String id) {
       this.model = model;
       this.id = id;
     }
@@ -376,60 +504,98 @@ public class CoreActorLibrary {
       return model.controlNode(id, command, value);
     }
 
-    @Verb(name = "events", executionType = Verb.Type.EMITTER, description = "Subscribe to the widget's typed input events")
-    public void events(RuntimeAgent.Scope scope) { model.subscribe(id, scope); }
+    @Verb(
+        name = "events",
+        executionType = Verb.Type.EMITTER,
+        description = "Subscribe to the widget's typed input events")
+    public void events(RuntimeAgent.Scope scope) {
+      model.subscribe(id, scope);
+    }
 
     @Verb(name = "get", description = "Read the canonical widget value")
-    public Object get() { return control("get", null); }
+    public Object get() {
+      return control("get", null);
+    }
 
     @Verb(name = "set", description = "Set the value without emitting input")
-    public void set(Object value) { control("set", value); }
+    public void set(Object value) {
+      control("set", value);
+    }
 
     @Verb(name = "gettext", description = "Read the displayed text or label")
-    public Object gettext() { return control("gettext", null); }
+    public Object gettext() {
+      return control("gettext", null);
+    }
 
     @Verb(name = "settext", description = "Set the displayed text or label")
-    public void settext(String text) { control("text", text); }
+    public void settext(String text) {
+      control("text", text);
+    }
 
     @Verb(name = "enabled", description = "Set enabled state")
-    public void enabled(boolean enabled) { control(enabled ? "enable" : "disable", null); }
+    public void enabled(boolean enabled) {
+      control(enabled ? "enable" : "disable", null);
+    }
 
     @Verb(name = "visible", description = "Set visibility")
-    public void visible(boolean visible) { control(visible ? "show" : "hide", null); }
+    public void visible(boolean visible) {
+      control(visible ? "show" : "hide", null);
+    }
 
     @Verb(name = "show", description = "Show the widget")
-    public void show() { control("show", null); }
+    public void show() {
+      control("show", null);
+    }
 
     @Verb(name = "hide", description = "Hide the widget")
-    public void hide() { control("hide", null); }
+    public void hide() {
+      control("hide", null);
+    }
 
     @Verb(name = "enable", description = "Enable interaction")
-    public void enable() { control("enable", null); }
+    public void enable() {
+      control("enable", null);
+    }
 
     @Verb(name = "disable", description = "Disable interaction")
-    public void disable() { control("disable", null); }
+    public void disable() {
+      control("disable", null);
+    }
 
     @Verb(name = "close", description = "Close a surface")
-    public void close() { control("close", null); }
+    public void close() {
+      control("close", null);
+    }
 
     @Verb(name = "remove", description = "Remove the widget and dispose its emitters")
-    public void remove() { control("remove", null); }
+    public void remove() {
+      control("remove", null);
+    }
 
     @Verb(name = "clear", description = "Clear container children")
-    public void clear() { control("clear", null); }
+    public void clear() {
+      control("clear", null);
+    }
 
     @Verb(name = "style", description = "Update validated layout and widget options")
-    public void style(Map<String, Object> properties) { control("style", properties); }
+    public void style(Map<String, Object> properties) {
+      control("style", properties);
+    }
 
     @Verb(name = "readonly", description = "Set read-only state")
-    public void readonly(boolean readonly) { style(Map.of("readonly", readonly)); }
+    public void readonly(boolean readonly) {
+      style(Map.of("readonly", readonly));
+    }
 
     @Verb(name = "loading", description = "Set loading state")
-    public void loading(boolean loading) { style(Map.of("loading", loading)); }
+    public void loading(boolean loading) {
+      style(Map.of("loading", loading));
+    }
 
     @Verb(name = "options", description = "Replace stable choice or navigation options")
     public void options(List<?> options) {
-      if (!Set.of("select", "radio", "multiselect", "tabs", "stepper", "breadcrumbs").contains(control("type", null)))
+      if (!Set.of("select", "radio", "multiselect", "tabs", "stepper", "breadcrumbs")
+          .contains(control("type", null)))
         throw new IllegalArgumentException("Options require a choice or navigation widget");
       style(Map.of("options", options));
     }
@@ -441,34 +607,48 @@ public class CoreActorLibrary {
       style(Map.of("items", items));
     }
 
-    @Verb(name = "file", producesAgent = "core.ui_file", description = "Reference the currently selected uploaded/downloadable file")
+    @Verb(
+        name = "file",
+        producesAgent = "core.ui_file",
+        description = "Reference the currently selected uploaded/downloadable file")
     public UiFile file() {
       var handle = (Map<?, ?>) control("file", null);
       return new UiFile(model, handle.get("id").toString());
     }
 
-    @Verb(name = "source", description = "Set a downloader's source from a widget, UI file reference or handle map")
+    @Verb(
+        name = "source",
+        description = "Set a downloader's source from a widget, UI file reference or handle map")
     public void source(Object source) {
       Object handle;
       if (source instanceof Widget widget) {
-        if (widget.model != model) throw new IllegalArgumentException("File source belongs to another application");
+        if (widget.model != model)
+          throw new IllegalArgumentException("File source belongs to another application");
         handle = widget.control("file", null);
       } else if (source instanceof UiFile file) {
-        if (file.model != model) throw new IllegalArgumentException("File source belongs to another application");
+        if (file.model != model)
+          throw new IllegalArgumentException("File source belongs to another application");
         handle = file.metadata();
       } else if (source instanceof Map<?, ?>) handle = source;
-      else throw new IllegalArgumentException("File source must be an upload/download widget, UI file reference or opaque handle map");
+      else
+        throw new IllegalArgumentException(
+            "File source must be an upload/download widget, UI file reference or opaque handle map");
       control("source", handle);
     }
 
-    @Verb(name = "content", producesAgent = "core.ui_file", description = "Generate UTF-8 download content and return its file reference")
+    @Verb(
+        name = "content",
+        producesAgent = "core.ui_file",
+        description = "Generate UTF-8 download content and return its file reference")
     public UiFile content(String name, String text, String mediaType) {
       var handle = model.downloadContent(id, name, text, mediaType);
       return new UiFile(model, handle.get("id").toString());
     }
 
     @Verb(name = "exists", description = "Whether the original widget is still alive")
-    public boolean exists() { return Boolean.TRUE.equals(control("exists", null)); }
+    public boolean exists() {
+      return Boolean.TRUE.equals(control("exists", null));
+    }
   }
 
   /** An opaque application-owned file capability, separate from core.file filesystem agents. */
@@ -477,42 +657,58 @@ public class CoreActorLibrary {
     private final org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model;
     private final String id;
 
-    private UiFile(org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model, String id) {
+    private UiFile(
+        org.integratedmodelling.klab.runtime.kactors.view.ApplicationUiModel model, String id) {
       this.model = model;
       this.id = id;
     }
 
     @Verb(name = "metadata", description = "Get the opaque JSON handle metadata")
-    public Map<String, Object> metadata() { return model.fileMetadata(id); }
+    public Map<String, Object> metadata() {
+      return model.fileMetadata(id);
+    }
 
     @Verb(name = "name", description = "Get the original filename")
-    public String name() { return metadata().get("name").toString(); }
+    public String name() {
+      return metadata().get("name").toString();
+    }
 
     @Verb(name = "type", description = "Get the claimed MIME type")
-    public String type() { return metadata().get("mediaType").toString(); }
+    public String type() {
+      return metadata().get("mediaType").toString();
+    }
 
     @Verb(name = "size", description = "Get file size in bytes")
-    public long size() { return ((Number) metadata().get("size")).longValue(); }
+    public long size() {
+      return ((Number) metadata().get("size")).longValue();
+    }
 
     @Verb(name = "bytes", description = "Read a defensive byte-array copy on the server")
     public byte[] bytes() {
       metadata();
-      try { return model.file(id).bytes(); }
-      catch (IllegalArgumentException expired) { throw new IllegalStateException("UI file handle is no longer valid", expired); }
+      try {
+        return model.file(id).bytes();
+      } catch (IllegalArgumentException expired) {
+        throw new IllegalStateException("UI file handle is no longer valid", expired);
+      }
     }
 
     @Verb(name = "text", description = "Read validated UTF-8 text on the server")
     public String text() {
       try {
-        return java.nio.charset.StandardCharsets.UTF_8.newDecoder()
-            .decode(java.nio.ByteBuffer.wrap(bytes())).toString();
+        return java.nio.charset.StandardCharsets.UTF_8
+            .newDecoder()
+            .decode(java.nio.ByteBuffer.wrap(bytes()))
+            .toString();
       } catch (java.nio.charset.CharacterCodingException invalid) {
         throw new IllegalArgumentException("UI file is not valid UTF-8 text", invalid);
       }
     }
 
     @Verb(name = "exists", description = "Whether these file bytes are still retained")
-    public boolean exists() { return model.fileExists(id); }
+    public boolean exists() {
+      return model.fileExists(id);
+    }
   }
 
   /** Stable coordinates only: no service, credentials or document bean is checkpointed. */
@@ -2380,11 +2576,12 @@ public class CoreActorLibrary {
       var builder = Observation.builder(selectedContext);
       // Options are never definition data, including multiple Metadata arguments merged above.
       Map<?, ?> definition = null;
-      if (arguments != null) for (var argument : arguments)
-        if (argument instanceof Map<?, ?> map && !(argument instanceof Metadata)) {
-          definition = map;
-          break;
-        }
+      if (arguments != null)
+        for (var argument : arguments)
+          if (argument instanceof Map<?, ?> map && !(argument instanceof Metadata)) {
+            definition = map;
+            break;
+          }
       var observable = Utils.Collections.findElement(arguments, KimObservable.class);
       var concept = Utils.Collections.findElement(arguments, KimConcept.class);
       var urn = Utils.Collections.findElement(arguments, Urn.class);
@@ -2394,8 +2591,7 @@ public class CoreActorLibrary {
           concept == null ? (observable == null ? null : observable.getUrn()) : concept.getUrn();
       Observable semantics = Utils.Collections.findElement(arguments, Observable.class);
       if (semanticDef != null) {
-        semantics =
-            selectedContext.getService(Reasoner.class).resolveObservable(semanticDef);
+        semantics = selectedContext.getService(Reasoner.class).resolveObservable(semanticDef);
       }
 
       // definition MUST remain last
@@ -2416,7 +2612,9 @@ public class CoreActorLibrary {
   }
 
   /** Assertions and explicitly gated native testcase operations; see docs/TESTING.md. */
-  @Actor(name = "inspector", description = "Asset assertions and bounded native testcase operations")
+  @Actor(
+      name = "inspector",
+      description = "Asset assertions and bounded native testcase operations")
   public static class Inspector {
 
     @Verb(
@@ -2756,310 +2954,595 @@ public class CoreActorLibrary {
           observation, contextScope(context), null, curve, offset);
     }
 
-    @Verb(name = "cellcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Compare one finite numeric export-view cell in double precision with an explicit absolute tolerance; missing values fail.")
-    public static boolean cellcheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "cellcheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Compare one finite numeric export-view cell in double precision with an explicit absolute tolerance; missing values fail.")
+    public static boolean cellcheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "observation", description = "Committed numeric quality or detached quality query") Observation observation,
+        @Verb.Argument(
+                name = "observation",
+                description = "Committed numeric quality or detached quality query")
+            Observation observation,
         @Verb.Argument(name = "curve", description = "Consumer fill curve") Data.FillCurve curve,
-        @Verb.Argument(name = "offset", description = "Zero-based consumer traversal offset") long offset,
-        @Verb.Argument(name = "expected", description = "Finite expected numeric value") double expected,
-        @Verb.Argument(name = "tolerance", description = "Finite nonnegative absolute tolerance") double tolerance) {
-      return ObservationInspector.numericCell(celltext(scope, context, observation, curve, offset), expected, tolerance);
+        @Verb.Argument(name = "offset", description = "Zero-based consumer traversal offset")
+            long offset,
+        @Verb.Argument(name = "expected", description = "Finite expected numeric value")
+            double expected,
+        @Verb.Argument(name = "tolerance", description = "Finite nonnegative absolute tolerance")
+            double tolerance) {
+      return ObservationInspector.numericCell(
+          celltext(scope, context, observation, curve, offset), expected, tolerance);
     }
 
-    @Verb(name = "schedulecheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Check one model cadence, exact UTC bounds and durable temporal commit count.")
-    public static boolean schedulecheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "schedulecheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Check one model cadence, exact UTC bounds and durable temporal commit count.")
+    public static boolean schedulecheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
         @Verb.Argument(name = "process", description = "Committed process") Observation process,
         @Verb.Argument(name = "step", description = "Cadence multiplier") double step,
         @Verb.Argument(name = "unit", description = "Calendar or regular time unit")
-            org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution.Type unit,
+            org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution.Type
+                unit,
         @Verb.Argument(name = "start", description = "Expected ISO-8601 start") String start,
         @Verb.Argument(name = "end", description = "Expected ISO-8601 end") String end,
-        @Verb.Argument(name = "count", description = "Exact committed transition count") int count) {
+        @Verb.Argument(name = "count", description = "Exact committed transition count")
+            int count) {
       return org.integratedmodelling.klab.runtime.storage.TemporalInspector.scheduleCheck(
           contextScope(context), process, step, unit, start, end, count);
     }
 
-    @Verb(name = "relativecheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Check all covered numeric cells against INIT+n*delta, preserving missingness.")
-    public static boolean relativecheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "relativecheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Check all covered numeric cells against INIT+n*delta, preserving missingness.")
+    public static boolean relativecheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
         @Verb.Argument(name = "process", description = "Committed process") Observation process,
-        @Verb.Argument(name = "quality", description = "Affected numeric quality") Observation quality,
+        @Verb.Argument(name = "quality", description = "Affected numeric quality")
+            Observation quality,
         @Verb.Argument(name = "count", description = "Exact transition count") int count,
         @Verb.Argument(name = "delta", description = "Expected change per transition") double delta,
-        @Verb.Argument(name = "tolerance", description = "Absolute tolerance; minimum four double ULPs")
+        @Verb.Argument(
+                name = "tolerance",
+                description = "Absolute tolerance; minimum four double ULPs")
             double tolerance) {
       return org.integratedmodelling.klab.runtime.storage.TemporalInspector.relativeCheck(
           contextScope(context), process, quality, count, delta, tolerance);
     }
 
-    @Verb(name = "processprovenance", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Check existence-only process provenance, actual observer and no INIT storage for creates qualities.")
-    public static boolean processprovenance(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "processprovenance",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Check existence-only process provenance, actual observer and no INIT storage for creates qualities.")
+    public static boolean processprovenance(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
         @Verb.Argument(name = "process", description = "Committed process") Observation process) {
       return org.integratedmodelling.klab.runtime.storage.TemporalInspector.provenanceCheck(
           contextScope(context), process);
     }
 
-    @Verb(name = "apply", executionType = Verb.Type.SUPPLIER,
+    @Verb(
+        name = "apply",
+        executionType = Verb.Type.SUPPLIER,
         returns = RuntimeService.OperationReceipt.class,
-        description = "Apply an UPDATE directive through the native test-only runtime capability; returns a committed receipt, never an observation.")
-    public static CompletableFuture<RuntimeService.OperationReceipt> apply(RuntimeAgent.Scope caller,
+        description =
+            "Apply an UPDATE directive through the native test-only runtime capability; returns a committed receipt, never an observation.")
+    public static CompletableFuture<RuntimeService.OperationReceipt> apply(
+        RuntimeAgent.Scope caller,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "directive", description = "Observable or semantic directive literal") Object directive,
-        @Verb.Argument(name = "support", description = "Explicit operation geometry") Geometry support,
-        @Verb.Argument(name = "options", description = "Submission scope options") Object... options) {
+        @Verb.Argument(name = "directive", description = "Observable or semantic directive literal")
+            Object directive,
+        @Verb.Argument(name = "support", description = "Explicit operation geometry")
+            Geometry support,
+        @Verb.Argument(name = "options", description = "Submission scope options")
+            Object... options) {
       // Gate before context conversion, options, semantic lookup or native service access.
       if (!(caller instanceof TestCaseBase.TestCaseScope))
-        throw new IllegalArgumentException("inspector.apply requires an actual testcase execution scope");
-      if (options != null) for (var option : options)
-        if (!(option instanceof Metadata)) throw new IllegalArgumentException("apply options require metadata");
-      var selected = ContextActorSupport.submissionScope(contextScope(context),
-          ContextActorSupport.metadata(options));
+        throw new IllegalArgumentException(
+            "inspector.apply requires an actual testcase execution scope");
+      if (options != null)
+        for (var option : options)
+          if (!(option instanceof Metadata))
+            throw new IllegalArgumentException("apply options require metadata");
+      var selected =
+          ContextActorSupport.submissionScope(
+              contextScope(context), ContextActorSupport.metadata(options));
       if (!(selected.getService(RuntimeService.class) instanceof RuntimeService.Testing testing))
-        throw new IllegalArgumentException("inspector.apply requires a native test runtime capability");
+        throw new IllegalArgumentException(
+            "inspector.apply requires a native test runtime capability");
       Observable observable;
       if (directive instanceof Observable value) observable = value;
       else {
-        String definition = directive instanceof KimObservable value ? value.getUrn()
-            : directive instanceof KimConcept value ? value.getUrn() : null;
+        String definition =
+            directive instanceof KimObservable value
+                ? value.getUrn()
+                : directive instanceof KimConcept value ? value.getUrn() : null;
         if (definition == null || definition.isBlank())
-          throw new IllegalArgumentException("apply requires an observable or semantic directive literal");
+          throw new IllegalArgumentException(
+              "apply requires an observable or semantic directive literal");
         observable = selected.getService(Reasoner.class).resolveObservable(definition);
       }
-      if (observable == null) throw new IllegalArgumentException("Cannot resolve operation directive");
+      if (observable == null)
+        throw new IllegalArgumentException("Cannot resolve operation directive");
       if (support == null || support.isEmpty())
         throw new IllegalArgumentException("apply requires explicit nonempty support geometry");
-      var provenance = selected.getDigitalTwin().getKnowledgeGraph().requireAgent(caller.getAgent().getName());
-      var operationScope = selected.withResolutionConstraints(
-          ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, provenance));
+      var provenance =
+          selected.getDigitalTwin().getKnowledgeGraph().requireAgent(caller.getAgent().getName());
+      var operationScope =
+          selected.withResolutionConstraints(
+              ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, provenance));
       return testing.applyForTesting(observable, support, operationScope, caller);
     }
 
-    @Verb(name = "observercheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Check a known actual observer selection, persisted concrete Agent identity and successful observer submission/resolution provenance.")
-    public static boolean observercheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "observercheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Check a known actual observer selection, persisted concrete Agent identity and successful observer submission/resolution provenance.")
+    public static boolean observercheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "observation", description = "Committed observation whose observer is checked") Observation observation,
-        @Verb.Argument(name = "observer", description = "Expected concrete Agent, or null for recorded no-observer selection") Observation observer) {
+        @Verb.Argument(
+                name = "observation",
+                description = "Committed observation whose observer is checked")
+            Observation observation,
+        @Verb.Argument(
+                name = "observer",
+                description = "Expected concrete Agent, or null for recorded no-observer selection")
+            Observation observer) {
       return ObservationInspector.observerCheck(contextScope(context), observation, observer);
     }
 
-    @Verb(name = "membersnapshot", executionType = Verb.Type.FUNCTION,
+    @Verb(
+        name = "membersnapshot",
+        executionType = Verb.Type.FUNCTION,
         returns = ObservationInspector.MemberSnapshot.class,
-        description = "Capture committed native cohort member identities, semantics, geometry and attribution.")
-    public static ObservationInspector.MemberSnapshot membersnapshot(RuntimeAgent.Scope scope,
+        description =
+            "Capture committed native cohort member identities, semantics, geometry and attribution.")
+    public static ObservationInspector.MemberSnapshot membersnapshot(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "producer", description = "Instantiated collection producer") Observation producer) {
+        @Verb.Argument(name = "producer", description = "Instantiated collection producer")
+            Observation producer) {
       return ObservationInspector.snapshot(contextScope(context), producer);
     }
 
-    @Verb(name = "nativesnapshot", executionType = Verb.Type.FUNCTION,
+    @Verb(
+        name = "nativesnapshot",
+        executionType = Verb.Type.FUNCTION,
         returns = ObservationInspector.NativeSnapshot.class,
-        description = "Capture committed native observations, cohorts and contextualization provenance, including an empty context.")
-    public static ObservationInspector.NativeSnapshot nativesnapshot(RuntimeAgent.Scope scope,
+        description =
+            "Capture committed native observations, cohorts and contextualization provenance, including an empty context.")
+    public static ObservationInspector.NativeSnapshot nativesnapshot(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context) {
       return ObservationInspector.nativeSnapshot(contextScope(context));
     }
 
-    @Verb(name = "nativeunchanged", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Require unchanged committed native identity, semantics, geometry, cohort membership and contextualization provenance.")
-    public static boolean nativeunchanged(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "nativeunchanged",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Require unchanged committed native identity, semantics, geometry, cohort membership and contextualization provenance.")
+    public static boolean nativeunchanged(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
         @Verb.Argument(name = "before", description = "Native snapshot from the same context")
             ObservationInspector.NativeSnapshot before) {
       return ObservationInspector.nativeUnchanged(contextScope(context), before);
     }
 
-    @Verb(name = "fixtures", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Grant a private local fixture permit to an actual testcase-owned native context; never available through flags or remote clients.")
-    public static boolean fixtures(RuntimeAgent.Scope caller,
-        @Verb.Argument(name = "context", description = "Registered testcase-owned context") Object context) {
+    @Verb(
+        name = "fixtures",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Grant a private local fixture permit to an actual testcase-owned native context; never available through flags or remote clients.")
+    public static boolean fixtures(
+        RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Registered testcase-owned context")
+            Object context) {
       if (!(caller instanceof TestCaseBase.TestCaseScope))
         throw new IllegalArgumentException("Native fixtures require an actual testcase scope");
       return NativeTestFixtures.grant(caller, contextScope(context));
     }
 
-    @Verb(name = "clearfixtures", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+    @Verb(
+        name = "clearfixtures",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
         description = "Revoke this testcase's private native fixture permit.")
-    public static boolean clearfixtures(RuntimeAgent.Scope caller,
-        @Verb.Argument(name = "context", description = "Registered testcase-owned context") Object context) {
+    public static boolean clearfixtures(
+        RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Registered testcase-owned context")
+            Object context) {
       if (!(caller instanceof TestCaseBase.TestCaseScope))
         throw new IllegalArgumentException("Native fixtures require an actual testcase scope");
       return NativeTestFixtures.clear(caller, contextScope(context));
     }
 
-    @Verb(name = "fixturecount", executionType = Verb.Type.FUNCTION, returns = Long.class,
-        description = "Read this testcase's in-memory fixture invocation evidence; evidence survives a deliberate transaction rollback.")
-    public static long fixturecount(RuntimeAgent.Scope caller,
-        @Verb.Argument(name = "context", description = "Registered testcase-owned context") Object context,
-        @Verb.Argument(name = "name", description = "Counter: empty, classifier, prior, consumer, consumerMembers, classification, ordered or discovery") String name) {
+    @Verb(
+        name = "fixturecount",
+        executionType = Verb.Type.FUNCTION,
+        returns = Long.class,
+        description =
+            "Read this testcase's in-memory fixture invocation evidence; evidence survives a deliberate transaction rollback.")
+    public static long fixturecount(
+        RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Registered testcase-owned context")
+            Object context,
+        @Verb.Argument(
+                name = "name",
+                description =
+                    "Counter: empty, classifier, prior, consumer, consumerMembers, classification, ordered or discovery")
+            String name) {
       if (!(caller instanceof TestCaseBase.TestCaseScope))
         throw new IllegalArgumentException("Native fixtures require an actual testcase scope");
       return NativeTestFixtures.count(caller, contextScope(context), name);
     }
 
-    @Verb(name = "preparecatalog", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Native testcase SETUP only: prepare one empty durable native Subject or Agent catalog through the existing public native Runtime routine; create no observation or completion.")
-    public static boolean preparecatalog(RuntimeAgent.Scope caller,
-        @Verb.Argument(name = "context", description = "Active testcase-owned context with an existing private fixture permit and no current transaction") Object context,
-        @Verb.Argument(name = "semantics", description = "Concrete singular native Subject or Agent semantic literal, Concept or legacy definition") Object semantics) {
+    @Verb(
+        name = "preparecatalog",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Native testcase SETUP only: prepare one empty durable native Subject or Agent catalog through the existing public native Runtime routine; create no observation or completion.")
+    public static boolean preparecatalog(
+        RuntimeAgent.Scope caller,
+        @Verb.Argument(
+                name = "context",
+                description =
+                    "Active testcase-owned context with an existing private fixture permit and no current transaction")
+            Object context,
+        @Verb.Argument(
+                name = "semantics",
+                description =
+                    "Concrete singular native Subject or Agent semantic literal, Concept or legacy definition")
+            Object semantics) {
       if (!(caller instanceof TestCaseBase.TestCaseScope))
-        throw new IllegalArgumentException("Native catalog setup requires an actual testcase scope");
-      return NativeTestFixtures.prepareCatalog(caller, contextScope(context), semanticConceptDefinition(semantics));
+        throw new IllegalArgumentException(
+            "Native catalog setup requires an actual testcase scope");
+      return NativeTestFixtures.prepareCatalog(
+          caller, contextScope(context), semanticConceptDefinition(semantics));
     }
 
-    @Verb(name = "selectioncheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Check a virtual collective selection against current native source completion, predicates, member identities, observer and enumeration.")
-    public static boolean selectioncheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "selectioncheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Check a virtual collective selection against current native source completion, predicates, member identities, observer and enumeration.")
+    public static boolean selectioncheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "view", description = "Successful virtual collective selection, including zero members") Observation view,
-        @Verb.Argument(name = "expected", description = "Expected complete collective semantic literal, Concept or legacy definition") Object expected) {
-      return ObservationInspector.selectionCheck(contextScope(context), view, semanticConceptDefinition(expected));
+        @Verb.Argument(
+                name = "view",
+                description = "Successful virtual collective selection, including zero members")
+            Observation view,
+        @Verb.Argument(
+                name = "expected",
+                description =
+                    "Expected complete collective semantic literal, Concept or legacy definition")
+            Object expected) {
+      return ObservationInspector.selectionCheck(
+          contextScope(context), view, semanticConceptDefinition(expected));
     }
 
-    @Verb(name = "consequencerole", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Wait bounded milliseconds for an exact committed consequence role and its matching source/rule/recipient audit; never resolves or characterizes.")
-    public static boolean consequencerole(RuntimeAgent.Scope caller,
+    @Verb(
+        name = "consequencerole",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Wait bounded milliseconds for an exact committed consequence role and its matching source/rule/recipient audit; never resolves or characterizes.")
+    public static boolean consequencerole(
+        RuntimeAgent.Scope caller,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "source", description = "Durable conferring source") Observation source,
-        @Verb.Argument(name = "recipient", description = "Durable substantial recipient") Observation recipient,
-        @Verb.Argument(name = "role", description = "Expected exact role semantic literal or Concept") Object role,
-        @Verb.Argument(name = "timeoutMillis", description = "Bounded asynchronous assertion wait, 1 to 60000 milliseconds") long timeoutMillis)
+        @Verb.Argument(name = "source", description = "Durable conferring source")
+            Observation source,
+        @Verb.Argument(name = "recipient", description = "Durable substantial recipient")
+            Observation recipient,
+        @Verb.Argument(
+                name = "role",
+                description = "Expected exact role semantic literal or Concept")
+            Object role,
+        @Verb.Argument(
+                name = "timeoutMillis",
+                description = "Bounded asynchronous assertion wait, 1 to 60000 milliseconds")
+            long timeoutMillis)
         throws InterruptedException {
-      return ConsequenceInspector.awaitRole(contextScope(context),source,recipient,semanticConceptDefinition(role),timeoutMillis);
+      return ConsequenceInspector.awaitRole(
+          contextScope(context), source, recipient, semanticConceptDefinition(role), timeoutMillis);
     }
 
-    @Verb(name = "consequencetarget", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Wait bounded milliseconds for an already committed consequence target under its bearer; read-only, never resolves a missing target.")
-    public static boolean consequencetarget(RuntimeAgent.Scope caller,
+    @Verb(
+        name = "consequencetarget",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Wait bounded milliseconds for an already committed consequence target under its bearer; read-only, never resolves a missing target.")
+    public static boolean consequencetarget(
+        RuntimeAgent.Scope caller,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "recipient", description = "Durable actual target bearer") Observation recipient,
-        @Verb.Argument(name = "target", description = "Expected target semantic literal or Observable") Object target,
-        @Verb.Argument(name = "timeoutMillis", description = "Bounded asynchronous assertion wait, 1 to 60000 milliseconds") long timeoutMillis)
+        @Verb.Argument(name = "recipient", description = "Durable actual target bearer")
+            Observation recipient,
+        @Verb.Argument(
+                name = "target",
+                description = "Expected target semantic literal or Observable")
+            Object target,
+        @Verb.Argument(
+                name = "timeoutMillis",
+                description = "Bounded asynchronous assertion wait, 1 to 60000 milliseconds")
+            long timeoutMillis)
         throws InterruptedException {
-      return ConsequenceInspector.awaitTarget(contextScope(context),recipient,semanticConceptDefinition(target),timeoutMillis);
+      return ConsequenceInspector.awaitTarget(
+          contextScope(context), recipient, semanticConceptDefinition(target), timeoutMillis);
     }
 
-    @Verb(name = "configuration", executionType = Verb.Type.FUNCTION, returns = Observation.class,
-        description = "Wait bounded milliseconds for a committed detected configuration with typed bearer/cohort placement, exact perspective and ingredient revision, and optional actual modeled completion; never resolves.")
-    public static Observation configuration(RuntimeAgent.Scope caller,
-        @Verb.Argument(name="context",description="Context actor or scope") Object context,
-        @Verb.Argument(name="semantics",description="Exact configuration semantic literal") Object semantics,
-        @Verb.Argument(name="minimumRevision",description="Minimum actual committed configuration revision") long minimumRevision,
-        @Verb.Argument(name="modeled",description="Require actual explanatory model completion") boolean modeled,
-        @Verb.Argument(name="timeoutMillis",description="Bounded1..60000ms native read wait") long timeoutMillis)throws InterruptedException {
-      return ConfigurationInspector.await(contextScope(context),semanticConceptDefinition(semantics),minimumRevision,modeled,timeoutMillis);
+    @Verb(
+        name = "configuration",
+        executionType = Verb.Type.FUNCTION,
+        returns = Observation.class,
+        description =
+            "Wait bounded milliseconds for a committed detected configuration with typed bearer/cohort placement, exact perspective and ingredient revision, and optional actual modeled completion; never resolves.")
+    public static Observation configuration(
+        RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "semantics", description = "Exact configuration semantic literal")
+            Object semantics,
+        @Verb.Argument(
+                name = "minimumRevision",
+                description = "Minimum actual committed configuration revision")
+            long minimumRevision,
+        @Verb.Argument(
+                name = "modeled",
+                description = "Require actual explanatory model completion")
+            boolean modeled,
+        @Verb.Argument(name = "timeoutMillis", description = "Bounded1..60000ms native read wait")
+            long timeoutMillis)
+        throws InterruptedException {
+      return ConfigurationInspector.await(
+          contextScope(context),
+          semanticConceptDefinition(semantics),
+          minimumRevision,
+          modeled,
+          timeoutMillis);
     }
 
-    @Verb(name = "configurationcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Read-only configuration placement/perspective, exact ingredient/current-revision, scientific detection proof and modeled-completion assertion.")
-    public static boolean configurationcheck(RuntimeAgent.Scope caller,
-        @Verb.Argument(name="context",description="Context actor or scope") Object context,
-        @Verb.Argument(name="configuration",description="Durable detected configuration") Observation configuration,
-        @Verb.Argument(name="semantics",description="Exact configuration semantic literal") Object semantics,
-        @Verb.Argument(name="minimumRevision",description="Minimum actual committed configuration revision") long minimumRevision,
-        @Verb.Argument(name="modeled",description="Require actual explanatory model completion") boolean modeled) {
-      return ConfigurationInspector.check(contextScope(context),configuration,semanticConceptDefinition(semantics),minimumRevision,modeled);
+    @Verb(
+        name = "configurationcheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Read-only configuration placement/perspective, exact ingredient/current-revision, scientific detection proof and modeled-completion assertion.")
+    public static boolean configurationcheck(
+        RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "configuration", description = "Durable detected configuration")
+            Observation configuration,
+        @Verb.Argument(name = "semantics", description = "Exact configuration semantic literal")
+            Object semantics,
+        @Verb.Argument(
+                name = "minimumRevision",
+                description = "Minimum actual committed configuration revision")
+            long minimumRevision,
+        @Verb.Argument(
+                name = "modeled",
+                description = "Require actual explanatory model completion")
+            boolean modeled) {
+      return ConfigurationInspector.check(
+          contextScope(context),
+          configuration,
+          semanticConceptDefinition(semantics),
+          minimumRevision,
+          modeled);
     }
 
-    @Verb(name="configurationsnapshot",executionType=Verb.Type.FUNCTION,returns=ConfigurationRecomputeInspector.Snapshot.class,
-        description="Capture immutable committed configuration history, lineage, managed inputs and current scheduler instant without execution.")
-    public static ConfigurationRecomputeInspector.Snapshot configurationsnapshot(RuntimeAgent.Scope caller,
-        @Verb.Argument(name="context",description="Context actor or scope") Object context,
-        @Verb.Argument(name="configuration",description="Committed modeled configuration") Observation configuration) {
-      return ConfigurationRecomputeInspector.snapshot(contextScope(context),configuration);
-    }
-    @Verb(name="configurationrecomputed",executionType=Verb.Type.FUNCTION,returns=Boolean.class,
-        description="Verify one actual Resize transition, same configuration identity, new modeled detection and preserved immutable history without another time advance.")
-    public static boolean configurationrecomputed(RuntimeAgent.Scope caller,
-        @Verb.Argument(name="context",description="Context actor or scope") Object context,
-        @Verb.Argument(name="before",description="Read-only pre-transition snapshot") ConfigurationRecomputeInspector.Snapshot before,
-        @Verb.Argument(name="configuration",description="Current same-identity configuration") Observation configuration,
-        @Verb.Argument(name="process",description="Actual ingredient-changing process") Observation process,
-        @Verb.Argument(name="height",description="Changed ingredient") Observation height,
-        @Verb.Argument(name="width",description="Unchanged ingredient") Observation width) {
-      return ConfigurationRecomputeInspector.recomputed(contextScope(context),before,configuration,process,height,width);
+    @Verb(
+        name = "configurationsnapshot",
+        executionType = Verb.Type.FUNCTION,
+        returns = ConfigurationRecomputeInspector.Snapshot.class,
+        description =
+            "Capture immutable committed configuration history, lineage, managed inputs and current scheduler instant without execution.")
+    public static ConfigurationRecomputeInspector.Snapshot configurationsnapshot(
+        RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "configuration", description = "Committed modeled configuration")
+            Observation configuration) {
+      return ConfigurationRecomputeInspector.snapshot(contextScope(context), configuration);
     }
 
-    @Verb(name = "selectionreplay", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Round-trip a selection as JSON and validate it through the normal read-only Runtime query path, preserving sources, selected identities and native state.")
-    public static boolean selectionreplay(RuntimeAgent.Scope scope,
-        @Verb.Argument(name = "context", description = "Context actor or scope owning the selection") Object context,
-        @Verb.Argument(name = "view", description = "Virtual selection to transport and replay") Observation view) {
+    @Verb(
+        name = "configurationrecomputed",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Verify one actual Resize transition, same configuration identity, new modeled detection and preserved immutable history without another time advance.")
+    public static boolean configurationrecomputed(
+        RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "before", description = "Read-only pre-transition snapshot")
+            ConfigurationRecomputeInspector.Snapshot before,
+        @Verb.Argument(name = "configuration", description = "Current same-identity configuration")
+            Observation configuration,
+        @Verb.Argument(name = "process", description = "Actual ingredient-changing process")
+            Observation process,
+        @Verb.Argument(name = "height", description = "Changed ingredient") Observation height,
+        @Verb.Argument(name = "width", description = "Unchanged ingredient") Observation width) {
+      return ConfigurationRecomputeInspector.recomputed(
+          contextScope(context), before, configuration, process, height, width);
+    }
+
+    @Verb(
+        name = "selectionreplay",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Round-trip a selection as JSON and validate it through the normal read-only Runtime query path, preserving sources, selected identities and native state.")
+    public static boolean selectionreplay(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(
+                name = "context",
+                description = "Context actor or scope owning the selection")
+            Object context,
+        @Verb.Argument(name = "view", description = "Virtual selection to transport and replay")
+            Observation view) {
       return ObservationInspector.selectionReplay(contextScope(context), view);
     }
 
-    @Verb(name = "selectioninput", executionType = Verb.Type.FUNCTION, returns = Observation.class,
-        description = "Recover and validate the actual predicate-filtered collective bound to a committed model consumer's local alias.")
-    public static Observation selectioninput(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "selectioninput",
+        executionType = Verb.Type.FUNCTION,
+        returns = Observation.class,
+        description =
+            "Recover and validate the actual predicate-filtered collective bound to a committed model consumer's local alias.")
+    public static Observation selectioninput(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "consumer", description = "Committed observation produced by the consuming model") Observation consumer,
-        @Verb.Argument(name = "alias", description = "Model-local input binding name") String alias) {
+        @Verb.Argument(
+                name = "consumer",
+                description = "Committed observation produced by the consuming model")
+            Observation consumer,
+        @Verb.Argument(name = "alias", description = "Model-local input binding name")
+            String alias) {
       return ObservationInspector.selectionInput(contextScope(context), consumer, alias);
     }
 
-    @Verb(name = "classificationcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Verify in-place concrete classification, unchanged member identity/geometry and committed attribution.")
-    public static boolean classificationcheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "classificationcheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Verify in-place concrete classification, unchanged member identity/geometry and committed attribution.")
+    public static boolean classificationcheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "before", description = "Member snapshot captured before classification")
+        @Verb.Argument(
+                name = "before",
+                description = "Member snapshot captured before classification")
             ObservationInspector.MemberSnapshot before,
-        @Verb.Argument(name = "family", description = "Expected predicate family semantic literal, Concept or legacy definition") Object family) {
-      return ObservationInspector.classificationCheck(contextScope(context), before, semanticConceptDefinition(family));
+        @Verb.Argument(
+                name = "family",
+                description =
+                    "Expected predicate family semantic literal, Concept or legacy definition")
+            Object family) {
+      return ObservationInspector.classificationCheck(
+          contextScope(context), before, semanticConceptDefinition(family));
     }
 
-    @Verb(name = "classificationcheckfor", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Verify committed in-place classification for an explicit requested predicate and its lexical family, preserving member identity, geometry and attribution evidence.")
-    public static boolean classificationcheckfor(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "classificationcheckfor",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Verify committed in-place classification for an explicit requested predicate and its lexical family, preserving member identity, geometry and attribution evidence.")
+    public static boolean classificationcheckfor(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "before", description = "Member snapshot captured before classification") ObservationInspector.MemberSnapshot before,
-        @Verb.Argument(name = "requested", description = "Predicate requested by the operation") Object requested,
-        @Verb.Argument(name = "family", description = "Explicit lexical family of the request") Object family) {
-      return ObservationInspector.classificationCheckFor(contextScope(context), before,
-          semanticConceptDefinition(requested), semanticConceptDefinition(family));
+        @Verb.Argument(
+                name = "before",
+                description = "Member snapshot captured before classification")
+            ObservationInspector.MemberSnapshot before,
+        @Verb.Argument(name = "requested", description = "Predicate requested by the operation")
+            Object requested,
+        @Verb.Argument(name = "family", description = "Explicit lexical family of the request")
+            Object family) {
+      return ObservationInspector.classificationCheckFor(
+          contextScope(context),
+          before,
+          semanticConceptDefinition(requested),
+          semanticConceptDefinition(family));
     }
 
-    @Verb(name = "failed", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Require an explicit empty, unassigned, zero-coverage submission response carrying an error notification. Null captures and successful empty selections do not pass; assert nativeunchanged separately for rollback.")
-    public static boolean failed(RuntimeAgent.Scope scope,
-        @Verb.Argument(name = "observation", description = "Submission response", optional = true) Observation observation) {
+    @Verb(
+        name = "failed",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Require an explicit empty, unassigned, zero-coverage submission response carrying an error notification. Null captures and successful empty selections do not pass; assert nativeunchanged separately for rollback.")
+    public static boolean failed(
+        RuntimeAgent.Scope scope,
+        @Verb.Argument(name = "observation", description = "Submission response", optional = true)
+            Observation observation) {
       return ObservationInspector.submissionFailed(observation);
     }
 
-    @Verb(name = "classificationnoop", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Verify successful existing-member classification with unchanged identities, semantics and attribution.")
-    public static boolean classificationnoop(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "classificationnoop",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Verify successful existing-member classification with unchanged identities, semantics and attribution.")
+    public static boolean classificationnoop(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
         @Verb.Argument(name = "before", description = "Snapshot of already classified members")
             ObservationInspector.MemberSnapshot before,
-        @Verb.Argument(name = "family", description = "Expected predicate family semantic literal, Concept or legacy definition") Object family) {
-      return ObservationInspector.classificationNoop(contextScope(context), before, semanticConceptDefinition(family));
+        @Verb.Argument(
+                name = "family",
+                description =
+                    "Expected predicate family semantic literal, Concept or legacy definition")
+            Object family) {
+      return ObservationInspector.classificationNoop(
+          contextScope(context), before, semanticConceptDefinition(family));
     }
 
-    @Verb(name = "classificationnoopfor", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Check one successful EXISTING-only classification audit for an explicit requested predicate and lexical family, with unchanged native members and attribution.")
-    public static boolean classificationnoopfor(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "classificationnoopfor",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Check one successful EXISTING-only classification audit for an explicit requested predicate and lexical family, with unchanged native members and attribution.")
+    public static boolean classificationnoopfor(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "before", description = "Snapshot of already classified members") ObservationInspector.MemberSnapshot before,
-        @Verb.Argument(name = "requested", description = "Predicate requested by the operation") Object requested,
-        @Verb.Argument(name = "family", description = "Explicit lexical family of the request") Object family) {
-      return ObservationInspector.classificationNoopFor(contextScope(context), before,
-          semanticConceptDefinition(requested), semanticConceptDefinition(family));
+        @Verb.Argument(name = "before", description = "Snapshot of already classified members")
+            ObservationInspector.MemberSnapshot before,
+        @Verb.Argument(name = "requested", description = "Predicate requested by the operation")
+            Object requested,
+        @Verb.Argument(name = "family", description = "Explicit lexical family of the request")
+            Object family) {
+      return ObservationInspector.classificationNoopFor(
+          contextScope(context),
+          before,
+          semanticConceptDefinition(requested),
+          semanticConceptDefinition(family));
     }
 
-    @Verb(name = "relationshipscheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Verify directed relationship members, semantic endpoints, ordered participant links and geometry.")
-    public static boolean relationshipscheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "relationshipscheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Verify directed relationship members, semantic endpoints, ordered participant links and geometry.")
+    public static boolean relationshipscheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "producer", description = "Relationship collection producer") Observation producer,
-        @Verb.Argument(name = "relationship", description = "Expected relationship semantic literal, Concept or legacy definition") Object relationship) {
-      return ObservationInspector.relationshipsCheck(contextScope(context), producer, semanticConceptDefinition(relationship));
+        @Verb.Argument(name = "producer", description = "Relationship collection producer")
+            Observation producer,
+        @Verb.Argument(
+                name = "relationship",
+                description =
+                    "Expected relationship semantic literal, Concept or legacy definition")
+            Object relationship) {
+      return ObservationInspector.relationshipsCheck(
+          contextScope(context), producer, semanticConceptDefinition(relationship));
     }
 
     /**
@@ -3076,18 +3559,29 @@ public class CoreActorLibrary {
         return semanticConceptDefinition(observable.getSemantics());
       else if (value instanceof KimConcept concept) definition = concept.getUrn();
       else if (value instanceof String legacy) definition = legacy;
-      else throw new IllegalArgumentException("Expected an inspector semantic literal, Concept or legacy concept definition");
+      else
+        throw new IllegalArgumentException(
+            "Expected an inspector semantic literal, Concept or legacy concept definition");
       if (definition == null || definition.isBlank())
-        throw new IllegalArgumentException("Inspector concept semantics must have a nonblank definition");
+        throw new IllegalArgumentException(
+            "Inspector concept semantics must have a nonblank definition");
       return definition;
     }
 
-    @Verb(name = "gridcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
-        description = "Check a bounded rectangular grid against independent native cell/value and physical-coordinate oracles.")
-    public static boolean gridcheck(RuntimeAgent.Scope scope,
+    @Verb(
+        name = "gridcheck",
+        executionType = Verb.Type.FUNCTION,
+        returns = Boolean.class,
+        description =
+            "Check a bounded rectangular grid against independent native cell/value and physical-coordinate oracles.")
+    public static boolean gridcheck(
+        RuntimeAgent.Scope scope,
         @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
-        @Verb.Argument(name = "observation", description = "Committed numeric grid quality") Observation observation,
-        @Verb.Argument(name = "expectedGeometry", description = "Explicit regular S2 bbox, dimensions and CRS")
+        @Verb.Argument(name = "observation", description = "Committed numeric grid quality")
+            Observation observation,
+        @Verb.Argument(
+                name = "expectedGeometry",
+                description = "Explicit regular S2 bbox, dimensions and CRS")
             String expectedGeometry) {
       return org.integratedmodelling.klab.runtime.storage.GridInspector.check(
           contextScope(context), observation, expectedGeometry);

@@ -80,8 +80,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
    * @return
    */
   protected Map<String, Object> asParameters(Object asset, Object... additionalParameters) {
-    var properties=parameterMap(asset, additionalParameters);
-    for(var field:java.util.List.of(KnowledgeGraph.CURRENT_PROPERTY,KnowledgeGraph.MEMBERSHIP_REVISION_PROPERTY,"klabCessationHistory","klabCeasedAtCommit"))properties.remove(field);
+    var properties = parameterMap(asset, additionalParameters);
+    for (var field :
+        java.util.List.of(
+            KnowledgeGraph.CURRENT_PROPERTY,
+            KnowledgeGraph.MEMBERSHIP_REVISION_PROPERTY,
+            "klabCessationHistory",
+            "klabCeasedAtCommit")) properties.remove(field);
     return properties;
   }
 
@@ -90,10 +95,12 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     if (asset != null) {
       switch (asset) {
         case Observation observation -> {
-          ret.put(GraphModel.Fields.ANNOTATIONS_JSON,
+          ret.put(
+              GraphModel.Fields.ANNOTATIONS_JSON,
               observation.getAnnotations().stream().map(Utils.Json::asString).toList());
           if (observation instanceof ObservationImpl annotated) {
-            ret.put(GraphModel.Fields.ANNOTATION_PRIORITIES,
+            ret.put(
+                GraphModel.Fields.ANNOTATION_PRIORITIES,
                 Utils.Json.asString(annotated.getAnnotationPriorities()));
           }
           var metadata = sanitizeMetadata(observation.getMetadata());
@@ -163,15 +170,22 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
         }
         case ActuatorImpl actuator -> {
           ret.put(GraphModel.Fields.ACTUATOR_SCHEMA_VERSION, 1);
-          ret.put(GraphModel.Fields.OPERATION_OBSERVABLE, actuator.getOperationObservable() == null
-              ? null : actuator.getOperationObservable().getUrn());
+          ret.put(
+              GraphModel.Fields.OPERATION_OBSERVABLE,
+              actuator.getOperationObservable() == null
+                  ? null
+                  : actuator.getOperationObservable().getUrn());
           ret.put(GraphModel.Fields.EXECUTION_ROLE, actuator.getExecutionRole().name());
-          ret.put(GraphModel.Fields.OCCURRENCE_SCHEDULES_JSON, actuator.getOccurrenceSchedules().entrySet().stream()
-              .sorted(Map.Entry.comparingByKey())
-              .map(entry -> Utils.Json.asString(
-                  new org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule.Computation(
-                      entry.getKey(), entry.getValue())))
-              .toList());
+          ret.put(
+              GraphModel.Fields.OCCURRENCE_SCHEDULES_JSON,
+              actuator.getOccurrenceSchedules().entrySet().stream()
+                  .sorted(Map.Entry.comparingByKey())
+                  .map(
+                      entry ->
+                          Utils.Json.asString(
+                              new org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule
+                                  .Computation(entry.getKey(), entry.getValue())))
+                  .toList());
           ret.put(GraphModel.Fields.ID, actuator.getId());
           ret.put(GraphModel.Fields.NAME, actuator.getName());
           ret.put(
@@ -204,9 +218,13 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
                   ? null
                   : actuator.getResolvedGeometry().encode());
           ret.put(GraphModel.Fields.RESOLVED_COVERAGE, actuator.getResolvedCoverage());
-          ret.put(GraphModel.Fields.SEMANTICS, actuator.getObservation() == null
-              ? actuator.getOperationObservable().getUrn() : actuator.getObservation().getObservable().getUrn());
-          if (actuator.getActuatorType() == org.integratedmodelling.klab.api.services.runtime.Actuator.Type.UPDATE)
+          ret.put(
+              GraphModel.Fields.SEMANTICS,
+              actuator.getObservation() == null
+                  ? actuator.getOperationObservable().getUrn()
+                  : actuator.getObservation().getObservable().getUrn());
+          if (actuator.getActuatorType()
+              == org.integratedmodelling.klab.api.services.runtime.Actuator.Type.UPDATE)
             ret.put("operationPlan", Utils.Json.asString(actuator));
           ret.put(
               GraphModel.Fields.COMPUTATION,
@@ -221,14 +239,20 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           var metadata = sanitizeMetadata(activity.getMetadata());
           ret.putAll(metadata);
           var auditMetadata = new HashMap<String, Object>(metadata);
-          for (var key : java.util.List.of(Metadata.IM_ATTRIBUTIONS, Metadata.IM_RESOLUTION_GRAPH, Metadata.IM_DATAFLOW_GRAPH, Metadata.IM_CLASSIFICATION_MEMBER_RESULTS,
-              org.integratedmodelling.klab.services.runtime.digitaltwin.RoleAttributionEvents.METADATA_KEY,
-              "klab.configuration.revisions")) {
+          for (var key :
+              java.util.List.of(
+                  Metadata.IM_ATTRIBUTIONS,
+                  Metadata.IM_RESOLUTION_GRAPH,
+                  Metadata.IM_DATAFLOW_GRAPH,
+                  Metadata.IM_CLASSIFICATION_MEMBER_RESULTS,
+                  org.integratedmodelling.klab.services.runtime.digitaltwin.RoleAttributionEvents
+                      .METADATA_KEY,
+                  "klab.configuration.revisions")) {
             var value = activity.getMetadata().get(key);
             // Metadata wraps nested maps as Parameters; persist invocation evidence as plain
             // JSON entries, rather than serializing Parameters implementation fields.
-            if (Metadata.IM_CLASSIFICATION_MEMBER_RESULTS.equals(key) && value instanceof Map<?, ?> map)
-              value = new java.util.LinkedHashMap<>(map);
+            if (Metadata.IM_CLASSIFICATION_MEMBER_RESULTS.equals(key)
+                && value instanceof Map<?, ?> map) value = new java.util.LinkedHashMap<>(map);
             if (value != null) auditMetadata.put(key, value);
           }
           ret.put(GraphModel.Fields.METADATA, Utils.Json.asString(auditMetadata));
@@ -269,8 +293,10 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           ret.put(GraphModel.Fields.TIMESTAMP, buffer.getTimestamp());
           ret.put(GraphModel.Fields.SHARD_COUNT, buffer.getShardCount());
           ret.put(GraphModel.Fields.URN, buffer.getUrn());
-          if (buffer.getKeyDictionaryHash() != null) ret.put("keyDictionaryHash", buffer.getKeyDictionaryHash());
-          if (buffer.getCategoryHistogram() != null) ret.put("categoryHistogram", Utils.Json.asString(buffer.getCategoryHistogram()));
+          if (buffer.getKeyDictionaryHash() != null)
+            ret.put("keyDictionaryHash", buffer.getKeyDictionaryHash());
+          if (buffer.getCategoryHistogram() != null)
+            ret.put("categoryHistogram", Utils.Json.asString(buffer.getCategoryHistogram()));
           if (buffer.getHistogram() != null) {
             ret.put(GraphModel.Fields.HISTOGRAM, Utils.Json.asString(buffer.getHistogram()));
           }
@@ -299,19 +325,26 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
 
   /**
    * Canonical persisted observation input, for transaction read comparison only. Runtime-only
-   * fields (notifications, service coordinates, transient IDs) are deliberately excluded.
-   * Geometry relationships live outside the observation node and are included separately.
+   * fields (notifications, service coordinates, transient IDs) are deliberately excluded. Geometry
+   * relationships live outside the observation node and are included separately.
    */
   public static Map<String, Object> persistedObservationProperties(Observation observation) {
     var parameters = parameterMap(observation);
-    for (var field : java.util.List.of(GraphModel.Fields.METADATA, GraphModel.Fields.ANNOTATION_PRIORITIES,
-        GraphModel.Fields.ADAPTER_PARAMETERS, GraphModel.Fields.HISTOGRAMS)) {
+    for (var field :
+        java.util.List.of(
+            GraphModel.Fields.METADATA,
+            GraphModel.Fields.ANNOTATION_PRIORITIES,
+            GraphModel.Fields.ADAPTER_PARAMETERS,
+            GraphModel.Fields.HISTOGRAMS)) {
       if (parameters.get(field) instanceof String json)
         parameters.put(field, Utils.Json.parseObject(json, Object.class));
     }
     if (parameters.get(GraphModel.Fields.ANNOTATIONS_JSON) instanceof java.util.List<?> annotations)
-      parameters.put(GraphModel.Fields.ANNOTATIONS_JSON, annotations.stream()
-          .map(value -> Utils.Json.parseObject(value.toString(), Object.class)).toList());
+      parameters.put(
+          GraphModel.Fields.ANNOTATIONS_JSON,
+          annotations.stream()
+              .map(value -> Utils.Json.parseObject(value.toString(), Object.class))
+              .toList());
     // A referenced cached observation can acquire a later operation receipt without a native
     // observation write. That runtime receipt is not classifier input.
     // Keep native storage and its raw read-set guard unchanged; normalize only this comparison.
@@ -323,16 +356,27 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     }
     var result = new java.util.TreeMap<String, Object>();
     result.put("properties", canonicalInput(parameters));
-    result.put("geometry", observation.getGeometry() == null ? null
-        : org.integratedmodelling.klab.api.geometry.Geometry.forTransport(observation.getGeometry()).encode());
-    var perceived = observation.getObservable().is(SemanticType.AGENT)
-        ? observation.geometry(Observation.GeometryRelationship.PERCEIVES) : null;
-    result.put("perceivedGeometry", perceived == null ? null
-        : org.integratedmodelling.klab.api.geometry.Geometry.forTransport(perceived).encode());
+    result.put(
+        "geometry",
+        observation.getGeometry() == null
+            ? null
+            : org.integratedmodelling.klab.api.geometry.Geometry.forTransport(
+                    observation.getGeometry())
+                .encode());
+    var perceived =
+        observation.getObservable().is(SemanticType.AGENT)
+            ? observation.geometry(Observation.GeometryRelationship.PERCEIVES)
+            : null;
+    result.put(
+        "perceivedGeometry",
+        perceived == null
+            ? null
+            : org.integratedmodelling.klab.api.geometry.Geometry.forTransport(perceived).encode());
     return java.util.Collections.unmodifiableMap(result);
   }
 
-  private record PersistedNumber(String kind,String value) {}
+  private record PersistedNumber(String kind, String value) {}
+
   private record PersistedBinary(String value) {}
 
   private static Object canonicalInput(Object value) {
@@ -343,17 +387,32 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
     }
     if (value instanceof java.util.Collection<?> items)
       return items.stream().map(AbstractKnowledgeGraph::canonicalInput).toList();
-    if (value instanceof byte[] bytes) return new PersistedBinary(java.util.Base64.getEncoder().encodeToString(bytes));
+    if (value instanceof byte[] bytes)
+      return new PersistedBinary(java.util.Base64.getEncoder().encodeToString(bytes));
     if (value instanceof Number number) {
-      String kind=number instanceof Byte || number instanceof Short || number instanceof Integer
-          || number instanceof Long || number instanceof java.math.BigInteger ? "integral"
-          : number instanceof java.math.BigDecimal decimal
-              ? (Utils.Json.asString(decimal).contains(".") || Utils.Json.asString(decimal).toLowerCase(java.util.Locale.ROOT).contains("e")
-                  ? "floating" : "integral")
-          : number instanceof Float || number instanceof Double
-              ? "floating" : number.getClass().getName();
-      try { return new PersistedNumber(kind,new java.math.BigDecimal(number.toString()).stripTrailingZeros().toPlainString()); }
-      catch (NumberFormatException nonFinite) { return new PersistedNumber(kind,number.toString()); }
+      String kind =
+          number instanceof Byte
+                  || number instanceof Short
+                  || number instanceof Integer
+                  || number instanceof Long
+                  || number instanceof java.math.BigInteger
+              ? "integral"
+              : number instanceof java.math.BigDecimal decimal
+                  ? (Utils.Json.asString(decimal).contains(".")
+                          || Utils.Json.asString(decimal)
+                              .toLowerCase(java.util.Locale.ROOT)
+                              .contains("e")
+                      ? "floating"
+                      : "integral")
+                  : number instanceof Float || number instanceof Double
+                      ? "floating"
+                      : number.getClass().getName();
+      try {
+        return new PersistedNumber(
+            kind, new java.math.BigDecimal(number.toString()).stripTrailingZeros().toPlainString());
+      } catch (NumberFormatException nonFinite) {
+        return new PersistedNumber(kind, number.toString());
+      }
     }
     return value;
   }

@@ -1,8 +1,5 @@
 package org.integratedmodelling.klab.services.reasoner.controllers;
 
-import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
-import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,12 +13,12 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.reasoner.ReasonerServer;
-import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,26 +30,69 @@ public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
 
-  private <T> T cycleCall(Principal principal,java.util.function.Function<org.integratedmodelling.klab.api.scope.Scope,T> call) {
-    if(!(principal instanceof EngineAuthorization authorization))throw new org.springframework.web.server.ResponseStatusException(
-        org.springframework.http.HttpStatus.FORBIDDEN,"Semantic cycles require authenticated context ownership");
-    try {return call.apply(authorization.getScope());}
-    catch(SecurityException denied){throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,denied.getMessage());}
-    catch(IllegalArgumentException malformed){throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,malformed.getMessage());}
+  private <T> T cycleCall(
+      Principal principal,
+      java.util.function.Function<org.integratedmodelling.klab.api.scope.Scope, T> call) {
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.FORBIDDEN,
+          "Semantic cycles require authenticated context ownership");
+    try {
+      return call.apply(authorization.getScope());
+    } catch (SecurityException denied) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.FORBIDDEN, denied.getMessage());
+    } catch (IllegalArgumentException malformed) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST, malformed.getMessage());
+    }
   }
+
   @PostMapping(ServicesAPI.REASONER.SEMANTIC_CYCLE_BEGIN)
-  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult beginSemanticCycle(
-      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest request,Principal principal) {
-    return cycleCall(principal,scope->reasoner.klabService().beginSemanticCycleResult(request.runtimeServiceId(),request.contextId(),request.cycleId(),scope));
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult
+      beginSemanticCycle(
+          @RequestBody
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest
+                  request,
+          Principal principal) {
+    return cycleCall(
+        principal,
+        scope ->
+            reasoner
+                .klabService()
+                .beginSemanticCycleResult(
+                    request.runtimeServiceId(), request.contextId(), request.cycleId(), scope));
   }
+
   @PostMapping(ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE)
-  public Boolean releaseSemanticCycle(@RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest request,Principal principal) {
-    return cycleCall(principal,scope->{reasoner.klabService().releaseSemanticCycle(request.binding(),request.runtimeServiceId(),request.contextId(),request.cycleId(),scope);return true;});
+  public Boolean releaseSemanticCycle(
+      @RequestBody
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest request,
+      Principal principal) {
+    return cycleCall(
+        principal,
+        scope -> {
+          reasoner
+              .klabService()
+              .releaseSemanticCycle(
+                  request.binding(),
+                  request.runtimeServiceId(),
+                  request.contextId(),
+                  request.cycleId(),
+                  scope);
+          return true;
+        });
   }
+
   @PostMapping(ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE)
-  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult invokeSemanticCycle(
-      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleInvocation request,Principal principal) {
-    return cycleCall(principal,scope->reasoner.klabService().invokeSemanticCycle(request,scope));
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult
+      invokeSemanticCycle(
+          @RequestBody
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleInvocation
+                  request,
+          Principal principal) {
+    return cycleCall(
+        principal, scope -> reasoner.klabService().invokeSemanticCycle(request, scope));
   }
 
   @Operation(summary = "Configure an authority bridge in the loaded worldview")
@@ -63,7 +103,8 @@ public class ReasonerController {
     if (principal instanceof EngineAuthorization authorization) {
       try {
         return reasoner.klabService().configureAuthority(request, authorization.getScope());
-      } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException | IllegalArgumentException e) {
+      } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException
+          | IllegalArgumentException e) {
         throw new org.springframework.web.server.ResponseStatusException(
             org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage());
       }
@@ -75,12 +116,16 @@ public class ReasonerController {
 
   @Operation(summary = "Certify the authority dependency closure of exact semantic obligations")
   @PostMapping(ServicesAPI.REASONER.SEMANTIC_DEPENDENCIES)
-  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
-      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request,
-      Principal principal) {
-    if(principal instanceof EngineAuthorization authorization)
-      return reasoner.klabService().semanticDependencies(request,authorization.getScope());
-    throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+      semanticDependencies(
+          @RequestBody
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest
+                  request,
+          Principal principal) {
+    if (principal instanceof EngineAuthorization authorization)
+      return reasoner.klabService().semanticDependencies(request, authorization.getScope());
+    throw new org.springframework.web.server.ResponseStatusException(
+        org.springframework.http.HttpStatus.FORBIDDEN,
         "Semantic dependency certification requires an authorized scope");
   }
 
@@ -129,7 +174,7 @@ public class ReasonerController {
   }
 
   private static Concept baseConcept(Semantics value) {
-    return value instanceof Concept concept?concept:value.asConcept();
+    return value instanceof Concept concept ? concept : value.asConcept();
   }
 
   private static void requireArguments(
@@ -298,7 +343,8 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.MATCHES)
   public boolean matches(
-      @Parameter(description = "Array of two semantic expressions to check") @RequestBody Semantics[] concepts) {
+      @Parameter(description = "Array of two semantic expressions to check") @RequestBody
+          Semantics[] concepts) {
     requireArguments(concepts, 2, 2, "Matching");
     return reasoner.klabService().match(concepts[0], concepts[1]);
   }
@@ -451,10 +497,15 @@ public class ReasonerController {
     return reasoner.klabService().authoredClosure(target);
   }
 
-  @Operation(summary = "Find source-owned consequence candidates in one accepted semantic generation")
+  @Operation(
+      summary = "Find source-owned consequence candidates in one accepted semantic generation")
   @PostMapping(ServicesAPI.REASONER.CONSEQUENCE_RULES)
-  public @ResponseBody org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse consequenceRules(
-      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery query) {
+  public @ResponseBody org.integratedmodelling.klab.api.services.reasoner.objects
+          .ConsequenceRuleResponse
+      consequenceRules(
+          @RequestBody
+              org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery
+                  query) {
     return reasoner.klabService().consequenceRules(query);
   }
 
@@ -507,10 +558,22 @@ public class ReasonerController {
     return asserted
         ? knowledgeRevision < 0
             ? reasoner.klabService().assertedDistance(concepts[0], concepts[1])
-            : reasoner.klabService().assertedDistanceAtRevision(baseConcept(concepts[0]), baseConcept(concepts[1]), knowledgeRevision)
+            : reasoner
+                .klabService()
+                .assertedDistanceAtRevision(
+                    baseConcept(concepts[0]), baseConcept(concepts[1]), knowledgeRevision)
         : knowledgeRevision < 0
-            ? reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2])
-            : reasoner.klabService().semanticDistance(concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2], knowledgeRevision);
+            ? reasoner
+                .klabService()
+                .semanticDistance(
+                    concepts[0], concepts[1], concepts.length == 2 ? null : concepts[2])
+            : reasoner
+                .klabService()
+                .semanticDistance(
+                    concepts[0],
+                    concepts[1],
+                    concepts.length == 2 ? null : concepts[2],
+                    knowledgeRevision);
   }
 
   @Operation(summary = "Compute distance against an admitted semantic generation")
@@ -1027,7 +1090,8 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.COMPATIBLE)
   public boolean compatible(
-      @Parameter(description = "Array of two semantic expressions to check") @RequestBody Semantics[] args) {
+      @Parameter(description = "Array of two semantic expressions to check") @RequestBody
+          Semantics[] args) {
     requireArguments(args, 2, 2, "Compatibility check");
     return reasoner.klabService().compatible(args[0], args[1]);
   }
@@ -1043,7 +1107,8 @@ public class ReasonerController {
       })
   @PostMapping(ServicesAPI.REASONER.CONTEXTUALLY_COMPATIBLE)
   public boolean contextuallyCompatible(
-      @Parameter(description = "Array of three semantic expressions to check") @RequestBody Semantics[] args) {
+      @Parameter(description = "Array of three semantic expressions to check") @RequestBody
+          Semantics[] args) {
     requireArguments(args, 3, 3, "Contextual compatibility check");
     return reasoner.klabService().contextuallyCompatible(args[0], args[1], args[2]);
   }

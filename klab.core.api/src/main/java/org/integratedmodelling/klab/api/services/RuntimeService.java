@@ -46,16 +46,22 @@ public interface RuntimeService extends KlabService {
     CompletableFuture<OperationReceipt> applyForTesting(
         org.integratedmodelling.klab.api.knowledge.Observable directive,
         org.integratedmodelling.klab.api.geometry.Geometry support,
-        ContextScope scope, RuntimeAgent.Scope caller);
+        ContextScope scope,
+        RuntimeAgent.Scope caller);
   }
 
   /** A committed semantic operation, never an observation or a detached observation view. */
   record OperationReceipt(String contextId, long commitId, long activityId, String directive)
       implements java.io.Serializable {
     public OperationReceipt {
-      if (contextId == null || contextId.isBlank() || directive == null || directive.isBlank()
-          || commitId <= 0 || activityId <= 0)
-        throw new IllegalArgumentException("A semantic operation receipt requires a committed activity");
+      if (contextId == null
+          || contextId.isBlank()
+          || directive == null
+          || directive.isBlank()
+          || commitId <= 0
+          || activityId <= 0)
+        throw new IllegalArgumentException(
+            "A semantic operation receipt requires a committed activity");
     }
   }
 
@@ -64,20 +70,23 @@ public interface RuntimeService extends KlabService {
    * views have no catalog identity: implementations must validate them in the supplied context.
    */
   default InputStream exportObservation(
-      Observation observation, String mediaType,
+      Observation observation,
+      String mediaType,
       Parameters<String> parameters,
       ContextScope scope) {
     if (observation == null || observation.isEmpty() || observation.getId() <= 0)
       throw new IllegalArgumentException("This runtime cannot export a detached observation view");
-    return exportAsset(observation.getUrn(), KlabAsset.KnowledgeClass.OBSERVATION,
-        mediaType, parameters, scope);
+    return exportAsset(
+        observation.getUrn(), KlabAsset.KnowledgeClass.OBSERVATION, mediaType, parameters, scope);
   }
 
-  /** Read one exact cell as locale-independent text ("null" for missing), without a dataset scan. */
-  default String readValue(org.integratedmodelling.klab.api.data.StorageScan.Point point, ContextScope scope) {
+  /**
+   * Read one exact cell as locale-independent text ("null" for missing), without a dataset scan.
+   */
+  default String readValue(
+      org.integratedmodelling.klab.api.data.StorageScan.Point point, ContextScope scope) {
     throw new UnsupportedOperationException("Point value access is not supported by this runtime");
   }
-
 
   Data.ShardingStrategy getDefaultShardingStrategy(Observation observation, ContextScope scope);
 
@@ -184,20 +193,28 @@ public interface RuntimeService extends KlabService {
      */
     List<Observation> getOutcomes();
 
-    /** Modeled cessation requests. The Runtime admits these only from its actual successful,
-     * source-backed compiled invocation; this method alone grants no graph mutation authority. */
-    default List<Observation> getCessations() { return java.util.List.of(); }
-
-    /** Accept an atomic batch of component output intents through the actual local execution.
-     * Implementations must reject unsupported requests, never interpret metadata as authority. */
-    default void reportCessations(List<Observation> requests, ContextScope execution) {
-      if (!requests.isEmpty()) throw new UnsupportedOperationException("Modeled cessation output is unavailable");
+    /**
+     * Modeled cessation requests. The Runtime admits these only from its actual successful,
+     * source-backed compiled invocation; this method alone grants no graph mutation authority.
+     */
+    default List<Observation> getCessations() {
+      return java.util.List.of();
     }
 
+    /**
+     * Accept an atomic batch of component output intents through the actual local execution.
+     * Implementations must reject unsupported requests, never interpret metadata as authority.
+     */
+    default void reportCessations(List<Observation> requests, ContextScope execution) {
+      if (!requests.isEmpty())
+        throw new UnsupportedOperationException("Modeled cessation output is unavailable");
+    }
 
     /** Producing computation's lexical constraints for a newly instantiated member. */
     default List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>
-        getResolutionConstraints(Observation outcome) { return List.of(); }
+        getResolutionConstraints(Observation outcome) {
+      return List.of();
+    }
   }
 
   /**
@@ -242,33 +259,54 @@ public interface RuntimeService extends KlabService {
    */
   CompletableFuture<Observation> submit(Observation observation, ContextScope scope);
 
-  /** Resolve native qualities per actual member, returning a typed view rather than a container field. */
-  default CompletableFuture<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
-      resolveMemberQualities(org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+  /**
+   * Resolve native qualities per actual member, returning a typed view rather than a container
+   * field.
+   */
+  default CompletableFuture<
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberQualities(
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
           ContextScope scope) {
-    return CompletableFuture.failedFuture(new UnsupportedOperationException("Native member-quality views are unavailable"));
+    return CompletableFuture.failedFuture(
+        new UnsupportedOperationException("Native member-quality views are unavailable"));
   }
 
-  /** Pure installed-implementation capability, not permission to reinterpret an ordinary dependency. */
-  default boolean supportsMemberQualityInput(org.integratedmodelling.klab.api.lang.ServiceCall call,
-      String port,ContextScope scope) { return false; }
+  /**
+   * Pure installed-implementation capability, not permission to reinterpret an ordinary dependency.
+   */
+  default boolean supportsMemberQualityInput(
+      org.integratedmodelling.klab.api.lang.ServiceCall call, String port, ContextScope scope) {
+    return false;
+  }
 
   /** Pure installed-method inspection; unavailable must never be treated as an empty contract. */
   default org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
-      inspectMemberQualityInputs(org.integratedmodelling.klab.api.lang.ServiceCall call,Scope scope) {
-    return org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection.unavailable();
+      inspectMemberQualityInputs(
+          org.integratedmodelling.klab.api.lang.ServiceCall call, Scope scope) {
+    return org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
+        .unavailable();
   }
 
   /** Execute the restricted existing MemberPlan form through the typed collection result path. */
-  default CompletableFuture<org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
-      resolveMemberPlan(org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy strategy,ContextScope scope) {
-    try { return resolveMemberQualities(org.integratedmodelling.klab.api.services.runtime.MemberQualityPlan.lower(strategy,scope),scope); }
-    catch(RuntimeException failure) { return CompletableFuture.failedFuture(failure); }
+  default CompletableFuture<
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityCollection>
+      resolveMemberPlan(
+          org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy strategy,
+          ContextScope scope) {
+    try {
+      return resolveMemberQualities(
+          org.integratedmodelling.klab.api.services.runtime.MemberQualityPlan.lower(
+              strategy, scope),
+          scope);
+    } catch (RuntimeException failure) {
+      return CompletableFuture.failedFuture(failure);
+    }
   }
 
   /** Audit an agent in this twin, returning its snapshot and separate WGS84 spatial geometries. */
-  default org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
-      long observerId, ContextScope scope) {
+  default org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView
+      getObserverGeometry(long observerId, ContextScope scope) {
     throw new UnsupportedOperationException("Observer geometry auditing is unavailable");
   }
 
@@ -296,23 +334,24 @@ public interface RuntimeService extends KlabService {
    * @param scope
    * @throws org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException if the
    *     observation is resolved or already registered.
-   * @return the requirements for the contextualizables, or an empty set with diagnostics when
-   *     they cannot be resolved; never {@code null}
+   * @return the requirements for the contextualizables, or an empty set with diagnostics when they
+   *     cannot be resolved; never {@code null}
    */
   Observation register(Observation observation, ContextScope scope);
 
   /** Install the context's single grid definition before registering observations. */
-  default org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(String definitionUrn, ContextScope scope) {
+  default org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(
+      String definitionUrn, ContextScope scope) {
     throw new UnsupportedOperationException("Grid configuration is unavailable");
   }
 
   /**
    * Enumerate a completed collective input within its observed support, including uncommitted
    * members for local runtime calls. Detached query views use their covered support and are never
-   * treated as a graph node with ID 0. Local results may be in-process
-   * {@link org.integratedmodelling.klab.api.data.LocalView} instances; use
-   * {@link Observation#forTransport(Observation)} before serializing them. Remote calls return
-   * portable member observations.
+   * treated as a graph node with ID 0. Local results may be in-process {@link
+   * org.integratedmodelling.klab.api.data.LocalView} instances; use {@link
+   * Observation#forTransport(Observation)} before serializing them. Remote calls return portable
+   * member observations.
    */
   default List<Observation> getMembers(Observation collective, ContextScope scope) {
     throw new UnsupportedOperationException("Collective member enumeration is unavailable");

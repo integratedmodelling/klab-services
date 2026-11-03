@@ -1,30 +1,56 @@
 package org.integratedmodelling.klab.api.lang.kim.impl;
 
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
-  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature declaredRelationshipNature = org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED;
-  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation declaredRelationshipOrientation = org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED;
-  @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature getDeclaredRelationshipNature() { return declaredRelationshipNature; }
-  public void setDeclaredRelationshipNature(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature value) { declaredRelationshipNature = java.util.Objects.requireNonNull(value); }
-  @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation getDeclaredRelationshipOrientation() { return declaredRelationshipOrientation; }
-  public void setDeclaredRelationshipOrientation(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation value) { declaredRelationshipOrientation = java.util.Objects.requireNonNull(value); }
+  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature
+      declaredRelationshipNature =
+          org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED;
+  private org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation
+      declaredRelationshipOrientation =
+          org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED;
+
+  @Override
+  public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature
+      getDeclaredRelationshipNature() {
+    return declaredRelationshipNature;
+  }
+
+  public void setDeclaredRelationshipNature(
+      org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature value) {
+    declaredRelationshipNature = java.util.Objects.requireNonNull(value);
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation
+      getDeclaredRelationshipOrientation() {
+    return declaredRelationshipOrientation;
+  }
+
+  public void setDeclaredRelationshipOrientation(
+      org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation value) {
+    declaredRelationshipOrientation = java.util.Objects.requireNonNull(value);
+  }
+
   private boolean genericQuality;
   private String deniedAlias;
 
   @Override
-  public String getDeniedAlias() { return deniedAlias; }
+  public String getDeniedAlias() {
+    return deniedAlias;
+  }
 
-  public void setDeniedAlias(String deniedAlias) { this.deniedAlias = deniedAlias; }
+  public void setDeniedAlias(String deniedAlias) {
+    this.deniedAlias = deniedAlias;
+  }
 
   @Override
   public boolean isGenericQuality() {
@@ -36,16 +62,19 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   }
 
   private List<DeclarationClause> declarationClauses = new ArrayList<>();
-  private List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> consequenceRules = new ArrayList<>();
+  private List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> consequenceRules =
+      new ArrayList<>();
 
   @Override
   public List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> getConsequenceRules() {
     return consequenceRules;
   }
 
-  public void setConsequenceRules(List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> rules) {
-    consequenceRules=rules;
+  public void setConsequenceRules(
+      List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> rules) {
+    consequenceRules = rules;
   }
+
   private List<KimConcept> declaredReferences = new ArrayList<>();
 
   @Override
@@ -125,6 +154,7 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   public void setObservationalContainments(List<ObservationalContainment> declarations) {
     this.observationalContainments = declarations;
   }
+
   private List<KimConcept> traitsConferred = new ArrayList<>();
   private List<KimConcept> traitsInherited = new ArrayList<>();
   private List<KimConcept> requiredRealms = new ArrayList<>();
@@ -144,11 +174,14 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   private List<KimConcept> interpretedPhysicalDomains = new ArrayList<>();
 
   @Override
-  public List<KimConcept> getInterpretedPhysicalDomains() { return interpretedPhysicalDomains; }
+  public List<KimConcept> getInterpretedPhysicalDomains() {
+    return interpretedPhysicalDomains;
+  }
 
   public void setInterpretedPhysicalDomains(List<KimConcept> domains) {
     interpretedPhysicalDomains = domains == null ? new ArrayList<>() : new ArrayList<>(domains);
   }
+
   private List<ApplicableConcept> subjectsLinked = new ArrayList<>();
   private List<ApplicableConcept> appliesTo = new ArrayList<>();
   private String docstring;
@@ -197,12 +230,10 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
     return this.traitsInherited;
   }
 
-
   @Override
   public List<KimConcept> getRequiredRealms() {
     return this.requiredRealms;
   }
-
 
   @Override
   public List<KimConcept> getRequiredIdentities() {
@@ -291,11 +322,9 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
     this.traitsInherited = traitsInherited;
   }
 
-
   public void setRequiredRealms(List<KimConcept> requiredRealms) {
     this.requiredRealms = requiredRealms;
   }
-
 
   public void setRequiredIdentities(List<KimConcept> requiredIdentities) {
     this.requiredIdentities = requiredIdentities;

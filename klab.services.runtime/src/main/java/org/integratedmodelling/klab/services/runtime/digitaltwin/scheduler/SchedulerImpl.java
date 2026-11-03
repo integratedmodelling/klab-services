@@ -1,18 +1,18 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler;
 
-import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.util.*;
 import java.util.concurrent.*;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
-import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.ObservedEvent;
-import org.integratedmodelling.klab.services.runtime.EventSupport;
+import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -25,15 +25,15 @@ import org.integratedmodelling.klab.api.lang.TriFunction;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.runtime.CompiledDataflow;
+import org.integratedmodelling.klab.services.runtime.EventSupport;
 import org.integratedmodelling.klab.services.runtime.RuntimeService;
-import org.integratedmodelling.common.runtime.ActuatorImpl;
+import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
+import reactor.core.Disposables;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
-import reactor.core.Disposables;
 
 /** INIT registration and synchronous bounded temporal dispatch with durable per-plan progress. */
 public class SchedulerImpl implements Scheduler, AutoCloseable {
@@ -56,19 +56,30 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   private final InitializationRuns initializationRuns = new InitializationRuns();
   private final DigitalTwinImpl digitalTwin;
   private final ThreadLocal<ServiceContextScope> cycleScope = new ThreadLocal<>();
-  final Map<String,DigitalTwin.Transaction> inputChangesInFlight = new HashMap<>();
-  private final Map<org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<?>,Set<String>> membershipCompleted=new IdentityHashMap<>();
-  synchronized boolean membershipCompleted(ServiceContextScope scope,String receipt,boolean record) {
-    var cycle=Objects.requireNonNull(scope.getResolutionCycle());
-    var done=membershipCompleted.get(cycle);
-    if(done==null) {
-      done=new HashSet<>();membershipCompleted.put(cycle,done);
-      cycle.quiescence().whenComplete((ignored,failure)->{synchronized(this){membershipCompleted.remove(cycle);}});
+  final Map<String, DigitalTwin.Transaction> inputChangesInFlight = new HashMap<>();
+  private final Map<org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<?>, Set<String>>
+      membershipCompleted = new IdentityHashMap<>();
+
+  synchronized boolean membershipCompleted(
+      ServiceContextScope scope, String receipt, boolean record) {
+    var cycle = Objects.requireNonNull(scope.getResolutionCycle());
+    var done = membershipCompleted.get(cycle);
+    if (done == null) {
+      done = new HashSet<>();
+      membershipCompleted.put(cycle, done);
+      cycle
+          .quiescence()
+          .whenComplete(
+              (ignored, failure) -> {
+                synchronized (this) {
+                  membershipCompleted.remove(cycle);
+                }
+              });
     }
-    return record?done.add(receipt):done.contains(receipt);
+    return record ? done.add(receipt) : done.contains(receipt);
   }
 
-  final Map<Long,DigitalTwin.Transaction> configurationsInFlight = new HashMap<>();
+  final Map<Long, DigitalTwin.Transaction> configurationsInFlight = new HashMap<>();
   private long committedModeledInstant = Long.MIN_VALUE;
   private boolean draining;
   private boolean advancePending;
@@ -109,12 +120,16 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     // Resumption is explicitly driven by advanceTo; construction must never execute user code.
     for (var observation : knowledgeGraph.getScheduledObservations(rootScope)) {
       var progress = observation.getMetadata().get(DispatchProgress.KEY);
-      if (progress != null) committedModeledInstant = Math.max(committedModeledInstant,
-          Utils.Json.parseObject(progress.toString(), DispatchProgress.class).through());
+      if (progress != null)
+        committedModeledInstant =
+            Math.max(
+                committedModeledInstant,
+                Utils.Json.parseObject(progress.toString(), DispatchProgress.class).through());
       // INIT records its established starting position; zero is its sentinel, not modeled time.
-      for (int n=1; n<observation.getEventTimestamps().size(); n++)
-        committedModeledInstant = Math.max(committedModeledInstant, observation.getEventTimestamps().get(n));
-      if(!knowledgeGraph.isObservationCurrent(observation,rootScope))continue;
+      for (int n = 1; n < observation.getEventTimestamps().size(); n++)
+        committedModeledInstant =
+            Math.max(committedModeledInstant, observation.getEventTimestamps().get(n));
+      if (!knowledgeGraph.isObservationCurrent(observation, rootScope)) continue;
       if (EventSupport.individual(observation)) {
         EventSupport.validate(observation, null);
         individualEvents.put(observation.getId(), observation);
@@ -142,7 +157,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   public boolean submit(Observation observation, ContextScope scope) {
 
     // TODO we should not register observations that are unaffected by others unless they're events
-    if (observation.isEmpty() || !knowledgeGraph.isObservationCurrent(observation,scope)) {
+    if (observation.isEmpty() || !knowledgeGraph.isObservationCurrent(observation, scope)) {
       return false;
     }
 
@@ -152,13 +167,14 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       if (initialized) {
         if (EventSupport.individual(observation)) stageIndividual(observation, serviceContextScope);
         var previous = observation.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY);
-        if(scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl local)
+        if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl local)
           local.markSchedulerRegistered(observation);
         else observation.getMetadata().put(Scheduler.REGISTRATION_METADATA_KEY, true);
         var transaction = scope.getCurrentTransaction();
         transaction.update(observation);
-        if(!(transaction instanceof DigitalTwinImpl.TransactionImpl)) transaction.afterRollback(
-            () -> restoreMetadata(observation, Scheduler.REGISTRATION_METADATA_KEY, previous));
+        if (!(transaction instanceof DigitalTwinImpl.TransactionImpl))
+          transaction.afterRollback(
+              () -> restoreMetadata(observation, Scheduler.REGISTRATION_METADATA_KEY, previous));
         transaction.afterCommit(
             () -> {
               if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY))
@@ -199,73 +215,138 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   @Override
   public synchronized java.util.OptionalLong currentModeledInstant() {
-    return committedModeledInstant == Long.MIN_VALUE ? java.util.OptionalLong.empty()
+    return committedModeledInstant == Long.MIN_VALUE
+        ? java.util.OptionalLong.empty()
         : java.util.OptionalLong.of(committedModeledInstant);
   }
 
   @Override
-  public ConfigurationRecomputeOutcome recomputeConfiguration(Observation configuration,
-      Geometry actualSupport,long triggeringCommitId,long configurationRevision,ContextScope execution) {
-    if (!(execution instanceof ServiceContextScope source)) return ConfigurationRecomputeOutcome.DEFERRED;
+  public ConfigurationRecomputeOutcome recomputeConfiguration(
+      Observation configuration,
+      Geometry actualSupport,
+      long triggeringCommitId,
+      long configurationRevision,
+      ContextScope execution) {
+    if (!(execution instanceof ServiceContextScope source))
+      return ConfigurationRecomputeOutcome.DEFERRED;
     // Admission may wait on another cycle: never hold the scheduler monitor while waiting.
-    try (var admission = digitalTwin.getResolutionCycles().admit(source,true).join()) {
-      synchronized(this) {
-        return ConfigurationRecompute.execute(this,configuration,actualSupport,triggeringCommitId,
-            configurationRevision,admission.scope(),currentModeledInstant(),knowledgeGraph);
+    try (var admission = digitalTwin.getResolutionCycles().admit(source, true).join()) {
+      synchronized (this) {
+        return ConfigurationRecompute.execute(
+            this,
+            configuration,
+            actualSupport,
+            triggeringCommitId,
+            configurationRevision,
+            admission.scope(),
+            currentModeledInstant(),
+            knowledgeGraph);
       }
-    } catch (Throwable failure) { ConfigurationRecompute.diagnose("prepared-scheduler",configuration,triggeringCommitId,configurationRevision,source,currentModeledInstant(),false,failure);source.error(failure); return ConfigurationRecomputeOutcome.FAILED; }
+    } catch (Throwable failure) {
+      ConfigurationRecompute.diagnose(
+          "prepared-scheduler",
+          configuration,
+          triggeringCommitId,
+          configurationRevision,
+          source,
+          currentModeledInstant(),
+          false,
+          failure);
+      source.error(failure);
+      return ConfigurationRecomputeOutcome.FAILED;
+    }
   }
 
   @Override
-  public ConfigurationRecomputeOutcome recomputeConfiguration(Observation configuration,
-      Geometry actualSupport,long triggeringCommitId,long configurationRevision,
-      ContextScope execution,Object preparationReceipt) {
+  public ConfigurationRecomputeOutcome recomputeConfiguration(
+      Observation configuration,
+      Geometry actualSupport,
+      long triggeringCommitId,
+      long configurationRevision,
+      ContextScope execution,
+      Object preparationReceipt) {
     if (!(execution instanceof ServiceContextScope source)
-        || !(preparationReceipt instanceof org.integratedmodelling.klab.services.runtime.RuntimeService.ConfigurationPreparation preparation))
-      return ConfigurationRecomputeOutcome.DEFERRED;
-    try (var admission = digitalTwin.getResolutionCycles().admit(source,true).join()) {
+        || !(preparationReceipt
+            instanceof
+            org.integratedmodelling.klab.services.runtime.RuntimeService.ConfigurationPreparation
+                preparation)) return ConfigurationRecomputeOutcome.DEFERRED;
+    try (var admission = digitalTwin.getResolutionCycles().admit(source, true).join()) {
       // Private issuance, target, cycle and origin validation can consult semantics: do not hold
       // the scheduler monitor or rebuild perspective from an uncommitted observation ID.
       var prepared = preparation.executionScope(configuration, admission.scope());
       boolean initial = preparation.initialCharacterization();
-      synchronized(this) {
-        return ConfigurationRecompute.executePrepared(this,configuration,actualSupport,
-            triggeringCommitId,configurationRevision,prepared,currentModeledInstant(),knowledgeGraph,initial,
-            (geometry,event)->preparation.recordExecutionSupport(configuration,prepared,geometry,event),
-            (geometry,event,scope)->preparation.executePreparedRoot(configuration,(ServiceContextScope)scope,geometry,event));
+      synchronized (this) {
+        return ConfigurationRecompute.executePrepared(
+            this,
+            configuration,
+            actualSupport,
+            triggeringCommitId,
+            configurationRevision,
+            prepared,
+            currentModeledInstant(),
+            knowledgeGraph,
+            initial,
+            (geometry, event) ->
+                preparation.recordExecutionSupport(configuration, prepared, geometry, event),
+            (geometry, event, scope) ->
+                preparation.executePreparedRoot(
+                    configuration, (ServiceContextScope) scope, geometry, event));
       }
-    } catch (Throwable failure) { ConfigurationRecompute.diagnose("prepared-scheduler",configuration,triggeringCommitId,configurationRevision,source,currentModeledInstant(),false,failure);source.error(failure); return ConfigurationRecomputeOutcome.FAILED; }
+    } catch (Throwable failure) {
+      ConfigurationRecompute.diagnose(
+          "prepared-scheduler",
+          configuration,
+          triggeringCommitId,
+          configurationRevision,
+          source,
+          currentModeledInstant(),
+          false,
+          failure);
+      source.error(failure);
+      return ConfigurationRecomputeOutcome.FAILED;
+    }
   }
 
-  boolean executePreparedConfiguration(Observation configuration,Geometry support,
-      ServiceContextScope prepared,Event event,TriFunction<Geometry,Event,ContextScope,Boolean> exactRoot) {
-    if(event.getType()==Event.Type.INITIALIZATION)
-      return initializationRuns.execute(prepared.getCurrentTransaction(),configuration.getId(),
-          ()->contextualizeOnce(configuration,support,prepared,event,exactRoot));
-    return contextualizeOnce(configuration,support,prepared,event,exactRoot);
+  boolean executePreparedConfiguration(
+      Observation configuration,
+      Geometry support,
+      ServiceContextScope prepared,
+      Event event,
+      TriFunction<Geometry, Event, ContextScope, Boolean> exactRoot) {
+    if (event.getType() == Event.Type.INITIALIZATION)
+      return initializationRuns.execute(
+          prepared.getCurrentTransaction(),
+          configuration.getId(),
+          () -> contextualizeOnce(configuration, support, prepared, event, exactRoot));
+    return contextualizeOnce(configuration, support, prepared, event, exactRoot);
   }
 
   @Override
-  public MembershipPropagationOutcome membershipChanged(DigitalTwin.CommittedMembershipChange committed,
-      ContextScope execution) {
-    if(!(execution instanceof ServiceContextScope source)
+  public MembershipPropagationOutcome membershipChanged(
+      DigitalTwin.CommittedMembershipChange committed, ContextScope execution) {
+    if (!(execution instanceof ServiceContextScope source)
         || !(committed instanceof DigitalTwinImpl.CommittedMembershipChange receipt))
       return MembershipPropagationOutcome.FAILED;
     try {
       receipt.require(source);
       // The source commit still owns its causal lease; inherited admission bypasses the explicit
       // root queue. Never wait for admission while holding the scheduler's clock monitor.
-      try(var admission=digitalTwin.getResolutionCycles().admit(source,true).join()) {
-        synchronized(this) {
-          return MembershipRecompute.execute(this,receipt,admission.scope(),knowledgeGraph,currentModeledInstant());
+      try (var admission = digitalTwin.getResolutionCycles().admit(source, true).join()) {
+        synchronized (this) {
+          return MembershipRecompute.execute(
+              this, receipt, admission.scope(), knowledgeGraph, currentModeledInstant());
         }
       }
-    } catch(Throwable failure) {source.error(failure);return MembershipPropagationOutcome.FAILED;}
+    } catch (Throwable failure) {
+      source.error(failure);
+      return MembershipPropagationOutcome.FAILED;
+    }
   }
 
-  TriFunction<Geometry,Event,ContextScope,Boolean> recomputeExecutor(Observation observation,ServiceContextScope scope) {
-    var executor=executors.getIfPresent(observation);
-    return executor == null ? restoreExecutor(observation,scope) : executor;
+  TriFunction<Geometry, Event, ContextScope, Boolean> recomputeExecutor(
+      Observation observation, ServiceContextScope scope) {
+    var executor = executors.getIfPresent(observation);
+    return executor == null ? restoreExecutor(observation, scope) : executor;
   }
 
   @Override
@@ -285,12 +366,19 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       throw new IllegalArgumentException("A finite simulation horizon is required");
     // Admission never waits while holding the scheduler monitor. Recursive callbacks retain the
     // existing cycle and bypass the root queue; only cycle identity overlays cached perspective.
-    try (var admission = digitalTwin.getResolutionCycles().admit(source,
-        () -> !occurrences.isEmpty() || !individualEvents.isEmpty()).join()) {
+    try (var admission =
+        digitalTwin
+            .getResolutionCycles()
+            .admit(source, () -> !occurrences.isEmpty() || !individualEvents.isEmpty())
+            .join()) {
       var previous = cycleScope.get();
       cycleScope.set(admission.scope());
-      try { return advanceFrozen(until); }
-      finally { if (previous == null) cycleScope.remove(); else cycleScope.set(previous); }
+      try {
+        return advanceFrozen(until);
+      } finally {
+        if (previous == null) cycleScope.remove();
+        else cycleScope.set(previous);
+      }
     }
   }
 
@@ -314,39 +402,84 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   private boolean drainThrough(long until) {
     // Rebuild after every commit: an instantiator may introduce boundaries before the next tick.
-    record Due(long instant, int priority, Observation observation,
-        OccurrenceRegistration registration, TransitionEvent event) {}
+    record Due(
+        long instant,
+        int priority,
+        Observation observation,
+        OccurrenceRegistration registration,
+        TransitionEvent event) {}
     while (true) {
-      var queue = new PriorityQueue<Due>(Comparator.comparingLong(Due::instant)
-          .thenComparingInt(Due::priority).thenComparing(d -> d.event().id()));
+      var queue =
+          new PriorityQueue<Due>(
+              Comparator.comparingLong(Due::instant)
+                  .thenComparingInt(Due::priority)
+                  .thenComparing(d -> d.event().id()));
       for (var entry : occurrences.entrySet()) {
         var registration = entry.getValue();
         var schedule = registration.schedules().getFirst().bound();
         if (registration.schedules().stream().anyMatch(s -> !s.bound().equals(schedule)))
-          throw new UnsupportedOperationException("An actuator chain must have one accepted schedule");
+          throw new UnsupportedOperationException(
+              "An actuator chain must have one accepted schedule");
         var observation = occurrenceObservations.get(entry.getKey());
-        if(observation==null || !knowledgeGraph.isObservationCurrent(observation,rootScope)) {
-          occurrences.remove(entry.getKey());occurrenceObservations.remove(entry.getKey());continue;
+        if (observation == null || !knowledgeGraph.isObservationCurrent(observation, rootScope)) {
+          occurrences.remove(entry.getKey());
+          occurrenceObservations.remove(entry.getKey());
+          continue;
         }
         var period = TimeEmitter.nextPeriod(schedule, completedThrough(observation, registration));
         if (period == null) continue;
-        boolean instantiator = registration.role() == org.integratedmodelling.klab.api.services.runtime.Actuator.ExecutionRole.EVENT_INSTANTIATOR;
+        boolean instantiator =
+            registration.role()
+                == org.integratedmodelling.klab.api.services.runtime.Actuator.ExecutionRole
+                    .EVENT_INSTANTIATOR;
         long instant = instantiator ? period.start() : period.end();
-        if (instant <= until) queue.add(new Due(instant, instantiator ? 0 : 2, observation, registration,
-            new TransitionEvent(registration.id() + "/" + registration.planRevision() + "/"
-                + period.start() + "/" + period.end(), period.start(), period.end(), null)));
+        if (instant <= until)
+          queue.add(
+              new Due(
+                  instant,
+                  instantiator ? 0 : 2,
+                  observation,
+                  registration,
+                  new TransitionEvent(
+                      registration.id()
+                          + "/"
+                          + registration.planRevision()
+                          + "/"
+                          + period.start()
+                          + "/"
+                          + period.end(),
+                      period.start(),
+                      period.end(),
+                      null)));
       }
       for (var observation : individualEvents.values()) {
-        if(!knowledgeGraph.isObservationCurrent(observation,rootScope)) {individualEvents.remove(observation.getId());continue;}
+        if (!knowledgeGraph.isObservationCurrent(observation, rootScope)) {
+          individualEvents.remove(observation.getId());
+          continue;
+        }
         var time = EventSupport.validate(observation, null);
-        var boundary = !Boolean.TRUE.equals(observation.getMetadata().get(ObservedEvent.STARTED))
-            ? Event.Boundary.START : !Boolean.TRUE.equals(observation.getMetadata().get(ObservedEvent.ENDED))
-                ? Event.Boundary.END : Event.Boundary.NONE;
+        var boundary =
+            !Boolean.TRUE.equals(observation.getMetadata().get(ObservedEvent.STARTED))
+                ? Event.Boundary.START
+                : !Boolean.TRUE.equals(observation.getMetadata().get(ObservedEvent.ENDED))
+                    ? Event.Boundary.END
+                    : Event.Boundary.NONE;
         if (boundary == Event.Boundary.NONE) continue;
-        long instant = (boundary == Event.Boundary.START ? time.getStart() : time.getEnd()).getMilliseconds();
-        if (instant <= until) queue.add(new Due(instant, 1, observation, null,
-            new TransitionEvent("observed:" + observation.getId() + ":" + boundary,
-                instant, instant, observation, boundary)));
+        long instant =
+            (boundary == Event.Boundary.START ? time.getStart() : time.getEnd()).getMilliseconds();
+        if (instant <= until)
+          queue.add(
+              new Due(
+                  instant,
+                  1,
+                  observation,
+                  null,
+                  new TransitionEvent(
+                      "observed:" + observation.getId() + ":" + boundary,
+                      instant,
+                      instant,
+                      observation,
+                      boundary)));
       }
       if (queue.isEmpty()) return true;
       var due = queue.remove();
@@ -367,7 +500,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   @Override
   public boolean dispatchObserved(Observation observation) {
-    if(!knowledgeGraph.isObservationCurrent(observation,rootScope))return false;
+    if (!knowledgeGraph.isObservationCurrent(observation, rootScope)) return false;
     if (observation.getId() <= 0
         || !observation.getObservable().is(SemanticType.EVENT)
         || observation.getObservable().getSemantics().isCollective())
@@ -385,10 +518,11 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       observation.getMetadata().put(ObservedEvent.PENDING, true);
     transaction.update(observation);
     transaction.afterRollback(() -> restoreMetadata(observation, ObservedEvent.PENDING, previous));
-    transaction.afterCommit(() -> {
-      individualEvents.put(observation.getId(), observation);
-      advanceCommittedOccurrences(scope);
-    });
+    transaction.afterCommit(
+        () -> {
+          individualEvents.put(observation.getId(), observation);
+          advanceCommittedOccurrences(scope);
+        });
   }
 
   private boolean dispatch(
@@ -396,9 +530,11 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       OccurrenceRegistration registration,
       TransitionEvent event,
       boolean runOccurrence) {
-    if(!knowledgeGraph.isObservationCurrent(observation,rootScope)) {
-      occurrences.remove(observation.getId());occurrenceObservations.remove(observation.getId());
-      individualEvents.remove(observation.getId());return true;
+    if (!knowledgeGraph.isObservationCurrent(observation, rootScope)) {
+      occurrences.remove(observation.getId());
+      occurrenceObservations.remove(observation.getId());
+      individualEvents.remove(observation.getId());
+      return true;
     }
     var geometry =
         org.integratedmodelling.klab.services.runtime.TemporalGeometry.localize(
@@ -407,22 +543,38 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     try {
       var original = rootScope.of(observation);
       var frozen = cycleScope.get();
-      if (frozen != null) original = original
-          .withResolutionCycle(frozen.getResolutionCycle(), frozen.getResolutionCycleBinding())
-          .withCycleReasoner(frozen.getService(org.integratedmodelling.klab.api.services.Reasoner.class));
-      var activity = org.integratedmodelling.klab.api.provenance.Activity.of(
-          org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION);
-      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(activity,original.getObserver());
-      var scope = original.executingFresh(activity,observation);
+      if (frozen != null)
+        original =
+            original
+                .withResolutionCycle(
+                    frozen.getResolutionCycle(), frozen.getResolutionCycleBinding())
+                .withCycleReasoner(
+                    frozen.getService(org.integratedmodelling.klab.api.services.Reasoner.class));
+      var activity =
+          org.integratedmodelling.klab.api.provenance.Activity.of(
+              org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION);
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(
+          activity, original.getObserver());
+      var scope = original.executingFresh(activity, observation);
       attempt = scope;
-      if (original.getObserver() != null) scope.getCurrentTransaction()
-          .link(activity,original.getObserver(),GraphModel.Relationship.HAS_OBSERVER);
+      if (original.getObserver() != null)
+        scope
+            .getCurrentTransaction()
+            .link(activity, original.getObserver(), GraphModel.Relationship.HAS_OBSERVER);
       var bearer = registration == null ? observation.getParentId() : registration.bearerId();
-      if (registration == null && observation.getMetadata().get(Scheduler.PLAN_METADATA_KEY) instanceof String encoded) {
-        var plan = Utils.Json.parseObject(encoded, org.integratedmodelling.klab.api.services.runtime.Actuator.class);
-        var bindings = plan.getData().get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY);
-        if (bindings != null) bearer = Utils.Json.parseObject(bindings.toString(),
-            org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.class).bearerId();
+      if (registration == null
+          && observation.getMetadata().get(Scheduler.PLAN_METADATA_KEY) instanceof String encoded) {
+        var plan =
+            Utils.Json.parseObject(
+                encoded, org.integratedmodelling.klab.api.services.runtime.Actuator.class);
+        var bindings =
+            plan.getData().get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DATA_KEY);
+        if (bindings != null)
+          bearer =
+              Utils.Json.parseObject(
+                      bindings.toString(),
+                      org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.class)
+                  .bearerId();
       }
       var consequences =
           ComputationalClosure.ordered(observation, bearer, geometry, knowledgeGraph, scope);
@@ -431,8 +583,10 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       if (runOccurrence) {
         // Compile against this attempt's scope, never a cached/committed transaction.
         var executor = restoreExecutor(observation, scope);
-        if (executor == null && (registration != null
-                || Boolean.TRUE.equals(observation.getMetadata().get(Scheduler.EXECUTION_METADATA_KEY)))
+        if (executor == null
+                && (registration != null
+                    || Boolean.TRUE.equals(
+                        observation.getMetadata().get(Scheduler.EXECUTION_METADATA_KEY)))
             || executor != null && !execute(executor, observation, geometry, event, scope))
           throw new IllegalStateException(
               "Temporal contextualization failed for " + observation.getUrn());
@@ -476,13 +630,17 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       var previous = observation.getMetadata().get(DispatchProgress.KEY);
       var transaction = scope.getCurrentTransaction();
       if (event.getBoundary() != Event.Boundary.NONE) {
-        String phaseKey = event.getBoundary() == Event.Boundary.START ? ObservedEvent.STARTED : ObservedEvent.ENDED;
+        String phaseKey =
+            event.getBoundary() == Event.Boundary.START
+                ? ObservedEvent.STARTED
+                : ObservedEvent.ENDED;
         var previousPhase = observation.getMetadata().get(phaseKey);
         var previousPending = observation.getMetadata().get(ObservedEvent.PENDING);
-        transaction.afterRollback(() -> {
-          restoreMetadata(observation, phaseKey, previousPhase);
-          restoreMetadata(observation, ObservedEvent.PENDING, previousPending);
-        });
+        transaction.afterRollback(
+            () -> {
+              restoreMetadata(observation, phaseKey, previousPhase);
+              restoreMetadata(observation, ObservedEvent.PENDING, previousPending);
+            });
         observation.getMetadata().put(phaseKey, true);
         observation.getMetadata().put(ObservedEvent.PENDING, false);
         if (event.getBoundary() == Event.Boundary.START && observation.getParentId() > 0) {
@@ -558,12 +716,22 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
                   0,
                   changed.stream().map(Observation::getId).sorted().toList(),
                   !changed.isEmpty(),
-                  event.getBoundary() == Event.Boundary.NONE ? null : new ObservedEvent(
-                      observation.getId(), observation.getObservable().getSemantics().getUrn(),
-                      observation.getName(), EventSupport.validate(observation, null).getStart().getMilliseconds(),
-                      EventSupport.validate(observation, null).getEnd().getMilliseconds(),
-                      observation.getGeometry().encode(), event.getBoundary())));
-      transaction.afterCommit(() -> { synchronized(this) { committedModeledInstant = Math.max(committedModeledInstant,event.end()); } });
+                  event.getBoundary() == Event.Boundary.NONE
+                      ? null
+                      : new ObservedEvent(
+                          observation.getId(),
+                          observation.getObservable().getSemantics().getUrn(),
+                          observation.getName(),
+                          EventSupport.validate(observation, null).getStart().getMilliseconds(),
+                          EventSupport.validate(observation, null).getEnd().getMilliseconds(),
+                          observation.getGeometry().encode(),
+                          event.getBoundary())));
+      transaction.afterCommit(
+          () -> {
+            synchronized (this) {
+              committedModeledInstant = Math.max(committedModeledInstant, event.end());
+            }
+          });
       if (scope.commit() < 0)
         throw new IllegalStateException("Temporal transaction did not commit");
       return true;
@@ -596,26 +764,32 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     if (event.getType() != Event.Type.INITIALIZATION)
       throw new UnsupportedOperationException(
           "Temporal prerequisites are selected by causal dispatch, not INIT recursion");
-    if(!knowledgeGraph.isObservationCurrent(observation,scope))return false;
+    if (!knowledgeGraph.isObservationCurrent(observation, scope)) return false;
     return checkEvent(observation, event)
         || contextualize(observation, geometry, (ServiceContextScope) scope, event);
   }
 
   /**
-   * Execute one verified native discovery fragment. Observation-wide INIT timestamps cannot
-   * certify a different spatial fragment of that same producer. Ordinary dependencies retain
-   * their existing once-per-observation guard; this entry point is only used after the Runtime
-   * has checked the fragment against the selected request and its completion evidence.
+   * Execute one verified native discovery fragment. Observation-wide INIT timestamps cannot certify
+   * a different spatial fragment of that same producer. Ordinary dependencies retain their existing
+   * once-per-observation guard; this entry point is only used after the Runtime has checked the
+   * fragment against the selected request and its completion evidence.
    */
   public boolean executeCollectiveContribution(
       Observation observation, Geometry support, ServiceContextScope scope) {
-    if (observation == null || !observation.getObservable().getSemantics().isCollective()
+    if (observation == null
+        || !observation.getObservable().getSemantics().isCollective()
         || !(observation.getObservable().is(SemanticType.SUBJECT)
             || observation.getObservable().is(SemanticType.AGENT))
-        || support == null || support.isUniversal() || scope.getCurrentTransaction() == null)
-      throw new IllegalArgumentException("A bounded collective contribution requires a transaction");
+        || support == null
+        || support.isUniversal()
+        || scope.getCurrentTransaction() == null)
+      throw new IllegalArgumentException(
+          "A bounded collective contribution requires a transaction");
     if (scope.isInterrupted() || Thread.currentThread().isInterrupted()) return false;
-    return initializationRuns.executeContribution(scope.getCurrentTransaction(), observation.getId(),
+    return initializationRuns.executeContribution(
+        scope.getCurrentTransaction(),
+        observation.getId(),
         Geometry.forTransport(support).encode(),
         () -> contextualizeOnce(observation, support, scope, Event.initialization()));
   }
@@ -648,80 +822,141 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       ServiceContextScope requestedScope,
       Event causingEvent) {
 
-    if(causingEvent.getType()==Event.Type.INITIALIZATION) {
-      return initializationRuns.execute(requestedScope.getCurrentTransaction(), observation.getId(),
-          () -> checkEvent(observation,causingEvent)
-              || contextualizeOnce(observation,geometry,requestedScope,causingEvent));
+    if (causingEvent.getType() == Event.Type.INITIALIZATION) {
+      return initializationRuns.execute(
+          requestedScope.getCurrentTransaction(),
+          observation.getId(),
+          () ->
+              checkEvent(observation, causingEvent)
+                  || contextualizeOnce(observation, geometry, requestedScope, causingEvent));
     }
-    return contextualizeOnce(observation,geometry,requestedScope,causingEvent);
+    return contextualizeOnce(observation, geometry, requestedScope, causingEvent);
   }
 
   private boolean contextualizeOnce(
-      Observation observation, Geometry geometry, ServiceContextScope requestedScope, Event causingEvent) {
-    return contextualizeOnce(observation,geometry,requestedScope,causingEvent,null);
+      Observation observation,
+      Geometry geometry,
+      ServiceContextScope requestedScope,
+      Event causingEvent) {
+    return contextualizeOnce(observation, geometry, requestedScope, causingEvent, null);
   }
 
   /** Diagnostic arguments in prerequisite threads may only read their immutable event. */
   private static OptionalLong diagnosticInstant(Event event) {
-    try {return event.hasTime()?OptionalLong.of(event.getTime().getEnd().getMilliseconds()):OptionalLong.empty();}
-    catch(RuntimeException unavailable){return OptionalLong.empty();}
-  }
-
-  private void diagnosePrerequisite(String stage,Observation target,ServiceContextScope scope,
-      Event event,Object executor,Boolean result) {
-    if(!Boolean.getBoolean("klab.diagnostics.configurationRecompute"))return;
     try {
-      var data=new LinkedHashMap<String,Object>();data.put("stage",stage);data.put("target",target.getId());data.put("parent",target.getParentId());
-      data.put("meaning",target.getObservable()==null?null:target.getObservable().getUrn());data.put("event",event.getType());
-      data.put("timestamps",target.getEventTimestamps().stream().limit(8).toList());data.put("notificationErrorCount",target.getNotifications().stream().filter(n->n.getLevel().severity>=3).count());
-      data.put("thread",Thread.currentThread().threadId());data.put("nanoTime",System.nanoTime());
-      data.put("context",scope.getId());var tx=scope.getCurrentTransaction();data.put("transaction",tx==null?null:System.identityHashCode(tx));
-      var root=tx;while(root!=null&&root.getParent()!=null)root=root.getParent();data.put("rootTransaction",root==null?null:System.identityHashCode(root));
-      data.put("transactionFailed",tx==null?null:tx.isFailed());data.put("executor",executor==null?null:executor.getClass().getName());data.put("result",result);
-      org.integratedmodelling.common.logging.Logging.INSTANCE.info("PREREQUISITE_DISPATCH_DIAGNOSTIC "+Utils.Json.asString(data));
-    }catch(RuntimeException ignored){/* Only immutable local facts, no query or repair. */}
+      return event.hasTime()
+          ? OptionalLong.of(event.getTime().getEnd().getMilliseconds())
+          : OptionalLong.empty();
+    } catch (RuntimeException unavailable) {
+      return OptionalLong.empty();
+    }
   }
 
-  /** A newly compiled quality has no committed value to update. Only the private prepared
+  private void diagnosePrerequisite(
+      String stage,
+      Observation target,
+      ServiceContextScope scope,
+      Event event,
+      Object executor,
+      Boolean result) {
+    if (!Boolean.getBoolean("klab.diagnostics.configurationRecompute")) return;
+    try {
+      var data = new LinkedHashMap<String, Object>();
+      data.put("stage", stage);
+      data.put("target", target.getId());
+      data.put("parent", target.getParentId());
+      data.put("meaning", target.getObservable() == null ? null : target.getObservable().getUrn());
+      data.put("event", event.getType());
+      data.put("timestamps", target.getEventTimestamps().stream().limit(8).toList());
+      data.put(
+          "notificationErrorCount",
+          target.getNotifications().stream().filter(n -> n.getLevel().severity >= 3).count());
+      data.put("thread", Thread.currentThread().threadId());
+      data.put("nanoTime", System.nanoTime());
+      data.put("context", scope.getId());
+      var tx = scope.getCurrentTransaction();
+      data.put("transaction", tx == null ? null : System.identityHashCode(tx));
+      var root = tx;
+      while (root != null && root.getParent() != null) root = root.getParent();
+      data.put("rootTransaction", root == null ? null : System.identityHashCode(root));
+      data.put("transactionFailed", tx == null ? null : tx.isFailed());
+      data.put("executor", executor == null ? null : executor.getClass().getName());
+      data.put("result", result);
+      org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+          "PREREQUISITE_DISPATCH_DIAGNOSTIC " + Utils.Json.asString(data));
+    } catch (RuntimeException ignored) {
+      /* Only immutable local facts, no query or repair. */
+    }
+  }
+
+  /**
+   * A newly compiled quality has no committed value to update. Only the private prepared
    * configuration path may initialize its exact transaction-owned producer before consuming it.
-   * Persisted observations retain temporal dispatch; foreign/unbound fresh inputs fail closed. */
-  private boolean contextualizePreparedPrerequisite(Observation input,Geometry geometry,
-      ServiceContextScope scope,Event event,boolean prepared) {
-    diagnosePrerequisite("entry",input,scope,event,null,null);
-    var transaction=scope.getCurrentTransaction();
-    if(prepared&&event.getType()==Event.Type.INPUT_CHANGE&&input.getId()<Observation.UNASSIGNED_ID
-        &&input.getObservable()!=null&&input.getObservable().is(SemanticType.QUALITY)) {
-      if(transaction==null||transaction.isFailed()||transaction.assets().stream().noneMatch(asset->asset==input))
+   * Persisted observations retain temporal dispatch; foreign/unbound fresh inputs fail closed.
+   */
+  private boolean contextualizePreparedPrerequisite(
+      Observation input,
+      Geometry geometry,
+      ServiceContextScope scope,
+      Event event,
+      boolean prepared) {
+    diagnosePrerequisite("entry", input, scope, event, null, null);
+    var transaction = scope.getCurrentTransaction();
+    if (prepared
+        && event.getType() == Event.Type.INPUT_CHANGE
+        && input.getId() < Observation.UNASSIGNED_ID
+        && input.getObservable() != null
+        && input.getObservable().is(SemanticType.QUALITY)) {
+      if (transaction == null
+          || transaction.isFailed()
+          || transaction.assets().stream().noneMatch(asset -> asset == input))
         throw new SecurityException("Prepared fresh prerequisite is not owned by this transaction");
-      var producer=transaction.getExecutor(input);
-      var plan=producer==null?null:producer.getActuator();
-      if(plan!=null&&plan.getObservation()!=null&&plan.getObservation().getId()==input.getId()
-          &&plan.getExecutionRole()==org.integratedmodelling.klab.api.services.runtime.Actuator.ExecutionRole.INITIALIZATION
-          &&plan.getActuatorType()!=org.integratedmodelling.klab.api.services.runtime.Actuator.Type.REFERENCE
-          &&plan.getActuatorType()!=org.integratedmodelling.klab.api.services.runtime.Actuator.Type.UPDATE) {
-        var selected=(ServiceContextScope)producer.executionScope(scope);
-        if(selected.getCurrentTransaction()!=transaction||!Objects.equals(selected.getId(),scope.getId())
-            ||!Objects.equals(selected.getResolutionCycleBinding(),scope.getResolutionCycleBinding())
-            ||!Objects.equals(selected.getObserverId(),scope.getObserverId())
-            ||!Objects.equals(selected.getUser(),scope.getUser()))
-          throw new SecurityException("Prepared prerequisite changed its owning transaction or perspective");
+      var producer = transaction.getExecutor(input);
+      var plan = producer == null ? null : producer.getActuator();
+      if (plan != null
+          && plan.getObservation() != null
+          && plan.getObservation().getId() == input.getId()
+          && plan.getExecutionRole()
+              == org.integratedmodelling.klab.api.services.runtime.Actuator.ExecutionRole
+                  .INITIALIZATION
+          && plan.getActuatorType()
+              != org.integratedmodelling.klab.api.services.runtime.Actuator.Type.REFERENCE
+          && plan.getActuatorType()
+              != org.integratedmodelling.klab.api.services.runtime.Actuator.Type.UPDATE) {
+        var selected = (ServiceContextScope) producer.executionScope(scope);
+        if (selected.getCurrentTransaction() != transaction
+            || !Objects.equals(selected.getId(), scope.getId())
+            || !Objects.equals(
+                selected.getResolutionCycleBinding(), scope.getResolutionCycleBinding())
+            || !Objects.equals(selected.getObserverId(), scope.getObserverId())
+            || !Objects.equals(selected.getUser(), scope.getUser()))
+          throw new SecurityException(
+              "Prepared prerequisite changed its owning transaction or perspective");
         // The waiting parent owns the clock monitor. Use its captured event, never reenter
         // that monitor from this prerequisite thread (even when diagnostics are disabled).
-        var capturedInstant=diagnosticInstant(event);
-        ConfigurationRecompute.diagnose("new-prerequisite-initialization",input,0,0,selected,capturedInstant,true,null);
-        var result=executeDependency(input,input.getGeometry(),Event.initialization(),selected);
-        diagnosePrerequisite("fresh-init-result",input,selected,event,producer,result);return result;
+        var capturedInstant = diagnosticInstant(event);
+        ConfigurationRecompute.diagnose(
+            "new-prerequisite-initialization", input, 0, 0, selected, capturedInstant, true, null);
+        var result =
+            executeDependency(input, input.getGeometry(), Event.initialization(), selected);
+        diagnosePrerequisite("fresh-init-result", input, selected, event, producer, result);
+        return result;
       }
-      throw new SecurityException("Prepared fresh prerequisite lacks its current compiled INIT producer");
+      throw new SecurityException(
+          "Prepared fresh prerequisite lacks its current compiled INIT producer");
     }
-    var result=contextualize(input,geometry,scope,event);
-    diagnosePrerequisite("result",input,scope,event,null,result);return result;
+    var result = contextualize(input, geometry, scope, event);
+    diagnosePrerequisite("result", input, scope, event, null, result);
+    return result;
   }
 
-  private boolean contextualizeOnce(Observation observation,Geometry geometry,
-      ServiceContextScope requestedScope,Event causingEvent,
-      TriFunction<Geometry,Event,ContextScope,Boolean> preparedRoot) {
-    if(!knowledgeGraph.isObservationCurrent(observation,requestedScope))return false;
+  private boolean contextualizeOnce(
+      Observation observation,
+      Geometry geometry,
+      ServiceContextScope requestedScope,
+      Event causingEvent,
+      TriFunction<Geometry, Event, ContextScope, Boolean> preparedRoot) {
+    if (!knowledgeGraph.isObservationCurrent(observation, requestedScope)) return false;
     var transactionExecutor =
         preparedRoot != null || requestedScope.getCurrentTransaction() == null
             ? null
@@ -758,14 +993,18 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
           || org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.DESCRIPTIVE.equals(role))
         continue;
 
-      if(affecting.source() instanceof org.integratedmodelling.klab.api.knowledge.Cohort cohort) {
-        var plan=transactionExecutor==null?null:transactionExecutor.getActuator();
-        if(plan==null) {
-          var encoded=observation.getMetadata().get(PLAN_METADATA_KEY);
-          if(encoded==null)throw new IllegalStateException("Collective consumer has no actual input plan");
-          plan=Utils.Json.parseObject(encoded.toString(),org.integratedmodelling.klab.api.services.runtime.Actuator.class);
+      if (affecting.source() instanceof org.integratedmodelling.klab.api.knowledge.Cohort cohort) {
+        var plan = transactionExecutor == null ? null : transactionExecutor.getActuator();
+        if (plan == null) {
+          var encoded = observation.getMetadata().get(PLAN_METADATA_KEY);
+          if (encoded == null)
+            throw new IllegalStateException("Collective consumer has no actual input plan");
+          plan =
+              Utils.Json.parseObject(
+                  encoded.toString(),
+                  org.integratedmodelling.klab.api.services.runtime.Actuator.class);
         }
-        ComputationalClosure.requireCollectiveInput(cohort,affecting,plan,scope);
+        ComputationalClosure.requireCollectiveInput(cohort, affecting, plan, scope);
         // The actual consumer executes its completed collective query. Ordinary producer
         // observations retain their separate prerequisite edges and normal execution path.
         continue;
@@ -781,8 +1020,13 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       tasks
           .computeIfAbsent(sequence, n -> new ArrayList<>())
           .add(
-              () -> contextualizePreparedPrerequisite((Observation) affecting.source(), geometry, scope,
-                  causingEvent,preparedRoot!=null));
+              () ->
+                  contextualizePreparedPrerequisite(
+                      (Observation) affecting.source(),
+                      geometry,
+                      scope,
+                      causingEvent,
+                      preparedRoot != null));
     }
 
     var sortedTasks =
@@ -796,8 +1040,17 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
         try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
           var ret = executorService.invokeAll(group);
           if (ret.stream().anyMatch(objectFuture -> objectFuture.state() == Future.State.FAILED)) {
-            for(var failed:ret)if(failed.state()==Future.State.FAILED)
-              ConfigurationRecompute.diagnose("prerequisite-task",observation,0,0,scope,diagnosticInstant(causingEvent),causingEvent.getType()==Event.Type.INITIALIZATION,failed.exceptionNow());
+            for (var failed : ret)
+              if (failed.state() == Future.State.FAILED)
+                ConfigurationRecompute.diagnose(
+                    "prerequisite-task",
+                    observation,
+                    0,
+                    0,
+                    scope,
+                    diagnosticInstant(causingEvent),
+                    causingEvent.getType() == Event.Type.INITIALIZATION,
+                    failed.exceptionNow());
             return false;
           }
           // check if anything has returned false
@@ -827,10 +1080,12 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     /*
      * The actual execution for self
      */
-    TriFunction<Geometry, Event, ContextScope, Boolean> executor = preparedRoot != null ? preparedRoot :
-        transactionExecutor == null
-            ? executors.getIfPresent(observation)
-            : transactionExecutor::run;
+    TriFunction<Geometry, Event, ContextScope, Boolean> executor =
+        preparedRoot != null
+            ? preparedRoot
+            : transactionExecutor == null
+                ? executors.getIfPresent(observation)
+                : transactionExecutor::run;
     if (transactionExecutor != null
         && transactionExecutor.getActuator() != null
         && transactionExecutor.getActuator().getExecutionRole()
@@ -872,7 +1127,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
 
   TriFunction<Geometry, Event, ContextScope, Boolean> restoreExecutor(
       Observation observation, ServiceContextScope scope) {
-    if(!knowledgeGraph.isObservationCurrent(observation,scope))return null;
+    if (!knowledgeGraph.isObservationCurrent(observation, scope)) return null;
     if (observation.getMetadata().containsKey(OccurrenceRegistration.METADATA_KEY)) {
       var registration = readOccurrence(observation);
       var plan =
@@ -972,34 +1227,44 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       Geometry geometry,
       Scheduler.Event event,
       ServiceContextScope scope) {
-    if(!knowledgeGraph.isObservationCurrent(observation,scope))return false;
+    if (!knowledgeGraph.isObservationCurrent(observation, scope)) return false;
     if (event.getType() != Event.Type.INITIALIZATION) {
-      diagnosePrerequisite("executor-enter",observation,scope,event,executor,null);
-      try {var result=executor.apply(geometry,event,scope);diagnosePrerequisite("executor-result",observation,scope,event,executor,result);return result;}
-      catch(RuntimeException|Error failure){org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy.diagnoseFailure(failure,observation,event,scope);throw failure;}
+      diagnosePrerequisite("executor-enter", observation, scope, event, executor, null);
+      try {
+        var result = executor.apply(geometry, event, scope);
+        diagnosePrerequisite("executor-result", observation, scope, event, executor, result);
+        return result;
+      } catch (RuntimeException | Error failure) {
+        org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy.diagnoseFailure(
+            failure, observation, event, scope);
+        throw failure;
+      }
     }
     // Dependency traversal may supply a detached graph snapshot. Transaction.update() resolves
     // identities to its own graph vertex, so publish summaries on that same instance.
     if (scope.getCurrentTransaction() != null && observation.getId() != Observation.UNASSIGNED_ID) {
       long observationId = observation.getId();
-      observation = scope.getCurrentTransaction().assets().stream()
-          .filter(Observation.class::isInstance)
-          .map(Observation.class::cast)
-          .filter(candidate -> candidate.getId() == observationId)
-          .findFirst().orElse(observation);
+      observation =
+          scope.getCurrentTransaction().assets().stream()
+              .filter(Observation.class::isInstance)
+              .map(Observation.class::cast)
+              .filter(candidate -> candidate.getId() == observationId)
+              .findFirst()
+              .orElse(observation);
     }
     if (observation instanceof ObservationImpl concrete && scope.getCurrentTransaction() != null) {
       var previousTimestamps = new ArrayList<>(observation.getEventTimestamps());
       var previousHistograms = observation.getHistograms();
-      boolean ledgerOwnsTimestamps=event.getType()==Event.Type.INITIALIZATION
-          && scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl;
+      boolean ledgerOwnsTimestamps =
+          event.getType() == Event.Type.INITIALIZATION
+              && scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl;
       scope
           .getCurrentTransaction()
-          .afterRollback(() -> {
-            if(!ledgerOwnsTimestamps)
-              concrete.setEventTimestamps(previousTimestamps);
-            concrete.setHistograms(previousHistograms);
-          });
+          .afterRollback(
+              () -> {
+                if (!ledgerOwnsTimestamps) concrete.setEventTimestamps(previousTimestamps);
+                concrete.setHistograms(previousHistograms);
+              });
     }
     if (executor.apply(geometry, event, scope)) {
       if (observation.getObservable().is(SemanticType.QUALITY)) {
@@ -1043,7 +1308,7 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   }
 
   private void activateOccurrence(Observation observation) {
-    if(!knowledgeGraph.isObservationCurrent(observation,rootScope))return;
+    if (!knowledgeGraph.isObservationCurrent(observation, rootScope)) return;
     occurrenceObservations.put(observation.getId(), observation);
     occurrences.put(observation.getId(), readOccurrence(observation));
     var encoded = observation.getMetadata().get(DispatchProgress.KEY);
@@ -1149,19 +1414,29 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
   }
 
   /** Run committed bounded registrations; the accepted bounds are also durable retry intent. */
-  void advanceCommittedOccurrences() { advanceCommittedOccurrences(rootScope); }
+  void advanceCommittedOccurrences() {
+    advanceCommittedOccurrences(rootScope);
+  }
 
   void advanceCommittedOccurrences(ServiceContextScope source) {
-    long horizon = occurrences.values().stream()
-        .flatMap(registration -> registration.schedules().stream())
-        .mapToLong(schedule -> schedule.bound().end()).max().orElse(Long.MIN_VALUE);
-    if (horizon == Long.MIN_VALUE && !individualEvents.isEmpty()
+    long horizon =
+        occurrences.values().stream()
+            .flatMap(registration -> registration.schedules().stream())
+            .mapToLong(schedule -> schedule.bound().end())
+            .max()
+            .orElse(Long.MIN_VALUE);
+    if (horizon == Long.MIN_VALUE
+        && !individualEvents.isEmpty()
         && rootScope.getContextObservation() != null) {
-      var time = GeometryRepository.INSTANCE.scale(rootScope.getContextObservation().getGeometry()).getTime();
+      var time =
+          GeometryRepository.INSTANCE
+              .scale(rootScope.getContextObservation().getGeometry())
+              .getTime();
       if (time != null && time.getEnd() != null) horizon = time.getEnd().getMilliseconds();
     }
     if (horizon != Long.MIN_VALUE && !advanceTo(horizon, source))
-      rootScope.error("Temporal dispatch stopped after registration commit; retry from durable progress is required");
+      rootScope.error(
+          "Temporal dispatch stopped after registration commit; retry from durable progress is required");
   }
 
   private boolean checkEvent(Observation observation, Event event) {
@@ -1172,7 +1447,8 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     var timestamps = observation.getEventTimestamps();
     // Untimed input revisions reuse initialized ordinary prerequisites without inventing time.
     // The private prepared root enters without this timestamp shortcut.
-    if(event.getType()==Event.Type.INPUT_CHANGE && !event.hasTime()) return !timestamps.isEmpty();
+    if (event.getType() == Event.Type.INPUT_CHANGE && !event.hasTime())
+      return !timestamps.isEmpty();
     if (event.getType() == Event.Type.INITIALIZATION
         && observation instanceof ObservationImpl observation1
         && observation1.isSubstantialQuality()) {
@@ -1197,9 +1473,11 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
       } else {
         timestamps.add(event.getTime().getEnd().getMilliseconds());
       }
-      if(event.getType()==Event.Type.INITIALIZATION && transaction instanceof DigitalTwinImpl.TransactionImpl local)
-        local.appendSchedulerInitializationTimestamps(observation,
-            timestamps.subList(observation.getEventTimestamps().size(),timestamps.size()));
+      if (event.getType() == Event.Type.INITIALIZATION
+          && transaction instanceof DigitalTwinImpl.TransactionImpl local)
+        local.appendSchedulerInitializationTimestamps(
+            observation,
+            timestamps.subList(observation.getEventTimestamps().size(), timestamps.size()));
       else observation1.setEventTimestamps(timestamps);
       transaction.update(observation);
     }

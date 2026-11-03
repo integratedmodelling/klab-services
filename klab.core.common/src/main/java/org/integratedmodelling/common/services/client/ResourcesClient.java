@@ -30,24 +30,39 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
-import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
+import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.integratedmodelling.klab.common.data.DataRequest;
 import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
 
 public class ResourcesClient extends BaseServiceClient implements ResourcesService {
 
-  @Override public <T> List<T> query(org.integratedmodelling.klab.api.collections.Parameters<String> query,
-      KnowledgeClass assetClass,Class<T> infoClass,UserScope scope) {
-    if(assetClass==KnowledgeClass.MODEL&&infoClass==ResourceSet.class
-        &&scope instanceof ContextScope context&&context.getResolutionCycleBinding()!=null)
-      return client.withScope(scope).postCollectionOrThrow(ServicesAPI.RESOURCES.SEMANTIC_CYCLE_MODELS,
-          query==null?org.integratedmodelling.klab.api.collections.Parameters.create():query,infoClass,
-          "knowledgeClass",assetClass,"infoClass",infoClass.getCanonicalName());
-    return super.query(query,assetClass,infoClass,scope);
+  @Override
+  public <T> List<T> query(
+      org.integratedmodelling.klab.api.collections.Parameters<String> query,
+      KnowledgeClass assetClass,
+      Class<T> infoClass,
+      UserScope scope) {
+    if (assetClass == KnowledgeClass.MODEL
+        && infoClass == ResourceSet.class
+        && scope instanceof ContextScope context
+        && context.getResolutionCycleBinding() != null)
+      return client
+          .withScope(scope)
+          .postCollectionOrThrow(
+              ServicesAPI.RESOURCES.SEMANTIC_CYCLE_MODELS,
+              query == null
+                  ? org.integratedmodelling.klab.api.collections.Parameters.create()
+                  : query,
+              infoClass,
+              "knowledgeClass",
+              assetClass,
+              "infoClass",
+              infoClass.getCanonicalName());
+    return super.query(query, assetClass, infoClass, scope);
   }
 
   private Capabilities capabilities;
@@ -55,18 +70,23 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public Workflow getWorkflow(String workflowId, UserScope scope) {
-    return client.withScope(scope).get(ServicesAPI.RESOURCES.WORKFLOW, Workflow.class, "workflowId", workflowId);
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.WORKFLOW, Workflow.class, "workflowId", workflowId);
   }
 
   @Override
   public Flow createFlow(String workflowId, Flow.State initialState, UserScope scope) {
-    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOWS, initialState, Flow.class, "workflowId", workflowId);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.FLOWS, initialState, Flow.class, "workflowId", workflowId);
   }
 
   @Override
   public Flow initializeFlow(
       String workflowId, Flow.InitializationRequest request, UserScope scope) {
-    return client.withScope(scope)
+    return client
+        .withScope(scope)
         .postRequired(
             ServicesAPI.RESOURCES.FLOW_INITIALIZATION,
             request,
@@ -88,56 +108,117 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public Flow reopenFlow(String flowId, UserScope scope) {
-    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_REOPEN, null, Flow.class, "flowId", flowId);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.FLOW_REOPEN, null, Flow.class, "flowId", flowId);
   }
 
   @Override
   public List<Flow> getFlows(boolean includeClosed, UserScope scope) {
-    return client.withScope(scope).getCollection(ServicesAPI.RESOURCES.FLOWS, Flow.class, "includeClosed", includeClosed);
+    return client
+        .withScope(scope)
+        .getCollection(ServicesAPI.RESOURCES.FLOWS, Flow.class, "includeClosed", includeClosed);
   }
 
   @Override
   public Flow.State createFlowState(String flowId, Flow.State state, UserScope scope) {
-    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_STATES, state, Flow.State.class, "flowId", flowId);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.FLOW_STATES, state, Flow.State.class, "flowId", flowId);
   }
 
   @Override
-  public Flow.State updateFlowState(String flowId, String stateId, Flow.State state, UserScope scope) {
-    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_STATE, state, Flow.State.class, "flowId", flowId, "stateId", stateId);
+  public Flow.State updateFlowState(
+      String flowId, String stateId, Flow.State state, UserScope scope) {
+    return client
+        .withScope(scope)
+        .post(
+            ServicesAPI.RESOURCES.FLOW_STATE,
+            state,
+            Flow.State.class,
+            "flowId",
+            flowId,
+            "stateId",
+            stateId);
   }
 
   @Override
   public boolean deleteFlowState(String flowId, String stateId, UserScope scope) {
-    client.withScope(scope).delete(ServicesAPI.RESOURCES.FLOW_STATE, "flowId", flowId, "stateId", stateId);
+    client
+        .withScope(scope)
+        .delete(ServicesAPI.RESOURCES.FLOW_STATE, "flowId", flowId, "stateId", stateId);
     return true;
   }
 
   @Override
-  public List<WorkflowBehavior.AvailableAction> getFlowActions(String flowId, String stateId, UserScope scope) {
-    return client.withScope(scope).getCollection(ServicesAPI.RESOURCES.FLOW_ACTIONS,
-        WorkflowBehavior.AvailableAction.class, "flowId", flowId, "stateId", stateId);
+  public List<WorkflowBehavior.AvailableAction> getFlowActions(
+      String flowId, String stateId, UserScope scope) {
+    return client
+        .withScope(scope)
+        .getCollection(
+            ServicesAPI.RESOURCES.FLOW_ACTIONS,
+            WorkflowBehavior.AvailableAction.class,
+            "flowId",
+            flowId,
+            "stateId",
+            stateId);
   }
 
   @Override
-  public Flow executeFlowAction(String flowId, String stateId, String actionId,
-      WorkflowBehavior.ActionRequest request, UserScope scope) {
-    return client.withScope(scope).postRequired(ServicesAPI.RESOURCES.FLOW_ACTION, request, Flow.class,
-        "flowId", flowId, "stateId", stateId, "actionId", actionId);
+  public Flow executeFlowAction(
+      String flowId,
+      String stateId,
+      String actionId,
+      WorkflowBehavior.ActionRequest request,
+      UserScope scope) {
+    return client
+        .withScope(scope)
+        .postRequired(
+            ServicesAPI.RESOURCES.FLOW_ACTION,
+            request,
+            Flow.class,
+            "flowId",
+            flowId,
+            "stateId",
+            stateId,
+            "actionId",
+            actionId);
   }
 
   @Override
   public Flow transitionFlow(String flowId, Flow.TransitionRequest request, UserScope scope) {
-    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_TRANSITIONS, request, Flow.class, "flowId", flowId);
+    return client
+        .withScope(scope)
+        .post(ServicesAPI.RESOURCES.FLOW_TRANSITIONS, request, Flow.class, "flowId", flowId);
   }
 
   @Override
-  public Flow.Attachment addFlowAttachment(String flowId, String stateId, Flow.AttachmentUpload upload, UserScope scope) {
-    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_ATTACHMENTS, upload, Flow.Attachment.class, "flowId", flowId, "stateId", stateId);
+  public Flow.Attachment addFlowAttachment(
+      String flowId, String stateId, Flow.AttachmentUpload upload, UserScope scope) {
+    return client
+        .withScope(scope)
+        .post(
+            ServicesAPI.RESOURCES.FLOW_ATTACHMENTS,
+            upload,
+            Flow.Attachment.class,
+            "flowId",
+            flowId,
+            "stateId",
+            stateId);
   }
 
   @Override
   public byte[] getFlowAttachment(String flowId, String attachmentId, UserScope scope) {
-    String encoded = client.withScope(scope).get(ServicesAPI.RESOURCES.FLOW_ATTACHMENT, String.class, "flowId", flowId, "attachmentId", attachmentId);
+    String encoded =
+        client
+            .withScope(scope)
+            .get(
+                ServicesAPI.RESOURCES.FLOW_ATTACHMENT,
+                String.class,
+                "flowId",
+                flowId,
+                "attachmentId",
+                attachmentId);
     return Base64.getDecoder().decode(encoded);
   }
 
@@ -182,9 +263,16 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
-    var result = client.withScope(scope).deleteCollectionOrThrow(
-        ServicesAPI.RESOURCES.DELETE_QUERY, ResourceSet.class,
-        "urn", urn, "knowledgeClass", knowledgeClass);
+    var result =
+        client
+            .withScope(scope)
+            .deleteCollectionOrThrow(
+                ServicesAPI.RESOURCES.DELETE_QUERY,
+                ResourceSet.class,
+                "urn",
+                urn,
+                "knowledgeClass",
+                knowledgeClass);
     invalidateCaches();
     return result;
   }
@@ -197,22 +285,33 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     // Media types contain slashes (and may contain parameters), so they cannot be carried in
     // the generic resolver's single URN path segment. Use the existing query-based endpoints.
     if (assetClass == KnowledgeClass.INFORMATION && urn.startsWith("export-schema:")) {
-      return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA,
-          ResourceSet.class, "mediaType", urn.substring("export-schema:".length()));
+      return client
+          .withScope(scope)
+          .get(
+              ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA,
+              ResourceSet.class,
+              "mediaType",
+              urn.substring("export-schema:".length()));
     }
     if (assetClass == KnowledgeClass.INFORMATION && urn.startsWith("import-schema:")) {
-      return client.withScope(scope).get(ServicesAPI.RESOURCES.RESOLVE_IMPORT_SCHEMA,
-          ResourceSet.class, "mediaType", urn.substring("import-schema:".length()));
+      return client
+          .withScope(scope)
+          .get(
+              ServicesAPI.RESOURCES.RESOLVE_IMPORT_SCHEMA,
+              ResourceSet.class,
+              "mediaType",
+              urn.substring("import-schema:".length()));
     }
-    ResourceSet resolution = client
-        .withScope(scope)
-        .get(
-            ServicesAPI.RESOURCES.RESOLVE,
-            ResourceSet.class,
-            "urn",
-            urn,
-            "knowledgeClass",
-            assetClass);
+    ResourceSet resolution =
+        client
+            .withScope(scope)
+            .get(
+                ServicesAPI.RESOURCES.RESOLVE,
+                ResourceSet.class,
+                "urn",
+                urn,
+                "knowledgeClass",
+                assetClass);
     if (assetClass == KnowledgeClass.RESOURCE_ADAPTER
         && (resolution == null || resolution.isEmpty())) {
       // Older providers may advertise a component without implementing adapter resolution.
@@ -236,20 +335,29 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     for (var component : capabilities.getComponents()) {
       if (Extensions.LOCAL_SERVICE_COMPONENT.equals(component.id())
           || component.adapters() == null
-          || component.adapters().stream().noneMatch(adapter ->
-              requested.getFirst().equals(adapter.getName())
-                  && adapter.isEmbeddable()
-                  && adapter.getVersion() != null
-                  && adapter.getVersion().compatible(requested.getSecond()))) {
+          || component.adapters().stream()
+              .noneMatch(
+                  adapter ->
+                      requested.getFirst().equals(adapter.getName())
+                          && adapter.isEmbeddable()
+                          && adapter.getVersion() != null
+                          && adapter.getVersion().compatible(requested.getSecond()))) {
         continue;
       }
-      var resource = new ResourceSet.Resource(
-          serviceId(), component.id(), null, component.version(), KnowledgeClass.COMPONENT,
-          component.timestamp(), false);
+      var resource =
+          new ResourceSet.Resource(
+              serviceId(),
+              component.id(),
+              null,
+              component.version(),
+              KnowledgeClass.COMPONENT,
+              component.timestamp(),
+              false);
       resource.setLocal(isLocal());
       if (component.mavenCoordinates() != null) {
-        resource.getMetadata().put(
-            Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY, component.mavenCoordinates());
+        resource
+            .getMetadata()
+            .put(Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY, component.mavenCoordinates());
       }
       results.getResults().add(resource);
     }
@@ -267,7 +375,8 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
         .withScope(scope)
         .putCollectionOrThrow(
             asset instanceof org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial
-                ? ServicesAPI.RESOURCES.SUBMIT_QUERY : ServicesAPI.RESOURCES.SUBMIT,
+                ? ServicesAPI.RESOURCES.SUBMIT_QUERY
+                : ServicesAPI.RESOURCES.SUBMIT,
             Utils.Json.asString(asset),
             ResourceSet.class,
             "knowledgeClass",
@@ -319,7 +428,9 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     return client
         .withScope(scope)
         .get(
-            urn.contains("/") ? ServicesAPI.RESOURCES.RETRIEVE_QUERY : ServicesAPI.RESOURCES.RETRIEVE,
+            urn.contains("/")
+                ? ServicesAPI.RESOURCES.RETRIEVE_QUERY
+                : ServicesAPI.RESOURCES.RETRIEVE,
             assetClass,
             "urn",
             urn,
@@ -470,14 +581,26 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
-  public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
-      UserScope scope, String credentialId, String... arguments) {
+  public List<ResourceSet> manageRepository(
+      String projectName,
+      RepositoryState.Operation operation,
+      UserScope scope,
+      String credentialId,
+      String... arguments) {
     var request = new ProjectRequest();
     request.setOperation(operation);
     request.setCredentialId(credentialId);
-    request.setParameters(arguments == null ? java.util.List.of() : java.util.Arrays.asList(arguments));
-    var result = client.withScope(scope).postCollectionOrThrow(ServicesAPI.RESOURCES.MANAGE_PROJECT,
-        request, ResourceSet.class, "urn", projectName);
+    request.setParameters(
+        arguments == null ? java.util.List.of() : java.util.Arrays.asList(arguments));
+    var result =
+        client
+            .withScope(scope)
+            .postCollectionOrThrow(
+                ServicesAPI.RESOURCES.MANAGE_PROJECT,
+                request,
+                ResourceSet.class,
+                "urn",
+                projectName);
     invalidateCaches();
     return result;
   }
@@ -490,12 +613,16 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public boolean lockProject(String urn, UserScope scope) {
-    return client.withScope(scope).get(ServicesAPI.RESOURCES.LOCK_PROJECT, Boolean.class, "urn", urn);
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.LOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   @Override
   public boolean unlockProject(String urn, UserScope scope) {
-    return client.withScope(scope).get(ServicesAPI.RESOURCES.UNLOCK_PROJECT, Boolean.class, "urn", urn);
+    return client
+        .withScope(scope)
+        .get(ServicesAPI.RESOURCES.UNLOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
   private void invalidateCaches() {

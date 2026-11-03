@@ -1,137 +1,147 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import java.util.List;
+import java.util.Set;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 
-import java.util.List;
-import java.util.Set;
+public class NavigableKimConceptStatement extends NavigableKlabStatement<KimConceptStatement>
+    implements KimConceptStatement {
+  @Override
+  public List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> getConsequenceRules() {
+    return delegate.getConsequenceRules();
+  }
 
-public class NavigableKimConceptStatement extends NavigableKlabStatement<KimConceptStatement> implements KimConceptStatement {
-    @Override public List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> getConsequenceRules() {
-        return delegate.getConsequenceRules();
-    }
-    @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature getDeclaredRelationshipNature() { return delegate.getDeclaredRelationshipNature(); }
-    @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation getDeclaredRelationshipOrientation() { return delegate.getDeclaredRelationshipOrientation(); }
-    @Override
-    public boolean isGenericQuality() {
-        return delegate.isGenericQuality();
-    }
+  @Override
+  public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature
+      getDeclaredRelationshipNature() {
+    return delegate.getDeclaredRelationshipNature();
+  }
 
-    public NavigableKimConceptStatement(KimConceptStatement asset, NavigableKlabAsset<?> parent) {
-        super(asset, parent);
-    }
+  @Override
+  public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation
+      getDeclaredRelationshipOrientation() {
+    return delegate.getDeclaredRelationshipOrientation();
+  }
 
-    @Override
-    public List<KimConceptStatement> getChildren() {
-        return delegate.getChildren();
-    }
+  @Override
+  public boolean isGenericQuality() {
+    return delegate.isGenericQuality();
+  }
 
-    @Override
-    public Set<SemanticType> getType() {
-        return delegate.getType();
-    }
+  public NavigableKimConceptStatement(KimConceptStatement asset, NavigableKlabAsset<?> parent) {
+    super(asset, parent);
+  }
 
-    @Override
-    public String getUpperConceptDefined() {
-        return delegate.getUpperConceptDefined();
-    }
+  @Override
+  public List<KimConceptStatement> getChildren() {
+    return delegate.getChildren();
+  }
 
-    @Override
-    public String getAuthorityDefined() {
-        return delegate.getAuthorityDefined();
-    }
+  @Override
+  public Set<SemanticType> getType() {
+    return delegate.getType();
+  }
 
-    @Override
-    public String getAuthorityRequired() {
-        return delegate.getAuthorityRequired();
-    }
+  @Override
+  public String getUpperConceptDefined() {
+    return delegate.getUpperConceptDefined();
+  }
 
-    @Override
-    public List<KimConcept> getQualitiesAffected() {
-        return delegate.getQualitiesAffected();
-    }
+  @Override
+  public String getAuthorityDefined() {
+    return delegate.getAuthorityDefined();
+  }
 
-    @Override
-    public List<KimConcept> getObservablesCreated() {
-        return delegate.getObservablesCreated();
-    }
+  @Override
+  public String getAuthorityRequired() {
+    return delegate.getAuthorityRequired();
+  }
 
-    @Override
-    public List<KimConcept> getTraitsConferred() {
-        return delegate.getTraitsConferred();
-    }
+  @Override
+  public List<KimConcept> getQualitiesAffected() {
+    return delegate.getQualitiesAffected();
+  }
 
-    @Override
-    public List<KimConcept> getTraitsInherited() {
-        return delegate.getTraitsInherited();
-    }
+  @Override
+  public List<KimConcept> getObservablesCreated() {
+    return delegate.getObservablesCreated();
+  }
 
+  @Override
+  public List<KimConcept> getTraitsConferred() {
+    return delegate.getTraitsConferred();
+  }
 
-    @Override
-    public List<KimConcept> getRequiredRealms() {
-        return delegate.getRequiredRealms();
-    }
+  @Override
+  public List<KimConcept> getTraitsInherited() {
+    return delegate.getTraitsInherited();
+  }
 
+  @Override
+  public List<KimConcept> getRequiredRealms() {
+    return delegate.getRequiredRealms();
+  }
 
-    @Override
-    public List<KimConcept> getRequiredIdentities() {
-        return delegate.getRequiredIdentities();
-    }
+  @Override
+  public List<KimConcept> getRequiredIdentities() {
+    return delegate.getRequiredIdentities();
+  }
 
-    @Override
-    public List<KimConcept> getEmergenceTriggers() {
-        return delegate.getEmergenceTriggers();
-    }
+  @Override
+  public List<KimConcept> getEmergenceTriggers() {
+    return delegate.getEmergenceTriggers();
+  }
 
-    @Override
-    public KimConcept getDeclaredParent() {
-        return delegate.getDeclaredParent();
-    }
+  @Override
+  public KimConcept getDeclaredParent() {
+    return delegate.getDeclaredParent();
+  }
 
-    @Override
-    public KimConcept getDeclaredInherent() {
-        return delegate.getDeclaredInherent();
-    }
+  @Override
+  public KimConcept getDeclaredInherent() {
+    return delegate.getDeclaredInherent();
+  }
 
-    @Override
-    public boolean isAlias() {
-        return delegate.isAlias();
-    }
+  @Override
+  public boolean isAlias() {
+    return delegate.isAlias();
+  }
 
-    @Override
-    public boolean isAbstract() {
-        return delegate.isAbstract();
-    }
+  @Override
+  public boolean isAbstract() {
+    return delegate.isAbstract();
+  }
 
-    @Override
-    public boolean isSubjective() {
-        return delegate.isSubjective();
-    }
+  @Override
+  public boolean isSubjective() {
+    return delegate.isSubjective();
+  }
 
-    @Override
-    public boolean isSealed() {
-        return delegate.isSealed();
-    }
+  @Override
+  public boolean isSealed() {
+    return delegate.isSealed();
+  }
 
-    @Override
-    public List<PairImpl<KimConcept, DescriptionType>> getObservablesDescribed() {
-        return delegate.getObservablesDescribed();
-    }
+  @Override
+  public List<PairImpl<KimConcept, DescriptionType>> getObservablesDescribed() {
+    return delegate.getObservablesDescribed();
+  }
 
-    @Override
-    public List<ApplicableConcept> getSubjectsLinked() {
-        return delegate.getSubjectsLinked();
-    }
+  @Override
+  public List<ApplicableConcept> getSubjectsLinked() {
+    return delegate.getSubjectsLinked();
+  }
 
-    @Override
-    public List<ApplicableConcept> getAppliesTo() {
-        return delegate.getAppliesTo();
-    }
+  @Override
+  public List<ApplicableConcept> getAppliesTo() {
+    return delegate.getAppliesTo();
+  }
 
-    @Override
-    public String getDocstring() {
-        return delegate.getDocstring();
-    }
+  @Override
+  public String getDocstring() {
+    return delegate.getDocstring();
+  }
 }

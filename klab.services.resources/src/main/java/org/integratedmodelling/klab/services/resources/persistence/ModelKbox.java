@@ -2,8 +2,6 @@ package org.integratedmodelling.klab.services.resources.persistence;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
-
 import java.util.*;
 import org.h2gis.utilities.SpatialResultSet;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
@@ -25,10 +23,10 @@ import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.persistence.h2.SQL;
@@ -219,7 +217,8 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
                 storeMetadataFor(primaryKey, metadata);
               }
 
-              storeMetadataFor(primaryKey, Map.of("$klab:descriptor:v1", ModelReferenceCodec.encode(model)));
+              storeMetadataFor(
+                  primaryKey, Map.of("$klab:descriptor:v1", ModelReferenceCodec.encode(model)));
               return ret;
             }
           });
@@ -242,12 +241,23 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints,
       ContextScope scope) {
-    return query(observable, geometry, contextObservable, resolutionConstraints, scope, ModelDiscoveryMode.EXECUTABLE);
+    return query(
+        observable,
+        geometry,
+        contextObservable,
+        resolutionConstraints,
+        scope,
+        ModelDiscoveryMode.EXECUTABLE);
   }
 
-  @Override public Collection<ModelReference> query(Observable observable,
-      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept contextObservable,
-      List<ResolutionConstraint> resolutionConstraints, ContextScope scope, ModelDiscoveryMode mode) {
+  @Override
+  public Collection<ModelReference> query(
+      Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry,
+      Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints,
+      ContextScope scope,
+      ModelDiscoveryMode mode) {
     java.util.Objects.requireNonNull(mode, "model discovery mode");
     initialize(scope);
 
@@ -258,7 +268,8 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     {
       try {
         for (ModelReference md :
-            queryModels(observable, geometry, contextObservable, resolutionConstraints, scope, mode)) {
+            queryModels(
+                observable, geometry, contextObservable, resolutionConstraints, scope, mode)) {
           if (ModelVisibility.authorized(md, scope)) {
             local.add(md);
           }
@@ -287,97 +298,124 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints,
       ContextScope context) {
-    return queryModels(observable, geometry, contextObservable, resolutionConstraints, context, ModelDiscoveryMode.EXECUTABLE);
+    return queryModels(
+        observable,
+        geometry,
+        contextObservable,
+        resolutionConstraints,
+        context,
+        ModelDiscoveryMode.EXECUTABLE);
   }
 
-  @Override public List<ModelReference> queryModels(Observable observable,
-      org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept contextObservable,
-      List<ResolutionConstraint> resolutionConstraints, ContextScope context, ModelDiscoveryMode mode) {
+  @Override
+  public List<ModelReference> queryModels(
+      Observable observable,
+      org.integratedmodelling.klab.api.geometry.Geometry geometry,
+      Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints,
+      ContextScope context,
+      ModelDiscoveryMode mode) {
     java.util.Objects.requireNonNull(mode, "model discovery mode");
-    try(var view=ModelVisibility.queryGuard(resourceService,context)) {
-    List<ModelReference> ret = new ArrayList<>();
+    try (var view = ModelVisibility.queryGuard(resourceService, context)) {
+      List<ModelReference> ret = new ArrayList<>();
 
-    if (!database.hasTable("model")) {
-      return ret;
-    }
-
-    //    var geometry = ContextScope.getResolutionGeometry(context);
-    if (geometry == null || geometry.isEmpty()) {
-      return ret;
-    }
-
-    var scale = GeometryRepository.INSTANCE.scale(geometry);
-    String query = "SELECT model.oid FROM model WHERE ";
-    //    Concept contextObservable =
-    //        context.getContextObservation() == null
-    //            ? null
-    //            : context.getContextObservation().getObservable().getSemantics();
-
-    String typeQuery = observableQuery(observable, contextObservable,context);
-    if (typeQuery == null) {
-      return ret;
-    }
-
-    query += "(" + scopeQuery(resolutionConstraints, observable) + ")";
-    query += " AND (" + typeQuery + ")";
-    if (scale.getSpace() != null) {
-      String sq = spaceQuery(scale.getSpace());
-      if (!sq.isEmpty()) {
-        query += " AND (" + sq + ")";
+      if (!database.hasTable("model")) {
+        return ret;
       }
-    }
 
-    String tQuery = timeQuery(scale.getTime());
-    if (!tQuery.isEmpty()) {
-      query += " AND (" + tQuery + ");";
-    }
+      //    var geometry = ContextScope.getResolutionGeometry(context);
+      if (geometry == null || geometry.isEmpty()) {
+        return ret;
+      }
 
-    final List<Long> oids = database.queryIds(query);
-    for (long l : oids) {
-      ModelReference model = retrieveModel(l, context);
-      if (model != null && ModelVisibility.accepts(model, observable, resolutionConstraints)) {
-        long validatedRevision = mode == ModelDiscoveryMode.PREPARABLE
-            ? org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableCatalogRevision(
-                model.getName(), model.getNamespaceId(), resourceService, context, observable)
-            : org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedRevision(
-                model.getName(), model.getNamespaceId(), resourceService, context, observable);
-        if (validatedRevision < 0) continue;
-        // Keep observable-level semantics (including observed-as) out of the coarse Concept index.
-        // The full wrapper is authoritative for matching, after source/revision validation.
-        var candidate = reasoner(context).resolveObservable(model.getObservable());
-        if (candidate == null || candidate.getSemantics() == null
-            || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
-        if (mode == ModelDiscoveryMode.EXECUTABLE && reasoner(context).semanticDistance(
-            candidate, observable, contextObservable, validatedRevision) < 0) continue;
-        Coverage coverage =
-            resourceService.info(
-                model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, context);
-        if (coverage != null && !coverage.checkConstraints(scale)) {
-          resourceService
-              .serviceScope()
-              .debug(
-                  "model "
-                      + model.getName()
-                      + " of "
-                      + observable
-                      + " discarded because of coverage constraints mismatch");
-          continue;
+      var scale = GeometryRepository.INSTANCE.scale(geometry);
+      String query = "SELECT model.oid FROM model WHERE ";
+      //    Concept contextObservable =
+      //        context.getContextObservation() == null
+      //            ? null
+      //            : context.getContextObservation().getObservable().getSemantics();
+
+      String typeQuery = observableQuery(observable, contextObservable, context);
+      if (typeQuery == null) {
+        return ret;
+      }
+
+      query += "(" + scopeQuery(resolutionConstraints, observable) + ")";
+      query += " AND (" + typeQuery + ")";
+      if (scale.getSpace() != null) {
+        String sq = spaceQuery(scale.getSpace());
+        if (!sq.isEmpty()) {
+          query += " AND (" + sq + ")";
         }
-        ret.add(model);
       }
-    }
 
-    resourceService
-        .serviceScope()
-        .info(
-            "model query for "
-                + observable.getContextualization().name().toLowerCase()
-                + " of "
-                + observable
-                + " found "
-                + (ret.size() == 1 ? ret.getFirst().getName() : (ret.size() + " models")));
+      String tQuery = timeQuery(scale.getTime());
+      if (!tQuery.isEmpty()) {
+        query += " AND (" + tQuery + ");";
+      }
 
-    return ret;
+      final List<Long> oids = database.queryIds(query);
+      for (long l : oids) {
+        ModelReference model = retrieveModel(l, context);
+        if (model != null && ModelVisibility.accepts(model, observable, resolutionConstraints)) {
+          long validatedRevision =
+              mode == ModelDiscoveryMode.PREPARABLE
+                  ? org.integratedmodelling.klab.runtime.language.ModelValidationGate
+                      .validatedPreparableCatalogRevision(
+                          model.getName(),
+                          model.getNamespaceId(),
+                          resourceService,
+                          context,
+                          observable)
+                  : org.integratedmodelling.klab.runtime.language.ModelValidationGate
+                      .validatedRevision(
+                          model.getName(),
+                          model.getNamespaceId(),
+                          resourceService,
+                          context,
+                          observable);
+          if (validatedRevision < 0) continue;
+          // Keep observable-level semantics (including observed-as) out of the coarse Concept
+          // index.
+          // The full wrapper is authoritative for matching, after source/revision validation.
+          var candidate = reasoner(context).resolveObservable(model.getObservable());
+          if (candidate == null
+              || candidate.getSemantics() == null
+              || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING))
+            continue;
+          if (mode == ModelDiscoveryMode.EXECUTABLE
+              && reasoner(context)
+                      .semanticDistance(candidate, observable, contextObservable, validatedRevision)
+                  < 0) continue;
+          Coverage coverage =
+              resourceService.info(
+                  model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, context);
+          if (coverage != null && !coverage.checkConstraints(scale)) {
+            resourceService
+                .serviceScope()
+                .debug(
+                    "model "
+                        + model.getName()
+                        + " of "
+                        + observable
+                        + " discarded because of coverage constraints mismatch");
+            continue;
+          }
+          ret.add(model);
+        }
+      }
+
+      resourceService
+          .serviceScope()
+          .info(
+              "model query for "
+                  + observable.getContextualization().name().toLowerCase()
+                  + " of "
+                  + observable
+                  + " found "
+                  + (ret.size() == 1 ? ret.getFirst().getName() : (ret.size() + " models")));
+
+      return ret;
     }
   }
 
@@ -411,11 +449,12 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
   // }
 
   private String observableQuery(Observable observable, Concept context) {
-    return observableQuery(observable,context,null);
+    return observableQuery(observable, context, null);
   }
-  private String observableQuery(Observable observable,Concept context,Scope request) {
 
-    Set<Long> ids = this.getCandidateTypeIds(observable,request);
+  private String observableQuery(Observable observable, Concept context, Scope request) {
+
+    Set<Long> ids = this.getCandidateTypeIds(observable, request);
     if (ids == null || ids.isEmpty()) {
       return null;
     }
@@ -434,8 +473,10 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     return values.isEmpty() ? null : values.getFirst();
   }
 
-  public <T> List<T> getConstraints(List<ResolutionConstraint> constraints,
-      ResolutionConstraint.Type type, Class<T> resultClass) {
+  public <T> List<T> getConstraints(
+      List<ResolutionConstraint> constraints,
+      ResolutionConstraint.Type type,
+      Class<T> resultClass) {
     return ModelVisibility.constraints(constraints, type, resultClass);
   }
 
@@ -447,25 +488,43 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
   private String scopeQuery(
       List<ResolutionConstraint> resolutionConstraints, Observable observable) {
 
-    String namespace = getConstraint(resolutionConstraints,
-        ResolutionConstraint.Type.ResolutionNamespace, String.class);
-    String project = getConstraint(resolutionConstraints,
-        ResolutionConstraint.Type.ResolutionProject, String.class);
+    String namespace =
+        getConstraint(
+            resolutionConstraints, ResolutionConstraint.Type.ResolutionNamespace, String.class);
+    String project =
+        getConstraint(
+            resolutionConstraints, ResolutionConstraint.Type.ResolutionProject, String.class);
     String visibility = "(model.scope = 'PUBLIC' AND NOT model.inscenario)";
-    if (namespace != null) visibility += " OR model.namespaceid = '" + Utils.Escape.forSQL(namespace) + "'";
-    if (project != null) visibility += " OR (model.scope = 'PROJECT_PRIVATE' AND NOT model.inscenario AND model.projectid = '"
-        + Utils.Escape.forSQL(project) + "')";
-    var scenarios = getConstraints(resolutionConstraints, ResolutionConstraint.Type.Scenarios, String.class);
-    if (!scenarios.isEmpty()) visibility += " OR (" + joinStringConditions("model.namespaceid", scenarios, "OR") + ")";
+    if (namespace != null)
+      visibility += " OR model.namespaceid = '" + Utils.Escape.forSQL(namespace) + "'";
+    if (project != null)
+      visibility +=
+          " OR (model.scope = 'PROJECT_PRIVATE' AND NOT model.inscenario AND model.projectid = '"
+              + Utils.Escape.forSQL(project)
+              + "')";
+    var scenarios =
+        getConstraints(resolutionConstraints, ResolutionConstraint.Type.Scenarios, String.class);
+    if (!scenarios.isEmpty())
+      visibility += " OR (" + joinStringConditions("model.namespaceid", scenarios, "OR") + ")";
     String ret = "(" + visibility + ")";
-    ret += namespace == null ? " AND model.scope <> 'PRIVATE'"
-        : " AND (model.scope <> 'PRIVATE' OR model.namespaceid = '" + Utils.Escape.forSQL(namespace) + "')";
+    ret +=
+        namespace == null
+            ? " AND model.scope <> 'PRIVATE'"
+            : " AND (model.scope <> 'PRIVATE' OR model.namespaceid = '"
+                + Utils.Escape.forSQL(namespace)
+                + "')";
     // Project-private models never escape their project, including explicit scenarios.
-    ret += project == null ? " AND model.scope <> 'PROJECT_PRIVATE'"
-        : " AND (model.scope <> 'PROJECT_PRIVATE' OR model.projectid = '" + Utils.Escape.forSQL(project) + "')";
+    ret +=
+        project == null
+            ? " AND model.scope <> 'PROJECT_PRIVATE'"
+            : " AND (model.scope <> 'PROJECT_PRIVATE' OR model.projectid = '"
+                + Utils.Escape.forSQL(project)
+                + "')";
     if (observable.is(SemanticType.COUNTABLE)) {
-      ret += observable.getContextualization().isCollective()
-          ? " AND model.isreification" : " AND NOT model.isreification";
+      ret +=
+          observable.getContextualization().isCollective()
+              ? " AND model.isreification"
+              : " AND NOT model.isreification";
     }
     return ret;
   }
@@ -576,7 +635,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
 
               ret.setName(srs.getString(4));
 
-              var observable = getType(tyid,monitor instanceof Scope request?request:null);
+              var observable = getType(tyid, monitor instanceof Scope request ? request : null);
               Concept mtype = observable == null ? null : observable.asConcept();
 
               ret.setObservableConcept(mtype);
@@ -630,19 +689,23 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     if (ret != null) {
       var metadata = getMetadataFor(oid);
       if (metadata != null && metadata.containsKey("$klab:descriptor:v1"))
-        return ModelReferenceCodec.decode(metadata.get("$klab:descriptor:v1"), reasoner(monitor instanceof Scope request?request:null));
+        return ModelReferenceCodec.decode(
+            metadata.get("$klab:descriptor:v1"),
+            reasoner(monitor instanceof Scope request ? request : null));
       ret.setMetadata(metadata);
       // Legacy rows did not persist permissions. Resolve them from the owning project rather
       // than trusting the bean's PUBLIC default when the project cannot be retrieved.
       if (ret.getProjectId() != null) {
         Project project = null;
-        if (resourceService instanceof org.integratedmodelling.klab.services.resources.ResourcesProvider provider)
+        if (resourceService
+            instanceof org.integratedmodelling.klab.services.resources.ResourcesProvider provider)
           project = provider.retrieveProject(ret.getProjectId(), scope);
         else if (monitor instanceof org.integratedmodelling.klab.api.scope.UserScope user)
           project = resourceService.retrieve(ret.getProjectId(), Project.class, user);
-        ret.setPermissions(project == null
-            ? org.integratedmodelling.klab.api.authentication.ResourcePrivileges.empty()
-            : project.getManifest().getPrivileges());
+        ret.setPermissions(
+            project == null
+                ? org.integratedmodelling.klab.api.authentication.ResourcePrivileges.empty()
+                : project.getManifest().getPrivileges());
       }
     }
     return ret;
@@ -663,7 +726,10 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       return false;
     }
 
-    return database.queryIds("SELECT oid FROM model WHERE name = '" + Utils.Escape.forSQL(name) + "';").size() > 0;
+    return database
+            .queryIds("SELECT oid FROM model WHERE name = '" + Utils.Escape.forSQL(name) + "';")
+            .size()
+        > 0;
   }
 
   @Override
@@ -738,7 +804,8 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
 
   private <T extends Extent<T>> T resolveEnumeratedExtensions(T extent) {
     return extent instanceof EnumeratedExtension<?> enumeration
-        ? (T) enumeration.getPhysicalExtent() : extent;
+        ? (T) enumeration.getPhysicalExtent()
+        : extent;
   }
 
   @Override
@@ -749,7 +816,11 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
   public ModelReference retrieveModel(String string, Channel monitor) {
     initialize(monitor);
     if (!database.hasTable("model")) return null;
-    var ids = database.queryIds("SELECT oid FROM model WHERE name = '" + Utils.Escape.forSQL(string) + "' ORDER BY oid");
+    var ids =
+        database.queryIds(
+            "SELECT oid FROM model WHERE name = '"
+                + Utils.Escape.forSQL(string)
+                + "' ORDER BY oid");
     return ids.isEmpty() ? null : retrieveModel(ids.getFirst(), monitor);
   }
 }
