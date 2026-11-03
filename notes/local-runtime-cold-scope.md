@@ -1,5 +1,9 @@
 # Cold owner scope restoration on the exact hosting Runtime
 
+**Bounded implementation and fresh restart acceptance PASS in both creation
+orders. Final documentation-head CI and merge review pending.** Historical failures
+below are retained, not relabelled by the later success.
+
 Issue89 follow-up after merged PR131 (`802e8cce2`). Graph-retaining restart run28
 restarted only the owned Runtime; its graph process and service ID were retained.
 Four native probes passed, including post-restart owner and public-outsider
@@ -70,5 +74,35 @@ or grant of caller authority. Remote-origin paths remain unchanged. The52 scope
 tests plus10 release tests now pass; all six changed executable lines and six
 branch outcomes across both modules are covered without exclusions. Exception-
 message exclusion and13-module packaging pass. A fixture-status omission in the
-first binding-candidate test remains preserved separately. Fresh full restart
-acceptance and independent cleanup in both orders remain required before merge.
+first binding-candidate test remains preserved separately.
+
+## Accepted fresh restart/disposal results
+
+Executable `6f509b2d9cdaa810e45c8f4697fec40fb805f118` passes run32 (Alice-first)
+and run33 (Bob-first). Each creates one session and four contexts, then explicitly
+restarts only the owned Runtime while retaining the graph process and Runtime ID.
+Post-restart owner and public-outsider native reconnects, all four cold scoped
+owner/Runtime/group descriptor checks, exact local parents, four positive native
+reads and five HTTP403 denials pass. Ordinary members cannot release the shared
+session. The full pre/post registration-log inventory has one session, no auxiliary.
+
+Each run confirms four context disposals and privileged final session disposal.
+All four manager releases are independently present in Runtime logs; no disposal
+failure diagnostic occurs. Runtime context listing and cleanup checks pass.
+All19 JVM identities are independently absent;3,898 launch hashes,1,154 main-source
+hashes and fixture/client launch hashes match. No matching owned visible windows
+remain; unrelated processes/windows are untouched. Zero scientific Jobs and no
+automatic mutation replay occur. Attestation matches2,612 class bytes to packaged
+JARs and seven fresh current declared closures; no historical closures are mixed.
+
+Run32 result SHA-256:
+`34f1326ea0dff6ea53630fe7ee41a4e13f1fa6904ad2cab795b7b59e72d46862`.
+Run33 result SHA-256:
+`be41606e44fbb7add4b575cd21d8bb945442747beddfe59cbfad7cdda0b352ff`.
+
+Earlier28/29/31 failure records and stopped graphs remain retained; their unknown
+historical disposal is not inferred from later fresh runs. This is controlled
+single-Runtime graph-retaining restart acceptance, not crash atomicity, scale,
+scientific acceptance or two-deployment validation. Other issue89 gates remain open.
+Review is author/agent-conducted, not independent maintainer approval. See
+[sanitized results](local-runtime-cold-scope-results-20261103.json).

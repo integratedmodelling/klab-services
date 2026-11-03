@@ -1,0 +1,32 @@
+{
+  "status": "PASS_BOUNDED_COLD_OWNER_AND_GRAPH_RETAINING_RUNTIME_RESTART",
+  "executable_candidate": "6f509b2d9cdaa810e45c8f4697fec40fb805f118",
+  "base": "802e8cce2ce1648f79ce766f5cd3f2cc400ac535",
+  "baseline_cold_lookup_tests_and_failures": [2, 2],
+  "pre_binding_disposal_test_and_failures": [1, 1],
+  "preserved_fixture_assertion_and_status_omissions": true,
+  "scope_tests": 52,
+  "release_tests": 10,
+  "changed_executable_lines_covered": "6/6",
+  "changed_branch_outcomes_covered": "6/6",
+  "coverage_exclusions_added": false,
+  "exception_messages_excluded_from_disposal_diagnostics": true,
+  "maximum_diagnostic_stack_locations": 8,
+  "package_modules": 13,
+  "class_bytes_matched_to_jars": 2612,
+  "current_declared_maven_closures": 7,
+  "fresh_acceptance": [
+    {"run": 32, "creation_order": "Alice first", "explicit_runtime_restarts": 1, "graph_process_and_runtime_id_preserved": true, "native_processes": 4, "positive_native_reads": 4, "explicit_denials_http403": 5, "all_cold_owner_checks_and_exact_parent_identity": "PASS", "registered_sessions": 1, "auxiliary_sessions": 0, "context_disposal_receipts_and_manager_release_logs": 4, "privileged_session_disposal_receipts": 1, "all19_jvm_identities_independently_absent": true, "launch_hashes_unchanged": 3898, "main_source_hashes_unchanged": 1154, "fixture_client_hashes_unchanged": true, "result_sha256": "34f1326ea0dff6ea53630fe7ee41a4e13f1fa6904ad2cab795b7b59e72d46862"},
+    {"run": 33, "creation_order": "Bob first", "explicit_runtime_restarts": 1, "graph_process_and_runtime_id_preserved": true, "native_processes": 4, "positive_native_reads": 4, "explicit_denials_http403": 5, "all_cold_owner_checks_and_exact_parent_identity": "PASS", "registered_sessions": 1, "auxiliary_sessions": 0, "context_disposal_receipts_and_manager_release_logs": 4, "privileged_session_disposal_receipts": 1, "all19_jvm_identities_independently_absent": true, "launch_hashes_unchanged": 3898, "main_source_hashes_unchanged": 1154, "fixture_client_hashes_unchanged": true, "result_sha256": "be41606e44fbb7add4b575cd21d8bb945442747beddfe59cbfad7cdda0b352ff"}
+  ],
+  "all_cleanup_steps": "PASS_BOTH_FRESH_RUNS",
+  "live_matching_owned_visible_windows": 0,
+  "unrelated_processes_windows_touched": false,
+  "scientific_jobs": 0,
+  "automatic_mutation_replay": false,
+  "credential_membership_acl_dependency_rules_changed": false,
+  "prior_runs28_29_31": "FAIL_RETAINED_WITH_HISTORICAL_UNCONFIRMED_DISPOSALS",
+  "crash_atomicity_scale_science_or_two_deployment_acceptance": false,
+  "broader_issue89": "INCOMPLETE",
+  "final_documentation_ci_and_merge_review": "PENDING"
+}
