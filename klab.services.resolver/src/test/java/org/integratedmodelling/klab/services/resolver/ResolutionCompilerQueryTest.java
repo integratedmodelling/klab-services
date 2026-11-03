@@ -22,6 +22,21 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class ResolutionCompilerQueryTest {
+  private static void semanticSnapshot(ContextScope scope, org.integratedmodelling.klab.api.services.Reasoner reasoner) {
+    var capabilities=mock(org.integratedmodelling.klab.api.services.Reasoner.Capabilities.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+    when(reasoner.capabilities(scope)).thenReturn(capabilities);
+    when(capabilities.getServiceId()).thenReturn("query-fixture");
+    when(capabilities.getKnowledgeRevision()).thenReturn(3L);
+  }
+
+  /** Catalog admission is a fixture boundary here; query selection and lowering remain real. */
+  private static org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt
+      admission(org.integratedmodelling.klab.api.knowledge.Model model) {
+    return new org.integratedmodelling.klab.runtime.language.ModelValidationGate.AdmissionReceipt(
+        model.getUrn(),model.getNamespace(),"fixture-version","fixture-source",
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.executableHash(model),"query-fixture",3L);
+  }
 
   @Test
   void completeTierZeroPrecomputedDataSkipsEarlierRecursiveCandidate() {
@@ -71,6 +86,7 @@ class ResolutionCompilerQueryTest {
       when(strategy.getOperations()).thenReturn(java.util.List.of(operation));
     }
     var reasoner=mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+    semanticSnapshot(scope, reasoner);
     when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
     when(reasoner.computeObservationStrategies(request,scope)).thenReturn(java.util.List.of(recursive,direct));
     var state=org.integratedmodelling.klab.api.collections.Parameters.<String>create();
@@ -87,6 +103,7 @@ class ResolutionCompilerQueryTest {
       var computation=mock(org.integratedmodelling.klab.api.lang.Contextualizable.class);
       when(model.getComputation()).thenReturn(java.util.List.of(computation));
       org.mockito.Mockito.doReturn(java.util.List.of(model)).when(compiler).queryModels(data,contextSemantics,scope,scale);
+      org.mockito.Mockito.doReturn(admission(model)).when(compiler).admissionReceipt(model);
       var runtime=mock(org.integratedmodelling.klab.api.services.RuntimeService.class);
       when(scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class)).thenReturn(runtime);
       when(runtime.resolveContextualizables(model.getComputation(),scope))
@@ -220,10 +237,16 @@ class ResolutionCompilerQueryTest {
     verify(scope, never()).observation(any());
   }
   @Test void loweringRetainsOrderedModelIdentityEvenWithoutComputations() {
-    var scope=mock(ContextScope.class);var graph=ResolutionGraph.create(scope);var actuator=new org.integratedmodelling.common.runtime.ActuatorImpl();
+    var scope=mock(ContextScope.class);
+    semanticSnapshot(scope,mock(org.integratedmodelling.klab.api.services.Reasoner.class));
+    var graph=ResolutionGraph.create(scope);var actuator=new org.integratedmodelling.common.runtime.ActuatorImpl();
     var observable=mock(Observable.class);var first=mock(org.integratedmodelling.klab.api.knowledge.Model.class);var second=mock(org.integratedmodelling.klab.api.knowledge.Model.class);
     when(first.getUrn()).thenReturn("same.namespace.producerA");when(second.getUrn()).thenReturn("same.namespace.producerB");
-    for(var model:java.util.List.of(first,second)){when(model.getObservables()).thenReturn(java.util.List.of(observable));when(model.getComputation()).thenReturn(java.util.List.of());graph.graph().addVertex(model);}
+    for(var model:java.util.List.of(first,second)){
+      when(model.getNamespace()).thenReturn("same.namespace");
+      when(model.getObservables()).thenReturn(java.util.List.of(observable));when(model.getComputation()).thenReturn(java.util.List.of());
+      graph.graph().addVertex(model);graph.admitModel(model,admission(model));
+    }
     var compiler=new DataflowCompiler(null,graph,scope);
     for(var model:java.util.List.of(first,first,second))compiler.compileModel(actuator,null,Geometry.create("*"),mock(org.integratedmodelling.klab.api.knowledge.ObservationStrategy.class),model,null);
     org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of("same.namespace.producerA","same.namespace.producerA","same.namespace.producerB"),actuator.getData().get(org.integratedmodelling.klab.api.services.runtime.Actuator.PRODUCING_MODELS_KEY));assertTrue(actuator.getComputation().isEmpty());
