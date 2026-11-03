@@ -3679,7 +3679,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           .values()
           .forEach(p -> errors.addAll(BeanIngestionPreflight.errors(p.notifications())));
       if (!errors.isEmpty())
-        return rejectBeanUpdate(changes, affectedKnowledge, List.copyOf(errors));
+        return rejectBeanUpdate(changes, affectedKnowledge, BeanIngestionPreflight.distinctOccurrences(errors));
     } catch (Exception e) {
       return rejectBeanUpdate(
           changes,
