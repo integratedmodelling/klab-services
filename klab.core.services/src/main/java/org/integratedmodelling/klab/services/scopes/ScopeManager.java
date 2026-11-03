@@ -761,6 +761,11 @@ public class ScopeManager {
    * Refresh only a known, authorized Runtime; never discover a service from an arbitrary header.
    */
   RuntimeService findOriginatingRuntime(ServiceUserScope userScope, String runtimeId) {
+    // A cold request to the hosting Runtime must use its own authorized persisted lookup,
+    // not depend on the caller first advertising a remote client for this same service.
+    if (service instanceof RuntimeService runtime && runtimeId.equals(runtime.serviceId())) {
+      return runtime;
+    }
     var usable = userScope.findService(RuntimeService.class, s -> runtimeId.equals(s.serviceId()));
     if (usable.isPresent()) {
       return usable.get();
