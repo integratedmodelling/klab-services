@@ -2,9 +2,38 @@
 
 Candidate parents: Python integration `e09a7de7cac6b48526fd8b7ac72879abb36a77a3`
 and upstream `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920`.
-The current candidate also integrates merged stabilization PRs #143, #146 and
-#148 through develop `d914a6c5f28d498a8eba38cb8661e4abeb7deb2f`.
+The current candidate integrates merged stabilization PRs #143, #146 and
+#148–#154 through develop `e6b3a643977fa624c2c7842dd18a2ac9acdc4402`.
 This candidate is not release acceptance. No scientific input is migrated.
+
+## Resources follow-up (2026-11-03)
+
+PRs #149–#154 are merged after their head checks passed (GitHub Actions and
+Jenkins). Author review only. Targeted results: temporal 33; semantic fixtures
+32; pipeline/shared helper 27; authoring 20; builder 19; authority 6 tests pass.
+These are separate selections, not an additive full-suite count.
+
+The fresh develop-based Resources selection before #153/#154 ran 445 tests:
+one failure, six errors, eight skips. Reports are preserved under
+`C:/Users/lumsd/AppData/Local/Temp/opencode/resources-followup-evidence-20261103`.
+Builder fixes use real OWL helpers and explicitly replace the obsolete ordinary
+Subject observer expectation with Subject rejection and Agent retention.
+Authority fixture publication retains version mismatch and no-installation checks.
+
+Three containment tests pass with `klab.test.core.directory` set to the absolute
+path of `klab.services.reasoner/src/main/resources/knowledge`. Classification/query
+acceptance passes with `klab.test.staging.directory` pointing to an external checkout
+of `https://github.com/integratedmodelling/klab.staging.vxii` at
+`65e077475301e1aad86025ba7ced6fb427842df2`. The older documented staging revision
+`baa9717f8c118501b77a6460e4c885bdf456a7cd` lacks `queries.kim`; classification source
+is identical between these revisions. No source fixtures or oracle values changed.
+The test selectors are `ContainedTierZeroAcceptanceTest` and
+`ClassificationSourceAcceptanceTest`, using `-pl klab.services.resources -am`
+and `-Dsurefire.failIfNoSpecifiedTests=false test` with normal failure handling.
+
+The integrated full Resources selection with both configured paths is running;
+see `C:/Users/lumsd/AppData/Local/Temp/opencode/resources-integrated-configured-20261103.log`.
+This does not establish complete Java-suite, live-stack, or original-study acceptance.
 
 ## Why integrate upstream
 
