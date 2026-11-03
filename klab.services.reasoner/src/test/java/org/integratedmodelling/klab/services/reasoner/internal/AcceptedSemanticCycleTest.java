@@ -55,6 +55,41 @@ class AcceptedSemanticCycleTest {
     when(scope.getActiveSessions()).thenReturn(List.of(session));when(session.getActiveContexts()).thenReturn(List.of(scope));
     return SemanticCycleFacade.create(base,request(binding,cycle),scope,runtime::invokeCycle);
   }
+  @Test void annotatedObservationSurvivesBindingStrategyComputationAndResponseTransport() throws Exception {
+    var actor=actor("fingerprint","test:Subject");
+    var current=new AtomicReference<>(state(actor,"fingerprint"));
+    var scope=scope("alice","context","runtime");
+    var concept=actor.resolveConcept("test:Subject");
+    var observable=new org.integratedmodelling.common.knowledge.ObservableImpl();
+    observable.setUrn(concept.getUrn());observable.setSemantics(concept);
+    var observation=new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+    observation.setObservable(observable);
+    observation.mergeAnnotations(List.of(org.integratedmodelling.klab.api.lang.Annotation.of(
+        "label","value","Cotechino","meaning",concept)),
+        org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl.DEFINITION_ANNOTATIONS);
+    var strategy=new org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl();
+    strategy.setUrn("test:strategy");
+    var operation=new org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl.OperationImpl();
+    operation.setType(ObservationStrategy.Operation.Type.OBSERVE);operation.setObservable(observable);
+    strategy.getOperations().add(operation);
+    doAnswer(call->{
+      org.integratedmodelling.klab.api.knowledge.observation.Observation bound=call.getArgument(0);
+      var annotation=bound.getAnnotations().iterator().next();
+      assertEquals("label",annotation.getName());
+      assertEquals("Cotechino",annotation.get("value"));
+      assertSame(concept,annotation.get("meaning"));
+      return List.of(strategy);
+    }).when(actor).computeObservationStrategies(any(),any());
+    try(var runtime=new AcceptedSemanticRuntime(AcceptedSemanticObserverScopeTest.factory(current),"reasoner")) {
+      runtime.submit(AcceptedSemanticObserverScopeTest.world());assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      var binding=runtime.beginCycle(request(null,"annotations"),scope);
+      var result=facade(runtime,binding,"annotations",scope).computeObservationStrategies(observation,scope);
+      assertEquals("test:strategy",result.getFirst().getUrn());
+      assertEquals(concept.getUrn(),result.getFirst().getOperations().getFirst().getObservable().getUrn());
+      assertEquals("Cotechino",observation.getAnnotations().getFirst().get("value"));
+      runtime.releaseCycle(request(binding,"annotations"),scope);
+    }
+  }
   @Test void oldCycleRetainsActorCapabilitiesAndWitnessAcrossPublicationWhileNewCycleSeesNewActor() throws Exception {
     var first=actor("first-fingerprint","test:First");var second=actor("second-fingerprint","test:Second");
     var oldState=state(first,"first-fingerprint");var newState=state(second,"second-fingerprint");

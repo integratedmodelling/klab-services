@@ -450,6 +450,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         || !Objects.equals(pin.reasonerSessionId(), selected.semanticSessionId()))
       throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
           "MODEL_CATALOG_VIEW_UNAVAILABLE: selected semantic actor does not match the cycle");
+    namespaceModelIndex.awaitInitialPublication(java.time.Duration.ofSeconds(60));
     return namespaceModelIndex.queryView(List.copyOf(workspaceManager.getNamespaces()), selected);
   }
 

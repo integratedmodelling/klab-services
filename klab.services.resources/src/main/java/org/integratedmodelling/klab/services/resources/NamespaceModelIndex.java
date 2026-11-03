@@ -58,7 +58,24 @@ final class NamespaceModelIndex {
       boolean sourceComplete) {}
 
   private volatile QueryView queryPublication;
+  private final java.util.concurrent.CompletableFuture<Void> firstPublication =
+      new java.util.concurrent.CompletableFuture<>();
   private final long retryDelay;
+
+  /** Wait without the writer monitor: admission can call back into Resources. */
+  void awaitInitialPublication(Duration timeout) {
+    if (firstPublication.isDone()) return;
+    try {
+      firstPublication.get(timeout.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw queryUnavailable("INITIAL_CATALOG_WAIT_INTERRUPTED");
+    } catch (java.util.concurrent.TimeoutException timeoutFailure) {
+      throw queryUnavailable("INITIAL_CATALOG_TIMEOUT: first reconciliation has not completed");
+    } catch (java.util.concurrent.ExecutionException failure) {
+      throw new IllegalStateException(failure.getCause());
+    }
+  }
 
   NamespaceModelIndex() {
     this(Duration.ofSeconds(5).toNanos());
@@ -176,6 +193,7 @@ final class NamespaceModelIndex {
         if (previous != null
             && previous.fingerprint().equals(fingerprint)
             && (!previous.retryable() || now - previous.attemptedAt() < retryDelay)) continue;
+        boolean replacementStarted = false;
         try (var validation = ModelValidationGate.openPublicationSession(namespace, scope)) {
           if (!fingerprint.eligible())
             throw new IllegalStateException(
@@ -212,13 +230,20 @@ final class NamespaceModelIndex {
                       response.getSemanticContentFingerprint(),
                       sourceContract));
           queryPublication = null; // Invalidate before any shared catalog/dictionary mutation.
+          replacementStarted = true;
           catalog.replaceNamespace(namespace, scope);
           staged.put(urn, new Attempt(fingerprint, false, now, List.of(), admission));
         } catch (ReconciliationChanged changed) {
           throw changed;
         } catch (RuntimeException rejected) {
-          queryPublication = null;
-          catalog.withholdNamespace(urn, scope);
+          // A failed retry of an already withheld, unchanged namespace does not mutate the
+          // catalog. Preserve its completed view for concurrent frozen-cycle readers.
+          // A replacement may have partially written data before failing and must be withdrawn.
+          if (replacementStarted || previous == null || previous.admission() != null
+              || !previous.fingerprint().equals(fingerprint)) {
+            queryPublication = null;
+            catalog.withholdNamespace(urn, scope);
+          }
           boolean retryable =
               !(rejected instanceof ModelValidationGate.AdmissionFailure failure)
                   || failure.retryable();
@@ -259,6 +284,7 @@ final class NamespaceModelIndex {
                 semantic,
                 Map.copyOf(fingerprints),
                 staged.values().stream().allMatch(NamespaceModelIndex::sourceComplete));
+      firstPublication.complete(null);
     } catch (RuntimeException changed) {
       // A namespace manifest may have been replaced just as the generation changed. Withdrawal
       // failure must propagate: the provider's readiness gate must not continue model queries.
@@ -299,23 +325,27 @@ final class NamespaceModelIndex {
     }
   }
 
-  private static RuntimeException queryUnavailable() {
+  private static RuntimeException queryUnavailable(String reason) {
     return new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
-        "MODEL_CATALOG_VIEW_UNAVAILABLE: no compatible stable model catalog is available for the frozen semantic cycle");
+        "MODEL_CATALOG_VIEW_UNAVAILABLE: " + reason);
   }
 
   Object queryView(
       Collection<KimNamespace> sources, ModelValidationGate.SemanticSnapshot selected) {
     var view = queryPublication;
-    if (view == null
-        || selected == null
-        || !org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(
-            selected.semanticFingerprint())
-        || !Objects.equals(view.semantic().serviceId(), selected.serviceId())
-        || !Objects.equals(view.semantic().semanticFingerprint(), selected.semanticFingerprint())
-        || !Objects.equals(view.semantic().semanticSessionId(), selected.semanticSessionId())
-        || view.semantic().revision() != selected.revision() && !view.sourceComplete()
-        || !matchesSources(view, sources)) throw queryUnavailable();
+    if (view == null) throw queryUnavailable("CATALOG_NOT_PUBLISHED: reconciliation has not completed or is mutating the catalog");
+    if (selected == null) throw queryUnavailable("SEMANTIC_SNAPSHOT_MISSING");
+    if (!org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(
+        selected.semanticFingerprint())) throw queryUnavailable("SEMANTIC_FINGERPRINT_UNSCOPED");
+    if (!Objects.equals(view.semantic().serviceId(), selected.serviceId()))
+      throw queryUnavailable("REASONER_SERVICE_MISMATCH: catalog=" + view.semantic().serviceId() + ", cycle=" + selected.serviceId());
+    if (!Objects.equals(view.semantic().semanticFingerprint(), selected.semanticFingerprint()))
+      throw queryUnavailable("SEMANTIC_FINGERPRINT_MISMATCH: catalog=" + view.semantic().semanticFingerprint() + ", cycle=" + selected.semanticFingerprint());
+    if (!Objects.equals(view.semantic().semanticSessionId(), selected.semanticSessionId()))
+      throw queryUnavailable("REASONER_SESSION_MISMATCH: catalog=" + view.semantic().semanticSessionId() + ", cycle=" + selected.semanticSessionId());
+    if (view.semantic().revision() != selected.revision() && !view.sourceComplete())
+      throw queryUnavailable("INCOMPLETE_CATALOG_REVISION_MISMATCH: catalog=" + view.semantic().revision() + ", cycle=" + selected.revision());
+    if (!matchesSources(view, sources)) throw queryUnavailable("NAMESPACE_SOURCES_CHANGED: catalog=" + view.sources().size() + ", current=" + sources.size());
     return view;
   }
 
@@ -323,7 +353,7 @@ final class NamespaceModelIndex {
       Object captured,
       Collection<KimNamespace> sources,
       ModelValidationGate.SemanticSnapshot selected) {
-    if (captured != queryView(sources, selected)) throw queryUnavailable();
+    if (captured != queryView(sources, selected)) throw queryUnavailable("CATALOG_REPLACED_DURING_QUERY");
   }
 
   private boolean matchesSources(QueryView view, Collection<KimNamespace> sources) {
