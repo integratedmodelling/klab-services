@@ -33,7 +33,10 @@ java -version
 ./mvnw -B -pl klab.services.runtime.server -am -Dtest=FederatedIdentityTransportTest,NativeReconnectParentTest,ClientScopeCreationTest,ClientScopeShutdownTest,FederationSessionIdentityTest,IdentityHeaderValidationTest,TokenAuthorizationFilterTest,LocalRuntimeColdScopeTest,CachedScopeRuntimeOriginTest,ScopeManagerTest,ServiceSessionScopeTest,ManagedScopeAccessTest,UserScopeAdvertisementTest,RuntimeContextReleaseTest,RuntimeContextAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
-On Windows use `mvnw.cmd` instead of `./mvnw`. Expected fixed behavior: selected
+On Windows use `mvnw.cmd` instead of `./mvnw`; in PowerShell quote every complete
+`-D...` argument, e.g. `'-Dsurefire.failIfNoSpecifiedTests=false'`. Otherwise
+PowerShell can split the dotted property and Maven reports `Unknown lifecycle
+phase ".failIfNoSpecifiedTests=false"` before any test runs. Expected fixed behavior: selected
 tests PASS, no ignored failures. Inspect each module's `target/surefire-reports/`
 for counts/errors/skips; reactor modules with no matching selected tests may run
 zero tests. This is a selected regression suite, **not** a full Java-suite claim.
@@ -71,7 +74,9 @@ Historical accepted observable artifact SHA256 was
 `4b89ef600e5d620eaf18553170d11b49f5dd78f93914402d3901e4832f5edcf1`.
 All five integratedmodelling language JARs changed at the same SNAPSHOT coordinates;
 see `notes/roadmap-handoff-verification-20261103.json` for all current/historical
-hashes. The cause of replacement and correct supported source/artifact pairing are
+hashes ([PR133 evidence addition](https://github.com/integratedmodelling/klab-services/blob/89ad51a2a80210ff785c6ac3a58e3b009e9890e3/notes/roadmap-handoff-verification-20261103.json),
+not a file already present at the pinned executable baseline).
+The cause of replacement and correct supported source/artifact pairing are
 not proven. Do not overwrite another user's Maven cache, recover arbitrary old
 JARs or remove scientific requirement cases to make compilation pass.
 

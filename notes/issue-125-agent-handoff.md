@@ -43,6 +43,11 @@ positive execution-handle tests. It must not simply rename preview as execution.
 Prerequisites: JDK21, `JAVA_HOME`, Maven wrapper and declared Maven repositories.
 From the same checkout (`mvnw.cmd` on Windows):
 
+In Windows PowerShell quote each complete `-D...` argument, including
+`'-Dsurefire.failIfNoSpecifiedTests=false'`, to avoid its property-name splitting.
+An `Unknown lifecycle phase ".failIfNoSpecifiedTests=false"` failure is shell
+argument parsing, not an agent or compiler failure.
+
 ```sh
 ./mvnw -B -pl klab.core.services -am -Dtest=AgentInstantiationRequestSerializationTest,AgentEventBusTest,RuntimeAgentBaseTest,AgentRegistryTest -Dsurefire.failIfNoSpecifiedTests=false test
 ```
@@ -75,7 +80,8 @@ also needs `EXTENT` and `ATTRIBUTE`. The accepted earlier artifact hash was
 `4b89ef600e5d620eaf18553170d11b49f5dd78f93914402d3901e4832f5edcf1`.
 All five language SNAPSHOT JARs changed; complete hashes and repeated command
 outcomes are in `notes/roadmap-handoff-verification-20261103.json` and the current
-#89 body. Establish a coherent maintained source/artifact pair; do not remove
+#89 body. That JSON is a [PR133 documentation addition](https://github.com/integratedmodelling/klab-services/blob/89ad51a2a80210ff785c6ac3a58e3b009e9890e3/notes/roadmap-handoff-verification-20261103.json),
+not part of the pinned executable baseline. Establish a coherent maintained source/artifact pair; do not remove
 scientific cases, mix old closures or overwrite someone else's Maven cache.
 Report changed artifact bytes/outcomes honestly if this exact trigger no longer
 resolves. Python state/transport development can continue independently; this build
