@@ -96,3 +96,12 @@ def test_do_not_echo_untrusted_values_in_errors():
     with pytest.raises(ProtocolError) as caught:
         decode_agent_status(payload(agentUrn=secret), expected_agent_urn=URN)
     assert secret not in str(caught.value)
+
+
+def test_each_feature_coverage_step_declares_its_checkout_working_directory():
+    workflow = (ROOT / ".github/workflows/python-client.yml").read_text(encoding="utf-8")
+    steps = workflow.split("      - ")
+    coverage_steps = [step for step in steps if "run: python tools/check_feature_coverage.py" in step]
+    assert len(coverage_steps) == 10
+    for step in coverage_steps:
+        assert "\n        working-directory: python-client\n" in step
