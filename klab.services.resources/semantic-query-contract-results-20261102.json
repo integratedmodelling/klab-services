@@ -91,7 +91,66 @@
   "bounded_review_evidence_capture": "COMPLETE",
   "review_acceptance": "INCOMPLETE",
   "genuine_numerical_or_notification_acceptance": "NOT_VERIFIED",
-  "next_evidence_gate": "OWNER_QUERY_CONTRACT_DECISION_AND_UNRESOLVED_DIAGNOSTIC_REVIEW",
+  "technical_admission_investigation": "IN_PROGRESS",
+  "external_or_authorization_blocker_established": false,
+  "actual_model_source_diagnostics": {
+    "original_source_sha256": "9bc51d4fa89c20136fe6b0951a4840120dce0da948156a08203868fb1b92db70",
+    "parser_diagnostics": [],
+    "authoring_and_executable_error": "MODEL_OUTPUT_UNRESOLVED",
+    "document": "python.fixture",
+    "offset": 95,
+    "length": 24,
+    "native_publication_gate_accepted": false,
+    "selected_model_preparation_receipt": false
+  },
+  "in_memory_explicit_bearer_source_diagnostic": {
+    "source_sha256": "04c3f69e58fc48f734043d84d5ace49a58f8d5a9ce176a53fc83525111f423d8",
+    "parser_authoring_executable_diagnostics": [],
+    "native_publication_gate_accepted": true,
+    "selected_model_preparation_receipt": true,
+    "namespace_wide_execution_footprint_complete": false,
+    "source_only_receipt_not_execution_certificate": true,
+    "different_generated_model_urn": true,
+    "constant_expression_preserved": true,
+    "original_file_modified": false,
+    "expressions_evaluated_or_catalog_written": false,
+    "original_acceptance_replacement": false
+  },
+  "additional_offline_source_admission_arms": {
+    "count": 5,
+    "unchanged_source_core_model_inputs": 218,
+    "unchanged_classpath_inputs_per_arm": 9828,
+    "recorded_jvm_identities_independently_absent": 5,
+    "live_owned_visible_windows": 0,
+    "source_validation_result_sha256": "cad1b7c6140f0f5f9a432874bf7b448bca73e90cdb719d1908d814606bec8811",
+    "full_preparation_result_sha256": "569cf22fa332dc4da6bf781b13bc3744bbea72680de8dcb7e0f28e25bdd81fff"
+  },
+  "expanded_pr120_tests": {
+    "native_diagnostic_cases": 10,
+    "related_gate_index_source_cases": 27,
+    "total_passed_locally": 37,
+    "final_head_ci": "PENDING",
+    "log_sha256": "3f5c566aad1bce3c4ee574749dee28902cbe9d0a69b78fc894d93d2a64c994c0"
+  },
+  "served_source_audit": {
+    "status": "DIAGNOSTIC_CAPTURED_NOT_NUMERICAL_OR_NOTIFICATION_ACCEPTANCE",
+    "original_source_hash_matches": true,
+    "namespace_parser_notifications": [],
+    "transported_source_admission_receipt_present": false,
+    "authoring_and_executable_error": "MODEL_OUTPUT_UNRESOLVED",
+    "source_semantics_complete": false,
+    "source_retrievals": 1,
+    "validation_calls": 2,
+    "sessions_contexts_publications_jobs": 0,
+    "runtime_context_list_and_http_close": "PASS",
+    "recorded_jvm_identities_independently_absent": 14,
+    "unchanged_backend_inputs": 3905,
+    "supervisor_result_sha256": "391b9c51680ddfb86b538238962e41a0032c4aefc0f113ac918a1c4170840c04",
+    "detailed_result_sha256": "7d5b143d6c26b075b3e0e305b38f2087e0a99dafc7ba4e3f47c03d16e2cdc823",
+    "mutation_journal_sha256": "f9f10724fd31366b7117a4f0f3d79de18be975be73cc2a5666092ddbfeaa4129"
+  },
+  "fixture_source_compatibility_failure_reproduced_on_full_service": true,
+  "next_evidence_gate": "OPT_IN_VERSIONED_FIXTURE_MIGRATION_AND_ADMISSION_PREFLIGHT_BEFORE_EXECUTION",
   "semantic_query_changes_authorized_by_this_review": false,
   "publication_authorized": false
 }

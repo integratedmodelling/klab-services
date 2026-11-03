@@ -1,6 +1,6 @@
 # Semantic/query-contract review: preserved Elevation acceptance
 
-Status: bounded read-only evidence captured; semantic acceptance remains unresolved.
+Status: technical admission investigation continues; semantic acceptance remains unresolved.
 Based on integration `5785c1baa`.
 No product code, scientific query, model, worldview, algorithm, oracle or deployment
 changes are included. This review is separate from diagnostic PR120 and does not
@@ -183,6 +183,76 @@ not prove whole-worldview completeness, select a model, establish correct scient
 meaning, repair all compiler diagnostics or reproduce the original Job's complete
 failure chain. The original fixed query and failed receipts remain unchanged.
 
+## Follow-through: actual fixture source and native admission gates
+
+The investigation is not waiting on routine authorization. Five further offline
+arms traced the actual unchanged `python.fixture` source through native parsing,
+source validators, the public Reasoner validation entry, source-publication admission
+and selected-model preparation. They retain the five compiler diagnostics above.
+
+The original namespace parses with no diagnostics. Native authoring and executable
+validation with a Terrestrial Region execution context both report
+`MODEL_OUTPUT_UNRESOLVED` at document `python.fixture`, offset95,length24, on its
+Elevation primary. Original source SHA-256 remains
+`9bc51d4fa89c20136fe6b0951a4840120dce0da948156a08203868fb1b92db70`.
+Adding context to the validation request does not repair source admission.
+
+An explicitly labelled **in-memory exploratory snapshot**, not a new accepted
+fixture, adds an explicit Terrestrial Region bearer to that one model primary.
+It preserves the exact `[100 + 23.25]` expression and all other namespace text;
+its SHA-256 is `04c3f69e58fc48f734043d84d5ace49a58f8d5a9ce176a53fc83525111f423d8`.
+Neither snapshot is evaluated or written back to the fixture.
+
+| Native check | Original source | In-memory explicit-bearer snapshot |
+| --- | --- | --- |
+| Parser diagnostics | none | none |
+| Authoring/executable source diagnostics | `MODEL_OUTPUT_UNRESOLVED` | none |
+| Public validation source-semantics flag | false | true |
+| Production `sourceAdmission` gate | rejects | accepts source-only receipt |
+| Selected model `validatedSourcePreparation` | no receipt | receipt present |
+| Executable hash during preparation | unchanged | unchanged |
+
+Both public validation responses have status COMPLETE, so **COMPLETE alone is not
+successful admission**: the original contains an Error notification. Both also
+have incomplete namespace-wide execution footprints: the namespace contains the
+separate opaque Java FixtureControls expressions. The exploratory source-only
+receipt is not used as a whole-namespace execution certificate; the selected
+constant model goes through its separate preparation gate. No catalog is written.
+
+The exploratory snapshot has a different generated model URN. It cannot silently
+replace an existing model/handle/Job identity or count as a passing original
+acceptance. Original receipts, sources, numerical oracle and scientific algorithms
+remain unchanged. No model has been executed, data read back or activity delivered.
+
+All218 pinned source/core/model inputs and9,828 current-classpath input hashes per
+arm stayed unchanged; all five additional recorded JVM identities were independently
+absent, with no matching live-owned visible windows or unrelated process changes.
+
+PR120 now contains three self-contained native source-admission cases. Together
+with its seven earlier diagnostics and27 existing gate/index/source-boolean cases,
+37 focused tests pass locally. They exercise parser/compiler and the real admission
+gates without evaluating expressions or modifying the original fixture. Final-head
+CI is required for that expanded suite.
+
+The read-only served-source audit completed against the actual full private service
+worldview, not this subset. The retrieved original source hash matched exactly,
+with no parser notifications and no transported namespace admission receipt.
+Authoring and executable-with-Region validation both returned the same
+`MODEL_OUTPUT_UNRESOLVED` Error, source semantics incomplete, and matching source
+hash. It used one retrieval, two validation calls and zero sessions, contexts,
+publications or scientific Jobs. Runtime context listing and HTTP closure passed;
+all14 JVM identities were independently absent and3,905 backend hashes unchanged.
+
+This confirms an operational incompatibility of the preserved synthetic fixture
+with current native source admission, not only a subset-harness artefact. A separate
+opt-in versioned fixture migration is being implemented under PR118. Original and
+v2 fixture evidence remain preserved; numerical expression/oracle remain unchanged.
+Any migrated fixture is labelled as a new synthetic contract, not a passing original
+request or scientific reproduction. Its native and real-service admission preflight
+must pass before a fresh bounded execution. No shared worldview, scientific algorithm
+or admission guard is changed. This is continuing technical work within the existing
+scope, not an established external or routine-authorization blocker.
+
 ## Decision gates
 
 1. Compare actual native closure evidence with the existing pinned-source contract.
@@ -195,9 +265,9 @@ failure chain. The original fixed query and failed receipts remain unchanged.
 3. If the source cannot prove the obligation, preserve the failed original request.
    Obtain a separate explicit decision before any query/model/worldview/semantic
    change; do not add a bearer, relabel abstractness or disable guards automatically.
-   A separately authorized synthetic notification fixture could use an explicitly
-   declared bearer, but must be labelled a new contract/variant, never a passing
-   rerun or reproduction of the original question. It has not been implemented.
+   Exploratory source/query variants must remain labelled as such, never a passing
+   rerun or reproduction of the original question. No shared scientific source or
+   production semantics is changed by these in-memory checks.
 4. Any later genuine numerical/notification acceptance still needs its own reviewed
    correction, current source-matched artifacts, bounded fresh-run authorization
    and independent cleanup. Successful strategy inference alone is insufficient.
