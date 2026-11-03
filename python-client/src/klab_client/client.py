@@ -16,10 +16,11 @@ from .api.scopes import ContextScopeImpl, SessionScopeImpl, UserScopeImpl
 from .dto import (check_notifications, configuration_to_wire, decode_cell, object_payload,
                   observation_from_wire, observation_to_wire, required_text)
 from .errors import (ConfigurationError, InvalidRequestError, JobCancelledError, JobFailedError,
-                     JobUnavailableError, ProtocolError, ServerError, TransportError,
+                     JobUnavailableError, ProtocolError, ServerError, SubmissionOutcomeUnknown, TransportError,
                       UnsupportedOperationError, WaitTimeout, WaitCancelled)
 from .transport import Endpoint, Transport, _normalize_service_url
 from .requests import ContextOptions, ObservationOptions, ObservationRequest
+from ._job_binding import JobBinding
 
 _TOKEN = re.compile(r"^[^.\s#]+(?:\.[^.\s#]+)?(?:\.[1-9][0-9]*)*(?:#[1-9][0-9]*)?$")
 
@@ -102,15 +103,21 @@ class Job:
         self._decoder = decoder
         self.result_kind = result_kind if result_kind is not None else ("mapping" if decoder is None else None)
         self.cancellation_requested = False
+        self._binding = JobBinding.capture(self, scope_token(scope))
+
+    def _check_binding(self):
+        self._binding.validate(self, scope_token)
 
     def __repr__(self):
         return f"Job(id={self.id}, service={self.service!r}, scope={scope_token(self.scope)!r})"
 
     def status(self, *, timeout: float | None = None, _deadline: float | None = None) -> JobStatus:
         """Poll the server state; EMPTY is unavailable, not successful cancellation."""
+        self._check_binding()
         payload = self.client.transport.request(
             self.service, "GET", f"/jobs/status/{self.id}", scope=scope_token(self.scope),
             service_id=self.client.runtime_service_id, timeout=timeout, deadline=_deadline)
+        self._check_binding()
         return self._decode_status(payload)
 
     def _decode_status(self, payload):
@@ -143,9 +150,14 @@ class Job:
         return self._decoder(payload) if self._decoder else payload
 
     def cancel(self) -> bool:
+        self._check_binding()
         accepted = self.client.transport.request(self.service, "GET", f"/jobs/cancel/{self.id}",
                                                  scope=scope_token(self.scope),
                                                  service_id=self.client.runtime_service_id, ambiguous=True)
+        try:
+            self._check_binding()
+        except ProtocolError:
+            raise SubmissionOutcomeUnknown("Cancellation response binding changed; outcome unknown, do not replay") from None
         if type(accepted) is not bool:
             raise ProtocolError("Cancellation must return a boolean")
         self.cancellation_requested = self.cancellation_requested or accepted
@@ -153,6 +165,7 @@ class Job:
 
     def result(self, timeout: float | None = None, *, _cancelled=None) -> ObservationImpl | dict[str, Any]:
         """Await and retrieve actual result; timeout preserves this resumable handle."""
+        self._check_binding()
         if timeout is not None and (not math.isfinite(timeout) or timeout < 0):
             raise InvalidRequestError("Wait timeout must be finite and nonnegative")
         if _cancelled is not None and not callable(_cancelled):
@@ -173,11 +186,14 @@ class Job:
             try:
                 status = self.status(timeout=remaining(), _deadline=deadline)
                 if self._finished(status):
+                    self._check_binding()
                     payload = self.client.transport.request(
                         self.service, "GET", f"/jobs/retrieve/{self.id}",
                         scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
                         timeout=remaining(), deadline=deadline)
+                    self._check_binding()
                     result = self._decode_result(payload)
+                    self._check_binding()
                     remaining()
                     return result
             except TransportError:
@@ -194,6 +210,7 @@ class Job:
     def to_handle(self):
         """Create an offline reference; custom decoders require a supported helper."""
         from .handles import to_handle
+        self._check_binding()
         return to_handle(self)
 
 
