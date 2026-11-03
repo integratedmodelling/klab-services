@@ -1,0 +1,6 @@
+[
+  {"@CLASS":"org.integratedmodelling.klab.api.actors.RuntimeAgent$Status","agentUrn":"test.agent.status","state":"READY","viable":true,"timestamp":1760000000000,"observationId":-1,"startedAt":-1,"lastActivityAt":-1},
+  {"@CLASS":"org.integratedmodelling.klab.api.actors.RuntimeAgent$Status","agentUrn":"test.agent.status","state":"RUNNING","viable":true,"timestamp":1760000000000,"observationId":-1,"startedAt":-1,"lastActivityAt":-1},
+  {"@CLASS":"org.integratedmodelling.klab.api.actors.RuntimeAgent$Status","agentUrn":"test.agent.status","state":"STOPPED","viable":false,"timestamp":1760000000000,"observationId":-1,"startedAt":-1,"lastActivityAt":-1},
+  {"@CLASS":"org.integratedmodelling.klab.api.actors.RuntimeAgent$Status","agentUrn":"test.agent.status","state":"FAILED","viable":false,"detail":"controlled failure","timestamp":1760000000000,"observationId":-1,"startedAt":-1,"lastActivityAt":-1}
+]

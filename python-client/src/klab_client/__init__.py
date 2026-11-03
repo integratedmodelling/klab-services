@@ -25,6 +25,8 @@ from klab_client.graph import GraphBrowser, GraphPage
 from klab_client.graph_projection import GraphProjection, GraphProjectionView, ProjectedGraphPage
 from klab_client.authoring import Authoring, AuthoringReceipt, ParsedSource
 from klab_client.agents import AgentPreviews, AgentSourcePreview
+from klab_client.agent_status import AgentStatusSnapshot, decode_agent_status
+from klab_client.agent_control import AgentControlBinding, AgentControlJournal, AgentControlView
 from klab_client.async_client import AsyncClient, AsyncContext, AsyncSession, AsyncJob
 from klab_client.transport import Endpoint
 from klab_client.connection import Connection, SelectionPolicy, connect
@@ -55,6 +57,8 @@ __all__ = [
     "ActivityNotifications", "ActivityNotification", "NotificationBroker",
     "Authoring", "AuthoringReceipt", "ParsedSource",
     "AgentPreviews", "AgentSourcePreview",
+    "AgentStatusSnapshot", "decode_agent_status",
+    "AgentControlBinding", "AgentControlJournal", "AgentControlView",
     "GraphBrowser", "GraphPage",
     "GraphProjection", "GraphProjectionView", "ProjectedGraphPage",
     "ScientificDataOrigin", "to_dataframe",
