@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -37,6 +38,31 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
  * frequency and/or memory available to the client.
  */
 public class ReasonerClient extends BaseServiceClient implements Reasoner, Reasoner.Admin {
+
+  @Override public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding beginSemanticCycle(
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    return beginSemanticCycleResult(runtimeServiceId,contextId,cycleId,scope).requireBinding();
+  }
+  @Override public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult beginSemanticCycleResult(
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.REASONER.SEMANTIC_CYCLE_BEGIN,
+        new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(runtimeServiceId,contextId,cycleId,null),
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult.class);
+  }
+  @Override public void releaseSemanticCycle(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    var accepted=client.withScope(scope).postRequired(ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE,
+        new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(runtimeServiceId,contextId,cycleId,binding),Boolean.class);
+    if(!Boolean.TRUE.equals(accepted))throw new IllegalStateException("Semantic cycle release was not acknowledged");
+  }
+  @Override public Reasoner bindSemanticCycle(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    if(binding==null || !Objects.equals(serviceId(),binding.reasonerServiceId()))throw new SecurityException("Semantic cycle belongs to another Reasoner");
+    var request=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(runtimeServiceId,contextId,cycleId,binding);
+    return SemanticCycleFacade.create(this,request,scope,(call,authorized)->client.withScope(authorized).postRequired(
+        ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE,call,
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult.class));
+  }
 
   // TODO link to configuration for debugging
   private boolean useCaches = true;
@@ -271,6 +297,16 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     if (result == null)
       throw new IllegalStateException("Reasoner did not return an authored vocabulary closure");
     return result;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse consequenceRules(
+      org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery query) {
+    var result=client.post(ServicesAPI.REASONER.CONSEQUENCE_RULES,query,
+        org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.class);
+    return result==null?new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+        org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status.UNAVAILABLE,
+        null,java.util.List.of(),null,"Authored consequence query is unavailable from the selected Reasoner"):result;
   }
 
   @Override

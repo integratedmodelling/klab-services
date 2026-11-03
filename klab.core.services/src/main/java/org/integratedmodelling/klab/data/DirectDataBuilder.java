@@ -22,7 +22,8 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   private final Data inputData;
   private final Observation observation;
   private List<Data.Builder> objects = new ArrayList<>();
-  private List<Notification> notifications = new ArrayList<>();
+  private final List<Notification> notifications;
+  private final List<Observation> cessations;
   private Urn identity;
 
   public DirectDataBuilder(
@@ -31,6 +32,13 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
       Observation observation,
       ContextScope contextScope,
       Urn identity) {
+    this(name, inputData, observation, contextScope, identity, new ArrayList<>(), new ArrayList<>());
+  }
+
+  private DirectDataBuilder(String name, Data inputData, Observation observation,
+      ContextScope contextScope, Urn identity, List<Observation> cessations, List<Notification> notifications) {
+    this.cessations = cessations;
+    this.notifications = notifications;
     this.scope = contextScope;
     this.name = name;
     this.inputData = inputData;
@@ -39,6 +47,8 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   }
 
   private DirectDataBuilder(DirectDataBuilder other) {
+    this.cessations = other.cessations;
+    this.notifications = other.notifications;
     this.scope = other.scope;
     this.name = other.name;
     this.inputData = other.inputData;
@@ -56,6 +66,25 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   @Override
   public List<Data.Builder> getObjects() {
     return objects;
+  }
+
+  @Override
+  public Data.Builder cease(Observation target) {
+    if (target == null || target.getId() <= 0 || target.isEmpty()
+        || target.getObservable() == null || target.getObservable().getSemantics() == null
+        || target.getObservable().getSemantics().isCollective()
+        || target.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.CONFIGURATION)
+        || !(target.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECT)
+            || target.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.AGENT)))
+      throw new IllegalArgumentException("Cessation requires an existing singular Subject or Agent");
+    // Preserve the exact supplied handle. Resolving a DTO by ID here would invent authority.
+    synchronized (cessations) { if (cessations.stream().noneMatch(existing -> existing == target)) cessations.add(target); }
+    return this;
+  }
+
+  @Override
+  public List<Observation> getCessations() {
+    synchronized (cessations) { return List.copyOf(cessations); }
   }
 
   @Override
@@ -88,7 +117,7 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
   public Data.Builder object(String name, Observable observable, Geometry geometry, Urn identity) {
     var observation =
         scope.observation(observable).geometry(geometry).identity(identity).register();
-    var builder = new DirectDataBuilder(name, null, observation, scope, identity);
+    var builder = new DirectDataBuilder(name, null, observation, scope, identity, cessations, notifications);
     objects.add(builder);
     return builder;
   }
@@ -113,7 +142,7 @@ public class DirectDataBuilder extends ScannerAdapter implements Data.Builder {
       Observation source, Observation target) {
     var relationship = scope.observation(observable).geometry(geometry).identity(identity)
         .between(source, target).register();
-    var builder = new DirectDataBuilder(name, null, relationship, scope, identity);
+    var builder = new DirectDataBuilder(name, null, relationship, scope, identity, cessations, notifications);
     objects.add(builder);
     return builder;
   }

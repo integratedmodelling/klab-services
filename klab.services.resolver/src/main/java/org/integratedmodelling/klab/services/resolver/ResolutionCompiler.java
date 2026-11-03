@@ -274,7 +274,8 @@ public class ResolutionCompiler {
       ResolutionGraph parentGraph,
       QueryMatch suppliedQuery) {
 
-    if (observation.getId() > 0) {
+    if (observation.getId() > 0
+        && !org.integratedmodelling.klab.runtime.consequence.ConfigurationExplanation.requested(observation, scope)) {
       ScheduleNegotiationSupport.checkReuse(observation, parentGraph.scheduleRequest,
           GeometryRepository.INSTANCE.scale(observation.getGeometry()).getTime(), scope);
       return parentGraph;
@@ -307,6 +308,9 @@ public class ResolutionCompiler {
     }
     Coverage coverage = Coverage.create(scale, 0.0);
     for (var resolvable : parentGraph.getResolving(observation.getObservable(), scale)) {
+      // Native detection is not an explanatory model for that same configuration. Ordinary
+      // strategy tiers and their scientific precomputed models remain available below.
+      if (org.integratedmodelling.klab.runtime.consequence.ConfigurationExplanation.requested(observation, scope)) continue;
       if (parentGraph.scheduleRequest != null || observation.getObservable().is(SemanticType.PROCESS)
           || observation.getObservable().is(SemanticType.EVENT)) {
         // A semantic/coverage cache entry alone cannot prove occurrence compatibility.

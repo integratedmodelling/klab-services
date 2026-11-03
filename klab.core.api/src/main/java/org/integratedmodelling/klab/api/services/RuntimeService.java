@@ -184,6 +184,17 @@ public interface RuntimeService extends KlabService {
      */
     List<Observation> getOutcomes();
 
+    /** Modeled cessation requests. The Runtime admits these only from its actual successful,
+     * source-backed compiled invocation; this method alone grants no graph mutation authority. */
+    default List<Observation> getCessations() { return java.util.List.of(); }
+
+    /** Accept an atomic batch of component output intents through the actual local execution.
+     * Implementations must reject unsupported requests, never interpret metadata as authority. */
+    default void reportCessations(List<Observation> requests, ContextScope execution) {
+      if (!requests.isEmpty()) throw new UnsupportedOperationException("Modeled cessation output is unavailable");
+    }
+
+
     /** Producing computation's lexical constraints for a newly instantiated member. */
     default List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>
         getResolutionConstraints(Observation outcome) { return List.of(); }

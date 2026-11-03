@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Set;
 
 public class NavigableKimConceptStatement extends NavigableKlabStatement<KimConceptStatement> implements KimConceptStatement {
+    @Override public List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> getConsequenceRules() {
+        return delegate.getConsequenceRules();
+    }
     @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature getDeclaredRelationshipNature() { return delegate.getDeclaredRelationshipNature(); }
     @Override public org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation getDeclaredRelationshipOrientation() { return delegate.getDeclaredRelationshipOrientation(); }
     @Override
@@ -65,20 +68,12 @@ public class NavigableKimConceptStatement extends NavigableKlabStatement<KimConc
         return delegate.getTraitsInherited();
     }
 
-    @Override
-    public List<KimConcept> getRequiredExtents() {
-        return delegate.getRequiredExtents();
-    }
 
     @Override
     public List<KimConcept> getRequiredRealms() {
         return delegate.getRequiredRealms();
     }
 
-    @Override
-    public List<KimConcept> getRequiredAttributes() {
-        return delegate.getRequiredAttributes();
-    }
 
     @Override
     public List<KimConcept> getRequiredIdentities() {

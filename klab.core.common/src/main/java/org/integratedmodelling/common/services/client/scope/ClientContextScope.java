@@ -34,6 +34,7 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   private Observation sourceObservation;
   private Observation targetObservation;
   private String transactionId;
+  private org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding resolutionCycleBinding;
 
   private final Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
@@ -89,6 +90,22 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     shardingStrategy = parent.shardingStrategy;
     this.transaction = parent.transaction;
     this.transactionId = parent.transactionId;
+    this.resolutionCycleBinding = parent.resolutionCycleBinding;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding getResolutionCycleBinding() {
+    return resolutionCycleBinding;
+  }
+
+  /** Preserve transport metadata on a detached view; server registries still authorize its use. */
+  public ClientContextScope withResolutionCycleBinding(
+      org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding binding) {
+    if(binding!=null && !Objects.equals(getId(),binding.contextId()))
+      throw new IllegalArgumentException("Resolution cycle belongs to another context");
+    var ret=new ClientContextScope(this);
+    ret.resolutionCycleBinding=binding;
+    return ret;
   }
 
   @Override

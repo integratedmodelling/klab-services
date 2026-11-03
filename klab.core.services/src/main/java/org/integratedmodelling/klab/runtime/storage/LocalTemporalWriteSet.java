@@ -30,6 +30,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
   }
 
   public static Geometry localize(Geometry geometry, Scheduler.Event event) {
+    if(!event.hasTime())return geometry;
     var time = event.getTime();
     var space = geometry.dimension(Geometry.Dimension.Type.SPACE);
     // Preserve the established scale encoding for whole observations (also used in delta evidence).
@@ -119,7 +120,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
               geometry.encode(),
               geometry.size(),
               i,
-              event.getTime().getEnd().getMilliseconds(),
+              event.hasTime()?event.getTime().getEnd().getMilliseconds():0L,
               nativeLayout));
       // A transaction overlay is not a persisted physical shard.
       shards.add(null);
@@ -298,13 +299,11 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
     for (var view : views.values()) {
       if (!view.changed()) continue;
       view.validateComplete();
-      view.storage.stageTemporal(
-          event,
-          view.support,
-          view.layout,
-          (partition, index) -> view.value(partition, index, false),
-          transaction);
-      if (view.observation instanceof ObservationImpl concrete) {
+      if(event.hasTime())view.storage.stageTemporal(event,view.support,view.layout,
+          (partition,index)->view.value(partition,index,false),transaction);
+      else view.storage.stageState(event,view.support,view.layout,
+          (partition,index)->view.value(partition,index,false),transaction);
+      if (event.hasTime() && view.observation instanceof ObservationImpl concrete) {
         var timestamps = new ArrayList<>(concrete.getEventTimestamps());
         var before = new ArrayList<>(timestamps);
         timestamps.add(event.getTime().getEnd().getMilliseconds());
@@ -339,7 +338,10 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
       coverage = SpatialCoverage.support(support.encode());
       boolean ephemeral =
           Boolean.TRUE.equals(observation.getMetadata().get(TemporalHistory.EPHEMERAL));
-      baseline = storage.temporalBaseline(event, ephemeral);
+      if(!event.hasTime() && observation.getGeometry().dimension(Geometry.Dimension.Type.TIME)!=null
+          && !GeometryRepository.INSTANCE.scale(observation.getGeometry()).getTime().is(org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Type.INITIALIZATION))
+        throw new IllegalStateException("A time-dependent value requires an established modeled instant");
+      baseline = event.hasTime()?storage.temporalBaseline(event, ephemeral):storage.stateBaseline();
       created =
           ephemeral && (event.getBoundary() == Scheduler.Event.Boundary.NONE || baseline.isEmpty());
       if (baseline.isEmpty() && !created)
@@ -400,7 +402,7 @@ public final class LocalTemporalWriteSet implements TemporalWriteSet {
               storage.getNativeShardingStrategy(),
               partition,
               layout.size(),
-              event.getTime().getEnd().getMilliseconds(),
+              event.hasTime()?event.getTime().getEnd().getMilliseconds():0L,
               scope.getConfiguration().getPersistence(),
               type);
       long size = layout.get(partition).size();

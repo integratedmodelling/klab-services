@@ -167,6 +167,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private ObservationReasoner observationReasoner;
   private volatile Worldview worldview;
   private volatile org.integratedmodelling.klab.services.reasoner.internal.AuthoredVocabulary authoredVocabulary;
+  private volatile org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex consequenceRuleIndex;
+  private volatile String consequenceRuleIndexFailure;
   private final org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
       authorityBindings;
 
@@ -444,6 +446,35 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private volatile org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime candidateRuntime;
 
   public org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime candidateRuntime() { return candidateRuntime; }
+
+  private org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime cycleRuntime() {
+    if(candidateRuntime==null||semanticOnly)throw new IllegalStateException("Retained semantic cycles require the deployed publication owner");
+    return candidateRuntime;
+  }
+  @Override public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding beginSemanticCycle(
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    return beginSemanticCycleResult(runtimeServiceId,contextId,cycleId,scope).requireBinding();
+  }
+  @Override public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult beginSemanticCycleResult(
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    return cycleRuntime().beginCycleResult(new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+        runtimeServiceId,contextId,cycleId,null),scope);
+  }
+  @Override public void releaseSemanticCycle(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    cycleRuntime().releaseCycle(new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+        runtimeServiceId,contextId,cycleId,binding),scope);
+  }
+  @Override public Reasoner bindSemanticCycle(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    var runtime=cycleRuntime();var request=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+        runtimeServiceId,contextId,cycleId,binding);
+    return org.integratedmodelling.common.services.client.SemanticCycleFacade.create(this,request,scope,runtime::invokeCycle);
+  }
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult invokeSemanticCycle(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleInvocation request,Scope scope) {
+    return cycleRuntime().invokeCycle(request,scope);
+  }
   public synchronized void enableCandidatePublication(
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory factory) {
     if (candidateRuntime != null) throw new IllegalStateException("Candidate publication is already configured");
@@ -1535,6 +1566,80 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         .sorted(java.util.Comparator.comparing(Concept::getUrn)).toList());
   }
 
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse consequenceRules(
+      org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery query) {
+    Objects.requireNonNull(query,"Consequence query");
+    if(candidateRuntime!=null&&!semanticOnly) {
+      try {return candidateRuntime.invoke("consequenceRules",new Class<?>[]{
+          org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery.class},new Object[]{query});}
+      catch(IllegalStateException unavailable) {
+        return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+            org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status.UNAVAILABLE,
+            null,List.of(),null,"Accepted consequence generation is unavailable or changed");
+      }
+    }
+    var capability=capabilities(serviceScope());
+    var epoch=new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Epoch(
+        capability.getServiceId(),capability.getKnowledgeRevision(),capability.getSemanticContentFingerprint(),capability.getSemanticSessionId());
+    var unavailable=org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status.UNAVAILABLE;
+    if(!epoch.valid())return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+        unavailable,null,List.of(),null,"Accepted semantic identity is unavailable");
+    if(query.expectedEpoch()!=null&&!query.expectedEpoch().equals(epoch))
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+          org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status.STALE,
+          epoch,List.of(),null,"Consequence request targets another semantic epoch");
+    var source=worldview;var index=consequenceRuleIndex;
+    if(index==null||!index.belongsTo(source))return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+        unavailable,epoch,List.of(),null,consequenceRuleIndexFailure==null?"Captured consequence declarations are unavailable":consequenceRuleIndexFailure);
+    try {
+      // Canonical identities are looked up only in this leased actor. Never call Resources to
+      // restore an unseen expression while holding an accepted semantic monitor.
+      var selection=index.select(query,trigger->org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex.semanticKeys(owl,trigger));
+      var obligations=new LinkedHashSet<>(selection.obligations());
+      query.ownerTriggers().forEach(c->obligations.add(c.getUrn()));query.ingredientTriggers().forEach(c->obligations.add(c.getUrn()));
+      var witness=consequenceEnumerationWitness(epoch,List.copyOf(obligations));
+      var after=capabilities(serviceScope());
+      if(source!=worldview||index!=consequenceRuleIndex||!epoch.equals(new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Epoch(
+          after.getServiceId(),after.getKnowledgeRevision(),after.getSemanticContentFingerprint(),after.getSemanticSessionId())))
+        return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+            org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status.STALE,
+            epoch,List.of(),null,"Semantic source changed during consequence discovery");
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+          org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status.COMPLETE,
+          epoch,selection.rules(),witness,null);
+    } catch(RuntimeException unsupported) {
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+          unavailable,epoch,List.of(),null,unsupported.getMessage());
+    }
+  }
+
+  /** Candidate semantic closure only; it does not certify graph applicability or target coverage. */
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness consequenceEnumerationWitness(
+      org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Epoch epoch,List<String> obligations) {
+    var request=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+        epoch.serviceId(),epoch.knowledgeRevision(),epoch.semanticFingerprint(),obligations);
+    var closure=new org.integratedmodelling.klab.services.reasoner.owl.AuthorityDependencySupport(owl)
+        .closure(obligations,authorityBindings.snapshot(),epoch.semanticFingerprint());
+    if(!closure.known())return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(request,closure.reason());
+    var uses=new ArrayList<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.AuthorityUse>();
+    var status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.COMPLETE;
+    String reason=null;
+    for(var authority:closure.authorities()) {
+      var binding=worldview.getAuthorityBindings().stream().filter(b->b.localId().equals(authority)).findFirst().orElse(null);
+      if(binding==null||capturedAuthorities==null)
+        return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(request,"Captured authority evidence unavailable");
+      var proof=capturedAuthorities.dependencyProof(binding);uses.add(proof);
+      if(proof.kind()==org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.UNVERSIONED) {
+        status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.REVALIDATION_REQUIRED;
+        reason="Mutable authority conditions require fresh scoped revalidation";
+      }
+    }
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness(
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.VERSION,status,
+        epoch.serviceId(),epoch.knowledgeRevision(),epoch.semanticFingerprint(),request.inputHash(),uses,reason);
+  }
+
   private Collection<Concept> projectHierarchy(Collection<Concept> concepts) {
     return concepts.stream().map(this::effectiveConcept).toList();
   }
@@ -2453,6 +2558,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   if (candidateRuntime != null && !semanticOnly)
       return candidateRuntime.invoke("applicableObservables", new Class<?>[] { Concept.class }, new Object[] { main });
   return projectHierarchy(this.owl.getRestrictedClasses(main, this.owl.getProperty(NS.APPLIES_TO_PROPERTY)));
+  }
+
+  @Override
+  public boolean consequenceApplicable(Concept configuration, Concept context) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke("consequenceApplicable", new Class<?>[] { Concept.class, Concept.class },
+          new Object[] { configuration, context });
+    return new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(owl)
+        .configurationApplicableTo(configuration==null?null:configuration.getUrn(),
+            context==null?null:context.getUrn());
   }
 
   @Override
@@ -3777,6 +3892,20 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // Compilation may resolve names before description-derived bearer closure is
     // complete. Do not publish those provisional eligibility/subsumption views.
     invalidateSemanticCaches();
+    // Capture once from source while compiling the private actor, not by rescanning declarations
+    // or restoring syntax through Resources during each post-commit candidate query.
+    consequenceRuleIndex=null;consequenceRuleIndexFailure=null;
+    try {
+      var source=worldview;
+      if(source!=null&&!source.getOntologies().isEmpty()) {
+        var target=owl.getOntology(source.getOntologies().getFirst().getUrn());
+        var scope=scopes.values().stream().findFirst().orElseGet(this::serviceScope);
+        consequenceRuleIndex=org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex.capture(
+            source,owl::getConcept,syntax->declare(syntax,target,scope));
+      }
+    } catch(RuntimeException unsupported) {
+      consequenceRuleIndexFailure="Consequence declarations unavailable: "+unsupported.getMessage();
+    }
   }
 
   private Concept buildInternal(

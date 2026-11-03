@@ -50,6 +50,7 @@ public class KlabErrorHandler {
 
   @ExceptionHandler(Throwable.class)
   public @ResponseBody ResponseEntity<ErrorResponse> handleDefaultException(Throwable ex) {
+    org.integratedmodelling.common.services.client.ResolverRequestSizeDiagnostics.reportConstraint(ex);
     org.integratedmodelling.common.logging.Logging.INSTANCE.error(
         ex, "Unhandled service request failure");
     ErrorResponse errorResponse =

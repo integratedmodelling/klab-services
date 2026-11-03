@@ -563,6 +563,25 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
             .allMatch(bound -> specializes(candidate, bound.filler(), new HashSet<>()));
   }
 
+  /** Resolve transported names canonically inside the selected OWL actor without exposing raw lookup. */
+  public boolean configurationApplicableTo(String configurationUrn,String contextUrn) {
+    var owner=configurationUrn==null?null:owl.existingMeaning(configurationUrn);
+    var target=contextUrn==null?null:owl.existingMeaning(contextUrn);
+    if(owner==null||owner.is(SemanticType.NOTHING)
+        ||contextUrn!=null&&(target==null||target.is(SemanticType.NOTHING)))
+      throw new IllegalStateException("Configuration application meaning is unavailable in this view");
+    return configurationApplicableTo(owner,target);
+  }
+
+  /** Complete configuration domain check, retaining inherited and Boolean authored bounds. */
+  public boolean configurationApplicableTo(Concept configuration, Concept context) {
+    owl.requireAvailableClosure();
+    if (configuration == null || !configuration.is(SemanticType.CONFIGURATION))
+      throw new IllegalArgumentException("Configuration applicability requires configuration semantics");
+    if (context == null) return bounds(configuration).stream().noneMatch(Bound::applicability);
+    return applicableTo(configuration, context);
+  }
+
   @Override
   public boolean accepts(Concept owner, SemanticRole role, Concept operand) {
     var candidate = owl.getOWLClass(operand.isCollective() ? operand.singular() : operand);

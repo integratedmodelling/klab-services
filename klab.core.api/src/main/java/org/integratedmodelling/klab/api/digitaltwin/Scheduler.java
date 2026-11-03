@@ -47,7 +47,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  * @author ferdinando.villa
  */
 public interface Scheduler {
-
   /** Durable observation metadata flag; written only by a successful scheduler submission. */
   String REGISTRATION_METADATA_KEY = "klab.scheduler.registered";
 
@@ -55,6 +54,33 @@ public interface Scheduler {
   String EXECUTION_METADATA_KEY = "klab.scheduler.executionRequired";
 
   String PLAN_METADATA_KEY = "klab.scheduler.computationPlan";
+
+  enum ConfigurationRecomputeOutcome { RESOLVED, NO_MODEL, ALREADY_EXECUTED, DEFERRED, FAILED }
+
+  /** Current committed modeled instant, absent when no temporal position has been established. */
+  default java.util.OptionalLong currentModeledInstant() { return java.util.OptionalLong.empty(); }
+
+  /** Recompute an existing configuration model after its input revision has committed.
+   * Uses the caller's guarded transaction and frozen perspective; never advances modeled time.
+   */
+  default ConfigurationRecomputeOutcome recomputeConfiguration(Observation configuration,
+      Geometry actualSupport, long triggeringCommitId, long configurationRevision, ContextScope execution) {
+    return ConfigurationRecomputeOutcome.DEFERRED;
+  }
+
+  /** Server-prepared configuration execution. The opaque receipt is validated by Runtime;
+   * callers without a receipt retain the legacy existing-observation path. */
+  default ConfigurationRecomputeOutcome recomputeConfiguration(Observation configuration,
+      Geometry actualSupport, long triggeringCommitId, long configurationRevision,
+      ContextScope execution, Object preparationReceipt) {
+    return ConfigurationRecomputeOutcome.DEFERRED;
+  }
+
+  enum MembershipPropagationOutcome { APPLIED, ALREADY_EXECUTED, DEFERRED, FAILED }
+
+  /** Ordinary causal dataflow propagation after an actual committed native membership change. */
+  default MembershipPropagationOutcome membershipChanged(DigitalTwin.CommittedMembershipChange committed,
+      ContextScope execution) { return MembershipPropagationOutcome.DEFERRED; }
 
   /** Drain due simulated work through this instant, including instantiator and event starts. */
   default boolean advanceTo(long until) {
@@ -86,8 +112,12 @@ public interface Scheduler {
 
     default Boundary getBoundary() { return Boundary.NONE; }
 
+    /** False for an untimed current-state input revision; asking for time then is an error. */
+    default boolean hasTime() { return true; }
+
     /** Logical invocation time; event boundaries carry an instantaneous scheduler support. */
     default TimeInstant getInstant() {
+      if (!hasTime()) throw new IllegalStateException("This invocation has no modeled time");
       return getBoundary() == Boundary.START ? getTime().getStart() : getTime().getEnd();
     }
 
@@ -103,6 +133,8 @@ public interface Scheduler {
        * view is in phase, and replayed for new ones.
        */
       TEMPORAL_TRANSITION,
+      /** Scheduler invocation for a committed input revision; not an ontology Event. */
+      INPUT_CHANGE,
       /** Each event resolved will be sent to the substantials that are affected by it. */
       EVENT
     }

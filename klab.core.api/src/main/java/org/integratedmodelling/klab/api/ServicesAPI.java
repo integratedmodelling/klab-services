@@ -56,6 +56,7 @@ public interface ServicesAPI {
 
   /** Base64-encoded UTF-8 consequence cause, scoped to this request's authorized context. */
   String CONSEQUENCE_HEADER = "klab-consequence";
+  String RESOLUTION_CYCLE_HEADER = "klab-resolution-cycle";
   String CONTEXT_OBSERVATION_ID_HEADER = "klab-context-observation";
   String SOURCE_OBSERVATION_ID_HEADER = "klab-source-observation";
   String TARGET_OBSERVATION_ID_HEADER = "klab-target-observation";
@@ -276,6 +277,9 @@ public interface ServicesAPI {
     String SEMANTIC_SEARCH = API_BASE + "/semanticSearch";
     String VALIDATE_DOCUMENT = API_BASE + "/validate/document";
     String SEMANTIC_DEPENDENCIES = API_BASE + "/semantic/dependencies";
+    String SEMANTIC_CYCLE_BEGIN = API_BASE + "/semantic/cycle/begin";
+    String SEMANTIC_CYCLE_RELEASE = API_BASE + "/semantic/cycle/release";
+    String SEMANTIC_CYCLE_INVOKE = API_BASE + "/semantic/cycle/invoke";
 
     String HAS_TRAIT = API_BASE + "/hasTrait";
 
@@ -297,6 +301,7 @@ public interface ServicesAPI {
 
     String CLOSURE = API_BASE + "/closure";
     String AUTHORED_CLOSURE = API_BASE + "/authoredClosure";
+    String CONSEQUENCE_RULES = API_BASE + "/consequenceRules";
 
     String CORE_OBSERVABLE = API_BASE + "/coreObservable";
     String BUILD_CONCEPT = API_BASE + "/buildConcept";
@@ -495,6 +500,9 @@ public interface ServicesAPI {
   }
 
   interface RESOURCES {
+
+    /** Fail-closed model discovery for an authenticated retained semantic cycle. */
+    String SEMANTIC_CYCLE_MODELS = API_BASE + "/semantic/cycle/models/{knowledgeClass}";
 
     String WORKFLOWS = API_BASE + "/workflows";
     String WORKFLOW = WORKFLOWS + "/{workflowId}";

@@ -2923,6 +2923,70 @@ public class CoreActorLibrary {
       return ObservationInspector.selectionCheck(contextScope(context), view, semanticConceptDefinition(expected));
     }
 
+    @Verb(name = "consequencerole", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Wait bounded milliseconds for an exact committed consequence role and its matching source/rule/recipient audit; never resolves or characterizes.")
+    public static boolean consequencerole(RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "source", description = "Durable conferring source") Observation source,
+        @Verb.Argument(name = "recipient", description = "Durable substantial recipient") Observation recipient,
+        @Verb.Argument(name = "role", description = "Expected exact role semantic literal or Concept") Object role,
+        @Verb.Argument(name = "timeoutMillis", description = "Bounded asynchronous assertion wait, 1 to 60000 milliseconds") long timeoutMillis)
+        throws InterruptedException {
+      return ConsequenceInspector.awaitRole(contextScope(context),source,recipient,semanticConceptDefinition(role),timeoutMillis);
+    }
+
+    @Verb(name = "consequencetarget", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Wait bounded milliseconds for an already committed consequence target under its bearer; read-only, never resolves a missing target.")
+    public static boolean consequencetarget(RuntimeAgent.Scope caller,
+        @Verb.Argument(name = "context", description = "Context actor or scope") Object context,
+        @Verb.Argument(name = "recipient", description = "Durable actual target bearer") Observation recipient,
+        @Verb.Argument(name = "target", description = "Expected target semantic literal or Observable") Object target,
+        @Verb.Argument(name = "timeoutMillis", description = "Bounded asynchronous assertion wait, 1 to 60000 milliseconds") long timeoutMillis)
+        throws InterruptedException {
+      return ConsequenceInspector.awaitTarget(contextScope(context),recipient,semanticConceptDefinition(target),timeoutMillis);
+    }
+
+    @Verb(name = "configuration", executionType = Verb.Type.FUNCTION, returns = Observation.class,
+        description = "Wait bounded milliseconds for a committed detected configuration with typed bearer/cohort placement, exact perspective and ingredient revision, and optional actual modeled completion; never resolves.")
+    public static Observation configuration(RuntimeAgent.Scope caller,
+        @Verb.Argument(name="context",description="Context actor or scope") Object context,
+        @Verb.Argument(name="semantics",description="Exact configuration semantic literal") Object semantics,
+        @Verb.Argument(name="minimumRevision",description="Minimum actual committed configuration revision") long minimumRevision,
+        @Verb.Argument(name="modeled",description="Require actual explanatory model completion") boolean modeled,
+        @Verb.Argument(name="timeoutMillis",description="Bounded1..60000ms native read wait") long timeoutMillis)throws InterruptedException {
+      return ConfigurationInspector.await(contextScope(context),semanticConceptDefinition(semantics),minimumRevision,modeled,timeoutMillis);
+    }
+
+    @Verb(name = "configurationcheck", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
+        description = "Read-only configuration placement/perspective, exact ingredient/current-revision, scientific detection proof and modeled-completion assertion.")
+    public static boolean configurationcheck(RuntimeAgent.Scope caller,
+        @Verb.Argument(name="context",description="Context actor or scope") Object context,
+        @Verb.Argument(name="configuration",description="Durable detected configuration") Observation configuration,
+        @Verb.Argument(name="semantics",description="Exact configuration semantic literal") Object semantics,
+        @Verb.Argument(name="minimumRevision",description="Minimum actual committed configuration revision") long minimumRevision,
+        @Verb.Argument(name="modeled",description="Require actual explanatory model completion") boolean modeled) {
+      return ConfigurationInspector.check(contextScope(context),configuration,semanticConceptDefinition(semantics),minimumRevision,modeled);
+    }
+
+    @Verb(name="configurationsnapshot",executionType=Verb.Type.FUNCTION,returns=ConfigurationRecomputeInspector.Snapshot.class,
+        description="Capture immutable committed configuration history, lineage, managed inputs and current scheduler instant without execution.")
+    public static ConfigurationRecomputeInspector.Snapshot configurationsnapshot(RuntimeAgent.Scope caller,
+        @Verb.Argument(name="context",description="Context actor or scope") Object context,
+        @Verb.Argument(name="configuration",description="Committed modeled configuration") Observation configuration) {
+      return ConfigurationRecomputeInspector.snapshot(contextScope(context),configuration);
+    }
+    @Verb(name="configurationrecomputed",executionType=Verb.Type.FUNCTION,returns=Boolean.class,
+        description="Verify one actual Resize transition, same configuration identity, new modeled detection and preserved immutable history without another time advance.")
+    public static boolean configurationrecomputed(RuntimeAgent.Scope caller,
+        @Verb.Argument(name="context",description="Context actor or scope") Object context,
+        @Verb.Argument(name="before",description="Read-only pre-transition snapshot") ConfigurationRecomputeInspector.Snapshot before,
+        @Verb.Argument(name="configuration",description="Current same-identity configuration") Observation configuration,
+        @Verb.Argument(name="process",description="Actual ingredient-changing process") Observation process,
+        @Verb.Argument(name="height",description="Changed ingredient") Observation height,
+        @Verb.Argument(name="width",description="Unchanged ingredient") Observation width) {
+      return ConfigurationRecomputeInspector.recomputed(contextScope(context),before,configuration,process,height,width);
+    }
+
     @Verb(name = "selectionreplay", executionType = Verb.Type.FUNCTION, returns = Boolean.class,
         description = "Round-trip a selection as JSON and validate it through the normal read-only Runtime query path, preserving sources, selected identities and native state.")
     public static boolean selectionreplay(RuntimeAgent.Scope scope,

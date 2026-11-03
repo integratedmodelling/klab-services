@@ -335,7 +335,7 @@ public final class Neo4jQueryCompiler {
   }
 
   private String visible(String variable) {
-    return "EXISTS { MATCH (root:"
+    return "(NOT "+variable+":Observation OR coalesce("+variable+".klabCurrent,true)=true) AND EXISTS { MATCH (root:"
         + Labels.CONTEXT
         + " {"
         + Fields.ID

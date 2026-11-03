@@ -24,6 +24,10 @@ final class NamespaceModelIndex {
   // must never acquire the writer monitor: semantic admission can call back into Resources.
   private final Map<String, Attempt> attempts = new HashMap<>();
   private volatile Map<String, Attempt> publication = Map.of();
+  /** The latest completed catalog view only; not a retained catalog/model-source history. */
+  private record QueryView(ModelValidationGate.SemanticSnapshot semantic,
+      Map<String,Fingerprint> sources,boolean sourceComplete) {}
+  private volatile QueryView queryPublication;
   private final long retryDelay;
 
   NamespaceModelIndex() { this(Duration.ofSeconds(5).toNanos()); }
@@ -107,10 +111,12 @@ final class NamespaceModelIndex {
           var admission=org.integratedmodelling.klab.utilities.Utils.Json.asString(new ModelValidationGate.NamespaceAdmission(
               semantic.serviceId(),org.integratedmodelling.klab.utilities.Utils.Json.asString(response),hashes,
               response.getSemanticContentFingerprint(),sourceContract));
+          queryPublication=null; // Invalidate before any shared catalog/dictionary mutation.
           catalog.replaceNamespace(namespace,scope);
           staged.put(urn,new Attempt(fingerprint,false,now,List.of(),admission));
         }catch(ReconciliationChanged changed) { throw changed;
         }catch(RuntimeException rejected) {
+          queryPublication=null;
           catalog.withholdNamespace(urn,scope);
           boolean retryable=!(rejected instanceof ModelValidationGate.AdmissionFailure failure)||failure.retryable();
           List<Notification> diagnostics=rejected instanceof ModelValidationGate.AdmissionFailure failure
@@ -119,6 +125,7 @@ final class NamespaceModelIndex {
         }
       }
       for(String removed:new ArrayList<>(attempts.keySet()))if(!present.contains(removed)) {
+        queryPublication=null;
         catalog.withholdNamespace(removed,scope);staged.remove(removed);
       }
       // No per-namespace capability traffic on the unchanged path. Concurrent generation/source
@@ -133,11 +140,15 @@ final class NamespaceModelIndex {
       requireEpoch(semantic,scope);
       attempts.clear();attempts.putAll(staged);
       publication=Map.copyOf(staged);
+      var view=queryPublication;
+      if(view==null||!view.semantic().equals(semantic)||!view.sources().equals(fingerprints))
+        queryPublication=new QueryView(semantic,Map.copyOf(fingerprints),staged.values().stream().allMatch(NamespaceModelIndex::sourceComplete));
     }catch(RuntimeException changed) {
       // A namespace manifest may have been replaced just as the generation changed. Withdrawal
       // failure must propagate: the provider's readiness gate must not continue model queries.
       attempts.clear();
       publication=Map.of();
+      queryPublication=null;
       RuntimeException withdrawalFailure=null;
       for(String urn:affected)try { catalog.withholdNamespace(urn,scope); }
       catch(RuntimeException failure) {
@@ -146,6 +157,41 @@ final class NamespaceModelIndex {
       if(withdrawalFailure!=null) { if(withdrawalFailure!=changed)withdrawalFailure.addSuppressed(changed);throw withdrawalFailure; }
       throw changed;
     }
+  }
+  private static boolean sourceComplete(Attempt attempt) {
+    if(!attempt.fingerprint().eligible())return true;
+    if(attempt.admission()==null)return false;
+    try {
+      var admission=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(attempt.admission(),ModelValidationGate.NamespaceAdmission.class);
+      var response=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(admission.response(),
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.class);
+      return response.valid()&&response.isSourceSemanticsComplete();
+    }catch(RuntimeException unavailable){return false;}
+  }
+  private static RuntimeException queryUnavailable() {
+    return new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+        "MODEL_CATALOG_VIEW_UNAVAILABLE: no compatible stable model catalog is available for the frozen semantic cycle");
+  }
+  Object queryView(Collection<KimNamespace> sources,ModelValidationGate.SemanticSnapshot selected) {
+    var view=queryPublication;
+    if(view==null||selected==null
+        ||!org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(selected.semanticFingerprint())
+        ||!Objects.equals(view.semantic().serviceId(),selected.serviceId())
+        ||!Objects.equals(view.semantic().semanticFingerprint(),selected.semanticFingerprint())
+        ||!Objects.equals(view.semantic().semanticSessionId(),selected.semanticSessionId())
+        ||view.semantic().revision()!=selected.revision()&&!view.sourceComplete()
+        ||!matchesSources(view,sources))throw queryUnavailable();
+    return view;
+  }
+  void requireQueryView(Object captured,Collection<KimNamespace> sources,ModelValidationGate.SemanticSnapshot selected) {
+    if(captured!=queryView(sources,selected))throw queryUnavailable();
+  }
+  private boolean matchesSources(QueryView view,Collection<KimNamespace> sources) {
+    if(sources.size()!=view.sources().size())return false;
+    var names=new HashSet<String>();
+    for(var source:sources)if(!names.add(source.getUrn())
+        ||!Objects.equals(view.sources().get(source.getUrn()),fingerprint(source,view.semantic())))return false;
+    return true;
   }
   /** Never attach a publication claim to the workspace AST or accept an authored claim. */
   KimNamespace forTransport(KimNamespace namespace) {

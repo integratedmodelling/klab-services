@@ -103,7 +103,7 @@ public class RuntimeService extends BaseService
   private final ConcurrentMap<SubmissionIdentity, CompletableFuture<Observation>>
       inFlightSubmissions = new ConcurrentHashMap<>();
 
-  private record SubmissionIdentity(String contextId, String cohortUrn, String observationUrn,
+  private record SubmissionIdentity(String contextId, String cycleId, String cohortUrn, String observationUrn,
       long observerId, String observerMeaning, long observerSemanticRevision, String observableUrn) {}
 
   /**
@@ -526,7 +526,19 @@ public class RuntimeService extends BaseService
    */
   @Override
   public CompletableFuture<Observation> submit(Observation submitted, ContextScope scope) {
-    return submitWithObserver(submitted, observerSubmissionScope(submitted, scope));
+    return withinResolutionCycle(submitted, scope,
+        admitted -> submitWithObserver(submitted, observerSubmissionScope(submitted, admitted)));
+  }
+
+  /** Root admission precedes observer preparation; causal children inherit their existing cycle. */
+  CompletableFuture<Observation> withinResolutionCycle(Observation submitted, ContextScope scope,
+      java.util.function.Function<ContextScope, CompletableFuture<Observation>> operation) {
+    if (!(scope instanceof ServiceContextScope context)
+        || !(scope.getDigitalTwin() instanceof DigitalTwinImpl twin))
+      return CompletableFuture.failedFuture(new IllegalArgumentException("Runtime submissions require a local digital twin"));
+    boolean semanticWork = !submitted.isEmpty() && submitted.getId() <= 0
+        && submitted.getId() != Observation.QUERY_ID;
+    return twin.getResolutionCycles().submit(context, semanticWork, operation::apply);
   }
 
   /** Only user root submissions can trigger automatic preparation, after their constraints arrive. */
@@ -585,11 +597,14 @@ public class RuntimeService extends BaseService
             "runtime.queryEmpty", submitted, scope, empty, null));
       }
       return CompletableFuture.completedFuture(submissionOutcome(
-          "runtime.queryReturned", submitted, scope, result, null));
+          "runtime.queryReturned", submitted, scope,
+          recordExistingPerception(result, effectiveScope, false, true), null));
     }
 
     var submissionScope = submissionScope(submitted, scope);
     var submissionIdentity = submissionIdentity(submitted, submissionScope);
+    if (submissionIdentity != null && submissionScope instanceof ServiceContextScope sharedScope)
+      sharedScope.detachCycleSubscriberCancellation();
     if (submissionIdentity == null && submissionScope instanceof ServiceContextScope serviceScope) {
       // CompletableFuture cancellation does not travel upstream through dependent stages.
       // Expose the request's own future as a cooperative signal to all derived execution scopes.
@@ -619,6 +634,16 @@ public class RuntimeService extends BaseService
       org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryUpdate update,
       ContextScope scope) {
     Objects.requireNonNull(update).validate();
+    if (!(scope instanceof ServiceContextScope context)
+        || !(scope.getDigitalTwin() instanceof DigitalTwinImpl twin))
+      throw new IllegalArgumentException("Perception edits require a local digital twin");
+    return twin.getResolutionCycles().submit(context, false,
+        admitted -> CompletableFuture.completedFuture(updateObserverGeometryWithinCycle(update, admitted))).join();
+  }
+
+  private Observation updateObserverGeometryWithinCycle(
+      org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryUpdate update,
+      ContextScope scope) {
     if (scope.getCurrentTransaction() != null) {
       throw new IllegalArgumentException("Edit perception outside an observation transaction");
     }
@@ -672,16 +697,41 @@ public class RuntimeService extends BaseService
 
   /** Reused/query observations do not open an observation transaction, but still record perception. */
   private Observation recordExistingPerception(Observation result, ContextScope scope, boolean explicitAgent) {
-    if (result == null || result.isEmpty() || scope.getCurrentTransaction() != null) return result;
-    boolean promote = explicitAgent && result.getId() > 0
+    return recordExistingPerception(result, scope, explicitAgent, false);
+  }
+
+  private Observation recordExistingPerception(
+      Observation result, ContextScope scope, boolean explicitAgent, boolean readOnly) {
+    if (result == null || result.isEmpty()) return result;
+    var causalAdmission = scope instanceof ServiceContextScope execution
+        ? execution.getConsequenceSubmissionAdmission() : null;
+    boolean nested = readOnly || scope.getCurrentTransaction() != null;
+    if (nested && causalAdmission == null) return result;
+    // Semantic and source preparation must precede native transaction creation/locking. Default
+    // admission is fail-closed; even a read-only existing answer needs its native source fence.
+    var existingGuard = causalAdmission == null ? null : Objects.requireNonNull(
+        causalAdmission.prepareExisting(result, (ServiceContextScope) scope),
+        "Existing-result causal admission returned no guard");
+    boolean promote = !nested && explicitAgent && result.getId() > 0
         && !Boolean.TRUE.equals(result.getMetadata().get(org.integratedmodelling.klab.api.knowledge.DefaultObserver.EXPLICIT));
-    var activeObserver = scope.getObserver();
+    var activeObserver = nested ? null : scope.getObserver();
     boolean perceive = activeObserver != null && result.getGeometry() != null;
-    if (!promote && !perceive) return result;
+    if (existingGuard == null && !promote && !perceive) return result;
     var graph = scope.getDigitalTwin().getKnowledgeGraph();
     try (var transaction = graph.createTransaction(scope)) {
-      if (promote) transaction.markExplicitAgent(result);
-      if (perceive) transaction.perceive(activeObserver, result.getGeometry());
+      try {
+        if (existingGuard != null) existingGuard.validate(transaction);
+        if (promote) transaction.markExplicitAgent(result);
+        if (perceive) transaction.perceive(activeObserver, result.getGeometry());
+      } catch (RuntimeException | Error failure) {
+        try {
+          transaction.fail(failure instanceof Exception exception ? exception
+              : new IllegalStateException("Existing-result native admission failed", failure));
+        } catch (RuntimeException | Error cleanupFailure) {
+          if (cleanupFailure != failure) failure.addSuppressed(cleanupFailure);
+        }
+        throw failure;
+      }
     } catch (Exception failure) {
       throw new KlabIllegalStateException(failure);
     }
@@ -704,6 +754,7 @@ public class RuntimeService extends BaseService
     // Client focus is not the bearer of an independent root submission. Nested submissions
     // retain their context for collective membership registration and lifecycle ownership.
     if (scope instanceof ServiceContextScope serviceScope
+        && serviceScope.getConsequenceCause() == null
         && serviceScope.getActivity() == null
         && scope.getContextObservation() != null
         && SemanticType.isEnumerableSubstantial(submitted.getObservable().getSemantics().getType())) {
@@ -945,6 +996,16 @@ public class RuntimeService extends BaseService
       // stage a new target until that distinction is known (children share the atomic graph).
       var submissionScope = serviceContextScope.executing(submission, isRoot ? storedAgent : null,
           dependentTarget ? null : observation);
+      if (serviceContextScope.getConsequenceSubmissionAdmission() != null) {
+        try {
+          serviceContextScope.getConsequenceSubmissionAdmission().bind(
+              submissionScope.getCurrentTransaction(), submissionScope);
+        } catch (RuntimeException invalidSource) {
+          submissionScope.fail(invalidSource);
+          return CompletableFuture.completedFuture(submissionOutcome("runtime.consequenceAdmissionFailed",
+              submitted, scope, Observation.empty(Notification.error(invalidSource.getMessage(), invalidSource)), invalidSource));
+        }
+      }
       org.integratedmodelling.klab.runtime.ObserverSemanticUse.start(submissionScope);
       var resolver = scope.getService(Resolver.class);
       var resolution =
@@ -1096,11 +1157,12 @@ public class RuntimeService extends BaseService
                 }
                 submissionOutcome("runtime.resolutionDetails", submitted, scope, observation, null);
                 resolutionScope.fail();
-                return new SubmissionResolution(submissionOutcome(rejectionOrigin, submitted, scope, Observation.empty(
+                return new SubmissionResolution(submissionOutcome(rejectionOrigin, submitted, scope, org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.terminal(Observation.empty(
                     Notification.error(
                         "Resolution of "
                             + observation.getObservable().getUrn()
-                            + " failed: empty dataflow")), null), false);
+                            + " failed: empty dataflow")), dataflow.isEmpty() ? dataflow.getResolutionOutcome()
+                            : Dataflow.ResolutionOutcome.FAILED), null), false);
               })
           /* then submit the observation to the scheduler, which will trigger contextualization */
           .thenApply(
@@ -1181,6 +1243,11 @@ public class RuntimeService extends BaseService
 
   private Observation submissionOutcome(String origin, Observation request, ContextScope scope,
       Observation result, Throwable failure) {
+    if (result != null && result.isEmpty()
+        && !origin.equals("runtime.queryEmpty") && !origin.equals("runtime.preassignedOrEmpty")
+        && org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.read(result).isEmpty())
+      result = org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.terminal(
+          result, Dataflow.ResolutionOutcome.FAILED);
     return org.integratedmodelling.common.runtime.SubmissionDiagnostics.result(
         origin, scope, request, result, null, failure);
   }
@@ -1195,6 +1262,7 @@ public class RuntimeService extends BaseService
         || root.getObservation() == null || root.getObservation().getId() != root.getId()) return null;
     var existing = scope.getDigitalTwin().getKnowledgeGraph().getAsset(root.getId(), scope, Observation.class);
     if (existing == null || existing.isEmpty() || existing.getId() != root.getId()
+        || !scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(existing,scope)
         || existing.getParentId() != referenceParent(requested, scope)
         || !Objects.equals(existing.getObservable().asConcept().getUrn(), requested.getObservable().asConcept().getUrn())
         || org.integratedmodelling.klab.runtime.ObserverResolution.preference(
@@ -1226,7 +1294,8 @@ public class RuntimeService extends BaseService
       var id = context.getId();
       var accessible = id == Observation.UNASSIGNED_ID || id == Observation.QUERY_ID
           ? null : scope.getObservation(id);
-      if (accessible == null || accessible.isEmpty() || accessible.getId() != id)
+      if (accessible == null || accessible.isEmpty() || accessible.getId() != id
+          || !scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(accessible,scope))
         throw new IllegalStateException("Reference answer is no longer compatible or accessible");
     }
     if (requested.getParentId() != Observation.UNASSIGNED_ID
@@ -1251,7 +1320,9 @@ public class RuntimeService extends BaseService
     long observerRevision = selectedObserver == null || scope.getDigitalTwin() == null
         ? 0 : scope.getDigitalTwin().getKnowledgeGraph().getSemanticRevision();
     return new SubmissionIdentity(
-        scope.getId(), cohortSemantics.getUrn(), ObservationImpl.logicalUrn(observation.getUrn()),
+        scope.getId(), scope.getResolutionCycleBinding() == null ? null
+            : scope.getResolutionCycleBinding().cycleId(),
+        cohortSemantics.getUrn(), ObservationImpl.logicalUrn(observation.getUrn()),
         selectedObserver == null ? 0L : selectedObserver.getId(), observerMeaning, observerRevision, observable.getUrn());
   }
 
@@ -1275,15 +1346,11 @@ public class RuntimeService extends BaseService
           .get()
           .whenComplete(
               (value, failure) -> {
-                try {
-                  if (failure == null) {
-                    result.complete(value);
-                  } else {
-                    result.completeExceptionally(failure);
-                  }
-                } finally {
-                  inFlight.remove(key, result);
-                }
+                // Native work has finished. Retire the in-flight identity before synchronous
+                // subscriber callbacks can submit another operation (possibly in a new cycle).
+                inFlight.remove(key, result);
+                if (failure == null) result.complete(value);
+                else result.completeExceptionally(failure);
               });
     } catch (Throwable failure) {
       inFlight.remove(key, result);
@@ -1555,7 +1622,7 @@ public class RuntimeService extends BaseService
         throw new IllegalStateException("Classification completion evidence changed while captured");
       transaction.guardClassificationOverlay(cohort,source,List.of(),captured.state());
     }
-    return overlay.members().stream().filter(member -> hasMemberSupport(intersection(member.getGeometry(), requested)))
+    return overlay.members().stream().filter(member->scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(member,scope)).filter(member -> hasMemberSupport(intersection(member.getGeometry(), requested)))
         .filter(member -> nativeMemberMatches(member, producer, scope)).toList();
   }
 
@@ -1593,6 +1660,7 @@ public class RuntimeService extends BaseService
     if (!hasMemberSupport(support)) throw new IllegalStateException("Missing member support");
     var ret = new ArrayList<Observation>();
     for (var candidate : members.values()) {
+      if(!graph.isObservationCurrent(candidate,scope))continue;
       var member = scope.getCurrentTransaction() == null ? candidate
           : scope.getCurrentTransaction().readObservation(candidate);
       var overlap = intersection(member.getGeometry(), support);
@@ -1725,6 +1793,41 @@ public class RuntimeService extends BaseService
         || coverage(request.getGeometry(), result.getGeometry()) < 1.0 - 1.0e-9)
       throw new IllegalStateException("Native cohort discovery is not complete over the requested support");
     return result;
+  }
+
+  /**
+   * Compose only a support that the existing native fragment-cover proof can certify. In
+   * particular, a bounding union of diagonal space/time fragments is not sufficient evidence.
+   * Null denotes unavailable representation/proof, rather than successfully empty support.
+   */
+  public static Geometry exactConfigurationSupport(List<Geometry> fragments) {
+    if (fragments == null || fragments.isEmpty()
+        || fragments.stream().anyMatch(g -> g == null || !hasMemberSupport(g))) return null;
+    var first = fragments.getFirst();
+    if (fragments.stream().anyMatch(g -> !sameSupportDimensions(first, g))) return null;
+    if (fragments.stream().allMatch(g -> first.encode().equals(g.encode()))) return first;
+    try {
+      Geometry union = first;
+      for (int i = 1; i < fragments.size(); i++) union = union(union, fragments.get(i));
+      if (!hasMemberSupport(union)) return null;
+      var candidate = union;
+      if (fragments.stream().anyMatch(g -> candidate.encode().equals(g.encode()))) return candidate;
+      var supplied = fragments.stream().map(g -> new CollectiveContribution(null, g, null)).toList();
+      return completeContributions(candidate, supplied).isEmpty() ? null : candidate;
+    } catch (RuntimeException unsupported) {
+      return null;
+    }
+  }
+
+  /** A positional native cover, not a ratio of the sizes of unrelated extents. */
+  static boolean configurationSupportCovered(Geometry requested, Collection<Geometry> completed) {
+    if(requested==null || completed==null || completed.isEmpty()
+        || completed.stream().anyMatch(actual->actual==null || !hasMemberSupport(actual))) return false;
+    try {
+      if(completed.stream().anyMatch(actual->requested.encode().equals(actual.encode()))) return true;
+      return !completeContributions(requested,completed.stream()
+          .map(actual->new CollectiveContribution(null,actual,null)).toList()).isEmpty();
+    } catch(RuntimeException unsupported) {return false;}
   }
 
   private record CollectiveContribution(Observation observation, Geometry support, org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding semanticEvidence) {}
@@ -2612,16 +2715,31 @@ public class RuntimeService extends BaseService
    * @return the (existing or newly created) cohort
    */
   public Cohort getCohortFor(Semantics observable, ContextScope scope, boolean addCohortIfMissing) {
+    return cohortFor(observable, scope, addCohortIfMissing, false);
+  }
 
-    var needsCohort = requiresCohort(observable);
+  /** A detected root-level configuration has its own catalogue; dependent configurations do not. */
+  public Cohort getConfigurationCohortFor(Semantics observable, ContextScope scope,
+      boolean addCohortIfMissing) {
+    if (observable == null || !observable.is(SemanticType.CONFIGURATION)
+        || observable.asConcept().isCollective())
+      throw new IllegalArgumentException("A singular configuration meaning is required");
+    return cohortFor(observable, scope, addCohortIfMissing, true);
+  }
+
+  private Cohort cohortFor(Semantics observable, ContextScope scope, boolean addCohortIfMissing,
+      boolean configurationRoot) {
+
+    var needsCohort = configurationRoot || requiresCohort(observable);
 
     if (needsCohort) {
 
       var reasoner = scope.getService(Reasoner.class);
-      var cohortObservable = reasoner.baseSubstantialType(observable, scope);
+      var cohortObservable = configurationRoot ? observable.asConcept()
+          : reasoner.baseSubstantialType(observable, scope);
       if (cohortObservable == null
           || cohortObservable.is(SemanticType.NOTHING)
-          || !SemanticType.isEnumerableSubstantial(cohortObservable.getType())) {
+          || !configurationRoot && !SemanticType.isEnumerableSubstantial(cohortObservable.getType())) {
         Logging.INSTANCE.warn(
             "Reasoner returned an invalid base substantial type for cohort {}; using the original semantics",
             observable.getUrn());
@@ -2664,7 +2782,7 @@ public class RuntimeService extends BaseService
                   canonicalCohortObservable.getUrn())
               .run(scope);
 
-      if (result.isEmpty()) {
+      if (result.isEmpty() && !configurationRoot) {
         /*
          * Compatibility with cohorts stored using a non-canonical observable by older reasoner
          * implementations. Re-normalize their observable now and reuse the matching cohort rather
@@ -2800,6 +2918,13 @@ public class RuntimeService extends BaseService
     return CompletableFuture.completedFuture(ret);
   }
 
+  /** Internal semantic-update path: never registers a characterization directive as an observation. */
+  public Dataflow.ResolutionOutcome characterizeConsequence(Observation recipient,
+      org.integratedmodelling.klab.api.knowledge.Observable requested, ServiceContextScope admitted)
+      throws InterruptedException {
+    return ConsequenceCharacterizationLifecycle.run(this,recipient,requested,admitted);
+  }
+
   void characterizePending(List<MemberClassifierExecutor.PendingAttribution> pending,
       ServiceContextScope scope) {
     CharacterizationLifecycle.run(pending, scope, this);
@@ -2872,8 +2997,354 @@ public class RuntimeService extends BaseService
     return producer;
   }
 
+  /** Install only server-owned handlers. Clients never issue consequence evidence. */
+  public void installConsequenceHandlers(
+      org.integratedmodelling.klab.services.runtime.digitaltwin.ConsequenceEngine engine,
+      org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles cycles) {
+    Objects.requireNonNull(engine); Objects.requireNonNull(cycles);
+    var configurations = new org.integratedmodelling.klab.services.runtime.digitaltwin.DefaultConfigurationBackend(
+        this, cycles::require, this::completeConfigurationDetection);
+    var roles = new org.integratedmodelling.klab.services.runtime.digitaltwin.DefaultRoleConsequenceRuntime(
+        this, cycles::require, null);
+    engine.register(org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION, configurations);
+    engine.register(org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.ROLE_CONFERRAL,
+        new org.integratedmodelling.klab.services.runtime.digitaltwin.RoleConferralHandler(roles));
+    engine.register(org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.ROLE_IMPLICATION,
+        new org.integratedmodelling.klab.services.runtime.digitaltwin.RoleImplicationHandler(roles));
+  }
+
+  /** Private completion capability supplied to this Runtime's concrete detector, not an API
+   * accepting a caller's assertion that a semantic request accounts for an execution. The fixed
+   * detector has captured and guarded every consumed native input, inherited actual source-model
+   * and attribution closure, and admitted the authored rule before reaching this continuation. */
+  private void completeConfigurationDetection(DigitalTwinImpl.TransactionImpl transaction,
+      List<Observation> configurations,
+      List<org.integratedmodelling.klab.services.runtime.digitaltwin.GuardedConfigurationPublisher.Prepared> prepared,
+      List<org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime.Update> updates,
+      List<org.integratedmodelling.klab.services.runtime.digitaltwin.GuardedConfigurationPublisher.Birth> births,
+      ServiceContextScope requested) {
+    if (!(requested.getDigitalTwin() instanceof DigitalTwinImpl twin))
+      throw new SecurityException("Configuration completion requires its local twin");
+    var execution = twin.getResolutionCycles().require(requested);
+    var cause = execution.getConsequenceCause();
+    var activity = transaction.getActivity();
+    if (execution.getCurrentTransaction() != transaction || transaction.isFailed()
+        || cause == null || cause.kind() != org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION
+        || activity == null || activity.getType() != Activity.Type.DETECTION
+        || !transaction.ownsExecutionActivity(activity)
+        || configurations.isEmpty() || configurations.size() != prepared.size()
+        || configurations.size() != updates.size() + births.size())
+      throw new SecurityException("Configuration completion is not the owned detection attempt");
+    var collector = new SemanticExecutionEvidence.Collector();
+    collector.scope(execution);
+    var identities = new HashSet<Long>();
+    for (int n = 0; n < configurations.size(); n++) {
+      var target = configurations.get(n); var preparation = prepared.get(n);
+      if (!identities.add(target.getId()) || !(preparation.receipt() instanceof ConfigurationPreparation receipt))
+        throw new SecurityException("Configuration preparation receipt missing or duplicated");
+      receipt.require(this, target, execution);
+      if (!preparation.status().name().equals(receipt.status().name())
+          || receipt.status() == ConfigurationPreparation.Status.DEFERRED)
+        throw new SecurityException("Configuration explanation has not completed admission");
+      if (receipt.status() == ConfigurationPreparation.Status.READY) {
+        if (preparation.support() == null || !preparation.support().encode().equals(receipt.support().encode()))
+          throw new SecurityException("Configuration explanation support differs from preparation");
+        receipt.requireScientificCompletion(target, execution);
+        if(receipt.initialCharacterization()) {
+          target.getMetadata().put(CONFIGURATION_SCIENTIFIC_INITIALIZED,CONFIGURATION_INITIALIZATION_VERSION);
+          transaction.update(target);
+        }
+      }
+      collector.observation(transaction.readObservation(target));
+    }
+    var authorities = new ArrayList<org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime.AuthorityReceipt>();
+    updates.forEach(update -> authorities.addAll(update.authorities()));
+    births.forEach(birth -> authorities.addAll(birth.authorities()));
+    if (authorities.isEmpty()) throw new SecurityException("Configuration source accounting is absent");
+    for (var authority : authorities) {
+      if (authority instanceof org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime.SourceReceipt source)
+        accountConfigurationInputs(collector, source.admissionRequest(), source.admissionWitness(), execution);
+      else if (authority instanceof org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationConsequenceRuntime.AffectsReceipt affected)
+        accountConfigurationInputs(collector, affected.request(), affected.witness(), execution);
+      else throw new SecurityException("Unknown configuration accounting authority");
+    }
+    collector.activityChildren(activity, execution);
+    if (execution.isInterrupted()) collector.unknown();
+    var evidence = collector.finish(execution);
+    if (!evidence.complete() || !SemanticExecutionEvidence.completeWitness(evidence.witness()))
+      throw new IllegalStateException("Configuration detection execution accounting is incomplete");
+    activity.getMetadata().put(org.integratedmodelling.klab.api.knowledge.SemanticEvidenceBinding.DATA_KEY,
+        Utils.Json.asString(evidence));
+    transaction.update(activity);
+  }
+
+  private void accountConfigurationInputs(SemanticExecutionEvidence.Collector collector,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness previous,
+      ServiceContextScope scope) {
+    var cycle = Objects.requireNonNull(scope.getResolutionCycleBinding()).semanticBinding();
+    if (cycle == null || request == null || previous == null || request.obligations().isEmpty()
+        || !Objects.equals(request.expectedServiceId(), cycle.reasonerServiceId())
+        || request.expectedKnowledgeRevision() != cycle.knowledgeRevision()
+        || !Objects.equals(request.expectedBaseFingerprint(), cycle.semanticFingerprint())
+        || !request.inputHash().equals(previous.inputHash()))
+      throw new SecurityException("Configuration input accounting belongs to another semantic view");
+    var current = scope.getService(Reasoner.class).semanticDependencies(request, scope);
+    if (!SemanticExecutionEvidence.completeWitness(current)
+        || !Objects.equals(current.serviceId(), request.expectedServiceId())
+        || current.knowledgeRevision() != request.expectedKnowledgeRevision()
+        || !Objects.equals(current.baseFingerprint(), request.expectedBaseFingerprint())
+        || !request.inputHash().equals(current.inputHash())
+        || !org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.revalidates(previous, current))
+      throw new IllegalStateException("Configuration original input/model accounting no longer validates");
+    request.obligations().forEach(collector::term);
+  }
+
+
+  public static final String CONFIGURATION_EXPLANATION_METADATA = "klab.configuration.explanation";
+  private static final String CONFIGURATION_SCIENTIFIC_INITIALIZED = "klab.configuration.scientificInitialization";
+  private static final String CONFIGURATION_INITIALIZATION_VERSION = "configuration-scientific-initialization-v1";
+
+  /** Server-minted preparation result; a missing executor is never a no-model receipt. */
+  public static final class ConfigurationPreparation {
+    public enum Status { READY, NO_MODEL, DEFERRED }
+    private final RuntimeService issuer;
+    private final long target;
+    private final org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding cycle;
+    private final org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective perspective;
+    private final Status status;
+    private final String support;
+    private final String provenance;
+    private final List<CompiledDataflow> scientificCompilations;
+    private final ServiceContextScope scientificScope;
+    private final org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective scientificPerspective;
+    private final boolean initialCharacterization;
+    private final java.util.concurrent.atomic.AtomicReference<String> executedSupport=new java.util.concurrent.atomic.AtomicReference<>();
+    private final java.util.concurrent.atomic.AtomicBoolean rootInvoked=new java.util.concurrent.atomic.AtomicBoolean();
+    private volatile boolean executionAuthorized;
+    private ConfigurationPreparation(RuntimeService issuer, Observation target, ServiceContextScope scope,
+        Status status, Geometry support, String provenance) {
+      this(issuer,target,scope,status,support,provenance,List.of(),scope,false);
+    }
+    private ConfigurationPreparation(RuntimeService issuer, Observation target, ServiceContextScope scope,
+        Status status, Geometry support, String provenance, List<CompiledDataflow> compiled,
+        ServiceContextScope scientificScope,boolean initialCharacterization) {
+      this.scientificCompilations=List.copyOf(compiled);
+      this.scientificScope=scientificScope;
+      this.scientificPerspective=org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective.capture(scientificScope);
+      this.initialCharacterization=initialCharacterization;
+      this.issuer=issuer;this.target=target.getId();this.cycle=scope.getResolutionCycleBinding();
+      this.perspective=org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective.capture(scope);
+      this.status=status;this.support=support==null?null:support.encode();this.provenance=provenance;
+    }
+    public Status status() { return status; }
+    public Geometry support() { return support==null?null:Geometry.create(support); }
+    public String provenance() { return provenance; }
+    private void requireScientificCompletion(Observation observation, ServiceContextScope execution) {
+      require(issuer,observation,execution);
+      if(status!=Status.READY || scientificCompilations.isEmpty())
+        throw new IllegalStateException("Configuration has no prepared scientific execution");
+      var completed=new ArrayList<Geometry>();
+      for(var compiled:scientificCompilations)
+        completed.add(compiled.scientificRootCompletionSupport(observation,scientificScope)
+            .orElseThrow(()->new IllegalStateException("Prepared configuration model did not complete its real execution")));
+      var expected=executedSupport.get();
+      if(expected==null || !configurationSupportCovered(Geometry.create(expected),completed))
+        throw new IllegalStateException("Configuration explanatory execution does not cover its admitted support");
+    }
+    public boolean initialCharacterization() { return initialCharacterization; }
+    /** Scheduler-only opaque execution capability. The admitted compiler may have a no-op root,
+     * so a per-actuator transaction executor is not a substitute for this exact prepared plan.
+     * Scheduler retains its ordinary prerequisite traversal before invoking this root. */
+    public boolean executePreparedRoot(Observation observation,ServiceContextScope execution,
+        Geometry actual,Scheduler.Event event) {
+      if(status!=Status.READY || scientificCompilations.size()!=1)
+        throw new SecurityException("Configuration has no single prepared scientific root");
+      var recorded=executedSupport.get();
+      if(recorded==null || actual==null || !recorded.equals(actual.encode()))
+        throw new SecurityException("Configuration root has no recorded Scheduler invocation support");
+      recordExecutionSupport(observation,execution,actual,event);
+      if(!rootInvoked.compareAndSet(false,true))
+        throw new SecurityException("Configuration prepared scientific root was already invoked");
+      return scientificCompilations.getFirst().executeRoot(actual,event,execution);
+    }
+    /** This private preparation capability keeps legitimate transaction-local targets out of the
+     * ordinary persisted-observation recovery path; it never changes global negative-ID rules. */
+    public ServiceContextScope executionScope(Observation observation,ServiceContextScope origin) {
+      require(issuer,observation,origin);
+      if(status!=Status.READY || !(origin.getDigitalTwin() instanceof DigitalTwinImpl twin)
+          || origin.getCurrentTransaction()==null || origin.getCurrentTransaction().isFailed()
+          || scientificScope.getCurrentTransaction()!=origin.getCurrentTransaction())
+        throw new SecurityException("Configuration execution is outside its prepared live transaction");
+      var admitted=twin.getResolutionCycles().require(scientificScope);
+      executionAuthorized=true;return admitted;
+    }
+    /** Called by Scheduler immediately before invocation, under its clock monitor. No semantic or
+     * asset refresh occurs here: executionScope has already validated the private capability. */
+    public void recordExecutionSupport(Observation observation,ServiceContextScope execution,
+        Geometry actual,Scheduler.Event event) {
+      var focus=execution.getContextObservation();
+      var identity=new org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective(
+          execution.getId(),execution.getObserverId()==null?0:execution.getObserverId(),focus==null?0:focus.getId());
+      if(!executionAuthorized || observation==null || observation.getId()!=target
+          || !cycle.equals(execution.getResolutionCycleBinding()) || !scientificPerspective.equals(identity)
+          || execution.getCurrentTransaction()==null || execution.getCurrentTransaction().isFailed()
+          || scientificScope.getCurrentTransaction()!=execution.getCurrentTransaction() || event==null
+          || initialCharacterization!=(event.getType()==Scheduler.Event.Type.INITIALIZATION)
+          || !initialCharacterization && event.getType()!=Scheduler.Event.Type.INPUT_CHANGE)
+        throw new SecurityException("Configuration invocation differs from its private preparation");
+      if(event.getType()==Scheduler.Event.Type.INPUT_CHANGE) {
+        var current=execution.getDigitalTwin().getScheduler().currentModeledInstant();
+        if(event.hasTime()!=current.isPresent() || event.hasTime()
+            &&(event.getTime().getStart().getMilliseconds()!=current.getAsLong()
+                || event.getTime().getEnd().getMilliseconds()!=current.getAsLong()))
+          throw new SecurityException("Configuration invocation does not use current modeled time");
+      }
+      var expected=TemporalGeometry.localize(support(),event);
+      if(actual==null || !expected.encode().equals(actual.encode()))
+        throw new SecurityException("Configuration invocation support differs from admitted localization");
+      var previous=executedSupport.get();
+      if(previous==null)executedSupport.compareAndSet(null,expected.encode());
+      if(!expected.encode().equals(executedSupport.get()))
+        throw new SecurityException("Configuration preparation cannot authorize another invocation support");
+    }
+    public void require(RuntimeService runtime, Observation observation, ServiceContextScope scope) {
+      if(issuer!=runtime || observation==null || target!=observation.getId()
+          || !cycle.equals(scope.getResolutionCycleBinding())
+          || !perspective.equals(org.integratedmodelling.klab.services.runtime.digitaltwin.ConfigurationPerspective.capture(scope)))
+        throw new SecurityException("Configuration explanation receipt has another issuer or target cycle");
+    }
+  }
+
+  /**
+   * Prepare an explanation in the caller's guarded DETECTION transaction. Detection has already
+   * established existence; it must not serve as its own model. Model selection and compilation
+   * use the ordinary resolver, source admission and classifier continuation. Execution belongs to
+   * Scheduler's input-revision path, so this method neither initializes nor commits the twin.
+   */
+  public ConfigurationPreparation prepareConfigurationExplanation(Observation configuration,
+      ServiceContextScope execution) throws Exception {
+    if(!(execution.getDigitalTwin() instanceof DigitalTwinImpl twin)
+        || !(execution.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction)
+        || execution.getConsequenceCause()==null
+        || execution.getConsequenceCause().kind()!=org.integratedmodelling.klab.api.digitaltwin.Consequence.Kind.CONFIGURATION_DETECTION
+        || configuration==null || configuration.getObservable()==null
+        || !configuration.getObservable().is(SemanticType.CONFIGURATION)
+        || configuration.getId()==Observation.UNASSIGNED_ID || configuration.getId()==Observation.QUERY_ID)
+      throw new IllegalArgumentException("Configuration explanation requires its guarded detection transaction");
+    var scope=twin.getResolutionCycles().require(execution);
+    var initialized=configuration.getMetadata().get(CONFIGURATION_SCIENTIFIC_INITIALIZED);
+    if(initialized!=null && !CONFIGURATION_INITIALIZATION_VERSION.equals(initialized))
+      throw new IllegalStateException("Configuration scientific initialization receipt is malformed");
+    boolean initialCharacterization=initialized==null;
+    var modelScope=configurationModelScope(configuration,scope,transaction);
+    var binding=scope.getResolutionCycleBinding();
+    if(binding.semanticBinding()==null)
+      return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.DEFERRED,
+          null,"Retained semantic view is unavailable");
+    checkSubmissionCancellation(scope);
+    // Native existence and persisted coverage-only plans are not scientific source admission.
+    // Even an existing executor must pass ordinary model resolution in this admitted cycle.
+    var request=(ObservationImpl)Observation.forTransport(configuration);
+    // Optional explanatory discovery is the exact-target request purpose below. Rebuilding
+    // this native observable as optional would change its URN and invalidate executable binding.
+    var requested=(ServiceContextScope)modelScope.withResolutionConstraints(ResolutionConstraint.of(
+        ResolutionConstraint.Type.ConfigurationExplanation,configuration.getId()));
+    var checks=new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
+    var finalizers=new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
+    var future=requested.getService(Resolver.class).resolve(request,requested)
+        .thenCompose(flow->SelectedModelClassifierContinuation.resume(this,flow,requested,checks,finalizers));
+    Dataflow dataflow;
+    boolean interrupted=false;
+    try {
+      for(;;)try {dataflow=future.get(100,java.util.concurrent.TimeUnit.MILLISECONDS);break;}
+      catch(java.util.concurrent.TimeoutException waiting) {if(scope.isInterrupted())interrupted=true;}
+      catch(InterruptedException cancellation) {interrupted=true;}
+    } finally {if(interrupted)Thread.currentThread().interrupt();}
+    if(interrupted)throw new InterruptedException("Configuration explanation cancelled after resolver drained");
+    checkSubmissionCancellation(requested);checks.forEach(Runnable::run);
+    if(dataflow==null || Utils.Notifications.hasErrors(dataflow.getNotifications()))
+      throw new IllegalStateException("Configuration explanation resolution failed");
+    var outcome=dataflow.getResolutionOutcome();
+    var receiptData=new LinkedHashMap<String,Object>();
+    receiptData.put("outcome",outcome.name());receiptData.put("cycle",binding);
+    receiptData.put("configuration",configuration.getId());
+    receiptData.put("requirements",dataflow.getRequirements());receiptData.put("metadata",dataflow.getMetadata());
+    var provenance=Utils.Json.asString(receiptData);
+    if(dataflow.isEmpty()) {
+      if(outcome==Dataflow.ResolutionOutcome.NO_MODEL) {
+        configuration.getMetadata().put(CONFIGURATION_EXPLANATION_METADATA,provenance);
+        transaction.update(configuration);
+        return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.NO_MODEL,
+            configuration.getGeometry(),provenance);
+      }
+      if(outcome==Dataflow.ResolutionOutcome.DEFERRED)
+        return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.DEFERRED,
+            null,provenance);
+      throw new IllegalStateException("Configuration explanation has no completed model resolution");
+    }
+    // The existing transaction initializer stores one root executor per target. Until a real
+    // source-model aggregate is supported, never report a composed explanation READY after only
+    // its last root could run. This limitation is specific to automatic configuration explanation.
+    if(dataflow.getComputation().size()!=1)
+      return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.DEFERRED,
+          null,"Multiple configuration explanation roots require aggregate execution");
+    var scientificCompilations=new ArrayList<CompiledDataflow>();
+    traceConfigurationRoot(configuration,dataflow.getComputation().getFirst(),requested);
+    if(outcome!=Dataflow.ResolutionOutcome.RESOLVED || !compile(configuration,dataflow,requested,scientificCompilations))
+      throw new IllegalStateException("Configuration explanation did not compile completely");
+    checks.forEach(Runnable::run);finalizers.forEach(Runnable::run);
+    transaction.registerExecutors();
+    configuration.getMetadata().put(CONFIGURATION_EXPLANATION_METADATA,provenance);
+    transaction.update(configuration);
+    var support=dataflow.getCoverage()==null?configuration.getGeometry():dataflow.getCoverage();
+    return new ConfigurationPreparation(this,configuration,scope,ConfigurationPreparation.Status.READY,
+        support,provenance,scientificCompilations,requested,initialCharacterization);
+  }
+
+  private static void traceConfigurationRoot(Observation bound,Actuator plan,ServiceContextScope scope) {
+    if(!Boolean.getBoolean("klab.consequences.trace"))return;
+    try {
+      var trace=new LinkedHashMap<String,Object>();trace.put("context",scope.getId());trace.put("actuatorId",plan.getId());
+      for(var item:Map.of("bound",bound,"declared",plan.getObservation()).entrySet()) {
+        var observation=item.getValue();var fields=new LinkedHashMap<String,Object>();
+        fields.put("id",observation.getId());fields.put("parent",observation.getParentId());
+        fields.put("urn",observation.getObservable()==null?null:observation.getObservable().getUrn());
+        fields.put("optional",observation.getObservable()==null?null:observation.getObservable().isOptional());
+        fields.put("support",observation.getGeometry()==null?null:Geometry.forTransport(observation.getGeometry()).encode());
+        trace.put(item.getKey(),fields);
+      }
+      Logging.INSTANCE.info("CONFIGURATION_EXECUTABLE_ROOT "+Utils.Json.asString(trace));
+    }catch(RuntimeException unavailable){/* Diagnostics never replace the strict compiler guard. */}
+  }
+
+  private ServiceContextScope configurationModelScope(Observation target,ServiceContextScope origin,
+      DigitalTwinImpl.TransactionImpl transaction) {
+    var placements=new LinkedHashMap<String,KnowledgeGraph.Link>();
+    for(var link:transaction.incoming(target))
+      if(link.type()==GraphModel.Relationship.HAS_CHILD || link.type()==GraphModel.Relationship.HAS_MEMBER)
+        placements.put(link.type()+":"+link.source().getId(),link);
+    if(target.getId()>0 && origin.getDigitalTwin().getKnowledgeGraph()!=null)
+      for(var link:origin.getDigitalTwin().getKnowledgeGraph().getLinks(target,
+          GraphModel.Relationship.Direction.INCOMING,origin,GraphModel.Relationship.HAS_CHILD,GraphModel.Relationship.HAS_MEMBER))
+        placements.putIfAbsent(link.type()+":"+link.source().getId(),link);
+    if(placements.size()!=1)throw new IllegalStateException("Configuration explanation requires one actual native placement");
+    var placement=placements.values().iterator().next();
+    if(placement.type()==GraphModel.Relationship.HAS_MEMBER && placement.source() instanceof Cohort)return origin;
+    if(placement.type()!=GraphModel.Relationship.HAS_CHILD || !(placement.source() instanceof Observation bearer)
+        || bearer.getId()<=0 || bearer.getObservable()==null
+        || !SemanticType.isEnumerableSubstantial(bearer.getObservable().getSemantics().getType()))
+      throw new IllegalStateException("Configuration explanation has no actual substantial bearer");
+    return origin.getContextObservation()==bearer?origin:origin.within(bearer);
+  }
+
   private boolean compile(
       Observation rootObservation, Dataflow dataflow, ServiceContextScope scope) {
+    return compile(rootObservation,dataflow,scope,null);
+  }
+
+  private boolean compile(Observation rootObservation, Dataflow dataflow, ServiceContextScope scope,
+      List<CompiledDataflow> compiledOutput) {
 
     scope
         .getCurrentTransaction()
@@ -2887,6 +3358,7 @@ public class RuntimeService extends BaseService
     if (scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transactionImpl) {
       for (var rootActuator : dataflow.getComputation()) {
         var executionSequence = new CompiledDataflow(this, rootObservation, scope, dataflow);
+        if(compiledOutput!=null)executionSequence.enableScientificConfigurationAccounting();
         if (!executionSequence.compile(rootActuator)) {
           scope
               .getCurrentTransaction()
@@ -2906,6 +3378,7 @@ public class RuntimeService extends BaseService
                           + rootObservation));
           return false;
         }
+        if(compiledOutput!=null)compiledOutput.add(executionSequence);
       }
 
       return true;
@@ -3308,6 +3781,11 @@ public class RuntimeService extends BaseService
     }
 
     return ret;
+  }
+
+  /** Called only with a private actual-compiled-execution capability; no remote mutation endpoint. */
+  public void stageModeledCessations(CompiledDataflow.ModeledCessationAuthority authority,ServiceContextScope execution) {
+    org.integratedmodelling.klab.services.runtime.digitaltwin.ModeledCessations.stage(authority,execution);
   }
 
   @Override

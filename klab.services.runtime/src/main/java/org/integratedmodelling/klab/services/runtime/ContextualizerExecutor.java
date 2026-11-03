@@ -172,6 +172,8 @@ public class ContextualizerExecutor extends AbstractExecutor
         observation.getNotifications().addAll(builder.getNotifications());
         if (org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(builder.getNotifications()))
           return false;
+        var cessations = builder.getCessations();
+        if (!cessations.isEmpty()) contextualizationScope.reportCessations(cessations, scope);
         var outcomes = builder.getObjects().stream().map(Data.Builder::getObservation).toList();
         contextualizationScope.getOutcomes().addAll(outcomes);
         // Transactional HAS_CHILD registration owns the cumulative count and rollback.

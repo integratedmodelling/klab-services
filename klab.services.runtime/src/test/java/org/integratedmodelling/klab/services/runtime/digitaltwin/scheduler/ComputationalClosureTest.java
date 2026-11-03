@@ -46,6 +46,7 @@ class ComputationalClosureTest {
         ConsequenceClosureTest.link(b,c,ProcessPlan.PREREQUISITE,10),
         ConsequenceClosureTest.link(a,foreign,ProcessPlan.PREREQUISITE,10)));
     var graph = mock(KnowledgeGraph.class); var scope = mock(ContextScope.class);
+    when(graph.isObservationCurrent(argThat(o->o!=null&&Set.of(1L,2L,3L,4L).contains(o.getId())),same(scope))).thenReturn(true);
     when(graph.getLinks(any(),eq(GraphModel.Relationship.Direction.OUTGOING),eq(scope),eq(GraphModel.Relationship.AFFECTS)))
         .thenAnswer(call -> links.stream().filter(l -> l.source().getId() == ((Observation)call.getArgument(0)).getId()).toList());
     assertEquals(List.of(b,c),ComputationalClosure.ordered(process,10,process.getGeometry(),graph,scope));

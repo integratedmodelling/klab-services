@@ -254,6 +254,9 @@ public interface DigitalTwin extends RuntimeAsset {
    * <p>TODO storage allocation must also be transactional, calling "release" on failure and
    * finalizing the storage commitment on commit.
    */
+  /** Opaque actual-commit authority, distinct from portable membership receipt data. */
+  interface CommittedMembershipChange {}
+
   interface Transaction {
     default org.integratedmodelling.klab.api.data.TemporalWriteSet getTemporalWrites() { return null; }
     default void setTemporalWrites(org.integratedmodelling.klab.api.data.TemporalWriteSet writes) {
@@ -429,6 +432,9 @@ public interface DigitalTwin extends RuntimeAsset {
      * @return
      */
     Collection<RuntimeAsset> assets();
+
+    /** Sources whose CURRENT EMERGED_FROM set is replaced by this attempt, not a historical deletion. */
+    default java.util.Set<Long> configurationParticipantReplacements() { return java.util.Set.of(); }
 
     Collection<KnowledgeGraph.Link> incoming(RuntimeAsset asset);
 

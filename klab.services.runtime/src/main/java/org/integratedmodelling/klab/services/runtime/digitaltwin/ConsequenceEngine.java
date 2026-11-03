@@ -53,9 +53,10 @@ public final class ConsequenceEngine implements AutoCloseable {
   private volatile boolean closed;
   private final long gracefulCloseMillis;
   private final long forcedCloseMillis;
+  private final Map<Long, AutoCloseable> cycleLeases = new java.util.HashMap<>();
   private long sequence;
 
-  private record Work(int priority, long sequence, Runnable action) implements Runnable, Comparable<Work> {
+  private record Work(int priority, long sequence, Runnable action, Runnable cancel) implements Runnable, Comparable<Work> {
     @Override public void run() { action.run(); }
     @Override public int compareTo(Work other) {
       int order = Integer.compare(priority, other.priority);
@@ -95,6 +96,8 @@ public final class ConsequenceEngine implements AutoCloseable {
   public synchronized void committed(
       KnowledgeGraph.Commit commit, ServiceContextScope source, long activityId, long observerId) {
     if (closed) return;
+    var binding = source.getResolutionCycleBinding();
+    if (binding != null && !binding.consequencesEnabled()) return;
     if (commit == null || commit.getId() <= 0 || activityId <= 0)
       throw new IllegalArgumentException("Consequences require a successful root commit");
     if (pending.contains(commit.getId()) || completed.getIfPresent(commit.getId()) != null) return;
@@ -106,6 +109,8 @@ public final class ConsequenceEngine implements AutoCloseable {
     // request cancellation. Do not use the neutral root scope for semantic evaluation.
     var evaluationScope = source.forConsequence(origin);
     var selected = new EnumMap<>(handlers);
+    if (source.getResolutionCycle() != null)
+      cycleLeases.put(commit.getId(), source.getResolutionCycle().retain());
     pending.add(commit.getId());
     worker.execute(new Work(0, sequence++, () -> {
       try {
@@ -117,22 +122,30 @@ public final class ConsequenceEngine implements AutoCloseable {
           evaluate(kind, selected.get(kind), snapshot, evaluationScope, activityId, observerId, fingerprint, origin);
         }
       } finally {
+        boolean finishNow;
         synchronized (this) {
-          if (closed || Thread.currentThread().isInterrupted()) finish(snapshot.getId());
-          else worker.execute(new Work(1, sequence++, () -> {
+          finishNow = closed || Thread.currentThread().isInterrupted();
+          if (!finishNow) worker.execute(new Work(1, sequence++, () -> {
             try {
               evaluate(Consequence.Kind.UNCERTAINTY, selected.get(Consequence.Kind.UNCERTAINTY),
                   snapshot, evaluationScope, activityId, observerId, fingerprint, origin);
             } finally { finish(snapshot.getId()); }
-          }));
+          }, () -> finish(snapshot.getId())));
         }
+        if (finishNow) finish(snapshot.getId());
       }
-    }));
+    }, () -> finish(snapshot.getId())));
   }
 
-  private synchronized void finish(long commitId) {
-    pending.remove(commitId);
-    completed.put(commitId, true);
+  private void finish(long commitId) {
+    AutoCloseable lease;
+    synchronized (this) {
+      pending.remove(commitId);
+      completed.put(commitId, true);
+      lease = cycleLeases.remove(commitId);
+    }
+    if (lease != null) try { lease.close(); }
+    catch (Exception failure) { rootScope.warn("Cannot release consequence cycle", failure); }
   }
 
   private void evaluate(Consequence.Kind kind, Handler handler, KnowledgeGraph.Commit snapshot,
@@ -149,7 +162,11 @@ public final class ConsequenceEngine implements AutoCloseable {
     }
     Result result;
     try {
-      result = handler == null
+      var binding = handlerScope.getResolutionCycleBinding();
+      result = binding == null || binding.semanticBinding() == null || handlerScope.getResolutionCycle() == null
+          ? new Result(Consequence.Outcome.DEFERRED,
+              "No frozen semantic view was available when this cycle started", List.of())
+          : handler == null
           ? new Result(Consequence.Outcome.DEFERRED,
               "No consequence handler is installed for " + kind, List.of())
           : Objects.requireNonNull(handler.evaluate(cause, CommitImpl.copyOf(snapshot), handlerScope),
@@ -174,6 +191,13 @@ public final class ConsequenceEngine implements AutoCloseable {
 
   private synchronized void publish(Message.MessageType type, Object payload) {
     if (closed) return;
+    if (type == Message.MessageType.ConsequenceDecision
+        && Boolean.getBoolean("klab.consequences.trace")) {
+      try {
+        org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+            "CONSEQUENCE_DECISION " + org.integratedmodelling.common.utils.Utils.Json.asString(payload));
+      } catch (RuntimeException ignored) { /* Diagnostics cannot suppress normal delivery. */ }
+    }
     try {
       rootScope.send(Message.MessageClass.DigitalTwin, type, payload);
     } catch (RuntimeException failure) {
@@ -184,16 +208,18 @@ public final class ConsequenceEngine implements AutoCloseable {
   /** Cancel queued work and stop the worker before the twin's graph/storage can be disposed. */
   @Override
   public void close() {
+    var queued = new java.util.ArrayList<Runnable>();
     synchronized (this) {
       closed = true;
       // Let an in-flight atomic operation/read finish before interrupting its driver.
       // In particular, interrupting synchronous Bolt I/O can strand its pending future.
-      ((ThreadPoolExecutor) worker).getQueue().clear();
+      ((ThreadPoolExecutor) worker).getQueue().drainTo(queued);
       worker.shutdown();
     }
+    for (var task : queued) ((Work) task).cancel().run();
     try {
       if (!worker.awaitTermination(gracefulCloseMillis, TimeUnit.MILLISECONDS)) {
-        worker.shutdownNow();
+        for (var task : worker.shutdownNow()) ((Work) task).cancel().run();
         if (!worker.awaitTermination(forcedCloseMillis, TimeUnit.MILLISECONDS))
           throw new IllegalStateException("Consequence handler did not stop for " + contextId);
       }

@@ -22,6 +22,28 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 /** The reasoner service collects all functionalities that use semantics in k.LAB. */
 public interface Reasoner extends KlabService {
 
+  default org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult beginSemanticCycleResult(
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult(
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult.Status.BOUND,
+        beginSemanticCycle(runtimeServiceId,contextId,cycleId,scope),null);
+  }
+
+  default org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding beginSemanticCycle(
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    throw new UnsupportedOperationException("Retained semantic cycles are unavailable");
+  }
+
+  default void releaseSemanticCycle(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    throw new UnsupportedOperationException("Retained semantic cycles are unavailable");
+  }
+
+  default Reasoner bindSemanticCycle(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,String contextId,String cycleId,Scope scope) {
+    throw new UnsupportedOperationException("Retained semantic cycles are unavailable");
+  }
+
   /** Explicitly expand deferred external ancestry in place. This may perform network I/O. */
   default Concept resolveAuthorityHierarchy(String authority, String identity, Scope scope) {
     throw new UnsupportedOperationException("Authority hierarchy expansion is unavailable");
@@ -663,6 +685,23 @@ public interface Reasoner extends KlabService {
    * @return all applicable concepts or an empty collection
    */
   Collection<Concept> applicableObservables(Concept main);
+
+  /**
+   * Evaluate the complete application-domain contract of a configuration. A null context is
+   * admitted only when the configuration has no application-domain requirement. This semantic
+   * decision is not native graph, support, source-rule or observation-creation authority.
+   */
+  default boolean consequenceApplicable(Concept configuration, Concept context) {
+    throw new UnsupportedOperationException("Complete consequence applicability is unavailable");
+  }
+
+  /** Authored candidates in one accepted generation; an unavailable query is not an empty match. */
+  default org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse consequenceRules(
+      org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery query) {
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+        org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status.UNAVAILABLE,
+        null,java.util.List.of(),null,"Reasoner does not expose authored consequence rules");
+  }
 
   /**
    * Return the type described by a quality that results from applying a unary operator to it. For

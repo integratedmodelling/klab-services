@@ -72,7 +72,7 @@ public final class NativeTestFixtures {
     if (test.getAgent() != permit.agent || !test.ownsContext(context))
       throw new IllegalArgumentException("Native fixture evidence belongs to another testcase");
     if (!java.util.Set.of("empty", "classifier", "prior", "consumer", "consumerMembers",
-        "classification", "ordered", "discovery").contains(name))
+        "classification", "ordered", "discovery", "cessation").contains(name))
       throw new IllegalArgumentException("Unknown native fixture counter");
     return permit.counts.getOrDefault(name, new AtomicLong()).get();
   }
@@ -177,6 +177,21 @@ public final class NativeTestFixtures {
     require(scope).add("empty", 1);
     // Normal contextualizer execution owns Data.Builder, transactions and INSTANTIATION evidence.
     // No observation, graph link, completion receipt or provenance activity is fabricated here.
+  }
+
+  /** Finite test emitter: all semantic input is the explicit resolved target dependency.
+   * It performs no lookup, semantic query, graph mutation or receipt issuance. The private
+   * testcase permit gates invocation; Builder/Runtime/native publication own all effect checks. */
+  @KlabFunction(name = "cease", type = Artifact.Type.OBJECT, geometry = "*",
+      description = "Report cessation of one explicitly resolved native testcase input")
+  public static void cease(Data.Builder builder,
+      @KlabFunction.Input(name = "target", type = Artifact.Type.OBJECT,
+          description = "Exact current substantial supplied by the admitted model input") Observation target,
+      ContextScope scope) {
+    var permit = require(scope);
+    if (builder == null || target == null) throw new IllegalArgumentException("Cessation requires its actual builder and resolved input");
+    builder.cease(target);
+    permit.add("cessation", 1);
   }
 
   @KlabFunction(name = "fixed", type = Artifact.Type.OBJECT, geometry = "*",

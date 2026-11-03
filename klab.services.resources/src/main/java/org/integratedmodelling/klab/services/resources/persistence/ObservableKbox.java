@@ -82,13 +82,17 @@ public abstract class ObservableKbox extends H2Kbox {
   }
 
   public Observable getType(long id) {
+    return getType(id,null);
+  }
+  protected Reasoner reasoner(Scope request) { return (request==null?scope:request).getService(Reasoner.class); }
+  protected Observable getType(long id,Scope request) {
     if (typeHash.containsKey(id)) {
       // FIXME this looks yucky - nonsemantic must compile just like the others
       // if (typeHash.get(id).startsWith("nonsemantic:")) {
       // return
       // reasoner.declareObservable(resourceService.resolveObservable(typeHash.get(id)));
       // }
-      return scope.getService(Reasoner.class).resolveObservable(typeHash.get(id));
+      return reasoner(request).resolveObservable(typeHash.get(id));
     }
     return null;
   }
@@ -336,18 +340,28 @@ public abstract class ObservableKbox extends H2Kbox {
   public synchronized Set<Long> getCandidateTypeIds(Observable observable) {
     return getTypeIds(observable, null, false);
   }
+  protected synchronized Set<Long> getCandidateTypeIds(Observable observable,Scope request) {
+    if(request==null)return getCandidateTypeIds(observable);
+    var selected=reasoner(request);
+    boolean frozen=request instanceof org.integratedmodelling.klab.api.scope.ContextScope context
+        &&context.getResolutionCycleBinding()!=null;
+    return getTypeIds(observable,null,false,selected,!frozen&&selected==reasoner(null));
+  }
 
   private Set<Long> getTypeIds(Observable observable, Concept context, boolean match) {
+    return getTypeIds(observable,context,match,reasoner(null),true);
+  }
+  private Set<Long> getTypeIds(Observable observable,Concept context,boolean match,Reasoner selected,boolean restore) {
 
     Set<Long> ret = new HashSet<>();
-    Concept main = scope.getService(Reasoner.class).coreObservable(observable);
+    Concept main = selected.coreObservable(observable);
     if (main == null) {
       /*
        * not a domain concept or abstract; can't have observables.
        */
       return ret;
     }
-    restoreConceptIndex();
+    if(restore)restoreConceptIndex();
 
     /*
      * We lookup all models whose observable incarnates the core type, adding all possible
@@ -359,7 +373,7 @@ public abstract class ObservableKbox extends H2Kbox {
         getCandidates(
             main,
             observable.getContextualization().isCollective(),
-            observable.getSpecializedComponents())) {
+            observable.getSpecializedComponents(),selected)) {
 
       /*
        * let an abstract model resolve a concrete observable if the abstract traits are in the
@@ -368,7 +382,7 @@ public abstract class ObservableKbox extends H2Kbox {
        * to specialized contexts
        */
 
-      if (!match || scope.getService(Reasoner.class).semanticDistance(candidate, observable, context) /*
+      if (!match || selected.semanticDistance(candidate, observable, context) /*
                              * TODO handle the resolved predicates?
                              * candidate.getSemanticDistance(observable, context,
                              * !observable.isSpecialized(), ((Observable)
@@ -394,10 +408,10 @@ public abstract class ObservableKbox extends H2Kbox {
   private Set<Concept> getCandidates(
       Concept concept,
       boolean instantiation,
-      Collection<Pair<Concept, Concept>> resolvedPredicates) {
+      Collection<Pair<Concept, Concept>> resolvedPredicates,Reasoner selected) {
 
     Set<Concept> ret = new HashSet<>();
-    for (Concept main : getAcceptableParents(concept, resolvedPredicates)) {
+    for (Concept main : getAcceptableParents(concept, resolvedPredicates,selected)) {
       Set<String> defs = coreTypeHash.get(main.getUrn());
       if (defs != null) {
         for (String def : defs) {
@@ -417,14 +431,13 @@ public abstract class ObservableKbox extends H2Kbox {
    * @return
    */
   private List<Concept> getAcceptableParents(
-      Concept concept, Collection<Pair<Concept, Concept>> resolvedPredicates) {
+      Concept concept, Collection<Pair<Concept, Concept>> resolvedPredicates,Reasoner reasoner) {
 
-    var reasoner = scope.getService(Reasoner.class);
     var ret = new ArrayList<>(reasoner.resolving(concept));
     if (resolvedPredicates != null && !resolvedPredicates.isEmpty()) {
       List<Concept> rabs = new ArrayList<>();
       for (Concept r : ret) {
-        rabs.add(replaceComponent(r, resolvedPredicates));
+        rabs.add(replaceComponent(r, resolvedPredicates,reasoner));
       }
       ret.addAll(rabs);
     }
@@ -639,6 +652,9 @@ public abstract class ObservableKbox extends H2Kbox {
    */
   protected Concept replaceComponent(
       Concept original, Collection<Pair<Concept, Concept>> replacements) {
+    return replaceComponent(original,replacements,reasoner(null));
+  }
+  private Concept replaceComponent(Concept original,Collection<Pair<Concept,Concept>> replacements,Reasoner selected) {
 
     if (replacements.isEmpty()) {
       return original;
@@ -653,6 +669,6 @@ public abstract class ObservableKbox extends H2Kbox {
       declaration = declaration.replace(key.getFirst().getUrn(), rep);
     }
 
-    return scope.getService(Reasoner.class).resolveConcept(declaration);
+    return selected.resolveConcept(declaration);
   }
 }

@@ -12,6 +12,8 @@ public record ProcessPlan(
   public static final String DATA_KEY = "klab.process.plan";
   public static final String EDGE_ROLE = "occurrenceRole";
   public static final String PREREQUISITE = "PREREQUISITE";
+  public static final String COLLECTIVE_SOURCE_OBSERVATION = "collectiveSourceObservation";
+  public static final String COLLECTIVE_COHORT_OBSERVABLE = "collectiveCohortObservable";
   public static final String INFLUENCE = "INFLUENCE";
   public static final String DESCRIPTIVE = "DESCRIPTIVE";
 

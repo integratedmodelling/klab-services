@@ -40,6 +40,16 @@ import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
 
 public class ResourcesClient extends BaseServiceClient implements ResourcesService {
 
+  @Override public <T> List<T> query(org.integratedmodelling.klab.api.collections.Parameters<String> query,
+      KnowledgeClass assetClass,Class<T> infoClass,UserScope scope) {
+    if(assetClass==KnowledgeClass.MODEL&&infoClass==ResourceSet.class
+        &&scope instanceof ContextScope context&&context.getResolutionCycleBinding()!=null)
+      return client.withScope(scope).postCollectionOrThrow(ServicesAPI.RESOURCES.SEMANTIC_CYCLE_MODELS,
+          query==null?org.integratedmodelling.klab.api.collections.Parameters.create():query,infoClass,
+          "knowledgeClass",assetClass,"infoClass",infoClass.getCanonicalName());
+    return super.query(query,assetClass,infoClass,scope);
+  }
+
   private Capabilities capabilities;
   boolean useCaches = false;
 

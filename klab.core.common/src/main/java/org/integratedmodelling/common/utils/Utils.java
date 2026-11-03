@@ -1464,7 +1464,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         for (var header : List.of(ServicesAPI.SCOPE_HEADER, ServicesAPI.SERVICE_ID_HEADER,
             ServicesAPI.USERNAME_HEADER, ServicesAPI.FEDERATION_HEADER, ServicesAPI.TRANSACTION_ID_HEADER,
             ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER, ServicesAPI.SOURCE_OBSERVATION_ID_HEADER,
-            ServicesAPI.TARGET_OBSERVATION_ID_HEADER, ServicesAPI.CONSEQUENCE_HEADER)) ret.headers.remove(header);
+            ServicesAPI.TARGET_OBSERVATION_ID_HEADER, ServicesAPI.CONSEQUENCE_HEADER,
+            ServicesAPI.RESOLUTION_CYCLE_HEADER)) ret.headers.remove(header);
         if (scope instanceof org.integratedmodelling.klab.api.scope.UserScope userScope
             && userScope.getUser() != null) {
           var user = userScope.getUser();
@@ -1485,6 +1486,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           if (contextScope.getConsequenceCause() != null) {
             ret.headers.put(ServicesAPI.CONSEQUENCE_HEADER, java.util.Base64.getEncoder().encodeToString(
                 Json.asString(contextScope.getConsequenceCause()).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+          }
+          if (contextScope.getResolutionCycleBinding() != null) {
+            ret.headers.put(ServicesAPI.RESOLUTION_CYCLE_HEADER, java.util.Base64.getEncoder().encodeToString(
+                Json.asString(contextScope.getResolutionCycleBinding()).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
           }
           if (contextScope.getContextObservation() != null) {
             ret.headers.put(
@@ -2044,6 +2049,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         try {
           var payloadText = payload instanceof String ? (String) payload : Json.asString(payload);
+          if(payload instanceof org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest request)
+            org.integratedmodelling.common.services.client.ResolverRequestSizeDiagnostics.report(apiRequest,request,scope,payloadText);
 
           var uriBuilder = new URIBuilder(uri + apiCall);
           for (String key : params.keySet()) {

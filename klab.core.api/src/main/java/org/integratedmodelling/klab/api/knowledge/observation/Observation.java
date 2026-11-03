@@ -407,7 +407,9 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     ret.setId(observation.getId());
     ret.setUrn(observation.getUrn());
     ret.setValue(Geometry.valueForTransport(observation.getValue()));
-    ret.setHistograms(observation.getHistograms());
+    var histograms = new java.util.TreeMap<Long, Histogram>();
+    observation.getHistograms().forEach((time, histogram) -> histograms.put(time, Histogram.forTransport(histogram)));
+    ret.setHistograms(histograms);
     ret.setName(observation.getName());
     ret.setResolvedCoverage(observation.getResolvedCoverage());
     ret.setEventTimestamps(new java.util.ArrayList<>(observation.getEventTimestamps()));

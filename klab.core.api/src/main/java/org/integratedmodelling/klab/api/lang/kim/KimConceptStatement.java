@@ -20,6 +20,9 @@ public interface KimConceptStatement extends KlabStatement {
 
   record DeclarationClause(String kind, String source, int offset, int length) {}
 
+  /** Authored actionable clauses, distinct from integrity requirements and execution evidence. */
+  default List<KimConsequenceRule> getConsequenceRules() { return List.of(); }
+
   /** Canonical container-to-contained declaration, independent of authored clause direction.
    * Does not establish observed membership, inherency or an executable contextual route. */
   record ObservationalContainment(KimConcept container, KimConcept contained) {}
@@ -174,11 +177,9 @@ public interface KimConceptStatement extends KlabStatement {
 
   List<KimConcept> getTraitsInherited();
 
-  List<KimConcept> getRequiredExtents();
 
   List<KimConcept> getRequiredRealms();
 
-  List<KimConcept> getRequiredAttributes();
 
   List<KimConcept> getRequiredIdentities();
 

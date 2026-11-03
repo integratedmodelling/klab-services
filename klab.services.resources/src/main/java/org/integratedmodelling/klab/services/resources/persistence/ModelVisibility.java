@@ -8,6 +8,16 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
 final class ModelVisibility {
+  interface QueryGuard extends AutoCloseable { @Override void close(); }
+  static QueryGuard queryGuard(org.integratedmodelling.klab.api.services.ResourcesService service,
+      org.integratedmodelling.klab.api.scope.ContextScope scope) {
+    if(service instanceof org.integratedmodelling.klab.services.resources.ResourcesProvider provider
+        &&scope!=null&&scope.getResolutionCycleBinding()!=null) {
+      var captured=provider.captureModelQueryView(scope);
+      return ()->provider.requireModelQueryView(captured,scope);
+    }
+    requireReady(service,scope);return ()->{};
+  }
   /** Direct catalog consumers must honor the provider's existing indexing readiness gate. */
   static void requireReady(org.integratedmodelling.klab.api.services.ResourcesService service,
       org.integratedmodelling.klab.api.scope.ContextScope scope) {

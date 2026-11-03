@@ -71,6 +71,9 @@ public abstract class AbstractResourceContextualizer {
         return false;
       }
 
+      var cessations = builder.getCessations();
+      if (!cessations.isEmpty()) contextualizationScope.reportCessations(cessations, scope);
+
       // FIXME this is fundamental logic and must be brought upstream (something like
       // handleAdapterResponse() in
       //  the DT). In the handler, each collective description must trigger the correspondent

@@ -33,6 +33,28 @@ public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
 
+  private <T> T cycleCall(Principal principal,java.util.function.Function<org.integratedmodelling.klab.api.scope.Scope,T> call) {
+    if(!(principal instanceof EngineAuthorization authorization))throw new org.springframework.web.server.ResponseStatusException(
+        org.springframework.http.HttpStatus.FORBIDDEN,"Semantic cycles require authenticated context ownership");
+    try {return call.apply(authorization.getScope());}
+    catch(SecurityException denied){throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,denied.getMessage());}
+    catch(IllegalArgumentException malformed){throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,malformed.getMessage());}
+  }
+  @PostMapping(ServicesAPI.REASONER.SEMANTIC_CYCLE_BEGIN)
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult beginSemanticCycle(
+      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest request,Principal principal) {
+    return cycleCall(principal,scope->reasoner.klabService().beginSemanticCycleResult(request.runtimeServiceId(),request.contextId(),request.cycleId(),scope));
+  }
+  @PostMapping(ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE)
+  public Boolean releaseSemanticCycle(@RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest request,Principal principal) {
+    return cycleCall(principal,scope->{reasoner.klabService().releaseSemanticCycle(request.binding(),request.runtimeServiceId(),request.contextId(),request.cycleId(),scope);return true;});
+  }
+  @PostMapping(ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE)
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult invokeSemanticCycle(
+      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleInvocation request,Principal principal) {
+    return cycleCall(principal,scope->reasoner.klabService().invokeSemanticCycle(request,scope));
+  }
+
   @Operation(summary = "Configure an authority bridge in the loaded worldview")
   @PostMapping(ServicesAPI.REASONER.CONFIGURE_AUTHORITY)
   public String configureAuthority(
@@ -427,6 +449,13 @@ public class ReasonerController {
   @PostMapping(ServicesAPI.REASONER.AUTHORED_CLOSURE)
   public @ResponseBody Collection<Concept> authoredClosure(@RequestBody Concept target) {
     return reasoner.klabService().authoredClosure(target);
+  }
+
+  @Operation(summary = "Find source-owned consequence candidates in one accepted semantic generation")
+  @PostMapping(ServicesAPI.REASONER.CONSEQUENCE_RULES)
+  public @ResponseBody org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse consequenceRules(
+      @RequestBody org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery query) {
+    return reasoner.klabService().consequenceRules(query);
   }
 
   /** Get the core observable of a concept */

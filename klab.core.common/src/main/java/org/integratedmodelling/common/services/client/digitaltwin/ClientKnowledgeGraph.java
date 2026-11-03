@@ -603,7 +603,8 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   /** Authoritative focus at an authenticated HTTP request boundary, independent of event delivery.
    * No graph monitor is held across the Runtime callback and no cached planning object is mutated. */
   public Observation getObservationForAdmission(long id, ContextScope requestScope) {
-    if (id <= 0) return null;
+    if (id <= 0 && (id >= Observation.UNASSIGNED_ID || requestScope.getTransactionId()==null
+        || requestScope.getTransactionId().isBlank())) return null;
     var asset = runtimeClient.getAsset(id, RuntimeAsset.class, requestScope);
     if (asset == null) return null;
     if (!(asset instanceof Observation observation) || observation.getId() != id)

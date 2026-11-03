@@ -458,6 +458,11 @@ public interface ContextScope extends SessionScope {
     return null;
   }
 
+  /** Frozen cycle identity, not an access grant or a lease retained by a scope copy. */
+  default org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding getResolutionCycleBinding() {
+    return null;
+  }
+
   /**
    * Obtain the properly formatted scope token for the {@link
    * org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} to use in a request. The root

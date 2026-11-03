@@ -645,6 +645,9 @@ public class OWL {
     this.conceptsById.put(concept.getUrn(), concept);
   }
 
+  /** Read an already owned canonical meaning without authority lookup, parsing or invention. */
+  synchronized Concept existingMeaning(String urn) { return conceptsById.get(urn); }
+
   /**
    * Change the semantic URN of a generated concept without leaving the OWL registries keyed by its
    * previous URN. Canonical concepts returned for aliases must never be passed here.

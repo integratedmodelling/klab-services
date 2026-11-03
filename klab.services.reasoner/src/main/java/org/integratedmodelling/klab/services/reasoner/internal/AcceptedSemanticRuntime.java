@@ -15,6 +15,12 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleInvocation;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult;
+import org.integratedmodelling.common.services.client.SemanticCycleCodec;
 
 /** Production publication owner: one complete actor per accepted generation, one lease per call. */
 public final class AcceptedSemanticRuntime implements AutoCloseable {
@@ -22,6 +28,120 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   private final CandidatePublicationCoordinator<Worldview, SemanticEnvironment> coordinator;
   private final Object lifecycle = new Object();
   private volatile boolean closed;
+  private record CycleOwner(String user,String runtime,String context,String cycle) {}
+  private record CycleLease(CycleOwner owner,SemanticCycleBinding binding,
+      CandidatePublicationCoordinator<Worldview,SemanticEnvironment>.Lease lease) {}
+  // Explicit Runtime cycle lifetime; unlike interactive searches, active cycles never idle-expire.
+  private final Map<CycleOwner,CycleLease> cyclesByOwner=new HashMap<>();
+  private final Map<String,CycleLease> cyclesById=new HashMap<>();
+  private final Map<CycleOwner,SemanticCycleBeginResult> unavailableCycles=new HashMap<>();
+
+  private CycleOwner cycleOwner(SemanticCycleRequest request,Scope scope) {
+    if(!(scope instanceof org.integratedmodelling.klab.api.scope.UserScope user)
+        ||user.getUser()==null||user.getUser().isAnonymous()
+        ||user.getUser().getUsername()==null||user.getUser().getUsername().isBlank()
+        ||!(scope instanceof ContextScope context)||!Objects.equals(context.getId(),request.contextId()))
+      throw new SecurityException("Semantic cycles require their authenticated context");
+    var runtime=scope.getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+    if(runtime==null||!Objects.equals(runtime.serviceId(),request.runtimeServiceId()))
+      throw new SecurityException("Semantic cycle belongs to another Runtime");
+    return new CycleOwner(user.getUser().getUsername(),request.runtimeServiceId(),request.contextId(),request.cycleId());
+  }
+
+  public SemanticCycleBinding beginCycle(SemanticCycleRequest request,Scope scope) {
+    return beginCycleResult(request,scope).requireBinding();
+  }
+
+  public SemanticCycleBeginResult beginCycleResult(SemanticCycleRequest request,Scope scope) {
+    var owner=cycleOwner(request,scope);
+    synchronized(lifecycle) {
+      requireOpen();
+      var existing=cyclesByOwner.get(owner);
+      if(existing!=null)return new SemanticCycleBeginResult(SemanticCycleBeginResult.Status.BOUND,existing.binding(),null);
+      var unavailable=unavailableCycles.get(owner);if(unavailable!=null)return unavailable;
+      if(deploymentServiceId==null)throw new IllegalStateException("Semantic cycles require deployed service identity");
+      var accepted=coordinator.accepted();
+      if(accepted.isEmpty()) {
+        var result=new SemanticCycleBeginResult(SemanticCycleBeginResult.Status.NO_ACCEPTED_VIEW,null,"No accepted semantic view is available at cycle start");
+        unavailableCycles.put(owner,result);return result;
+      }
+      var lease=accepted.orElseThrow();
+      try {
+        var binding=new SemanticCycleBinding(SemanticCycleBinding.VERSION,deploymentServiceId,semanticSessionId,
+            lease.generation(),lease.state().semanticContentFingerprint(),UUID.randomUUID().toString());
+        var entry=new CycleLease(owner,binding,lease);cyclesByOwner.put(owner,entry);cyclesById.put(binding.leaseId(),entry);
+        return new SemanticCycleBeginResult(SemanticCycleBeginResult.Status.BOUND,binding,null);
+      }catch(RuntimeException failure){lease.close();throw failure;}
+    }
+  }
+
+  private CycleLease requireCycle(SemanticCycleRequest request,CycleOwner owner) {
+    requireOpen();var binding=Objects.requireNonNull(request.binding(),"Missing semantic cycle binding");
+    var entry=cyclesById.get(binding.leaseId());
+    if(entry==null||!entry.owner().equals(owner)||!entry.binding().equals(binding))
+      throw new SecurityException("Unknown, closed or mismatched semantic cycle");
+    return entry;
+  }
+
+  public void releaseCycle(SemanticCycleRequest request,Scope scope) {
+    var owner=cycleOwner(request,scope);final CycleLease entry;
+    synchronized(lifecycle){
+      requireOpen();
+      if(request.binding()==null) {
+        if(unavailableCycles.remove(owner)!=null)return;
+        throw new SecurityException("Unknown or closed unbound semantic cycle");
+      }
+      entry=requireCycle(request,owner);cyclesById.remove(entry.binding().leaseId());cyclesByOwner.remove(owner);
+    }
+    entry.lease().close();
+  }
+
+  public SemanticCycleResult invokeCycle(SemanticCycleInvocation request,Scope authorizedScope) {
+    var owner=cycleOwner(request.cycle(),authorizedScope);
+    var method=SemanticCycleCodec.method(request.method(),request.parameterTypes());
+    final CandidatePublicationCoordinator<Worldview,SemanticEnvironment>.Lease operation;
+    synchronized(lifecycle){operation=requireCycle(request.cycle(),owner).lease().retain();}
+    try(operation) {
+      // Graph/observer callbacks are completed before acquiring the retained actor monitor.
+      var prepared=prepareScopes(authorizedScope);
+      var arguments=new Object[method.getParameterCount()];var types=method.getGenericParameterTypes();
+      for(int i=0;i<arguments.length;i++)arguments[i]=Scope.class.isAssignableFrom(method.getParameterTypes()[i])
+          ?prepared:SemanticCycleCodec.decode(request.arguments().get(i),types[i]);
+      if(method.getName().equals("authorityCodelists")
+          && ((org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest)arguments[0]).operation()
+              !=org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.LIST)
+        throw new SecurityException("Authority ledger mutation is not a retained semantic operation");
+      synchronized(operation.state()) {
+        requireOpen();var actor=operation.state().actor();
+        for(int i=0;i<arguments.length;i++)arguments[i]=bind(arguments[i],actor);
+        Object result;
+        if(method.getName().equals("validateDocument")) {
+          var validation=(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest)arguments[0];
+          result=validatePinned(validation,
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.forRequest(validation),
+              (Scope)bind(prepared,actor),operation,true);
+        }else try(var portable=portableCapabilities(actor,operation.generation())) {
+          if(factory.authorityBootstrapEnabled())actor.enableInteractiveAuthorities();
+          if(method.getName().equals("semanticDistance") && method.getParameterCount()==4) {
+            // Admission revisions identify this retained publication, not the actor's local
+            // compilation/enrichment counter. Never accept another publication's receipt.
+            long expected=(Long)arguments[3];
+            result=expected==operation.generation()
+                ? actor.semanticDistance((org.integratedmodelling.klab.api.knowledge.Semantics)arguments[0],
+                    (org.integratedmodelling.klab.api.knowledge.Semantics)arguments[1],
+                    (org.integratedmodelling.klab.api.knowledge.Semantics)arguments[2]) : -50;
+          } else result=method.invoke(actor,arguments);
+        }
+        var output=new ArrayList<String>();
+        for(int i=0;i<arguments.length;i++)output.add(SemanticCycleCodec.encode(arguments[i],types[i]));
+        return new SemanticCycleResult(SemanticCycleCodec.encode(result,method.getGenericReturnType()),output);
+      }
+    }catch(InvocationTargetException e){
+      if(e.getCause() instanceof RuntimeException runtime)throw runtime;
+      if(e.getCause() instanceof Error error)throw error;
+      throw new IllegalStateException(e.getCause());
+    }catch(IllegalAccessException e){throw new IllegalStateException("Pinned semantic signature mismatch",e);}
+  }
   private void requireOpen() { if (closed) throw new IllegalStateException("Semantic runtime is closed"); }
   private final java.util.function.LongSupplier retryClock;
   private final String deploymentServiceId;
@@ -288,6 +408,21 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request,
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response,Scope requestingScope) {
     try (var lease = lease()) {
+      return validatePinned(request,response,requestingScope,lease,false);
+    } catch (IllegalStateException unavailable) {
+      if (DocumentValidationTrace.enabled())
+        DocumentValidationTrace.exception(
+            request,
+            response.getKnowledgeRevision(),
+            unavailable);
+      return unavailableValidation(request, response);
+    }
+  }
+
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse validatePinned(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response,Scope requestingScope,
+      CandidatePublicationCoordinator<Worldview,SemanticEnvironment>.Lease lease,boolean retained) {
       response.setKnowledgeRevision(lease.generation());
       response.setSemanticSessionId(semanticSessionId);
       response.setSemanticContentFingerprint(lease.state().semanticContentFingerprint());
@@ -297,7 +432,11 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       }
       if (request.document() instanceof org.integratedmodelling.klab.api.lang.kim.KimOntology
           && !Objects.equals(response.getSourceHash(), lease.sourceHashes().get(SemanticEnvironmentFactory.sourceKey(request.document())))) {
-        return unavailableValidation(request, response);
+        if(!retained)return unavailableValidation(request, response);
+        response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.UNAVAILABLE);
+        response.setSemanticContentFingerprint(null);
+        response.setReason("The saved document is not part of the retained semantic cycle");
+        return response;
       }
       synchronized (lease.state()) {
         var actor = lease.state().actor();
@@ -326,14 +465,6 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         return response;
         }
       }
-    } catch (IllegalStateException unavailable) {
-      if (DocumentValidationTrace.enabled())
-        DocumentValidationTrace.exception(
-            request,
-            response.getKnowledgeRevision(),
-            unavailable);
-      return unavailableValidation(request, response);
-    }
   }
 
   /** Stable, client-readable explanation; polling does not initiate validation. */
@@ -713,10 +844,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         .convertValue(value, value.getClass());
   }
   @Override public void close() {
+    final List<CycleLease> cycles;
     synchronized (lifecycle) {
       if (closed) return;
       closed = true; searches.invalidateAll(); searches.cleanUp();
+      cycles=List.copyOf(cyclesById.values());cyclesById.clear();cyclesByOwner.clear();unavailableCycles.clear();
     }
+    cycles.forEach(cycle->cycle.lease().close());
     coordinator.close();
     factory.invalidateBootstrap();
   }

@@ -32,6 +32,7 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
     ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,
     ServicesAPI.TRANSACTION_ID_HEADER,
     ServicesAPI.CONSEQUENCE_HEADER,
+    ServicesAPI.RESOLUTION_CYCLE_HEADER,
     ServicesAPI.SOURCE_OBSERVATION_ID_HEADER,
     ServicesAPI.TARGET_OBSERVATION_ID_HEADER
   };

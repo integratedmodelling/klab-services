@@ -707,6 +707,18 @@ public interface Data {
      */
     List<Builder> getObjects();
 
+    /** Report cessation of a committed singular Subject/Agent through the successful modeled
+     * invocation. This is an intent only: Runtime verifies the exact current server-held target,
+     * scope and execution, then admits it through its guarded native transaction. Metadata and
+     * transported observation copies grant no removal authority. Legacy/remote builders fail
+     * explicitly until they support this operation; no termination event or model is implied. */
+    default Builder cease(Observation observation) {
+      throw new UnsupportedOperationException("Modeled cessation is unavailable on this builder");
+    }
+
+    /** Runtime adapter output, not a mutation capability. Empty for legacy builders. */
+    default List<Observation> getCessations() { return List.of(); }
+
     /**
      * Add the passed non-semantic metadata. Can be used for properties when no data content is
      * added but an adapter is used. Returns self.

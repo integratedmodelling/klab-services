@@ -80,7 +80,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
    * @return
    */
   protected Map<String, Object> asParameters(Object asset, Object... additionalParameters) {
-    return parameterMap(asset, additionalParameters);
+    var properties=parameterMap(asset, additionalParameters);
+    for(var field:java.util.List.of(KnowledgeGraph.CURRENT_PROPERTY,KnowledgeGraph.MEMBERSHIP_REVISION_PROPERTY,"klabCessationHistory","klabCeasedAtCommit"))properties.remove(field);
+    return properties;
   }
 
   private static Map<String, Object> parameterMap(Object asset, Object... additionalParameters) {
@@ -219,7 +221,9 @@ public abstract class AbstractKnowledgeGraph implements KnowledgeGraph {
           var metadata = sanitizeMetadata(activity.getMetadata());
           ret.putAll(metadata);
           var auditMetadata = new HashMap<String, Object>(metadata);
-          for (var key : java.util.List.of(Metadata.IM_ATTRIBUTIONS, Metadata.IM_RESOLUTION_GRAPH, Metadata.IM_DATAFLOW_GRAPH, Metadata.IM_CLASSIFICATION_MEMBER_RESULTS)) {
+          for (var key : java.util.List.of(Metadata.IM_ATTRIBUTIONS, Metadata.IM_RESOLUTION_GRAPH, Metadata.IM_DATAFLOW_GRAPH, Metadata.IM_CLASSIFICATION_MEMBER_RESULTS,
+              org.integratedmodelling.klab.services.runtime.digitaltwin.RoleAttributionEvents.METADATA_KEY,
+              "klab.configuration.revisions")) {
             var value = activity.getMetadata().get(key);
             // Metadata wraps nested maps as Parameters; persist invocation evidence as plain
             // JSON entries, rather than serializing Parameters implementation fields.

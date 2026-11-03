@@ -255,7 +255,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     /*
      * only query locally if we've seen a model before.
      */
-    if (database.hasTable("model")) {
+    {
       try {
         for (ModelReference md :
             queryModels(observable, geometry, contextObservable, resolutionConstraints, scope, mode)) {
@@ -294,8 +294,8 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints, ContextScope context, ModelDiscoveryMode mode) {
     java.util.Objects.requireNonNull(mode, "model discovery mode");
+    try(var view=ModelVisibility.queryGuard(resourceService,context)) {
     List<ModelReference> ret = new ArrayList<>();
-    ModelVisibility.requireReady(resourceService, context);
 
     if (!database.hasTable("model")) {
       return ret;
@@ -313,7 +313,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     //            ? null
     //            : context.getContextObservation().getObservable().getSemantics();
 
-    String typeQuery = observableQuery(observable, contextObservable);
+    String typeQuery = observableQuery(observable, contextObservable,context);
     if (typeQuery == null) {
       return ret;
     }
@@ -344,10 +344,10 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
         if (validatedRevision < 0) continue;
         // Keep observable-level semantics (including observed-as) out of the coarse Concept index.
         // The full wrapper is authoritative for matching, after source/revision validation.
-        var candidate = scope.getService(Reasoner.class).resolveObservable(model.getObservable());
+        var candidate = reasoner(context).resolveObservable(model.getObservable());
         if (candidate == null || candidate.getSemantics() == null
             || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
-        if (mode == ModelDiscoveryMode.EXECUTABLE && scope.getService(Reasoner.class).semanticDistance(
+        if (mode == ModelDiscoveryMode.EXECUTABLE && reasoner(context).semanticDistance(
             candidate, observable, contextObservable, validatedRevision) < 0) continue;
         Coverage coverage =
             resourceService.info(
@@ -378,6 +378,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
                 + (ret.size() == 1 ? ret.getFirst().getName() : (ret.size() + " models")));
 
     return ret;
+    }
   }
 
   // private boolean isAuthorized(ModelReference model, IObservable observable,
@@ -410,8 +411,11 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
   // }
 
   private String observableQuery(Observable observable, Concept context) {
+    return observableQuery(observable,context,null);
+  }
+  private String observableQuery(Observable observable,Concept context,Scope request) {
 
-    Set<Long> ids = this.getCandidateTypeIds(observable);
+    Set<Long> ids = this.getCandidateTypeIds(observable,request);
     if (ids == null || ids.isEmpty()) {
       return null;
     }
@@ -572,7 +576,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
 
               ret.setName(srs.getString(4));
 
-              var observable = getType(tyid);
+              var observable = getType(tyid,monitor instanceof Scope request?request:null);
               Concept mtype = observable == null ? null : observable.asConcept();
 
               ret.setObservableConcept(mtype);
@@ -626,7 +630,7 @@ public class ModelKbox extends ObservableKbox implements ModelCatalog {
     if (ret != null) {
       var metadata = getMetadataFor(oid);
       if (metadata != null && metadata.containsKey("$klab:descriptor:v1"))
-        return ModelReferenceCodec.decode(metadata.get("$klab:descriptor:v1"), scope.getService(Reasoner.class));
+        return ModelReferenceCodec.decode(metadata.get("$klab:descriptor:v1"), reasoner(monitor instanceof Scope request?request:null));
       ret.setMetadata(metadata);
       // Legacy rows did not persist permissions. Resolve them from the owning project rather
       // than trusting the bean's PUBLIC default when the project cannot be retrieved.

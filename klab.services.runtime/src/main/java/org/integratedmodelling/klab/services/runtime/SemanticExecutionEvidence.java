@@ -123,6 +123,10 @@ final class SemanticExecutionEvidence {
       ISSUED.put(new IdentityReference(view, ISSUED_QUEUE), snapshot);
     }
   }
+  /** Existing exact-object/payload/scope receipt only. Never issue or replay a missing receipt. */
+  static SemanticEvidenceBinding issuedForConsequence(Observation view, ServiceContextScope scope) {
+    return issued(view,scope);
+  }
   private static SemanticEvidenceBinding issued(Observation view, ServiceContextScope scope) {
     final Issued snapshot;
     synchronized (ISSUED) { snapshot = ISSUED.get(new IdentityReference(view, null)); }
@@ -528,6 +532,8 @@ final class SemanticExecutionEvidence {
         : scope.getCurrentTransaction().readObservation(target));
     for (var outcome : outcomes) collector.observation(scope.getCurrentTransaction() == null ? outcome
         : scope.getCurrentTransaction().readObservation(outcome));
+    var causalAdmission=scope.getConsequenceSubmissionAdmission();
+    if(causalAdmission!=null)collector.inherit(causalAdmission.semanticEvidence(),scope);
     collector.inputs(target,actualInputs,scope);
     collector.activityChildren(activity, scope);
     activity.getMetadata().put(DATA_KEY, Utils.Json.asString(collector.finish(scope)));
@@ -584,12 +590,17 @@ final class SemanticExecutionEvidence {
     catch (IllegalArgumentException unsupported) { return result; }
     for (var transaction = scope.getCurrentTransaction(); transaction != null; transaction = transaction.getParent())
       for (var link : transaction.incoming(observation))
-        if (link.type() == effect && link.source() instanceof Activity activity
+        if (link.source() instanceof Activity activity && (link.type()==effect
+            ||link.type()==GraphModel.Relationship.CREATED&&CompiledDataflow.processBirthAccounting(activity.getType(),activity.getMetadata(),observation))
             && transaction instanceof DigitalTwinImpl.TransactionImpl nativeAttempt
             && nativeAttempt.ownsExecutionActivity(activity)) result.add(activity);
     if (observation.getId() > 0) result.addAll(scope.getDigitalTwin().getKnowledgeGraph()
         .query(Activity.class, scope).target(observation).along(effect).run(scope).stream()
         .filter(activity -> activity.getId() > 0).toList());
+    if(observation.getId()>0&&observation.getObservable().is(org.integratedmodelling.klab.api.knowledge.SemanticType.PROCESS))
+      result.addAll(scope.getDigitalTwin().getKnowledgeGraph().query(Activity.class,scope).target(observation)
+          .along(GraphModel.Relationship.CREATED).run(scope).stream().filter(activity->activity.getId()>0
+              &&CompiledDataflow.processBirthAccounting(activity.getType(),activity.getMetadata(),observation)).toList());
     return result;
   }
 

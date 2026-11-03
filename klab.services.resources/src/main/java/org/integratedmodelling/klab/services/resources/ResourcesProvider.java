@@ -385,6 +385,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public boolean checkSemanticServices(Scope scope) {
+      if(scope instanceof ContextScope context&&context.getResolutionCycleBinding()!=null) {
+        captureModelQueryView(context);
+        return true;
+      }
       var iAmLocal = this.serviceScope().getIdentity() instanceof UserIdentity;
 
       /** Only local reasoners can index semantic content of a local resources service. */
@@ -413,6 +417,29 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         this.semanticSearchAvailable.set(false);
       }
     return this.semanticSearchAvailable.get();
+  }
+
+  /** Bound requests never rebuild a shared catalog using an old semantic actor. */
+  public Object captureModelQueryView(ContextScope scope) {
+    var cycle=scope.getResolutionCycleBinding();
+    if(cycle==null||cycle.semanticBinding()==null||namespaceModelIndex==null)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+          "MODEL_CATALOG_VIEW_UNAVAILABLE: the cycle has no frozen semantic catalog view");
+    var selected=org.integratedmodelling.klab.runtime.language.ModelValidationGate.currentSemanticSnapshot(scope);
+    var pin=cycle.semanticBinding();
+    if(selected==null||!Objects.equals(pin.reasonerServiceId(),selected.serviceId())
+        ||pin.knowledgeRevision()!=selected.revision()
+        ||!Objects.equals(pin.semanticFingerprint(),selected.semanticFingerprint())
+        ||!Objects.equals(pin.reasonerSessionId(),selected.semanticSessionId()))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+          "MODEL_CATALOG_VIEW_UNAVAILABLE: selected semantic actor does not match the cycle");
+    return namespaceModelIndex.queryView(List.copyOf(workspaceManager.getNamespaces()),selected);
+  }
+
+  public void requireModelQueryView(Object captured,ContextScope scope) {
+    if(namespaceModelIndex==null)throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException("MODEL_CATALOG_VIEW_UNAVAILABLE");
+    if(captured!=captureModelQueryView(scope))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException("MODEL_CATALOG_VIEW_UNAVAILABLE: catalog changed during discovery");
   }
 
   /** Semantic-owned model diagnostics; source documents remain available for authoring. */
@@ -2153,7 +2180,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public ResourceSet resolveModels(Observable observable, Geometry geometry, Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints, ContextScope scope, ModelDiscoveryMode mode) {
     Objects.requireNonNull(mode, "model discovery mode");
-    if (!checkSemanticServices(scope)) {
+    var frozen=scope!=null&&scope.getResolutionCycleBinding()!=null?captureModelQueryView(scope):null;
+    if (frozen==null&&!checkSemanticServices(scope)) {
       return ResourceSet.empty(Notification.error("Semantic search is not available: model indexing or reasoner availability failed"));
     }
 
@@ -2175,6 +2203,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     addDependencies(results, scope);
 
+    if(frozen!=null)requireModelQueryView(frozen,scope);
     return results;
   }
 

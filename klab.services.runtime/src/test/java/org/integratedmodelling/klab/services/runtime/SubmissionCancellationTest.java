@@ -120,7 +120,7 @@ class SubmissionCancellationTest {
     final RuntimeService runtime = mock(RuntimeService.class);
     final Resolver resolver = mock(Resolver.class);
     final Reasoner reasoner = mock(Reasoner.class);
-    final DigitalTwin twin = mock(DigitalTwin.class);
+    final DigitalTwinImpl twin = mock(DigitalTwinImpl.class);
     final Scheduler scheduler = mock(Scheduler.class);
     final DigitalTwinImpl.TransactionImpl rootTransaction = mock(DigitalTwinImpl.TransactionImpl.class);
     final DigitalTwinImpl.TransactionImpl resolutionTransaction = mock(DigitalTwinImpl.TransactionImpl.class);
@@ -148,6 +148,7 @@ class SubmissionCancellationTest {
       when(twin.getScheduler()).thenReturn(scheduler);
       when(twin.transaction(any(), any(), any(Object[].class))).thenAnswer(call -> {
         when(rootTransaction.getActivity()).thenReturn(call.getArgument(0));
+        when(rootTransaction.executionScope()).thenReturn(call.getArgument(1));
         return rootTransaction;
       });
       when(rootTransaction.getChild(any(), any(), any(Object[].class))).thenAnswer(call -> {
@@ -164,6 +165,10 @@ class SubmissionCancellationTest {
       when(dataflow.getComputation()).thenReturn(List.of());
       when(scheduler.submit(any(), any())).thenReturn(true);
       when(runtime.register(any(), any())).thenAnswer(call -> call.getArgument(0));
+      // This fixture tests submission phases; real cycle admission has dedicated lifecycle tests.
+      doAnswer(call -> ((java.util.function.Function<org.integratedmodelling.klab.api.scope.ContextScope,
+          CompletableFuture<Observation>>) call.getArgument(2)).apply(call.getArgument(1)))
+          .when(runtime).withinResolutionCycle(any(), any(), any());
       doCallRealMethod().when(runtime).submit(any(), any());
     }
 

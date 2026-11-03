@@ -44,7 +44,7 @@ public final class StorageScan {
     public Slice {
       Objects.requireNonNull(type); text(key, "event key");
       if (type != Scheduler.Event.Type.INITIALIZATION
-          && (end < start || end == start && type != Scheduler.Event.Type.EVENT))
+          && (end < start || end == start && type != Scheduler.Event.Type.EVENT && type != Scheduler.Event.Type.INPUT_CHANGE))
         throw new IllegalArgumentException("A scan interval must have positive duration");
     }
     public static Slice of(Scheduler.Event event) {

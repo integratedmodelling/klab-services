@@ -13,7 +13,7 @@ public final class TemporalGeometry {
   private TemporalGeometry() {}
 
   public static Geometry localize(Geometry geometry, Scheduler.Event event) {
-    if (event == null || event.getType() == Scheduler.Event.Type.INITIALIZATION) return geometry;
+    if (event == null || !event.hasTime() || event.getType() == Scheduler.Event.Type.INITIALIZATION) return geometry;
     var time = event.getTime();
     var extent =
         GeometryRepository.INSTANCE

@@ -655,6 +655,28 @@ public class RuntimeServerController {
       @PathVariable(name = "id") long id, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
+      if(id<Observation.UNASSIGNED_ID) {
+        var transaction=contextScope==null?null:contextScope.getCurrentTransaction();
+        if(!(contextScope instanceof org.integratedmodelling.klab.services.scopes.ServiceContextScope local)
+            || transaction==null || transaction.isFailed()
+            || local.getTransaction(transaction.getId())!=transaction
+            || !(transaction instanceof org.integratedmodelling.klab.runtime.lifecycle.CycleScopedTransaction scoped))
+          throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Prospective observation requires an active owned transaction");
+        var owner=scoped.executionScope();
+        if(owner==null || !authorization.isAuthenticated()
+            || !java.util.Objects.equals(owner.getId(),local.getId())
+            || owner.getUser()==null || local.getUser()==null
+            || !java.util.Objects.equals(authorization.getUsername(),local.getUser().getUsername())
+            || !java.util.Objects.equals(owner.getUser().getUsername(),local.getUser().getUsername())
+            || owner.getResolutionCycleBinding()==null
+            || !owner.getResolutionCycleBinding().equals(local.getResolutionCycleBinding())
+            || !java.util.Objects.equals(owner.getObserverId(),local.getObserverId()))
+          throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Prospective observation differs from its transaction owner");
+        var observation=local.getObservation(id);
+        if(observation==null || observation.getId()!=id)
+          throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Prospective observation is not registered in this transaction");
+        return Observation.forTransport(observation);
+      }
       return contextScope
           .getDigitalTwin()
           .getKnowledgeGraph()

@@ -60,7 +60,7 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
 
     // TODO add observation, observable, urn, input data if the resource requires them, observation
     //  storage and anything the adapter may want.
-    adapter.encode(
+    boolean encoded = adapter.encode(
         resource,
         scanner == null ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
             : scanner.shard().getGeometry(),
@@ -73,6 +73,7 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
         urnParameters,
         scope);
 
+    if (!encoded) builder.notification(org.integratedmodelling.klab.api.services.runtime.Notification.error("Local adapter contextualization failed"));
     return builder;
   }
 }

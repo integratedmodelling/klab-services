@@ -186,7 +186,9 @@ public class DataflowCompiler {
     }
 
     // compile references for any obs with ID > 0 (coming from the remote KG) or already compiled
-    if (observation.getId() > 0 || catalog.contains(observation.getId())) {
+    if ((observation.getId() > 0
+            && !org.integratedmodelling.klab.runtime.consequence.ConfigurationExplanation.requested(observation, scope))
+        || catalog.contains(observation.getId())) {
       var ret = new ActuatorImpl();
       ret.setObservation(Observation.forTransport(observation));
       ret.setId(observation.getId());

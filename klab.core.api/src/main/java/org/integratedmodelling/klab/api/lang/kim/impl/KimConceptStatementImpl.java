@@ -36,6 +36,16 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   }
 
   private List<DeclarationClause> declarationClauses = new ArrayList<>();
+  private List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> consequenceRules = new ArrayList<>();
+
+  @Override
+  public List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> getConsequenceRules() {
+    return consequenceRules;
+  }
+
+  public void setConsequenceRules(List<org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule> rules) {
+    consequenceRules=rules;
+  }
   private List<KimConcept> declaredReferences = new ArrayList<>();
 
   @Override
@@ -117,9 +127,7 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
   }
   private List<KimConcept> traitsConferred = new ArrayList<>();
   private List<KimConcept> traitsInherited = new ArrayList<>();
-  private List<KimConcept> requiredExtents = new ArrayList<>();
   private List<KimConcept> requiredRealms = new ArrayList<>();
-  private List<KimConcept> requiredAttributes = new ArrayList<>();
   private List<KimConcept> requiredIdentities = new ArrayList<>();
   private List<KimConcept> emergenceTriggers = new ArrayList<>();
   //    private List<KimRestriction> restrictions = new ArrayList<>();
@@ -189,20 +197,12 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
     return this.traitsInherited;
   }
 
-  @Override
-  public List<KimConcept> getRequiredExtents() {
-    return this.requiredExtents;
-  }
 
   @Override
   public List<KimConcept> getRequiredRealms() {
     return this.requiredRealms;
   }
 
-  @Override
-  public List<KimConcept> getRequiredAttributes() {
-    return this.requiredAttributes;
-  }
 
   @Override
   public List<KimConcept> getRequiredIdentities() {
@@ -291,17 +291,11 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
     this.traitsInherited = traitsInherited;
   }
 
-  public void setRequiredExtents(List<KimConcept> requiredExtents) {
-    this.requiredExtents = requiredExtents;
-  }
 
   public void setRequiredRealms(List<KimConcept> requiredRealms) {
     this.requiredRealms = requiredRealms;
   }
 
-  public void setRequiredAttributes(List<KimConcept> requiredAttributes) {
-    this.requiredAttributes = requiredAttributes;
-  }
 
   public void setRequiredIdentities(List<KimConcept> requiredIdentities) {
     this.requiredIdentities = requiredIdentities;

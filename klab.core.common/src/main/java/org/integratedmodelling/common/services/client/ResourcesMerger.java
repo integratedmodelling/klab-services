@@ -66,7 +66,9 @@ public class ResourcesMerger implements ResourcesService {
     this.owningScope = Objects.requireNonNull(owningScope);
   }
 
-  private List<ResourcesService> services() {
+  private List<ResourcesService> services() { return services(false); }
+
+  private List<ResourcesService> services(boolean requireComplete) {
     /*
      * A service-side scope retains every service advertised by the client but its typed view is a
      * live, status-filtered projection. In particular, a merger may have been created while two
@@ -88,6 +90,7 @@ public class ResourcesMerger implements ResourcesService {
                 .toList());
       }
     } catch (RuntimeException ignored) {
+      if (requireComplete) throw ignored;
       // Some delegating scopes expose only typed service views. The typed snapshot above remains
       // authoritative for those scopes.
     }
@@ -180,13 +183,18 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   private <T> List<T> collect(Function<ResourcesService, List<T>> operation) {
-    var snapshot = services();
+    return collect(operation,false);
+  }
+  private <T> List<T> collect(Function<ResourcesService,List<T>> operation,boolean requireComplete) {
+    var snapshot = services(requireComplete);
+    if(requireComplete&&snapshot.isEmpty())throw new KlabServiceAccessException("No resources service is available for frozen model discovery");
     var responses =
         snapshot.stream()
             .map(
-                service ->
-                    CompletableFuture.supplyAsync(() -> operation.apply(service))
-                        .exceptionally(failure -> List.of()))
+                service -> {
+                  var response=CompletableFuture.supplyAsync(() -> operation.apply(service));
+                  return requireComplete?response:response.exceptionally(failure -> List.of());
+                })
             .toList();
     CompletableFuture.allOf(responses.toArray(CompletableFuture[]::new)).join();
     var merged = new LinkedHashSet<T>();
@@ -451,7 +459,9 @@ public class ResourcesMerger implements ResourcesService {
       KlabAsset.KnowledgeClass assetClass,
       Class<T> infoClass,
       UserScope scope) {
-    return collect(service -> service.query(query, assetClass, infoClass, scope));
+    boolean frozenModels=assetClass==KlabAsset.KnowledgeClass.MODEL&&infoClass==ResourceSet.class
+        &&scope instanceof ContextScope context&&context.getResolutionCycleBinding()!=null;
+    return collect(service -> service.query(query, assetClass, infoClass, scope),frozenModels);
   }
 
   @Override

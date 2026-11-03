@@ -175,10 +175,23 @@ public class ResolverService extends BaseService implements Resolver {
             return result;
           }
 
-          return unresolvedOutcome(observation.getObservable(), compiler.hasNoExplanatoryModel(), ret.getNotifications());
+          return unresolvedOutcome(observation, contextScope, compiler.hasNoExplanatoryModel(), ret.getNotifications());
           }
         },
         resolutionExecutor);
+  }
+
+  /** A target-specific explanation is an operation purpose, never an optionalized meaning.
+   * Only actual, error-free model absence may complete this detected configuration's request.
+   * Source admission, access and native publication authority remain their ordinary guards. */
+  static Dataflow unresolvedOutcome(Observation observation, ContextScope scope, boolean noModel,
+      java.util.List<org.integratedmodelling.klab.api.services.runtime.Notification> notifications) {
+    if (observation == null || observation.getObservable() == null || scope == null)
+      throw new IllegalArgumentException("Resolution outcome requires an observation and context");
+    if (org.integratedmodelling.klab.runtime.consequence.ConfigurationExplanation.requested(observation, scope))
+      return noModel && !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(notifications)
+          ? Dataflow.noModel(notifications) : Dataflow.empty(notifications);
+    return unresolvedOutcome(observation.getObservable(), noModel, notifications);
   }
 
   static Dataflow unresolvedOutcome(org.integratedmodelling.klab.api.knowledge.Observable observable,

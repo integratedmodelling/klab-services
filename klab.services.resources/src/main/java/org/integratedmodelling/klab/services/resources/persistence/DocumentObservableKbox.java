@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /** Independent document-backed semantic dictionary. No H2 database is constructed. */
@@ -16,6 +17,7 @@ public class DocumentObservableKbox implements AutoCloseable {
     this.documents = Objects.requireNonNull(documents);
   }
   protected Reasoner reasoner() { return resourceService.serviceScope().getService(Reasoner.class); }
+  protected Reasoner reasoner(Scope request) { return request==null?reasoner():request.getService(Reasoner.class); }
   public long getConceptId(Concept concept) {
     var document = documents.get("concept:" + concept.getUrn());
     return document == null ? -1 : ((Number) document.get("id")).longValue();
@@ -66,8 +68,17 @@ public class DocumentObservableKbox implements AutoCloseable {
   public Set<Long> getCandidateTypeIds(Observable observable) {
     return getTypeIds(observable, null, false);
   }
+  protected Set<Long> getCandidateTypeIds(Observable observable,Scope request) {
+    if(request==null)return getCandidateTypeIds(observable);
+    var selected=reasoner(request);
+    boolean frozen=request instanceof org.integratedmodelling.klab.api.scope.ContextScope context
+        &&context.getResolutionCycleBinding()!=null;
+    return getTypeIds(observable,null,false,selected,!frozen&&selected==reasoner());
+  }
   private Set<Long> getTypeIds(Observable observable, Concept context, boolean match) {
-    var reasoner = reasoner();
+    return getTypeIds(observable,context,match,reasoner(),true);
+  }
+  private Set<Long> getTypeIds(Observable observable,Concept context,boolean match,Reasoner reasoner,boolean maintainIndex) {
     var core = reasoner.coreObservable(observable);
     Set<Long> result = new HashSet<>();
     if (core == null) return result;
@@ -92,7 +103,7 @@ public class DocumentObservableKbox implements AutoCloseable {
       var candidate = reasoner.resolveConcept((String) document.get("definition"));
       if (candidate == null) continue;
       var candidateCore = reasoner.coreObservable(candidate);
-      if (candidateCore != null && "".equals(document.get("core"))) requireConceptId(candidate, resourceService.serviceScope());
+      if (maintainIndex&&candidateCore != null && "".equals(document.get("core"))) requireConceptId(candidate, resourceService.serviceScope());
       if (candidateCore != null && heads.contains(candidateCore.getUrn())
           && (!match || reasoner.semanticDistance(candidate, observable, context) >= 0))
         result.add(((Number) document.get("id")).longValue());

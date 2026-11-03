@@ -543,7 +543,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     public static String serializeHistogramMap(
         Map<Long, ? extends Histogram> histograms) {
-      return Json.asString(histograms == null ? Map.of() : histograms);
+      var snapshots = new TreeMap<Long, Histogram>();
+      if (histograms != null) histograms.forEach((time, histogram) -> snapshots.put(time, Histogram.forTransport(histogram)));
+      return Json.asString(snapshots);
     }
 
     public static Map<Long, Histogram> deserializeHistogramMap(String histograms) {

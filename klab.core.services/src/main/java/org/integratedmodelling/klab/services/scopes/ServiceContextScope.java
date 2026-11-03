@@ -93,6 +93,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private DigitalTwin.Transaction currentTransaction;
   private java.util.function.BooleanSupplier requestCancelled = () -> false;
   private org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause consequenceCause;
+  private org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding resolutionCycleBinding;
+  private org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<?> resolutionCycle;
+  private ConsequenceSubmissionAdmission consequenceSubmissionAdmission;
+  private java.util.concurrent.atomic.AtomicBoolean cycleSubscriberDetached;
   private java.util.concurrent.atomic.AtomicReference<String> consequenceFailure =
       new java.util.concurrent.atomic.AtomicReference<>();
   private volatile boolean consequenceErrors;
@@ -121,6 +125,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.remoteTransactionId = parent.remoteTransactionId;
     this.requestCancelled = parent.requestCancelled;
     this.consequenceCause = parent.consequenceCause;
+    this.resolutionCycleBinding = parent.resolutionCycleBinding;
+    this.resolutionCycle = parent.resolutionCycle;
+    this.consequenceSubmissionAdmission = parent.consequenceSubmissionAdmission;
+    this.cycleSubscriberDetached = parent.cycleSubscriberDetached;
     this.consequenceFailure = parent.consequenceFailure;
     this.consequenceErrors = parent.consequenceErrors;
     this.consequenceWarning = parent.consequenceWarning;
@@ -137,6 +145,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     ret.remoteTransactionId = null;
     ret.requestCancelled = () -> false;
     ret.consequenceCause = cause;
+    ret.consequenceSubmissionAdmission = null;
+    ret.cycleSubscriberDetached = null;
     ret.consequenceFailure = new java.util.concurrent.atomic.AtomicReference<>();
     ret.consequenceErrors = false;
     ret.consequenceWarning = new java.util.concurrent.atomic.AtomicReference<>();
@@ -146,6 +156,79 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause getConsequenceCause() {
     return consequenceCause;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding getResolutionCycleBinding() {
+    return resolutionCycleBinding;
+  }
+
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  public org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<?> getResolutionCycle() {
+    return resolutionCycle;
+  }
+
+  /** A scope copy carries identity; actual asynchronous work retains ownership separately. */
+  public ServiceContextScope withResolutionCycle(
+      org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<?> cycle,
+      org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding binding) {
+    Objects.requireNonNull(cycle);Objects.requireNonNull(binding);
+    if(!Objects.equals(getId(),binding.contextId()) || !Objects.equals(cycle.id(),binding.cycleId())
+        || !Objects.equals(cycle.contextId(),binding.contextId())
+        || cycle.consequencesEnabled()!=binding.consequencesEnabled()
+        || !Objects.equals(cycle.semantics(),binding))
+      throw new IllegalArgumentException("Resolution cycle does not match this context");
+    var ret=new ServiceContextScope(this);
+    ret.resolutionCycle=cycle;ret.resolutionCycleBinding=binding;
+    return ret;
+  }
+
+  /** Transport metadata only: receiving services must validate the retained registry separately. */
+  public ServiceContextScope withResolutionCycleBinding(
+      org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding binding) {
+    if(binding!=null && !Objects.equals(getId(),binding.contextId()))
+      throw new IllegalArgumentException("Resolution cycle belongs to another context");
+    var ret=new ServiceContextScope(this);
+    ret.resolutionCycleBinding=binding;ret.resolutionCycle=null;
+    return ret;
+  }
+
+  /** Per-submit cooperative signal. A coalesced subscriber may detach only its own signal. */
+  public ServiceContextScope withCycleSubscriberCancellation(java.util.function.BooleanSupplier cancelled) {
+    var detached = new java.util.concurrent.atomic.AtomicBoolean();
+    var ret = withCancellation(() -> !detached.get() && cancelled.getAsBoolean());
+    ret.cycleSubscriberDetached = detached;
+    return ret;
+  }
+
+  /** Parent and shutdown cancellation remain in the inherited cancellation chain. */
+  public void detachCycleSubscriberCancellation() {
+    if (cycleSubscriberDetached != null) cycleSubscriberDetached.set(true);
+  }
+
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  public ConsequenceSubmissionAdmission getConsequenceSubmissionAdmission() {
+    return consequenceSubmissionAdmission;
+  }
+
+  public ServiceContextScope withoutConsequenceSubmissionAdmission() {
+    var ret = new ServiceContextScope(this);
+    ret.consequenceSubmissionAdmission = null;
+    return ret;
+  }
+
+  public ServiceContextScope withConsequenceSubmissionAdmission(ConsequenceSubmissionAdmission admission) {
+    var ret = new ServiceContextScope(this);
+    ret.consequenceSubmissionAdmission = java.util.Objects.requireNonNull(admission);
+    return ret;
+  }
+
+  /** Only the cycle-selected semantic view is available on this detached scope and its copies. */
+  public ServiceContextScope withCycleReasoner(org.integratedmodelling.klab.api.services.Reasoner reasoner) {
+    var ret=new ServiceContextScope(this);
+    ret.serviceMap.put(org.integratedmodelling.klab.api.services.KlabService.Type.REASONER,
+        reasoner==null?List.of():List.of(reasoner));
+    return ret;
   }
 
   /** Failure details are reported once by the engine's decision notification, not as scope errors. */
@@ -158,8 +241,26 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     consequenceWarning.compareAndSet(null, Notification.warning(details).getMessage());
   }
 
+  private void diagnoseErrorCall(Object[] details) {
+    if(!Boolean.getBoolean("klab.diagnostics.configurationRecompute"))return;
+    try {
+      var data=new java.util.LinkedHashMap<String,Object>();data.put("stage","scope-error-call");data.put("context",getId());
+      data.put("thread",Thread.currentThread().threadId());data.put("nanoTime",System.nanoTime());
+      var tx=currentTransaction;data.put("transaction",tx==null?null:System.identityHashCode(tx));
+      var root=tx;while(root!=null&&root.getParent()!=null)root=root.getParent();
+      data.put("rootTransaction",root==null?null:System.identityHashCode(root));data.put("transactionFailed",tx==null?null:tx.isFailed());
+      var values=details==null?new Object[0]:details;
+      data.put("detailTypes",java.util.Arrays.stream(values).limit(8).map(value->value==null?"null":value.getClass().getName()).toList());
+      data.put("callers",java.util.Arrays.stream(Thread.currentThread().getStackTrace()).skip(2).limit(16).map(Object::toString).toList());
+      org.integratedmodelling.common.logging.Logging.INSTANCE.info("SCOPE_ERROR_CALL_DIAGNOSTIC "+Utils.Json.asString(data));
+      for(var value:values)if(value instanceof Throwable cause)
+        org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy.diagnoseFailure(cause,null,null,this);
+    }catch(RuntimeException ignored){/* No message/payload logging or change to error delivery. */}
+  }
+
   @Override
   public void error(Object... details) {
+    diagnoseErrorCall(details);
     if (consequenceCause == null) { super.error(details); return; }
     consequenceErrors = true;
     consequenceFailure.compareAndSet(null, Notification.error(details).getMessage());
@@ -300,12 +401,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       for (var obs :
           currentTransaction.assets().stream().filter(o -> o instanceof Observation).toList()) {
         if (obs.getId() == id) {
-          return (Observation) obs;
+          return currentObservation((Observation)obs);
         }
       }
       var provisional = provisionalObservations.get(rootTransactionId(currentTransaction));
       if (provisional != null && provisional.containsKey(id)) {
-        return provisional.get(id);
+        return currentObservation(provisional.get(id));
       }
     }
 
@@ -314,16 +415,23 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       return null;
     }
 
+    var reference=new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();reference.setId(id);
+    if(!digitalTwin.getKnowledgeGraph().isObservationCurrent(reference,this))return null;
     try {
       var revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
       if (revision != observationCacheRevision) {
         observationCache.invalidateAll();
         observationCacheRevision = revision;
       }
-      return observationCache.get(id, () -> loadObservation(id));
+      return currentObservation(observationCache.get(id, () -> loadObservation(id)));
     } catch (ExecutionException e) {
       throw new KlabInternalErrorException(e);
     }
+  }
+
+  /** Only native lifecycle status, including this root's owned overlay, defines currentness. */
+  private Observation currentObservation(Observation observation) {
+    return observation!=null&&digitalTwin!=null&&digitalTwin.getKnowledgeGraph().isObservationCurrent(observation,this)?observation:null;
   }
 
   /** Capture a new request's persisted focus; later reads retain that captured scope snapshot. */
@@ -751,10 +859,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (runtimeAssets != null) {
       assets.addAll(Arrays.asList(runtimeAssets));
     }
-    ret.currentTransaction =
-        currentTransaction == null
-            ? getDigitalTwin().transaction(currentActivity, this, assets.toArray())
-            : currentTransaction.getChild(currentActivity, ret, assets.toArray());
+    if (currentTransaction == null) {
+      var transaction = getDigitalTwin().transaction(currentActivity, this, assets.toArray());
+      if (transaction instanceof org.integratedmodelling.klab.runtime.lifecycle.CycleScopedTransaction scoped)
+        ret = new ServiceContextScope(scoped.executionScope());
+      ret.currentTransaction = transaction;
+    } else {
+      ret.currentTransaction = currentTransaction.getChild(currentActivity, ret, assets.toArray());
+    }
 
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
 
@@ -779,7 +891,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       return -1;
     }
 
-    var ret = this.currentTransaction.commit();
+    var completing = this.currentTransaction;
+    var rootCommit = completing.getParent() == null;
+    var ret = completing.commit();
+    if (rootCommit && ret > 0 && consequenceSubmissionAdmission != null) {
+      try { consequenceSubmissionAdmission.committed(ret); }
+      catch (RuntimeException receiptFailure) {
+        warn("Cannot record optional submission commit receipt", receiptFailure);
+      }
+    }
     try {
       send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
     } catch (RuntimeException deliveryFailure) {

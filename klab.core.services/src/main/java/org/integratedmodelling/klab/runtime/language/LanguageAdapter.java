@@ -966,6 +966,10 @@ public class LanguageAdapter {
                   .orElse(null);
         }
         ((ContextualizableImpl) adapted).setTarget(target);
+        if(ConfigurationTerminationValidation.termination(adapted)
+            &&ConfigurationTerminationValidation.configuration(target))
+          namespace.getNotifications().add(Notification.error(ConfigurationTerminationValidation.UNSUPPORTED,
+              Notification.LexicalContext.of(adapted,namespace)));
         ret.getContextualization().add(adapted);
       } catch (KlabIllegalArgumentException e) {
         var notification = Notification.error(ret, e.getMessage());
@@ -995,6 +999,9 @@ public class LanguageAdapter {
     ret.setLength(contextualizable.getCodeLength());
     ret.setNamespace(namespace.getUrn());
     ret.setTargetId(contextualizable.getTarget());
+    // Retain source phases for validators without activating previously unimplemented triggers.
+    ConfigurationTerminationValidation.authoredPhases(ret,
+        contextualizable.getTriggers().stream().map(Enum::name).toList());
 
     if (contextualizable.getContextualizable() instanceof FunctionCallSyntax functionCallSyntax) {
       ret.setServiceCall(
@@ -1003,6 +1010,10 @@ public class LanguageAdapter {
               namespace.getUrn(),
               namespace.getProjectName(),
               KlabAsset.KnowledgeClass.MODEL));
+    } else if (contextualizable.getContextualizable() instanceof ParsedLiteral literal
+        && literal.getPod() instanceof Number number) {
+      // Inline numeric model heads are real INIT computations, including zero.
+      ret.setLiteral(number);
     } else if (contextualizable.getContextualizable()
         instanceof ExpressionSyntax expressionSyntax) {
       ret.setExpression(adaptExpression(expressionSyntax, namespace));
@@ -1933,6 +1944,19 @@ public class LanguageAdapter {
     ret.setChildrenDisjoint(definition.isChildrenDisjoint());
     java.util.function.Function<SemanticSyntax, KimConcept> adapt =
         value -> adaptSemantics(value, namespace, projectName, KlabAsset.KnowledgeClass.ONTOLOGY);
+    for (var rule : definition.getConsequenceRules()) {
+      var source=rule.source();
+      var recipient=rule.recipient();
+      ret.getConsequenceRules().add(new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule(
+          org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Kind.valueOf(rule.kind().name()),
+          adapt.apply(rule.target()),
+          new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Recipient(
+              org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.RecipientKind.valueOf(recipient.kind().name()),
+              recipient.expression()==null?null:adapt.apply(recipient.expression())),
+          rule.secondaryInherency()==null?null:adapt.apply(rule.secondaryInherency()),
+          rule.within()==null?null:adapt.apply(rule.within()),
+          new KimConceptStatement.DeclarationClause(source.kind(),source.text(),source.offset(),source.length())));
+    }
     if (definition.getDeclaredInherent() != null)
       ret.setDeclaredInherent(adapt.apply(definition.getDeclaredInherent()));
     definition
@@ -2003,8 +2027,6 @@ public class LanguageAdapter {
             switch (requirement.type()) {
               case IDENTITY -> ret.getRequiredIdentities();
               case REALM -> ret.getRequiredRealms();
-              case EXTENT -> ret.getRequiredExtents();
-              case ATTRIBUTE -> ret.getRequiredAttributes();
               default -> throw new IllegalArgumentException("Unexpected requirement");
             };
         requirement.targets().forEach(value -> targets.add(
@@ -2044,10 +2066,19 @@ public class LanguageAdapter {
         && parentHead.getOperands().isEmpty()
         && parentHead.is(SemanticType.CONFIGURATION) && parentHead.getInherent() != null) {
       ret.getEmergenceTriggers().add(parentHead.getInherent());
+      var source=ret.getDeclarationClauses().stream().filter(c->"isClause".equals(c.kind()))
+          .findFirst().orElseThrow(()->new IllegalArgumentException(
+              "Configuration emergence shorthand requires authored source provenance"));
+      ret.getConsequenceRules().add(new org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule(
+          org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Kind.EMERGES_FROM,
+          parentHead.getInherent(),
+          org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Recipient.implicit(),
+          null,null,source));
       ((KimConceptImpl) parentHead).setInherent(null);
       ((KimConceptImpl) parentHead).resetDefinition();
       if (ret.getDeclaredParent() instanceof KimConceptImpl root) root.resetDefinition();
     }
+    ret.getConsequenceRules().sort(java.util.Comparator.comparingInt(rule->rule.source().offset()));
     definition.getImplies().stream()
         .filter(value -> value.getContextualization() == null)
         .forEach(value -> ret.getImpliedObservables().add(adapt.apply(value)));

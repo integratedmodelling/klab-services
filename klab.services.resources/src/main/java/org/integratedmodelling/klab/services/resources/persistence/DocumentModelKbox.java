@@ -227,21 +227,22 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
       org.integratedmodelling.klab.api.geometry.Geometry geometry, Concept context,
       List<ResolutionConstraint> constraints, ContextScope scope, ModelDiscoveryMode mode) {
     java.util.Objects.requireNonNull(mode, "model discovery mode");
+    try(var view=ModelVisibility.queryGuard(resourceService,scope)) {
     List<ModelReference> result = new ArrayList<>();
-    ModelVisibility.requireReady(resourceService, scope);
     if (geometry == null || geometry.isEmpty()) return result;
     var scale = GeometryRepository.INSTANCE.scale(geometry);
     Object time = scale.getTime();
     if (time instanceof EnumeratedExtension<?> enumeration) time = enumeration.getPhysicalExtent();
     if (time instanceof EnumeratedExtension<?>) throw new KlabUnimplementedException("enumerated extension");
-    var types = getCandidateTypeIds(observable);
+    var selected=reasoner(scope);
+    var types = getCandidateTypeIds(observable,scope);
     for (var document : documents.find("typeIds", types)) {
       if (!active(document)) continue;
       var storedTypes = numbers(document, "typeIds");
       var payloads = payloads(document);
       for (int i = 0; i < payloads.size(); i++) {
         if (!types.contains(storedTypes.get(i).longValue())) continue;
-        var model = ModelReferenceCodec.decode(payloads.get(i), reasoner());
+        var model = ModelReferenceCodec.decode(payloads.get(i), selected);
         if (!ModelVisibility.accepts(model, observable, constraints) || !matchesSpace(model, scale)) continue;
         var validationScope = scope == null ? resourceService.serviceScope() : scope;
         long validatedRevision = mode == ModelDiscoveryMode.PREPARABLE
@@ -252,16 +253,17 @@ public final class DocumentModelKbox extends DocumentObservableKbox implements M
         if (validatedRevision < 0) continue;
         // The indexed Concept omits observable-level clauses such as an explicit observer.
         // Reconstruct the complete authored wrapper only after current source validation succeeds.
-        var candidate = reasoner().resolveObservable(model.getObservable());
+        var candidate = selected.resolveObservable(model.getObservable());
         if (candidate == null || candidate.getSemantics() == null
             || candidate.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)) continue;
         if (mode == ModelDiscoveryMode.EXECUTABLE
-            && reasoner().semanticDistance(candidate, observable, context, validatedRevision) < 0) continue;
+            && selected.semanticDistance(candidate, observable, context, validatedRevision) < 0) continue;
         Coverage coverage = resourceService.info(model.getName(), KlabAsset.KnowledgeClass.MODEL, Coverage.class, scope);
         if (coverage == null || coverage.checkConstraints(scale)) result.add(model);
       }
     }
     return result;
+    }
   }
   private boolean matchesSpace(ModelReference model, Scale scale) {
     Space space = scale.getSpace();

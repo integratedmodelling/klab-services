@@ -71,6 +71,21 @@ final class SemanticExecutionFootprints {
             org.integratedmodelling.klab.api.knowledge.Observable.class,
             org.integratedmodelling.klab.api.scope.ContextScope.class}))
       return true; // Exact testcase producer only; execution still requires its private live permit.
+    if (actual.getDeclaringClass() == NativeTestFixtures.class && "cease".equals(actual.getName())
+        && "klab.tests.fixtures.cease".equals(call.getUrn()) && actual.getReturnType() == void.class
+        && java.lang.reflect.Modifier.isStatic(actual.getModifiers())
+        && java.util.Arrays.equals(actual.getParameterTypes(), new Class<?>[] {
+            org.integratedmodelling.klab.api.data.Data.Builder.class,
+            org.integratedmodelling.klab.api.knowledge.observation.Observation.class,
+            org.integratedmodelling.klab.api.scope.ContextScope.class})) {
+      var input=actual.getParameters()[1].getAnnotation(
+          org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Input.class);
+      // Exact trusted core implementation, not a name-only plugin exemption. Its body only
+      // reports the one declared dependency, which normal semanticInputs/receipts account for.
+      return input != null && "target".equals(input.name()) && !input.optional()
+          && java.util.Arrays.equals(input.type(),new org.integratedmodelling.klab.api.knowledge.Artifact.Type[] {
+              org.integratedmodelling.klab.api.knowledge.Artifact.Type.OBJECT});
+    }
     if (registry == null) { trace(scope,actual,receiver,call,false,null); return false; }
     var components=registry.getInstalledComponents(scope);
     boolean accepted=components.stream().anyMatch(component ->

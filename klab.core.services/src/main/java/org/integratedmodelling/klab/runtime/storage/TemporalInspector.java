@@ -116,6 +116,35 @@ public final class TemporalInspector {
     return observer;
   }
 
+  /** Opt-in read-only facts captured before a testcase can release its context. Never an execution grant. */
+  private static void diagnoseSchedule(ContextScope scope, Observation process,
+      Registration registration, double step, Time.Resolution.Type unit, long from, long until, int count) {
+    if (!Boolean.getBoolean("klab.diagnostics.temporalInspector")) return;
+    try {
+      var facts = new LinkedHashMap<String, Object>();
+      facts.put("contextId", scope.getId());
+      facts.put("processId", process.getId());
+      facts.put("geometry", process.getGeometry().encode());
+      facts.put("registered", process.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY));
+      facts.put("registration", registration);
+      var focused = scope.getContextObservation();
+      facts.put("focusId", focused == null ? null : focused.getId());
+      facts.put("expected", Map.of("step", step, "unit", unit, "start", from, "end", until, "count", count));
+      try {
+        facts.put("creators", creators(scope, process).stream().map(activity -> {
+          var row = new LinkedHashMap<String, Object>();
+          row.put("id", activity.getId()); row.put("type", activity.getType());
+          row.put("outcome", activity.getOutcome());
+          row.put("transition", activity.getMetadata().get(TransitionCommit.METADATA_KEY));
+          return row;
+        }).toList());
+      } catch (RuntimeException failure) {
+        facts.put("creatorsFailure", failure.getClass().getName());
+      }
+      scope.warn("TEMPORAL_SCHEDULE_DIAGNOSTIC " + Utils.Json.asString(facts));
+    } catch (RuntimeException ignored) { /* Diagnostics must not change any assertion or guard. */ }
+  }
+
   /** Require one model cadence, its bound context support and exactly the expected durable ticks. */
   public static boolean scheduleCheck(ContextScope scope, Observation process,
       double step, Time.Resolution.Type unit, String start, String end, int count) {
@@ -123,6 +152,7 @@ public final class TemporalInspector {
     long from = Instant.parse(start).toEpochMilli(), until = Instant.parse(end).toEpochMilli();
     var registration = registration(process);
     var plan = plan(registration);
+    diagnoseSchedule(scope, process, registration, step, unit, from, until, count);
     if (plan.getExecutionRole() != Actuator.ExecutionRole.PROCESS
         || !Boolean.TRUE.equals(process.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY))
         || plan.getOccurrenceSchedules().size() != 1) return false;
@@ -144,12 +174,62 @@ public final class TemporalInspector {
     return cursor == until;
   }
 
+  private static Map<String, Object> diagnosticRead(ContextScope scope, Observation quality, Scheduler.Event event) {
+    try (var frame = StorageReads.open(quality, scope, event,
+        Data.FillCurve.UNSPECIFIED, Storage.DoubleScanner.class)) {
+      var scanner = frame.scanners().getFirst();
+      var cells = new ArrayList<Map<String, Object>>();
+      while (scanner.hasNext() && cells.size() < 16) {
+        var cell = new LinkedHashMap<String, Object>();
+        cell.put("position", scanner.position()); cell.put("valid", scanner.isValid());
+        cell.put("value", scanner.isValid() ? scanner.peek() : null);
+        cells.add(cell); scanner.nextLong();
+      }
+      return Map.of("size", scanner.size(), "cells", cells,
+          "sources", scanner.view().sources().stream().map(StorageScan.SourceShard::urn).toList());
+    }
+  }
+
+  /** Bounded read-only evidence comparison. It never substitutes the fresh handle in the assertion. */
+  private static void diagnoseRelative(ContextScope scope, Observation process, Observation quality,
+      List<Transition> transitions, int count, double delta, double tolerance) {
+    if (!Boolean.getBoolean("klab.diagnostics.temporalInspector")) return;
+    try {
+      var facts = new LinkedHashMap<String, Object>();
+      facts.put("contextId", scope.getId()); facts.put("processId", process.getId());
+      facts.put("qualityId", quality.getId()); facts.put("heldMeaning", quality.getObservable().getUrn());
+      facts.put("heldTemporalHistory", quality.getMetadata().get(TemporalHistory.KEY));
+      facts.put("count", count); facts.put("delta", delta); facts.put("tolerance", tolerance);
+      var fresh = scope.getDigitalTwin().getKnowledgeGraph().query(Observation.class, scope)
+          .where(GraphModel.Fields.ID, KnowledgeGraph.Query.Operator.EQUALS, quality.getId()).run(scope);
+      facts.put("freshMatches", fresh.size());
+      if (fresh.size() == 1) {
+        var current = fresh.getFirst();
+        facts.put("freshId", current.getId()); facts.put("freshMeaning", current.getObservable().getUrn());
+        facts.put("freshTemporalHistory", current.getMetadata().get(TemporalHistory.KEY));
+        try {
+          facts.put("initial", diagnosticRead(scope, current, Scheduler.Event.initialization()));
+          var reads = new ArrayList<Map<String, Object>>();
+          facts.put("transitionCount", transitions.size());
+          for (var transition : transitions.stream().limit(16).toList()) {
+            var journal = transition.journal();
+            var event = new StorageScan.Slice(journal.kind(), journal.eventId(), journal.start(), journal.end()).event();
+            reads.add(Map.of("journal", journal, "read", diagnosticRead(scope, current, event)));
+          }
+          facts.put("transitions", reads);
+        } catch (RuntimeException failure) { facts.put("readFailure", failure.getClass().getName()); }
+      }
+      scope.warn("TEMPORAL_RELATIVE_DIAGNOSTIC " + Utils.Json.asString(facts));
+    } catch (RuntimeException ignored) { /* Diagnostic reads never replace assertion evidence. */ }
+  }
+
   /** Compare every covered cell at tick n with its own INIT value plus n*delta. */
   public static boolean relativeCheck(ContextScope scope, Observation process, Observation quality,
       int count, double delta, double tolerance) {
     if (count < 1 || !Double.isFinite(delta) || !Double.isFinite(tolerance) || tolerance < 0)
       throw new IllegalArgumentException("Invalid relative-value assertion");
     var transitions = history(scope, process);
+    diagnoseRelative(scope, process, quality, transitions, count, delta, tolerance);
     if (transitions.size() != count) return false;
     Object encodedHistory = quality.getMetadata().get(TemporalHistory.KEY);
     if (!(encodedHistory instanceof String text)) return false;

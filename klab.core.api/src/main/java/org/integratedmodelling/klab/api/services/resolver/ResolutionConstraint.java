@@ -83,6 +83,8 @@ public interface ResolutionConstraint extends Serializable {
     ConcretePredicates(Concept.class, true),
     /** The dataflow needs the passed additional observables produced by an adapter. */
     AdditionalObservables(Observable.class, false),
+    /** Resolve a model explaining this already detected configuration, not its mere existence. */
+    ConfigurationExplanation(Long.class, false),
     /** Observed qualities sharing the current bearer, used to prefer joint process models when
      * resolving change. Does not override strategy tiers, admission, observer or coverage checks. */
     ChangeQualities(Observable.class, false),

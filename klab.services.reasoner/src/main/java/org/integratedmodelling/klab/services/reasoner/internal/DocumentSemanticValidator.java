@@ -145,6 +145,20 @@ public class DocumentSemanticValidator
   public List<Notification> validateModel(
       KimModel model, KimObservableVisitor.Context context) {
     var result = validateDependencies(model, context);
+    for(var contextualizable:model.getContextualization()) {
+      if(!org.integratedmodelling.klab.runtime.language.ConfigurationTerminationValidation.termination(contextualizable))continue;
+      var target=contextualizable.getTarget();var targetId=contextualizable.getTargetId();
+      if(targetId!=null&&!targetId.isBlank()) {
+        target=findTarget(model.getObservables(),targetId);
+        if(target==null)target=findTarget(model.getDependencies(),targetId);
+      }else if(target==null&&!model.getObservables().isEmpty())target=model.getObservables().getFirst();
+      try {
+        var effective=resolveSemantics(target);
+        if(effective!=null&&effective.is(SemanticType.CONFIGURATION))
+          result.add(error(org.integratedmodelling.klab.runtime.language.ConfigurationTerminationValidation.UNSUPPORTED,
+              contextualizable,context));
+      }catch(RuntimeException unavailable){result.add(error(unavailable,contextualizable,context));}
+    }
     for (var output : model.getObservables()) {
       var semantics = output.getSemantics();
       if (semantics == null || !semantics.isCollective()) continue;

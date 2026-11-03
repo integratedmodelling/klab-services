@@ -126,24 +126,7 @@ public final class WorldviewDeclarationSupport {
         statement.getRequiredRealms(),
         SemanticType.REALM,
         resolve);
-    add(
-        restrictions,
-        "odo:requiresExtent",
-        statement.getRequiredExtents(),
-        SemanticType.EXTENT,
-        resolve);
-    add(
-        restrictions,
-        "odo:requiresAttribute",
-        statement.getRequiredAttributes(),
-        SemanticType.ATTRIBUTE,
-        resolve);
-    add(
-        restrictions,
-        "odo:impliesObservable",
-        statement.getImpliedObservables(),
-        SemanticType.OBSERVABLE,
-        resolve);
+    addImplications(restrictions, owner, statement, resolve);
     add(
         restrictions,
         "odo:emergesFrom",
@@ -301,6 +284,46 @@ public final class WorldviewDeclarationSupport {
         .map(org.semanticweb.owlapi.model.OWLLiteral.class::cast).map(v -> v.getLiteral())
         .filter(v -> v.contains("UNRESOLVED")).distinct().sorted()
         .map(v -> "DESCRIPTION_BEARER_UNRESOLVED: " + owner.getUrn() + " describes " + v).toList();
+  }
+
+  /** Keep predicate implications out of the Observable-ranged legacy property. */
+  private static void addImplications(Map<String, List<Concept>> restrictions, Concept owner,
+      KimConceptStatement statement, Function<KimConcept, Concept> resolve) {
+    var rules = statement.getConsequenceRules().stream()
+        .filter(rule -> rule != null && rule.kind() == KimConsequenceRule.Kind.IMPLIES).toList();
+    var operands = new LinkedHashMap<String, KimConcept>();
+    // Scoped clauses deliberately have no legacy flat value. Preserve their target too;
+    // recipient, application scope and authored source remain in the unchanged rule evidence.
+    for (var rule : rules) {
+      if (rule.target() == null) throw new KlabValidationException("Missing implication target");
+      operands.put(rule.target().getUrn(), rule.target());
+    }
+    for (var legacy : statement.getImpliedObservables()) operands.putIfAbsent(legacy.getUrn(), legacy);
+    for (var operand : operands.values()) {
+      var target = resolve.apply(operand);
+      boolean predicate = target != null && !target.is(SemanticType.NOTHING)
+          && (target.is(SemanticType.PREDICATE)
+              || target.getType().stream().anyMatch(SemanticType::isPredicate));
+      boolean configuration = owner.is(SemanticType.CONFIGURATION);
+      boolean role = owner.is(SemanticType.ROLE);
+      boolean relationship = owner.is(SemanticType.RELATIONSHIP);
+      if (!rules.isEmpty() && (!(configuration || role || relationship)
+          || target == null || target.is(SemanticType.NOTHING)
+          || (configuration ? !target.is(SemanticType.ROLE)
+              : !(SemanticType.isDependent(target.getType())
+                  || target.is(SemanticType.RELATIONSHIP) || predicate)
+                  || relationship && target.is(SemanticType.ROLE))))
+        throw new KlabValidationException("Invalid implication source or target: " + operand.getUrn());
+      if (predicate) {
+        if (!(role || configuration && target.is(SemanticType.ROLE)
+            || relationship && !target.is(SemanticType.ROLE)))
+          throw new KlabValidationException("Invalid predicate implication: " + operand.getUrn());
+        restrictions.computeIfAbsent("odo:impliesPredicate", key -> new ArrayList<>()).add(target);
+      } else {
+        restrictions.computeIfAbsent("odo:impliesObservable", key -> new ArrayList<>())
+            .add(require(resolve, operand, SemanticType.OBSERVABLE));
+      }
+    }
   }
 
   private static void add(
