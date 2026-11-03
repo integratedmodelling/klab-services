@@ -180,3 +180,24 @@ def test_resolver_and_home_bindings_are_checked_independently(service, field):
             del api._service_id_cache[service]
         with pytest.raises(ProtocolError): job.status()
     assert not calls
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("service", ["runtime", "resolver"])
+@pytest.mark.parametrize("field", ["runtime_id", "origin", "credential"])
+def test_string_scope_jobs_reject_identity_drift_without_context_object(asynchronous, service, field):
+    async def run():
+        api, context, _, calls = setup(asynchronous, service)
+        job = (AsyncJob if asynchronous else Job)(api, 5, "s.c", service=service)
+        drift(api, context, job, field)
+        if asynchronous:
+            async with api:
+                with pytest.raises(ProtocolError):
+                    await job.cancel()
+        else:
+            with api, pytest.raises(ProtocolError):
+                job.cancel()
+        assert not calls
+        assert not job.cancellation_requested
+
+    asyncio.run(run())
