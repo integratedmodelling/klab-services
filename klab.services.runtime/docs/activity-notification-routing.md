@@ -1,9 +1,38 @@
-# Explicit Runtime activity-hint publisher routing (under verification)
+# Explicit Runtime activity-hint publisher routing
 
 This opt-in prerequisite adds a **separate sender-only connection** for root-context
 `DigitalTwin/ActivityStarted` and `ActivityFinished` hints. It does not replace the
 Runtime's existing user/session/context federation messaging, widen its broker
 permissions, add an HTTP endpoint, or change a running deployment.
+
+## Current bounded acceptance
+
+After merged PR122, executable candidate `ca9297335d28cfdf76132ecd8f049ac2f3d4adca`
+passes181 integrated tests, enforced100% publisher line/branch coverage and13-module
+verification/packaging. All2,612 compiled classes match packaged JARs and seven
+launch classpaths use current declared Maven closures, not historical mixtures.
+
+Fresh bounded synthetic-v3 run18 passes two explicit controlled Job results and
+all20 cells independently read back as123.25 metres. Actual configured Runtime /
+ServiceContextScope hooks deliver12 persisted hints with six matched start/finish
+IDs and a successful finish. No Activity or publisher channel is injected. The
+wrong-context reader is denied and the second context receives no hints.
+
+Receiver/queue/context/session/list/publisher-socket/HTTP cleanup all pass. All14
+owned JVM identities are independently absent;3,898 launch hashes,1,154 source hashes
+and all fixture launch hashes remain unchanged. No matching owned visible windows
+remain; unrelated services/windows are untouched. The fsynced hint journal matches
+the aggregate JSON. Two confirmed submissions override the inherited zero summary
+counter. Continuity and upstream overflow remain UNKNOWN.
+
+This completes bounded lifecycle/numerical/automatic-hook acceptance of the new
+explicit-bearer synthetic fixture, not the original bare query or study reproduction.
+Original/v2 files and all failed evidence remain retained. Final documentation-head
+CI/review and merge are still required; this is not deployment or publication approval.
+Result SHA-256: `2642ce271831b39f540eb081584f4515bd9a97ed575d53cb2ecc0aaf68de7956`.
+Hint-journal SHA-256: `cba2eeb9755be57fbdf8c115acc537f157ef3b6770a864af1cce96fbc9598ce7`.
+
+## Historical development passes (preserved failures and limits)
 
 Implementation and acceptance are separate. In the original executable pass, source compilation and43 focused
 regressions pass; the new publisher helper and transport worker have100% unexcluded
