@@ -95,7 +95,9 @@ class DirectTransactionCycleTest {
          while(System.nanoTime()<deadline){synchronized(cycles){enqueued=!((java.util.Set<?>)queued.get(cycles)).isEmpty();}
            if(enqueued)break;Thread.sleep(1);}
          assertTrue(enqueued,"Advance must already be queued before the first process registration");assertFalse(pending.isDone());
-         var process=new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();process.setId(77);
+          var process=new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();process.setId(77);
+          when(f.graph.isObservationCurrent(same(process),any())).thenAnswer(call ->
+              "context".equals(call.getArgument(1,org.integratedmodelling.klab.api.scope.ContextScope.class).getId()));
          var geometry=org.integratedmodelling.klab.api.geometry.Geometry.create("T1(365){ttype=GRID,tstart=1388534400000,tend=1420070400000,tscope=1,tunit=DAY,tgrid=86400000}");
          process.setGeometry(geometry);
          var declaration=new org.integratedmodelling.klab.api.digitaltwin.OccurrenceSchedule(1,"","",1,
