@@ -25,7 +25,17 @@
   "automatic_mutation_replays": 0,
   "original_query_acceptance_replaced": false,
   "scientific_reproduction": false,
-  "final_integrated_python_software_gate": "PENDING",
+  "final_integrated_python_software_gate": "PASS",
+  "offline_tests": 2163,
+  "unexcluded_feature_coverage_gates": 8,
+  "lint": "PASS",
+  "wheel_and_sdist": "PASS",
+  "wheel_source_modules_matched": 33,
+  "sdist_byte_pinned_contracts_matched": 2,
+  "events_optional_dependency_in_wheel": true,
+  "windows_fixture_byte_ci": "PASS",
+  "prior_windows_hash_failure_preserved": true,
+  "windows_correction": "LF_CHECKOUT_ATTRIBUTES_ONLY_CONTRACT_CONTENT_AND_HASH_ASSERTIONS_UNCHANGED",
   "result_sha256": "2642ce271831b39f540eb081584f4515bd9a97ed575d53cb2ecc0aaf68de7956",
   "hint_journal_sha256": "cba2eeb9755be57fbdf8c115acc537f157ef3b6770a864af1cce96fbc9598ce7"
 }

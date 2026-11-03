@@ -2,8 +2,9 @@
 
 The selected scope is best-effort notifications, not durable recovery. Bounded
 actual Runtime/numerical/activity acceptance now passes with the explicit synthetic
-v3 fixture and merged generation correction; final integration/package/CI gates
-remain before PR108 merge. This does not replace failed original-query acceptance.
+v3 fixture and merged generation correction. Final integrated software gates pass;
+final documentation-head CI/review remain before merge. This does not replace
+failed original-query acceptance.
 The original shared-host broker attempt did not satisfy the mandatory context
 isolation test. Those failures remain in [historical facts](results/notifications-controlled-20261102.json).
 The separate per-context virtual-host profile now merged in PR #116 establishes
@@ -172,4 +173,15 @@ Continuity/upstream overflow remain UNKNOWN; this is not durable replay/resync,
 observation-focus privacy, production TLS deployment or study reproduction. Original
 and v2 source/model/oracle bytes and failed evidence remain preserved. The v3 model
 is an explicitly labelled different synthetic contract, never a passing original
-bare query. Final merged-prerequisite offline/package/CI checks remain required.
+bare query.
+
+Final merged-prerequisite verification passes2,163 offline tests, all eight
+unexcluded coverage gates, lint, wheel and sdist. All33 wheel Python modules match
+source; both byte-pinned fixture contracts match the sdist; the optional events
+dependency is present. The initial Windows-only hash failure is preserved: Git
+checkout CRLF changed contract bytes while committed LF bytes matched the pinned
+hash exactly. Narrow LF attributes restore those existing bytes without changing
+contract content, expected hashes or assertions. The new Windows fixture-byte CI
+job passes. Receiver source remains identical to the genuine run18 implementation.
+Final documentation-head CI and review remain required before merge. No new
+scientific requests or publication are authorized by packaging success.
