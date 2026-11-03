@@ -32,7 +32,7 @@ class ObservationSemanticAnnotationsTest {
     syntax.setType(type);
     var reasoner = mock(ReasonerService.class);
     when(reasoner.resolveConcept("test:Thing")).thenReturn(concept);
-    when(reasoner.owl()).thenReturn(mock(OWL.class));
+    when(reasoner.owl()).thenReturn(new OWL(mock(Scope.class)));
     var resources = mock(ResourcesService.class);
     when(resources.declareConcept("test:Thing")).thenReturn(syntax);
     var scope = mock(Scope.class);
