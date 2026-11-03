@@ -24,6 +24,7 @@ from klab_client.tables import to_dataframe
 from klab_client.graph import GraphBrowser, GraphPage
 from klab_client.graph_projection import GraphProjection, GraphProjectionView, ProjectedGraphPage
 from klab_client.authoring import Authoring, AuthoringReceipt, ParsedSource
+from klab_client.source_previews import SourcePreview, SourcePreviews
 from klab_client.agents import AgentPreviews, AgentSourcePreview
 from klab_client.agent_status import AgentStatusSnapshot, decode_agent_status
 from klab_client.agent_control import AgentControlBinding, AgentControlJournal, AgentControlView
@@ -59,6 +60,7 @@ from klab_client.notifications import ActivityNotifications, ActivityNotificatio
 __all__ = [
     "ActivityNotifications", "ActivityNotification", "NotificationBroker",
     "Authoring", "AuthoringReceipt", "ParsedSource",
+    "SourcePreview", "SourcePreviews",
     "AgentPreviews", "AgentSourcePreview",
     "AgentStatusSnapshot", "decode_agent_status",
     "AgentControlBinding", "AgentControlJournal", "AgentControlView",
