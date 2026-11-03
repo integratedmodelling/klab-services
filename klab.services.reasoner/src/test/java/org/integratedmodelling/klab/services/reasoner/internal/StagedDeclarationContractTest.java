@@ -136,6 +136,17 @@ class StagedDeclarationContractTest {
       assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID,result.logicalStatus(),result.diagnostics().toString());
       for(var key:List.of("staged_reasonerCreations","staged_actualFlushes","staged_satisfiabilityQueries","staged_entailmentQueries"))
         assertEquals(0,state.actor().declarationStagingMetrics().get(key),key);
+      var field=org.integratedmodelling.klab.services.reasoner.ReasonerService.class.getDeclaredField("emergence");
+      field.setAccessible(true);
+      @SuppressWarnings("unchecked")
+      var index=(Map<Concept,Set<org.integratedmodelling.klab.services.reasoner.ReasonerService.Emergence>>)field.get(state.actor());
+      var trigger=state.actor().owl().getConcept("k:Q");
+      var indexed=index.get(trigger);
+      assertNotNull(indexed,"Deferred indexing must retain the authored trigger");
+      assertEquals(1,indexed.size());
+      var emergence=indexed.iterator().next();
+      assertEquals(state.actor().owl().getConcept("k:Pattern"),emergence.emergentObservable);
+      assertEquals(Set.of(trigger),emergence.triggerObservables);
     }
   }
 
